@@ -19,6 +19,11 @@ export const FLAG_SRC: Record<string, string> = {
     PE: '/flags/pe.svg',
     ES: '/flags/es.svg',
     EU: '/flags/eu.svg',
+    BR: '/flags/br.svg',
+    CA: '/flags/ca.svg',
+    GB: '/flags/gb.svg',
+    DE: '/flags/de.svg',
+    FR: '/flags/fr.svg',
 };
 
 // El selector de moneda (nueva.astro) no tiene un país, tiene una divisa —

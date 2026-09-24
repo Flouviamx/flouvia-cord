@@ -5,11 +5,16 @@ const en = getLangFromUrl(Astro.url) === 'en';
 const slackLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64';
 const hubspotLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=64';
 const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://teams.microsoft.com&size=64';
-const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes(slug);
+const PF = ['pagos', 'cobranza-ia', 'divisas', 'clientes-credito', 'finanzas'].includes(slug);
+const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes(slug) || PF;
 const LOC = en ? 'en-US' : 'es-MX';
 const mx = (n: number, d = 2) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 const tx = (es: string, e: string) => (en ? e : es);
-const wrapClass = `bm-wrap bm-${slug}-${index}${CALCA ? ` bm-x${index === 2 ? ' bm-x-full' : ''}` : ''}`;
+const nf = (n: number, d = 2) => new Intl.NumberFormat(LOC, { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const cur = (c: string, n: number, d = 2) => `${c === 'USD' ? 'US$' : c} ${nf(n, d)}`;
+const mxs = en ? 'MX$' : '$';
+const mpLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://mercadopago.com.mx&size=64';
+const wrapClass = `bm-wrap bm-${slug}-${index}${CALCA ? ` bm-x${index === 2 ? ' bm-x-full' : ''}` : ''}${PF ? ' bm-pf' : ''}`;
 const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 ---
 <div class={wrapClass} data-loc={CALCA ? LOC : undefined}>
@@ -610,49 +615,146 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
 
   {/* ────────────────── CORD PAYMENTS ────────────────── */}
   {slug === 'pagos' && index === 0 && (
-    <div class="bm-stage bm-pay-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">A-001048 · Materiales del Valle</span>
-          <span class="bm-app-badge bm-badge-green">● Aprobada</span>
+    <div class="bm-stage" data-bmx="pg0">
+      <div class="bm-app bm-x-free">
+        <div class="bm-py">
+          <div class="bm-py-brand">
+            <span class="bm-py-av">M</span>
+            <span class="bm-py-bt"><strong>Materiales del Valle</strong><em>{tx('Cotización', 'Quote')} COT-0148</em></span>
+          </div>
+          <div class="bm-py-amt">
+            <span class="l">{tx('Anticipo a pagar', 'Deposit due')}</span>
+            <span class="editorial v">{mxs}{nf(58940.76)} <small>MXN</small></span>
+            <span class="n">{tx(`del total de ${mxs}${nf(196469.2)} MXN`, `of a ${mxs}${nf(196469.2)} MXN total`)}</span>
+            <span class="n">{tx('Tarjeta · Transferencia SPEI', 'Card · SPEI transfer')}</span>
+          </div>
+          <span class="bm-py-lg">{tx('Método de pago', 'Payment method')}</span>
+          <div class="bm-py-seg"><span class="on" data-seg="card">{tx('Tarjeta', 'Card')}</span><span data-seg="spei">{tx('Transferencia SPEI', 'SPEI transfer')}</span></div>
+          <div class="bm-py-body" data-body>
+            <div class="bm-py-card" data-panel="card">
+              <span class="bm-py-f"><span class="lb">{tx('Número de tarjeta', 'Card number')}</span><span class="in"><span class="ph">1234 1234 1234 1234</span><span class="bm-py-brands"><span>VISA</span><span>MC</span><span>AMEX</span></span></span></span>
+              <span class="bm-py-2"><span class="bm-py-f"><span class="lb">{tx('Vencimiento', 'Expiration')}</span><span class="in"><span class="ph">{tx('MM / AA', 'MM / YY')}</span></span></span><span class="bm-py-f"><span class="lb">CVC</span><span class="in"><span class="ph">CVC</span></span></span></span>
+              <span class="bm-py-cta">{tx(`Pagar ${mxs}${nf(58940.76)}`, `Pay ${mxs}${nf(58940.76)}`)}</span>
+            </div>
+            <div class="bm-py-spei" data-panel="spei" hidden>
+              <strong>{tx('Instrucciones SPEI', 'SPEI instructions')}</strong>
+              <p>{tx('Transfiere el monto exacto y usa la referencia indicada. La confirmación es automática.', 'Transfer the exact amount and use the reference shown. Confirmation is automatic.')}</p>
+              <span class="r"><span>{tx('Monto', 'Amount')}</span><b class="editorial">{mxs}{nf(58940.76)} MXN</b></span>
+              <span class="r"><span>CLABE</span><b class="editorial">646180157300048271</b><em>{tx('Copiar', 'Copy')}</em></span>
+              <span class="r"><span>{tx('Banco', 'Bank')}</span><b>STP</b></span>
+              <span class="r"><span>{tx('Referencia', 'Reference')}</span><b class="editorial">4827193</b><em>{tx('Copiar', 'Copy')}</em></span>
+            </div>
+          </div>
+          <div class="bm-py-or"><span>{tx('o', 'or')}</span></div>
+          <span class="bm-py-mp"><img src={mpLogo} alt="" width="18" height="18" loading="lazy" />{tx('Pagar con Mercado Pago', 'Pay with Mercado Pago')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4"/></svg></span>
         </div>
-        <div class="bm-kv"><span>Total a pagar</span><b class="editorial">$196,469.20</b></div>
-        <div class="bm-kv"><span>Método</span><span class="bm-tg bm-tg-blue">Tarjeta •••• 4242</span></div>
-        <div class="bm-kv"><span>Destino</span><b>Cuenta conectada de Materiales del Valle</b></div>
-        <div class="bm-app-foot"><span>Se cobra en</span><b>MXN</b></div>
+        <p class="bm-py-foot"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</p>
       </div>
     </div>
   )}
 
   {slug === 'pagos' && index === 1 && (
-    <div class="bm-stage bm-pay-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Alta de cuenta de cobro</span>
-          <span class="bm-app-badge bm-badge-blue">Paso 3 de 5</span>
+    <div class="bm-stage" data-bmx="pg1">
+      <div class="bm-app bm-x-free">
+        <div class="bm-ql bm-ql-main">
+          <div class="bm-ql-head">
+            <span class="bm-qc-brand"><span class="bm-qc-mark">M</span><span class="bm-qc-bt"><span class="n">Materiales del Valle</span><span class="r">RFC MVA240611AB3</span></span></span>
+            <span class="bm-qc-folio"><span class="e">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="f">COT-0148</span></span>
+          </div>
+          <div class="bm-ql-meta">
+            <span><em>{tx('PARA', 'FOR')}</em>Distribuidora El Zarco</span>
+            <span><em>{tx('VÁLIDA HASTA', 'VALID UNTIL')}</em>{tx('22 oct 2026', 'Oct 22, 2026')}</span>
+            <span><em>{tx('TÉRMINOS', 'TERMS')}</em>Net 30</span>
+          </div>
+          <div class="bm-ql-hero">
+            <span class="e">{tx('TOTAL A PAGAR', 'TOTAL DUE')}</span>
+            <span class="editorial v">{mxs}{nf(196469.2)}</span>
+            <span class="n">MXN · {tx('IVA incluido', 'tax included')}</span>
+            <span class="s">{tx(`Hoy pagas ${mxs}${nf(58940.76)} MXN de anticipo (30%) · Saldo: ${mxs}${nf(137528.44)} MXN — vence el 24 oct 2026`, `Today you pay ${mxs}${nf(58940.76)} MXN as a deposit (30%) · Balance: ${mxs}${nf(137528.44)} MXN — due on Oct 24, 2026`)}</span>
+          </div>
+          <div class="bm-ql-plan">
+            <span class="h">{tx('Plan de pago', 'Payment plan')}</span>
+            <span class="r"><span>{tx('Anticipo', 'Deposit')}</span><b class="editorial">{mxs}{nf(58940.76)}</b><em class="due">{tx('Por pagar', 'Due')}</em></span>
+            <span class="r"><span>{tx('Saldo', 'Balance')}</span><b class="editorial">{mxs}{nf(137528.44)}</b><em>{tx('Vence el 24 oct 2026', 'Due on Oct 24, 2026')}</em></span>
+          </div>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">RM</span><div class="bm-uid-tx"><b>Raúl Mendoza</b><span>Dueño · 60%</span></div></div><span class="bm-tg bm-tg-green">Verificado</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">LF</span><div class="bm-uid-tx"><b>Lucía Ferreira</b><span>Socia · 40%</span></div></div><span class="bm-tg bm-tg-amber">Pendiente</span></div>
-        <div class="bm-kv"><span>Identificación</span><b>Continuar en tu teléfono</b></div>
-        <div class="bm-app-foot"><span>Todo dentro de Cord</span><b>Sin redirecciones</b></div>
+        <div class="bm-ql bm-ql-sub" data-sub>
+          <div class="bm-ql-head">
+            <span class="bm-qc-brand"><span class="bm-qc-mark">M</span><span class="bm-qc-bt"><span class="n">Materiales del Valle</span><span class="r">{tx('Para', 'For')} Constructora GAMA</span></span></span>
+            <span class="bm-qc-folio"><span class="e">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="f">COT-0151</span></span>
+          </div>
+          <div class="bm-ql-hero sm">
+            <span class="e">{tx('TOTAL A PAGAR', 'TOTAL DUE')}</span>
+            <span class="editorial v">{mxs}{nf(38000)} <small>MXN</small></span>
+            <span class="s" data-split data-off={tx(`Iguala mensual · ${mxs}${nf(38000)} MXN cada mes`, `Monthly plan · ${mxs}${nf(38000)} MXN per month`)} data-on={tx(`Iguala activa · se cobra ${mxs}${nf(38000)} MXN cada mes`, `Active recurring plan · ${mxs}${nf(38000)} MXN charged monthly`)}>{tx(`Iguala activa · se cobra ${mxs}${nf(38000)} MXN cada mes`, `Active recurring plan · ${mxs}${nf(38000)} MXN charged monthly`)}</span>
+          </div>
+          <div class="bm-ql-auth" data-auth hidden>
+            <strong>{tx('Autoriza tu iguala mensual', 'Authorize your monthly plan')}</strong>
+            <span>{tx(`Se cobrará ${mxs}${nf(38000)} MXN a tu tarjeta hoy y ese mismo monto automáticamente cada mes, hasta que se cancele. Puedes cancelar cuando quieras.`, `${mxs}${nf(38000)} MXN will be charged to your card today and that same amount automatically every month, until cancelled. You can cancel anytime.`)}</span>
+            <span class="bm-ql-cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Autorizar cobro mensual', 'Authorize monthly charge')}</span>
+            <span class="bm-ql-sec">{tx('Suscripción con tarjeta · protegida por Cord Payments', 'Card subscription · protected by Cord Payments')}</span>
+          </div>
+          <div class="bm-ql-active" data-active>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.12"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+            <span><strong>{tx('Iguala activa', 'Active recurring plan')}</strong><span>{tx(`Se te cobra ${mxs}${nf(38000)} MXN cada mes automáticamente con tu tarjeta — próximo cargo el 24 oct 2026. Para cancelar, contacta a Materiales del Valle.`, `You're charged ${mxs}${nf(38000)} MXN every month automatically on your card — next charge on Oct 24, 2026. To cancel, contact Materiales del Valle.`)}</span></span>
+          </div>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'pagos' && index === 2 && (
-    <div class="bm-stage bm-pay-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Depósitos</span>
-          <span class="bm-app-badge bm-badge-green">Semanal</span>
+    <div class="bm-stage" data-bmx="pg2">
+      <div class="bm-app bm-w bm-pg2-set">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Cobros', 'Payments')}</strong></span>
         </div>
-        <div class="bm-app-body">
-          <div class="bm-g bm-g3 bm-g-head"><span>Fecha</span><span>Estado</span><span class="bm-r">Monto</span></div>
-          <div class="bm-g bm-g3"><span>12 sep 2026</span><span class="bm-tg bm-tg-green">Pagado</span><b class="editorial bm-r">$84,210.00</b></div>
-          <div class="bm-g bm-g3"><span>5 sep 2026</span><span class="bm-tg bm-tg-green">Pagado</span><b class="editorial bm-r">$71,940.00</b></div>
-          <div class="bm-g bm-g3"><span>29 ago 2026</span><span class="bm-tg bm-tg-amber">En camino</span><b class="editorial bm-r">$63,500.00</b></div>
+        <div class="bm-pg2-body">
+          <span class="bm-pg2-h">{tx('Estado de tu cuenta', 'Your account status')}</span>
+          <div class="bm-pg2-status">
+            <span class="dot"></span>
+            <span class="tx"><strong>{tx('¡Todo listo, ya puedes cobrar!', 'All set, you can accept payments now!')}</strong><span>{tx('Tu cuenta está verificada y activa. El dinero de tus cobros se enviará automáticamente a tu banco.', 'Your account is verified and active. Your payment money will be sent to your bank automatically.')}</span></span>
+          </div>
+          <div class="bm-pg2-bank">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fill-opacity="0.12"/><path d="M9 21v-6h6v6"/></svg></span>
+            <span class="tx"><strong>{tx('Cuenta bancaria', 'Bank account')}</strong><span>{tx('Cuenta CLABE terminación •••• 4821. Aquí llegan tus depósitos.', 'CLABE account ending in •••• 4821. Your payouts arrive here.')}</span></span>
+            <span class="ok">{tx('18 dígitos · verificada', '18 digits · verified')}</span>
+          </div>
+          <div class="bm-pg2-sched">
+            <strong>{tx('Frecuencia de depósito', 'Payout frequency')}</strong>
+            <p>{tx('Cada cuánto sale tu dinero hacia tu cuenta bancaria. Los depósitos diarios pagan más veces la comisión fija de transferencia; los mensuales juntan el dinero pero lo dejan más lejos.', 'How often your money leaves for your bank account. Daily payouts pay the fixed transfer fee more often; monthly ones pool the money but keep it further away.')}</p>
+            <div class="bm-pg2-row">
+              <span class="f"><span class="lb">{tx('Frecuencia', 'Frequency')}</span><span class="bm-field"><span>{tx('Semanal', 'Weekly')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+              <span class="f"><span class="lb">{tx('Día de la semana', 'Day of the week')}</span><span class="bm-field"><span>{tx('Viernes', 'Friday')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+            </div>
+            <span class="bm-pg2-save">{tx('Guardar frecuencia', 'Save frequency')}</span>
+          </div>
         </div>
-        <div class="bm-app-foot"><span>Cuenta</span><b>CLABE •••• 4821</b></div>
+      </div>
+      <div class="bm-fl bm-pg2-money">
+        <span class="bm-kl">{tx('Saldo disponible', 'Available balance')}<span class="bm-snap">{tx('en vivo', 'live')}</span></span>
+        <strong class="editorial bm-pg2-bal">MXN {nf(128640)}</strong>
+        <small class="bm-pg2-sub">MXN {nf(305433)} {tx('en camino', 'on the way')}</small>
+        <div class="bm-pg2-sec">
+          <span class="t">{tx('Próximo depósito', 'Next payout')}<span class="bm-snap">{tx('en vivo', 'live')}</span></span>
+          <span class="d">{tx('Transferencias de Cord Payments a tu cuenta bancaria.', 'Cord Payments transfers to your bank account.')}</span>
+        </div>
+        <div class="bm-pg2-po" data-po data-l={JSON.stringify([tx('Programado', 'Scheduled'), tx('En camino', 'In transit'), tx('Depositado', 'Deposited')])}>
+          <i class="dot" data-dot></i>
+          <span class="tx"><strong data-st>{tx('En camino', 'In transit')}</strong><small>{tx('Llegada: 26 sep', 'Arrival: Sep 26')}</small></span>
+          <b class="editorial">MXN {nf(84210)}</b>
+        </div>
+        <div class="bm-pg2-sec">
+          <span class="t">{tx('A dónde va cada peso', 'Where every peso goes')}</span>
+          <span class="d">{tx('Del bruto cobrado, cuánto llega neto a tu banco.', 'Of the gross collected, how much reaches your bank.')}</span>
+        </div>
+        <div class="bm-pg2-seg"><i style="width:92.6%;background:#059669"></i><i style="width:4.3%;background:#f59e0b"></i><i style="width:1%;background:#8b95a5"></i><i style="width:2.1%;background:#ef4444"></i></div>
+        <div class="bm-pg2-dest">
+          <span><span><strong>{tx('Neto a tu banco', 'Net to your bank')}</strong><small>92.6%</small></span><b class="editorial ok">MXN {nf(381991.1)}</b></span>
+          <span><span><strong>{tx('Comisión', 'Fee')}</strong><small>4.3%</small></span><b class="editorial warn">−MXN {nf(17728.9)}</b></span>
+          <span><span><strong>{tx('Reembolsos', 'Refunds')}</strong></span><b class="editorial">−MXN {nf(4180)}</b></span>
+          <span><span><strong>{tx('Disputas', 'Disputes')}</strong></span><b class="editorial bad">−MXN {nf(8400)}</b></span>
+        </div>
       </div>
     </div>
   )}
@@ -1796,6 +1898,154 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     .bm-bd-card .f { white-space: nowrap; }
     .bm-bd-card .a { font-size: 0.62rem; }
   }
+  /* ═══ Calcas de Pagos y finanzas: pagos, cobranza-ia, divisas, clientes-credito, finanzas ═══ */
+  .bm-pf .bm-w { border-color: rgba(10,25,47,0.09); box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 18px 40px -18px rgba(10,25,47,0.2), 0 50px 90px -44px rgba(10,25,47,0.26); }
+  .bm-pf .bm-w-bar { background: #fafbfc; }
+  .bm-fl { position: relative; background: #ffffff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.09); padding: 15px 16px 16px; color: #0f1729; font-size: 0.74rem; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 26px 52px -18px rgba(10,25,47,0.26), 0 70px 110px -50px rgba(10,25,47,0.3); }
+  .bm-kl { display: flex; align-items: center; font-size: 0.52rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #5b6472; }
+  .bm-snap { display: inline-flex; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: #f1f3f6; color: #5b6472; font-size: 0.46rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
+  .bm-pf .bm-sec-h span { font-weight: 500; }
+
+  /* pagos · página de pago */
+  [data-bmx="pg0"] .bm-x-free { flex-direction: column; align-items: center; }
+  .bm-py { width: min(100%, 352px); background: #ffffff; border-radius: 22px; padding: 16px 16px 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 24px 50px -18px rgba(10,25,47,0.2), 0 64px 100px -50px rgba(10,25,47,0.26); color: #050505; }
+  .bm-py-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .bm-py-av { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; }
+  .bm-py-bt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-py-bt strong { font-size: 0.76rem; font-weight: 600; letter-spacing: -0.01em; color: #050505; }
+  .bm-py-bt em { font-size: 0.6rem; color: #6b7686; }
+  .bm-py-amt { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px 10px; margin-bottom: 12px; background: #f5f5f7; border-radius: 13px; }
+  .bm-py-amt .l { font-size: 0.5rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8a93a2; }
+  .bm-py-amt .v { font-size: 1.2rem; line-height: 1.2; color: #050505 !important; }
+  .bm-py-amt .v small { font-size: 0.58rem; font-weight: 600; color: #8a93a2; }
+  .bm-py-amt .n { font-size: 0.56rem; color: #8a93a2; }
+  .bm-py-lg { display: block; font-size: 0.58rem; font-weight: 600; color: #4a5567; margin-bottom: 6px; }
+  .bm-py-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; margin-bottom: 11px; background: #f5f5f7; border-radius: 11px; }
+  .bm-py-seg > span { text-align: center; font-size: 0.64rem; font-weight: 500; color: #050505; padding: 6px 6px; border-radius: 9px; border: 1px solid transparent; white-space: nowrap; transition: background 0.25s, border-color 0.25s, box-shadow 0.25s; }
+  .bm-py-seg > span.on { background: #ffffff; border-color: #b45309; font-weight: 650; box-shadow: 0 2px 8px rgba(10,25,47,0.08); }
+  .bm-py-body { position: relative; }
+  .bm-py-card { display: flex; flex-direction: column; gap: 7px; }
+  .bm-py-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .bm-py-f .lb { font-size: 0.54rem; font-weight: 500; color: #4a5567; }
+  .bm-py-f .in { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 27px; padding: 0 9px; border: 1px solid #e2e5ea; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 1px rgba(10,25,47,0.03); }
+  .bm-py-f .ph { font-size: 0.62rem; color: #a3a9b3; white-space: nowrap; }
+  .bm-py-brands { display: flex; gap: 3px; }
+  .bm-py-brands > span { font-size: 0.38rem; font-weight: 800; letter-spacing: 0.3px; color: #5b6472; border: 1px solid rgba(10,25,47,0.12); border-radius: 3px; padding: 1px 3px; }
+  .bm-py-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .bm-py-cta { display: block; margin-top: 3px; text-align: center; font-size: 0.68rem; font-weight: 650; color: #ffffff; background: #b45309; border-radius: 999px; padding: 8px 12px; box-shadow: 0 8px 18px -10px rgba(180,83,9,0.6); }
+  .bm-py-spei strong { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
+  .bm-py-spei p { margin: 2px 0 3px; font-size: 0.56rem; line-height: 1.45; color: #667085; }
+  .bm-py-spei .r { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.56rem; color: #667085; }
+  .bm-py-spei .r b { font-size: 0.64rem; font-weight: 600; color: #050505 !important; overflow-wrap: anywhere; }
+  .bm-py-spei .r em { font-size: 0.56rem; font-weight: 650; color: #b45309; }
+  .bm-py-or { display: flex; align-items: center; gap: 8px; margin: 10px 0 9px; font-size: 0.56rem; color: #8a93a2; }
+  .bm-py-or::before, .bm-py-or::after { content: ''; flex: 1; height: 1px; background: rgba(10,25,47,0.09); }
+  .bm-py-mp { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.14), 0 1px 2px rgba(10,25,47,0.05); font-size: 0.66rem; font-weight: 600; color: #0a192f; }
+  .bm-py-mp img { width: 16px; height: 16px; border-radius: 4px; }
+  .bm-py-mp svg { width: 11px; height: 11px; opacity: 0.7; }
+  .bm-py-foot { display: flex; align-items: flex-start; justify-content: center; gap: 5px; max-width: 330px; margin: 11px 0 0; font-size: 0.52rem; line-height: 1.45; color: #8a93a2; text-align: center; }
+  .bm-py-foot svg { width: 10px; height: 10px; flex-shrink: 0; margin-top: 1px; }
+
+  /* pagos · anticipo, saldo e iguala en el link */
+  [data-bmx="pg1"] .bm-x-free { position: relative; display: block; min-height: 400px; }
+  .bm-ql { background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,25,47,0.07); padding: 15px 16px 16px; color: #111111; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 48px -18px rgba(10,25,47,0.18), 0 60px 100px -50px rgba(10,25,47,0.24); }
+  .bm-ql-main { width: calc(100% - 214px); min-width: 330px; }
+  .bm-ql-sub { position: absolute; top: 58px; right: 0; width: 262px; z-index: 3; padding: 13px 14px 14px; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -20px rgba(10,25,47,0.3), 0 80px 120px -50px rgba(10,25,47,0.3); }
+  .bm-ql-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding-bottom: 11px; margin-bottom: 11px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .bm-ql-meta { display: flex; gap: 22px; margin-bottom: 12px; }
+  .bm-ql-meta > span { display: flex; flex-direction: column; gap: 3px; font-size: 0.66rem; font-weight: 600; color: #111111; white-space: nowrap; }
+  .bm-ql-meta em { font-size: 0.42rem; font-weight: 800; letter-spacing: 1.6px; color: #c4c9d0; }
+  .bm-ql-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 16px 12px 15px; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 16px; }
+  .bm-ql-hero .e { font-size: 0.44rem; font-weight: 800; letter-spacing: 2px; color: #c4c9d0; }
+  .bm-ql-hero .v { font-size: 1.9rem; line-height: 1.05; letter-spacing: -0.04em !important; color: #b45309 !important; }
+  .bm-ql-hero .v small { font-size: 0.66rem; letter-spacing: 0; color: #9ca3af; }
+  .bm-ql-hero .n { font-size: 0.58rem; font-weight: 500; color: #9ca3af; }
+  .bm-ql-hero .s { display: inline-block; margin-top: 5px; padding: 5px 11px; font-size: 0.6rem; font-weight: 600; line-height: 1.45; color: #0a192f; background: rgba(10,25,47,0.05); border-radius: 999px; }
+  .bm-ql-hero.sm { padding: 11px 10px 12px; }
+  .bm-ql-hero.sm .v { font-size: 1.32rem; }
+  .bm-ql-hero.sm .s { font-size: 0.54rem; padding: 4px 9px; }
+  .bm-ql-plan { display: flex; flex-direction: column; margin-top: 12px; padding: 2px 13px 4px; border: 1px solid rgba(10,25,47,0.07); border-radius: 14px; }
+  .bm-ql-plan .h { font-size: 0.5rem; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: #8a93a2; padding: 9px 0 5px; }
+  .bm-ql-plan .r { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(10,25,47,0.06); font-size: 0.66rem; }
+  .bm-ql-plan .r > span { flex: 1; font-weight: 600; color: #0a192f; }
+  .bm-ql-plan .r b { font-size: 0.68rem; color: #0a192f !important; }
+  .bm-ql-plan .r em { min-width: 104px; text-align: right; font-size: 0.56rem; font-weight: 600; color: #8a93a2; }
+  .bm-ql-auth { display: flex; flex-direction: column; gap: 5px; margin-top: 11px; }
+  .bm-ql-auth strong { font-size: 0.7rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+  .bm-ql-auth > span:not([class]) { font-size: 0.56rem; line-height: 1.5; color: #6b7686; }
+  .bm-ql-cta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; padding: 9px 12px; border-radius: 11px; background: #b45309; color: #ffffff; font-size: 0.66rem; font-weight: 600; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); }
+  .bm-ql-cta svg { width: 11px; height: 11px; }
+  .bm-ql-sec { font-size: 0.5rem; color: #8a93a2; text-align: center; }
+  .bm-ql-active { display: flex; align-items: flex-start; gap: 9px; margin-top: 11px; padding: 11px 12px; background: #f5f5f7; border-radius: 13px; }
+  .bm-ql-active svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: #0a192f; }
+  .bm-ql-active > span { display: flex; flex-direction: column; gap: 3px; }
+  .bm-ql-active strong { font-size: 0.68rem; font-weight: 600; color: #0a192f; }
+  .bm-ql-active > span > span { font-size: 0.56rem; line-height: 1.5; color: #6b7686; }
+  [data-auth][hidden], [data-active][hidden], [data-panel][hidden] { display: none !important; }
+
+  /* pagos · depósitos */
+  .bm-x-full [data-bmx="pg2"] .bm-pg2-set { position: absolute; left: 30px; top: 34px; width: calc(100% - 250px); }
+  .bm-x-full [data-bmx="pg2"] .bm-pg2-money { position: absolute; right: 26px; top: 20px; width: 262px; z-index: 3; }
+  .bm-pg2-body { padding: 14px 16px 18px; }
+  .bm-pg2-h { display: block; font-size: 0.78rem; font-weight: 600; color: #0f1729; margin-bottom: 9px; }
+  .bm-pg2-status { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border-radius: 12px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.22); }
+  .bm-pg2-status .dot { width: 8px; height: 8px; flex-shrink: 0; margin-top: 4px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+  .bm-pg2-status .tx, .bm-pg2-bank .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-pg2-status strong, .bm-pg2-bank strong { font-size: 0.72rem; font-weight: 600; color: #0f1729; }
+  .bm-pg2-status .tx > span, .bm-pg2-bank .tx > span { font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-pg2-bank { display: flex; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-pg2-bank .ic { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #0a192f; background: #f5f5f7; }
+  .bm-pg2-bank .ic svg { width: 16px; height: 16px; }
+  .bm-pg2-bank .ok { margin-left: auto; flex-shrink: 0; font-size: 0.56rem; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .bm-pg2-sched { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; padding: 13px 14px 14px; border: 1px solid rgba(10,25,47,0.08); border-radius: 14px; }
+  .bm-pg2-sched > strong { font-size: 0.74rem; font-weight: 600; color: #0f1729; letter-spacing: -0.01em; }
+  .bm-pg2-sched p { margin: 0; font-size: 0.6rem; line-height: 1.5; color: #5b6472; }
+  .bm-pg2-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .bm-pg2-row .f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .bm-pg2-row .lb { font-size: 0.6rem; font-weight: 600; color: #0f1729; }
+  .bm-pg2-save { align-self: flex-start; font-size: 0.64rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 999px; padding: 7px 14px; }
+  .bm-pg2-bal { display: block; margin-top: 6px; font-size: 1.36rem; line-height: 1.1; color: #0a192f !important; }
+  .bm-pg2-sub { display: block; margin-top: 3px; font-size: 0.6rem; color: #5b6472; }
+  .bm-pg2-sec { display: flex; flex-direction: column; gap: 2px; margin-top: 13px; padding-top: 11px; border-top: 1px solid rgba(10,25,47,0.08); }
+  .bm-pg2-sec .t { display: flex; align-items: center; font-size: 0.7rem; font-weight: 600; color: #0f1729; }
+  .bm-pg2-sec .d { font-size: 0.56rem; line-height: 1.4; color: #5b6472; }
+  .bm-pg2-po { display: flex; align-items: center; gap: 9px; margin-top: 9px; padding: 9px 10px; border-radius: 11px; background: #fafbfc; border: 1px solid rgba(10,25,47,0.06); }
+  .bm-pg2-po .dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #3b82f6; }
+  .bm-pg2-po .tx { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .bm-pg2-po strong { font-size: 0.68rem; font-weight: 600; color: #0f1729; }
+  .bm-pg2-po small { font-size: 0.56rem; color: #5b6472; }
+  .bm-pg2-po b { font-size: 0.74rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-pg2-seg { display: flex; gap: 2px; height: 8px; margin-top: 10px; border-radius: 999px; overflow: hidden; }
+  .bm-pg2-seg > i { display: block; height: 100%; }
+  .bm-pg2-dest { display: flex; flex-direction: column; margin-top: 4px; }
+  .bm-pg2-dest > span { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(10,25,47,0.07); }
+  .bm-pg2-dest > span:first-child { border-top: 0; }
+  .bm-pg2-dest > span > span { display: flex; flex-direction: column; gap: 1px; }
+  .bm-pg2-dest strong { font-size: 0.62rem; font-weight: 600; color: #0f1729; }
+  .bm-pg2-dest small { font-size: 0.52rem; color: #5b6472; }
+  .bm-pg2-dest b { font-size: 0.66rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-pg2-dest b.ok { color: #059669 !important; }
+  .bm-pg2-dest b.warn { color: #b45309 !important; }
+  .bm-pg2-dest b.bad { color: #dc2626 !important; }
+
+  @media (max-width: 1180px) {
+    .bm-ql-main { width: calc(100% - 190px); }
+    .bm-x-full [data-bmx="pg2"] .bm-pg2-set { left: 22px; width: calc(100% - 226px); }
+    .bm-x-full [data-bmx="pg2"] .bm-pg2-money { right: 18px; width: 248px; }
+  }
+  @media (max-width: 960px) {
+    .bm-x-full [data-bmx="pg2"] .bm-pg2-set { display: none; }
+    .bm-x-full [data-bmx="pg2"] .bm-pg2-money { position: relative; right: auto; top: auto; width: 100%; max-width: 360px; margin: 0 auto; }
+  }
+  @media (max-width: 700px) {
+    .bm-py-foot { display: none; }
+    [data-bmx="pg1"] .bm-x-free { min-height: 0; }
+    .bm-ql-main { width: 100%; min-width: 0; }
+    .bm-ql-sub { display: none; }
+    .bm-ql-meta { gap: 14px; }
+    .bm-ql-meta > span:nth-child(2) { display: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bm-caret, .bm-lv .dot { animation: none; }
   }

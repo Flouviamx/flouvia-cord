@@ -12,9 +12,11 @@ import BlockMockup from '../../components/producto/BlockMockup.astro';
 import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 import FeatureShowcase from '../../components/producto/FeatureShowcase.astro';
 import QuoteBuilderDemo from '../../components/producto/QuoteBuilderDemo.astro';
+import PaymentRailsMatrix from '../../components/producto/PaymentRailsMatrix.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
+import { flagSrc } from '../../lib/flags';
 import { getLangFromUrl } from '../../i18n/utils';
 
 export function getStaticPaths() {
@@ -238,6 +240,7 @@ const MKI = {
     doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/>',
     burger: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
     cursor: '<path d="M5.5 3.2 19 14.6l-6.1.5 3.5 7.3-2.6 1.2-3.4-7.4-4.9 4.6z"/>',
+    cal: '<rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/>',
 };
 const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     { k: 'inicio' }, { k: 'cotizaciones', on: true }, { k: 'clientes' }, { k: 'productos' },
@@ -616,37 +619,100 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         )}
 
                         {feature.slug === 'clientes-credito' && (
-                            <div class="mk-window mk-cliwin">
-                              <div class="mk-bar">
-                                <span class="mk-bar-title">Cord · {isEn ? 'Clients & credit' : 'Clientes y crédito'}</span>
-                                <span class="mk-badge mk-badge-sent">3 {isEn ? 'clients' : 'clientes'}</span>
-                              </div>
-                              <div class="mk-cli">
-                                <div class="mk-cli-row cli-item">
-                                    <span class="mk-avatar mk-avatar-ez">EZ</span>
-                                    <div class="mk-cli-info"><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b><i>Raúl Mendoza · DEZ981123QX1</i></div>
-                                    <div class="mk-term-wrap"><span class="mk-term">Net 30</span></div>
-                                    <div class="mk-credit">
-                                        <div class="mk-credit-bar"><i style="width: 85%" class="warn-bar"></i></div>
-                                        <span class="editorial">$425k / $500k</span>
+                            <div class="mkc-stage mkc-cc" id="ccHero" aria-hidden="true">
+                              <div class="mkc-app mkc-cc-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.k === 'clientes' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Clients' : 'Clientes'}</span><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b></span>
+                                            <span class="mkc-title">{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span>
+                                        </div>
+                                        <span class="mkc-ci-acts"><span class="mkc-btn">{isEn ? 'Edit' : 'Editar'}</span><span class="mkc-btn mkc-btn-pri">{isEn ? 'New quote' : 'Nueva cotización'}</span></span>
                                     </div>
-                                </div>
-                                <div class="mk-cli-row cli-item">
-                                    <span class="mk-avatar mk-avatar-cg">CG</span>
-                                    <div class="mk-cli-info"><b>Constructora GAMA</b><i>Lucía Ferreira · CGA050617HJ8</i></div>
-                                    <div class="mk-term-wrap"><span class="mk-term">Net 60</span></div>
-                                    <div class="mk-credit">
-                                        <div class="mk-credit-bar"><i style="width: 72%"></i></div>
-                                        <span class="editorial">$612k / $850k</span>
-                                    </div>
-                                </div>
-                                <div class="mk-cli-row cli-item">
-                                    <span class="mk-avatar mk-avatar-gf">GF</span>
-                                    <div class="mk-cli-info"><b>Grupo Ferrex</b><i>Marco Ruiz · GFE120304TR2</i></div>
-                                    <div class="mk-term-wrap"><span class="mk-term mk-term-cash">Contado</span></div>
-                                    <div class="mk-credit">
-                                        <div class="mk-credit-bar"><i></i></div>
-                                        <span class="editorial">{isEn ? 'No credit' : 'Sin crédito'}</span>
+                                    <div class="mkc-cc-grid">
+                                        <div class="mkc-cc-main">
+                                            <div class="mkc-cc-head">
+                                                <span class="mkc-cc-av">D</span>
+                                                <div class="mkc-cc-info">
+                                                    <span class="mkc-cc-badges"><i class="mkc-cc-tier">{isEn ? 'Distributor' : 'Distribuidor'}</i><i class="mkc-cc-fis">{isEn ? 'Complete tax data' : 'Datos fiscales completos'}</i></span>
+                                                    <span class="mkc-cc-meta">Raúl Mendoza · compras@elzarco.mx · 81 8342 1170</span>
+                                                </div>
+                                                <div class="mkc-cc-tot"><span>{isEn ? 'Closed' : 'Cerrado'}</span><b class="editorial" data-cc-n data-a="1715435" data-b="1911904">MXN 1,911,904</b></div>
+                                            </div>
+                                            <div class="mkc-panel mkc-cc-kpis">
+                                                <div><span>{isEn ? 'Quotes' : 'Cotizaciones'}</span><b class="editorial">23</b></div>
+                                                <div><span>{isEn ? 'In pipeline' : 'En pipeline'}</span><b class="editorial" data-cc-n data-a="514709" data-b="318240">MXN 318,240</b></div>
+                                                <div><span>{isEn ? 'Collected' : 'Cobrado'}</span><b class="editorial">MXN 1,486,905</b></div>
+                                                <div><span>{isEn ? 'Avg. deal size' : 'Ticket promedio'}</span><b class="editorial" data-cc-n data-a="114362" data-b="119494">MXN 119,494</b></div>
+                                                <div><span>{isEn ? 'Close rate' : 'Tasa de cierre'}</span><b class="editorial" data-cc-n data-pct data-a="65" data-b="70">70%</b></div>
+                                            </div>
+                                            <div class="mkc-panel mkc-cc-credit">
+                                                <div class="mkc-cc-ch"><b>{isEn ? 'Credit' : 'Crédito'}</b><span id="ccPct" data-tpl={isEn ? '{n}% used' : '{n}% usado'} data-a="46" data-b="85">{isEn ? '85% used' : '85% usado'}</span></div>
+                                                <div class="mkc-cc-track"><i id="ccFill" style="width:85%"></i></div>
+                                                <div class="mkc-cc-nums"><b class="editorial" data-cc-n data-a="228530" data-b="424999">MXN 424,999</b><span>{isEn ? 'Open balance · MXN 500,000 credit' : 'Saldo abierto · MXN 500,000 crédito'}</span></div>
+                                            </div>
+                                            <div class="mkc-panel mkc-cc-ec">
+                                                <div class="mkc-cc-ch"><b>{isEn ? 'Account statement' : 'Estado de cuenta'}</b></div>
+                                                <div class="mkc-cc-eck">
+                                                    <div><span>{isEn ? 'Total balance' : 'Saldo total'}</span><b class="editorial" data-cc-n data-dec data-a="228530" data-b="424999.2">MXN 424,999.20</b></div>
+                                                    <div><span>{isEn ? 'Overdue' : 'Vencido'}</span><b class="editorial is-bad">MXN 86,420.00</b></div>
+                                                    <div><span>{isEn ? 'Oldest overdue' : 'Atraso máximo'}</span><b class="editorial">{isEn ? '12 days' : '12 días'}</b></div>
+                                                </div>
+                                                <div class="mkc-cc-aging">
+                                                    <div><span>{isEn ? 'Current' : 'Corriente'}</span><b class="editorial" data-cc-n data-dec data-a="142110" data-b="338579.2">MXN 338,579.20</b></div>
+                                                    <div class="late"><span>{isEn ? '1–30 days' : '1–30 días'}</span><b class="editorial">MXN 86,420.00</b></div>
+                                                    <div class="empty"><span>{isEn ? '31–60 days' : '31–60 días'}</span><b class="editorial">MXN 0.00</b></div>
+                                                    <div class="empty"><span>{isEn ? '61–90 days' : '61–90 días'}</span><b class="editorial">MXN 0.00</b></div>
+                                                    <div class="empty"><span>{isEn ? '90+ days' : '+90 días'}</span><b class="editorial">MXN 0.00</b></div>
+                                                </div>
+                                                <div class="mkc-cc-rows">
+                                                    <div class="mkc-cc-r"><b>FAC-001041</b><i class="late">{isEn ? '12 days' : '12 días'}</i><span class="editorial">MXN 86,420.00</span><em>{isEn ? 'Due Jun 28, 2026' : 'Vence 28 jun 2026'}</em></div>
+                                                    <div class="mkc-cc-r mkc-cc-new" id="ccNew"><b>COT-0148</b><i>{isEn ? 'Current' : 'Al corriente'}</i><span class="editorial">MXN 196,469.20</span><em>{isEn ? 'Due Aug 9, 2026' : 'Vence 9 ago 2026'}</em></div>
+                                                    <div class="mkc-cc-r" id="ccNext"><b>COT-0139</b><i>{isEn ? 'Current' : 'Al corriente'}</i><span class="editorial">MXN 142,110.00</span><em>{isEn ? 'Due Aug 14, 2026' : 'Vence 14 ago 2026'}</em></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <aside class="mkc-panel mkc-cc-side">
+                                            <div class="mkc-cc-sb">
+                                                <div class="mkc-cc-ch"><b>{isEn ? 'Terms' : 'Condiciones'}</b></div>
+                                                <div class="mkc-cc-kv"><span>{isEn ? 'Tax ID' : 'RFC'}</span><b>DEZ981123QX1</b></div>
+                                                <div class="mkc-cc-kv"><span>{isEn ? 'Credit limit' : 'Límite de crédito'}</span><b class="editorial">MXN 500,000</b></div>
+                                                <div class="mkc-cc-kv"><span>{isEn ? 'Terms' : 'Términos'}</span><b>Net 30</b></div>
+                                            </div>
+                                            <div class="mkc-cc-sb">
+                                                <div class="mkc-cc-ch"><b>{isEn ? 'Contact' : 'Contacto'}</b></div>
+                                                <div class="mkc-cc-kv"><b class="n">Raúl Mendoza</b></div>
+                                                <div class="mkc-cc-kv"><b class="n">compras@elzarco.mx</b><em>↗</em></div>
+                                                <div class="mkc-cc-kv"><b class="n">81 8342 1170</b><em>{isEn ? 'Call' : 'Llamar'}</em></div>
+                                                <span class="mkc-cc-wa">WhatsApp</span>
+                                            </div>
+                                            <div class="mkc-cc-sb">
+                                                <div class="mkc-cc-ch"><b>{isEn ? 'Metadata' : 'Metadatos'}</b></div>
+                                                <div class="mkc-cc-kv"><span>{isEn ? 'Added' : 'Alta'}</span><b>{isEn ? 'Mar 3, 2025' : '3 mar 2025'}</b></div>
+                                                <div class="mkc-cc-kv"><span>{isEn ? 'Source' : 'Origen'}</span><b>{isEn ? 'Added manually' : 'Alta manual'}</b></div>
+                                            </div>
+                                        </aside>
                                     </div>
                                 </div>
                               </div>
@@ -654,151 +720,305 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         )}
 
                         {feature.slug === 'cobranza-ia' && (
-                            <div class="mk-chatfree" id="arFree">
-                                <div class="cf-msg cf-in" data-cf="0">
-                                    <span class="cf-name">{isEn ? 'Cord Agent' : 'Agente Cord'} <em class="cf-badge">IA</em></span>
-                                    <div class="cf-bub cf-bub-in">{isEn ? 'Hi Raúl, your $412,300 balance is 47 days overdue. Can I help you clear it in 3 monthly payments, no surcharges?' : 'Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Te ayudo a liquidarlo en 3 pagos mensuales, sin recargos?'}</div>
-                                </div>
-                                <div class="cf-msg cf-out" data-cf="1">
-                                    <span class="cf-name">Raúl · El Zarco</span>
-                                    <div class="cf-bub cf-bub-out">{isEn ? 'Yes, 3 parts works for me.' : 'Sí, me funciona en 3 partes.'}</div>
-                                </div>
-                                <div class="cf-msg cf-in" data-cf="2">
-                                    <span class="cf-name">{isEn ? 'Cord Agent' : 'Agente Cord'} <em class="cf-badge">IA</em></span>
-                                    <div class="cf-bub cf-bub-in">{isEn ? 'Done — here’s the plan:' : 'Listo — este es el plan:'}</div>
-                                </div>
-                                <div class="cf-plan" data-cf="3">
-                                    <div class="cf-plan-head"><span>{isEn ? 'Payment plan' : 'Plan de pagos'}</span><b class="editorial">$412,300</b></div>
-                                    <div class="cf-plan-rows">
-                                        <div class="cf-cuota"><span>15 jul</span><b class="editorial">$137,433</b></div>
-                                        <div class="cf-cuota"><span>15 ago</span><b class="editorial">$137,433</b></div>
-                                        <div class="cf-cuota"><span>15 sep</span><b class="editorial">$137,434</b></div>
+                            <div class="mkc-stage mkc-ci" id="ciHero" aria-hidden="true">
+                              <div class="mkc-app mkc-ci-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.k === 'cobranza' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-title">{isEn ? 'Collections agent' : 'Agente de cobranza'}</span>
+                                            <span class="mkc-pgh-sub">{isEn ? 'It drafts, negotiates and collects for you. You decide what goes out.' : 'Redacta, negocia y cobra por ti. Tú decides qué sale.'}</span>
+                                        </div>
+                                        <span class="mkc-ci-acts"><span class="mkc-ci-state"><i></i>{isEn ? 'Needs approval' : 'Requiere aprobación'}</span><span class="mkc-btn">{isEn ? 'Run now' : 'Correr ahora'}</span></span>
                                     </div>
-                                    <div class="cf-approve" id="cfApprove">{isEn ? 'Approve plan' : 'Aprobar plan'}</div>
+                                    <div class="mkc-tabs"><span>{isEn ? 'Collections' : 'Cobranza'}</span><span class="on">{isEn ? 'AI agent' : 'Agente de IA'}</span></div>
+                                    <div class="mkc-pad">
+                                        <div class="mkc-kpis mkc-kpis-3">
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Recovered by the agent' : 'Recuperado por el agente'}</span><b class="editorial is-ok"><small>MXN</small>286,940</b><small>{isEn ? 'Last 30 days · 4 account(s) paid after its email' : 'Últimos 30 días · 4 cuenta(s) cobradas tras su correo'}</small></div>
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Awaiting your approval' : 'Esperan tu aprobación'}</span><b class="editorial is-warn" id="ciPend" data-b="1">2</b><small>{isEn ? 'Review before they go out' : 'Revisa antes de que salgan'}</small></div>
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Active payment plans' : 'Planes de pago activos'}</span><b class="editorial" id="ciPlans" data-b="4">3</b><small id="ciComp" data-b={isEn ? 'MXN 730,500 committed in instalments' : 'MXN 730,500 comprometido en cuotas'}>{isEn ? 'MXN 318,200 committed in instalments' : 'MXN 318,200 comprometido en cuotas'}</small></div>
+                                        </div>
+                                        <div class="mkc-ci-grid">
+                                            <section class="mkc-panel mkc-ci-inbox">
+                                                <div class="mkc-sh"><b>{isEn ? 'Approval inbox' : 'Bandeja de aprobación'}</b><span>{isEn ? 'Nothing goes out until you approve it. You can edit the email before sending.' : 'Nada sale hasta que lo apruebes. Puedes editar el correo antes de enviarlo.'}</span></div>
+                                                <div class="mkc-ci-clip">
+                                                    <div class="mkc-ci-list" id="ciList">
+                                                        <div class="mkc-ci-draft" id="ciDraft">
+                                                            <div class="mkc-ci-dh"><span class="mkc-ci-av">G</span><span class="mkc-ci-who"><strong>Grupo Ferrex</strong><small><u>COT-0127</u> · {isEn ? '47 days overdue' : 'vencida hace 47 días'}</small></span><b class="editorial">MXN 412,300</b></div>
+                                                            <div class="mkc-ci-plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{isEn ? 'Proposes 3 instalments of MXN 137,433.33' : 'Propone 3 cuotas de MXN 137,433.33'}</div>
+                                                            <p class="mkc-ci-text">{isEn ? 'Hi Marco,\n\nCOT-0127 for MXN 412,300.00 is 47 days overdue. If it helps, you can settle it in 3 monthly payments: MXN 137,433.33 today, MXN 137,433.33 on July 24 and MXN 137,433.34 on August 24. You can pay the first one from the same quote link.\n\nBest regards,\nValle Materials' : 'Hola Marco:\n\nLa COT-0127 por MXN 412,300.00 lleva 47 días vencida. Si te ayuda, puedes liquidarla en 3 pagos mensuales: MXN 137,433.33 hoy, MXN 137,433.33 el 24 de julio y MXN 137,433.34 el 24 de agosto. El primero lo pagas desde el mismo link de la cotización.\n\nQuedo atento,\nMateriales del Valle'}</p>
+                                                            <div class="mkc-ci-acts2"><span class="mkc-ci-act pri" id="ciOk">{isEn ? 'Approve and send' : 'Aprobar y enviar'}</span><span class="mkc-ci-act">{isEn ? 'Regenerate' : 'Regenerar'}</span><span class="mkc-ci-act ghost">{isEn ? 'Discard' : 'Descartar'}</span><span class="mkc-ci-act ghost">{isEn ? "Don't email them" : 'No escribirle'}</span></div>
+                                                        </div>
+                                                        <div class="mkc-ci-draft">
+                                                            <div class="mkc-ci-dh"><span class="mkc-ci-av">C</span><span class="mkc-ci-who"><strong>{isEn ? 'GAMA Construction' : 'Constructora GAMA'}</strong><small><u>COT-0133</u> · {isEn ? '9 days overdue' : 'vencida hace 9 días'}</small></span><b class="editorial">MXN 58,904</b></div>
+                                                            <p class="mkc-ci-text">{isEn ? 'Hi Lucía,\n\nA quick reminder that COT-0133 for MXN 58,904.00 was due on June 15. You can pay it from the quote link in one step.' : 'Hola Lucía:\n\nTe recuerdo que la COT-0133 por MXN 58,904.00 venció el 15 de junio. Puedes pagarla desde el link de la cotización en un solo paso.'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="mkc-panel mkc-ci-threads">
+                                                <div class="mkc-sh"><b>{isEn ? 'Conversations' : 'Conversaciones'}</b><span>{isEn ? 'One thread per account. You can take over and write yourself.' : 'Un hilo por cuenta. Puedes tomar el control y escribir tú.'}</span></div>
+                                                <div class="mkc-ci-th"><span class="mkc-ci-av">G</span><span class="mkc-ci-who"><strong>Grupo Ferrex</strong><small>COT-0127 · {isEn ? '3 message(s)' : '3 mensaje(s)'}</small></span><b class="editorial">MXN 412,300</b></div>
+                                                <div class="mkc-ci-msgs">
+                                                    <div class="mkc-ci-msg ag"><span class="mkc-ci-meta">{isEn ? 'Agent' : 'Agente'} · {isEn ? 'May 26, 9:00 AM' : '26 may, 09:00'}</span><p>{isEn ? 'Hi Marco, COT-0127 for MXN 412,300.00 was due on May 8. You can pay it from the quote link.' : 'Hola Marco, la COT-0127 por MXN 412,300.00 venció el 8 de mayo. Puedes pagarla desde el link de la cotización.'}</p></div>
+                                                    <div class="mkc-ci-msg us"><span class="mkc-ci-meta">{isEn ? 'You' : 'Tú'} · {isEn ? 'Jun 3, 4:20 PM' : '3 jun, 16:20'}</span><p>{isEn ? 'Marco, I’ll call you on Thursday to go over dates.' : 'Marco, te llamo el jueves para ver fechas.'}</p></div>
+                                                    <div class="mkc-ci-msg ag"><span class="mkc-ci-meta">{isEn ? 'Agent' : 'Agente'} · <span id="ciWhen" data-b={isEn ? 'Jun 24, 12:14 PM' : '24 jun, 12:14'}>{isEn ? 'Jun 24, 9:15 AM' : '24 jun, 09:15'}</span><em id="ciTag">{isEn ? 'Draft' : 'Borrador'}</em></span><p>{isEn ? 'COT-0127 is 47 days overdue. If it helps, you can settle it in 3 monthly payments of MXN 137,433.33…' : 'La COT-0127 lleva 47 días vencida. Si te ayuda, puedes liquidarla en 3 pagos mensuales de MXN 137,433.33…'}</p></div>
+                                                </div>
+                                                <div class="mkc-ci-th mkc-ci-th2"><span class="mkc-ci-av">C</span><span class="mkc-ci-who"><strong>{isEn ? 'GAMA Construction' : 'Constructora GAMA'}</strong><small>COT-0133 · {isEn ? '1 message(s)' : '1 mensaje(s)'}</small></span><b class="editorial">MXN 58,904</b></div>
+                                            </section>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="cf-msg cf-out" data-cf="4">
-                                    <div class="cf-bub cf-bub-out cf-bub-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> {isEn ? 'Approved' : 'Aprobado'}</div>
-                                </div>
+                                <div class="mkc-toast" id="ciToast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} />{isEn ? 'Email sent and instalment plan activated' : 'Correo enviado y plan de cuotas activado'}</div>
+                              </div>
+                              <span class="mkc-cursor" id="ciCursor"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" set:html={MKI.cursor} /></span>
                             </div>
                         )}
 
                         {feature.slug === 'divisas' && (
-                            <div class="mk-window mk-fx" id="fxHero">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">COT-0150 · Acme Imports</span>
-                                    <span class="mk-badge mk-badge-sent">● USD</span>
-                                </div>
-                                <div class="mk-fx-body">
-                                    <div class="mk-fx-controls">
-                                        <div class="mk-fx-field">
-                                            <label>Moneda de presentación</label>
-                                            <div class="mk-fx-seg"><span class="on">USD</span><span>EUR</span><span>MXN</span></div>
+                            <div class="mkc-stage mkc-fx" id="fxHero" aria-hidden="true">
+                              <div class="mkc-app mkc-fx-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Quotes' : 'Cotizaciones'}</span><b>{isEn ? 'New quote' : 'Nueva cotización'}</b></span>
+                                            <span class="mkc-title">{isEn ? 'New quote' : 'Nueva cotización'}</span>
                                         </div>
-                                        <div class="mk-fx-field">
-                                            <label>Cobertura (buffer)</label>
-                                            <div class="mk-fx-buffer">2.0%</div>
+                                        <span class="mkc-draft">{isEn ? 'Draft' : 'Borrador'}</span>
+                                    </div>
+                                    <div class="mkc-ed mkc-fx-ed">
+                                        <div class="mkc-ed-main">
+                                            <div class="mkc-step">
+                                                <div class="mkc-step-h"><span class="mkc-step-n">1</span><div><b>{isEn ? 'Who are you quoting?' : '¿A quién le cotizas?'}</b></div></div>
+                                                <div class="mkc-client">
+                                                    <span class="mkc-field">Rio Bravo Builders — Mike Harrison<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                                    <span class="mkc-chips"><i>{isEn ? 'Cash' : 'Contado'}</i><i class="on">Net 30</i><i>Net 60</i></span>
+                                                </div>
+                                            </div>
+                                            <div class="mkc-step">
+                                                <div class="mkc-step-h"><span class="mkc-step-n">2</span><div><b>{isEn ? 'What are you quoting them?' : '¿Qué le vas a cotizar?'}</b><span>{isEn ? 'Prices in USD, the currency you quote in.' : 'Precios en USD, la moneda en que le cotizas.'}</span></div></div>
+                                                <div class="mkc-lh"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty.' : 'Cant.'}</span><span>{isEn ? 'List' : 'Lista'}</span><span>{isEn ? 'Negotiated' : 'Negociado'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span></div>
+                                                <div class="mkc-lr"><span class="mkc-lr-n">{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<small>{isEn ? 'bag' : 'saco'}</small></span><span class="mkc-in">400</span><span class="mkc-lista">US$ 10.90</span><span class="mkc-in deal">10.40</span><span class="mkc-imp editorial">US$ 4,160.00</span></div>
+                                                <div class="mkc-lr"><span class="mkc-lr-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-in">300</span><span class="mkc-lista">US$ 10.20</span><span class="mkc-in deal">9.60</span><span class="mkc-imp editorial">US$ 2,880.00</span></div>
+                                                <div class="mkc-lr"><span class="mkc-lr-n">{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-in">2000</span><span class="mkc-lista">US$ 0.89</span><span class="mkc-in deal">0.82</span><span class="mkc-imp editorial">US$ 1,640.00</span></div>
+                                                <div class="mkc-lr"><span class="mkc-lr-n">{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<small>{isEn ? 'roll' : 'rollo'}</small></span><span class="mkc-in">60</span><span class="mkc-lista">US$ 19.10</span><span class="mkc-in deal">18.20</span><span class="mkc-imp editorial">US$ 1,092.00</span></div>
+                                                <div class="mkc-add">
+                                                    <span class="mkc-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.search} />{isEn ? 'Search a product in your catalog… (name or SKU)' : 'Busca un producto de tu catálogo… (nombre o SKU)'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="mk-fx-rate">
-                                        <span class="mk-fx-rate-line">1 USD = <b class="editorial" id="fxRate">$18.50 MXN</b></span>
-                                        <span class="mk-fx-lock" id="fxLock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> lock 30 días</span>
-                                    </div>
-                                    <div class="mk-fx-totals">
-                                        <div class="mk-fx-total"><span>El cliente ve</span><b class="editorial">USD 10,620.50</b></div>
-                                        <div class="mk-fx-total mk-fx-total-mxn" id="fxMxn"><span>Se factura</span><b class="editorial">$196,469.20 MXN</b></div>
+                                        <aside class="mkc-sum mkc-fx-sum">
+                                            <b class="mkc-sum-h">{isEn ? 'Review and send' : 'Revisa y envía'}</b>
+                                            <div class="mkc-sl"><span>Subtotal</span><span class="editorial">US$ 9,772.00</span></div>
+                                            <div class="mkc-sl mkc-sl-save"><span>{isEn ? 'You discounted them' : 'Le descontaste'}</span><span class="editorial">−US$ 574.00</span></div>
+                                            <div class="mkc-sl mkc-sl-tax"><span>IVA 16%</span><span class="editorial">US$ 1,563.52</span></div>
+                                            <span class="mkc-sum-div"></span>
+                                            <div class="mkc-sl mkc-sl-tot"><span>Total</span><span><b class="editorial">US$ 11,335.52</b></span></div>
+                                            <div class="mkc-sf mkc-fx-sf"><label>{isEn ? 'What currency are you quoting in?' : '¿En qué moneda le cotizas?'}</label><span class="mkc-field mkc-fx-cur" id="fxCur"><img src="/flags/us.svg" alt="" width="14" height="14" /><span>{isEn ? 'USD — US Dollar' : 'USD — Dólar estadounidense'}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>                                            <div class="mkc-fx-pop" id="fxPop">
+                                                <span class="mkc-fx-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.search} />{isEn ? 'Search…' : 'Buscar…'}</span>
+                                                <div class="mkc-fx-list" id="fxList">
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="MXN"><img src={flagSrc('MX')} alt="" width="13" height="13" /><span>{isEn ? 'MXN — Mexican Peso' : 'MXN — Peso mexicano'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: true }]} data-c="USD"><img src={flagSrc('US')} alt="" width="13" height="13" /><span>{isEn ? 'USD — US Dollar' : 'USD — Dólar estadounidense'}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="CAD"><img src={flagSrc('CA')} alt="" width="13" height="13" /><span>{isEn ? 'CAD — Canadian Dollar' : 'CAD — Dólar canadiense'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="BRL"><img src={flagSrc('BR')} alt="" width="13" height="13" /><span>{isEn ? 'BRL — Brazilian Real' : 'BRL — Real brasileño'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="EUR"><img src={flagSrc('EU')} alt="" width="13" height="13" /><span>{isEn ? 'EUR — Euro' : 'EUR — Euro'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="GBP"><img src={flagSrc('GB')} alt="" width="13" height="13" /><span>{isEn ? 'GBP — British Pound' : 'GBP — Libra esterlina'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="COP"><img src={flagSrc('CO')} alt="" width="13" height="13" /><span>{isEn ? 'COP — Colombian Peso' : 'COP — Peso colombiano'}</span></span>
+                                                    <span class:list={['mkc-fx-opt', { sel: false }]} data-c="ARS"><img src={flagSrc('AR')} alt="" width="13" height="13" /><span>{isEn ? 'ARS — Argentine Peso' : 'ARS — Peso argentino'}</span></span>
+                                                </div>
+                                            </div></div>
+                                            <div class="mkc-fx-cover">
+                                                <p class="mkc-fx-exp">{isEn ? 'You quote and charge in ' : 'Capturas y cobras en '}<b>USD</b>{isEn ? ', but your books are in Mexican pesos. We freeze today’s rate and the invoice declares it.' : ', pero tu contabilidad va en pesos mexicanos. Congelamos el tipo de cambio de hoy y la factura lo declara.'}</p>
+                                                <div class="mkc-fx-steps">
+                                                    <div class="mkc-fx-st"><span>{isEn ? "Today's exchange rate" : 'Tipo de cambio hoy'}</span><b class="editorial"><small>MXN</small> <span id="fxSpot">18.12</span></b></div>
+                                                    <i>→</i>
+                                                    <div class="mkc-fx-st on" id="fxOn"><span>{isEn ? 'Your locked-in rate' : 'Tu tasa protegida'} <em id="fxBuf">+2%</em></span><b class="editorial"><small>MXN</small> <span id="fxApplied">18.48</span></b></div>
+                                                </div>
+                                                <p class="mkc-fx-sees">{isEn ? 'Your client pays ' : 'Tu cliente paga '}<b>US$ 11,335.52</b>{isEn ? ' · in your books ≈ ' : ' · en tus libros ≈ '}<b>MXN <span id="fxBooks">209,507.61</span></b></p>
+                                                <div class="mkc-fx-lock" id="fxLock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />{isEn ? 'Rate locked' : 'Tasa congelada'}</div>
+                                            </div>
+                                            <span class="mkc-send">{isEn ? 'Create and send' : 'Crear y enviar'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.arrow} /></span>
+                                        </aside>
                                     </div>
                                 </div>
+                              </div>
+
+                              <div class="mkc-phone mkc-fx-phone">
+                                  <div class="mkc-phone-scr">
+                                      <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                      <div class="mkc-phone-page">
+                                          <div class="mkc-qm">
+                                              <div class="mkc-q-head">
+                                                  <div class="mkc-q-brand"><span class="mkc-q-logo">MV</span><div><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><i>RFC MVA240611AB3</i></div></div>
+                                              </div>
+                                              <div class="mkc-qm-fol"><span>{isEn ? 'QUOTE' : 'COTIZACIÓN'}</span><b>COT-0153</b></div>
+                                              <div class="mkc-q-meta mkc-qm-meta">
+                                                  <div><span>{isEn ? 'FOR' : 'PARA'}</span><b>Rio Bravo Builders</b></div>
+                                                  <div><span>{isEn ? 'VALID UNTIL' : 'VÁLIDA HASTA'}</span><b>{isEn ? 'Jul 24, 2026' : '24 jul 2026'}</b><em>{isEn ? 'Due in 30 days' : 'Vence en 30 días'}</em></div>
+                                              </div>
+                                              <div class="mkc-q-total mkc-qm-total" id="fxClient"><span>{isEn ? 'TOTAL DUE' : 'TOTAL A PAGAR'}</span><b class="editorial">US$ 11,335.52</b><i>USD · {isEn ? 'tax included' : 'IVA incluido'}</i></div>
+                                              <div class="mkc-qm-items">
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>400 {isEn ? 'bag' : 'saco'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>US$ 10.90</s>US$ 10.40</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>US$ 4,160.00</b></span></div></div>
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>300 {isEn ? 'piece' : 'pieza'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>US$ 10.20</s>US$ 9.60</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>US$ 2,880.00</b></span></div></div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div class="mkc-qm-sticky mkc-fx-sticky"><div><span>{isEn ? 'Total due' : 'Total a pagar'}</span><b class="editorial">US$ 11,335.52</b></div><span class="mkc-qm-sticky-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} />{isEn ? 'Approve' : 'Aprobar'}</span></div>
+                                      <div class="mkc-safari"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app</span></div>
+                                      <span class="mkc-home"></span>
+                                  </div>
+                              </div>
+                              <span class="mkc-cursor" id="fxCursor"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" set:html={MKI.cursor} /></span>
                             </div>
                         )}
 
                         {feature.slug === 'pagos' && (
-                            <div class="mk-window mk-pay" id="payHero">
-                                <div class="mk-bar">
-                                    <span class="mk-bar-title">{isEn ? 'Quote COT-0148' : 'Cotización COT-0148'}</span>
-                                    <div class="mk-bar-actions">
-                                        <span class="mk-pay-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> cordhq.app/q/8f2a</span>
-                                        <span class="mk-badge mk-badge-ok">● {isEn ? 'Approved' : 'Aprobada'}</span>
+                            <div class="mkc-stage mkc-py" id="pyHero" aria-hidden="true">
+                              <div class="mkc-app mkc-py-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.k === 'cobros' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot" id="pyBell"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t"><span class="mkc-title">{isEn ? 'Collections' : 'Cobros'}</span></div>
+                                        <span class="mkc-range"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.cal} />{isEn ? 'Last 30 days' : 'Últimos 30 días'}<svg class="mkc-range-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
                                     </div>
-                                </div>
-                                <div class="mk-pay-body">
-                                    <div class="mk-pay-sum">
-                                        <div class="mk-pay-org">
-                                            <span class="mk-avatar">MV</span>
-                                            <div>
-                                                <b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b>
-                                                <i>{isEn ? 'Approved today 12:36 · Net 30' : 'Aprobada hoy 12:36 · Net 30'}</i>
+                                    <div class="mkc-pad">
+                                        <section class="mkc-zone">
+                                            <div class="mkc-zone-h">
+                                                <div><span>{isEn ? 'BALANCE AND OPERATIONS' : 'SALDO Y OPERACIÓN'}</span><b>{isEn ? 'Your money today' : 'Tu dinero hoy'}</b></div>
+                                                <p>{isEn ? 'Balance, next movement, and operating status in one view.' : 'Saldo, siguiente movimiento y estado operativo en una sola vista.'}</p>
                                             </div>
-                                        </div>
-                                        <div class="mk-pay-lines">
-                                            <div class="mk-pay-line"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<em>× 120</em></span><b class="editorial">$21,840.00</b></div>
-                                            <div class="mk-pay-line"><span>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<em>× 340</em></span><b class="editorial">$57,290.00</b></div>
-                                            <div class="mk-pay-line"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<em>× 2,400</em></span><b class="editorial">$34,080.00</b></div>
-                                            <div class="mk-pay-line"><span>{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<em>× 180</em></span><b class="editorial">$56,160.00</b></div>
-                                        </div>
-                                        <div class="mk-pay-tots">
-                                            <div class="mk-pay-tot"><span>Subtotal</span><b class="editorial">$169,370.00</b></div>
-                                            <div class="mk-pay-tot"><span>{isEn ? 'Tax 16%' : 'IVA 16%'}</span><b class="editorial">$27,099.20</b></div>
-                                            <div class="mk-pay-tot mk-pay-tot-final"><span>{isEn ? 'Total due' : 'Total a pagar'}</span><b class="editorial">$196,469.20</b></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mk-pay-sheet">
-                                        <div class="mk-pay-form" id="payForm">
-                                            <div class="mk-pay-sheet-head">
-                                                <b>{isEn ? 'Pay by card' : 'Pagar con tarjeta'}</b>
-                                                <span class="mk-pay-cur">MXN</span>
-                                            </div>
-                                            <div class="mk-pay-fg">
-                                                <span class="mk-pay-lbl">{isEn ? 'Email' : 'Correo'}</span>
-                                                <div class="mk-pay-field"><span class="mk-pay-val">compras@elzarco.mx</span></div>
-                                            </div>
-                                            <div class="mk-pay-fg">
-                                                <span class="mk-pay-lbl">{isEn ? 'Card details' : 'Datos de la tarjeta'}</span>
-                                                <div class="mk-pay-field mk-pay-cardf" id="payCardField">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://visa.com&size=128" alt="Visa" width="18" height="18" loading="lazy" />
-                                                    <span class="mk-pay-val editorial">•••• •••• •••• 4242</span>
-                                                    <span class="mk-pay-mini editorial">04 / 29</span>
-                                                    <span class="mk-pay-mini editorial mk-pay-cvc">•••</span>
+                                            <div class="mkc-py-cols">
+                                                <div class="mkc-py-saldo">
+                                                    <span class="mkc-kl">{isEn ? 'Available balance' : 'Saldo disponible'}<i class="mkc-snap">{isEn ? 'live' : 'en vivo'}</i></span>
+                                                    <b class="editorial"><small>MXN</small>84,211</b>
+                                                    <small id="pyPend" data-tpl={isEn ? '{m} on the way' : '{m} en camino'} data-from="116040" data-to="172108">{isEn ? 'MXN 172,108 on the way' : 'MXN 172,108 en camino'}</small>
+                                                </div>
+                                                <div class="mkc-py-side">
+                                                    <div class="mkc-sh"><b>{isEn ? 'Next payout' : 'Próximo depósito'}<i class="mkc-snap">{isEn ? 'live' : 'en vivo'}</i></b><span>{isEn ? 'Cord Payments transfers to your bank account.' : 'Transferencias de Cord Payments a tu cuenta bancaria.'}</span></div>
+                                                    <div class="mkc-py-po"><i class="mkc-dot" style="background:#3b82f6"></i><span><strong>{isEn ? 'In transit' : 'En camino'}</strong><small>{isEn ? 'Arrival: Aug 11' : 'Llegada: 11 ago'}</small></span><b class="editorial">MXN 128,640</b></div>
+                                                </div>
+                                                <div class="mkc-py-side">
+                                                    <div class="mkc-sh mkc-sh-r"><b>{isEn ? 'Account status' : 'Estado de la cuenta'}</b><em>{isEn ? 'Manage' : 'Administrar'} →</em></div>
+                                                    <div class="mkc-py-chips">
+                                                        <span><i class="mkc-dot"></i><strong>{isEn ? 'Payments' : 'Cobros'}</strong><small>{isEn ? 'Active' : 'Activos'}</small></span>
+                                                        <span><i class="mkc-dot"></i><strong>{isEn ? 'Payouts' : 'Depósitos'}</strong><small>{isEn ? 'Active' : 'Activos'}</small></span>
+                                                        <span><i class="mkc-dot"></i><strong>{isEn ? 'Verification' : 'Verificación'}</strong><small>{isEn ? 'Complete' : 'Completa'}</small></span>
+                                                    </div>
+                                                    <p class="mkc-py-bank">{isEn ? 'Payouts to BBVA ••••4821' : 'Depósitos a BBVA ••••4821'}</p>
                                                 </div>
                                             </div>
-                                            <div class="mk-pay-fg">
-                                                <span class="mk-pay-lbl">{isEn ? 'Country' : 'País'}</span>
-                                                <div class="mk-pay-field"><span class="mk-pay-val">México</span><svg class="mk-pay-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-                                            </div>
-                                            <div class="mk-pay-btn" id="payBtn">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.18"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                                                {isEn ? 'Pay $196,469.20' : 'Pagar $196,469.20'}
-                                            </div>
-                                            <div class="mk-pay-note">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.13" d="M12 2.6 4.5 5.6v6c0 4.4 3.1 8.5 7.5 9.8 4.4-1.3 7.5-5.4 7.5-9.8v-6z"/><path d="m9.2 12.1 2 2 3.6-4"/></svg>
-                                                <span>{isEn ? 'Funds land in Valle Materials’ connected account.' : 'El dinero llega a la cuenta conectada de Materiales del Valle.'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div class="mk-pay-ok" id="paySuccess">
-                                            <div class="mk-pay-tickwrap">
-                                                <div class="mk-pay-ring" aria-hidden="true"></div>
-                                                <i class="mk-pay-tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>
-                                            </div>
-                                            <b>{isEn ? 'Payment received' : 'Pago recibido'}</b>
-                                            <span class="editorial mk-pay-ok-amt">$196,469.20</span>
-                                            <i class="mk-pay-ok-sub">{isEn ? 'To the connected account of Valle Materials' : 'A la cuenta conectada de Materiales del Valle'}</i>
-                                            <div class="mk-pay-ok-dep">
-                                                <span>{isEn ? 'Payout' : 'Depósito'}</span>
-                                                <b>CLABE •••• 4821 · 15 {isEn ? 'Sep' : 'sep'}</b>
-                                            </div>
-                                        </div>
+                                        </section>
+                                        <section class="mkc-panel mkc-py-rec">
+                                            <div class="mkc-sh"><b>{isEn ? 'Recent payments' : 'Cobros recientes'}</b></div>
+                                            <div class="mkc-py-th"><span>{isEn ? 'Quote #' : 'Folio'}</span><span>{isEn ? 'Client' : 'Cliente'}</span><span>{isEn ? 'Method' : 'Método'}</span><span>{isEn ? 'Date' : 'Fecha'}</span><span class="r">{isEn ? 'Amount' : 'Monto'}</span></div>
+                                            <div class="mkc-py-body"><div class="mkc-py-list" id="pyList"><div class="mkc-py-tr mkc-py-hot" id="pyNew"><b>COT-0152</b><span>{isEn ? 'GAMA Construction' : 'Constructora GAMA'}</span><span class="mkc-py-m"><i style="background:#6366f1"></i>{isEn ? 'Credit/debit card' : 'Tarjeta de crédito/débito'}</span><span class="mkc-py-d">{isEn ? 'Aug 9, 2026' : '9 ago 2026'}</span><span class="editorial r">MXN 58,800</span></div>
+                                            <div class="mkc-py-tr"><b>COT-0148</b><span>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span><span class="mkc-py-m"><i style="background:#10b981"></i>{isEn ? 'SPEI transfer' : 'Transferencia SPEI'}</span><span class="mkc-py-d">{isEn ? 'Aug 8, 2026' : '8 ago 2026'}</span><span class="editorial r">MXN 196,469</span></div>
+                                            <div class="mkc-py-tr"><b>COT-0142</b><span>Grupo Ferrex</span><span class="mkc-py-m"><i style="background:#6366f1"></i>{isEn ? 'Credit/debit card' : 'Tarjeta de crédito/débito'}</span><span class="mkc-py-d">{isEn ? 'Aug 6, 2026' : '6 ago 2026'}</span><span class="editorial r">MXN 58,904</span></div>
+                                            <div class="mkc-py-tr"><b>COT-0139</b><span>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span><span class="mkc-py-m"><i style="background:#0ea5e9"></i>{isEn ? 'Transfer (Manual)' : 'Transferencia (Manual)'}</span><span class="mkc-py-d">{isEn ? 'Aug 5, 2026' : '5 ago 2026'}</span><span class="editorial r">MXN 142,110</span></div>
+                                            <div class="mkc-py-tr"><b>COT-0136</b><span>{isEn ? 'Rivera Finishes' : 'Acabados Rivera'}</span><span class="mkc-py-m"><i style="background:#10b981"></i>{isEn ? 'SPEI transfer' : 'Transferencia SPEI'}</span><span class="mkc-py-d">{isEn ? 'Aug 3, 2026' : '3 ago 2026'}</span><span class="editorial r">MXN 37,845</span></div></div></div>
+                                        </section>
                                     </div>
                                 </div>
-                                <div class="mk-pay-foot">
-                                    <span class="mk-pay-via">{isEn ? 'via' : 'vía'} <b>cord</b></span>
-                                    <span class="mk-pay-sep" aria-hidden="true"></span>
-                                    <span class="mk-pay-vpill">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
-                                        {isEn ? 'Payout account verified inside Cord' : 'Cuenta de cobro verificada dentro de Cord'}
-                                    </span>
-                                </div>
+                              </div>
+
+                              <div class="mkc-phone mkc-py-phone">
+                                  <div class="mkc-phone-scr">
+                                      <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                      <div class="mkc-phone-page mkc-pp">
+                                          <span class="mkc-pp-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>{isEn ? 'Back to the quote' : 'Volver a la cotización'}</span>
+                                          <div class="mkc-pp-card">
+                                              <div class="mkc-pp-brand"><span class="mkc-q-logo">MV</span><div><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><i>{isEn ? 'Quote' : 'Cotización'} COT-0152</i></div></div>
+                                              <div class="mkc-pp-amt"><span>{isEn ? 'Deposit due' : 'Anticipo a pagar'}</span><b class="editorial"><small>MXN</small> 58,800.00</b><i>{isEn ? 'of a MXN 196,000.00 total' : 'del total de MXN 196,000.00'}</i><i>{isEn ? 'Card · SPEI transfer' : 'Tarjeta · Transferencia SPEI'}</i></div>
+                                              <div class="mkc-pp-flow">
+                                                  <div class="mkc-pp-form" id="ppForm">
+                                                      <span class="mkc-pp-lg">{isEn ? 'Payment method' : 'Método de pago'}</span>
+                                                      <div class="mkc-pp-seg"><i class="on">{isEn ? 'Card' : 'Tarjeta'}</i><i>SPEI</i></div>
+                                                      <div class="mkc-pp-f"><label>{isEn ? 'Card number' : 'Número de tarjeta'}</label><span class="mkc-pp-in" id="ppNumF"><span class="mkc-pp-v" id="ppNum" data-ph="1234 1234 1234 1234">4242 4242 4242 4242</span><span class="mkc-pp-cards"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://visa.com&size=64" alt="" width="12" height="12" /><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://mastercard.com&size=64" alt="" width="12" height="12" /><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://americanexpress.com&size=64" alt="" width="12" height="12" /></span></span></div>
+                                                      <div class="mkc-pp-2">
+                                                          <div class="mkc-pp-f"><label>{isEn ? 'Expiration date' : 'Fecha de vencimiento'}</label><span class="mkc-pp-in" id="ppExpF"><span class="mkc-pp-v" id="ppExp" data-ph={isEn ? 'MM / YY' : 'MM / AA'}>12 / 28</span></span></div>
+                                                          <div class="mkc-pp-f"><label>{isEn ? 'Security code' : 'Código de seguridad'}</label><span class="mkc-pp-in" id="ppCvcF"><span class="mkc-pp-v" id="ppCvc" data-ph="CVC">123</span></span></div>
+                                                      </div>
+                                                      <span class="mkc-pp-btn" id="ppBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} /><span id="ppBtnT" data-busy={isEn ? 'Processing…' : 'Procesando…'}>{isEn ? 'Pay MXN 58,800.00' : 'Pagar MXN 58,800.00'}</span></span>
+                                                  </div>
+                                                  <div class="mkc-pp-ok" id="ppOk">
+                                                      <svg viewBox="0 0 52 52" fill="none" stroke="#14365c" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="26" r="23" fill="#14365c" fill-opacity="0.08" stroke-width="1.6" id="ppRing"/><polyline points="14,27 22,35 38,18" stroke-width="2.2" id="ppTick"/></svg>
+                                                      <b>{isEn ? 'Payment received' : 'Pago recibido'}</b>
+                                                      <span>{isEn ? 'Your payment went through. It may take a few seconds to show up on the quote.' : 'Tu pago se procesó correctamente. La confirmación puede tardar unos segundos en reflejarse en la cotización.'}</span>
+                                                      <em>{isEn ? 'Back to the quote' : 'Volver a la cotización'}</em>
+                                                  </div>
+                                              </div>
+                                              <div class="mkc-pp-mp" id="ppMp">
+                                                  <div class="mkc-pp-or"><span>{isEn ? 'or' : 'o'}</span></div>
+                                                  <span class="mkc-pp-mpb"><img class="mkc-pp-mpl" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://mercadopago.com&size=64" alt="" width="16" height="16" />{isEn ? 'Pay with Mercado Pago' : 'Pagar con Mercado Pago'}<svg class="mkc-pp-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4"/></svg></span>
+                                              </div>
+                                          </div>
+                                          <p class="mkc-pp-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{isEn ? 'Encrypted and processed by Cord Payments. Valle Materials never sees your card details.' : 'Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.'}</p>
+                                      </div>
+                                      <div class="mkc-safari"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app</span></div>
+                                      <span class="mkc-home"></span>
+                                  </div>
+                              </div>
                             </div>
                         )}
 
@@ -920,30 +1140,88 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         )}
 
                         {feature.slug === 'finanzas' && (
-                            <div class="mk-window mk-fin" id="finHero">
-                                <div class="mk-bar">
-                                    <span class="mk-bar-title">Cord · {isEn ? 'CFO Dashboard' : 'Panel financiero'}</span>
-                                    <span class="mk-badge mk-badge-ok">● {isEn ? 'Live' : 'En vivo'}</span>
+                            <div class="mkc-stage mkc-fn" id="fnHero" aria-hidden="true">
+                              <div class="mkc-app mkc-fn-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.k === 'informes' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Reports' : 'Informes'}</span><b>{isEn ? 'Cash flow · 90 days' : 'Flujo de caja · 90 días'}</b></span>
+                                            <span class="mkc-title">{isEn ? 'Cash flow · 90 days' : 'Flujo de caja · 90 días'}</span>
+                                        </div>
+                                        <span class="mkc-ci-acts">
+                                            <span class="mkc-range mkc-fn-pick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/><path d="M15 7h4v4"/><path d="M3 21h18V7l-9 10-4-3-5 5z" fill="currentColor" fill-opacity="0.12" stroke="none"/></svg>{isEn ? 'Cash flow · 90 days' : 'Flujo de caja · 90 días'}<svg class="mkc-range-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-snapchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.cal} />{isEn ? 'As of today · Sep 24, 2026' : 'Al día de hoy · 24 sep 2026'}</span>
+                                        </span>
+                                    </div>
+                                    <div class="mkc-pad">
+                                        <div class="mkc-kpis">
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Next 90 days' : 'Próximos 90 días'}</span><b class="editorial"><small>MXN</small><span data-fn-n="1517970">1,517,970</span></b><small>{isEn ? 'receivables + pipeline + retainers' : 'cartera + pipeline + igualas'}</small></div>
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Beyond horizon' : 'Fuera del horizonte'}</span><b class="editorial"><small>MXN</small><span data-fn-n="214300">214,300</span></b><small>{isEn ? '6 movements from day 91' : '6 movimientos desde el día 91'}</small></div>
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">MRR</span><b class="editorial"><small>MXN</small><span data-fn-n="48500">48,500</span></b><small>{isEn ? '4 retainers' : '4 igualas'}</small></div>
+                                            <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Certain receivables' : 'Cartera cierta'}</span><b class="editorial"><small>MXN</small><span data-fn-n="959870">959,870</span></b><small>{isEn ? 'not weighted by close rate' : 'sin ponderar por cierre'}</small></div>
+                                        </div>
+                                        <div class="mkc-fn-grid">
+                                            <section class="mkc-panel mkc-fn-weeks">
+                                                <div class="mkc-sh mkc-sh-r">
+                                                    <div class="mkc-fn-st"><b>{isEn ? 'Weekly flow · 90 days' : 'Flujo semanal · 90 días'}</b><span>{isEn ? 'Three separate sources to distinguish certainty from probability.' : 'Tres fuentes separadas para no confundir certeza con probabilidad.'}</span></div>
+                                                    <span class="mkc-fn-leg"><i class="c">{isEn ? 'Receivables' : 'Cartera'}</i><i class="p">Pipeline</i><i class="m">MRR</i></span>
+                                                </div>
+                                                <div class="mkc-fn-rows">
+                                                    {[['25 sep – 1 oct', 'Sep 25 – Oct 1', 188649, 80.7, 77, 16.5, 6.4], ['2 oct – 8 oct', 'Oct 2 – Oct 8', 68850, 29.4, 0, 64.8, 35.2], ['9 oct – 15 oct', 'Oct 9 – Oct 15', 181010, 77.4, 78.5, 21.5, 0], ['16 oct – 22 oct', 'Oct 16 – Oct 22', 161225, 68.9, 60, 32.4, 7.5], ['23 oct – 29 oct', 'Oct 23 – Oct 29', 179133, 76.6, 76.7, 23.3, 0], ['30 oct – 5 nov', 'Oct 30 – Nov 5', 108050, 46.2, 20.4, 57.2, 22.4], ['6 nov – 12 nov', 'Nov 6 – Nov 12', 233869, 100, 84, 16, 0], ['13 nov – 19 nov', 'Nov 13 – Nov 19', 60325, 25.8, 0, 79.9, 20.1], ['20 nov – 26 nov', 'Nov 20 – Nov 26', 167034, 71.4, 82.3, 17.7, 0], ['27 nov – 3 dic', 'Nov 27 – Dec 3', 58350, 24.9, 0, 58.4, 41.6], ['4 dic – 10 dic', 'Dec 4 – Dec 10', 41100, 17.6, 44.5, 55.5, 0], ['11 dic – 17 dic', 'Dec 11 – Dec 17', 31525, 13.5, 0, 61.5, 38.5], ['18 dic – 23 dic', 'Dec 18 – Dec 23', 38850, 16.6, 0, 37.6, 62.4]].map((w) => (
+                                                        <div class="mkc-fn-w">
+                                                            <span class="mkc-fn-wl">{isEn ? w[1] : w[0]}</span>
+                                                            <span class="mkc-fn-tr"><span class="mkc-fn-fill" style={`width:${w[3]}%`}><i class="c" style={`flex-basis:${w[4]}%`}></i><i class="p" style={`flex-basis:${w[5]}%`}></i><i class="m" style={`flex-basis:${w[6]}%`}></i></span></span>
+                                                            <b class="editorial">MXN <span data-fn-n={w[2]}>{Number(w[2]).toLocaleString('en-US')}</span></b>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </section>
+                                            <div class="mkc-fn-side">
+                                                <section class="mkc-panel mkc-fn-conc">
+                                                    <div class="mkc-sh mkc-sh-r"><div class="mkc-fn-st"><b>{isEn ? 'Concentration risk · 30 days' : 'Riesgo de concentración · 30 días'}</b><span>{isEn ? 'Largest client share of near-term expected inflow.' : 'Participación del cliente principal en el flujo esperado inmediato.'}</span></div><strong class="editorial" data-fn-n="38" data-pct>38%</strong></div>
+                                                    {[[isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco', 228530, 100], ['Grupo Ferrex', 118400, 51.8], [isEn ? 'GAMA Construction' : 'Constructora GAMA', 96104, 42.1]].map((c, i) => (
+                                                        <div class="mkc-fn-h">
+                                                            <span><em>{c[0]}</em><b class="editorial">{'MXN ' + Number(c[1]).toLocaleString('en-US')}</b></span>
+                                                            <span class="mkc-fn-ht"><i class:list={[{ top: i === 0 }]} style={`width:${c[2]}%`}></i></span>
+                                                        </div>
+                                                    ))}
+                                                </section>
+                                                <section class="mkc-panel mkc-fn-cum">
+                                                    <div class="mkc-sh"><b>{isEn ? 'Cumulative cash curve' : 'Curva acumulada de caja'}</b><span>{isEn ? 'Daily accumulation of the expected scenario.' : 'Suma diaria del escenario esperado.'}</span></div>
+                                                    <svg class="mkc-fn-line" viewBox="0 0 300 86" preserveAspectRatio="none">
+                                                        <defs><linearGradient id="fnArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a192f" stop-opacity="0.12"/><stop offset="1" stop-color="#0a192f" stop-opacity="0"/></linearGradient></defs>
+                                                        <path d="M0,26 H300 M0,53 H300 M0,80 H300" stroke="rgba(10,25,47,0.07)" stroke-width="1" fill="none" vector-effect="non-scaling-stroke"/>
+                                                        <path id="fnArea2" d="M0,80 C3.9,78.6 15.4,73.4 23.1,71.5 C30.8,69.6 38.5,70.3 46.2,68.4 C53.9,66.5 61.5,62.9 69.2,60.3 C76.9,57.7 84.6,55.5 92.3,53 C100.0,50.5 107.7,47.1 115.4,45 C123.1,42.9 130.8,42.7 138.5,40.1 C146.2,37.5 153.8,31.8 161.5,29.6 C169.2,27.4 176.9,28.6 184.6,26.9 C192.3,25.2 200.0,21.0 207.7,19.3 C215.4,17.6 223.1,17.4 230.8,16.7 C238.5,16.0 246.1,15.4 253.8,14.9 C261.5,14.4 269.2,13.9 276.9,13.4 C284.6,12.9 296.1,12.0 300,11.7 L300,86 L0,86 Z" fill="url(#fnArea)"/>
+                                                        <path id="fnLine" d="M0,80 C3.9,78.6 15.4,73.4 23.1,71.5 C30.8,69.6 38.5,70.3 46.2,68.4 C53.9,66.5 61.5,62.9 69.2,60.3 C76.9,57.7 84.6,55.5 92.3,53 C100.0,50.5 107.7,47.1 115.4,45 C123.1,42.9 130.8,42.7 138.5,40.1 C146.2,37.5 153.8,31.8 161.5,29.6 C169.2,27.4 176.9,28.6 184.6,26.9 C192.3,25.2 200.0,21.0 207.7,19.3 C215.4,17.6 223.1,17.4 230.8,16.7 C238.5,16.0 246.1,15.4 253.8,14.9 C261.5,14.4 269.2,13.9 276.9,13.4 C284.6,12.9 296.1,12.0 300,11.7" fill="none" stroke="#0a192f" stroke-width="1.8" stroke-linecap="round" pathLength="1"/>
+                                                    </svg>
+                                                    <div class="mkc-fn-ax"><span>{isEn ? 'Sep 25' : '25 sep'}</span><span>{isEn ? 'Oct 24' : '24 oct'}</span><span>{isEn ? 'Nov 23' : '23 nov'}</span><span>{isEn ? 'Dec 23' : '23 dic'}</span></div>
+                                                </section>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="mk-fin-body">
-                                    <div class="mk-fin-kpis">
-                                        <div class="mk-fin-kpi"><span>Pipeline</span><b class="editorial" id="finK1" data-to="1.84">$0.00M</b></div>
-                                        <div class="mk-fin-kpi"><span>{isEn ? 'Expected' : 'Ingreso esperado'}</span><b class="editorial mk-green" id="finK2" data-to="1.29">$0.00M</b></div>
-                                        <div class="mk-fin-kpi"><span>DSO</span><b class="editorial">34<i> días</i></b></div>
-                                    </div>
-                                    <div class="mk-fin-chart-head"><span>{isEn ? 'Expected cash · next 5 weeks' : 'Flujo esperado · próximas 5 semanas'}</span><span class="mk-fin-chart-legend">MXN</span></div>
-                                    <div class="mk-fin-chart" id="finChart">
-                                        <div class="mk-fin-bar"><i style="--h: 46%"></i><em>S1</em></div>
-                                        <div class="mk-fin-bar"><i style="--h: 66%"></i><em>S2</em></div>
-                                        <div class="mk-fin-bar"><i style="--h: 52%"></i><em>S3</em></div>
-                                        <div class="mk-fin-bar mk-fin-bar-hot"><i style="--h: 90%"></i><em>S4</em></div>
-                                        <div class="mk-fin-bar"><i style="--h: 60%"></i><em>S5</em></div>
-                                    </div>
-                                    <div class="mk-fin-insight" id="finInsight">
-                                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.15" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></i>
-                                        <span><b>{isEn ? 'AI insight:' : 'Insight de IA:'}</b> {isEn ? '71% of your cash is concentrated in El Zarco. Diversify before week 4.' : 'el 71% de tu flujo se concentra en El Zarco. Diversifica antes de la semana 4.'}</span>
-                                    </div>
-                                </div>
+                              </div>
                             </div>
                         )}
 
@@ -1075,6 +1353,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         </section>
 
         {feature.slug === 'link-publico' && <QuoteBuilderDemo isEn={isEn} />}
+        {feature.slug === 'pagos' && <PaymentRailsMatrix isEn={isEn} />}
 
         <!-- ── BENTO GRID ── -->
         <section class="pp-bento">
@@ -1427,208 +1706,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     }
     .mk-check svg { width: 14px; height: 14px; }
 
-    /* ── CLIENTES Y CRÉDITO — LIGHT ── */
-    .mk-cli {
-        display: flex; flex-direction: column; gap: 8px;
-        background: #ffffff;
-        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.07);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.07);
-    }
-    /* dentro de la ventana: sin card-en-card */
-    .mk-cliwin { max-width: 540px; margin: 0 auto; }
-    .mk-cliwin .mk-cli { background: transparent; border: none; border-radius: 0; box-shadow: none; padding: 0.9rem; }
-    .mk-cli-row {
-        display: grid; grid-template-columns: auto 1.5fr auto 1fr;
-        gap: 16px; align-items: center;
-        padding: 12px 14px; border-radius: 12px;
-        background: #f8fafc; border: 1px solid rgba(0,0,0,0.05);
-        opacity: 0; transform: translateY(15px); /* GSAP */
-    }
-    .mk-cli-info b { display: block; font-size: 0.85rem; color: #0f172a; font-weight: 600; margin-bottom: 2px; }
-    .mk-cli-info i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; }
-    .mk-term-wrap { display: flex; justify-content: flex-end; }
-    .mk-term {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;
-        color: #2563eb; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2);
-        padding: 4px 10px; border-radius: 100px; text-transform: uppercase;
-    }
-    .mk-term-cash { color: #64748b; background: #f1f5f9; border-color: rgba(0,0,0,0.08); }
-    .mk-credit { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-    .mk-credit-bar {
-        width: 100%; height: 4px; border-radius: 2px; background: #e2e8f0;
-        overflow: hidden; display: flex;
-    }
-    .mk-credit-bar i {
-        height: 100%; border-radius: 2px; background: #3b82f6;
-        transform-origin: left; transform: scaleX(0); /* GSAP */
-    }
-    .mk-credit-bar i.warn-bar { background: linear-gradient(90deg, #3b82f6, #f59e0b); }
-    .mk-credit span { font-size: 0.7rem; color: #64748b; font-weight: 500; font-family: var(--font-mono, monospace); }
-
-    /* ── COBRANZA IA — LIGHT ── */
-    .mk-ar {
-        max-width: 470px; margin: 0 auto;
-        display: flex; flex-direction: column; gap: 1rem; padding: 1.4rem;
-        background: #ffffff;
-        border-radius: 18px; border: 1px solid rgba(0,0,0,0.07);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.06);
-    }
-    .mk-ar-head { display: flex; align-items: center; gap: 12px; }
-    .mk-ar-head b { display: block; font-size: 0.92rem; color: #0f172a; font-weight: 600; }
-    .mk-ar-head i { display: block; font-style: normal; font-size: 0.72rem; color: #64748b; margin-top: 2px; }
-    .mk-ar-overdue { margin-left: auto; color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); }
-    .mk-ar-thread { display: flex; flex-direction: column; gap: 8px; }
-    .mk-ar-bubble { font-size: 0.8rem; line-height: 1.5; padding: 10px 13px; border-radius: 13px; max-width: 90%; color: #334155; }
-    .mk-ar-ai { align-self: flex-start; background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.14); border-bottom-left-radius: 4px; color: #1e40af; }
-    .mk-ar-client { align-self: flex-end; background: #0a192f; color: #fff; font-weight: 500; border-bottom-right-radius: 4px; }
-    .mk-ar-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #2563eb; margin-bottom: 4px; }
-    .mk-ar-plan {
-        display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 13px;
-        background: #f8fafc; border: 1px solid rgba(0,0,0,0.06);
-    }
-    .mk-ar-cuota { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #64748b; }
-    .mk-ar-cuota b { color: #0f172a; font-weight: 600; }
-    .mk-ar-approve {
-        margin-top: 4px; text-align: center; font-size: 0.82rem; font-weight: 700;
-        padding: 11px; border-radius: 11px; background: #059669; color: #fff;
-    }
-
-    /* ── COBRANZA IA — chat LIBRE sobre el hero (sin card contenedora, estilo Stripe) ── */
-    .mk-chatfree {
-        position: relative; width: 100%; max-width: 460px;
-        margin: 0 auto 0 22%;
-        display: flex; flex-direction: column; gap: 16px;
-        padding: 8px 0;
-    }
-    /* indicador "escribiendo…" (chat en vivo real) */
-    .cf-typing-msg { align-self: flex-start; }
-    .cf-typing-msg.cf-out { align-self: flex-end; }
-    .cf-dots { display: inline-flex; gap: 5px; padding: 14px 16px; background: #ffffff; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px 18px 18px 5px; box-shadow: 0 8px 24px -8px rgba(10,25,47,0.18); }
-    .cf-typing-msg.cf-out .cf-dots { background: #0a192f; border-color: transparent; border-radius: 18px 18px 5px 18px; }
-    .cf-dots span { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; animation: cf-blink 1.25s infinite ease-in-out; }
-    .cf-typing-msg.cf-out .cf-dots span { background: rgba(255,255,255,0.6); }
-    .cf-dots span:nth-child(2) { animation-delay: 0.18s; }
-    .cf-dots span:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes cf-blink { 0%, 65%, 100% { opacity: 0.35; transform: translateY(0); } 32% { opacity: 1; transform: translateY(-3px); } }
-    .cf-msg { display: flex; flex-direction: column; gap: 5px; max-width: 82%; }
-    .cf-in { align-self: flex-start; align-items: flex-start; }
-    .cf-out { align-self: flex-end; align-items: flex-end; }
-    .cf-name { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3px; color: #94a3b8; padding: 0 4px; display: inline-flex; align-items: center; gap: 6px; }
-    .cf-badge { font-style: normal; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.5px; color: #2563eb; background: rgba(37,99,235,0.1); padding: 1px 5px; border-radius: 5px; }
-    .cf-bub { font-size: 0.86rem; line-height: 1.45; font-weight: 500; padding: 12px 16px;
-        box-shadow: 0 8px 24px -8px rgba(10,25,47,0.18); }
-    .cf-bub-in { background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px 18px 18px 5px; }
-    .cf-bub-out { background: #0a192f; color: #fff; border-radius: 18px 18px 5px 18px; }
-    .cf-bub-ok { display: inline-flex; align-items: center; gap: 7px; background: #059669; font-weight: 700; }
-    .cf-bub-ok svg { width: 15px; height: 15px; }
-    /* la "product card" del plan flota libre también */
-    .cf-plan { align-self: flex-start; width: 300px; background: #ffffff; border: 1px solid rgba(10,25,47,0.06); border-radius: 18px;
-        box-shadow: 0 2px 6px rgba(10,25,47,0.04), 0 20px 48px -14px rgba(10,25,47,0.20); overflow: hidden; }
-    .cf-plan-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgba(10,25,47,0.05); background: #fcfdfe; }
-    .cf-plan-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
-    .cf-plan-head b { font-size: 0.98rem; color: #0f172a; }
-    .cf-plan-rows { display: flex; flex-direction: column; padding: 6px 8px; }
-    .cf-cuota { display: flex; align-items: center; justify-content: space-between; padding: 9px 8px; font-size: 0.8rem; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.04); }
-    .cf-cuota:last-child { border-bottom: none; }
-    .cf-cuota b { color: #0f172a; font-weight: 600; }
-    .cf-approve { margin: 6px 12px 12px; text-align: center; font-size: 0.82rem; font-weight: 700; padding: 11px; border-radius: 11px; background: #0a192f; color: #fff; box-shadow: 0 6px 16px -4px rgba(10,25,47,0.4); }
-
-    /* ── MULTI-DIVISA / FX — LIGHT ── */
-    .mk-fx-body { padding: 1.2rem 1.3rem 1.4rem; }
-    .mk-fx-controls { display: flex; gap: 1rem; margin-bottom: 1rem; }
-    .mk-fx-field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .mk-fx-field label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #94a3b8; }
-    .mk-fx-seg { display: inline-flex; background: #f1f5f9; border-radius: 9px; padding: 3px; gap: 2px; align-self: flex-start; border: 1px solid rgba(0,0,0,0.06); }
-    .mk-fx-seg span { font-size: 0.72rem; font-weight: 600; color: #64748b; padding: 5px 11px; border-radius: 7px; }
-    .mk-fx-seg span.on { background: #fff; color: #1e40af; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-    .mk-fx-buffer { font-size: 0.85rem; font-weight: 600; color: #0f172a; background: #f1f5f9; border-radius: 9px; padding: 8px 12px; align-self: flex-start; border: 1px solid rgba(0,0,0,0.07); }
-    .mk-fx-rate { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.14); margin-bottom: 1rem; }
-    .mk-fx-rate-line { font-size: 0.82rem; color: #475569; }
-    .mk-fx-rate-line b { color: #0f172a; margin-left: 4px; }
-    .mk-fx-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; font-weight: 700; color: #2563eb; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
-    .mk-fx-lock svg { width: 12px; height: 12px; flex-shrink: 0; }
-    .mk-fx-totals { display: flex; flex-direction: column; gap: 6px; }
-    .mk-fx-total { display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; border-radius: 11px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
-    .mk-fx-total span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; }
-    .mk-fx-total b { font-size: 1.05rem; color: #0f172a; }
-    .mk-fx-total-mxn b { color: #059669; }
-
-    /* ── CORD PAYMENTS — checkout dentro del link público ── */
-    .mk-pay-url { display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; font-weight: 600; color: #64748b; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.06); padding: 4px 10px; border-radius: 100px; }
-    .mk-pay-url svg { width: 11px; height: 11px; flex-shrink: 0; color: #94a3b8; }
-    .mk-pay-body { display: grid; grid-template-columns: 1.12fr 0.98fr; align-items: stretch; }
-
-    /* Columna izquierda — resumen de lo que se está pagando */
-    .mk-pay-sum { display: flex; flex-direction: column; padding: 1.15rem 1.3rem 1.25rem; border-right: 1px solid rgba(10,25,47,0.06); background: #fff; }
-    .mk-pay-org { display: flex; align-items: center; gap: 11px; padding-bottom: 0.85rem; border-bottom: 1px solid rgba(10,25,47,0.06); }
-    .mk-pay-org b { display: block; font-size: 0.88rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
-    .mk-pay-org i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
-    .mk-pay-lines { display: flex; flex-direction: column; }
-    .mk-pay-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid rgba(10,25,47,0.045); }
-    .mk-pay-line > span { font-size: 0.76rem; font-weight: 500; color: #334155; min-width: 0; }
-    .mk-pay-line em { font-style: normal; font-size: 0.68rem; font-weight: 500; color: #94a3b8; margin-left: 7px; }
-    .mk-pay-line b { font-size: 0.78rem; font-weight: 600; color: #334155; white-space: nowrap; }
-    .mk-pay-tots { margin-top: auto; padding-top: 0.9rem; display: flex; flex-direction: column; gap: 7px; }
-    .mk-pay-tot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .mk-pay-tot span { font-size: 0.7rem; color: #94a3b8; }
-    .mk-pay-tot b { font-size: 0.8rem; font-weight: 600; color: #475569; }
-    .mk-pay-tot-final { align-items: baseline; margin-top: 3px; padding-top: 0.75rem; border-top: 1px solid rgba(10,25,47,0.08); }
-    .mk-pay-tot-final span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #64748b; }
-    .mk-pay-tot-final b { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; color: #0a192f; }
-
-    /* Columna derecha — la hoja de cobro */
-    .mk-pay-sheet { position: relative; padding: 1.15rem 1.3rem 1.25rem; background: #fbfcfd; }
-    .mk-pay-form { display: flex; flex-direction: column; gap: 11px; }
-    .mk-pay-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 1px; }
-    .mk-pay-sheet-head b { font-size: 0.82rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
-    .mk-pay-cur { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.7px; color: #64748b; background: #eef2f7; border: 1px solid rgba(10,25,47,0.06); padding: 3px 8px; border-radius: 100px; }
-    .mk-pay-fg { display: flex; flex-direction: column; gap: 5px; }
-    .mk-pay-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #94a3b8; }
-    .mk-pay-field { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 9px; background: #fff; border: 1px solid rgba(10,25,47,0.10); box-shadow: 0 1px 2px rgba(10,25,47,0.04); }
-    .mk-pay-field img { flex-shrink: 0; border-radius: 4px; }
-    .mk-pay-val { font-size: 0.76rem; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-pay-cardf .mk-pay-val { flex: 1; letter-spacing: 0.02em; }
-    .mk-pay-mini { font-size: 0.72rem; font-weight: 500; color: #64748b; white-space: nowrap; }
-    .mk-pay-cvc { letter-spacing: 0.06em; }
-    .mk-pay-chev { width: 14px; height: 14px; margin-left: auto; color: #94a3b8; flex-shrink: 0; }
-    .mk-pay-btn {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 3px; padding: 12px; border-radius: 10px;
-        background: #0a192f; color: #fff; font-size: 0.84rem; font-weight: 700; letter-spacing: -0.01em;
-        box-shadow: 0 1px 2px rgba(10,25,47,0.20), 0 8px 20px -8px rgba(10,25,47,0.55);
-    }
-    .mk-pay-btn svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.85; }
-    .mk-pay-note { display: flex; align-items: flex-start; gap: 7px; padding-top: 1px; }
-    .mk-pay-note svg { width: 14px; height: 14px; flex-shrink: 0; color: #059669; margin-top: 1px; }
-    .mk-pay-note span { font-size: 0.67rem; line-height: 1.45; color: #94a3b8; }
-
-    /* Confirmación — reemplaza la hoja de cobro, no la ventana entera */
-    .mk-pay-ok {
-        position: absolute; inset: 0; z-index: 5;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-        padding: 1.2rem 1.3rem; text-align: center;
-        background: #fbfcfd; opacity: 0; pointer-events: none;
-    }
-    .mk-pay-tickwrap { position: relative; display: flex; margin-bottom: 6px; }
-    .mk-pay-ring { position: absolute; inset: -7px; border-radius: 50%; border: 2px solid rgba(16,185,129,0.5); opacity: 0; }
-    .mk-pay-tick { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.28); }
-    .mk-pay-tick svg { width: 24px; height: 24px; }
-    .mk-pay-ok b { font-size: 0.86rem; font-weight: 600; color: #0f172a; }
-    .mk-pay-ok-amt { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: #0a192f; }
-    .mk-pay-ok-sub { font-style: normal; font-size: 0.7rem; line-height: 1.45; color: #94a3b8; max-width: 250px; text-wrap: balance; }
-    .mk-pay-ok-dep { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; max-width: 260px; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: #fff; border: 1px solid rgba(10,25,47,0.08); }
-    .mk-pay-ok-dep span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #94a3b8; }
-    .mk-pay-ok-dep b { font-size: 0.7rem; font-weight: 600; color: #475569; }
-
-    /* El footer se alinea a la IZQUIERDA a propósito: con el sangrado derecho del
-       hero, lo que se lee va del lado que no se corta. */
-    .mk-pay-foot { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
-    .mk-pay-sep { width: 1px; height: 13px; background: rgba(10,25,47,0.10); flex-shrink: 0; }
-    .mk-pay-via { font-size: 0.68rem; color: #94a3b8; white-space: nowrap; }
-    .mk-pay-via b { color: #64748b; font-weight: 700; letter-spacing: -0.02em; }
-    .mk-pay-vpill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.63rem; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.06); padding: 4px 10px; border-radius: 100px; }
-    .mk-pay-vpill svg { width: 12px; height: 12px; flex-shrink: 0; color: #059669; }
-
     /* ── FACTURACIÓN INTERNACIONAL (US/MX) ── */
     .mk-intl { position: relative; }
     .mk-intl-body { padding: 1.1rem 1.2rem 1.3rem; }
@@ -1675,27 +1752,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mk-wf-foot span { display: inline-flex; align-items: center; gap: 7px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mk-wf-foot b { color: #059669; font-weight: 700; white-space: nowrap; }
     .mk-wf-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
-
-    /* ── FINANZAS / CFO — dashboard con barras ── */
-    .mk-fin-body { padding: 1.2rem 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 1.05rem; }
-    .mk-fin-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .mk-fin-kpi { background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; padding: 11px 13px; display: flex; flex-direction: column; gap: 4px; }
-    .mk-fin-kpi span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
-    .mk-fin-kpi b { font-size: 1.05rem; color: #0f172a; }
-    .mk-fin-kpi b i { font-size: 0.6rem; font-weight: 600; color: #94a3b8; font-style: normal; }
-    .mk-fin-chart-head { display: flex; align-items: center; justify-content: space-between; }
-    .mk-fin-chart-head span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #64748b; }
-    .mk-fin-chart-legend { color: #cbd5e1 !important; }
-    .mk-fin-chart { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-items: end; height: 118px; padding: 0 4px; }
-    .mk-fin-bar { display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
-    .mk-fin-bar i { display: block; width: 100%; max-width: 38px; height: var(--h); border-radius: 5px 5px 2px 2px; background: #e2e8f0; transform-origin: bottom; transform: scaleY(0); }
-    .mk-fin-bar em { font-size: 0.6rem; font-weight: 600; color: #94a3b8; font-style: normal; }
-    .mk-fin-bar-hot i { background: linear-gradient(180deg, #1e3a5f, #0a192f); }
-    .mk-fin-insight { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.06); }
-    .mk-fin-insight i { flex-shrink: 0; color: #64748b; display: flex; margin-top: 1px; }
-    .mk-fin-insight i svg { width: 16px; height: 16px; }
-    .mk-fin-insight span { font-size: 0.74rem; line-height: 1.5; color: #475569; }
-    .mk-fin-insight b { color: #0f172a; font-weight: 700; }
 
     /* ══ HERO CALCA (editor · link público · seguimiento · aprobaciones): réplica de AppLayout, cotizaciones/nueva, cotizaciones/[id] y q/[token] ══ */
     .mkc-stage { position: relative; width: 100%; container-type: inline-size; text-align: left; color: #0f1729; }
@@ -1883,7 +1939,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mkc-tr-app .mkc-dh-tot b { font-size: 17px; }
     .mkc-tr-app .mkc-dih, .mkc-tr-app .mkc-dir { grid-template-columns: minmax(0, 1fr) 36px 62px 74px; }
     .mkc-tr-phone { left: 0; top: 30px; }
-    .mkc-tr-scroll { will-change: transform; }
+    .mkc-tr-scroll { will-change: transform; transform: translateY(-280px); }
     @container (max-width: 860px) {
         .mkc-tr-app .mkc-dh-tot, .mkc-tr-app .mkc-dih > :nth-child(2), .mkc-tr-app .mkc-dir-q { display: none; }
         .mkc-tr-app .mkc-dih, .mkc-tr-app .mkc-dir { grid-template-columns: minmax(0, 1fr) 62px 74px; }
@@ -2048,6 +2104,309 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mkc-qm-sticky-b { display: inline-flex !important; align-items: center; gap: 4px; padding: 8px 12px; font-size: 10.5px !important; font-weight: 650 !important; letter-spacing: 0 !important; text-transform: none !important; color: #fff !important; background: #14365c; border-radius: 10px; }
     .mkc-qm-sticky-b svg { width: 10px; height: 10px; }
 
+    /* ══ HERO CALCA · Pagos y finanzas (cobros · cobranza/agente · editor FX · clientes/[id] · informes flujo) ══ */
+    .mkc-pad { display: flex; flex-direction: column; gap: 10px; padding: 0 var(--gut) 0 10px; min-width: 0; }
+    .mkc-range { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; font-size: 10.5px; font-weight: 600; color: #0f1729; background: #fff; border-radius: 8px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08), 0 1px 2px rgba(10,25,47,0.05); white-space: nowrap; }
+    .mkc-range svg { width: 11px; height: 11px; color: #5b6472; }
+    .mkc-range .mkc-range-c { width: 8px; height: 8px; }
+    .mkc-zone, .mkc-panel { background: #fff; border-radius: 16px; box-shadow: 0 1px 2px rgba(10,25,47,0.03), 0 14px 32px -20px rgba(10,25,47,0.18), inset 0 0 0 1px rgba(10,25,47,0.04); min-width: 0; }
+    .mkc-panel { padding: 12px 14px; }
+    .mkc-zone-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 12px 14px 10px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-zone-h > div { display: flex; flex-direction: column; gap: 3px; }
+    .mkc-zone-h span { font-size: 7px; font-weight: 800; letter-spacing: 0.14em; color: #5b6472; }
+    .mkc-zone-h b { font-size: 14px; font-weight: 680; letter-spacing: -0.035em; color: #0f1729; }
+    .mkc-zone-h p { max-width: 190px; margin: 0; font-size: 9px; line-height: 1.45; color: #5b6472; text-align: right; }
+    .mkc-sh { display: flex; flex-direction: column; gap: 2px; padding-bottom: 7px; margin-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-sh b { display: flex; align-items: center; font-size: 11.5px; font-weight: 600; letter-spacing: -0.01em; color: #0f1729; }
+    .mkc-sh > span { font-size: 9px; line-height: 1.4; color: #5b6472; }
+    .mkc-sh-r { flex-direction: row; align-items: center; justify-content: space-between; }
+    .mkc-sh-r em { font-style: normal; font-size: 9.5px; font-weight: 650; color: #0a192f; white-space: nowrap; }
+    .mkc-kl { display: flex; align-items: center; font-size: 7.5px; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #5b6472; opacity: 0.85; white-space: nowrap; }
+    .mkc-snap { display: inline-flex; margin-left: 5px; padding: 1px 5px; border-radius: 99px; background: #f5f5f7; font-style: normal; font-size: 6.5px; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; color: #5b6472; }
+    .mkc-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; background: #10b981; }
+
+    /* ── Pagos: el cliente paga en su teléfono y el cobro aparece en Cobros ── */
+    .mkc-py { height: 500px; }
+    .mkc-py-app { margin-left: 172px; min-width: 640px; height: 468px; }
+    .mkc-py-phone { left: 0; top: 16px; }
+    .mkc-py-cols { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr) minmax(0, 1.02fr); }
+    .mkc-py-cols > div { min-width: 0; padding: 12px 14px 13px; }
+    .mkc-py-cols > div + div { border-left: 1px solid rgba(10,25,47,0.07); }
+    .mkc-py-saldo { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+    .mkc-py-saldo b { font-size: 29px; line-height: 1; letter-spacing: -0.05em; color: #0a192f; white-space: nowrap; }
+    .mkc-py-saldo b small { margin-right: 4px; font-size: 11px; letter-spacing: 0; color: #5b6472; }
+    .mkc-py-saldo small { font-size: 9.5px; color: #5b6472; }
+    .mkc-py-side .mkc-sh b { font-size: 10.5px; white-space: nowrap; }
+    .mkc-py-side .mkc-sh > span { font-size: 8.5px; }
+    .mkc-py-po { display: flex; align-items: center; gap: 7px; }
+    .mkc-py-po span { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .mkc-py-po strong { font-size: 10px; font-weight: 600; color: #0f1729; }
+    .mkc-py-po small { font-size: 8.5px; color: #5b6472; }
+    .mkc-py-po b { font-size: 11.5px; color: #0f1729; }
+    .mkc-py-chips { display: grid; gap: 4px; }
+    .mkc-py-chips span { display: flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 99px; background: #f5f5f7; font-size: 9px; }
+    .mkc-py-chips strong { font-weight: 600; color: #0f1729; }
+    .mkc-py-chips small { color: #5b6472; }
+    .mkc-py-bank { margin: 6px 0 0; font-size: 8.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-py-th, .mkc-py-tr { display: grid; grid-template-columns: 58px minmax(0, 1.4fr) minmax(0, 1.4fr) 62px 76px; gap: 10px; align-items: center; }
+    .mkc-py-th { padding-bottom: 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-py-th .r, .mkc-py-tr .r { text-align: right; }
+    .mkc-py-tr { padding: 7px 0; font-size: 10px; color: #0f1729; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mkc-py-tr > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-py-tr b { font-size: 10px; font-weight: 600; }
+    .mkc-py-m { display: flex; align-items: center; gap: 6px; color: #5b6472; font-size: 9.5px; }
+    .mkc-py-m i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .mkc-py-d { color: #5b6472; font-size: 9.5px; }
+    .mkc-py-tr .editorial { font-size: 11px; }
+    .mkc-py-body { overflow: hidden; }
+    .mkc-py-hot { margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 7px; }
+
+    /* Página de pago (q/[token]/pay) a ancho de teléfono */
+    .mkc-py-phone .mkc-phone-scr { background: #f5f5f7; }
+    .mkc-py-phone .mkc-ios { background: linear-gradient(#f5f5f7 72%, rgba(245,245,247,0)); }
+    .mkc-pp { display: flex; flex-direction: column; gap: 7px; padding: 6px 9px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    .mkc-pp-back { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 500; color: #6b7686; }
+    .mkc-pp-back svg { width: 10px; height: 10px; }
+    .mkc-pp-card { display: flex; flex-direction: column; gap: 9px; padding: 11px 11px 12px; background: #fff; border-radius: 18px; border: 1px solid rgba(10,25,47,0.05); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 18px 36px -14px rgba(10,25,47,0.12); }
+    .mkc-pp-brand { display: flex; align-items: center; gap: 8px; }
+    .mkc-pp-brand .mkc-q-logo { width: 24px; height: 24px; border-radius: 7px; font-size: 8.5px; }
+    .mkc-pp-brand b { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: -0.01em; color: #050505; }
+    .mkc-pp-brand i { display: block; font-style: normal; font-size: 8.5px; color: #6b7686; }
+    .mkc-pp-amt { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f5f5f7; border-radius: 11px; }
+    .mkc-pp-amt span { font-size: 6.5px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: #8a93a2; }
+    .mkc-pp-amt b { font-size: 17px; line-height: 1.15; color: #050505; }
+    .mkc-pp-amt small { font-size: 8px; font-weight: 600; color: #8a93a2; }
+    .mkc-pp-amt i { font-style: normal; font-size: 7.5px; color: #8a93a2; }
+    .mkc-pp-amt small { font-size: 9px; }
+    .mkc-pp-flow { display: grid; }
+    .mkc-pp-flow > * { grid-area: 1 / 1; }
+    .mkc-pp-form { display: flex; flex-direction: column; gap: 6px; }
+    .mkc-pp-lg { font-size: 8.5px; font-weight: 600; color: #4a5567; }
+    .mkc-pp-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; margin-bottom: 2px; background: #f5f5f7; border-radius: 9px; }
+    .mkc-pp-seg i { padding: 5px 0; font-style: normal; font-size: 9px; font-weight: 500; color: #050505; text-align: center; border: 1px solid transparent; border-radius: 7px; }
+    .mkc-pp-seg i.on { font-weight: 650; background: #fff; border-color: #14365c; box-shadow: 0 2px 6px rgba(10,25,47,0.08); }
+    .mkc-pp-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .mkc-pp-f label { font-size: 8px; color: #30313d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-pp-in { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 25px; padding: 0 8px; font-size: 9.5px; color: #050505; background: #f5f5f7; border: 1px solid transparent; border-radius: 7px; font-variant-numeric: tabular-nums; }
+    .mkc-pp-in.on { background: #fff; border-color: #14365c; box-shadow: 0 0 0 2px rgba(10,25,47,0.08); }
+    .mkc-pp-v { min-width: 0; white-space: nowrap; overflow: hidden; }
+    .mkc-pp-v:empty::before { content: attr(data-ph); color: #aab2bf; }
+    .mkc-pp-cards { display: flex; gap: 3px; }
+    .mkc-pp-cards img { width: 11px; height: 11px; border-radius: 3px; }
+    .mkc-pp-cards i { display: flex; align-items: center; justify-content: center; width: 17px; height: 11px; border-radius: 2px; font-style: normal; font-size: 4.5px; font-weight: 900; letter-spacing: 0.02em; }
+    .mkc-pp-cards .v { color: #1a1f71; background: #fff; box-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.2); font-style: italic; font-size: 5px; }
+    .mkc-pp-cards .m { background: #fff; box-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.2); }
+    .mkc-pp-cards .m b { width: 6px; height: 6px; border-radius: 50%; background: #eb001b; }
+    .mkc-pp-cards .m b + b { margin-left: -2.5px; background: #f79e1b; mix-blend-mode: multiply; }
+    .mkc-pp-cards .a { color: #fff; background: #1f72cd; }
+    .mkc-pp-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .mkc-pp-btn { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 3px; padding: 8px; font-size: 10px; font-weight: 600; letter-spacing: -0.01em; color: #fff; background: #14365c; border-radius: 99px; box-shadow: 0 8px 18px -8px rgba(10,25,47,0.5); }
+    .mkc-pp-btn svg { width: 10px; height: 10px; }
+    .mkc-pp-ok { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; visibility: hidden; opacity: 0; }
+    .mkc-pp-ok svg { width: 38px; height: 38px; margin-bottom: 2px; }
+    .mkc-pp-ok b { font-size: 11px; font-weight: 600; color: #050505; }
+    .mkc-pp-ok span { max-width: 170px; font-size: 8.5px; line-height: 1.5; color: #6b7686; }
+    .mkc-pp-ok em { margin-top: 2px; font-style: normal; font-size: 9px; font-weight: 600; color: #0a192f; }
+    .mkc-pp-or { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 8px; color: #8a93a2; }
+    .mkc-pp-or::before, .mkc-pp-or::after { content: ''; flex: 1; height: 1px; background: rgba(10,25,47,0.1); }
+    .mkc-pp-mpb { display: flex; align-items: center; justify-content: center; gap: 6px; height: 30px; font-size: 9.5px; font-weight: 600; color: #0a192f; background: #fff; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.14), 0 1px 2px rgba(10,25,47,0.05); }
+    .mkc-pp-mpl { width: 15px; height: 15px; border-radius: 4px; }
+    .mkc-pp-go { width: 9px; height: 9px; opacity: 0.7; }
+    .mkc-pp-foot { display: flex; gap: 5px; margin: 1px 4px 0; font-size: 7.5px; line-height: 1.45; color: #9aa2af; text-align: left; }
+    .mkc-pp-foot svg { flex-shrink: 0; width: 8px; height: 8px; margin-top: 1px; opacity: 0.7; }
+
+    /* ── Cobranza IA (cobranza/agente): el agente propone un plan y espera tu visto bueno ── */
+    .mkc-ci-app { min-width: 820px; height: 486px; }
+    .mkc-pgh-sub { font-size: 10px; color: #5b6472; white-space: nowrap; }
+    .mkc-btn { display: inline-flex; align-items: center; padding: 5px 10px; font-size: 10px; font-weight: 600; color: #0f1729; background: #fff; border-radius: 99px; box-shadow: 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+    .mkc-ci-acts { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .mkc-ci-state { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; font-size: 9.5px; font-weight: 700; color: #b45309; background: rgba(245,158,11,0.12); border-radius: 99px; white-space: nowrap; }
+    .mkc-ci-state i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .mkc-tabs { display: flex; gap: 16px; margin: -2px var(--gut) 10px 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-tabs span { padding: 0 1px 7px; font-size: 10.5px; font-weight: 500; color: #5b6472; }
+    .mkc-tabs span.on { font-weight: 600; color: #0f1729; box-shadow: inset 0 -2px 0 #0a192f; }
+    .mkc-ci .mkc-pad { flex: 1; min-height: 0; }
+    .mkc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .mkc-kpi { display: flex; flex-direction: column; gap: 4px; padding: 9px 11px 10px; }
+    .mkc-kpi b { font-size: 19px; line-height: 1; letter-spacing: -0.02em; color: #0a192f; }
+    .mkc-kpi b.is-ok { color: #059669; }
+    .mkc-kpi b.is-warn { color: #d97706; }
+    .mkc-kpis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mkc-kpi b small { margin-right: 3px; font-size: 9px; letter-spacing: 0; color: #5b6472; }
+    .mkc-kpi small { font-size: 8.5px; line-height: 1.35; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-ci-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; }
+    .mkc-ci-grid > .mkc-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .mkc-ci-clip { flex: 1; min-height: 0; overflow: hidden; }
+    .mkc-ci-draft { padding: 10px 11px 11px; margin-bottom: 8px; border-radius: 13px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.09); transform-origin: 50% 0; }
+    .mkc-ci-dh, .mkc-ci-th { display: flex; align-items: center; gap: 8px; }
+    .mkc-ci-dh { margin-bottom: 8px; }
+    .mkc-ci-av { width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; color: #5b6472; background: #f5f5f7; }
+    .mkc-ci-who { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .mkc-ci-who strong { font-size: 10.5px; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-ci-who small { font-size: 8.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-ci-who u { text-decoration: none; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 8px; }
+    .mkc-ci-dh > b, .mkc-ci-th > b { font-size: 11.5px; color: #0f1729; }
+    .mkc-ci-plan { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 6px 8px; font-size: 9.5px; color: #0f1729; background: rgba(10,25,47,0.05); border-radius: 8px; }
+    .mkc-ci-plan svg { width: 12px; height: 12px; color: #0a192f; }
+    .mkc-ci-text { position: relative; margin: 0; height: 84px; overflow: hidden; padding: 7px 10px; font-size: 9.5px; line-height: 1.55; color: #0f1729; background: #f5f5f7; border-radius: 9px; white-space: pre-line; }
+    .mkc-ci-text::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 22px; background: linear-gradient(rgba(245,245,247,0), #f5f5f7 85%); }
+    .mkc-ci-acts2 { display: flex; gap: 4px; margin-top: 8px; }
+    .mkc-ci-act { padding: 5px 10px; font-size: 9px; font-weight: 600; color: #0f1729; background: #fff; border-radius: 99px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+    .mkc-ci-act.pri { color: #fff; background: #0a192f; box-shadow: none; }
+    .mkc-ci-act.ghost { color: #5b6472; background: transparent; box-shadow: none; }
+    .mkc-ci-th { padding: 2px 0 8px; }
+    .mkc-ci-th2 { margin-top: auto; padding: 8px 0 0; border-top: 1px solid rgba(10,25,47,0.07); }
+    .mkc-ci-msgs { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+    .mkc-ci-msg { max-width: 88%; padding: 6px 9px 7px; border-radius: 11px; }
+    .mkc-ci-msg p { margin: 2px 0 0; font-size: 9px; line-height: 1.5; color: #0f1729; }
+    .mkc-ci-msg.ag { align-self: flex-start; background: #f5f5f7; border-bottom-left-radius: 3px; }
+    .mkc-ci-msg.us { align-self: flex-end; background: #0a192f; border-bottom-right-radius: 3px; }
+    .mkc-ci-msg.us p, .mkc-ci-msg.us .mkc-ci-meta { color: #fff; }
+    .mkc-ci-msg.us .mkc-ci-meta { opacity: 0.75; }
+    .mkc-ci-meta { display: flex; align-items: center; gap: 3px; font-size: 6.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(15,23,41,0.6); }
+    .mkc-ci-meta em { margin-left: 3px; padding: 1px 5px; font-style: normal; color: #b45309; background: rgba(245,158,11,0.14); border-radius: 99px; }
+    .mkc-toast { position: absolute; left: 0; right: 0; bottom: 18px; z-index: 5; width: max-content; margin: 0 auto; display: flex; align-items: center; gap: 6px; padding: 7px 13px 7px 10px; font-size: 10px; font-weight: 600; color: #fff; background: #0a192f; border-radius: 99px; box-shadow: 0 12px 28px -10px rgba(10,25,47,0.55); opacity: 0; visibility: hidden; }
+    .mkc-toast svg { width: 11px; height: 11px; color: #34d399; }
+
+    /* ── Clientes y crédito (clientes/[id]): la aprobación de COT-0148 mueve el crédito y el estado de cuenta ── */
+    .mkc-cc-app { min-width: 820px; height: 500px; }
+    .mkc-cc .mkc-pgh { padding-top: 11px; padding-bottom: 10px; }
+    .mkc-btn-pri { color: #fff; background: #0a192f; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); }
+    .mkc-cc-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 12px; padding: 0 var(--gut) 0 10px; }
+    .mkc-cc-main { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    .mkc-cc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-cc-av { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; background: #0a192f; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 14px -8px rgba(10,25,47,0.55), 0 0 0 2px rgba(10,25,47,0.3); }
+    .mkc-cc-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .mkc-cc-badges { display: flex; gap: 4px; }
+    .mkc-cc-badges i { font-style: normal; font-size: 8px; font-weight: 800; letter-spacing: 0.2px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+    .mkc-cc-tier { color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .mkc-cc-fis { color: #059669; background: rgba(16,185,129,0.12); font-weight: 700 !important; }
+    .mkc-cc-meta { font-size: 9.5px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-cc-tot { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .mkc-cc-tot span { font-size: 7px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #5b6472; opacity: 0.75; }
+    .mkc-cc-tot b { font-size: 20px; line-height: 1.1; letter-spacing: -0.02em; color: #0a192f; }
+    .mkc-cc-kpis { display: grid; grid-template-columns: 0.7fr repeat(4, minmax(0, 1fr)); padding: 8px 4px; }
+    .mkc-cc-kpis > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0 9px; border-left: 1px solid rgba(10,25,47,0.07); }
+    .mkc-cc-kpis > div:first-child { border-left: 0; }
+    .mkc-cc-kpis span { font-size: 6.5px; font-weight: 800; letter-spacing: 0.9px; text-transform: uppercase; color: #5b6472; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-cc-kpis b { font-size: 12px; letter-spacing: -0.025em; color: #0f1729; white-space: nowrap; }
+    .mkc-cc-ch { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-cc-ch b { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; color: #0f1729; }
+    .mkc-cc-ch span { font-size: 9.5px; font-weight: 600; color: #5b6472; }
+    .mkc-cc-track { height: 6px; margin-bottom: 6px; border-radius: 99px; background: #f0f1f4; overflow: hidden; }
+    .mkc-cc-track i { display: block; height: 100%; border-radius: 99px; background: #0a192f; }
+    .mkc-cc-credit { padding-top: 9px; padding-bottom: 10px; }
+    .mkc-cc-credit .mkc-cc-ch { padding-bottom: 0; margin-bottom: 7px; border-bottom: 0; }
+    .mkc-cc-nums { display: flex; align-items: baseline; gap: 7px; }
+    .mkc-cc-nums b { font-size: 12.5px; color: #0f1729; }
+    .mkc-cc-nums span { font-size: 9px; color: #5b6472; }
+    .mkc-cc-ec { flex: 1; min-height: 0; overflow: hidden; padding-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .mkc-cc-eck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 7px; }
+    .mkc-cc-eck > div, .mkc-cc-aging > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .mkc-cc-eck span { font-size: 8.5px; color: #5b6472; }
+    .mkc-cc-eck b { font-size: 12.5px; color: #0a192f; white-space: nowrap; }
+    .mkc-cc-eck b.is-bad { color: #dc2626; }
+    .mkc-cc-aging { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; margin-bottom: 6px; border-radius: 9px; overflow: hidden; background: rgba(10,25,47,0.08); }
+    .mkc-cc-aging > div { padding: 5px 8px; background: #f7f7f9; }
+    .mkc-cc-aging span { font-size: 7.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-cc-aging b { font-size: 9.5px; color: #0f1729; white-space: nowrap; }
+    .mkc-cc-aging .late b { color: #b45309; }
+    .mkc-cc-aging .empty b { color: #5b6472; opacity: 0.6; }
+    .mkc-cc-r { display: grid; grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 6px 6px; margin: 0 -6px; border-radius: 8px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mkc-cc-r b { font-size: 10px; font-weight: 600; color: #0f1729; }
+    .mkc-cc-r i { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; font-style: normal; font-size: 8px; font-weight: 700; color: #5b6472; background: rgba(0,0,0,0.05); border-radius: 99px; white-space: nowrap; }
+    .mkc-cc-r i::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+    .mkc-cc-r i.late { color: #b45309; background: rgba(245,158,11,0.12); }
+    .mkc-cc-r span { font-size: 10.5px; text-align: right; color: #0f1729; }
+    .mkc-cc-r em { font-style: normal; font-size: 8.5px; color: #5b6472; text-align: right; white-space: nowrap; }
+    .mkc-cc-side { padding: 11px 12px; overflow: hidden; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .mkc-cc-sb + .mkc-cc-sb { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.07); }
+    .mkc-cc-kv { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; font-size: 9.5px; }
+    .mkc-cc-kv span { color: #5b6472; font-size: 9px; }
+    .mkc-cc-kv b { font-weight: 500; color: #0f1729; white-space: nowrap; }
+    .mkc-cc-kv b.n { overflow: hidden; text-overflow: ellipsis; }
+    .mkc-cc-kv em { font-style: normal; font-size: 9px; font-weight: 600; color: #0a192f; }
+    .mkc-cc-wa { display: inline-flex; margin-top: 8px; padding: 5px 11px; font-size: 9.5px; font-weight: 600; color: #fff; background: #25d366; border-radius: 7px; }
+
+    /* ── Finanzas (informes › Flujo de caja · 90 días) ── */
+    .mkc-fn-app { min-width: 820px; height: 486px; }
+    .mkc-fn .mkc-pad { flex: 1; min-height: 0; }
+    .mkc-snapchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; font-size: 9.5px; font-weight: 600; color: #5b6472; background: #fff; border-radius: 99px; box-shadow: 0 0 0 1px rgba(10,25,47,0.07); white-space: nowrap; }
+    .mkc-snapchip svg { width: 10px; height: 10px; }
+    .mkc-fn-pick svg:first-child { color: #0a192f; }
+    .mkc-fn-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr); gap: 10px; }
+    .mkc-fn-weeks { min-height: 0; overflow: hidden; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .mkc-fn-st { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .mkc-fn-st span { font-size: 8.5px; line-height: 1.4; color: #5b6472; }
+    .mkc-sh-r .mkc-fn-st b { font-size: 11px; }
+    .mkc-fn-leg { display: flex; gap: 8px; flex-shrink: 0; align-self: flex-start; }
+    .mkc-fn-leg i { display: inline-flex; align-items: center; gap: 4px; font-style: normal; font-size: 8px; color: #5b6472; }
+    .mkc-fn-leg i::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+    .mkc-fn-leg .c, .mkc-fn-fill .c { --c: #0f766e; }
+    .mkc-fn-leg .p, .mkc-fn-fill .p { --c: #2563eb; }
+    .mkc-fn-leg .m, .mkc-fn-fill .m { --c: #8b5cf6; }
+    .mkc-fn-rows { display: flex; flex-direction: column; gap: 8px; padding-top: 2px; }
+    .mkc-fn-w { display: grid; grid-template-columns: 80px minmax(0, 1fr) 74px; gap: 9px; align-items: center; }
+    .mkc-fn-wl { font-size: 8.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-fn-tr { display: flex; height: 7px; border-radius: 99px; background: #eef0f3; overflow: hidden; }
+    .mkc-fn-fill { display: flex; height: 100%; transform-origin: 0 50%; }
+    .mkc-fn-fill i { display: block; height: 100%; flex-grow: 0; flex-shrink: 0; background: var(--c); }
+    .mkc-fn-w b { font-size: 9.5px; text-align: right; color: #0f1729; white-space: nowrap; }
+    .mkc-fn-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .mkc-fn-conc strong { flex-shrink: 0; font-size: 19px; line-height: 1; letter-spacing: -0.02em; color: #0a192f; }
+    .mkc-fn-h { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+    .mkc-fn-h > span:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .mkc-fn-h em { font-style: normal; font-size: 9px; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fn-h b { font-size: 9px; color: #0f1729; }
+    .mkc-fn-ht { height: 5px; border-radius: 99px; background: #eef0f3; overflow: hidden; }
+    .mkc-fn-ht i { display: block; height: 100%; border-radius: 99px; background: #b8bfca; transform-origin: 0 50%; }
+    .mkc-fn-ht i.top { background: #0a192f; }
+    .mkc-fn-cum { flex: 1; min-height: 0; overflow: hidden; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .mkc-fn-line { display: block; width: 100%; height: 58px; overflow: visible; }
+    .mkc-fn-ax { display: flex; justify-content: space-between; margin-top: 4px; font-size: 7.5px; color: #99a2af; }
+
+    /* ── Divisas (cotizaciones/nueva en USD): el cliente ve dólares, tus libros van en pesos ── */
+    .mkc-fx { height: 500px; }
+    .mkc-fx-app { margin-left: 172px; min-width: 640px; height: 468px; }
+    .mkc-fx-phone { left: 0; top: 16px; }
+    .mkc-fx-ed { grid-template-columns: minmax(0, 1fr) 222px; gap: 14px; }
+    .mkc-fx-app .mkc-lh, .mkc-fx-app .mkc-lr { grid-template-columns: minmax(0, 1fr) 36px 50px 42px 72px; gap: 7px; }
+    .mkc-fx-app .mkc-lista { font-size: 9.5px; white-space: nowrap; }
+    .mkc-fx-app .mkc-imp { font-size: 11px; }
+    .mkc-fx-sum { gap: 5px; padding: 11px 12px; }
+    .mkc-fx-sum .mkc-sl-tot .editorial { font-size: 17px; }
+    .mkc-fx-sf { position: relative; }
+    .mkc-fx-cur { justify-content: flex-start; gap: 6px; }
+    .mkc-fx-cur img { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+    .mkc-fx-cur > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fx-pop { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 8; padding: 5px; background: #fff; border-radius: 11px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08), 0 18px 36px -12px rgba(10,25,47,0.35); opacity: 0; visibility: hidden; }
+    .mkc-fx-q { display: flex; align-items: center; gap: 5px; padding: 5px 7px; margin-bottom: 3px; font-size: 9.5px; color: #99a2af; background: #f5f5f7; border-radius: 7px; }
+    .mkc-fx-q svg { width: 10px; height: 10px; }
+    .mkc-fx-list { display: flex; flex-direction: column; }
+    .mkc-fx-opt { display: flex; align-items: center; gap: 6px; padding: 5px 7px; font-size: 9.5px; color: #0f1729; border-radius: 6px; white-space: nowrap; }
+    .mkc-fx-opt img { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .mkc-fx-opt span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fx-opt svg { width: 10px; height: 10px; color: #0a192f; }
+    .mkc-fx-opt.sel { font-weight: 600; }
+    .mkc-fx-opt.hov { background: #f0f1f4; }
+    .mkc-fx-cover { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; padding: 7px 8px; background: #f5f5f7; border: 1px solid rgba(10,25,47,0.07); border-radius: 10px; }
+    .mkc-fx-exp { margin: 0; font-size: 8.5px; line-height: 1.45; color: #5b6472; }
+    .mkc-fx-exp b { color: #0f1729; font-weight: 600; }
+    .mkc-fx-steps { display: flex; align-items: stretch; gap: 4px; }
+    .mkc-fx-steps > i { align-self: center; font-style: normal; font-size: 9px; color: #5b6472; }
+    .mkc-fx-st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 5px 7px; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 7px; }
+    .mkc-fx-st span { font-size: 7px; font-weight: 600; line-height: 1.25; color: #5b6472; }
+    .mkc-fx-st em { font-style: normal; }
+    .mkc-fx-st b { font-size: 11px; color: #0f1729; white-space: nowrap; }
+    .mkc-fx-st b small { font-size: 7.5px; color: #5b6472; }
+    .mkc-fx-st.on { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
+    .mkc-fx-st.on > span { color: #059669; }
+    .mkc-fx-sees { margin: 0; padding: 2px 0; font-size: 9px; line-height: 1.45; color: #0f1729; border-radius: 5px; }
+    .mkc-fx-sees b { font-weight: 600; white-space: nowrap; }
+    .mkc-fx-lock { display: flex; align-items: center; gap: 4px; font-size: 8px; color: #5b6472; }
+    .mkc-fx-lock svg { width: 9px; height: 9px; }
+    .mkc-fx-phone .mkc-qm-total b { font-size: 21px; white-space: nowrap; }
+
     /* ── EQUIPO / roles ── */
     .mk-team-body { padding: 1rem 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 8px; }
     .mk-team-row { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); }
@@ -2097,7 +2456,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         padding: 6rem 5% 5rem;
         display: grid;
         grid-template-columns: 5fr 7fr;
-        gap: 1.5rem;
+        gap: 1.2rem;
     }
 
     /* Cards 0 and 1 sit side-by-side; card 2+ span full width */
@@ -2107,16 +2466,24 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     }
 
     .pp-bcard {
-        background: #f5f5f7;
-        border-radius: 24px;
+        background: #fff;
+        border-radius: 28px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
         min-height: 540px;
-        border: 1px solid rgba(0,0,0,0.06);
         box-shadow:
-            0 1px 3px rgba(0,0,0,0.04),
-            0 24px 48px -14px rgba(0,0,0,0.08);
+            0 2px 4px rgba(10,25,47,0.04),
+            0 28px 56px -16px rgba(10,25,47,0.14),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .pp-bcard:hover {
+        transform: translateY(-6px);
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.05),
+            0 38px 72px -18px rgba(10,25,47,0.2),
+            inset 0 1px 0 rgba(255,255,255,0.6);
     }
 
     /* Full-width cards: text left, visual right */
@@ -2150,7 +2517,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         position: relative;
         overflow: hidden;
         min-height: 340px;
-        background: #f5f5f7;
+        background: #fff;
     }
 
     .pp-bcard-eyebrow {
@@ -2304,9 +2671,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .pp-hero { padding-top: 8.5rem; }
         .mk-row { grid-template-columns: 1.4fr 0.5fr 1fr; }
         .mk-row span:nth-child(4) { display: none; }
-        .mk-cli-row { grid-template-columns: auto 1fr; }
-        .mk-credit { display: none; }
-        .mk-term { justify-self: end; }
     }
 
     /* ══════════════════════════════════════════════════════════════════
@@ -2402,29 +2766,97 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .mkc-dih > :nth-child(2), .mkc-dir > .mkc-dir-q { display: none; }
         .mkc-dir-n { font-size: 12.5px; }
         .mkc-dir-p b, .mkc-dir-a { font-size: 12.5px; }
-        /* ── cobranza IA: el chat estaba corrido 22% a la derecha ── */
-        .mk-chatfree { margin: 0 auto; max-width: 100%; }
-        .cf-msg { max-width: 100%; }
-        .cf-plan { width: 100%; }
 
-        /* ── clientes y crédito: el plazo vuelve al renglón del nombre ── */
-        .mk-cli-row { grid-template-columns: auto 1fr auto; gap: 12px; }
-        .mk-term-wrap { justify-content: flex-end; }
-        .mk-cli-info b { font-size: 0.86rem; }
-        .mk-cli-info i { font-size: 0.72rem; }
+        /* ── pagos y finanzas: la app en su forma móvil (una columna, sin rail) ── */
+        .mkc-py-app, .mkc-ci-app, .mkc-cc-app, .mkc-fn-app, .mkc-fx-app { min-width: 0; height: auto; margin-left: 0; }
+        .mkc-pgh-sub { white-space: normal; font-size: 11.5px; }
+        .mkc-ci .mkc-pgh, .mkc-cc .mkc-pgh, .mkc-fn .mkc-pgh { flex-wrap: wrap; align-items: flex-start; row-gap: 10px; }
+        .mkc-btn, .mkc-ci-state, .mkc-range, .mkc-snapchip { font-size: 11.5px; padding: 6px 11px; }
+        .mkc-kl { font-size: 9px; white-space: normal; line-height: 1.3; }
+        .mkc-kpis, .mkc-kpis-3 { grid-template-columns: 1fr 1fr; }
+        .mkc-kpis-3 > :first-child { grid-column: 1 / -1; }
+        .mkc-kpi { padding: 11px 12px 12px; }
+        .mkc-kpi b { font-size: 22px; }
+        .mkc-kpi small { font-size: 10.5px; white-space: normal; }
+        .mkc-sh b { font-size: 13px; }
+        .mkc-sh > span, .mkc-fn-st span { font-size: 11px; }
 
+        .mkc-py { height: 480px; }
+        .mkc-py-app { display: none; }
+        .mkc-py-phone { left: 50%; top: 4px; margin-left: -118px; }
+
+        .mkc-tabs span { font-size: 12.5px; }
+        .mkc-ci .mkc-pgh-sub { display: none; }
+        .mkc-ci .mkc-kpis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+        .mkc-ci .mkc-kpis-3 > :first-child { grid-column: auto; }
+        .mkc-ci .mkc-kpi { padding: 9px 9px 10px; }
+        .mkc-ci .mkc-kpi b { font-size: 17px; white-space: nowrap; }
+        .mkc-ci .mkc-kpi b small { font-size: 8px; }
+        .mkc-ci .mkc-kpi small { display: none; }
+        .mkc-ci .mkc-kpi b small { display: inline; }
+        .mkc-ci-grid > .mkc-ci-threads { display: none; }
+        .mkc-ci-grid { grid-template-columns: 1fr; }
+        .mkc-ci-clip { flex: none; height: 334px; }
+        .mkc-ci-dh { flex-wrap: wrap; }
+        .mkc-ci-who strong { font-size: 13px; }
+        .mkc-ci-who small { font-size: 11px; }
+        .mkc-ci-who u { font-size: 10.5px; }
+        .mkc-ci-dh > b { width: 100%; padding-left: 32px; font-size: 13px; }
+        .mkc-ci-plan { font-size: 12px; padding: 8px 10px; }
+        .mkc-ci-text { height: 128px; font-size: 12px; }
+        .mkc-ci-acts2 { flex-wrap: wrap; }
+        .mkc-ci-act { font-size: 11.5px; padding: 8px 13px; }
+        .mkc-ci-act.ghost:last-child { display: none; }
+        .mkc-toast { bottom: 14px; font-size: 11.5px; }
+
+        .mkc-cc-grid { grid-template-columns: 1fr; padding: 0 var(--gut) 8px; }
+        .mkc-cc-side { display: none; }
+        .mkc-cc-head { flex-wrap: wrap; }
+        .mkc-cc-meta { font-size: 11px; white-space: normal; }
+        .mkc-cc-badges i { font-size: 10px; }
+        .mkc-cc-tot { width: 100%; flex-direction: row; align-items: baseline; justify-content: space-between; }
+        .mkc-cc-tot span { font-size: 9px; }
+        .mkc-cc-kpis { display: none; }
+        .mkc-cc-ch b { font-size: 13px; }
+        .mkc-cc-ch span, .mkc-cc-nums span { font-size: 11px; }
+        .mkc-cc-nums { flex-wrap: wrap; }
+        .mkc-cc-nums b { font-size: 15px; white-space: nowrap; }
+        .mkc-cc-eck { grid-template-columns: 1fr 1fr; row-gap: 8px; }
+        .mkc-cc-eck span { font-size: 10.5px; }
+        .mkc-cc-eck b { font-size: 15px; }
+        .mkc-cc-aging { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .mkc-cc-aging > div:nth-child(n+3) { display: none; }
+        .mkc-cc-aging span { font-size: 9.5px; }
+        .mkc-cc-aging b { font-size: 12px; }
+        .mkc-cc-r { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; padding: 9px 6px; }
+        .mkc-cc-r b { font-size: 12.5px; }
+        .mkc-cc-r i { font-size: 10px; justify-self: end; }
+        .mkc-cc-r span { font-size: 13px; text-align: left; }
+        .mkc-cc-r em { font-size: 10.5px; }
+        .mkc-cc-ec { border-radius: 16px; }
+
+        .mkc-fn-grid { grid-template-columns: 1fr; }
+        .mkc-fn .mkc-ci-acts, .mkc-cc .mkc-ci-acts { flex-wrap: wrap; flex-shrink: 1; min-width: 0; }
+        .mkc-fn-side, .mkc-fn-leg { display: none; }
+        .mkc-fn-w { grid-template-columns: 92px minmax(0, 1fr) 92px; }
+        .mkc-fn-w:nth-child(n+9) { display: none; }
+        .mkc-fn-wl { font-size: 10.5px; }
+        .mkc-fn-w b { font-size: 11.5px; }
+        .mkc-fn-weeks { border-radius: 16px; }
+
+        .mkc-fx { height: auto; }
+        .mkc-fx-phone, .mkc-fx-ed .mkc-ed-main { display: none; }
+        .mkc-fx-ed { grid-template-columns: 1fr; padding: 0 var(--gut) 6px; }
+        .mkc-fx-sum { gap: 8px; padding: 14px; }
+        .mkc-fx-sum .mkc-sl-tot .editorial { font-size: 21px; }
+        .mkc-fx-app .mkc-sf label { font-size: 11px; }
+        .mkc-fx-opt, .mkc-fx-q { font-size: 12px; padding: 7px 9px; }
+        .mkc-fx-exp, .mkc-fx-sees { font-size: 11.5px; }
+        .mkc-fx-st span { font-size: 9.5px; }
+        .mkc-fx-st b { font-size: 14px; }
+        .mkc-fx-lock { font-size: 10.5px; }
         /* ── facturación: el sello se movía sobre el encabezado ── */
         .mk-intl-pill { position: static; margin: 0 0 2px auto; box-shadow: none; }
-
-        /* ── pagos: el checkout de dos columnas se apila (resumen arriba, cobro abajo) ── */
-        .mk-pay-url { display: none; }
-        .mk-pay-body { grid-template-columns: 1fr; }
-        .mk-pay-sum { border-right: none; border-bottom: 1px solid rgba(10,25,47,0.06); padding: 1rem 1.05rem 1.1rem; }
-        .mk-pay-sheet { padding: 1rem 1.05rem 1.15rem; }
-        .mk-pay-line > span, .mk-pay-line b, .mk-pay-val { font-size: 0.82rem; }
-        .mk-pay-tot-final b { font-size: 1.3rem; }
-        .mk-pay-cvc { display: none; }
-        .mk-pay-vpill { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* ── workflows: las dos ramas se apilan como en el editor móvil ── */
         .mk-wf-runs { display: none; }
@@ -2434,10 +2866,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .mk-wf-node em { font-size: 0.7rem; white-space: normal; }
         .mk-wf-foot { padding: 10px 13px; }
 
-        /* ── finanzas: la etiqueta de dos renglones desalineaba el KPI ── */
-        .mk-fin-kpi { justify-content: space-between; }
-        .mk-fin-kpi span { font-size: 0.55rem; }
-        .mk-fin-body { padding: 1rem 1rem 1.15rem; }
     }
 </style>
 
@@ -2881,113 +3309,178 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     });
                 }
                 
-                // Clientes Animation
-                const cliItems = document.querySelectorAll('.cli-item');
-                if (cliItems.length) {
-                    const bars = document.querySelectorAll('.mk-credit-bar i');
-                    gsap.to(cliItems, {
-                        opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out',
-                        scrollTrigger: { trigger: '.mk-cli', start: 'top 80%', once: true }
-                    });
-                    gsap.to(bars, {
-                        scaleX: 1, duration: 1, stagger: 0.1, ease: 'power3.out', delay: 0.4,
-                        scrollTrigger: { trigger: '.mk-cli', start: 'top 80%', once: true }
-                    });
-                }
-
-                // Cobranza IA — chat LIBRE sobre el hero con "escribiendo…" real (loop)
-                const arFree = document.getElementById('arFree');
-                if (arFree) {
-                    const steps = [...arFree.querySelectorAll('[data-cf]')];
-                    const approve = document.getElementById('cfApprove');
-                    const cuotas = arFree.querySelectorAll('.cf-cuota');
-                    const makeTyping = (isOut) => {
-                        const m = document.createElement('div');
-                        m.className = 'cf-typing-msg ' + (isOut ? 'cf-out' : 'cf-in');
-                        m.innerHTML = '<div class="cf-dots"><span></span><span></span><span></span></div>';
-                        return m;
+                // Clientes y crédito: COT-0148 se aprueba y el estado de cuenta del cliente la absorbe
+                const ccHero = document.getElementById('ccHero');
+                if (ccHero) {
+                    const nums = [...ccHero.querySelectorAll('[data-cc-n]')];
+                    const pct = document.getElementById('ccPct'), fill = document.getElementById('ccFill');
+                    const row = document.getElementById('ccNew'), next = document.getElementById('ccNext');
+                    const fmt = (el, v) => el.hasAttribute('data-pct') ? Math.round(v) + '%'
+                        : 'MXN ' + v.toLocaleString('en-US', { minimumFractionDigits: el.hasAttribute('data-dec') ? 2 : 0, maximumFractionDigits: el.hasAttribute('data-dec') ? 2 : 0 });
+                    const setAll = (k) => {
+                        nums.forEach((el) => { el.textContent = fmt(el, Number(el.dataset[k])); });
+                        pct.textContent = pct.dataset.tpl.replace('{n}', pct.dataset[k]);
+                        gsap.set(fill, { width: pct.dataset[k] + '%' });
                     };
-                    const reset = () => { gsap.set(steps, { opacity: 0, y: 16, scale: 0.96 }); gsap.set(cuotas, { opacity: 0, x: -8 }); arFree.querySelectorAll('.cf-typing-msg').forEach(n => n.remove()); };
-                    reset();
-                    ScrollTrigger.create({
-                        trigger: arFree, start: 'top 80%', once: true,
-                        onEnter: () => {
-                            const tl = gsap.timeline({ delay: 0.4, repeat: -1, repeatDelay: 3.2 });
-                            steps.forEach((s, i) => {
-                                const isOut = s.classList.contains('cf-out');
-                                const isPlan = s.classList.contains('cf-plan');
-                                if (!isPlan) {
-                                    // aparece "escribiendo…" en el lugar del mensaje, luego lo reemplaza la burbuja
-                                    tl.call(() => {
-                                        const t = makeTyping(isOut); s.parentNode.insertBefore(t, s); s._t = t;
-                                        gsap.fromTo(t, { opacity: 0, scale: 0.8, y: 8 }, { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'back.out(2)' });
-                                    }, null, i === 0 ? '>' : '+=0.45');
-                                    tl.to({}, { duration: 0.75 });
-                                    tl.call(() => { if (s._t) { const t = s._t; gsap.to(t, { opacity: 0, scale: 0.8, duration: 0.2, onComplete: () => t.remove() }); } });
-                                    tl.to(s, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'back.out(1.4)' }, '+=0.06');
-                                } else {
-                                    tl.to(s, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.3)' }, '+=0.5');
-                                    tl.to(cuotas, { opacity: 1, x: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out' }, '-=0.1');
-                                    if (approve) tl.fromTo(approve, { boxShadow: '0 6px 16px -4px rgba(10,25,47,0.4), 0 0 0 0 rgba(10,25,47,0)' }, { boxShadow: '0 6px 16px -4px rgba(10,25,47,0.4), 0 0 0 6px rgba(10,25,47,0.12)', duration: 0.6, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '+=0.15');
-                                }
-                            });
-                            // cierre del loop: se desvanece y reinicia
-                            tl.to(steps, { opacity: 0, y: 10, duration: 0.5, stagger: 0.04 }, '+=1.6');
-                            tl.add(() => reset());
-                        },
-                    });
+                    const before = () => { setAll('a'); gsap.set(row, { opacity: 0 }); gsap.set(next, { y: () => -row.offsetHeight }); gsap.set(row, { backgroundColor: 'rgba(16,185,129,0)' }); };
+                    before();
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.to({}, { duration: 1.6 });
+                        tl.to(next, { y: 0, duration: 0.6, ease: 'power3.out' });
+                        tl.to(row, { opacity: 1, duration: 0.45 }, '<0.15');
+                        tl.fromTo(row, { backgroundColor: 'rgba(16,185,129,0.14)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 2.8, ease: 'power1.in' }, '<');
+                        nums.forEach((el) => {
+                            const o = { v: Number(el.dataset.a) };
+                            tl.to(o, { v: Number(el.dataset.b), duration: 1.3, ease: 'power2.out', onUpdate: () => { el.textContent = fmt(el, o.v); } }, '<');
+                        });
+                        const po = { v: Number(pct.dataset.a) };
+                        tl.to(po, { v: Number(pct.dataset.b), duration: 1.3, ease: 'power2.out', onUpdate: () => { pct.textContent = pct.dataset.tpl.replace('{n}', String(Math.round(po.v))); } }, '<');
+                        tl.to(fill, { width: pct.dataset.b + '%', duration: 1.3, ease: 'power2.out' }, '<');
+                        tl.to({}, { duration: 3.4 });
+                        tl.to([row, ...nums, pct], { opacity: 0, duration: 0.35 });
+                        tl.call(before);
+                        tl.to(fill, { width: pct.dataset.a + '%', duration: 0.01 }, '<');
+                        tl.to([...nums, pct], { opacity: 1, duration: 0.35 });
+                    };
+                    ScrollTrigger.create({ trigger: ccHero, start: 'top 90%', once: true, onEnter: loop });
                 }
 
-                // Multi-divisa Animation (count-up de la tasa + pop del lock + flash del total MXN)
+                // Cobranza IA: apruebas el plan que negoció el agente y el correo sale
+                const ciHero = document.getElementById('ciHero');
+                if (ciHero) {
+                    const $ = (id) => document.getElementById(id);
+                    const cursor = $('ciCursor'), ok = $('ciOk'), draft = $('ciDraft'), list = $('ciList'), toast = $('ciToast'), tag = $('ciTag');
+                    const swaps = ['ciPend', 'ciPlans', 'ciComp', 'ciWhen'].map((id) => { const el = $(id); return { el, a: el.textContent, b: el.dataset.b }; });
+                    const setState = (after) => swaps.forEach((s) => { s.el.textContent = after ? s.b : s.a; });
+                    const nums = ['ciPend', 'ciPlans'].map($);
+                    const loop = (first) => {
+                        const tl = gsap.timeline({ onComplete: () => loop(false) });
+                        if (!first) {
+                            tl.to(toast, { autoAlpha: 0, y: 8, duration: 0.3 })
+                              .to(list, { y: 0, duration: 0.55, ease: 'power2.inOut' })
+                              .to(draft, { opacity: 1, scale: 1, duration: 0.4 }, '<0.2')
+                              .call(() => setState(false), null, '<')
+                              .to(tag, { autoAlpha: 1, duration: 0.3 }, '<')
+                              .set(ok, { opacity: 1 });
+                        }
+                        tl.call(() => { const r = mkcPos(ciHero, ok); gsap.set(cursor, { x: r.x + r.w * 0.6 + 110, y: r.y + r.h + 90, scale: 1 }); });
+                        tl.to(cursor, { opacity: 1, duration: 0.3 }, '+=1.6');
+                        tl.to(cursor, { x: () => { const r = mkcPos(ciHero, ok); return r.x + r.w * 0.55; }, y: () => { const r = mkcPos(ciHero, ok); return r.y + r.h * 0.55; }, duration: 1.05, ease: 'power3.inOut' });
+                        tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 });
+                        tl.to(ok, { opacity: 0.6, duration: 0.15 }, '<');
+                        tl.to(draft, { opacity: 0, scale: 0.98, duration: 0.3 }, '+=0.4');
+                        tl.to(list, { y: () => -(draft.offsetHeight + 8), duration: 0.6, ease: 'power2.inOut' }, '<0.12');
+                        tl.call(() => setState(true), null, '<');
+                        tl.to(tag, { autoAlpha: 0, duration: 0.3 }, '<');
+                        tl.fromTo(nums, { scale: 1.14 }, { immediateRender: false, scale: 1, duration: 0.45, ease: 'back.out(2)', transformOrigin: '0% 60%' }, '<');
+                        tl.to(toast, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '<0.15');
+                        tl.to(cursor, { x: '+=70', y: '+=110', opacity: 0, duration: 0.8, ease: 'power2.in' }, '<');
+                        tl.to({}, { duration: 3.4 });
+                    };
+                    gsap.set(toast, { autoAlpha: 0, y: 8 });
+                    ScrollTrigger.create({ trigger: ciHero, start: 'top 90%', once: true, onEnter: () => loop(true) });
+                }
+
+                // Divisas: eliges la moneda del cliente y el editor dice cuánto entra a tus libros
                 const fxHero = document.getElementById('fxHero');
                 if (fxHero) {
-                    const rate = document.getElementById('fxRate');
-                    const lock = document.getElementById('fxLock');
-                    const mxn = document.getElementById('fxMxn');
-                    gsap.set(lock, { opacity: 0, scale: 0.6 });
-                    ScrollTrigger.create({
-                        trigger: fxHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            const obj = { v: 17.9 };
-                            gsap.timeline({ delay: 0.5 })
-                                .to(obj, { v: 18.50, duration: 1, ease: 'power2.out', onUpdate: () => { if (rate) rate.textContent = '$' + obj.v.toFixed(2) + ' MXN'; } })
-                                .to(lock, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '-=0.25')
-                                .fromTo(mxn, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: '#f8fafc', duration: 1.1, ease: 'power2.out' }, '-=0.1');
-                        },
-                    });
+                    const $ = (id) => document.getElementById(id);
+                    const cursor = $('fxCursor'), cur = $('fxCur'), pop = $('fxPop'), sees = fxHero.querySelector('.mkc-fx-sees'), client = $('fxClient');
+                    const opts = [...pop.querySelectorAll('.mkc-fx-opt')];
+                    const pick = (c) => opts.find((o) => o.dataset.c === c);
+                    const rates = [$('fxSpot'), $('fxApplied'), $('fxBooks')];
+                    const real = rates.map((el) => el.textContent);
+                    const at = (el, fx, fy) => { const r = mkcPos(fxHero, el); return { x: r.x + r.w * fx, y: r.y + r.h * fy }; };
+                    const hover = (o) => opts.forEach((x) => x.classList.toggle('hov', x === o));
+                    const goTo = (tl, el, dur, pos) => tl.to(cursor, { x: () => at(el, 0.6, 0.5).x, y: () => at(el, 0.6, 0.55).y, duration: dur, ease: 'power2.inOut' }, pos);
+                    gsap.set(pop, { autoAlpha: 0, y: -4 });
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.call(() => { const p = at(cur, 0.6, 0.5); gsap.set(cursor, { x: p.x + 110, y: p.y + 160, scale: 1 }); hover(null); });
+                        tl.to(cursor, { opacity: 1, duration: 0.3 }, '+=1.4');
+                        goTo(tl, cur, 1, '>');
+                        tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 });
+                        tl.to(pop, { autoAlpha: 1, y: 0, duration: 0.25, ease: 'power2.out' }, '<0.1');
+                        goTo(tl, pick('EUR'), 0.7, '+=0.35');
+                        tl.call(() => hover(pick('EUR')), null, '-=0.2');
+                        goTo(tl, pick('COP'), 0.45, '+=0.35');
+                        tl.call(() => hover(pick('COP')), null, '-=0.15');
+                        goTo(tl, pick('USD'), 0.75, '+=0.4');
+                        tl.call(() => hover(pick('USD')), null, '-=0.2');
+                        tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 }, '+=0.25');
+                        tl.to(pop, { autoAlpha: 0, y: -4, duration: 0.2 });
+                        tl.call(() => rates.forEach((el) => { el.textContent = '—'; }));
+                        tl.call(() => rates.forEach((el, k) => { el.textContent = real[k]; }), null, '+=0.5');
+                        tl.fromTo(rates, { opacity: 0, y: 3 }, { immediateRender: false, opacity: 1, y: 0, duration: 0.35, stagger: 0.08 }, '<');
+                        tl.fromTo(sees, { backgroundColor: 'rgba(16,185,129,0.16)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 1.6 }, '<0.1');
+                        tl.fromTo(client, { boxShadow: '0 0 0 0 rgba(10,25,47,0)' }, { immediateRender: false, boxShadow: '0 0 0 3px rgba(10,25,47,0.1)', duration: 0.5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<');
+                        tl.to(cursor, { x: '+=70', y: '+=110', opacity: 0, duration: 0.8, ease: 'power2.in' }, '<');
+                        tl.to({}, { duration: 3.2 });
+                    };
+                    ScrollTrigger.create({ trigger: fxHero, start: 'top 90%', once: true, onEnter: loop });
+                    const phone = fxHero.querySelector('.mkc-fx-phone');
+                    if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
-                // Cord Payments — el cliente paga con tarjeta dentro del link y el cobro
-                // se confirma hacia la cuenta conectada del negocio (loop auto-reproducido).
-                const payHero = document.getElementById('payHero');
-                if (payHero) {
-                    const payLines = payHero.querySelectorAll('.mk-pay-line');
-                    const cardField = document.getElementById('payCardField');
-                    const payForm = document.getElementById('payForm');
-                    const payBtn = document.getElementById('payBtn');
-                    const payOk = document.getElementById('paySuccess');
-                    const payRing = payHero.querySelector('.mk-pay-ring');
-                    const payTick = payHero.querySelector('.mk-pay-tick');
-                    const payDep = payHero.querySelector('.mk-pay-ok-dep');
-                    gsap.set(payLines, { opacity: 0, x: -10 });
-                    ScrollTrigger.create({
-                        trigger: payHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.to(payLines, { opacity: 1, x: 0, duration: 0.5, stagger: 0.09, ease: 'power2.out', delay: 0.3 });
-                            gsap.timeline({ delay: 1.25, repeat: -1, repeatDelay: 2.2 })
-                                .fromTo(cardField, { boxShadow: '0 1px 2px rgba(10,25,47,0.04)' }, { boxShadow: '0 1px 2px rgba(10,25,47,0.04), 0 0 0 3px rgba(10,25,47,0.10)', duration: 0.45, ease: 'sine.out' })
-                                .to(cardField, { boxShadow: '0 1px 2px rgba(10,25,47,0.04)', duration: 0.4, ease: 'sine.in' }, '+=0.35')
-                                .to(payBtn, { scale: 0.97, duration: 0.12, ease: 'power2.in' })
-                                .to(payBtn, { scale: 1, duration: 0.18, ease: 'power2.out' })
-                                .to(payForm, { opacity: 0, y: -6, duration: 0.35, ease: 'power2.in' }, '+=0.15')
-                                .to(payOk, { opacity: 1, duration: 0.3 }, '-=0.12')
-                                .fromTo(payRing, { scale: 0.55, opacity: 1 }, { scale: 1.7, opacity: 0, duration: 0.9, ease: 'power2.out' }, '<')
-                                .fromTo(payTick, { scale: 0, rotation: -32 }, { scale: 1, rotation: 0, duration: 0.55, ease: 'back.out(2)' }, '<0.05')
-                                .fromTo(payDep, { opacity: 0, y: 9 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '-=0.2')
-                                .to(payOk, { opacity: 0, duration: 0.45 }, '+=2.6')
-                                .to(payForm, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '<');
-                        },
-                    });
+                // Pagos: el cliente paga desde su teléfono y el cobro entra a Cobros
+                const pyHero = document.getElementById('pyHero');
+                if (pyHero) {
+                    const $ = (id) => document.getElementById(id);
+                    const phone = pyHero.querySelector('.mkc-py-phone');
+                    const num = $('ppNum'), exp = $('ppExp'), cvc = $('ppCvc');
+                    const fields = [$('ppNumF'), $('ppExpF'), $('ppCvcF')];
+                    const btn = $('ppBtn'), btnT = $('ppBtnT'), form = $('ppForm'), ok = $('ppOk'), mp = $('ppMp');
+                    const ring = $('ppRing'), tick = $('ppTick'), list = $('pyList'), hot = $('pyNew'), pend = $('pyPend'), bell = $('pyBell');
+                    const full = [num.textContent, exp.textContent, cvc.textContent];
+                    const payLabel = btnT.textContent, busyLabel = btnT.dataset.busy;
+                    const tplPend = pend.dataset.tpl, pFrom = Number(pend.dataset.from), pTo = Number(pend.dataset.to);
+                    const m0 = (v) => 'MXN ' + Math.round(v).toLocaleString('en-US');
+                    const typed = (s) => { const out = []; for (let i = 1; i <= s.length; i++) if (!/[\s/]/.test(s[i - 1])) out.push(s.slice(0, i)); return out; };
+                    gsap.set(ring, { strokeDasharray: 145 });
+                    gsap.set(tick, { strokeDasharray: 40 });
+                    const reset = () => {
+                        num.textContent = ''; exp.textContent = ''; cvc.textContent = '';
+                        fields.forEach((f) => f.classList.remove('on'));
+                        btnT.textContent = payLabel;
+                        gsap.set(btn, { opacity: 0.55, scale: 1 });
+                        gsap.set(ok, { autoAlpha: 0 });
+                        gsap.set(ring, { strokeDashoffset: 145 }); gsap.set(tick, { strokeDashoffset: 40 });
+                        gsap.set(list, { y: -hot.offsetHeight }); gsap.set(hot, { opacity: 0, backgroundColor: 'rgba(16,185,129,0)' });
+                        pend.textContent = tplPend.replace('{m}', m0(pFrom));
+                    };
+                    reset();
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.to({}, { duration: 0.5 });
+                        [num, exp, cvc].forEach((el, k) => {
+                            tl.call(() => fields[k].classList.add('on'));
+                            typed(full[k]).forEach((s) => tl.call(() => { el.textContent = s; }, null, k === 0 ? '+=0.07' : '+=0.1'));
+                            tl.call(() => fields[k].classList.remove('on'), null, '+=0.18');
+                        });
+                        tl.to(btn, { opacity: 1, duration: 0.25 });
+                        tl.to(btn, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.inOut' }, '+=0.4');
+                        tl.call(() => { btnT.textContent = busyLabel; });
+                        tl.to([form, mp], { autoAlpha: 0, duration: 0.25 }, '+=0.95');
+                        tl.to(ok, { autoAlpha: 1, duration: 0.3 });
+                        tl.to(ring, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, '<0.05');
+                        tl.to(tick, { strokeDashoffset: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2');
+                        tl.to(list, { y: 0, duration: 0.6, ease: 'power3.out' }, '-=0.15');
+                        tl.to(hot, { opacity: 1, duration: 0.45 }, '<0.1');
+                        tl.fromTo(hot, { backgroundColor: 'rgba(16,185,129,0.16)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 2.6, ease: 'power1.in' }, '<0.25');
+                        const o = { v: pFrom };
+                        tl.to(o, { v: pTo, duration: 1.3, ease: 'power2.out', onUpdate: () => { pend.textContent = tplPend.replace('{m}', m0(o.v)); } }, '<');
+                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.9, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
+                        tl.to({}, { duration: 3.6 });
+                        tl.to([ok, pend], { autoAlpha: 0, duration: 0.35 });
+                        tl.to(hot, { opacity: 0, duration: 0.3 }, '<');
+                        tl.to(list, { y: () => -hot.offsetHeight, duration: 0.5, ease: 'power2.inOut' }, '<0.1');
+                        tl.call(reset);
+                        tl.to([form, mp, pend], { autoAlpha: 1, duration: 0.4 });
+                    };
+                    gsap.set(form, { autoAlpha: 1 });
+                    ScrollTrigger.create({ trigger: pyHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.6, loop) });
+                    if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
                 // Cord Invoicing Animation (pill "Timbrada" + flash del saldo por cobrar)
@@ -3006,27 +3499,39 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     });
                 }
 
-                // Finanzas / CFO — count-up KPIs + barras que crecen + insight + pulso del pico
-                const finHero = document.getElementById('finHero');
-                if (finHero) {
-                    const bars = finHero.querySelectorAll('.mk-fin-bar i');
-                    const insight = document.getElementById('finInsight');
-                    const k1 = document.getElementById('finK1');
-                    const k2 = document.getElementById('finK2');
-                    const hot = finHero.querySelector('.mk-fin-bar-hot i');
-                    gsap.set(insight, { opacity: 0, y: 10 });
-                    const countTo = (el, to) => { const o = { v: 0 }; return gsap.to(o, { v: to, duration: 1.1, ease: 'power2.out', onUpdate: () => { if (el) el.textContent = '$' + o.v.toFixed(2) + 'M'; } }); };
-                    ScrollTrigger.create({
-                        trigger: finHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            const tl = gsap.timeline({ delay: 0.35 });
-                            tl.to(bars, { scaleY: 1, duration: 0.85, stagger: 0.09, ease: 'power3.out' })
-                              .add(countTo(k1, parseFloat(k1.dataset.to)), '<')
-                              .add(countTo(k2, parseFloat(k2.dataset.to)), '<0.15')
-                              .to(insight, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.3');
-                            if (hot) gsap.to(hot, { filter: 'brightness(1.12)', duration: 1.1, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.4 });
-                        },
-                    });
+                // Finanzas: el flujo de 90 días se arma por fuente y la caja se acumula
+                const fnHero = document.getElementById('fnHero');
+                if (fnHero) {
+                    const fills = fnHero.querySelectorAll('.mkc-fn-fill');
+                    const hbars = fnHero.querySelectorAll('.mkc-fn-ht i');
+                    const line = document.getElementById('fnLine'), area = document.getElementById('fnArea2');
+                    const nums = [...fnHero.querySelectorAll('[data-fn-n]')];
+                    const fmt = (el, v) => el.hasAttribute('data-pct') ? Math.round(v) + '%' : Math.round(v).toLocaleString('en-US');
+                    const reset = () => {
+                        gsap.set([fills, hbars], { scaleX: 0 });
+                        gsap.set(line, { strokeDasharray: 1, strokeDashoffset: 1 }); gsap.set(area, { opacity: 0 });
+                        nums.forEach((el) => { el.textContent = fmt(el, 0); });
+                        gsap.set(nums, { opacity: 0 });
+                    };
+                    reset();
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.to(fills, { scaleX: 1, duration: 0.75, stagger: 0.07, ease: 'power3.out' }, 0.2);
+                        tl.to(nums, { opacity: 1, duration: 0.3 }, 0.2);
+                        nums.forEach((el) => {
+                            const o = { v: 0 };
+                            tl.to(o, { v: Number(el.dataset.fnN), duration: 1.3, ease: 'power2.out', onUpdate: () => { el.textContent = fmt(el, o.v); } }, 0.2);
+                        });
+                        tl.to(hbars, { scaleX: 1, duration: 0.7, stagger: 0.09, ease: 'power3.out' }, 0.55);
+                        tl.to(line, { strokeDashoffset: 0, duration: 1.7, ease: 'power2.inOut' }, 0.6);
+                        tl.to(area, { opacity: 1, duration: 0.8 }, 1.5);
+                        tl.to({}, { duration: 5.6 });
+                        tl.to([...nums, area], { opacity: 0, duration: 0.3 });
+                        tl.to([fills, hbars], { scaleX: 0, duration: 0.4, ease: 'power2.in' }, '<');
+                        tl.to(line, { strokeDashoffset: 1, duration: 0.4, ease: 'power2.in' }, '<');
+                        tl.call(reset);
+                    };
+                    ScrollTrigger.create({ trigger: fnHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.4, loop) });
                 }
 
                 // Equipo — filas entran en cascada + el botón invitar pulsa

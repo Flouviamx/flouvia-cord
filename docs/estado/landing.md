@@ -81,10 +81,18 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
   Profesional" cuando el cobro con tarjeta está disponible desde Gratis. Se
   agregó como feature en `src/lib/producto.ts`/`producto.en.ts`, con entrada
   propia en el megamenú (grupo "Pagos y Finanzas") y en `RELATED`/`DOCS_PATH`
-  de `src/pages/producto/[slug].astro`. El copy distingue los 8 de 12 países
-  con cobro en línea activo (`supportsOnlinePayments()`) de los 4 que solo
-  cotizan/facturan/cobran manual, y no reclama nada que el proveedor haga
+  de `src/pages/producto/[slug].astro`. No reclama nada que el proveedor haga
   (autenticidad documental, prueba de vida) que Cord no contrate.
+- **Grupo "Pagos y Finanzas" reescrito (sep 2026):** `pagos`, `cobranza-ia`,
+  `divisas`, `clientes-credito` y `finanzas` se reescribieron contra el código.
+  Cada tema tiene una sola página dueña: rieles, métodos, anticipo/saldo,
+  igualas, depósitos y contracargos en `pagos` (Cord Payments en 8 países,
+  Mercado Pago en 6, `src/lib/payment-rail.ts`); planes en cuotas y cartera
+  operativa en `cobranza-ia`; el flujo a 90 días solo en `finanzas` (plan
+  Profesional, sin "IA": es estadística del historial); estado de cuenta y
+  límite (alerta, no bloqueo) en `clientes-credito`; divisa de venta y tasa
+  demostrable en `divisas`, que ya no vende la tasa congelada como cobertura
+  de margen.
 
 ### Idioma público y frontera con la app
 
