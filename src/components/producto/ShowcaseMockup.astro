@@ -558,231 +558,444 @@ const NAV = [
 
   {/* ═══════════════════════════════ CLIENTES & CRÉDITO ═══════════════════════════════ */}
   {slug === 'clientes-credito' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Exposición de crédito</span>
-          <span class="shwm-badge shwm-badge-blue">4 clientes</span>
+    <div class="shwm-frame shwm-scene" data-shx="cc0">
+      <div class="shwm-brw shwm-cc0-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=clientes</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
+            <div class="shwm-wgs">
+              <div class="shwm-wg is-hot">
+                <div class="shwm-wg-h"><span><strong>{tx('Clientes en riesgo', 'Clients at risk')}</strong><small>{tx('Tienen historial, pero ninguna actividad en 90 días.', 'They have history, but no activity in 90 days.')}<span class="shwm-tag">{tx('hoy', 'today')}</span></small></span></div>
+                <div class="shwm-rl" data-rows>
+                  <div><span class="w"><strong>Constructora del Pacífico</strong><small>{tx('Oro', 'Gold')} · 14 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(1284500, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Grupo Industrial Tepeyac</strong><small>{tx('Distribuidor', 'Distributor')} · 22 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(986300, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Hotelera Costa Azul</strong><small>{tx('Plata', 'Silver')} · 9 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(412750, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Desarrollos Altamira</strong><small>{tx('Plata', 'Silver')} · 7 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(268900, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Constructora Norteña</strong><small>{tx('Estándar', 'Standard')} · 5 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(154200, 'MXN', 0)}</b></div>
+                </div>
+              </div>
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Conversión por cliente', 'Client conversion')}</strong><small>{tx('Cierres dentro de la cohorte seleccionada.', 'Wins inside the selected cohort.')}</small></span></div>
+                <div class="shwm-rl">
+                  <div><span class="w"><strong>Distribuidora El Zarco</strong><small>5 / 7 · 71%</small></span><b class="editorial">{cm(618200, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Constructora GAMA</strong><small>4 / 6 · 67%</small></span><b class="editorial">{cm(582400, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Grupo Ferrex</strong><small>3 / 5 · 60%</small></span><b class="editorial">{cm(398760, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Urbanizadora Sierra</strong><small>1 / 3 · 33%</small></span><b class="editorial">{cm(286450, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Aceros del Norte</strong><small>2 / 4 · 50%</small></span><b class="editorial">{cm(176800, 'MXN', 0)}</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-credit">
-          <div class="shwm-credit-r">
-            <div class="shwm-credit-who"><span class="shwm-avat a1">EZ</span><div><b>Distribuidora El Zarco</b><em>Net 30 · usado 72%</em></div></div>
-            <div class="shwm-gauge"><i style="width:72%"></i></div>
-            <b class="editorial">$180,000 <span class="shwm-mut">/ $250,000</span></b>
+      </div>
+      <div class="shwm-dv shwm-cc0-ph" data-ph>
+        <div class="shwm-dv-scr shwm-mrec">
+          <div class="shwm-dv-ios"><span class="t">16:20</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+          <div class="shwm-mapp-top"><span class="mn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span><span class="tt"><em>{tx('Clientes', 'Clients')}</em><strong>Constructora del Pacífico</strong></span></div>
+          <div class="shwm-mrec-b">
+            <div class="hd"><span class="av">C</span><span class="w"><span class="bg"><span class="tier">{tx('Oro', 'Gold')}</span><span class="fi">{tx('Datos fiscales completos', 'Complete tax data')}</span></span><small>Ing. Rodrigo Ibarra · compras@cpacifico.mx</small></span></div>
+            <div class="tot"><em>{tx('CERRADO', 'CLOSED')}</em><span class="editorial">{cm(1284500, 'MXN', 0)}</span></div>
+            <div class="kp"><span><em>{tx('Cotizaciones', 'Quotes')}</em><b class="editorial">14</b></span><span><em>{tx('Tasa de cierre', 'Close rate')}</em><b class="editorial">71%</b></span><span><em>{tx('Ticket promedio', 'Avg. deal size')}</em><b class="editorial">{cm(128450, 'MXN', 0)}</b></span><span><em>{tx('Días a cierre', 'Days to close')}</em><b class="editorial">5</b></span></div>
+            <div class="sec"><strong>{tx('Contacto', 'Contact')}</strong>
+              <span class="kv"><span>Ing. Rodrigo Ibarra</span></span>
+              <span class="kv"><span>+52 322 184 5290</span><span class="lk">{tx('Llamar', 'Call')}</span></span>
+              <span class="wa" data-wa><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg>WhatsApp</span>
+            </div>
+            <div class="sec"><strong>{tx('Metadatos', 'Metadata')}</strong>
+              <span class="kv"><span class="k">{tx('Alta', 'Added')}</span><span>{tx('12 mar 2025', 'Mar 12, 2025')}</span></span>
+              <span class="kv hot" data-silence><span class="k">{tx('Sin actividad hace', 'No activity in')}</span><span>{tx('104 días', '104 days')}</span></span>
+            </div>
           </div>
-          <div class="shwm-credit-r shwm-credit-hot">
-            <div class="shwm-credit-who"><span class="shwm-avat a2">CA</span><div><b>Constructora Apex</b><em>Net 60 · usado 91%</em></div></div>
-            <div class="shwm-gauge"><i class="warn" style="width:91%"></i></div>
-            <b class="editorial">$773,500 <span class="shwm-mut">/ $850,000</span></b>
-          </div>
-          <div class="shwm-credit-r">
-            <div class="shwm-credit-who"><span class="shwm-avat a4">AN</span><div><b>Aceros del Norte</b><em>Net 30 · usado 34%</em></div></div>
-            <div class="shwm-gauge"><i style="width:34%"></i></div>
-            <b class="editorial">$204,000 <span class="shwm-mut">/ $600,000</span></b>
-          </div>
-          <div class="shwm-credit-r">
-            <div class="shwm-credit-who"><span class="shwm-avat a-gray">GF</span><div><b>Grupo Ferrex</b><em>Contado · sin línea</em></div></div>
-            <div class="shwm-gauge shwm-gauge-off"><i style="width:0%"></i></div>
-            <span class="shwm-badge shwm-badge-gray">Contado</span>
-          </div>
+          <span class="shwm-dv-home"></span>
         </div>
-        <div class="shwm-foot"><span>Sabes cuánto le queda antes de decir que sí</span><b>Apex cerca de su límite</b></div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Clientes · Términos de pago</span>
-          <span class="shwm-badge shwm-badge-blue">Aplicados solos</span>
+    <div class="shwm-frame shwm-scene" data-shx="cc1">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=clientes</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
+            <div class="shwm-wg shwm-cc1-mx">
+              <div class="shwm-wg-h"><span><strong>{tx('Matriz nivel × comportamiento de pago', 'Tier × payment behavior matrix')}</strong><small>{tx('Cruza el nivel comercial con la puntualidad histórica real.', 'Crosses commercial tier with actual historical payment timing.')}<span class="shwm-tag">{tx('hoy', 'today')}</span></small></span></div>
+              <div class="shwm-hb shwm-hb-lg is-dim" data-hb>
+                {[
+                  [tx('Oro · Puntual', 'Gold · On time'), 3184200],
+                  [tx('Distribuidor · Puntual', 'Distributor · On time'), 2640900],
+                  [tx('Oro · Más de 7 días tarde', 'Gold · Over 7 days late'), 1912400, 1],
+                  [tx('Plata · Puntual', 'Silver · On time'), 1208300],
+                  [tx('Plata · 1–7 días tarde', 'Silver · 1–7 days late'), 864500],
+                  [tx('Estándar · Puntual', 'Standard · On time'), 512800],
+                  [tx('Estándar · Más de 7 días tarde', 'Standard · Over 7 days late'), 298600],
+                ].map((r) => (
+                  <div class={r[2] ? 'on' : ''}><span class="n">{r[0]}</span><span class="t"><i style={`width:${Math.max(3, (Number(r[1]) / 3184200) * 100).toFixed(1)}%`}></i></span><span class="editorial v">{cm(Number(r[1]), 'MXN', 0)}</span></div>
+                ))}
+              </div>
+              <span class="shwm-tip" data-tip><i></i>{tx('Oro · Más de 7 días tarde', 'Gold · Over 7 days late')}<b class="editorial">{cm(1912400, 'MXN', 0)}</b></span>
+            </div>
+            <div class="shwm-wgs">
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Clientes en riesgo', 'Clients at risk')}</strong><small>{tx('Tienen historial, pero ninguna actividad en 90 días.', 'They have history, but no activity in 90 days.')}<span class="shwm-tag">{tx('hoy', 'today')}</span></small></span></div>
+                <div class="shwm-rl"><div><span class="w"><strong>Constructora del Pacífico</strong><small>{tx('Oro', 'Gold')} · 14 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(1284500, 'MXN', 0)}</b></div><div><span class="w"><strong>Grupo Industrial Tepeyac</strong><small>{tx('Distribuidor', 'Distributor')} · 22 {tx('cotizaciones', 'quotes')}</small></span><b class="editorial">{cm(986300, 'MXN', 0)}</b></div></div>
+              </div>
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Conversión por cliente', 'Client conversion')}</strong><small>{tx('Cierres dentro de la cohorte seleccionada.', 'Wins inside the selected cohort.')}</small></span></div>
+                <div class="shwm-rl"><div><span class="w"><strong>Distribuidora El Zarco</strong><small>5 / 7 · 71%</small></span><b class="editorial">{cm(618200, 'MXN', 0)}</b></div><div><span class="w"><strong>Constructora GAMA</strong><small>4 / 6 · 67%</small></span><b class="editorial">{cm(582400, 'MXN', 0)}</b></div></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-cli shwm-g-head"><span>Cliente</span><span>RFC</span><span class="shwm-r">Términos</span></div>
-          <div class="shwm-g shwm-g-cli"><div class="shwm-cli-who"><span class="shwm-avat a1">EZ</span><b>Distribuidora El Zarco</b></div><span class="shwm-tag-mono">DEZ981123QX1</span><span class="shwm-r"><span class="shwm-badge shwm-badge-amber">Net 30</span></span></div>
-          <div class="shwm-g shwm-g-cli"><div class="shwm-cli-who"><span class="shwm-avat a2">CA</span><b>Constructora Apex</b></div><span class="shwm-tag-mono">CAP070312HJ8</span><span class="shwm-r"><span class="shwm-badge shwm-badge-amber">Net 60</span></span></div>
-          <div class="shwm-g shwm-g-cli"><div class="shwm-cli-who"><span class="shwm-avat a4">AN</span><b>Aceros del Norte</b></div><span class="shwm-tag-mono">ANO980145RT2</span><span class="shwm-r"><span class="shwm-badge shwm-badge-amber">Net 30</span></span></div>
-          <div class="shwm-g shwm-g-cli"><div class="shwm-cli-who"><span class="shwm-avat a-gray">GF</span><b>Grupo Ferrex</b></div><span class="shwm-tag-mono">GFE110822KM4</span><span class="shwm-r"><span class="shwm-badge shwm-badge-green">Contado</span></span></div>
-        </div>
-        <div class="shwm-foot"><span>Ningún vendedor inventa sus propios términos</span><b>Reglas del negocio, no de la memoria</b></div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Distribuidora El Zarco · Perfil</span>
-          <span class="shwm-badge shwm-badge-green">Cliente A</span>
+    <div class="shwm-frame shwm-scene" data-shx="cc2">
+      <div class="shwm-brw shwm-cc2-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/clientes/distribuidora-el-zarco</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'clientes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Clientes', 'Clients')} <span class="sep">/</span></span><strong>Distribuidora El Zarco</strong></span><span class="shwm-ph-r"><span class="shwm-btn">{tx('Editar', 'Edit')}</span><span class="shwm-btn pri">{tx('Nueva cotización', 'New quote')}</span></span></div>
+            <div class="shwm-dtg shwm-cc2-g">
+              <div class="shwm-dtg-main">
+                <div class="shwm-dh2"><span class="av tier">D</span><span class="tx"><span class="n"><span class="shwm-tier">{tx('Oro', 'Gold')}</span><span class="shwm-fis">{tx('Datos fiscales completos', 'Complete tax data')}</span></span><span class="m">Raúl Mendoza · raul@elzarco.mx · +52 33 1845 2290</span></span><span class="tot"><em>{tx('CERRADO', 'CLOSED')}</em><span class="editorial">{cm(618200, 'MXN', 0)}</span></span></div>
+                <div class="shwm-dck">
+                  <span><em>{tx('Cotizaciones', 'Quotes')}</em><b class="editorial">9</b></span>
+                  <span><em>{tx('En pipeline', 'In pipeline')}</em><b class="editorial">{cm(196469, 'MXN', 0)}</b></span>
+                  <span><em>{tx('Cobrado', 'Collected')}</em><b class="editorial">{cm(480300, 'MXN', 0)}</b></span>
+                  <span><em>{tx('Ticket promedio', 'Avg. deal size')}</em><b class="editorial">{cm(123640, 'MXN', 0)}</b></span>
+                  <span><em>{tx('Tasa de cierre', 'Close rate')}</em><b class="editorial">71%</b></span>
+                  <span><em>{tx('Días a cierre', 'Days to close')}</em><b class="editorial">6</b></span>
+                </div>
+                <div class="shwm-nego" data-nego>
+                  <div class="shwm-sech"><strong>{tx('Negociación', 'Negotiation')}</strong></div>
+                  <p class="ln"><span class="editorial" data-ced>{cm(84300, 'MXN', 0)}</span> {tx('Descuento cedido', 'Discount given')} <span class="pc">(−12%)</span></p>
+                  <p class="hn">{tx('Diferencia entre precio de lista y lo realmente cobrado en sus cotizaciones', 'Difference between list price and what was actually charged across their quotes')}</p>
+                </div>
+                <div class="shwm-sech"><strong>{tx('Qué le vendes', 'What you sell them')}</strong></div>
+                <div class="shwm-qlv">
+                  <span><span class="pn">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><span class="vx">7×</span><span class="editorial">{cm(268400, 'MXN', 0)}</span></span>
+                  <span><span class="pn">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><span class="vx">6×</span><span class="editorial">{cm(131000, 'MXN', 0)}</span></span>
+                  <span><span class="pn">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><span class="vx">4×</span><span class="editorial">{cm(112300, 'MXN', 0)}</span></span>
+                  <span><span class="pn">{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}</span><span class="vx">3×</span><span class="editorial">{cm(61200, 'MXN', 0)}</span></span>
+                </div>
+              </div>
+              <div class="shwm-dtg-side">
+                <div class="shwm-sech"><strong>{tx('Contacto', 'Contact')}</strong></div>
+                <div class="shwm-kvl"><span><span>Raúl Mendoza</span></span><span><span>raul@elzarco.mx</span><span class="lk">↗</span></span><span><span>+52 33 1845 2290</span><span class="lk">{tx('Llamar', 'Call')}</span></span></div>
+                <span class="shwm-wabtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg>WhatsApp</span>
+                <div class="shwm-sech shwm-sech-gap"><strong>{tx('Condiciones', 'Terms')}</strong></div>
+                <div class="shwm-kvl"><span><span class="k">RFC</span><span>DEZ981123QX1</span></span><span><span class="k">{tx('Límite de crédito', 'Credit limit')}</span><span class="editorial">{cm(500000, 'MXN', 0)}</span></span><span><span class="k">{tx('Términos', 'Terms')}</span><span>Net 30</span></span></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-profile">
-          <div class="shwm-profile-head">
-            <span class="shwm-avat a1 shwm-avat-lg">EZ</span>
-            <div><b>Distribuidora El Zarco</b><em>Raúl Mendoza · raul@elzarco.mx · desde 2023</em></div>
+      </div>
+      <div class="shwm-dv shwm-cc2-ph">
+        <div class="shwm-dv-scr shwm-wa2">
+          <div class="shwm-dv-ios dark"><span class="t">10:42</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+          <div class="shwm-wa2-head">
+            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span class="av">RM</span>
+            <span class="who"><strong>Raúl Mendoza</strong><em data-wast data-typing={tx('escribiendo…', 'typing…')} data-idle="Distribuidora El Zarco">Distribuidora El Zarco</em></span>
           </div>
-          <div class="shwm-kpis shwm-kpis-3">
-            <div class="shwm-kpi"><span>Paga a tiempo</span><b class="editorial shwm-g">89%</b></div>
-            <div class="shwm-kpi"><span>Días prom. a pago</span><b class="editorial">28</b></div>
-            <div class="shwm-kpi"><span>Tasa de aprobación</span><b class="editorial shwm-g">86%</b></div>
-          </div>
-          <div class="shwm-plist">
-            <div class="shwm-pl"><span>Cotizaciones históricas</span><b>18 · $2,420,000</b></div>
-            <div class="shwm-pl"><span>Pagos a tiempo</span><b>16 de 18</b></div>
-            <div class="shwm-pl"><span>Último cierre</span><b>hace 4 días</b></div>
+          <div class="shwm-wa2-body">
+            <span class="day">{tx('Ayer', 'Yesterday')}</span>
+            <span class="out">{tx('Raúl, ya quedó entregado el pedido en la obra de Zapopan.', 'Raúl, the order was delivered to the Zapopan site.')}<span class="tm">17:05</span></span>
+            <span class="in">{tx('Perfecto, gracias Laura.', 'Perfect, thanks Laura.')}<span class="tm">17:12</span></span>
+            <span class="day">{tx('Hoy', 'Today')}</span>
+            <span class="in">{tx('Laura, para el pedido de octubre vamos a necesitar 600 varillas de 3/8.', "Laura, for the October order we'll need 600 rebars 3/8.")}<span class="tm">10:40</span></span>
+            <span class="in" data-ask>{tx('¿Me puedes dejar la varilla otro 5% abajo?', 'Can you knock another 5% off the rebar?')}<span class="tm">10:42</span></span>
           </div>
         </div>
-        <div class="shwm-foot"><span>La memoria comercial, en datos — no en una persona</span><b>Merece mejor precio</b></div>
       </div>
     </div>
   )}
 
   {/* ═══════════════════════════════ COBRANZA CON IA ═══════════════════════════════ */}
   {slug === 'cobranza-ia' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Agente de cobranza · actividad</span>
-          <span class="shwm-badge shwm-badge-green">● Siempre activo</span>
+    <div class="shwm-frame shwm-scene" data-shx="cb0">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <nav class="shwm-as-nav">
+              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
+            </nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Cobranza', 'Collections')}</strong><span class="shwm-ptabs"><span class="on">{tx('Cobranza', 'Collections')}</span><span>{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></div>
+            <div class="shwm-kts">
+              <div class="shwm-kt"><span class="lb">{tx('VENCIDO', 'OVERDUE')}</span><span class="editorial v danger" data-n="1047819">{cm(1047819, 'MXN', 0)}</span><span class="s">{tx('5 cuenta(s) · toca para filtrar', '5 account(s) · tap to filter')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('VENCE ESTA SEMANA', 'DUE THIS WEEK')}</span><span class="editorial v" data-n="154160">{cm(154160, 'MXN', 0)}</span><span class="s">{tx('2 cuenta(s) en los próximos 7 días', '2 account(s) in the next 7 days')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('PROMESAS POR VENCER', 'PROMISES COMING DUE')}</span><span class="editorial v warn">1</span><span class="s">{tx('1 comprometida(s) para hoy o antes', '1 committed for today or earlier')}</span><span class="s">{tx('82% de cumplimiento histórico', '82% historical fulfillment')}</span></div>
+              <div class="shwm-kt is-hot" data-sg><span class="lb">{tx('VENCIDO SIN GESTIÓN', 'OVERDUE, UNTOUCHED')}</span><span class="editorial v danger" data-n="697169">{cm(697169, 'MXN', 0)}</span><span class="s">{tx('3 sin promesa de pago · toca para filtrar', '3 without a payment promise · tap to filter')}</span></div>
+            </div>
+            <div class="shwm-wgs shwm-cb0-wgs">
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Atiende primero', 'Handle first')}</strong><small>{tx('Ordenado por monto y días vencido: lo que más pesa, arriba.', 'Sorted by amount and days overdue: the heaviest on top.')}</small></span></div>
+                <div class="shwm-rl" data-rows>
+                  <div><span class="w"><strong>Constructora Apex</strong><small>COT-0118 · {tx('Vencida 47 d', 'Overdue 47 d')}</small></span><span class="rt"><b class="editorial">{cm(412300, 'MXN', 0)}</b><span class="shwm-wab"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg></span></span></div>
+                  <div><span class="w"><strong>Urbanizadora Sierra</strong><small>COT-0126 · {tx('Vencida 32 d', 'Overdue 32 d')}</small></span><span class="rt"><b class="editorial">{cm(286450, 'MXN', 0)}</b><span class="shwm-wab"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg></span></span></div>
+                  <div><span class="w"><strong>Distribuidora El Zarco</strong><small>COT-0136 · {tx('Vencida 18 d', 'Overdue 18 d')}</small></span><span class="rt"><b class="editorial">{cm(196469, 'MXN', 0)}</b><span class="shwm-wab"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg></span></span></div>
+                  <div><span class="w"><strong>Grupo Ferrex</strong><small>COT-0142 · {tx('Vencida 25 d', 'Overdue 25 d')}</small></span><span class="rt"><b class="editorial">{cm(64200, 'MXN', 0)}</b><span class="shwm-wab"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg></span></span></div>
+                  <div><span class="w"><strong>Aceros del Norte</strong><small>COT-0134 · {tx('Vencida 9 d', 'Overdue 9 d')}</small></span><span class="rt"><b class="editorial">{cm(88400, 'MXN', 0)}</b><span class="shwm-wab"><svg viewBox="0 0 24 24" fill="currentColor"><path d={WA_PATH}/></svg></span></span></div>
+                </div>
+              </div>
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Promesas de pago', 'Payment promises')}</strong><small>{tx('Compromisos abiertos, del más próximo al más lejano.', 'Open commitments, from the nearest to the furthest.')}</small></span></div>
+                <div class="shwm-rl">
+                  <div><span class="w"><strong>Grupo Ferrex</strong><small>COT-0142 · {tx('Promete 24 sep', 'Promises Sep 24')}</small></span><span class="rt"><b class="editorial">{cm(64200, 'MXN', 0)}</b><span class="shwm-okb" set:html={chk}></span></span></div>
+                  <div><span class="w"><strong>Urbanizadora Sierra</strong><small>COT-0126 · {tx('Promete 30 sep', 'Promises Sep 30')}</small></span><span class="rt"><b class="editorial">{cm(150000, 'MXN', 0)}</b><span class="shwm-okb" set:html={chk}></span></span></div>
+                  <div><span class="w"><strong>Grupo Constructor Lerma</strong><small>COT-0149 · {tx('Promete 2 oct', 'Promises Oct 2')}</small></span><span class="rt"><b class="editorial">{cm(41860, 'MXN', 0)}</b><span class="shwm-okb" set:html={chk}></span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="shwm-wg shwm-cb0-tbl">
+              <div class="shwm-wg-h"><span><strong>{tx('Cuentas por cobrar', 'Accounts receivable')}</strong></span><span class="shwm-fchips"><span class="on">{tx('Todas', 'All')}</span><span>{tx('Vencidas', 'Overdue')}</span><span>{tx('Con promesa', 'With promise')}</span><span>{tx('Sin gestión', 'Untouched')}</span></span></div>
+              <div class="shwm-ct">
+                <div class="r h"><span>{tx('Cliente', 'Client')}</span><span>{tx('Folio', 'Folio')}</span><span>{tx('Términos', 'Terms')}</span><span>{tx('Vence', 'Due')}</span><span>{tx('Estado', 'Status')}</span><span class="am">{tx('Saldo', 'Balance')}</span></div>
+                <div class="r"><span class="cl"><i>C</i>Constructora Apex</span><span class="fo">COT-0118</span><span class="mu">Net 30</span><span class="mu">{tx('8 ago', 'Aug 8')}</span><span class="es"><span class="shwm-est over">{tx('Vencida 47 d', 'Overdue 47 d')}</span></span><span class="editorial am">{cm(412300, 'MXN', 0)}</span></div>
+                <div class="r"><span class="cl"><i>U</i>Urbanizadora Sierra</span><span class="fo">COT-0126</span><span class="mu">Net 30</span><span class="mu">{tx('23 ago', 'Aug 23')}</span><span class="es"><span class="shwm-est over">{tx('Vencida 32 d', 'Overdue 32 d')}</span><span class="shwm-est prom">{tx('Promete 30 sep', 'Promises Sep 30')}</span></span><span class="editorial am">{cm(286450, 'MXN', 0)}</span></div>
+                <div class="r"><span class="cl"><i>D</i>Distribuidora El Zarco</span><span class="fo">COT-0136</span><span class="mu">Net 30</span><span class="mu">{tx('6 sep', 'Sep 6')}</span><span class="es"><span class="shwm-est over">{tx('Vencida 18 d', 'Overdue 18 d')}</span></span><span class="editorial am">{cm(196469, 'MXN', 0)}</span></div>
+                <div class="r"><span class="cl"><i>G</i>Grupo Ferrex</span><span class="fo">COT-0142</span><span class="mu">Net 60</span><span class="mu">{tx('30 ago', 'Aug 30')}</span><span class="es"><span class="shwm-est over">{tx('Vencida 25 d', 'Overdue 25 d')}</span><span class="shwm-est prom">{tx('Promete 24 sep', 'Promises Sep 24')}</span></span><span class="editorial am">{cm(64200, 'MXN', 0)}</span></div>
+                <div class="r"><span class="cl"><i>A</i>Aceros del Norte</span><span class="fo">COT-0134</span><span class="mu">Net 30</span><span class="mu">{tx('15 sep', 'Sep 15')}</span><span class="es"><span class="shwm-est over">{tx('Vencida 9 d', 'Overdue 9 d')}</span></span><span class="editorial am">{cm(88400, 'MXN', 0)}</span></div>
+                <div class="r"><span class="cl"><i>C</i>Constructora GAMA</span><span class="fo">COT-0153</span><span class="mu">Net 30</span><span class="mu">{tx('27 sep', 'Sep 27')}</span><span class="es"><span class="shwm-est due">{tx('Vence en 3 d', 'Due in 3 d')}</span></span><span class="editorial am">{cm(112300, 'MXN', 0)}</span></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-log">
-          <div class="shwm-log-r"><span class="shwm-log-time">Sáb 3:12 am</span><span class="shwm-log-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z" fill="currentColor" fill-opacity="0.08"/><path d="M4 7l8 6 8-6"/></svg></span><div class="shwm-log-tx"><b>Recordatorio enviado a El Zarco</b><span>Agente IA · saldo vencido 47 días</span></div></div>
-          <div class="shwm-log-r"><span class="shwm-log-time">Dom 11:47 pm</span><span class="shwm-log-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z" fill="currentColor" fill-opacity="0.08"/><path d="M4 7l8 6 8-6"/></svg></span><div class="shwm-log-tx"><b>Respuesta leída de Constructora Apex</b><span>Agente IA · interpretó "pago en 3 partes"</span></div></div>
-          <div class="shwm-log-r"><span class="shwm-log-time">Lun 6:04 am</span><span class="shwm-log-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z" fill="currentColor" fill-opacity="0.08"/><path d="M4 7l8 6 8-6"/></svg></span><div class="shwm-log-tx"><b>Segundo seguimiento a Aceros del Norte</b><span>Agente IA · sin respuesta al primero</span></div></div>
-          <div class="shwm-log-r"><span class="shwm-log-time">Lun 8:22 am</span><span class="shwm-log-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z" fill="currentColor" fill-opacity="0.08"/><path d="M4 7l8 6 8-6"/></svg></span><div class="shwm-log-tx"><b>Plan de pago propuesto a El Zarco</b><span>Agente IA · 3 cuotas mensuales</span></div></div>
-        </div>
-        <div class="shwm-foot"><span>Da seguimiento de noche y en fin de semana</span><b>La cartera no se enfría</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Negociación autónoma · El Zarco</span>
-          <span class="shwm-badge shwm-badge-amber">47 días vencido</span>
-        </div>
-        <div class="shwm-chat">
-          <div class="shwm-msg shwm-msg-ai"><span class="shwm-msg-tag">Agente Cord · IA</span>Hola Raúl. Tu saldo de $412,300 venció hace 47 días. Para no cargarte recargos, ¿lo dividimos en 3 pagos mensuales sin intereses?</div>
-          <div class="shwm-msg shwm-msg-cl">Me sirve. ¿De cuánto quedaría cada uno?</div>
-          <div class="shwm-msg shwm-msg-ai"><span class="shwm-msg-tag">Agente Cord · IA</span>Serían 3 pagos de $137,433. El primero el 15 de julio, dentro de las condiciones que autorizó tu proveedor.</div>
-          <div class="shwm-msg shwm-msg-cl">De acuerdo, empiezo el 15.</div>
-        </div>
-        <div class="shwm-plan-card">
-          <div class="shwm-plan-head"><b>Plan de pagos registrado</b><span class="shwm-badge shwm-badge-green">Aceptado</span></div>
-          <div class="shwm-plan-row"><span>Cuota 1 · 15 jul</span><b class="editorial">$137,433.33</b></div>
-          <div class="shwm-plan-row"><span>Cuota 2 · 15 ago</span><b class="editorial">$137,433.33</b></div>
-          <div class="shwm-plan-row"><span>Cuota 3 · 15 sep</span><b class="editorial">$137,433.34</b></div>
+    <div class="shwm-frame shwm-scene" data-shx="cb1">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza/agente</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev"><i></i>{tx('Requiere aprobación', 'Needs approval')}</span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
+            <div class="shwm-kts k3">
+              <div class="shwm-kt is-hot"><span class="lb">{tx('Recuperado por el agente', 'Recovered by the agent')}</span><span class="editorial v ok" data-rec>{cm(606018, 'MXN', 0)}</span><span class="s">{tx('Últimos 30 días · 3 cuenta(s) cobradas tras su correo', 'Last 30 days · 3 account(s) paid after its email')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('Esperan tu aprobación', 'Awaiting your approval')}</span><span class="editorial v warn">2</span><span class="s">{tx('Revisa antes de que salgan', 'Review them before they go out')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('Planes de pago activos', 'Active payment plans')}</span><span class="editorial v">2</span><span class="s">{tx(`${cm(482919, 'MXN', 0)} comprometido en cuotas`, `${cm(482919, 'MXN', 0)} committed in instalments`)}</span></div>
+            </div>
+            <div class="shwm-wgs shwm-cb1-wgs">
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Conversaciones', 'Conversations')}</strong><small>{tx('Un hilo por cuenta. Puedes tomar el control y escribir tú.', 'One thread per account. You can take over and write yourself.')}</small></span></div>
+                <div class="shwm-th is-open">
+                  <div class="sm"><span class="av">I</span><span class="w"><strong>Inmobiliaria Norte</strong><small>COT-0109 · {tx('2 mensaje(s)', '2 message(s)')}</small></span><b class="editorial" data-bal>{cm(0, 'MXN', 0)}</b></div>
+                  <div class="shwm-msgs">
+                    <div class="shwm-msg ag"><span class="mt">{tx('Agente · 3 sep 2026', 'Agent · Sep 3, 2026')}</span><p>{tx('Hola, te escribo de Materiales del Valle para recordarte el saldo pendiente de tu último pedido. Ya venció el plazo acordado, y quería confirmar contigo si hay algo que podamos resolver de nuestro lado.', "Hi, I'm writing from Materiales del Valle about the outstanding balance on your last order. The agreed term has passed, and I wanted to check whether there's anything we can sort out on our end.")}</p></div>
+                    <div class="shwm-msg me"><span class="mt">{tx('Tú · 5 sep 2026', 'You · Sep 5, 2026')}</span><p>{tx('Mario, te dejo el link directo para liquidarlo con tarjeta o SPEI.', 'Mario, here is the direct link to settle it by card or bank transfer.')}</p></div>
+                  </div>
+                </div>
+                <div class="shwm-th"><div class="sm"><span class="av">F</span><span class="w"><strong>Ferretería Central</strong><small>COT-0121 · {tx('3 mensaje(s)', '3 message(s)')}</small></span><b class="editorial">{cm(98235, 'MXN', 0)}</b></div></div>
+              </div>
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Planes negociados', 'Negotiated plans')}</strong><small>{tx('Cuotas acordadas por el agente y su avance real.', 'Instalments agreed by the agent and their actual progress.')}</small></span></div>
+                <div class="shwm-rl">
+                  <div><span class="w"><strong>Ferretería Central</strong><small>COT-0121 · {tx('1 de 2 cuotas pagadas · próxima 20 oct', '1 of 2 instalments paid · next Oct 20')}</small></span><b class="editorial">{cm(98235, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Constructora del Bajío</strong><small>COT-0115 · {tx('1 de 3 cuotas pagadas · próxima 15 oct', '1 of 3 instalments paid · next Oct 15')}</small></span><b class="editorial">{cm(95483, 'MXN', 0)}</b></div>
+                  <div><span class="w"><strong>Aceros del Norte</strong><small>COT-0134 · {tx('0 de 2 cuotas pagadas', '0 of 2 instalments paid')} <em class="shwm-tagp">{tx('Por aprobar', 'Pending approval')}</em></small></span><b class="editorial">{cm(44200, 'MXN', 0)}</b></div>
+                </div>
+                <div class="shwm-wg-h shwm-wg-h2"><span><strong>{tx('En la mira', 'Up next')}</strong><small>{tx('A quién le escribirá en la próxima corrida, y a quién no.', "Who it will email on the next run, and who it won't.")}</small></span><b class="editorial big">3</b></div>
+                <div class="shwm-rl">
+                  <div><span class="w"><strong>Inmobiliaria Norte</strong><small>COT-0109</small></span><span class="shwm-chipm">{tx('Ya saldada', 'Already settled')}</span></div>
+                  <div><span class="w"><strong>Constructora del Bajío</strong><small>COT-0115</small></span><span class="shwm-chipm">{tx('Plan al corriente', 'Plan on track')}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Bitácora del agente · COT-0148</span>
-          <span class="shwm-badge shwm-badge-blue">Cero caja negra</span>
+    <div class="shwm-frame shwm-scene" data-shx="cb2">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza/agente</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev" data-mode data-auto={tx('Automático', 'Automatic')}><i></i><span data-mode-t>{tx('Requiere aprobación', 'Needs approval')}</span></span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
+            <div class="shwm-nudge" data-nudge>
+              <span>{tx('Llevas 8 correos aprobados sin cambiarles una palabra. ¿Dejas que salgan solos?', "You've approved 8 emails without changing a word. Let them go out on their own?")}</span>
+              <span class="b"><span class="y" data-yes>{tx('Pasar a automático', 'Switch to automatic')}</span><span class="n">{tx('Ahora no', 'Not now')}</span></span>
+            </div>
+            <div class="shwm-kts k3">
+              <div class="shwm-kt"><span class="lb">{tx('Recuperado por el agente', 'Recovered by the agent')}</span><span class="editorial v ok">{cm(606018, 'MXN', 0)}</span><span class="s">{tx('Últimos 30 días · 3 cuenta(s) cobradas tras su correo', 'Last 30 days · 3 account(s) paid after its email')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('Esperan tu aprobación', 'Awaiting your approval')}</span><span class="editorial v warn">2</span><span class="s" data-pend data-auto={tx('En automático los correos salen solos', 'On automatic, emails go out on their own')}>{tx('Revisa antes de que salgan', 'Review them before they go out')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('Planes de pago activos', 'Active payment plans')}</span><span class="editorial v">2</span><span class="s">{tx(`${cm(482919, 'MXN', 0)} comprometido en cuotas`, `${cm(482919, 'MXN', 0)} committed in instalments`)}</span></div>
+            </div>
+            <div class="shwm-wg">
+              <div class="shwm-wg-h"><span><strong>{tx('Bandeja de aprobación', 'Approval inbox')}</strong><small data-inbox data-auto={tx('Estás en automático: los correos salen solos. Aquí verás los que fallen.', "You're on automatic: emails go out on their own. Any that fail will show up here.")}>{tx('Nada sale hasta que lo apruebes. Puedes editar el correo antes de enviarlo.', 'Nothing goes out until you approve it. You can edit the email before sending it.')}</small></span></div>
+              <div class="shwm-draft">
+                <div class="hd"><span class="av">G</span><span class="w"><strong>Grupo Ferrex</strong><small>COT-0142 · {tx('vencida hace 25 días', 'overdue by 25 days')}</small></span><b class="editorial">{cm(64200, 'MXN', 0)}</b></div>
+                <div class="ta">{tx('Hola, Tomás. Te escribo de Materiales del Valle para recordarte el saldo pendiente de la cotización COT-0142. Ya venció el plazo acordado, y quería confirmar contigo si hay algo que podamos resolver de nuestro lado. Puedes liquidarlo en línea con el botón de abajo.', "Hi Tomás. I'm writing from Materiales del Valle about the outstanding balance on quote COT-0142. The agreed term has passed, and I wanted to check whether there's anything we can sort out on our end. You can settle it online with the button below.")}</div>
+                <div class="ac"><span class="p">{tx('Aprobar y enviar', 'Approve and send')}</span><span>{tx('Regenerar', 'Regenerate')}</span><span class="g">{tx('Descartar', 'Discard')}</span><span class="g">{tx('No escribirle', "Don't email them")}</span></div>
+              </div>
+              <div class="shwm-draft">
+                <div class="hd"><span class="av">A</span><span class="w"><strong>Aceros del Norte</strong><small>COT-0134 · {tx('vencida hace 9 días', 'overdue by 9 days')}</small></span><b class="editorial">{cm(88400, 'MXN', 0)}</b></div>
+                <div class="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{tx(`Propone 2 cuotas de ${cm(44200, 'MXN', 0)}`, `Proposes 2 instalments of ${cm(44200, 'MXN', 0)}`)}</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-audit shwm-g-head"><span>Acción</span><span>Actor</span><span class="shwm-r">Hora</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>Correo de cobranza enviado</div><span class="shwm-audit-actor">Agente IA</span><span class="shwm-r shwm-mut">Sáb 3:12 am</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>Respuesta del cliente interpretada</div><span class="shwm-audit-actor">Agente IA</span><span class="shwm-r shwm-mut">Dom 11:47 pm</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>Plan de 3 cuotas propuesto</div><span class="shwm-audit-actor">Agente IA</span><span class="shwm-r shwm-mut">Lun 8:22 am</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Acuerdo cerrado con el cliente</div><span class="shwm-audit-actor">Agente IA</span><span class="shwm-r shwm-mut">Lun 9:03 am</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Cuota 1 registrada · $137,433</div><span class="shwm-audit-actor">Agente IA</span><span class="shwm-r shwm-mut">Mar 10:15 am</span></div>
-        </div>
-        <div class="shwm-foot"><span>Cada acción en el audit log inmutable — tú lo lees</span><b>Opt-in por cliente</b></div>
       </div>
     </div>
   )}
 
   {/* ═══════════════════════════════ DIVISAS / FX ═══════════════════════════════ */}
   {slug === 'divisas' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">USD / MXN · cobertura</span>
-          <span class="shwm-badge shwm-badge-green">FX lock 30 días</span>
-        </div>
-        <div class="shwm-fxchart">
-          <div class="shwm-fxchart-plot">
-            <svg viewBox="0 0 320 120" preserveAspectRatio="none" fill="none">
-              <path class="shwm-fx-volatile" d="M0 70 L 30 55 L 55 82 L 82 40 L 110 74 L 138 48 L 160 70" stroke="#cbd5e1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-              <path class="shwm-fx-locked" d="M160 62 L 320 62" stroke="#0a192f" stroke-width="3" stroke-linecap="round"/>
-              <line x1="160" y1="8" x2="160" y2="120" stroke="#0a192f" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
-            </svg>
-            <span class="shwm-fx-lockbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Congelada 30 días</span>
+    <div class="shwm-frame shwm-scene" data-shx="fx0">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/nueva</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <nav class="shwm-as-nav">
+              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
+            </nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
+            <div class="shwm-edg shwm-edg-wide shwm-fx0-edg">
+              <div class="shwm-edg-main">
+                <div class="shwm-steph"><span class="n">1</span><span class="t">{tx('¿A quién le cotizas?', 'Who are you quoting?')}</span></div>
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Harbor Supply Co. — Dana Whitfield</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span class="on">{tx('Contado', 'Cash')}</span><span>Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
+                <div class="shwm-lines shwm-lines-5 shwm-fx0-lines">
+                  <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Porcelanato rectificado 60×60', 'Rectified porcelain tile 60×60')}<small>m²</small></span><span class="shwm-inp">420</span><span class="ls" data-cur>{cm(15.2, 'USD')}</span><span class="shwm-inp deal">14.50</span><span class="editorial am" data-cur>{cm(6090, 'USD')}</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Adhesivo para porcelanato 20 kg', 'Porcelain tile adhesive 20 kg')}<small>{tx('saco', 'bag')}</small></span><span class="shwm-inp">160</span><span class="ls eq" data-cur>{cm(9.75, 'USD')}</span><span class="shwm-inp">9.75</span><span class="editorial am" data-cur>{cm(1560, 'USD')}</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Boquilla sin arena 5 kg', 'Unsanded grout 5 kg')}<small>{tx('bolsa', 'bag')}</small></span><span class="shwm-inp">90</span><span class="ls eq" data-cur>{cm(6.5, 'USD')}</span><span class="shwm-inp">6.50</span><span class="editorial am" data-cur>{cm(585, 'USD')}</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Flete a Laredo, TX', 'Freight to Laredo, TX')}<small>{tx('servicio', 'service')}</small></span><span class="shwm-inp">1</span><span class="ls eq" data-cur>{cm(1765, 'USD')}</span><span class="shwm-inp">1,765.00</span><span class="editorial am" data-cur>{cm(1765, 'USD')}</span></div>
+                </div>
+                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
+              </div>
+              <div class="shwm-sum shwm-fx0-sum">
+                <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+                <span class="c">4 {tx('líneas', 'lines')} · 671 {tx('piezas', 'pieces')}</span>
+                <span class="l"><span>Subtotal</span><span class="editorial" data-cur>{cm(10000, 'USD')}</span></span>
+                <span class="l tax"><span>{'IVA 0%'}</span><span class="editorial" data-cur>{cm(0, 'USD')}</span></span>
+                <span class="dv"></span>
+                <span class="l total"><span>Total</span><span class="editorial" data-cur>{cm(10000, 'USD')}</span></span>
+                <span class="f shwm-fxf"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel" data-sel><span class="cc" data-code>USD</span><span data-name data-mx={tx('MXN — peso mexicano', 'MXN — Mexican Peso')}>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                  <span class="shwm-fxdrop" data-drop>
+                  <span class="it"><span class="cc">MXN</span>{tx('peso mexicano', 'Mexican Peso')}</span>
+                  <span class="it on" data-usd><span class="cc">USD</span>{tx('dólar estadounidense', 'US Dollar')}</span>
+                  <span class="it"><span class="cc">CAD</span>{tx('dólar canadiense', 'Canadian Dollar')}</span>
+                  <span class="it"><span class="cc">EUR</span>euro</span>
+                  <span class="it"><span class="cc">COP</span>{tx('peso colombiano', 'Colombian Peso')}</span>
+                </span></span>
+                <span class="shwm-fxc" data-fxc>
+                  <span class="ex" set:html={tx('Capturas y cobras en <b>USD</b>, pero tu contabilidad va en peso mexicano. Congelamos el tipo de cambio de hoy: la factura lo declara.', 'You quote and charge in <b>USD</b>, but your books are in Mexican Peso. We lock today\'s exchange rate: the invoice declares it.')}></span>
+                  <span class="stp"><span class="s"><em>{tx('Tipo de cambio hoy', "Today's exchange rate")}</em><span class="editorial" data-spot>MXN 18.04</span></span><span class="ar">→</span><span class="s on"><em>{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</em><span class="editorial" data-app>MXN 18.40</span></span></span>
+                  <span class="cu"><em>{tx('¿Qué tan cauto quieres ser?', 'How cautious do you want to be?')}</em><span class="ch"><span>{tx('Poco', 'Slightly')} <small>+1%</small></span><span class="on">{tx('Normal', 'Normal')} <small>+2%</small></span><span>{tx('Cauto', 'Cautious')} <small>+5%</small></span></span></span>
+                  <span class="pv" data-pv set:html={tx(`Tu cliente paga <b>${cm(10000, 'USD')}</b> · en tus libros ≈ <b>${cm(184000)}</b>`, `Your client pays <b>${cm(10000, 'USD')}</b> · in your books ≈ <b>${cm(184000)}</b>`)}></span>
+                </span>
+                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+              </div>
+            </div>
           </div>
-          <div class="shwm-fx-legend"><span><i class="shwm-lg-line gray"></i> El dólar se mueve</span><span><i class="shwm-lg-line navy"></i> Tu tasa no</span></div>
         </div>
-        <div class="shwm-kpis">
-          <div class="shwm-kpi"><span>Spot hoy</span><b class="editorial">$18.42</b></div>
-          <div class="shwm-kpi"><span>Tasa aplicada</span><b class="editorial shwm-g">$18.79</b></div>
-          <div class="shwm-kpi"><span>Congelada hasta</span><b class="editorial">24 ago</b></div>
-        </div>
-        <div class="shwm-foot"><span>El margen que cierras es el margen que cobras</span><b>Protegido</b></div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app shwm-app-narrow">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Tipo de cambio</span>
-          <span class="shwm-badge shwm-badge-green">● En vivo · BCE</span>
-        </div>
-        <div class="shwm-ticker">
-          <div class="shwm-tick-r">
-            <span class="shwm-tick-cur">USD → MXN</span>
-            <b class="editorial shwm-tick-big">$18.42</b>
-            <span class="shwm-tick-live"><i class="shwm-pulse"></i> spot del día</span>
+    <div class="shwm-frame shwm-scene" data-shx="fx1">
+      <div class="shwm-dv shwm-fx1-ph">
+        <div class="shwm-dv-scr shwm-payp">
+          <div class="shwm-dv-ios"><span class="t">10:26</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+          <span class="bk">← {tx('Volver a la cotización', 'Back to the quote')}</span>
+          <div class="cd">
+            <div class="br"><span class="av">M</span><span><strong>Materiales del Valle</strong><em>{tx('Cotización', 'Quote')} COT-0161</em></span></div>
+            <div class="am"><em>{tx('Total a pagar', 'Total due')}</em><span class="editorial">{cm(1250000, 'CLP', 0)}</span><small>{tx('Tarjeta', 'Card')}</small></div>
+            <div class="el">
+              <span class="lb">{tx('Número de tarjeta', 'Card number')}</span>
+              <span class="in"><span>4242 4242 4242 4242</span><span class="vs">VISA</span></span>
+              <span class="row"><span><span class="lb">{tx('Vencimiento', 'Expiration')}</span><span class="in">08 / 29</span></span><span><span class="lb">CVC</span><span class="in">•••</span></span></span>
+              <span class="lb">{tx('País', 'Country')}</span>
+              <span class="in"><span>Chile</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <span class="cta" data-cta>{tx(`Pagar ${cm(1250000, 'CLP', 0)}`, `Pay ${cm(1250000, 'CLP', 0)}`)}</span>
           </div>
-          <div class="shwm-tick-r">
-            <span class="shwm-tick-cur">EUR → MXN</span>
-            <b class="editorial shwm-tick-big">$20.10</b>
-            <span class="shwm-tick-live"><i class="shwm-pulse"></i> spot del día</span>
-          </div>
+          <span class="ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</span>
+          <span class="shwm-dv-home"></span>
         </div>
-        <div class="shwm-plist">
-          <div class="shwm-pl"><span>Fuente</span><b>Banco Central Europeo</b></div>
-          <div class="shwm-pl"><span>Actualizado</span><b>hace 12 s</b></div>
-          <div class="shwm-pl"><span>Respaldo si falla la red</span><span class="shwm-badge shwm-badge-green">Activo</span></div>
+      </div>
+      <div class="shwm-cw shwm-fx1-win">
+        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Lo que llega al cobro en línea', 'What reaches the online charge')}</strong><span class="shwm-cw-draft">{tx('Mismo pedido', 'Same order')}</span></div>
+        <div class="shwm-dec">
+          <div class="r h"><span>{tx('Divisa', 'Currency')}</span><span class="c">{tx('Decimales', 'Decimals')}</span><span class="n">{tx('Cord cobra', 'Cord charges')}</span><span class="n">{tx('Si asumiera 2 decimales', 'If it assumed 2 decimals')}</span></div>
+          <div class="r z" data-z><span class="cu"><b>CLP</b><em>{tx('peso chileno', 'Chilean peso')}</em></span><span class="c editorial">0</span><span class="n editorial ok">{cm(1250000, 'CLP', 0)}</span><span class="n editorial bad"><s>{cm(125000000, 'CLP', 0)}</s><i>×100</i></span></div>
+          <div class="r z" data-z><span class="cu"><b>JPY</b><em>{tx('yen', 'Japanese yen')}</em></span><span class="c editorial">0</span><span class="n editorial ok">{cm(480000, 'JPY', 0)}</span><span class="n editorial bad"><s>{cm(48000000, 'JPY', 0)}</s><i>×100</i></span></div>
+          <div class="r" data-z><span class="cu"><b>USD</b><em>{tx('dólar estadounidense', 'US dollar')}</em></span><span class="c editorial">2</span><span class="n editorial">{cm(12400, 'USD')}</span><span class="n editorial mu">{cm(12400, 'USD')}</span></div>
+          <div class="r" data-z><span class="cu"><b>MXN</b><em>{tx('peso mexicano', 'Mexican peso')}</em></span><span class="c editorial">2</span><span class="n editorial">{cm(196469.2)}</span><span class="n editorial mu">{cm(196469.2)}</span></div>
         </div>
-        <div class="shwm-foot"><span>Nadie tiene que acordarse de revisar el tipo de cambio</span><b>Sin capturar nada</b></div>
+        <div class="shwm-cw-foot"><span>{tx('El yen y el peso chileno no tienen centavos: el cargo sale por lo que dice la cotización.', 'The yen and the Chilean peso have no cents: the charge matches what the quote says.')}</span></div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">COT-0150 · Acme Imports</span>
-          <span class="shwm-badge shwm-badge-blue">Dos monedas · un folio</span>
-        </div>
-        <div class="shwm-dual">
-          <div class="shwm-dual-col">
-            <span class="shwm-dual-cap">Lo que ve tu cliente</span>
-            <div class="shwm-dual-flag"><span class="shwm-flag">US</span> Presentación</div>
-            <b class="editorial shwm-dual-amt">US$10,620.50</b>
-            <em>revisa y aprueba en su moneda</em>
+    <div class="shwm-frame shwm-scene" data-shx="fx2">
+      {[
+        { k: 'pe', t: '09:48', org: 'Ferretería Rímac S.A.C.', av: 'F', col: '#9a3412', c: 'PEN', name: tx('sol peruano', 'Peruvian Sol'), tax: 'IGV 0%', lines: tx('2 líneas · 86 piezas', '2 lines · 86 pieces'), usd: 8650, spot: 3.74, app: 3.81, books: 32998.02 },
+        { k: 'co', t: '10:15', org: 'Andina de Recubrimientos S.A.S.', av: 'A', col: '#0f766e', c: 'COP', name: tx('peso colombiano', 'Colombian Peso'), tax: 'IVA 0%', lines: tx('3 líneas · 1,240 piezas', '3 lines · 1,240 pieces'), usd: 12400, spot: 3912.4, app: 3990.65, books: 49484035.2 },
+        { k: 'ar', t: '11:02', org: 'Aberturas del Plata S.R.L.', av: 'A', col: '#1e3a8a', c: 'ARS', name: tx('peso argentino', 'Argentine Peso'), tax: 'IVA 0%', lines: tx('4 líneas · 310 piezas', '4 lines · 310 pieces'), usd: 5980, spot: 1412.75, app: 1441.01, books: 8617209.9 },
+      ].map((p) => (
+        <div class={`shwm-dv shwm-fx2-ph shwm-fx2-${p.k}`}>
+          <div class="shwm-dv-scr shwm-med">
+            <div class="shwm-dv-ios"><span class="t">{p.t}</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+            <div class="shwm-med-top"><span class="av" style={`background:${p.col}`}>{p.av}</span><span class="tt"><em>{p.org}</em><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
+            <div class="shwm-sum shwm-med-sum">
+              <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+              <span class="c">{p.lines}</span>
+              <span class="l"><span>Subtotal</span><span class="editorial">{cm(p.usd, 'USD')}</span></span>
+              <span class="l tax"><span>{p.tax}</span><span class="editorial">{cm(0, 'USD')}</span></span>
+              <span class="dv"></span>
+              <span class="l total"><span>Total</span><span class="editorial">{cm(p.usd, 'USD')}</span></span>
+              <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel"><span class="cc">USD</span><span>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+              <span class="shwm-fxc">
+                <span class="ex" set:html={tx(`Capturas y cobras en <b>USD</b>, pero tu contabilidad va en ${p.name}.`, `You quote and charge in <b>USD</b>, but your books are in ${p.name}.`)}></span>
+                <span class="stp"><span class="s"><em>{tx('Tipo de cambio hoy', "Today's exchange rate")}</em><span class="editorial" data-rate={p.spot} data-c={p.c}>{cm(p.spot, p.c)}</span></span><span class="ar">→</span><span class="s on"><em>{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</em><span class="editorial">{cm(p.app, p.c)}</span></span></span>
+                <span class="pv" set:html={tx(`Tu cliente paga <b>${cm(p.usd, 'USD')}</b> · en tus libros ≈ <b>${cm(p.books, p.c)}</b>`, `Your client pays <b>${cm(p.usd, 'USD')}</b> · in your books ≈ <b>${cm(p.books, p.c)}</b>`)}></span>
+              </span>
+              <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+            </div>
+            <span class="shwm-dv-home"></span>
           </div>
-          <div class="shwm-dual-eq">=</div>
-          <div class="shwm-dual-col shwm-dual-fiscal">
-            <span class="shwm-dual-cap">Lo que factura contabilidad</span>
-            <div class="shwm-dual-flag"><span class="shwm-flag mx">MX</span> Fiscal</div>
-            <b class="editorial shwm-dual-amt shwm-g">$196,469.20</b>
-            <em>CFDI 4.0 en pesos</em>
-          </div>
         </div>
-        <div class="shwm-dual-rate">Mismo folio · tasa guardada <b class="editorial">1 USD = $18.50</b> · vigente 30 días</div>
-        <div class="shwm-foot"><span>Tu cliente ve dólares. El SAT ve pesos. Nadie se confunde</span><b>COT-0150</b></div>
-      </div>
+      ))}
     </div>
   )}
 
@@ -1002,7 +1215,7 @@ const NAV = [
 
   {slug === 'pagos' && index === 2 && (
     <div class="shwm-frame shwm-scene" data-shx="pg2">
-      <div class="shwm-brw shwm-pg2-brw">
+      <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/COT-0157</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
           <aside class="shwm-as-side">
@@ -1108,88 +1321,160 @@ const NAV = [
 
   {/* ═══════════════════════════════ FINANZAS ═══════════════════════════════ */}
   {slug === 'finanzas' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">DSO real vs. contrato</span>
-          <span class="shwm-badge shwm-badge-green">Predicción IA</span>
+    <div class="shwm-frame shwm-scene" data-shx="fn0">
+      <div class="shwm-brw shwm-fn-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=cobranza</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Cobranza y cartera', 'Collections and receivables')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></span></div>
+            <div class="shwm-kts">
+              <div class="shwm-kt"><span class="lb">{tx('POR COBRAR', 'RECEIVABLES')}</span><span class="editorial v">{cm(1284600, 'MXN', 0)}</span><span class="s">{tx('9 documentos', '9 documents')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('VENCIDO', 'OVERDUE')}</span><span class="editorial v danger">{cm(412300, 'MXN', 0)}</span><span class="s">{tx('2 cuentas', '2 accounts')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('COBRANZA ESPERADA · 30D', 'EXPECTED COLLECTIONS · 30D')}</span><span class="editorial v">{cm(518900, 'MXN', 0)}</span><span class="s">{tx('cartera cierta, timing estimado', 'certain receivables, estimated timing')}</span></div>
+              <div class="shwm-kt is-hot"><span class="lb">{tx('RETRASO MEDIO', 'AVERAGE DELAY')}</span><span class="editorial v">11<em>d</em></span><span class="s">{tx('contra el plazo pactado', 'against agreed terms')}</span></div>
+            </div>
+            <div class="shwm-wgs">
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('DSO real vs. pactado', 'Actual vs. agreed DSO')}</strong><small>{tx('Cuánto se desvía el pago real del plazo acordado.', 'How actual payment deviates from agreed terms.')}</small></span></div>
+                <div class="shwm-vb" data-vb>
+                  {[[tx('A tiempo', 'On time'), 11], [tx('1–7 días tarde', '1–7 days late'), 7], [tx('8–30 días tarde', '8–30 days late'), 9], [tx('+30 días tarde', '30+ days late'), 3]].map((b) => (
+                    <span class="c"><b class="editorial">{b[1]}</b><i style={`height:${(Number(b[1]) / 11) * 100}%`}></i><em>{b[0]}</em></span>
+                  ))}
+                </div>
+              </div>
+              <div class="shwm-wg">
+                <div class="shwm-wg-h"><span><strong>{tx('Exposición por cliente', 'Client exposure')}</strong><small>{tx('Saldo abierto frente al límite configurado.', 'Open balance against configured limit.')}</small></span></div>
+                <div class="shwm-hb">
+                  {[['Constructora Apex', 412300], ['Distribuidora El Zarco', 196469], ['Urbanizadora Sierra', 286450], ['Grupo Ferrex', 64200], ['Aceros del Norte', 88400]].sort((x, y) => Number(y[1]) - Number(x[1])).map((r) => (
+                    <div><span class="n">{r[0]}</span><span class="t"><i style={`width:${(Number(r[1]) / 412300) * 100}%`}></i></span><span class="editorial v">{cm(Number(r[1]), 'MXN', 0)}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-dso">
-          <div class="shwm-dso-r">
-            <div class="shwm-dso-who"><span class="shwm-avat a1">EZ</span><b>Distribuidora El Zarco</b></div>
-            <div class="shwm-dso-cmp"><span class="shwm-dso-strike">Contrato dice Net 30</span><span class="shwm-dso-arrow">→</span><b class="shwm-dso-real">Paga en 42 días</b></div>
-            <span class="shwm-badge shwm-badge-amber">DSO 42</span>
-          </div>
-          <div class="shwm-dso-r">
-            <div class="shwm-dso-who"><span class="shwm-avat a2">CA</span><b>Constructora Apex</b></div>
-            <div class="shwm-dso-cmp"><span class="shwm-dso-strike">Contrato dice Net 60</span><span class="shwm-dso-arrow">→</span><b class="shwm-dso-real">Paga en 58 días</b></div>
-            <span class="shwm-badge shwm-badge-green">DSO 58</span>
-          </div>
-          <div class="shwm-dso-r">
-            <div class="shwm-dso-who"><span class="shwm-avat a4">GF</span><b>Grupo Ferrex</b></div>
-            <div class="shwm-dso-cmp"><span class="shwm-dso-strike">Contrato dice Contado</span><span class="shwm-dso-arrow">→</span><b class="shwm-dso-real">Paga en 3 días</b></div>
-            <span class="shwm-badge shwm-badge-green">DSO 3</span>
-          </div>
+      </div>
+      <div class="shwm-rul" data-rul>
+        <div class="hd"><span class="av">D</span><span class="w"><strong>Distribuidora El Zarco</strong><small>COT-0148 · {cm(196469.2)}</small></span><span class="shwm-est due">+14 d</span></div>
+        <div class="tk">
+          <span class="ln"><i class="late" data-late></i></span>
+          <span class="pt p0"><i></i><em>{tx('Día 0', 'Day 0')}</em><b>{tx('Aprobada', 'Approved')}</b><b>{tx('22 sep', 'Sep 22')}</b></span>
+          <span class="pt p30"><i></i><em>{tx('Día 30', 'Day 30')}</em><b class="x">{tx('Vence', 'Due')}</b><b class="x">{tx('22 oct', 'Oct 22')}</b></span>
+          <span class="pt p44" data-p44><i></i><em>{tx('Día 44', 'Day 44')}</em><b>{tx('Proyección', 'Forecast')}</b><b>{tx('5 nov', 'Nov 5')}</b></span>
         </div>
-        <div class="shwm-foot"><span>Cord no asume que Net 30 se paga al día 30 — usa la verdad</span><b class="editorial">Proyección $2.4M</b></div>
+        <p class="ft"><strong>{tx('Net 30 · paga en promedio el día 44', 'Net 30 · pays on day 44 on average')}</strong><span>{tx('Su cobro cae en la semana del 30 oct – 5 nov, no en la del vencimiento.', 'Its payment lands in the week of Oct 30 – Nov 5, not the due-date week.')}</span></p>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Concentración de riesgo</span>
-          <span class="shwm-badge shwm-badge-amber">● Alerta</span>
-        </div>
-        <div class="shwm-conc">
-          <div class="shwm-donut">
-            <div class="shwm-donut-ring" style="--pct:40;"></div>
-            <div class="shwm-donut-hole"><b class="editorial">40%</b><span>en 1 cliente</span></div>
+    <div class="shwm-frame shwm-scene" data-shx="fn1">
+      <div class="shwm-brw shwm-fn-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <nav class="shwm-as-nav">
+              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
+            </nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+            <div class="shwm-wg shwm-hlth">
+              <div class="shwm-wg-h"><span><strong>{tx('Salud del pipeline', 'Pipeline health')}</strong></span></div>
+              <div class="shwm-hg">
+                {[
+                  { v: '27d', f: 27 / 90, c: '#10b981', l: tx('DÍAS PROMEDIO DE COBRO (DSO)', 'AVG. DAYS TO COLLECT (DSO)'), s: tx('Saludable', 'Healthy'), d: 'ok' },
+                  { v: '52%', f: 0.52, c: '#f59e0b', l: tx('CONCENTRACIÓN DE RIESGO', 'RISK CONCENTRATION'), s: tx('Moderada', 'Moderate'), d: 'warn', hot: 1 },
+                  { v: '8%', f: 8 / 50, c: '#10b981', l: tx('MARGEN CEDIDO', 'MARGIN GIVEN UP'), s: tx('de descuento sobre precio de lista', 'discount off list price') },
+                  { v: '46%', f: 0.46, c: '#0a192f', l: tx('INGRESO ESPERADO (PONDERADO)', 'EXPECTED REVENUE (WEIGHTED)'), s: tx(`de ${cm(3420000, 'MXN', 0)} en pipeline abierto`, `of ${cm(3420000, 'MXN', 0)} in open pipeline`) },
+                ].map((g) => (
+                  <span class={`cl${g.hot ? ' hot' : ''}`}>
+                    <span class="gg"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="28" fill="none" stroke="rgba(10,25,47,0.05)" stroke-width="9"/><circle cx="36" cy="36" r="28" fill="none" stroke={g.c} stroke-width="9" stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset={(175.93 * (1 - g.f)).toFixed(2)} transform="rotate(-90 36 36)" data-ring={(175.93 * (1 - g.f)).toFixed(2)}/></svg><b class="editorial">{g.v}</b></span>
+                    <em>{g.l}</em>
+                    <small>{g.d && <i class={g.d}></i>}{g.s}</small>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div class="shwm-wg">
+              <div class="shwm-wg-h"><span><strong>{tx('Flujo esperado · 5 semanas', 'Expected cash flow · 5 weeks')}</strong></span></div>
+              <div class="shwm-vb shwm-vb5">
+                {[[tx('25 sep', 'Sep 25'), 286400], [tx('2 oct', 'Oct 2'), 166800], [tx('9 oct', 'Oct 9'), 237400], [tx('16 oct', 'Oct 16'), 157600], [tx('23 oct', 'Oct 23'), 252400]].map((b) => (
+                  <span class="c"><b class="editorial">{cm(Number(b[1]), 'MXN', 0)}</b><i style={`height:${(Number(b[1]) / 286400) * 100}%`}></i><em>{b[0]}</em></span>
+                ))}
+              </div>
+            </div>
           </div>
-          <div class="shwm-conc-legend">
-            <div class="shwm-conc-r shwm-conc-hot"><i class="shwm-lg-sw navy"></i><span>Constructora Apex</span><b class="editorial">40%</b></div>
-            <div class="shwm-conc-r"><i class="shwm-lg-sw g1"></i><span>Distribuidora El Zarco</span><b class="editorial">24%</b></div>
-            <div class="shwm-conc-r"><i class="shwm-lg-sw g2"></i><span>Aceros del Norte</span><b class="editorial">18%</b></div>
-            <div class="shwm-conc-r"><i class="shwm-lg-sw g3"></i><span>Otros 9 clientes</span><b class="editorial">18%</b></div>
+        </div>
+      </div>
+      <div class="shwm-cw shwm-fn1-win" data-conc>
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><span>{tx('Informes', 'Reports')}</span><span class="sep">/</span><strong>{tx('Flujo de caja · 90 días', 'Cash flow · 90 days')}</strong></span></div>
+        <div class="shwm-fn1-b">
+          <div class="shwm-wg-h"><span><strong>{tx('Riesgo de concentración · 30 días', 'Concentration risk · 30 days')}</strong><small>{tx('Participación del cliente principal en el flujo esperado inmediato.', 'Largest client share of near-term expected inflow.')}</small></span><b class="editorial big">59%</b></div>
+          <div class="shwm-hb" data-hb>
+            {[['Constructora Apex', 412300], ['Distribuidora El Zarco', 137528], ['Grupo Ferrex', 64200], ['Aceros del Norte', 48720], ['Urbanizadora Sierra', 31900]].map((r) => (
+              <div><span class="n">{r[0]}</span><span class="t"><i style={`width:${Math.max(3, (Number(r[1]) / 412300) * 100).toFixed(1)}%`}></i></span><span class="editorial v">{cm(Number(r[1]), 'MXN', 0)}</span></div>
+            ))}
           </div>
         </div>
-        <div class="shwm-alert-strip">
-          <span class="shwm-alert-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z" fill="currentColor" fill-opacity="0.12"/><path d="M12 10v4M12 17.5v.01" stroke-linecap="round"/></svg></span>
-          <span>Si Apex se atrasa, el 40% de tu cartera se atrasa contigo. <b>Limita su crédito hoy.</b></span>
-        </div>
-        <div class="shwm-foot"><span>El riesgo que no ves a tiempo</span><b>Actúa mientras hay margen</b></div>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Panel del CFO · resumen ejecutivo</span>
-          <span class="shwm-badge shwm-badge-green">● En vivo</span>
-        </div>
-        <div class="shwm-kpis shwm-kpis-4">
-          <div class="shwm-kpi"><span>Efectivo hoy</span><b class="editorial">$840,200</b></div>
-          <div class="shwm-kpi"><span>Por cobrar 30 d</span><b class="editorial shwm-g">$1,142,000</b></div>
-          <div class="shwm-kpi"><span>DSO global</span><b class="editorial">34 d</b></div>
-          <div class="shwm-kpi"><span>Riesgo impago</span><b class="editorial shwm-amber-t">1.2%</b></div>
-        </div>
-        <div class="shwm-exec-chart">
-          <span class="shwm-exec-cap">Ingreso proyectado · próximas 5 semanas</span>
-          <div class="shwm-bars">
-            <div class="shwm-bar-col"><i style="height:44%"></i><span>S1</span></div>
-            <div class="shwm-bar-col"><i style="height:62%"></i><span>S2</span></div>
-            <div class="shwm-bar-col"><i style="height:54%"></i><span>S3</span></div>
-            <div class="shwm-bar-col"><i class="hot" style="height:88%"></i><span>S4</span></div>
-            <div class="shwm-bar-col"><i style="height:70%"></i><span>S5</span></div>
+    <div class="shwm-frame shwm-scene" data-shx="fn2">
+      <div class="shwm-brw shwm-fn-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=flujo</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Flujo de caja · 90 días', 'Cash flow · 90 days')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></span></div>
+            <div class="shwm-kts">
+              <div class="shwm-kt"><span class="lb">{tx('PRÓXIMOS 90 DÍAS', 'NEXT 90 DAYS')}</span><span class="editorial v">{cm(2323000, 'MXN', 0)}</span><span class="s">{tx('cartera + pipeline + igualas', 'receivables + pipeline + retainers')}</span></div>
+              <div class="shwm-kt is-hot" data-out><span class="lb">{tx('FUERA DEL HORIZONTE', 'BEYOND HORIZON')}</span><span class="editorial v">{cm(486500, 'MXN', 0)}</span><span class="s">{tx('4 movimientos desde el día 91', '4 movements from day 91')}</span></div>
+              <div class="shwm-kt"><span class="lb">MRR</span><span class="editorial v">{cm(32000, 'MXN', 0)}</span><span class="s">{tx('3 igualas', '3 retainers')}</span></div>
+              <div class="shwm-kt"><span class="lb">{tx('CARTERA CIERTA', 'CERTAIN RECEIVABLES')}</span><span class="editorial v">{cm(1284600, 'MXN', 0)}</span><span class="s">{tx('sin ponderar por cierre', 'not weighted by close rate')}</span></div>
+            </div>
+            <div class="shwm-wg">
+              <div class="shwm-wg-h"><span><strong>{tx('Flujo semanal · 90 días', 'Weekly flow · 90 days')}</strong><small>{tx('Tres fuentes separadas para no confundir certeza con probabilidad.', 'Three separate sources to distinguish certainty from probability.')}</small></span><span class="shwm-flg"><span class="ca">{tx('Cartera', 'Receivables')}</span><span class="pi">Pipeline</span><span class="mr">MRR</span></span></div>
+              <div class="shwm-fw" data-fw>
+                {[
+                  [tx('25 sep – 1 oct', 'Sep 25 – Oct 1'), 212400, 42000, 32000],
+                  [tx('2 – 8 oct', 'Oct 2 – 8'), 98300, 68500, 0],
+                  [tx('9 – 15 oct', 'Oct 9 – 15'), 186200, 51200, 0],
+                  [tx('16 – 22 oct', 'Oct 16 – 22'), 64200, 93400, 0],
+                  [tx('23 – 29 oct', 'Oct 23 – 29'), 142800, 77600, 32000],
+                  [tx('30 oct – 5 nov', 'Oct 30 – Nov 5'), 196500, 58200, 0],
+                  [tx('6 – 12 nov', 'Nov 6 – 12'), 88400, 104300, 0],
+                  [tx('13 – 19 nov', 'Nov 13 – 19'), 112300, 86100, 0],
+                  [tx('20 – 26 nov', 'Nov 20 – 26'), 48700, 71800, 32000],
+                  [tx('27 nov – 3 dic', 'Nov 27 – Dec 3'), 0, 92600, 0],
+                  [tx('4 – 10 dic', 'Dec 4 – 10'), 64200, 64500, 0],
+                  [tx('11 – 17 dic', 'Dec 11 – 17'), 41860, 58300, 0],
+                  [tx('18 – 24 dic', 'Dec 18 – 24'), 28740, 41900, 32000],
+                ].map((w) => {
+                  const t = Number(w[1]) + Number(w[2]) + Number(w[3]);
+                  return <span class="w"><span class="l">{w[0]}</span><span class="t"><i class="ca" style={`width:${(Number(w[1]) / 286400) * 100}%`}></i><i class="pi" style={`width:${(Number(w[2]) / 286400) * 100}%`}></i><i class="mr" style={`width:${(Number(w[3]) / 286400) * 100}%`}></i></span><b class="editorial">{cm(t, 'MXN', 0)}</b></span>;
+                })}
+              </div>
+            </div>
           </div>
         </div>
-        <div class="shwm-exec-foot">
-          <span>Siempre actualizado · cero conciliación manual</span>
-          <span class="shwm-exec-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> Exportar</span>
+      </div>
+      <div class="shwm-cw shwm-fn2-win" data-sum>
+        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Lo que entró a la proyección', 'What went into the forecast')}</strong></div>
+        <div class="shwm-fsum">
+          <span class="r"><span>{tx('13 semanas · próximos 90 días', '13 weeks · next 90 days')}</span><b class="editorial">{cm(2323000, 'MXN', 0)}</b></span>
+          <span class="r hot"><span>{tx('Fuera del horizonte · 4 movimientos', 'Beyond horizon · 4 movements')}</span><b class="editorial">+ {cm(486500, 'MXN', 0)}</b></span>
+          <span class="r tot"><span>Total</span><b class="editorial" data-total>{cm(2809500, 'MXN', 0)}</b></span>
         </div>
       </div>
     </div>
@@ -1579,7 +1864,6 @@ const NAV = [
   .shwm-mut { color: #94a3b8; font-weight: 400; }
   .shwm-g { grid-template-columns: 2fr 0.7fr 1fr 1.1fr; }
 
-  .shwm-g-cli { grid-template-columns: 2fr 1.4fr 1fr; }
   .shwm-g-audit { grid-template-columns: 2.2fr 1.4fr 0.9fr; }
   .shwm-g-line { grid-template-columns: 2.3fr 1fr 1.1fr; }
 
@@ -1612,19 +1896,11 @@ const NAV = [
   .shwm-g { }
 
   /* ── Tag mono (SKU / RFC) ── */
-  .shwm-tag-mono { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.74rem; color: #64748b; }
 
   /* ── KPIs strip ── */
-  .shwm-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 16px 16px 8px; }
-  .shwm-kpis-4 { grid-template-columns: repeat(4,1fr); }
-  .shwm-kpis-3 { grid-template-columns: repeat(3,1fr); padding: 4px 0 12px; }
-  .shwm-kpi { background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; padding: 13px 14px; }
-  .shwm-kpi span { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; }
-  .shwm-kpi b { display: block; font-size: 1.28rem; color: #0f172a; margin-top: 5px; letter-spacing: -0.02em; }
   .shwm-g { color: #475569; }
-  .shwm-kpi b.shwm-g, b.shwm-g { color: #059669; }
+  b.shwm-g { color: #059669; }
   .shwm-amber-t { color: #d97706; }
-  .shwm-kpi b.shwm-amber-t { color: #d97706; }
 
   .shwm-center-label { font-size: 0.82rem; font-weight: 600; color: #64748b; }
 
@@ -1671,51 +1947,7 @@ const NAV = [
   .shwm-connected b { display: block; font-size: 0.86rem; color: #0f172a; font-weight: 600; }
   .shwm-connected em { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
 
-  /* ══════════════════ CLIENTES & CRÉDITO ══════════════════ */
-  .shwm-credit { display: flex; flex-direction: column; padding: 10px 16px; }
-  .shwm-credit-r { display: grid; grid-template-columns: 1.5fr 1.3fr 1fr; align-items: center; gap: 16px; padding: 13px 8px; border-bottom: 1px solid rgba(10,25,47,0.05); border-radius: 8px; }
-  .shwm-credit-r:last-child { border-bottom: none; }
-  .shwm-credit-hot { background: rgba(245,158,11,0.045); }
-  .shwm-credit-who { display: flex; align-items: center; gap: 11px; }
-  .shwm-credit-who b { display: block; font-size: 0.84rem; color: #0f172a; font-weight: 600; }
-  .shwm-credit-who em { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 1px; }
-  .shwm-gauge { height: 10px; border-radius: 100px; background: #eef2f7; overflow: hidden; }
-  .shwm-gauge > i { display: block; height: 100%; border-radius: 100px; background: #2563eb; }
-  .shwm-gauge > i.warn { background: linear-gradient(90deg,#f59e0b,#dc2626); }
-  .shwm-gauge-off { opacity: 0.5; }
-  .shwm-credit-r > b { text-align: right; font-weight: 600; color: #0f172a; }
-  .shwm-credit-r > .shwm-badge { justify-self: end; }
-
-  .shwm-cli-who { display: flex; align-items: center; gap: 11px; }
-  .shwm-cli-who .shwm-avat { width: 30px; height: 30px; font-size: 0.66rem; }
-
-  .shwm-profile { padding: 18px 18px 6px; }
-  .shwm-profile-head { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid rgba(10,25,47,0.06); margin-bottom: 14px; }
-  .shwm-profile-head b { display: block; font-size: 1.02rem; color: #0f172a; font-weight: 700; }
-  .shwm-profile-head em { display: block; font-style: normal; font-size: 0.74rem; color: #94a3b8; margin-top: 3px; }
   .shwm-plist { display: flex; flex-direction: column; }
-
-  /* ══════════════════ COBRANZA IA ══════════════════ */
-  .shwm-log { display: flex; flex-direction: column; padding: 8px 18px; }
-  .shwm-log-r { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(10,25,47,0.05); }
-  .shwm-log-r:last-child { border-bottom: none; }
-  .shwm-log-time { flex-shrink: 0; width: 92px; font-size: 0.72rem; font-weight: 700; color: #b45309; font-family: var(--font-mono, monospace); }
-  .shwm-log-ico { width: 32px; height: 32px; border-radius: 9px; background: rgba(10,25,47,0.04); color: #64748b; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .shwm-log-ico svg { width: 16px; height: 16px; }
-  .shwm-log-tx { flex: 1; }
-  .shwm-log-tx b { display: block; font-size: 0.84rem; color: #0f172a; font-weight: 600; }
-  .shwm-log-tx span { display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
-
-  .shwm-chat { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 10px; }
-  .shwm-msg { max-width: 76%; font-size: 0.84rem; line-height: 1.45; padding: 11px 14px; box-shadow: 0 4px 14px -8px rgba(10,25,47,0.14); }
-  .shwm-msg-ai { align-self: flex-start; background: #f4f6f9; color: #334155; border: 1px solid rgba(10,25,47,0.05); border-radius: 15px 15px 15px 4px; }
-  .shwm-msg-cl { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 15px 15px 4px 15px; }
-  .shwm-msg-tag { display: block; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #2563eb; margin-bottom: 4px; }
-  .shwm-plan-card { margin: 8px 20px 0; padding: 14px 16px; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; }
-  .shwm-plan-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid rgba(16,185,129,0.14); }
-  .shwm-plan-head b { font-size: 0.84rem; color: #0f172a; font-weight: 700; }
-  .shwm-plan-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 0.8rem; color: #475569; }
-  .shwm-plan-row b { color: #0f172a; font-weight: 600; }
 
   .shwm-audit-what { display: flex; align-items: center; gap: 9px; color: #0f172a; font-weight: 500; }
   .shwm-ad-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -1724,37 +1956,8 @@ const NAV = [
   .shwm-ad-dot.green { background: #10b981; }
   .shwm-audit-actor { font-size: 0.78rem; color: #64748b; }
 
-  /* ══════════════════ DIVISAS / FX ══════════════════ */
-  .shwm-fxchart { padding: 16px 20px 4px; }
-  .shwm-fxchart-plot { position: relative; height: 130px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; overflow: hidden; }
-  .shwm-fxchart-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .shwm-fx-lockbadge { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 6px; font-size: 0.64rem; font-weight: 700; color: #0a192f; background: rgba(255,255,255,0.9); border: 1px solid rgba(10,25,47,0.1); border-radius: 100px; padding: 4px 10px; }
-  .shwm-fx-lockbadge svg { width: 13px; height: 13px; }
-  .shwm-fx-legend { display: flex; gap: 20px; padding: 10px 2px 0; }
-  .shwm-fx-legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; color: #64748b; }
-  .shwm-lg-line { width: 16px; height: 3px; border-radius: 2px; }
-  .shwm-lg-line.gray { background: #cbd5e1; }
-  .shwm-lg-line.navy { background: #0a192f; }
-
-  .shwm-ticker { padding: 18px 20px 8px; display: flex; flex-direction: column; gap: 12px; }
-  .shwm-tick-r { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; padding: 14px 16px; }
-  .shwm-tick-cur { font-size: 0.78rem; font-weight: 700; color: #475569; }
-  .shwm-tick-big { font-size: 1.5rem; color: #0f172a; letter-spacing: -0.03em; text-align: center; }
-  .shwm-tick-live { display: inline-flex; align-items: center; gap: 7px; justify-self: end; font-size: 0.7rem; color: #94a3b8; }
-  .shwm-pulse { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
-
-  .shwm-dual { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0; padding: 20px 20px 12px; }
-  .shwm-dual-col { background: #f8fafc; border: 1px solid rgba(10,25,47,0.06); border-radius: 14px; padding: 18px 18px; }
-  .shwm-dual-fiscal { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.18); }
-  .shwm-dual-cap { display: block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; }
-  .shwm-dual-flag { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.74rem; font-weight: 600; color: #64748b; }
-  .shwm-dual-amt { display: block; font-size: 1.7rem; color: #0f172a; letter-spacing: -0.03em; margin-top: 8px; }
-  .shwm-dual-col em { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 6px; }
-  .shwm-dual-eq { font-size: 1.4rem; font-weight: 300; color: #cbd5e1; padding: 0 16px; }
   .shwm-flag { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 17px; padding: 0 4px; border-radius: 3px; background: #1d4ed8; color: #fff; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.3px; }
   .shwm-flag.mx { background: #047857; }
-  .shwm-dual-rate { margin: 6px 20px 0; padding: 11px 14px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 10px; font-size: 0.76rem; color: #64748b; text-align: center; }
-  .shwm-dual-rate b { color: #0f172a; font-weight: 600; }
 
   /* ══════════════════ INTERNACIONAL ══════════════════ */
   .shwm-border { display: grid; grid-template-columns: 1fr 1.1fr 1fr; align-items: center; gap: 0; padding: 24px 20px; }
@@ -1796,47 +1999,6 @@ const NAV = [
   .shwm-uuid { color: #2563eb !important; font-size: 0.76rem; }
   .shwm-stamp-cta { display: flex; gap: 10px; margin-top: 16px; }
   .shwm-stamp-btn { flex: 1; text-align: center; font-size: 0.8rem; font-weight: 600; color: #475569; padding: 11px; border-radius: 10px; border: 1px solid rgba(10,25,47,0.12); }
-
-  /* ══════════════════ FINANZAS ══════════════════ */
-  .shwm-dso { display: flex; flex-direction: column; padding: 10px 16px; }
-  .shwm-dso-r { display: grid; grid-template-columns: 1.4fr 2fr 0.7fr; align-items: center; gap: 16px; padding: 15px 8px; border-bottom: 1px solid rgba(10,25,47,0.05); }
-  .shwm-dso-r:last-child { border-bottom: none; }
-  .shwm-dso-who { display: flex; align-items: center; gap: 11px; }
-  .shwm-dso-who b { font-size: 0.84rem; color: #0f172a; font-weight: 600; }
-  .shwm-dso-cmp { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; }
-  .shwm-dso-strike { color: #b6bcc6; text-decoration: line-through; }
-  .shwm-dso-arrow { color: #cbd5e1; font-weight: 700; }
-  .shwm-dso-real { color: #0f172a; font-weight: 700; }
-  .shwm-dso-r > .shwm-badge { justify-self: end; }
-
-  .shwm-conc { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 24px; padding: 18px 22px 10px; }
-  .shwm-donut { position: relative; width: 130px; height: 130px; }
-  .shwm-donut-ring { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#0a192f 0% 40%, #64748b 40% 64%, #94a3b8 64% 82%, #cbd5e1 82% 100%); }
-  .shwm-donut-hole { position: absolute; inset: 22px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
-  .shwm-donut-hole b { font-size: 1.5rem; color: #0f172a; letter-spacing: -0.03em; }
-  .shwm-donut-hole span { font-size: 0.62rem; color: #94a3b8; margin-top: 2px; }
-  .shwm-conc-legend { display: flex; flex-direction: column; gap: 4px; }
-  .shwm-conc-r { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 8px 0; font-size: 0.82rem; color: #475569; border-bottom: 1px solid rgba(10,25,47,0.04); }
-  .shwm-conc-r:last-child { border-bottom: none; }
-  .shwm-conc-r b { color: #0f172a; font-weight: 600; }
-  .shwm-conc-hot span { color: #0f172a; font-weight: 600; }
-  .shwm-lg-sw { width: 12px; height: 12px; border-radius: 4px; }
-  .shwm-lg-sw.navy { background: #0a192f; } .shwm-lg-sw.g1 { background: #64748b; } .shwm-lg-sw.g2 { background: #94a3b8; } .shwm-lg-sw.g3 { background: #cbd5e1; }
-  .shwm-alert-strip { display: flex; align-items: center; gap: 12px; margin: 6px 20px 6px; padding: 13px 15px; background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; font-size: 0.8rem; color: #78530a; }
-  .shwm-alert-strip b { color: #92400e; font-weight: 700; }
-  .shwm-alert-ico { width: 30px; height: 30px; color: #d97706; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-  .shwm-alert-ico svg { width: 22px; height: 22px; }
-
-  .shwm-exec-chart { margin: 8px 18px 4px; padding: 14px 16px 10px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 12px; }
-  .shwm-exec-cap { display: block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #a3adba; margin-bottom: 12px; }
-  .shwm-bars { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; align-items: end; height: 110px; }
-  .shwm-bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 8px; }
-  .shwm-bar-col > i { display: block; width: 100%; max-width: 42px; border-radius: 6px 6px 3px 3px; background: #e2e8f0; }
-  .shwm-bar-col > i.hot { background: linear-gradient(180deg,#1e3a5f,#0a192f); }
-  .shwm-bar-col > span { font-size: 0.62rem; font-weight: 600; color: #a3adba; }
-  .shwm-exec-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 20px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.8rem; color: #94a3b8; }
-  .shwm-exec-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #fff; background: #0a192f; padding: 9px 16px; border-radius: 100px; }
-  .shwm-exec-btn svg { width: 15px; height: 15px; }
 
   /* ══════════════════ EQUIPO ══════════════════ */
   .shwm-matrix { padding: 16px 18px 8px; }
@@ -1934,28 +2096,6 @@ const NAV = [
     .shwm-sign { padding: 22px 18px; border-radius: 16px; }
     .shwm-sign-seal { width: 52px; height: 52px; margin-bottom: 12px; }
     .shwm-sign-hash { margin: 16px 0 12px; padding: 12px 13px; }
-
-    /* KPIs: tres o cuatro columnas no caben en 350px */
-    .shwm-kpis { grid-template-columns: repeat(2, 1fr); gap: 9px; padding: 12px 12px 6px; }
-    .shwm-kpis-3, .shwm-kpis-4 { grid-template-columns: repeat(2, 1fr); }
-    .shwm-kpi { padding: 11px 12px; }
-    .shwm-kpi span { font-size: 0.56rem; }
-    .shwm-kpi b { font-size: 1.08rem; }
-
-    /* DSO: el nombre arriba, la comparación abajo y el badge a la derecha */
-    .shwm-dso { padding: 8px 12px; }
-    .shwm-dso-r { grid-template-columns: 1fr auto; gap: 8px 10px; padding: 13px 6px; }
-    .shwm-dso-who { grid-column: 1; }
-    .shwm-dso-r > .shwm-badge { grid-column: 2; grid-row: 1; }
-    .shwm-dso-cmp { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; }
-    .shwm-dso-who b { font-size: 0.82rem; }
-
-    /* Divisas: las dos columnas se apilan con el "=" girado en medio */
-    .shwm-dual { grid-template-columns: 1fr; gap: 8px; padding: 14px 14px 10px; }
-    .shwm-dual-col { padding: 14px; }
-    .shwm-dual-amt { font-size: 1.4rem; }
-    .shwm-dual-eq { padding: 0; text-align: center; }
-    .shwm-dual-rate { margin: 6px 14px 0; padding: 10px 12px; font-size: 0.74rem; }
 
     /* Frontera: tres nodos en fila tampoco caben */
     .shwm-border { grid-template-columns: 1fr; gap: 10px; padding: 16px 14px; }
@@ -2590,7 +2730,27 @@ const NAV = [
   .shwm-hb .t i { display: block; height: 100%; border-radius: 100px; background: #0a192f; transition: opacity 0.25s; }
   .shwm-hb .v { font-size: 0.64rem; color: #0a192f; white-space: nowrap; text-align: right; }
   .shwm-hb.is-dim .t i { opacity: 0.28; }
-  .shwm-hb.is-dim > div.is-focus .t i { opacity: 1; }
+  .shwm-hb.is-dim > div.on .t i { opacity: 1; }
+  @media (max-width: 1180px) {
+    .shwm-kt .v { font-size: 1rem; }
+    .shwm-kt { padding: 11px 12px; }
+  }
+  @media (max-width: 760px) {
+    .shwm-ph { flex-wrap: wrap; gap: 8px; padding: 12px 0 10px; }
+    .shwm-ph-t { flex-wrap: wrap; gap: 6px 10px; }
+    .shwm-ph-r .shwm-btn, .shwm-ph-r .shwm-pick { display: none; }
+    .shwm-kts, .shwm-kts.k3 { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .shwm-kts.k3 > :first-child { grid-column: 1 / -1; }
+    .shwm-kt { padding: 10px 11px; }
+    .shwm-kt .v { font-size: 0.94rem; }
+    .shwm-hb > div { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "n v" "t t"; row-gap: 4px; }
+    .shwm-hb .n { grid-area: n; }
+    .shwm-hb .v { grid-area: v; }
+    .shwm-hb .t { grid-area: t; }
+    .shwm-kt .lb { font-size: 0.46rem; letter-spacing: 0.6px; }
+    .shwm-wgs { grid-template-columns: 1fr; gap: 8px; }
+    .shwm-wg { padding: 12px 12px 8px; }
+  }
   .shwm-pg0-brw { left: 3%; transform: none; width: 66%; }
   .shwm-pg0-ph { right: 5%; top: 18px; }
   .shwm-co { max-width: 660px; padding-bottom: 20px; }
@@ -2682,6 +2842,349 @@ const NAV = [
   .shwm-sech-gap { margin-top: 16px !important; }
   .shwm-tl3 .tx strong { white-space: normal; line-height: 1.35; }
   .shwm-actok.is-gone { display: none; }
+  @media (max-width: 1180px) {
+    .shwm-dp-hero { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .shwm-dp-pdf { width: 290px; top: 176px; right: 2%; padding: 18px 18px 20px; font-size: 0.54rem; }
+  }
+  @media (max-width: 760px) {
+    .shwm-pg0-ph, .shwm-dp-pdf { display: none; }
+    .shwm-dp-hero { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .shwm-dp-hero .l strong { font-size: 1.15rem; }
+    .shwm-dp-grid { grid-template-columns: 1fr; gap: 8px; }
+    .shwm-dp-form { padding: 13px 13px; border-radius: 16px; }
+    .shwm-dp-form > .f + .f { display: none; }
+    [data-shx="pg2"] .shwm-di, [data-shx="pg2"] .shwm-qtot, [data-shx="pg2"] .shwm-dtg-main .shwm-sech { display: none; }
+    [data-shx="pg2"] .shwm-dh2 { margin-bottom: 4px; }
+    .shwm-tl3 .it:nth-child(n+4) { display: none; }
+  }
+
+  .shwm-ph-t { display: inline-flex; align-items: center; gap: 14px; min-width: 0; }
+  .shwm-ph-t > strong { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; color: #0f1729; white-space: nowrap; }
+  .shwm-kt.is-hot { box-shadow: 0 0 0 1.5px rgba(10,25,47,0.14), 0 14px 32px -22px rgba(10,25,47,0.22); }
+  .shwm-wab { width: 22px; height: 22px; border-radius: 50%; background: rgba(37,211,102,0.12); color: #128c4a; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-wab svg { width: 12px; height: 12px; }
+  .shwm-okb { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); color: #059669; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-okb svg { width: 10px; height: 10px; }
+  .shwm-cb0-wgs { margin-bottom: 10px; }
+  .shwm-wg-h > .shwm-fchips { display: inline-flex; flex-direction: row; gap: 4px; flex-shrink: 0; }
+  .shwm-fchips span { font-size: 0.56rem; font-weight: 600; color: #5b6472; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); border-radius: 999px; padding: 3px 9px; white-space: nowrap; transition: background 0.25s, color 0.25s; }
+  .shwm-fchips span.on { background: #0a192f; color: #ffffff; box-shadow: none; }
+  .shwm-ct .r { display: grid; grid-template-columns: minmax(0,1.5fr) 66px 52px 52px minmax(0,1.5fr) 96px; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid rgba(10,25,47,0.07); font-size: 0.62rem; }
+  .shwm-ct .r.h { border-top: 0; padding-top: 2px; font-size: 0.54rem; font-weight: 600; color: #5b6472; }
+  .shwm-ct .cl { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-ct .cl i { width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px; background: rgba(10,25,47,0.07); color: #5b6472; display: inline-flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; }
+  .shwm-ct .fo { font-weight: 600; color: #0a192f; }
+  .shwm-ct .mu { color: #5b6472; }
+  .shwm-ct .es { display: flex; flex-wrap: wrap; gap: 4px; }
+  .shwm-ct .am { text-align: right; justify-self: end; white-space: nowrap; }
+  .shwm-est { display: inline-flex; align-items: center; font-size: 0.52rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .shwm-est.over { color: #dc2626; background: rgba(239,68,68,0.09); }
+  .shwm-est.due { color: #b45309; background: rgba(245,158,11,0.12); }
+  .shwm-est.prom { color: #047857; background: rgba(16,185,129,0.1); }
+
+  .shwm-mode { display: inline-flex; align-items: center; gap: 6px; font-size: 0.58rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; transition: background 0.3s, color 0.3s; }
+  .shwm-mode i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .shwm-mode.rev { background: rgba(245,158,11,0.12); color: #b45309; }
+  .shwm-mode.auto { background: rgba(16,185,129,0.12); color: #047857; }
+  .shwm-th { border-top: 1px solid rgba(10,25,47,0.07); }
+  .shwm-wg-h + .shwm-th { border-top: 0; }
+  .shwm-th .sm { display: flex; align-items: center; gap: 9px; padding: 8px 0; }
+  .shwm-th .av, .shwm-draft .av { width: 24px; height: 24px; flex-shrink: 0; border-radius: 8px; background: #fafbfc; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.07); color: #5b6472; display: inline-flex; align-items: center; justify-content: center; font-size: 0.58rem; font-weight: 700; }
+  .shwm-th .w, .shwm-draft .w { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .shwm-th strong, .shwm-draft .hd strong { font-size: 0.66rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-th small, .shwm-draft small { font-size: 0.56rem; color: #5b6472; }
+  .shwm-th b, .shwm-draft .hd b { font-size: 0.68rem; font-weight: 600; color: #0a192f; white-space: nowrap; border-radius: 5px; padding: 0 3px; }
+  .shwm-msgs { display: flex; flex-direction: column; gap: 6px; padding: 0 0 9px; }
+  .shwm-msg { max-width: 88%; padding: 7px 10px; border-radius: 12px; font-size: 0.6rem; line-height: 1.5; }
+  .shwm-msg .mt { display: block; font-size: 0.48rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; }
+  .shwm-msg p { margin: 2px 0 0; }
+  .shwm-msg.ag { align-self: flex-start; background: #fafbfc; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.05); border-bottom-left-radius: 4px; }
+  .shwm-msg.me { align-self: flex-end; background: #0a192f; color: #ffffff; border-bottom-right-radius: 4px; }
+  .shwm-msg.me .mt { opacity: 0.8; }
+  .shwm-tagp { margin-left: 5px; font-size: 0.46rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 999px; background: #f5f5f7; color: #5b6472; }
+  .shwm-wg-h2 { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.07); }
+  .shwm-nudge { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px 9px 14px; margin-bottom: 10px; border-radius: 12px; background: rgba(16,185,129,0.09); font-size: 0.64rem; color: #0f1729; }
+  .shwm-nudge .b { display: inline-flex; gap: 4px; flex-shrink: 0; }
+  .shwm-nudge .b span { font-size: 0.58rem; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+  .shwm-nudge .y { background: #0a192f; color: #ffffff; }
+  .shwm-nudge .n { color: #5b6472; }
+  .shwm-draft { padding: 11px 12px; margin-top: 8px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+  .shwm-draft .hd { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+  .shwm-draft .ta { padding: 9px 11px; border-radius: 10px; background: #fafbfc; font-size: 0.6rem; line-height: 1.6; color: #0f1729; }
+  .shwm-draft .ac { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .shwm-draft .ac span { font-size: 0.58rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+  .shwm-draft .ac .p { background: #0a192f; color: #ffffff; box-shadow: none; }
+  .shwm-draft .ac .g { box-shadow: none; color: #5b6472; }
+  .shwm-draft .plan { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 10px; background: rgba(10,25,47,0.05); font-size: 0.6rem; }
+  .shwm-draft .plan svg { width: 14px; height: 14px; color: #0a192f; flex-shrink: 0; }
+  @media (max-width: 760px) {
+    [data-shx="cb0"] .shwm-cb0-wgs > :last-child, .shwm-cb0-tbl { display: none; }
+    [data-shx="cb0"] .shwm-kt:nth-child(3) .s:last-child { display: none; }
+    [data-shx="cb1"] .shwm-cb1-wgs > :last-child, [data-shx="cb1"] .shwm-th:not(.is-open) { display: none; }
+    [data-shx="cb2"] .shwm-kts, [data-shx="cb2"] .shwm-draft + .shwm-draft { display: none; }
+    .shwm-nudge { flex-direction: column; align-items: stretch; gap: 8px; }
+    .shwm-nudge .b { display: grid; grid-template-columns: 1fr 1fr; }
+    .shwm-nudge .b span { text-align: center; padding: 8px 6px; }
+    .shwm-draft .ac .g { display: none; }
+  }
+
+  .shwm-fx0-edg { grid-template-columns: minmax(0,1fr) 262px; }
+  .shwm-fx0-lines .ls.eq { text-decoration: none; }
+  .shwm-x[data-loc] .shwm-fx0-lines .shwm-lh, .shwm-x[data-loc] .shwm-fx0-lines .shwm-lr { grid-template-columns: minmax(0,1fr) 40px 74px 58px 92px; }
+  .shwm-fx0-sum { position: relative; gap: 7px; }
+  .shwm-fxsel { justify-content: flex-start; }
+  .shwm-fxsel .cc, .shwm-fxdrop .cc { flex-shrink: 0; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.04em; color: #ffffff; background: #0a192f; border-radius: 4px; padding: 2px 4px; }
+  .shwm-fxsel > span:nth-child(2) { flex: 1; }
+  .shwm-fxf { position: relative; }
+  .shwm-fxdrop { position: absolute; z-index: 6; left: 0; right: 0; top: calc(100% + 4px); display: flex; flex-direction: column; padding: 5px; background: #ffffff; border-radius: 12px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 16px 40px -14px rgba(10,25,47,0.3); opacity: 0; visibility: hidden; }
+  .shwm-fxdrop .it { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 0.62rem; font-weight: 500; }
+  .shwm-fxdrop .it.on { background: #f5f5f7; }
+  .shwm-fxdrop .cc { background: rgba(10,25,47,0.55); }
+  .shwm-fxc { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; padding-top: 9px; border-top: 1px solid rgba(10,25,47,0.08); overflow: hidden; }
+  .shwm-fxc .ex { font-size: 0.58rem; line-height: 1.5; color: #5b6472; }
+  .shwm-fxc .ex b { color: #0f1729; }
+  .shwm-fxc .stp { display: flex; align-items: stretch; gap: 5px; }
+  .shwm-fxc .stp .s { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 7px 8px; border-radius: 10px; background: #fafbfc; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06); min-width: 0; }
+  .shwm-fxc .stp .s.on { background: #ffffff; box-shadow: inset 0 0 0 1.5px #0a192f; }
+  .shwm-fxc .stp em { font-size: 0.48rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .shwm-fxc .stp .editorial { font-size: 0.78rem; color: #0a192f; white-space: nowrap; }
+  .shwm-fxc .ar { align-self: center; font-size: 0.7rem; color: #99a2af; }
+  .shwm-fxc .cu { display: flex; flex-direction: column; gap: 4px; }
+  .shwm-fxc .cu em { font-size: 0.52rem; color: #5b6472; }
+  .shwm-fxc .ch { display: flex; gap: 4px; }
+  .shwm-fxc .ch span { flex: 1; text-align: center; font-size: 0.54rem; font-weight: 600; padding: 4px 0; border-radius: 8px; background: #f5f5f7; color: #5b6472; }
+  .shwm-fxc .ch span.on { background: #0a192f; color: #ffffff; }
+  .shwm-fxc .ch small { font-size: 0.48rem; opacity: 0.75; }
+  .shwm-fxc .pv { padding: 8px 9px; border-radius: 10px; background: rgba(16,185,129,0.08); font-size: 0.58rem; line-height: 1.5; color: #0f1729; }
+  .shwm-fxc .pv b { font-weight: 700; white-space: nowrap; }
+
+  .shwm-fx1-ph { left: calc(50% - 400px); top: 20px; }
+  .shwm-payp { background: #f5f5f7; }
+  .shwm-payp .bk { display: block; padding: 6px 16px 8px; font-size: 0.56rem; font-weight: 500; color: #6b7686; }
+  .shwm-payp .cd { margin: 0 9px; padding: 14px 13px 13px; background: #ffffff; border-radius: 20px; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 44px -16px rgba(10,25,47,0.14); display: flex; flex-direction: column; gap: 11px; }
+  .shwm-payp .br { display: flex; align-items: center; gap: 8px; }
+  .shwm-payp .br .av { width: 26px; height: 26px; border-radius: 8px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+  .shwm-payp .br strong { display: block; font-size: 0.64rem; font-weight: 650; }
+  .shwm-payp .br em { display: block; font-size: 0.52rem; color: #8a8f98; }
+  .shwm-payp .am { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 11px 6px; border-radius: 14px; background: #fafafa; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.05); }
+  .shwm-payp .am em { font-size: 0.42rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #9ca3af; }
+  .shwm-payp .am .editorial { font-size: 1.22rem; line-height: 1.1; letter-spacing: -0.03em; color: #b45309; white-space: nowrap; }
+  .shwm-payp .am small { font-size: 0.5rem; color: #9ca3af; }
+  .shwm-payp .el { display: flex; flex-direction: column; gap: 4px; }
+  .shwm-payp .lb { font-size: 0.5rem; font-weight: 500; color: #5b6472; margin-top: 2px; }
+  .shwm-payp .in { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 9px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.14); font-size: 0.58rem; color: #0f1729; }
+  .shwm-payp .in svg { width: 10px; height: 10px; color: #99a2af; }
+  .shwm-payp .vs { font-size: 0.46rem; font-weight: 900; font-style: italic; letter-spacing: 0.02em; color: #1a1f71; }
+  .shwm-payp .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .shwm-payp .row > span { display: flex; flex-direction: column; gap: 4px; }
+  .shwm-payp .cta { display: block; padding: 9px; border-radius: 10px; background: #b45309; color: #ffffff; text-align: center; font-size: 0.62rem; font-weight: 650; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); }
+  .shwm-payp .ft { display: flex; gap: 5px; margin: 11px 18px 0; font-size: 0.48rem; line-height: 1.45; color: #8a8f98; }
+  .shwm-payp .ft svg { width: 9px; height: 9px; flex-shrink: 0; margin-top: 1px; }
+  .shwm-fx1-win { left: calc(50% - 116px); top: 96px; width: 540px; }
+  .shwm-dec { padding: 6px 16px 4px; }
+  .shwm-dec .r { display: grid; grid-template-columns: minmax(0,1.1fr) 56px minmax(0,1fr) minmax(0,1.25fr); gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(10,25,47,0.07); font-size: 0.66rem; }
+  .shwm-dec .r.h { border-top: 0; padding: 6px 0; font-size: 0.54rem; font-weight: 600; color: #5b6472; }
+  .shwm-dec .cu { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-dec .cu b { font-size: 0.66rem; font-weight: 700; }
+  .shwm-dec .cu em { font-size: 0.54rem; color: #5b6472; }
+  .shwm-dec .c { text-align: center; }
+  .shwm-dec .n { text-align: right; white-space: nowrap; }
+  .shwm-dec .ok { color: #047857; }
+  .shwm-dec .mu { color: #99a2af; }
+  .shwm-dec .bad { color: #dc2626; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .shwm-dec .bad s { text-decoration-thickness: 1.5px; }
+  .shwm-dec .bad i { font-size: 0.5rem; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: rgba(239,68,68,0.1); }
+  .shwm-cw-foot { padding: 10px 16px 12px; border-top: 1px solid rgba(10,25,47,0.07); background: #fcfdfe; font-size: 0.58rem; line-height: 1.5; color: #5b6472; }
+
+  .shwm-fx2-ph { top: 22px; }
+  .shwm-fx2-pe { left: calc(50% - 420px); top: 44px; }
+  .shwm-fx2-co { left: calc(50% - 122px); }
+  .shwm-fx2-ar { left: calc(50% + 176px); top: 44px; }
+  .shwm-med { background: #fafbfc; }
+  .shwm-med-top { display: flex; align-items: center; gap: 7px; padding: 4px 12px 9px; border-bottom: 1px solid rgba(10,25,47,0.07); background: #ffffff; }
+  .shwm-med-top .av { width: 24px; height: 24px; flex-shrink: 0; border-radius: 7px; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.58rem; font-weight: 800; }
+  .shwm-med-top .tt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-med-top .tt em { font-size: 0.48rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-med-top .tt strong { font-size: 0.7rem; font-weight: 700; }
+  .shwm-med-sum { margin: 9px 8px 0; padding: 12px 12px 13px; gap: 6px; border-radius: 16px; }
+  .shwm-med-sum .l.total .editorial { font-size: 1.05rem; }
+  .shwm-med-sum .send { margin-top: 2px; padding: 8px 12px; font-size: 0.64rem; }
+  .shwm-med .shwm-fxc .stp .editorial { font-size: 0.66rem; }
+  .shwm-med .shwm-fxc .stp em { white-space: normal; line-height: 1.25; }
+  @media (max-width: 1180px) {
+    [data-shx="fx0"] .shwm-as { grid-template-columns: 58px minmax(0,1fr); }
+    [data-shx="fx0"] .shwm-as-side { align-items: center; padding: 12px 6px; }
+    [data-shx="fx0"] .shwm-as-org { border: 0; padding: 4px 0 8px; }
+    [data-shx="fx0"] .shwm-as-org strong, [data-shx="fx0"] .shwm-as-org svg, [data-shx="fx0"] .shwm-as-g, [data-shx="fx0"] .shwm-as-i em { display: none; }
+    [data-shx="fx0"] .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; font-size: 0; }
+    .shwm-fx0-edg { grid-template-columns: minmax(0,1fr) 240px; gap: 18px; }
+  }
+  @media (max-width: 760px) {
+    [data-shx="fx0"] .shwm-edg-main, .shwm-fxc .cu, .shwm-fx1-ph, .shwm-fx2-pe, .shwm-fx2-ar { display: none; }
+    [data-shx="fx0"] .shwm-fx0-edg { grid-template-columns: 1fr; }
+    .shwm-dec { padding: 4px 12px; }
+    .shwm-dec .r { grid-template-columns: minmax(0,0.7fr) 30px minmax(0,1fr) minmax(0,1.25fr); gap: 6px; font-size: 0.58rem; }
+    .shwm-dec .r.h { font-size: 0.48rem; }
+    .shwm-dec .cu em { display: none; }
+    .shwm-dec .bad { flex-direction: column; align-items: flex-end; gap: 2px; }
+  }
+
+  .shwm-ph-l small { font-size: 0.58rem; color: #5b6472; }
+  .shwm-ph-l { gap: 3px; }
+  .shwm-wg.is-hot { box-shadow: 0 0 0 1.5px rgba(10,25,47,0.14), 0 14px 32px -22px rgba(10,25,47,0.22); }
+  .shwm-cc0-brw { left: 3%; transform: none; width: 72%; }
+  .shwm-cc0-ph { right: 4%; top: 20px; }
+  .shwm-mrec { background: #fafbfc; }
+  .shwm-mrec .shwm-mapp-top { background: #ffffff; }
+  .shwm-mrec-b { display: flex; flex-direction: column; gap: 9px; padding: 11px 11px 0; }
+  .shwm-mrec-b .hd { display: flex; align-items: center; gap: 9px; }
+  .shwm-mrec-b .hd .av { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: #a16207; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; }
+  .shwm-mrec-b .hd .w { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .shwm-mrec-b .bg { display: flex; flex-wrap: wrap; gap: 4px; }
+  .shwm-mrec-b small { font-size: 0.5rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-tier, .shwm-mrec-b .tier { font-size: 0.5rem; font-weight: 700; color: #92400e; background: rgba(217,119,6,0.12); border-radius: 999px; padding: 2px 7px; }
+  .shwm-fis, .shwm-mrec-b .fi { font-size: 0.5rem; font-weight: 600; color: #047857; background: rgba(16,185,129,0.1); border-radius: 999px; padding: 2px 7px; }
+  .shwm-mrec-b .tot { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-mrec-b .tot em { font-size: 0.44rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+  .shwm-mrec-b .tot .editorial { font-size: 1.2rem; color: #0a192f; line-height: 1.1; }
+  .shwm-mrec-b .kp { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; border-radius: 12px; overflow: hidden; background: rgba(10,25,47,0.06); }
+  .shwm-mrec-b .kp > span { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; background: #ffffff; }
+  .shwm-mrec-b .kp em { font-size: 0.46rem; color: #5b6472; }
+  .shwm-mrec-b .kp b { font-size: 0.7rem; font-weight: 600; color: #0a192f; white-space: nowrap; }
+  .shwm-mrec-b .sec { display: flex; flex-direction: column; gap: 5px; padding: 9px 10px; border-radius: 12px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.05); }
+  .shwm-mrec-b .sec > strong { font-size: 0.62rem; font-weight: 700; }
+  .shwm-mrec-b .kv, .shwm-kvl > span { display: flex; justify-content: space-between; gap: 8px; font-size: 0.56rem; color: #0f1729; }
+  .shwm-mrec-b .kv .k, .shwm-kvl .k { color: #5b6472; }
+  .shwm-mrec-b .kv .lk, .shwm-kvl .lk { font-weight: 600; color: #0a192f; }
+  .shwm-mrec-b .kv.hot { margin: 0 -5px; padding: 3px 5px; border-radius: 6px; background: rgba(245,158,11,0.12); font-weight: 600; color: #92400e; }
+  .shwm-mrec-b .kv.hot .k { color: #92400e; }
+  .shwm-mrec-b .wa, .shwm-wabtn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 10px; background: #25d366; color: #ffffff; font-size: 0.6rem; font-weight: 700; }
+  .shwm-mrec-b .wa svg, .shwm-wabtn svg { width: 12px; height: 12px; }
+
+  .shwm-cc1-mx { position: relative; margin-bottom: 10px; }
+  .shwm-hb-lg { gap: 10px; padding: 4px 0 2px; }
+  .shwm-hb-lg > div { grid-template-columns: minmax(0,1.1fr) 2fr 104px; }
+  .shwm-hb-lg .n { font-size: 0.66rem; }
+  .shwm-hb-lg .t { height: 8px; }
+  .shwm-hb-lg .v { font-size: 0.66rem; }
+  .shwm-tip { position: absolute; z-index: 3; left: 49%; top: 118px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; background: #0a192f; color: #ffffff; font-size: 0.58rem; font-weight: 500; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(10,25,47,0.5); }
+  .shwm-tip i { width: 7px; height: 7px; border-radius: 50%; background: #ffffff; }
+  .shwm-tip b { font-weight: 700; }
+
+  .shwm-cc2-brw { left: auto; right: 3%; transform: none; width: 72%; }
+  .shwm-cc2-ph { left: 4%; top: 20px; }
+  .shwm-cc2-g { grid-template-columns: minmax(0,1fr) 220px; gap: 22px; }
+  .shwm-dh2 .av.tier { background: #a16207; }
+  .shwm-dh2 .n .shwm-tier, .shwm-dh2 .n .shwm-fis { font-size: 0.54rem; }
+  .shwm-btn.pri { background: #0a192f; color: #ffffff; border-color: #0a192f; }
+  .shwm-dck { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; margin-bottom: 14px; border-radius: 14px; overflow: hidden; background: rgba(10,25,47,0.06); box-shadow: 0 1px 2px rgba(10,25,47,0.03); }
+  .shwm-dck > span { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; background: #ffffff; min-width: 0; }
+  .shwm-dck em { font-size: 0.5rem; color: #5b6472; white-space: nowrap; }
+  .shwm-dck b { font-size: 0.7rem; font-weight: 600; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-nego { margin-bottom: 14px; padding: 0 0 2px; border-radius: 10px; }
+  .shwm-nego .ln { margin: 0; font-size: 0.66rem; color: #0f1729; }
+  .shwm-nego .ln .editorial { font-size: 1.05rem; color: #0a192f; margin-right: 3px; }
+  .shwm-nego .pc { font-weight: 600; color: #b45309; }
+  .shwm-nego .hn { margin: 3px 0 0; font-size: 0.56rem; color: #5b6472; }
+  .shwm-qlv { display: flex; flex-direction: column; }
+  .shwm-qlv > span { display: grid; grid-template-columns: minmax(0,1fr) 32px 96px; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.64rem; }
+  .shwm-qlv .pn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-qlv .vx { font-size: 0.58rem; font-weight: 600; color: #5b6472; text-align: center; }
+  .shwm-qlv .editorial { text-align: right; }
+  .shwm-kvl { display: flex; flex-direction: column; gap: 7px; margin-bottom: 9px; }
+  .shwm-kvl > span { font-size: 0.6rem; }
+  .shwm-wa2 .shwm-wa2-body .in[data-ask] { font-weight: 500; }
+  @media (max-width: 1180px) {
+    .shwm-cc0-brw { left: 2%; width: calc(100% - 300px); }
+    [data-shx="cc0"] .shwm-wgs { grid-template-columns: 1fr; }
+    [data-shx="cc0"] .shwm-wgs > :last-child { display: none; }
+  }
+  @media (max-width: 760px) {
+    .shwm-cc0-ph, [data-shx="cc0"] .shwm-wgs > :last-child, .shwm-cc2-ph, [data-shx="cc1"] .shwm-cc1-mx ~ .shwm-wgs, .shwm-tip { display: none; }
+    .shwm-hb-lg > div { grid-template-columns: minmax(0,1fr) auto; }
+    .shwm-cc2-g { grid-template-columns: 1fr; }
+    [data-shx="cc2"] .shwm-dtg-side, [data-shx="cc2"] .shwm-as-head .shwm-ph-r { display: none; }
+    .shwm-dck b { font-size: 0.62rem; }
+  }
+
+  .shwm-fn-brw { left: 3%; transform: none; width: 68%; }
+  .shwm-vb { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; align-items: end; height: 150px; padding: 6px 4px 0; }
+  .shwm-vb5 { grid-template-columns: repeat(5, minmax(0,1fr)); height: 130px; }
+  .shwm-vb .c { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; height: 100%; min-width: 0; }
+  .shwm-vb .c i { display: block; width: 100%; max-width: 46px; border-radius: 6px 6px 3px 3px; background: #0a192f; transform-origin: bottom; }
+  .shwm-vb .c b { font-size: 0.6rem; font-weight: 600; color: #0a192f; white-space: nowrap; }
+  .shwm-vb .c em { font-size: 0.52rem; color: #5b6472; white-space: nowrap; }
+  .shwm-vb5 .c b { font-size: 0.52rem; }
+  .shwm-rul { position: absolute; z-index: 3; right: 2.5%; top: 150px; width: 330px; padding: 14px 16px 14px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -18px rgba(10,25,47,0.3); color: #0f1729; }
+  .shwm-rul .hd { display: flex; align-items: center; gap: 9px; }
+  .shwm-rul .hd .av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+  .shwm-rul .hd .w { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-rul .hd strong { font-size: 0.7rem; font-weight: 700; }
+  .shwm-rul .hd small { font-size: 0.56rem; color: #5b6472; }
+  .shwm-rul .tk { position: relative; height: 84px; margin: 14px 4px 4px; }
+  .shwm-rul .ln { position: absolute; left: 0; right: 0; top: 7px; height: 4px; border-radius: 99px; background: rgba(10,25,47,0.1); }
+  .shwm-rul .ln .late { position: absolute; left: 68.2%; right: 0; top: 0; bottom: 0; border-radius: 99px; background: #f59e0b; transform-origin: left; }
+  .shwm-rul .pt { position: absolute; top: 0; display: flex; flex-direction: column; gap: 2px; transform: translateX(-50%); align-items: center; text-align: center; white-space: nowrap; }
+  .shwm-rul .pt i { width: 18px; height: 18px; border-radius: 50%; background: #ffffff; box-shadow: inset 0 0 0 3px rgba(10,25,47,0.25); margin-bottom: 4px; }
+  .shwm-rul .pt em { font-size: 0.48rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #99a2af; }
+  .shwm-rul .pt b { font-size: 0.56rem; font-weight: 600; color: #5b6472; }
+  .shwm-rul .p0 { left: 0; transform: none; align-items: flex-start; text-align: left; }
+  .shwm-rul .p30 { left: 68.2%; }
+  .shwm-rul .p30 b.x { text-decoration: line-through; text-decoration-color: rgba(10,25,47,0.3); }
+  .shwm-rul .p44 { left: 100%; transform: translateX(-100%); align-items: flex-end; text-align: right; }
+  .shwm-rul .p44 i { background: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.12); }
+  .shwm-rul .p44 em { color: #0a192f; }
+  .shwm-rul .p44 b { color: #0a192f; }
+  .shwm-rul .ft { display: flex; flex-direction: column; gap: 2px; margin: 0; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.07); }
+  .shwm-rul .ft strong { font-size: 0.66rem; font-weight: 700; }
+  .shwm-rul .ft span { font-size: 0.56rem; line-height: 1.45; color: #5b6472; }
+
+  .shwm-hlth { margin-bottom: 10px; }
+  .shwm-hg { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; padding: 4px 0 6px; }
+  .shwm-hg .cl { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 8px 4px; border-radius: 12px; }
+  .shwm-hg .cl.hot { background: rgba(245,158,11,0.07); box-shadow: inset 0 0 0 1px rgba(245,158,11,0.25); }
+  .shwm-hg .gg { position: relative; width: 72px; height: 72px; }
+  .shwm-hg .gg svg { width: 100%; height: 100%; }
+  .shwm-hg .gg b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.84rem; color: #0a192f; }
+  .shwm-hg em { font-size: 0.48rem; font-weight: 800; letter-spacing: 0.8px; color: #5b6472; opacity: 0.8; line-height: 1.3; }
+  .shwm-hg small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; color: #5b6472; line-height: 1.35; }
+  .shwm-hg small i { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; }
+  .shwm-hg small i.ok { background: #10b981; }
+  .shwm-hg small i.warn { background: #f59e0b; }
+  .shwm-fn1-win { right: 2.5%; top: 214px; width: 340px; }
+  .shwm-fn1-b { padding: 12px 16px 14px; }
+
+  .shwm-flg { display: inline-flex; gap: 10px; flex-shrink: 0; }
+  .shwm-flg span { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; color: #5b6472; }
+  .shwm-flg span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--fc); }
+  .shwm-flg .ca, .shwm-fw .ca { --fc: #0f766e; }
+  .shwm-flg .pi, .shwm-fw .pi { --fc: #2563eb; }
+  .shwm-flg .mr, .shwm-fw .mr { --fc: #8b5cf6; }
+  .shwm-fw { display: flex; flex-direction: column; gap: 7px; padding-top: 2px; }
+  .shwm-fw .w { display: grid; grid-template-columns: 98px minmax(0,1fr) 96px; gap: 10px; align-items: center; }
+  .shwm-fw .l { font-size: 0.56rem; color: #5b6472; white-space: nowrap; }
+  .shwm-fw .t { display: flex; height: 8px; border-radius: 999px; background: rgba(10,25,47,0.05); overflow: hidden; }
+  .shwm-fw .t i { display: block; height: 100%; background: var(--fc); }
+  .shwm-fw b { font-size: 0.6rem; font-weight: 600; color: #0a192f; text-align: right; white-space: nowrap; }
+  .shwm-fn2-win { right: 2.5%; top: 196px; width: 330px; }
+  .shwm-fsum { display: flex; flex-direction: column; padding: 6px 16px 12px; }
+  .shwm-fsum .r { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(10,25,47,0.07); font-size: 0.64rem; color: #5b6472; }
+  .shwm-fsum .r:first-child { border-top: 0; }
+  .shwm-fsum .r b { font-weight: 600; color: #0a192f; white-space: nowrap; }
+  .shwm-fsum .r.hot { margin: 0 -8px; padding: 10px 8px; border-radius: 10px; background: rgba(10,25,47,0.04); color: #0f1729; }
+  .shwm-fsum .r.tot { border-top: 1.5px solid #0a192f; color: #0f1729; font-weight: 700; }
+  .shwm-fsum .r.tot b { font-size: 0.86rem; font-weight: 700; }
+  @media (max-width: 1180px) {
+    .shwm-fn-brw { left: 2%; width: 74%; }
+    .shwm-rul, .shwm-fn1-win, .shwm-fn2-win { top: auto; bottom: 16px; right: 2%; width: 300px; }
+  }
+  @media (max-width: 760px) {
+    [data-shx="fn0"] .shwm-kt:not(.is-hot), [data-shx="fn0"] .shwm-wgs > :last-child, [data-shx="fn1"] .shwm-hlth ~ .shwm-wg, [data-shx="fn2"] .shwm-as-main > .shwm-wg { display: none; }
+    [data-shx="fn0"] .shwm-kts { grid-template-columns: 1fr; }
+    .shwm-scene .shwm-rul { position: relative; left: auto; right: auto; top: auto; width: 100%; }
+    .shwm-vb { height: 120px; }
+    .shwm-hg { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  }
   /* pf:end */
   @media (prefers-reduced-motion: reduce) {
     .shwm-crt, .shwm-lv .dot { animation: none; }
@@ -2993,6 +3496,167 @@ const NAV = [
       tl.call(() => expand(dup), [], 4.4)
         .fromTo(dup, { backgroundColor: 'rgba(245,158,11,0.18)' }, { backgroundColor: 'rgba(245,158,11,0)', duration: 1.4, clearProps: 'backgroundColor' }, 4.5);
       hold(tl, 5.2, 3);
+      return tl;
+    },
+
+    cb0(root, loc) {
+      const nums = $$(root, '.shwm-kt [data-n]'), rows = $$(root, '[data-rows] > div'), sg = $(root, '[data-sg]');
+      const tl = gsap.timeline({ repeat: -1 });
+      nums.forEach((n) => count(tl, n, 0, Number(n.dataset.n), 0.5, (v) => `MXN ${num(loc, Math.round(v))}`, 1.1));
+      tl.fromTo(rows, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out', clearProps: 'transform' }, 0.6)
+        .fromTo(sg, { boxShadow: '0 0 0 1.5px rgba(239,68,68,0.45), 0 14px 32px -22px rgba(10,25,47,0.22)' }, { boxShadow: '0 0 0 1.5px rgba(10,25,47,0.14), 0 14px 32px -22px rgba(10,25,47,0.22)', duration: 1.6, clearProps: 'boxShadow' }, 2.2);
+      hold(tl, 3.8, 3.6);
+      return tl;
+    },
+
+    cb1(root, loc) {
+      const bal = $(root, '[data-bal]'), rec = $(root, '[data-rec]'), msgs = $$(root, '.shwm-msg');
+      const mxn = (v: number) => `MXN ${num(loc, Math.round(v))}`;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { bal.textContent = mxn(412300); rec.textContent = mxn(193718); }, [], 0.4)
+        .fromTo(msgs, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.7, ease: 'power2.out', clearProps: 'transform' }, 0.8);
+      count(tl, bal, 412300, 0, 2.9, mxn, 1);
+      count(tl, rec, 193718, 606018, 3.1, mxn, 1.1);
+      flash(tl, [bal, rec], 4.1);
+      hold(tl, 4.6, 3.2);
+      return tl;
+    },
+
+    cb2(root) {
+      const mode = $(root, '[data-mode]'), modeT = $(root, '[data-mode-t]'), nudge = $(root, '[data-nudge]'), yes = $(root, '[data-yes]');
+      const pend = $(root, '[data-pend]'), inbox = $(root, '[data-inbox]');
+      const T = { mode: modeT.textContent || '', pend: pend.textContent || '', inbox: inbox.textContent || '' };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => {
+        mode.className = mode.className.replace('auto', 'rev'); modeT.textContent = T.mode;
+        pend.textContent = T.pend; inbox.textContent = T.inbox;
+        if (nudge.style.height) expand(nudge);
+      }, [], 0.3)
+        .fromTo(nudge, { backgroundColor: 'rgba(16,185,129,0.22)' }, { backgroundColor: 'rgba(16,185,129,0.09)', duration: 1, clearProps: 'backgroundColor' }, 1)
+        .to(yes, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1 }, 2.6)
+        .call(() => {
+          mode.className = mode.className.replace('rev', 'auto'); modeT.textContent = mode.dataset.auto || '';
+          pend.textContent = pend.dataset.auto || ''; inbox.textContent = inbox.dataset.auto || '';
+          collapse(nudge);
+        }, [], 2.9)
+        .fromTo(mode, { scale: 1.12 }, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 2.9);
+      flash(tl, [pend, inbox], 3);
+      hold(tl, 3.4, 3.6);
+      return tl;
+    },
+
+    fx0(root, loc) {
+      const curs = $$(root, '[data-cur]'), code = $(root, '[data-code]'), name = $(root, '[data-name]'), drop = $(root, '[data-drop]');
+      const sel = $(root, '[data-sel]'), fxc = $(root, '[data-fxc]'), spot = $(root, '[data-spot]'), app = $(root, '[data-app]'), pv = $(root, '[data-pv]');
+      const orig = curs.map((c) => c.textContent || ''), nameUsd = name.textContent || '', nameMx = name.dataset.mx || '';
+      const d2 = (v: number) => `MXN ${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}`;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { curs.forEach((c, i) => { c.textContent = orig[i].replace('US$', 'MXN'); }); code.textContent = 'MXN'; name.textContent = nameMx; collapse(fxc); }, [], 0.5)
+        .call(() => sel.classList.add('is-focus'), [], 1.7)
+        .to(drop, { autoAlpha: 1, y: 0, duration: 0.2, startAt: { y: -4 } }, 1.8)
+        .to(drop, { autoAlpha: 0, duration: 0.15 }, 2.9)
+        .call(() => { sel.classList.remove('is-focus'); curs.forEach((c, i) => { c.textContent = orig[i]; }); code.textContent = 'USD'; name.textContent = nameUsd; expand(fxc); }, [], 3.0);
+      flash(tl, curs, 3.05);
+      count(tl, spot, 17.2, 18.04, 3.3, d2, 0.9);
+      count(tl, app, 17.54, 18.4, 3.3, d2, 0.9);
+      tl.fromTo(pv, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45, clearProps: 'transform' }, 4.1);
+      hold(tl, 4.6, 3);
+      return tl;
+    },
+
+    fx1(root) {
+      const rows = $$(root, '[data-z]'), bad = $$(root, '.shwm-dec .bad'), cta = $(root, '[data-cta]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(rows, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.14, ease: 'power2.out', clearProps: 'transform' }, 0.5)
+        .fromTo(bad, { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.45, stagger: 0.25, ease: 'power2.out', clearProps: 'transform' }, 1.5)
+        .to(cta, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, 2.8);
+      hold(tl, 3.2, 4.4);
+      return tl;
+    },
+
+    fx2(root, loc) {
+      const rates = $$(root, '[data-rate]'), pvs = $$(root, '.shwm-fxc .pv');
+      const f = (c: string) => (v: number) => `${c} ${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}`;
+      const tl = gsap.timeline({ repeat: -1 });
+      rates.forEach((r, i) => count(tl, r, Number(r.dataset.rate) * 0.96, Number(r.dataset.rate), 0.5 + i * 0.35, f(r.dataset.c || ''), 1));
+      tl.fromTo(pvs, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.35, clearProps: 'transform' }, 1.3);
+      hold(tl, 2.6, 5);
+      return tl;
+    },
+
+    cc0(root) {
+      const rows = $$(root, '[data-rows] > div'), ph = $(root, '[data-ph]'), sil = $(root, '[data-silence]'), wa = $(root, '[data-wa]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.set(ph, { autoAlpha: 0, y: 24 }, 0.4)
+        .fromTo(rows, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: 'power2.out', clearProps: 'transform' }, 0.5)
+        .to(ph, { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 1.6)
+        .fromTo(sil, { backgroundColor: 'rgba(245,158,11,0.34)' }, { backgroundColor: 'rgba(245,158,11,0.12)', duration: 1.2, clearProps: 'backgroundColor' }, 2.5)
+        .to(wa, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 3.4);
+      hold(tl, 3.7, 3.8);
+      return tl;
+    },
+
+    cc1(root) {
+      const hb = $(root, '[data-hb]'), fills = $$(hb, '.t i'), tip = $(root, '[data-tip]');
+      const widths = fills.map((f) => f.style.width);
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => hb.classList.remove('is-dim'), [], 0.4)
+        .set(tip, { autoAlpha: 0 }, 0.4)
+        .set(fills, { width: '0%' }, 0.45);
+      fills.forEach((f, i) => tl.to(f, { width: widths[i], duration: 0.8, ease: 'power2.out' }, 0.6 + i * 0.08));
+      tl.call(() => hb.classList.add('is-dim'), [], 2.3)
+        .fromTo(tip, { autoAlpha: 0, y: 4 }, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.35);
+      hold(tl, 2.7, 4.6);
+      return tl;
+    },
+
+    cc2(root, loc) {
+      const ask = $(root, '[data-ask]'), st = $(root, '[data-wast]'), nego = $(root, '[data-nego]'), ced = $(root, '[data-ced]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.set(ask, { autoAlpha: 0, display: 'none' }, 0.4)
+        .call(() => { st.textContent = st.dataset.typing || ''; }, [], 1)
+        .call(() => { st.textContent = st.dataset.idle || ''; }, [], 2.2)
+        .set(ask, { display: '' }, 2.2)
+        .fromTo(ask, { autoAlpha: 0, y: 8, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.6)', transformOrigin: '0% 100%' }, 2.2);
+      count(tl, ced, 0, 84300, 3, (v) => `MXN ${num(loc, Math.round(v))}`, 1);
+      tl.fromTo(nego, { backgroundColor: 'rgba(245,158,11,0.14)' }, { backgroundColor: 'rgba(245,158,11,0)', duration: 1.6, clearProps: 'backgroundColor' }, 3);
+      hold(tl, 4.6, 3);
+      return tl;
+    },
+
+    fn0(root) {
+      const bars = $$(root, '[data-vb] i'), late = $(root, '[data-late]'), p44 = $(root, '[data-p44]'), rul = $(root, '[data-rul]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(bars, { scaleY: 0 }, { scaleY: 1, duration: 0.7, stagger: 0.1, ease: 'power2.out' }, 0.4)
+        .fromTo(rul, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 1.2)
+        .set(p44, { autoAlpha: 0 }, 1.2)
+        .fromTo(late, { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'power2.inOut' }, 2)
+        .to(p44, { autoAlpha: 1, duration: 0.35 }, 2.8);
+      hold(tl, 3.2, 4.2);
+      return tl;
+    },
+
+    fn1(root) {
+      const rings = $$(root, '[data-ring]'), conc = $(root, '[data-conc]'), fills = $$(conc, '.t i');
+      const widths = fills.map((f) => f.style.width);
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.set(rings, { attr: { 'stroke-dashoffset': 175.93 } }, 0.4);
+      rings.forEach((r, i) => tl.to(r, { attr: { 'stroke-dashoffset': Number(r.dataset.ring) }, duration: 0.9, ease: 'power2.out' }, 0.55 + i * 0.12));
+      tl.fromTo(conc, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 1.8)
+        .set(fills, { width: '0%' }, 1.8);
+      fills.forEach((f, i) => tl.to(f, { width: widths[i], duration: 0.7, ease: 'power2.out' }, 2 + i * 0.08));
+      hold(tl, 3, 4.4);
+      return tl;
+    },
+
+    fn2(root) {
+      const rows = $$(root, '[data-fw] .w'), out = $(root, '[data-out]'), sum = $(root, '[data-sum]'), total = $(root, '[data-total]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(rows, { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.06, ease: 'power2.out', clearProps: 'transform' }, 0.4)
+        .fromTo(out, { boxShadow: '0 0 0 1.5px rgba(10,25,47,0.5), 0 14px 32px -22px rgba(10,25,47,0.22)' }, { boxShadow: '0 0 0 1.5px rgba(10,25,47,0.14), 0 14px 32px -22px rgba(10,25,47,0.22)', duration: 1.4, clearProps: 'boxShadow' }, 1.4)
+        .fromTo(sum, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 2);
+      flash(tl, [total], 2.7);
+      hold(tl, 3.2, 4.2);
       return tl;
     },
 

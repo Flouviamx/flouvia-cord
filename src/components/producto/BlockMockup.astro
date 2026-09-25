@@ -458,157 +458,340 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
 
   {/* ────────────────── CLIENTES & CRÉDITO ────────────────── */}
   {slug === 'clientes-credito' && index === 0 && (
-    <div class="bm-stage bm-credit-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Distribuidora El Zarco</span>
-          <span class="bm-app-badge bm-badge-blue">Cliente</span>
+    <div class="bm-stage" data-bmx="cc0">
+      <div class="bm-app bm-w bm-cm">
+        <div class="bm-cm-head"><strong>{tx('Editar cliente', 'Edit client')}</strong><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div>
+        <div class="bm-cm-body">
+          <span class="bm-cm-f"><span class="lb">{tx('Empresa *', 'Company *')}</span><span class="bm-field"><span>Obras Levante S.L.</span></span></span>
+          <span class="bm-cm-2">
+            <span class="bm-cm-f"><span class="lb">{tx('Contacto', 'Contact')}</span><span class="bm-field"><span>Lucía Ferrer</span></span></span>
+            <span class="bm-cm-f"><span class="lb">{tx('Correo', 'Email')}</span><span class="bm-field"><span>compras@obraslevante.es</span></span></span>
+          </span>
+          <span class="bm-cm-2">
+            <span class="bm-cm-f"><span class="lb">{tx('Teléfono', 'Phone')}</span><span class="bm-field"><span>+34 961 23 45 67</span></span></span>
+            <span class="bm-cm-f"><span class="lb">NIF / CIF</span><span class="bm-field"><span>B98765432</span></span></span>
+          </span>
+          <span class="bm-cm-f"><span class="lb">{tx('Límite de crédito (MXN)', 'Credit limit (MXN)')}</span><span class="bm-field"><span>350000</span></span></span>
+          <span class="bm-cm-f"><span class="lb">{tx('Nivel de precio', 'Price tier')}</span><span class="bm-chips bm-cm-chips" data-tiers><span data-v="0">{tx('Estándar', 'Standard')}</span><span data-v="5">{tx('Plata', 'Silver')}</span><span class="on" data-v="10">{tx('Oro', 'Gold')}</span><span data-v="15">{tx('Distribuidor', 'Distributor')}</span></span></span>
+          <span class="bm-cm-f"><span class="lb">{tx('Descuento automático en sus precios', 'Automatic discount on their prices')}</span><span class="bm-cm-disc"><span class="bm-field" data-disc><span data-dv>10</span><em>%</em></span><span class="pv" data-pv>MXN 1,000 → <b>MXN 900</b></span></span></span>
+          <span class="bm-cm-f"><span class="lb">{tx('Términos de pago', 'Payment terms')}</span><span class="bm-chips bm-cm-chips"><span>{tx('Contado', 'Cash')}</span><span>Net 30</span><span class="on">Net 60</span></span></span>
         </div>
-        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
-          <span class="bm-avat a1">EZ</span>
-          <div class="bm-uid-tx"><b>Raúl Mendoza</b><span>raul@elzarco.mx · +52 55 1234 5678</span></div>
-        </div>
-        <div class="bm-kv"><span>RFC</span><b>DEZ981123QX1</b></div>
-        <div class="bm-kv"><span>Régimen fiscal</span><b>601 · General de Ley</b></div>
-        <div class="bm-kv"><span>Términos de pago</span><span class="bm-tg bm-tg-amber">Net 30</span></div>
-        <div class="bm-kv"><span>Límite de crédito</span><b class="editorial">$500,000</b></div>
-        <div class="bm-app-foot"><span>Datos listos para el CFDI</span><b>18 cotizaciones</b></div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 1 && (
-    <div class="bm-stage bm-credit-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Exposición de crédito</span>
-          <span class="bm-app-badge bm-badge-blue">3 clientes</span>
+    <div class="bm-stage" data-bmx="cc1">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Clientes', 'Clients')}</span><span class="bm-w-sep">/</span><strong>Distribuidora El Zarco</strong></span>
+          <span class="bm-cc-acts"><span class="bm-btn-soft">{tx('Editar', 'Edit')}</span><span class="bm-btn-navy">{tx('Nueva cotización', 'New quote')}</span></span>
         </div>
-        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">El Zarco</b><div class="bm-cbar" style="margin-top:6px;"><i class="warn" style="width:85%;"></i></div></div><b class="editorial" style="margin-left:12px;">$425k/$500k</b></div>
-        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Constructora GAMA</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:72%;"></i></div></div><b class="editorial" style="margin-left:12px;">$612k/$850k</b></div>
-        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Grupo Ferrex</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:8%;"></i></div></div><span class="bm-tg bm-tg-gray" style="margin-left:12px;">Contado</span></div>
-        <div class="bm-app-foot"><span>El Zarco cerca de su límite</span><b>Riesgo $1.04M</b></div>
+        <div class="bm-sec-h"><strong>{tx('Estado de cuenta', 'Account statement')}</strong></div>
+        <div class="bm-ec-k">
+          <span><em>{tx('Saldo total', 'Total balance')}</em><b class="editorial" data-ec="tot" data-from="409750">MXN {nf(349750)}</b></span>
+          <span><em>{tx('Vencido', 'Overdue')}</em><b class="editorial bad" data-ec="ven" data-from="214320">MXN {nf(154320)}</b></span>
+          <span><em>{tx('Atraso máximo', 'Oldest overdue')}</em><b class="editorial bad">{tx('47 días', '47 days')}</b></span>
+        </div>
+        <div class="bm-ec-ag">
+          <span><em>{tx('Corriente', 'Current')}</em><b class="editorial">MXN {nf(195430)}</b></span>
+          <span class="late"><em>{tx('1–30 días', '1–30 days')}</em><b class="editorial">MXN {nf(94213.6)}</b></span>
+          <span class="late"><em>{tx('31–60 días', '31–60 days')}</em><b class="editorial" data-ec="b31" data-from="120106.4">MXN {nf(60106.4)}</b></span>
+          <span class="empty"><em>{tx('61–90 días', '61–90 days')}</em><b class="editorial">MXN {nf(0)}</b></span>
+          <span class="empty"><em>{tx('+90 días', '90+ days')}</em><b class="editorial">MXN {nf(0)}</b></span>
+        </div>
+        <div class="bm-ec-rows">
+          <span data-ec-row><span class="f">A-001041</span><span class="bm-ec-pill late">{tx('47 días', '47 days')}</span><b class="editorial" data-ec="row" data-from="120106.4">MXN {nf(60106.4)}</b><span class="d">{tx('Vence 8 ago 2026', 'Due Aug 8, 2026')}</span></span>
+          <span><span class="f">COT-0139</span><span class="bm-ec-pill late">{tx('18 días', '18 days')}</span><b class="editorial">MXN {nf(94213.6)}</b><span class="d">{tx('Vence 6 sep 2026', 'Due Sep 6, 2026')}</span></span>
+          <span><span class="f">COT-0148</span><span class="bm-ec-pill">{tx('Al corriente', 'Current')}</span><b class="editorial">MXN {nf(137528.44)}</b><span class="d">{tx('Vence 24 oct 2026', 'Due Oct 24, 2026')}</span></span>
+          <span><span class="f">A-001047</span><span class="bm-ec-pill">{tx('Al corriente', 'Current')}</span><b class="editorial">MXN {nf(57901.56)}</b><span class="d">{tx('Vence 30 oct 2026', 'Due Oct 30, 2026')}</span></span>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'clientes-credito' && index === 2 && (
-    <div class="bm-stage bm-credit-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">El Zarco · Relación</span>
-          <span class="bm-app-badge bm-badge-green">Cliente A</span>
+    <div class="bm-stage" data-bmx="cc2">
+      <div class="bm-app bm-w bm-cc2-rec">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Clientes', 'Clients')}</span><span class="bm-w-sep">/</span><strong>Grupo Ferrex</strong></span>
+          <span class="bm-cc-acts"><span class="bm-btn-soft">{tx('Editar', 'Edit')}</span><span class="bm-btn-navy">{tx('Nueva cotización', 'New quote')}</span></span>
         </div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>Tasa de aprobación</span><b class="g">86%</b></div>
-          <div class="bm-stat"><span>Días a pago</span><b>28</b></div>
+        <div class="bm-cc2-head">
+          <span class="av">G</span>
+          <span class="tx"><span class="bd"><span class="tier">{tx('Distribuidor', 'Distributor')}</span><span class="fis">{tx('Datos fiscales completos', 'Complete tax data')}</span></span><span class="m">Martín Ochoa · compras@grupoferrex.mx · +52 81 8342 1190</span></span>
+          <span class="tot"><em>{tx('CERRADO', 'CLOSED')}</em><b class="editorial">MXN {nf(1284600, 0)}</b></span>
         </div>
-        <div class="bm-kv"><span>Cotizaciones</span><b>18 · $2.4M</b></div>
-        <div class="bm-kv"><span>Pagos a tiempo</span><span class="bm-tg bm-tg-green">16 de 18</span></div>
-        <div class="bm-kv"><span>Último cierre</span><b>hace 4 días</b></div>
-        <div class="bm-app-foot"><span>La memoria comercial, en datos</span><b>Mejor decisión de precio</b></div>
+        <div class="bm-cc2-kpis">
+          <span><em>{tx('Cotizaciones', 'Quotes')}</em><b class="editorial">23</b></span>
+          <span><em>{tx('En pipeline', 'In pipeline')}</em><b class="editorial">MXN {nf(148920, 0)}</b></span>
+          <span><em>{tx('Cobrado', 'Collected')}</em><b class="editorial">MXN {nf(1016300, 0)}</b></span>
+        </div>
+        <div class="bm-cred" data-cred data-pct0="58" data-pct1="112" data-s0="291500" data-s1="560400">
+          <div class="bm-cred-h"><strong>{tx('Crédito', 'Credit')}</strong><span class="p" data-p data-l={tx('{p}% usado', '{p}% used')}>{tx('112% usado', '112% used')}</span></div>
+          <div class="bm-cred-tr"><i data-fill style="width:100%"></i></div>
+          <div class="bm-cred-n"><b class="editorial" data-s>MXN {nf(560400, 0)}</b><span>{tx('Saldo abierto', 'Open balance')} · MXN {nf(500000, 0)} {tx('crédito', 'credit')}</span></div>
+          <p class="bm-cred-w" data-w>{tx('Saldo abierto por encima del límite de crédito', 'Open balance above the credit limit')}</p>
+        </div>
+      </div>
+      <div class="bm-app bm-x-free bm-cc2-ph">
+        <div class="bm-phone">
+          <div class="bm-phone-scr">
+            <div class="bm-ios">
+              <span class="t">9:41</span><span class="isl"></span>
+              <span class="ic">
+                <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg>
+                <svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="17" height="8.2" rx="2" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="bm-qp">
+              <div class="bm-qc">
+                <div class="bm-qc-head">
+                  <span class="bm-qc-brand"><span class="bm-qc-mark">M</span><span class="bm-qc-bt"><span class="n">Materiales del Valle</span><span class="r">RFC MVA240611AB3</span></span></span>
+                  <span class="bm-qc-folio"><span class="e">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="f">COT-0145</span></span>
+                </div>
+                <div class="bm-fx0-meta"><span><em>{tx('PARA', 'FOR')}</em>Grupo Ferrex</span><span><em>{tx('TÉRMINOS', 'TERMS')}</em>Net 30</span></div>
+                <div class="bm-fx0-hero sm"><span class="e">{tx('TOTAL A PAGAR', 'TOTAL DUE')}</span><span class="editorial v">MXN {nf(268900)}</span></div>
+                <div class="bm-cc2-pre" data-pre hidden>
+                  <span class="bm-fx0-cta" data-ap>{tx('Aprobar cotización', 'Approve quote')}</span>
+                </div>
+                <div class="bm-cc2-done" data-done>
+                  <span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tt">{tx('Cotización aprobada', 'Quote approved')}</span>
+                  <div class="bm-cc2-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                    <span><strong>{tx('Pedido confirmado con crédito Net 30', 'Order confirmed with Net 30 credit')}</strong><span>{tx(`El pago de MXN ${nf(268900)} vence el 24 oct 2026. Cuando llegue la fecha podrás pagar en línea desde este mismo link.`, `The payment of MXN ${nf(268900)} is due on Oct 24, 2026. Once the date arrives you'll be able to pay online from this same link.`)}</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )}
 
   {/* ────────────────── COBRANZA CON IA ────────────────── */}
   {slug === 'cobranza-ia' && index === 0 && (
-    <div class="bm-stage bm-ar-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Agente de cobranza · El Zarco</span>
-          <span class="bm-app-badge bm-badge-amber">47 días vencido</span>
+    <div class="bm-stage" data-bmx="ar0">
+      <div class="bm-app bm-w bm-mail">
+        <div class="bm-mail-top">
+          <strong class="bm-mail-subj">{tx('Recordatorio de pago — saldo vencido (18 días)', 'Payment reminder — overdue balance (18 days)')}</strong>
+          <div class="bm-mail-from">
+            <span class="av">M</span>
+            <span class="who"><strong>Materiales del Valle vía Cord</strong><span>{tx('para', 'to')} raul@elzarco.mx</span></span>
+            <span class="when">{tx('9:02 a.m.', '9:02 AM')}</span>
+          </div>
         </div>
-        <div class="bm-cc">
-          <div class="bm-cc-b bm-cc-ai"><span class="bm-cc-tag">Agente Cord · IA</span>Hola Raúl, tu saldo de $412,300 venció hace 47 días. ¿Lo liquidamos en 3 pagos, sin recargos?</div>
-          <div class="bm-cc-b bm-cc-cl">De acuerdo, empiezo el 15 de julio.</div>
-          <div class="bm-cc-b bm-cc-ai"><span class="bm-cc-tag">Agente Cord · IA</span>Listo — plan de 3 × $137,433 registrado.</div>
+        <div class="bm-mail-body">
+          <img class="bm-mail-logo" src="/imgs/logo-cord-navy.png" alt="Cord" width="64" height="18" loading="lazy" />
+          <p>{tx('Hola Raúl: te escribo de Materiales del Valle por la cotización COT-0139. El saldo pendiente es de MXN 94,213.60 —ya descontamos el anticipo que nos pagaste— y venció hace 18 días. Puedes liquidarlo en línea desde el botón de abajo; si necesitas otra fecha, responde a este correo.', "Hi Raúl, I'm writing from Materiales del Valle about quote COT-0139. The outstanding balance is MXN 94,213.60 — we've already deducted the deposit you paid — and it's 18 days past due. You can settle it online with the button below; if you need a different date, just reply to this email.")}</p>
+          <span class="bm-mail-btn">{tx('Pagar MXN 94,213.60 en línea', 'Pay MXN 94,213.60 online')}</span>
+          <div class="bm-mail-foot">
+            <strong>Materiales del Valle</strong>
+            <span>{tx('Identificación fiscal', 'Tax ID')}: MVA240611AB3</span>
+            <span>{tx('Este es un mensaje automatizado de cobranza enviado por Cord en nombre de Materiales del Valle.', 'This is an automated collections message sent by Cord on behalf of Materiales del Valle.')}</span>
+          </div>
         </div>
-        <div class="bm-app-foot"><span>Negocia dentro de tus reglas</span><b class="bm-tg bm-tg-green">Plan activo</b></div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 1 && (
-    <div class="bm-stage bm-ar-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Flujo de caja · 90 días</span>
-          <span class="bm-app-badge bm-badge-green">IA</span>
+    <div class="bm-stage" data-bmx="ar1">
+      <div class="bm-app bm-w bm-ar1-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cobranza', 'Collections')}</span><span class="bm-w-sep">/</span><strong>{tx('Agente de IA', 'AI agent')}</strong></span>
+          <span class="bm-ar-mode"><i></i>{tx('Requiere aprobación', 'Needs approval')}</span>
         </div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>Ingreso proyectado</span><b class="editorial g">$1.84M</b></div>
-          <div class="bm-stat"><span>Probabilidad</span><b>82%</b></div>
+        <div class="bm-ar-sec"><strong>{tx('Bandeja de aprobación', 'Approval inbox')}</strong><span>{tx('Nada sale hasta que lo apruebes. Puedes editar el correo antes de enviarlo.', 'Nothing goes out until you approve it. You can edit the email before sending.')}</span></div>
+        <div class="bm-ar-draft" data-draft>
+          <div class="bm-ar-dh">
+            <span class="bm-ar-av">C</span>
+            <span class="who"><strong>Constructora GAMA</strong><span><u>COT-0133</u> · {tx('vencida hace 64 días', '64 days overdue')}</span></span>
+            <span class="editorial amt">MXN {nf(412300)}</span>
+          </div>
+          <div class="bm-ar-plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>{tx(`Propone 3 cuotas de MXN ${nf(137433.33)}`, `Proposes 3 instalments of MXN ${nf(137433.33)}`)}</span></div>
+          <div class="bm-ar-text">{tx(`Hola, Ing. Robles: le escribo de Materiales del Valle por la cotización COT-0133. El saldo de MXN ${nf(412300)} venció hace 64 días. Si le facilita las cosas, podemos dividirlo en 3 pagos mensuales de MXN ${nf(137433.33)}, el primero el 24 de octubre, y cada uno se paga desde el mismo enlace.`, `Hello Mr. Robles, I'm writing from Materiales del Valle about quote COT-0133. The MXN ${nf(412300)} balance is 64 days past due. If it helps, we can split it into 3 monthly payments of MXN ${nf(137433.33)}, the first on October 24, each payable from the same link.`)}</div>
+          <div class="bm-ar-acts"><span class="pri" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span>{tx('Regenerar', 'Regenerate')}</span><span class="gh">{tx('Descartar', 'Discard')}</span><span class="gh">{tx('No escribirle', "Don't email them")}</span></div>
         </div>
-        <div class="bm-bars2"><i style="height:44%"></i><i style="height:62%"></i><i style="height:54%"></i><i class="hot" style="height:88%"></i><i style="height:70%"></i></div>
-        <div class="bm-bars2-x"><span>30d</span><span>45d</span><span>60d</span><span>75d</span><span>90d</span></div>
-        <div class="bm-app-foot"><span>Basado en tu historial real de pago</span><b class="bm-tg bm-tg-amber">Riesgo El Zarco</b></div>
+        <div class="bm-ar-draft">
+          <div class="bm-ar-dh">
+            <span class="bm-ar-av">A</span>
+            <span class="who"><strong>Aceros del Norte</strong><span><u>COT-0138</u> · {tx('vencida hace 21 días', '21 days overdue')}</span></span>
+            <span class="editorial amt">MXN {nf(48720)}</span>
+          </div>
+          <div class="bm-ar-text">{tx(`Hola, Sra. Treviño: le escribo de Materiales del Valle por la cotización COT-0138. El saldo de MXN ${nf(48720)} venció hace 21 días; puede liquidarlo en línea desde el enlace de este correo.`, `Hello Ms. Treviño, I'm writing from Materiales del Valle about quote COT-0138. The MXN ${nf(48720)} balance is 21 days past due; you can settle it online from the link in this email.`)}</div>
+        </div>
+      </div>
+      <div class="bm-fl bm-ar1-plans">
+        <div class="bm-ar-sec in"><strong>{tx('Planes negociados', 'Negotiated plans')}</strong><span>{tx('Cuotas acordadas por el agente y su avance real.', "Instalments the agent agreed on, and how they're going.")}</span></div>
+        <div class="bm-rl">
+          <div data-plan data-pend={tx('0 de 3 cuotas pagadas', '0 of 3 instalments paid')} data-act={tx('0 de 3 cuotas pagadas · próxima 24 oct', '0 of 3 instalments paid · next Oct 24')}><span><strong>Constructora GAMA</strong><small>COT-0133 · <span data-pt>{tx('0 de 3 cuotas pagadas', '0 of 3 instalments paid')}</span><em class="bm-ar-prop" data-prop>{tx('Por aprobar', 'Pending approval')}</em></small></span><b class="editorial">MXN {nf(137433.33)}</b></div>
+          <div><span><strong>Grupo Ferrex</strong><small>COT-0127 · {tx('1 de 3 cuotas pagadas · próxima 3 oct', '1 of 3 instalments paid · next Oct 3')}</small></span><b class="editorial">MXN {nf(58904)}</b></div>
+          <div><span><strong>Aceros del Norte</strong><small>COT-0119 · {tx('2 de 4 cuotas pagadas · próxima 10 oct', '2 of 4 instalments paid · next Oct 10')}</small></span><b class="editorial">MXN {nf(36250)}</b></div>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'cobranza-ia' && index === 2 && (
-    <div class="bm-stage bm-ar-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Supervisión de cobranza</span>
-          <span class="bm-app-badge bm-badge-blue">Opt-in</span>
+    <div class="bm-stage" data-bmx="ar2">
+      <div class="bm-app bm-w bm-ar2-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cobranza', 'Collections')}</span><span class="bm-w-sep">/</span><strong>{tx('Agente de IA', 'AI agent')}</strong></span>
+          <span class="bm-ar-top"><span class="bm-ar-mode"><i></i>{tx('Requiere aprobación', 'Needs approval')}</span><span class="bm-btn-soft">{tx('Correr ahora', 'Run now')}</span></span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">EZ</span><div class="bm-uid-tx"><b>Distribuidora El Zarco</b><span>$412,300 · agente activo</span></div></div><span class="bm-tg bm-tg-amber">Negociando</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">CG</span><div class="bm-uid-tx"><b>Constructora GAMA</b><span>plan de 3 cuotas</span></div></div><span class="bm-tg bm-tg-green">Plan activo</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">GF</span><div class="bm-uid-tx"><b>Grupo Ferrex</b><span>fuera de límites</span></div></div><span class="bm-tg bm-tg-gray">Tu OK</span></div>
-        <div class="bm-app-foot"><span>Cada acción en el audit log</span><b>Tú apruebas</b></div>
+        <div class="bm-ar-sec"><strong>{tx('Bandeja de aprobación', 'Approval inbox')}</strong><span>{tx('Nada sale hasta que lo apruebes. Puedes editar el correo antes de enviarlo.', 'Nothing goes out until you approve it. You can edit the email before sending.')}</span></div>
+        <div class="bm-ar-draft">
+          <div class="bm-ar-dh">
+            <span class="bm-ar-av">D</span>
+            <span class="who"><strong>Distribuidora El Zarco</strong><span><u>COT-0139</u> · {tx('vencida hace 18 días', '18 days overdue')}</span></span>
+            <span class="editorial amt">MXN {nf(94213.6)}</span>
+          </div>
+          <div class="bm-ar-text" data-text data-short={tx(`Hola Raúl: te quedan MXN ${nf(94213.6)} de la COT-0139, vencidos hace 18 días. Puedes pagarlos en línea desde este correo. ¡Gracias!`, `Hi Raúl, there's MXN ${nf(94213.6)} left on COT-0139, 18 days past due. You can pay it online from this email. Thanks!`)}>{tx(`Hola Raúl, le escribo de parte de Materiales del Valle para dar seguimiento a la cotización COT-0139. Nuestro registro muestra un saldo pendiente de MXN ${nf(94213.6)}, con 18 días de atraso respecto al plazo acordado. Le agradeceríamos regularizarlo; puede pagar en línea desde el enlace de este correo.`, `Hello Raúl, I'm writing on behalf of Materiales del Valle to follow up on quote COT-0139. Our records show an outstanding balance of MXN ${nf(94213.6)}, 18 days past the agreed term. We'd appreciate your help settling it; you can pay online from the link in this email.`)}</div>
+          <div class="bm-ar-acts"><span class="pri">{tx('Aprobar y enviar', 'Approve and send')}</span><span class="on">{tx('Regenerar', 'Regenerate')}</span><span class="gh">{tx('Descartar', 'Discard')}</span><span class="gh">{tx('No escribirle', "Don't email them")}</span></div>
+          <div class="bm-ar-regen" data-regen>
+            <span class="in"><span data-q>{tx('más corto y menos formal', 'shorter and less formal')}</span><span class="bm-caret"></span></span>
+            <span class="pri" data-go>{tx('Regenerar con esto', 'Regenerate with this')}</span>
+            <span class="gh">{tx('Cancelar', 'Cancel')}</span>
+          </div>
+        </div>
+      </div>
+      <div class="bm-fl bm-ar2-mira">
+        <div class="bm-ar-sec in row"><span class="c"><strong>{tx('En la mira', 'Up next')}</strong><span>{tx('A quién le escribirá en la próxima corrida, y a quién no.', "Who it will email on the next run, and who it won't.")}</span></span><b class="editorial n">3</b></div>
+        <div class="bm-rl">
+          {[
+            ['Grupo Ferrex', 'COT-0127', tx('Plan al corriente', 'Plan on track')],
+            ['Aceros del Norte', 'COT-0138', tx('Ya le escribió', 'Emailed recently')],
+            ['Tlapalería La Esperanza', 'COT-0153', tx('Bajo el monto mínimo', 'Below minimum amount')],
+            ['Obras del Bajío', 'COT-0141', tx('Excluida', 'Excluded')],
+            ['Urbanizadora Sierra', 'COT-0144', tx('Ya saldada', 'Already settled')],
+          ].map(([e, f, m]) => (
+            <div><span><strong>{e}</strong><small>{f}</small></span><em class="bm-ar-why">{m}</em></div>
+          ))}
+        </div>
+        <p class="bm-ar-last">{tx('Último correo enviado: hoy, 9:02 a.m.', 'Last email sent: today, 9:02 AM.')}</p>
       </div>
     </div>
   )}
 
   {/* ────────────────── MULTI-DIVISA / FX ────────────────── */}
   {slug === 'divisas' && index === 0 && (
-    <div class="bm-stage bm-fx-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0150 · Acme Imports</span>
-          <span class="bm-app-badge bm-badge-blue">USD → MXN</span>
+    <div class="bm-stage" data-bmx="fx0" data-v={JSON.stringify([
+      { f: 'COT-0150', c: 'Acme Building Supply', t: cur('USD', 12400), k: 'USD', a: cur('USD', 3650), b: cur('USD', 3480) },
+      { f: 'COT-0154', c: 'Obras Levante S.L.', t: cur('EUR', 11380), k: 'EUR', a: cur('EUR', 3350), b: cur('EUR', 3195) },
+      { f: 'COT-0157', c: 'Constructora Andina', t: cur('COP', 48670200), k: 'COP', a: cur('COP', 14326500), b: cur('COP', 13659000) },
+    ])}>
+      <div class="bm-app bm-x-free">
+        <div class="bm-phone bm-fx0-phone">
+          <div class="bm-phone-scr">
+            <div class="bm-ios">
+              <span class="t">9:41</span><span class="isl"></span>
+              <span class="ic">
+                <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg>
+                <svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="17" height="8.2" rx="2" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="bm-qp">
+              <div class="bm-qc bm-fx0-qc" data-sw>
+                <div class="bm-qc-head">
+                  <span class="bm-qc-brand"><span class="bm-qc-mark">M</span><span class="bm-qc-bt"><span class="n">Materiales del Valle</span><span class="r">RFC MVA240611AB3</span></span></span>
+                  <span class="bm-qc-folio"><span class="e">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="f" data-f>COT-0150</span></span>
+                </div>
+                <div class="bm-fx0-meta"><span><em>{tx('PARA', 'FOR')}</em><span data-c>Acme Building Supply</span></span><span><em>{tx('VÁLIDA HASTA', 'VALID UNTIL')}</em>{tx('24 oct 2026', 'Oct 24, 2026')}</span></div>
+                <div class="bm-fx0-hero">
+                  <span class="e">{tx('TOTAL A PAGAR', 'TOTAL DUE')}</span>
+                  <span class="editorial v" data-t>{cur('USD', 12400)}</span>
+                  <span class="n"><span data-k>USD</span> · {tx('IVA incluido', 'tax included')}</span>
+                </div>
+                <div class="bm-fx0-it">
+                  <span class="h"><span>{tx('Concepto', 'Item')}</span><span>{tx('Importe', 'Amount')}</span></span>
+                  <span class="r"><span>{tx('Varilla corrugada 3/8" × 340', 'Rebar 3/8" × 340')}</span><b class="editorial" data-a>{cur('USD', 3650)}</b></span>
+                  <span class="r"><span>{tx('Malla electrosoldada × 180', 'Wire mesh × 180')}</span><b class="editorial" data-b>{cur('USD', 3480)}</b></span>
+                </div>
+                <span class="bm-fx0-cta">{tx('Aprobar cotización', 'Approve quote')}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="bm-kv"><span>Moneda de presentación</span><span class="bm-tg bm-tg-blue">USD</span></div>
-        <div class="bm-kv"><span>Moneda fiscal (factura)</span><span class="bm-tg bm-tg-green">MXN</span></div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>El cliente ve</span><b class="editorial">US$10,620.50</b></div>
-          <div class="bm-stat"><span>Se factura</span><b class="editorial g">$196,469.20</b></div>
-        </div>
-        <div class="bm-app-foot"><span>Tasa guardada en la cotización</span><b>1 USD = $18.50</b></div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 1 && (
-    <div class="bm-stage bm-fx-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Tipo de cambio</span>
-          <span class="bm-app-badge bm-badge-green">● En vivo · BCE</span>
+    <div class="bm-stage" data-bmx="fx1">
+      <div class="bm-app bm-x-free">
+        <div class="bm-sum bm-fx1-sum">
+          <div class="bm-sum-h">{tx('Revisa y envía', 'Review and send')}</div>
+          <div class="bm-sum-count">3 {tx('líneas', 'lines')} · 1,340 {tx('piezas', 'pieces')}</div>
+          <div class="bm-sum-l"><span>Subtotal</span><span class="editorial">US${nf(10000)}</span></div>
+          <div class="bm-sum-div"></div>
+          <div class="bm-sum-l total"><span>Total</span><span class="editorial">US${nf(10000)}</span></div>
+          <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+          <div class="bm-fx">
+            <p class="bm-fx-ex">{tx('Capturas y cobras en ', 'You quote and charge in ')}<b>USD</b>{tx(', pero tu contabilidad va en pesos mexicanos.', ', but your books are in Mexican pesos.')}</p>
+            <div class="bm-fx-st">
+              <span class="s"><span class="l">{tx('Tipo de cambio hoy', "Today's exchange rate")}</span><span class="editorial v">$18.40</span></span>
+              <span class="ar">→</span>
+              <span class="s on" data-rate><span class="l">{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</span><span class="editorial v">$18.77</span></span>
+            </div>
+            <p class="bm-fx-sees">{tx('Tu cliente paga ', 'Your client pays ')}<b>US${nf(10000)}</b>{tx(' · en tus libros ≈ ', ' · in your books ≈ ')}<b>${nf(187680)} MXN</b></p>
+            <span class="bm-fx-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Tasa congelada', 'Rate locked')}</span>
+          </div>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">$</span><div class="bm-uid-tx"><b>USD / MXN</b><span>spot del día</span></div></div><b class="editorial">$18.50</b></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3" style="border-radius:8px;">€</span><div class="bm-uid-tx"><b>EUR / MXN</b><span>spot del día</span></div></div><b class="editorial">$20.10</b></div>
-        <div class="bm-kv"><span>Fuente</span><span class="bm-tg bm-tg-blue">Banco Central Europeo</span></div>
-        <div class="bm-kv"><span>Respaldo si falla</span><span class="bm-tg bm-tg-green">Activo</span></div>
-        <div class="bm-app-foot"><span>Preview mientras cotizas</span><b>Sin capturar nada</b></div>
+        <div class="bm-fl bm-fx1-inv">
+          <div class="bm-fx1-ih"><span class="f">A-001052</span><span class="bm-sp bm-sp-approved">{tx('Emitida', 'Issued')}</span></div>
+          <span class="bm-fx1-is">Acme Building Supply · {tx('desde', 'from')} COT-0156 · {tx('15 oct 2026', 'Oct 15, 2026')}</span>
+          <span class="bm-kl bm-fx1-tl">Total</span>
+          <strong class="editorial bm-fx1-tot">USD {nf(10000)}</strong>
+          <div class="bm-fx1-rows">
+            <span><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><b class="editorial">USD {nf(5840)}</b></span>
+            <span><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><b class="editorial">USD {nf(2980)}</b></span>
+            <span><span>{tx('Alambre recocido cal. 18', 'Annealed wire gauge 18')}</span><b class="editorial">USD {nf(1180)}</b></span>
+            <span class="t"><span>{tx('Saldo', 'Balance')}</span><b class="editorial">USD {nf(10000)}</b></span>
+          </div>
+          <p class="bm-fx1-fx" data-inv>{tx('Tipo de cambio declarado', 'Stated exchange rate')}: 1 USD = 18.768 MXN · {tx('Total contable', 'Ledger total')} {nf(187680)} MXN</p>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'divisas' && index === 2 && (
-    <div class="bm-stage bm-fx-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Cobertura cambiaria</span>
-          <span class="bm-app-badge bm-badge-green">FX lock 30 días</span>
+    <div class="bm-stage" data-bmx="fx2">
+      <div class="bm-app bm-w bm-fx2-back">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
+          <span class="bm-w-draft">{tx('Borrador', 'Draft')}</span>
         </div>
-        <div class="bm-kv"><span>Tasa spot</span><b class="editorial">$18.50</b></div>
-        <div class="bm-kv"><span>Buffer de cobertura</span><div class="bm-cbar" style="width:120px;"><i style="width:60%;background:#059669;"></i></div></div>
-        <div class="bm-kv bm-active" style="border-radius:0;"><span>Tasa aplicada</span><b class="editorial" style="color:#059669;">$18.87 <span class="bm-tg bm-tg-green">+2%</span></b></div>
-        <div class="bm-kv"><span>Congelada hasta</span><b>24 jul 2026</b></div>
-        <div class="bm-app-foot"><span>El margen que cierras es el que cobras</span><b>Protegido</b></div>
+        <div class="bm-ed-client"><span class="bm-field bm-ed-select"><span>Acme Building Supply — Mark Davis</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <div class="bm-ed-lines bm-ed-lines-b bm-fx2-lines">
+          <div class="bm-ed-head"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Precio', 'Price')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+          {[
+            [tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m'), tx('pieza', 'piece'), 340, 11.6],
+            [tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6'), tx('hoja', 'sheet'), 180, 17.4],
+            [tx('Cemento gris 50 kg', 'Gray cement 50 kg'), tx('saco', 'bag'), 100, 12.44],
+            [tx('Block hueco 15×20×40', 'Hollow block 15×20×40'), tx('pieza', 'piece'), 800, 2.1],
+          ].map(([n, u, q, p]) => (
+            <div class="bm-ed-row"><span class="bm-ed-name">{n}<small>{u}</small></span><span class="bm-in bm-ed-q">{q}</span><span class="bm-in">{nf(p as number)}</span><span class="editorial bm-ed-amt">US${nf((q as number) * (p as number))}</span></div>
+          ))}
+        </div>
+      </div>
+      <div class="bm-sum bm-fx2-sum">
+        <div class="bm-sum-h">{tx('Revisa y envía', 'Review and send')}</div>
+        <div class="bm-sum-count">4 {tx('líneas', 'lines')} · 1,420 {tx('piezas', 'pieces')}</div>
+        <div class="bm-sum-l total"><span>Total</span><span class="editorial">US${nf(10000)}</span></div>
+        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <div class="bm-fx">
+          <p class="bm-fx-ex">{tx('Capturas y cobras en ', 'You quote and charge in ')}<b>USD</b>{tx(', pero tu contabilidad va en pesos colombianos.', ', but your books are in Colombian pesos.')}</p>
+          <div class="bm-fx-st">
+            <span class="s"><span class="l">{tx('Tipo de cambio hoy', "Today's exchange rate")}</span><span class="editorial v">—</span></span>
+            <span class="ar">→</span>
+            <span class="s on"><span class="l">{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</span><span class="editorial v">—</span></span>
+          </div>
+          <p class="bm-fx-err" data-err>{tx('No pudimos obtener el tipo de cambio USD → COP. Intenta de nuevo en un momento o cotiza en la moneda de tu negocio.', "We couldn't get the USD → COP exchange rate. Try again in a moment or quote in your business's currency.")}</p>
+        </div>
+        <span class="bm-sum-send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
     </div>
   )}
@@ -625,16 +808,14 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-py-amt">
             <span class="l">{tx('Anticipo a pagar', 'Deposit due')}</span>
             <span class="editorial v">{mxs}{nf(58940.76)} <small>MXN</small></span>
-            <span class="n">{tx(`del total de ${mxs}${nf(196469.2)} MXN`, `of a ${mxs}${nf(196469.2)} MXN total`)}</span>
-            <span class="n">{tx('Tarjeta · Transferencia SPEI', 'Card · SPEI transfer')}</span>
+            <span class="n">{tx(`del total de ${mxs}${nf(196469.2)} MXN · Tarjeta · Transferencia SPEI`, `of a ${mxs}${nf(196469.2)} MXN total · Card · SPEI transfer`)}</span>
           </div>
           <span class="bm-py-lg">{tx('Método de pago', 'Payment method')}</span>
           <div class="bm-py-seg"><span class="on" data-seg="card">{tx('Tarjeta', 'Card')}</span><span data-seg="spei">{tx('Transferencia SPEI', 'SPEI transfer')}</span></div>
           <div class="bm-py-body" data-body>
             <div class="bm-py-card" data-panel="card">
-              <span class="bm-py-f"><span class="lb">{tx('Número de tarjeta', 'Card number')}</span><span class="in"><span class="ph">1234 1234 1234 1234</span><span class="bm-py-brands"><span>VISA</span><span>MC</span><span>AMEX</span></span></span></span>
-              <span class="bm-py-2"><span class="bm-py-f"><span class="lb">{tx('Vencimiento', 'Expiration')}</span><span class="in"><span class="ph">{tx('MM / AA', 'MM / YY')}</span></span></span><span class="bm-py-f"><span class="lb">CVC</span><span class="in"><span class="ph">CVC</span></span></span></span>
-              <span class="bm-py-cta">{tx(`Pagar ${mxs}${nf(58940.76)}`, `Pay ${mxs}${nf(58940.76)}`)}</span>
+              <span class="bm-py-f"><span class="lb">{tx('Datos de la tarjeta', 'Card details')}<span class="bm-py-brands"><span>VISA</span><span>MC</span><span>AMEX</span></span></span><span class="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><line x1="2.5" y1="10" x2="21.5" y2="10"/></svg><span class="ph" data-num>1234 1234 1234 1234</span><span class="ph sm">{tx('MM / AA', 'MM / YY')}</span><span class="ph sm">CVC</span></span></span>
+              <span class="bm-py-cta">{tx(`Pagar ${mxs}${nf(58940.76)} MXN`, `Pay ${mxs}${nf(58940.76)} MXN`)}</span>
             </div>
             <div class="bm-py-spei" data-panel="spei" hidden>
               <strong>{tx('Instrucciones SPEI', 'SPEI instructions')}</strong>
@@ -674,8 +855,8 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           </div>
           <div class="bm-ql-plan">
             <span class="h">{tx('Plan de pago', 'Payment plan')}</span>
-            <span class="r"><span>{tx('Anticipo', 'Deposit')}</span><b class="editorial">{mxs}{nf(58940.76)}</b><em class="due">{tx('Por pagar', 'Due')}</em></span>
-            <span class="r"><span>{tx('Saldo', 'Balance')}</span><b class="editorial">{mxs}{nf(137528.44)}</b><em>{tx('Vence el 24 oct 2026', 'Due on Oct 24, 2026')}</em></span>
+            <span class="r"><span>{tx('Anticipo', 'Deposit')}</span><b class="editorial">{cur('MXN', 58940.76)}</b><em>{tx('Por pagar', 'Due')}</em></span>
+            <span class="r"><span>{tx('Saldo', 'Balance')}</span><b class="editorial">{cur('MXN', 137528.44)}</b><em>{tx('Vence el 24 oct 2026', 'Due on Oct 24, 2026')}</em></span>
           </div>
         </div>
         <div class="bm-ql bm-ql-sub" data-sub>
@@ -718,7 +899,6 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-pg2-bank">
             <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fill-opacity="0.12"/><path d="M9 21v-6h6v6"/></svg></span>
             <span class="tx"><strong>{tx('Cuenta bancaria', 'Bank account')}</strong><span>{tx('Cuenta CLABE terminación •••• 4821. Aquí llegan tus depósitos.', 'CLABE account ending in •••• 4821. Your payouts arrive here.')}</span></span>
-            <span class="ok">{tx('18 dígitos · verificada', '18 digits · verified')}</span>
           </div>
           <div class="bm-pg2-sched">
             <strong>{tx('Frecuencia de depósito', 'Payout frequency')}</strong>
@@ -872,51 +1052,96 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   )}
   {/* ────────────────── FINANZAS ────────────────── */}
   {slug === 'finanzas' && index === 0 && (
-    <div class="bm-stage bm-fin-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">DSO por cliente</span>
-          <span class="bm-app-badge bm-badge-green">IA</span>
+    <div class="bm-stage" data-bmx="fn0">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Informes', 'Reports')}</span><span class="bm-w-sep">/</span><strong>{tx('Flujo de caja · 90 días', 'Cash flow · 90 days')}</strong></span>
+          <span class="bm-snap bm-fn-day">{tx('Al día de hoy · 24 sep', 'As of today · Sep 24')}</span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">EZ</span><div class="bm-uid-tx"><b>El Zarco</b><span>Net 30 · paga en 42 días</span></div></div><b class="bm-tg bm-tg-amber">DSO 42</b></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">CG</span><div class="bm-uid-tx"><b>Constructora GAMA</b><span>Net 60 · paga en 58 días</span></div></div><b class="bm-tg bm-tg-green">DSO 58</b></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">GF</span><div class="bm-uid-tx"><b>Grupo Ferrex</b><span>Contado · paga en 3 días</span></div></div><b class="bm-tg bm-tg-green">DSO 3</b></div>
-        <div class="bm-app-foot"><span>No adivina: usa tu historial real</span><b class="editorial">Proyección $2.4M</b></div>
+        <div class="bm-fn-sh">
+          <span class="c"><strong>{tx('Flujo semanal · 90 días', 'Weekly flow · 90 days')}</strong><span>{tx('Tres fuentes separadas para no confundir certeza con probabilidad.', 'Three separate sources to distinguish certainty from probability.')}</span></span>
+          <span class="bm-fn-lg"><span class="ca">{tx('Cartera', 'Receivables')}</span><span class="pi">Pipeline</span><span class="mr">MRR</span></span>
+        </div>
+        <div class="bm-fn-weeks">
+          {(() => {
+            const W = [[214320, 0, 86400], [137528, 18400, 0], [96800, 42600, 0], [57902, 88300, 0], [121800, 97260, 0], [38150, 71900, 86400], [0, 124580, 0], [24300, 58210, 0], [0, 49870, 0], [0, 38420, 86400], [0, 26150, 0], [0, 17600, 0], [0, 9850, 0]];
+            const L = en
+              ? ['Sep 25 – Oct 1', 'Oct 2 – Oct 8', 'Oct 9 – Oct 15', 'Oct 16 – Oct 22', 'Oct 23 – Oct 29', 'Oct 30 – Nov 5', 'Nov 6 – Nov 12', 'Nov 13 – Nov 19', 'Nov 20 – Nov 26', 'Nov 27 – Dec 3', 'Dec 4 – Dec 10', 'Dec 11 – Dec 17', 'Dec 18 – Dec 23']
+              : ['25 sep – 1 oct', '2 oct – 8 oct', '9 oct – 15 oct', '16 oct – 22 oct', '23 oct – 29 oct', '30 oct – 5 nov', '6 nov – 12 nov', '13 nov – 19 nov', '20 nov – 26 nov', '27 nov – 3 dic', '4 dic – 10 dic', '11 dic – 17 dic', '18 dic – 23 dic'];
+            const max = Math.max(...W.map((w) => w[0] + w[1] + w[2]));
+            return W.map((w, i) => (
+              <div class="bm-fn-wk">
+                <span class="l">{L[i]}</span>
+                <span class="tr"><i class="ca" style={`width:${(w[0] / max) * 100}%`}></i><i class="pi" style={`width:${(w[1] / max) * 100}%`}></i><i class="mr" style={`width:${(w[2] / max) * 100}%`}></i></span>
+                <b class="editorial">MXN {nf(w[0] + w[1] + w[2], 0)}</b>
+              </div>
+            ));
+          })()}
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 1 && (
-    <div class="bm-stage bm-fin-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Riesgo de cartera</span>
-          <span class="bm-app-badge bm-badge-amber">● Alerta</span>
+    <div class="bm-stage" data-bmx="fn1">
+      <div class="bm-app bm-w bm-fn1-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Informes', 'Reports')}</span><span class="bm-w-sep">/</span><strong>{tx('Finanzas', 'Finance')}</strong></span>
         </div>
-        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">Grupo Constructor A</b><div class="bm-cbar" style="margin-top:6px;"><i class="warn" style="width:42%;"></i></div></div><b class="bm-tg bm-tg-red" style="margin-left:12px;">42%</b></div>
-        <div class="bm-kv"><div style="flex:1;"><b style="display:block;font-size:0.8rem;">El Zarco</b><div class="bm-cbar" style="margin-top:6px;"><i style="width:24%;"></i></div></div><span class="bm-tg bm-tg-gray" style="margin-left:12px;">24%</span></div>
-        <div class="bm-kv"><span>DSO promedio histórico</span><b class="bm-tg bm-tg-amber">+18 días</b></div>
-        <div class="bm-app-foot"><span>Recomendación de IA</span><b>Limitar crédito a Grupo A</b></div>
+        <div class="bm-fn-sh">
+          <span class="c"><strong>{tx('Pipeline ponderado por cliente', 'Client-weighted pipeline')}</strong><span>{tx('Probabilidad y tiempo derivados del historial real.', 'Probability and timing from actual history.')}<span class="bm-snap">{tx('hoy', 'today')}</span></span></span>
+        </div>
+        <div class="bm-hb">
+          {[
+            ['Constructora GAMA', 288610, 'gama'],
+            ['Distribuidora El Zarco', 197866, ''],
+            ['Inmobiliaria Valle Real', 97260, ''],
+            ['Aceros del Norte', 81906, ''],
+            ['Urbanizadora Sierra', 73387, ''],
+            ['Ferretería Central', 50586, ''],
+            ['Tlapalería La Esperanza', 15260, ''],
+          ].map(([n, v, k]) => (
+            <div class="bm-hb-r" data-k={k || undefined}><span class="n">{n}</span><span class="tr"><i style={`width:${((v as number) / 288610) * 100}%`}></i></span><b class="editorial">MXN {nf(v as number, 0)}</b></div>
+          ))}
+        </div>
+      </div>
+      <div class="bm-fl bm-fn1-rec" data-rec>
+        <div class="bm-fn1-rh"><span class="av">C</span><span class="tx"><strong>Constructora GAMA</strong><span class="tier">{tx('Oro', 'Gold')}</span></span></div>
+        <div class="bm-fn1-k">
+          <span data-hi><em>{tx('En pipeline', 'In pipeline')}</em><b class="editorial">MXN {nf(412300, 0)}</b></span>
+          <span data-hi><em>{tx('Tasa de cierre', 'Close rate')}</em><b class="editorial">70%</b></span>
+          <span><em>{tx('Días a cierre', 'Days to close')}</em><b class="editorial">12</b></span>
+          <span><em>{tx('Cotizaciones', 'Quotes')}</em><b class="editorial">14</b></span>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'finanzas' && index === 2 && (
-    <div class="bm-stage bm-fin-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Panel del CFO</span>
-          <span class="bm-app-badge bm-badge-green">● En vivo</span>
+    <div class="bm-stage" data-bmx="fn2">
+      <div class="bm-app bm-w bm-x-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Informes', 'Reports')}</span><span class="bm-w-sep">/</span><strong>{tx('Finanzas', 'Finance')}</strong></span>
+          <span class="bm-snap bm-fn-day">{tx('Al día de hoy · 24 sep 2026', 'As of today · Sep 24, 2026')}</span>
         </div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>Efectivo disponible</span><b class="editorial">$840k</b></div>
-          <div class="bm-stat"><span>Por cobrar 30d</span><b class="editorial g">$1.1M</b></div>
+        <div class="bm-fn2-k">
+          <span><em>{tx('MRR contratado', 'Contracted MRR')}</em><b class="editorial" data-n="86400">MXN {nf(86400, 0)}</b><small>{tx('7 igualas activas', '7 active retainers')}</small></span>
+          <span><em>ARR</em><b class="editorial" data-n="1036800">MXN {nf(1036800, 0)}</b><small>{tx('MRR anualizado', 'Annualized MRR')}</small></span>
+          <span><em>DSO</em><b class="editorial">38<em>d</em></b><small>{tx('tiempo estimado a cobro', 'estimated time to collection')}</small></span>
+          <span><em>{tx('MRR en riesgo', 'MRR at risk')}</em><b class="editorial bad" data-n="12800">MXN {nf(12800, 0)}</b><small>{tx('cobro fallido o cancelación programada', 'failed charge or scheduled cancellation')}</small></span>
         </div>
-        <div class="bm-kv"><span>Riesgo de impago estimado</span><b class="bm-tg bm-tg-amber">1.2%</b></div>
-        <div class="bm-kv"><span>DSO global</span><b>34 días</b></div>
-        <div style="display:flex;gap:8px;padding:2px 12px 14px;">
-          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Exportar CSV</div>
-          <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Exportar PDF</div>
+        <div class="bm-fn-sh bm-fn2-sh">
+          <span class="c"><strong>{tx('Rentabilidad por nivel de cliente', 'Profitability by client tier')}</strong><span>{tx('Contrasta descuento configurado, tasa de cierre y valor cerrado.', 'Compares configured discount, close rate, and closed value.')}</span></span>
+        </div>
+        <div class="bm-rl bm-fn2-rl">
+          {[
+            [tx('Distribuidor', 'Distributor'), 15, 71, 24, 2184300],
+            [tx('Oro', 'Gold'), 10, 62, 18, 1406900],
+            [tx('Plata', 'Silver'), 5, 48, 21, 688450],
+            [tx('Estándar', 'Standard'), 0, 31, 46, 512780],
+          ].map(([n, d, c, s, v]) => (
+            <div><span><strong>{n}</strong><small>{d}% {tx('descuento', 'discount')} · {c}% {tx('cierre', 'close rate')} · n={s}</small></span><b class="editorial">MXN {nf(v as number, 0)}</b></div>
+          ))}
         </div>
       </div>
     </div>
@@ -1907,38 +2132,40 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   .bm-pf .bm-sec-h span { font-weight: 500; }
 
   /* pagos · página de pago */
+  .bm-wrap.bm-pagos-0 { padding-top: 18px !important; }
   [data-bmx="pg0"] .bm-x-free { flex-direction: column; align-items: center; }
-  .bm-py { width: min(100%, 352px); background: #ffffff; border-radius: 22px; padding: 16px 16px 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 24px 50px -18px rgba(10,25,47,0.2), 0 64px 100px -50px rgba(10,25,47,0.26); color: #050505; }
-  .bm-py-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .bm-py { width: min(100%, 352px); background: #ffffff; border-radius: 22px; padding: 14px 15px 15px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 24px 50px -18px rgba(10,25,47,0.2), 0 64px 100px -50px rgba(10,25,47,0.26); color: #050505; }
+  .bm-py-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .bm-py-av { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; }
   .bm-py-bt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .bm-py-bt strong { font-size: 0.76rem; font-weight: 600; letter-spacing: -0.01em; color: #050505; }
   .bm-py-bt em { font-size: 0.6rem; color: #6b7686; }
-  .bm-py-amt { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px 10px; margin-bottom: 12px; background: #f5f5f7; border-radius: 13px; }
+  .bm-py-amt { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px 9px; margin-bottom: 10px; background: #f5f5f7; border-radius: 13px; }
   .bm-py-amt .l { font-size: 0.5rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8a93a2; }
   .bm-py-amt .v { font-size: 1.2rem; line-height: 1.2; color: #050505 !important; }
   .bm-py-amt .v small { font-size: 0.58rem; font-weight: 600; color: #8a93a2; }
   .bm-py-amt .n { font-size: 0.56rem; color: #8a93a2; }
-  .bm-py-lg { display: block; font-size: 0.58rem; font-weight: 600; color: #4a5567; margin-bottom: 6px; }
-  .bm-py-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; margin-bottom: 11px; background: #f5f5f7; border-radius: 11px; }
+  .bm-py-lg { display: block; font-size: 0.58rem; font-weight: 600; color: #4a5567; margin-bottom: 5px; }
+  .bm-py-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; margin-bottom: 9px; background: #f5f5f7; border-radius: 11px; }
   .bm-py-seg > span { text-align: center; font-size: 0.64rem; font-weight: 500; color: #050505; padding: 6px 6px; border-radius: 9px; border: 1px solid transparent; white-space: nowrap; transition: background 0.25s, border-color 0.25s, box-shadow 0.25s; }
   .bm-py-seg > span.on { background: #ffffff; border-color: #b45309; font-weight: 650; box-shadow: 0 2px 8px rgba(10,25,47,0.08); }
   .bm-py-body { position: relative; }
-  .bm-py-card { display: flex; flex-direction: column; gap: 7px; }
+  .bm-py-card { display: flex; flex-direction: column; gap: 8px; }
   .bm-py-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .bm-py-f .lb { font-size: 0.54rem; font-weight: 500; color: #4a5567; }
-  .bm-py-f .in { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 27px; padding: 0 9px; border: 1px solid #e2e5ea; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 1px rgba(10,25,47,0.03); }
-  .bm-py-f .ph { font-size: 0.62rem; color: #a3a9b3; white-space: nowrap; }
+  .bm-py-f .lb { display: flex; align-items: center; justify-content: space-between; font-size: 0.54rem; font-weight: 500; color: #4a5567; }
+  .bm-py-f .in { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 9px; border: 1px solid #e2e5ea; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 1px rgba(10,25,47,0.03); }
+  .bm-py-f .in svg { width: 14px; height: 14px; flex-shrink: 0; color: #8a93a2; }
+  .bm-py-f .ph { flex: 1; min-width: 0; overflow: hidden; font-size: 0.62rem; color: #a3a9b3; white-space: nowrap; }
+  .bm-py-f .ph.sm { flex: none; }
   .bm-py-brands { display: flex; gap: 3px; }
   .bm-py-brands > span { font-size: 0.38rem; font-weight: 800; letter-spacing: 0.3px; color: #5b6472; border: 1px solid rgba(10,25,47,0.12); border-radius: 3px; padding: 1px 3px; }
-  .bm-py-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .bm-py-cta { display: block; margin-top: 3px; text-align: center; font-size: 0.68rem; font-weight: 650; color: #ffffff; background: #b45309; border-radius: 999px; padding: 8px 12px; box-shadow: 0 8px 18px -10px rgba(180,83,9,0.6); }
   .bm-py-spei strong { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
   .bm-py-spei p { margin: 2px 0 3px; font-size: 0.56rem; line-height: 1.45; color: #667085; }
   .bm-py-spei .r { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.56rem; color: #667085; }
   .bm-py-spei .r b { font-size: 0.64rem; font-weight: 600; color: #050505 !important; overflow-wrap: anywhere; }
   .bm-py-spei .r em { font-size: 0.56rem; font-weight: 650; color: #b45309; }
-  .bm-py-or { display: flex; align-items: center; gap: 8px; margin: 10px 0 9px; font-size: 0.56rem; color: #8a93a2; }
+  .bm-py-or { display: flex; align-items: center; gap: 8px; margin: 8px 0 7px; font-size: 0.56rem; color: #8a93a2; }
   .bm-py-or::before, .bm-py-or::after { content: ''; flex: 1; height: 1px; background: rgba(10,25,47,0.09); }
   .bm-py-mp { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.14), 0 1px 2px rgba(10,25,47,0.05); font-size: 0.66rem; font-weight: 600; color: #0a192f; }
   .bm-py-mp img { width: 16px; height: 16px; border-radius: 4px; }
@@ -1947,10 +2174,10 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   .bm-py-foot svg { width: 10px; height: 10px; flex-shrink: 0; margin-top: 1px; }
 
   /* pagos · anticipo, saldo e iguala en el link */
-  [data-bmx="pg1"] .bm-x-free { position: relative; display: block; min-height: 400px; }
+  .bm-x [data-bmx="pg1"] .bm-x-free.bm-app { position: relative; display: block; min-height: 400px; }
   .bm-ql { background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,25,47,0.07); padding: 15px 16px 16px; color: #111111; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 48px -18px rgba(10,25,47,0.18), 0 60px 100px -50px rgba(10,25,47,0.24); }
-  .bm-ql-main { width: calc(100% - 214px); min-width: 330px; }
-  .bm-ql-sub { position: absolute; top: 58px; right: 0; width: 262px; z-index: 3; padding: 13px 14px 14px; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -20px rgba(10,25,47,0.3), 0 80px 120px -50px rgba(10,25,47,0.3); }
+  .bm-ql-main { width: calc(100% - 226px); min-width: 330px; }
+  .bm-ql-sub { position: absolute; top: 58px; right: 0; width: 250px; z-index: 3; padding: 13px 14px 14px; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -20px rgba(10,25,47,0.3), 0 80px 120px -50px rgba(10,25,47,0.3); }
   .bm-ql-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding-bottom: 11px; margin-bottom: 11px; border-bottom: 1px solid rgba(10,25,47,0.06); }
   .bm-ql-meta { display: flex; gap: 22px; margin-bottom: 12px; }
   .bm-ql-meta > span { display: flex; flex-direction: column; gap: 3px; font-size: 0.66rem; font-weight: 600; color: #111111; white-space: nowrap; }
@@ -1984,7 +2211,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   [data-auth][hidden], [data-active][hidden], [data-panel][hidden] { display: none !important; }
 
   /* pagos · depósitos */
-  .bm-x-full [data-bmx="pg2"] .bm-pg2-set { position: absolute; left: 30px; top: 34px; width: calc(100% - 250px); }
+  .bm-x-full [data-bmx="pg2"] .bm-pg2-set { position: absolute; left: 30px; top: 34px; width: calc(100% - 290px); }
   .bm-x-full [data-bmx="pg2"] .bm-pg2-money { position: absolute; right: 26px; top: 20px; width: 262px; z-index: 3; }
   .bm-pg2-body { padding: 14px 16px 18px; }
   .bm-pg2-h { display: block; font-size: 0.78rem; font-weight: 600; color: #0f1729; margin-bottom: 9px; }
@@ -1996,7 +2223,6 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   .bm-pg2-bank { display: flex; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid rgba(10,25,47,0.08); }
   .bm-pg2-bank .ic { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #0a192f; background: #f5f5f7; }
   .bm-pg2-bank .ic svg { width: 16px; height: 16px; }
-  .bm-pg2-bank .ok { margin-left: auto; flex-shrink: 0; font-size: 0.56rem; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
   .bm-pg2-sched { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; padding: 13px 14px 14px; border: 1px solid rgba(10,25,47,0.08); border-radius: 14px; }
   .bm-pg2-sched > strong { font-size: 0.74rem; font-weight: 600; color: #0f1729; letter-spacing: -0.01em; }
   .bm-pg2-sched p { margin: 0; font-size: 0.6rem; line-height: 1.5; color: #5b6472; }
@@ -2029,8 +2255,9 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   .bm-pg2-dest b.bad { color: #dc2626 !important; }
 
   @media (max-width: 1180px) {
-    .bm-ql-main { width: calc(100% - 190px); }
-    .bm-x-full [data-bmx="pg2"] .bm-pg2-set { left: 22px; width: calc(100% - 226px); }
+    .bm-ql-main { width: calc(100% - 200px); min-width: 300px; }
+    .bm-ql-sub { width: 232px; }
+    .bm-x-full [data-bmx="pg2"] .bm-pg2-set { left: 22px; width: calc(100% - 262px); }
     .bm-x-full [data-bmx="pg2"] .bm-pg2-money { right: 18px; width: 248px; }
   }
   @media (max-width: 960px) {
@@ -2039,11 +2266,304 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   }
   @media (max-width: 700px) {
     .bm-py-foot { display: none; }
-    [data-bmx="pg1"] .bm-x-free { min-height: 0; }
+    .bm-x [data-bmx="pg1"] .bm-x-free.bm-app { min-height: 0; }
     .bm-ql-main { width: 100%; min-width: 0; }
     .bm-ql-sub { display: none; }
     .bm-ql-meta { gap: 14px; }
     .bm-ql-meta > span:nth-child(2) { display: none; }
+  }
+
+  /* listas hairline compartidas */
+  .bm-rl { display: flex; flex-direction: column; }
+  .bm-rl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(10,25,47,0.08); }
+  .bm-rl > div:first-child { border-top: 0; }
+  .bm-rl > div > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-rl strong { font-size: 0.68rem; font-weight: 600; color: #0f1729; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bm-rl small { font-size: 0.56rem; color: #5b6472; }
+  .bm-rl b { font-size: 0.7rem; color: #0a192f !important; white-space: nowrap; }
+
+  /* cobranza-ia · correo */
+  .bm-mail-top { padding: 14px 16px 12px; border-bottom: 1px solid rgba(10,25,47,0.07); background: #fafbfc; }
+  .bm-mail-subj { display: block; margin-bottom: 10px; font-size: 0.82rem; font-weight: 650; letter-spacing: -0.01em; color: #0f1729; }
+  .bm-mail-from { display: flex; align-items: center; gap: 9px; }
+  .bm-mail-from .av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; }
+  .bm-mail-from .who { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .bm-mail-from .who strong { font-size: 0.68rem; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-mail-from .who span { font-size: 0.6rem; color: #5b6472; }
+  .bm-mail-from .when { flex-shrink: 0; font-size: 0.58rem; color: #8a93a2; }
+  .bm-mail-body { padding: 16px 20px 20px; }
+  .bm-mail-logo { display: block; width: 56px; height: auto; margin-bottom: 14px; }
+  .bm-mail-body p { margin: 0; font-size: 0.7rem; line-height: 1.6; color: #374151; }
+  .bm-mail-btn { display: inline-block; margin-top: 14px; padding: 8px 16px; border-radius: 999px; background: #0a192f; color: #ffffff; font-size: 0.64rem; font-weight: 600; }
+  .bm-mail-foot { display: flex; flex-direction: column; gap: 3px; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+  .bm-mail-foot strong { font-size: 0.6rem; font-weight: 600; color: #4b5563; }
+  .bm-mail-foot span { font-size: 0.56rem; line-height: 1.5; color: #6b7280; }
+
+  /* cobranza-ia · bandeja, planes y en la mira */
+  .bm-ar-mode { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 0.6rem; font-weight: 650; color: #92600a; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28); white-space: nowrap; }
+  .bm-ar-mode i { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+  .bm-ar-top { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .bm-ar-sec { display: flex; flex-direction: column; gap: 2px; margin: 12px 14px 0; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-ar-sec strong { font-size: 0.78rem; font-weight: 600; letter-spacing: -0.01em; color: #0f1729; }
+  .bm-ar-sec span { font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-ar-sec.in { margin: 0 0 4px; }
+  .bm-ar-sec.row { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .bm-ar-sec .c { display: flex; flex-direction: column; gap: 2px; }
+  .bm-ar-sec .n { font-size: 1.3rem; line-height: 1; color: #0a192f !important; }
+  .bm-ar-draft + .bm-ar-draft { margin-top: -4px; }
+  .bm-ar-draft { margin: 12px 14px 16px; padding: 12px 13px 13px; border: 1px solid rgba(10,25,47,0.09); border-radius: 13px; overflow: hidden; }
+  .bm-ar-dh { display: flex; align-items: center; gap: 9px; }
+  .bm-ar-av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; }
+  .bm-ar-dh .who { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .bm-ar-dh .who strong { font-size: 0.72rem; font-weight: 600; color: #0f1729; }
+  .bm-ar-dh .who span { font-size: 0.58rem; color: #5b6472; }
+  .bm-ar-dh .who u { text-decoration: none; font-weight: 600; color: #2563eb; }
+  .bm-ar-dh .amt { font-size: 0.78rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-ar-plan { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 10px; border-radius: 10px; background: rgba(37,99,235,0.06); color: #1d4ed8; font-size: 0.64rem; font-weight: 600; }
+  .bm-ar-plan svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .bm-ar-text { margin-top: 9px; padding: 9px 11px; border-radius: 10px; background: #f5f5f7; font-size: 0.63rem; line-height: 1.55; color: #0f1729; }
+  .bm-ar-acts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .bm-ar-acts > span, .bm-ar-regen > span:not(.in) { font-size: 0.6rem; font-weight: 600; color: #0f1729; background: #fafbfc; border: 1px solid rgba(10,25,47,0.1); border-radius: 8px; padding: 5px 9px; white-space: nowrap; }
+  .bm-ar-acts > .pri, .bm-ar-regen > .pri { background: #0a192f; border-color: #0a192f; color: #ffffff; }
+  .bm-ar-acts > .gh, .bm-ar-regen > .gh { background: transparent; border-color: transparent; color: #5b6472; }
+  .bm-ar-acts > .on { background: #ffffff; border-color: rgba(10,25,47,0.3); }
+  .bm-ar-regen { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+  .bm-ar-regen .in { flex: 1; min-width: 0; display: flex; align-items: center; height: 27px; padding: 0 9px; border-radius: 8px; background: #ffffff; border: 1.5px solid #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.07); font-size: 0.62rem; color: #0f1729; white-space: nowrap; overflow: hidden; }
+  .bm-ar-regen .in .bm-caret { display: inline-block; }
+  .bm-ar-prop { margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 0.5rem; font-weight: 700; color: #92600a; background: rgba(245,158,11,0.14); }
+  .bm-ar-prop[hidden] { display: none; }
+  .bm-ar-why { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 0.56rem; font-weight: 600; color: #5b6472; background: #f1f3f6; }
+  .bm-ar-last { margin: 8px 0 0; font-size: 0.56rem; color: #5b6472; }
+  .bm-x [data-bmx="ar1"], .bm-x [data-bmx="fn1"] { position: relative; min-height: 380px; }
+  .bm-ar1-main { width: calc(100% - 244px); min-width: 330px; }
+  .bm-ar1-plans { position: absolute; right: 0; top: 96px; width: 272px; z-index: 3; }
+  .bm-x-full [data-bmx="ar2"] .bm-ar2-main { position: absolute; left: 30px; top: 34px; width: calc(100% - 316px); }
+  [data-bmx="ar2"] .bm-w-crumbs { flex-shrink: 1; }
+  .bm-x-full [data-bmx="ar2"] .bm-ar2-mira { position: absolute; right: 26px; top: 22px; width: 280px; z-index: 3; }
+
+  /* divisas · link en su moneda */
+  .bm-fx0-qc { gap: 11px; }
+  .bm-fx0-meta { display: flex; gap: 16px; }
+  .bm-fx0-meta > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 0.62rem; font-weight: 600; color: #111111; white-space: nowrap; }
+  .bm-fx0-meta em { font-size: 0.4rem; font-weight: 800; letter-spacing: 1.6px; color: #c4c9d0; }
+  .bm-fx0-hero { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 8px; text-align: center; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 14px; }
+  .bm-fx0-hero .e { font-size: 0.4rem; font-weight: 800; letter-spacing: 1.8px; color: #c4c9d0; }
+  .bm-fx0-hero .v { font-size: 1.06rem; line-height: 1.15; letter-spacing: -0.03em !important; color: #b45309 !important; white-space: nowrap; }
+  .bm-fx0-hero .n { font-size: 0.52rem; color: #9ca3af; }
+  .bm-fx0-hero.sm .v { font-size: 1rem; }
+  .bm-fx0-it { display: flex; flex-direction: column; }
+  .bm-fx0-it .h { display: flex; justify-content: space-between; padding-bottom: 5px; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.4rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #c4c9d0; }
+  .bm-fx0-it .r { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 0.56rem; color: #111111; }
+  .bm-fx0-it .r > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bm-fx0-it .r b { font-size: 0.58rem; color: #111111 !important; white-space: nowrap; }
+  .bm-fx0-cta { display: block; padding: 9px 12px; border-radius: 11px; text-align: center; font-size: 0.68rem; font-weight: 600; color: #ffffff; background: #b45309; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); }
+
+  /* divisas · panel de tipo de cambio y factura */
+  .bm-fx { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; padding: 11px 12px; border-radius: 13px; background: #f7f8fa; border: 1px solid rgba(10,25,47,0.06); }
+  .bm-fx-ex { margin: 0; font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-fx-ex b, .bm-fx-sees b { font-weight: 650; color: #0f1729 !important; }
+  .bm-fx-st { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; }
+  .bm-fx-st .s { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 7px 9px; border-radius: 10px; background: #ffffff; border: 1px solid rgba(10,25,47,0.07); }
+  .bm-fx-st .s.on { border-color: rgba(10,25,47,0.28); box-shadow: 0 0 0 3px rgba(10,25,47,0.05); }
+  .bm-fx-st .l { font-size: 0.5rem; font-weight: 600; line-height: 1.3; color: #5b6472; }
+  .bm-fx-st .v { font-size: 0.86rem; color: #0a192f !important; }
+  .bm-fx-st .ar { font-size: 0.7rem; color: #99a2af; }
+  .bm-fx-sees { margin: 0; font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-fx-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; font-weight: 600; color: #047857; }
+  .bm-fx-lock svg { width: 11px; height: 11px; }
+  .bm-fx-err { margin: 0; font-size: 0.6rem; line-height: 1.5; font-weight: 500; color: #b42318; }
+  .bm-x [data-bmx="fx1"] .bm-x-free.bm-app { position: relative; display: block; min-height: 340px; }
+  .bm-fx1-sum { width: min(318px, 52%); }
+  .bm-fx1-inv { position: absolute; right: 0; top: 58px; width: min(318px, 50%); z-index: 3; }
+  .bm-fx1-ih { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .bm-fx1-ih .f { font-size: 0.82rem; font-weight: 700; letter-spacing: -0.01em; color: #0f1729; }
+  .bm-fx1-is { display: block; margin-top: 3px; font-size: 0.56rem; color: #5b6472; }
+  .bm-fx1-tl { margin-top: 11px; }
+  .bm-fx1-tot { display: block; margin-top: 2px; font-size: 1.3rem; line-height: 1.15; color: #0a192f !important; }
+  .bm-fx1-rows { display: flex; flex-direction: column; margin-top: 8px; }
+  .bm-fx1-rows > span { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(10,25,47,0.07); font-size: 0.6rem; color: #0f1729; }
+  .bm-fx1-rows > span.t { font-weight: 700; }
+  .bm-fx1-rows b { color: #0f1729 !important; white-space: nowrap; }
+  .bm-fx1-fx { margin: 8px 0 0; padding: 7px 9px; border-radius: 9px; background: #f5f5f7; font-size: 0.56rem; line-height: 1.5; color: #5b6472; }
+  .bm-x-full [data-bmx="fx2"] .bm-fx2-back { position: absolute; left: 30px; top: 40px; width: calc(100% - 330px); max-width: 420px; }
+  .bm-x-full [data-bmx="fx2"] .bm-fx2-sum { position: absolute; right: 30px; top: 22px; width: 284px; z-index: 3; }
+  .bm-fx2-lines .bm-ed-head, .bm-fx2-lines .bm-ed-row { grid-template-columns: minmax(0,1fr) 50px 58px 84px; }
+  .bm-fx2-lines { padding-bottom: 18px; }
+
+  /* clientes-credito · ficha, estado de cuenta y crédito */
+  .bm-wrap.bm-clientes-credito-0 { padding-top: 16px !important; }
+  .bm-cm-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-cm-head strong { font-size: 0.84rem; font-weight: 700; letter-spacing: -0.02em; color: #0f1729; }
+  .bm-cm-head .x { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #5b6472; background: #f5f5f7; }
+  .bm-cm-head .x svg { width: 12px; height: 12px; }
+  .bm-cm-body { display: flex; flex-direction: column; gap: 7px; padding: 10px 16px 18px; }
+  .bm-cm-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 9px; }
+  .bm-cm-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .bm-cm-f .lb { font-size: 0.56rem; font-weight: 600; color: #5b6472; }
+  .bm-cm-f .bm-field { justify-content: flex-start; padding: 5px 10px; font-size: 0.66rem; }
+  .bm-cm-chips { flex-wrap: wrap; }
+  .bm-cm-chips > span { font-size: 0.6rem; padding: 3px 10px; transition: background 0.25s, color 0.25s; }
+  .bm-cm-disc { display: flex; align-items: center; gap: 8px; }
+  .bm-cm-disc .bm-field { width: 66px; justify-content: space-between; }
+  .bm-cm-disc em { font-weight: 600; color: #99a2af; }
+  .bm-cm-disc .pv { font-size: 0.62rem; font-weight: 500; color: #047857; }
+  .bm-cm-disc .pv b { font-weight: 700; color: #047857 !important; }
+  .bm-cc-acts { display: inline-flex; gap: 6px; flex-shrink: 0; }
+  .bm-ec-k { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 11px 14px 0; }
+  .bm-ec-k > span, .bm-ec-ag > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-ec-k em { font-size: 0.58rem; color: #5b6472; }
+  .bm-ec-k b { font-size: 0.9rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-ec-k b.bad { color: #dc2626 !important; }
+  .bm-ec-ag { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin: 11px 14px 0; border-radius: 11px; overflow: hidden; background: rgba(10,25,47,0.08); }
+  .bm-ec-ag > span { padding: 8px 9px; background: #fafbfc; }
+  .bm-ec-ag em { font-size: 0.52rem; color: #5b6472; white-space: nowrap; }
+  .bm-ec-ag b { font-size: 0.62rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-ec-ag .late b { color: #b45309 !important; }
+  .bm-ec-ag .empty b { color: #a3aab5 !important; }
+  .bm-ec-rows { display: flex; flex-direction: column; margin: 6px 14px 16px; }
+  .bm-ec-rows > span { display: grid; grid-template-columns: 1fr auto 1.1fr 1fr; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-ec-rows .f { font-size: 0.68rem; font-weight: 600; color: #0f1729; }
+  .bm-ec-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.54rem; font-weight: 700; color: #5b6472; background: rgba(0,0,0,0.05); white-space: nowrap; }
+  .bm-ec-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .bm-ec-pill.late { color: #b45309; background: rgba(245,158,11,0.12); }
+  .bm-ec-rows b { text-align: right; font-size: 0.68rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-ec-rows .d { text-align: right; font-size: 0.58rem; color: #5b6472; white-space: nowrap; }
+  .bm-x-full [data-bmx="cc2"] .bm-cc2-rec { position: absolute; left: 30px; top: 34px; width: calc(100% - 318px); }
+  .bm-x-full [data-bmx="cc2"] .bm-cc2-ph { position: absolute; right: 30px; top: 22px; width: 262px; z-index: 3; }
+  .bm-cc2-head { display: flex; align-items: center; gap: 11px; padding: 14px 16px 13px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-cc2-head .av { width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; box-shadow: 0 0 0 2.5px rgba(10,25,47,0.28); }
+  .bm-cc2-head .tx { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+  .bm-cc2-head .bd { display: flex; gap: 5px; white-space: nowrap; }
+  .bm-cc2-head .tier, .bm-fn1-rh .tier { padding: 3px 8px; border-radius: 999px; font-size: 0.52rem; font-weight: 800; letter-spacing: 0.3px; color: #1e3a5f; background: rgba(10,25,47,0.1); }
+  .bm-cc2-head .fis { padding: 3px 8px; border-radius: 999px; font-size: 0.52rem; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); }
+  .bm-cc2-head .m { font-size: 0.6rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-cc2-head .tot { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .bm-cc2-head .tot em, .bm-cc2-kpis em, .bm-fn1-k em, .bm-fn2-k em { font-size: 0.46rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #5b6472; }
+  .bm-cc2-head .tot b { font-size: 1.05rem; color: #0a192f !important; }
+  .bm-cc2-kpis { display: grid; grid-template-columns: repeat(3, 1fr); margin: 12px 16px 0; }
+  .bm-cc2-kpis > span { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; border-left: 1px solid rgba(10,25,47,0.08); min-width: 0; }
+  .bm-cc2-kpis > span:first-child { padding-left: 0; border-left: 0; }
+  .bm-cc2-kpis b { font-size: 0.8rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-cred { margin: 14px 16px 18px; padding: 12px 14px 13px; border-radius: 14px; border: 1px solid rgba(10,25,47,0.08); }
+  .bm-cred-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-cred-h strong { font-size: 0.8rem; font-weight: 600; color: #0f1729; }
+  .bm-cred-h .p { font-size: 0.64rem; font-weight: 600; color: #dc2626; }
+  .bm-cred-h .p.ok { color: #5b6472; }
+  .bm-cred-tr { height: 8px; margin-bottom: 8px; border-radius: 999px; overflow: hidden; background: rgba(10,25,47,0.06); }
+  .bm-cred-tr i { display: block; height: 100%; border-radius: 999px; background: #ef4444; }
+  .bm-cred-tr i.ok { background: #0a192f; }
+  .bm-cred-n { display: flex; align-items: baseline; gap: 8px; }
+  .bm-cred-n b { font-size: 0.86rem; color: #0f1729 !important; }
+  .bm-cred-n span { font-size: 0.62rem; color: #5b6472; }
+  .bm-cred-w { margin: 8px 0 0; font-size: 0.62rem; color: #dc2626; }
+  .bm-cc2-ph .bm-qc { gap: 11px; }
+  .bm-cc2-done { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .bm-cc2-done .ring { width: 36px; height: 36px; color: #b45309; }
+  .bm-cc2-done .ring svg { width: 100%; height: 100%; }
+  .bm-cc2-done .tt { font-size: 0.78rem; font-weight: 700; color: #111111; }
+  .bm-cc2-note { display: flex; gap: 8px; margin-top: 4px; padding: 10px 11px; border-radius: 12px; background: #f5f5f7; text-align: left; }
+  .bm-cc2-note svg { width: 16px; height: 16px; flex-shrink: 0; color: #0a192f; }
+  .bm-cc2-note > span { display: flex; flex-direction: column; gap: 3px; }
+  .bm-cc2-note strong { font-size: 0.62rem; font-weight: 600; color: #0a192f; }
+  .bm-cc2-note > span > span { font-size: 0.54rem; line-height: 1.5; color: #6b7686; }
+  [data-pre][hidden], [data-done][hidden] { display: none !important; }
+
+  /* finanzas · flujo, pipeline ponderado, MRR */
+  .bm-fn-day { flex-shrink: 0; margin-left: 0; white-space: nowrap; }
+  .bm-fn-sh { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 12px 14px 0; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-fn-sh .c { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-fn-sh strong { font-size: 0.78rem; font-weight: 600; letter-spacing: -0.01em; color: #0f1729; }
+  .bm-fn-sh .c > span { font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-fn-lg { display: flex; gap: 9px; flex-shrink: 0; padding-top: 2px; font-size: 0.56rem; color: #5b6472; }
+  .bm-fn-lg > span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: var(--c); }
+  .bm-fn-lg .ca, .bm-fn-wk i.ca { --c: #0f766e; }
+  .bm-fn-lg .pi, .bm-fn-wk i.pi { --c: #2563eb; }
+  .bm-fn-lg .mr, .bm-fn-wk i.mr { --c: #8b5cf6; }
+  .bm-fn-weeks { display: flex; flex-direction: column; gap: 8px; padding: 11px 14px 16px; }
+  .bm-fn-wk { display: grid; grid-template-columns: 94px minmax(0,1fr) 88px; gap: 10px; align-items: center; }
+  .bm-fn-wk .l { font-size: 0.6rem; color: #5b6472; white-space: nowrap; }
+  .bm-fn-wk .tr { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: rgba(10,25,47,0.05); }
+  .bm-fn-wk .tr i { display: block; height: 100%; background: var(--c); }
+  .bm-fn-wk b { text-align: right; font-size: 0.64rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-fn1-main { width: calc(100% - 226px); min-width: 330px; }
+  .bm-fn1-rec { position: absolute; right: 0; top: 64px; width: 236px; z-index: 3; padding: 13px 14px 14px; }
+  .bm-hb { display: flex; flex-direction: column; gap: 5px; padding: 10px 14px 16px; }
+  .bm-hb-r { display: grid; grid-template-columns: minmax(0,1.05fr) 1.1fr 84px; align-items: center; gap: 10px; padding: 3px 4px; border-radius: 7px; }
+  .bm-hb-r .n { font-size: 0.64rem; font-weight: 550; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-hb-r .tr { height: 8px; border-radius: 999px; overflow: hidden; background: rgba(10,25,47,0.05); }
+  .bm-hb-r .tr i { display: block; height: 100%; border-radius: 999px; background: #0a192f; }
+  .bm-hb-r b { text-align: right; font-size: 0.64rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-fn1-rh { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-fn1-rh .av { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; box-shadow: 0 0 0 2px rgba(245,158,11,0.4); }
+  .bm-fn1-rh .tx { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .bm-fn1-rh strong { font-size: 0.72rem; font-weight: 600; color: #0f1729; white-space: nowrap; }
+  .bm-fn1-rh .tier { color: #92600a; background: rgba(245,158,11,0.18); }
+  .bm-fn1-k { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; padding-top: 8px; }
+  .bm-fn1-k > span { display: flex; flex-direction: column; gap: 3px; padding: 6px 7px; border-radius: 8px; }
+  .bm-fn1-k b { font-size: 0.8rem; color: #0f1729 !important; white-space: nowrap; }
+  .bm-x-full [data-bmx="fn2"] .bm-x-main { right: 34px; }
+  .bm-fn2-k { display: grid; grid-template-columns: repeat(4, 1fr); padding: 16px 18px 14px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-fn2-k > span { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 2px 14px; border-left: 1px solid rgba(10,25,47,0.08); }
+  .bm-fn2-k > span:first-child { padding-left: 0; border-left: 0; }
+  .bm-fn2-k b { font-size: 1.12rem; line-height: 1.15; color: #0a192f !important; white-space: nowrap; }
+  .bm-fn2-k b.bad { color: #dc2626 !important; }
+  .bm-fn2-k b em { margin-left: 2px; font-size: 0.55em; font-weight: 600; letter-spacing: 0; text-transform: none; color: #5b6472; }
+  .bm-fn2-k small { font-size: 0.56rem; line-height: 1.4; color: #5b6472; }
+  .bm-fn2-sh { margin: 14px 18px 0; }
+  .bm-fn2-rl { padding: 2px 18px 18px; }
+  .bm-fn2-rl > div { padding: 10px 0; }
+  .bm-fn2-rl strong { font-size: 0.74rem; }
+  .bm-fn2-rl small { font-size: 0.6rem; }
+  .bm-fn2-rl b { font-size: 0.8rem; }
+
+  @media (max-width: 1400px) {
+    [data-bmx="ar2"] .bm-ar-top .bm-btn-soft { display: none; }
+  }
+  @media (max-width: 1180px) {
+    .bm-ar1-main { width: calc(100% - 214px); min-width: 300px; }
+    .bm-ar1-plans { width: 250px; }
+    .bm-x-full [data-bmx="ar2"] .bm-ar2-main { left: 22px; width: calc(100% - 270px); }
+    .bm-x-full [data-bmx="ar2"] .bm-ar2-mira { right: 18px; width: 256px; }
+    .bm-x-full [data-bmx="fx2"] .bm-fx2-back { left: 22px; width: calc(100% - 300px); }
+    .bm-x-full [data-bmx="fx2"] .bm-fx2-sum { right: 22px; width: 268px; }
+    .bm-x-full [data-bmx="cc2"] .bm-cc2-rec { left: 22px; width: calc(100% - 304px); }
+    .bm-x-full [data-bmx="cc2"] .bm-cc2-ph { right: 22px; }
+    .bm-fn1-main { width: calc(100% - 210px); min-width: 300px; }
+    .bm-fn1-rec { width: 220px; }
+  }
+  @media (max-width: 960px) {
+    .bm-x-full [data-bmx="ar2"] .bm-ar2-mira, .bm-x-full [data-bmx="fx2"] .bm-fx2-back, .bm-x-full [data-bmx="cc2"] .bm-cc2-ph { display: none; }
+    .bm-x-full [data-bmx="ar2"] .bm-ar2-main, .bm-x-full [data-bmx="cc2"] .bm-cc2-rec { position: relative; left: auto; top: auto; width: auto; }
+    .bm-x-full [data-bmx="fx2"] .bm-fx2-sum { position: relative; right: auto; top: auto; width: 100%; max-width: 340px; margin: 0 auto; }
+    .bm-x-full [data-bmx="fn2"] .bm-x-main { right: auto; }
+  }
+  @media (max-width: 700px) {
+    .bm-x [data-bmx="ar1"], .bm-x [data-bmx="fn1"] { min-height: 0; }
+    .bm-ar1-main, .bm-fn1-main { width: 100%; min-width: 0; }
+    .bm-ar1-plans, .bm-fn1-rec { display: none; }
+    .bm-ar-acts > span:nth-child(n+3), .bm-ar-top .bm-btn-soft { display: none; }
+    .bm-ar-regen > .gh { display: none; }
+    .bm-mail-body { padding: 14px 16px 18px; }
+    .bm-x [data-bmx="fx1"] .bm-x-free.bm-app { min-height: 0; }
+    .bm-fx1-sum { width: 100%; }
+    .bm-fx1-inv { display: none; }
+    .bm-cm-2 { gap: 7px; }
+    .bm-cc-acts .bm-btn-soft { display: none; }
+    .bm-ec-k { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .bm-ec-k b { font-size: 0.8rem; }
+    .bm-cred-n b { white-space: nowrap; }
+    .bm-hb-r { grid-template-columns: minmax(0,1.5fr) 0.8fr 78px; gap: 8px; }
+    .bm-ec-ag { grid-template-columns: repeat(3, 1fr); }
+    .bm-ec-ag > span:nth-child(n+4) { display: none; }
+    .bm-ec-rows > span { grid-template-columns: 1fr auto auto; }
+    .bm-ec-rows .d { display: none; }
+    .bm-cc2-head, .bm-cc2-kpis { display: none; }
+    .bm-fn-day { display: none; }
+    .bm-fn-sh { flex-direction: column; gap: 6px; }
+    .bm-fn-wk { grid-template-columns: 84px minmax(0,1fr) 80px; gap: 8px; }
+    .bm-fn2-k { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+    .bm-fn2-k > span:nth-child(3) { padding-left: 0; border-left: 0; }
+    .bm-fn2-k b { font-size: 0.96rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2072,6 +2592,10 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   const countTo = (tl: gsap.core.Timeline, el: HTMLElement, from: number, to: number, at: number, f: (n: number) => string, dur = 0.8) => {
     const o = { n: from };
     tl.fromTo(o, { n: from }, { n: to, duration: dur, ease: 'power2.out', onUpdate: () => { el.textContent = f(o.n); } }, at);
+  };
+  const countLate = (tl: gsap.core.Timeline, el: HTMLElement, from: number, to: number, at: number, f: (n: number) => string, dur = 0.8) => {
+    const o = { n: from };
+    tl.fromTo(o, { n: from }, { n: to, duration: dur, ease: 'power2.out', immediateRender: false, onUpdate: () => { el.textContent = f(o.n); } }, at);
   };
   const swapPill = (el: HTMLElement, cls: string, text: string) => {
     el.className = el.className.replace(/bm-sp-\w+/, cls);
@@ -2313,6 +2837,204 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         .call(() => expand(row), [], 4.2)
         .fromTo(row, { backgroundColor: 'rgba(16,185,129,0.12)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor' }, 4.3)
         .to({}, { duration: 2.4 }, 4.8);
+      return tl;
+    },
+
+    pg0(root) {
+      const tabs = Array.from(root.querySelectorAll<HTMLElement>('[data-seg]'));
+      const card = $(root, '[data-panel="card"]'), spei = $(root, '[data-panel="spei"]'), body = $(root, '[data-body]');
+      const show = (m: string) => {
+        const from = body.offsetHeight;
+        tabs.forEach((t) => t.classList.toggle('on', t.dataset.seg === m));
+        card.hidden = m !== 'card'; spei.hidden = m !== 'spei';
+        const to = body.offsetHeight;
+        gsap.fromTo(body, { height: from }, { height: to, duration: 0.45, ease: 'power2.inOut', clearProps: 'height' });
+        gsap.fromTo(m === 'card' ? card : spei, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.35, delay: 0.12, clearProps: 'all' });
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(tabs[1], { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, 2.2)
+        .call(() => show('spei'), [], 2.45)
+        .to(tabs[0], { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, 7)
+        .call(() => show('card'), [], 7.25)
+        .to({}, { duration: 2.6 }, 7.4);
+      return tl;
+    },
+
+    pg1(root) {
+      const auth = $(root, '[data-auth]'), active = $(root, '[data-active]'), split = $(root, '[data-split]'), cta = $(root, '[data-cta]');
+      const on = split.dataset.on || '', off = split.dataset.off || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([active, split], { opacity: 0, duration: 0.25 }, 1.6)
+        .call(() => { active.hidden = true; auth.hidden = false; split.textContent = off; }, [], 1.86)
+        .fromTo([auth, split], { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 1.9)
+        .to(cta, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 4.6)
+        .to(auth, { opacity: 0, duration: 0.25 }, 5)
+        .call(() => { auth.hidden = true; active.hidden = false; split.textContent = on; }, [], 5.26)
+        .fromTo(active, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', immediateRender: false }, 5.3)
+        .fromTo(split, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: 'rgba(10,25,47,0.05)', duration: 1.2, clearProps: 'backgroundColor', immediateRender: false }, 5.3)
+        .to({}, { duration: 3.2 }, 5.8);
+      return tl;
+    },
+
+    pg2(root) {
+      const po = $(root, '[data-po]'), dot = $(po, '[data-dot]'), st = $(po, '[data-st]');
+      const [sched, transit, paid] = JSON.parse(po.dataset.l || '[]') as string[];
+      const set = (label: string, color: string) => { st.textContent = label; gsap.to(dot, { backgroundColor: color, duration: 0.3 }); gsap.fromTo(po, { backgroundColor: 'rgba(16,185,129,0.1)' }, { backgroundColor: '#fafbfc', duration: 1, clearProps: 'backgroundColor' }); };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => set(paid, '#10b981'), [], 2.4)
+        .call(() => set(sched, '#f59e0b'), [], 5.2)
+        .call(() => set(transit, '#3b82f6'), [], 7.6)
+        .to({}, { duration: 1.6 }, 7.8);
+      return tl;
+    },
+
+    ar1(root) {
+      const draft = $(root, '[data-draft]'), ok = $(root, '[data-ok]'), plan = $(root, '[data-plan]'), pt = $(plan, '[data-pt]'), prop = $(plan, '[data-prop]');
+      const pend = plan.dataset.pend || '', act = plan.dataset.act || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(ok, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 2.6)
+        .call(() => collapse(draft), [], 2.95)
+        .call(() => { prop.hidden = true; pt.textContent = act; gsap.fromTo(plan, { backgroundColor: 'rgba(16,185,129,0.14)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.3, clearProps: 'backgroundColor' }); }, [], 3.4)
+        .call(() => { expand(draft); prop.hidden = false; pt.textContent = pend; }, [], 7.2)
+        .to({}, { duration: 1.4 }, 7.6);
+      return tl;
+    },
+
+    ar2(root) {
+      const text = $(root, '[data-text]'), regen = $(root, '[data-regen]'), q = $(root, '[data-q]'), go = $(root, '[data-go]');
+      const long = text.textContent || '', short = text.dataset.short || '', ask = q.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { q.textContent = ''; }, [], 1.2);
+      const end = typeText(tl, q, ask, 1.5, 0.06);
+      tl.to(go, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1 }, end + 0.5)
+        .to(text, { opacity: 0.25, duration: 0.3 }, end + 0.8)
+        .call(() => { text.textContent = short; collapse(regen); }, [], end + 1.5)
+        .to(text, { opacity: 1, duration: 0.35 }, end + 1.55)
+        .call(() => { gsap.fromTo(text, { backgroundColor: 'rgba(16,185,129,0.14)' }, { backgroundColor: '#f5f5f7', duration: 1.2, clearProps: 'backgroundColor' }); }, [], end + 1.6)
+        .to(text, { opacity: 0, duration: 0.3 }, end + 5.4)
+        .call(() => { text.textContent = long; expand(regen); }, [], end + 5.75)
+        .to(text, { opacity: 1, duration: 0.3 }, end + 5.8)
+        .to({}, { duration: 0.8 }, end + 6.1);
+      return tl;
+    },
+
+    fx0(root) {
+      const V = JSON.parse(root.dataset.v || '[]') as Record<string, string>[];
+      const sw = $(root, '[data-sw]'), keys = ['f', 'c', 't', 'k', 'a', 'b'];
+      const els = keys.map((k) => $(sw, `[data-${k}]`));
+      const tl = gsap.timeline({ repeat: -1 });
+      [1, 2, 0].forEach((idx, n) => {
+        const at = 2.8 + n * 3.2;
+        tl.to(els, { opacity: 0, duration: 0.22 }, at)
+          .call(() => keys.forEach((k, i) => { els[i].textContent = V[idx][k]; }), [], at + 0.24)
+          .to(els, { opacity: 1, duration: 0.3 }, at + 0.26);
+      });
+      tl.to({}, { duration: 0.4 }, 12.2);
+      return tl;
+    },
+
+    fx1(root) {
+      const rate = $(root, '[data-rate]'), inv = $(root, '[data-inv]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(rate, { boxShadow: '0 0 0 3px rgba(10,25,47,0.05)' }, { boxShadow: '0 0 0 5px rgba(16,185,129,0.22)', duration: 0.5, yoyo: true, repeat: 1, immediateRender: false }, 1.6)
+        .fromTo(inv, { backgroundColor: '#f5f5f7' }, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.5, yoyo: true, repeat: 1, immediateRender: false }, 2.3)
+        .to({}, { duration: 3.6 }, 3.3);
+      return tl;
+    },
+
+    fx2(root) {
+      const err = $(root, '[data-err]'), send = $(root, '[data-send]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(err, { opacity: 0, duration: 0.25 }, 1.4)
+        .to(err, { opacity: 1, duration: 0.35 }, 2.9)
+        .to(send, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 4.6)
+        .to(err, { x: -4, duration: 0.06, yoyo: true, repeat: 5, ease: 'none' }, 4.9)
+        .fromTo(err, { backgroundColor: 'rgba(239,68,68,0)' }, { backgroundColor: 'rgba(239,68,68,0.1)', duration: 0.4, yoyo: true, repeat: 1, immediateRender: false }, 4.9)
+        .to({}, { duration: 2.4 }, 5.8);
+      return tl;
+    },
+
+    cc0(root, loc) {
+      const tiers = Array.from(root.querySelectorAll<HTMLElement>('[data-tiers] > span')), dv = $(root, '[data-dv]'), pv = $(root, '[data-pv]'), disc = $(root, '[data-disc]');
+      const n = (x: number) => new Intl.NumberFormat(loc).format(x);
+      const pick = (v: number) => {
+        tiers.forEach((t) => t.classList.toggle('on', Number(t.dataset.v) === v));
+        dv.textContent = String(v);
+        pv.innerHTML = `MXN ${n(1000)} → <b>MXN ${n(Math.round(1000 * (1 - v / 100)))}</b>`;
+        gsap.fromTo(disc, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: '#f5f5f7', duration: 0.9, clearProps: 'backgroundColor' });
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(tiers[1], { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, 1.8)
+        .call(() => pick(5), [], 2)
+        .to(tiers[2], { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, 4.4)
+        .call(() => pick(10), [], 4.6)
+        .to({}, { duration: 2.6 }, 4.8);
+      return tl;
+    },
+
+    cc1(root, loc) {
+      const f = (x: number) => `MXN ${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(x)}`;
+      const els = Array.from(root.querySelectorAll<HTMLElement>('[data-ec]'));
+      const after = els.map((e) => Number((e.textContent || '').replace(/[^\d.]/g, '')));
+      const before = els.map((e) => Number(e.dataset.from || 0));
+      const row = $(root, '[data-ec-row]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(els, { opacity: 0, duration: 0.25 }, 1.4)
+        .call(() => els.forEach((e, i) => { e.textContent = f(before[i]); }), [], 1.66)
+        .to(els, { opacity: 1, duration: 0.25 }, 1.7);
+      els.forEach((e, i) => countLate(tl, e, before[i], after[i], 3.6, f, 0.9));
+      tl.call(() => { gsap.fromTo(row, { backgroundColor: 'rgba(16,185,129,0.14)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor' }); }, [], 3.6)
+        .to({}, { duration: 3 }, 4.6);
+      return tl;
+    },
+
+    cc2(root, loc) {
+      const cred = $(root, '[data-cred]'), fill = $(cred, '[data-fill]'), p = $(cred, '[data-p]'), s = $(cred, '[data-s]'), w = $(cred, '[data-w]');
+      const pre = $(root, '[data-pre]'), done = $(root, '[data-done]'), ap = $(root, '[data-ap]');
+      const pct0 = Number(cred.dataset.pct0), pct1 = Number(cred.dataset.pct1), s0 = Number(cred.dataset.s0), s1 = Number(cred.dataset.s1);
+      const tpl = p.dataset.l || '{p}%';
+      const m0 = (x: number) => `MXN ${new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(x)}`;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([done, cred], { opacity: 0, duration: 0.3 }, 1.4)
+        .call(() => {
+          done.hidden = true; pre.hidden = false; w.hidden = true;
+          fill.classList.add('ok'); gsap.set(fill, { width: `${pct0}%` });
+          p.classList.add('ok'); p.textContent = tpl.replace('{p}', String(pct0)); s.textContent = m0(s0);
+        }, [], 1.72)
+        .to(cred, { opacity: 1, duration: 0.3 }, 1.76)
+        .fromTo(pre, { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 1.76)
+        .to(ap, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 3.6)
+        .call(() => { pre.hidden = true; done.hidden = false; }, [], 3.9)
+        .fromTo(done, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4, immediateRender: false }, 3.92)
+        .call(() => { fill.classList.remove('ok'); p.classList.remove('ok'); p.textContent = tpl.replace('{p}', String(pct1)); w.hidden = false; gsap.from(w, { opacity: 0, y: -4, duration: 0.4 }); }, [], 4.9)
+        .to(fill, { width: '100%', duration: 0.8, ease: 'power2.out' }, 4.6);
+      countLate(tl, s, s0, s1, 4.6, m0, 0.8);
+      tl.to({}, { duration: 3.2 }, 5.6);
+      return tl;
+    },
+
+    fn0(root) {
+      const segs = Array.from(root.querySelectorAll<HTMLElement>('.bm-fn-wk .tr'));
+      const tl = gsap.timeline();
+      tl.from(segs, { scaleX: 0, transformOrigin: 'left center', duration: 0.7, ease: 'power2.out', stagger: 0.05, clearProps: 'transform' }, 0.15);
+      return tl;
+    },
+
+    fn1(root) {
+      const hi = Array.from(root.querySelectorAll<HTMLElement>('[data-hi]')), row = $(root, '[data-k="gama"]');
+      gsap.from(Array.from(root.querySelectorAll<HTMLElement>('.bm-hb-r .tr i')), { width: 0, duration: 0.8, ease: 'power2.out', stagger: 0.05, delay: 0.1 });
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(hi, { backgroundColor: 'rgba(37,99,235,0)' }, { backgroundColor: 'rgba(37,99,235,0.1)', duration: 0.45, yoyo: true, repeat: 1, stagger: 0.18, immediateRender: false }, 2.2)
+        .fromTo(row, { backgroundColor: 'rgba(37,99,235,0)' }, { backgroundColor: 'rgba(37,99,235,0.1)', duration: 0.45, yoyo: true, repeat: 1, immediateRender: false }, 2.9)
+        .to({}, { duration: 3.4 }, 3.8);
+      return tl;
+    },
+
+    fn2(root, loc) {
+      const els = Array.from(root.querySelectorAll<HTMLElement>('[data-n]'));
+      const tl = gsap.timeline();
+      const m0 = (x: number) => `MXN ${new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(x)}`;
+      els.forEach((e) => countTo(tl, e, 0, Number(e.dataset.n), 0.2, m0, 1.1));
       return tl;
     },
   };

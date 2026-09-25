@@ -570,9 +570,9 @@ export const FEATURES: Feature[] = [
             {
                 eyebrow: 'DESPUÉS DEL COBRO',
                 titulo: 'Sabes cuánto te depositan, cuándo y a qué cuenta.',
-                copy: 'En Cobros ves tu saldo disponible, el próximo depósito y cada transferencia con su estado —programada, en camino o depositada—, además de lo que se fue en comisiones, reembolsos y disputas. Tú eliges cada cuánto te depositan, y tu cuenta bancaria se captura en el formato de tu país —CLABE, IBAN, routing number o sort code— y se valida antes de guardarla, incluidos los dígitos de control donde el formato los tiene.',
+                copy: 'En Cobros ves tu saldo disponible y el próximo depósito con su estado —programado, en camino o depositado— y su fecha de llegada, además de lo que se fue en comisiones, reembolsos y disputas. Tú eliges cada cuánto te depositan, y tu cuenta bancaria se captura en el formato de tu país —CLABE, IBAN, routing number o sort code— y se valida antes de guardarla, incluidos los dígitos de control donde el formato los tiene.',
                 bullets: [
-                    'Historial de depósitos con estado y fecha de llegada',
+                    'El próximo depósito, con su estado y fecha de llegada',
                     'Depósitos diarios, semanales o mensuales, a tu elección',
                     'Cuenta de depósito validada en el formato de tu país',
                 ],

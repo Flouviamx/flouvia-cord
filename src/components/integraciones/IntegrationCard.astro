@@ -11,12 +11,19 @@ interface Props {
 const { page, href, en = false } = Astro.props;
 const story = INTEGRATION_STORY[page.slug];
 const copy = en ? page.en : page.es;
-const cardImage = `/imgs/integrations/cards/${page.slug}.jpg`;
+const cardBase = `/imgs/integrations/cards/${page.slug}`;
 ---
 
 <a href={href} class="icard" style={`--ic-from:${story.brand.from};--ic-to:${story.brand.to}`}>
     <span class="icard-art" aria-hidden="true">
-        <img class="icard-img" src={cardImage} alt="" width="564" height="752" loading="lazy" decoding="async" />
+        <img
+            class="icard-img"
+            src={`${cardBase}-600.webp`}
+            srcset={`${cardBase}-600.webp 600w, ${cardBase}-900.webp 900w, ${cardBase}-1200.webp 1200w`}
+            sizes="(max-width: 880px) min(72vw, 270px), 300px"
+            alt="" width="600" height="745"
+            loading="eager" fetchpriority="low" decoding="async"
+        />
         <span class="icard-fade"></span>
         <span class="icard-mark">
             <img class="icard-logo" src={page.logo} alt="" width="26" height="26" loading="lazy" />

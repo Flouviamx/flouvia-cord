@@ -526,9 +526,9 @@ export const FEATURES_EN: Feature[] = [
             {
                 eyebrow: 'AFTER THE CHARGE',
                 titulo: 'You know how much gets deposited, when, and to which account.',
-                copy: "In Payments you see your available balance, the next payout and every transfer with its status (scheduled, in transit or deposited), plus what went to fees, refunds and disputes. You choose how often you get paid, and your bank account is entered in your country's format (CLABE, IBAN, routing number or sort code) and validated before it's saved, including check digits where the format has them.",
+                copy: "In Payments you see your available balance and the next payout with its status (scheduled, in transit or deposited) and arrival date, plus what went to fees, refunds and disputes. You choose how often you get paid, and your bank account is entered in your country's format (CLABE, IBAN, routing number or sort code) and validated before it's saved, including check digits where the format has them.",
                 bullets: [
-                    'Payout history with status and arrival date',
+                    'The next payout, with its status and arrival date',
                     'Daily, weekly or monthly payouts, your choice',
                     "Payout account validated in your country's format",
                 ],
