@@ -93,6 +93,50 @@ comandos**, agrega `CORD_CLIENT_ID` y `CORD_CLIENT_SECRET` con los valores de
 El cliente se registra una vez y no depende del ID del script:
 `node scripts/oauth-client.mjs --slug gmail --nombre "Cord para Gmail" --dominio mail.google.com --redirect https://cordhq.app/oauth/listo --env integrations/gmail/.env`
 
+## Publicarlo en Google Workspace Marketplace
+
+Marketplace no instala el código que está en el editor sino una **versión fija**:
+
+```bash
+clasp push
+clasp version "Marketplace 1.1"
+clasp deploy -V <número> -d "Marketplace 1.1"
+```
+
+`clasp deploy` imprime el **ID de implementación** (`AKfycb…`), que va en
+Google Cloud › Google Workspace Marketplace SDK › Configuración de la app. La
+primera fue la versión 1 (28 sep 2026). Un cambio del complemento no llega a
+quien lo instaló desde Marketplace hasta que se publica otra versión y se
+actualiza ese ID.
+
+Los recursos de la ficha están en `marketplace/`: íconos de 32, 48, 96 y 128 px
+y el banner de 220 x 140. Las capturas de pantalla (1280 x 800) se toman del
+complemento funcionando.
+
+Direcciones para la ficha y la pantalla de consentimiento:
+
+- Página de inicio: `https://cordhq.app/integraciones/gmail` (declara el uso de
+  datos de Google y el Uso Limitado).
+- Soporte: `https://cordhq.app/soporte/conectar-gmail`.
+- Privacidad: `https://cordhq.app/privacidad`. Términos: `https://cordhq.app/terminos`.
+
+Permisos que se declaran en la pantalla de consentimiento del proyecto (el
+complemento y el envío desde Gmail comparten proyecto):
+
+| Permiso | Para qué |
+|---|---|
+| `gmail.addons.execute` | Correr el complemento dentro de Gmail. |
+| `gmail.addons.current.message.readonly` | Leer el correo abierto: remitente, asunto, folio y, al pedir cotizar con IA, el texto. |
+| `gmail.addons.current.message.metadata` | Leer los destinatarios del borrador para listar sus cotizaciones. |
+| `gmail.addons.current.action.compose` | Insertar la cotización al redactar y crear la respuesta en el hilo. |
+| `script.external_request` | Hablar con la API de Cord. |
+| `gmail.send` | Enviar desde el Gmail del negocio las cotizaciones y facturas (Cord, no el complemento). |
+| `drive.file` | Google Sheets: solo el archivo que Cord crea. |
+
+Ninguno es restringido, así que no hay auditoría de seguridad; los sensibles
+piden la verificación de la pantalla de consentimiento con un video que muestre
+el uso de cada uno.
+
 ## Probarlo
 
 `clasp push`, recarga Gmail, abre un correo y pulsa **Conectar con Cord**.
