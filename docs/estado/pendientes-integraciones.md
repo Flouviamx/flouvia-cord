@@ -234,12 +234,17 @@ Dos lecciones que quedaron en el código:
   (`/api/integraciones/hojas/callback`, producción y localhost): reusar el
   registro de Teams comparte los permisos pero NO las URL de retorno, y sin ella
   Microsoft responde `AADSTS50011`.
-- [ ] André: crear el cliente OAuth de Google (proyecto en Google Cloud, APIs de
-  Sheets y Drive habilitadas, tipo "Aplicación web", URI de redirección
-  `https://cordhq.app/api/integraciones/hojas/callback`, permiso `drive.file`) y
-  poner `GOOGLE_SHEETS_CLIENT_ID` / `GOOGLE_SHEETS_CLIENT_SECRET` en Vercel.
+- [x] **Google Sheets PROBADO en producción (28 sep)**, a la primera. Proyecto
+  `cord-510006`, cliente OAuth de tipo web, permisos `drive.file` + `openid` +
+  `userinfo.email`, y la app PUBLICADA — en estado de prueba Google revoca los
+  tokens a los 7 días y la conexión se moriría sola una semana después, que es
+  la clase de fallo que nadie relaciona con su causa.
+  Nota de contraste con Excel: aquí no hubo drama porque Sheets crea el archivo
+  con una llamada a su API. La plantilla binaria que Excel obliga a subir fue la
+  fuente de todos los problemas de esa noche.
 - [x] Excel probado de punta a punta el 28 sep.
-- [ ] Probar Google Sheets igual, cuando existan sus credenciales.
+- [ ] Rotar el secreto del cliente de Google: se escribió en el chat durante la
+  configuración.
 - [ ] Confirmar en los dos que cambiar el estado de una cotización REEMPLAZA su
   fila en vez de duplicarla.
 - [ ] Pendiente de producto: elegir una hoja EXISTENTE en vez de crear una. Con
