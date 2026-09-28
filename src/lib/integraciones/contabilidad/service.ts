@@ -115,6 +115,18 @@ export async function conectarConta(
     cuenta: string, cuentaNombre: string | null, scopes: string[],
 ): Promise<void> {
     if (!tokens.refreshToken) throw new ProveedorError('auth', 'sin refresh');
+    // Reconectar a OTRA empresa reutiliza la misma fila de conexión, y los
+    // vínculos cuelgan de ella. Sin borrarlos, Cord creería que las facturas ya
+    // enviadas a la empresa anterior (por ejemplo, la de pruebas) están en la
+    // nueva, y nunca las mandaría. Reconectar a la MISMA empresa los conserva:
+    // ahí son justo lo que impide duplicar.
+    await withOrgTx(orgId, sql`
+        delete from integracion_vinculos
+         where org_id = ${orgId}
+           and conexion_id in (
+               select id from integracion_conexiones
+                where org_id = ${orgId} and proveedor = ${proveedor}
+                  and cuenta_externa <> ${cuenta})`);
     await withOrgTx(orgId, sql`
         insert into integracion_conexiones
             (org_id, proveedor, estado, cuenta_externa, cuenta_nombre, scopes,
