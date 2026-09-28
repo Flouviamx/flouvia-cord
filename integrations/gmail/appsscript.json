@@ -13,7 +13,7 @@
   "addOns": {
     "common": {
       "name": "Cord",
-      "logoUrl": "https://cordhq.app/imgs/logo-cord-navy.png",
+      "logoUrl": "https://cordhq.app/favicon-192x192.png",
       "useLocaleFromApp": true,
       "layoutProperties": {
         "primaryColor": "#0a192f",
