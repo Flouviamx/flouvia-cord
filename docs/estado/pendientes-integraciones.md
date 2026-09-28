@@ -203,9 +203,25 @@ y artículo de ayuda por integración en los dos idiomas. Sheets sale con cabece
 congelada, filtro y formato de número; Excel con tabla real. Contrato de columnas
 verificado en `test/hojas.test.ts`. Una organización puede conectar las dos.
 
-**Excel ya funciona** porque reusa la app de Entra de Teams. Falta agregarle el
-permiso delegado `Files.ReadWrite` al registro de la app; sin eso, la
-autorización se completa pero la escritura responde "sin permiso".
+**Excel PROBADO en producción (28 sep):** conecta, crea el libro en OneDrive y
+lo llena. Reusa la app de Entra de Teams.
+
+Costó tres diagnósticos equivocados y vale la pena saber por qué. El síntoma era
+que Excel no podía abrir el archivo y que Graph respondía 500 al preguntarle por
+sus hojas. La causa: la plantilla en base64 estaba escrita como una
+concatenación cuya PRIMERA línea empezaba con `+`, que en JavaScript es un más
+UNARIO — convertía esa línea en `NaN`, se perdían 96 caracteres, y el
+decodificador de base64 de Node se traga lo inválido sin avisar. Subía 4714
+bytes de basura en lugar de 4784 de zip.
+
+Dos lecciones que quedaron en el código:
+- **Una plantilla incrustada se verifica EVALUANDO el módulo, no leyendo el
+  archivo.** La verificación previa extrajo el base64 del fuente con una
+  expresión regular: comprobó la intención, no lo que corre. Hoy lo cubre
+  `test/hojas.test.ts`, que importa la constante y mide los bytes.
+- **El cuerpo del error del proveedor se guarda en el log** (`detalle` en
+  `proveedor-http.ts`). Sin él, un 500 es indistinguible de otro y se acaba
+  adivinando la causa durante horas.
 
 **Falta:**
 - [x] `Files.ReadWrite` agregado a la app de Entra `Cord`
@@ -222,8 +238,10 @@ autorización se completa pero la escritura responde "sin permiso".
   Sheets y Drive habilitadas, tipo "Aplicación web", URI de redirección
   `https://cordhq.app/api/integraciones/hojas/callback`, permiso `drive.file`) y
   poner `GOOGLE_SHEETS_CLIENT_ID` / `GOOGLE_SHEETS_CLIENT_SECRET` en Vercel.
-- [ ] Probar de punta a punta: conectar, ver el archivo, cambiar el estado de una
-  cotización y confirmar que la fila se reemplaza en vez de duplicarse.
+- [x] Excel probado de punta a punta el 28 sep.
+- [ ] Probar Google Sheets igual, cuando existan sus credenciales.
+- [ ] Confirmar en los dos que cambiar el estado de una cotización REEMPLAZA su
+  fila en vez de duplicarla.
 - [ ] Pendiente de producto: elegir una hoja EXISTENTE en vez de crear una. Con
   `drive.file` se puede sin ampliar permisos, usando el selector de archivos de
   Google, pero es una pantalla más y no bloquea el valor principal.
