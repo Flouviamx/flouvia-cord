@@ -20,6 +20,7 @@
 | **Microsoft Teams** | App de Entra registrada y credenciales en Vercel (23 sep 2026); falta probarlo | Conectar, elegir canal y mandar prueba; verificación de editor | André prueba | Nada; el mes de prueba de Microsoft 365 corre desde el 23 sep 2026 |
 | **Shopify** | Fases 1 y 2 en producción (catálogo y clientes hacia Cord; pedido de vuelta al cerrar) | Probar con una tienda de desarrollo; fases 3-5 (facturar pedidos, cotizar desde el admin, precios en vivo) | André prueba, Claude construye | Nada, es gratis |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
+| **Gmail** | Envío desde el Gmail del negocio y complemento probado (28 sep 2026) | Registrar el regreso en Google Cloud; verificación y ficha de Marketplace | André | Verificación de Google |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 
 ---
@@ -209,20 +210,34 @@ verificado en `test/contabilidad.test.ts`.
 
 ---
 
-## Cord para Gmail
+## Gmail
 
-**Hecho (27 sep):** complemento completo en `integrations/gmail/` (manifiesto,
-tarjetas y README de publicación). Lee solo el mensaje abierto, reconoce si el
-remitente ya es cliente y crea cliente y cotización con la API pública v1.
+**Hecho (27-28 sep):**
+- Complemento en `integrations/gmail/`, conectado por el OAuth de Cord y probado
+  en Gmail: panel sobre el correo, estado en vivo de la cotización del hilo,
+  responder en el hilo, cotizar con IA e insertar al redactar. Versión 1
+  desplegada para Marketplace (`clasp deploy`).
+- **Enviar desde el Gmail del negocio** (`gmail.send`), en producción. Falta
+  registrar su regreso en Google Cloud para poder conectarlo.
+- Página pública `/integraciones/gmail` con la declaración de datos de Google y
+  guía `/soporte/conectar-gmail`.
 
 **Falta:**
-- [ ] André: proyecto de Google Cloud, `clasp login` y `clasp push` desde
-  `integrations/gmail/` (necesita terminal interactiva), y habilitar el
-  **Google Workspace Marketplace SDK** para publicarlo, aunque sea privado para
-  el dominio.
-- [ ] Probarlo en Gmail con una llave de escritura real.
-- [ ] Mejora posterior: cambiar la llave de API por el OAuth propio de Cord, el
-  mismo que ya usan Zapier y Make.
+- [ ] André: registrar `https://cordhq.app/api/integraciones/gmail/callback` en
+  el cliente OAuth de Google (el mismo de Sheets) y habilitar la Gmail API en
+  el proyecto. Sin esto, "Conectar Gmail" regresa con error de Google.
+- [ ] André: pantalla de consentimiento con los siete permisos (tabla en
+  `integrations/gmail/README.md`) y enviar la verificación con el video de
+  demostración.
+- [ ] André: Marketplace SDK (configuración con el ID de la versión 1) y ficha
+  (íconos y banner en `integrations/gmail/marketplace/`, capturas 1280 x 800).
+- [ ] Legal: que el Aviso de Privacidad mencione el uso de datos de Google y el
+  Uso Limitado en su próxima versión. Hoy lo declara la página de la
+  integración; el revisor de Google lee el enlace de privacidad, así que puede
+  pedirlo. Es un cambio de documento versionado, no de código.
+- [ ] Al publicar: poner el link de la ficha en `GMAIL_INSTALL_URL`
+  (`src/lib/integraciones/catalogo.ts`) y quitar de las docs y la página el
+  "todavía no está publicado".
 
 ---
 
@@ -393,13 +408,12 @@ que solo suma un logo al directorio no entra.
 | 3 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
 | 4 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
 | 5 | **Pagos hacia la contabilidad** | Hoy Cord manda la factura pero no el cobro: el pago se registra a mano en QuickBooks o Xero. | Bajo, sobre el carril que ya existe |
-| 6 | **Gmail (envío desde tu correo)** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
+| 6 | **Google Calendar** | Seguimiento agendado cuando una cotización está por vencer, y la llamada de cierre en el calendario del vendedor. Hoy solo con Make y Zapier. | Medio: `calendar.events` es sensible, entra en la misma verificación de Google |
+| 7 | **Google Drive** | El PDF de cada factura y cotización en una carpeta del negocio, ordenado por año y cliente. `drive.file` ya está aprobado por Sheets. | Bajo |
 
 Shopify salió de esta lista el 23 de septiembre de 2026 (está en producción en
 los dos sentidos), Google Sheets y Excel el 27 de septiembre, y QuickBooks y
-Xero el 27 también. El complemento de Gmail para crear cotizaciones desde un
-correo ya está construido; lo que queda en la lista es enviar el correo DESDE la
-cuenta del negocio, que es otra cosa.
+Xero el 27 también, y Gmail (envío y complemento) el 28.
 
 Todo lo que se agregue sigue la regla 15: nada aparece en Ajustes › Integraciones
 como disponible hasta que funcione de punta a punta.
