@@ -57,7 +57,7 @@ Tap a card to open that app's page. Everything about the integration lives there
 | To push your quotes and invoices into a spreadsheet | **Google Sheets** or **Microsoft Excel**, with nothing exported by hand |
 | Your invoices to appear in your accounting without entering them twice | **QuickBooks Online** or **Xero** |
 | To quote wholesale with your online store's catalog | **Shopify** |
-| To open a quote from the client's email | The **Cord for Gmail** add-on |
+| To open a quote from the client's email | The **Cord for Gmail** add-on, once it is published (it cannot be installed yet) |
 | To send Cord data to an ERP or any other app | **Make**, **n8n** (or Zapier) |
 | To build your own integration | The [developer guide](/en/docs/desarrolladores/herramientas/integraciones) |
 
@@ -90,7 +90,8 @@ Integrations belong to the **organization**, not a person: if whoever connected 
 
 ## Security
 
-- **Cord never asks for another tool's password.** HubSpot and Slack are authorized on their own page; Teams and n8n use URLs or keys you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
+- **Cord never asks for another tool's password.** HubSpot, Slack, Shopify, Google Sheets, Excel, QuickBooks and Xero are authorized on the provider's own page. n8n uses a key you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
+- **Each integration asks for the narrowest permission it needs.** Google Sheets can only open the spreadsheet Cord created, not the rest of your Drive; Xero only gets access to invoices and contacts, not payments or bank accounts.
 - **Access credentials are stored encrypted** and only used for what each integration describes.
 - **Disconnecting really cuts access.** For HubSpot, Cord also revokes its authorization in your account.
 - **Webhook URLs are secrets.** Anyone with your Slack or Make webhook URL can post to it; do not share them.

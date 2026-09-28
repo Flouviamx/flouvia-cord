@@ -58,7 +58,7 @@ Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa int
 | Llevar tus cotizaciones y facturas a una hoja de cálculo | **Google Sheets** o **Microsoft Excel**, sin exportar nada a mano |
 | Que tus facturas aparezcan en la contabilidad sin capturarlas dos veces | **QuickBooks Online** o **Xero** |
 | Cotizar mayoreo con el catálogo de tu tienda en línea | **Shopify** |
-| Abrir una cotización desde el correo del cliente | El complemento **Cord para Gmail** |
+| Abrir una cotización desde el correo del cliente | El complemento **Cord para Gmail**, cuando esté publicado (todavía no se puede instalar) |
 | Llevar datos de Cord a un ERP o a cualquier otra app | **Make**, **n8n** (o Zapier) |
 | Que tu cliente pague con Mercado Pago | [Mercado Pago](/docs/pagos/mercado-pago), en **Ajustes › Cobros** (es un riel de cobro, no una app del directorio) |
 | Construir tu propia integración | La [guía para desarrolladores](/docs/desarrolladores/herramientas/integraciones) |
@@ -92,7 +92,8 @@ Las integraciones son de la **organización**, no de una persona: si quien conec
 
 ## Seguridad
 
-- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot y Slack se autorizan en su propia página; Teams y n8n usan URLs o llaves que tú generas y puedes revocar, y Zapier y Make se autorizan en una pantalla de Cord que también puedes revocar.
+- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot, Slack, Shopify, Google Sheets, Excel, QuickBooks y Xero se autorizan en la página del propio proveedor. n8n usa una llave que tú generas y puedes revocar, y Zapier y Make se autorizan en una pantalla de Cord que también puedes revocar.
+- **Cada integración pide el permiso más estrecho que le sirve.** Google Sheets solo puede abrir la hoja que Cord creó, no el resto de tu Drive; Xero solo recibe permiso sobre facturas y contactos, no sobre pagos ni bancos.
 - **Los accesos se guardan cifrados** y solo se usan para lo que describe cada integración.
 - **Desconectar corta el acceso de verdad.** En HubSpot, Cord además revoca su autorización en tu cuenta.
 - **Las URLs de webhook son secretos.** Quien tenga la URL de tu webhook de Slack, del flujo de Teams o de Make puede publicar en ella; no las compartas.
