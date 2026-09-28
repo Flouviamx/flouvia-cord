@@ -327,10 +327,19 @@ export async function contabilizarPendientes(
 
     let hechas = 0;
     const motivos: string[] = [];
+    let primerFallo: unknown = null;
     for (const f of filas) {
-        const r = await contabilizarFactura(orgId, String(f.id), proveedor);
-        if (r.ok) hechas += 1;
-        else motivos.push(r.motivo ?? 'desconocido');
+        try {
+            const r = await contabilizarFactura(orgId, String(f.id), proveedor);
+            if (r.ok) hechas += 1;
+            else motivos.push(r.motivo ?? 'desconocido');
+        } catch (err) {
+            // Una factura que revienta no puede llevarse las demás: antes, la
+            // primera que fallaba abortaba el lote entero y las siguientes ni
+            // se intentaban.
+            motivos.push(err instanceof ProveedorError ? err.motivo : 'desconocido');
+            primerFallo = primerFallo ?? err;
+        }
     }
     // Un "0 enviadas" habiendo candidatas es un fallo SILENCIOSO: la pantalla
     // dice que todo salió bien y nadie sabe qué las descartó. Así se escondió
@@ -339,7 +348,12 @@ export async function contabilizarPendientes(
         log.error('ninguna factura llegó a la contabilidad', {
             route: 'contabilidad', orgId, proveedor,
             candidatas: filas.length, motivos: [...new Set(motivos)],
+            err: primerFallo ?? undefined,
         });
+        // Si NINGUNA salió por un error, se propaga para que la pantalla lo
+        // diga. Devolver cero en silencio es cómo se escondió el fallo de las
+        // facturas sin cotización.
+        if (primerFallo) throw primerFallo;
     }
     return { facturas: hechas };
 }
@@ -369,13 +383,17 @@ export async function onDomainEventConta(orgId: string, type: string, objectId: 
         try {
             await contabilizarFactura(orgId, objectId, proveedor);
         } catch (err) {
-            const motivo = err instanceof ProveedorError ? err.motivo : 'proveedor';
+            const esDelProveedor = err instanceof ProveedorError;
+            const motivo = esDelProveedor ? err.motivo : 'desconocido';
             if (motivo === 'auth' || motivo === 'permiso') await marcarError(orgId, proveedor, motivo).catch(() => null);
             log.error('no se pudo contabilizar la factura', {
                 route: 'contabilidad', orgId, proveedor, motivo,
                 // El detalle trae el código del proveedor y su id de traza: es
-                // con lo que su soporte encuentra la llamada exacta.
-                detalle: err instanceof ProveedorError ? err.detalle : undefined,
+                // con lo que su soporte encuentra la llamada exacta. El error
+                // crudo va aparte porque un fallo del CÓDIGO no trae ninguno de
+                // los dos, y ahí es donde se investiga a ciegas.
+                detalle: esDelProveedor ? err.detalle : undefined,
+                err,
             });
         }
     }
