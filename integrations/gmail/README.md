@@ -18,8 +18,13 @@ precios y los impuestos.
   entera (`gmail.readonly`) es un permiso RESTRINGIDO: obliga a una auditoría de
   seguridad anual de un tercero certificado, del orden de miles de dólares. Este
   complemento está diseñado para no necesitarla nunca.
-- **No manda el cuerpo del correo a Cord.** Del mensaje salen el remitente y el
-  asunto. El contenido de un correo es del negocio.
+- **El texto del correo solo viaja a Cord cuando se pide.** Del mensaje salen el
+  remitente, el asunto y el folio de una cotización si lo trae (para mostrar su
+  estado). El texto se manda únicamente al pulsar "Cotizar con IA", sin lo
+  citado de correos anteriores, y la tarjeta de la propuesta lo dice.
+- **Responder con la cotización** crea el borrador de respuesta en el mismo
+  hilo, desde el Gmail de quien vende (`createDraftReply` con el permiso de
+  redacción del complemento, sin `gmail.send`).
 - **Se conecta con el OAuth de Cord**, el mismo de Zapier y Make: botón
   "Conectar con Cord", autorización en la pantalla de Cord, y listo. Nadie copia
   llaves. El cliente OAuth es `gmail` (registrado con `scripts/oauth-client.mjs`)

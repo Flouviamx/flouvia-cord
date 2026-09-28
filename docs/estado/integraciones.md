@@ -239,8 +239,13 @@ las apps de Zapier, Make y n8n viven como código en el repo.
   contra la lista oficial—. Leer la bandeja (`gmail.readonly`) sí lo está, y
   obliga a una auditoría de seguridad anual de un tercero certificado. El
   complemento está hecho para no necesitarla nunca.
-- **Del correo salen el remitente y el asunto, nunca el cuerpo.** El contenido
-  de un correo es del negocio.
+- **Del correo salen el remitente, el asunto y el folio si lo trae.** Con el
+  folio el panel muestra la cotización del hilo en vivo (estado, última
+  actividad) y deja responder con ella en el mismo hilo o reenviarla por Cord.
+  El texto viaja a Cord solo al pulsar "Cotizar con IA"
+  (`POST /api/v1/cotizaciones/ia`, que gasta IA del plan y no crea nada: la
+  persona confirma las líneas). La IA es la misma del editor
+  (`src/lib/ai-quote-draft.ts`).
 - **Se conecta con el OAuth de Cord** (cliente `gmail`), sin llaves. El regreso
   NO es la `usercallback` de Apps Script: Google la ejecuta con la primera
   cuenta del navegador, que no siempre es la del complemento, y fallaba con "se

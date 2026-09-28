@@ -98,6 +98,16 @@ The `status` value is the internal state as-is (English, never translated): `dra
 
 Note: in the list, `link_publico` is a relative path (`/q/<token>`); the creation response returns it absolute. For the detail of a single quote (line items, event timeline, approval), use `GET /api/v1/cotizaciones/{id}`.
 
+## Proposing lines with AI
+
+`POST /api/v1/cotizaciones/ia` takes `{ "texto": "..." }` (the client's order, up to 6000 characters) and returns the lines matched to your catalog, without creating anything:
+
+```json
+{ "data": { "moneda": "MXN", "items": [{ "id": "prd_...", "nombre": "Gray Cement 50kg", "unidad": "sack", "lista": 185, "negociado": null, "cantidad": 5 }] } }
+```
+
+`id` is `null` when the item is not in your catalog. Prices are in `moneda`. To create the quote, send those lines to `POST /api/v1/cotizaciones`. It needs a write key and uses one AI unit from your plan: when none are left you get `429` with `code: "ai_quota_exceeded"`; if the text has no products, `422` with `code: "no_items"`.
+
 ## Changing a quote status
 
 With a write key (`write`) you can move a quote through its lifecycle with `POST /api/v1/cotizaciones/{id}`:

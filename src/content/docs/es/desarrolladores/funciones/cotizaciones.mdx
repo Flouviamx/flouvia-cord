@@ -98,6 +98,16 @@ El valor de `status` es el estado interno tal cual (en inglés, no traducido): `
 
 Nota: en el listado, `link_publico` es una ruta relativa (`/q/<token>`); en la respuesta de creación viene absoluta. Para el detalle de una sola cotización (líneas, eventos, aprobación), usa `GET /api/v1/cotizaciones/{id}`.
 
+## Proponer líneas con IA
+
+`POST /api/v1/cotizaciones/ia` recibe `{ "texto": "..." }` (el pedido del cliente, hasta 6000 caracteres) y devuelve las líneas emparejadas con tu catálogo, sin crear nada:
+
+```json
+{ "data": { "moneda": "MXN", "items": [{ "id": "prd_...", "nombre": "Cemento Gris 50kg", "unidad": "saco", "lista": 185, "negociado": null, "cantidad": 5 }] } }
+```
+
+`id` es `null` cuando el concepto no está en tu catálogo. Los precios van en `moneda`. Para crear la cotización, manda esas líneas a `POST /api/v1/cotizaciones`. Requiere una llave con escritura y gasta una unidad de IA de tu plan: si ya no quedan, recibes `429` con `code: "ai_quota_exceeded"`; si el texto no trae productos, `422` con `code: "no_items"`.
+
 ## Cambiar el estado de una cotización
 
 Con una llave de escritura (`write`) puedes mover la cotización por su ciclo de vida con `POST /api/v1/cotizaciones/{id}`:

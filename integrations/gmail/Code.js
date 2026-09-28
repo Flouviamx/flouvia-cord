@@ -16,8 +16,9 @@
  *    propio espacio de Cord y nadie ve los tokens de nadie. Las credenciales
  *    del cliente OAuth viven en las propiedades del SCRIPT, que solo ve quien
  *    lo publica: nunca en este archivo ni en git.
- *  - No manda el cuerpo del correo a Cord. Del mensaje salen el remitente y el
- *    asunto, y nada más; el contenido de un correo es del negocio, no nuestro.
+ *  - Del correo salen el remitente, el asunto y el folio de una cotización si
+ *    lo trae. El texto solo viaja a Cord cuando la persona pulsa "Cotizar con
+ *    IA", y la tarjeta lo dice: el contenido de un correo es del negocio.
  */
 
 var CORD = 'https://cordhq.app';
@@ -287,7 +288,7 @@ function tarjetaConectar(mensajeError) {
     if (mensajeError) seccion.addWidget(textoSimple('<font color="#b3261e">' + escaparHtml(mensajeError) + '</font>'));
 
     var nota = CardService.newCardSection().addWidget(textoSimple(
-        '<font color="#6b7280">Autorizas en la pantalla de Cord; no copias ninguna llave. Cord lee solo el remitente y el asunto del correo abierto.</font>',
+        '<font color="#6b7280">Autorizas en la pantalla de Cord; no copias ninguna llave. Del correo abierto, Cord usa el remitente y el asunto; el texto solo cuando pides cotizar con IA.</font>',
     ));
 
     return CardService.newCardBuilder()
@@ -410,6 +411,66 @@ function tarjetaInicio() {
 
 // ── Tarjeta sobre un correo ───────────────────────────────────────────────────
 
+/** Folios del asunto y del inicio del cuerpo: "Re: Cotización COT-0006 — Flouvia". */
+function foliosDelCorreo(asunto, cuerpo) {
+    var texto = asunto + '\n' + String(cuerpo || '').slice(0, 4000);
+    var vistos = {};
+    var out = [];
+    var re = /\b([A-Z]{2,6}-\d{3,8})\b/g;
+    var m;
+    while ((m = re.exec(texto)) && out.length < 3) {
+        if (!vistos[m[1]]) { vistos[m[1]] = true; out.push(m[1]); }
+    }
+    return out;
+}
+
+function cotizacionDelHilo(folios) {
+    for (var i = 0; i < folios.length; i++) {
+        var r = cordFetch('/api/v1/cotizaciones?limit=1&folio=' + encodeURIComponent(folios[i]));
+        var q = r.ok && r.data && r.data.data && r.data.data[0];
+        if (!q) continue;
+        var detalle = cordFetch('/api/v1/cotizaciones/' + encodeURIComponent(q.id));
+        return detalle.ok && detalle.data && detalle.data.data ? detalle.data.data : q;
+    }
+    return null;
+}
+
+/** Lo último que pasó con la cotización, del historial de Cord. */
+function ultimaActividad(q) {
+    var eventos = Array.isArray(q.eventos) ? q.eventos : [];
+    var e = eventos[0];
+    return e ? e.detalle + (e.cuando ? ' · ' + e.cuando : '') : '';
+}
+
+function seccionCotizacionDelHilo(q) {
+    var seccion = CardService.newCardSection().setHeader('Cotización en este hilo');
+    seccion.addWidget(filaCotizacion(q).setOpenLink(enlace(CORD + '/app/cotizaciones/' + q.id)));
+    var actividad = ultimaActividad(q);
+    if (actividad) {
+        seccion.addWidget(CardService.newDecoratedText()
+            .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.CLOCK))
+            .setTopLabel('Última actividad')
+            .setText(escaparHtml(actividad))
+            .setWrapText(true));
+    }
+    var botones = CardService.newButtonSet();
+    if (q.link_publico && q.status !== 'draft') {
+        botones.addButton(boton('Responder con ella')
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('responderConCotizacion')
+                .setParameters(parametrosTarjeta(q))));
+        if (['sent', 'viewed'].indexOf(q.status) >= 0) {
+            botones.addButton(boton('Reenviar por Cord')
+                .setOnClickAction(CardService.newAction()
+                    .setFunctionName('reenviarPorCord')
+                    .setParameters({ id: String(q.id), folio: q.folio || '' })));
+        }
+    }
+    botones.addButton(boton('Abrir').setOpenLink(enlace(CORD + '/app/cotizaciones/' + q.id)));
+    seccion.addWidget(botones);
+    return seccion;
+}
+
 function onGmailMessage(e) {
     exigirPermisos();
     if (!conectado()) return tarjetaConectar();
@@ -440,6 +501,14 @@ function onGmailMessage(e) {
     }
     var cliente = b.cliente;
 
+    var tarjeta = CardService.newCardBuilder()
+        .setHeader(encabezado('Cord', asunto ? asunto.slice(0, 80) : 'Correo abierto'));
+
+    // El folio se busca en el asunto y el arranque del cuerpo del correo abierto,
+    // que es lo que el permiso deja leer. No se manda a Cord nada más que el folio.
+    var enHilo = cotizacionDelHilo(foliosDelCorreo(asunto, mensaje.getPlainBody()));
+    if (enHilo) tarjeta.addSection(seccionCotizacionDelHilo(enHilo));
+
     var persona = CardService.newCardSection()
         .addWidget(CardService.newDecoratedText()
             .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.PERSON))
@@ -450,16 +519,14 @@ function onGmailMessage(e) {
     if (cliente) {
         persona.addWidget(boton('Ver cliente en Cord').setOpenLink(enlace(CORD + '/app/clientes/' + cliente.id)));
     }
-
-    var tarjeta = CardService.newCardBuilder()
-        .setHeader(encabezado('Cord', asunto ? asunto.slice(0, 80) : 'Correo abierto'))
-        .addSection(persona);
+    tarjeta.addSection(persona);
 
     if (cliente) {
-        var datos = listarCotizaciones(cliente.id, 3);
+        var datos = listarCotizaciones(cliente.id, 4);
+        var otras = datos.lista.filter(function (q) { return !enHilo || q.id !== enHilo.id; }).slice(0, 3);
         var historial = CardService.newCardSection().setHeader('Sus cotizaciones');
-        if (!datos.lista.length) historial.addWidget(textoSimple('<font color="#6b7280">Todavía no tiene cotizaciones.</font>'));
-        datos.lista.forEach(function (q) {
+        if (!otras.length) historial.addWidget(textoSimple('<font color="#6b7280">' + (enHilo ? 'No tiene otras cotizaciones.' : 'Todavía no tiene cotizaciones.') + '</font>'));
+        otras.forEach(function (q) {
             historial.addWidget(filaCotizacion(q).setOpenLink(enlace(CORD + '/app/cotizaciones/' + q.id)));
         });
         tarjeta.addSection(historial);
@@ -469,18 +536,96 @@ function onGmailMessage(e) {
         )));
     }
 
+    var params = {
+        email: quien.email,
+        nombre: quien.nombre || '',
+        asunto: asunto,
+        clienteId: cliente ? String(cliente.id) : '',
+    };
     return tarjeta
-        .setFixedFooter(CardService.newFixedFooter().setPrimaryButton(
-            boton(cliente ? 'Crear cotización' : 'Crear cliente y cotización', CardService.TextButtonStyle.FILLED)
+        .setFixedFooter(CardService.newFixedFooter()
+            .setPrimaryButton(boton('Cotizar con IA', CardService.TextButtonStyle.FILLED)
                 .setBackgroundColor(NAVY)
-                .setOnClickAction(CardService.newAction()
-                    .setFunctionName('crearCotizacion')
-                    .setParameters({
-                        email: quien.email,
-                        nombre: quien.nombre || '',
-                        asunto: asunto,
-                        clienteId: cliente ? String(cliente.id) : '',
-                    }))))
+                .setOnClickAction(CardService.newAction().setFunctionName('cotizarConIa').setParameters(params)))
+            .setSecondaryButton(boton(cliente ? 'Cotización en blanco' : 'Crear cliente y cotización')
+                .setOnClickAction(CardService.newAction().setFunctionName('crearCotizacion').setParameters(params))))
+        .build();
+}
+
+// ── Cotizar con IA ────────────────────────────────────────────────────────────
+
+/**
+ * El pedido del correo sin lo citado: las respuestas arrastran el hilo entero
+ * debajo, y la IA no debe cotizar lo que se pidió hace tres correos.
+ */
+function textoDelPedido(cuerpo) {
+    var lineas = String(cuerpo || '').split(/\r?\n/);
+    var out = [];
+    for (var i = 0; i < lineas.length; i++) {
+        var l = lineas[i];
+        if (/^\s*>/.test(l)) continue;
+        if (/^(El|On)\s.+(escribió|wrote):\s*$/.test(l.trim())) break;
+        if (/^-{2,}\s*(Mensaje original|Original Message)/i.test(l.trim())) break;
+        out.push(l);
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 6000);
+}
+
+/**
+ * Es el ÚNICO camino que manda el texto de un correo a Cord, y solo cuando la
+ * persona pulsa el botón. La tarjeta lo dice.
+ */
+function cotizarConIa(e) {
+    var p = e.parameters || {};
+    GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
+    var mensaje = GmailApp.getMessageById(e.gmail.messageId);
+    var texto = textoDelPedido(mensaje.getPlainBody());
+    if (!texto) texto = p.asunto || '';
+    if (!texto) return notificar('Este correo no trae texto que Cord pueda leer.');
+
+    var r = cordFetch('/api/v1/cotizaciones/ia', { method: 'post', payload: { texto: (p.asunto ? 'Asunto: ' + p.asunto + '\n\n' : '') + texto } });
+    if (r.status === 401) return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().updateCard(expirada())).build();
+    if (!r.ok || !r.data || !r.data.data) {
+        var codigo = r.data && r.data.code;
+        return notificar(codigo === 'ai_quota_exceeded'
+            ? 'Tu plan de Cord ya usó sus cotizaciones con IA de este mes.'
+            : codigo === 'no_items'
+                ? 'La IA no encontró productos en este correo. Crea la cotización en blanco.'
+                : (r.data && r.data.error) || 'La IA no pudo leer el pedido. Inténtalo otra vez.');
+    }
+
+    var items = (r.data.data.items || []).slice(0, 40);
+    var moneda = r.data.data.moneda;
+    var seccion = CardService.newCardSection().setHeader(items.length + (items.length === 1 ? ' línea propuesta' : ' líneas propuestas'));
+    items.forEach(function (it, i) {
+        if (i > 0) seccion.addWidget(CardService.newDivider());
+        var precio = it.negociado || it.lista;
+        seccion.addWidget(CardService.newDecoratedText()
+            .setTopLabel(it.cantidad + ' ' + (it.unidad || 'pieza') + (it.id ? '' : '  ·  fuera de tu catálogo'))
+            .setText('<b>' + escaparHtml(it.nombre) + '</b>')
+            .setBottomLabel(precio > 0 ? dinero(precio, moneda) + ' c/u' : 'Sin precio: lo pones en Cord')
+            .setWrapText(true));
+    });
+
+    var compacto = JSON.stringify(items.map(function (it) {
+        return { p: it.id || '', d: it.nombre, c: it.cantidad, u: it.lista || 0, n: it.negociado || null };
+    }));
+    var tarjeta = CardService.newCardBuilder()
+        .setHeader(encabezado('Cotización propuesta', p.nombre || p.email))
+        .addSection(seccion)
+        .addSection(CardService.newCardSection().addWidget(textoSimple(
+            '<font color="#6b7280">Cord leyó el texto de este correo para proponerla. Revisa las líneas: se crea como borrador y la terminas en Cord.</font>',
+        )))
+        .setFixedFooter(CardService.newFixedFooter().setPrimaryButton(
+            boton('Crear cotización', CardService.TextButtonStyle.FILLED)
+                .setBackgroundColor(NAVY)
+                .setOnClickAction(CardService.newAction().setFunctionName('crearCotizacion').setParameters({
+                    email: p.email || '', nombre: p.nombre || '', asunto: p.asunto || '', clienteId: p.clienteId || '', items: compacto,
+                }))))
+        .build();
+
+    return CardService.newActionResponseBuilder()
+        .setNavigation(CardService.newNavigation().pushCard(tarjeta))
         .build();
 }
 
@@ -508,12 +653,23 @@ function crearCotizacion(e) {
     // La cotización nace con una línea a partir del asunto: Cord exige al menos
     // una, y un asunto describe el trabajo mejor que un renglón vacío. El
     // vendedor la ajusta en Cord, que es donde están los productos y los precios.
+    var lineas = [{ descripcion: (p.asunto || 'Concepto por definir').slice(0, 200), cantidad: 1, precio_unitario: 0 }];
+    if (p.items) {
+        try {
+            var propuestas = JSON.parse(p.items).map(function (it) {
+                var linea = { descripcion: String(it.d || '').slice(0, 200), cantidad: Number(it.c) || 1, precio_unitario: Number(it.u) || 0 };
+                if (it.p) linea.producto_id = it.p;
+                if (it.n) linea.precio_negociado = Number(it.n);
+                return linea;
+            }).filter(function (l) { return l.descripcion; });
+            if (propuestas.length) lineas = propuestas;
+        } catch (err) {
+            console.error('Líneas de la IA ilegibles', err);
+        }
+    }
     var cotizacion = cordFetch('/api/v1/cotizaciones', {
         method: 'post',
-        payload: {
-            cliente_id: clienteId,
-            items: [{ descripcion: (p.asunto || 'Concepto por definir').slice(0, 200), cantidad: 1, precio_unitario: 0 }],
-        },
+        payload: { cliente_id: clienteId, items: lineas },
     });
     if (!cotizacion.ok || !cotizacion.data || !cotizacion.data.data) {
         return notificar(mensajeDeError(cotizacion, 'No se pudo crear la cotización en Cord.'));
@@ -579,13 +735,7 @@ function onGmailCompose(e) {
                 .setBackgroundColor(NAVY)
                 .setOnClickAction(CardService.newAction()
                     .setFunctionName('insertarCotizacion')
-                    .setParameters({
-                        link: q.link_publico,
-                        folio: q.folio || '',
-                        cliente: q.cliente || '',
-                        importe: dinero(q.total, q.moneda),
-                        vigencia: fechaCorta(q.vigencia),
-                    }))));
+                    .setParameters(parametrosTarjeta(q)))));
     });
 
     var subtitulo = cliente ? 'Para ' + (cliente.empresa || email) : 'Tus cotizaciones enviadas';
@@ -596,15 +746,13 @@ function onGmailCompose(e) {
 }
 
 /**
- * Inserta una tarjeta de la cotización, no un link suelto. Es HTML de correo:
+ * La cotización como tarjeta de correo, no un link suelto. Es HTML de correo:
  * tablas y estilos en línea, porque los clientes de correo ignoran el CSS externo.
  */
-function insertarCotizacion(e) {
-    var p = e.parameters || {};
-    if (!/^https:\/\//.test(p.link || '')) return notificar('Esa cotización no tiene un link válido.');
+function tarjetaHtml(p) {
     var link = escaparHtml(p.link);
     var detalle = [p.cliente, p.vigencia ? 'Vigente hasta el ' + p.vigencia : ''].filter(Boolean).map(escaparHtml).join(' &middot; ');
-    var html = ''
+    return ''
         + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border:1px solid #e5e7eb;border-radius:16px;max-width:460px;width:100%;margin:12px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Helvetica,Arial,sans-serif">'
         + '<tr><td style="padding:22px 24px">'
         + '<div style="font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#8a93a3">Cotización ' + escaparHtml(p.folio) + '</div>'
@@ -614,9 +762,44 @@ function insertarCotizacion(e) {
         + '<td style="border-radius:999px;background:#0a192f"><a href="' + link + '" style="display:inline-block;padding:11px 22px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:999px">Ver cotización</a></td>'
         + '</tr></table>'
         + '</td></tr></table><br>';
+}
+
+function parametrosTarjeta(q) {
+    return {
+        link: q.link_publico || '',
+        folio: q.folio || '',
+        cliente: q.cliente || '',
+        importe: dinero(q.total, q.moneda),
+        vigencia: fechaCorta(q.vigencia),
+    };
+}
+
+function insertarCotizacion(e) {
+    var p = e.parameters || {};
+    if (!/^https:\/\//.test(p.link || '')) return notificar('Esa cotización no tiene un link válido.');
     return CardService.newUpdateDraftActionResponseBuilder()
         .setUpdateDraftBodyAction(CardService.newUpdateDraftBodyAction()
-            .addUpdateContent(html, CardService.ContentType.MUTABLE_HTML)
+            .addUpdateContent(tarjetaHtml(p), CardService.ContentType.MUTABLE_HTML)
             .setUpdateType(CardService.UpdateDraftBodyType.IN_PLACE_INSERT))
         .build();
+}
+
+/**
+ * Responde en el MISMO hilo, desde el Gmail de quien vende: el cliente ve la
+ * cotización en la conversación que ya tiene, y su respuesta llega a esa persona.
+ */
+function responderConCotizacion(e) {
+    var p = e.parameters || {};
+    if (!/^https:\/\//.test(p.link || '')) return notificar('Esa cotización todavía no tiene link: envíala primero desde Cord.');
+    GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
+    var texto = 'Te comparto la cotización ' + p.folio + ': ' + p.link;
+    var html = '<p>Hola, te comparto la cotización ' + escaparHtml(p.folio) + '.</p>' + tarjetaHtml(p);
+    var borrador = GmailApp.getMessageById(e.gmail.messageId).createDraftReply(texto, { htmlBody: html });
+    return CardService.newComposeActionResponseBuilder().setGmailDraft(borrador).build();
+}
+
+function reenviarPorCord(e) {
+    var p = e.parameters || {};
+    var r = cordFetch('/api/v1/cotizaciones/' + encodeURIComponent(p.id), { method: 'post', payload: { action: 'resend' } });
+    return notificar(r.ok ? 'Cord le volvió a mandar la cotización ' + p.folio + '.' : mensajeDeError(r, 'No se pudo reenviar la cotización.'));
 }
