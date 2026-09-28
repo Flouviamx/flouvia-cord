@@ -18,6 +18,7 @@ import { flushUsageReservation, reserveUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
 import { apiKeyLimit } from './permissions';
 import { runIdempotent } from './api-idempotency';
+import { isFirstPartyClient } from './oauth-core';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -32,6 +33,8 @@ export interface ApiAuth {
     mode: ApiMode;
     type: ApiKeyType;
     keyId: string;
+    /** Slug del cliente OAuth cuando la llave es un token de una app conectada. */
+    oauthClient?: string | null;
 }
 
 function jsonError(error: string, code: string, status: number): Response {
@@ -94,9 +97,10 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
             )
             select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at, k.expires_at,
                    cord_effective_plan(o.id) as effective_plan,
-                   k.active_rank, o.sandbox_of, o.embed_domains
+                   k.active_rank, o.sandbox_of, o.embed_domains, c.slug as oauth_slug
               from ranked k
               join orgs o on o.id = k.org_id
+              left join oauth_clients c on c.client_id = k.oauth_client_id
              where k.hash = ${hash}
              limit 1`;
     } catch {
@@ -171,7 +175,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     // Marca de uso (best-effort: nunca debe romper la request).
     sql`update api_keys set last_used_at = now() where id = ${row.id}`.catch(() => {});
 
-    return { orgId, scope, mode, type, keyId: row.id as string };
+    return { orgId, scope, mode, type, keyId: row.id as string, oauthClient: (row.oauth_slug as string | null) ?? null };
 }
 
 /**
@@ -223,7 +227,7 @@ export async function checkApiKeyRateLimit(auth: ApiAuth): Promise<Response | nu
 // quedan en Neon de forma atómica; entregar el evento a Stripe sí es asíncrono.
 // Las llaves de prueba no consumen ni generan cargos reales.
 export async function meterApiUsage(auth: ApiAuth): Promise<Response | null> {
-    if (auth.mode !== 'live') return null;
+    if (auth.mode !== 'live' || isFirstPartyClient(auth.oauthClient)) return null;
     const reservation = await reserveUsage(auth.orgId, 'api', 1);
     if (!reservation.ok || !reservation.id) {
         const unavailable = /verificar|registrar/i.test(reservation.reason || '');

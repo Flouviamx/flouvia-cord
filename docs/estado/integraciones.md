@@ -255,6 +255,11 @@ las apps de Zapier, Make y n8n viven como código en el repo.
   (`gmail.addons.current.message.metadata`) y escribe con
   `gmail.addons.current.action.compose`; ninguno es restringido. Los borradores
   no se listan: todavía no tienen página que el cliente pueda abrir.
+- **No gasta la cuota mensual de API** (`isFirstPartyClient` en
+  `src/lib/oauth-core.ts`, aplicado en `meterApiUsage`): es la interfaz de Cord
+  dentro de Gmail, no una integración que el negocio arma, y con las 100
+  llamadas de Gratis se agotaba en días. Decisión de André (28 sep 2026). El
+  límite por minuto sí aplica; Zapier, Make y n8n siguen contando.
 - **La tarjeta de Ajustes** existe (`gmail` en el catálogo) pero dice
   "Próximamente" mientras `GMAIL_INSTALL_URL` sea `null`: la conexión ocurre
   dentro de Gmail y sin ficha en Google Workspace Marketplace no hay forma de

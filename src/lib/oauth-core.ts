@@ -49,6 +49,14 @@ export function pickReturnTo(registered: readonly string[], requested: string, h
 }
 
 /** Un redirect registrado debe ser https, o http solo hacia la propia máquina. */
+/**
+ * Clientes OAuth que son la interfaz de Cord en otra superficie (el complemento
+ * de Gmail), no una integración del cliente: no gastan la cuota mensual de API,
+ * igual que la app web. El límite por minuto sí les aplica.
+ */
+const FIRST_PARTY_CLIENTS = new Set(['gmail']);
+export const isFirstPartyClient = (slug: string | null | undefined): boolean => !!slug && FIRST_PARTY_CLIENTS.has(slug);
+
 const ENTREGA_STATE_RE = /^[A-Za-z0-9_-]{32,128}$/;
 
 /**

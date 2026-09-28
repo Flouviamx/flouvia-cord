@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import {
-    buildRedirect, clientSecretMatches, isEntregaUri, isValidCodeChallenge, isValidEntregaState, isValidRedirectUri, newAccessToken, newAuthCode,
+    buildRedirect, clientSecretMatches, isEntregaUri, isFirstPartyClient, isValidCodeChallenge, isValidEntregaState, isValidRedirectUri, newAccessToken, newAuthCode,
     newRefreshToken, parseScope, pickReturnTo, readClientCredentials, redirectAllowed, sha256Hex, tokenDisplay, verifyPkce,
 } from '../src/lib/oauth-core';
 
@@ -110,5 +110,12 @@ describe('oauth-core', () => {
         expect(isValidEntregaState('a'.repeat(64))).toBe(true);
         expect(isValidEntregaState('corto')).toBe(false);
         expect(isValidEntregaState('a'.repeat(63) + '/')).toBe(false);
+    });
+
+    it('solo la interfaz propia de Cord se libra de la cuota de API', () => {
+        expect(isFirstPartyClient('gmail')).toBe(true);
+        expect(isFirstPartyClient('zapier')).toBe(false);
+        expect(isFirstPartyClient('make')).toBe(false);
+        expect(isFirstPartyClient(null)).toBe(false);
     });
 });
