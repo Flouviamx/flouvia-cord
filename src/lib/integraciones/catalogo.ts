@@ -1,5 +1,5 @@
-export type IntegrationSlug = 'hubspot' | 'shopify' | 'google-sheets' | 'excel' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
-export type IntegrationCategory = 'crm' | 'ecommerce' | 'productividad' | 'comunicacion' | 'automatizacion';
+export type IntegrationSlug = 'hubspot' | 'shopify' | 'google-sheets' | 'excel' | 'quickbooks' | 'xero' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
+export type IntegrationCategory = 'crm' | 'ecommerce' | 'productividad' | 'contabilidad' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationApp {
     slug: IntegrationSlug;
@@ -25,6 +25,15 @@ export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-in
  * integraciones distintas para quien las usa, y una cuenta puede tener las dos.
  * Excel reusa el registro de Entra de Teams, así que llega listo antes.
  */
+export const QUICKBOOKS_LISTO = Boolean(
+    (import.meta.env.QUICKBOOKS_CLIENT_ID || process.env.QUICKBOOKS_CLIENT_ID)
+    && (import.meta.env.QUICKBOOKS_CLIENT_SECRET || process.env.QUICKBOOKS_CLIENT_SECRET),
+);
+export const XERO_LISTO = Boolean(
+    (import.meta.env.XERO_CLIENT_ID || process.env.XERO_CLIENT_ID)
+    && (import.meta.env.XERO_CLIENT_SECRET || process.env.XERO_CLIENT_SECRET),
+);
+
 export const GOOGLE_SHEETS_LISTO = Boolean(
     (import.meta.env.GOOGLE_SHEETS_CLIENT_ID || process.env.GOOGLE_SHEETS_CLIENT_ID)
     && (import.meta.env.GOOGLE_SHEETS_CLIENT_SECRET || process.env.GOOGLE_SHEETS_CLIENT_SECRET),
@@ -44,14 +53,18 @@ const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
     { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: '/imgs/integrations/shopify.svg', tile: true, guia: '/soporte/conectar-shopify' },
-    // Los dos van con `tile: false`: un mosaico dibuja el logo a sangre, y estos
-    // son íconos de producto sin margen propio — a sangre se ven enormes.
-    { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: false, guia: '/soporte/conectar-google-sheets' },
-    { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: false, guia: '/soporte/conectar-excel' },
+    // Estos cuatro traen su propio fondo (el cuadro verde de Excel, el círculo
+    // de QuickBooks, el azul de Xero): van a pantalla completa del recuadro,
+    // como los demás íconos de app. Los que son un glifo suelto, como Slack, se
+    // quedan dentro del contenedor.
+    { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: true, guia: '/soporte/conectar-google-sheets' },
+    { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: true, guia: '/soporte/conectar-excel' },
     // El favicon de slack.com mide 35x34 px y la API de favicons no da más
     // grande: cualquier tamaño de pantalla lo amplía y se pixelea. Este es el
     // activo oficial de Slack a 400 px, guardado en el repo para no depender
     // del número de compilación de su CDN de marketing.
+    { slug: 'quickbooks', nombre: 'QuickBooks Online', dominio: 'quickbooks.intuit.com', categoria: 'contabilidad', disponible: QUICKBOOKS_LISTO, logo: favicon('quickbooks.intuit.com', 128), tile: true, guia: '/soporte/conectar-quickbooks' },
+    { slug: 'xero', nombre: 'Xero', dominio: 'xero.com', categoria: 'contabilidad', disponible: XERO_LISTO, logo: favicon('xero.com', 128), tile: true, guia: '/soporte/conectar-xero' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/slack.png', tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
@@ -69,6 +82,9 @@ export interface IntegrationCtx {
     /** Estado de cada hoja: 'activa' | 'error' | null. Son independientes. */
     googleSheets?: string | null;
     excel?: string | null;
+    /** Estado de cada contabilidad: 'activa' | 'error' | null. */
+    quickbooks?: string | null;
+    xero?: string | null;
     slack: boolean;
     teams: boolean;
     /** Microsoft ya no acepta la conexión de Teams y hay que volver a iniciar sesión. */
@@ -84,6 +100,8 @@ export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): Inte
     if (app.slug === 'shopify') return ctx.shopify === 'activa' ? 'on' : ctx.shopify === 'error' ? 'warn' : 'off';
     if (app.slug === 'google-sheets') return ctx.googleSheets === 'activa' ? 'on' : ctx.googleSheets === 'error' ? 'warn' : 'off';
     if (app.slug === 'excel') return ctx.excel === 'activa' ? 'on' : ctx.excel === 'error' ? 'warn' : 'off';
+    if (app.slug === 'quickbooks') return ctx.quickbooks === 'activa' ? 'on' : ctx.quickbooks === 'error' ? 'warn' : 'off';
+    if (app.slug === 'xero') return ctx.xero === 'activa' ? 'on' : ctx.xero === 'error' ? 'warn' : 'off';
     if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teamsError ? 'warn' : ctx.teams ? 'on' : 'off';

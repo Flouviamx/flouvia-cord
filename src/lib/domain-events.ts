@@ -114,6 +114,11 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
         if (id) {
             after(import('./integraciones/hojas/service').then((m) => m.onDomainEventHoja(orgId, type, objectId)));
         }
+        // La contabilidad solo mira facturas definitivas; el módulo decide y sale
+        // sin tocar la red si la organización no tiene contabilidad conectada.
+        if (id && objectId && type.startsWith('invoice.')) {
+            after(import('./integraciones/contabilidad/service').then((m) => m.onDomainEventConta(orgId, type, objectId)));
+        }
         return id;
     } catch (err) {
         log.error('no se pudo registrar el evento de dominio', { route: 'domain-events', type, orgId, err });

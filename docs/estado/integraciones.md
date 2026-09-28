@@ -185,6 +185,41 @@ documento se lee una vez y se escribe en cada una. Por dentro comparten motor
 Contrato ejecutable en `src/lib/integraciones/hojas/columnas.ts`, verificado por
 `test/hojas.test.ts`.
 
+## QuickBooks Online y Xero
+
+La factura definitiva de Cord entra a la contabilidad del negocio (27 sep 2026).
+Vive en `src/lib/integraciones/contabilidad/` y reusa el carril de siempre
+(`integracion_conexiones` + `integracion_vinculos`), una conexión por proveedor.
+
+- **La idempotencia es el vínculo** (`objeto = 'invoice'`), no un `if`. Una
+  factura duplicada en los libros de alguien se arregla a mano y con su
+  contador; el vínculo es lo que impide que ocurra.
+- **Solo viajan facturas DEFINITIVAS.** QuickBooks no tiene borradores: lo que
+  se crea por su API queda asentado. Por eso el disparador es
+  `invoice.finalized` / `invoice.sent`, nunca un borrador.
+- **Xero sí tiene borradores, y se usan.** La factura entra en `DRAFT` y la
+  aprueba el contador: un sistema externo no asienta solo en los libros de otro.
+  Esa asimetría es deliberada y está dicha en la tarjeta de cada uno.
+- **El importe de la línea se calcula sobre el precio YA redondeado.** Con el
+  crudo, `33.333 × 3` daba precio 33.33 e importe 100.00: un renglón que no
+  cuadra consigo mismo, y basta uno para que un contador desconfíe de todo lo
+  que mande Cord.
+- **QuickBooks exige un producto por línea de venta.** Cord asegura un servicio
+  llamado `Cord` y cuelga de ahí todas las líneas, en vez de crear un producto
+  por concepto y ensuciar el catálogo del contador. El folio de Cord va en la
+  nota privada: la numeración de la contabilidad es del contador.
+- **El refresh token de Xero es de un solo uso.** Cada renovación trae uno nuevo
+  y hay que guardarlo; conservar el viejo mata la conexión en la siguiente hora.
+- **El cliente se resuelve una vez y se recuerda** con su propio vínculo. Sin
+  eso, cada factura crearía otro cliente con el mismo nombre.
+
+Lo que NO hace todavía: mandar los pagos, mapear los códigos de impuesto del
+proveedor y traer datos de vuelta. Está dicho en los dos artículos de ayuda.
+
+Contrato ejecutable en `lineasDe()` y `TIPOS` de
+`src/lib/integraciones/contabilidad/service.ts`, verificado por
+`test/contabilidad.test.ts`.
+
 ## Cord para Gmail (complemento)
 
 Complemento de Google Workspace que abre una cotización desde el correo del

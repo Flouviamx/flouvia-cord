@@ -43,51 +43,9 @@ export interface ClienteHoja {
     urlDelLibro(libroId: string): string;
 }
 
-/** Un fallo del proveedor nunca viaja con su texto crudo hacia el usuario (regla 14). */
-export class HojaError extends Error {
-    constructor(readonly motivo: 'auth' | 'permiso' | 'limite' | 'red' | 'proveedor', readonly detalle?: string) {
-        super(motivo);
-        this.name = 'HojaError';
-    }
-}
-
-const TIMEOUT_MS = 15_000;
-
-export async function apiJson(
-    url: string,
-    init: RequestInit & { token?: string } = {},
-): Promise<any> {
-    const { token, headers, ...resto } = init;
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-    let res: Response;
-    try {
-        res = await fetch(url, {
-            ...resto,
-            signal: ctrl.signal,
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                ...(headers as Record<string, string> | undefined),
-            },
-        });
-    } catch {
-        throw new HojaError('red');
-    } finally {
-        clearTimeout(t);
-    }
-
-    if (res.status === 401) throw new HojaError('auth');
-    if (res.status === 403) throw new HojaError('permiso');
-    if (res.status === 429 || res.status >= 500) throw new HojaError('limite');
-    if (!res.ok) throw new HojaError('proveedor', `${res.status}`);
-
-    if (res.status === 204) return null;
-    const texto = await res.text();
-    if (!texto) return null;
-    try {
-        return JSON.parse(texto);
-    } catch {
-        throw new HojaError('proveedor', 'respuesta ilegible');
-    }
-}
+/**
+ * Un fallo del proveedor nunca viaja con su texto crudo hacia el usuario
+ * (regla 14). Es el error compartido de las integraciones, con el nombre que ya
+ * usaba este módulo.
+ */
+export { ProveedorError as HojaError, apiJson } from '../proveedor-http';

@@ -150,6 +150,32 @@ el dominio: funciona con el `.onmicrosoft.com`.
 
 ---
 
+## QuickBooks Online y Xero
+
+**Hecho (27 sep):** carril de contabilidad completo en
+`src/lib/integraciones/contabilidad/`. OAuth de los dos, alta de cliente sin
+duplicar, factura con sus líneas (borrador en Xero, asentada en QuickBooks
+porque no tiene borradores), idempotencia por vínculo, botón para mandar las
+pendientes, tarjeta propia y artículo de ayuda en los dos idiomas. Contrato
+verificado en `test/contabilidad.test.ts`.
+
+**Falta:**
+- [ ] André: cuenta de desarrollador de Intuit (gratis), app nueva, URI de
+  redirección `https://cordhq.app/api/integraciones/contabilidad/callback`, y
+  `QUICKBOOKS_CLIENT_ID` / `QUICKBOOKS_CLIENT_SECRET` en Vercel. Las llaves de
+  producción de Intuit exigen que la app pase su revisión; con las de sandbox se
+  prueba de inmediato (`QUICKBOOKS_SANDBOX=true`).
+- [ ] André: cuenta de desarrollador de Xero (gratis), app de tipo *Web app*, la
+  misma URI de redirección, y `XERO_CLIENT_ID` / `XERO_CLIENT_SECRET` en Vercel.
+  Una app sin certificar admite hasta 25 organizaciones conectadas.
+- [ ] Probar de punta a punta: conectar, emitir una factura y confirmar que
+  aparece con el cliente correcto y sin duplicar.
+- [ ] Mandar también los **pagos**, no solo la factura.
+- [ ] Mapear los códigos de impuesto del proveedor en vez de dejar el impuesto
+  al criterio de la cuenta.
+
+---
+
 ## Cord para Gmail
 
 **Hecho (27 sep):** complemento completo en `integrations/gmail/` (manifiesto,
@@ -299,15 +325,18 @@ que solo suma un logo al directorio no entra.
 
 | Prioridad | App | Por qué le sirve a Cord | Esfuerzo |
 |---|---|---|---|
-| 1 | **QuickBooks Online y Xero** | Que cada factura y pago de Cord aparezca solo en la contabilidad. QuickBooks domina en Estados Unidos; Xero en Reino Unido y buena parte de Europa. | Medio: OAuth y revisión de sus marketplaces |
-| 2 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
-| 3 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
-| 4 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
-| 5 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
-| 6 | **Gmail** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
+| 1 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
+| 2 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
+| 3 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
+| 4 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
+| 5 | **Pagos hacia la contabilidad** | Hoy Cord manda la factura pero no el cobro: el pago se registra a mano en QuickBooks o Xero. | Bajo, sobre el carril que ya existe |
+| 6 | **Gmail (envío desde tu correo)** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
 
 Shopify salió de esta lista el 23 de septiembre de 2026 (está en producción en
-los dos sentidos) y Google Sheets y Excel el 27 de septiembre.
+los dos sentidos), Google Sheets y Excel el 27 de septiembre, y QuickBooks y
+Xero el 27 también. El complemento de Gmail para crear cotizaciones desde un
+correo ya está construido; lo que queda en la lista es enviar el correo DESDE la
+cuenta del negocio, que es otra cosa.
 
 Todo lo que se agregue sigue la regla 15: nada aparece en Ajustes › Integraciones
 como disponible hasta que funcione de punta a punta.

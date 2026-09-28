@@ -20,5 +20,7 @@ const { app, size = 'md' } = Astro.props;
     .igl img { width: 24px; height: 24px; }
     .igl-lg img { width: 32px; height: 32px; }
     .igl.is-tile { background: none; box-shadow: 0 1px 2px rgba(10,25,47,0.08); }
-    .igl.is-tile img { width: 100%; height: 100%; object-fit: cover; }
+    /* `contain` y no `cover`: un ícono de app ya viene cuadrado y con su propio
+       fondo, y recortarlo lo agranda y le come los bordes. */
+    .igl.is-tile img { width: 100%; height: 100%; object-fit: contain; }
 </style>
