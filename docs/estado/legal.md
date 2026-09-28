@@ -168,6 +168,44 @@ org, el rail degrada a `commercial_only`. Detalle operativo en
 [`../proyecto.md`](../proyecto.md) y regla 29 de
 [`../estandares-ingenieria.md`](../estandares-ingenieria.md).
 
+## Lista para publicar: revisión `2026-08-30.1` de Términos y Aviso
+
+Revisada el 28 de septiembre de 2026 y **lista para publicar como versión
+`2026-09-28`**, sin marcadores de borrador. Incluye la corrección general de
+agosto, las integraciones de septiembre (HubSpot, Zapier, Make, Workflows,
+Google, Microsoft, QuickBooks, Xero, Shopify, WhatsApp, Mercado Pago), la
+sección de datos de usuario de Google con Uso Limitado y los plazos de
+respuesta a derechos de privacidad.
+
+**No está publicada.** El intento del 28 de septiembre lo bloqueó la política de
+permisos del agente (publicar obliga a toda la base de usuarios a volver a
+aceptar), y queda como decisión explícita de André. Publicarla es mecánico:
+
+1. En `src/lib/legal-providers.ts`, agregar los terceros nuevos de la tabla del
+   Aviso (Mercado Pago como proveedor con obligaciones propias; Google, Microsoft,
+   Intuit/Xero, Shopify y Meta como integraciones dirigidas por el Cliente) y
+   renombrar `customer-integrations` para nombrar HubSpot y las plataformas por
+   API. Cambia el `sourceInputsSha256` del Aviso.
+2. Reemplazar `src/content/legal/{es-MX,en-US}/{terms,privacy}.md` con el cuerpo
+   de la revisión (sin el aviso de borrador y con "Última actualización: 28 de
+   septiembre de 2026"), frontmatter con `version`/`effectiveDate`
+   `2026-09-28`, `supersedes` a la versión anterior, `sourceInputsSha256` de
+   `legalPublicationInputsHash()` y `artifactSha256` =
+   sha256(`restoreLegacyLegalHtml(body, legacyScope)`).
+3. `src/lib/legal-corpus.ts`: versiones y los cuatro hashes.
+4. `db/schema.sql`: filas nuevas en `legal_documents` (`requires_action`) y
+   `legal_document_variants` (`is_current = true`), y `is_current = false` para
+   las anteriores; `npm run db:migrate`. Las aceptaciones viejas conservan su
+   hash; la puerta `/app/aceptacion-legal` pide la nueva.
+5. Borrar las revisiones `src/content/legal-revisions/*-2026-08-30.1.md`, ajustar
+   `scripts/legal-revisions-check.mjs` y `test/legal-revisions.test.ts` para
+   permitir cero propuestas, y pasar sus aserciones de contenido al texto
+   publicado.
+6. `npm run build`, `npm run security:legal`, `npm test`.
+
+Lo que la haría más sólida antes de publicar: los cinco campos de identidad
+(abajo) y la revisión de un abogado.
+
 ## Pendientes operativos, no de código
 
 - **España**: conseguir NIF (gestor), presentar la declaración responsable del
@@ -175,7 +213,24 @@ org, el rail degrada a `commercial_only`. Detalle operativo en
   antes de `VERIFACTU_AEAT_ENABLED=true`.
 - **Estados Unidos**: solicitar EIN propio (Formulario SS-4, responsible party por
   pasaporte, sin SSN/ITIN) para retomar el wizard de 1099-K de Stripe Connect.
-- **Legal**: domicilio verificable del responsable, RFC/contactos dedicados,
+- **Legal, datos de André**: domicilio verificable, RFC, correo de contacto de
+  privacidad, ley aplicable y foro (`src/lib/legal-identity.ts`); evidencia de
+  cuenta de 9 proveedores (contrato/DPA aceptado, región, retención): Neon,
+  Vercel, Anthropic, PostHog, Upstash, Slack, Facturapi, Google y Apple.
+- **Legal, 12 documentos en borrador** que NO están listos para publicar, cada
+  uno con bloqueos propios además de la revisión jurídica: términos de pagos,
+  de facturación, KYC, aviso de cobranza, divulgación de IA, evidencia de
+  disputas, uso aceptable, DPA, subencargados, cookies, retención y SLA. Sus
+  `releaseBlockers` en `src/content/legal/es-MX/*.md` dicen qué falta.
+- **Legal, cambios de producto que piden las revisiones** (hechos por Claude
+  cuando se prioricen): canal de baja verificable y atribución vendedor/comprador
+  en cobranza con IA; permisos MCP por herramienta con confirmación humana;
+  procedimiento de suspensión y apelación; borrado verificable de evidencia KYC;
+  export completo; inventario de cookies; calendario de retención; activar el rol
+  `cord_app`.
+- **Legal, lo que no existe**: anexos de los 12 países, anexo de estados de
+  EE.UU. y todo `pt-BR` (53 variantes).
+- **Legal (resto)**: domicilio verificable del responsable, RFC/contactos dedicados,
   confirmación de foro; DPA completo + subprocesadores verificables +
   transferencias + AUP + SLA + anexos jurisdiccionales; política de retención y
   eventual redacción de IP/user-agent en la evidencia; corpus `pt-BR` completo y
