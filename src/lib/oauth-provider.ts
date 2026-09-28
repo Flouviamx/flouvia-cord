@@ -119,6 +119,16 @@ export async function exchangeAuthorizationCode(input: {
     };
 }
 
+export async function guardarEntrega(client: OAuthClient, state: string, code: string, redirectUri: string): Promise<void> {
+    await sql`select cord_oauth_entrega_guardar(${sha256Hex(state)}, ${client.clientId}, ${code}, ${redirectUri}, ${OAUTH_CODE_TTL_S})`;
+}
+
+/** Un solo uso: la fila se borra en la misma sentencia que la lee. */
+export async function recogerEntrega(client: OAuthClient, state: string): Promise<{ code: string; redirectUri: string } | null> {
+    const [row] = await sql`select code, redirect_uri from cord_oauth_entrega_recoger(${sha256Hex(state)}, ${client.clientId})`;
+    return row ? { code: row.code as string, redirectUri: row.redirect_uri as string } : null;
+}
+
 export async function refreshTokens(client: OAuthClient, refreshToken: string): Promise<TokenResult> {
     const access = newAccessToken();
     const refresh = newRefreshToken();

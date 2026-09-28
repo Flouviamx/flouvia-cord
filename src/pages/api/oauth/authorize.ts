@@ -7,8 +7,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { buildRedirect, isValidCodeChallenge, parseScope, redirectAllowed } from '../../../lib/oauth-core';
-import { authorizableOrgs, getOAuthClient, issueAuthorizationCode } from '../../../lib/oauth-provider';
+import { buildRedirect, isEntregaUri, isValidCodeChallenge, isValidEntregaState, parseScope, redirectAllowed } from '../../../lib/oauth-core';
+import { authorizableOrgs, getOAuthClient, guardarEntrega, issueAuthorizationCode } from '../../../lib/oauth-provider';
 
 const back = (to: string) => new Response(null, { status: 303, headers: { Location: to, 'Cache-Control': 'no-store' } });
 const problem = (code: string) => back(`/oauth/authorize?error=${encodeURIComponent(code)}`);
@@ -31,6 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
     const hinted = field('return_to');
     const returnTo = hinted && client.redirectUris.includes(hinted) ? hinted : redirect;
     const state = field('state');
+    const entrega = isEntregaUri(redirect);
 
     if (field('decision') !== 'allow') {
         return back(buildRedirect(returnTo, { error: 'access_denied', state }));
@@ -38,7 +39,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const scope = parseScope(field('scope'));
     const challenge = field('code_challenge');
-    if (!scope || (challenge && (!isValidCodeChallenge(challenge) || field('code_challenge_method') !== 'S256'))) {
+    const pkceMalo = challenge ? !isValidCodeChallenge(challenge) || field('code_challenge_method') !== 'S256' : entrega;
+    if (!scope || pkceMalo || (entrega && !isValidEntregaState(state))) {
         return back(buildRedirect(returnTo, { error: 'invalid_request', state }));
     }
 
@@ -49,5 +51,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const code = await issueAuthorizationCode({ client, userId, orgId, scope, redirectUri: redirect, codeChallenge: challenge });
+    if (entrega) {
+        await guardarEntrega(client, state as string, code, redirect);
+        return back(returnTo);
+    }
     return back(buildRedirect(returnTo, { code, state }));
 };

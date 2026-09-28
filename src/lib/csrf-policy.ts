@@ -17,6 +17,8 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/oauth/token/',
     '/api/oauth/revoke',
     '/api/oauth/revoke/',
+    '/api/oauth/entrega',
+    '/api/oauth/entrega/',
 ]);
 
 /**

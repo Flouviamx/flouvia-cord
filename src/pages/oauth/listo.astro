@@ -1,0 +1,41 @@
+---
+// /oauth/listo — regreso de las apps que recogen su autorización en Cord (el
+// complemento de Gmail). La URL no trae el código: se quedó guardado en Cord.
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const L = currentLocale();
+const ok = !Astro.url.searchParams.get('error');
+---
+
+<Layout title={t(L, 'oauth.eyebrow')} noindex={true} analyticsDisabled={true}>
+    <main class="ol-page">
+        <div class="ol-card" data-ok={ok ? '1' : undefined}>
+            <h1>{t(L, ok ? 'oauth.listo.titulo' : 'oauth.listo.no_titulo')}</h1>
+            <p>{t(L, ok ? 'oauth.listo.texto' : 'oauth.listo.no_texto')}</p>
+            <button type="button" class="ol-btn" data-cerrar>{t(L, 'oauth.listo.cerrar')}</button>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    document.querySelector('[data-cerrar]')?.addEventListener('click', () => window.close());
+    if (document.querySelector('.ol-card[data-ok]')) setTimeout(() => window.close(), 1200);
+</script>
+
+<style>
+    .ol-page { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; background: var(--color-bg-soft, #f5f5f7); }
+    .ol-card { width: min(420px, 100%); background: var(--surface, #fff); border: 1px solid var(--color-border, rgba(10,25,47,0.08)); border-radius: 28px; box-shadow: 0 30px 70px -30px rgba(10,25,47,0.25); padding: 2.4rem 2rem; text-align: center; }
+    .ol-card h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; margin: 0 0 0.8rem; color: var(--color-text, #050505); text-wrap: balance; }
+    .ol-card p { font-size: 0.9rem; line-height: 1.5; color: var(--color-text-muted, #555); margin: 0 0 1.6rem; }
+    .ol-btn { min-height: 46px; font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; padding: 12px 28px; border-radius: 999px; background: var(--color-blue-deep, #0a192f); color: #fff; transition: transform 0.3s var(--ease-spring, ease); }
+    .ol-btn:hover { transform: translateY(-2px); }
+    .ol-btn:active { transform: scale(0.97); }
+    .ol-btn:focus-visible { outline: 2px solid var(--color-blue-deep, #0a192f); outline-offset: 2px; }
+</style>

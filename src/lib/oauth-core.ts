@@ -49,6 +49,25 @@ export function pickReturnTo(registered: readonly string[], requested: string, h
 }
 
 /** Un redirect registrado debe ser https, o http solo hacia la propia máquina. */
+const ENTREGA_STATE_RE = /^[A-Za-z0-9_-]{32,128}$/;
+
+/**
+ * El regreso de los clientes que no pueden recibir un redirect propio, como el
+ * complemento de Gmail: el código se queda en Cord y el cliente lo recoge.
+ */
+export function isEntregaUri(uri: string | null | undefined): boolean {
+    if (!uri) return false;
+    try {
+        const u = new URL(uri);
+        const local = u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1');
+        return u.pathname === '/oauth/listo' && !u.search && !u.hash && (u.origin === 'https://cordhq.app' || local);
+    } catch {
+        return false;
+    }
+}
+
+export const isValidEntregaState = (state: string | null | undefined): state is string => !!state && ENTREGA_STATE_RE.test(state);
+
 export function isValidRedirectUri(uri: string): boolean {
     try {
         const u = new URL(uri);

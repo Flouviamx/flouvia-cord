@@ -1,4 +1,4 @@
-export type IntegrationSlug = 'hubspot' | 'shopify' | 'google-sheets' | 'excel' | 'quickbooks' | 'xero' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
+export type IntegrationSlug = 'hubspot' | 'shopify' | 'google-sheets' | 'excel' | 'gmail' | 'quickbooks' | 'xero' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
 export type IntegrationCategory = 'crm' | 'ecommerce' | 'productividad' | 'contabilidad' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationApp {
@@ -13,6 +13,8 @@ export interface IntegrationApp {
 }
 
 export const ZAPIER_INVITE_URL: string | null = 'https://zapier.com/developer/public-invite/246344/a3e1e697b77f2b9e803233fd998ef461/';
+/** Ficha del complemento en Google Workspace Marketplace; sin ella la tarjeta dice Próximamente (regla 15). */
+export const GMAIL_INSTALL_URL: string | null = null;
 export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-invitation/83a99178a8e30c3b36b5165225176c3f';
 
 /**
@@ -59,6 +61,7 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     // quedan dentro del contenedor.
     { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: true, guia: '/soporte/conectar-google-sheets' },
     { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: true, guia: '/soporte/conectar-excel' },
+    { slug: 'gmail', nombre: 'Gmail', dominio: 'mail.google.com', categoria: 'productividad', disponible: GMAIL_INSTALL_URL !== null, logo: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png', tile: false, guia: null },
     // El favicon de slack.com mide 35x34 px y la API de favicons no da más
     // grande: cualquier tamaño de pantalla lo amplía y se pixelea. Este es el
     // activo oficial de Slack a 400 px, guardado en el repo para no depender

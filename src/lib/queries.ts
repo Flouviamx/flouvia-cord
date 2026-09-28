@@ -1415,19 +1415,22 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
     return rows.map(c => rowToQuote(c, [], [], []));
 }
 
-export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null; folio?: string | null }) {
+export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null; folio?: string | null; clienteId?: string | null }) {
     const folio = String(page.folio ?? '').trim().slice(0, 60);
+    const clienteId = page.clienteId ?? null;
     const orgId = await getActiveOrgId();
     const [[count], rows] = await withOrgTx(orgId,
         sql`select count(*)::int as n from cotizaciones c
             where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
-              and (${folio} = '' or lower(c.folio) = lower(${folio}))`,
+              and (${folio} = '' or lower(c.folio) = lower(${folio}))
+              and (${clienteId}::text is null or c.cliente_id::text = ${clienteId})`,
         sql`select c.*, cl.empresa, cl.terminos_default,
                    coalesce(c.terminos, cl.terminos_default) as terminos
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
             where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
               and (${folio} = '' or lower(c.folio) = lower(${folio}))
+              and (${clienteId}::text is null or c.cliente_id::text = ${clienteId})
             order by c.created_at desc, c.id desc
             limit ${page.limit} offset ${page.offset}`);
     return { items: rows.map(c => rowToQuote(c, [], [], [])), total: Number(count?.n ?? 0) };

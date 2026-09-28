@@ -10,7 +10,7 @@ import HojaCard from './HojaCard.astro';
 import ContaCard from './ContaCard.astro';
 import WhatsAppCard from './WhatsAppCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
-import { MAKE_INVITE_URL, ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
+import { GMAIL_INSTALL_URL, MAKE_INVITE_URL, ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
 import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
 import { findAction } from '../../lib/workflows/catalog';
 import type { Step } from '../../lib/workflows/definition';
@@ -47,6 +47,7 @@ const DESC: Record<string, string> = {
     n8n: t(L, 'set.integ.n8n.desc'),
     make: t(L, 'set.integ.make.desc'),
     zapier: t(L, 'set.integ.zapier.desc'),
+    gmail: t(L, 'set.integ.gmail.desc'),
 };
 
 const usesBrand = (steps: Step[]): boolean => steps.some((s) =>
@@ -195,6 +196,35 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                         <li>{t(L, 'set.integ.zapier.busquedas')}</li>
                     </ul>
                     <p class="ig-note">{t(L, 'set.integ.zapier.cupo')}</p>
+                </div>
+            </div>
+        </Fragment>
+    )}
+
+    {app.slug === 'gmail' && (
+        <Fragment>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.gmail.conectar_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.gmail.paso_1')}</li>
+                        <li>{t(L, 'set.integ.gmail.paso_2')}</li>
+                        <li>{t(L, 'set.integ.gmail.paso_3')}</li>
+                    </ol>
+                    <div class="ig-actions">
+                        {GMAIL_INSTALL_URL && <a class="ig-btn ig-btn-solid" href={GMAIL_INSTALL_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.gmail.abrir')}</a>}
+                        <a class="ig-link" href="?wb=api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
+                    </div>
+                </div>
+            </div>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.gmail.que_titulo')}</h3>
+                <div class="s-body">
+                    <ul class="ig-steps ig-list">
+                        <li>{t(L, 'set.integ.gmail.que_leer')}</li>
+                        <li>{t(L, 'set.integ.gmail.que_redactar')}</li>
+                    </ul>
+                    <p class="ig-note">{t(L, 'set.integ.gmail.privacidad')}</p>
                 </div>
             </div>
         </Fragment>

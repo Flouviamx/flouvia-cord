@@ -1,5 +1,5 @@
 // /api/v1/cotizaciones — API PÚBLICA de cotizaciones.
-//   GET  ?status=&folio=&limit=&offset=   → { data: [...], meta: { limit, offset, total } }
+//   GET  ?status=&folio=&cliente_id=&limit=&offset=   → { data: [...], meta: { limit, offset, total } }
 //   POST { cliente_id?, terminos?, vigencia_dias?, notas?, send?, items[] }
 //        → { data: { id, folio, link_publico, ... } }   (scope: write)
 export const prerender = false;
@@ -15,7 +15,9 @@ export const GET = withApiAuth('read', async ({ url }) => {
     const orgId = await getActiveOrgId();
     const { limit, offset } = pageParams(url);
     const status = url.searchParams.get('status') || null;
-    const page = await getCotizacionesPage({ limit, offset, status, folio: url.searchParams.get('folio') });
+    const clienteId = url.searchParams.get('cliente_id') || null;
+    if (clienteId && !/^[0-9a-f-]{36}$/i.test(clienteId)) return fail('cliente_id no es válido.', 'invalid_cliente_id');
+    const page = await getCotizacionesPage({ limit, offset, status, folio: url.searchParams.get('folio'), clienteId });
     return ok(await Promise.all(page.items.map((q) => quoteListItem(q, orgId))), { limit, offset, total: page.total });
 });
 

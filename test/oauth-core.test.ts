@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import {
-    buildRedirect, clientSecretMatches, isValidCodeChallenge, isValidRedirectUri, newAccessToken, newAuthCode,
+    buildRedirect, clientSecretMatches, isEntregaUri, isValidCodeChallenge, isValidEntregaState, isValidRedirectUri, newAccessToken, newAuthCode,
     newRefreshToken, parseScope, pickReturnTo, readClientCredentials, redirectAllowed, sha256Hex, tokenDisplay, verifyPkce,
 } from '../src/lib/oauth-core';
 
@@ -98,5 +98,17 @@ describe('oauth-core', () => {
         expect(pickReturnTo(reg, www, 'https://evil.test/oauth/cb/app', 'https://us2.make.com/')).toBe('https://us2.make.com/oauth/cb/app');
         const zap = ['https://zapier.com/dashboard/auth/oauth/return/App246344CLIAPI/'];
         expect(pickReturnTo(zap, zap[0], null, 'https://zapier.com/editor/1')).toBe(zap[0]);
+    });
+
+    it('solo el regreso propio de Cord guarda el código para que el cliente lo recoja', () => {
+        expect(isEntregaUri('https://cordhq.app/oauth/listo')).toBe(true);
+        expect(isEntregaUri('http://localhost:4321/oauth/listo')).toBe(true);
+        expect(isEntregaUri('https://evil.test/oauth/listo')).toBe(false);
+        expect(isEntregaUri('https://cordhq.app/oauth/listo?x=1')).toBe(false);
+        expect(isEntregaUri('https://script.google.com/macros/d/abc/usercallback')).toBe(false);
+        expect(isEntregaUri(null)).toBe(false);
+        expect(isValidEntregaState('a'.repeat(64))).toBe(true);
+        expect(isValidEntregaState('corto')).toBe(false);
+        expect(isValidEntregaState('a'.repeat(63) + '/')).toBe(false);
     });
 });

@@ -241,10 +241,24 @@ las apps de Zapier, Make y n8n viven como código en el repo.
   complemento está hecho para no necesitarla nunca.
 - **Del correo salen el remitente y el asunto, nunca el cuerpo.** El contenido
   de un correo es del negocio.
-- **Autentica con llave de API**, como el nodo de n8n, guardada en las
-  propiedades del USUARIO y probada contra `/api/v1/me` antes de darla por
-  buena. Migrar al OAuth propio de Cord (el de Zapier y Make) es una mejora
-  posterior, no un rediseño.
+- **Se conecta con el OAuth de Cord** (cliente `gmail`), sin llaves. El regreso
+  NO es la `usercallback` de Apps Script: Google la ejecuta con la primera
+  cuenta del navegador, que no siempre es la del complemento, y fallaba con "se
+  requiere autorización" (28 sep 2026). El regreso registrado es
+  `https://cordhq.app/oauth/listo`: `/api/oauth/authorize` detecta esa dirección
+  (`isEntregaUri`), guarda el código en `oauth_entregas` contra el sha-256 del
+  `state` y lo deja fuera de la URL; el complemento lo recoge en
+  `/api/oauth/entrega` con su secreto, el `state` y su verificador PKCE, que en
+  este carril es obligatorio. Un solo uso, cinco minutos de vida.
+- **Al redactar** (`composeTrigger`), inserta el link de una cotización del
+  destinatario. Lee solo los destinatarios del borrador
+  (`gmail.addons.current.message.metadata`) y escribe con
+  `gmail.addons.current.action.compose`; ninguno es restringido. Los borradores
+  no se listan: todavía no tienen página que el cliente pueda abrir.
+- **La tarjeta de Ajustes** existe (`gmail` en el catálogo) pero dice
+  "Próximamente" mientras `GMAIL_INSTALL_URL` sea `null`: la conexión ocurre
+  dentro de Gmail y sin ficha en Google Workspace Marketplace no hay forma de
+  instalarlo. El estado "Conectado" sale de `connectedOAuthApps`, como Zapier.
 - La cotización nace con una línea a partir del asunto porque `createCotizacion`
   exige al menos una; el vendedor la termina en Cord, donde están los productos,
   los precios y los impuestos.

@@ -23,7 +23,12 @@ precios y los impuestos.
 - **Se conecta con el OAuth de Cord**, el mismo de Zapier y Make: botón
   "Conectar con Cord", autorización en la pantalla de Cord, y listo. Nadie copia
   llaves. El cliente OAuth es `gmail` (registrado con `scripts/oauth-client.mjs`)
-  y su URL de regreso es la `usercallback` de este script.
+  y su URL de regreso es `https://cordhq.app/oauth/listo`, no la `usercallback`
+  de Apps Script: Google ejecuta esa con la primera cuenta del navegador y
+  fallaba con "se requiere autorización". Cord guarda el código y el complemento
+  lo recoge en `/api/oauth/entrega` con el `state`, su secreto y PKCE.
+- **Al redactar** aparece en la barra de redacción: inserta el link de una
+  cotización del destinatario. Lee solo los destinatarios del borrador.
 - **Los tokens viven en las propiedades del USUARIO**: cada persona conecta su
   espacio y nadie ve los de nadie. El refresh token se guarda nuevo en cada
   renovación porque Cord lo rota y detecta el reuso.
@@ -80,9 +85,8 @@ En Apps Script: **Configuración del proyecto › Propiedades de la secuencia de
 comandos**, agrega `CORD_CLIENT_ID` y `CORD_CLIENT_SECRET` con los valores de
 `integrations/gmail/.env`.
 
-Si el ID del script cambia (un `clasp create` nuevo), la URL de regreso cambia
-con él y hay que actualizar el cliente:
-`node scripts/oauth-client.mjs --slug gmail --redirect https://script.google.com/macros/d/<SCRIPT_ID>/usercallback ...`
+El cliente se registra una vez y no depende del ID del script:
+`node scripts/oauth-client.mjs --slug gmail --nombre "Cord para Gmail" --dominio mail.google.com --redirect https://cordhq.app/oauth/listo --env integrations/gmail/.env`
 
 ## Probarlo
 
