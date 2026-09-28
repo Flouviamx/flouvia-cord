@@ -103,6 +103,18 @@ export interface ResultadoPedido {
     ok: boolean;
     pedido?: string;
     motivo?: 'sin_conexion' | 'apagado' | 'sin_permiso' | 'divisa' | 'sin_lineas' | 'shopify' | 'ya_existe';
+    /** Para el historial: qué divisa llevaba la venta y cuál cobra la tienda. */
+    monedas?: { venta: string; tienda: string };
+}
+
+/** Un pedido que no se creó se dice en el historial de la cotización, no solo en el log. */
+function porQueNo(r: ResultadoPedido): string | null {
+    if (r.motivo === 'divisa' && r.monedas) {
+        return `No se creó el pedido en Shopify: la cotización va en ${r.monedas.venta} y la tienda cobra en ${r.monedas.tienda}. Cord no convierte el importe.`;
+    }
+    if (r.motivo === 'sin_permiso') return 'No se creó el pedido en Shopify: la tienda no tiene el permiso para crear pedidos. Reconéctala desde Integraciones.';
+    if (r.motivo === 'shopify') return 'Shopify no aceptó el pedido de esta cotización. Revisa la conexión en Integraciones.';
+    return null;
 }
 
 /** Lo que el evento de dominio dispara. Nunca lanza: un fallo aquí no rompe la venta. */
@@ -113,7 +125,12 @@ export async function onQuoteEvent(orgId: string, type: string, quoteId: string)
         if (!cx || cx.disparador === 'no') return;
         if (type === 'quote.approved' && cx.disparador !== 'aprobada') return;
         if (type === 'quote.paid' && cx.disparador !== 'pagada') return;
-        await crearPedido(orgId, quoteId, { pagado: type === 'quote.paid' });
+        const r = await crearPedido(orgId, quoteId, { pagado: type === 'quote.paid' });
+        const nota = porQueNo(r);
+        if (nota) {
+            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                                       values (${orgId}, ${quoteId}, 'nota', ${nota})`);
+        }
     } catch (err) {
         log.error('no se pudo crear el pedido en Shopify', { route: 'shopify-orders', orgId, type, err });
     }
@@ -160,7 +177,7 @@ export async function crearPedido(
     }
 
     const moneda = normalizeCurrency(q.base_currency as string);
-    if (cx.monedaTienda && moneda !== cx.monedaTienda) return { ok: false, motivo: 'divisa' };
+    if (cx.monedaTienda && moneda !== cx.monedaTienda) return { ok: false, motivo: 'divisa', monedas: { venta: moneda, tienda: cx.monedaTienda } };
 
     const [items] = await withOrgTx(orgId, sql`
         select i.descripcion, i.cantidad, i.precio_unitario, i.precio_negociado, i.descuento_pct,
