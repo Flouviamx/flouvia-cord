@@ -1,0 +1,145 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+
+interface Props {
+    lang: AppLocale;
+    conexion: { proveedor: string; cuenta: string; libroUrl: string; ultimaSync: string | null; estado: string } | null;
+    /** Qué proveedor tiene app detrás. Sin app no se ofrece el botón (regla 15). */
+    google: boolean;
+    excel: boolean;
+    flash: string | null;
+}
+
+const { lang: L, conexion, google, excel, flash } = Astro.props;
+const FLASH = ['conectada', 'cancelada', 'estado', 'cuenta', 'error'];
+const conectada = Boolean(conexion) && conexion?.estado !== 'desconectada';
+const fecha = conexion?.ultimaSync
+    ? new Date(conexion.ultimaSync).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
+const NOMBRE: Record<string, string> = { google_sheets: 'Google Sheets', excel: 'Microsoft Excel' };
+---
+
+<div class="s-block" data-hoja>
+    <h3>{t(L, 'hojas.titulo')}</h3>
+    <div class="s-body">
+        {flash && FLASH.includes(flash) && (
+            <p class="hj-flash" data-bad={flash !== 'conectada' ? '1' : undefined}>{t(L, `hojas.flash_${flash}` as any)}</p>
+        )}
+
+        <p class="hj-que">{t(L, 'hojas.que_hace')}</p>
+
+        {conectada ? (
+            <Fragment>
+                {conexion?.estado === 'error' && <p class="hj-flash" data-bad="1">{t(L, 'hojas.reconectar_aviso')}</p>}
+                <p class="hj-conn">
+                    {t(L, 'hojas.conectado_a')} <b>{NOMBRE[conexion?.proveedor ?? ''] ?? ''}</b>
+                    <span class="hj-sub">{conexion?.cuenta}</span>
+                </p>
+                <p class="hj-sync">{t(L, 'hojas.ultima_sync')} {fecha ?? t(L, 'hojas.nunca')}</p>
+                <div class="hj-actions">
+                    <a class="hj-btn-solid" href={conexion?.libroUrl} target="_blank" rel="noopener noreferrer">{t(L, 'hojas.abrir')}</a>
+                    <button class="hj-btn-ghost" id="hjSync">{t(L, 'hojas.actualizar')}</button>
+                    <button class="hj-btn-ghost" id="hjOff">{t(L, 'hojas.desconectar')}</button>
+                </div>
+            </Fragment>
+        ) : (
+            <div class="hj-actions">
+                <button class="hj-btn-solid" data-hj-conectar="google_sheets" disabled={!google}>
+                    {t(L, 'hojas.conectar_google')}{!google && ` · ${t(L, 'hojas.no_disponible')}`}
+                </button>
+                <button class="hj-btn-solid" data-hj-conectar="excel" disabled={!excel}>
+                    {t(L, 'hojas.conectar_excel')}{!excel && ` · ${t(L, 'hojas.no_disponible')}`}
+                </button>
+            </div>
+        )}
+
+        <span class="hj-msg" id="hjMsg"
+            data-i18n-no-conecto={t(L, 'hojas.err.no_conecto')}
+            data-i18n-no-desconecto={t(L, 'hojas.err.no_desconecto')}
+            data-i18n-actualizando={t(L, 'hojas.actualizando')}
+            data-i18n-resultado={t(L, 'hojas.resultado')}></span>
+    </div>
+</div>
+
+<style>
+    .hj-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
+    .hj-flash[data-bad] { color: var(--color-danger); }
+    .hj-que { font-size: 0.85rem; line-height: 1.5; color: var(--color-text-muted); margin: 0 0 1rem; max-width: 62ch; }
+    .hj-conn { font-size: 0.9rem; margin: 0 0 0.35rem; color: var(--color-text); }
+    .hj-sub { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--color-text-muted); }
+    .hj-sync { font-size: 0.82rem; color: var(--color-text-muted); margin: 0 0 1rem; }
+    .hj-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .hj-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; }
+    .hj-msg:global(.ok) { color: var(--color-ok); }
+    .hj-msg:global(.err) { color: var(--color-danger); }
+    .hj-btn-solid { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; text-decoration: none; }
+    .hj-btn-solid:disabled, .hj-btn-ghost:disabled { opacity: 0.6; cursor: not-allowed; }
+    .hj-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .hj-btn-solid:focus-visible, .hj-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    @media (max-width: 560px) {
+        .hj-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
+        .hj-btn-solid, .hj-btn-ghost { min-height: 46px; width: 100%; justify-content: center; text-align: center; }
+    }
+</style>
+
+<script>
+    function initHoja() {
+        const msg = document.getElementById('hjMsg');
+        if (!msg) return;
+        const flash = (text: string, ok: boolean) => {
+            msg.textContent = text;
+            msg.className = 'hj-msg ' + (ok ? 'ok' : 'err');
+        };
+
+        document.querySelectorAll<HTMLButtonElement>('[data-hj-conectar]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                try {
+                    const res = await fetch('/api/integraciones/hojas/conectar', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ proveedor: btn.dataset.hjConectar }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok || !d.redirect) throw new Error(d.error || '');
+                    window.location.href = d.redirect;
+                } catch (err: any) {
+                    flash(err.message || msg.dataset.i18nNoConecto || '', false);
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        const off = document.getElementById('hjOff') as HTMLButtonElement | null;
+        off?.addEventListener('click', async () => {
+            off.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/hojas/conectar', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                window.location.href = window.location.pathname;
+            } catch {
+                flash(msg.dataset.i18nNoDesconecto || '', false);
+                off.disabled = false;
+            }
+        });
+
+        const sync = document.getElementById('hjSync') as HTMLButtonElement | null;
+        sync?.addEventListener('click', async () => {
+            sync.disabled = true;
+            flash(msg.dataset.i18nActualizando || '', true);
+            try {
+                const res = await fetch('/api/integraciones/hojas/sync', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || '');
+                const plantilla = msg.dataset.i18nResultado || '';
+                flash(plantilla.replace('{cotizaciones}', String(d.cotizaciones ?? 0)).replace('{facturas}', String(d.facturas ?? 0)), true);
+            } catch (err: any) {
+                flash(err.message || '', false);
+            } finally {
+                sync.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHoja);
+    else initHoja();
+</script>

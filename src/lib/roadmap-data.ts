@@ -626,6 +626,7 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Acciones reales:** crear una tarea, avisar al equipo por correo, escribirle al cliente con tu marca, caducar una cotización, anular una factura, mandar los datos a una URL, publicar en Slack o Teams, o dejar una nota en el Deal de HubSpot.
 - **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
+- **Google Sheets y Excel:** cada cotización y cada factura como una fila en tu hoja, al día sola: folio, cliente, estado, fechas, divisa y montos como números que puedes sumar. Cord crea el archivo y solo puede abrir ese, así que no ve el resto de tu Drive ni de tu OneDrive.
 - **Shopify en los dos sentidos:** el catálogo y los clientes de tu tienda entran a Cord para cotizar mayoreo con precios y SKU reales, y cuando la cotización se aprueba o se paga, el pedido se crea en tu tienda para que el surtido y el inventario sigan donde ya viven. El pedido nace apagado: lo activas tú.
 - **Apps de Cord en Zapier y Make, sin llaves:** se conectan con un clic en una pantalla de Cord, con disparadores instantáneos, acciones y búsquedas. Cada conexión se puede revocar desde Ajustes.
 - **Slack con Añadir a Slack:** eliges el canal en Slack y listo, sin copiar URLs. Teams publica tarjetas en tu canal y WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
@@ -634,7 +635,7 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
-- **Contabilidad y hojas de cálculo:** las siguientes conexiones son donde aterriza el dinero que ya cerraste — Google Sheets y Excel para llevar tus ventas a la hoja que usas cada mes, y después contabilidad: QuickBooks, Xero, Alegra, Holded y Siigo.
+- **Contabilidad:** las siguientes conexiones son donde aterriza el dinero que ya cerraste — QuickBooks, Xero, Alegra, Holded y Siigo.
 - **n8n Cloud:** el nodo se envió a verificación de n8n el 21 de septiembre de 2026; aparece en n8n Cloud cuando n8n lo apruebe.
 - **Microsoft Teams con tu cuenta:** iniciar sesión con Microsoft y elegir el equipo y el canal en Cord, sin copiar la URL de un flujo.
 - **WhatsApp con un botón:** conectar el número sin pasar por la consola de Meta, cuando Meta apruebe a Cord como proveedor.
@@ -653,6 +654,7 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **Real actions:** create a task, email your team, email the client with your branding, expire a quote, void an invoice, send the data to a URL, post to Slack or Teams, or add a note to the HubSpot Deal.
 - **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
+- **Google Sheets and Excel:** every quote and every invoice as a row in your spreadsheet, kept current on its own: number, client, status, dates, currency and amounts as numbers you can actually sum. Cord creates the file and can only open that one, so it never sees the rest of your Drive or OneDrive.
 - **Shopify both ways:** your store's catalog and customers flow into Cord so you can quote wholesale with real prices and SKUs, and when the quote is approved or paid, the order is created in your store so fulfillment and inventory stay where they already live. Orders start off: you turn them on.
 - **Cord apps on Zapier and Make, without keys:** connect with one click on a Cord screen, with instant triggers, actions and searches. Each connection can be revoked from Settings.
 - **Slack with Add to Slack:** pick the channel in Slack and you are done, with no URLs to copy. Teams posts cards to your channel and WhatsApp messages the client with your Meta-approved template.
@@ -661,7 +663,7 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
-- **Accounting and spreadsheets:** the next connections are where the money you already closed lands — Google Sheets and Excel to push your sales into the sheet you use every month, and then accounting: QuickBooks, Xero, Alegra, Holded and Siigo.
+- **Accounting:** the next connections are where the money you already closed lands — QuickBooks, Xero, Alegra, Holded and Siigo.
 - **n8n Cloud:** the node was submitted to n8n's verification on September 21, 2026; it appears in n8n Cloud once n8n approves it.
 - **Microsoft Teams with your account:** sign in with Microsoft and pick the team and channel in Cord, without copying a flow URL.
 - **WhatsApp with a button:** connect the number without going through Meta's console, once Meta approves Cord as a provider.

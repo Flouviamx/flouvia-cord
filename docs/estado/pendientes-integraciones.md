@@ -150,6 +150,34 @@ el dominio: funciona con el `.onmicrosoft.com`.
 
 ---
 
+## Google Sheets y Excel
+
+**Hecho (27 sep):** integración completa en `src/lib/integraciones/hojas/`. OAuth
+de los dos proveedores, creación del archivo, dos pestañas con una fila por
+documento, actualización por evento de dominio, relleno inicial de 500
+documentos por pestaña, tarjeta en Ajustes y artículo de ayuda en los dos
+idiomas. Contrato de columnas verificado en `test/hojas.test.ts`.
+
+**Excel ya funciona** porque reusa la app de Entra de Teams. Falta agregarle el
+permiso delegado `Files.ReadWrite` al registro de la app; sin eso, la
+autorización se completa pero la escritura responde "sin permiso".
+
+**Falta:**
+- [ ] Claude: agregar `Files.ReadWrite` a la app de Entra `Cord`
+  (`9c8b8fe6-8096-48a2-b991-32f978c12a9a`) con el CLI de Azure. Necesita que
+  André vuelva a hacer `az login` porque el token de Graph caduca.
+- [ ] André: crear el cliente OAuth de Google (proyecto en Google Cloud, APIs de
+  Sheets y Drive habilitadas, tipo "Aplicación web", URI de redirección
+  `https://cordhq.app/api/integraciones/hojas/callback`, permiso `drive.file`) y
+  poner `GOOGLE_SHEETS_CLIENT_ID` / `GOOGLE_SHEETS_CLIENT_SECRET` en Vercel.
+- [ ] Probar de punta a punta: conectar, ver el archivo, cambiar el estado de una
+  cotización y confirmar que la fila se reemplaza en vez de duplicarse.
+- [ ] Pendiente de producto: elegir una hoja EXISTENTE en vez de crear una. Con
+  `drive.file` se puede sin ampliar permisos, usando el selector de archivos de
+  Google, pero es una pantalla más y no bloquea el valor principal.
+
+---
+
 ## Shopify
 
 **Hecho (22-23 sep):** app creada y publicada (`cord-4`), credenciales en Vercel
@@ -252,16 +280,15 @@ que solo suma un logo al directorio no entra.
 
 | Prioridad | App | Por qué le sirve a Cord | Esfuerzo |
 |---|---|---|---|
-| 1 | **Google Sheets y Excel** | Cada cotización, factura y pago en la hoja donde el negocio ya lleva sus números, sin exportar a mano. Es lo más pedido y lo de menor esfuerzo: las dos tienen API estable y ninguna exige revisión de marketplace. | Bajo |
-| 2 | **QuickBooks Online y Xero** | Que cada factura y pago de Cord aparezca solo en la contabilidad. QuickBooks domina en Estados Unidos; Xero en Reino Unido y buena parte de Europa. | Medio: OAuth y revisión de sus marketplaces |
-| 3 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
-| 4 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
-| 5 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
-| 6 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
-| 7 | **Gmail** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
+| 1 | **QuickBooks Online y Xero** | Que cada factura y pago de Cord aparezca solo en la contabilidad. QuickBooks domina en Estados Unidos; Xero en Reino Unido y buena parte de Europa. | Medio: OAuth y revisión de sus marketplaces |
+| 2 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
+| 3 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
+| 4 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
+| 5 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
+| 6 | **Gmail** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
 
-Shopify salió de esta lista el 23 de septiembre de 2026: está en producción en
-los dos sentidos.
+Shopify salió de esta lista el 23 de septiembre de 2026 (está en producción en
+los dos sentidos) y Google Sheets y Excel el 27 de septiembre.
 
 Todo lo que se agregue sigue la regla 15: nada aparece en Ajustes › Integraciones
 como disponible hasta que funcione de punta a punta.

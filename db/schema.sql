@@ -5168,6 +5168,23 @@ alter table integracion_conexiones drop constraint if exists integracion_conexio
 alter table integracion_conexiones add constraint integracion_conexiones_credencial_activa_check
   check (estado <> 'desconectada' or (refresh_token_enc is null and access_token_enc is null));
 alter table integracion_conexiones drop constraint if exists integracion_conexiones_check1;
+
+-- Google Sheets y Excel: misma tabla, una conexión por organización. La cuenta
+-- es el correo con el que se autorizó, que es lo único que identifica al dueño
+-- del archivo en los dos proveedores.
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_proveedor_check;
+alter table integracion_conexiones add constraint integracion_conexiones_proveedor_check
+  check (proveedor in ('hubspot', 'shopify', 'google_sheets', 'excel'));
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_cuenta_externa_check;
+alter table integracion_conexiones add constraint integracion_conexiones_cuenta_externa_check
+  check (
+    cuenta_externa ~ '^[0-9]{1,20}$'
+    or cuenta_externa ~ '^[a-z0-9][a-z0-9-]{0,59}\.myshopify\.com$'
+    or (cuenta_externa ~ '^[^@[:space:]]{1,128}@[^@[:space:]]{1,127}$' and length(cuenta_externa) <= 254)
+  );
+alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
+alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
+  check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams', 'shopify', 'google_sheets', 'excel'));
 -- END integraciones-tables
 
 -- BEGIN oauth-provider

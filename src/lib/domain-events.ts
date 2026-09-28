@@ -108,6 +108,12 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
         if (id && objectId && (type === 'quote.approved' || type === 'quote.paid')) {
             after(import('./integraciones/shopify/orders').then((m) => m.onQuoteEvent(orgId, type, objectId)));
         }
+        // La hoja de cálculo refleja el estado, así que le interesan muchos más
+        // eventos que a Shopify; el módulo decide cuáles y sale sin tocar la red
+        // si la organización no tiene hoja conectada.
+        if (id) {
+            after(import('./integraciones/hojas/service').then((m) => m.onDomainEventHoja(orgId, type, objectId)));
+        }
         return id;
     } catch (err) {
         log.error('no se pudo registrar el evento de dominio', { route: 'domain-events', type, orgId, err });

@@ -127,6 +127,52 @@ escribe en el negocio de alguien más, así que todo está acotado a propósito:
 - **Un fallo aquí no rompe la venta.** `onQuoteEvent()` cuelga de
   `domain-events.ts` dentro de `after(...)` y nunca lanza.
 
+## Hojas de cálculo (Google Sheets y Excel)
+
+Una fila por documento en una hoja del negocio, al día sola (27 sep 2026). Vive
+en `src/lib/integraciones/hojas/` y reusa el carril de HubSpot y Shopify
+(`integracion_conexiones`), con una conexión por organización: Google **o**
+Excel, no las dos.
+
+- **El permiso es el más estrecho que existe, y eso decide el diseño.** Google
+  recibe solo `drive.file` (más `openid email`), que no es un permiso sensible:
+  la app ve ÚNICAMENTE los archivos que ella creó. Por eso Cord CREA la hoja en
+  vez de pedir una existente — pedir `spreadsheets` habría dado acceso a toda la
+  cuenta y metido al producto en la auditoría de seguridad anual de Google, que
+  cuesta miles de dólares y se repite cada año. Excel usa `Files.ReadWrite` de
+  Graph, con la MISMA app de Entra que Teams: los permisos se piden por
+  autorización, así que quien solo conecta Excel nunca ve los de Teams.
+- **La fila se encuentra por FOLIO, no por número de fila.** La hoja es de la
+  persona y la persona ordena, filtra e inserta filas; un número guardado en
+  Cord apunta a otra venta en cuanto alguien ordena por total, y entonces Cord
+  sobrescribe el documento equivocado. El folio vive en la columna A y sobrevive
+  a todo eso. Si no aparece, la fila se agrega al final.
+- **Los importes viajan como número y la divisa en su columna** (regla 21). Una
+  hoja existe para sumar: `"$1,234.50"` es texto que no suma. Y pegarle el
+  símbolo al número escondería que la columna mezcla monedas, con un `SUM` que
+  daría un total inexistente.
+- **Las fechas van en la zona de la organización** (regla 24), en `YYYY-MM-DD`,
+  el único formato que ordena bien y que las dos hojas reconocen sin importar el
+  idioma del archivo.
+- **Los títulos de las pestañas son un DATO, no una constante.** Se traducen al
+  idioma de la organización al crear el archivo y se guardan en `ajustes`:
+  buscarlos por un literal del código rompería la escritura en una cuenta en
+  inglés.
+- **Un fallo de la hoja no tumba la venta.** `onDomainEventHoja()` cuelga de
+  `domain-events.ts` dentro de `after(...)`, nunca lanza, y un error de
+  autorización marca la conexión en `error` para que la tarjeta ofrezca
+  reconectar en vez de fallar en silencio.
+- **Excel necesita una plantilla.** Graph no tiene "crear libro": un archivo de
+  cero bytes no es un `.xlsx` y la API de libros lo rechaza. Cord sube una
+  plantilla mínima de 1.9 KB —generada y verificada una vez— y a partir de ahí
+  usa la API normal.
+- Sin credenciales, cada proveedor se ofrece como "Próximamente" por separado
+  (regla 15): hoy Excel está listo porque reusa la app de Teams, y Google espera
+  su cliente OAuth (`GOOGLE_SHEETS_CLIENT_ID`/`SECRET`).
+
+Contrato ejecutable en `src/lib/integraciones/hojas/columnas.ts`, verificado por
+`test/hojas.test.ts`.
+
 ## Zapier y Make
 
 Ambas apps viven como código en el repo y se publican con el CLI o la API de cada
