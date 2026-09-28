@@ -1,6 +1,6 @@
 import { BRAND_LOGOS } from './integraciones/catalogo';
 
-export type IntegrationLandingSlug = 'hubspot' | 'shopify' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp';
+export type IntegrationLandingSlug = 'hubspot' | 'shopify' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp' | 'gmail';
 export type IntegrationLandingCategory = 'crm' | 'ecommerce' | 'cobros' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationFlow { cord: string; app: string; dir: string }
@@ -1565,6 +1565,167 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { label: 'Workflow actions', href: `${DOCS_EN}/automatizacion/workflows/acciones` },
             ],
             cta: { titulo: 'Collect on the channel your client actually reads.', sub: 'Connect your WhatsApp Business and add the reminder to your first workflow. Free to start.' },
+        },
+    },
+    {
+        slug: 'gmail',
+        nombre: 'Gmail',
+        dominio: 'mail.google.com',
+        logo: BRAND_LOGOS.gmail,
+        categoria: 'comunicacion',
+        related: ['whatsapp', 'slack', 'hubspot'],
+        producto: 'editor',
+        es: {
+            metaTitle: 'Integración con Gmail: cotiza y envía desde tu correo | Cord',
+            metaDescription: 'Tus cotizaciones y facturas salen desde tu Gmail, y dentro de Gmail ves el estado de cada cotización y la armas con IA a partir del correo del cliente.',
+            eyebrow: 'INTEGRACIÓN · GMAIL',
+            titulo: 'Cotiza y cobra desde el correo donde ya hablas con tus clientes.',
+            sub: 'Conecta tu Gmail y las cotizaciones, facturas y recordatorios salen desde tu dirección. Con el complemento, dentro de Gmail ves cada cotización en vivo y la armas con IA a partir del pedido del cliente.',
+            resumen: 'Envía desde tu Gmail y cotiza sin salir del correo.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis. Cotizar con IA usa las cotizaciones con IA de tu plan.',
+            flujoTitulo: 'Qué pasa entre Cord y Gmail',
+            flujo: [
+                { cord: 'Cotización, factura o recordatorio de pago', app: 'Sale desde tu dirección de Gmail', dir: 'Al conectar tu Gmail' },
+                { cord: 'Cotización del hilo', app: 'Estado y última actividad en el panel de Gmail', dir: 'Con el complemento' },
+                { cord: 'Borrador de cotización', app: 'Armado con IA desde el correo del cliente', dir: 'Cuando tú lo pides' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'DESDE TU DIRECCIÓN',
+                    titulo: 'El cliente reconoce al remitente y te responde a ti.',
+                    copy: 'Al conectar tu Gmail, los correos que Cord manda a tus clientes salen desde tu cuenta: quedan en tus Enviados y la respuesta llega a tu bandeja. Si Gmail no acepta un envío, el correo sale desde Cord para que la factura no se pierda.',
+                    bullets: [
+                        'Cotizaciones, facturas y recordatorios de pago',
+                        'Cord solo pide permiso para enviar; no lee tu correo',
+                        'Un envío fallido sale desde Cord y la tarjeta te pide reconectar',
+                    ],
+                },
+                {
+                    eyebrow: 'DENTRO DE GMAIL',
+                    titulo: 'La cotización del hilo, en vivo, junto al correo.',
+                    copy: 'El complemento de Cord muestra si quien te escribe ya es tu cliente y, si el correo es de una cotización, su estado y lo último que pasó con ella. Desde ahí respondes en el mismo hilo con la cotización o armas una nueva con IA a partir del pedido del correo.',
+                    bullets: [
+                        'Estado y última actividad de la cotización del hilo',
+                        'Responder en el mismo hilo con la tarjeta de la cotización',
+                        'Insertar una cotización mientras redactas',
+                    ],
+                },
+                {
+                    eyebrow: 'TUS DATOS DE GOOGLE',
+                    titulo: 'Qué lee Cord de tu cuenta de Google, y qué no.',
+                    copy: 'El envío pide solo el permiso de enviar correo y tu dirección. El complemento lee únicamente el correo que tienes abierto: el remitente, el asunto y el folio de una cotización; el texto del correo viaja a Cord solo cuando pulsas Cotizar con IA. Cord no vende estos datos, no los usa para publicidad ni para entrenar modelos de IA generales, y el uso que hace de la información recibida de las APIs de Google se ajusta a la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.',
+                    bullets: [
+                        'Sin acceso a tu bandeja completa',
+                        'El texto del correo solo cuando tú lo pides',
+                        'Revocas el acceso cuando quieras desde Cord o desde tu cuenta de Google',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Conecta tu Gmail', text: 'En Ajustes › Integraciones › Gmail pulsa Conectar Gmail y autoriza el envío con tu cuenta de Google.' },
+                { name: 'Manda una cotización', text: 'Envíala como siempre desde Cord: el correo sale desde tu dirección y aparece en tus Enviados.' },
+                { name: 'Usa Cord dentro de Gmail', text: 'Con el complemento instalado, abre el correo de un cliente y pulsa el ícono de Cord en el panel derecho.' },
+            ],
+            limites: [
+                'El complemento para Gmail todavía no está publicado en Google Workspace Marketplace; el envío desde tu Gmail sí está disponible.',
+                'Los avisos internos de Cord (a ti y a tu equipo) siguen saliendo desde Cord.',
+                'Gmail limita cuántos correos puede mandar una cuenta al día; los envíos que pasen ese límite salen desde Cord.',
+            ],
+            faqs: [
+                {
+                    q: '¿Cord puede leer mis correos?',
+                    a: 'El envío no: solo pide permiso para enviar. El complemento lee únicamente el correo que tienes abierto, y del texto solo cuando pulsas Cotizar con IA. Nunca lee tu bandeja completa.',
+                },
+                {
+                    q: '¿Qué pasa si desconecto Gmail?',
+                    a: 'Los correos a tus clientes vuelven a salir desde Cord, como antes. También puedes quitar el acceso desde la configuración de seguridad de tu cuenta de Google.',
+                },
+                {
+                    q: '¿Funciona con Google Workspace?',
+                    a: 'Sí, con cuentas de Gmail y de Google Workspace. En Workspace, tu administrador puede tener que permitir la app.',
+                },
+            ],
+            guias: [
+                { label: 'Conectar Gmail', href: 'https://cordhq.app/soporte/conectar-gmail' },
+                { label: 'Integraciones de Cord', href: `${DOCS}/automatizacion/integraciones` },
+            ],
+            cta: { titulo: 'Que tus cotizaciones salgan de quien las firma.', sub: 'Conecta tu Gmail desde Ajustes. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'Gmail integration: quote and send from your email | Cord',
+            metaDescription: 'Your quotes and invoices go out from your Gmail, and inside Gmail you see each quote\'s status and build it with AI from the client\'s email.',
+            eyebrow: 'INTEGRATION · GMAIL',
+            titulo: 'Quote and get paid from the inbox where you already talk to clients.',
+            sub: 'Connect your Gmail and quotes, invoices and reminders go out from your address. With the add-on, inside Gmail you see each quote live and build it with AI from the client\'s order.',
+            resumen: 'Send from your Gmail and quote without leaving your inbox.',
+            plan: 'Included in every Cord plan, starting with Free. Quoting with AI uses your plan\'s AI quotes.',
+            flujoTitulo: 'What happens between Cord and Gmail',
+            flujo: [
+                { cord: 'Quote, invoice or payment reminder', app: 'Sent from your Gmail address', dir: 'Once you connect Gmail' },
+                { cord: 'The thread\'s quote', app: 'Status and latest activity in the Gmail panel', dir: 'With the add-on' },
+                { cord: 'Draft quote', app: 'Built with AI from the client\'s email', dir: 'When you ask for it' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'FROM YOUR ADDRESS',
+                    titulo: 'Clients recognize the sender and reply to you.',
+                    copy: 'Once you connect Gmail, the emails Cord sends to your clients go out from your account: they stay in your Sent folder and replies land in your inbox. If Gmail rejects a send, the email goes out from Cord so the invoice is not lost.',
+                    bullets: [
+                        'Quotes, invoices and payment reminders',
+                        'Cord only asks permission to send; it does not read your email',
+                        'A failed send goes out from Cord and the card asks you to reconnect',
+                    ],
+                },
+                {
+                    eyebrow: 'INSIDE GMAIL',
+                    titulo: 'The thread\'s quote, live, next to the email.',
+                    copy: 'The Cord add-on shows whether the sender is already your client and, if the email is about a quote, its status and what last happened to it. From there you reply in the same thread with the quote or build a new one with AI from the order in the email.',
+                    bullets: [
+                        'Status and latest activity of the thread\'s quote',
+                        'Reply in the same thread with the quote card',
+                        'Insert a quote while you compose',
+                    ],
+                },
+                {
+                    eyebrow: 'YOUR GOOGLE DATA',
+                    titulo: 'What Cord reads from your Google account, and what it does not.',
+                    copy: 'Sending asks only for permission to send email and your address. The add-on reads only the email you have open: the sender, the subject and a quote number; the email text reaches Cord only when you click Quote with AI. Cord does not sell this data, does not use it for advertising or to train general AI models, and its use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.',
+                    bullets: [
+                        'No access to your full inbox',
+                        'Email text only when you ask for it',
+                        'Revoke access anytime from Cord or your Google account',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Connect your Gmail', text: 'In Settings › Integrations › Gmail click Connect Gmail and authorize sending with your Google account.' },
+                { name: 'Send a quote', text: 'Send it from Cord as usual: the email goes out from your address and shows up in your Sent folder.' },
+                { name: 'Use Cord inside Gmail', text: 'With the add-on installed, open a client\'s email and click the Cord icon in the right panel.' },
+            ],
+            limites: [
+                'The Gmail add-on is not yet published on Google Workspace Marketplace; sending from your Gmail is available now.',
+                'Cord\'s internal notifications (to you and your team) still go out from Cord.',
+                'Gmail limits how many emails an account can send per day; sends beyond that limit go out from Cord.',
+            ],
+            faqs: [
+                {
+                    q: 'Can Cord read my email?',
+                    a: 'Sending cannot: it only asks permission to send. The add-on reads only the email you have open, and its text only when you click Quote with AI. It never reads your full inbox.',
+                },
+                {
+                    q: 'What happens if I disconnect Gmail?',
+                    a: 'Emails to your clients go back to being sent from Cord, as before. You can also remove access from your Google account\'s security settings.',
+                },
+                {
+                    q: 'Does it work with Google Workspace?',
+                    a: 'Yes, with Gmail and Google Workspace accounts. In Workspace, your administrator may need to allow the app.',
+                },
+            ],
+            guias: [
+                { label: 'Connect Gmail', href: 'https://cordhq.app/en/support/conectar-gmail' },
+                { label: 'Cord integrations', href: `${DOCS_EN}/automatizacion/integraciones` },
+            ],
+            cta: { titulo: 'Let your quotes come from the person who signs them.', sub: 'Connect your Gmail from Settings. Free to start.' },
         },
     },
 ];

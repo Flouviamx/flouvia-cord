@@ -189,6 +189,28 @@ export const INTEGRATION_STORY: Record<IntegrationLandingSlug, IntegrationStory>
             chip: { titulo: 'Quote approved', linea: 'COT-0152 · Aceros del Norte', monto: '$184,300.00 MXN' },
         },
     },
+    gmail: {
+        brand: { from: '#ea4335', to: '#5c1410', accent: '#c5221f' },
+        shot: { x: '8%', y: '10%' },
+        es: {
+            datos: [
+                { valor: 'Tu dirección', texto: 'cotizaciones, facturas y recordatorios salen desde tu Gmail.' },
+                { valor: 'Solo enviar', texto: 'el único permiso que Cord pide sobre tu correo.' },
+                { valor: 'En vivo', texto: 'el estado de la cotización del hilo, junto al correo.' },
+                { valor: 'Gratis', texto: 'incluida en todos los planes de Cord.' },
+            ],
+            chip: { titulo: 'Cotización vista', linea: 'COT-0152 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+        en: {
+            datos: [
+                { valor: 'Your address', texto: 'quotes, invoices and reminders go out from your Gmail.' },
+                { valor: 'Send only', texto: 'the only permission Cord asks for on your email.' },
+                { valor: 'Live', texto: 'the status of the thread\'s quote, next to the email.' },
+                { valor: 'Free', texto: 'included in every Cord plan.' },
+            ],
+            chip: { titulo: 'Quote viewed', linea: 'COT-0152 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+    },
     whatsapp: {
         brand: { from: '#2fb56a', to: '#053d2b', accent: '#128c7e' },
         shot: { x: '8%', y: '10%' },

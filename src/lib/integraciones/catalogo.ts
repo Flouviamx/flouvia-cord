@@ -61,7 +61,7 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     // quedan dentro del contenedor.
     { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: true, guia: '/soporte/conectar-google-sheets' },
     { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: true, guia: '/soporte/conectar-excel' },
-    { slug: 'gmail', nombre: 'Gmail', dominio: 'mail.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO || GMAIL_INSTALL_URL !== null, logo: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png', tile: false, guia: null },
+    { slug: 'gmail', nombre: 'Gmail', dominio: 'mail.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO || GMAIL_INSTALL_URL !== null, logo: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png', tile: false, guia: '/soporte/conectar-gmail' },
     // El favicon de slack.com mide 35x34 px y la API de favicons no da más
     // grande: cualquier tamaño de pantalla lo amplía y se pixelea. Este es el
     // activo oficial de Slack a 400 px, guardado en el repo para no depender
