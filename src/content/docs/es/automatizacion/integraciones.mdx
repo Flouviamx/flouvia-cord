@@ -1,8 +1,8 @@
 ---
 title: "Integraciones"
-seoTitle: "Integraciones de Cord: HubSpot, Slack, Zapier, Make y más"
+seoTitle: "Integraciones de Cord: Shopify, QuickBooks, Xero, Sheets y más"
 description: "Cómo funciona Ajustes › Integraciones en Cord: el directorio de apps, qué significa cada estado, qué integración conviene para cada caso y quién puede conectarlas."
-lastUpdated: "2026-09-22"
+lastUpdated: "2026-09-28"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -40,6 +40,11 @@ Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa int
 | **Make** | Automatización | Recibir eventos de Cord en tus escenarios y crear o actualizar datos en Cord desde Make. | Aceptar la invitación de la app de Cord en Make y autorizar con un clic. | [Make](/docs/automatizacion/integraciones/make) |
 | **Zapier** | Automatización | Conectar Cord con miles de apps sin escribir código. | Aceptar la invitación de la app de Cord en Zapier y autorizar con un clic. | [Zapier](/docs/automatizacion/integraciones/zapier) |
 | **n8n** | Automatización | Flujos propios con el nodo comunitario de Cord, que registra su webhook y verifica la firma. | Instalar el nodo `n8n-nodes-cord` en n8n y pegar una llave de API en su credencial. Hoy en n8n autoalojado; en n8n Cloud cuando n8n termine de verificarlo. | [Conectar n8n](https://cordhq.app/soporte/conectar-n8n) |
+| **Shopify** | Comercio electrónico | Los productos y clientes de tu tienda entran a Cord para cotizar mayoreo, y la cotización cerrada crea el pedido en tu tienda. | Escribir el dominio `tu-tienda.myshopify.com` y autorizar en Shopify. | [Conectar Shopify](https://cordhq.app/soporte/conectar-shopify) |
+| **Google Sheets** | Productividad | Cada cotización y cada factura como una fila en tu hoja, al día sola. | Botón **Conectar Google Sheets** y autorización con tu cuenta de Google. | [Conectar Google Sheets](https://cordhq.app/soporte/conectar-google-sheets) |
+| **Microsoft Excel** | Productividad | Lo mismo, en un libro de tu OneDrive, dentro de una tabla de Excel de verdad. | Botón **Conectar Excel** y autorización con tu cuenta de trabajo de Microsoft. | [Conectar Excel](https://cordhq.app/soporte/conectar-excel) |
+| **QuickBooks Online** | Contabilidad | Cada factura definitiva de Cord entra a tu contabilidad con su cliente, sus líneas y su divisa. | Botón **Conectar QuickBooks** y autorización en Intuit. | [Conectar QuickBooks](https://cordhq.app/soporte/conectar-quickbooks) |
+| **Xero** | Contabilidad | Lo mismo, y la factura entra como borrador para que la apruebe tu contador. | Botón **Conectar Xero** y elegir la organización. | [Conectar Xero](https://cordhq.app/soporte/conectar-xero) |
 
 ## Qué conviene para cada caso
 
@@ -50,13 +55,17 @@ Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa int
 | Que tu cliente reciba el recordatorio donde sí lo lee | **WhatsApp Business** con un [workflow](/docs/automatizacion/workflows) |
 | Un mensaje en Slack con tu propio texto, o solo en ciertos casos | **Slack** con un [workflow](/docs/automatizacion/workflows) |
 | Crear tareas o avisar por correo cuando pasa algo en Cord | [Cord Workflows](/docs/automatizacion/workflows), sin conectar nada |
-| Llevar datos de Cord a una hoja de cálculo, un ERP o cualquier otra app | **Make**, **n8n** (o Zapier) |
+| Llevar tus cotizaciones y facturas a una hoja de cálculo | **Google Sheets** o **Microsoft Excel**, sin exportar nada a mano |
+| Que tus facturas aparezcan en la contabilidad sin capturarlas dos veces | **QuickBooks Online** o **Xero** |
+| Cotizar mayoreo con el catálogo de tu tienda en línea | **Shopify** |
+| Abrir una cotización desde el correo del cliente | El complemento **Cord para Gmail** |
+| Llevar datos de Cord a un ERP o a cualquier otra app | **Make**, **n8n** (o Zapier) |
 | Que tu cliente pague con Mercado Pago | [Mercado Pago](/docs/pagos/mercado-pago), en **Ajustes › Cobros** (es un riel de cobro, no una app del directorio) |
 | Construir tu propia integración | La [guía para desarrolladores](/docs/desarrolladores/herramientas/integraciones) |
 
 ## Estado de cada integración
 
-Lo que funciona hoy y lo que todavía falta, al 21 de septiembre de 2026.
+Lo que funciona hoy y lo que todavía falta, al 28 de septiembre de 2026.
 
 | App | Funciona hoy | Lo que falta |
 |---|---|---|
@@ -67,6 +76,10 @@ Lo que funciona hoy y lo que todavía falta, al 21 de septiembre de 2026.
 | **Make** | App de Cord con invitación y autorización con un clic, en todas las zonas de Make. | Aparecer en el catálogo público de Make. |
 | **Zapier** | App de Cord con invitación y autorización con un clic. | Aparecer en el directorio público de Zapier. |
 | **n8n** | Nodo `n8n-nodes-cord` en npm para n8n autoalojado. | La verificación de n8n, enviada el 21 de septiembre, para que aparezca en n8n Cloud. |
+| **Shopify** | Catálogo y clientes hacia Cord, y el pedido de vuelta al aprobarse o pagarse la cotización. El pedido nace apagado y lo activas tú. | Facturar los pedidos que nacen en la tienda, y cotizar desde el panel de Shopify. |
+| **Google Sheets** y **Excel** | Una fila por cotización y por factura, al día sola, con los importes como número. | Elegir una hoja que ya tengas en vez de que Cord cree una. |
+| **QuickBooks Online** y **Xero** | La factura definitiva entra con su cliente y sus líneas: asentada en QuickBooks, en borrador en Xero. | Mandar también los pagos, y mapear tus códigos de impuesto. |
+| **Cord para Gmail** | Complemento que abre la cotización desde el correo del cliente. | Publicarlo en el Marketplace de Google Workspace. |
 | **Mercado Pago** (Ajustes › Cobros) | Cobro de cotizaciones y facturas con tu cuenta en México y Latinoamérica, con lectura de reembolsos. | Igualas recurrentes, que siguen siendo de Cord Payments. Detalle en [Mercado Pago](/docs/pagos/mercado-pago). |
 
 Lo que está en camino también aparece en el [roadmap](https://cordhq.app/roadmap).
