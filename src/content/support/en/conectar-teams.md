@@ -5,7 +5,9 @@ category: "Account & Team"
 order: 22
 ---
 
-Cord posts to Teams through a **Power Automate flow**. The old Teams connectors (the Office 365 "Incoming Webhook") are retired by Microsoft, so the URL you need comes from the flow, not from the channel.
+The short way is **Connect with Microsoft**: in **Settings › Integrations › Microsoft Teams** you sign in with your Microsoft 365 work account, pick the team and channel, and click **Use this channel**. There is no URL to copy. The card is posted in the name of whoever connected.
+
+If you prefer your own flow to post, use a **Power Automate flow**. The old Teams connectors (the Office 365 "Incoming Webhook") are retired by Microsoft, so in that case the URL comes from the flow, not from the channel.
 
 ### Create the flow in Teams
 

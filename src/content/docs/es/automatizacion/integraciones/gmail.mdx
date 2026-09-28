@@ -1,0 +1,91 @@
+---
+title: "Gmail"
+seoTitle: "Conectar Cord con Gmail: envío y complemento"
+description: "Cómo enviar cotizaciones y facturas desde tu Gmail, y cómo usar el complemento de Cord dentro de Gmail: cotización del hilo en vivo, cotizar con IA, responder en el hilo e insertar al redactar."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Gmail</h1>
+  <p class="page-subtitle">Envía desde tu Gmail y cotiza sin salir del correo donde ya hablas con tus clientes.</p>
+</header>
+
+## Dos formas de conectarlo
+
+| | Enviar desde tu Gmail | Complemento de Cord para Gmail |
+|---|---|---|
+| **Qué hace** | Las cotizaciones, facturas y recordatorios de pago salen desde tu dirección. | Un panel dentro de Gmail con tus clientes y cotizaciones. |
+| **Dónde se conecta** | **Ajustes › Integraciones › Gmail** | Dentro de Gmail, con **Conectar con Cord** |
+| **Permiso de Google** | Solo enviar (`gmail.send`); no lee tu correo. | Solo el correo que tienes abierto. |
+| **Disponible** | Sí | Pendiente de publicarse en Google Workspace Marketplace |
+
+## Enviar desde tu Gmail
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Gmail**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar Gmail** y autoriza con tu cuenta de Google. Si Google muestra casillas, deja marcada la de **enviar correo**: sin ella la conexión no se completa.
+3. Al volver, la tarjeta dice desde qué dirección salen los correos. Manda una cotización como siempre: aparece en tus Enviados.
+</Steps>
+
+Salen desde tu Gmail los correos que Cord manda **a tus clientes**:
+
+| Correo | Cuándo |
+|---|---|
+| Cotización enviada | Al enviar o reenviar una cotización. |
+| Factura | Al emitir o enviar una factura, con su PDF adjunto. |
+| Recordatorio de pago | Los recordatorios automáticos de facturas por vencer o vencidas. |
+| Correo al cliente de un workflow | La acción de workflow que escribe al cliente. |
+
+Los avisos internos (a ti y a tu equipo) siguen saliendo desde Cord.
+
+**Si Gmail no acepta un envío** —cambiaste la contraseña, quitaste el acceso o pasaste el límite diario de Gmail—, el correo sale desde Cord para que tu cliente lo reciba igual, y la tarjeta te pide volver a conectar. Un correo de cobro no se pierde por una conexión rota.
+
+## El complemento dentro de Gmail
+
+Abre un correo y pulsa el ícono de Cord en el panel derecho. La primera vez pulsa **Conectar con Cord** y autoriza en la pantalla de Cord: no copias ninguna llave. El complemento habla español o inglés según el idioma de tu Gmail.
+
+### Sobre un correo abierto
+
+- **Quién te escribe.** Si el remitente ya es tu cliente, ves su empresa y sus últimas cotizaciones.
+- **La cotización del hilo, en vivo.** Si el asunto o el inicio del correo traen el folio de una cotización (por ejemplo, la respuesta de tu cliente a "Cotización COT-0006"), el panel la muestra arriba con su estado, su importe y lo último que pasó con ella. Desde ahí:
+  - **Responder con ella** abre una respuesta en el mismo hilo, desde tu Gmail, con la tarjeta de la cotización.
+  - **Reenviar por Cord** le vuelve a mandar el correo de la cotización.
+  - **Abrir** te lleva a la cotización en Cord.
+- **Cotizar con IA.** Cord lee el pedido del correo, lo empareja con tus productos y te muestra las líneas propuestas con cantidad y precio. Las revisas y **Crear cotización** la crea como borrador. Si el remitente no es tu cliente, Cord lo da de alta con su nombre y correo.
+- **Cotización en blanco.** Crea la cotización con el asunto como primera línea, para que la termines en Cord.
+
+### Mientras redactas
+
+En la barra de redacción, el ícono de Cord (o el menú de tres puntos, si Gmail lo esconde por espacio) abre **Insertar cotización**: lista las cotizaciones enviadas del destinatario y las inserta como una tarjeta con folio, importe, vigencia y el botón **Ver cotización**.
+
+### Cotizar con IA: lo que conviene saber
+
+- Gasta una cotización con IA de tu plan, igual que en el editor de Cord.
+- Ignora lo citado de correos anteriores: cotiza lo que pide el último mensaje.
+- Una línea que no existe en tu catálogo llega como concepto libre y lo dice.
+- Los precios salen de tu catálogo; si el cliente menciona un precio por unidad, se toma como precio negociado.
+
+## Qué lee Cord de tu cuenta de Google
+
+- **El envío:** solo el permiso de enviar y tu dirección. No puede leer tu bandeja.
+- **El complemento:** únicamente el correo que tienes abierto, y de él el remitente, el asunto y el folio de una cotización. El texto del correo viaja a Cord **solo cuando pulsas Cotizar con IA**. Nunca lee tu bandeja completa. Al redactar, solo lee los destinatarios del borrador.
+
+Cord no vende estos datos, no los usa para publicidad y su uso de la información de las APIs de Google se ajusta a la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.
+
+## Desconectar
+
+- **El envío:** **Dejar de enviar desde Gmail** en la tarjeta. Los correos vuelven a salir desde Cord.
+- **El complemento:** **Desconectar** en la portada del complemento, que revoca el acceso en Cord. También puedes revocarlo en **Ajustes › Modo desarrollador** (conexiones autorizadas).
+- En cualquier caso, puedes quitar el acceso desde la seguridad de tu cuenta de Google.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **"Falta el permiso para enviar correos"** | Desmarcaste la casilla de enviar al autorizar. Vuelve a conectar y déjala marcada. |
+| **"Google no verificó esta app"** | Mientras la verificación de Google termina, pulsa **Configuración avanzada › Ir a Cord**. |
+| **El complemento dice que se requiere autorización** | Abre el ícono de Cord y acepta todos los permisos que pide Google, sin desmarcar ninguno. |
+| **"Tu plan ya usó sus cotizaciones con IA de este mes"** | Crea la cotización en blanco o sube de plan. |
+| **No aparece "Cotización en este hilo"** | El correo no trae un folio en el asunto ni al inicio del texto. |

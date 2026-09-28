@@ -34,7 +34,7 @@ Cada línea con un producto de tu tienda viaja como esa variante, así el pedido
 
 Dos cosas que conviene saber:
 
-- **La divisa manda.** El pedido se crea en la divisa de tu tienda. Si la cotización va en otra, Cord no crea el pedido en lugar de cobrar en la equivocada.
+- **La divisa manda.** Si la cotización va en la divisa de tu tienda, o en otra que tu tienda tiene activada en sus mercados, el pedido se crea en esa divisa con el precio exacto. Si tu tienda no cobra en esa divisa, Cord no crea el pedido, lo dice en el historial de la cotización y te indica activarla en Shopify › Configuración › Mercados. Nunca inventa un tipo de cambio.
 - **El impuesto lo calcula Shopify** con la configuración de tu tienda. Si no coincide con el de la cotización, el documento fiscal de Cord es el que vale.
 
 Una cotización genera un solo pedido: si el evento se repite, Cord reconoce el que ya existe.

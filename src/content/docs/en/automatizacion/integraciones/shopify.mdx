@@ -1,0 +1,77 @@
+---
+title: "Shopify"
+seoTitle: "Connect Cord with Shopify"
+description: "How to connect Shopify with Cord: catalog and customers into Cord, the order back to your store when the quote closes, currencies, inventory, taxes and common issues."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Shopify</h1>
+  <p class="page-subtitle">Your store catalog and customers, ready to quote, and the order back when you close.</p>
+</header>
+
+## How it works
+
+With Shopify connected, your catalog and customers come into Cord and stay current. You quote wholesale with the prices and SKUs you already have, and when the quote closes, Cord can create the order in your store so fulfillment and inventory live there.
+
+**Cord reads your store and writes only what you turn on.** Products and customers come in on their own; orders start switched off. Cord never changes prices or edits your catalog.
+
+## Connect
+
+<Steps>
+1. Go to **Settings › Integrations › Shopify**. You need the **Settings** permission.
+2. Enter your store domain ending in `myshopify.com` (Shopify › Settings › Domains).
+3. Click **Connect Shopify** and authorize the app. Shopify shows the permissions: read products and customers, and create orders when you enable it.
+4. When you come back, the first sync takes a few minutes depending on catalog size.
+</Steps>
+
+## What comes into Cord
+
+| Data | How it arrives |
+|---|---|
+| **Products** | Each **variant** is a Cord product, with its own price and SKU. A shirt in three sizes arrives as three products. |
+| **Status** | Active if the product is active in Shopify. An **out-of-stock product stays active**: it can still be quoted. A draft or archived product arrives inactive. |
+| **Customers** | The company comes from the customer's company in Shopify; if there is none, from the person's name. An email already in Cord is not duplicated. |
+| **Deletions** | A product deleted in Shopify is **deactivated** in Cord, not deleted: it may be in a quote already sent. |
+
+Changes in Shopify arrive within seconds. **Sync now** rereads the whole catalog.
+
+## The order back to your store
+
+On the Shopify card you choose when the order is created. **It starts off**:
+
+| Option | What happens |
+|---|---|
+| **Do not create orders** | Default. |
+| **When the quote is approved** | The order is created as a draft in Shopify, ready to fulfill or collect there. |
+| **When the client pays** | Cord collects and the order enters your store marked as paid. |
+
+- Each line with one of your store's products travels as that variant and reduces inventory; a free-form line travels as an item with its price.
+- The price that travels is the **negotiated** one, with its discount applied.
+- The order carries the `cord` tag and the quote number in a note.
+- A quote produces **a single order**, even if the event repeats.
+
+### Currencies
+
+- If the quote is in your store's currency, the order is created as usual.
+- If it is in **another currency your store has enabled** in its markets, the order is created in that currency with the quote's exact price.
+- If your store **does not sell** in that currency, no order is created: the quote says so in its history and tells you to enable it under **Shopify › Settings › Markets**. Cord never makes up an exchange rate.
+
+### Taxes
+
+The order's tax is computed by Shopify with your store settings. The tax document that counts is Cord's.
+
+## Disconnect
+
+With **Disconnect** on the card. Products and customers already in Cord stay and stop updating. If you uninstall the app from Shopify, Cord detects it and marks the connection as disconnected.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"Enter your store domain"** | Use the one ending in `myshopify.com`, not your own domain. |
+| **"We could not verify the response came from Shopify"** | Start again from Cord, not from a saved link. |
+| **The card asks you to reconnect** | Someone uninstalled the app or changed its permissions. Connect it again. |
+| **No order was created** | Check the quote's history: it says whether it was the currency, a missing permission or a Shopify rejection. |

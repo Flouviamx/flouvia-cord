@@ -34,7 +34,7 @@ Every line with a product from your store travels as that variant, so the order 
 
 Two things worth knowing:
 
-- **Currency rules.** The order is created in your store currency. If the quote uses a different one, Cord does not create the order instead of charging in the wrong currency.
+- **Currency rules.** If the quote is in your store's currency, or in another one your store has enabled in its markets, the order is created in that currency with the exact price. If your store does not sell in that currency, Cord does not create the order, says so in the quote's history and tells you to enable it under Shopify › Settings › Markets. It never makes up an exchange rate.
 - **Taxes are calculated by Shopify** with your store settings. If they differ from the quote, Cord's fiscal document is the one that counts.
 
 One quote creates one order: if the event repeats, Cord recognizes the one that already exists.

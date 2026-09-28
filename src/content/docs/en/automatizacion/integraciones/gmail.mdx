@@ -1,0 +1,91 @@
+---
+title: "Gmail"
+seoTitle: "Connect Cord with Gmail: sending and add-on"
+description: "How to send quotes and invoices from your Gmail, and how to use the Cord add-on inside Gmail: the thread quote live, quote with AI, reply in the thread and insert while composing."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Gmail</h1>
+  <p class="page-subtitle">Send from your Gmail and quote without leaving the inbox where you already talk to clients.</p>
+</header>
+
+## Two ways to connect it
+
+| | Send from your Gmail | Cord add-on for Gmail |
+|---|---|---|
+| **What it does** | Quotes, invoices and payment reminders go out from your address. | A panel inside Gmail with your clients and quotes. |
+| **Where you connect it** | **Settings › Integrations › Gmail** | Inside Gmail, with **Connect with Cord** |
+| **Google permission** | Send only (`gmail.send`); it does not read your email. | Only the email you have open. |
+| **Available** | Yes | Pending publication on Google Workspace Marketplace |
+
+## Send from your Gmail
+
+<Steps>
+1. Go to **Settings › Integrations › Gmail**. You need the **Settings** permission.
+2. Click **Connect Gmail** and authorize with your Google account. If Google shows checkboxes, keep **send email** checked: without it the connection is not completed.
+3. When you come back, the card shows which address emails go out from. Send a quote as usual: it appears in your Sent folder.
+</Steps>
+
+These emails Cord sends **to your clients** go out from your Gmail:
+
+| Email | When |
+|---|---|
+| Quote sent | When you send or resend a quote. |
+| Invoice | When you issue or send an invoice, with its PDF attached. |
+| Payment reminder | Automatic reminders for invoices about to fall due or overdue. |
+| Workflow email to the client | The workflow action that writes to the client. |
+
+Internal notifications (to you and your team) still go out from Cord.
+
+**If Gmail rejects a send** —you changed your password, removed access or hit Gmail's daily limit— the email goes out from Cord so your client still gets it, and the card asks you to reconnect. A collection email is never lost to a broken connection.
+
+## The add-on inside Gmail
+
+Open an email and click the Cord icon in the right panel. The first time, click **Connect with Cord** and authorize on the Cord screen: no key to copy. The add-on speaks English or Spanish according to your Gmail language.
+
+### On an open email
+
+- **Who is writing.** If the sender is already your client, you see their company and latest quotes.
+- **The thread's quote, live.** If the subject or the start of the email carries a quote number (for example, your client's reply to "Quote COT-0006"), the panel shows it at the top with its status, amount and the last thing that happened to it. From there:
+  - **Reply with it** opens a reply in the same thread, from your Gmail, with the quote card.
+  - **Resend via Cord** sends the quote email again.
+  - **Open** takes you to the quote in Cord.
+- **Quote with AI.** Cord reads the order in the email, matches it to your products and shows the proposed lines with quantity and price. You review them and **Create quote** creates it as a draft. If the sender is not your client yet, Cord adds them with their name and email.
+- **Blank quote.** Creates the quote with the subject as its first line, for you to finish in Cord.
+
+### While composing
+
+In the compose toolbar, the Cord icon (or the three-dot menu, when Gmail hides it for space) opens **Insert quote**: it lists the recipient's sent quotes and inserts one as a card with number, amount, validity and a **View quote** button.
+
+### Quote with AI: good to know
+
+- It uses one AI quote from your plan, same as in the Cord editor.
+- It ignores quoted earlier emails: it quotes what the latest message asks for.
+- A line not in your catalog arrives as a free-form item and says so.
+- Prices come from your catalog; if the client states a unit price, it is taken as the negotiated price.
+
+## What Cord reads from your Google account
+
+- **Sending:** only the permission to send and your address. It cannot read your inbox.
+- **The add-on:** only the email you have open, and from it the sender, the subject and a quote number. The email text reaches Cord **only when you click Quote with AI**. It never reads your full inbox. While composing, it only reads the draft's recipients.
+
+Cord does not sell this data or use it for advertising, and its use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.
+
+## Disconnect
+
+- **Sending:** **Stop sending from Gmail** on the card. Emails go back to being sent from Cord.
+- **The add-on:** **Disconnect** on the add-on's home card, which revokes access in Cord. You can also revoke it under **Settings › Developer mode** (authorized connections).
+- Either way, you can remove access from your Google account's security settings.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"The permission to send email is missing"** | You unchecked the send box when authorizing. Reconnect and keep it checked. |
+| **"Google hasn't verified this app"** | While Google's verification finishes, click **Advanced › Go to Cord**. |
+| **The add-on says authorization is required** | Open the Cord icon and accept every permission Google asks for, without unchecking any. |
+| **"Your Cord plan used its AI quotes for this month"** | Create a blank quote or upgrade your plan. |
+| **"Quote in this thread" does not appear** | The email has no quote number in the subject or at the start of the text. |

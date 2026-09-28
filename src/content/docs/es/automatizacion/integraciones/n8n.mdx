@@ -1,0 +1,48 @@
+---
+title: "n8n"
+seoTitle: "Conectar Cord con n8n"
+description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: credencial con llave de API, disparador con firma verificada, acciones disponibles y límites."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">n8n</h1>
+  <p class="page-subtitle">Flujos propios con el nodo de Cord, o con el nodo HTTP para cualquier endpoint.</p>
+</header>
+
+## Cómo funciona
+
+n8n se conecta a Cord de dos formas. El **nodo de Cord** (`n8n-nodes-cord`) es el camino corto; el **nodo HTTP Request** sirve para cualquier endpoint de la [API](/docs/desarrolladores/empezar/resumen) que el nodo todavía no cubra.
+
+n8n usa una **llave de API** de Cord, no la autorización de un clic de Zapier y Make: cada instalación de n8n tiene su propia dirección de regreso, y Cord solo acepta direcciones registradas de antemano.
+
+## Con el nodo de Cord
+
+<Steps>
+1. En n8n, entra a **Settings › Community nodes** e instala `n8n-nodes-cord`. Necesitas una instalación propia de n8n y ser administrador. En n8n Cloud aparecerá cuando n8n termine de verificarlo.
+2. En Cord, ve a **Ajustes**, activa el modo desarrollador al final del índice y abre **API**. Crea una llave con permiso de escritura; las que empiezan con `sk_test_` trabajan contra tu entorno de prueba.
+3. En n8n crea una credencial **Cord API** y pega la llave. El botón de probar te dice si es de prueba o de producción.
+4. Agrega el nodo **Cord Trigger**, elige los eventos y activa el flujo: n8n registra el webhook en Cord y lo borra cuando lo desactivas.
+5. Para actuar sobre Cord, usa el nodo **Cord**.
+</Steps>
+
+| Recurso | Operaciones |
+|---|---|
+| **Clientes** | Crear, actualizar, obtener y buscar. |
+| **Cotizaciones** | Crear, obtener, buscar, enviar y marcar pagada. |
+| **Tareas** | Crear. |
+
+El disparador verifica la firma `X-Cord-Signature-V1` de cada entrega: un POST que no venga de Cord se descarta.
+
+## Con el nodo HTTP Request
+
+<Steps>
+1. En Cord, agrega un webhook en **Ajustes › Modo desarrollador › Webhooks** con la URL del nodo **Webhook** de n8n.
+2. Para llamar a la API, usa **HTTP Request** contra `https://cordhq.app/api/v1/...` con el encabezado `Authorization: Bearer sk_...`.
+</Steps>
+
+## Límites
+
+Los webhooks y las llamadas de API cuentan contra los límites de tu plan, igual que con Zapier o Make. Los ves en **Ajustes › Modo desarrollador**.

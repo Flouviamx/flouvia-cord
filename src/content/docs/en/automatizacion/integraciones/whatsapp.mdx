@@ -1,0 +1,53 @@
+---
+title: "WhatsApp Business"
+seoTitle: "Connect Cord with WhatsApp Business"
+description: "How to connect your WhatsApp Business number with Cord: Meta-approved templates, variables with event data, phone numbers with country code, limits and common issues."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">WhatsApp Business</h1>
+  <p class="page-subtitle">Your client gets the reminder where they actually read it, from your own number.</p>
+</header>
+
+## How it works
+
+Cord sends WhatsApp messages with **Meta's Cloud API** and **your** account: messages come from your number and Meta bills the conversation to your account, not Cord.
+
+Meta does not allow starting a conversation with free text, only with an **approved template**. That is why Cord asks for your template name and fills its variables; there is no free-text field because Meta would reject it.
+
+## Connect
+
+<Steps>
+1. At [Meta for Developers](https://developers.facebook.com), create a **WhatsApp Business** app and add your sending number.
+2. In **WhatsApp Manager**, create a message template and submit it for approval. Example: `Hi {{1}}, your quote {{2}} expires on {{3}}. You can see it here: {{4}}`.
+3. Copy the **phone number ID** (digits only) and generate a **permanent access token**.
+4. In Cord, go to **Settings › Integrations › WhatsApp Business**, paste both, plus the template name and language (for example `en_US`).
+5. Click **Save**, then **Send test** to your own number, with country code.
+</Steps>
+
+The token is stored encrypted and never shown again. To change the template, leave the token field empty.
+
+## Use it in a workflow
+
+The **Send the client a WhatsApp** action in [Cord Workflows](/en/docs/automatizacion/workflows) sends your template to the phone of the document's client. Each step variable fills `{{1}}`, `{{2}}`… in order, and accepts event data: `{{cliente}}`, `{{folio}}`, `{{total}}`, `{{vence}}`.
+
+The phone comes from the client, never from a step field, and must have its **country code** (`+1 512 555 0100`). Cord does not guess the country: the same number exists in several.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Messages from workflows | 60 per hour per account |
+| Tests from Settings | 5 per hour |
+| Cost per conversation | Billed by Meta to your account, by country |
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"The client has no phone with country code"** | Edit the client and save the number with `+` and its country code. |
+| **"WhatsApp did not accept your template"** | Check it is approved, the name matches and the number of variables is the same. |
+| **"WhatsApp did not accept the message"** | Usually the token expired or the sending number was disabled in Meta. |

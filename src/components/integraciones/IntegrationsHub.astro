@@ -15,13 +15,13 @@ const pre = isEn ? '/en' : '';
 const pageUrl = `${base}/integraciones`;
 
 const title = isEn
-    ? 'Cord integrations: HubSpot, Slack, Zapier, Make, Mercado Pago and more'
-    : 'Integraciones de Cord: HubSpot, Slack, Zapier, Make, Mercado Pago y más';
+    ? 'Cord integrations: HubSpot, Gmail, QuickBooks, Shopify, Slack and more'
+    : 'Integraciones de Cord: HubSpot, Gmail, QuickBooks, Shopify, Slack y más';
 const description = isEn
-    ? 'Connect Cord with the tools your team already uses: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n and Mercado Pago. Included in every plan, starting with Free.'
-    : 'Conecta Cord con las herramientas de tu equipo: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n y Mercado Pago. Incluidas en todos los planes, desde Gratis.';
+    ? 'Connect Cord with the tools your team already uses: HubSpot, Shopify, Gmail, Google Sheets, Excel, QuickBooks, Xero, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n and Mercado Pago. Included in every plan, starting with Free.'
+    : 'Conecta Cord con las herramientas de tu equipo: HubSpot, Shopify, Gmail, Google Sheets, Excel, QuickBooks, Xero, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n y Mercado Pago. Incluidas en todos los planes, desde Gratis.';
 
-const ORDER: IntegrationLandingCategory[] = ['crm', 'ecommerce', 'cobros', 'comunicacion', 'automatizacion'];
+const ORDER: IntegrationLandingCategory[] = ['crm', 'ecommerce', 'cobros', 'contabilidad', 'productividad', 'comunicacion', 'automatizacion'];
 const groups = ORDER.map((cat) => ({ cat, label: CATEGORY_LABEL[cat][lang], items: INTEGRATION_PAGES.filter((p) => p.categoria === cat) }))
     .filter((g) => g.items.length);
 

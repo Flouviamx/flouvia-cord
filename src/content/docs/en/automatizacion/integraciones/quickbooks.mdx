@@ -1,0 +1,61 @@
+---
+title: "QuickBooks Online"
+seoTitle: "Connect Cord with QuickBooks Online"
+description: "How to connect QuickBooks Online with Cord: what it creates in your accounting (customer, invoice and the Cord service), what it does not do yet, duplicate guarantees and common issues."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">QuickBooks Online</h1>
+  <p class="page-subtitle">Every Cord invoice, recorded in your QuickBooks with its customer, lines and currency.</p>
+</header>
+
+## How it works
+
+Every invoice you issue in Cord shows up in your accounting with its customer, lines and currency. You stop entering the same thing twice.
+
+**QuickBooks has no drafts**: what goes in is recorded in your books. That is why Cord only sends invoices that are already **final** on its side.
+
+## Connect
+
+<Steps>
+1. Go to **Settings › Integrations › QuickBooks Online**. You need the **Settings** permission.
+2. Click **Connect QuickBooks** and authorize with the account that manages your company.
+3. When you come back you see the connected company's name. From then on, each new invoice travels on its own.
+4. If you already had invoices, click **Send pending invoices** to send the latest 50 missing ones.
+</Steps>
+
+## What it creates in your accounting
+
+| Record | Detail |
+|---|---|
+| **Customer** | If it does not exist. Cord looks it up by email first, then by name, so it does not duplicate it, and remembers the link for later invoices. |
+| **Invoice** | Date, due date, currency and one line per item with the negotiated price and its discount applied. |
+| **"Cord" service** | Created once. QuickBooks requires every sales line to hang from a product; Cord uses one instead of filling your catalog. |
+| **Private note** | Holds the Cord number. The invoice number belongs to your accounting and Cord does not overwrite it. |
+
+## What it does not do yet
+
+- **It does not send payments.** You record the payment in your accounting as usual.
+- **It does not map your tax codes.** Check the tax on the first invoice before relying on it.
+- **It brings nothing from your accounting into Cord.** It flows one way.
+
+## Guarantees
+
+- **An invoice is never sent twice.** Cord remembers which invoice was recorded and does not repeat it, even if the event is retried.
+- **Only final invoices travel.** Never a quote or a Cord draft.
+- **Each line amount is computed on the already-rounded price**, so the total matches Cord to the cent.
+
+## Disconnect
+
+With **Disconnect** on the card. What was already recorded stays in your accounting. If you connect a different company or organization, Cord starts from scratch with it instead of reusing the previous one.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **The card asks you to reconnect** | QuickBooks expired or revoked access. Reconnect; missed invoices go out with **Send pending invoices**. |
+| **"0 invoices sent"** | There are no pending final invoices, or they were all already recorded. |
+| **The tax does not match** | QuickBooks applies its own tax codes; adjust it on the first invoice. |

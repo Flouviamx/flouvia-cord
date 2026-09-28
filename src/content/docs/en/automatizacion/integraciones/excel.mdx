@@ -1,0 +1,66 @@
+---
+title: "Microsoft Excel"
+seoTitle: "Connect Cord with Microsoft Excel"
+description: "How to connect Excel with Cord: the workbook Cord creates in your OneDrive with real Excel tables, its columns, how rows update by number and how to fix problems."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Microsoft Excel</h1>
+  <p class="page-subtitle">Every quote and every invoice as a row in your Excel workbook, in real tables.</p>
+</header>
+
+## How it works
+
+Cord creates an Excel workbook in your OneDrive and writes your quotes and invoices into it: one row per document, updated on its own when the document changes status.
+
+Data goes into a real **Excel table**, not a loose range: you get filters, banding, a header that stays visible while scrolling and formulas by column name, such as `=SUM(CordCotizaciones[total])`. The tables are named `CordCotizaciones` and `CordFacturas`.
+
+**Cord works only with the workbook it creates.** It uses the same Microsoft app as Microsoft Teams, but permissions are requested per connection: if you only connect Excel, you never see the Teams permissions.
+
+## Connect
+
+<Steps>
+1. Go to **Settings › Integrations › Microsoft Excel**. You need the **Settings** permission.
+2. Click **Connect Excel** and authorize with your Microsoft work or school account.
+3. When you come back, Cord creates the workbook in your OneDrive and starts filling it with what you already had.
+4. Click **Open the sheet** to see it.
+</Steps>
+
+## What the sheet contains
+
+Two tabs, **Quotes** and **Invoices**, with one row per document:
+
+| Tab | Columns |
+|---|---|
+| **Quotes** | Number, client, status, date, valid until, currency, subtotal, discount, taxes, total, collected and public link. |
+| **Invoices** | Number, client, status, tax status, date, due date, currency, total, paid, balance and public link. |
+
+- **Amounts are numbers, not text.** You can sum, average and chart them without cleaning anything.
+- **Currency has its own column.** If you sell in two currencies, the sheet says so instead of hiding it inside the number, so you never add pesos to dollars.
+- **Dates use your account's time zone**, in `YYYY-MM-DD` format, which sorts correctly and both apps recognize as a date.
+- **The header row arrives frozen and filtered**, with columns sized to their content.
+
+## How it stays current
+
+When a quote is sent, approved, rejected, expires or is paid —and when an invoice is issued, sent, paid, becomes overdue or is canceled— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end.
+
+That is why you can sort, filter and add your own columns to the right: Cord matches by number, not by row position. The only thing you should not touch is **column A**.
+
+**Update now** rewrites your latest 500 documents in each tab. Use it right after connecting or whenever you are unsure.
+
+## Disconnect
+
+With **Disconnect** on the card. The file stays in your account with what it had; it simply stops updating. If you connect again, Cord creates a new file.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"The connection to your sheet stopped working"** | Access was revoked or the account password changed. Reconnect from the card. |
+| **You deleted the file** | Disconnect and connect again; Cord creates and fills a new one. |
+| **You deleted the first row** | No problem: Cord writes it again on the next update. |
+| **"The workbook could not be opened"** right after connecting | OneDrive sometimes takes a few seconds to have a new file ready. Click **Update now** in a minute. |
+| **A row got duplicated** | Check that nobody edited column A; Cord matches by number. |

@@ -1,0 +1,66 @@
+---
+title: "Microsoft Excel"
+seoTitle: "Conectar Cord con Microsoft Excel"
+description: "Cómo conectar Excel con Cord: el libro que Cord crea en tu OneDrive con tablas de Excel reales, qué columnas trae, cómo se actualiza por folio y cómo resolver problemas."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Microsoft Excel</h1>
+  <p class="page-subtitle">Cada cotización y cada factura como una fila en tu libro de Excel, en tablas de verdad.</p>
+</header>
+
+## Cómo funciona
+
+Cord crea un libro de Excel en tu OneDrive y escribe ahí tus cotizaciones y facturas: una fila por documento, que se actualiza sola cuando el documento cambia de estado.
+
+Los datos entran en una **tabla de Excel** real, no en un rango suelto: tienes filtros, bandas, encabezado fijo al desplazar y fórmulas por nombre de columna, como `=SUMA(CordCotizaciones[total])`. Las tablas se llaman `CordCotizaciones` y `CordFacturas`.
+
+**Cord trabaja solo con el libro que crea.** Usa la misma app de Microsoft que Microsoft Teams, pero los permisos se piden por conexión: si solo conectas Excel, nunca ves los de Teams.
+
+## Conectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Microsoft Excel**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar Excel** y autoriza con tu cuenta de Microsoft de trabajo o escuela.
+3. Al volver, Cord crea el libro en tu OneDrive y empieza a llenarlo con lo que ya tenías.
+4. Pulsa **Abrir la hoja** para verla.
+</Steps>
+
+## Qué trae la hoja
+
+Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento:
+
+| Pestaña | Columnas |
+|---|---|
+| **Cotizaciones** | Folio, cliente, estado, fecha, vigencia, divisa, subtotal, descuento, impuestos, total, cobrado y link público. |
+| **Facturas** | Folio, cliente, estado, estado fiscal, fecha, vencimiento, divisa, total, pagado, saldo y link público. |
+
+- **Los importes son números, no texto.** Puedes sumarlos, promediarlos y graficarlos sin limpiar nada.
+- **La divisa va en su propia columna.** Si vendes en dos monedas, la hoja lo dice en vez de esconderlo dentro del número, para que no sumes pesos con dólares.
+- **Las fechas van en la zona horaria de tu cuenta**, en formato `AAAA-MM-DD`, que ordena bien y ambas hojas reconocen como fecha.
+- **El encabezado llega fijo y con filtro**, y las columnas al ancho de su contenido.
+
+## Cómo se mantiene al día
+
+Cuando una cotización se envía, se aprueba, se rechaza, vence o se paga —y cuando una factura se emite, se envía, se paga, se vence o se cancela— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final.
+
+Por eso puedes ordenar, filtrar y agregar tus propias columnas a la derecha: Cord se guía por el folio, no por el número de fila. Lo único que no conviene tocar es la **columna A**.
+
+**Actualizar ahora** vuelve a escribir tus últimos 500 documentos de cada pestaña. Úsalo al conectar por primera vez o si dudas de algo.
+
+## Desconectar
+
+Desde la misma tarjeta, con **Desconectar**. El archivo se queda en tu cuenta con lo que ya tenía; simplemente deja de actualizarse. Si vuelves a conectar, Cord crea un archivo nuevo.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **"La conexión con tu hoja dejó de funcionar"** | El permiso se revocó o cambió la contraseña de la cuenta. Vuelve a conectar desde la tarjeta. |
+| **Borraste el archivo** | Desconecta y vuelve a conectar; Cord crea uno nuevo y lo llena. |
+| **Borraste la primera fila** | No pasa nada: Cord la vuelve a escribir en la siguiente actualización. |
+| **"No se pudo abrir el libro"** justo después de conectar | OneDrive a veces tarda unos segundos en tener listo un archivo nuevo. Pulsa **Actualizar ahora** en un minuto. |
+| **Una fila se duplicó** | Revisa que nadie haya editado la columna A; Cord empareja por folio. |

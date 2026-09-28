@@ -1,0 +1,65 @@
+---
+title: "Google Sheets"
+seoTitle: "Conectar Cord con Google Sheets"
+description: "Cómo conectar Google Sheets con Cord: la hoja que Cord crea en tu Drive, qué columnas trae, cómo se actualiza por folio, el permiso que pide y cómo resolver problemas."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Google Sheets</h1>
+  <p class="page-subtitle">Cada cotización y cada factura como una fila en tu hoja de Google, al día sola.</p>
+</header>
+
+## Cómo funciona
+
+Cord crea una hoja de cálculo en tu Google Drive y escribe ahí tus cotizaciones y facturas: una fila por documento, que se actualiza sola cuando el documento cambia de estado. Sirve para lo de siempre —sumar el mes, filtrar por cliente, armar una gráfica— sin exportar nada a mano.
+
+**Cord solo puede abrir la hoja que crea.** Pide el permiso `drive.file`, el más estrecho que ofrece Google: no ve nada más de tu Drive. Pedir acceso a todas tus hojas habría metido a tu cuenta en un permiso mucho más amplio del que esta función necesita.
+
+## Conectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Google Sheets**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar Google Sheets** y autoriza con tu cuenta de Google.
+3. Al volver, Cord crea el archivo en tu Drive (se llama con el nombre de tu negocio y el año) y empieza a llenarlo con lo que ya tenías.
+4. Pulsa **Abrir la hoja** para verla. El primer llenado tarda un momento si tienes mucho histórico.
+</Steps>
+
+Puedes tener Google Sheets y Excel conectados a la vez; cada uno lleva su propio archivo.
+
+## Qué trae la hoja
+
+Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento:
+
+| Pestaña | Columnas |
+|---|---|
+| **Cotizaciones** | Folio, cliente, estado, fecha, vigencia, divisa, subtotal, descuento, impuestos, total, cobrado y link público. |
+| **Facturas** | Folio, cliente, estado, estado fiscal, fecha, vencimiento, divisa, total, pagado, saldo y link público. |
+
+- **Los importes son números, no texto.** Puedes sumarlos, promediarlos y graficarlos sin limpiar nada.
+- **La divisa va en su propia columna.** Si vendes en dos monedas, la hoja lo dice en vez de esconderlo dentro del número, para que no sumes pesos con dólares.
+- **Las fechas van en la zona horaria de tu cuenta**, en formato `AAAA-MM-DD`, que ordena bien y ambas hojas reconocen como fecha.
+- **El encabezado llega fijo y con filtro**, y las columnas al ancho de su contenido.
+
+## Cómo se mantiene al día
+
+Cuando una cotización se envía, se aprueba, se rechaza, vence o se paga —y cuando una factura se emite, se envía, se paga, se vence o se cancela— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final.
+
+Por eso puedes ordenar, filtrar y agregar tus propias columnas a la derecha: Cord se guía por el folio, no por el número de fila. Lo único que no conviene tocar es la **columna A**.
+
+**Actualizar ahora** vuelve a escribir tus últimos 500 documentos de cada pestaña. Úsalo al conectar por primera vez o si dudas de algo.
+
+## Desconectar
+
+Desde la misma tarjeta, con **Desconectar**. El archivo se queda en tu cuenta con lo que ya tenía; simplemente deja de actualizarse. Si vuelves a conectar, Cord crea un archivo nuevo.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **"La conexión con tu hoja dejó de funcionar"** | El permiso se revocó o cambió la contraseña de la cuenta. Vuelve a conectar desde la tarjeta. |
+| **Borraste el archivo** | Desconecta y vuelve a conectar; Cord crea uno nuevo y lo llena. |
+| **Borraste la primera fila** | No pasa nada: Cord la vuelve a escribir en la siguiente actualización. |
+| **Una fila se duplicó** | Revisa que nadie haya editado la columna A; Cord empareja por folio. |

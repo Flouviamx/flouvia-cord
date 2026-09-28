@@ -1,0 +1,77 @@
+---
+title: "Shopify"
+seoTitle: "Conectar Cord con Shopify"
+description: "Cómo conectar Shopify con Cord: catálogo y clientes hacia Cord, el pedido de vuelta a tu tienda al cerrar la cotización, divisas, inventario, impuestos y problemas frecuentes."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Shopify</h1>
+  <p class="page-subtitle">Tu catálogo y tus clientes de la tienda, listos para cotizar, y el pedido de vuelta al cerrar.</p>
+</header>
+
+## Cómo funciona
+
+Con Shopify conectado, tu catálogo y tus clientes entran a Cord y se mantienen al día. Cotizas mayoreo con los precios y SKU que ya tienes, y cuando la cotización cierra, Cord puede crear el pedido en tu tienda para que el surtido y el inventario vivan ahí.
+
+**Cord lee tu tienda y escribe solo lo que tú enciendas.** Productos y clientes entran solos; el pedido nace apagado. Cord nunca cambia precios ni edita tu catálogo.
+
+## Conectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Shopify**. Necesitas el permiso de **Ajustes**.
+2. Escribe el dominio de tu tienda que termina en `myshopify.com` (Shopify › Configuración › Dominios).
+3. Pulsa **Conectar Shopify** y autoriza la app. Shopify te muestra los permisos: leer productos y clientes, y crear pedidos cuando tú lo actives.
+4. Al volver, la primera sincronización tarda unos minutos según el tamaño del catálogo.
+</Steps>
+
+## Qué entra a Cord
+
+| Dato | Cómo llega |
+|---|---|
+| **Productos** | Cada **variante** es un producto en Cord, con su precio y su SKU. Una camisa con tres tallas llega como tres productos. |
+| **Estado** | Activo si el producto está activo en Shopify. Un producto **agotado sigue activo**: sin existencias también se cotiza. Uno en borrador o archivado llega inactivo. |
+| **Clientes** | La empresa sale de la compañía del cliente en Shopify; si no tiene, del nombre de la persona. Un correo que ya existe en Cord no se duplica. |
+| **Borrados** | Un producto borrado en Shopify se **desactiva** en Cord, no se borra: pudo quedar en una cotización ya enviada. |
+
+Los cambios en Shopify llegan en segundos. **Sincronizar ahora** vuelve a leer todo el catálogo.
+
+## El pedido de vuelta a tu tienda
+
+En la tarjeta de Shopify eliges cuándo se crea el pedido. **Nace apagado**:
+
+| Opción | Qué pasa |
+|---|---|
+| **No crear pedidos** | Valor inicial. |
+| **Al aprobarse la cotización** | El pedido queda como borrador en Shopify, listo para surtir o cobrar desde ahí. |
+| **Cuando el cliente pague** | Cord cobra y el pedido entra a tu tienda marcado como pagado. |
+
+- Cada línea con un producto de tu tienda viaja como esa variante y descuenta inventario; una línea libre viaja como concepto con su precio.
+- El precio que viaja es el **negociado**, con su descuento aplicado.
+- El pedido lleva la etiqueta `cord` y el folio de la cotización en una nota.
+- Una cotización genera **un solo pedido**, aunque el evento se repita.
+
+### Divisas
+
+- Si la cotización va en la divisa de tu tienda, el pedido se crea igual.
+- Si va en **otra divisa que tu tienda tiene activada** en sus mercados, el pedido se crea en esa divisa con el precio exacto de la cotización.
+- Si tu tienda **no cobra** en esa divisa, no se crea el pedido: la cotización lo dice en su historial y te indica activarla en **Shopify › Configuración › Mercados**. Cord nunca inventa un tipo de cambio.
+
+### Impuestos
+
+El impuesto del pedido lo calcula Shopify con la configuración de tu tienda. El documento fiscal que vale es el de Cord.
+
+## Desconectar
+
+Con **Desconectar** en la tarjeta. Productos y clientes que ya entraron se quedan en Cord y dejan de actualizarse. Si desinstalas la app desde Shopify, Cord lo detecta y marca la conexión como desconectada.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **"Escribe el dominio de tu tienda"** | Usa el que termina en `myshopify.com`, no tu dominio propio. |
+| **"No pudimos verificar que la respuesta venga de Shopify"** | Inicia otra vez desde Cord, no desde un enlace guardado. |
+| **La tarjeta pide reconectar** | Alguien desinstaló la app o cambió sus permisos. Conéctala de nuevo. |
+| **No se creó el pedido** | Revisa el historial de la cotización: dice si fue la divisa, un permiso faltante o un rechazo de Shopify. |

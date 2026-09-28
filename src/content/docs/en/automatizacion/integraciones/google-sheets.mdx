@@ -1,0 +1,65 @@
+---
+title: "Google Sheets"
+seoTitle: "Connect Cord with Google Sheets"
+description: "How to connect Google Sheets with Cord: the sheet Cord creates in your Drive, its columns, how rows update by number, the permission it asks for and how to fix problems."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Google Sheets</h1>
+  <p class="page-subtitle">Every quote and every invoice as a row in your Google sheet, kept current on its own.</p>
+</header>
+
+## How it works
+
+Cord creates a spreadsheet in your Google Drive and writes your quotes and invoices into it: one row per document, updated on its own when the document changes status. It is there for the usual work —totaling the month, filtering by client, building a chart— without exporting anything by hand.
+
+**Cord can only open the sheet it creates.** It asks for `drive.file`, the narrowest permission Google offers: it sees nothing else in your Drive.
+
+## Connect
+
+<Steps>
+1. Go to **Settings › Integrations › Google Sheets**. You need the **Settings** permission.
+2. Click **Connect Google Sheets** and authorize with your Google account.
+3. When you come back, Cord creates the file in your Drive (named after your business and the year) and starts filling it with what you already had.
+4. Click **Open the sheet** to see it. The first fill takes a moment if you have a lot of history.
+</Steps>
+
+You can have Google Sheets and Excel connected at the same time; each keeps its own file.
+
+## What the sheet contains
+
+Two tabs, **Quotes** and **Invoices**, with one row per document:
+
+| Tab | Columns |
+|---|---|
+| **Quotes** | Number, client, status, date, valid until, currency, subtotal, discount, taxes, total, collected and public link. |
+| **Invoices** | Number, client, status, tax status, date, due date, currency, total, paid, balance and public link. |
+
+- **Amounts are numbers, not text.** You can sum, average and chart them without cleaning anything.
+- **Currency has its own column.** If you sell in two currencies, the sheet says so instead of hiding it inside the number, so you never add pesos to dollars.
+- **Dates use your account's time zone**, in `YYYY-MM-DD` format, which sorts correctly and both apps recognize as a date.
+- **The header row arrives frozen and filtered**, with columns sized to their content.
+
+## How it stays current
+
+When a quote is sent, approved, rejected, expires or is paid —and when an invoice is issued, sent, paid, becomes overdue or is canceled— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end.
+
+That is why you can sort, filter and add your own columns to the right: Cord matches by number, not by row position. The only thing you should not touch is **column A**.
+
+**Update now** rewrites your latest 500 documents in each tab. Use it right after connecting or whenever you are unsure.
+
+## Disconnect
+
+With **Disconnect** on the card. The file stays in your account with what it had; it simply stops updating. If you connect again, Cord creates a new file.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"The connection to your sheet stopped working"** | Access was revoked or the account password changed. Reconnect from the card. |
+| **You deleted the file** | Disconnect and connect again; Cord creates and fills a new one. |
+| **You deleted the first row** | No problem: Cord writes it again on the next update. |
+| **A row got duplicated** | Check that nobody edited column A; Cord matches by number. |

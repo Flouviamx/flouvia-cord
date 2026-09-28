@@ -5,7 +5,9 @@ category: "Cuenta y Equipo"
 order: 22
 ---
 
-Cord publica en Teams a través de un **flujo de Power Automate**. Los conectores antiguos de Teams (los "Incoming Webhook" de Office 365) están retirados por Microsoft, así que la URL que necesitas la da el flujo, no el canal.
+La forma corta es **Conectar con Microsoft**: en **Ajustes › Integraciones › Microsoft Teams** inicias sesión con tu cuenta de trabajo de Microsoft 365, eliges el equipo y el canal, y pulsas **Usar este canal**. No hay ninguna URL que copiar. La tarjeta se publica a nombre de quien conectó.
+
+Si prefieres que publique un flujo propio, usa un **flujo de Power Automate**. Los conectores antiguos de Teams (los "Incoming Webhook" de Office 365) están retirados por Microsoft, así que en ese caso la URL la da el flujo, no el canal.
 
 ### Crear el flujo en Teams
 

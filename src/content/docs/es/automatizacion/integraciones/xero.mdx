@@ -1,0 +1,62 @@
+---
+title: "Xero"
+seoTitle: "Conectar Cord con Xero"
+description: "Cómo conectar Xero con Cord: facturas en borrador para que las apruebe tu contador, contactos sin duplicar, importes sin impuesto incluido y problemas frecuentes."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Xero</h1>
+  <p class="page-subtitle">Cada factura de Cord en tu Xero, como borrador listo para que lo apruebe tu contador.</p>
+</header>
+
+## Cómo funciona
+
+Cada factura que emites en Cord aparece en tu Xero con su contacto, sus conceptos y su divisa.
+
+**Entra como borrador y la apruebas tú.** Un sistema de fuera no debería asentar solo en los libros de nadie: Cord deja la factura lista y tu contador la revisa antes de aprobarla.
+
+## Conectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Xero**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar Xero** y autoriza. Xero te pregunta a qué organización dar acceso: elige la de tu empresa.
+3. Al volver verás el nombre de la organización. Desde ese momento, cada factura nueva viaja sola.
+4. Si ya tenías facturas emitidas, pulsa **Enviar las facturas pendientes** para mandar las últimas 50 que falten.
+</Steps>
+
+## Qué crea en tu contabilidad
+
+| Registro | Detalle |
+|---|---|
+| **Contacto** | Si no existe, buscándolo primero por correo. Cord recuerda el vínculo. |
+| **Factura de venta** | Tipo `ACCREC`, en estado **borrador**, con fecha, vencimiento, divisa, el folio de Cord en la referencia y una línea por concepto. |
+| **Importes** | Sin impuesto incluido (`Exclusive`): Cord ya calculó el impuesto por línea y Xero no lo vuelve a sumar. |
+
+Cord pide los permisos granulares de Xero para facturas y contactos (`accounting.invoices` y `accounting.contacts`), no acceso a toda tu contabilidad.
+
+## Qué no hace todavía
+
+- **No aprueba la factura.** Es deliberado: la apruebas tú en Xero.
+- **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
+- **No mapea tus códigos de impuesto.** Revisa el impuesto de la primera factura antes de darla por buena.
+- **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+
+## Garantías
+
+- **Una factura nunca se manda dos veces.** Cord recuerda qué factura quedó registrada y no la repite, aunque el evento se reintente.
+- **Solo viajan facturas definitivas.** Nunca una cotización ni un borrador de Cord.
+- **El importe de cada línea se calcula sobre el precio ya redondeado**, para que la suma cuadre con la de Cord al centavo.
+
+## Desconectar
+
+Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabilidad. Si conectas otra empresa u organización, Cord empieza de cero con ella en vez de reusar lo de la anterior.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **La tarjeta pide reconectar** | Xero renueva su acceso cada 30 minutos y revoca el anterior; si la renovación falla, reconecta. |
+| **No veo la factura** | Búscala en Xero en **Borradores**: ahí entra hasta que la apruebas. |

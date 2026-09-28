@@ -1,0 +1,62 @@
+---
+title: "Xero"
+seoTitle: "Connect Cord with Xero"
+description: "How to connect Xero with Cord: invoices as drafts for your accountant to approve, contacts without duplicates, tax-exclusive amounts and common issues."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Xero</h1>
+  <p class="page-subtitle">Every Cord invoice in your Xero, as a draft ready for your accountant to approve.</p>
+</header>
+
+## How it works
+
+Every invoice you issue in Cord shows up in your Xero with its contact, lines and currency.
+
+**It arrives as a draft and you approve it.** An outside system should not post to anyone's books on its own: Cord prepares the invoice and your accountant reviews it before approving.
+
+## Connect
+
+<Steps>
+1. Go to **Settings › Integrations › Xero**. You need the **Settings** permission.
+2. Click **Connect Xero** and authorize. Xero asks which organization to grant access to: choose your company's.
+3. When you come back you see the organization's name. From then on, each new invoice travels on its own.
+4. If you already had invoices, click **Send pending invoices** to send the latest 50 missing ones.
+</Steps>
+
+## What it creates in your accounting
+
+| Record | Detail |
+|---|---|
+| **Contact** | If it does not exist, looked up by email first. Cord remembers the link. |
+| **Sales invoice** | Type `ACCREC`, in **draft** status, with date, due date, currency, the Cord number as the reference and one line per item. |
+| **Amounts** | Tax exclusive (`Exclusive`): Cord already computed tax per line, so Xero does not add it again. |
+
+Cord asks for Xero's granular permissions for invoices and contacts (`accounting.invoices` and `accounting.contacts`), not access to your whole ledger.
+
+## What it does not do yet
+
+- **It does not approve the invoice.** That is deliberate: you approve it in Xero.
+- **It does not send payments.** You record the payment in your accounting as usual.
+- **It does not map your tax codes.** Check the tax on the first invoice before relying on it.
+- **It brings nothing from your accounting into Cord.** It flows one way.
+
+## Guarantees
+
+- **An invoice is never sent twice.** Cord remembers which invoice was recorded and does not repeat it, even if the event is retried.
+- **Only final invoices travel.** Never a quote or a Cord draft.
+- **Each line amount is computed on the already-rounded price**, so the total matches Cord to the cent.
+
+## Disconnect
+
+With **Disconnect** on the card. What was already recorded stays in your accounting. If you connect a different company or organization, Cord starts from scratch with it instead of reusing the previous one.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **The card asks you to reconnect** | Xero renews access every 30 minutes and revokes the previous one; if renewal fails, reconnect. |
+| **I cannot see the invoice** | Look for it in Xero under **Drafts**: it stays there until you approve it. |

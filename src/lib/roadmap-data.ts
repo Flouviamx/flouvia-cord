@@ -551,14 +551,14 @@ Una matriz de eventos por canal (correo, Slack y Microsoft Teams) en Ajustes ›
 
 ### Beneficios clave:
 - **Correo al dueño de la cuenta:** vista, aprobada, rechazada, pago recibido, por vencer, pago vencido y equipo; vienen encendidos por default en aprobada/rechazada/pagada desde el primer día.
-- **Slack y Teams para todo el equipo:** conecta tu canal de Slack con Añadir a Slack, o el de Teams con su flujo, y publica los mismos eventos con folio, cliente, total y link directo.
+- **Slack y Teams para todo el equipo:** conecta tu canal de Slack con Añadir a Slack, o el de Teams con tu cuenta de Microsoft, y publica los mismos eventos con folio, cliente, total y link directo.
 - **Sin ruido falso:** solo se dispara lo que de verdad marcaste; nada se postea "por si acaso".`,
             en: `## Find out the moment it happens, not when you check the dashboard
 A matrix of events by channel (email, Slack and Microsoft Teams) under Settings › Notifications. Check the boxes you want and they save instantly.
 
 ### Key benefits:
 - **Email to the account owner:** viewed, approved, rejected, payment received, about to expire, overdue, and team; approved/rejected/paid come on by default from day one.
-- **Slack and Teams for the whole team:** connect your Slack channel with Add to Slack, or your Teams channel with its flow, and post the same events with folio, client, total, and a direct link.
+- **Slack and Teams for the whole team:** connect your Slack channel with Add to Slack, or your Teams channel with your Microsoft account, and post the same events with folio, client, total, and a direct link.
 - **No false noise:** only what you actually checked fires; nothing gets posted "just in case".`
         },
         area: 'finanzas',
@@ -627,17 +627,21 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
 - **Google Sheets y Excel:** cada cotización y cada factura como una fila en tu hoja, al día sola: folio, cliente, estado, fechas, divisa y montos como números que puedes sumar. Cord crea el archivo y solo puede abrir ese, así que no ve el resto de tu Drive ni de tu OneDrive.
-- **Shopify en los dos sentidos:** el catálogo y los clientes de tu tienda entran a Cord para cotizar mayoreo con precios y SKU reales, y cuando la cotización se aprueba o se paga, el pedido se crea en tu tienda para que el surtido y el inventario sigan donde ya viven. El pedido nace apagado: lo activas tú.
+- **Shopify en los dos sentidos:** el catálogo y los clientes de tu tienda entran a Cord para cotizar mayoreo con precios y SKU reales, y cuando la cotización se aprueba o se paga, el pedido se crea en tu tienda para que el surtido y el inventario sigan donde ya viven, en la divisa de la cotización si tu tienda la acepta. El pedido nace apagado: lo activas tú.
+- **QuickBooks Online y Xero:** cada factura definitiva entra a tu contabilidad con su cliente, sus líneas y su divisa, sin duplicarse: asentada en QuickBooks y en borrador en Xero para que la apruebe tu contador.
+- **Gmail:** las cotizaciones, facturas y recordatorios de pago salen desde tu propia dirección, y el complemento de Cord para Gmail muestra la cotización del hilo en vivo, responde con ella en el mismo hilo y arma la cotización con IA a partir del pedido del correo.
 - **Apps de Cord en Zapier y Make, sin llaves:** se conectan con un clic en una pantalla de Cord, con disparadores instantáneos, acciones y búsquedas. Cada conexión se puede revocar desde Ajustes.
-- **Slack con Añadir a Slack:** eliges el canal en Slack y listo, sin copiar URLs. Teams publica tarjetas en tu canal y WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
+- **Slack con Añadir a Slack y Teams con tu cuenta de Microsoft:** eliges el canal y listo, sin copiar URLs. WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
 - **Nodo de Cord para n8n:** se instala desde Community Nodes como **n8n-nodes-cord** en n8n autoalojado, con su disparador que registra el webhook y verifica la firma.
 - **La barra superior muestra tus apps conectadas:** los logos de las que usas y el acceso a las demás, sin salir de la pantalla.
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
-- **Contabilidad:** las siguientes conexiones son donde aterriza el dinero que ya cerraste — QuickBooks, Xero, Alegra, Holded y Siigo.
+- **Contabilidad local:** Alegra (México, Colombia y Perú), Holded (España) y Siigo (Colombia).
+- **Pagos hacia tu contabilidad:** que el cobro también llegue a QuickBooks y Xero, no solo la factura.
+- **El complemento de Gmail en Google Workspace Marketplace**, para instalarlo con un clic desde Gmail.
+- **Google Calendar y Google Drive:** el seguimiento agendado cuando una cotización está por vencer, y el PDF de cada factura en una carpeta de tu Drive.
 - **n8n Cloud:** el nodo se envió a verificación de n8n el 21 de septiembre de 2026; aparece en n8n Cloud cuando n8n lo apruebe.
-- **Microsoft Teams con tu cuenta:** iniciar sesión con Microsoft y elegir el equipo y el canal en Cord, sin copiar la URL de un flujo.
 - **WhatsApp con un botón:** conectar el número sin pasar por la consola de Meta, cuando Meta apruebe a Cord como proveedor.
 - **Directorios públicos:** Cord en el buscador de Zapier, en el catálogo de Make y en el directorio de apps de Slack.`,
             en: `## Let the close trigger the rest of the work
@@ -655,17 +659,21 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
 - **Google Sheets and Excel:** every quote and every invoice as a row in your spreadsheet, kept current on its own: number, client, status, dates, currency and amounts as numbers you can actually sum. Cord creates the file and can only open that one, so it never sees the rest of your Drive or OneDrive.
-- **Shopify both ways:** your store's catalog and customers flow into Cord so you can quote wholesale with real prices and SKUs, and when the quote is approved or paid, the order is created in your store so fulfillment and inventory stay where they already live. Orders start off: you turn them on.
+- **Shopify both ways:** your store's catalog and customers flow into Cord so you can quote wholesale with real prices and SKUs, and when the quote is approved or paid, the order is created in your store so fulfillment and inventory stay where they already live, in the quote's currency if your store accepts it. Orders start off: you turn them on.
+- **QuickBooks Online and Xero:** every final invoice enters your accounting with its customer, lines and currency, never duplicated: recorded in QuickBooks and as a draft in Xero for your accountant to approve.
+- **Gmail:** quotes, invoices and payment reminders go out from your own address, and the Cord add-on for Gmail shows the thread's quote live, replies with it in the same thread and builds the quote with AI from the order in the email.
 - **Cord apps on Zapier and Make, without keys:** connect with one click on a Cord screen, with instant triggers, actions and searches. Each connection can be revoked from Settings.
-- **Slack with Add to Slack:** pick the channel in Slack and you are done, with no URLs to copy. Teams posts cards to your channel and WhatsApp messages the client with your Meta-approved template.
+- **Slack with Add to Slack and Teams with your Microsoft account:** pick the channel and you are done, with no URLs to copy. WhatsApp messages the client with your Meta-approved template.
 - **Cord node for n8n:** install it from Community Nodes as **n8n-nodes-cord** on self-hosted n8n, with a trigger that registers its webhook and verifies the signature.
 - **The top bar shows your connected apps:** the logos of the ones you use and quick access to the rest, without leaving the screen.
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
-- **Accounting:** the next connections are where the money you already closed lands — QuickBooks, Xero, Alegra, Holded and Siigo.
+- **Local accounting:** Alegra (Mexico, Colombia and Peru), Holded (Spain) and Siigo (Colombia).
+- **Payments into your accounting:** the payment should reach QuickBooks and Xero too, not only the invoice.
+- **The Gmail add-on on Google Workspace Marketplace**, to install it with one click from Gmail.
+- **Google Calendar and Google Drive:** follow-ups scheduled when a quote is about to expire, and each invoice PDF in a folder in your Drive.
 - **n8n Cloud:** the node was submitted to n8n's verification on September 21, 2026; it appears in n8n Cloud once n8n approves it.
-- **Microsoft Teams with your account:** sign in with Microsoft and pick the team and channel in Cord, without copying a flow URL.
 - **WhatsApp with a button:** connect the number without going through Meta's console, once Meta approves Cord as a provider.
 - **Public directories:** Cord in Zapier's search, Make's catalog, and the Slack app directory.`
         },
@@ -952,7 +960,7 @@ const roadmapEnhancements = {
             en: ['Choose channel and event in Settings.', 'Cord saves the preference matrix as each option changes.', 'When a view, approval, rejection, or payment occurs, it sends only enabled alerts.']
         },
         scope: { es: 'Siete clases de evento por correo, Slack y Microsoft Teams, con folio, cliente, total y enlace cuando el canal permite ese contexto.', en: 'Seven event classes across email, Slack, and Microsoft Teams, with number, customer, total, and link when the channel supports that context.' },
-        boundaries: { es: 'Slack se conecta con Añadir a Slack o un webhook propio; Teams, con un flujo de Power Automate del canal. Cord no publica eventos desactivados ni sustituye el historial interno por mensajes externos.', en: 'Slack connects with Add to Slack or your own webhook; Teams, with the channel\'s Power Automate flow. Cord does not publish disabled events or replace internal history with external messages.' },
+        boundaries: { es: 'Slack se conecta con Añadir a Slack o un webhook propio; Teams, con tu cuenta de Microsoft o un flujo de Power Automate del canal. Cord no publica eventos desactivados ni sustituye el historial interno por mensajes externos.', en: 'Slack connects with Add to Slack or your own webhook; Teams, with your Microsoft account or the channel\'s Power Automate flow. Cord does not publish disabled events or replace internal history with external messages.' },
         related: ['seguimiento-vivo', 'link-publico', 'integraciones-y-flujos']
     },
     'facturas-emitidas': {
@@ -971,7 +979,7 @@ const roadmapEnhancements = {
             es: ['Elige el evento de Cord que arranca el workflow y define condiciones visibles.', 'Encadena acciones —tarea, correo al equipo, Slack o nota en HubSpot— y publícalo cuando esté listo.', 'Revisa cada ejecución, su resultado y el error legible cuando un paso falla.'],
             en: ['Pick the Cord event that starts the workflow and set visible conditions.', 'Chain actions — task, team email, Slack or a HubSpot note — and publish when ready.', 'Review every run, its result, and the readable error when a step fails.']
         },
-        scope: { es: 'Workflows sobre los eventos de Cord y sobre un horario fijo, con consultas, esperas condicionadas y prueba sin publicar; directorio de integraciones con HubSpot, Slack y Teams; escenarios de Make y nodo de n8n; y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events and on a fixed schedule, with lookups, conditional waits and a test run before publishing; an integrations directory with HubSpot, Slack and Teams; Make scenarios and an n8n node; and the developer platform: API v1, signed webhooks and MCP.' },
+        scope: { es: 'Workflows sobre los eventos de Cord y sobre un horario fijo, con consultas, esperas condicionadas y prueba sin publicar; directorio de integraciones con HubSpot, Shopify, Gmail, Google Sheets, Excel, QuickBooks, Xero, Slack, Teams y WhatsApp; apps de Zapier y Make y nodo de n8n; y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events and on a fixed schedule, with lookups, conditional waits and a test run before publishing; an integrations directory with HubSpot, Shopify, Gmail, Google Sheets, Excel, QuickBooks, Xero, Slack, Teams and WhatsApp; Zapier and Make apps and an n8n node; and the developer platform: API v1, signed webhooks and MCP.' },
         boundaries: { es: 'Un workflow no cobra ni emite facturas: esas siguen siendo decisiones de una persona. Cuando le escribe al cliente, lo hace con tu marca o, por WhatsApp, con tu plantilla aprobada por Meta. Las esperas se cuentan en días y la entrega es al menos una vez, así que cada paso queda en el historial.', en: 'A workflow never charges or issues invoices: those stay human decisions. When it writes to the client, it does so with your branding or, on WhatsApp, with your Meta-approved template. Waits are counted in days and delivery is at least once, so every step stays in the history.' },
         related: ['cord-elements', 'notificaciones', 'ciclo-de-vida-contrato']
     },

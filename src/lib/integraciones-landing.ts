@@ -1,7 +1,7 @@
 import { BRAND_LOGOS } from './integraciones/catalogo';
 
-export type IntegrationLandingSlug = 'hubspot' | 'shopify' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp' | 'gmail';
-export type IntegrationLandingCategory = 'crm' | 'ecommerce' | 'cobros' | 'comunicacion' | 'automatizacion';
+export type IntegrationLandingSlug = 'hubspot' | 'shopify' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp' | 'gmail' | 'google-sheets' | 'excel' | 'quickbooks' | 'xero';
+export type IntegrationLandingCategory = 'crm' | 'ecommerce' | 'cobros' | 'contabilidad' | 'productividad' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationFlow { cord: string; app: string; dir: string }
 export interface IntegrationBlock { eyebrow: string; titulo: string; copy: string; bullets: string[] }
@@ -47,6 +47,8 @@ export const CATEGORY_LABEL: Record<IntegrationLandingCategory, { es: string; en
     cobros: { es: 'Cobros', en: 'Payments' },
     comunicacion: { es: 'Comunicación', en: 'Communication' },
     automatizacion: { es: 'Automatización', en: 'Automation' },
+    contabilidad: { es: 'Contabilidad', en: 'Accounting' },
+    productividad: { es: 'Productividad', en: 'Productivity' },
 };
 
 export const INTEGRATION_PAGES: IntegrationLanding[] = [
@@ -1572,7 +1574,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
         nombre: 'Gmail',
         dominio: 'mail.google.com',
         logo: BRAND_LOGOS.gmail,
-        categoria: 'comunicacion',
+        categoria: 'productividad',
         related: ['whatsapp', 'slack', 'hubspot'],
         producto: 'editor',
         es: {
@@ -1726,6 +1728,462 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { label: 'Cord integrations', href: `${DOCS_EN}/automatizacion/integraciones` },
             ],
             cta: { titulo: 'Let your quotes come from the person who signs them.', sub: 'Connect your Gmail from Settings. Free to start.' },
+        },
+    },
+    {
+        slug: 'google-sheets',
+        nombre: 'Google Sheets',
+        dominio: 'sheets.google.com',
+        logo: BRAND_LOGOS['google-sheets'],
+        categoria: 'productividad',
+        related: ['excel', 'quickbooks', 'xero'],
+        producto: 'finanzas',
+        es: {
+            metaTitle: 'Integración con Google Sheets: cotizaciones y facturas al día | Cord',
+            metaDescription: 'Cada cotización y cada factura de Cord como una fila en tu hoja de Google, al día sola: importes como número, divisa en su columna y fechas en tu zona horaria.',
+            eyebrow: 'INTEGRACIÓN · GOOGLE SHEETS',
+            titulo: 'Tus cotizaciones y facturas en tu hoja de Google, al día solas.',
+            sub: 'Cord escribe una fila por documento y la actualiza cada vez que cambia de estado. Sumas el mes, filtras por cliente y armas tus gráficas sin exportar nada.',
+            resumen: 'Una fila por cotización y por factura, al día sola.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis',
+            flujoTitulo: 'Qué se escribe en tu hoja',
+            flujo: [
+                { cord: 'Cotización enviada, aprobada, rechazada, vencida o pagada', app: 'Fila en la pestaña Cotizaciones', dir: 'Se reemplaza por folio' },
+                { cord: 'Factura emitida, enviada, pagada, vencida o cancelada', app: 'Fila en la pestaña Facturas', dir: 'Se reemplaza por folio' },
+                { cord: 'Actualizar ahora', app: 'Tus últimos 500 documentos por pestaña', dir: 'Cuando lo pides' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'DATOS QUE SIRVEN',
+                    titulo: 'Números que se suman, divisas que no se mezclan.',
+                    copy: 'Los importes llegan como número, no como texto, así que suman y grafican sin limpiar nada. La divisa va en su propia columna para que no sumes pesos con dólares, y las fechas llegan en la zona horaria de tu cuenta con formato AAAA-MM-DD.',
+                    bullets: [
+                        'Cotizaciones: folio, cliente, estado, fecha, vigencia, divisa, subtotal, descuento, impuestos, total, cobrado y link',
+                        'Facturas: folio, cliente, estado, estado fiscal, fecha, vencimiento, divisa, total, pagado, saldo y link',
+                        'Encabezado fijo y con filtro',
+                    ],
+                },
+                {
+                    eyebrow: 'SE GUÍA POR EL FOLIO',
+                    titulo: 'Ordena, filtra y agrega tus columnas.',
+                    copy: 'Cord encuentra cada documento por su folio en la columna A, no por el número de fila. Puedes ordenar, filtrar y agregar tus propias columnas a la derecha sin romper la sincronización. Y Cord solo puede abrir la hoja que crea: el resto de tu Drive no lo ve.',
+                    bullets: [
+                        'La fila se reemplaza, no se duplica',
+                        'Un documento nuevo se agrega al final',
+                        'Borrar la primera fila no rompe nada',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Conecta', text: 'En Ajustes › Integraciones › Google Sheets pulsa Conectar Google Sheets y autoriza con tu cuenta.' },
+                { name: 'Cord crea el archivo', text: 'Al volver, Cord crea el archivo y lo llena con lo que ya tenías.' },
+                { name: 'Ábrelo', text: 'Pulsa Abrir la hoja. Desde ahí, cada cambio de estado se escribe solo.' },
+            ],
+            limites: [
+                'Cord crea su propio archivo; todavía no escribe en una hoja que ya tengas.',
+                'La sincronización va de Cord a la hoja: editar una fila no cambia el documento en Cord.',
+            ],
+            faqs: [
+                { q: '¿Qué pasa si borro el archivo?', a: 'Desconecta y vuelve a conectar; Cord crea uno nuevo y lo llena.' },
+                { q: '¿Puedo tener Google Sheets y Excel a la vez?', a: 'Sí. Son dos integraciones distintas y cada una lleva su propio archivo.' },
+            ],
+            guias: [
+                { label: 'Conectar Google Sheets', href: `${DOCS}/automatizacion/integraciones/google-sheets` },
+            ],
+            cta: { titulo: 'Tus números donde ya los llevas.', sub: 'Conecta Google Sheets desde Ajustes. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'Google Sheets integration: quotes and invoices kept current | Cord',
+            metaDescription: 'Every Cord quote and invoice as a row in your Google sheet, kept current on its own: numeric amounts, currency in its own column and dates in your time zone.',
+            eyebrow: 'INTEGRATION · GOOGLE SHEETS',
+            titulo: 'Your quotes and invoices in your Google sheet, current on their own.',
+            sub: 'Cord writes one row per document and updates it every time it changes status. Total the month, filter by client and build charts without exporting anything.',
+            resumen: 'One row per quote and invoice, kept current on its own.',
+            plan: 'Included in every Cord plan, starting with Free',
+            flujoTitulo: 'What gets written to your sheet',
+            flujo: [
+                { cord: 'Quote sent, approved, rejected, expired or paid', app: 'Row in the Quotes tab', dir: 'Replaced by number' },
+                { cord: 'Invoice issued, sent, paid, overdue or canceled', app: 'Row in the Invoices tab', dir: 'Replaced by number' },
+                { cord: 'Update now', app: 'Your latest 500 documents per tab', dir: 'On request' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'USEFUL DATA',
+                    titulo: 'Numbers that add up, currencies that do not mix.',
+                    copy: 'Amounts arrive as numbers, not text, so they sum and chart without cleanup. Currency has its own column so you never add pesos to dollars, and dates arrive in your account time zone as YYYY-MM-DD.',
+                    bullets: [
+                        'Quotes: number, client, status, date, valid until, currency, subtotal, discount, taxes, total, collected and link',
+                        'Invoices: number, client, status, tax status, date, due date, currency, total, paid, balance and link',
+                        'Frozen, filtered header row',
+                    ],
+                },
+                {
+                    eyebrow: 'MATCHED BY NUMBER',
+                    titulo: 'Sort, filter and add your own columns.',
+                    copy: 'Cord finds each document by its number in column A, not by row position. You can sort, filter and add your own columns to the right without breaking the sync. And Cord can only open the sheet it creates: it never sees the rest of your Drive.',
+                    bullets: [
+                        'The row is replaced, not duplicated',
+                        'A new document is added at the end',
+                        'Deleting the first row breaks nothing',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Connect', text: 'In Settings › Integrations › Google Sheets click Connect Google Sheets and authorize with your account.' },
+                { name: 'Cord creates the file', text: 'When you come back, Cord creates the file and fills it with what you already had.' },
+                { name: 'Open it', text: 'Click Open the sheet. From then on, every status change is written on its own.' },
+            ],
+            limites: [
+                'Cord creates its own file; it does not yet write to a sheet you already have.',
+                'Sync goes from Cord to the sheet: editing a row does not change the document in Cord.',
+            ],
+            faqs: [
+                { q: 'What if I delete the file?', a: 'Disconnect and connect again; Cord creates and fills a new one.' },
+                { q: 'Can I have Google Sheets and Excel at the same time?', a: 'Yes. They are two separate integrations and each keeps its own file.' },
+            ],
+            guias: [
+                { label: 'Connect Google Sheets', href: `${DOCS_EN}/automatizacion/integraciones/google-sheets` },
+            ],
+            cta: { titulo: 'Your numbers where you already keep them.', sub: 'Connect Google Sheets from Settings. Free to start.' },
+        },
+    },
+    {
+        slug: 'excel',
+        nombre: 'Microsoft Excel',
+        dominio: 'excel.cloud.microsoft',
+        logo: BRAND_LOGOS['excel'],
+        categoria: 'productividad',
+        related: ['google-sheets', 'quickbooks', 'xero'],
+        producto: 'finanzas',
+        es: {
+            metaTitle: 'Integración con Microsoft Excel: cotizaciones y facturas al día | Cord',
+            metaDescription: 'Cada cotización y cada factura de Cord como una fila en tu libro de Excel, al día sola: importes como número, divisa en su columna y fechas en tu zona horaria.',
+            eyebrow: 'INTEGRACIÓN · MICROSOFT EXCEL',
+            titulo: 'Tus cotizaciones y facturas en tu libro de Excel, al día solas.',
+            sub: 'Cord escribe una fila por documento y la actualiza cada vez que cambia de estado. Sumas el mes, filtras por cliente y armas tus gráficas sin exportar nada.',
+            resumen: 'Una fila por cotización y por factura, al día sola.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis',
+            flujoTitulo: 'Qué se escribe en tu hoja',
+            flujo: [
+                { cord: 'Cotización enviada, aprobada, rechazada, vencida o pagada', app: 'Fila en la pestaña Cotizaciones', dir: 'Se reemplaza por folio' },
+                { cord: 'Factura emitida, enviada, pagada, vencida o cancelada', app: 'Fila en la pestaña Facturas', dir: 'Se reemplaza por folio' },
+                { cord: 'Actualizar ahora', app: 'Tus últimos 500 documentos por pestaña', dir: 'Cuando lo pides' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'DATOS QUE SIRVEN',
+                    titulo: 'Números que se suman, divisas que no se mezclan.',
+                    copy: 'Los importes llegan como número, no como texto, así que suman y grafican sin limpiar nada. La divisa va en su propia columna para que no sumes pesos con dólares, y las fechas llegan en la zona horaria de tu cuenta con formato AAAA-MM-DD.',
+                    bullets: [
+                        'Cotizaciones: folio, cliente, estado, fecha, vigencia, divisa, subtotal, descuento, impuestos, total, cobrado y link',
+                        'Facturas: folio, cliente, estado, estado fiscal, fecha, vencimiento, divisa, total, pagado, saldo y link',
+                        'Encabezado fijo y con filtro',
+                    ],
+                },
+                {
+                    eyebrow: 'SE GUÍA POR EL FOLIO',
+                    titulo: 'Ordena, filtra y agrega tus columnas.',
+                    copy: 'Cord encuentra cada documento por su folio en la columna A, no por el número de fila. Puedes ordenar, filtrar y agregar tus propias columnas a la derecha sin romper la sincronización. Los datos van en tablas de Excel reales, con filtros y fórmulas por nombre de columna.',
+                    bullets: [
+                        'La fila se reemplaza, no se duplica',
+                        'Un documento nuevo se agrega al final',
+                        'Borrar la primera fila no rompe nada',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Conecta', text: 'En Ajustes › Integraciones › Microsoft Excel pulsa Conectar Excel y autoriza con tu cuenta.' },
+                { name: 'Cord crea el archivo', text: 'Al volver, Cord crea el archivo y lo llena con lo que ya tenías.' },
+                { name: 'Ábrelo', text: 'Pulsa Abrir la hoja. Desde ahí, cada cambio de estado se escribe solo.' },
+            ],
+            limites: [
+                'Cord crea su propio archivo; todavía no escribe en una hoja que ya tengas.',
+                'La sincronización va de Cord a la hoja: editar una fila no cambia el documento en Cord.',
+            ],
+            faqs: [
+                { q: '¿Qué pasa si borro el archivo?', a: 'Desconecta y vuelve a conectar; Cord crea uno nuevo y lo llena.' },
+                { q: '¿Puedo tener Google Sheets y Excel a la vez?', a: 'Sí. Son dos integraciones distintas y cada una lleva su propio archivo.' },
+            ],
+            guias: [
+                { label: 'Conectar Microsoft Excel', href: `${DOCS}/automatizacion/integraciones/excel` },
+            ],
+            cta: { titulo: 'Tus números donde ya los llevas.', sub: 'Conecta Microsoft Excel desde Ajustes. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'Microsoft Excel integration: quotes and invoices kept current | Cord',
+            metaDescription: 'Every Cord quote and invoice as a row in your Excel workbook, kept current on its own: numeric amounts, currency in its own column and dates in your time zone.',
+            eyebrow: 'INTEGRATION · MICROSOFT EXCEL',
+            titulo: 'Your quotes and invoices in your Excel workbook, current on their own.',
+            sub: 'Cord writes one row per document and updates it every time it changes status. Total the month, filter by client and build charts without exporting anything.',
+            resumen: 'One row per quote and invoice, kept current on its own.',
+            plan: 'Included in every Cord plan, starting with Free',
+            flujoTitulo: 'What gets written to your sheet',
+            flujo: [
+                { cord: 'Quote sent, approved, rejected, expired or paid', app: 'Row in the Quotes tab', dir: 'Replaced by number' },
+                { cord: 'Invoice issued, sent, paid, overdue or canceled', app: 'Row in the Invoices tab', dir: 'Replaced by number' },
+                { cord: 'Update now', app: 'Your latest 500 documents per tab', dir: 'On request' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'USEFUL DATA',
+                    titulo: 'Numbers that add up, currencies that do not mix.',
+                    copy: 'Amounts arrive as numbers, not text, so they sum and chart without cleanup. Currency has its own column so you never add pesos to dollars, and dates arrive in your account time zone as YYYY-MM-DD.',
+                    bullets: [
+                        'Quotes: number, client, status, date, valid until, currency, subtotal, discount, taxes, total, collected and link',
+                        'Invoices: number, client, status, tax status, date, due date, currency, total, paid, balance and link',
+                        'Frozen, filtered header row',
+                    ],
+                },
+                {
+                    eyebrow: 'MATCHED BY NUMBER',
+                    titulo: 'Sort, filter and add your own columns.',
+                    copy: 'Cord finds each document by its number in column A, not by row position. You can sort, filter and add your own columns to the right without breaking the sync. Data goes into real Excel tables, with filters and formulas by column name.',
+                    bullets: [
+                        'The row is replaced, not duplicated',
+                        'A new document is added at the end',
+                        'Deleting the first row breaks nothing',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Connect', text: 'In Settings › Integrations › Microsoft Excel click Connect Excel and authorize with your account.' },
+                { name: 'Cord creates the file', text: 'When you come back, Cord creates the file and fills it with what you already had.' },
+                { name: 'Open it', text: 'Click Open the sheet. From then on, every status change is written on its own.' },
+            ],
+            limites: [
+                'Cord creates its own file; it does not yet write to a sheet you already have.',
+                'Sync goes from Cord to the sheet: editing a row does not change the document in Cord.',
+            ],
+            faqs: [
+                { q: 'What if I delete the file?', a: 'Disconnect and connect again; Cord creates and fills a new one.' },
+                { q: 'Can I have Google Sheets and Excel at the same time?', a: 'Yes. They are two separate integrations and each keeps its own file.' },
+            ],
+            guias: [
+                { label: 'Connect Microsoft Excel', href: `${DOCS_EN}/automatizacion/integraciones/excel` },
+            ],
+            cta: { titulo: 'Your numbers where you already keep them.', sub: 'Connect Microsoft Excel from Settings. Free to start.' },
+        },
+    },
+    {
+        slug: 'quickbooks',
+        nombre: 'QuickBooks Online',
+        dominio: 'quickbooks.intuit.com',
+        logo: BRAND_LOGOS['quickbooks'],
+        categoria: 'contabilidad',
+        related: ['xero', 'google-sheets', 'excel'],
+        producto: 'facturacion',
+        es: {
+            metaTitle: 'Integración con QuickBooks Online: tus facturas sin capturarlas dos veces | Cord',
+            metaDescription: 'Cada factura definitiva de Cord entra a QuickBooks Online con su cliente, sus líneas y su divisa, asentada en tus libros. Sin duplicados y sin volver a capturar.',
+            eyebrow: 'INTEGRACIÓN · QUICKBOOKS ONLINE',
+            titulo: 'Tus facturas de Cord en QuickBooks Online, sin capturarlas dos veces.',
+            sub: 'Cada factura definitiva entra a tu contabilidad con su cliente, sus conceptos y su divisa, asentada en tus libros. Dejas de cuadrar a fin de mes lo que ya estaba en dos lugares.',
+            resumen: 'Tus facturas de Cord en tu contabilidad, asentada en tus libros.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis',
+            flujoTitulo: 'Qué viaja a tu contabilidad',
+            flujo: [
+                { cord: 'Factura definitiva', app: 'Factura de venta con sus líneas', dir: 'Asentada en tus libros' },
+                { cord: 'Cliente de la factura', app: 'Cliente o contacto, sin duplicar', dir: 'Buscado primero por correo' },
+                { cord: 'Enviar las facturas pendientes', app: 'Las últimas 50 que falten', dir: 'Cuando lo pides' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'SIN DUPLICADOS',
+                    titulo: 'Una factura se registra una sola vez.',
+                    copy: 'Cord recuerda qué factura quedó en tu contabilidad y no la repite, aunque el evento se reintente. El cliente se busca primero por correo para no llenarte el catálogo de duplicados, y el vínculo se recuerda para las siguientes facturas.',
+                    bullets: [
+                        'Solo facturas definitivas, nunca cotizaciones ni borradores de Cord',
+                        'El precio negociado con su descuento ya aplicado',
+                        'Cada importe calculado sobre el precio ya redondeado, para que cuadre al centavo',
+                    ],
+                },
+                {
+                    eyebrow: 'CÓMO ENTRA',
+                    titulo: 'Asentada, con un solo servicio en tu catálogo.',
+                    copy: 'QuickBooks no maneja borradores, así que Cord solo manda facturas definitivas. Toda línea de QuickBooks cuelga de un producto: Cord usa un único servicio llamado Cord en vez de inventar uno por concepto, y deja el folio en la nota privada para no pisar tu numeración.',
+                    bullets: ['Un servicio llamado Cord, creado una sola vez', 'El folio de Cord en la nota privada', 'Tu numeración de facturas intacta'],
+                },
+            ],
+            pasos: [
+                { name: 'Conecta', text: 'En Ajustes › Integraciones › QuickBooks Online pulsa Conectar QuickBooks y autoriza.' },
+                { name: 'Emite como siempre', text: 'Cada factura definitiva nueva viaja sola a tu contabilidad.' },
+                { name: 'Manda lo anterior', text: 'Si ya tenías facturas, pulsa Enviar las facturas pendientes.' },
+            ],
+            limites: [
+                'Todavía no manda los pagos: el cobro se registra en tu contabilidad como siempre.',
+                'Todavía no mapea tus códigos de impuesto: revisa el impuesto de la primera factura.',
+                'El flujo va de Cord a tu contabilidad, no al revés.',
+            ],
+            faqs: [
+                { q: '¿Se puede duplicar una factura?', a: 'No. Cord recuerda cada factura registrada y no la vuelve a mandar.' },
+                { q: '¿Qué pasa si conecto otra empresa?', a: 'Cord empieza de cero con ella en vez de reusar los vínculos de la anterior.' },
+            ],
+            guias: [
+                { label: 'Conectar QuickBooks Online', href: `${DOCS}/automatizacion/integraciones/quickbooks` },
+            ],
+            cta: { titulo: 'Emite una vez, y que tu contabilidad se entere sola.', sub: 'Conecta QuickBooks Online desde Ajustes. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'QuickBooks Online integration: your invoices without typing them twice | Cord',
+            metaDescription: 'Every final Cord invoice enters QuickBooks Online with its customer, lines and currency, recorded in your books. No duplicates and no retyping.',
+            eyebrow: 'INTEGRATION · QUICKBOOKS ONLINE',
+            titulo: 'Your Cord invoices in QuickBooks Online, without typing them twice.',
+            sub: 'Every final invoice enters your accounting with its customer, lines and currency, recorded in your books. Stop reconciling at month end what was already in two places.',
+            resumen: 'Your Cord invoices in your accounting, recorded in your books.',
+            plan: 'Included in every Cord plan, starting with Free',
+            flujoTitulo: 'What travels to your accounting',
+            flujo: [
+                { cord: 'Final invoice', app: 'Sales invoice with its lines', dir: 'Recorded in your books' },
+                { cord: 'Invoice customer', app: 'Customer or contact, not duplicated', dir: 'Looked up by email first' },
+                { cord: 'Send pending invoices', app: 'The latest 50 missing ones', dir: 'On request' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'NO DUPLICATES',
+                    titulo: 'An invoice is recorded only once.',
+                    copy: 'Cord remembers which invoice was recorded in your accounting and does not repeat it, even if the event is retried. The customer is looked up by email first so your list does not fill with duplicates, and the link is remembered for later invoices.',
+                    bullets: [
+                        'Only final invoices, never quotes or Cord drafts',
+                        'The negotiated price with its discount applied',
+                        'Each amount computed on the already-rounded price, so it matches to the cent',
+                    ],
+                },
+                {
+                    eyebrow: 'HOW IT ARRIVES',
+                    titulo: 'Recorded, with a single service in your catalog.',
+                    copy: 'QuickBooks has no drafts, so Cord only sends final invoices. Every QuickBooks line hangs from a product: Cord uses one service called Cord instead of inventing one per item, and keeps its number in the private note so it never overwrites your numbering.',
+                    bullets: ['One service called Cord, created once', 'The Cord number in the private note', 'Your invoice numbering untouched'],
+                },
+            ],
+            pasos: [
+                { name: 'Connect', text: 'In Settings › Integrations › QuickBooks Online click Connect QuickBooks and authorize.' },
+                { name: 'Invoice as usual', text: 'Every new final invoice travels to your accounting on its own.' },
+                { name: 'Send the backlog', text: 'If you already had invoices, click Send pending invoices.' },
+            ],
+            limites: [
+                'It does not send payments yet: record the payment in your accounting as usual.',
+                'It does not map your tax codes yet: check the tax on the first invoice.',
+                'It flows from Cord to your accounting, not the other way.',
+            ],
+            faqs: [
+                { q: 'Can an invoice be duplicated?', a: 'No. Cord remembers every recorded invoice and never sends it again.' },
+                { q: 'What if I connect another company?', a: 'Cord starts from scratch with it instead of reusing the previous links.' },
+            ],
+            guias: [
+                { label: 'Connect QuickBooks Online', href: `${DOCS_EN}/automatizacion/integraciones/quickbooks` },
+            ],
+            cta: { titulo: 'Invoice once, and let your accounting know on its own.', sub: 'Connect QuickBooks Online from Settings. Free to start.' },
+        },
+    },
+    {
+        slug: 'xero',
+        nombre: 'Xero',
+        dominio: 'xero.com',
+        logo: BRAND_LOGOS['xero'],
+        categoria: 'contabilidad',
+        related: ['quickbooks', 'google-sheets', 'excel'],
+        producto: 'facturacion',
+        es: {
+            metaTitle: 'Integración con Xero: tus facturas sin capturarlas dos veces | Cord',
+            metaDescription: 'Cada factura definitiva de Cord entra a Xero con su cliente, sus líneas y su divisa, como borrador para que la apruebe tu contador. Sin duplicados y sin volver a capturar.',
+            eyebrow: 'INTEGRACIÓN · XERO',
+            titulo: 'Tus facturas de Cord en Xero, sin capturarlas dos veces.',
+            sub: 'Cada factura definitiva entra a tu contabilidad con su cliente, sus conceptos y su divisa, como borrador para que la apruebe tu contador. Dejas de cuadrar a fin de mes lo que ya estaba en dos lugares.',
+            resumen: 'Tus facturas de Cord en tu contabilidad, como borrador para que la apruebe tu contador.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis',
+            flujoTitulo: 'Qué viaja a tu contabilidad',
+            flujo: [
+                { cord: 'Factura definitiva', app: 'Factura de venta con sus líneas', dir: 'Como borrador para que la apruebe tu contador' },
+                { cord: 'Cliente de la factura', app: 'Cliente o contacto, sin duplicar', dir: 'Buscado primero por correo' },
+                { cord: 'Enviar las facturas pendientes', app: 'Las últimas 50 que falten', dir: 'Cuando lo pides' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'SIN DUPLICADOS',
+                    titulo: 'Una factura se registra una sola vez.',
+                    copy: 'Cord recuerda qué factura quedó en tu contabilidad y no la repite, aunque el evento se reintente. El cliente se busca primero por correo para no llenarte el catálogo de duplicados, y el vínculo se recuerda para las siguientes facturas.',
+                    bullets: [
+                        'Solo facturas definitivas, nunca cotizaciones ni borradores de Cord',
+                        'El precio negociado con su descuento ya aplicado',
+                        'Cada importe calculado sobre el precio ya redondeado, para que cuadre al centavo',
+                    ],
+                },
+                {
+                    eyebrow: 'CÓMO ENTRA',
+                    titulo: 'En borrador, y la apruebas tú.',
+                    copy: 'Un sistema de fuera no debería asentar solo en los libros de nadie: la factura entra como borrador con el folio de Cord en la referencia, y tu contador la revisa antes de aprobarla. Los importes van sin impuesto incluido porque Cord ya calculó el impuesto por línea.',
+                    bullets: ['Factura de venta en estado borrador', 'El folio de Cord en la referencia', 'Permisos solo sobre facturas y contactos'],
+                },
+            ],
+            pasos: [
+                { name: 'Conecta', text: 'En Ajustes › Integraciones › Xero pulsa Conectar Xero y autoriza.' },
+                { name: 'Emite como siempre', text: 'Cada factura definitiva nueva viaja sola a tu contabilidad.' },
+                { name: 'Manda lo anterior', text: 'Si ya tenías facturas, pulsa Enviar las facturas pendientes.' },
+            ],
+            limites: [
+                'Todavía no manda los pagos: el cobro se registra en tu contabilidad como siempre.',
+                'Todavía no mapea tus códigos de impuesto: revisa el impuesto de la primera factura.',
+                'El flujo va de Cord a tu contabilidad, no al revés.',
+            ],
+            faqs: [
+                { q: '¿Se puede duplicar una factura?', a: 'No. Cord recuerda cada factura registrada y no la vuelve a mandar.' },
+                { q: '¿Qué pasa si conecto otra empresa?', a: 'Cord empieza de cero con ella en vez de reusar los vínculos de la anterior.' },
+            ],
+            guias: [
+                { label: 'Conectar Xero', href: `${DOCS}/automatizacion/integraciones/xero` },
+            ],
+            cta: { titulo: 'Emite una vez, y que tu contabilidad se entere sola.', sub: 'Conecta Xero desde Ajustes. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'Xero integration: your invoices without typing them twice | Cord',
+            metaDescription: 'Every final Cord invoice enters Xero with its customer, lines and currency, as a draft for your accountant to approve. No duplicates and no retyping.',
+            eyebrow: 'INTEGRATION · XERO',
+            titulo: 'Your Cord invoices in Xero, without typing them twice.',
+            sub: 'Every final invoice enters your accounting with its customer, lines and currency, as a draft for your accountant to approve. Stop reconciling at month end what was already in two places.',
+            resumen: 'Your Cord invoices in your accounting, as a draft for your accountant to approve.',
+            plan: 'Included in every Cord plan, starting with Free',
+            flujoTitulo: 'What travels to your accounting',
+            flujo: [
+                { cord: 'Final invoice', app: 'Sales invoice with its lines', dir: 'As a draft for your accountant to approve' },
+                { cord: 'Invoice customer', app: 'Customer or contact, not duplicated', dir: 'Looked up by email first' },
+                { cord: 'Send pending invoices', app: 'The latest 50 missing ones', dir: 'On request' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'NO DUPLICATES',
+                    titulo: 'An invoice is recorded only once.',
+                    copy: 'Cord remembers which invoice was recorded in your accounting and does not repeat it, even if the event is retried. The customer is looked up by email first so your list does not fill with duplicates, and the link is remembered for later invoices.',
+                    bullets: [
+                        'Only final invoices, never quotes or Cord drafts',
+                        'The negotiated price with its discount applied',
+                        'Each amount computed on the already-rounded price, so it matches to the cent',
+                    ],
+                },
+                {
+                    eyebrow: 'HOW IT ARRIVES',
+                    titulo: 'As a draft, and you approve it.',
+                    copy: 'An outside system should not post to anyone\'s books on its own: the invoice arrives as a draft with the Cord number as its reference, and your accountant reviews it before approving. Amounts are tax exclusive because Cord already computed tax per line.',
+                    bullets: ['Sales invoice in draft status', 'The Cord number as the reference', 'Permissions only over invoices and contacts'],
+                },
+            ],
+            pasos: [
+                { name: 'Connect', text: 'In Settings › Integrations › Xero click Connect Xero and authorize.' },
+                { name: 'Invoice as usual', text: 'Every new final invoice travels to your accounting on its own.' },
+                { name: 'Send the backlog', text: 'If you already had invoices, click Send pending invoices.' },
+            ],
+            limites: [
+                'It does not send payments yet: record the payment in your accounting as usual.',
+                'It does not map your tax codes yet: check the tax on the first invoice.',
+                'It flows from Cord to your accounting, not the other way.',
+            ],
+            faqs: [
+                { q: 'Can an invoice be duplicated?', a: 'No. Cord remembers every recorded invoice and never sends it again.' },
+                { q: 'What if I connect another company?', a: 'Cord starts from scratch with it instead of reusing the previous links.' },
+            ],
+            guias: [
+                { label: 'Connect Xero', href: `${DOCS_EN}/automatizacion/integraciones/xero` },
+            ],
+            cta: { titulo: 'Invoice once, and let your accounting know on its own.', sub: 'Connect Xero from Settings. Free to start.' },
         },
     },
 ];

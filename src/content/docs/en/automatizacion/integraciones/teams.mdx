@@ -1,0 +1,79 @@
+---
+title: "Microsoft Teams"
+seoTitle: "Connect Cord with Microsoft Teams"
+description: "How to connect Microsoft Teams with Cord by signing in with Microsoft or with a Power Automate flow, turn on alerts per event, use Teams in workflows and fix problems."
+lastUpdated: "2026-09-28"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Microsoft Teams</h1>
+  <p class="page-subtitle">Your team sees in its Teams channel when a client opens, approves or pays.</p>
+</header>
+
+## How it works
+
+Cord posts a card in the Teams channel you choose when a quote moves forward. There are two ways to connect it, and only one can be active:
+
+| | Connect with Microsoft | Power Automate flow |
+|---|---|---|
+| **How** | Sign in with your work account and pick team and channel. | Create a flow in the channel and paste its URL. |
+| **Who posts** | The card is posted in the name of whoever connected; Cord's card says so. | The channel's flow. |
+| **Requirement** | A Microsoft 365 work or school account (channels do not exist in personal accounts). | Being able to create flows in the channel. |
+
+## Connect with Microsoft
+
+<Steps>
+1. Go to **Settings › Integrations › Microsoft Teams**.
+2. Click **Connect with Microsoft** and sign in with your work account.
+3. Pick the **team** and **channel** from the lists and click **Use this channel**.
+4. Click **Send test**: a sample card appears in the channel.
+</Steps>
+
+Cord asks to read your profile, the teams and channels you belong to, and to send channel messages. None needs an administrator's approval.
+
+## With a Power Automate flow
+
+Teams' old connectors (Office 365 "Incoming Webhook") are retired; the URL comes from a flow.
+
+<Steps>
+1. In the channel, open **Workflows** from the three-dot menu.
+2. Use the template **"Post to a channel when a webhook request is received"** and pick team and channel.
+3. Copy the flow URL (it starts with `https://prod-` and ends in `logic.azure.com`).
+4. In Cord, open **Use a Power Automate flow** on the Teams card, paste the URL, save and click **Send test**.
+</Steps>
+
+The URL is a credential: if it leaks, delete the flow and create another.
+
+## Turn on alerts
+
+Connecting turns on no alerts. In **Settings › Notifications**, check the **Teams** column for the events you want:
+
+| Event | When it fires |
+|---|---|
+| **Your client viewed the quote** | When the client opens the public link. |
+| **Quote approved** | The client accepted the proposal. |
+| **Quote rejected** | The client rejected it. |
+| **Payment received** | An online payment was recorded. |
+| **Quote expiring** | 3 days before the valid-until date. |
+| **Payment overdue** | A receivable passed its due date. |
+
+Email, Slack and Teams are checked separately.
+
+## Teams in a workflow
+
+The **Send a Teams message** action in [Cord Workflows](/en/docs/automatizacion/workflows) posts your own text with event data (`{{cliente}}`, `{{folio}}`, `{{total}}`), even if alerts are off.
+
+## Disconnect
+
+With **Disconnect** on the card. Microsoft does not allow revoking a single access from outside: to remove the app from your account, do it at myapps.microsoft.com.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **"Microsoft no longer accepts the connection"** | Access expired or was revoked. Click **Reconnect**. |
+| **No teams appear** | Your account does not belong to any Teams team, or it is a personal account. |
+| **"The Teams URL must be the flow's URL"** | You pasted another address; it must end in a `logic.azure.com` domain. |
+| **"Teams did not accept the card"** | The flow was turned off or deleted. Turn it on in Workflows or paste a new URL. |

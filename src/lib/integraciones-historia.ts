@@ -211,6 +211,94 @@ export const INTEGRATION_STORY: Record<IntegrationLandingSlug, IntegrationStory>
             chip: { titulo: 'Quote viewed', linea: 'COT-0152 · Aceros del Norte', monto: '$184,300.00 MXN' },
         },
     },
+    'google-sheets': {
+        brand: { from: '#34a853', to: '#0d3b1e', accent: '#188038' },
+        shot: { x: '8%', y: '10%' },
+        es: {
+            datos: [
+                { valor: '1 fila', texto: 'por cotización y por factura, al día sola.' },
+                { valor: 'Por folio', texto: 'Cord encuentra cada fila aunque ordenes o filtres.' },
+                { valor: 'Números', texto: 'importes que se suman, con la divisa en su columna.' },
+                { valor: 'Gratis', texto: 'incluida en todos los planes de Cord.' },
+            ],
+            chip: { titulo: 'Fila actualizada', linea: 'COT-0152 · Aceros del Norte · Aprobada', monto: '$184,300.00 MXN' },
+        },
+        en: {
+            datos: [
+                { valor: '1 row', texto: 'per quote and invoice, kept current on its own.' },
+                { valor: 'By number', texto: 'Cord finds each row even if you sort or filter.' },
+                { valor: 'Numbers', texto: 'amounts that add up, with currency in its own column.' },
+                { valor: 'Free', texto: 'included in every Cord plan.' },
+            ],
+            chip: { titulo: 'Row updated', linea: 'COT-0152 · Aceros del Norte · Approved', monto: '$184,300.00 MXN' },
+        },
+    },
+    'excel': {
+        brand: { from: '#21a366', to: '#0b3d24', accent: '#107c41' },
+        shot: { x: '8%', y: '10%' },
+        es: {
+            datos: [
+                { valor: '1 fila', texto: 'por cotización y por factura, al día sola.' },
+                { valor: 'Por folio', texto: 'Cord encuentra cada fila aunque ordenes o filtres.' },
+                { valor: 'Números', texto: 'importes que se suman, con la divisa en su columna.' },
+                { valor: 'Gratis', texto: 'incluida en todos los planes de Cord.' },
+            ],
+            chip: { titulo: 'Fila actualizada', linea: 'COT-0152 · Aceros del Norte · Aprobada', monto: '$184,300.00 MXN' },
+        },
+        en: {
+            datos: [
+                { valor: '1 row', texto: 'per quote and invoice, kept current on its own.' },
+                { valor: 'By number', texto: 'Cord finds each row even if you sort or filter.' },
+                { valor: 'Numbers', texto: 'amounts that add up, with currency in its own column.' },
+                { valor: 'Free', texto: 'included in every Cord plan.' },
+            ],
+            chip: { titulo: 'Row updated', linea: 'COT-0152 · Aceros del Norte · Approved', monto: '$184,300.00 MXN' },
+        },
+    },
+    'quickbooks': {
+        brand: { from: '#2ca01c', to: '#0f3d0a', accent: '#108000' },
+        shot: { x: '8%', y: '10%' },
+        es: {
+            datos: [
+                { valor: '1 vez', texto: 'cada factura se registra una sola vez.' },
+                { valor: 'Sin duplicar', texto: 'el cliente se busca primero por correo.' },
+                { valor: 'Al centavo', texto: 'cada línea calculada sobre el precio redondeado.' },
+                { valor: 'Gratis', texto: 'incluida en todos los planes de Cord.' },
+            ],
+            chip: { titulo: 'Factura asentada', linea: 'F-0231 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+        en: {
+            datos: [
+                { valor: 'Once', texto: 'each invoice is recorded a single time.' },
+                { valor: 'No duplicates', texto: 'the customer is looked up by email first.' },
+                { valor: 'To the cent', texto: 'each line computed on the rounded price.' },
+                { valor: 'Free', texto: 'included in every Cord plan.' },
+            ],
+            chip: { titulo: 'Invoice recorded', linea: 'F-0231 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+    },
+    'xero': {
+        brand: { from: '#13b5ea', to: '#063b4d', accent: '#0078c8' },
+        shot: { x: '8%', y: '10%' },
+        es: {
+            datos: [
+                { valor: '1 vez', texto: 'cada factura se registra una sola vez.' },
+                { valor: 'Sin duplicar', texto: 'el cliente se busca primero por correo.' },
+                { valor: 'Al centavo', texto: 'cada línea calculada sobre el precio redondeado.' },
+                { valor: 'Gratis', texto: 'incluida en todos los planes de Cord.' },
+            ],
+            chip: { titulo: 'Factura en borrador', linea: 'F-0231 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+        en: {
+            datos: [
+                { valor: 'Once', texto: 'each invoice is recorded a single time.' },
+                { valor: 'No duplicates', texto: 'the customer is looked up by email first.' },
+                { valor: 'To the cent', texto: 'each line computed on the rounded price.' },
+                { valor: 'Free', texto: 'included in every Cord plan.' },
+            ],
+            chip: { titulo: 'Draft invoice', linea: 'F-0231 · Aceros del Norte', monto: '$184,300.00 MXN' },
+        },
+    },
     whatsapp: {
         brand: { from: '#2fb56a', to: '#053d2b', accent: '#128c7e' },
         shot: { x: '8%', y: '10%' },

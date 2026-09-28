@@ -1,0 +1,61 @@
+---
+title: "QuickBooks Online"
+seoTitle: "Conectar Cord con QuickBooks Online"
+description: "Cómo conectar QuickBooks Online con Cord: qué crea en tu contabilidad (cliente, factura y el servicio Cord), qué no hace todavía, garantías contra duplicados y problemas frecuentes."
+lastUpdated: "2026-09-28"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">QuickBooks Online</h1>
+  <p class="page-subtitle">Cada factura de Cord, asentada en tu QuickBooks con su cliente, sus conceptos y su divisa.</p>
+</header>
+
+## Cómo funciona
+
+Cada factura que emites en Cord aparece en tu contabilidad con su cliente, sus conceptos y su divisa. Dejas de capturar lo mismo dos veces.
+
+**QuickBooks no maneja borradores**: lo que entra queda asentado en tus libros. Por eso Cord solo manda facturas que ya son **definitivas** de su lado.
+
+## Conectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › QuickBooks Online**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar QuickBooks** y autoriza con la cuenta que administra tu empresa.
+3. Al volver verás el nombre de la empresa conectada. Desde ese momento, cada factura nueva viaja sola.
+4. Si ya tenías facturas emitidas, pulsa **Enviar las facturas pendientes** para mandar las últimas 50 que falten.
+</Steps>
+
+## Qué crea en tu contabilidad
+
+| Registro | Detalle |
+|---|---|
+| **Cliente** | Si no existe. Cord lo busca primero por correo y luego por nombre para no duplicarlo, y recuerda el vínculo para las siguientes facturas. |
+| **Factura** | Fecha, vencimiento, divisa y una línea por concepto con el precio negociado y su descuento aplicados. |
+| **Servicio "Cord"** | Se crea una sola vez. QuickBooks exige que cada línea cuelgue de un producto; Cord usa uno solo en vez de llenarte el catálogo. |
+| **Nota privada** | Lleva el folio de Cord. El número de factura es de tu contabilidad y Cord no lo pisa. |
+
+## Qué no hace todavía
+
+- **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
+- **No mapea tus códigos de impuesto.** Revisa el impuesto de la primera factura antes de darla por buena.
+- **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+
+## Garantías
+
+- **Una factura nunca se manda dos veces.** Cord recuerda qué factura quedó registrada y no la repite, aunque el evento se reintente.
+- **Solo viajan facturas definitivas.** Nunca una cotización ni un borrador de Cord.
+- **El importe de cada línea se calcula sobre el precio ya redondeado**, para que la suma cuadre con la de Cord al centavo.
+
+## Desconectar
+
+Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabilidad. Si conectas otra empresa u organización, Cord empieza de cero con ella en vez de reusar lo de la anterior.
+
+## Problemas frecuentes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **La tarjeta pide reconectar** | QuickBooks venció o revocó el acceso. Reconecta; las facturas que faltaron se mandan con **Enviar las facturas pendientes**. |
+| **"0 facturas enviadas"** | No hay facturas definitivas pendientes, o ya estaban todas registradas. |
+| **El impuesto no coincide** | QuickBooks aplica sus propios códigos de impuesto; ajústalo en la primera factura. |
