@@ -88,6 +88,7 @@ export async function quoteListItem(q: Quote, orgId: string) {
         cliente: q.cliente,
         status: q.status,
         total: q.total,
+        moneda: q.baseCurrency ?? null,
         terminos: q.terminos,
         vigencia: q.vigencia,
         creada: q.creada,

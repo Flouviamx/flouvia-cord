@@ -198,8 +198,22 @@ function partirRemitente(from) {
     return { nombre: '', email: texto.trim().toLowerCase() };
 }
 
+var LOGO = CORD + '/favicon-192x192.png';
+var NAVY = '#0a192f';
+
+var ESTADOS = {
+    draft: 'Borrador', sent: 'Enviada', viewed: 'Vista', approved: 'Aprobada', rejected: 'Rechazada',
+    expired: 'Vencida', paid: 'Pagada', invoiced: 'Facturada',
+};
+
+var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
 function encabezado(titulo, subtitulo) {
-    var h = CardService.newCardHeader().setTitle(titulo);
+    var h = CardService.newCardHeader()
+        .setTitle(titulo)
+        .setImageUrl(LOGO)
+        .setImageStyle(CardService.ImageStyle.SQUARE)
+        .setImageAltText('Cord');
     if (subtitulo) h.setSubtitle(subtitulo);
     return h;
 }
@@ -214,32 +228,76 @@ function notificar(mensaje) {
         .build();
 }
 
+function escaparHtml(texto) {
+    return String(texto || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** El importe viaja con su divisa: sin ella es un número, no dinero. */
+function dinero(total, moneda) {
+    var n = Number(total);
+    if (!isFinite(n) || !moneda) return '';
+    var texto;
+    try {
+        texto = new Intl.NumberFormat('es-MX', { style: 'currency', currency: moneda }).format(n);
+    } catch (err) {
+        texto = n.toFixed(2);
+    }
+    return texto.indexOf(moneda) >= 0 ? texto : texto + ' ' + moneda;
+}
+
+function fechaCorta(iso) {
+    var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? Number(m[3]) + ' ' + MESES[Number(m[2]) - 1] + ' ' + m[1] : '';
+}
+
+function boton(texto, estilo) {
+    return CardService.newTextButton().setText(texto).setTextButtonStyle(estilo || CardService.TextButtonStyle.TEXT);
+}
+
+function enlace(url) {
+    return CardService.newOpenLink().setUrl(url);
+}
+
 // ── Tarjeta de conexión ───────────────────────────────────────────────────────
 
 function tarjetaConectar(mensajeError) {
-    var seccion = CardService.newCardSection()
-        .addWidget(textoSimple(
-            'Conecta tu espacio de Cord para crear cotizaciones desde tus correos. '
-            + 'Se autoriza en la pantalla de Cord; no tienes que copiar nada.',
-        ))
-        .addWidget(CardService.newTextButton()
-            .setText('Conectar con Cord')
-            .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-            // Al cerrarse la ventana de Cord, Gmail vuelve a pintar el
-            // complemento y `conectado()` recoge la autorización.
-            .setOpenLink(CardService.newOpenLink()
-                .setUrl(urlAutorizacion())
-                .setOpenAs(CardService.OpenAs.OVERLAY)
-                .setOnClose(CardService.OnClose.RELOAD)))
-        .addWidget(CardService.newTextButton()
-            .setText('Ya autoricé')
-            .setOnClickAction(CardService.newAction().setFunctionName('revisarConexion')));
+    var conectar = boton('Conectar con Cord', CardService.TextButtonStyle.FILLED)
+        .setBackgroundColor(NAVY)
+        // Al cerrarse la ventana de Cord, Gmail vuelve a pintar el complemento
+        // y `conectado()` recoge la autorización.
+        .setOpenLink(enlace(urlAutorizacion())
+            .setOpenAs(CardService.OpenAs.OVERLAY)
+            .setOnClose(CardService.OnClose.RELOAD));
 
-    if (mensajeError) seccion.addWidget(textoSimple('<font color="#b3261e">' + mensajeError + '</font>'));
+    var seccion = CardService.newCardSection()
+        .addWidget(textoSimple('<b>De la propuesta al pago, desde tu correo.</b>'))
+        .addWidget(CardService.newDecoratedText()
+            .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.PERSON))
+            .setText('Mira si quien te escribe ya es tu cliente')
+            .setWrapText(true))
+        .addWidget(CardService.newDecoratedText()
+            .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.DESCRIPTION))
+            .setText('Crea su cotización de un clic')
+            .setWrapText(true))
+        .addWidget(CardService.newDecoratedText()
+            .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.EMAIL))
+            .setText('Inserta el link de una cotización mientras escribes')
+            .setWrapText(true));
+
+    if (mensajeError) seccion.addWidget(textoSimple('<font color="#b3261e">' + escaparHtml(mensajeError) + '</font>'));
+
+    var nota = CardService.newCardSection().addWidget(textoSimple(
+        '<font color="#6b7280">Autorizas en la pantalla de Cord; no copias ninguna llave. Cord lee solo el remitente y el asunto del correo abierto.</font>',
+    ));
 
     return CardService.newCardBuilder()
-        .setHeader(encabezado('Conecta tu cuenta de Cord'))
+        .setHeader(encabezado('Cord', 'Conecta tu espacio de trabajo'))
         .addSection(seccion)
+        .addSection(nota)
+        .setFixedFooter(CardService.newFixedFooter()
+            .setPrimaryButton(conectar)
+            .setSecondaryButton(boton('Ya autoricé')
+                .setOnClickAction(CardService.newAction().setFunctionName('revisarConexion'))))
         .build();
 }
 
@@ -285,6 +343,33 @@ function exigirPermisos() {
     ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);
 }
 
+function expirada(mensaje) {
+    borrarTokens();
+    return tarjetaConectar(mensaje || 'La conexión con Cord venció o se revocó. Vuelve a conectar.');
+}
+
+function buscarCliente(email) {
+    var r = cordFetch('/api/v1/clientes?email=' + encodeURIComponent(email) + '&limit=1');
+    var cliente = r.ok && r.data && r.data.data && r.data.data[0] ? r.data.data[0] : null;
+    return { r: r, cliente: cliente };
+}
+
+function listarCotizaciones(clienteId, limite) {
+    var r = cordFetch('/api/v1/cotizaciones?limit=' + limite + (clienteId ? '&cliente_id=' + encodeURIComponent(clienteId) : ''));
+    return { r: r, lista: r.ok && r.data && r.data.data ? r.data.data : [] };
+}
+
+/** Una fila de cotización: folio y estado arriba, importe al centro, cliente abajo. */
+function filaCotizacion(q) {
+    var arriba = q.folio + '  ·  ' + (ESTADOS[q.status] || q.status);
+    var importe = dinero(q.total, q.moneda);
+    return CardService.newDecoratedText()
+        .setTopLabel(arriba)
+        .setText('<b>' + escaparHtml(importe || q.folio) + '</b>')
+        .setBottomLabel(q.cliente || '')
+        .setWrapText(true);
+}
+
 // ── Inicio ────────────────────────────────────────────────────────────────────
 
 function onHomepage() {
@@ -293,20 +378,33 @@ function onHomepage() {
 }
 
 function tarjetaInicio() {
-    var seccion = CardService.newCardSection()
-        .addWidget(textoSimple(
-            'Abre un correo de un cliente y Cord te deja crear su cotización sin salir de Gmail.',
-        ))
-        .addWidget(CardService.newTextButton()
-            .setText('Abrir Cord')
-            .setOpenLink(CardService.newOpenLink().setUrl(CORD + '/app')))
-        .addWidget(CardService.newTextButton()
-            .setText('Desconectar')
-            .setOnClickAction(CardService.newAction().setFunctionName('desconectar')));
+    var datos = listarCotizaciones(null, 5);
+    if (datos.r.status === 401) return expirada();
+
+    var seccion = CardService.newCardSection().setHeader('Cotizaciones recientes');
+    if (!datos.r.ok) {
+        seccion.addWidget(textoSimple(mensajeDeError(datos.r, 'No se pudieron traer tus cotizaciones.')));
+    } else if (!datos.lista.length) {
+        seccion.addWidget(textoSimple('Todavía no tienes cotizaciones. Abre el correo de un cliente para crear la primera.'));
+    }
+    datos.lista.forEach(function (q) {
+        seccion.addWidget(filaCotizacion(q).setOpenLink(enlace(CORD + '/app/cotizaciones/' + q.id)));
+    });
+
+    var ayuda = CardService.newCardSection().addWidget(textoSimple(
+        '<font color="#6b7280">Abre el correo de un cliente para crear su cotización, o usa Cord al redactar para insertar un link.</font>',
+    ));
 
     return CardService.newCardBuilder()
         .setHeader(encabezado('Cord', 'Conectado'))
         .addSection(seccion)
+        .addSection(ayuda)
+        .setFixedFooter(CardService.newFixedFooter()
+            .setPrimaryButton(boton('Abrir Cord', CardService.TextButtonStyle.FILLED)
+                .setBackgroundColor(NAVY)
+                .setOpenLink(enlace(CORD + '/app')))
+            .setSecondaryButton(boton('Desconectar')
+                .setOnClickAction(CardService.newAction().setFunctionName('desconectar'))))
         .build();
 }
 
@@ -330,44 +428,59 @@ function onGmailMessage(e) {
             .build();
     }
 
-    var busqueda = cordFetch('/api/v1/clientes?email=' + encodeURIComponent(quien.email) + '&limit=1');
-    if (busqueda.status === 401) {
-        borrarTokens();
-        return tarjetaConectar('La conexión con Cord venció o se revocó. Vuelve a conectar.');
+    var b = buscarCliente(quien.email);
+    if (b.r.status === 401) return expirada();
+    if (!b.r.ok) {
+        return CardService.newCardBuilder()
+            .setHeader(encabezado('Cord'))
+            .addSection(CardService.newCardSection().addWidget(
+                textoSimple(mensajeDeError(b.r, 'No se pudo consultar Cord. Inténtalo otra vez.')),
+            ))
+            .build();
+    }
+    var cliente = b.cliente;
+
+    var persona = CardService.newCardSection()
+        .addWidget(CardService.newDecoratedText()
+            .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.PERSON))
+            .setTopLabel(cliente ? 'Cliente en Cord' : 'Todavía no es tu cliente')
+            .setText('<b>' + escaparHtml(cliente ? (cliente.empresa || quien.email) : (quien.nombre || quien.email)) + '</b>')
+            .setBottomLabel(quien.email)
+            .setWrapText(true));
+    if (cliente) {
+        persona.addWidget(boton('Ver cliente en Cord').setOpenLink(enlace(CORD + '/app/clientes/' + cliente.id)));
     }
 
-    var cliente = busqueda.ok && busqueda.data && busqueda.data.data && busqueda.data.data[0]
-        ? busqueda.data.data[0]
-        : null;
-
-    var seccion = CardService.newCardSection();
-    seccion.addWidget(CardService.newDecoratedText()
-        .setTopLabel(cliente ? 'Cliente en Cord' : 'Todavía no es tu cliente')
-        .setText(cliente ? (cliente.empresa || quien.email) : (quien.nombre || quien.email))
-        .setBottomLabel(quien.email)
-        .setWrapText(true));
-
-    seccion.addWidget(CardService.newTextButton()
-        .setText(cliente ? 'Crear cotización' : 'Crear cliente y cotización')
-        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-        .setOnClickAction(CardService.newAction()
-            .setFunctionName('crearCotizacion')
-            .setParameters({
-                email: quien.email,
-                nombre: quien.nombre || '',
-                asunto: asunto,
-                clienteId: cliente ? String(cliente.id) : '',
-            })));
+    var tarjeta = CardService.newCardBuilder()
+        .setHeader(encabezado('Cord', asunto ? asunto.slice(0, 80) : 'Correo abierto'))
+        .addSection(persona);
 
     if (cliente) {
-        seccion.addWidget(CardService.newTextButton()
-            .setText('Ver en Cord')
-            .setOpenLink(CardService.newOpenLink().setUrl(CORD + '/app/clientes/' + cliente.id)));
+        var datos = listarCotizaciones(cliente.id, 3);
+        var historial = CardService.newCardSection().setHeader('Sus cotizaciones');
+        if (!datos.lista.length) historial.addWidget(textoSimple('<font color="#6b7280">Todavía no tiene cotizaciones.</font>'));
+        datos.lista.forEach(function (q) {
+            historial.addWidget(filaCotizacion(q).setOpenLink(enlace(CORD + '/app/cotizaciones/' + q.id)));
+        });
+        tarjeta.addSection(historial);
+    } else {
+        tarjeta.addSection(CardService.newCardSection().addWidget(textoSimple(
+            '<font color="#6b7280">Al crear la cotización, Cord lo da de alta con su nombre y correo.</font>',
+        )));
     }
 
-    return CardService.newCardBuilder()
-        .setHeader(encabezado('Cord'))
-        .addSection(seccion)
+    return tarjeta
+        .setFixedFooter(CardService.newFixedFooter().setPrimaryButton(
+            boton(cliente ? 'Crear cotización' : 'Crear cliente y cotización', CardService.TextButtonStyle.FILLED)
+                .setBackgroundColor(NAVY)
+                .setOnClickAction(CardService.newAction()
+                    .setFunctionName('crearCotizacion')
+                    .setParameters({
+                        email: quien.email,
+                        nombre: quien.nombre || '',
+                        asunto: asunto,
+                        clienteId: cliente ? String(cliente.id) : '',
+                    }))))
         .build();
 }
 
@@ -407,14 +520,19 @@ function crearCotizacion(e) {
     }
 
     var datos = cotizacion.data.data;
+    var url = CORD + '/app/cotizaciones/' + datos.id;
     var tarjeta = CardService.newCardBuilder()
         .setHeader(encabezado('Cotización creada', datos.folio || ''))
         .addSection(CardService.newCardSection()
-            .addWidget(textoSimple('Ábrela en Cord para poner los productos y el precio, y mandarla.'))
-            .addWidget(CardService.newTextButton()
-                .setText('Abrir ' + (datos.folio || 'la cotización'))
-                .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-                .setOpenLink(CardService.newOpenLink().setUrl(CORD + '/app/cotizaciones/' + datos.id))))
+            .addWidget(CardService.newDecoratedText()
+                .setStartIcon(CardService.newIconImage().setIcon(CardService.Icon.DESCRIPTION))
+                .setTopLabel('Borrador')
+                .setText('<b>' + escaparHtml(datos.folio || 'Cotización') + '</b>')
+                .setBottomLabel(p.nombre || p.email || '')
+                .setWrapText(true))
+            .addWidget(textoSimple('<font color="#6b7280">Agrega los productos y el precio en Cord, y envíala desde ahí.</font>')))
+        .setFixedFooter(CardService.newFixedFooter().setPrimaryButton(
+            boton('Terminar en Cord', CardService.TextButtonStyle.FILLED).setBackgroundColor(NAVY).setOpenLink(enlace(url))))
         .build();
 
     return CardService.newActionResponseBuilder()
@@ -425,15 +543,6 @@ function crearCotizacion(e) {
 
 // ── Al redactar ───────────────────────────────────────────────────────────────
 
-var ESTADOS = {
-    sent: 'Enviada', viewed: 'Vista', approved: 'Aprobada', rejected: 'Rechazada',
-    expired: 'Vencida', paid: 'Pagada', invoiced: 'Facturada',
-};
-
-function escaparHtml(texto) {
-    return String(texto || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 function onGmailCompose(e) {
     exigirPermisos();
     if (!conectado()) return [tarjetaConectar()];
@@ -442,58 +551,69 @@ function onGmailCompose(e) {
     var email = para.length ? partirRemitente(para[0]).email : '';
     var cliente = null;
     if (email) {
-        var busqueda = cordFetch('/api/v1/clientes?email=' + encodeURIComponent(email) + '&limit=1');
-        if (busqueda.status === 401) {
-            borrarTokens();
-            return [tarjetaConectar('La conexión con Cord venció o se revocó. Vuelve a conectar.')];
-        }
-        cliente = busqueda.ok && busqueda.data && busqueda.data.data && busqueda.data.data[0] ? busqueda.data.data[0] : null;
+        var b = buscarCliente(email);
+        if (b.r.status === 401) return [expirada()];
+        cliente = b.cliente;
     }
 
-    var lista = cordFetch('/api/v1/cotizaciones?limit=25' + (cliente ? '&cliente_id=' + encodeURIComponent(cliente.id) : ''));
-    if (lista.status === 401) {
-        borrarTokens();
-        return [tarjetaConectar('La conexión con Cord venció o se revocó. Vuelve a conectar.')];
-    }
+    var datos = listarCotizaciones(cliente ? cliente.id : null, 25);
+    if (datos.r.status === 401) return [expirada()];
     // Un borrador todavía no tiene una página que el cliente pueda abrir.
-    var cotizaciones = (lista.ok && lista.data && lista.data.data ? lista.data.data : [])
+    var cotizaciones = datos.lista
         .filter(function (q) { return q.status !== 'draft' && q.link_publico; })
         .slice(0, 10);
 
-    var seccion = CardService.newCardSection()
-        .setHeader(cliente ? 'Cotizaciones de ' + (cliente.empresa || email) : 'Cotizaciones recientes');
-
-    if (!lista.ok) {
-        seccion.addWidget(textoSimple(mensajeDeError(lista, 'No se pudieron traer tus cotizaciones de Cord. Inténtalo otra vez.')));
+    var seccion = CardService.newCardSection();
+    if (!datos.r.ok) {
+        seccion.addWidget(textoSimple(mensajeDeError(datos.r, 'No se pudieron traer tus cotizaciones de Cord. Inténtalo otra vez.')));
     } else if (!cotizaciones.length) {
         seccion.addWidget(textoSimple(cliente
             ? 'Este cliente todavía no tiene cotizaciones enviadas.'
             : 'Todavía no tienes cotizaciones enviadas.'));
     }
 
-    cotizaciones.forEach(function (q) {
-        seccion.addWidget(CardService.newDecoratedText()
-            .setTopLabel(ESTADOS[q.status] || q.status)
-            .setText(q.folio)
-            .setBottomLabel(q.cliente || '')
-            .setWrapText(true)
-            .setButton(CardService.newTextButton()
-                .setText('Insertar')
+    cotizaciones.forEach(function (q, i) {
+        if (i > 0) seccion.addWidget(CardService.newDivider());
+        seccion.addWidget(filaCotizacion(q)
+            .setButton(boton('Insertar', CardService.TextButtonStyle.FILLED)
+                .setBackgroundColor(NAVY)
                 .setOnClickAction(CardService.newAction()
-                    .setFunctionName('insertarLink')
-                    .setParameters({ link: q.link_publico, folio: q.folio }))));
+                    .setFunctionName('insertarCotizacion')
+                    .setParameters({
+                        link: q.link_publico,
+                        folio: q.folio || '',
+                        cliente: q.cliente || '',
+                        importe: dinero(q.total, q.moneda),
+                        vigencia: fechaCorta(q.vigencia),
+                    }))));
     });
 
+    var subtitulo = cliente ? 'Para ' + (cliente.empresa || email) : 'Tus cotizaciones enviadas';
     return [CardService.newCardBuilder()
-        .setHeader(encabezado('Insertar cotización'))
+        .setHeader(encabezado('Insertar cotización', subtitulo))
         .addSection(seccion)
         .build()];
 }
 
-function insertarLink(e) {
+/**
+ * Inserta una tarjeta de la cotización, no un link suelto. Es HTML de correo:
+ * tablas y estilos en línea, porque los clientes de correo ignoran el CSS externo.
+ */
+function insertarCotizacion(e) {
     var p = e.parameters || {};
     if (!/^https:\/\//.test(p.link || '')) return notificar('Esa cotización no tiene un link válido.');
-    var html = '<a href="' + escaparHtml(p.link) + '">Ver cotización ' + escaparHtml(p.folio) + '</a>';
+    var link = escaparHtml(p.link);
+    var detalle = [p.cliente, p.vigencia ? 'Vigente hasta el ' + p.vigencia : ''].filter(Boolean).map(escaparHtml).join(' &middot; ');
+    var html = ''
+        + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border:1px solid #e5e7eb;border-radius:16px;max-width:460px;width:100%;margin:12px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Helvetica,Arial,sans-serif">'
+        + '<tr><td style="padding:22px 24px">'
+        + '<div style="font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#8a93a3">Cotización ' + escaparHtml(p.folio) + '</div>'
+        + (p.importe ? '<div style="font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#050505;margin:8px 0 4px">' + escaparHtml(p.importe) + '</div>' : '')
+        + (detalle ? '<div style="font-size:13px;line-height:1.5;color:#5b6472">' + detalle + '</div>' : '')
+        + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px"><tr>'
+        + '<td style="border-radius:999px;background:#0a192f"><a href="' + link + '" style="display:inline-block;padding:11px 22px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:999px">Ver cotización</a></td>'
+        + '</tr></table>'
+        + '</td></tr></table><br>';
     return CardService.newUpdateDraftActionResponseBuilder()
         .setUpdateDraftBodyAction(CardService.newUpdateDraftBodyAction()
             .addUpdateContent(html, CardService.ContentType.MUTABLE_HTML)
