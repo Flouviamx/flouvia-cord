@@ -1,0 +1,109 @@
+---
+title: "OAuth para apps"
+seoTitle: "OAuth 2.0 de Cord para apps de terceros"
+description: "Cómo una app externa se conecta a Cord con OAuth 2.0 en vez de pedir una llave: registro del cliente, autorización, canje de código, PKCE, renovación con rotación y revocación."
+---
+
+<header class="content-header">
+  <h1 class="page-title">OAuth para apps</h1>
+  <p class="page-subtitle">Tu app se conecta a la cuenta de Cord de un negocio con un clic, sin que nadie copie una llave.</p>
+</header>
+
+## Cuándo usarlo
+
+Si construyes una app que muchos negocios van a conectar con su Cord —un conector, un complemento, una plataforma de automatización—, usa OAuth 2.0 en lugar de pedirles una llave de API. La persona autoriza en una pantalla de Cord, elige el espacio de trabajo y puede revocar el acceso cuando quiera. Es el mismo mecanismo que usan las apps de Cord en Zapier, Make y el complemento de Gmail.
+
+Para una integración de tu propio negocio, una [llave de API](/docs/desarrolladores/empezar/apikey) es más simple.
+
+## Registrar tu app
+
+El registro de clientes OAuth todavía no es de autoservicio. Escríbenos a contacto@cordhq.app con el nombre de tu app, su dominio y las direcciones de regreso (`redirect_uri`) exactas. Te damos un `client_id` y un `client_secret`. Guarda el secreto en tu servidor: Cord solo conserva su huella y no puede volver a mostrarlo.
+
+Las direcciones de regreso deben ser `https` (o `http://localhost` para desarrollo) y se comparan exactas, sin comodines.
+
+## 1. Pide la autorización
+
+Manda a la persona a:
+
+```
+https://cordhq.app/oauth/authorize
+  ?response_type=code
+  &client_id=cord_oc_...
+  &redirect_uri=https://tuapp.com/cord/callback
+  &scope=write
+  &state=VALOR_ALEATORIO
+  &code_challenge=...            (opcional, PKCE)
+  &code_challenge_method=S256    (opcional, PKCE)
+```
+
+| Parámetro | Detalle |
+|---|---|
+| `scope` | `read` para solo lectura; `write` para lectura y escritura. |
+| `state` | Un valor aleatorio que tu app verifica al regreso. Evita que un tercero te inyecte una autorización. |
+| `code_challenge` | PKCE con `S256`. Recomendado siempre; `plain` no se acepta. |
+
+Si la persona no tiene sesión, Cord le pide iniciarla y regresa a la misma pantalla. Solo quien tiene el permiso de **Ajustes** en un espacio de trabajo puede autorizar apps en él. La pantalla muestra qué podrá hacer tu app y qué no.
+
+Al autorizar, Cord regresa a tu `redirect_uri` con `?code=...&state=...`. Si la persona cancela, regresa con `?error=access_denied&state=...`.
+
+## 2. Canjea el código
+
+El código dura **5 minutos** y sirve **una sola vez**. Canjéalo desde tu servidor:
+
+```bash
+curl -X POST "https://cordhq.app/api/oauth/token" \
+     -d grant_type=authorization_code \
+     -d code=cord_ac_... \
+     -d redirect_uri=https://tuapp.com/cord/callback \
+     -d client_id=cord_oc_... \
+     -d client_secret=cord_cs_... \
+     -d code_verifier=...
+```
+
+También puedes mandar las credenciales del cliente con autenticación HTTP Basic.
+
+```json
+{ "access_token": "cord_at_...", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "cord_rt_...", "scope": "write" }
+```
+
+## 3. Llama a la API
+
+El `access_token` funciona como una llave en toda la [API v1](/docs/desarrolladores/empezar/resumen) y en el [servidor MCP](/docs/desarrolladores/herramientas/mcp):
+
+```bash
+curl "https://cordhq.app/api/v1/me" -H "Authorization: Bearer cord_at_..."
+```
+
+## 4. Renueva el acceso
+
+El access token dura **1 hora**. Renuévalo con el refresh token, que dura **180 días**:
+
+```bash
+curl -X POST "https://cordhq.app/api/oauth/token" \
+     -d grant_type=refresh_token \
+     -d refresh_token=cord_rt_... \
+     -d client_id=cord_oc_... \
+     -d client_secret=cord_cs_...
+```
+
+**Cada renovación entrega un refresh token nuevo y el anterior deja de servir.** Guarda siempre el nuevo. Si un refresh token ya usado se presenta de nuevo pasados 30 segundos, Cord lo trata como posible robo y revoca la conexión completa; la persona tendrá que volver a autorizar.
+
+## 5. Revoca
+
+```bash
+curl -X POST "https://cordhq.app/api/oauth/revoke" \
+     -d token=cord_rt_... -d client_id=cord_oc_... -d client_secret=cord_cs_...
+```
+
+Responde `200` aunque el token no exista, para no revelar qué tokens son válidos. La persona también puede revocar tu app en **Ajustes › Modo desarrollador**, entre las conexiones autorizadas.
+
+## Límites y errores
+
+| Situación | Respuesta |
+|---|---|
+| Credenciales del cliente inválidas | `401` con `error: "invalid_client"` |
+| Código o refresh token vencido, usado o de otro cliente | `400` con `error: "invalid_grant"` |
+| `grant_type` distinto de `authorization_code` o `refresh_token` | `400` con `error: "unsupported_grant_type"` |
+| El espacio ya tiene 25 conexiones vivas de tu app | `400` con `error: "invalid_request"`; la persona debe revocar las que no use |
+
+Las llamadas con un token de OAuth cuentan contra la cuota de API del plan del negocio, igual que una llave.

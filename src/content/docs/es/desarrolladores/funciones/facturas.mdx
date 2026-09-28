@@ -1,0 +1,119 @@
+---
+title: "API de Facturas"
+seoTitle: "API de facturas de Cord"
+description: "Lista, crea, emite, envía, cobra y anula facturas desde tu sistema con la API v1 de Cord: borradores, emisión irreversible, pagos parciales y notas de crédito."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Facturas</h1>
+  <p class="page-subtitle">El ciclo completo de una factura desde tu sistema: borrador, emisión, envío, cobro y cancelación.</p>
+</header>
+
+## Descripción general
+
+Una factura nace como **borrador** y solo se vuelve definitiva cuando la emites. Emitir es una acción explícita e irreversible: consume el timbrado de tu plan cuando aplica (CFDI en México) y deja la factura con su número. Crear nunca emite por sí solo.
+
+La API de facturas requiere que tu plan incluya la facturación de tu país; si no, responde `402`.
+
+## Listar facturas
+
+`GET /api/v1/facturas` con estos filtros opcionales:
+
+| Parámetro | Qué hace |
+|---|---|
+| `estado` | Filtra por estado de la factura. |
+| `cliente` | Id del cliente. |
+| `desde`, `hasta` | Rango de fechas `YYYY-MM-DD`. |
+| `q` | Busca por número o cliente. |
+| `limit` | De 1 a 200; por defecto 50. |
+| `cursor` | El `next_cursor` de la página anterior. |
+
+La paginación es por cursor, no por desplazamiento: una factura nueva no mueve la página que estás leyendo.
+
+```bash
+curl "https://cordhq.app/api/v1/facturas?limit=20" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
+      "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
+      "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d...", "creada": "2026-09-15T18:02:11.000Z"
+    }
+  ],
+  "meta": { "next_cursor": "MjAyNi0w..." }
+}
+```
+
+| Campo | Valores |
+|---|---|
+| `estado` | `draft` (borrador), `open` (emitida y por cobrar), `paid` (pagada), `void` (anulada) o `uncollectible` (incobrable). |
+| `estado_fiscal` | `pending`, `issued` (registrada ante el proveedor fiscal), `cancelled` o `error`. |
+| `tipo` | `cfdi_40` (CFDI en México) o `invoice` (factura comercial). |
+
+## Crear un borrador
+
+`POST /api/v1/facturas` crea un borrador. Requiere una llave con escritura y acepta `Idempotency-Key`.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| `cliente_id` | Sí | Un cliente de tu organización. |
+| `items` | Sí | De 1 al máximo por factura. Cada uno con `descripcion` y `cantidad`; opcionales `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` y `tax_rate`. |
+| `currency` | No | Divisa de la factura; por defecto la de tu cuenta. |
+| `due_date` | No | Vencimiento en `YYYY-MM-DD`. |
+| `notas` | No | Hasta 1000 caracteres. |
+| `iva_incluido` | No | `true` si los precios ya traen el impuesto. |
+
+`tax_rate` es una fracción (`0.16`, no `16`) y se valida contra tu catálogo de impuestos: no puedes declarar una línea exenta en una venta gravada. `0` significa exenta a propósito; omitirla usa la tasa de tu cuenta.
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/facturas" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: factura-pedido-8812" \
+     -d '{
+       "cliente_id": "9b2e...",
+       "currency": "MXN",
+       "due_date": "2026-10-15",
+       "items": [{ "descripcion": "Varilla 3/8\"", "cantidad": 120, "precio_unitario": 42, "tax_rate": 0.16 }]
+     }'
+```
+
+```json
+{ "data": { "id": "f3a1..." } }
+```
+
+Si la factura va en otra divisa que tu divisa contable y no se puede obtener un tipo de cambio verificable, responde `503` con `code: "fx_unavailable"`: reintenta más tarde, Cord no inventa una tasa.
+
+## Consultar una factura
+
+`GET /api/v1/facturas/{id}` devuelve los campos del listado más `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `emisor`, `receptor`, `conceptos` y `pagos`.
+
+## Cambiar el estado
+
+`POST /api/v1/facturas/{id}` con `action`:
+
+| `action` | Qué hace | Campos |
+|---|---|---|
+| `finalize` | Emite la factura. Irreversible; timbra el CFDI en México cuando aplica. | — |
+| `send` | Envía el correo de la factura con su PDF al cliente. Exige una factura emitida y un cliente con correo. | — |
+| `payment` | Registra un pago, total o parcial. | `monto`, `moneda`, `metodo` (por defecto `manual`), `referencia` |
+| `void` | Anula la factura. | `motivo` |
+| `credit_note` | Emite una nota de crédito sobre la factura. | `monto` (opcional; sin él, por el total), `motivo` |
+
+`payment` responde con lo pagado, el saldo y el estado resultante. Un pago que liquida la factura dispara el evento `invoice.paid`.
+
+Si una factura ya timbrada no puede anularse directamente, `void` responde `409` con `code: "credit_note_required"`: emite una nota de crédito.
+
+## Errores frecuentes
+
+| Código | Cuándo |
+|---|---|
+| `invalid_request` (400) | Falta `cliente_id` o `items`, una línea no trae descripción o cantidad, o `due_date` no es `YYYY-MM-DD`. |
+| `invalid_state` (409) | La acción no aplica al estado actual (por ejemplo, enviar un borrador). |
+| `provider_error` (502) | El proveedor fiscal rechazó la emisión; el mensaje dice por qué. |
+| `fx_unavailable`, `tax_catalog_unavailable` (503) | No hay tipo de cambio verificable o no se pudo leer tu catálogo de impuestos. Reintenta. |

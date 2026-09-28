@@ -1,0 +1,59 @@
+---
+title: "API de Eventos"
+seoTitle: "API de eventos y verificación de llave de Cord"
+description: "Consulta el historial de eventos de tu negocio con la API v1 de Cord para reconciliar webhooks perdidos, y verifica a qué organización pertenece una llave con /me."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Eventos</h1>
+  <p class="page-subtitle">El historial de lo que pasó en tu negocio, para reconciliar lo que tus webhooks no alcanzaron a entregar.</p>
+</header>
+
+## Historial de eventos
+
+`GET /api/v1/events` devuelve los eventos de tu organización, del más nuevo al más viejo. Son los mismos que entregan los [webhooks](/docs/desarrolladores/herramientas/webhooks): si tu servidor estuvo caído, aquí recuperas lo que te perdiste.
+
+| Parámetro | Qué hace |
+|---|---|
+| `type` | Un tipo de evento, por ejemplo `quote.approved`. Un tipo desconocido responde `400`. |
+| `object_id` | El id (UUID) del objeto: la historia de una cotización o una factura. |
+| `limit` | De 1 a 200; por defecto 50. |
+| `cursor` | El `next_cursor` de la página anterior. |
+
+```bash
+curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=10" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "e81c...",
+      "type": "quote.approved",
+      "object": "quote",
+      "object_id": "2a9d...",
+      "data": { "folio": "COT-00104", "total": 6000, "moneda": "MXN" },
+      "actor": "client",
+      "created_at": "2026-09-20T16:41:07.512Z"
+    }
+  ],
+  "meta": { "next_cursor": "MjAyNi0w..." }
+}
+```
+
+La paginación es por cursor y estable: un evento nuevo no desplaza la página que estás leyendo. Requiere una llave de lectura.
+
+## Verificar una llave
+
+`GET /api/v1/me` es la llamada más simple de la API: confirma que la llave es válida y te dice a qué organización pertenece, su permiso y su modo.
+
+```bash
+curl "https://cordhq.app/api/v1/me" -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{ "data": { "org": { "id": "6f65...", "nombre": "Aceros del Norte", "plan": "pro" }, "scope": "write", "mode": "live" } }
+```
+
+Úsala para probar una credencial antes de guardarla en tu integración.

@@ -1,0 +1,119 @@
+---
+title: "Invoices API"
+seoTitle: "Cord invoices API"
+description: "List, create, issue, send, collect and void invoices from your system with Cord's API v1: drafts, irreversible issuing, partial payments and credit notes."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Invoices</h1>
+  <p class="page-subtitle">An invoice's full lifecycle from your system: draft, issue, send, collect and cancel.</p>
+</header>
+
+## Overview
+
+An invoice is born as a **draft** and only becomes final when you issue it. Issuing is an explicit, irreversible action: it uses your plan's stamping when it applies (CFDI in Mexico) and gives the invoice its number. Creating never issues on its own.
+
+The invoices API requires your plan to include invoicing for your country; otherwise it responds `402`.
+
+## List invoices
+
+`GET /api/v1/facturas` with these optional filters:
+
+| Parameter | What it does |
+|---|---|
+| `estado` | Filters by invoice status. |
+| `cliente` | Client id. |
+| `desde`, `hasta` | Date range `YYYY-MM-DD`. |
+| `q` | Searches by number or client. |
+| `limit` | From 1 to 200; defaults to 50. |
+| `cursor` | The previous page's `next_cursor`. |
+
+Pagination is cursor-based, not offset-based: a new invoice never shifts the page you are reading.
+
+```bash
+curl "https://cordhq.app/api/v1/facturas?limit=20" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
+      "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
+      "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d...", "creada": "2026-09-15T18:02:11.000Z"
+    }
+  ],
+  "meta": { "next_cursor": "MjAyNi0w..." }
+}
+```
+
+| Field | Values |
+|---|---|
+| `estado` | `draft`, `open` (issued and awaiting payment), `paid`, `void` or `uncollectible`. |
+| `estado_fiscal` | `pending`, `issued` (registered with the tax provider), `cancelled` or `error`. |
+| `tipo` | `cfdi_40` (CFDI in Mexico) or `invoice` (commercial invoice). |
+
+## Create a draft
+
+`POST /api/v1/facturas` creates a draft. It needs a write key and accepts `Idempotency-Key`.
+
+| Field | Required | Detail |
+|---|---|---|
+| `cliente_id` | Yes | A client in your organization. |
+| `items` | Yes | From 1 up to the per-invoice maximum. Each with `descripcion` and `cantidad`; optional `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` and `tax_rate`. |
+| `currency` | No | Invoice currency; defaults to your account's. |
+| `due_date` | No | Due date as `YYYY-MM-DD`. |
+| `notas` | No | Up to 1000 characters. |
+| `iva_incluido` | No | `true` if prices already include tax. |
+
+`tax_rate` is a fraction (`0.16`, not `16`) and is validated against your tax catalog: you cannot declare an exempt line on a taxed sale. `0` means deliberately exempt; omitting it uses your account's rate.
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/facturas" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: invoice-order-8812" \
+     -d '{
+       "cliente_id": "9b2e...",
+       "currency": "USD",
+       "due_date": "2026-10-15",
+       "items": [{ "descripcion": "Rebar 3/8\"", "cantidad": 120, "precio_unitario": 4.2, "tax_rate": 0.0825 }]
+     }'
+```
+
+```json
+{ "data": { "id": "f3a1..." } }
+```
+
+If the invoice is in a currency other than your ledger currency and no verifiable exchange rate can be obtained, it responds `503` with `code: "fx_unavailable"`: retry later, Cord never makes up a rate.
+
+## Get an invoice
+
+`GET /api/v1/facturas/{id}` returns the list fields plus `subtotal`, `impuestos`, `moneda_contable`, `tipo_cambio`, `total_contable`, `notas`, `emisor`, `receptor`, `conceptos` and `pagos`.
+
+## Change status
+
+`POST /api/v1/facturas/{id}` with `action`:
+
+| `action` | What it does | Fields |
+|---|---|---|
+| `finalize` | Issues the invoice. Irreversible; stamps the CFDI in Mexico when it applies. | — |
+| `send` | Emails the invoice with its PDF to the client. Requires an issued invoice and a client with an email. | — |
+| `payment` | Records a full or partial payment. | `monto`, `moneda`, `metodo` (defaults to `manual`), `referencia` |
+| `void` | Voids the invoice. | `motivo` |
+| `credit_note` | Issues a credit note against the invoice. | `monto` (optional; without it, for the total), `motivo` |
+
+`payment` responds with the amount paid, the balance and the resulting status. A payment that settles the invoice fires the `invoice.paid` event.
+
+If an already stamped invoice cannot be voided directly, `void` responds `409` with `code: "credit_note_required"`: issue a credit note instead.
+
+## Common errors
+
+| Code | When |
+|---|---|
+| `invalid_request` (400) | `cliente_id` or `items` is missing, a line has no description or quantity, or `due_date` is not `YYYY-MM-DD`. |
+| `invalid_state` (409) | The action does not apply to the current status (for example, sending a draft). |
+| `provider_error` (502) | The tax provider rejected issuing; the message says why. |
+| `fx_unavailable`, `tax_catalog_unavailable` (503) | No verifiable exchange rate, or your tax catalog could not be read. Retry. |
