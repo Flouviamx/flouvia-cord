@@ -208,9 +208,16 @@ permiso delegado `Files.ReadWrite` al registro de la app; sin eso, la
 autorización se completa pero la escritura responde "sin permiso".
 
 **Falta:**
-- [ ] Claude: agregar `Files.ReadWrite` a la app de Entra `Cord`
-  (`9c8b8fe6-8096-48a2-b991-32f978c12a9a`) con el CLI de Azure. Necesita que
-  André vuelva a hacer `az login` porque el token de Graph caduca.
+- [x] `Files.ReadWrite` agregado a la app de Entra `Cord`
+  (`9c8b8fe6-8096-48a2-b991-32f978c12a9a`) y consentimiento de administrador
+  dado, desde el portal. **El CLI de Azure no sirve en este tenant**: el inicio
+  de sesión normal pide entrar a Azure Resource Manager y la cuenta es
+  administradora de Microsoft 365 sin suscripción de Azure, así que responde
+  "no tiene permiso para acceder a este recurso". El portal de Entra sí funciona.
+- [x] Registrar en esa app la URL de retorno de las hojas
+  (`/api/integraciones/hojas/callback`, producción y localhost): reusar el
+  registro de Teams comparte los permisos pero NO las URL de retorno, y sin ella
+  Microsoft responde `AADSTS50011`.
 - [ ] André: crear el cliente OAuth de Google (proyecto en Google Cloud, APIs de
   Sheets y Drive habilitadas, tipo "Aplicación web", URI de redirección
   `https://cordhq.app/api/integraciones/hojas/callback`, permiso `drive.file`) y

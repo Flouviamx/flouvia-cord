@@ -146,6 +146,13 @@ documento se lee una vez y se escribe en cada una. Por dentro comparten motor
 - **Qué columna lleva dinero se DERIVA de la cabecera** (`columnasMonto()`), no
   se escribe a mano: mover una columna movería el formato a la equivocada.
 
+- **Excel reusa la app de Entra de Teams, y eso obliga a registrar SU retorno.**
+  Los permisos se piden por autorización, así que compartir el registro es
+  correcto; lo que no se hereda es la URL de retorno. La app `Cord`
+  (`9c8b8fe6-8096-48a2-b991-32f978c12a9a`) necesita las cuatro:
+  `/api/integraciones/teams/callback` y `/api/integraciones/hojas/callback`, cada
+  una en producción y en `localhost:4321`. Faltando la de hojas, Microsoft
+  responde `AADSTS50011` y la conexión de Excel muere antes de empezar.
 - **El permiso es el más estrecho que existe, y eso decide el diseño.** Google
   recibe solo `drive.file` (más `openid email`), que no es un permiso sensible:
   la app ve ÚNICAMENTE los archivos que ella creó. Por eso Cord CREA la hoja en
