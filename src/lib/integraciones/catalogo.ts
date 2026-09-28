@@ -48,7 +48,11 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     // son íconos de producto sin margen propio — a sangre se ven enormes.
     { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: false, guia: '/soporte/conectar-google-sheets' },
     { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: false, guia: '/soporte/conectar-excel' },
-    { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
+    // El favicon de slack.com mide 35x34 px y la API de favicons no da más
+    // grande: cualquier tamaño de pantalla lo amplía y se pixelea. Este es el
+    // activo oficial de Slack a 400 px, guardado en el repo para no depender
+    // del número de compilación de su CDN de marketing.
+    { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/slack.png', tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
     { slug: 'make', nombre: 'Make', dominio: 'make.com', categoria: 'automatizacion', disponible: true, logo: favicon('make.com', 128), tile: true, guia: '/soporte/conectar-make' },

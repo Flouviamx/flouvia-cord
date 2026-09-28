@@ -1,0 +1,36 @@
+{
+  "timeZone": "America/Mexico_City",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.addons.execute",
+    "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
+    "https://www.googleapis.com/auth/script.external_request"
+  ],
+  "urlFetchWhitelist": [
+    "https://cordhq.app/"
+  ],
+  "addOns": {
+    "common": {
+      "name": "Cord",
+      "logoUrl": "https://cordhq.app/imgs/logo-cord-navy.png",
+      "useLocaleFromApp": true,
+      "layoutProperties": {
+        "primaryColor": "#0a192f",
+        "secondaryColor": "#0a192f"
+      },
+      "homepageTrigger": {
+        "runFunction": "onHomepage",
+        "enabled": true
+      }
+    },
+    "gmail": {
+      "contextualTriggers": [
+        {
+          "unconditional": {},
+          "onTriggerFunction": "onGmailMessage"
+        }
+      ]
+    }
+  }
+}
