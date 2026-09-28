@@ -160,11 +160,25 @@ pendientes, tarjeta propia y artículo de ayuda en los dos idiomas. Contrato
 verificado en `test/contabilidad.test.ts`.
 
 **Falta:**
-- [ ] André: cuenta de desarrollador de Intuit (gratis), app nueva, URI de
-  redirección `https://cordhq.app/api/integraciones/contabilidad/callback`, y
-  `QUICKBOOKS_CLIENT_ID` / `QUICKBOOKS_CLIENT_SECRET` en Vercel. Las llaves de
-  producción de Intuit exigen que la app pase su revisión; con las de sandbox se
-  prueba de inmediato (`QUICKBOOKS_SANDBOX=true`).
+- [x] **QuickBooks PROBADO en sandbox (28 sep)**: app de Intuit creada, llaves
+  de desarrollo en Vercel con `QUICKBOOKS_SANDBOX=true`, conexión a la empresa
+  `9341458036003969`, y las dos facturas de la cuenta asentadas con su cliente
+  (Customer 58, Invoice 145 y 146). Las empresas sandbox NO se ven en el
+  QuickBooks normal: viven en `sandbox.qbo.intuit.com`.
+
+  Dos fallos que encontró esta prueba y ya están corregidos: las líneas se
+  armaban desde `cotizacion_items`, así que una factura de Cord Invoicing —sin
+  cotización— daba cero líneas y se descartaba como `sin_lineas`; y el botón
+  respondía "0 facturas enviadas" como si fuera éxito, que es lo que escondió
+  el primero. Hoy manda `line_items_snapshot` y un cero con candidatas queda
+  registrado con sus motivos.
+- [ ] Llaves de PRODUCCIÓN de Intuit: exigen pasar su revisión. El cuestionario
+  está contestado salvo un punto — hay que **quitar la API de pagos** de las
+  categorías declaradas: Cord solo usa `com.intuit.quickbooks.accounting`, y
+  declarar pagos mete la app en el sector regulado, donde una de las
+  certificaciones ("los tokens viven solo en memoria volátil") es falsa para
+  Cord, que los guarda cifrados.
+- [ ] Rotar las llaves de QuickBooks: se escribieron en el chat.
 - [ ] André: cuenta de desarrollador de Xero (gratis), app de tipo *Web app*, la
   misma URI de redirección, y `XERO_CLIENT_ID` / `XERO_CLIENT_SECRET` en Vercel.
   Una app sin certificar admite hasta 25 organizaciones conectadas.
