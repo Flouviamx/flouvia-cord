@@ -5060,6 +5060,9 @@ create table if not exists integracion_vinculos (
   objeto           text not null check (objeto in ('client', 'client_contact', 'quote', 'product')),
   local_id         uuid not null,
   externo_tipo     text not null check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer', 'shopify_draft_order', 'shopify_order')),
+  -- Numérico (HubSpot, Shopify, QuickBooks) o UUID (Xero). Estricto a propósito:
+  -- con este valor se arman rutas hacia el proveedor. La forma vigente se
+  -- redefine al final del bloque de integraciones, igual que las demás listas.
   externo_id       text not null check (externo_id ~ '^[0-9]{1,20}$'),
   huella           text check (huella is null or huella ~ '^[a-f0-9]{64}$'),
   sincronizado_at  timestamptz,
@@ -5179,6 +5182,17 @@ alter table integracion_vinculos add constraint integracion_vinculos_externo_tip
   check (externo_tipo in ('company', 'contact', 'deal',
                           'shopify_product', 'shopify_customer', 'shopify_draft_order', 'shopify_order',
                           'qbo_customer', 'qbo_invoice', 'xero_contact', 'xero_invoice'));
+
+-- El id externo no siempre es numérico: Xero usa UUID. Con la forma original
+-- —solo dígitos— el vínculo no se guardaba, la factura quedaba creada del lado
+-- del proveedor y Cord sin memoria de ella, que es el camino directo a
+-- contabilizar la misma factura dos veces.
+alter table integracion_vinculos drop constraint if exists integracion_vinculos_externo_id_check;
+alter table integracion_vinculos add constraint integracion_vinculos_externo_id_check
+  check (
+    externo_id ~ '^[0-9]{1,20}$'
+    or externo_id ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  );
 
 -- El token de Shopify es "offline": no vence y no hay refresh que guardar. La
 -- condición original era de HubSpot, donde el refresh ES la credencial viva.
