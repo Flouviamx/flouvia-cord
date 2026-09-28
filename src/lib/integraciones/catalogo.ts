@@ -44,8 +44,10 @@ const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
     { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: '/imgs/integrations/shopify.svg', tile: true, guia: '/soporte/conectar-shopify' },
-    { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: '/imgs/integrations/google-sheets.svg', tile: true, guia: '/soporte/conectar-google-sheets' },
-    { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'microsoft.com', categoria: 'productividad', disponible: EXCEL_LISTO, logo: '/imgs/integrations/excel.svg', tile: true, guia: '/soporte/conectar-excel' },
+    // Los dos van con `tile: false`: un mosaico dibuja el logo a sangre, y estos
+    // son íconos de producto sin margen propio — a sangre se ven enormes.
+    { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: false, guia: '/soporte/conectar-google-sheets' },
+    { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: false, guia: '/soporte/conectar-excel' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
