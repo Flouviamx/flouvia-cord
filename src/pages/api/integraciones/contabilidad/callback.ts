@@ -20,7 +20,9 @@ import { xeroExchange, xeroTenant } from '../../../../lib/integraciones/contabil
 import { conectarConta } from '../../../../lib/integraciones/contabilidad/service';
 import { siteOrigin } from '../../../../lib/email';
 
-const VUELTA = '/app/ajustes/integraciones';
+const LISTA = '/app/ajustes/integraciones';
+/** El aviso lo dibuja la tarjeta de cada app, no la lista (ver hojas/callback). */
+const VUELTA_DE = (p: string) => `${LISTA}/${p}`;
 
 export const GET: APIRoute = async ({ request, url, redirect }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -31,7 +33,8 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
     const corte = crudo.indexOf('.');
     const proveedor = corte > 0 ? crudo.slice(0, corte) : '';
     const state = corte > 0 ? crudo.slice(corte + 1) : '';
-    if (!esProveedorConta(proveedor)) return redirect(`${VUELTA}?conta=estado`);
+    if (!esProveedorConta(proveedor)) return redirect(`${LISTA}?conta=estado`);
+    const VUELTA = VUELTA_DE(proveedor);
     if (!credencialesConta(proveedor)) return redirect(`${VUELTA}?conta=error`);
 
     const code = url.searchParams.get('code') ?? '';

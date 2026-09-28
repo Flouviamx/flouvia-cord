@@ -19,7 +19,14 @@ import { conectarHoja, sincronizarTodo } from '../../../../lib/integraciones/hoj
 import { siteOrigin } from '../../../../lib/email';
 import { REDIRECT_PATH } from './conectar';
 
-const VUELTA = '/app/ajustes/integraciones';
+const LISTA = '/app/ajustes/integraciones';
+/**
+ * El aviso de esta vuelta lo dibuja la tarjeta de CADA app, no la lista. Volver
+ * a la lista dejaba a la persona en una pantalla que no dice nada: ni que
+ * conectó, ni por qué no. Antes de saber el proveedor no hay tarjeta a la que
+ * volver, y solo entonces se cae a la lista.
+ */
+const VUELTA_DE = (p: string) => `${LISTA}/${p === 'google_sheets' ? 'google-sheets' : 'excel'}`;
 
 export const GET: APIRoute = async ({ request, url, redirect }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -30,7 +37,8 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
     const corte = crudo.indexOf('.');
     const proveedor = corte > 0 ? crudo.slice(0, corte) : '';
     const state = corte > 0 ? crudo.slice(corte + 1) : '';
-    if (!esProveedorHoja(proveedor)) return redirect(`${VUELTA}?hoja=estado`);
+    if (!esProveedorHoja(proveedor)) return redirect(`${LISTA}?hoja=estado`);
+    const VUELTA = VUELTA_DE(proveedor);
     if (!credencialesHoja(proveedor)) return redirect(`${VUELTA}?hoja=error`);
 
     // Cancelar en la pantalla del proveedor es una respuesta legítima, no un fallo.
