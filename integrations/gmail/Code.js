@@ -236,6 +236,7 @@ function tarjetaConectar(mensajeError) {
 }
 
 function revisarConexion(e) {
+    exigirPermisos();
     if (!conectado()) return notificar('Todavía no se completó la autorización en Cord.');
     var tarjeta = e && e.gmail && e.gmail.messageId ? onGmailMessage(e) : tarjetaInicio();
     return CardService.newActionResponseBuilder()
@@ -267,9 +268,19 @@ function desconectar() {
         .build();
 }
 
+/**
+ * Google deja aceptar los permisos uno por uno. Si falta alguno (típicamente
+ * "conectarse a un servicio externo"), esto lanza y Gmail vuelve a pedirlo, en
+ * vez de que cada llamada a Cord falle en silencio.
+ */
+function exigirPermisos() {
+    ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);
+}
+
 // ── Inicio ────────────────────────────────────────────────────────────────────
 
 function onHomepage() {
+    exigirPermisos();
     return conectado() ? tarjetaInicio() : tarjetaConectar();
 }
 
@@ -294,6 +305,7 @@ function tarjetaInicio() {
 // ── Tarjeta sobre un correo ───────────────────────────────────────────────────
 
 function onGmailMessage(e) {
+    exigirPermisos();
     if (!conectado()) return tarjetaConectar();
 
     GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
@@ -415,6 +427,7 @@ function escaparHtml(texto) {
 }
 
 function onGmailCompose(e) {
+    exigirPermisos();
     if (!conectado()) return [tarjetaConectar()];
 
     var para = (e.draftMetadata && e.draftMetadata.toRecipients) || [];
