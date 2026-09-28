@@ -93,6 +93,17 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
   límite (alerta, no bloqueo) en `clientes-credito`; divisa de venta y tasa
   demostrable en `divisas`, que ya no vende la tasa congelada como cobertura
   de margen.
+- **Grupo "Facturación y operación" reescrito (sep 2026):** `facturacion`,
+  `workflows` y `equipo`, contra el código. `facturacion` es dueña del ciclo de
+  la factura (borrador sin folio, emisión y envío con PDF, recordatorios,
+  anulación y nota de crédito, recurrencia en Profesional) y del documento por
+  país: CFDI 4.0 desde Starter, proforma en Gratis y en España —VERI*FACTU no
+  se anuncia como activo—, documento comercial en el resto. Rieles, abonos y
+  comisiones siguen en `pagos`; la API, en `/desarrolladores`. `workflows`
+  cuenta 44 eventos, 11 acciones y 9 ideas (`src/lib/workflows/`). `equipo`
+  dejó de prometer carteras privadas por vendedor, un rol "Contador" y
+  "multi-empresa desde Profesional": los permisos son por sección, crear otra
+  organización no se gatea y cada una lleva su propio plan; SSO SAML en Scale.
 
 ### Idioma público y frontera con la app
 

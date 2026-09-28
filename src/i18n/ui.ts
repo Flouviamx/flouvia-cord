@@ -39,7 +39,7 @@ export const ui = {
     'nav.mega.prod.7.title': 'Multi-divisa y FX',
     'nav.mega.prod.7.desc': 'Vende en la moneda de tu cliente',
     'nav.mega.prod.8.title': 'Cord Invoicing',
-    'nav.mega.prod.8.desc': 'CFDI 4.0 en México, factura comercial en el resto',
+    'nav.mega.prod.8.desc': 'Facturas con link de pago; CFDI 4.0 en México',
     'nav.mega.prod.9.title': 'Finanzas y flujo de caja',
     'nav.mega.prod.9.desc': 'Flujo a 90 días, DSO y riesgo',
     'nav.mega.prod.10.title': 'Control de márgenes',
@@ -49,7 +49,7 @@ export const ui = {
     'nav.mega.prod.14.title': 'Integraciones',
     'nav.mega.prod.14.desc': 'HubSpot, Slack, Zapier, Make y más',
     'nav.mega.prod.11.title': 'Roles y equipo',
-    'nav.mega.prod.11.desc': 'Permisos corporativos y multi-empresa',
+    'nav.mega.prod.11.desc': 'Permisos por sección, SSO y varias empresas',
     'nav.mega.prod.foot': 'Lee nuestro Blog',
 
     'nav.mega.dev.1.title': 'API REST',
@@ -290,7 +290,7 @@ export const ui = {
     'nav.mega.prod.7.title': 'Multi-currency & FX',
     'nav.mega.prod.7.desc': 'Sell in your client\'s currency',
     'nav.mega.prod.8.title': 'Cord Invoicing',
-    'nav.mega.prod.8.desc': 'CFDI 4.0 in Mexico, commercial invoice everywhere else',
+    'nav.mega.prod.8.desc': 'Invoices with a payment link; CFDI 4.0 in Mexico',
     'nav.mega.prod.9.title': 'Finance & cash flow',
     'nav.mega.prod.9.desc': '90-day cash flow, DSO and risk',
     'nav.mega.prod.10.title': 'Margin control',
@@ -300,7 +300,7 @@ export const ui = {
     'nav.mega.prod.14.title': 'Integrations',
     'nav.mega.prod.14.desc': 'HubSpot, Slack, Zapier, Make and more',
     'nav.mega.prod.11.title': 'Roles & team',
-    'nav.mega.prod.11.desc': 'Advanced permissions and multi-entity',
+    'nav.mega.prod.11.desc': 'Per-section permissions, SSO and multiple entities',
 
     'nav.mega.prod.foot': 'Read our Blog',
 

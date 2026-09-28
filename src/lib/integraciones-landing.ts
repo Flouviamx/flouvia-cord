@@ -436,7 +436,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             eyebrow: 'INTEGRACIÓN · MERCADO PAGO',
             titulo: 'Tu cliente paga con Mercado Pago, sin salir de la cotización.',
             sub: 'Conecta tu cuenta de Mercado Pago y cada cotización ofrece el botón de pago en la misma página donde tu cliente la aprobó. El dinero llega a tu cuenta de Mercado Pago, nunca a la de Cord.',
-            resumen: 'Un segundo riel de cobro en línea para tus cotizaciones.',
+            resumen: 'Cobro en línea con tu cuenta de Mercado Pago, en cotizaciones y facturas.',
             plan: 'Disponible en todos los planes de Cord; la comisión es la de tu cuenta de Mercado Pago',
             flujoTitulo: 'Cómo viaja un pago',
             flujo: [
@@ -468,7 +468,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 {
                     eyebrow: 'TU CUENTA, TUS CONDICIONES',
                     titulo: 'El dinero nunca pasa por Cord.',
-                    copy: 'Cord cobra con tu propia cuenta de Mercado Pago: tú apareces como vendedor en el checkout y cada pago llega ahí, con la comisión de tus condiciones con Mercado Pago. Cord guarda el acceso cifrado, lo renueva solo y lo usa únicamente para abrir el cobro de tus cotizaciones y leer si ya se pagó.',
+                    copy: 'Cord cobra con tu propia cuenta de Mercado Pago: tú apareces como vendedor en el checkout y cada pago llega ahí, con la comisión de tus condiciones con Mercado Pago. Cord guarda el acceso cifrado, lo renueva solo y lo usa únicamente para abrir el cobro de tus cotizaciones y facturas, y leer si ya se pagó o se reembolsó.',
                     bullets: [
                         'Tú eres el vendedor en el checkout',
                         'Acceso cifrado que se renueva solo',
@@ -480,12 +480,11 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { name: 'Abre Cobros', text: 'En Cord, ve a Ajustes › Cobros. Necesitas el permiso Configurar cobros.' },
                 { name: 'Conecta Mercado Pago', text: 'En la tarjeta de Mercado Pago, pulsa Conectar Mercado Pago.' },
                 { name: 'Autoriza tu cuenta', text: 'Inicia sesión con la cuenta de negocio que va a recibir el dinero y autoriza a Cord.' },
-                { name: 'Listo para cobrar', text: 'De vuelta en Cord la tarjeta dice Conectado y tus cotizaciones ofrecen el botón de pago.' },
+                { name: 'Listo para cobrar', text: 'De vuelta en Cord la tarjeta dice Conectado y tus cotizaciones y facturas ofrecen el botón de pago.' },
             ],
             limites: [
-                'El link de una factura de Cord Invoicing todavía no ofrece Mercado Pago; solo las cotizaciones.',
                 'Las igualas recurrentes no se cobran con Mercado Pago: necesitan la suscripción de Cord Payments.',
-                'Los reembolsos se hacen desde tu cuenta de Mercado Pago y Cord todavía no los lee: anótalo en el historial de la cotización.',
+                'Los contracargos de Mercado Pago todavía no llegan a Cord: se atienden desde tu cuenta de Mercado Pago.',
             ],
             faqs: [
                 {
@@ -521,7 +520,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             eyebrow: 'INTEGRATION · MERCADO PAGO',
             titulo: 'Your client pays with Mercado Pago, without leaving the quote.',
             sub: 'Connect your Mercado Pago account and every quote offers the payment button on the same page where your client approved it. The money lands in your Mercado Pago account, never in Cord\'s.',
-            resumen: 'A second online payment rail for your quotes.',
+            resumen: 'Online payments through your Mercado Pago account, on quotes and invoices.',
             plan: 'Available on every Cord plan; the fee is the one on your Mercado Pago account',
             flujoTitulo: 'How a payment travels',
             flujo: [
@@ -553,7 +552,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 {
                     eyebrow: 'YOUR ACCOUNT, YOUR TERMS',
                     titulo: 'The money never goes through Cord.',
-                    copy: 'Cord charges with your own Mercado Pago account: you appear as the seller at checkout and every payment lands there, with the fee from your terms with Mercado Pago. Cord stores the access encrypted, renews it automatically and only uses it to open your quotes\' charges and read whether they were paid.',
+                    copy: 'Cord charges with your own Mercado Pago account: you appear as the seller at checkout and every payment lands there, with the fee from your terms with Mercado Pago. Cord stores the access encrypted, renews it automatically and only uses it to open the charges on your quotes and invoices, and read whether they were paid or refunded.',
                     bullets: [
                         'You are the seller at checkout',
                         'Encrypted access that renews itself',
@@ -565,12 +564,11 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { name: 'Open Payments', text: 'In Cord, go to Settings › Payments. You need the Configure payments permission.' },
                 { name: 'Connect Mercado Pago', text: 'On the Mercado Pago card, press Connect Mercado Pago.' },
                 { name: 'Authorize your account', text: 'Sign in with the business account that will receive the money and authorize Cord.' },
-                { name: 'Ready to get paid', text: 'Back in Cord the card says Connected and your quotes offer the payment button.' },
+                { name: 'Ready to get paid', text: 'Back in Cord the card says Connected and your quotes and invoices offer the payment button.' },
             ],
             limites: [
-                'A Cord Invoicing invoice link does not offer Mercado Pago yet; only quotes do.',
                 'Recurring retainers are not charged with Mercado Pago: they need the Cord Payments subscription.',
-                'Refunds are made from your Mercado Pago account and Cord does not read them yet: note them in the quote history.',
+                'Mercado Pago chargebacks do not reach Cord yet: you handle them from your Mercado Pago account.',
             ],
             faqs: [
                 {

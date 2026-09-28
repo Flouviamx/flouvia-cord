@@ -17,6 +17,7 @@ import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
 import { flagSrc } from '../../lib/flags';
+import { WORKFLOW_ICONS } from '../../lib/workflows/icons';
 import { getLangFromUrl } from '../../i18n/utils';
 
 export function getStaticPaths() {
@@ -162,18 +163,18 @@ const HOWTO: Record<string, { name: string; steps: { name: string; text: string 
     facturacion: isEn ? {
         name: 'How to issue an invoice in Cord',
         steps: [
-            { name: 'Create the draft', text: 'Open Invoices, pick the client and enter the line items. The draft consumes no invoice number and no stamp.' },
-            { name: 'Issue it', text: 'Issuing reserves the next sequential number and stamps the document: real CFDI 4.0 with the SAT in Mexico, a commercial invoice with your own numbering elsewhere.' },
-            { name: 'Send it to your client', text: 'Cord emails the invoice with its PDF and a link to its own page, where the client sees the balance and can pay by card.' },
-            { name: 'Follow the balance', text: 'Card payments from the link and wires you record by hand both reduce the same balance. At zero the invoice is marked paid.' },
+            { name: 'Create the draft', text: 'Open Invoices, pick the client and add the line items. The draft uses up no number and no stamp.' },
+            { name: 'Choose the document', text: 'In Mexico, from the Starter plan and with your CSD uploaded, the invoice is stamped as CFDI 4.0; on Free it is a pro forma. Outside Mexico it is a commercial document with your numbering.' },
+            { name: 'Issue and send', text: 'Issue and send assigns the next number in your series and emails your client the PDF as an attachment and the link to the invoice page, where they can pay.' },
+            { name: 'Follow the balance', text: 'The invoice shows when it was sent, viewed and paid. Payments from the link and the ones you record by hand reduce the same balance, and reminders go out until it reaches zero.' },
         ],
     } : {
         name: 'Cómo emitir una factura en Cord',
         steps: [
-            { name: 'Crea el borrador', text: 'Entra a Facturas, elige el cliente y captura los conceptos. El borrador no consume folio ni timbre.' },
-            { name: 'Emítela', text: 'Al emitir se reserva el folio consecutivo y se timbra el documento: CFDI 4.0 real ante el SAT en México, factura comercial con folio propio en el resto.' },
-            { name: 'Mándala a tu cliente', text: 'Cord envía la factura por correo con su PDF y el link a su propia página, donde el cliente ve el saldo y puede pagar con tarjeta.' },
-            { name: 'Sigue el saldo', text: 'Los pagos con tarjeta desde el link y las transferencias que registras a mano bajan el mismo saldo. Al llegar a cero, la factura se marca pagada.' },
+            { name: 'Crea el borrador', text: 'Entra a Facturas, elige el cliente y agrega los conceptos. El borrador no gasta folio ni timbre.' },
+            { name: 'Elige el documento', text: 'En México, desde el plan Starter y con tu CSD cargado, la factura se timbra como CFDI 4.0; en Gratis es una proforma. Fuera de México es un documento comercial con tu numeración.' },
+            { name: 'Emite y envía', text: 'Emitir y enviar asigna el siguiente folio de tu serie y le manda a tu cliente el PDF adjunto y el link a la página de la factura, donde puede pagarla.' },
+            { name: 'Sigue el saldo', text: 'La factura muestra cuándo se envió, se vio y se pagó. Los pagos desde el link y los que registras a mano bajan el mismo saldo, y los recordatorios salen hasta que llega a cero.' },
         ],
     },
 };
@@ -241,12 +242,29 @@ const MKI = {
     burger: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
     cursor: '<path d="M5.5 3.2 19 14.6l-6.1.5 3.5 7.3-2.6 1.2-3.4-7.4-4.9 4.6z"/>',
     cal: '<rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/>',
+    workflows: '<rect x="8.25" y="2.5" width="7.5" height="6" rx="2.2" fill="currentColor" fill-opacity="0.15"/><path d="M12 8.5v3.2M5.4 15.5v-1.6a2.2 2.2 0 0 1 2.2-2.2h8.8a2.2 2.2 0 0 1 2.2 2.2v1.6" stroke-opacity="0.7"/><rect x="2.5" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/><rect x="15.7" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    minus: '<path d="M5 12h14"/>',
+    fit: '<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/>',
+    ext: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="currentColor" fill-opacity="0.1"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    dl: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="currentColor" fill-opacity="0.1"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+    chevUp: '<polyline points="18 15 12 9 6 15"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    reply: '<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+    compose: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    building: '<rect x="4" y="3" width="16" height="18" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M10 21v-4h4v4"/>',
+    flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3" fill="currentColor" fill-opacity="0.12"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
 };
 const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     { k: 'inicio' }, { k: 'cotizaciones', on: true }, { k: 'clientes' }, { k: 'productos' },
     { k: 'facturas', sep: true }, { k: 'cobros' }, { k: 'cobranza' },
     { k: 'informes', sep: true }, { k: 'equipo' },
 ];
+const MK_RAIL_WF: typeof MK_RAIL = [...MK_RAIL.map((it) => ({ ...it, on: false })), { k: 'workflows', on: true }];
+const WFI = WORKFLOW_ICONS;
 ---
 
 <Layout
@@ -1023,78 +1041,299 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         )}
 
                         {feature.slug === 'facturacion' && (
-                            <div class="mk-window mk-intl" id="intlHero">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">A-001048 · Materiales del Valle</span>
-                                    <span class="mk-badge mk-badge-sent">● {isEn ? 'Open' : 'Abierta'}</span>
-                                </div>
-                                <div class="mk-intl-pill" id="intlPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.15"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg> {isEn ? 'Stamped with the SAT' : 'Timbrada ante el SAT'}</div>
-                                <div class="mk-intl-body">
-                                    <div class="mk-rows mk-rows-intl">
-                                        <div class="mk-row mk-row-head"><span>{isEn ? 'Item' : 'Concepto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
-                                        <div class="mk-row"><span>Válvula industrial 4"</span><span>40</span><span class="editorial">$3,367.00</span><span class="editorial">$134,680.00</span></div>
-                                        <div class="mk-row"><span>Acople bridado 6"</span><span>25</span><span class="editorial">$2,848.00</span><span class="editorial">$71,200.00</span></div>
+                            <div class="mkc-stage mkc-fa" id="faHero" aria-hidden="true" data-cur={isEn ? 'MX$' : '$'}>
+                              <div class="mkc-app mkc-fa-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.k === 'facturas' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot" id="faBell"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Invoices' : 'Facturas'}</span><b>A-001048</b></span>
+                                            <span class="mkc-title">A-001048</span>
+                                        </div>
+                                        <span class="mkc-pill mkc-pill-open">{isEn ? 'Open' : 'Abierta'}</span>
                                     </div>
-                                    <div class="mk-intl-totals">
-                                        <div class="mk-intl-tot"><span>{isEn ? 'Total invoiced' : 'Total facturado'}</span><b class="editorial">$230,880.00</b></div>
-                                        <div class="mk-intl-tot mk-intl-tot-fiscal" id="intlFiscal"><span>{isEn ? 'Balance due' : 'Saldo por cobrar'}</span><b class="editorial">$134,880.00</b></div>
-                                        <span class="mk-intl-rate">{isEn ? 'Due 14 Sep · client link with card checkout' : 'Vence 14 sep · link del cliente con pago con tarjeta'}</span>
+                                    <div class="mkc-stp">
+                                        <span class="mkc-stp-s done"><i class="mkc-stp-d"><em class="mkc-stp-n">1</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Draft' : 'Borrador'}</b></span>
+                                        <span class="mkc-stp-s done"><i class="mkc-stp-d"><em class="mkc-stp-n">2</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Issued' : 'Emitida'}</b></span>
+                                        <span class="mkc-stp-s done"><i class="mkc-stp-d"><em class="mkc-stp-n">3</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Sent' : 'Enviada'}</b></span>
+                                        <span class="mkc-stp-s cur"><i class="mkc-stp-d">4</i><b>{isEn ? 'Viewed' : 'Vista'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">5</i><b>{isEn ? 'Paid' : 'Pagada'}</b></span>
+                                    </div>
+                                    <div class="mkc-fa-grid">
+                                        <div class="mkc-fa-main">
+                                            <div class="mkc-dh mkc-fa-dh">
+                                                <span class="mkc-dh-av">DE</span>
+                                                <div class="mkc-dh-t">
+                                                    <span class="mkc-dh-n">{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span>
+                                                    <span class="mkc-dh-m">{isEn ? 'Issued Sep 12, 2026' : 'Emitida 12 sept 2026'} <i>·</i> {isEn ? 'Due Oct 12, 2026' : 'Vence 12 oct 2026'} <i>·</i> {isEn ? 'Sent' : 'Enviada'}</span>
+                                                    <span class="mkc-fa-origin">{isEn ? 'from quote COT-0148' : 'desde la cotización COT-0148'}</span>
+                                                </div>
+                                                <div class="mkc-dh-tot"><span>TOTAL</span><b class="editorial">{isEn ? 'MX$' : '$'}196,469.20</b><em><span id="faHeadSaldo" data-lbl={isEn ? 'Balance' : 'Saldo'}>{isEn ? 'Balance' : 'Saldo'} {isEn ? 'MX$' : '$'}96,469.20</span>{isEn ? '' : ' MXN'}</em></div>
+                                            </div>
+                                            <div class="mkc-fa-ih"><span>{isEn ? 'Item' : 'Concepto'}</span><span>{isEn ? 'Qty.' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
+                                            <div class="mkc-fa-ir"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><span>120</span><span class="editorial">{isEn ? 'MX$' : '$'}182.00</span><span class="editorial">{isEn ? 'MX$' : '$'}21,840.00</span></div>
+                                            <div class="mkc-fa-ir"><span>{isEn ? 'Rebar 3/8"' : 'Varilla corrugada 3/8"'}</span><span>340</span><span class="editorial">{isEn ? 'MX$' : '$'}168.50</span><span class="editorial">{isEn ? 'MX$' : '$'}57,290.00</span></div>
+                                            <div class="mkc-fa-ir"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}</span><span>2,400</span><span class="editorial">{isEn ? 'MX$' : '$'}14.20</span><span class="editorial">{isEn ? 'MX$' : '$'}34,080.00</span></div>
+                                            <div class="mkc-fa-ir"><span>{isEn ? 'River sand m³' : 'Arena de río m³'}</span><span>180</span><span class="editorial">{isEn ? 'MX$' : '$'}312.00</span><span class="editorial">{isEn ? 'MX$' : '$'}56,160.00</span></div>
+                                            <div class="mkc-fa-tots">
+                                                <div><span>Subtotal</span><span class="editorial">{isEn ? 'MX$' : '$'}169,370.00</span></div>
+                                                <div><span>16%</span><span class="editorial">{isEn ? 'MX$' : '$'}27,099.20</span></div>
+                                                <div class="mkc-fa-tot"><span>Total</span><span class="editorial">{isEn ? 'MX$' : '$'}196,469.20</span></div>
+                                                <div><span>{isEn ? 'Paid' : 'Pagado'}</span><span class="editorial" id="faPag">−{isEn ? 'MX$' : '$'}100,000.00</span></div>
+                                                <div class="mkc-fa-due"><span>{isEn ? 'Balance' : 'Saldo'}</span><span class="editorial" id="faDue">{isEn ? 'MX$' : '$'}96,469.20</span></div>
+                                            </div>
+                                            <div class="mkc-sec mkc-fa-sec">{isEn ? 'Payments' : 'Pagos'}</div>
+                                            <div class="mkc-fa-pagos">
+                                                <div class="mkc-fa-pw" id="faNewPago"><div class="mkc-fa-pago"><span>{isEn ? 'Today · Card •••• 4242 · Pay link' : 'Hoy · Tarjeta •••• 4242 · Link de pago'}</span><b class="editorial">{isEn ? 'MX$' : '$'}40,000.00</b></div></div>
+                                                <div class="mkc-fa-pago"><span>{isEn ? 'Sep 15 · Transfer · SPEI 0915' : '15 sept · Transferencia · SPEI 0915'}</span><b class="editorial">{isEn ? 'MX$' : '$'}60,000.00</b></div>
+                                            </div>
+                                        </div>
+                                        <aside class="mkc-fa-side">
+                                            <div class="mkc-sec">{isEn ? 'Actions' : 'Acciones'}</div>
+                                            <span class="mkc-fa-btn">{isEn ? 'Record payment' : 'Registrar pago'}</span>
+                                            <div class="mkc-fa-deliv"><i></i><span><b>{isEn ? 'Sent to client' : 'Enviada al cliente'}</b><small>raul@elzarco.mx</small></span><em>{isEn ? 'Resend' : 'Reenviar'}</em></div>
+                                            <div class="mkc-fa-util">
+                                                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.ext} />{isEn ? 'Open link' : 'Abrir link'}</span>
+                                                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.copy} />{isEn ? 'Copy' : 'Copiar'}</span>
+                                                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.dl} />PDF</span>
+                                                <span class="wa"><img src="/imgs/integrations/whatsapp.svg" alt="" width="13" height="13" />WhatsApp</span>
+                                            </div>
+                                            <div class="mkc-sec mkc-sec-2">{isEn ? 'Activity' : 'Actividad'}</div>
+                                            <div class="mkc-tl mkc-fa-tl">
+                                                <div class="mkc-fa-tlw" id="faNewTl"><div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#10b981"></i><div class="mkc-tl-b"><b>{isEn ? 'Payment applied' : 'Pago aplicado'}</b><span>{isEn ? 'Payment of MX$40,000.00 · today, 12:14 PM' : 'Abono de $40,000.00 · hoy, 12:14'}</span></div></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#10b981"></i><div class="mkc-tl-b"><b>{isEn ? 'Payment applied' : 'Pago aplicado'}</b><span>{isEn ? 'Payment of MX$60,000.00 · Sep 15, 10:02 AM' : 'Abono de $60,000.00 · 15 sept, 10:02'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#0a192f"></i><div class="mkc-tl-b"><b>{isEn ? 'The client opened it' : 'El cliente la abrió'}</b><span>{isEn ? 'Sep 12, 11:08 AM' : '12 sept, 11:08'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#cbd5e1"></i><div class="mkc-tl-b"><b>{isEn ? 'Sent to the client' : 'Enviada al cliente'}</b><span>{isEn ? 'Sent to raul@elzarco.mx' : 'Enviada a raul@elzarco.mx'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#cbd5e1"></i><div class="mkc-tl-b"><b>{isEn ? 'Issued' : 'Emitida'}</b><span>{isEn ? 'Invoice A-001048 issued · CFDI 4.0' : 'Factura A-001048 emitida · CFDI 4.0'}</span></div></div>
+                                            </div>
+                                            <div class="mkc-sec mkc-sec-2">{isEn ? 'Invoice details' : 'Datos de la factura'}</div>
+                                            <div class="mkc-fa-meta">
+                                                <div><span>{isEn ? 'Country' : 'País'}</span><b><img src={flagSrc('MX')} alt="" width="12" height="9" />MX</b></div>
+                                                <div><span>{isEn ? 'Currency' : 'Divisa'}</span><b>MXN</b></div>
+                                                <div><span>RFC</span><b>DEZ981123QX1</b></div>
+                                                <div><span>{isEn ? 'Tax folio' : 'Folio fiscal'}</span><b class="mono">5E2F9C1A-7B34-4D0E-9A61-3C8B2D4F7E10</b></div>
+                                            </div>
+                                        </aside>
                                     </div>
                                 </div>
+                              </div>
+
+                              <div class="mkc-phone mkc-fa-phone">
+                                  <div class="mkc-phone-scr">
+                                      <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                      <div class="mkc-phone-page mkc-iv" id="faPage">
+                                          <div class="mkc-iv-scroll" id="faScroll">
+                                              <div class="mkc-iv-card">
+                                                  <div class="mkc-iv-head">
+                                                      <span class="mkc-iv-brand"><i>M</i><span><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><small>RFC MVA240611AB3</small></span></span>
+                                                      <span class="mkc-iv-folio"><span>{isEn ? 'Invoice' : 'Factura'}</span><b>A-001048</b></span>
+                                                  </div>
+                                                  <div class="mkc-iv-rule"></div>
+                                                  <div class="mkc-iv-hero">
+                                                      <span>{isEn ? 'Balance due' : 'Saldo pendiente'}</span>
+                                                      <b class="editorial" id="faPhSaldo">{isEn ? 'MX$' : '$'}96,469.20</b>
+                                                      <i>{isEn ? 'Awaiting payment' : 'Pendiente de pago'}</i>
+                                                      <small><span>{isEn ? 'Issued Sep 12, 2026' : 'Emitida 12 sept 2026'}</span><span>{isEn ? 'Due Oct 12, 2026' : 'Vence el 12 oct 2026'}</span></small>
+                                                  </div>
+                                                  <p class="mkc-iv-next">{isEn ? 'Pay the balance or make a partial payment below. Your recorded payments appear on this page.' : 'Paga el saldo o realiza un abono abajo. Los pagos registrados aparecen en esta página.'}<u>{isEn ? 'Refresh balance' : 'Actualizar saldo'}</u></p>
+                                                  <div class="mkc-iv-parties">
+                                                      <div><span>{isEn ? 'From' : 'De'}</span><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><small>ventas@materialesdelvalle.mx</small></div>
+                                                      <div><span>{isEn ? 'To' : 'Para'}</span><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b><small>RFC DEZ981123QX1</small></div>
+                                                  </div>
+                                                  <div class="mkc-iv-lh"><span>{isEn ? 'Item' : 'Concepto'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
+                                                  <div class="mkc-iv-lr"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<small>120 × {isEn ? 'MX$' : '$'}182.00</small></span><b class="editorial">{isEn ? 'MX$' : '$'}21,840.00</b></div>
+                                                  <div class="mkc-iv-lr"><span>{isEn ? 'Rebar 3/8"' : 'Varilla corrugada 3/8"'}<small>340 × {isEn ? 'MX$' : '$'}168.50</small></span><b class="editorial">{isEn ? 'MX$' : '$'}57,290.00</b></div>
+                                                  <div class="mkc-iv-lr"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<small>2,400 × {isEn ? 'MX$' : '$'}14.20</small></span><b class="editorial">{isEn ? 'MX$' : '$'}34,080.00</b></div>
+                                                  <div class="mkc-iv-lr"><span>{isEn ? 'River sand m³' : 'Arena de río m³'}<small>180 × {isEn ? 'MX$' : '$'}312.00</small></span><b class="editorial">{isEn ? 'MX$' : '$'}56,160.00</b></div>
+                                                  <div class="mkc-iv-tots">
+                                                      <div><span>Subtotal</span><span class="editorial">{isEn ? 'MX$' : '$'}169,370.00</span></div>
+                                                      <div><span>{isEn ? 'Taxes' : 'Impuestos'}</span><span class="editorial">{isEn ? 'MX$' : '$'}27,099.20</span></div>
+                                                      <div class="t"><span>Total</span><span class="editorial">{isEn ? 'MX$' : '$'}196,469.20</span></div>
+                                                      <div><span>{isEn ? 'Paid' : 'Pagado'}</span><span class="editorial" id="faPhPag">−{isEn ? 'MX$' : '$'}100,000.00</span></div>
+                                                      <div class="d"><span>{isEn ? 'Balance' : 'Saldo'}</span><span class="editorial" id="faPhDue">{isEn ? 'MX$' : '$'}96,469.20</span></div>
+                                                  </div>
+                                                  <div class="mkc-iv-pagos">
+                                                      <span>{isEn ? 'Payments received' : 'Pagos recibidos'}</span>
+                                                      <div><span>{isEn ? 'Sep 15, 2026' : '15 sept 2026'}</span><span class="editorial">{isEn ? 'MX$' : '$'}60,000.00</span></div>
+                                                      <div class="mkc-iv-pw" id="faPhNew"><div><span>{isEn ? 'Sep 27, 2026' : '27 sept 2026'}</span><span class="editorial">{isEn ? 'MX$' : '$'}40,000.00</span></div></div>
+                                                  </div>
+                                                  <div class="mkc-iv-foot">
+                                                      <span class="mkc-iv-pay" id="faPhPay">{isEn ? 'Pay' : 'Pagar'} <span id="faPhPayAmt">{isEn ? 'MX$' : '$'}96,469.20</span></span>
+                                                      <span class="mkc-iv-partial" id="faPartial">{isEn ? 'Pay another amount' : 'Pagar otra cantidad'}</span>
+                                                      <div class="mkc-iv-box" id="faBox">
+                                                          <div class="mkc-iv-box-in">
+                                                              <label>{isEn ? 'How much would you like to pay?' : '¿Cuánto quieres abonar?'}</label>
+                                                              <div class="mkc-iv-box-row"><em>MXN</em><span class="mkc-iv-in" id="faAmtF"><span id="faAmt">40,000.00</span></span></div>
+                                                              <p>{isEn ? 'You can pay part of it. The rest stays as an outstanding balance on this same invoice.' : 'Puedes abonar una parte. El resto queda como saldo pendiente de esta misma factura.'}</p>
+                                                              <div class="mkc-iv-acts"><span>{isEn ? 'Cancel' : 'Cancelar'}</span><span class="ok" id="faCont" data-busy={isEn ? 'Processing…' : 'Procesando…'}>{isEn ? 'Continue' : 'Continuar'}</span></div>
+                                                          </div>
+                                                      </div>
+                                                      <div class="mkc-iv-dl"><span>{isEn ? 'Download PDF' : 'Descargar PDF'}</span><span>{isEn ? 'Download XML' : 'Descargar XML'}</span></div>
+                                                      <p class="mkc-iv-uuid">{isEn ? 'Tax folio' : 'Folio fiscal'} 5E2F9C1A-7B34-4D0E-9A61-3C8B2D4F7E10</p>
+                                                      <p class="mkc-iv-pow">{isEn ? 'Valle Materials · Sent with Cord' : 'Materiales del Valle · Enviado con Cord'}</p>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div class="mkc-safari"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app</span></div>
+                                      <span class="mkc-home"></span>
+                                  </div>
+                              </div>
                             </div>
                         )}
 
                         {feature.slug === 'workflows' && (
-                            <div class="mk-window mk-wf" id="wfHero">
-                                <div class="mk-bar">
-                                    <span class="mk-bar-title">{isEn ? 'Quote follow-up ladder' : 'Escalera de seguimiento'}</span>
-                                    <div class="mk-bar-actions">
-                                        <span class="mk-wf-runs">{isEn ? '143 runs · 30 days' : '143 ejecuciones · 30 días'}</span>
-                                        <span class="mk-badge mk-badge-ok">● {isEn ? 'Active' : 'Activo'}</span>
+                            <div class="mkc-stage mkc-wf" id="wfHero" aria-hidden="true">
+                              <div class="mkc-app mkc-wf-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL_WF.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-wf-bar">
+                                        <span class="mkc-wf-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" set:html={MKI.x} /></span>
+                                        <b class="mkc-wf-name">{isEn ? 'Quote follow-up' : 'Seguimiento de cotizaciones'}</b>
+                                        <span class="mkc-wf-badge">{isEn ? 'Active' : 'Activo'}</span>
+                                        <span class="mkc-wf-acts">
+                                            <span class="mkc-wf-btn">{isEn ? 'Test' : 'Probar'}</span>
+                                            <span class="mkc-wf-btn mkc-wf-save">{isEn ? 'Save draft' : 'Guardar borrador'}</span>
+                                            <span class="mkc-wf-btn pri">{isEn ? 'Publish' : 'Publicar'}</span>
+                                            <span class="mkc-wf-more"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                                        </span>
                                     </div>
-                                </div>
-                                <div class="mk-wf-body">
-                                    <span class="mk-wf-sec">{isEn ? 'When this happens' : 'Cuando pase esto'}</span>
-                                    <div class="mk-wf-node mk-wf-trigger">
-                                        <i class="mk-wf-ico mk-wf-ico-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.14" d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z" fill="currentColor" fill-opacity="0.14"/></svg></i>
-                                        <div><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><em>quote.sent</em></div>
-                                    </div>
-                                    <span class="mk-wf-line" aria-hidden="true"></span>
-                                    <span class="mk-wf-sec">{isEn ? 'Do this' : 'Haz esto'}</span>
-                                    <div class="mk-wf-node">
-                                        <i class="mk-wf-ico mk-wf-ico-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="M12 7v5l3 2"/></svg></i>
-                                        <div><b>{isEn ? 'Wait until the client opens or approves' : 'Espera hasta que el cliente la abra o la apruebe'}</b><em>{isEn ? 'Deadline: 2 days' : 'Plazo: 2 días'}</em></div>
-                                    </div>
-                                    <div class="mk-wf-branches">
-                                        <div class="mk-wf-branch">
-                                            <span class="mk-wf-tag mk-wf-tag-ok">{isEn ? 'If it happens' : 'Si ocurre'}</span>
-                                            <div class="mk-wf-node mk-wf-node-sm">
-                                                <i class="mk-wf-ico mk-wf-ico-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></i>
-                                                <div><b>{isEn ? 'Create a task' : 'Crear una tarea'}</b><em>{isEn ? 'Call {{client}} about {{folio}}' : 'Llamar a {{cliente}} por {{folio}}'}</em></div>
+                                    <div class="mkc-wf-tabs"><span class="on" id="wfTabEd">Editor</span><span id="wfTabRuns">{isEn ? 'Runs' : 'Ejecuciones'}</span></div>
+                                    <div class="mkc-wf-body">
+                                        <div class="mkc-wf-canvas" id="wfCanvas">
+                                            <div class="mkc-wf-flow">
+                                                <div class="mkc-wf-node">
+                                                    <span class="mkc-wf-ic" set:html={WFI.quotes} />
+                                                    <span class="mkc-wf-tx"><small>{isEn ? 'When this happens' : 'Cuando pase esto'}</small><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><em>{isEn ? 'Quotes' : 'Cotizaciones'}</em></span>
+                                                </div>
+                                                <span class="mkc-wf-link"></span>
+                                                <span class="mkc-wf-dia" set:html={WFI.wait_until} />
+                                                <div class="mkc-wf-node mkc-wf-cs">
+                                                    <span class="mkc-wf-ic" set:html={WFI.wait_until} />
+                                                    <span class="mkc-wf-tx"><small>{isEn ? 'Wait until' : 'Espera hasta'}</small><b>{isEn ? 'Current quote status is Viewed and 1 more' : 'Estado actual de la cotización es Vista y 1 más'}</b><em>{isEn ? 'Up to 2 days' : 'Máximo 2 días'}</em></span>
+                                                    <span class="mkc-wf-dots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                                                </div>
+                                                <div class="mkc-wf-brs">
+                                                    <div class="mkc-wf-br">
+                                                        <span class="mkc-wf-lbl">{isEn ? 'If it happens' : 'Si ocurre'}</span>
+                                                        <div class="mkc-wf-node">
+                                                            <span class="mkc-wf-ic" set:html={WFI.create_task} />
+                                                            <span class="mkc-wf-tx"><small>{isEn ? 'Action' : 'Acción'}</small><b>{isEn ? 'Create a task' : 'Crear una tarea'}</b><em>{isEn ? 'Call {{cliente}} while {{folio}} is warm' : 'Llamar a {{cliente}} mientras {{folio}} está caliente'}</em></span>
+                                                            <span class="mkc-wf-dots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                                                        </div>
+                                                        <span class="mkc-wf-link"></span>
+                                                        <div class="mkc-wf-node is-empty">
+                                                            <span class="mkc-wf-ic" set:html={WFI.plus} />
+                                                            <span class="mkc-wf-tx"><small>{isEn ? 'Do this' : 'Haz esto'}</small><b>{isEn ? 'Add a step' : 'Agregar un paso'}</b></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mkc-wf-br">
+                                                        <span class="mkc-wf-lbl">{isEn ? 'If the deadline runs out' : 'Si se acaba el plazo'}</span>
+                                                        <div class="mkc-wf-node is-sel" id="wfMail">
+                                                            <span class="mkc-wf-ic" set:html={WFI.send_client_email} />
+                                                            <span class="mkc-wf-tx"><small>{isEn ? 'Action' : 'Acción'}</small><b>{isEn ? 'Email the client' : 'Escribirle al cliente'}</b><em>{isEn ? 'Any questions about {{folio}}?' : '¿Alguna duda sobre {{folio}}?'}</em></span>
+                                                            <span class="mkc-wf-dots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                                                        </div>
+                                                        <span class="mkc-wf-link"></span>
+                                                        <span class="mkc-wf-dia" set:html={WFI.wait_until} />
+                                                        <div class="mkc-wf-node mkc-wf-cs">
+                                                            <span class="mkc-wf-ic" set:html={WFI.wait_until} />
+                                                            <span class="mkc-wf-tx"><small>{isEn ? 'Wait until' : 'Espera hasta'}</small><b>{isEn ? 'Current quote status is Approved and 1 more' : 'Estado actual de la cotización es Aprobada y 1 más'}</b><em>{isEn ? 'Up to 5 days' : 'Máximo 5 días'}</em></span>
+                                                            <span class="mkc-wf-dots"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="mk-wf-node mk-wf-node-sm">
-                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64" alt="Slack" width="18" height="18" loading="lazy" />
-                                                <div><b>{isEn ? 'Send a Slack message' : 'Enviar un mensaje a Slack'}</b><em>#ventas</em></div>
-                                            </div>
+                                            <div class="mkc-wf-zoom"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" set:html={MKI.plus} /></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" set:html={MKI.minus} /></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.fit} /></span></div>
                                         </div>
-                                        <div class="mk-wf-branch">
-                                            <span class="mk-wf-tag mk-wf-tag-warn">{isEn ? 'If the deadline passes' : 'Si vence el plazo'}</span>
-                                            <div class="mk-wf-node mk-wf-node-sm">
-                                                <i class="mk-wf-ico mk-wf-ico-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="m22 6-10 7L2 6"/></svg></i>
-                                                <div><b>{isEn ? 'Email the client' : 'Escribirle al cliente'}</b><em>{isEn ? 'Any questions about {{folio}}?' : '¿Alguna duda sobre {{folio}}?'}</em></div>
-                                            </div>
-                                            <div class="mk-wf-node mk-wf-node-sm">
-                                                <img src="/imgs/integrations/whatsapp.svg" alt="WhatsApp" width="18" height="18" loading="lazy" />
-                                                <div><b>{isEn ? 'Send the client a WhatsApp' : 'Mandarle un WhatsApp al cliente'}</b><em>{isEn ? 'Approved template' : 'Plantilla aprobada'}</em></div>
-                                            </div>
+                                        <div class="mkc-wf-runs" id="wfRuns">
+                                            <div class="mkc-wf-runs-bar"><span class="mkc-wf-btn">{isEn ? 'Refresh' : 'Actualizar'}</span></div>
+                                            <div class="mkc-wf-rw" id="wfRunNew"><div class="mkc-wf-run"><i class="mkc-wf-pill wait">{isEn ? 'Waiting' : 'En espera'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0152 · {isEn ? 'GAMA Construction' : 'Constructora GAMA'}</small></span><em>{isEn ? 'Sep 27, 9:41 AM' : '27 sept, 09:41'}</em></div></div>
+                                            <div class="mkc-wf-run"><i class="mkc-wf-pill ok">{isEn ? 'Completed' : 'Completada'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0148 · {isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</small></span><em>{isEn ? 'Sep 24, 4:05 PM' : '24 sept, 16:05'}</em></div>
+                                            <div class="mkc-wf-run"><i class="mkc-wf-pill wait">{isEn ? 'Waiting' : 'En espera'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0154 · Grupo Ferrex</small></span><em>{isEn ? 'Sep 23, 9:30 AM' : '23 sept, 09:30'}</em></div>
+                                            <div class="mkc-wf-run"><i class="mkc-wf-pill ok">{isEn ? 'Completed' : 'Completada'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0149 · {isEn ? 'Rivera Finishes' : 'Acabados Rivera'}</small></span><em>{isEn ? 'Sep 22, 12:18 PM' : '22 sept, 12:18'}</em></div>
+                                            <div class="mkc-wf-run"><i class="mkc-wf-pill fail">{isEn ? 'Failed' : 'Fallida'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0146 · {isEn ? 'Northern Steel' : 'Aceros del Norte'}</small></span><em>{isEn ? 'Sep 19, 5:40 PM' : '19 sept, 17:40'}</em></div>
+                                            <div class="mkc-wf-run"><i class="mkc-wf-pill ok">{isEn ? 'Completed' : 'Completada'}</i><span><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><small>COT-0145 · {isEn ? 'Apex Construction' : 'Constructora Apex'}</small></span><em>{isEn ? 'Sep 18, 11:02 AM' : '18 sept, 11:02'}</em></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="mk-wf-foot">
-                                    <span><i class="mk-wf-dot"></i>{isEn ? 'Last run 12:36 · COT-0148 · completed' : 'Última ejecución 12:36 · COT-0148 · completada'}</span>
-                                    <b>{isEn ? '0 errors' : '0 errores'}</b>
-                                </div>
+                              </div>
+
+                              <div class="mkc-phone mkc-wf-phone" id="wfPhone">
+                                  <div class="mkc-phone-scr">
+                                      <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                      <div class="mkc-phone-page mkc-ml" id="wfMailView">
+                                          <div class="mkc-ml-nav"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.back} />{isEn ? 'Inbox' : 'Recibidos'}</span><span class="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.chevUp} /><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span></div>
+                                          <div class="mkc-ml-head"><i>MV</i><span><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><small>{isEn ? 'To: Sofía Ruiz' : 'Para: Sofía Ruiz'}</small></span><em>9:41</em></div>
+                                          <b class="mkc-ml-subj">{isEn ? 'Any questions about COT-0152?' : '¿Alguna duda sobre COT-0152?'}</b>
+                                          <div class="mkc-ml-body">
+                                              <img src="/imgs/logo-cord-navy.png" alt="" width="40" height="12" />
+                                              <b>{isEn ? 'GAMA Construction' : 'Constructora GAMA'}</b>
+                                              <p>{isEn ? 'Hi, we are following up on quote COT-0152 for 196,000 MXN. If anything needs adjusting, reply to this email and we will sort it out.' : 'Hola, damos seguimiento a la cotización COT-0152 por 196,000 MXN. Si hay algo que ajustar, responde este correo y lo vemos.'}</p>
+                                              <span class="mkc-ml-cta">{isEn ? 'View quote COT-0152' : 'Ver cotización COT-0152'}</span>
+                                              <small>{isEn ? 'Or copy this link into your browser:' : 'O copie este enlace en su navegador:'}<u>https://cordhq.app/q/7Hq2mXe9</u></small>
+                                              <em>{isEn ? 'Valle Materials · sent with Cord' : 'Materiales del Valle · enviado con Cord'}</em>
+                                          </div>
+                                          <div class="mkc-ml-bar">
+                                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.trash} />
+                                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.folder} />
+                                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.reply} />
+                                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.compose} />
+                                          </div>
+                                      </div>
+                                      <div class="mkc-ml-lock" id="wfLock">
+                                          <span class="mkc-ml-date">{isEn ? 'Sunday, September 27' : 'domingo, 27 de septiembre'}</span>
+                                          <b class="mkc-ml-clock">9:41</b>
+                                          <div class="mkc-ml-notif" id="wfNotif">
+                                              <i class="mkc-ml-app"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="m3.6 7.6 8.4 6 8.4-6"/></svg></i>
+                                              <span><span class="t"><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><em>{isEn ? 'now' : 'ahora'}</em></span><strong>{isEn ? 'Any questions about COT-0152?' : '¿Alguna duda sobre COT-0152?'}</strong><small>{isEn ? 'Hi, we are following up on quote COT-0152 for 196,000 MXN…' : 'Hola, damos seguimiento a la cotización COT-0152 por 196,000 MXN…'}</small></span>
+                                          </div>
+                                          <span class="mkc-ml-lb l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1 6h-4z"/><path d="M10 8h4v13h-4z"/></svg></span>
+                                          <span class="mkc-ml-lb r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+                                      </div>
+                                      <span class="mkc-home"></span>
+                                  </div>
+                              </div>
                             </div>
                         )}
 
@@ -1307,42 +1546,92 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         )}
 
                         {feature.slug === 'equipo' && (
-                            <div class="mk-window mk-team" id="teamHero">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">Cord · {isEn ? 'Team & roles' : 'Equipo y roles'}</span>
-                                    <span class="mk-badge mk-badge-sent">● 4 {isEn ? 'members' : 'miembros'}</span>
+                            <div class="mkc-stage mkc-eq" id="eqHero" aria-hidden="true">
+                              <div class="mkc-app mkc-eq-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org" id="eqOrgBtn">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class="mkc-rail-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti mkc-ti-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-eq-page">
+                                        <span class="mkc-eq-crumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.back} />{isEn ? 'Settings' : 'Configuración'}<i>/</i><b>{isEn ? 'Team & roles' : 'Equipo y Roles'}</b></span>
+                                        <b class="mkc-eq-h">{isEn ? 'Team & permissions' : 'Equipo y permisos'}</b>
+                                        <span class="mkc-eq-desc">{isEn ? 'Invite your team, set permissions, and access security.' : 'Invita a tu equipo, define permisos y la seguridad de acceso.'}</span>
+                                        <span class="mkc-eq-tabs"><i class="on">{isEn ? 'Team & roles' : 'Equipo y Roles'}</i><i>SSO</i><i>{isEn ? 'Security' : 'Seguridad'}</i></span>
+                                        <div class="mkc-eq-seats">
+                                            <b class="editorial" id="eqSeats" data-tpl={isEn ? '{n} of 15 seats' : '{n} de 15 asientos'}>{isEn ? '6 of 15 seats' : '6 de 15 asientos'}</b>
+                                            <span class="mkc-eq-bar"><i id="eqSeatBar" style="width:40%"></i></span>
+                                            <span class="mkc-eq-sa"><span class="mkc-eq-btn">{isEn ? 'Export' : 'Exportar'}</span><span class="mkc-eq-btn pri" id="eqAdd">{isEn ? 'Add member' : 'Agregar miembro'}</span></span>
+                                        </div>
+                                        <div class="mkc-eq-chips"><i class="on">{isEn ? 'All' : 'Todos'} <b id="eqCAll">7</b></i><i>{isEn ? 'Active' : 'Activos'} <b>5</b></i><i>{isEn ? 'Pending invitations' : 'Invitaciones pendientes'} <b id="eqCInv">1</b></i><i>{isEn ? 'Inactive' : 'Inactivos'} <b>1</b></i></div>
+                                        <div class="mkc-eq-th"><span>{isEn ? 'Member' : 'Miembro'}</span><span>{isEn ? 'Role' : 'Rol'}</span><span>{isEn ? 'Activity' : 'Actividad'}</span><span></span></div>
+                                        <div class="mkc-eq-r"><span class="mkc-eq-m"><i>RV</i><span><b>Ricardo Valle<em>{isEn ? 'You' : 'Tú'}</em></b><small>ricardo@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role own">{isEn ? 'Super admin' : 'Súper administrador'}</i></span><span class="mkc-eq-act"><b>{isEn ? 'Last seen Sep 27, 2026' : 'Última sesión 27 sept 2026'}</b><small>{isEn ? '42 quote(s) in 30 days' : '42 cotización(es) en 30 días'}</small></span><span></span></div>
+                                        <div class="mkc-eq-r"><span class="mkc-eq-m"><i>LF</i><span><b>Lucía Ferreira</b><small>lucia@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role">{isEn ? 'Admin' : 'Administrador'}</i></span><span class="mkc-eq-act"><b>{isEn ? 'Last seen Sep 27, 2026' : 'Última sesión 27 sept 2026'}</b><small>{isEn ? '18 quote(s) in 30 days' : '18 cotización(es) en 30 días'}</small></span><span class="mkc-eq-ra"><u>{isEn ? 'Edit permissions' : 'Editar funciones'}</u><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${MKI.x}</svg>`} /></span></div>
+                                        <div class="mkc-eq-r"><span class="mkc-eq-m"><i>MR</i><span><b>Marco Ruiz</b><small>marco@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role">{isEn ? 'Rep' : 'Vendedor'}</i></span><span class="mkc-eq-act"><b>{isEn ? 'Last seen Sep 26, 2026' : 'Última sesión 26 sept 2026'}</b><small>{isEn ? '31 quote(s) in 30 days' : '31 cotización(es) en 30 días'}</small></span><span class="mkc-eq-ra"><u>{isEn ? 'Edit permissions' : 'Editar funciones'}</u><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${MKI.x}</svg>`} /></span></div>
+                                        <div class="mkc-eq-r"><span class="mkc-eq-m"><i>DO</i><span><b>Daniela Ortiz</b><small>daniela@materialesdelvalle.mx</small></span></span><span class="mkc-eq-rc"><i class="mkc-eq-role">{isEn ? 'Rep' : 'Vendedor'}</i><em>{isEn ? 'Managed by SSO' : 'Gestionado por SSO'}</em></span><span class="mkc-eq-act"><b>{isEn ? 'Last seen Sep 25, 2026' : 'Última sesión 25 sept 2026'}</b><small>{isEn ? '24 quote(s) in 30 days' : '24 cotización(es) en 30 días'}</small></span><span class="mkc-eq-ra"><u>{isEn ? 'Edit permissions' : 'Editar funciones'}</u><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${MKI.x}</svg>`} /></span></div>
+                                        <div class="mkc-eq-r"><span class="mkc-eq-m"><i>JS</i><span><b>Jorge Salinas</b><small>jorge@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role">{isEn ? 'Custom' : 'Personalizado'}</i></span><span class="mkc-eq-act"><b>{isEn ? 'Last seen Sep 22, 2026' : 'Última sesión 22 sept 2026'}</b></span><span class="mkc-eq-ra"><u>{isEn ? 'Edit permissions' : 'Editar funciones'}</u><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${MKI.x}</svg>`} /></span></div>
+                                        <div class="mkc-eq-r is-off"><span class="mkc-eq-m"><i>PI</i><span><b>Pedro Ibarra</b><small>pedro@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role">{isEn ? 'Rep' : 'Vendedor'}</i></span><span class="mkc-eq-act"><span class="mkc-eq-st off">{isEn ? 'No access' : 'Sin acceso'}</span></span><span class="mkc-eq-ra"><u>{isEn ? 'Invite again' : 'Volver a invitar'}</u></span></div>
+                                        <div class="mkc-eq-rw" id="eqNewRow"><div class="mkc-eq-r"><span class="mkc-eq-m"><i>AN</i><span><b>ana.vega@materialesdelvalle.mx</b><small>ana.vega@materialesdelvalle.mx</small></span></span><span><i class="mkc-eq-role">{isEn ? 'Custom' : 'Personalizado'}</i></span><span class="mkc-eq-act"><span class="mkc-eq-st">{isEn ? 'Invitation pending' : 'Invitación pendiente'}</span></span><span class="mkc-eq-ra"><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${MKI.reload}</svg>`} /><u>{isEn ? 'Edit permissions' : 'Editar funciones'}</u></span></div></div>
+                                    </div>
                                 </div>
-                                <div class="mk-team-body">
-                                    <div class="mk-team-row team-item">
-                                        <span class="mk-avatar mk-avatar-cg">RM</span>
-                                        <div class="mk-team-info"><b>Raúl Mendoza</b><i>raul@materialesdelvalle.mx</i></div>
-                                        <span class="mk-role mk-role-owner">{isEn ? 'Owner' : 'Dueño'}</span>
-                                    </div>
-                                    <div class="mk-team-row team-item">
-                                        <span class="mk-avatar">LF</span>
-                                        <div class="mk-team-info"><b>Lucía Ferreira</b><i>lucia@materialesdelvalle.mx</i></div>
-                                        <span class="mk-role mk-role-admin">Admin</span>
-                                    </div>
-                                    <div class="mk-team-row team-item">
-                                        <span class="mk-avatar mk-avatar-gf">MR</span>
-                                        <div class="mk-team-info"><b>Marco Ruiz</b><i>marco@materialesdelvalle.mx</i></div>
-                                        <span class="mk-role mk-role-sales">{isEn ? 'Sales' : 'Vendedor'}</span>
-                                    </div>
-                                    <div class="mk-team-row team-item mk-team-row-ghost">
-                                        <span class="mk-avatar mk-avatar-pending">AV</span>
-                                        <div class="mk-team-info"><b>Ana Vega</b><i>{isEn ? 'invitation sent' : 'invitación enviada'}</i></div>
-                                        <span class="mk-role mk-role-view">{isEn ? 'View' : 'Lectura'}</span>
-                                    </div>
-                                    <div class="mk-team-invite" id="teamInvite">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        {isEn ? 'Invite by email' : 'Invitar por correo'}
-                                    </div>
+
+                                <div class="mkc-eq-org" id="eqOrg">
+                                    <span class="mkc-eq-ol">{isEn ? 'Workspaces' : 'Espacios de trabajo'}</span>
+                                    <span class="mkc-eq-oi sel"><i>M</i><span><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><small>{isEn ? 'Owner' : 'Dueño'}</small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></span>
+                                    <span class="mkc-eq-kids"><span class="mkc-eq-oi"><i>M</i><span><b>{isEn ? 'Valle Materials USA' : 'Materiales del Valle USA'}</b></span></span></span>
+                                    <span class="mkc-eq-oi"><i class="alt">P</i><span><b>{isEn ? 'Valle Ready-Mix' : 'Premezclados del Valle'}</b><small>Admin</small></span></span>
+                                    <span class="mkc-eq-od"></span>
+                                    <span class="mkc-eq-oa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create workspace' : 'Crear espacio de trabajo'}</span>
+                                    <span class="mkc-eq-oa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} />{isEn ? 'Team settings' : 'Configuración del equipo'}<svg class="c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.fwd} /></span>
+                                    <span class="mkc-eq-oa amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.flask} />{isEn ? 'Test environment' : 'Entorno de prueba'}<i class="mkc-eq-sw"></i></span>
+                                    <span class="mkc-eq-od"></span>
+                                    <span class="mkc-eq-oi"><i class="usr">R</i><span><b>Ricardo Valle</b><small>ricardo@materialesdelvalle.mx</small></span></span>
+                                    <span class="mkc-eq-oa red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.logout} />{isEn ? 'Sign out' : 'Cerrar sesión'}</span>
                                 </div>
+
+                                <div class="mkc-eq-scrim" id="eqScrim"></div>
+                                <div class="mkc-eq-modal" id="eqModal">
+                                    <div class="mkc-eq-mh"><b>{isEn ? 'Add team member' : 'Agregar miembro del equipo'}</b><s set:html={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${MKI.x}</svg>`} /></div>
+                                    <div class="mkc-eq-mb">
+                                        <label>{isEn ? 'Email' : 'Correo electrónico'}</label>
+                                        <span class="mkc-eq-in" id="eqEmailF"><span id="eqEmail">ana.vega@materialesdelvalle.mx</span></span>
+                                        <span class="mkc-eq-pre" id="eqPre"><i data-p="admin">{isEn ? 'Admin' : 'Administrador'}</i><i data-p="vendedor">{isEn ? 'Rep' : 'Vendedor'}</i><i data-p="lectura">{isEn ? 'Read only' : 'Solo lectura'}</i><i data-p="custom" class="on">{isEn ? 'Custom' : 'Personalizado'}</i></span>
+                                        <p class="mkc-eq-pd" id="eqPd" data-vendedor={isEn ? 'Quotes and manages clients/products; no access to settings or approvals.' : 'Cotiza y gestiona clientes/productos; no toca ajustes ni aprueba.'} data-lectura={isEn ? "Can view the app but can't change anything." : 'Puede ver la app pero no modifica nada.'} data-custom={isEn ? 'Custom role — combines exactly the permissions you checked below.' : 'Rol personalizado — combina exactamente los permisos que marcaste abajo.'}>{isEn ? 'Custom role — combines exactly the permissions you checked below.' : 'Rol personalizado — combina exactamente los permisos que marcaste abajo.'}</p>
+                                        <span class="mkc-eq-g">{isEn ? 'Selling' : 'Vender'}</span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Quotes' : 'Cotizaciones'}</b><i data-k="cotizar"></i></span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Clients' : 'Clientes'}</b><i data-k="clientes"></i></span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Products' : 'Productos'}</b><i data-k="productos"></i></span>
+                                        <span class="mkc-eq-g">{isEn ? 'Money' : 'Dinero'}</span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Collections' : 'Cobranza'}</b><i data-k="cobranza" class="on" id="eqPCob"></i></span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Payment settings' : 'Configurar cobros'}</b><i data-k="cobros_config"></i></span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Refunds' : 'Reembolsos'}</b><i data-k="reembolsar"></i></span>
+                                        <span class="mkc-eq-g">{isEn ? 'Control and analytics' : 'Control y análisis'}</span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Approvals' : 'Aprobaciones'}</b><i data-k="aprobar"></i></span>
+                                        <span class="mkc-eq-p"><b>{isEn ? 'Reports' : 'Informes'}</b><i data-k="analitica" class="on" id="eqPInf"></i></span>
+                                    </div>
+                                    <div class="mkc-eq-mf"><span class="mkc-eq-btn">{isEn ? 'Cancel' : 'Cancelar'}</span><span class="mkc-eq-btn pri" id="eqSend">{isEn ? 'Send invitation' : 'Enviar invitación'}</span></div>
+                                </div>
+                                <span class="mkc-toast" id="eqToast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} />{isEn ? 'Invitation sent — the link was also copied' : 'Invitación enviada — el link también quedó copiado'}</span>
+                              </div>
                             </div>
                         )}
-
-
 
                     </div>
                 </div>
@@ -1706,52 +1995,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     }
     .mk-check svg { width: 14px; height: 14px; }
 
-    /* ── FACTURACIÓN INTERNACIONAL (US/MX) ── */
-    .mk-intl { position: relative; }
-    .mk-intl-body { padding: 1.1rem 1.2rem 1.3rem; }
-    .mk-rows-intl { display: flex; flex-direction: column; gap: 4px; }
-    .mk-rows-intl .mk-row { grid-template-columns: 1.7fr 0.6fr 1fr 1fr; }
-    .mk-intl-totals { display: flex; flex-direction: column; gap: 6px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.06); }
-    .mk-intl-tot { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 10px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
-    .mk-intl-tot span { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; }
-    .mk-intl-tot b { font-size: 0.95rem; color: #0f172a; }
-    .mk-intl-tot-fiscal b { color: #059669; }
-    .mk-intl-rate { font-size: 0.66rem; color: #94a3b8; text-align: right; padding-right: 4px; }
-    .mk-intl-pill { display: inline-flex; align-items: center; gap: 5px; position: absolute; top: 46px; right: 14px; z-index: 3; font-size: 0.64rem; font-weight: 700; color: #2563eb; background: rgba(255,255,255,0.95); border: 1px solid rgba(37,99,235,0.25); padding: 5px 11px; border-radius: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
-    .mk-intl-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
-
-    /* ── CORD WORKFLOWS — editor con disparador, espera y ramas ── */
-    .mk-wf { max-width: 620px; margin: 0 auto; }
-    .mk-wf-runs { font-size: 0.64rem; color: #94a3b8; font-weight: 600; white-space: nowrap; }
-    .mk-wf-body { padding: 1.05rem 1.2rem 1.15rem; display: flex; flex-direction: column; background: linear-gradient(180deg, #fcfdfe 0%, #ffffff 60%); }
-    .mk-wf-sec { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.9px; text-transform: uppercase; color: #94a3b8; margin: 0 0 7px 2px; }
-    .mk-wf-node { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 6px 16px -10px rgba(10,25,47,0.18); }
-    .mk-wf-node > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .mk-wf-node b { font-size: 0.74rem; font-weight: 650; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
-    .mk-wf-node em { font-style: normal; font-size: 0.64rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-wf-trigger { border-color: rgba(37,99,235,0.22); box-shadow: 0 0 0 3px rgba(37,99,235,0.06), 0 6px 16px -10px rgba(10,25,47,0.18); }
-    .mk-wf-trigger em { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: #2563eb; }
-    .mk-wf-node img { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; }
-    .mk-wf-ico { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .mk-wf-ico svg { width: 15px; height: 15px; }
-    .mk-wf-ico-blue { color: #2563eb; background: rgba(37,99,235,0.08); }
-    .mk-wf-ico-amber { color: #b45309; background: rgba(245,158,11,0.10); }
-    .mk-wf-ico-green { color: #059669; background: rgba(16,185,129,0.10); }
-    .mk-wf-line { display: block; width: 1px; height: 16px; background: rgba(10,25,47,0.14); margin: 6px 0 8px 26px; }
-    .mk-wf-branches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(10,25,47,0.12); }
-    .mk-wf-branch { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-    .mk-wf-node-sm { padding: 8px 10px; gap: 8px; border-radius: 10px; }
-    .mk-wf-node-sm .mk-wf-ico { width: 24px; height: 24px; border-radius: 7px; }
-    .mk-wf-node-sm .mk-wf-ico svg { width: 13px; height: 13px; }
-    .mk-wf-node-sm b { font-size: 0.68rem; }
-    .mk-wf-node-sm em { font-size: 0.6rem; }
-    .mk-wf-tag { align-self: flex-start; font-size: 0.58rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; }
-    .mk-wf-tag-ok { color: #059669; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
-    .mk-wf-tag-warn { color: #b45309; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); }
-    .mk-wf-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.64rem; color: #64748b; }
-    .mk-wf-foot span { display: inline-flex; align-items: center; gap: 7px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-wf-foot b { color: #059669; font-weight: 700; white-space: nowrap; }
-    .mk-wf-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
 
     /* ══ HERO CALCA (editor · link público · seguimiento · aprobaciones): réplica de AppLayout, cotizaciones/nueva, cotizaciones/[id] y q/[token] ══ */
     .mkc-stage { position: relative; width: 100%; container-type: inline-size; text-align: left; color: #0f1729; }
@@ -2407,21 +2650,323 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mkc-fx-lock svg { width: 9px; height: 9px; }
     .mkc-fx-phone .mkc-qm-total b { font-size: 21px; white-space: nowrap; }
 
-    /* ── EQUIPO / roles ── */
-    .mk-team-body { padding: 1rem 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 8px; }
-    .mk-team-row { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); }
-    .mk-team-row-ghost { opacity: 0.72; border-style: dashed; }
-    .mk-team-info { flex: 1; min-width: 0; }
-    .mk-team-info b { display: block; font-size: 0.85rem; color: #0f172a; font-weight: 600; margin-bottom: 2px; }
-    .mk-team-info i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-role { flex-shrink: 0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 5px 11px; border-radius: 100px; }
-    .mk-role-owner { color: #0f172a; background: rgba(10,25,47,0.07); border: 1px solid rgba(10,25,47,0.14); }
-    .mk-role-admin { color: #7c3aed; background: rgba(124,58,237,0.09); border: 1px solid rgba(124,58,237,0.2); }
-    .mk-role-sales { color: #2563eb; background: rgba(37,99,235,0.09); border: 1px solid rgba(37,99,235,0.2); }
-    .mk-role-view  { color: #64748b; background: rgba(100,116,139,0.09); border: 1px solid rgba(100,116,139,0.2); }
-    .mk-avatar-pending { background: linear-gradient(135deg, #cbd5e1, #94a3b8) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3) !important; }
-    .mk-team-invite { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; padding: 11px; border-radius: 12px; border: 1px dashed rgba(37,99,235,0.35); color: #2563eb; font-size: 0.8rem; font-weight: 600; background: rgba(37,99,235,0.03); }
-    .mk-team-invite svg { width: 15px; height: 15px; }
+    /* ── Facturación (facturas/[id] + i/[token]): el cliente abona desde su link y el saldo baja en la factura ── */
+    .mkc-fa { height: 510px; }
+    .mkc-fa-app { margin-left: 172px; min-width: 640px; height: 500px; }
+    .mkc-fa-phone { left: 0; top: 20px; }
+    .mkc-pill-open { color: #b45309; background: rgba(245,158,11,0.12); }
+    .mkc-fa-grid { display: grid; grid-template-columns: minmax(0, 1fr) 196px; gap: 20px; align-items: start; padding: 0 var(--gut) 0 10px; }
+    .mkc-fa-main, .mkc-fa-side { min-width: 0; display: flex; flex-direction: column; }
+    .mkc-fa-dh { padding-bottom: 10px; margin-bottom: 8px; align-items: flex-start; }
+    .mkc-fa-dh .mkc-dh-av { background: #334155; }
+    .mkc-dh-m i { font-style: normal; color: #c3c8d0; }
+    .mkc-fa-origin { font-size: 9px; font-weight: 600; color: #0a192f; border-bottom: 1px solid rgba(10,25,47,0.18); }
+    .mkc-fa-dh .mkc-dh-tot b { font-size: 18px; }
+    .mkc-fa-dh .mkc-dh-tot em { margin-top: 2px; white-space: nowrap; }
+    .mkc-fa-dh .mkc-dh-tot em span { font-size: inherit; font-weight: inherit; letter-spacing: 0; color: inherit; opacity: 1; }
+    .mkc-fa-dh .mkc-dh-m { white-space: normal; line-height: 1.45; }
+    .mkc-fa-ih, .mkc-fa-ir { display: grid; grid-template-columns: minmax(0, 1.7fr) 36px 58px 74px; gap: 8px; align-items: center; }
+    .mkc-fa-ih { padding: 0 4px 5px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-fa-ih span:not(:first-child), .mkc-fa-ir span:not(:first-child) { text-align: right; }
+    .mkc-fa-ir { padding: 5px 4px; font-size: 10px; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mkc-fa-ir span:first-child { font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fa-ir .editorial:last-child { color: #0a192f; }
+    .mkc-fa-tots { display: flex; flex-direction: column; align-items: flex-end; padding: 6px 4px 0; }
+    .mkc-fa-tots > div { display: flex; justify-content: space-between; gap: 20px; min-width: 196px; padding: 1.5px 0; font-size: 9.5px; color: #5b6472; }
+    .mkc-fa-tots .editorial { font-size: 10.5px; color: #0a192f; white-space: nowrap; }
+    .mkc-fa-tot { margin-top: 2px; padding-top: 4px !important; border-top: 1px solid rgba(10,25,47,0.08); color: #0f1729 !important; font-weight: 650; }
+    .mkc-fa-due { margin-top: 3px; padding-top: 5px !important; border-top: 2px solid #0a192f; color: #0f1729 !important; font-size: 10.5px !important; font-weight: 750; }
+    .mkc-fa-due .editorial { font-size: 12.5px; }
+    .mkc-fa-sec { margin: 6px 0 2px; padding-bottom: 4px; }
+    .mkc-fa-pw, .mkc-fa-tlw, .mkc-iv-pw { overflow: hidden; }
+    .mkc-fa-pago { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 4px; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 9.5px; border-radius: 6px; }
+    .mkc-fa-pago span { color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fa-pago b { font-size: 10.5px; color: #0a192f; white-space: nowrap; }
+    .mkc-fa-side .mkc-sec { padding-bottom: 5px; margin-bottom: 7px; }
+    .mkc-fa-btn { display: flex; align-items: center; justify-content: center; padding: 7px; font-size: 10.5px; font-weight: 650; color: #fff; background: #18b889; border: 1px solid #07996c; border-radius: 9px; box-shadow: 0 8px 18px -10px rgba(16,185,129,0.6); }
+    .mkc-fa-deliv { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 2px 2px; }
+    .mkc-fa-deliv i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.12); }
+    .mkc-fa-deliv span { display: flex; flex-direction: column; min-width: 0; }
+    .mkc-fa-deliv b { font-size: 9.5px; font-weight: 700; color: #0f1729; }
+    .mkc-fa-deliv small { font-size: 8.5px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fa-deliv em { font-style: normal; font-size: 8.5px; font-weight: 700; color: #0a192f; }
+    .mkc-fa-util { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 7px; }
+    .mkc-fa-util span { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 6px 2px 5px; font-size: 7px; font-weight: 650; color: #5b6472; background: #fff; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08), 0 1px 2px rgba(10,25,47,0.04); white-space: nowrap; }
+    .mkc-fa-util svg, .mkc-fa-util img { width: 12px; height: 12px; }
+    .mkc-fa-util .wa { color: #0b7a4b; }
+    .mkc-fa-tl { gap: 0; }
+    .mkc-fa-tl .mkc-tl-i { padding-bottom: 7px; }
+    .mkc-fa-tl .mkc-tl-b b { font-size: 9.5px; font-weight: 600; }
+    .mkc-fa-tl .mkc-tl-b span { font-size: 8.5px; }
+    .mkc-fa-meta { display: flex; flex-direction: column; gap: 5px; }
+    .mkc-fa-meta div { display: flex; justify-content: space-between; gap: 10px; font-size: 9px; }
+    .mkc-fa-meta span { color: #5b6472; }
+    .mkc-fa-meta b { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-weight: 500; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-fa-meta img { width: 12px; height: 9px; border-radius: 2px; }
+    .mkc-fa-meta .mono { display: block; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 7.5px; }
+
+    /* Factura hospedada (i/[token]) a ancho de teléfono */
+    .mkc-fa-phone .mkc-phone-scr { background: #f3f2ef; }
+    .mkc-iv { padding: 4px 7px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    .mkc-iv-scroll { padding-bottom: 46px; will-change: transform; }
+    .mkc-iv-card { padding: 13px 12px 12px; background: #fff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.06); box-shadow: 0 2px 4px rgba(10,25,47,0.03), 0 12px 30px -14px rgba(10,25,47,0.14); }
+    .mkc-iv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .mkc-iv-brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .mkc-iv-brand i { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 10px; font-weight: 800; color: #fff; background: #14365c; border-radius: 7px; }
+    .mkc-iv-brand > span { display: flex; flex-direction: column; min-width: 0; }
+    .mkc-iv-brand b { font-size: 10px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-iv-brand small { font-size: 6.5px; color: #9ca3af; }
+    .mkc-iv-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+    .mkc-iv-folio span { font-size: 5.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #c4c8cf; }
+    .mkc-iv-folio b { font-size: 9.5px; font-weight: 700; color: #111; letter-spacing: -0.02em; }
+    .mkc-iv-rule { height: 1px; margin: 10px 0; background: rgba(10,25,47,0.07); }
+    .mkc-iv-hero { display: flex; flex-direction: column; align-items: center; padding: 12px 8px 11px; text-align: center; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 13px; }
+    .mkc-iv-hero > span { font-size: 5.5px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: #b7bcc5; }
+    .mkc-iv-hero b { margin: 5px 0 7px; font-size: 25px; line-height: 1; letter-spacing: -0.05em; color: #14365c; white-space: nowrap; }
+    .mkc-iv-hero i { font-style: normal; font-size: 7.5px; font-weight: 500; padding: 3px 8px; border-radius: 99px; background: rgba(10,25,47,0.06); color: #0a192f; }
+    .mkc-iv-hero small { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 9px; margin-top: 6px; font-size: 7px; color: #8a8f99; }
+    .mkc-iv-next { margin: 10px 0 12px; font-size: 7.5px; line-height: 1.5; color: #4a5567; }
+    .mkc-iv-next u { display: block; margin-top: 3px; font-weight: 600; color: #0a192f; text-underline-offset: 2px; }
+    .mkc-iv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .mkc-iv-parties div { display: flex; flex-direction: column; min-width: 0; }
+    .mkc-iv-parties span, .mkc-iv-lh, .mkc-iv-pagos > span { font-size: 5.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #c4c8cf; }
+    .mkc-iv-parties b { margin-top: 3px; font-size: 8.5px; font-weight: 650; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-iv-parties small { margin-top: 1px; font-size: 6.5px; color: #8a8f99; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-iv-lh { display: flex; justify-content: space-between; padding-bottom: 5px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-iv-lr { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(10,25,47,0.045); }
+    .mkc-iv-lr > span { display: flex; flex-direction: column; min-width: 0; font-size: 8px; font-weight: 600; color: #111827; }
+    .mkc-iv-lr small { font-size: 6.5px; font-weight: 500; color: #9ca3af; }
+    .mkc-iv-lr b { font-size: 8px; color: #4b5563; white-space: nowrap; }
+    .mkc-iv-tots { margin-top: 8px; }
+    .mkc-iv-tots > div { display: flex; justify-content: space-between; padding: 2px 0; font-size: 7.5px; color: #6b7280; }
+    .mkc-iv-tots .t { margin-top: 3px; padding-top: 5px; border-top: 1px solid #eceff3; color: #111827; font-weight: 500; }
+    .mkc-iv-tots .d { margin-top: 3px; padding-top: 5px; border-top: 1px solid #0a192f; color: #050505; font-size: 10px; font-weight: 600; }
+    .mkc-iv-pagos { margin-top: 11px; }
+    .mkc-iv-pagos > span { display: block; margin-bottom: 3px; }
+    .mkc-iv-pagos div div, .mkc-iv-pagos > div:not(.mkc-iv-pw) { display: flex; justify-content: space-between; padding: 2.5px 0; font-size: 7.5px; color: #4b5563; }
+    .mkc-iv-foot { margin-top: 12px; padding-top: 11px; border-top: 1px solid rgba(10,25,47,0.07); }
+    .mkc-iv-pay { display: flex; align-items: center; justify-content: center; gap: 3px; padding: 9px; font-size: 9px; font-weight: 650; color: #fff; background: #14365c; border-radius: 10px; box-shadow: 0 10px 20px -12px rgba(10,25,47,0.55); white-space: nowrap; }
+    .mkc-iv-partial { display: flex; justify-content: center; margin-top: 6px; padding: 7px; font-size: 8px; font-weight: 600; color: #4a5567; border: 1px solid #e5e7eb; border-radius: 99px; }
+    .mkc-iv-box { height: 0; opacity: 0; overflow: hidden; }
+    .mkc-iv-box-in { margin-top: 7px; padding: 9px; background: #f5f5f7; border: 1px solid #e5e7eb; border-radius: 11px; }
+    .mkc-iv-box-in label { display: block; font-size: 8px; font-weight: 600; color: #111827; }
+    .mkc-iv-box-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+    .mkc-iv-box-row em { font-style: normal; font-size: 7px; font-weight: 700; color: #6b7280; }
+    .mkc-iv-in { flex: 1; min-height: 22px; display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; font-size: 10px; font-weight: 600; color: #111827; background: #fff; border: 1px solid transparent; border-radius: 8px; font-variant-numeric: tabular-nums; }
+    .mkc-iv-in.on { border-color: rgba(10,25,47,0.28); box-shadow: 0 0 0 2px rgba(10,25,47,0.06); }
+    .mkc-iv-box-in p { margin: 6px 0 8px; font-size: 6.5px; line-height: 1.45; color: #6b7280; }
+    .mkc-iv-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .mkc-iv-acts span { display: flex; justify-content: center; padding: 6px; font-size: 8px; font-weight: 650; color: #4a5567; background: #fff; border-radius: 99px; white-space: nowrap; }
+    .mkc-iv-acts .ok { color: #fff; background: #14365c; }
+    .mkc-iv-dl { display: flex; justify-content: center; gap: 12px; margin-top: 10px; font-size: 7.5px; font-weight: 650; color: #0a192f; }
+    .mkc-iv-uuid { margin: 8px 0 0; font-size: 6px; color: #9ca3af; word-break: break-all; }
+    .mkc-iv-pow { margin: 3px 0 0; font-size: 6px; color: #9ca3af; }
+
+    /* ── Workflows (workflows/[id]): la escalera corre sola y el correo le llega al cliente ── */
+    .mkc-wf { height: 510px; }
+    .mkc-wf-app { margin-left: 172px; min-width: 660px; height: 500px; }
+    .mkc-wf-phone { left: 0; top: 20px; }
+    .mkc-wf-bar { display: flex; align-items: center; gap: 7px; padding: 12px var(--gut) 9px 10px; }
+    .mkc-wf-x, .mkc-wf-more { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; color: #0f1729; background: #fff; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.09); }
+    .mkc-wf-x svg { width: 11px; height: 11px; }
+    .mkc-wf-more svg { width: 12px; height: 12px; color: #5b6472; }
+    .mkc-wf-name { min-width: 0; font-size: 13px; font-weight: 700; letter-spacing: -0.03em; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-wf-badge { flex-shrink: 0; font-size: 8.5px; font-weight: 700; padding: 3px 8px; border-radius: 99px; color: #047857; background: rgba(16,185,129,0.12); }
+    .mkc-wf-acts { display: flex; align-items: center; gap: 5px; margin-left: auto; flex-shrink: 0; }
+    .mkc-wf-btn { font-size: 9.5px; font-weight: 600; padding: 5px 10px; border-radius: 99px; color: #0f1729; background: #fff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+    .mkc-wf-btn.pri { color: #fff; background: #0a192f; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); }
+    @container (max-width: 880px) { .mkc-wf-save { display: none; } }
+    .mkc-wf-tabs { display: flex; gap: 16px; margin: 0 var(--gut) 9px 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-wf-tabs span { padding: 0 1px 6px; font-size: 10.5px; font-weight: 600; color: #5b6472; }
+    .mkc-wf-tabs span.on { color: #0f1729; box-shadow: inset 0 -2px 0 #0a192f; }
+    .mkc-wf-app .mkc-main { min-height: 0; }
+    .mkc-wf-body { position: relative; flex: 1; min-height: 0; display: grid; margin: 0 var(--gut) 0 10px; }
+    .mkc-wf-body > * { grid-area: 1 / 1; min-height: 0; min-width: 0; }
+    .mkc-wf-canvas { position: relative; overflow: hidden; border-radius: 16px 16px 0 0; background-color: #f8f8fa; background-image: radial-gradient(rgba(10,25,47,0.13) 1px, transparent 1px); background-size: 14px 14px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .mkc-wf-flow { display: flex; flex-direction: column; align-items: center; padding-top: 18px; }
+    .mkc-wf-node { position: relative; width: 206px; display: flex; align-items: center; gap: 8px; padding: 8px 7px 8px 9px; background: #fff; border-radius: 11px; box-shadow: 0 0 0 1px rgba(10,25,47,0.09), 0 1px 2px rgba(10,25,47,0.04), 0 8px 20px -14px rgba(10,25,47,0.3); }
+    .mkc-wf-ic { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; color: #0a192f; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .mkc-wf-ic :global(svg), .mkc-wf-dia :global(svg) { width: 13px; height: 13px; }
+    .mkc-wf-tx { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .mkc-wf-tx small { font-size: 7.5px; color: #5b6472; }
+    .mkc-wf-tx b { font-size: 9.5px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; color: #0f1729; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .mkc-wf-tx em { font-style: normal; font-size: 8px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-wf-dots { width: 18px; height: 18px; flex-shrink: 0; display: grid; place-items: center; color: #99a2af; }
+    .mkc-wf-dots svg { width: 11px; height: 11px; }
+    .mkc-wf-node.is-empty { background: transparent; box-shadow: none; outline: 1.3px dashed rgba(10,25,47,0.2); outline-offset: -1px; }
+    .mkc-wf-node.is-empty .mkc-wf-ic { background: #fff; }
+    .mkc-wf-node.is-empty b { color: #0a192f; }
+    .mkc-wf-node.is-sel { box-shadow: 0 0 0 1px #0a192f, 0 0 0 4px rgba(10,25,47,0.08), 0 8px 20px -14px rgba(10,25,47,0.3); }
+    .mkc-wf-link { display: block; width: 1.5px; height: 20px; background: rgba(10,25,47,0.18); }
+    .mkc-wf-dia { position: relative; width: 34px; height: 34px; display: grid; place-items: center; color: #0a192f; }
+    .mkc-wf-dia::before { content: ''; position: absolute; inset: 6px; border-radius: 7px; transform: rotate(45deg); background: #fff; box-shadow: 0 0 0 1px rgba(10,25,47,0.1), 0 8px 18px -12px rgba(10,25,47,0.3); }
+    .mkc-wf-dia :global(svg) { position: relative; }
+    .mkc-wf-cs { margin-top: 9px; }
+    .mkc-wf-cs::before { content: ''; position: absolute; left: 50%; top: -10px; width: 1.5px; height: 9px; background: rgba(10,25,47,0.18); }
+    .mkc-wf-brs { position: relative; display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; margin-top: 12px; padding-top: 20px; }
+    .mkc-wf-brs::before { content: ''; position: absolute; top: 0; left: calc(25% - 5px); right: calc(25% - 5px); height: 20px; border: 1.5px solid rgba(10,25,47,0.18); border-bottom: none; border-radius: 10px 10px 0 0; }
+    .mkc-wf-brs::after { content: ''; position: absolute; top: -12px; left: 50%; width: 1.5px; height: 12px; background: rgba(10,25,47,0.18); }
+    .mkc-wf-br { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .mkc-wf-lbl { margin-bottom: 9px; padding: 3px 9px; font-size: 8px; font-weight: 600; color: #5b6472; background: #fff; border-radius: 99px; box-shadow: 0 0 0 1px rgba(10,25,47,0.09); white-space: nowrap; }
+    .mkc-wf-zoom { position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 9px; box-shadow: 0 0 0 1px rgba(10,25,47,0.09), 0 6px 14px -10px rgba(10,25,47,0.3); }
+    .mkc-wf-zoom span { width: 24px; height: 24px; display: grid; place-items: center; color: #5b6472; }
+    .mkc-wf-zoom span + span { border-top: 1px solid rgba(10,25,47,0.08); }
+    .mkc-wf-zoom svg { width: 11px; height: 11px; }
+    .mkc-wf-runs { overflow: hidden; visibility: hidden; opacity: 0; }
+    .mkc-wf-runs-bar { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+    .mkc-wf-rw { overflow: hidden; }
+    .mkc-wf-run { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 5px; border-bottom: 1px solid rgba(10,25,47,0.08); border-radius: 8px; }
+    .mkc-wf-run > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .mkc-wf-run b { font-size: 10px; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-wf-run small { font-size: 8.5px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-wf-run em { font-style: normal; font-size: 8.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-wf-pill { justify-self: start; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; font-style: normal; font-size: 8px; font-weight: 700; border-radius: 99px; white-space: nowrap; }
+    .mkc-wf-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .mkc-wf-pill.ok { color: #047857; background: rgba(16,185,129,0.12); }
+    .mkc-wf-pill.fail { color: #b91c1c; background: rgba(239,68,68,0.1); }
+    .mkc-wf-pill.wait { color: #1d4ed8; background: rgba(59,130,246,0.1); }
+
+    /* El correo del workflow en Mail (iOS), con la notificación en pantalla bloqueada */
+    .mkc-wf-phone .mkc-phone-scr { background: #fff; }
+    .mkc-wf-phone .mkc-ios { background: linear-gradient(#fff 72%, rgba(255,255,255,0)); }
+    .mkc-wf-phone.is-lock .mkc-ios { color: #fff; background: none; }
+    .mkc-wf-phone.is-lock .mkc-ios > b { visibility: hidden; }
+    .mkc-wf-phone.is-lock .mkc-ios-sig i, .mkc-wf-phone.is-lock .mkc-ios-bat i { background: #fff; }
+    .mkc-wf-phone.is-lock .mkc-ios-bat { border-color: rgba(255,255,255,0.55); }
+    .mkc-wf-phone.is-lock .mkc-home { background: #fff; }
+    .mkc-ml { display: flex; flex-direction: column; padding: 2px 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #111; }
+    .mkc-ml-nav { display: flex; align-items: center; justify-content: space-between; height: 24px; font-size: 10.5px; color: #007aff; }
+    .mkc-ml-nav span { display: flex; align-items: center; gap: 1px; }
+    .mkc-ml-nav .r { gap: 12px; }
+    .mkc-ml-nav svg { width: 13px; height: 13px; }
+    .mkc-ml-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 7px; border-bottom: 0.5px solid rgba(0,0,0,0.12); }
+    .mkc-ml-head i { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 9.5px; font-weight: 600; color: #fff; background: linear-gradient(#aeb4bf, #868d99); border-radius: 50%; }
+    .mkc-ml-head span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .mkc-ml-head b { font-size: 10.5px; font-weight: 600; }
+    .mkc-ml-head small { font-size: 8.5px; color: #8e8e93; }
+    .mkc-ml-head em { align-self: flex-start; font-style: normal; font-size: 8.5px; color: #8e8e93; }
+    .mkc-ml-subj { display: block; margin: 8px 0 2px; font-size: 12.5px; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em; }
+    .mkc-ml-body { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 10px 2px 0; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .mkc-ml-body img { width: 40px; height: auto; margin-bottom: 3px; }
+    .mkc-ml-body b { font-size: 9.5px; font-weight: 500; color: #111827; }
+    .mkc-ml-body p { margin: 0; font-size: 9px; line-height: 1.6; color: #374151; }
+    .mkc-ml-cta { margin: 4px 0; padding: 6px 11px; font-size: 9px; font-weight: 500; color: #fff; background: #0a192f; border-radius: 6px; }
+    .mkc-ml-body small { font-size: 7.5px; line-height: 1.5; color: #6b7280; }
+    .mkc-ml-body u { display: block; color: #2563eb; text-decoration: none; }
+    .mkc-ml-body em { align-self: stretch; margin-top: 6px; padding-top: 8px; font-style: normal; font-size: 7px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+    .mkc-ml-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 44px; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 9px; color: #007aff; background: rgba(249,249,249,0.97); border-top: 0.5px solid rgba(0,0,0,0.1); }
+    .mkc-ml-bar svg { width: 15px; height: 15px; }
+    .mkc-ml-lock { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; padding-top: 50px; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; background: radial-gradient(ellipse 80% 55% at 25% 18%, rgba(92,96,160,0.75), transparent 62%), radial-gradient(ellipse 75% 55% at 85% 85%, rgba(122,78,120,0.7), transparent 60%), linear-gradient(170deg, #161c38 0%, #262244 55%, #33263f 100%); visibility: hidden; opacity: 0; }
+    .mkc-ml-date { font-size: 10px; font-weight: 500; opacity: 0.9; }
+    .mkc-ml-clock { margin-top: 1px; font-size: 52px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+    .mkc-ml-notif { display: flex; gap: 8px; width: calc(100% - 16px); margin-top: 26px; padding: 9px 10px; color: #111; background: rgba(250,250,252,0.9); border-radius: 16px; box-shadow: 0 10px 24px -12px rgba(0,0,0,0.5); }
+    .mkc-ml-app { width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; font-style: normal; background: linear-gradient(#45a6ff, #0a6cf0); border-radius: 7px; }
+    .mkc-ml-app svg { width: 15px; height: 15px; }
+    .mkc-ml-notif > span { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .mkc-ml-notif .t { display: flex; justify-content: space-between; gap: 6px; }
+    .mkc-ml-notif b, .mkc-ml-notif strong { font-size: 9px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-ml-notif em { font-style: normal; font-size: 8px; color: #6b7280; }
+    .mkc-ml-notif small { font-size: 8.5px; line-height: 1.35; color: #3c3c43; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .mkc-ml-lb { position: absolute; bottom: 26px; width: 30px; height: 30px; display: grid; place-items: center; background: rgba(255,255,255,0.14); border-radius: 50%; }
+    .mkc-ml-lb.l { left: 22px; }
+    .mkc-ml-lb.r { right: 22px; }
+    .mkc-ml-lb svg { width: 14px; height: 14px; }
+
+    /* ── Equipo (ajustes/equipo + selector de organizaciones): invitas con permisos exactos ── */
+    .mkc-eq-app { min-width: 820px; height: 500px; }
+    .mkc-rail-org.is-open { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(10,25,47,0.22); }
+    .mkc-ti-on { color: #fff; background: #0a192f; border-radius: 7px; }
+    .mkc-eq-page { display: flex; flex-direction: column; min-width: 0; padding: 13px var(--gut) 0 10px; }
+    .mkc-eq-crumb { display: flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 600; color: #5b6472; }
+    .mkc-eq-crumb svg { width: 10px; height: 10px; }
+    .mkc-eq-crumb i { font-style: normal; color: #c4cad3; margin: 0 2px; }
+    .mkc-eq-crumb b { color: #0f1729; font-weight: 600; }
+    .mkc-eq-h { margin-top: 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.1; color: #0f1729; }
+    .mkc-eq-desc { margin-top: 3px; font-size: 9.5px; color: #5b6472; }
+    .mkc-eq-tabs { align-self: flex-start; display: inline-flex; gap: 2px; margin-top: 11px; padding: 2px; background: rgba(10,25,47,0.065); border-radius: 9px; }
+    .mkc-eq-tabs i { font-style: normal; font-size: 9.5px; font-weight: 600; padding: 5px 10px; color: #5b6472; border-radius: 7px; }
+    .mkc-eq-tabs i.on { color: #0f1729; background: #fff; box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+    .mkc-eq-seats { display: flex; align-items: center; gap: 12px; margin-top: 13px; }
+    .mkc-eq-seats > b { font-size: 11.5px; color: #0f1729; white-space: nowrap; }
+    .mkc-eq-bar { flex: 0 0 140px; height: 4px; overflow: hidden; background: rgba(10,25,47,0.08); border-radius: 99px; }
+    .mkc-eq-bar i { display: block; height: 100%; background: #0a192f; border-radius: 99px; }
+    .mkc-eq-sa { display: flex; gap: 5px; margin-left: auto; }
+    .mkc-eq-btn { font-size: 9.5px; font-weight: 600; padding: 6px 11px; color: #0f1729; background: #fff; border-radius: 99px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+    .mkc-eq-btn.pri { color: #fff; background: #0a192f; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); }
+    .mkc-eq-chips { display: flex; gap: 5px; margin: 11px 0 8px; }
+    .mkc-eq-chips i { font-style: normal; font-size: 9px; font-weight: 600; padding: 5px 10px; color: #5b6472; background: rgba(10,25,47,0.06); border-radius: 99px; white-space: nowrap; }
+    .mkc-eq-chips i b { margin-left: 2px; font-weight: 700; opacity: 0.7; }
+    .mkc-eq-chips i.on { color: #fff; background: #0a192f; }
+    .mkc-eq-th, .mkc-eq-r { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.95fr) minmax(0, 1.1fr) 118px; gap: 12px; align-items: center; }
+    .mkc-eq-th { padding: 0 6px 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-eq-r { padding: 6px 6px; border-bottom: 1px solid rgba(10,25,47,0.06); border-radius: 7px; }
+    .mkc-eq-r > span { min-width: 0; }
+    .mkc-eq-r.is-off { opacity: 0.6; }
+    .mkc-eq-rw { overflow: hidden; }
+    .mkc-eq-m { display: flex; align-items: center; gap: 8px; }
+    .mkc-eq-m > i { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 8.5px; font-weight: 700; color: #5b6472; background: #e9ebef; border-radius: 8px; }
+    .mkc-eq-m > span { display: flex; flex-direction: column; min-width: 0; }
+    .mkc-eq-m b { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 10px; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-eq-m em { font-style: normal; font-size: 7.5px; font-weight: 700; padding: 1px 5px; color: #0a192f; background: rgba(10,25,47,0.07); border-radius: 4px; }
+    .mkc-eq-m small { font-size: 8.5px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-eq-role { font-style: normal; font-size: 8.5px; font-weight: 600; padding: 3px 8px; color: #5b6472; background: rgba(10,25,47,0.055); border-radius: 99px; white-space: nowrap; }
+    .mkc-eq-role.own { color: #0a192f; background: rgba(10,25,47,0.09); }
+    .mkc-eq-rc { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    .mkc-eq-rc em { font-style: normal; font-size: 6.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #5b6472; white-space: nowrap; }
+    .mkc-eq-act { display: flex; flex-direction: column; gap: 1px; }
+    .mkc-eq-act b { font-size: 9px; font-weight: 500; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-eq-act small { font-size: 8px; color: #5b6472; white-space: nowrap; }
+    .mkc-eq-st { font-size: 9px; font-weight: 600; color: #b45309; }
+    .mkc-eq-st.off { color: #5b6472; }
+    .mkc-eq-ra { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .mkc-eq-ra u { font-size: 8.5px; font-weight: 600; color: #0a192f; text-decoration: none; white-space: nowrap; }
+    .mkc-eq-ra s, .mkc-eq-mh s { width: 20px; height: 20px; display: grid; place-items: center; color: #5b6472; text-decoration: none; border-radius: 6px; }
+    .mkc-eq-ra s { color: #99a2af; }
+    .mkc-eq-ra s svg, .mkc-eq-mh s svg { width: 10px; height: 10px; }
+    .mkc-eq-org { visibility: hidden; opacity: 0; position: absolute; left: 12px; top: 50px; z-index: 6; width: 216px; display: flex; flex-direction: column; padding: 5px; background: #fff; border-radius: 12px; box-shadow: 0 30px 60px -12px rgba(10,25,47,0.3), 0 0 0 1px rgba(10,25,47,0.07); transform-origin: 8% 0; }
+    .mkc-eq-ol { padding: 5px 7px 3px; font-size: 7.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #5b6472; }
+    .mkc-eq-oi { display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 6px; }
+    .mkc-eq-oi.sel { background: rgba(10,25,47,0.035); }
+    .mkc-eq-oi > i { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 8.5px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1b3a64, #0a192f); border-radius: 6px; }
+    .mkc-eq-oi > i.alt { background: #475569; }
+    .mkc-eq-oi > i.usr { color: #5b6472; background: #e9ebef; border-radius: 50%; }
+    .mkc-eq-oi > span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .mkc-eq-oi b { font-size: 9.5px; font-weight: 500; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-eq-oi small { font-size: 8px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-eq-oi > svg { width: 11px; height: 11px; color: #0a192f; }
+    .mkc-eq-kids { display: flex; flex-direction: column; margin: 1px 0 2px 16px; padding-left: 6px; border-left: 1px solid rgba(10,25,47,0.1); }
+    .mkc-eq-kids .mkc-eq-oi > i { width: 16px; height: 16px; font-size: 7px; border-radius: 4px; }
+    .mkc-eq-kids .mkc-eq-oi b { font-size: 9px; }
+    .mkc-eq-od { height: 1px; margin: 4px 2px; background: rgba(10,25,47,0.07); }
+    .mkc-eq-oa { display: flex; align-items: center; gap: 7px; padding: 5px 6px; font-size: 9.5px; font-weight: 500; color: #0f1729; }
+    .mkc-eq-oa > svg { width: 12px; height: 12px; color: #5b6472; }
+    .mkc-eq-oa > svg.c { width: 10px; height: 10px; margin-left: auto; opacity: 0.5; }
+    .mkc-eq-oa.amber > svg { color: #d97706; }
+    .mkc-eq-oa.red, .mkc-eq-oa.red > svg { color: #dc2626; }
+    .mkc-eq-sw { position: relative; width: 22px; height: 13px; margin-left: auto; background: rgba(10,25,47,0.13); border-radius: 99px; }
+    .mkc-eq-sw::after { content: ''; position: absolute; left: 2px; top: 2px; width: 9px; height: 9px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(10,25,47,0.25); }
+    .mkc-eq-scrim { position: absolute; inset: 0; z-index: 7; background: rgba(10,25,47,0.28); border-radius: inherit; opacity: 0; visibility: hidden; }
+    .mkc-eq-modal { position: absolute; left: 50%; top: 50%; z-index: 8; width: 300px; margin: -196px 0 0 -150px; overflow: hidden; background: #fff; border-radius: 16px; box-shadow: 0 30px 70px -20px rgba(10,25,47,0.55), 0 0 0 1px rgba(10,25,47,0.06); opacity: 0; visibility: hidden; }
+    .mkc-eq-mh { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 9px 14px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-eq-mh b { font-size: 12px; font-weight: 700; letter-spacing: -0.02em; color: #0f1729; }
+    .mkc-eq-mb { display: flex; flex-direction: column; padding: 10px 14px 6px; }
+    .mkc-eq-mb label { margin-bottom: 4px; font-size: 8.5px; font-weight: 600; color: #0f1729; }
+    .mkc-eq-in { min-height: 26px; display: flex; align-items: center; padding: 0 9px; font-size: 10px; color: #0f1729; background: #f5f5f7; border: 1px solid transparent; border-radius: 8px; }
+    .mkc-eq-in.on { background: #fff; border-color: rgba(10,25,47,0.18); box-shadow: 0 0 0 3px rgba(10,25,47,0.06); }
+    .mkc-eq-pre { display: flex; gap: 2px; margin-top: 10px; padding: 2px; background: #f5f5f7; border-radius: 9px; }
+    .mkc-eq-pre i { flex: 1; text-align: center; font-style: normal; font-size: 8.5px; font-weight: 600; padding: 5px 3px; color: #5b6472; border-radius: 7px; white-space: nowrap; }
+    .mkc-eq-pre i.on { color: #0f1729; background: #fff; box-shadow: 0 1px 3px rgba(10,25,47,0.1); }
+    .mkc-eq-pd { margin: 6px 0 2px; font-size: 8px; line-height: 1.45; color: #5b6472; }
+    .mkc-eq-g { margin-top: 7px; font-size: 6.5px; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #99a2af; }
+    .mkc-eq-p { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid rgba(10,25,47,0.07); }
+    .mkc-eq-g + .mkc-eq-p { border-top: 0; }
+    .mkc-eq-p b { font-size: 9.5px; font-weight: 600; color: #0f1729; }
+    .mkc-eq-p i { position: relative; width: 22px; height: 13px; flex-shrink: 0; background: #e3e5ea; border-radius: 99px; transition: background 0.25s; }
+    .mkc-eq-p i::after { content: ''; position: absolute; left: 2px; top: 2px; width: 9px; height: 9px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(10,25,47,0.25); transition: transform 0.25s; }
+    .mkc-eq-p i.on { background: #0a192f; }
+    .mkc-eq-p i.on::after { transform: translateX(9px); }
+    .mkc-eq-mf { display: flex; justify-content: flex-end; gap: 6px; padding: 10px 14px 12px; border-top: 1px solid rgba(10,25,47,0.07); }
+    .mkc-eq-app .mkc-toast { z-index: 9; }
 
 
 
@@ -2688,9 +3233,6 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .mk-bar-title { font-size: 0.8rem; }
         .mk-bar-actions { flex-shrink: 0; }
 
-        /* ── facturación comparte .mk-row ── */
-        .mk-row { grid-template-columns: 1fr 46px 92px; gap: 10px; padding: 9px 8px; font-size: 0.82rem; }
-        .mk-row-head { font-size: 0.62rem; }
 
         /* ── hero calca: la app en su forma móvil (sidebar en drawer, una columna) ── */
         .mkc-app { --gut: 12px; padding: 8px; border-radius: 16px; }
@@ -2855,16 +3397,54 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .mkc-fx-st span { font-size: 9.5px; }
         .mkc-fx-st b { font-size: 14px; }
         .mkc-fx-lock { font-size: 10.5px; }
-        /* ── facturación: el sello se movía sobre el encabezado ── */
-        .mk-intl-pill { position: static; margin: 0 0 2px auto; box-shadow: none; }
+        /* ── facturación: la factura hospedada en el teléfono del cliente ── */
+        .mkc-fa { height: 490px; }
+        .mkc-fa-app { display: none; }
+        .mkc-fa-phone { left: 50%; top: 4px; margin-left: -118px; }
 
-        /* ── workflows: las dos ramas se apilan como en el editor móvil ── */
-        .mk-wf-runs { display: none; }
-        .mk-wf-body { padding: 0.95rem 0.95rem 1rem; }
-        .mk-wf-branches { grid-template-columns: 1fr; }
-        .mk-wf-node b { font-size: 0.8rem; }
-        .mk-wf-node em { font-size: 0.7rem; white-space: normal; }
-        .mk-wf-foot { padding: 10px 13px; }
+        /* ── workflows: el editor en su forma móvil ── */
+        .mkc-wf { height: auto; }
+        .mkc-wf-phone, .mkc-wf-zoom, .mkc-wf-acts .mkc-wf-btn:not(.pri), .mkc-wf-more { display: none; }
+        .mkc-wf-app { min-width: 0; height: auto; margin-left: 0; }
+        .mkc-wf-bar { padding: 12px var(--gut) 10px; }
+        .mkc-wf-name { font-size: 15px; }
+        .mkc-wf-badge, .mkc-wf-btn { font-size: 11px; }
+        .mkc-wf-tabs { margin: 0 var(--gut) 10px; }
+        .mkc-wf-tabs span { font-size: 12.5px; }
+        .mkc-wf-body { height: 392px; margin: 0 var(--gut) 0; }
+        .mkc-wf-flow { padding: 16px 8px 0; }
+        .mkc-wf-node { width: min(250px, 100%); }
+        .mkc-wf-brs { column-gap: 10px; width: 100%; }
+        .mkc-wf-br .mkc-wf-node { width: 100%; }
+        .mkc-wf-tx small { font-size: 9px; }
+        .mkc-wf-tx b { font-size: 11px; }
+        .mkc-wf-tx em { font-size: 9.5px; }
+        .mkc-wf-br .mkc-wf-dots { display: none; }
+        .mkc-wf-lbl { font-size: 9.5px; }
+        .mkc-wf-run { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; }
+        .mkc-wf-run em { display: none; }
+        .mkc-wf-run .mkc-wf-pill { grid-column: 2; grid-row: 1; font-size: 9.5px; }
+        .mkc-wf-run b { font-size: 12px; }
+        .mkc-wf-run small { font-size: 10.5px; }
+
+        /* ── equipo: la lista de miembros como en la app móvil ── */
+        .mkc-eq-app { min-width: 0; height: auto; }
+        .mkc-eq-org, .mkc-eq-modal, .mkc-eq-scrim, .mkc-eq-th, .mkc-eq-r.is-off, .mkc-eq-act, .mkc-eq-ra, .mkc-eq-chips i:nth-child(n+3), .mkc-eq-sa .mkc-eq-btn:not(.pri) { display: none; }
+        .mkc-eq-page { padding: 14px var(--gut) 8px; }
+        .mkc-eq-crumb, .mkc-eq-desc { font-size: 11px; }
+        .mkc-eq-h { font-size: 20px; }
+        .mkc-eq-tabs i, .mkc-eq-chips i, .mkc-eq-btn { font-size: 11px; }
+        .mkc-eq-seats { flex-wrap: wrap; row-gap: 8px; }
+        .mkc-eq-seats > b { font-size: 13px; }
+        .mkc-eq-bar { flex: 1 1 80px; }
+        .mkc-eq-r { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 9px 2px; }
+        .mkc-eq-m b { font-size: 12px; }
+        .mkc-eq-m small { font-size: 10.5px; }
+        .mkc-eq-m > i { width: 30px; height: 30px; font-size: 10px; }
+        .mkc-eq-role { font-size: 10px; }
+        .mkc-eq-rc { align-items: flex-end; }
+        .mkc-eq-rc em { font-size: 8px; }
+        .mkc-eq-app .mkc-toast { font-size: 11px; }
 
     }
 </style>
@@ -3483,20 +4063,104 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
-                // Cord Invoicing Animation (pill "Timbrada" + flash del saldo por cobrar)
-                const intlHero = document.getElementById('intlHero');
-                if (intlHero) {
-                    const fiscal = document.getElementById('intlFiscal');
-                    const pill = document.getElementById('intlPill');
-                    gsap.set(pill, { opacity: 0, scale: 0.6, y: -6 });
-                    ScrollTrigger.create({
-                        trigger: intlHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.timeline({ delay: 0.5 })
-                                .to(pill, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' })
-                                .fromTo(fiscal, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: '#f8fafc', duration: 1.1, ease: 'power2.out' }, '-=0.1');
-                        },
-                    });
+                // Facturación: el cliente abona desde el link de la factura y el saldo baja en su detalle
+                const faHero = document.getElementById('faHero');
+                if (faHero) {
+                    const $ = (id) => document.getElementById(id);
+                    const cur = faHero.dataset.cur || '$';
+                    const fm = (v) => cur + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const page = $('faPage'), scroll = $('faScroll'), box = $('faBox'), amt = $('faAmt'), amtF = $('faAmtF'), cont = $('faCont'), partial = $('faPartial');
+                    const phSaldo = $('faPhSaldo'), phPag = $('faPhPag'), phDue = $('faPhDue'), phPay = $('faPhPayAmt'), phNew = $('faPhNew');
+                    const headSaldo = $('faHeadSaldo'), pag = $('faPag'), due = $('faDue'), newPago = $('faNewPago'), newTl = $('faNewTl'), bell = $('faBell');
+                    const grid = faHero.querySelector('.mkc-fa-grid');
+                    const contLabel = cont.textContent, busy = cont.dataset.busy, amtFull = amt.textContent;
+                    const TOTAL = 196469.2, PAID0 = 60000, PAID1 = 100000;
+                    const paint = (paid, hero) => {
+                        const bal = TOTAL - paid;
+                        if (hero) phSaldo.textContent = fm(bal);
+                        phPag.textContent = '−' + fm(paid); pag.textContent = '−' + fm(paid);
+                        phDue.textContent = fm(bal); due.textContent = fm(bal); phPay.textContent = fm(bal);
+                        headSaldo.textContent = headSaldo.dataset.lbl + ' ' + fm(bal);
+                    };
+                    const maxY = () => -Math.max(0, scroll.offsetHeight - page.clientHeight);
+                    const reset = () => {
+                        paint(PAID0, true);
+                        gsap.set(scroll, { y: 0 });
+                        gsap.set([box, phNew, newPago, newTl], { height: 0, opacity: 0 });
+                        amt.textContent = ''; amtF.classList.remove('on'); cont.textContent = contLabel;
+                    };
+                    reset();
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.to({}, { duration: 1.2 });
+                        tl.to(scroll, { y: maxY, duration: 1.5, ease: 'power2.inOut' });
+                        tl.to(partial, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.inOut' }, '+=0.35');
+                        tl.to(box, { height: 'auto', opacity: 1, duration: 0.45, ease: 'power2.out' });
+                        tl.to(scroll, { y: () => maxY() - 96, duration: 0.45, ease: 'power2.out' }, '<');
+                        tl.call(() => amtF.classList.add('on'), null, '+=0.15');
+                        for (let i = 1; i <= amtFull.length; i++) tl.call(() => { amt.textContent = amtFull.slice(0, i); }, null, '+=0.07');
+                        tl.call(() => amtF.classList.remove('on'), null, '+=0.3');
+                        tl.to(cont, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.inOut' }, '+=0.15');
+                        tl.call(() => { cont.textContent = busy; });
+                        tl.to(box, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.inOut' }, '+=1');
+                        tl.to(scroll, { y: () => maxY() + 84, duration: 0.4, ease: 'power2.inOut' }, '<');
+                        tl.to(phNew, { height: 'auto', opacity: 1, duration: 0.4, ease: 'power2.out' }, '<');
+                        const o = { v: PAID0 };
+                        tl.to(o, { v: PAID1, duration: 1.2, ease: 'power2.out', onUpdate: () => paint(o.v, false) }, '<');
+                        tl.to(newPago, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '<0.1');
+                        tl.fromTo(newPago.firstElementChild, { backgroundColor: 'rgba(16,185,129,0.16)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 2.6, ease: 'power1.in' }, '<0.2');
+                        tl.to(newTl, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '<');
+                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.9, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
+                        tl.to(scroll, { y: 0, duration: 1.4, ease: 'power2.inOut' }, '+=0.7');
+                        const h = { v: TOTAL - PAID0 };
+                        tl.to(h, { v: TOTAL - PAID1, duration: 1.1, ease: 'power2.out', onUpdate: () => { phSaldo.textContent = fm(h.v); } }, '-=0.45');
+                        tl.to({}, { duration: 4.2 });
+                        tl.to([page, grid], { opacity: 0, duration: 0.3 });
+                        tl.call(reset);
+                        tl.to([page, grid], { opacity: 1, duration: 0.4 });
+                    };
+                    ScrollTrigger.create({ trigger: faHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.6, loop) });
+                    const phone = faHero.querySelector('.mkc-fa-phone');
+                    if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+                }
+
+                // Workflows: la espera vence, el correo llega al teléfono del cliente y la ejecución queda registrada
+                const wfHero = document.getElementById('wfHero');
+                if (wfHero) {
+                    const $ = (id) => document.getElementById(id);
+                    const phone = $('wfPhone'), lock = $('wfLock'), notif = $('wfNotif'), mailView = $('wfMailView');
+                    const tabEd = $('wfTabEd'), tabRuns = $('wfTabRuns'), canvas = $('wfCanvas'), runs = $('wfRuns'), runNew = $('wfRunNew'), mailNode = $('wfMail');
+                    const tab = (onRuns) => { tabEd.classList.toggle('on', !onRuns); tabRuns.classList.toggle('on', onRuns); };
+                    const setLock = (on) => phone.classList.toggle('is-lock', on);
+                    const reset = () => {
+                        setLock(true); gsap.set(lock, { autoAlpha: 1 }); gsap.set(notif, { y: -24, autoAlpha: 0, scale: 1 });
+                        tab(false); gsap.set(canvas, { autoAlpha: 1 }); gsap.set(runs, { autoAlpha: 0 });
+                        gsap.set(runNew, { height: 0, opacity: 0 });
+                    };
+                    reset();
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.fromTo(mailNode, { scale: 1 }, { scale: 1.035, duration: 0.28, yoyo: true, repeat: 1, ease: 'power2.inOut' }, 0.9);
+                        tl.to(notif, { y: 0, autoAlpha: 1, duration: 0.55, ease: 'back.out(1.5)' }, '+=0.15');
+                        tl.to(notif, { scale: 0.97, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.inOut' }, '+=1.7');
+                        tl.call(() => setLock(false));
+                        tl.to(lock, { autoAlpha: 0, duration: 0.45, ease: 'power2.out' });
+                        tl.fromTo(mailView, { y: 12, opacity: 0.4 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '<');
+                        tl.call(() => tab(true), null, '+=2.2');
+                        tl.to(canvas, { autoAlpha: 0, duration: 0.3 }, '<');
+                        tl.to(runs, { autoAlpha: 1, duration: 0.3 }, '<0.1');
+                        tl.to(runNew, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '+=0.25');
+                        tl.fromTo(runNew.firstElementChild, { backgroundColor: 'rgba(59,130,246,0.12)' }, { immediateRender: false, backgroundColor: 'rgba(59,130,246,0)', duration: 2.4, ease: 'power1.in' }, '<0.2');
+                        tl.call(() => tab(false), null, '+=2.4');
+                        tl.to(runs, { autoAlpha: 0, duration: 0.3 }, '<');
+                        tl.to(canvas, { autoAlpha: 1, duration: 0.35 }, '<0.1');
+                        tl.call(() => setLock(true), null, '+=2.2');
+                        tl.set(notif, { y: -24, autoAlpha: 0 }, '<');
+                        tl.to(lock, { autoAlpha: 1, duration: 0.45 }, '<');
+                        tl.set(runNew, { height: 0, opacity: 0 });
+                    };
+                    ScrollTrigger.create({ trigger: wfHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.4, loop) });
+                    gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
                 // Finanzas: el flujo de 90 días se arma por fuente y la caja se acumula
@@ -3534,24 +4198,52 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     ScrollTrigger.create({ trigger: fnHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.4, loop) });
                 }
 
-                // Equipo — filas entran en cascada + el botón invitar pulsa
-                const teamHero = document.getElementById('teamHero');
-                if (teamHero) {
-                    const rows = teamHero.querySelectorAll('.team-item');
-                    const invite = document.getElementById('teamInvite');
-                    gsap.set(rows, { opacity: 0, x: -14 });
-                    gsap.set(invite, { opacity: 0, y: 8 });
-                    ScrollTrigger.create({
-                        trigger: teamHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.timeline({ delay: 0.35 })
-                                .to(rows, { opacity: 1, x: 0, duration: 0.6, stagger: 0.11, ease: 'power2.out' })
-                                .to(invite, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2');
-                        },
-                    });
+                // Equipo: cambias de organización, invitas con permisos exactos y la invitación queda en la tabla
+                const eqHero = document.getElementById('eqHero');
+                if (eqHero) {
+                    const $ = (id) => document.getElementById(id);
+                    const org = $('eqOrg'), orgBtn = $('eqOrgBtn'), scrim = $('eqScrim'), modal = $('eqModal'), add = $('eqAdd'), send = $('eqSend');
+                    const emailF = $('eqEmailF'), email = $('eqEmail'), pd = $('eqPd'), row = $('eqNewRow'), toast = $('eqToast');
+                    const seats = $('eqSeats'), bar = $('eqSeatBar'), cAll = $('eqCAll'), cInv = $('eqCInv');
+                    const presets = [...modal.querySelectorAll('[data-p]')], toggles = [...modal.querySelectorAll('[data-k]')];
+                    const mail = email.textContent, tpl = seats.dataset.tpl;
+                    const VEND = ['cotizar', 'clientes', 'productos', 'analitica'];
+                    const setPreset = (p) => { presets.forEach((el) => el.classList.toggle('on', el.dataset.p === p)); pd.textContent = pd.dataset[p]; };
+                    const setToggles = (keys) => toggles.forEach((el) => el.classList.toggle('on', keys.includes(el.dataset.k)));
+                    const setCount = (n) => { seats.textContent = tpl.replace('{n}', n); bar.style.width = (n / 15 * 100) + '%'; cAll.textContent = n + 1; cInv.textContent = n - 5; };
+                    const toggleOn = (tl, id) => tl.call(() => $(id).classList.add('on'));
+                    gsap.set(toast, { autoAlpha: 0, y: 8 });
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.call(() => orgBtn.classList.add('is-open'), null, 0.5);
+                        tl.fromTo(org, { autoAlpha: 0, y: -4, scale: 0.98 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out' }, '<');
+                        tl.to(org, { autoAlpha: 0, y: -4, scale: 0.98, duration: 0.25, ease: 'power2.in' }, 2.6);
+                        tl.call(() => orgBtn.classList.remove('is-open'), null, '<');
+                        tl.to(add, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 }, '+=0.45');
+                        tl.call(() => { email.textContent = ''; emailF.classList.add('on'); setPreset('vendedor'); setToggles(VEND); });
+                        tl.to(scrim, { autoAlpha: 1, duration: 0.3 });
+                        tl.fromTo(modal, { autoAlpha: 0, scale: 0.96 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power2.out' }, '<');
+                        tl.set(row, { height: 0, opacity: 0 }, '<');
+                        tl.call(() => setCount(5), null, '<');
+                        for (let i = 1; i <= mail.length; i++) tl.call(() => { email.textContent = mail.slice(0, i); }, null, i === 1 ? '+=0.3' : '+=0.035');
+                        tl.call(() => emailF.classList.remove('on'), null, '+=0.2');
+                        tl.to(presets[2], { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, '+=0.35');
+                        tl.call(() => { setPreset('lectura'); setToggles([]); });
+                        toggleOn(tl.to({}, { duration: 0.75 }), 'eqPCob');
+                        tl.call(() => setPreset('custom'));
+                        toggleOn(tl.to({}, { duration: 0.55 }), 'eqPInf');
+                        tl.to(send, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 }, '+=0.6');
+                        tl.to(modal, { autoAlpha: 0, scale: 0.97, duration: 0.25, ease: 'power2.in' }, '+=0.1');
+                        tl.to(scrim, { autoAlpha: 0, duration: 0.3 }, '<');
+                        tl.to(row, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' });
+                        tl.fromTo(row.firstElementChild, { backgroundColor: 'rgba(245,158,11,0.14)' }, { immediateRender: false, backgroundColor: 'rgba(245,158,11,0)', duration: 2.6, ease: 'power1.in' }, '<0.2');
+                        tl.call(() => setCount(6), null, '<');
+                        tl.to(toast, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out' }, '<');
+                        tl.to(toast, { autoAlpha: 0, y: 8, duration: 0.3 }, '+=2.2');
+                        tl.to({}, { duration: 1.2 });
+                    };
+                    ScrollTrigger.create({ trigger: eqHero, start: 'top 90%', once: true, onEnter: loop });
                 }
-
-
 
                 // ── Ambient float sutil para TODOS los mockups del hero (toque Linear, sobrio) ──
                 const heroMock = wrap.querySelector('.pp-mockup > *');

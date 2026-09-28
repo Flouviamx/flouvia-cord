@@ -85,6 +85,23 @@ describe('el texto no desborda la celda', () => {
     });
 });
 
+describe('la plantilla de libro que se sube a OneDrive', () => {
+    it('es un paquete .xlsx íntegro, no una cadena rota', async () => {
+        const { LIBRO_VACIO_B64 } = await import('../src/lib/integraciones/hojas/excel');
+        const buf = Buffer.from(LIBRO_VACIO_B64, 'base64');
+
+        // Esta prueba existe por un error real: la constante empezaba con un `+`
+        // suelto, que en JavaScript es un más UNARIO. Convertía la primera línea
+        // en NaN, se perdían 96 caracteres, y el decodificador de base64 se tragó
+        // lo inválido sin avisar. Se subía un archivo corrupto que ni Excel ni la
+        // API de Microsoft podían abrir, y el error que devolvían no decía eso.
+        // Leer el código no bastó para verlo: hay que evaluarlo.
+        expect(LIBRO_VACIO_B64.startsWith('NaN')).toBe(false);
+        expect(buf.subarray(0, 2).toString()).toBe('PK');
+        expect(buf.length).toBe(4784);
+    });
+});
+
 describe('las columnas de dinero se derivan de la cabecera', () => {
     it('señala exactamente las columnas con importes, en las dos pestañas', () => {
         const cot = columnasMonto('cotizaciones');

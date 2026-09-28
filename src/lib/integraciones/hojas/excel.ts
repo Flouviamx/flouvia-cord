@@ -15,7 +15,10 @@ import { CABECERAS, columnasMonto, type Celda } from './columnas';
 import { apiJson, HojaError, type ClienteHoja, type HojaRef, type LibroCreado, type TokensHoja } from './cliente';
 import { credencialesHoja, EXCEL_SCOPES, MS_GRAPH, MS_LOGIN } from './config';
 
-const LIBRO_VACIO_B64 =
+// El '' inicial NO es decorativo: sin él, el primer `+` es un más UNARIO que
+// convierte la primera línea en NaN y se pierde entera, y el decodificador de
+// base64 se traga lo inválido sin quejarse. El archivo subía corrupto.
+export const LIBRO_VACIO_B64 = ''
     + 'UEsDBBQAAAAIAI0DPF1Gx01IlQAAAM0AAAAQAAAAZG9jUHJvcHMvYXBwLnhtbE3PTQvCMAwG4L9SdreZih6kDkQ9ip68zy51'
     + 'hbYpbYT67+0EP255ecgboi6JIia2mEXxLuRtMzLHDUDWI/o+y8qhiqHke64x3YGMsRoPpB8eA8OibdeAhTEMOMzit7Dp1C5G'
     + 'Z3XPlkJ3sjpRJsPiWDQ6sScfq9wcChDneiU+ixNLOZcrBf+LU8sVU57mym/8ZAW/B7oXUEsDBBQAAAAIAI0DPF3iTdLt6gAA'

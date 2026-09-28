@@ -1,12 +1,15 @@
 ---
 import { getLangFromUrl } from '../../i18n/utils';
+import { WORKFLOW_TRIGGERS, TRIGGER_CATEGORIES, WORKFLOW_ACTIONS, ACTION_GROUPS } from '../../lib/workflows/catalog';
+import { WORKFLOW_ICONS as WFI, BRAND_LOGOS, BRAND_TILES } from '../../lib/workflows/icons';
 const { slug, index } = Astro.props;
 const en = getLangFromUrl(Astro.url) === 'en';
 const slackLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64';
 const hubspotLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=64';
 const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://teams.microsoft.com&size=64';
 const PF = ['pagos', 'cobranza-ia', 'divisas', 'clientes-credito', 'finanzas'].includes(slug);
-const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes(slug) || PF;
+const FO = ['facturacion', 'workflows', 'equipo'].includes(slug);
+const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes(slug) || PF || FO;
 const LOC = en ? 'en-US' : 'es-MX';
 const mx = (n: number, d = 2) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 const tx = (es: string, e: string) => (en ? e : es);
@@ -14,7 +17,54 @@ const nf = (n: number, d = 2) => new Intl.NumberFormat(LOC, { minimumFractionDig
 const cur = (c: string, n: number, d = 2) => `${c === 'USD' ? 'US$' : c} ${nf(n, d)}`;
 const mxs = en ? 'MX$' : '$';
 const mpLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://mercadopago.com.mx&size=64';
-const wrapClass = `bm-wrap bm-${slug}-${index}${CALCA ? ` bm-x${index === 2 ? ' bm-x-full' : ''}` : ''}${PF ? ' bm-pf' : ''}`;
+const wrapClass = `bm-wrap bm-${slug}-${index}${CALCA ? ` bm-x${index === 2 ? ' bm-x-full' : ''}` : ''}${PF || FO ? ' bm-pf' : ''}${FO ? ' bm-fo' : ''}`;
+const LG = en ? 'en' : 'es';
+const trigCat = (k: string) => TRIGGER_CATEGORIES.find((c) => c.key === k)!.label[LG];
+const WF_LISTS = [
+  { key: 'all', items: WORKFLOW_TRIGGERS.slice(0, 9) },
+  { key: 'payments', items: WORKFLOW_TRIGGERS.filter((t) => t.category === 'payments') },
+  { key: 'q', items: WORKFLOW_TRIGGERS.filter((t) => t.label[LG].toLowerCase().includes(en ? 'due' : 'venc')) },
+];
+const WF_STEPS = WORKFLOW_ACTIONS.map((a) => ({ ...a, groupLabel: ACTION_GROUPS.find((g) => g.key === a.group)!.label[LG] }));
+const wfIcon = (key: string, brand?: string) => (brand && brand !== 'cord' && BRAND_LOGOS[brand]
+  ? `<img class="${BRAND_TILES.has(brand as any) ? 'tile' : ''}" src="${BRAND_LOGOS[brand]}" alt="" width="20" height="20" loading="lazy" />`
+  : WFI[key] ?? WFI.action);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const FA_DOCS = [
+  { cc: 'US', loc: 'en-US', cur: 'USD', from: 'Materiales del Valle USA LLC', fromId: 'EIN / Tax ID: 88-4172093', fromAddr: 'Laredo, TX 78041', to: 'Ridgeline Builders LLC', toId: 'EIN / Tax ID: 47-2918305', toAddr: 'San Antonio, TX 78205', num: 'INV-000214', terms: 'Net 30', tax: 'Sales tax', rate: 6.25,
+    lines: [['Portland cement, 94 lb bag', 120, 16.4], ['Rebar #3, 20 ft', 340, 9.85], ['Concrete block 8×8×16', 2400, 2.35]] },
+  { cc: 'GB', loc: 'en-GB', cur: 'GBP', from: 'Harlow Building Supplies Ltd', fromId: 'UTR / VAT number: GB 284 1937 06', fromAddr: 'Leeds LS11 5QT', to: 'Kestrel Construction Ltd', toId: 'UTR / VAT number: GB 519 2046 83', toAddr: 'Manchester M4 6WX', num: 'INV-000087', terms: 'Net 30', tax: 'VAT', rate: 20,
+    lines: [['Portland cement 25 kg', 200, 7.95], ['Rebar 10 mm × 6 m', 150, 11.2], ['Concrete block 440×215×100', 1500, 1.62]] },
+  { cc: 'FR', loc: 'fr-FR', cur: 'EUR', from: 'Matériaux Rhône SAS', fromId: 'SIREN / VAT ID: FR 41 832594017', fromAddr: '69007 Lyon', to: 'Bâtiments Vercors SARL', toId: 'SIREN / VAT ID: FR 73 519204318', toAddr: '38000 Grenoble', num: 'INV-000132', terms: 'Net 30', tax: 'TVA', rate: 20,
+    lines: [['Ciment gris 35 kg', 180, 9.4], ['Fer à béton HA10, 6 m', 220, 12.8], ['Parpaing creux 20×20×50', 1200, 1.95]] },
+  { cc: 'PE', loc: 'es-PE', cur: 'PEN', from: 'Ferretera Andina S.A.C.', fromId: 'RUC: 20548712396', fromAddr: 'Lima 15074', to: 'Constructora Pachacámac S.A.', toId: 'RUC: 20601938475', toAddr: 'Arequipa 04001', num: 'INV-000051', terms: '30 días', tax: 'IGV', rate: 18,
+    lines: [['Cemento Portland tipo I, 42.5 kg', 300, 31.5], ['Fierro corrugado 1/2" × 9 m', 250, 47.9], ['Ladrillo King Kong 18 huecos', 4000, 1.25]] },
+].map((d) => {
+  const es = d.loc.startsWith('es');
+  const n = new Intl.NumberFormat(d.loc, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' as any });
+  const q = new Intl.NumberFormat(d.loc, { maximumFractionDigits: 3, useGrouping: 'always' as any });
+  const sub = round2(d.lines.reduce((s, l) => s + (l[1] as number) * (l[2] as number), 0));
+  const taxAmt = round2((sub * d.rate) / 100);
+  const date = new Intl.DateTimeFormat(d.loc, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(Date.UTC(2026, 8, 18));
+  const due = new Intl.DateTimeFormat(d.loc, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.UTC(2026, 9, 18));
+  const t = (a: string, b: string) => (es ? a : b);
+  return {
+    ...d, date, due, t, rateTxt: `${d.rate}%`,
+    rows: d.lines.map((l) => ({ d: l[0] as string, q: q.format(l[1] as number), p: n.format(l[2] as number), a: n.format(round2((l[1] as number) * (l[2] as number))) })),
+    sub: n.format(sub), base: n.format(sub), taxAmt: n.format(taxAmt), total: n.format(round2(sub + taxAmt)),
+    foot: t('Documento comercial emitido por Cord. No representa por sí solo una transmisión, autorización o timbrado ante la autoridad fiscal local.',
+      'Commercial document issued by Cord. It does not by itself represent submission, clearance, or stamping by the local tax authority.'),
+  };
+});
+const chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+const qr = (() => {
+  const N = 25; let seed = 48271; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const inF = (x: number, y: number) => (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9);
+  let o = '';
+  for (const [fx, fy] of [[0, 0], [N - 7, 0], [0, N - 7]]) o += `<path d="M${fx} ${fy}h7v7h-7zM${fx + 1} ${fy + 1}v5h5v-5z" fill-rule="evenodd"/><rect x="${fx + 2}" y="${fy + 2}" width="3" height="3"/>`;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!inF(x, y) && rnd() > 0.52) o += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  return `<svg viewBox="0 0 ${N} ${N}" shape-rendering="crispEdges" fill="currentColor">${o}</svg>`;
+})();
 const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 ---
 <div class={wrapClass} data-loc={CALCA ? LOC : undefined}>
@@ -941,112 +991,289 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
 
   {/* ────────────────── CORD WORKFLOWS ────────────────── */}
   {slug === 'workflows' && index === 0 && (
-    <div class="bm-stage bm-wf-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">{en ? 'Choose the trigger' : 'Elige el disparador'}</span>
-          <span class="bm-app-badge bm-badge-blue">{en ? '44 events' : '44 eventos'}</span>
+    <div class="bm-stage" data-bmx="wf0">
+      <div class="bm-w bm-wfp">
+        <div class="bm-wfp-top">
+          <span class="bm-wfp-search"><Fragment set:html={WFI.search} /><span class="q" data-q></span><span class="ph" data-ph>{tx('Busca un disparador', 'Find a trigger')}</span><i class="bm-caret" data-caret></i></span>
+          <span class="bm-wfp-chips" data-chips>
+            <span class="on" data-c="all">{tx('Todos', 'All')}</span>
+            {TRIGGER_CATEGORIES.map((c) => <span data-c={c.key}>{c.label[LG]}</span>)}
+          </span>
         </div>
-        <div class="bm-app-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <span class="bm-search-q">{en ? 'invoice' : 'factura'}</span><span class="bm-search-caret"></span>
-        </div>
-        <div class="bm-app-body">
-          <div class="bm-kv bm-active"><div class="bm-uid-tx"><b>{en ? 'An invoice is due soon' : 'Una factura está por vencer'}</b><span>invoice.due_soon</span></div><span class="bm-tg bm-tg-amber">{en ? 'Time' : 'Tiempo'}</span></div>
-          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'An invoice is past due' : 'Una factura se venció'}</b><span>invoice.past_due</span></div><span class="bm-tg bm-tg-red">{en ? 'Time' : 'Tiempo'}</span></div>
-          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'An invoice is paid' : 'Se paga una factura'}</b><span>invoice.paid</span></div><span class="bm-tg bm-tg-green">{en ? 'Payments' : 'Pagos'}</span></div>
-          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'Every Monday at 9:00' : 'Cada lunes a las 9:00'}</b><span>{en ? 'Schedule · America/Mexico_City' : 'Horario · America/Mexico_City'}</span></div><span class="bm-tg bm-tg-purple">{en ? 'Schedule' : 'Horario'}</span></div>
-        </div>
-        <div class="bm-app-foot"><span>{en ? 'One trigger per workflow' : 'Un disparador por workflow'}</span><b>{en ? 'Your time zone' : 'Tu zona horaria'}</b></div>
+        {WF_LISTS.map((l) => (
+          <div class="bm-wfp-list" data-list={l.key} hidden={l.key !== 'all'}>
+            {l.items.map((t) => (
+              <span class="bm-wfp-it"><span class="ic"><Fragment set:html={WFI[t.category]} /></span><span class="lb">{t.label[LG]}</span><span class="ct">{trigCat(t.category)}</span></span>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   )}
 
   {slug === 'workflows' && index === 1 && (
-    <div class="bm-stage bm-wf-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">{en ? 'Add an action' : 'Agregar una acción'}</span>
-          <span class="bm-app-badge">{en ? '11 actions' : '11 acciones'}</span>
+    <div class="bm-stage" data-bmx="wf1">
+      <div class="bm-w bm-wfp bm-wf1-pick">
+        <div class="bm-wfp-top">
+          <span class="bm-wfp-search"><Fragment set:html={WFI.search} /><span class="ph">{tx('Busca una acción o una consulta', 'Find an action or a lookup')}</span></span>
+          <span class="bm-wfp-chips" data-chips>
+            <span data-c="all">{tx('Todos', 'All')}</span>
+            {ACTION_GROUPS.map((g) => <span class:list={[{ on: g.key === 'externo' }]} data-c={g.key}>{g.label[LG]}</span>)}
+            <span data-c="consulta">{tx('Consulta', 'Lookup')}</span>
+          </span>
         </div>
-        <div class="bm-app-body">
-          <div class="bm-kv"><div class="bm-uid"><span class="bm-wf-ico">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
-          </span><div class="bm-uid-tx"><b>{en ? 'Create a task' : 'Crear una tarea'}</b><span>{en ? 'For the right person, with a due date' : 'Para la persona correcta, con fecha'}</span></div></div></div>
-          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={slackLogo} alt="Slack" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send a Slack message' : 'Enviar un mensaje a Slack'}</b><span>{en ? 'Your own text with event data' : 'Tu texto con datos del evento'}</span></div></div></div>
-          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={teamsLogo} alt="Microsoft Teams" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send a Teams message' : 'Enviar un mensaje a Teams'}</b><span>{en ? 'A card in your channel' : 'Una tarjeta en tu canal'}</span></div></div></div>
-          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={hubspotLogo} alt="HubSpot" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Add a note in HubSpot' : 'Agregar una nota en HubSpot'}</b><span>{en ? 'On the client\'s company' : 'En la empresa del cliente'}</span></div></div></div>
-          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src="/imgs/integrations/whatsapp.svg" alt="WhatsApp" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send the client a WhatsApp' : 'Mandarle un WhatsApp al cliente'}</b><span>{en ? 'With your approved template' : 'Con tu plantilla aprobada'}</span></div></div></div>
+        <div class="bm-wfp-list rich">
+          {WF_STEPS.map((a) => (
+            <span class="bm-wfp-it" data-g={a.group} hidden={a.group !== 'externo'}>
+              <span class:list={['ic', { tl: BRAND_TILES.has(a.brand as any) }]}><Fragment set:html={wfIcon(a.key, a.brand)} /></span>
+              <span class="tx"><strong>{a.label[LG]}</strong><small>{a.description[LG]}</small>{a.requires && <em>{a.requires[LG]}</em>}</span>
+              <span class="ct">{a.groupLabel}</span>
+            </span>
+          ))}
         </div>
-        <div class="bm-app-foot"><span>{en ? 'Recipient' : 'Destinatario'}</span><b>{en ? 'Always the document\'s client' : 'Siempre el cliente del documento'}</b></div>
+      </div>
+      <div class="bm-fl bm-wf1-panel">
+        <div class="bm-wfe-ph"><strong>{tx('Editar acción', 'Edit action')}</strong><Fragment set:html={WFI.close} /></div>
+        <div class="bm-wfe-sum"><span class="ic tl"><Fragment set:html={wfIcon('whatsapp_client', 'whatsapp')} /></span><span class="tx"><strong>{tx('Mandarle un WhatsApp al cliente', 'Send the client a WhatsApp')}</strong></span><span class="bm-btn-soft">{tx('Cambiar', 'Change')}</span></div>
+        <span class="bm-wfe-lb">{tx('Variable 1 de la plantilla', 'Template variable 1')}</span>
+        <span class="bm-wfe-in is-focus" data-v1><span data-t>{'{{cliente}}'}</span><i class="bm-caret"></i></span>
+        <p class="bm-wfe-hint">{tx('Rellena {{1}} de tu plantilla aprobada. Meta no permite texto libre para iniciar la conversación.', 'Fills {{1}} of your approved template. Meta does not allow free text to start the conversation.')}</p>
+        <span class="bm-wfe-lb">{tx('Variable 2', 'Variable 2')}</span>
+        <span class="bm-wfe-in">{'{{folio}}'}</span>
+        <span class="bm-wfe-lb">{tx('Variable 3', 'Variable 3')}</span>
+        <span class="bm-wfe-in">{'{{total}} {{moneda}}'}</span>
+        <span class="bm-wfe-lb">{tx('Datos del evento', 'Event data')}</span>
+        <span class="bm-wfe-chips"><span>{tx('Folio', 'Number')}</span><span>{tx('Cliente', 'Client')}</span><span>Total</span><span>{tx('Divisa', 'Currency')}</span><span>{tx('Nombre de tu negocio', 'Your business name')}</span></span>
       </div>
     </div>
   )}
 
   {slug === 'workflows' && index === 2 && (
-    <div class="bm-stage bm-wf-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">{en ? 'Test against the latest event' : 'Probar contra el último evento'}</span>
-          <span class="bm-app-badge bm-badge-green">{en ? 'Draft' : 'Borrador'}</span>
+    <div class="bm-stage" data-bmx="wf2">
+      <div class="bm-w bm-x-main bm-wf2">
+        <div class="bm-wf2-bar">
+          <span class="x"><Fragment set:html={WFI.close} /></span>
+          <strong>{tx('Reenvío con cambio de precio', 'Resent with a price change')}</strong>
+          <span class="bm-st bm-st-paid">{tx('Activo', 'Active')}</span>
+          <span class="acts"><span class="bm-btn-soft">{tx('Probar', 'Test')}</span><span class="bm-btn-soft">{tx('Guardar borrador', 'Save draft')}</span><span class="bm-btn-navy">{tx('Publicar', 'Publish')}</span></span>
         </div>
-        <div class="bm-app-body">
-          <div class="bm-kv"><span>{en ? 'Lookup · client balance' : 'Consulta · saldo del cliente'}</span><b class="editorial">$134,880.00</b></div>
-          <div class="bm-kv"><span>{en ? 'Condition · balance > $100,000' : 'Condición · saldo > $100,000'}</span><span class="bm-tg bm-tg-green">{en ? 'Met' : 'Se cumple'}</span></div>
-          <div class="bm-kv"><span>{en ? 'Wait until paid · 5 days' : 'Espera hasta que se pague · 5 días'}</span><span class="bm-tg bm-tg-amber">{en ? 'Would wait' : 'Esperaría'}</span></div>
-          <div class="bm-kv"><span>{en ? 'Email the owner' : 'Avisar al dueño por correo'}</span><span class="bm-tg bm-tg-gray">{en ? 'Not sent' : 'No se envía'}</span></div>
+        <div class="bm-wf2-tabs"><span class="on">{tx('Editor', 'Editor')}</span><span>{tx('Ejecuciones', 'Runs')}</span></div>
+        <div class="bm-wf2-canvas">
+          <div class="bm-wf2-flow">
+            <span class="bm-wfn" data-n><span class="ic"><Fragment set:html={WFI.quotes} /></span><span class="tx"><small>{tx('Cuando pase esto', 'When this happens')}</small><strong>{tx('Se modifica y reenvía una cotización', 'A quote is edited and resent')}</strong><em>{tx('Cotizaciones', 'Quotes')}</em></span></span>
+            <i class="bm-wfl"></i>
+            <span class="bm-wfn q" data-n><span class="ic"><Fragment set:html={WFI.query} /></span><span class="tx"><small>{tx('Consulta', 'Lookup')}</small><strong>{tx('Consultar el saldo del cliente', "Look up the client's balance")}</strong><em>{tx('Saldo del cliente · Vencido del cliente · Documentos abiertos', 'Client balance · Client overdue · Open documents')}</em></span></span>
+            <i class="bm-wfl q"></i>
+            <span class="bm-wfd" data-n><Fragment set:html={WFI.condition} /></span>
+            <span class="bm-wfn sel" data-n><span class="ic"><Fragment set:html={WFI.condition} /></span><span class="tx"><small>{tx('Condición', 'Condition')}</small><strong>{tx('Total cambió y 1 más', 'Total changed and 1 more')}</strong></span></span>
+            <div class="bm-wfb">
+              <div class="br">
+                <span class="bl">{tx('Si se cumple', 'If the condition is met')}</span>
+                <span class="bm-wfd sm" data-n><Fragment set:html={WFI.wait_until} /></span>
+                <span class="bm-wfn" data-n><span class="ic"><Fragment set:html={WFI.wait_until} /></span><span class="tx"><small>{tx('Espera hasta', 'Wait until')}</small><strong>{tx('Estado actual de la cotización es Aprobada', 'Current quote status is Approved')}</strong><em>{tx('Máximo 5 días', 'Up to 5 days')}</em></span></span>
+              </div>
+              <div class="br">
+                <span class="bl">{tx('Si no se cumple', "If the condition isn't met")}</span>
+                <span class="bm-wfn" data-n><span class="ic"><Fragment set:html={WFI.wait} /></span><span class="tx"><small>{tx('Espera', 'Wait')}</small><strong>{tx('Esperar 3 días', 'Wait 3 days')}</strong></span></span>
+                <i class="bm-wfl"></i>
+                <span class="bm-wfn" data-n><span class="ic"><Fragment set:html={WFI.send_client_email} /></span><span class="tx"><small>{tx('Acción', 'Action')}</small><strong>{tx('Escribirle al cliente', 'Email the client')}</strong><em>{tx('¿Seguimos con {{folio}}?', 'Still moving ahead with {{folio}}?')}</em></span></span>
+              </div>
+            </div>
+          </div>
+          <div class="bm-wf2-panel" data-panel>
+            <div class="bm-wfe-ph"><strong>{tx('Editar condición', 'Edit condition')}</strong><Fragment set:html={WFI.close} /></div>
+            <span class="bm-wfe-lb">{tx('Continuar por "Si se cumple" cuando', 'Take the "met" branch when')}</span>
+            <span class="bm-wfe-seg"><span class="on" data-all>{tx('se cumplen todas', 'all are met')}</span><span data-any>{tx('se cumple alguna', 'any is met')}</span></span>
+            <div class="bm-wfe-cond">
+              <span class="h"><span>{tx('Condición 1', 'Condition 1')}</span><em>{tx('Quitar', 'Remove')}</em></span>
+              <span class="bm-wfe-sel"><span>Total</span><Fragment set:html={chev} /></span>
+              <span class="bm-wfe-sel"><span>{tx('cambió', 'changed')}</span><Fragment set:html={chev} /></span>
+            </div>
+            <div class="bm-wfe-cond">
+              <span class="h"><span>{tx('Condición 2', 'Condition 2')}</span><em>{tx('Quitar', 'Remove')}</em></span>
+              <span class="bm-wfe-sel"><span>{tx('Saldo del cliente', 'Client balance')}</span><Fragment set:html={chev} /></span>
+              <span class="bm-wfe-sel"><span>{tx('es mayor o igual a', 'is at least')}</span><Fragment set:html={chev} /></span>
+              <span class="bm-wfe-in is-focus" data-val><span data-t>100000</span><i class="bm-caret"></i></span>
+            </div>
+            <span class="bm-wfe-add">+ {tx('Agregar otra condición', 'Add another condition')}</span>
+          </div>
         </div>
-        <div class="bm-app-foot"><span>{en ? 'Lookups run, actions don\'t' : 'Las consultas corren, las acciones no'}</span><b>COT-0148</b></div>
       </div>
     </div>
   )}
 
   {/* ────────────────── CORD INVOICING ────────────────── */}
   {slug === 'facturacion' && index === 0 && (
-    <div class="bm-stage bm-intl-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">A-001048 · Materiales del Valle</span>
-          <span class="bm-app-badge bm-badge-green">Emitida</span>
+    <div class="bm-stage" data-bmx="fa0">
+      <div class="bm-w bm-fa0-list">
+        <div class="bm-w-bar">
+          <span class="bm-w-h">{tx('Facturas', 'Invoices')}</span>
+          <span class="bm-btn-navy">+ {tx('Nueva factura', 'New invoice')}</span>
         </div>
-        <div class="bm-kv"><span>Borrador</span><span class="bm-tg bm-tg-gray">14 ago</span></div>
-        <div class="bm-kv bm-active" style="border-radius:0;"><span>Emitida · CFDI timbrado</span><span class="bm-tg bm-tg-green">15 ago</span></div>
-        <div class="bm-kv"><span>Pago recibido</span><b class="editorial g">$96,000.00</b></div>
-        <div class="bm-kv"><span>Saldo</span><b class="editorial">$134,880.00</b></div>
-        <div class="bm-app-foot"><span>El folio se asigna al emitir, no antes</span><b>Abierta</b></div>
+        <div class="bm-filters"><span class="on">{tx('Todas', 'All')}</span><span>{tx('Borradores', 'Drafts')}</span><span>{tx('Abiertas', 'Open')}</span><span>{tx('Vencidas', 'Past due')}</span><span>{tx('Pagadas', 'Paid')}</span></div>
+        <div class="bm-fa0-h"><span>{tx('Factura', 'Invoice')}</span><span>{tx('Cliente', 'Client')}</span><span class="r">Total</span><span>{tx('Estado', 'Status')}</span></div>
+        <div class="bm-fa0-r is-draft" data-row>
+          <span class="f"><strong data-folio data-a="A-001049" data-b={tx('Sin folio', 'No number')}>{tx('Sin folio', 'No number')}</strong><small data-bor>{tx('Borrador', 'Draft')} · BOR-3F9A1C</small></span>
+          <span class="c"><i>GF</i><span>Grupo Ferrex</span></span>
+          <b class="editorial r">MXN 48,720.00</b>
+          <span class="s"><span class="bm-st bm-st-draft" data-st data-a={tx('Abierta', 'Open')} data-b={tx('Borrador', 'Draft')}>{tx('Borrador', 'Draft')}</span><em data-sent hidden>{tx('Enviada', 'Sent')}</em></span>
+        </div>
+        <div class="bm-fa0-r">
+          <span class="f"><strong>A-001048</strong></span>
+          <span class="c"><i>DZ</i><span>Distribuidora El Zarco</span></span>
+          <b class="editorial r">MXN 196,469.20</b>
+          <span class="s"><span class="bm-st bm-st-open">{tx('Abierta', 'Open')}</span><em>{tx('Enviada', 'Sent')}</em></span>
+        </div>
+        <div class="bm-fa0-r">
+          <span class="f"><strong>A-001047</strong></span>
+          <span class="c"><i>CG</i><span>Constructora GAMA</span></span>
+          <b class="editorial r">MXN 84,216.00</b>
+          <span class="s"><span class="bm-st bm-st-paid">{tx('Pagada', 'Paid')}</span><em>{tx('Enviada', 'Sent')}</em></span>
+        </div>
+        <div class="bm-fa0-r">
+          <span class="f"><strong>A-001046</strong></span>
+          <span class="c"><i>OP</i><span>Obras y Proyectos del Norte</span></span>
+          <b class="editorial r">MXN 38,400.00</b>
+          <span class="s"><span class="bm-st bm-st-late">{tx('Vencida', 'Overdue')}</span><em>+6d</em></span>
+        </div>
+        <div class="bm-fa0-r">
+          <span class="f"><strong>A-001045</strong></span>
+          <span class="c"><i>CG</i><span>Constructora GAMA</span></span>
+          <b class="editorial r">MXN 121,800.00</b>
+          <span class="s"><span class="bm-st bm-st-paid">{tx('Pagada', 'Paid')}</span><em>{tx('Enviada', 'Sent')}</em></span>
+        </div>
+      </div>
+      <div class="bm-fl bm-fa0-side" data-side>
+        <strong class="h">{tx('Revisa y emite', 'Review and issue')}</strong>
+        <span class="l t"><span>Total</span><b class="editorial">{mxs}{nf(48720)} <small>MXN</small></b></span>
+        <span class="dl"><span class="k">{tx('Entrega', 'Delivery')}</span><strong>compras@grupoferrex.mx</strong><small>{tx('El correo incluye el PDF y la liga de pago.', 'Email includes the PDF and payment link.')}</small></span>
+        <span class="go" data-go><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z" fill="currentColor" fill-opacity="0.18"/></svg>{tx('Emitir y enviar', 'Issue and send')}</span>
+        <span class="sec"><span>{tx('Emitir sin enviar', 'Issue without sending')}</span><em>{tx('Guardar y salir', 'Save and exit')}</em></span>
+        <p class="note">{tx('El folio se asigna al emitir. Después, las correcciones requieren anulación o nota de crédito.', 'The number is assigned when you issue. Later corrections require a void or credit note.')}</p>
       </div>
     </div>
   )}
 
   {slug === 'facturacion' && index === 1 && (
-    <div class="bm-stage bm-intl-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">cordhq.app/i/k4m2xq…</span>
-          <span class="bm-app-badge bm-badge-blue">Vista del cliente</span>
+    <div class="bm-stage" data-bmx="fa1">
+      <div class="bm-w bm-fa1">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Facturas', 'Invoices')}</span><span class="bm-w-sep">/</span><strong>A-001046</strong></span>
+          <span class="bm-st bm-st-paid" data-pill data-a={tx('Abierta', 'Open')} data-b={tx('Pagada', 'Paid')}>{tx('Pagada', 'Paid')}</span>
         </div>
-        <div class="bm-kv"><span>Factura A-001048</span><span class="bm-tg bm-tg-gray">Vence 14 sep</span></div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>Total</span><b class="editorial">$230,880.00</b></div>
-          <div class="bm-stat"><span>Saldo</span><b class="editorial g">$134,880.00</b></div>
+        <div class="bm-fa1-steps" data-steps>
+          {(en ? ['Draft', 'Issued', 'Sent', 'Viewed', 'Paid'] : ['Borrador', 'Emitida', 'Enviada', 'Vista', 'Pagada']).map((s, i) => (
+            <span class:list={['s', i < 4 ? 'done' : 'cur']} data-s={i}><i><b class="d"><Fragment set:html={chk} /></b><b class="nn">{i + 1}</b></i><em>{s}</em></span>
+          ))}
         </div>
-        <div class="bm-kv"><span>Pagar con tarjeta</span><span class="bm-tg bm-tg-green">Disponible</span></div>
-        <div class="bm-app-foot"><span>PDF y XML descargables</span><b>Tu marca</b></div>
+        <div class="bm-fa1-grid">
+          <div class="bm-fa1-main">
+            <div class="bm-fa1-head">
+              <span class="av">CG</span>
+              <span class="who"><strong>Constructora GAMA</strong><small>{tx('Emitida 22 ago 2026 · Vence 21 sep 2026 · Enviada', 'Issued Aug 22, 2026 · Due Sep 21, 2026 · Sent')}</small></span>
+              <span class="tot"><em>TOTAL</em><b class="editorial">{mxs}{nf(84216)}</b><small data-bal data-a={`${tx('Saldo', 'Balance')} ${mxs}${nf(34216)}`} data-b={`${tx('Saldo', 'Balance')} ${mxs}${nf(0)}`}>{tx('Saldo', 'Balance')} {mxs}{nf(0)}</small></span>
+            </div>
+            <span class="bm-fa1-sh">{tx('Pagos', 'Payments')}</span>
+            <div class="bm-fa1-pays">
+              <span data-newpay><span>{tx('Hoy · Transferencia · SPEI 4471', 'Today · Wire transfer · SPEI 4471')}</span><b class="editorial">{mxs}{nf(34216)}</b></span>
+              <span><span>{tx('19 sept · Transferencia · SPEI 88213', 'Sep 19 · Wire transfer · SPEI 88213')}</span><b class="editorial">{mxs}{nf(50000)}</b></span>
+            </div>
+            <div class="bm-fa1-tot">
+              <span><span>Total</span><b class="editorial">{mxs}{nf(84216)}</b></span>
+              <span><span>{tx('Pagado', 'Paid')}</span><b class="editorial" data-paid data-a={`−${mxs}${nf(50000)}`} data-b={`−${mxs}${nf(84216)}`}>−{mxs}{nf(84216)}</b></span>
+              <span class="due"><span>{tx('Saldo', 'Balance')}</span><b class="editorial" data-due data-a={`${mxs}${nf(34216)} MXN`} data-b={`${mxs}${nf(0)} MXN`}>{mxs}{nf(0)} MXN</b></span>
+            </div>
+          </div>
+          <div class="bm-fa1-side">
+            <span class="bm-fa1-sh">{tx('Actividad', 'Activity')}</span>
+            <ol class="bm-fa1-tl">
+              <li class="ok" data-new><i></i><span><strong>{tx('Saldo liquidado', 'Balance settled')}</strong><time>{tx('hoy, 12:41', 'today, 12:41 PM')}</time></span></li>
+              <li class="ok" data-new><i></i><span><strong>{tx('Pago aplicado', 'Payment applied')}</strong><small>{tx(`Abono de ${mxs}${nf(34216)}`, `Payment of ${mxs}${nf(34216)}`)}</small><time>{tx('hoy, 12:41', 'today, 12:41 PM')}</time></span></li>
+              <li class="rem"><i></i><span><strong>{tx('Recordatorio enviado', 'Reminder sent')}</strong><small>{tx('Aviso de vencimiento (1 día antes)', 'Due-date notice (1 day before)')}</small><time>{tx('20 sept, 09:00', 'Sep 20, 9:00 AM')}</time></span></li>
+              <li class="ok"><i></i><span><strong>{tx('Pago aplicado', 'Payment applied')}</strong><small>{tx(`Abono de ${mxs}${nf(50000)}`, `Payment of ${mxs}${nf(50000)}`)}</small><time>{tx('19 sept, 16:05', 'Sep 19, 4:05 PM')}</time></span></li>
+              <li class="rem"><i></i><span><strong>{tx('Recordatorio enviado', 'Reminder sent')}</strong><small>{tx('Aviso de vencimiento (7 días antes)', 'Due-date notice (7 days before)')}</small><time>{tx('14 sept, 09:00', 'Sep 14, 9:00 AM')}</time></span></li>
+              <li class="vw"><i></i><span><strong>{tx('El cliente la abrió', 'The client opened it')}</strong><time>{tx('23 ago, 09:47', 'Aug 23, 9:47 AM')}</time></span></li>
+              <li><i></i><span><strong>{tx('Enviada al cliente', 'Sent to the client')}</strong><small>{tx('Enviada a pagos@constructoragama.mx', 'Sent to pagos@constructoragama.mx')}</small><time>{tx('22 ago, 10:12', 'Aug 22, 10:12 AM')}</time></span></li>
+              <li><i></i><span><strong>{tx('Emitida', 'Issued')}</strong><small>{tx('Factura A-001046 emitida', 'Invoice A-001046 issued')}</small><time>{tx('22 ago, 10:12', 'Aug 22, 10:12 AM')}</time></span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div class="bm-fl bm-fa1-pay" data-modal hidden>
+        <div class="bm-wfe-ph"><strong>{tx('Registrar pago', 'Record payment')}</strong><Fragment set:html={WFI.close} /></div>
+        <span class="bm-wfe-lb">{tx('Monto', 'Amount')} (MXN)</span>
+        <span class="bm-wfe-in is-focus"><span class="editorial" data-amt>{nf(34216)}</span><i class="bm-caret"></i></span>
+        <span class="bm-wfe-lb">{tx('Método', 'Method')}</span>
+        <span class="bm-wfe-sel"><span>{tx('Transferencia', 'Wire transfer')}</span><Fragment set:html={chev} /></span>
+        <span class="bm-wfe-lb">{tx('Referencia', 'Reference')}</span>
+        <span class="bm-wfe-in">SPEI 4471</span>
+        <span class="bm-fa1-mf"><span class="bm-btn-soft">{tx('Cancelar', 'Cancel')}</span><span class="bm-btn-navy" data-rec>{tx('Registrar', 'Record')}</span></span>
       </div>
     </div>
   )}
 
   {slug === 'facturacion' && index === 2 && (
-    <div class="bm-stage bm-intl-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Carril fiscal por país</span>
-          <span class="bm-app-badge bm-badge-green">Multi-país</span>
+    <div class="bm-stage" data-bmx="fa2">
+      <div class="bm-doc bm-doc-mx">
+        <div class="bm-dmx-top">
+          <span class="lg">M</span>
+          <span class="em"><strong>Materiales del Valle S.A. de C.V.</strong><small>RFC MVA240611AB3 · Régimen 601</small><small>Av. Constitución 2150, Monterrey, N.L. 64000</small></span>
+          <span class="fo"><em>FACTURA</em><strong>A-001048</strong><span class="cf">CFDI 4.0</span></span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;">MX</span><div class="bm-uid-tx"><b>México · CFDI 4.0</b><span>timbrado ante el SAT con tu CSD</span></div></div><span class="bm-tg bm-tg-green">Timbrado</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">ES</span><div class="bm-uid-tx"><b>España · Factura comercial</b><span>folio propio, sin presentación local</span></div></div><span class="bm-tg bm-tg-gray">Comercial</span></div>
-        <div class="bm-code" style="border-top:1px solid rgba(10,25,47,0.05);border-bottom:none;">UUID <b>a1b2c3d4-9f01-4e22-b7aa</b> · SAT ✓</div>
-        <div class="bm-app-foot"><span>Mismo flujo, distinto carril</span><b>$230,880.00 MXN</b></div>
+        <div class="bm-dmx-meta">
+          <span class="w"><em>Folio fiscal (UUID)</em><b>5E2F9C1A-7B34-4D0E-9A61-3C8B2D4F7E10</b></span>
+          <span><em>Fecha de timbrado</em><b>2026-09-12 10:14:32</b></span>
+          <span><em>Uso CFDI</em><b>G03 · Gastos en general</b></span>
+          <span><em>Método de pago</em><b>PPD</b></span>
+          <span><em>Moneda</em><b>MXN</b></span>
+        </div>
+        <div class="bm-dmx-rec"><em>Receptor</em><strong>Distribuidora El Zarco S.A. de C.V.</strong><small>RFC DEZ981123QX1 · Régimen 601 · C.P. 64720</small></div>
+        <div class="bm-dmx-tb">
+          <span class="h"><span>Descripción</span><span>Cant.</span><span>Importe</span><span>IVA 16%</span></span>
+          <span><span>Cemento gris 50kg</span><span>120</span><span>21,840.00</span><span>3,494.40</span></span>
+          <span><span>Varilla corrugada 3/8"</span><span>340</span><span>57,290.00</span><span>9,166.40</span></span>
+          <span><span>Block hueco 15×20×40</span><span>2,400</span><span>34,080.00</span><span>5,452.80</span></span>
+          <span><span>Arena de río m³</span><span>180</span><span>56,160.00</span><span>8,985.60</span></span>
+        </div>
+        <div class="bm-dmx-tt">
+          <span><span>Subtotal</span><b>$169,370.00</b></span>
+          <span><span>IVA trasladado 16%</span><b>$27,099.20</b></span>
+          <span class="t"><span>Total</span><b>$196,469.20 MXN</b></span>
+        </div>
+        <div class="bm-dmx-foot">
+          <span class="qr" aria-hidden="true"><Fragment set:html={qr} /></span>
+          <span class="sl"><em>Sello digital del CFDI</em><code>hN3kQ8vZt2+Lr0aWx9PmYc4Bd7Ef1Gh6Jk5Mn2Op8Qr3St0Uv9Wx4Yz7Ab1Cd6Ef2Gh5Ij8Kl3Mn0Op==</code><em>Sello del SAT</em><code>Tz6Yb1Wq8Xe3Rv0Uc5Is2Od9Pa4Lf7Kg1Jh6Hm3Gn8Fb2Dv5Cs0Ax9Zw4Yq7Xr1Wt6Vu3Ty8Rs==</code></span>
+        </div>
+        <p class="bm-dmx-leg">Este documento es una representación impresa de un CFDI 4.0</p>
+      </div>
+      <div class="bm-doc bm-doc-cm" data-docs>
+        {FA_DOCS.map((d, i) => (
+          <div class="bm-dcm" data-doc={d.cc} hidden={i !== 0}>
+            <div class="bm-dcm-band">
+              <strong class="nm">{d.from}</strong>
+              <span class="fo"><em>{d.t('FACTURA', 'INVOICE')}</em><strong>{d.num}</strong><small>{d.date}</small></span>
+            </div>
+            <div class="bm-dcm-pp">
+              <span><em>{d.t('DE', 'FROM')}</em><strong>{d.from}</strong><small>{d.fromId}</small><small>{d.fromAddr}</small></span>
+              <span><em>{d.t('PARA', 'BILL TO')}</em><strong>{d.to}</strong><small>{d.toId}</small><small>{d.toAddr}</small></span>
+            </div>
+            <div class="bm-dcm-facts">
+              <span><em>{d.t('VENCIMIENTO', 'DUE DATE')}</em><b>{d.due}</b></span>
+              <span><em>{d.t('CONDICIONES', 'TERMS')}</em><b>{d.terms}</b></span>
+              <span><em>{d.t('MONEDA', 'CURRENCY')}</em><b>{d.cur}</b></span>
+            </div>
+            <div class="bm-dcm-tb">
+              <span class="h"><span>{d.t('CONCEPTO', 'DESCRIPTION')}</span><span>{d.t('CANT.', 'QTY')}</span><span>{d.t('P. UNITARIO', 'UNIT PRICE')}</span><span>{d.tax.toUpperCase()}</span><span>{d.t('IMPORTE', 'AMOUNT')}</span></span>
+              {d.rows.map((r) => <span><span>{r.d}</span><span>{r.q}</span><span>{r.p}</span><span>{d.rateTxt}</span><span>{r.a}</span></span>)}
+            </div>
+            <div class="bm-dcm-tt">
+              <span><span>Subtotal</span><b>{d.sub} {d.cur}</b></span>
+              <span class="m" data-taxrow><span>{d.tax} {d.rateTxt} · base {d.base}</span><b>{d.taxAmt} {d.cur}</b></span>
+              <span class="t"><span>TOTAL</span><b>{d.total} {d.cur}</b></span>
+            </div>
+            <p class="bm-dcm-foot">{d.foot}</p>
+          </div>
+        ))}
       </div>
     </div>
   )}
@@ -1252,48 +1479,120 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
 
   {/* ────────────────── EQUIPO ────────────────── */}
   {slug === 'equipo' && index === 0 && (
-    <div class="bm-stage bm-eq-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Equipo y roles</span>
-          <span class="bm-app-badge bm-badge-blue">4 miembros</span>
+    <div class="bm-stage" data-bmx="eq0">
+      <div class="bm-w bm-eq0">
+        <div class="bm-eq0-head"><strong>Marco Ruiz</strong><Fragment set:html={WFI.close} /></div>
+        <div class="bm-eq0-body">
+          <span class="bm-eq0-pre" data-pre>
+            <span data-p="admin">{tx('Administrador', 'Admin')}</span>
+            <span class="on" data-p="vendedor">{tx('Vendedor', 'Rep')}</span>
+            <span data-p="lectura">{tx('Solo lectura', 'Read only')}</span>
+            <span class="cu" data-p="custom" hidden>{tx('Personalizado', 'Custom')}</span>
+          </span>
+          <p class="bm-eq0-desc" data-desc data-a={tx('Cotiza y gestiona clientes/productos; no toca ajustes ni aprueba.', 'Quotes and manages clients/products; no access to settings or approvals.')} data-b={tx('Rol personalizado — combina exactamente los permisos que marcaste abajo.', 'Custom role — combines exactly the permissions you checked below.')}>{tx('Cotiza y gestiona clientes/productos; no toca ajustes ni aprueba.', 'Quotes and manages clients/products; no access to settings or approvals.')}</p>
+          {[
+            { g: tx('Vender', 'Selling'), rows: [[tx('Cotizaciones', 'Quotes'), 1], [tx('Clientes', 'Clients'), 1], [tx('Productos', 'Products'), 1]] },
+            { g: tx('Dinero', 'Money'), rows: [[tx('Cobranza', 'Collections'), 0, 'cob'], [tx('Configurar cobros', 'Payment settings'), 0], [tx('Reembolsos', 'Refunds'), 0]] },
+            { g: tx('Control y análisis', 'Control and analytics'), rows: [[tx('Aprobaciones', 'Approvals'), 0], [tx('Informes', 'Reports'), 1]] },
+            { g: tx('Administración', 'Administration'), rows: [[tx('Ajustes', 'Settings'), 0], [tx('Equipo', 'Team'), 0]] },
+          ].map((grp) => (
+            <div class="bm-eq0-g">
+              <span class="gh">{grp.g}</span>
+              {grp.rows.map((r) => (
+                <span class="bm-eq0-r" data-k={r[2]}><span class="tx"><strong>{r[0]}</strong></span><i class:list={['bm-tog', { on: r[1] === 1 }]} data-tog={r[2]}></i></span>
+              ))}
+            </div>
+          ))}
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">AP</span><div class="bm-uid-tx"><b>Ana Pérez</b><span>ana@tu-empresa.mx</span></div></div><span class="bm-tg bm-tg-purple">Admin</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">CM</span><div class="bm-uid-tx"><b>Carlos M.</b><span>ve todo el pipeline</span></div></div><span class="bm-tg bm-tg-amber">Gerente</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">LG</span><div class="bm-uid-tx"><b>Laura G.</b><span>solo su cartera</span></div></div><span class="bm-tg bm-tg-blue">Vendedor</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">RS</span><div class="bm-uid-tx"><b>Rosa S.</b><span>solo lectura</span></div></div><span class="bm-tg bm-tg-gray">Contador</span></div>
-        <div class="bm-app-foot"><span>Cada quien ve solo lo suyo</span><b>Sin exportar ni borrar</b></div>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 1 && (
-    <div class="bm-stage bm-eq-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Cambiar de empresa</span>
-          <span class="bm-app-badge bm-badge-blue">Multi-empresa</span>
+    <div class="bm-stage" data-bmx="eq1">
+      <div class="bm-w bm-eq1-sb">
+        <span class="bm-eq1-btn"><span class="av">M</span><span class="tx"><em>{tx('Espacio de trabajo', 'Workspace')}</em><strong>Materiales del Valle</strong></span><Fragment set:html={chev} /></span>
+        <div class="bm-eq1-dd">
+          <span class="lb">{tx('Espacios de trabajo', 'Workspaces')}</span>
+          <span class="it sel"><span class="av">M</span><span class="tx"><strong>Materiales del Valle</strong><small>{tx('Dueño', 'Owner')}</small></span><span class="ck"><Fragment set:html={chk} /></span></span>
+          <div class="kids">
+            <span class="it kid"><span class="av sm">A</span><span class="tx"><strong>Acabados del Valle</strong></span></span>
+            <span class="it kid nw" data-kid hidden><span class="av sm">M</span><span class="tx"><strong>Materiales del Valle USA</strong></span></span>
+          </div>
+          <span class="it"><span class="av alt">I</span><span class="tx"><strong>Inmobiliaria Valle Alto</strong><small>{tx('Dueño', 'Owner')}</small></span></span>
+          <span class="sep"></span>
+          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>{tx('Crear espacio de trabajo', 'Create workspace')}</span>
+          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.14"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>{tx('Configuración del equipo', 'Team settings')}</span>
+          <span class="sep"></span>
+          <span class="me"><span class="av u">R</span><span class="tx"><strong>Ricardo Valle</strong><small>ricardo@materialesdelvalle.mx</small></span></span>
         </div>
-        <div class="bm-kv bm-active" style="border-radius:0;"><div class="bm-uid"><span class="bm-avat a2">AM</span><div class="bm-uid-tx"><b>Acero Monterrey</b><span>RFC ACM981123 · activa</span></div></div><span class="bm-tg bm-tg-green">Actual</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">FC</span><div class="bm-uid-tx"><b>Ferretería Central</b><span>RFC FEC882045</span></div></div><span class="bm-tg bm-tg-gray">Cambiar</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">DP</span><div class="bm-uid-tx"><b>Distribuidora del Pacífico</b><span>RFC DPA070312</span></div></div><span class="bm-tg bm-tg-gray">Cambiar</span></div>
-        <div class="bm-app-foot"><span>Logo y sellos aislados por marca</span><b>Reportes consolidados</b></div>
+      </div>
+      <div class="bm-fl bm-eq1-md" data-modal>
+        <span class="bm-eq1-steps"><i class="on"></i><i class="on"></i></span>
+        <strong class="bm-eq1-t">{tx('Dale un nombre a tu cuenta', 'Name your account')}</strong>
+        <p class="bm-eq1-s">{tx('El nombre y el país los puedes cambiar después en Ajustes.', 'You can change the name and country later in Settings.')}</p>
+        <div class="bm-eq1-form">
+          <div class="fl">
+            <span class="lb">{tx('Nombre de la cuenta', 'Account name')}</span>
+            <span class="in is-focus"><span data-name>Materiales del Valle USA</span><i class="bm-caret"></i></span>
+            <span class="lb">{tx('País donde operas', 'Country you operate in')}</span>
+            <span class="in sel"><img src="/flags/us.svg" alt="" width="16" height="16" /><span>{tx('Estados Unidos', 'United States')}</span><Fragment set:html={chev} /></span>
+            <p class="hi">{tx('Define tu moneda y tus documentos fiscales. Puedes emitir facturas comerciales desde Cord; la conexión con la autoridad fiscal local no está incluida actualmente.', 'Sets your currency and your tax documents. You can issue commercial invoices from Cord; a connection to the local tax authority is not currently included.')}</p>
+          </div>
+          <div class="pv">
+            <span class="lb">{tx('Así quedará', "Here's how it will look")}</span>
+            <span class="nd root"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor" fill-opacity="0.12"/></svg><span>Materiales del Valle</span></span>
+            <div class="ch">
+              <span class="nd hl"><img src="/flags/us.svg" alt="" width="16" height="16" /><span data-pvname>Materiales del Valle USA</span><b>{tx('Nueva', 'New')}</b></span>
+              <span class="nd dim"><span>Acabados del Valle</span></span>
+            </div>
+          </div>
+        </div>
+        <span class="bm-eq1-ft"><span class="gh">{tx('Atrás', 'Back')}</span><span class="pri" data-go>{tx('Crear cuenta', 'Create account')}</span></span>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 2 && (
-    <div class="bm-stage bm-eq-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Acceso y seguridad</span>
-          <span class="bm-app-badge bm-badge-green">SSO activo</span>
+    <div class="bm-stage" data-bmx="eq2">
+      <div class="bm-w bm-eq2-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>SSO</span><span class="bm-w-sep">/</span><strong>{tx('Okta producción', 'Okta production')}</strong></span>
+          <span class="bm-st bm-st-paid">{tx('Activa', 'Active')}</span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">G</span><div class="bm-uid-tx"><b>Google Workspace</b><span>@tu-empresa.com</span></div></div><span class="bm-tg bm-tg-green">Conectado</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1" style="border-radius:8px;">M</span><div class="bm-uid-tx"><b>Microsoft Entra</b><span>SAML / OIDC</span></div></div><span class="bm-tg bm-tg-gray">Disponible</span></div>
-        <div class="bm-kv"><span>Autenticación robusta</span><span class="bm-tg bm-tg-blue">Google Auth</span></div>
-        <div class="bm-kv"><span>Bitácora de sesiones</span><span class="bm-tg bm-tg-green">Auditada</span></div>
-        <div class="bm-app-foot"><span>Accesos de grado empresarial</span><b>SSO · SAML</b></div>
+        <div class="bm-eq2-sec">
+          <strong class="h">{tx('Dominios verificados', 'Verified domains')}</strong>
+          <p class="d">{tx('Solo los correos de un dominio verificado pueden iniciar sesión por esta conexión.', 'Only emails from a verified domain can sign in through this connection.')}</p>
+          <div class="bm-eq2-dom">
+            <span class="r"><span class="bm-st bm-st-paid">{tx('Verificado', 'Verified')}</span><strong>materialesdelvalle.mx</strong></span>
+            <span class="r" data-dom><span class="bm-st bm-st-draft" data-dst data-a={tx('Sin verificar', 'Unverified')} data-b={tx('Verificado', 'Verified')}>{tx('Sin verificar', 'Unverified')}</span><strong>mdv-usa.com</strong><span class="bm-btn-soft" data-ver>{tx('Verificar', 'Verify')}</span></span>
+            <div class="bm-eq2-dns" data-dns>
+              <p>{tx('Consulta con tu proveedor de DNS y añade un registro con los siguientes datos.', 'Check with your DNS provider and add a record with the following details.')}</p>
+              <span><em>{tx('Dominio', 'Domain')}</em><b>mdv-usa.com</b></span>
+              <span><em>{tx('Nombre', 'Name')}</em><b>@</b></span>
+              <span><em>{tx('Registro', 'Record')}</em><b>TXT</b></span>
+              <span><em>{tx('Código DNS', 'DNS code')}</em><b class="mono">cord-domain-verify=9f2c41d7e08b3a6f5c1e9d2047b8a3c6</b><u>{tx('Copiar', 'Copy')}</u></span>
+            </div>
+          </div>
+        </div>
+        <div class="bm-eq2-sec">
+          <strong class="h">{tx('Mapeo de roles', 'Role mapping')}</strong>
+          <p class="d">{tx('Asigna un rol de Cord según los atributos que mande tu IdP (ej. el grupo del usuario). La primera regla que coincida gana.', "Assign a Cord role based on the attributes your IdP sends (e.g. the user's group). The first matching rule wins.")}</p>
+          <div class="bm-eq2-map">
+            <span class="r"><span class="in">groups</span><span class="in op">=</span><span class="in">Cord-Admins</span><span class="in s">admin</span></span>
+            <span class="r"><span class="in">groups</span><span class="in op">=</span><span class="in">Ventas</span><span class="in s">vendedor</span></span>
+            <span class="r"><span class="in">groups</span><span class="in op">=</span><span class="in">Finanzas</span><span class="in s">admin</span></span>
+          </div>
+          <span class="bm-eq2-def"><em>{tx('Rol por defecto (si ninguna regla coincide)', 'Default role (if no rule matches)')}</em><span class="in s">lectura</span></span>
+        </div>
+      </div>
+      <div class="bm-fl bm-eq2-req">
+        <span class="bm-eq2-ch"><strong>{tx('Conexiones', 'Connections')}</strong></span>
+        <span class="bm-eq2-conn"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/></svg></span><span class="tx"><strong>{tx('Okta producción', 'Okta production')}</strong><small>http://www.okta.com/exk8f2v1qLmZ7c4Nw697</small></span><span class="bm-st bm-st-paid">{tx('Activa', 'Active')}</span></span>
+        <span class="bm-eq2-ch"><strong>{tx('Exigir SSO', 'Require SSO')}</strong></span>
+        <span class="bm-eq2-tg"><i class="bm-tog on" data-req></i><span>{tx('Exigir a tu equipo iniciar sesión por SSO', 'Require your team to sign in via SSO')}</span></span>
+        <p class="bm-eq2-hint">{tx('Bloquea contraseña, Google, Apple y llaves de acceso para todos menos el dueño de la cuenta, que siempre conserva su contraseña como respaldo.', 'Blocks password, Google, Apple, and passkeys for everyone except the account owner, who always keeps their password as a fallback.')}</p>
+        <span class="bm-btn-soft bm-eq2-bg">{tx('Desactivar por 1 hora', 'Disable for 1 hour')}</span>
       </div>
     </div>
   )}
@@ -1438,9 +1737,6 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   .bm-app-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.72rem; color: #94a3b8; }
   .bm-app-foot b { color: #0f172a; font-weight: 700; }
 
-  .bm-wf-ico { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.1); }
-  .bm-wf-ico svg { width: 16px; height: 16px; }
-  .bm-wf-logo { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; margin: 0 4px; }
 
   /* ── Helpers reutilizables para las ventanas completas ── */
   .bm-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(10,25,47,0.05); font-size: 0.77rem; color: #475569; }
@@ -2566,6 +2862,427 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     .bm-fn2-k b { font-size: 0.96rem; }
   }
 
+  /* ═══ Calcas de Facturación y operación: facturacion, workflows, equipo ═══ */
+  .bm-fo [hidden] { display: none !important; }
+  .bm-st { flex-shrink: 0; display: inline-flex; align-items: center; font-size: 0.58rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .bm-st-draft { color: #5b6472; background: rgba(91,100,114,0.1); }
+  .bm-st-open { color: #b45309; background: rgba(245,158,11,0.12); }
+  .bm-st-paid { color: #047857; background: rgba(16,185,129,0.12); }
+  .bm-st-late { color: #dc2626; background: rgba(239,68,68,0.1); }
+  .bm-fo .bm-fl { padding: 14px 15px 15px; }
+
+  /* piezas del editor de workflows y paneles */
+  .bm-wfe-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; padding-bottom: 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-wfe-ph strong { font-size: 0.82rem; font-weight: 700; letter-spacing: -0.02em; color: #0f1729; }
+  .bm-wfe-ph :global(svg) { width: 14px; height: 14px; color: #5b6472; flex-shrink: 0; }
+  .bm-wfe-lb { display: block; margin: 10px 0 5px; font-size: 0.62rem; font-weight: 600; color: #0f1729; }
+  .bm-wfe-in, .bm-wfe-sel { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 9px; background: #f5f5f7; border: 1.5px solid transparent; font-size: 0.64rem; color: #0f1729; white-space: nowrap; overflow: hidden; }
+  .bm-wfe-sel { justify-content: space-between; }
+  .bm-wfe-sel :global(svg) { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+  .bm-wfe-hint { margin: 5px 0 0; font-size: 0.56rem; line-height: 1.45; color: #5b6472; }
+  .bm-wfe-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .bm-wfe-chips > span { font-size: 0.56rem; font-weight: 600; color: #5b6472; background: #ffffff; border: 1px solid rgba(10,25,47,0.1); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .bm-wfe-sum { display: flex; align-items: center; gap: 9px; margin-top: 10px; padding: 9px 10px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.09); }
+  .bm-wfe-sum .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .bm-wfe-sum strong { font-size: 0.66rem; font-weight: 600; line-height: 1.3; color: #0f1729; }
+  .bm-wfe-sum small { font-size: 0.54rem; line-height: 1.35; color: #5b6472; }
+  .bm-wfe-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+  .bm-wfe-seg > span { font-size: 0.58rem; font-weight: 600; color: #5b6472; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .bm-wfe-seg > span.on { background: #ffffff; color: #0f1729; box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+  .bm-wfe-cond { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.09); }
+  .bm-wfe-cond .h { display: flex; justify-content: space-between; font-size: 0.56rem; color: #5b6472; }
+  .bm-wfe-cond .h em { font-weight: 600; color: #dc2626; }
+  .bm-wfe-add { display: inline-block; margin-top: 10px; font-size: 0.62rem; font-weight: 600; color: #0a192f; }
+  .bm-fo .ic { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 9px; color: #0a192f; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); overflow: hidden; }
+  .bm-fo .ic :global(svg) { width: 16px; height: 16px; }
+  .bm-fo .ic :global(img) { width: 18px; height: 18px; border-radius: 5px; object-fit: contain; }
+  .bm-fo .ic :global(img.tile) { width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
+  .bm-fo .ic.tl { background: none; box-shadow: none; }
+
+  /* workflows · buscadores de disparador y de paso */
+  .bm-wfp-top { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 11px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-wfp-search { display: flex; align-items: center; gap: 8px; min-height: 22px; font-size: 0.8rem; color: #0f1729; }
+  .bm-wfp-search :global(svg) { width: 15px; height: 15px; color: #8a93a2; flex-shrink: 0; }
+  .bm-wfp-search .ph { color: #99a2af; }
+  .bm-wfp-search .q:empty { display: none; }
+  .bm-wfp-search .q:not(:empty) + .ph { display: none; }
+  .bm-wfp-search.is-typing .bm-caret { display: inline-block; margin-left: -6px; }
+  .bm-wfp-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .bm-wfp-chips > span { font-size: 0.6rem; font-weight: 600; color: #5b6472; background: #ffffff; border: 1px solid rgba(10,25,47,0.1); padding: 4px 9px; border-radius: 999px; white-space: nowrap; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+  .bm-wfp-chips > span.on { background: #0a192f; border-color: #0a192f; color: #ffffff; }
+  .bm-wfp-list { display: flex; flex-direction: column; padding: 6px 8px 10px; }
+  .bm-wfp-it { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+  .bm-wfp-it .lb { flex: 1; min-width: 0; font-size: 0.72rem; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-wfp-it .ct { flex-shrink: 0; font-size: 0.6rem; color: #8a93a2; white-space: nowrap; }
+  .bm-wfp-list.rich .bm-wfp-it { align-items: flex-start; padding: 8px; }
+  .bm-wfp-it .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .bm-wfp-it .tx strong { font-size: 0.72rem; font-weight: 600; color: #0f1729; }
+  .bm-wfp-it .tx small { font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-wfp-it .tx em { margin-top: 1px; font-size: 0.56rem; font-weight: 600; color: #8a93a2; }
+  .bm-wfp-list.rich .ct { padding-top: 2px; }
+  .bm-wrap.bm-workflows-0 .bm-wfp-list .bm-wfp-it:first-child { background: #f5f5f7; }
+  [data-bmx="wf1"] { position: relative; }
+  .bm-wf1-pick { width: calc(100% - 190px); min-width: 330px; }
+  .bm-wf1-panel { position: absolute; right: 0; top: 92px; width: 256px; z-index: 3; }
+
+  /* workflows · lienzo con ramas */
+  .bm-x-full [data-bmx="wf2"] .bm-x-main { top: 24px; right: 30px; }
+  .bm-wf2-bar { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-bottom: 1px solid rgba(10,25,47,0.07); background: #fafbfc; }
+  .bm-wf2-bar .x { width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; border: 1px solid rgba(10,25,47,0.1); background: #ffffff; color: #0f1729; }
+  .bm-wf2-bar .x :global(svg) { width: 12px; height: 12px; }
+  .bm-wf2-bar > strong { min-width: 0; font-size: 0.84rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-wf2-bar .acts { margin-left: auto; display: flex; gap: 5px; }
+  .bm-wf2-bar .acts > span { border-radius: 999px; padding: 5px 11px; }
+  .bm-wf2-tabs { display: flex; gap: 16px; padding: 0 14px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-wf2-tabs span { margin-bottom: -1px; padding: 8px 0 7px; border-bottom: 2px solid transparent; font-size: 0.66rem; font-weight: 600; color: #5b6472; }
+  .bm-wf2-tabs .on { color: #0f1729; border-bottom-color: #0a192f; }
+  .bm-wf2-canvas { position: relative; height: 560px; overflow: hidden; background-color: #f5f5f7; background-image: radial-gradient(rgba(10,25,47,0.13) 1px, transparent 1px); background-size: 16px 16px; }
+  .bm-wf2-flow { position: absolute; left: 10px; right: 262px; top: 14px; display: flex; flex-direction: column; align-items: center; }
+  .bm-wfn { position: relative; width: 272px; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 13px; background: #ffffff; border: 1px solid rgba(10,25,47,0.09); box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 10px 30px -18px rgba(10,25,47,0.22); text-align: left; }
+  .bm-wfn.sel { border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08), 0 10px 30px -18px rgba(10,25,47,0.22); }
+  .bm-wfn .ic { width: 28px; height: 28px; }
+  .bm-wfn .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .bm-wfn small { font-size: 0.54rem; color: #5b6472; }
+  .bm-wfn strong { font-size: 0.66rem; font-weight: 600; line-height: 1.3; color: #0f1729; }
+  .bm-wfn em { font-size: 0.54rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-wfl { display: block; width: 1.5px; height: 14px; background: rgba(10,25,47,0.2); }
+  .bm-wfd { position: relative; width: 38px; height: 38px; display: grid; place-items: center; color: #0a192f; }
+  .bm-wfd::before { content: ''; position: absolute; inset: 6px; border-radius: 7px; transform: rotate(45deg); background: #ffffff; border: 1px solid rgba(10,25,47,0.16); box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 8px 18px -10px rgba(10,25,47,0.35); }
+  .bm-wfd :global(svg) { position: relative; width: 15px; height: 15px; }
+  .bm-wfd.sm { width: 30px; height: 30px; }
+  .bm-wfd.sm + .bm-wfn { margin-top: 8px; }
+  .bm-wfd + .bm-wfn { margin-top: 10px; }
+  .bm-wfd + .bm-wfn::before { content: ''; position: absolute; left: 50%; top: -11px; width: 1.5px; height: 10px; background: rgba(10,25,47,0.2); }
+  .bm-wfb { position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); column-gap: 14px; width: 100%; max-width: 440px; margin-top: 14px; padding-top: 22px; }
+  .bm-wfb::before { content: ''; position: absolute; top: 0; left: 25%; right: 25%; height: 22px; border: 1.5px solid rgba(10,25,47,0.2); border-bottom: none; border-radius: 12px 12px 0 0; }
+  .bm-wfb::after { content: ''; position: absolute; top: -14px; left: 50%; width: 1.5px; height: 14px; background: rgba(10,25,47,0.2); }
+  .bm-wfb .br { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .bm-wfb .bl { margin-bottom: 10px; padding: 3px 9px; border-radius: 999px; background: #ffffff; box-shadow: 0 0 0 1px rgba(10,25,47,0.1); font-size: 0.56rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .bm-wfb .bm-wfn { width: 100%; }
+  .bm-wf2-panel { position: absolute; top: 10px; right: 10px; bottom: -20px; width: 246px; padding: 14px 15px; border-radius: 16px; background: #ffffff; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 16px 40px -8px rgba(10,25,47,0.2); }
+
+  /* facturación · lista y emisión */
+  [data-bmx="fa0"] { position: relative; }
+  .bm-fa0-h, .bm-fa0-r { display: grid; grid-template-columns: minmax(0,0.95fr) minmax(0,1.25fr) minmax(0,1fr) 70px; gap: 8px; align-items: center; padding: 0 14px; }
+  .bm-fa0-h { margin-top: 6px; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.52rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #8a93a2; }
+  .bm-fa0-h .r, .bm-fa0-r .r { justify-self: end; text-align: right; }
+  .bm-fa0-r { padding-top: 9px; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .bm-fa0-r.is-draft { background: rgba(37,99,235,0.045); }
+  .bm-fa0-r .f { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-fa0-r .f strong { font-size: 0.7rem; font-weight: 600; color: #0f1729; white-space: nowrap; }
+  .bm-fa0-r .f small { font-size: 0.54rem; color: #8a93a2; white-space: nowrap; }
+  .bm-fa0-r .c { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 0.66rem; color: #0f1729; }
+  .bm-fa0-r .c span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bm-fa0-r .c i { width: 20px; height: 20px; flex-shrink: 0; display: grid; place-items: center; border-radius: 6px; background: #eef0f3; color: #5b6472; font-size: 0.48rem; font-weight: 700; font-style: normal; }
+  .bm-fa0-r b { font-size: 0.66rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-fa0-r .s { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .bm-fa0-r .s em { font-size: 0.54rem; color: #8a93a2; }
+  .bm-fa0-side { position: absolute; right: -4px; top: 58px; width: 212px; z-index: 3; }
+  .bm-fa0-side .h { display: block; padding-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.78rem; font-weight: 650; letter-spacing: -0.01em; }
+  .bm-fa0-side .n { display: block; margin: 7px 0 3px; font-size: 0.56rem; color: #8a93a2; }
+  .bm-fa0-side .l { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: 0.62rem; color: #5b6472; }
+  .bm-fa0-side .l b { font-size: 0.66rem; color: #0a192f !important; }
+  .bm-fa0-side .l.t { margin-top: 2px; padding-top: 8px; font-weight: 650; color: #0f1729; }
+  .bm-fa0-side .l.t b { font-size: 0.8rem; }
+  .bm-fa0-side .l.t small { font-size: 0.56rem; color: #5b6472; }
+  .bm-fa0-side .k { display: block; margin: 9px 0 4px; font-size: 0.56rem; font-weight: 600; color: #5b6472; }
+  .bm-fa0-side .bm-field { display: flex; width: 100%; box-sizing: border-box; }
+  .bm-fa0-side .dl { display: flex; flex-direction: column; gap: 1px; margin-top: 8px; padding: 8px 9px; border-radius: 10px; background: #f5f5f7; }
+  .bm-fa0-side .dl .k { margin: 0 0 1px; }
+  .bm-fa0-side .dl strong { font-size: 0.64rem; }
+  .bm-fa0-side .dl small { font-size: 0.54rem; line-height: 1.4; color: #5b6472; }
+  .bm-fa0-side .go { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px; border-radius: 10px; background: #0a192f; color: #ffffff; font-size: 0.66rem; font-weight: 600; box-shadow: 0 8px 22px -10px rgba(10,25,47,0.5); }
+  .bm-fa0-side .go svg { width: 12px; height: 12px; }
+  .bm-fa0-side .sec { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; font-size: 0.6rem; font-weight: 600; }
+  .bm-fa0-side .sec span { padding: 5px 9px; border-radius: 9px; border: 1px solid rgba(10,25,47,0.1); }
+  .bm-fa0-side .sec em { color: #5b6472; }
+  .bm-fa0-side .note { margin: 9px 0 0; font-size: 0.54rem; line-height: 1.45; color: #8a93a2; }
+
+  /* facturación · avance, actividad y pago registrado */
+  [data-bmx="fa1"] { position: relative; }
+  .bm-fa1-steps { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-fa1-steps .s { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+  .bm-fa1-steps .s:last-child { flex: 0 0 auto; }
+  .bm-fa1-steps .s:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 8px; border-radius: 2px; background: rgba(10,25,47,0.1); }
+  .bm-fa1-steps .s.done:not(:last-child)::after { background: #10b981; }
+  .bm-fa1-steps i { width: 20px; height: 20px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(10,25,47,0.14); background: #f5f5f7; color: #5b6472; font-style: normal; font-size: 0.56rem; font-weight: 800; }
+  .bm-fa1-steps i b { display: none; font-weight: 800; color: inherit !important; }
+  .bm-fa1-steps .s .nn, .bm-fa1-steps .s.done .d { display: grid; place-items: center; }
+  .bm-fa1-steps .s.done .nn { display: none; }
+  .bm-fa1-steps .s.done i { border-color: #10b981; background: #10b981; color: #ffffff; }
+  .bm-fa1-steps .s.cur i { border-color: #0a192f; background: #0a192f; color: #ffffff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+  .bm-fa1-steps em { font-size: 0.6rem; font-weight: 600; color: #8a93a2; white-space: nowrap; }
+  .bm-fa1-steps .s.done em, .bm-fa1-steps .s.cur em { color: #0f1729; }
+  .bm-fa1-grid { display: grid; grid-template-columns: minmax(0,1fr) 228px; }
+  .bm-fa1-main { padding: 14px 16px 18px; border-right: 1px solid rgba(10,25,47,0.07); }
+  .bm-fa1-side { padding: 14px 16px 18px; }
+  .bm-fa1-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-fa1-head .av { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: #0a192f; color: #ffffff; font-size: 0.66rem; font-weight: 800; }
+  .bm-fa1-head .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-fa1-head .who strong { font-size: 0.84rem; font-weight: 700; letter-spacing: -0.01em; }
+  .bm-fa1-head .who small { font-size: 0.56rem; color: #5b6472; }
+  .bm-fa1-head .tot { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; }
+  .bm-fa1-head .tot em { font-size: 0.46rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+  .bm-fa1-head .tot b { font-size: 1.05rem; line-height: 1.15; color: #0a192f !important; white-space: nowrap; }
+  .bm-fa1-head .tot small { margin-top: 2px; font-size: 0.56rem; color: #5b6472; white-space: nowrap; }
+  .bm-fa1-sh { display: block; margin: 12px 0 2px; padding-bottom: 6px; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.7rem; font-weight: 600; color: #0f1729; }
+  .bm-fa1-side .bm-fa1-sh { margin-top: 0; margin-bottom: 8px; }
+  .bm-fa1-pays > span { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.6rem; color: #5b6472; }
+  .bm-fa1-pays b, .bm-fa1-tot b { font-size: 0.66rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-fa1-tot { display: flex; flex-direction: column; align-items: flex-end; padding-top: 8px; }
+  .bm-fa1-tot > span { display: flex; justify-content: space-between; gap: 28px; min-width: 200px; padding: 3px 0; font-size: 0.6rem; color: #5b6472; }
+  .bm-fa1-tot > span.due { margin-top: 3px; padding-top: 6px; border-top: 2px solid #0a192f; font-size: 0.68rem; font-weight: 750; color: #0f1729; }
+  .bm-fa1-tot > span.due b { font-size: 0.74rem; }
+  .bm-fa1-tl { position: relative; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 2px 0 0; list-style: none; }
+  .bm-fa1-tl::before { content: ''; position: absolute; top: 8px; bottom: 6px; left: 3px; width: 1px; background: rgba(10,25,47,0.1); }
+  .bm-fa1-tl li { position: relative; display: grid; grid-template-columns: 8px minmax(0,1fr); gap: 9px; align-items: start; }
+  .bm-fa1-tl li > i { z-index: 1; width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #8a93a2; opacity: 0.5; box-shadow: 0 0 0 3px #ffffff; }
+  .bm-fa1-tl li.ok > i { background: #10b981; opacity: 1; }
+  .bm-fa1-tl li.vw > i { background: #0a192f; opacity: 1; }
+  .bm-fa1-tl li.rem > i { background: #b45309; opacity: 1; }
+  .bm-fa1-tl li > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-fa1-tl strong { font-size: 0.64rem; font-weight: 600; }
+  .bm-fa1-tl small { font-size: 0.56rem; line-height: 1.4; color: #5b6472; }
+  .bm-fa1-tl time { font-size: 0.52rem; color: #8a93a2; }
+  .bm-fa1-pay { position: absolute; left: 40px; top: 104px; width: 236px; z-index: 3; }
+  .bm-fa1-mf { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.08); }
+
+  /* facturación · el documento que toca */
+  .bm-doc { background: #ffffff; border-radius: 6px; border: 1px solid rgba(10,25,47,0.09); color: #1f2733; font-size: 0.74rem; line-height: 1.35; overflow: hidden; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 18px 40px -18px rgba(10,25,47,0.22), 0 50px 90px -44px rgba(10,25,47,0.28); }
+  .bm-doc b, .bm-doc strong { font-weight: 600; }
+  .bm-doc em { font-style: normal; }
+  .bm-x-full [data-bmx="fa2"] .bm-doc-mx { position: absolute; left: 26px; top: 30px; width: calc(50% - 32px); }
+  .bm-x-full [data-bmx="fa2"] .bm-doc-cm { position: absolute; right: 26px; top: 58px; width: calc(50% - 26px); z-index: 3; }
+  .bm-doc-mx { padding: 15px 15px 13px; }
+  .bm-dmx-top { display: flex; align-items: flex-start; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid #e6e8ec; }
+  .bm-dmx-top .lg { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border-radius: 7px; background: #b45309; color: #ffffff; font-size: 0.72rem; font-weight: 800; }
+  .bm-dmx-top .em { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .bm-dmx-top .em strong { font-size: 0.64rem; }
+  .bm-dmx-top small { font-size: 0.5rem; color: #6b7280; }
+  .bm-dmx-top .fo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .bm-dmx-top .fo em, .bm-dmx-meta em, .bm-dmx-rec em, .bm-dmx-foot em { font-size: 0.44rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #8a93a2; }
+  .bm-dmx-top .fo strong { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .bm-dmx-top .cf { font-size: 0.5rem; font-weight: 700; color: #047857; background: rgba(16,185,129,0.12); padding: 2px 6px; border-radius: 999px; }
+  .bm-dmx-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 9px 0; border-bottom: 1px solid #e6e8ec; }
+  .bm-dmx-meta > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-dmx-meta .w { grid-column: 1 / -1; }
+  .bm-dmx-meta b { font-size: 0.54rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-dmx-meta .w b { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 0.54rem; letter-spacing: 0.01em; }
+  .bm-dmx-rec { display: flex; flex-direction: column; gap: 1px; padding: 8px 0; border-bottom: 1px solid #e6e8ec; }
+  .bm-dmx-rec strong { font-size: 0.6rem; }
+  .bm-dmx-rec small { font-size: 0.5rem; color: #6b7280; }
+  .bm-dmx-tb { padding-top: 8px; }
+  .bm-dmx-tb > span { display: grid; grid-template-columns: minmax(0,1fr) 34px 56px 48px; gap: 6px; padding: 5px 6px; border-bottom: 1px solid #f0f1f4; font-size: 0.52rem; }
+  .bm-dmx-tb > span > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-dmx-tb > span > span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+  .bm-dmx-tb > span.h { border: 0; border-radius: 4px; background: #f3f4f6; font-size: 0.44rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #6b7280; }
+  .bm-dmx-tt, .bm-dcm-tt { display: flex; flex-direction: column; align-items: flex-end; }
+  .bm-dmx-tt { padding: 8px 6px; }
+  .bm-dmx-tt > span, .bm-dcm-tt > span { display: flex; justify-content: space-between; gap: 14px; min-width: 170px; padding: 2px 0; font-size: 0.54rem; color: #6b7280; }
+  .bm-dmx-tt b, .bm-dcm-tt b { color: #1f2733; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bm-dmx-tt > span.t { margin-top: 3px; padding-top: 5px; border-top: 1px solid #e6e8ec; font-weight: 700; color: #1f2733; }
+  .bm-dmx-tt > span.t b { font-size: 0.66rem; }
+  .bm-dmx-foot { display: flex; gap: 10px; padding-top: 9px; border-top: 1px solid #e6e8ec; }
+  .bm-dmx-foot .qr { width: 60px; height: 60px; flex-shrink: 0; color: #1f2733; }
+  .bm-dmx-foot .qr :global(svg) { display: block; width: 100%; height: 100%; }
+  .bm-dmx-foot .sl { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-dmx-foot code { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 0.42rem; line-height: 1.35; color: #6b7280; word-break: break-all; }
+  .bm-dmx-leg { margin: 8px 0 0; font-size: 0.46rem; text-align: center; color: #8a93a2; }
+  .bm-dcm-band { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 16px 14px; background: #0a192f; color: #ffffff; }
+  .bm-dcm-band .nm { max-width: 55%; font-size: 0.8rem; font-weight: 700; line-height: 1.2; }
+  .bm-dcm-band .fo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+  .bm-dcm-band .fo em { font-size: 0.46rem; font-weight: 700; letter-spacing: 2px; }
+  .bm-dcm-band .fo strong { font-size: 0.9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bm-dcm-band .fo small { font-size: 0.5rem; opacity: 0.85; }
+  .bm-dcm-pp { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 12px 16px 8px; }
+  .bm-dcm-pp em, .bm-dcm-facts em { display: block; margin-bottom: 3px; font-size: 0.44rem; font-weight: 700; letter-spacing: 1px; color: #8a93a2; }
+  .bm-dcm-pp strong { display: block; font-size: 0.6rem; }
+  .bm-dcm-pp small { display: block; font-size: 0.5rem; line-height: 1.4; color: #6b7280; }
+  .bm-dcm-facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 4px 16px 10px; padding: 8px 10px; border-radius: 5px; background: #eceef2; }
+  .bm-dcm-facts em { margin-bottom: 2px; font-size: 0.42rem; }
+  .bm-dcm-facts b { font-size: 0.56rem; font-weight: 700; }
+  .bm-dcm-tb { padding: 0 16px; }
+  .bm-dcm-tb > span { display: grid; grid-template-columns: minmax(0,1fr) 34px 48px 36px 56px; gap: 5px; padding: 6px; border-bottom: 1px solid #eef0f3; font-size: 0.52rem; }
+  .bm-dcm-tb > span > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-dcm-tb > span > span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bm-dcm-tb > span.h { border: 0; border-radius: 4px; background: #dde1e7; font-size: 0.42rem; font-weight: 700; letter-spacing: 0.6px; }
+  .bm-dcm-tt { padding: 10px 16px 8px; }
+  .bm-dcm-tt > span.m { color: #6b7280; }
+  .bm-dcm-tt > span.t { margin-top: 5px; padding: 7px 9px; border-radius: 5px; background: #0a192f; color: #ffffff; align-items: center; }
+  .bm-dcm-tt > span.t > span { font-size: 0.46rem; font-weight: 700; letter-spacing: 1.2px; }
+  .bm-dcm-tt > span.t b { font-size: 0.7rem; color: #ffffff !important; }
+  .bm-dcm-foot { margin: 6px 16px 0; padding: 8px 0 14px; border-top: 1px solid #e6e8ec; font-size: 0.46rem; line-height: 1.45; color: #8a93a2; }
+
+  /* equipo · permisos por sección */
+  .bm-eq0-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px 12px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-eq0-head strong { font-size: 0.9rem; font-weight: 700; letter-spacing: -0.02em; }
+  .bm-eq0-head :global(svg) { width: 14px; height: 14px; color: #5b6472; }
+  .bm-eq0-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 18px 16px; }
+  .bm-eq0-pre { display: flex; gap: 3px; padding: 3px; border-radius: 11px; background: #f5f5f7; }
+  .bm-eq0-pre > span { flex: 1; padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 0.64rem; font-weight: 600; color: #5b6472; white-space: nowrap; transition: background 0.25s, color 0.25s, box-shadow 0.25s; }
+  .bm-eq0-pre > span.on { background: #ffffff; color: #0f1729; box-shadow: 0 1px 3px rgba(10,25,47,0.1); }
+  .bm-eq0-pre > span.cu { flex: 0 0 auto; }
+  .bm-eq0-desc { margin: 0; font-size: 0.6rem; line-height: 1.5; color: #5b6472; }
+  .bm-eq0-g .gh { display: block; margin: 4px 0 1px; font-size: 0.48rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #99a2af; }
+  .bm-eq0-r { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid rgba(10,25,47,0.07); }
+  .bm-eq0-g .gh + .bm-eq0-r { border-top: 0; }
+  .bm-eq0-r .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-eq0-r strong { font-size: 0.68rem; font-weight: 600; }
+  .bm-eq0-r small { font-size: 0.56rem; line-height: 1.4; color: #5b6472; }
+
+  /* equipo · varias empresas */
+  [data-bmx="eq1"] { position: relative; min-height: 430px; }
+  .bm-eq1-sb { width: 262px; padding: 10px; background: #fbfbfc; }
+  .bm-eq1-btn { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 11px; background: rgba(10,25,47,0.05); }
+  .bm-eq1-sb .av { width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; background: #0a192f; color: #ffffff; font-size: 0.66rem; font-weight: 700; box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 3px 8px -3px rgba(10,25,47,0.4); }
+  .bm-eq1-btn .av { width: 30px; height: 30px; border-radius: 10px; }
+  .bm-eq1-sb .av.sm { width: 20px; height: 20px; border-radius: 5px; font-size: 0.54rem; }
+  .bm-eq1-sb .av.alt { background: #475569; }
+  .bm-eq1-sb .av.u { border-radius: 50%; background: #e6e9ee; color: #0f1729; box-shadow: none; }
+  .bm-eq1-sb .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .bm-eq1-btn .tx em { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #8a93a2; }
+  .bm-eq1-btn .tx strong { font-size: 0.74rem; font-weight: 600; }
+  .bm-eq1-btn :global(svg) { width: 13px; height: 13px; color: #0f1729; transform: rotate(180deg); }
+  .bm-eq1-dd { margin-top: 6px; padding: 5px; border-radius: 12px; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.1); }
+  .bm-eq1-dd .lb { display: block; padding: 5px 8px 3px; font-size: 0.52rem; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #8a93a2; }
+  .bm-eq1-dd .it { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 9px; }
+  .bm-eq1-dd .it.sel { background: rgba(10,25,47,0.05); }
+  .bm-eq1-dd .it strong { font-size: 0.68rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-eq1-dd .it small { font-size: 0.54rem; color: #8a93a2; }
+  .bm-eq1-dd .kid strong { font-size: 0.64rem; font-weight: 500; }
+  .bm-eq1-dd .ck { display: grid; color: #0a192f; }
+  .bm-eq1-dd .kids { margin: 2px 0 4px 16px; padding-left: 8px; border-left: 1px solid rgba(10,25,47,0.1); }
+  .bm-eq1-dd .sep { display: block; height: 1px; margin: 5px 2px; background: rgba(10,25,47,0.08); }
+  .bm-eq1-dd .ac { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 0.66rem; color: #0f1729; }
+  .bm-eq1-dd .oi { width: 22px; height: 22px; flex-shrink: 0; display: grid; place-items: center; border-radius: 7px; background: #f5f5f7; color: #5b6472; }
+  .bm-eq1-dd .oi svg { width: 12px; height: 12px; }
+  .bm-eq1-dd .me { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+  .bm-eq1-dd .me strong { font-size: 0.66rem; }
+  .bm-eq1-dd .me small { font-size: 0.54rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-eq1-md { position: absolute; right: 0; top: 26px; width: calc(100% - 214px); max-width: 480px; padding: 20px 22px 18px !important; z-index: 3; }
+  .bm-eq1-steps { display: flex; gap: 5px; margin-bottom: 12px; }
+  .bm-eq1-steps i { width: 22px; height: 3px; border-radius: 99px; background: rgba(10,25,47,0.12); }
+  .bm-eq1-steps i.on { background: #0a192f; }
+  .bm-eq1-t { display: block; margin-bottom: 5px; font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
+  .bm-eq1-s { margin: 0 0 14px; font-size: 0.64rem; line-height: 1.5; color: #5b6472; }
+  .bm-eq1-form { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; align-items: start; }
+  .bm-eq1-form .lb { display: block; margin: 0 0 5px; font-size: 0.62rem; font-weight: 600; }
+  .bm-eq1-form .fl .lb:not(:first-child) { margin-top: 12px; }
+  .bm-eq1-form .in { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border-radius: 10px; background: #f5f5f7; border: 1.5px solid transparent; font-size: 0.68rem; white-space: nowrap; overflow: hidden; }
+  .bm-eq1-form .in.is-focus { background: #ffffff; border-color: #0a192f; box-shadow: 0 0 0 4px rgba(10,25,47,0.08); }
+  .bm-eq1-form .in.sel :global(svg) { width: 12px; height: 12px; margin-left: auto; color: #99a2af; flex-shrink: 0; }
+  .bm-eq1-form img { border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); }
+  .bm-eq1-form .hi { margin: 6px 0 0; font-size: 0.56rem; line-height: 1.45; color: #8a93a2; }
+  .bm-eq1-form .pv { padding: 12px; border-radius: 14px; background: #f5f5f7; }
+  .bm-eq1-form .pv .lb { margin-bottom: 8px; font-size: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; color: #8a93a2; }
+  .bm-eq1-form .nd { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px 8px; border-radius: 9px; background: #ffffff; border: 1px solid rgba(10,25,47,0.1); font-size: 0.6rem; font-weight: 500; }
+  .bm-eq1-form .nd span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-eq1-form .nd svg { width: 12px; height: 12px; flex-shrink: 0; color: #8a93a2; }
+  .bm-eq1-form .ch { display: flex; flex-direction: column; gap: 5px; margin: 5px 0 0 9px; padding-left: 9px; border-left: 1.5px solid rgba(10,25,47,0.1); }
+  .bm-eq1-form .nd.hl span { white-space: normal; }
+  .bm-eq1-form .nd.hl { border-color: #0a192f; box-shadow: 0 0 0 1px #0a192f, 0 6px 16px -8px rgba(10,25,47,0.3); }
+  .bm-eq1-form .nd b { flex-shrink: 0; padding: 2px 5px; border-radius: 99px; background: #0a192f; color: #ffffff !important; font-size: 0.44rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .bm-eq1-form .nd.dim { opacity: 0.55; }
+  .bm-eq1-ft { display: flex; justify-content: flex-end; gap: 7px; margin-top: 16px; }
+  .bm-eq1-ft > span { padding: 7px 16px; border-radius: 999px; border: 1px solid transparent; font-size: 0.66rem; font-weight: 600; }
+  .bm-eq1-ft .gh { border-color: rgba(10,25,47,0.12); }
+  .bm-eq1-ft .pri { background: #0a192f; color: #ffffff; }
+
+  /* equipo · SSO */
+  .bm-x-full [data-bmx="eq2"] .bm-eq2-main { position: absolute; left: 30px; top: 34px; width: calc(100% - 320px); }
+  .bm-x-full [data-bmx="eq2"] .bm-eq2-req { position: absolute; right: 26px; top: 22px; width: 270px; z-index: 3; }
+  .bm-eq2-sec { padding: 13px 16px 12px; }
+  .bm-eq2-sec + .bm-eq2-sec { border-top: 1px solid rgba(10,25,47,0.07); }
+  .bm-eq2-sec .h { display: block; font-size: 0.78rem; font-weight: 650; letter-spacing: -0.01em; }
+  .bm-eq2-sec .d { margin: 3px 0 9px; font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .bm-eq2-dom .r { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-top: 1px solid rgba(10,25,47,0.07); }
+  .bm-eq2-dom .r:first-child { border-top: 0; }
+  .bm-eq2-dom .r strong { font-size: 0.7rem; font-weight: 600; }
+  .bm-eq2-dom .r .bm-btn-soft { margin-left: auto; }
+  .bm-eq2-dns { margin: 0 0 4px; padding: 10px 12px; border-radius: 11px; background: #f5f5f7; }
+  .bm-eq2-dns p { margin: 0 0 6px; font-size: 0.56rem; line-height: 1.45; color: #5b6472; }
+  .bm-eq2-dns > span { display: grid; grid-template-columns: 70px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 3px 0; font-size: 0.58rem; }
+  .bm-eq2-dns em { color: #5b6472; }
+  .bm-eq2-dns b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-eq2-dns .mono { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 0.54rem; }
+  .bm-eq2-dns u { text-decoration: none; font-size: 0.56rem; font-weight: 600; color: #0a192f; }
+  .bm-eq2-map .r { display: grid; grid-template-columns: minmax(0,1fr) 30px minmax(0,1fr) minmax(0,0.9fr); gap: 6px; margin-bottom: 6px; }
+  .bm-eq2-sec .in { position: relative; display: flex; align-items: center; min-height: 27px; padding: 0 9px; border-radius: 8px; background: #f5f5f7; font-size: 0.62rem; white-space: nowrap; overflow: hidden; }
+  .bm-eq2-sec .in.op { justify-content: center; padding: 0; }
+  .bm-eq2-sec .in.s { padding-right: 22px; }
+  .bm-eq2-sec .in.s::after { content: ''; position: absolute; right: 10px; top: 50%; width: 5px; height: 5px; border-right: 1.5px solid #99a2af; border-bottom: 1.5px solid #99a2af; transform: translateY(-70%) rotate(45deg); }
+  .bm-eq2-def { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+  .bm-eq2-def em { font-size: 0.6rem; font-weight: 600; color: #0f1729; }
+  .bm-eq2-def .in { min-width: 118px; }
+  .bm-eq2-ch { display: block; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-eq2-ch strong { font-size: 0.74rem; font-weight: 650; }
+  .bm-eq2-conn { display: flex; align-items: center; gap: 9px; padding-bottom: 12px; }
+  .bm-eq2-conn .ic { width: 32px; height: 32px; border-radius: 10px; }
+  .bm-eq2-conn .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .bm-eq2-conn strong { font-size: 0.68rem; font-weight: 600; }
+  .bm-eq2-conn small { font-size: 0.52rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-eq2-tg { display: flex; align-items: center; gap: 9px; font-size: 0.66rem; font-weight: 600; }
+  .bm-eq2-hint { margin: 6px 0 10px; font-size: 0.56rem; line-height: 1.5; color: #5b6472; }
+  .bm-eq2-bg { display: inline-flex; border-radius: 999px; }
+
+  @media (max-width: 1180px) {
+    .bm-wf1-pick { width: calc(100% - 160px); }
+    .bm-wf1-panel { width: 236px; }
+    .bm-x-full [data-bmx="eq2"] .bm-eq2-main { left: 22px; width: calc(100% - 282px); }
+    .bm-x-full [data-bmx="eq2"] .bm-eq2-req { right: 18px; width: 250px; }
+  }
+  @media (max-width: 960px) {
+    .bm-x-full [data-bmx="wf2"] .bm-x-main { right: auto; }
+    .bm-wf2-panel { display: none; }
+    .bm-wf2-flow { right: 14px; }
+    .bm-wf2-canvas { height: 470px; }
+    .bm-x-full [data-bmx="fa2"] { height: 470px; }
+    .bm-x-full [data-bmx="fa2"] .bm-doc-mx { left: 0; top: 0; width: 70%; }
+    .bm-x-full [data-bmx="fa2"] .bm-doc-cm { right: 0; top: 104px; width: 70%; }
+    .bm-x-full [data-bmx="eq2"] .bm-eq2-req { display: none; }
+    .bm-x-full [data-bmx="eq2"] .bm-eq2-main { position: relative; left: auto; top: auto; width: auto; }
+  }
+  @media (max-width: 700px) {
+    .bm-wfp-chips { flex-wrap: nowrap; overflow: hidden; }
+    .bm-wfp-chips > span.on { order: -1; }
+    .bm-wf2-tabs, .bm-wf2-flow .q { display: none; }
+    .bm-wf2-flow { top: 10px; }
+    .bm-wf2-flow > .bm-wfn em { display: none; }
+    .bm-wf2-flow > .bm-wfl { height: 10px; }
+    .bm-wf2-flow > .bm-wfd { width: 32px; height: 32px; }
+    .bm-wfn { padding: 7px 9px; }
+    .bm-wf1-pick { width: 100%; min-width: 0; }
+    .bm-wf1-panel { display: none; }
+    .bm-wfp-list.rich .ct { display: none; }
+    .bm-wf2-bar .acts > span:not(:last-child) { display: none; }
+    .bm-wf2-flow { left: 8px; right: 8px; }
+    .bm-wfn { width: 100%; max-width: 240px; }
+    .bm-wfb { column-gap: 8px; }
+    .bm-wfb .bm-wfn .ic { display: none; }
+    .bm-wfb .bl { font-size: 0.5rem; padding: 3px 7px; }
+    .bm-fa0-r .c, .bm-fa0-h > span:nth-child(2) { display: none; }
+    .bm-fa0-h, .bm-fa0-r { grid-template-columns: minmax(0,1fr) auto 66px; }
+    .bm-fa0-side { display: none; }
+    .bm-fa1-grid { grid-template-columns: 1fr; }
+    .bm-fa1-main { border-right: 0; padding-bottom: 6px; }
+    .bm-fa1-pays, .bm-fa1-tot, .bm-fa1-main .bm-fa1-sh { display: none; }
+    .bm-fa1-steps .s:not(.cur) em { display: none; }
+    .bm-fa1-pay { display: none; }
+    .bm-fa1-head .who small { display: none; }
+    .bm-x-full [data-bmx="fa2"] { height: 400px; }
+    .bm-x-full [data-bmx="fa2"] .bm-doc-mx { width: 108%; transform: scale(0.78); transform-origin: top left; }
+    .bm-x-full [data-bmx="fa2"] .bm-doc-cm { width: 108%; top: 116px; transform: scale(0.78); transform-origin: top right; }
+    [data-bmx="eq1"] { min-height: 0; }
+    .bm-eq1-sb { display: none; }
+    .bm-eq1-md { position: relative; top: auto; width: auto; max-width: none; }
+    .bm-eq1-form { grid-template-columns: 1fr; }
+    .bm-eq1-form .pv { order: -1; }
+    .bm-eq2-map .r { grid-template-columns: minmax(0,1fr) 26px minmax(0,1fr); }
+    .bm-eq2-map .r .s { display: none; }
+    .bm-eq2-dns > span { grid-template-columns: 62px minmax(0,1fr); }
+    .bm-eq2-dns u { display: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bm-caret, .bm-lv .dot { animation: none; }
   }
@@ -3035,6 +3752,154 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
       const tl = gsap.timeline();
       const m0 = (x: number) => `MXN ${new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(x)}`;
       els.forEach((e) => countTo(tl, e, 0, Number(e.dataset.n), 0.2, m0, 1.1));
+      return tl;
+    },
+    wf0(root, loc) {
+      const chips = Array.from(root.querySelectorAll<HTMLElement>('[data-chips] > span'));
+      const lists = Array.from(root.querySelectorAll<HTMLElement>('[data-list]'));
+      const q = $(root, '[data-q]'), search = $(root, '.bm-wfp-search');
+      const show = (chip: string, list: string) => {
+        chips.forEach((c) => c.classList.toggle('on', c.dataset.c === chip));
+        lists.forEach((l) => { l.hidden = l.dataset.list !== list; });
+        const vis = lists.find((l) => !l.hidden);
+        if (vis) gsap.fromTo(vis.children, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.03, clearProps: 'all' });
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => show('payments', 'payments'), [], 2.4)
+        .call(() => { show('all', 'all'); search.classList.add('is-typing'); }, [], 5.6);
+      const end = typeText(tl, q, loc === 'en-US' ? 'due' : 'venc', 6, 0.16);
+      tl.call(() => show('all', 'q'), [], end + 0.15)
+        .call(() => { q.textContent = ''; search.classList.remove('is-typing'); show('all', 'all'); }, [], end + 3.6)
+        .to({}, { duration: 0.6 }, end + 3.6);
+      return tl;
+    },
+
+    wf1(root) {
+      const chips = Array.from(root.querySelectorAll<HTMLElement>('[data-chips] > span'));
+      const items = Array.from(root.querySelectorAll<HTMLElement>('.bm-wfp-it'));
+      const show = (g: string) => {
+        chips.forEach((c) => c.classList.toggle('on', c.dataset.c === g));
+        items.forEach((it) => { it.hidden = g !== 'all' && it.dataset.g !== g; });
+        gsap.fromTo(items.filter((it) => !it.hidden), { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.03, clearProps: 'all' });
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      ['equipo', 'cliente', 'documento', 'all', 'externo'].forEach((g, i) => tl.call(() => show(g), [], 2.4 + i * 2.4));
+      tl.to({}, { duration: 0.6 }, 2.4 + 4 * 2.4 + 1.6);
+      return tl;
+    },
+
+    wf2(root, loc) {
+      const nodes = Array.from(root.querySelectorAll<HTMLElement>('[data-n]'));
+      const val = $(root, '[data-val] [data-t]');
+      gsap.from(nodes, { opacity: 0, y: 8, duration: 0.45, ease: 'power2.out', stagger: 0.08, clearProps: 'all' });
+      const tl = gsap.timeline({ repeat: -1, delay: 1 });
+      tl.call(() => { val.textContent = ''; }, [], 1.6);
+      const end = typeText(tl, val, '100000', 1.8, 0.12);
+      tl.to({}, { duration: 3.2 }, end);
+      return tl;
+    },
+
+    fa0(root) {
+      const row = $(root, '[data-row]'), folio = $(root, '[data-folio]'), bor = $(root, '[data-bor]');
+      const st = $(root, '[data-st]'), sent = $(root, '[data-sent]'), side = $(root, '[data-side]'), go = $(root, '[data-go]');
+      const draft = () => {
+        folio.textContent = folio.dataset.b || ''; bor.hidden = false; sent.hidden = true;
+        st.className = 'bm-st bm-st-draft'; st.textContent = st.dataset.b || ''; row.classList.add('is-draft');
+      };
+      const issued = () => {
+        folio.textContent = folio.dataset.a || ''; bor.hidden = true; sent.hidden = false;
+        st.className = 'bm-st bm-st-open'; st.textContent = st.dataset.a || ''; row.classList.remove('is-draft');
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(draft, [], 0)
+        .fromTo(side, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 0.1)
+        .to(go, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 2.9)
+        .to(side, { opacity: 0, y: 8, duration: 0.35 }, 3.25)
+        .call(issued, [], 3.6)
+        .fromTo(row, { backgroundColor: 'rgba(16,185,129,0.16)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor', immediateRender: false }, 3.6)
+        .to({}, { duration: 3.2 }, 5);
+      return tl;
+    },
+
+    fa1(root) {
+      const pill = $(root, '[data-pill]'), modal = $(root, '[data-modal]'), rec = $(root, '[data-rec]');
+      const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-s]'));
+      const swap = Array.from(root.querySelectorAll<HTMLElement>('[data-bal], [data-paid], [data-due]'));
+      const fresh = Array.from(root.querySelectorAll<HTMLElement>('[data-new], [data-newpay]'));
+      const due = $(root, '[data-due]');
+      const state = (paid: boolean) => {
+        pill.className = `bm-st ${paid ? 'bm-st-paid' : 'bm-st-open'}`;
+        pill.textContent = (paid ? pill.dataset.b : pill.dataset.a) || '';
+        steps.forEach((s, i) => { s.classList.toggle('done', i < (paid ? 4 : 3)); s.classList.toggle('cur', i === (paid ? 4 : 3)); });
+        swap.forEach((e) => { e.textContent = (paid ? e.dataset.b : e.dataset.a) || ''; });
+        fresh.forEach((e) => { e.hidden = !paid; });
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { state(false); modal.hidden = false; }, [], 0)
+        .fromTo(modal, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 0.15)
+        .to(rec, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 3)
+        .to(modal, { opacity: 0, y: 8, duration: 0.3 }, 3.35)
+        .call(() => { modal.hidden = true; state(true); expand(fresh); }, [], 3.7)
+        .fromTo(due, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.3, clearProps: 'backgroundColor', immediateRender: false }, 3.8)
+        .to({}, { duration: 3.4 }, 4.6);
+      return tl;
+    },
+
+    fa2(root) {
+      const docs = Array.from(root.querySelectorAll<HTMLElement>('[data-doc]'));
+      const tl = gsap.timeline({ repeat: -1 });
+      docs.forEach((_, k) => {
+        const at = 2.8 + k * 3, next = docs[(k + 1) % docs.length];
+        tl.to(docs[k], { opacity: 0, duration: 0.25 }, at)
+          .call(() => { docs.forEach((d) => { d.hidden = d !== next; }); }, [], at + 0.26)
+          .fromTo(next, { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, at + 0.27)
+          .fromTo(next.querySelector('[data-taxrow]'), { backgroundColor: 'rgba(37,99,235,0.12)' }, { backgroundColor: 'rgba(37,99,235,0)', duration: 1.3, clearProps: 'backgroundColor', immediateRender: false }, at + 0.5);
+      });
+      return tl;
+    },
+
+    eq0(root) {
+      const tog = $(root, '[data-tog="cob"]'), row = $(root, '[data-k="cob"]'), desc = $(root, '[data-desc]');
+      const pre = Array.from(root.querySelectorAll<HTMLElement>('[data-pre] > span'));
+      const custom = (on: boolean) => {
+        tog.classList.toggle('on', on);
+        pre.forEach((p) => p.classList.toggle('on', on ? p.dataset.p === 'custom' : p.dataset.p === 'vendedor'));
+        const cu = pre.find((p) => p.dataset.p === 'custom');
+        if (cu) cu.hidden = !on;
+        desc.textContent = (on ? desc.dataset.b : desc.dataset.a) || '';
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => custom(true), [], 2.4)
+        .fromTo(row, { backgroundColor: 'rgba(37,99,235,0.1)' }, { backgroundColor: 'rgba(37,99,235,0)', duration: 1.3, clearProps: 'backgroundColor', immediateRender: false }, 2.4)
+        .call(() => custom(false), [], 6)
+        .to({}, { duration: 2 }, 6);
+      return tl;
+    },
+
+    eq1(root) {
+      const name = $(root, '[data-name]'), pv = $(root, '[data-pvname]'), modal = $(root, '[data-modal]');
+      const kid = $(root, '[data-kid]'), go = $(root, '[data-go]');
+      const full = name.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { kid.hidden = true; name.textContent = ''; pv.textContent = ''; }, [], 0)
+        .fromTo(modal, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 0.1);
+      for (let i = 1; i <= full.length; i++) tl.call(() => { name.textContent = full.slice(0, i); pv.textContent = full.slice(0, i); }, [], 0.7 + i * 0.07);
+      const end = 0.7 + full.length * 0.07;
+      tl.to(go, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, end + 0.9)
+        .to(modal, { opacity: 0, y: 8, duration: 0.35 }, end + 1.25)
+        .call(() => { kid.hidden = false; }, [], end + 1.6)
+        .fromTo(kid, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor', immediateRender: false }, end + 1.6)
+        .to({}, { duration: 2.6 }, end + 2.2);
+      return tl;
+    },
+
+    eq2(root) {
+      const dst = $(root, '[data-dst]'), ver = $(root, '[data-ver]'), dns = $(root, '[data-dns]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(ver, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1 }, 2.4)
+        .call(() => { dst.className = 'bm-st bm-st-paid'; dst.textContent = dst.dataset.b || ''; ver.hidden = true; collapse(dns); }, [], 2.75)
+        .call(() => { dst.className = 'bm-st bm-st-draft'; dst.textContent = dst.dataset.a || ''; ver.hidden = false; expand(dns); }, [], 6.4)
+        .to({}, { duration: 1.6 }, 6.4);
       return tl;
     },
   };

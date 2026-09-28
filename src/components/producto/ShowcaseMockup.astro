@@ -4,9 +4,10 @@
 // Contrato: recibe { slug, index } y llena por completo su contenedor (inset:0).
 // Solo markup + CSS estático; el crossfade/autoplay lo maneja el padre.
 import { getLangFromUrl } from '../../i18n/utils';
+import { WORKFLOW_ICONS } from '../../lib/workflows/icons';
 const { slug, index } = Astro.props as { slug: string; index: number };
 const en = getLangFromUrl(Astro.url) === 'en';
-const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones', 'pagos', 'cobranza-ia', 'divisas', 'clientes-credito', 'finanzas'].includes(slug);
+const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones', 'pagos', 'cobranza-ia', 'divisas', 'clientes-credito', 'finanzas', 'facturacion', 'workflows', 'equipo'].includes(slug);
 const LOC = en ? 'en-US' : 'es-MX';
 const mx = (n: number, d = 2) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 const tx = (es: string, e: string) => (en ? e : es);
@@ -32,6 +33,8 @@ const ICON: Record<string, string> = {
   desempeno: '<circle cx="9" cy="8" r="3.4" fill="currentColor" fill-opacity="0.15"/><path d="M2.8 20.2a6.2 6.2 0 0 1 12.4 0" stroke-opacity="0.8"/><circle cx="17.2" cy="9.4" r="2.4" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.75"/><path d="M16 14.1a5 5 0 0 1 5.2 4.8" stroke-opacity="0.55"/>',
   workflows: '<rect x="8.25" y="2.5" width="7.5" height="6" rx="2.2" fill="currentColor" fill-opacity="0.15"/><path d="M12 8.5v3.2M5.4 15.5v-1.6a2.2 2.2 0 0 1 2.2-2.2h8.8a2.2 2.2 0 0 1 2.2 2.2v1.6" stroke-opacity="0.7"/><rect x="2.5" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/><rect x="15.7" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/>',
 };
+const WI = (k: string) => (WORKFLOW_ICONS[k] ?? WORKFLOW_ICONS.action).replace('<svg ', '<svg width="15" height="15" ');
+const GEAR = '<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>';
 const NAV = [
   { k: 'dashboard', l: tx('Inicio', 'Home') },
   { k: 'cotizaciones', l: tx('Cotizaciones', 'Quotes'), b: '3' },
@@ -1001,85 +1004,186 @@ const NAV = [
 
   {/* ═══════════════════════════════ CORD INVOICING ═══════════════════════════════ */}
   {slug === 'facturacion' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Nueva factura</span>
-          <span class="shwm-badge shwm-badge-blue">Borrador</span>
+    <div class="shwm-frame shwm-scene" data-shx="fa0">
+      <div class="shwm-brw shwm-fa0-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/facturas/recurrentes</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'facturas' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Facturas', 'Invoices')} <span class="sep">/</span></span><strong>{tx('Facturas recurrentes', 'Recurring invoices')}</strong></span><span class="shwm-rc-back">{tx('Facturas', 'Invoices')} →</span></div>
+            <p class="shwm-rc-intro">{tx('Cord emite y envía estas facturas por ti en la fecha que definiste. Cada emisión congela sus propios importes e impuestos.', 'Cord issues and sends these invoices for you on the date you set. Each run freezes its own amounts and taxes.')}</p>
+            <div class="shwm-rc">
+              <div class="shwm-rc-r h"><span>{tx('Cliente', 'Client')}</span><span>{tx('Cadencia', 'Frequency')}</span><span>{tx('Próxima emisión', 'Next run')}</span><span class="n">{tx('Emitidas', 'Issued')}</span><span>{tx('Estado', 'Status')}</span><span></span></div>
+              <div class="shwm-rc-r" data-newrow><span class="nm"><strong>Grupo Ferrex</strong><small>{tx('Renta de revolvedora de 1 saco', 'One-bag concrete mixer rental')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">0</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Distribuidora El Zarco</strong><small>{tx('Suministro mensual de cemento y block', 'Monthly cement and block supply')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">7</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Constructora Apex</strong><small>{tx('Renta de andamio tubular, 40 m²', 'Tubular scaffold rental, 40 m²')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">11</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Ferretería San Pedro</strong><small>{tx('Suministro mensual de varilla', 'Monthly rebar supply')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">14</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Constructora GAMA</strong><small>{tx('Mantenimiento de bodega', 'Warehouse maintenance')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">5</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Inmobiliaria Los Arcos</strong><small>{tx('Renta de montacargas', 'Forklift rental')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">9</span><span><span class="shwm-sts draft">{tx('Pausada', 'Paused')}</span></span><span class="ac"><span>{tx('Reanudar', 'Resume')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Grupo Constructor Tapatío</strong><small>{tx('Renta de cimbra metálica', 'Steel formwork rental')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">3</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+              <div class="shwm-rc-r"><span class="nm"><strong>Pinturas y Acabados Chapala</strong><small>{tx('Suministro mensual de impermeabilizante', 'Monthly waterproofing supply')}</small></span><span class="cd">{tx('Mensual', 'Monthly')}<small>{tx('Día 1 de cada periodo', 'Day 1 of each period')}</small></span><span class="editorial dt">{tx('1 oct 2026', 'Oct 1, 2026')}</span><span class="n editorial">2</span><span><span class="shwm-sts paid">{tx('Activa', 'Active')}</span></span><span class="ac"><span>{tx('Pausar', 'Pause')}</span><span>{tx('Eliminar', 'Delete')}</span></span></div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-border">
-          <div class="shwm-border-node">
-            <span class="shwm-flag shwm-flag-lg">COT</span>
-            <b>Desde una cotización</b>
-            <em>COT-0151 aprobada · hereda cliente, líneas y divisa</em>
-            <span class="shwm-badge shwm-badge-blue">Ligadas</span>
+      </div>
+      <span class="shwm-toast shwm-fa0-toast" data-toast><span class="dot"></span>{tx('Listo. Cord volverá a emitir esta factura cada mes.', 'Done. Cord will issue this invoice again every month.')}</span>
+      <div class="shwm-dv shwm-fa0-ph" data-ph>
+        <div class="shwm-dv-scr shwm-iml">
+          <div class="shwm-dv-ios"><span class="t">9:02</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+          <div class="shwm-iml-nav"><span class="bk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Recibidos', 'Inbox')}</span><span class="ar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+          <div class="shwm-iml-hd"><span class="av">MV</span><span class="w"><strong>Materiales del Valle</strong><em>{tx('Para: Raúl Mendoza', 'To: Raúl Mendoza')}</em></span><span class="tm">{tx('1 sep', 'Sep 1')}</span></div>
+          <strong class="shwm-iml-s">{tx('Factura A-001041 — Materiales del Valle', 'Invoice A-001041 — Materiales del Valle')}</strong>
+          <span class="shwm-iml-att"><span class="pdf">PDF</span><span class="nm"><strong>A-001041.pdf</strong><em>52 KB</em></span></span>
+          <div class="shwm-iml-b">
+            <img src="/imgs/logo-cord-navy.png" alt="Cord" width="58" height="20" loading="lazy" />
+            <span class="to">Distribuidora El Zarco</span>
+            <p>{tx('Materiales del Valle emitió la factura', 'Materiales del Valle issued invoice')} <strong>A-001041</strong> {tx('por', 'for')} {cm(38280)}. {tx('Puedes revisarla y pagarla en línea desde el enlace.', 'You can review it and pay online from the link below.')}</p>
+            <span class="tb"><span><em>{tx('Factura', 'Invoice')}</em><b>A-001041</b></span><span><em>{tx('Vence', 'Due')}</em><b>{tx('1 sep 2026', 'Sep 1, 2026')}</b></span><span class="s"><em>{tx('Saldo', 'Amount due')}</em><b class="editorial">{cm(38280)}</b></span></span>
+            <span class="btn">{tx('Ver y pagar factura', 'View and pay invoice')}</span>
           </div>
-          <div class="shwm-border-link" aria-hidden="true">
-            <div class="shwm-border-doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z" fill="currentColor" fill-opacity="0.08"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></div>
-            <span class="shwm-border-cap">una sola factura</span>
-          </div>
-          <div class="shwm-border-node">
-            <span class="shwm-flag shwm-flag-lg mx">+</span>
-            <b>O desde cero</b>
-            <em>Eliges cliente y capturas los conceptos</em>
-            <span class="shwm-badge shwm-badge-green">Sin cotización</span>
-          </div>
+          <span class="shwm-dv-home"></span>
         </div>
-        <div class="shwm-foot"><span>El folio se reserva al emitir, no al empezar</span><b>Borrador editable</b></div>
       </div>
     </div>
   )}
 
   {slug === 'facturacion' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app shwm-app-narrow">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">A-001048 · saldo</span>
-          <span class="shwm-badge shwm-badge-blue">Abierta</span>
+    <div class="shwm-frame shwm-scene" data-shx="fa1">
+      <div class="shwm-brw shwm-fa1-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/facturas/0b7e4f1c-5d2a-4e8b-9c31-6a1f2d8e4b70</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'facturas' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Facturas', 'Invoices')} <span class="sep">/</span></span><strong>A-001052</strong></span><span class="shwm-sts paid" data-pill data-was={tx('Abierta', 'Open')}>{tx('Saldada', 'Settled')}</span></div>
+            <div class="shwm-stp2">
+              <span class="s done"><span class="d" set:html={chk}></span>{tx('Borrador', 'Draft')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Emitida', 'Issued')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Enviada', 'Sent')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Vista', 'Viewed')}</span><span class="s cur"><span class="d">5</span>{tx('Pagada', 'Paid')}</span>
+            </div>
+            <div class="shwm-dtg">
+              <div class="shwm-dtg-main">
+                <div class="shwm-dh2"><span class="av">GF</span><span class="tx"><span class="n">Grupo Ferrex</span><span class="m">{tx('Emitida 3 sep 2026 · Vence 3 oct 2026 · Enviada', 'Issued Sep 3, 2026 · Due Oct 3, 2026 · Sent')}</span></span><span class="tot"><em>TOTAL</em><span class="editorial">{cm(63236.24)}</span><small class="shwm-fsal">{tx('Saldo', 'Balance')} <span data-saltop>{cm(0)}</span></small></span></div>
+                <div class="shwm-sech"><strong>{tx('Detalle', 'Details')}</strong></div>
+                <div class="shwm-di"><span class="h">{tx('Concepto', 'Item')}</span><span class="h">{tx('Cant.', 'Qty.')}</span><span class="h">{tx('Precio', 'Price')}</span><span class="h r">{tx('Importe', 'Amount')}</span>
+                  <span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><span>150</span><span class="p"><span class="editorial">{cm(191.48)}</span></span><span class="editorial r">{cm(28722)}</span>
+                  <span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><span>80</span><span class="p"><span class="editorial">{cm(182)}</span></span><span class="editorial r">{cm(14560)}</span>
+                  <span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><span>36</span><span class="p"><span class="editorial">{cm(312)}</span></span><span class="editorial r">{cm(11232)}</span>
+                </div>
+                <div class="shwm-ftot">
+                  <span><span>Subtotal</span><span class="editorial">{cm(54514)}</span></span>
+                  <span class="tax"><span>16%</span><span class="editorial">{cm(8722.24)}</span></span>
+                  <span class="tt"><span>Total</span><span class="editorial">{cm(63236.24)}</span></span>
+                  <span class="nc" data-nc><span>{tx('Notas de crédito aplicadas', 'Credit notes applied')}</span><span class="editorial">−{cm(38236.24)}</span></span>
+                  <span><span>{tx('Pagado', 'Paid')}</span><span class="editorial">−{cm(25000)}</span></span>
+                  <span class="due"><span>{tx('Saldo', 'Balance')}</span><span class="editorial" data-due>{cm(0)}</span></span>
+                </div>
+              </div>
+              <div class="shwm-dtg-side">
+                <div class="shwm-sech"><strong>{tx('Acciones', 'Actions')}</strong></div>
+                <div class="shwm-fdl"><span class="dt"></span><span class="tx"><strong>{tx('Enviada al cliente', 'Sent to client')}</strong><small>compras@grupoferrex.mx</small></span><span class="rs">{tx('Reenviar', 'Resend')}</span></div>
+                <div class="shwm-actgrid"><span>{tx('Abrir link', 'Open link')}</span><span>{tx('Copiar', 'Copy')}</span><span>{tx('Descargar PDF', 'Download PDF')}</span><span>WhatsApp</span></div>
+                <span class="shwm-fbtn">{tx('Duplicar factura', 'Duplicate invoice')}</span>
+                <div class="shwm-fmore">
+                  <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+                  <span class="it" data-ncbtn>{tx('Nota de crédito', 'Credit note')}</span>
+                  <span class="it">{tx('Repetir cada mes', 'Repeat monthly')}</span>
+                  <span class="it">{tx('Descargar XML', 'Download XML')}</span>
+                </div>
+                <div class="shwm-sech shwm-sech-gap"><strong>{tx('Actividad', 'Activity')}</strong></div>
+                <div class="shwm-tl2 shwm-tl3">
+                  <span class="it" data-ncev><span class="d" style="background:#0a192f"></span><span class="tx"><strong>{tx('Nota de crédito', 'Credit note')}</strong><em>{tx('hace 1 min', '1 min ago')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#10b981"></span><span class="tx"><strong>{tx('Pago aplicado', 'Payment applied')}</strong><em>{tx('hace 12 días', '12 days ago')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#7c3aed"></span><span class="tx"><strong>{tx('El cliente la abrió', 'The client opened it')}</strong><em>{tx('hace 3 semanas', '3 weeks ago')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#2563eb"></span><span class="tx"><strong>{tx('Enviada al cliente', 'Sent to the client')}</strong><em>{tx('hace 3 semanas', '3 weeks ago')}</em></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-plist">
-          <div class="shwm-pl"><span>Total facturado</span><b class="editorial">$230,880.00</b></div>
-          <div class="shwm-pl"><span>15 ago · tarjeta desde el link</span><b class="editorial shwm-g">−$60,000.00</b></div>
-          <div class="shwm-pl"><span>22 ago · transferencia registrada</span><b class="editorial shwm-g">−$36,000.00</b></div>
-          <div class="shwm-pl"><span>Saldo</span><b class="editorial">$134,880.00</b></div>
+      </div>
+      <div class="shwm-cw shwm-fa1-cw">
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><span>{tx('Facturas', 'Invoices')}</span><span class="sep">/</span><strong>A-001057</strong></span><span class="shwm-sts open">{tx('Abierta', 'Open')}</span></div>
+        <div class="shwm-fa1-b">
+          <div class="kv"><span>Constructora Apex</span><b class="editorial">{cm(18720.4)}</b></div>
+          <div class="kv"><span>{tx('Pagado', 'Paid')}</span><b class="editorial">{cm(0)}</b></div>
+          <div class="shwm-fmore">
+            <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            <span class="it">{tx('Marcar incobrable', 'Mark uncollectible')}</span>
+            <span class="it">{tx('Nota de crédito', 'Credit note')}</span>
+            <span class="it">{tx('Descargar XML', 'Download XML')}</span>
+            <span class="it dg">{tx('Anular', 'Void')}</span>
+          </div>
+          <div class="shwm-fcan"><p>{tx('El SAT está verificando la solicitud.', 'The tax authority is verifying the request.')}</p><span class="b">{tx('Consultar cancelación', 'Check cancellation status')}</span></div>
         </div>
-        <div class="shwm-lock-strip">
-          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <div><b>Al llegar a cero se marca pagada</b><em>Y sale de la cartera vencida, sin que nadie la toque</em></div>
-        </div>
-        <div class="shwm-foot"><span>Tarjeta y transferencia bajan el mismo saldo</span><b>Una sola cuenta</b></div>
       </div>
     </div>
   )}
 
   {slug === 'facturacion' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">API v1 · facturas</span>
-          <span class="shwm-badge shwm-badge-green">200 OK</span>
-        </div>
-        <div class="shwm-stamp">
-          <div class="shwm-stamp-doc">
-            <div class="shwm-stamp-seal">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="shwm-frame shwm-scene" data-shx="fa2">
+      <div class="shwm-brw shwm-fa2-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/COT-0154</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0154</strong></span><span class="shwm-sts inv" data-pill data-was={tx('Aprobada', 'Approved')}>{tx('Facturada', 'Invoiced')}</span></div>
+            <div class="shwm-stp2">
+              <span class="s done"><span class="d" set:html={chk}></span>{tx('Borrador', 'Draft')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Enviada', 'Sent')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Vista', 'Viewed')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Aprobada', 'Approved')}</span><span class="s cur"><span class="d">5</span><span data-s5 data-was={tx('Pagada', 'Paid')}>{tx('Facturada', 'Invoiced')}</span></span>
             </div>
-            <div class="shwm-stamp-tx">
-              <b>POST /v1/facturas/&#123;id&#125; · finalize</b>
-              <em>Emitida y timbrada · CFDI 4.0 · Serie A · Folio 1048</em>
+            <div class="shwm-dtg">
+              <div class="shwm-dtg-main">
+                <div class="shwm-dh2"><span class="av">CG</span><span class="tx"><span class="n">Constructora GAMA <span class="vb">V1</span></span><span class="m">{tx('Net 30 · Creada 15 sep 2026', 'Net 30 · Created Sep 15, 2026')}</span></span><span class="tot"><em>TOTAL</em><span class="editorial">{cm(412310.4)}</span></span></div>
+                <div class="shwm-sech"><strong>{tx('Detalle', 'Details')}</strong></div>
+                <div class="shwm-di" data-qlines><span class="h">{tx('Producto', 'Product')}</span><span class="h">{tx('Cant.', 'Qty.')}</span><span class="h">{tx('Precio', 'Price')}</span><span class="h r">{tx('Importe', 'Amount')}</span>
+                  <span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span>800</span><span class="p"><span class="editorial">{cm(191.48)}</span></span><span class="editorial r">{cm(153184)}</span>
+                  <span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span>600</span><span class="p"><span class="editorial">{cm(182)}</span></span><span class="editorial r">{cm(109200)}</span>
+                  <span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span>240</span><span class="p"><span class="editorial">{cm(312)}</span></span><span class="editorial r">{cm(74880)}</span>
+                  <span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span>1,280</span><span class="p"><span class="editorial">{cm(14.2)}</span></span><span class="editorial r">{cm(18176)}</span>
+                </div>
+                <div class="shwm-qtot"><span><span>Subtotal</span><span class="editorial">{cm(355440)}</span></span><span><span>{'IVA 16%'}</span><span class="editorial">{cm(56870.4)}</span></span></div>
+              </div>
+              <div class="shwm-dtg-side">
+                <div class="shwm-sech"><strong>{tx('Acciones', 'Actions')}</strong></div>
+                <span class="shwm-fnv is-gone" data-inv>{tx('Timbrar CFDI 4.0', 'Stamp CFDI 4.0')}</span>
+                <div class="shwm-actgrid"><span>{tx('Abrir link', 'Open link')}</span><span>{tx('Copiar link', 'Copy link')}</span><span>PDF</span><span>WhatsApp</span></div>
+                <span class="shwm-fbtn">{tx('Duplicar', 'Duplicate')}</span>
+                <div class="shwm-sech shwm-sech-gap"><strong>{tx('Actividad', 'Activity')}</strong></div>
+                <div class="shwm-tl2 shwm-tl3">
+                  <span class="it" data-invev><span class="d" style="background:#0a192f"></span><span class="tx"><strong>{tx('CFDI emitido', 'CFDI issued')}</strong><em>{tx('hoy, 11:20', 'today, 11:20 AM')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#10b981"></span><span class="tx"><strong>{tx('Firmado digitalmente por "Ing. Rodrigo Nava" (IP 201.141.8.77)', 'Digitally signed by "Ing. Rodrigo Nava" (IP 201.141.8.77)')}</strong><em>{tx('24 sep, 17:02', 'Sep 24, 5:02 PM')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#7c3aed"></span><span class="tx"><strong>{tx('Abierta por el cliente desde el link', 'Opened by the client from the link')}</strong><em>{tx('22 sep, 09:15', 'Sep 22, 9:15 AM')}</em></span></span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="shwm-plist">
-            <div class="shwm-pl"><span>UUID (Folio Fiscal)</span><b class="editorial shwm-uuid">a1b2c3d4-9f01-4e22-b7aa</b></div>
-            <div class="shwm-pl"><span>invoice.finalized</span><b>webhook entregado</b></div>
-            <div class="shwm-pl"><span>invoice.paid</span><b>webhook entregado</b></div>
+        </div>
+      </div>
+      <div class="shwm-cw shwm-fa2-inv" data-invwin>
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><span>{tx('Facturas', 'Invoices')}</span><span class="sep">/</span><strong>A-001051</strong></span><span class="shwm-sts open">{tx('Abierta', 'Open')}</span></div>
+        <div class="shwm-fa2-b">
+          <div class="shwm-stp2 sm">
+            <span class="s done"><span class="d" set:html={chk}></span>{tx('Borrador', 'Draft')}</span><span class="s cur"><span class="d">2</span>{tx('Emitida', 'Issued')}</span><span class="s"><span class="d">3</span>{tx('Enviada', 'Sent')}</span><span class="s"><span class="d">4</span>{tx('Vista', 'Viewed')}</span><span class="s"><span class="d">5</span>{tx('Pagada', 'Paid')}</span>
           </div>
-          <div class="shwm-stamp-cta">
-            <span class="shwm-stamp-btn">Ver PDF</span>
-            <span class="shwm-stamp-btn">Descargar XML</span>
+          <div class="shwm-fa2-hd"><span class="av">CG</span><span class="tx"><strong>Constructora GAMA</strong><em>{tx('Emitida 25 sep 2026 · Vence 25 oct 2026 · Sin enviar', 'Issued Sep 25, 2026 · Due Oct 25, 2026 · Not sent')}</em><span class="og" data-origin>{tx('desde la cotización', 'from quote')} COT-0154</span></span></div>
+          <div class="shwm-fa2-tot"><em>TOTAL</em><span class="editorial">{cm(412310.4)}</span></div>
+          <div class="shwm-fa2-it" data-ilines>
+            <span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>800 × {cm(191.48)}</small></span><span class="editorial">{cm(153184)}</span>
+            <span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>600 × {cm(182)}</small></span><span class="editorial">{cm(109200)}</span>
+            <span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>240 × {cm(312)}</small></span><span class="editorial">{cm(74880)}</span>
+            <span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>1,280 × {cm(14.2)}</small></span><span class="editorial">{cm(18176)}</span>
+          </div>
+          <div class="shwm-fa2-meta">
+            <span><em>{tx('País', 'Country')}</em><b>MX</b></span><span><em>{tx('Divisa', 'Currency')}</em><b>MXN</b></span><span><em>RFC</em><b>CGA190312KT4</b></span>
+            <span class="w"><em>{tx('Folio fiscal', 'Tax folio')}</em><b class="uuid">7F3A21C4-9D0E-4B6F-A8E2-51C07D3B9A64</b></span>
           </div>
         </div>
-        <div class="shwm-foot"><span>Crear, emitir, enviar, cobrar y anular por API</span><b>Y por MCP</b></div>
       </div>
     </div>
   )}
@@ -1261,60 +1365,133 @@ const NAV = [
 
   {/* ═══════════════════════════════ CORD WORKFLOWS ═══════════════════════════════ */}
   {slug === 'workflows' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">{en ? 'Run · COT-0152 · Grupo Norte' : 'Ejecución · COT-0152 · Grupo Norte'}</span>
-          <span class="shwm-badge shwm-badge-blue">{en ? 'Waiting' : 'En espera'}</span>
+    <div class="shwm-frame shwm-scene" data-shx="wf0">
+      <div class="shwm-cw shwm-wf0-mc">
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><strong>{tx('Recibidos', 'Inbox')}</strong><span class="shwm-mc-n">2</span></span><span class="shwm-cw-me"><span class="av">LG</span>laura@materialesdelvalle.mx</span></div>
+        <div class="shwm-mc">
+          <div class="shwm-mc-l">
+            <div class="it on" data-newmail><span class="u"></span><span class="w"><span class="l1"><strong>Cord</strong><em>{tx('lun 21 sep', 'Mon Sep 21')}</em></span><span class="s">{tx('COT-0152 lleva una semana sin decisión', 'COT-0152 went a week without a decision')}</span><span class="p">{tx('Grupo Norte no ha decidido COT-0152 (148,600 MXN). Saldo abierto contigo…', 'Grupo Norte has not decided on COT-0152 (148,600 MXN). Open balance with you…')}</span></span></div>
+            <div class="it"><span class="u"></span><span class="w"><span class="l1"><strong>Cord</strong><em>{tx('sáb 19 sep', 'Sat Sep 19')}</em></span><span class="s">{tx('Grupo Ferrex pagó el anticipo de COT-0157', 'Grupo Ferrex paid the deposit for COT-0157')}</span><span class="p">{tx('Llegó un anticipo de 107,424.35 MXN. Saldo pendiente: 161,136.53 MXN.', 'A deposit of 107,424.35 MXN arrived. Remaining balance: 161,136.53 MXN.')}</span></span></div>
+            <div class="it rd"><span class="u"></span><span class="w"><span class="l1"><strong>Cord</strong><em>{tx('vie 18 sep', 'Fri Sep 18')}</em></span><span class="s">{tx('Distribuidora El Zarco aprobó tu cotización COT-0148', 'Distribuidora El Zarco approved your quote COT-0148')}</span><span class="p">{tx(`Distribuidora El Zarco aprobó la cotización COT-0148 por ${cm(196469.2)}.`, `Distribuidora El Zarco approved quote COT-0148 for ${cm(196469.2)}.`)}</span></span></div>
+            <div class="it rd"><span class="u"></span><span class="w"><span class="l1"><strong>Ing. Rodrigo Nava</strong><em>{tx('jue 17 sep', 'Thu Sep 17')}</em></span><span class="s">{tx('Re: Entrega en obra, Zapopan', 'Re: Delivery to site, Zapopan')}</span><span class="p">{tx('Confirmado para el martes a las 8:00. La grúa entra por la calle lateral.', 'Confirmed for Tuesday at 8:00. The crane comes in through the side street.')}</span></span></div>
+            <div class="it rd"><span class="u"></span><span class="w"><span class="l1"><strong>Cord</strong><em>{tx('lun 14 sep', 'Mon Sep 14')}</em></span><span class="s">{tx('Tu semana en Cord (14 sep 2026)', 'Your week in Cord (Sep 14, 2026)')}</span><span class="p">{tx('Vencido: 184,320 MXN en 6 documentos, el más atrasado 23 días.', 'Overdue: 184,320 MXN across 6 documents, the oldest 23 days past due.')}</span></span></div>
+          </div>
+          <div class="shwm-mc-r" data-read>
+            <strong class="sj">{tx('COT-0152 lleva una semana sin decisión', 'COT-0152 went a week without a decision')}</strong>
+            <div class="fr"><img src="/favicon-192x192.png" alt="" width="30" height="30" loading="lazy" /><span class="w"><strong>Cord</strong><em>{tx('para mí', 'to me')}</em></span><span class="tm">{tx('lun 21 sep, 10:41', 'Mon Sep 21, 10:41 AM')}</span></div>
+            <p>{tx('Grupo Norte no ha decidido COT-0152 (148,600 MXN). Saldo abierto contigo: 84,300 MXN, de los cuales 21,450 MXN están vencidos.', 'Grupo Norte has not decided on COT-0152 (148,600 MXN). Open balance with you: 84,300 MXN, of which 21,450 MXN is overdue.')}</p>
+            <p class="ft">{tx('Enviado por el workflow', 'Sent by the')} <u>{tx('Escalera de seguimiento de una cotización', 'Quote follow-up ladder')}</u> {tx('de Cord.', 'workflow in Cord.')}</p>
+            <span class="rp"><span>{tx('Responder', 'Reply')}</span><span>{tx('Reenviar', 'Forward')}</span></span>
+          </div>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Step' : 'Paso'}</span><span>{en ? 'Result' : 'Resultado'}</span><span class="shwm-r">{en ? 'When' : 'Cuándo'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'A quote is sent' : 'Se envía una cotización'}</div><span class="shwm-audit-actor">{en ? 'Trigger' : 'Disparador'}</span><span class="shwm-r shwm-mut">{en ? 'Mon 10:41' : 'Lun 10:41'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Wait until opened · 2 days' : 'Espera hasta que la abra · 2 días'}</div><span class="shwm-audit-actor">{en ? 'Deadline passed' : 'Venció el plazo'}</span><span class="shwm-r shwm-mut">{en ? 'Wed 10:41' : 'Mié 10:41'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Email the client' : 'Escribirle al cliente'}</div><span class="shwm-audit-actor">{en ? 'Delivered' : 'Entregado'}</span><span class="shwm-r shwm-mut">{en ? 'Wed 10:41' : 'Mié 10:41'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>{en ? 'Wait for the decision · 5 days' : 'Espera su decisión · 5 días'}</div><span class="shwm-audit-actor">{en ? 'In progress' : 'En curso'}</span><span class="shwm-r shwm-mut">{en ? 'until Mon' : 'hasta el lun'}</span></div>
+      </div>
+      <div class="shwm-mail shwm-wf0-cli" data-cli>
+        <div class="shwm-mail-h"><span class="av">MV</span><span class="who"><strong>Materiales del Valle</strong><em>{tx('para', 'to')} compras@gruponorte.mx</em></span><span class="when">{tx('mié 16 sep, 10:41', 'Wed Sep 16, 10:41 AM')}</span></div>
+        <span class="shwm-mail-s">{tx('¿Alguna duda sobre COT-0152?', 'Any questions about COT-0152?')}</span>
+        <div class="shwm-mail-b">
+          <img src="/imgs/logo-cord-navy.png" alt="Cord" width="82" height="28" loading="lazy" />
+          <span class="to">Grupo Norte</span>
+          <p>{tx('Hola, damos seguimiento a la cotización COT-0152 por 148,600 MXN. Si hay algo que ajustar, responde este correo y lo vemos.', 'Hi, we are following up on quote COT-0152 for 148,600 MXN. If anything needs adjusting, reply to this email and we will sort it out.')}</p>
+          <span class="btn">{tx('Ver cotización COT-0152', 'View quote COT-0152')}</span>
+          <span class="lk">{tx('O copie este enlace en su navegador:', 'Or copy this link into your browser:')} <u>cordhq.app/q/4Rt8nKw2</u></span>
+          <span class="ft">Materiales del Valle · {tx('enviado con Cord', 'sent with Cord')}</span>
         </div>
-        <div class="shwm-foot"><span>{en ? 'Each quote runs its own copy' : 'Cada cotización corre su propia copia'}</span><b>{en ? 'Quote follow-up ladder' : 'Escalera de seguimiento'}</b></div>
       </div>
     </div>
   )}
 
   {slug === 'workflows' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app shwm-app-narrow">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">{en ? 'Staged collection · A-001052' : 'Cobranza escalonada · A-001052'}</span>
-          <span class="shwm-badge shwm-badge-amber">{en ? 'Due in 3 days' : 'Vence en 3 días'}</span>
+    <div class="shwm-frame shwm-scene" data-shx="wf1">
+      <div class="shwm-brw shwm-wf1-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/workflows/8d41c2e0</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'workflows' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-wfb"><span class="x"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><strong>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</strong><span class="bd">{tx('Activo', 'Active')}</span><span class="sp"></span><span class="b">{tx('Probar', 'Test')}</span><span class="b">{tx('Guardar borrador', 'Save draft')}</span><span class="b pri">{tx('Publicar', 'Publish')}</span></div>
+            <div class="shwm-wft"><span>Editor</span><span class="on">{tx('Ejecuciones', 'Runs')}</span></div>
+            <div class="shwm-wrb"><span class="shwm-btn">{tx('Actualizar', 'Refresh')}</span></div>
+            <div class="shwm-wrl">
+              <div class="run" data-run>
+                <div class="row"><span class="shwm-wp ok">{tx('Completada', 'Completed')}</span><span class="mn"><strong>{tx('Llega un pago parcial', 'A partial payment arrives')}</strong><small>COT-0157 · Grupo Ferrex</small></span><span class="wh">{tx('19 sep, 10:12', 'Sep 19, 10:12 AM')}</span></div>
+                <ol class="st"><li data-st><span class="res ok">{tx('Se cumplió', 'Met')}</span><span>{tx('Tipo de pago es Anticipo', 'Payment type is Deposit')}</span></li><li data-st><span class="res ok">{tx('Hecho', 'Done')}</span><span>{tx('Crear una tarea', 'Create a task')}</span></li><li data-st><span class="res ok">{tx('Hecho', 'Done')}</span><span>{tx('Avisar al equipo por correo', 'Email the team')}</span></li></ol>
+              </div>
+              <div class="run">
+                <div class="row"><span class="shwm-wp ok">{tx('Completada', 'Completed')}</span><span class="mn"><strong>{tx('Llega un pago parcial', 'A partial payment arrives')}</strong><small>COT-0149 · Constructora Apex</small></span><span class="wh">{tx('18 sep, 16:40', 'Sep 18, 4:40 PM')}</span></div>
+                <ol class="st"><li><span class="res no">{tx('No se cumplió', 'Not met')}</span><span>{tx('Tipo de pago es Anticipo', 'Payment type is Deposit')}</span></li></ol>
+              </div>
+              <div class="run">
+                <div class="row"><span class="shwm-wp ok">{tx('Completada', 'Completed')}</span><span class="mn"><strong>{tx('Llega un pago parcial', 'A partial payment arrives')}</strong><small>COT-0146 · Inmobiliaria Los Arcos</small></span><span class="wh">{tx('15 sep, 12:03', 'Sep 15, 12:03 PM')}</span></div>
+                <ol class="st"><li><span class="res no">{tx('No se cumplió', 'Not met')}</span><span>{tx('Tipo de pago es Anticipo', 'Payment type is Deposit')}</span></li></ol>
+              </div>
+              <div class="run"><div class="row"><span class="shwm-wp ok">{tx('Completada', 'Completed')}</span><span class="mn"><strong>{tx('Llega un pago parcial', 'A partial payment arrives')}</strong><small>COT-0151 · Constructora GAMA</small></span><span class="wh">{tx('12 sep, 09:47', 'Sep 12, 9:47 AM')}</span></div></div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Step' : 'Paso'}</span><span>{en ? 'Channel' : 'Canal'}</span><span class="shwm-r">{en ? 'Day' : 'Día'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Friendly reminder' : 'Recordatorio amable'}</div><span class="shwm-audit-actor">{en ? 'Email' : 'Correo'}</span><span class="shwm-r shwm-mut">−3</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Due today, with payment link' : 'Vence hoy, con link de pago'}</div><span class="shwm-audit-actor">WhatsApp</span><span class="shwm-r shwm-mut">0</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>{en ? 'Alert the owner with the balance' : 'Aviso al dueño con el saldo'}</div><span class="shwm-audit-actor">Slack</span><span class="shwm-r shwm-mut">+7</span></div>
+      </div>
+      <div class="shwm-cw shwm-wf1-task">
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><span>{tx('Inicio', 'Home')}</span><span class="sep">/</span><strong>{tx('Tareas y recordatorios', 'Tasks and reminders')}</strong></span></div>
+        <div class="shwm-tk">
+          <div class="add"><span class="in">{tx('Ej. Llamar a GAMA para dar seguimiento…', 'E.g. Call GAMA for a follow-up…')}</span><span class="b">{tx('Agregar', 'Add')}</span></div>
+          <div class="r"><span class="ck"></span><span class="tx"><strong>{tx('Llamar a Distribuidora El Zarco mientras COT-0148 está caliente', 'Call Distribuidora El Zarco while COT-0148 is warm')}</strong><small>COT-0148 · {tx('18 sep 2026', 'Sep 18, 2026')}</small></span><span class="ov">{tx('vencida', 'overdue')}</span></div>
+          <div class="r" data-task><span class="ck"></span><span class="tx"><strong>{tx('Arrancar el trabajo de COT-0157 (Grupo Ferrex)', 'Start the work for COT-0157 (Grupo Ferrex)')}</strong><small>COT-0157 · {tx('20 sep 2026', 'Sep 20, 2026')}</small></span></div>
+          <div class="r"><span class="ck"></span><span class="tx"><strong>{tx('Confirmar flete a obra con GAMA', 'Confirm delivery to site with GAMA')}</strong><small>COT-0151 · {tx('24 sep 2026', 'Sep 24, 2026')}</small></span></div>
         </div>
-        <div class="shwm-lock-strip">
-          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <div><b>{en ? 'It stops by itself when the invoice is paid' : 'Se detiene sola cuando la factura se paga'}</b><em>{en ? 'A condition checks the balance before every step' : 'Una condición revisa el saldo antes de cada paso'}</em></div>
-        </div>
-        <div class="shwm-foot"><span>{en ? 'Days counted in' : 'Días contados en'}</span><b>{en ? 'Your time zone' : 'Tu zona horaria'}</b></div>
+      </div>
+      <div class="shwm-mail shwm-wf1-mail" data-mail>
+        <div class="shwm-mail-h"><img src="/favicon-192x192.png" alt="" width="32" height="32" loading="lazy" /><span class="who"><strong>Cord</strong><em>{tx('para mí', 'to me')}</em></span><span class="when">10:12</span></div>
+        <span class="shwm-mail-s">{tx('Grupo Ferrex pagó el anticipo de COT-0157', 'Grupo Ferrex paid the deposit for COT-0157')}</span>
+        <p class="shwm-mail-p">{tx('Llegó un anticipo de 107,424.35 MXN. Saldo pendiente: 161,136.53 MXN.', 'A deposit of 107,424.35 MXN arrived. Remaining balance: 161,136.53 MXN.')}</p>
+        <p class="shwm-mail-f">{tx('Enviado por el workflow', 'Sent by the')} <u>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</u> {tx('de Cord.', 'workflow in Cord.')}</p>
       </div>
     </div>
   )}
 
   {slug === 'workflows' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">{en ? 'Workflow health · 30 days' : 'Salud de los workflows · 30 días'}</span>
-          <span class="shwm-badge shwm-badge-green">{en ? '98.6% completed' : '98.6% completadas'}</span>
+    <div class="shwm-frame shwm-scene" data-shx="wf2">
+      <div class="shwm-brw shwm-wf2-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/workflows</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'workflows' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><strong>Cord Workflows</strong></span><span class="shwm-wnew">{tx('Nuevo workflow', 'New workflow')}</span></div>
+            <div class="shwm-wtop"><p>{tx('Automatiza lo que pasa después de cada venta: cuando ocurre algo en Cord, el workflow da el siguiente paso por ti.', 'Automate what happens after every sale: when something happens in Cord, the workflow takes the next step for you.')}</p><span class="cupo">{tx('4 de 5 workflows activos en tu plan', '4 of 5 active workflows on your plan')}</span></div>
+            <section class="shwm-wh">
+              <div class="hd"><strong>{tx('Cómo van tus automatizaciones', 'How your automations are doing')}</strong><span>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+              <div class="kp"><span><b class="editorial" data-k="400">400</b><small>{tx('Ejecuciones', 'Runs')}</small></span><span><b class="editorial" data-k="391">391</b><small>{tx('Completadas', 'Completed')}</small></span><span class="bad"><b class="editorial" data-k="6">6</b><small>{tx('Fallidas', 'Failed')}</small></span><span><b class="editorial" data-k="3">3</b><small>{tx('En curso o en espera', 'Running or waiting')}</small></span></div>
+              <div class="cz"><span class="t">{tx('Por qué fallaron', 'Why they failed')}</span>
+                <div class="c"><span class="n">4</span><span class="tx"><strong>{tx('El cliente no tiene un teléfono con lada de país registrado.', 'The client has no phone with a country code on file.')}</strong><small>{tx('Recordatorio de vencimiento por WhatsApp · hace 2 días', 'WhatsApp due-date reminder · 2 days ago')}</small></span></div>
+                <div class="c"><span class="n">2</span><span class="tx"><strong>{tx('Conecta Slack en Ajustes › Integraciones para usar esta acción.', 'Connect Slack in Settings › Integrations to use this action.')}</strong><small>{tx('Resumen de cobranza cada lunes · hace 6 días', 'Collections summary every Monday · 6 days ago')}</small></span></div>
+              </div>
+            </section>
+            <div class="shwm-wl">
+              <div class="r h"><span>Workflow</span><span>{tx('Se inicia cuando', 'Starts when')}</span><span class="n">{tx('Ejecuciones (30 días)', 'Runs (30 days)')}</span><span>{tx('Estado', 'Status')}</span></div>
+              <div class="r"><span class="nm"><span class="g" set:html={WI('quotes')}></span><span class="t"><strong>{tx('Escalera de seguimiento de una cotización', 'Quote follow-up ladder')}</strong><small>{tx('hace 3 días', '3 days ago')}</small></span></span><span class="tg">{tx('Se envía una cotización', 'A quote is sent')}<small>{tx('Cotizaciones', 'Quotes')}</small></span><span class="n editorial">212</span><span><span class="shwm-sts paid">{tx('Activo', 'Active')}</span></span></div>
+              <div class="r"><span class="nm"><span class="g" set:html={WI('invoices')}></span><span class="t"><strong>{tx('Recordatorio de vencimiento por WhatsApp', 'WhatsApp due-date reminder')}</strong><small>{tx('hace 2 semanas', '2 weeks ago')}</small></span></span><span class="tg">{tx('Se acerca el vencimiento de una factura', 'An invoice is about to be due')}<small>{tx('Facturas', 'Invoices')}</small></span><span class="n"><span class="editorial">146</span><small class="bad">{tx('4 con error', '4 failed')}</small></span><span><span class="shwm-sts paid">{tx('Activo', 'Active')}</span></span></div>
+              <div class="r"><span class="nm"><span class="g" set:html={WI('payments')}></span><span class="t"><strong>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</strong><small>{tx('hace 1 mes', '1 month ago')}</small></span></span><span class="tg">{tx('Llega un pago parcial', 'A partial payment arrives')}<small>{tx('Pagos', 'Payments')}</small></span><span class="n editorial">38</span><span><span class="shwm-sts paid">{tx('Activo', 'Active')}</span></span></div>
+              <div class="r"><span class="nm"><span class="g" set:html={WI('schedule')}></span><span class="t"><strong>{tx('Resumen de cobranza cada lunes', 'Collections summary every Monday')}</strong><small>{tx('hace 1 mes', '1 month ago')}</small></span></span><span class="tg">{tx('En un horario fijo', 'On a fixed schedule')}<small>{tx('Programado', 'Scheduled')}</small></span><span class="n"><span class="editorial">4</span><small class="bad">{tx('2 con error', '2 failed')}</small></span><span><span class="shwm-sts paid">{tx('Activo', 'Active')}</span></span></div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Cause' : 'Causa'}</span><span>{en ? 'Workflow' : 'Workflow'}</span><span class="shwm-r">{en ? 'Runs' : 'Ejecuciones'}</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Completed' : 'Completadas'}</div><span class="shwm-audit-actor">{en ? 'All' : 'Todos'}</span><span class="shwm-r"><b>412</b></span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Client phone without country code' : 'Teléfono del cliente sin lada'}</div><span class="shwm-audit-actor">{en ? 'Due-date reminder' : 'Recordatorio de vencimiento'}</span><span class="shwm-r"><b>4</b></span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Slack is not connected' : 'Slack no está conectado'}</div><span class="shwm-audit-actor">{en ? 'Monday summary' : 'Resumen del lunes'}</span><span class="shwm-r"><b>2</b></span></div>
+      </div>
+      <div class="shwm-cw shwm-wf2-test" data-test>
+        <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><strong>{tx('Escalera de seguimiento de una cotización', 'Quote follow-up ladder')}</strong></span><span class="shwm-wdirty">{tx('Cambios sin publicar', 'Unpublished changes')}</span></div>
+        <div class="shwm-wt">
+          <div class="hd"><strong>{tx('Prueba sin publicar', 'Test without publishing')}</strong><span class="x"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+          <p class="sub" data-sub data-run={tx('Corriendo con el último evento real...', 'Running with the latest real event...')}>{tx('Con el evento del 21 sep 2026, 10:41. Las consultas se ejecutan de verdad; las acciones no se envían.', 'With the event from Sep 21, 2026, 10:41 AM. Lookups really run; actions are not sent.')}</p>
+          <div class="sts">
+            <div class="st" data-tst><span class="ic" set:html={WI('wait_until')}></span><span class="tx"><strong>{tx('Espera hasta', 'Wait until')}</strong></span><span class="rs no">{tx('No se cumplió', 'Not met')}</span></div>
+            <div class="st" data-tst><span class="ic" set:html={WI('send_client_email')}></span><span class="tx"><strong>{tx('Escribirle al cliente', 'Email the client')}</strong><small>{tx('Asunto: ¿Alguna duda sobre COT-0152?', 'Subject: Any questions about COT-0152?')}</small><small>{tx('Mensaje: Hola, damos seguimiento a la cotización COT-0152 por 148,600 MXN. Si hay algo que ajustar, responde este correo y lo vemos.', 'Message: Hi, we are following up on quote COT-0152 for 148,600 MXN. If anything needs adjusting, reply to this email and we will sort it out.')}</small></span><span class="rs ok">{tx('Haría', 'Would do')}</span></div>
+            <div class="st" data-tst><span class="ic" set:html={WI('wait_until')}></span><span class="tx"><strong>{tx('Espera hasta', 'Wait until')}</strong></span><span class="rs no">{tx('No se cumplió', 'Not met')}</span></div>
+            <div class="st" data-tst><span class="ic" set:html={WI('query')}></span><span class="tx"><strong>{tx('Consultar el saldo del cliente', "Look up the client's balance")}</strong><small>{tx('Saldo del cliente: 84,300', 'Client balance: 84,300')}</small><small>{tx('Vencido del cliente: 21,450', 'Client overdue: 21,450')}</small><small>{tx('Documentos abiertos: 3', 'Open documents: 3')}</small></span><span class="rs ok">{tx('Haría', 'Would do')}</span></div>
+            <div class="st" data-tst><span class="ic" set:html={WI('notify_team')}></span><span class="tx"><strong>{tx('Avisar al equipo por correo', 'Email the team')}</strong><small>{tx('Asunto: COT-0152 lleva una semana sin decisión', 'Subject: COT-0152 went a week without a decision')}</small><small>{tx('Mensaje: Grupo Norte no ha decidido COT-0152 (148,600 MXN). Saldo abierto contigo: 84,300 MXN, de los cuales 21,450 MXN están vencidos.', 'Message: Grupo Norte has not decided on COT-0152 (148,600 MXN). Open balance with you: 84,300 MXN, of which 21,450 MXN is overdue.')}</small></span><span class="rs ok">{tx('Haría', 'Would do')}</span></div>
+          </div>
         </div>
-        <div class="shwm-foot"><span>{en ? 'Failures grouped by cause' : 'Fallas agrupadas por causa'}</span><b>{en ? 'Not by message' : 'No por mensaje'}</b></div>
       </div>
     </div>
   )}
@@ -1619,71 +1796,154 @@ const NAV = [
 
   {/* ═══════════════════════════════ EQUIPO ═══════════════════════════════ */}
   {slug === 'equipo' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Roles y permisos</span>
-          <span class="shwm-badge shwm-badge-blue">Por diseño</span>
-        </div>
-        <div class="shwm-matrix">
-          <div class="shwm-mx-head">
-            <span class="shwm-mx-corner">Permiso</span>
-            <span>Vendedor</span>
-            <span>Gerente</span>
-            <span>Contador</span>
+    <div class="shwm-frame shwm-scene" data-shx="eq0">
+      <div class="shwm-brw shwm-eq0-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/ajustes/equipo</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class="shwm-as-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}<span class="shwm-as-i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={GEAR}></svg></span></nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-set">
+              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Equipo y Roles', 'Team & roles')}</b></span>
+              <strong class="h">{tx('Equipo y permisos', 'Team & permissions')}</strong>
+              <span class="ds">{tx('Invita a tu equipo, define permisos y la seguridad de acceso.', 'Invite your team, set permissions, and access security.')}</span>
+              <span class="tb"><span class="on">{tx('Equipo y Roles', 'Team & roles')}</span><span>SSO</span><span>{tx('Seguridad', 'Security')}</span></span>
+            </div>
+            <div class="shwm-eqs"><span class="tx"><strong class="editorial">{tx('6 de 15 asientos', '6 of 15 seats')}</strong><span class="bar"><i></i></span></span><span class="shwm-btn">{tx('Exportar', 'Export')}</span><span class="shwm-btn pri">{tx('Agregar miembro', 'Add member')}</span></div>
+            <div class="shwm-eqf"><span class="on">{tx('Todos', 'All')} <b>7</b></span><span>{tx('Activos', 'Active')} <b data-ca data-was="6">5</b></span><span>{tx('Invitaciones pendientes', 'Pending invitations')} <b>1</b></span><span>{tx('Inactivos', 'Inactive')} <b data-ci data-was="0">1</b></span></div>
+            <div class="shwm-eqt">
+              <div class="r h"><span>{tx('Miembro', 'Member')}</span><span>{tx('Rol', 'Role')}</span><span>{tx('Actividad', 'Activity')}</span><span></span></div>
+              <div class="r"><span class="mb"><span class="av">LG</span><span class="t"><strong>Laura Gómez <em class="you">{tx('Tú', 'You')}</em></strong><small>laura@materialesdelvalle.mx</small></span></span><span><span class="rl ow">{tx('Súper administrador', 'Super admin')}</span></span><span class="ac"><b>{tx('Última sesión hace 2 min', 'Last seen 2 min ago')}</b></span><span></span></div>
+              <div class="r"><span class="mb"><span class="av">AS</span><span class="t"><strong>Andrés Solís</strong><small>andres@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Administrador', 'Admin')}</span></span><span class="ac"><b>{tx('Última sesión hoy, 12:40', 'Last seen today, 12:40 PM')}</b><small>{tx('9 cotización(es) en 30 días', '9 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+              <div class="r is-rev" data-rev>
+                <span class="mb"><span class="av">DS</span><span class="t"><strong>Diego Salas</strong><small>diego@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span>
+                <span class="ac"><span class="on-a"><b>{tx('Última sesión hace 18 min', 'Last seen 18 min ago')}</b><small>{tx('12 cotización(es) en 30 días', '12 quote(s) in 30 days')}</small></span><span class="shwm-eqst">{tx('Sin acceso', 'No access')}</span></span>
+                <span class="ra"><span class="on-a"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb" data-x><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span><span class="lk off-a">{tx('Volver a invitar', 'Invite again')}</span></span>
+              </div>
+              <div class="r"><span class="mb"><span class="av">MC</span><span class="t"><strong>Mariana Cota</strong><small>mariana@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión ayer, 19:15', 'Last seen yesterday, 7:15 PM')}</b><small>{tx('14 cotización(es) en 30 días', '14 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">TI</span><span class="t"><strong>Tomás Ibarra</strong><small>tomas@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión 22 sep', 'Last seen Sep 22')}</b><small>{tx('6 cotización(es) en 30 días', '6 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">SR</span><span class="t"><strong>Sofía Rentería</strong><small>sofia@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Solo lectura', 'Read only')}</span></span><span class="ac"><b>{tx('Última sesión 18 sep', 'Last seen Sep 18')}</b></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+            </div>
           </div>
-          <div class="shwm-mx-r"><span class="shwm-mx-perm">Ver toda su cartera</span><i class="shwm-mx-yes"></i><i class="shwm-mx-yes"></i><i class="shwm-mx-no"></i></div>
-          <div class="shwm-mx-r"><span class="shwm-mx-perm">Ver pipeline completo</span><i class="shwm-mx-no"></i><i class="shwm-mx-yes"></i><i class="shwm-mx-no"></i></div>
-          <div class="shwm-mx-r"><span class="shwm-mx-perm">Aprobar descuentos</span><i class="shwm-mx-no"></i><i class="shwm-mx-yes"></i><i class="shwm-mx-no"></i></div>
-          <div class="shwm-mx-r"><span class="shwm-mx-perm">Descargar CFDI</span><i class="shwm-mx-no"></i><i class="shwm-mx-yes"></i><i class="shwm-mx-yes"></i></div>
-          <div class="shwm-mx-r"><span class="shwm-mx-perm">Exportar o borrar datos</span><i class="shwm-mx-no"></i><i class="shwm-mx-no"></i><i class="shwm-mx-no"></i></div>
         </div>
-        <div class="shwm-foot"><span>Cada quien ve solo lo que le toca</span><b>Nadie tiene más acceso del necesario</b></div>
+      </div>
+      <span class="shwm-toast shwm-eq0-toast" data-toast><span class="dot"></span>{tx('Acceso revocado', 'Access revoked')}</span>
+      <div class="shwm-audit2 shwm-eq0-aud">
+        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
+        <p class="shwm-audit2-i">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
+        <div class="shwm-audit2-l">
+          <span class="r is-new" data-arow><span class="a">equipo.revocado</span><span class="d"></span><span class="w">{tx('hace 1 min', '1 min ago')} · 189.203.45.112</span></span>
+          <span class="r"><span class="a">equipo.actualizado</span><span class="d">vendedor</span><span class="w">{tx('hace 2 días', '2 days ago')} · 189.203.45.112</span></span>
+          <span class="r"><span class="a">sso.exigir_activado</span><span class="d">{tx('6 sesión(es) revocada(s)', '6 session(s) revoked')}</span><span class="w">{tx('hace 5 días', '5 days ago')} · 189.203.45.112</span></span>
+          <span class="r"><span class="a">equipo.invitado</span><span class="d">ventas3@materialesdelvalle.mx</span><span class="w">{tx('hace 6 días', '6 days ago')} · 201.141.28.77</span></span>
+          <span class="r"><span class="a">factura.pago_registrado</span><span class="d">25000 MXN</span><span class="w">{tx('hace 1 semana', '1 week ago')} · 189.203.45.112</span></span>
+          <span class="r"><span class="a">org.actualizada</span><span class="d">{tx('Campos: require_2fa, session_timeout_min', 'Fields: require_2fa, session_timeout_min')}</span><span class="w">{tx('hace 2 semanas', '2 weeks ago')} · 189.203.45.112</span></span>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app shwm-app-narrow">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Cambiar de empresa</span>
-          <span class="shwm-badge shwm-badge-blue">Multi-empresa</span>
+    <div class="shwm-frame shwm-scene" data-shx="eq1">
+      <div class="shwm-brw shwm-eq1-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/ajustes/seguridad</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class="shwm-as-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}<span class="shwm-as-i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={GEAR}></svg></span></nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-set">
+              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Seguridad', 'Security')}</b></span>
+              <strong class="h">{tx('Equipo y permisos', 'Team & permissions')}</strong>
+              <span class="ds">{tx('Invita a tu equipo, define permisos y la seguridad de acceso.', 'Invite your team, set permissions, and access security.')}</span>
+              <span class="tb"><span>{tx('Equipo y Roles', 'Team & roles')}</span><span>SSO</span><span class="on">{tx('Seguridad', 'Security')}</span></span>
+              <p class="in">{tx('Reglas de acceso para todo tu equipo. La identidad está cifrada; aquí defines las políticas que aplican a tu organización.', 'Access rules for your whole team. Identity is encrypted; here you set the policies that apply to your organization.')}</p>
+            </div>
+            <div class="shwm-sb">
+              <strong class="h3">{tx('Autenticación', 'Authentication')}</strong>
+              <div class="rw"><span class="tx"><strong>{tx('Exigir verificación en dos pasos (2FA)', 'Require two-factor authentication (2FA)')}</strong><small>{tx('Todos los miembros deberán tener 2FA activo para entrar. Protege tu cuenta aunque se filtre una contraseña.', 'All members will need active 2FA to sign in. Protects your account even if a password leaks.')}</small></span><span class="shwm-tog on" data-tog></span></div>
+              <div class="hb"><span class="dt"></span>{tx('La política se guarda de inmediato. (La 2FA por usuario se configura en Tu cuenta).', 'The policy saves immediately. (Per-user 2FA is configured in Your account).')}</div>
+            </div>
+            <div class="shwm-sb">
+              <strong class="h3">{tx('Sesiones', 'Sessions')}</strong>
+              <span class="lb">{tx('Cierre por inactividad', 'Inactivity timeout')}</span>
+              <span class="shwm-fd sel">{tx('8 horas', '8 hours')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <small class="ht">{tx('Tras este tiempo sin actividad, se pedirá iniciar sesión de nuevo.', 'After this much time without activity, sign-in will be required again.')}</small>
+            </div>
+            <div class="shwm-sb">
+              <strong class="h3">{tx('Dominios de invitación', 'Invitation domains')}</strong>
+              <span class="lb">{tx('Dominios permitidos', 'Allowed domains')}</span>
+              <span class="shwm-fd wide">materialesdelvalle.mx, mdvalle.com.mx</span>
+              <small class="ht">{tx('Separados por coma. Si los defines, solo podrás invitar correos de esos dominios. Déjalo vacío para permitir cualquiera.', 'Comma-separated. If set, you can only invite emails from these domains. Leave empty to allow any.')}</small>
+            </div>
+          </div>
         </div>
-        <div class="shwm-switch-current">
-          <span class="shwm-avat a2 shwm-avat-lg">AM</span>
-          <div><b>Acero Monterrey</b><em>RFC ACM981123 · activa ahora</em></div>
-          <svg class="shwm-switch-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="shwm-dv shwm-eq1-ph">
+        <div class="shwm-dv-scr shwm-v2f">
+          <div class="shwm-dv-ios"><span class="t">23:48</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
+          <img class="lg" src="/imgs/logo-cord-navy.png" alt="Cord" width="64" height="22" loading="lazy" />
+          <div class="cd">
+            <strong class="h">{tx('Verificación en dos pasos', 'Two-step verification')}</strong>
+            <span class="p">{tx('Abre tu app de autenticación e ingresa el código de 6 dígitos.', 'Open your authenticator app and enter the 6-digit code.')}</span>
+            <span class="bx is-err" data-code>{['4', '8', '1', '0', '2', '7'].map((d) => <span>{d}</span>)}</span>
+            <span class="er" data-err>{tx('Código incorrecto. Intenta de nuevo.', 'Incorrect code. Try again.')}</span>
+            <span class="bt" data-btn data-busy={tx('Verificando...', 'Verifying...')}>{tx('Verificar', 'Verify')}</span>
+            <span class="lk">{tx('¿Perdiste acceso? Usar código de respaldo', 'Lost access? Use a backup code')}</span>
+          </div>
+          <div class="sf"><span class="u"><Fragment set:html={BRW_LOCK} />cordhq.app</span></div>
+          <span class="shwm-dv-home"></span>
         </div>
-        <div class="shwm-switch-drop">
-          <div class="shwm-switch-r shwm-switch-active"><span class="shwm-avat a2">AM</span><div><b>Acero Monterrey</b><em>RFC ACM981123</em></div><i class="shwm-ck"></i></div>
-          <div class="shwm-switch-r"><span class="shwm-avat a1">FC</span><div><b>Ferretería Central</b><em>RFC FEC882045</em></div></div>
-          <div class="shwm-switch-r"><span class="shwm-avat a4">DP</span><div><b>Distribuidora del Pacífico</b><em>RFC DPA070312</em></div></div>
-        </div>
-        <div class="shwm-foot"><span>Un clic, no una contraseña distinta por marca</span><b>Reportes consolidados</b></div>
       </div>
     </div>
   )}
 
   {slug === 'equipo' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Acceso y seguridad</span>
-          <span class="shwm-badge shwm-badge-green">SSO activo</span>
-        </div>
-        <div class="shwm-sec">
-          <div class="shwm-sec-sso">
-            <div class="shwm-sec-sso-r"><span class="shwm-sec-logo"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://google.com&size=128" alt="Google" width="20" height="20" loading="lazy" /></span><div><b>Google Workspace</b><em>@materialesdelvalle.mx</em></div><span class="shwm-badge shwm-badge-green">Conectado</span></div>
-            <div class="shwm-sec-sso-r"><span class="shwm-sec-logo"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://microsoft.com&size=128" alt="Microsoft" width="20" height="20" loading="lazy" /></span><div><b>Microsoft Entra</b><em>SAML / OIDC</em></div><span class="shwm-badge shwm-badge-gray">Disponible</span></div>
+    <div class="shwm-frame shwm-scene" data-shx="eq2">
+      <div class="shwm-brw shwm-eq2-brw">
+        <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/desempeno</span><span class="act" set:html={BRW_SHARE}></span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'desempeno' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Desempeño', 'Performance')}</strong></span><span class="shwm-ptabs"><span>{tx('Informes', 'Reports')}</span><span class="on">{tx('Equipo', 'Team')}</span></span></div>
+            <div class="shwm-dk">
+              <span><em>{tx('CERRADO POR EL EQUIPO', 'CLOSED BY THE TEAM')}</em><b class="editorial ok" data-kc>{cm(2280760, 'MXN', 0)}</b><small>{tx('aprobadas, pagadas y facturadas', 'approved, paid and invoiced')}</small></span>
+              <span><em>{tx('TASA DE CIERRE PROMEDIO', 'AVERAGE CLOSE RATE')}</em><b class="editorial">35<i>%</i></b><small>{tx('de lo enviado por vendedor', 'of what each rep sent')}</small></span>
+              <span><em>{tx('LÍDER DEL PERIODO', 'TOP PERFORMER')}</em><b class="editorial ld">Laura Gómez</b><small>{cm(812400, 'MXN', 0)}{tx(' cerrado', ' closed')}</small></span>
+              <span><em>{tx('VENDEDORES ACTIVOS', 'ACTIVE REPS')}</em><b class="editorial">5</b><small>{tx('con cuenta activa en el equipo', 'with an active team account')}</small></span>
+            </div>
+            <div class="shwm-lb">
+              <div class="sh"><strong>{tx('Ranking por vendedor', 'Ranking by rep')}</strong><span>{tx('por monto cerrado', 'by amount closed')}</span></div>
+              <div class="r h"><span>{tx('Vendedor', 'Rep')}</span><span class="n">{tx('Cotiz.', 'Quotes')}</span><span class="n">{tx('Cierre', 'Close')}</span><span>{tx('Cerrado', 'Closed')}</span><span class="n">{tx('Cobrado', 'Collected')}</span><span class="n">Ticket</span><span class="n">{tx('Días', 'Days')}</span></div>
+              {[
+                { i: 'LG', n: 'Laura Gómez', r: tx('Dueño', 'Owner'), me: true, q: 34, c: 44, cl: 812400, co: 655180, tk: 54160, d: 9 },
+                { i: 'DS', n: 'Diego Salas', r: '', q: 41, c: 37, cl: 604350, co: 431200, tk: 40290, d: 12 },
+                { i: 'MC', n: 'Mariana Cota', r: '', q: 28, c: 43, cl: 468000, co: 398760, tk: 39000, d: 8 },
+                { i: 'AS', n: 'Andrés Solís', r: tx('Administrador', 'Admin'), q: 19, c: 32, cl: 214110, co: 120400, tk: 35685, d: 15 },
+                { i: 'TI', n: 'Tomás Ibarra', r: '', q: 22, c: 18, cl: 85700, co: 42850, tk: 21425, d: 21 },
+              ].map((v, k) => (
+                <div class={`r${v.me ? ' me' : ''}`}>
+                  <span class="nm"><span class="rk">{k + 1}</span><span class="av">{v.i}</span><span class="t"><strong>{v.n}{v.me && <em class="you">{tx('Tú', 'You')}</em>}</strong>{v.r && <small>{v.r}</small>}</span></span>
+                  <span class="n">{v.q}</span><span class="n">{v.c}%</span>
+                  <span class="cl"><span class="bw"><i class={k === 0 ? 'lead' : ''} style={`width:${Math.round((v.cl / 812400) * 100)}%`} data-bar></i></span><span class="editorial">{cm(v.cl, 'MXN', 0)}</span></span>
+                  <span class="n editorial co">{cm(v.co, 'MXN', 0)}</span><span class="n editorial sm">{cm(v.tk, 'MXN', 0)}</span><span class="n editorial sm">{v.d} d</span>
+                </div>
+              ))}
+              <div class="r un">
+                <span class="nm"><span class="rk">—</span><span class="av mu">?</span><span class="t"><strong>{tx('Sin asignar', 'Unassigned')}</strong><small>{tx('de antes de este reporte o vía API', 'from before this report or via API')}</small></span></span>
+                <span class="n">7</span><span class="n">—</span>
+                <span class="cl"><span class="bw"><i style="width:12%" data-bar></i></span><span class="editorial">{cm(96200, 'MXN', 0)}</span></span>
+                <span class="n editorial co">{cm(96200, 'MXN', 0)}</span><span class="n sm">—</span><span class="n sm">—</span>
+              </div>
+            </div>
           </div>
-          <span class="shwm-sec-cap">Sesiones activas</span>
-          <div class="shwm-sec-sessions">
-            <div class="shwm-sess-r"><span class="shwm-sess-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2" fill="currentColor" fill-opacity="0.08"/><path d="M8 20h8"/></svg></span><div><b>MacBook Pro · esta sesión</b><em>Guadalajara · hace 2 min</em></div><span class="shwm-badge shwm-badge-green">Actual</span></div>
-            <div class="shwm-sess-r"><span class="shwm-sess-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="3" width="10" height="18" rx="2" fill="currentColor" fill-opacity="0.08"/></svg></span><div><b>iPhone · Laura G.</b><em>CDMX · hace 5 h</em></div><span class="shwm-sess-revoke">Revocar</span></div>
-          </div>
         </div>
-        <div class="shwm-foot"><span>Cortas el correo, se corta Cord — el mismo día</span><b>SSO · SAML · auditado</b></div>
       </div>
     </div>
   )}
@@ -2681,7 +2941,7 @@ const NAV = [
     .shwm-audit2 .r { grid-template-columns: 1fr; gap: 2px; }
     .shwm-audit2 .d { white-space: normal; }
   }
-  /* pf:start */
+  /* ═══ Calcas de pagos, cobranza, divisas, clientes y finanzas ═══ */
   .shwm-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.58rem; color: #5b6472; background: #f5f5f7; border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
   .shwm-sts.paid { color: #047857; background: rgba(16,185,129,0.12); }
   .shwm-sts.over { color: #dc2626; background: rgba(239,68,68,0.1); }
@@ -3022,6 +3282,7 @@ const NAV = [
   @media (max-width: 760px) {
     [data-shx="fx0"] .shwm-edg-main, .shwm-fxc .cu, .shwm-fx1-ph, .shwm-fx2-pe, .shwm-fx2-ar { display: none; }
     [data-shx="fx0"] .shwm-fx0-edg { grid-template-columns: 1fr; }
+    [data-shx="fx0"] .shwm-as { grid-template-columns: 1fr; }
     .shwm-dec { padding: 4px 12px; }
     .shwm-dec .r { grid-template-columns: minmax(0,0.7fr) 30px minmax(0,1fr) minmax(0,1.25fr); gap: 6px; font-size: 0.58rem; }
     .shwm-dec .r.h { font-size: 0.48rem; }
@@ -3185,7 +3446,394 @@ const NAV = [
     .shwm-vb { height: 120px; }
     .shwm-hg { grid-template-columns: repeat(2, minmax(0,1fr)); }
   }
-  /* pf:end */
+  /* ═══ Calcas de facturación, workflows y equipo ═══ */
+  .shwm-sts.open { color: #b45309; background: rgba(245,158,11,0.12); }
+  .shwm-sts.inv { color: #0a192f; background: rgba(10,25,47,0.08); }
+  .shwm-btn.pri { color: #ffffff; background: #0a192f; border-color: #0a192f; }
+  .shwm-x .you { font-size: 0.5rem; font-weight: 700; color: #0a192f; background: rgba(10,25,47,0.06); padding: 1px 6px; border-radius: 100px; }
+  .shwm-mc-r u, .shwm-mail u { color: #0a192f; text-decoration: underline; text-underline-offset: 2px; }
+
+  .shwm-fa0-brw { left: 3%; transform: none; width: 67%; }
+  .shwm-fa0-ph { right: 4.5%; top: 18px; }
+  .shwm-fa0-toast, .shwm-eq0-toast { left: 36.5%; bottom: 22px; opacity: 0; visibility: hidden; }
+  .shwm-rc-back { font-size: 0.64rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .shwm-rc-intro { margin: -4px 0 14px; max-width: 62ch; font-size: 0.64rem; line-height: 1.55; color: #5b6472; }
+  .shwm-rc-r { display: grid; grid-template-columns: minmax(0,1.9fr) minmax(0,1.05fr) 72px 46px 70px 124px; gap: 11px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.66rem; }
+  .shwm-rc-r.h { padding: 0 0 7px; font-size: 0.58rem; font-weight: 600; color: #5b6472; border-bottom-color: rgba(10,25,47,0.1); }
+  .shwm-rc-r .n { text-align: right; }
+  .shwm-rc-r .nm, .shwm-rc-r .cd { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-rc-r .nm strong { font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-rc-r small { font-size: 0.56rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-rc-r .dt { white-space: nowrap; }
+  .shwm-rc-r .ac { display: inline-flex; gap: 5px; justify-content: flex-end; }
+  .shwm-rc-r .ac span { font-size: 0.56rem; font-weight: 600; color: #5b6472; padding: 4px 8px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+  .shwm-iml { display: flex; flex-direction: column; background: #ffffff; }
+  .shwm-iml-nav { display: flex; align-items: center; justify-content: space-between; padding: 4px 14px 8px; color: #0a84ff; font-size: 0.68rem; }
+  .shwm-iml-nav .bk { display: inline-flex; align-items: center; gap: 2px; }
+  .shwm-iml-nav .ar { display: inline-flex; gap: 12px; }
+  .shwm-iml-hd { display: flex; align-items: center; gap: 8px; padding: 4px 14px 7px; }
+  .shwm-iml-hd .av, .shwm-mail-h .av { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 700; }
+  .shwm-iml-hd .w { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-iml-hd strong { font-size: 0.68rem; }
+  .shwm-iml-hd em, .shwm-iml-hd .tm { font-size: 0.56rem; color: #6b7280; }
+  .shwm-iml-hd .tm { align-self: flex-start; margin-top: 3px; }
+  .shwm-iml-s { display: block; padding: 0 14px 9px; font-size: 0.78rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-iml-att { display: flex; align-items: center; gap: 8px; margin: 9px 14px 0; padding: 7px 9px; border-radius: 10px; background: #f3f4f6; }
+  .shwm-iml-att .pdf { box-sizing: border-box; width: 24px; height: 28px; padding-bottom: 4px; border-radius: 4px; background: #dc2626; color: #ffffff; font-size: 0.42rem; font-weight: 800; display: inline-flex; align-items: flex-end; justify-content: center; }
+  .shwm-iml-att .nm { display: flex; flex-direction: column; }
+  .shwm-iml-att strong { font-size: 0.62rem; }
+  .shwm-iml-att em { font-size: 0.52rem; color: #6b7280; }
+  .shwm-iml-b { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; }
+  .shwm-iml-b img { width: 58px; height: auto; margin-bottom: 4px; }
+  .shwm-iml-b .to { font-size: 0.68rem; font-weight: 500; color: #111827; }
+  .shwm-iml-b p { margin: 0; font-size: 0.64rem; line-height: 1.55; color: #374151; }
+  .shwm-iml-b .tb { display: flex; flex-direction: column; margin: 4px 0; padding: 4px 0; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; }
+  .shwm-iml-b .tb > span { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 0.6rem; }
+  .shwm-iml-b .tb em { color: #6b7280; }
+  .shwm-iml-b .tb b { font-weight: 500; color: #111827; }
+  .shwm-iml-b .tb .s em, .shwm-iml-b .tb .s b { color: #111827; font-weight: 600; }
+  .shwm-iml-b .btn { align-self: flex-start; margin-top: 4px; font-size: 0.62rem; font-weight: 500; color: #ffffff; background: #b45309; border-radius: 7px; padding: 8px 14px; }
+
+  .shwm-fa1-brw { left: 3%; transform: none; width: 74%; }
+  .shwm-fa1-cw { right: 2.5%; top: 128px; width: 262px; }
+  .shwm-fsal { margin-top: 2px; font-size: 0.58rem; color: #5b6472; }
+  .shwm-ftot { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 10px; }
+  .shwm-ftot > span { display: flex; justify-content: space-between; gap: 30px; min-width: 250px; font-size: 0.64rem; color: #5b6472; }
+  .shwm-ftot .editorial { color: #0f1729; }
+  .shwm-ftot .tax { font-size: 0.6rem; }
+  .shwm-ftot .tt { color: #0f1729; font-weight: 700; }
+  .shwm-ftot .nc { color: #0f1729; }
+  .shwm-ftot .due { margin-top: 3px; padding-top: 6px; border-top: 1px solid rgba(10,25,47,0.1); color: #0f1729; font-weight: 700; }
+  .shwm-ftot .due .editorial { font-size: 0.84rem; }
+  .shwm-fdl { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: #f5f5f7; }
+  .shwm-fdl .dt { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: #10b981; }
+  .shwm-fdl .tx { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-fdl strong { font-size: 0.64rem; }
+  .shwm-fdl small { font-size: 0.54rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-fdl .rs { font-size: 0.56rem; font-weight: 600; color: #0a192f; }
+  .shwm-fbtn { display: block; margin-top: 6px; padding: 7px; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); text-align: center; font-size: 0.6rem; font-weight: 600; color: #0f1729; }
+  .shwm-fmore { display: flex; flex-direction: column; margin-top: 6px; padding: 4px; border-radius: 11px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+  .shwm-fmore .sm { display: flex; align-items: center; justify-content: space-between; padding: 5px 7px 6px; font-size: 0.6rem; font-weight: 600; color: #5b6472; }
+  .shwm-fmore .it { padding: 6px 8px; border-radius: 7px; font-size: 0.62rem; font-weight: 500; color: #0f1729; transition: background 0.2s; }
+  .shwm-fmore .it.is-hover { background: #eef0f3; }
+  .shwm-fmore .dg { color: #dc2626; }
+  .shwm-fa1-b { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px 14px; }
+  .shwm-fa1-b .kv { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 0.62rem; color: #5b6472; }
+  .shwm-fa1-b .kv b { font-weight: 600; color: #0f1729; }
+  .shwm-fcan { margin-top: 6px; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; }
+  .shwm-fcan p { margin: 0 0 8px; font-size: 0.62rem; line-height: 1.45; color: #0f1729; }
+  .shwm-fcan .b { display: block; padding: 6px; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); text-align: center; font-size: 0.58rem; font-weight: 600; }
+
+  .shwm-fa2-brw { left: 3%; transform: none; width: 66%; }
+  [data-shx="fa2"] .shwm-dtg { grid-template-columns: minmax(0,1fr) 224px; gap: 22px; }
+  .shwm-fa2-inv { right: 3%; top: 56px; width: 350px; }
+  .shwm-fnv { display: block; margin-bottom: 8px; padding: 9px; border-radius: 10px; background: #0a192f; color: #ffffff; text-align: center; font-size: 0.66rem; font-weight: 700; box-shadow: 0 4px 14px -4px rgba(10,25,47,0.4); }
+  .shwm-fnv.is-gone { display: none; }
+  .shwm-fa2-b { padding: 12px 16px 16px; }
+  .shwm-stp2.sm { margin-bottom: 12px; }
+  .shwm-stp2.sm .s { font-size: 0; gap: 0; }
+  .shwm-stp2.sm .s.cur { font-size: 0.6rem; gap: 5px; }
+  .shwm-stp2.sm .s:not(:last-child)::after { margin: 0 5px; }
+  .shwm-stp2.sm .d { width: 16px; height: 16px; font-size: 0.5rem; }
+  .shwm-fa2-hd { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-fa2-hd .av { width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.64rem; font-weight: 800; }
+  .shwm-fa2-hd .tx { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+  .shwm-fa2-hd strong { font-size: 0.8rem; }
+  .shwm-fa2-hd em { font-size: 0.56rem; color: #5b6472; }
+  .shwm-fa2-hd .og { margin-top: 4px; font-size: 0.58rem; font-weight: 600; color: #0a192f; background: rgba(10,25,47,0.06); padding: 3px 8px; border-radius: 6px; }
+  .shwm-fa2-tot { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0 6px; }
+  .shwm-fa2-tot em { font-size: 0.48rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+  .shwm-fa2-tot .editorial { font-size: 1.12rem; color: #0a192f; }
+  .shwm-fa2-it { display: grid; grid-template-columns: minmax(0,1fr) auto; font-size: 0.62rem; }
+  .shwm-fa2-it > span { padding: 5px 0; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .shwm-fa2-it > span:nth-child(odd) { display: flex; flex-direction: column; min-width: 0; }
+  .shwm-fa2-it small { font-size: 0.52rem; color: #5b6472; }
+  .shwm-fa2-it .editorial { align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-left: 10px; white-space: nowrap; }
+  .shwm-fa2-meta { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 8px 10px; margin-top: 10px; }
+  .shwm-fa2-meta span { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-fa2-meta em { font-size: 0.5rem; font-weight: 600; color: #99a2af; }
+  .shwm-fa2-meta b { font-size: 0.6rem; font-weight: 600; }
+  .shwm-fa2-meta .w { grid-column: 1 / -1; }
+  .shwm-fa2-meta .uuid { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.54rem; font-weight: 500; color: #5b6472; }
+
+  .shwm-wf0-mc { left: 3%; top: 30px; width: 70%; height: 620px; }
+  .shwm-mc-n { margin-left: 6px; font-size: 0.56rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.07); border-radius: 100px; padding: 1px 6px; }
+  .shwm-mc { display: grid; grid-template-columns: 38% minmax(0,1fr); height: calc(100% - 46px); }
+  .shwm-mc-l { overflow: hidden; background: #fbfbfc; border-right: 1px solid rgba(10,25,47,0.07); }
+  .shwm-mc-l .it { display: flex; gap: 7px; padding: 10px 12px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .shwm-mc-l .it.on { background: rgba(10,25,47,0.05); }
+  .shwm-mc-l .u { width: 6px; height: 6px; flex-shrink: 0; margin-top: 4px; border-radius: 50%; background: #2563eb; }
+  .shwm-mc-l .it.rd .u { background: transparent; }
+  .shwm-mc-l .w { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .shwm-mc-l .l1 { display: flex; justify-content: space-between; gap: 8px; }
+  .shwm-mc-l strong { font-size: 0.64rem; }
+  .shwm-mc-l em { font-size: 0.54rem; color: #5b6472; white-space: nowrap; }
+  .shwm-mc-l .s { font-size: 0.62rem; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-mc-l .rd .s { font-weight: 500; }
+  .shwm-mc-l .p { font-size: 0.58rem; line-height: 1.4; color: #5b6472; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .shwm-mc-r { padding: 18px 22px; }
+  .shwm-mc-r .sj { display: block; margin-bottom: 14px; font-size: 0.94rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
+  .shwm-mc-r .fr { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-mc-r .fr img, .shwm-wf1-mail .shwm-mail-h img { width: 30px; height: 30px; border-radius: 8px; }
+  .shwm-mc-r .rp { display: flex; gap: 8px; margin-top: 26px; }
+  .shwm-mc-r .rp span { font-size: 0.62rem; font-weight: 600; color: #0f1729; padding: 7px 16px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.14); }
+  .shwm-mc-r .fr .w { flex: 1; display: flex; flex-direction: column; }
+  .shwm-mc-r .fr strong { font-size: 0.7rem; }
+  .shwm-mc-r .fr em, .shwm-mc-r .fr .tm { font-size: 0.58rem; color: #5b6472; }
+  .shwm-mc-r p { margin: 0 0 12px; font-size: 0.7rem; line-height: 1.6; color: #050505; }
+  .shwm-mc-r .ft { margin-top: 22px; font-size: 0.58rem; color: #6b7280; }
+  .shwm-mail.shwm-wf0-cli { left: auto; right: 2.5%; top: 118px; width: 340px; }
+  .shwm-mail-b .to { display: block; margin-bottom: 8px; font-size: 0.7rem; font-weight: 500; color: #111827; }
+  .shwm-mail-b .lk { display: block; margin-top: 12px; font-size: 0.56rem; line-height: 1.5; color: #6b7280; }
+  .shwm-mail-b .lk u { color: #2563eb; text-decoration: none; }
+
+  .shwm-wf1-brw { left: 3%; transform: none; width: 60%; }
+  .shwm-wf1-task { right: 3%; top: 30px; width: 340px; }
+  .shwm-mail.shwm-wf1-mail { left: auto; right: 5%; top: 296px; width: 318px; }
+  .shwm-mail-p { margin: 0 0 12px; font-size: 0.68rem; line-height: 1.6; color: #050505; }
+  .shwm-mail-f { margin: 0; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 0.56rem; color: #6b7280; }
+  .shwm-wfb { display: flex; align-items: center; gap: 8px; padding: 12px 0 10px; }
+  .shwm-wfb .x { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #5b6472; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); }
+  .shwm-wfb strong { min-width: 0; font-size: 0.78rem; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-wfb .bd { flex-shrink: 0; font-size: 0.54rem; font-weight: 700; color: #047857; background: rgba(16,185,129,0.12); padding: 2px 7px; border-radius: 100px; }
+  .shwm-wfb .sp { flex: 1; }
+  .shwm-wfb .b { font-size: 0.58rem; font-weight: 600; padding: 5px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); white-space: nowrap; }
+  .shwm-wfb .b.pri { background: #0a192f; color: #ffffff; box-shadow: none; }
+  .shwm-wft { display: flex; gap: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-wft span { padding: 6px 0 8px; font-size: 0.64rem; font-weight: 600; color: #5b6472; }
+  .shwm-wft .on { color: #0a192f; box-shadow: inset 0 -2px 0 #0a192f; }
+  .shwm-wrb { display: flex; justify-content: flex-end; margin-bottom: 2px; }
+  .shwm-wrl .run { border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-wrl .row { display: grid; grid-template-columns: 82px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 9px 4px; }
+  .shwm-wp { justify-self: start; font-size: 0.56rem; font-weight: 700; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+  .shwm-wp.ok { color: #047857; background: rgba(16,185,129,0.12); }
+  .shwm-wrl .mn { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-wrl .mn strong { font-size: 0.66rem; }
+  .shwm-wrl .mn small, .shwm-wrl .wh { font-size: 0.58rem; color: #5b6472; white-space: nowrap; }
+  .shwm-wrl .st { display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 0 4px 11px 98px; list-style: none; }
+  .shwm-wrl .st li { display: flex; align-items: baseline; gap: 10px; font-size: 0.64rem; }
+  .shwm-wrl .res { min-width: 78px; font-size: 0.58rem; font-weight: 700; }
+  .shwm-wrl .res.ok { color: #047857; }
+  .shwm-wrl .res.no { color: #5b6472; }
+  .shwm-tk { padding: 10px 14px 10px; }
+  .shwm-tk .add { display: flex; gap: 6px; margin-bottom: 4px; }
+  .shwm-tk .in { flex: 1; min-width: 0; font-size: 0.58rem; color: #99a2af; background: #f5f5f7; border-radius: 8px; padding: 6px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-tk .b { font-size: 0.58rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 8px; padding: 6px 10px; }
+  .shwm-tk .r { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .shwm-tk .r:last-child { border-bottom: 0; }
+  .shwm-tk .ck { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.25); }
+  .shwm-tk .tx { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-tk strong { font-size: 0.62rem; font-weight: 500; line-height: 1.35; }
+  .shwm-tk small { font-size: 0.54rem; color: #5b6472; }
+  .shwm-tk .ov { font-size: 0.52rem; font-weight: 700; color: #dc2626; background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 100px; }
+
+  .shwm-wf2-brw { left: 3%; transform: none; width: 67%; }
+  .shwm-wf2-test { right: 2.5%; top: 24px; width: 344px; }
+  .shwm-wnew { font-size: 0.62rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+  .shwm-wtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+  .shwm-wtop p { margin: 0; max-width: 52ch; font-size: 0.62rem; line-height: 1.5; color: #5b6472; }
+  .shwm-wtop .cupo { font-size: 0.56rem; font-weight: 600; color: #5b6472; background: #f5f5f7; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .shwm-wh { margin-bottom: 10px; padding: 12px 0; border-top: 1px solid rgba(10,25,47,0.08); border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-wh .hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  .shwm-wh .hd strong { font-size: 0.74rem; }
+  .shwm-wh .hd span { font-size: 0.58rem; color: #5b6472; }
+  .shwm-wh .kp { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 10px; }
+  .shwm-wh .kp > span { display: flex; flex-direction: column; gap: 3px; }
+  .shwm-wh .kp b { font-size: 1.1rem; line-height: 1; color: #0a192f; }
+  .shwm-wh .kp .bad b { color: #dc2626; }
+  .shwm-wh .kp small { font-size: 0.56rem; color: #5b6472; }
+  .shwm-wh .cz .t { display: block; margin-bottom: 4px; font-size: 0.58rem; font-weight: 700; color: #5b6472; }
+  .shwm-wh .c { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; }
+  .shwm-wh .c .n { min-width: 20px; height: 18px; flex-shrink: 0; border-radius: 6px; background: rgba(239,68,68,0.1); color: #dc2626; font-size: 0.58rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-wh .c .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-wh .c strong { font-size: 0.62rem; font-weight: 500; }
+  .shwm-wh .c small { font-size: 0.54rem; color: #5b6472; }
+  .shwm-wl .r { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1.2fr) 118px 58px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.64rem; }
+  .shwm-wl .r.h { padding: 0 0 7px; font-size: 0.58rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .shwm-wl .n { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .shwm-wl .nm { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .shwm-wl .g { width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px; background: #f5f5f7; color: #0a192f; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-wl .t, .shwm-wl .tg { display: flex; flex-direction: column; min-width: 0; }
+  .shwm-wl .t strong, .shwm-wl .tg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-wl .t strong { font-size: 0.64rem; }
+  .shwm-wl small { font-size: 0.54rem; color: #5b6472; }
+  .shwm-wl small.bad { color: #dc2626; font-weight: 600; }
+  .shwm-wdirty { font-size: 0.54rem; font-weight: 600; color: #b45309; background: rgba(245,158,11,0.12); padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
+  .shwm-wf2-test .shwm-cw-crumbs { min-width: 0; }
+  .shwm-wf2-test .shwm-cw-crumbs strong { overflow: hidden; text-overflow: ellipsis; }
+  .shwm-wt { padding: 12px 14px 14px; }
+  .shwm-wt .hd { display: flex; align-items: center; justify-content: space-between; }
+  .shwm-wt .hd strong { font-size: 0.84rem; font-weight: 650; letter-spacing: -0.02em; }
+  .shwm-wt .x { color: #5b6472; }
+  .shwm-wt .sub { margin: 4px 0 10px; font-size: 0.58rem; line-height: 1.5; color: #5b6472; }
+  .shwm-wt .sts { display: flex; flex-direction: column; gap: 6px; }
+  .shwm-wt .st { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: 11px; background: #f5f5f7; }
+  .shwm-wt .ic { width: 24px; height: 24px; flex-shrink: 0; border-radius: 7px; background: #ffffff; color: #0a192f; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-wt .tx { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .shwm-wt .tx strong { font-size: 0.64rem; }
+  .shwm-wt .tx small { font-size: 0.56rem; line-height: 1.45; color: #5b6472; }
+  .shwm-wt .rs { flex-shrink: 0; margin-top: 2px; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #5b6472; }
+  .shwm-wt .rs.ok { color: #059669; }
+
+  .shwm-eq0-brw { left: 3%; transform: none; width: 63%; }
+  .shwm-audit2.shwm-eq0-aud { right: 2.5%; top: 64px; bottom: auto; width: 372px; }
+  .shwm-eq0-aud .d { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .shwm-audit2-l { display: flex; flex-direction: column; }
+  .shwm-set { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; padding-top: 14px; }
+  .shwm-set .cb { display: inline-flex; align-items: center; gap: 4px; font-size: 0.6rem; font-weight: 600; color: #5b6472; }
+  .shwm-set .cb .sep { margin: 0 2px; color: #c9ced6; }
+  .shwm-set .cb b { font-weight: 600; color: #0f1729; }
+  .shwm-set .h { margin-top: 4px; font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .shwm-set .ds { font-size: 0.62rem; color: #5b6472; }
+  .shwm-set .tb { display: flex; gap: 16px; margin-top: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-set .tb span { padding: 6px 0 8px; font-size: 0.64rem; font-weight: 600; color: #5b6472; }
+  .shwm-set .tb .on { color: #0a192f; box-shadow: inset 0 -2px 0 #0a192f; }
+  .shwm-set .in { max-width: 62ch; margin: 8px 0 0; font-size: 0.62rem; line-height: 1.5; color: #5b6472; }
+  .shwm-eqs { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .shwm-eqs .tx { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .shwm-eqs strong { font-size: 0.7rem; }
+  .shwm-eqs .bar { width: 180px; height: 5px; border-radius: 100px; background: rgba(10,25,47,0.08); overflow: hidden; }
+  .shwm-eqs .bar i { display: block; width: 40%; height: 100%; border-radius: 100px; background: #0a192f; }
+  .shwm-eqf { display: flex; gap: 6px; margin-bottom: 8px; }
+  .shwm-eqf span { font-size: 0.58rem; font-weight: 600; color: #5b6472; padding: 4px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); white-space: nowrap; }
+  .shwm-eqf .on { background: #0a192f; color: #ffffff; box-shadow: none; }
+  .shwm-eqf b { margin-left: 2px; font-weight: 700; }
+  .shwm-eqt .r { display: grid; grid-template-columns: minmax(0,1.7fr) 112px minmax(0,1.3fr) 116px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-eqt .r.h { padding: 0 0 7px; font-size: 0.56rem; font-weight: 600; color: #5b6472; }
+  .shwm-eqt .mb { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .shwm-eqt .av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #334155; color: #ffffff; font-size: 0.54rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-eqt .t { display: flex; flex-direction: column; min-width: 0; }
+  .shwm-eqt .t strong { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; white-space: nowrap; }
+  .shwm-eqt small { font-size: 0.56rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-eqt .rl { font-size: 0.56rem; font-weight: 600; color: #0f1729; background: #f5f5f7; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+  .shwm-eqt .rl.ow { background: rgba(10,25,47,0.08); }
+  .shwm-eqt .ac, .shwm-eqt .ac .on-a { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-eqt .ac b { font-size: 0.6rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-eqt .ra, .shwm-eqt .ra .on-a { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+  .shwm-eqt .lk { font-size: 0.58rem; font-weight: 600; color: #0a192f; white-space: nowrap; }
+  .shwm-eqt .xb { width: 24px; height: 24px; flex-shrink: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #99a2af; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); transition: color 0.2s, background 0.2s, box-shadow 0.2s; }
+  .shwm-eqt .xb.is-hover { color: #dc2626; background: rgba(239,68,68,0.06); box-shadow: inset 0 0 0 1px rgba(220,38,38,0.4); }
+  .shwm-eqst { align-self: flex-start; font-size: 0.56rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.06); padding: 3px 8px; border-radius: 100px; }
+  .shwm-eqt .r .off-a, .shwm-eqt .r .shwm-eqst, .shwm-eqt .r.is-rev .on-a { display: none; }
+  .shwm-eqt .r.is-rev .off-a, .shwm-eqt .r.is-rev .shwm-eqst { display: inline-flex; }
+  .shwm-eqt .r.is-rev .mb { opacity: 0.55; }
+
+  .shwm-eq1-brw { left: 3%; transform: none; width: 64%; }
+  .shwm-eq1-ph { right: 8%; top: 18px; }
+  .shwm-sb { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid rgba(10,25,47,0.08); }
+  .shwm-sb .h3 { margin-bottom: 2px; font-size: 0.74rem; font-weight: 650; }
+  .shwm-sb .rw { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+  .shwm-sb .rw .tx { display: flex; flex-direction: column; gap: 2px; }
+  .shwm-sb .rw strong { font-size: 0.68rem; }
+  .shwm-sb .rw small { font-size: 0.6rem; line-height: 1.45; color: #5b6472; }
+  .shwm-sb .hb { display: flex; align-items: flex-start; gap: 8px; padding: 9px 11px; border-radius: 9px; background: #f5f5f7; font-size: 0.6rem; line-height: 1.5; color: #5b6472; }
+  .shwm-sb .hb .dt { width: 7px; height: 7px; flex-shrink: 0; margin-top: 4px; border-radius: 50%; background: #10b981; }
+  .shwm-sb .lb { font-size: 0.62rem; font-weight: 600; }
+  .shwm-sb .shwm-fd.sel { width: 46%; }
+  .shwm-sb .shwm-fd.wide { justify-content: flex-start; }
+  .shwm-sb .ht { font-size: 0.58rem; line-height: 1.45; color: #5b6472; }
+  .shwm-v2f { display: flex; flex-direction: column; align-items: center; background: #f5f5f7; }
+  .shwm-v2f .shwm-dv-ios { align-self: stretch; }
+  .shwm-v2f .lg { width: 64px; height: auto; margin: 64px 0 18px; }
+  .shwm-v2f .cd { box-sizing: border-box; width: calc(100% - 24px); display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 20px 14px 16px; text-align: center; background: #ffffff; border-radius: 20px; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 44px -16px rgba(10,25,47,0.16); }
+  .shwm-v2f .h { font-size: 0.86rem; font-weight: 700; letter-spacing: -0.03em; color: #050505; }
+  .shwm-v2f .p { font-size: 0.58rem; line-height: 1.5; color: #5b6472; }
+  .shwm-v2f .bx { display: flex; gap: 5px; margin: 4px 0; }
+  .shwm-v2f .bx span { width: 26px; height: 32px; border-radius: 8px; background: #f5f5f7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: #0f1729; transition: box-shadow 0.2s; }
+  .shwm-v2f .bx.is-err span { box-shadow: inset 0 0 0 1.5px rgba(220,38,38,0.45); }
+  .shwm-v2f .er { font-size: 0.58rem; font-weight: 600; color: #dc2626; }
+  .shwm-v2f .bt { align-self: stretch; padding: 9px; border-radius: 999px; background: #0a192f; color: #ffffff; font-size: 0.66rem; font-weight: 600; }
+  .shwm-v2f .lk { font-size: 0.54rem; font-weight: 600; color: #0a192f; text-decoration: underline; }
+  .shwm-v2f .sf { position: absolute; left: 0; right: 0; bottom: 20px; display: flex; justify-content: center; }
+  .shwm-v2f .sf .u { display: inline-flex; align-items: center; gap: 5px; padding: 8px 24px; border-radius: 999px; background: rgba(255,255,255,0.94); font-size: 0.6rem; font-weight: 600; color: #0f1729; box-shadow: 0 4px 14px -4px rgba(10,25,47,0.2); }
+
+  .shwm-eq2-brw { width: min(1080px, calc(100% - 80px)); }
+  .shwm-dk { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); margin-bottom: 16px; border-top: 1px solid rgba(10,25,47,0.08); border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-dk > span { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 12px 16px; border-left: 1px solid rgba(10,25,47,0.08); }
+  .shwm-dk > span:first-child { padding-left: 0; border-left: 0; }
+  .shwm-dk em, .shwm-dk b, .shwm-dk small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-dk em { font-size: 0.48rem; font-weight: 800; letter-spacing: 1.3px; color: #99a2af; }
+  .shwm-dk b { font-size: 1.36rem; line-height: 1.05; color: #0a192f; }
+  .shwm-dk b.ok { color: #059669; }
+  .shwm-dk b.ld { font-size: 0.98rem; line-height: 1.4; }
+  .shwm-dk b i { font-size: 0.6em; }
+  .shwm-dk small { font-size: 0.56rem; color: #5b6472; }
+  .shwm-lb .sh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .shwm-lb .sh strong { font-size: 0.8rem; }
+  .shwm-lb .sh span { font-size: 0.58rem; color: #5b6472; }
+  .shwm-lb .r { display: grid; grid-template-columns: 2.1fr 0.55fr 0.6fr 1.3fr 0.95fr 0.85fr 0.5fr; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.66rem; }
+  .shwm-lb .r.h { padding: 6px 0; font-size: 0.5rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+  .shwm-lb .r.me { margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 10px; border-bottom-color: transparent; background: #f5f5f7; }
+  .shwm-lb .r.un { opacity: 0.65; }
+  .shwm-lb .n { text-align: right; white-space: nowrap; }
+  .shwm-lb .nm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .shwm-lb .rk { width: 12px; flex-shrink: 0; font-size: 0.62rem; font-weight: 700; color: #5b6472; }
+  .shwm-lb .av { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: #0a192f; color: #ffffff; font-size: 0.54rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-lb .av.mu { background: #f5f5f7; color: #5b6472; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); }
+  .shwm-lb .t { display: flex; flex-direction: column; min-width: 0; }
+  .shwm-lb .t strong { display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; white-space: nowrap; }
+  .shwm-lb .t small { font-size: 0.56rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-lb .cl { display: grid; grid-template-columns: minmax(30px,1fr) 90px; gap: 8px; align-items: center; min-width: 0; }
+  .shwm-lb .bw { height: 7px; border-radius: 100px; background: rgba(10,25,47,0.05); overflow: hidden; }
+  .shwm-lb .bw i { display: block; height: 100%; border-radius: 100px; background: #c6d0dd; }
+  .shwm-lb .bw i.lead { background: #0a192f; }
+  .shwm-lb .cl .editorial { text-align: right; font-size: 0.68rem; color: #0a192f; white-space: nowrap; }
+  .shwm-lb .co { color: #059669; }
+  .shwm-lb .sm { font-size: 0.62rem; color: #5b6472; }
+
+  @media (max-width: 1180px) {
+    .shwm-rc-r { grid-template-columns: minmax(0,1.9fr) minmax(0,1.05fr) 72px 40px 70px; }
+    .shwm-rc-r > :nth-child(6) { display: none; }
+    .shwm-fa1-brw { width: 78%; }
+    .shwm-fa1-cw { width: 236px; top: auto; bottom: 18px; }
+    .shwm-fa2-inv { width: 318px; }
+    .shwm-wf1-task, .shwm-mail.shwm-wf1-mail { width: 300px; }
+    .shwm-wf2-test { width: 310px; }
+    .shwm-audit2.shwm-eq0-aud { width: 340px; top: auto; bottom: 20px; }
+    .shwm-eqt .r { grid-template-columns: minmax(0,1.7fr) 104px minmax(0,1.3fr) 30px; }
+    .shwm-eqt .lk:not(.off-a) { display: none; }
+    .shwm-eq1-ph { right: 4%; }
+  }
+  @media (max-width: 960px) {
+    .shwm-fa0-brw, .shwm-wf0-mc, .shwm-eq0-brw, .shwm-eq1-brw { width: 72%; }
+    .shwm-mc { grid-template-columns: 34% minmax(0,1fr); }
+    .shwm-wf2-brw { width: 74%; }
+  }
+  @media (max-width: 760px) {
+    .shwm-fa0-toast, .shwm-eq0-toast, .shwm-fa0-ph, .shwm-eq1-ph, .shwm-wf1-task { display: none; }
+    .shwm-rc-intro { margin: 0 0 10px; }
+    .shwm-rc-r, .shwm-rc-r.h { grid-template-columns: minmax(0,1fr) auto auto; }
+    .shwm-rc-r > :nth-child(2), .shwm-rc-r > :nth-child(4) { display: none; }
+    [data-shx="fa1"] .shwm-di, [data-shx="fa1"] .shwm-dtg-main .shwm-sech, [data-shx="fa1"] .shwm-actgrid, [data-shx="fa1"] .shwm-fbtn, [data-shx="fa1"] .shwm-fdl, [data-shx="fa1"] .shwm-tl2, [data-shx="fa1"] .shwm-sech-gap { display: none; }
+    .shwm-ftot { align-items: stretch; }
+    .shwm-ftot > span { min-width: 0; }
+    [data-shx="fa2"] .shwm-dtg-main .shwm-sech, [data-shx="fa2"] .shwm-di, [data-shx="fa2"] .shwm-qtot, [data-shx="fa2"] .shwm-dtg-side { display: none; }
+    [data-shx="fa2"] .shwm-dh2 { margin-bottom: 0; }
+    .shwm-fa2-meta { grid-template-columns: repeat(2, auto); }
+    .shwm-mc { grid-template-columns: 1fr; height: auto; }
+    .shwm-mc-l { display: none; }
+    .shwm-mc-r { padding: 14px 16px; }
+    .shwm-scene .shwm-mail { width: 100%; box-sizing: border-box; }
+    .shwm-wf0-cli { order: -1; }
+    .shwm-wfb .b, .shwm-wfb .bd { display: none; }
+    .shwm-wrl .row { grid-template-columns: auto minmax(0,1fr); }
+    .shwm-wrl .wh { display: none; }
+    .shwm-wrl .st { padding-left: 4px; }
+    .shwm-wtop p, .shwm-wl { display: none; }
+    .shwm-wh .kp { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .shwm-set .ds, .shwm-set .in, .shwm-eqs .bar, .shwm-eqs .shwm-btn:not(.pri) { display: none; }
+    .shwm-eqf { flex-wrap: wrap; }
+    .shwm-eqt .r, .shwm-eqt .r.h { grid-template-columns: minmax(0,1fr) auto; }
+    .shwm-eqt .r > :nth-child(2), .shwm-eqt .r > :nth-child(4) { display: none; }
+    .shwm-sb .shwm-fd.sel { width: auto; }
+    .shwm-dk { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .shwm-dk > span:nth-child(3) { padding-left: 0; border-left: 0; }
+    .shwm-dk > span:nth-child(n+3) { border-top: 1px solid rgba(10,25,47,0.08); }
+    .shwm-dk b { font-size: 1.05rem; }
+    .shwm-lb .r { grid-template-columns: minmax(0,1fr) 34px minmax(0,1fr); }
+    .shwm-lb .r > :nth-child(2), .shwm-lb .r > :nth-child(n+5) { display: none; }
+    .shwm-lb .cl { grid-template-columns: 1fr; gap: 3px; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .shwm-crt, .shwm-lv .dot { animation: none; }
   }
@@ -3435,7 +4083,6 @@ const NAV = [
       hold(tl, 2.8, 4.4);
       return tl;
     },
-    // pf:start
     pg0(root) {
       const front = $(root, '[data-idc="front"]'), back = $(root, '[data-idc="back"]'), done = $(root, '[data-idc="done"]');
       const dotsBox = $(root, '[data-dots]'), dots = $$(dotsBox, 'i'), cta = $(root, '[data-cta]'), cta2 = $(root, '[data-cta2]');
@@ -3660,7 +4307,144 @@ const NAV = [
       return tl;
     },
 
-    // pf:end
+    fa0(root) {
+      const row = $(root, '[data-newrow]'), toast = $(root, '[data-toast]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => collapse(row), [], 0.4)
+        .call(() => expand(row), [], 1.5);
+      flash(tl, [row], 1.6);
+      tl.to(toast, { autoAlpha: 1, duration: 0.3 }, 1.6)
+        .to(toast, { autoAlpha: 0, duration: 0.3 }, 4.3);
+      hold(tl, 4.6, 1.2);
+      return tl;
+    },
+
+    fa1(root, loc) {
+      const pill = $(root, '[data-pill]'), nc = $(root, '[data-nc]'), due = $(root, '[data-due]'), top = $(root, '[data-saltop]');
+      const btn = $(root, '[data-ncbtn]'), ev = $(root, '[data-ncev]');
+      const paid = pill.textContent || '', was = pill.dataset.was || '';
+      const f = (n: number) => `MXN ${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => {
+        collapse([nc, ev]);
+        pill.classList.replace('paid', 'open'); pill.textContent = was;
+        due.textContent = f(38236.24); top.textContent = f(38236.24);
+      }, [], 0.4)
+        .call(() => btn.classList.add('is-hover'), [], 1.3)
+        .to(btn, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1 }, 1.8)
+        .call(() => { btn.classList.remove('is-hover'); expand(nc); }, [], 2.1);
+      count(tl, due, 38236.24, 0, 2.2, f, 0.9);
+      count(tl, top, 38236.24, 0, 2.2, f, 0.9);
+      flash(tl, [due.parentElement!], 3.1);
+      tl.call(() => { pill.classList.replace('open', 'paid'); pill.textContent = paid; expand(ev); }, [], 3.1);
+      hold(tl, 3.5, 2.5);
+      return tl;
+    },
+
+    fa2(root) {
+      const inv = $(root, '[data-inv]'), pill = $(root, '[data-pill]'), s5 = $(root, '[data-s5]'), ev = $(root, '[data-invev]');
+      const win = $(root, '[data-invwin]'), og = $(root, '[data-origin]');
+      const pT = pill.textContent || '', pW = pill.dataset.was || '', sT = s5.textContent || '', sW = s5.dataset.was || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => {
+        inv.classList.remove('is-gone'); collapse(ev);
+        pill.classList.replace('inv', 'approved'); pill.textContent = pW; s5.textContent = sW;
+      }, [], 0.4)
+        .to(win, { autoAlpha: 0, x: 24, duration: 0.3 }, 0.4)
+        .to(inv, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, 1.5)
+        .call(() => {
+          inv.classList.add('is-gone'); expand(ev);
+          pill.classList.replace('approved', 'inv'); pill.textContent = pT; s5.textContent = sT;
+        }, [], 1.9)
+        .to(win, { autoAlpha: 1, x: 0, duration: 0.65, ease: 'power3.out' }, 2.2)
+        .fromTo(og, { boxShadow: '0 0 0 3px rgba(10,25,47,0.18)' }, { boxShadow: '0 0 0 0px rgba(10,25,47,0)', duration: 1.4, clearProps: 'boxShadow' }, 3);
+      hold(tl, 3.6, 2.4);
+      return tl;
+    },
+
+    wf0(root) {
+      const cli = $(root, '[data-cli]'), nm = $(root, '[data-newmail]'), rd = $(root, '[data-read]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([cli, rd], { autoAlpha: 0, duration: 0.3 }, 0.4)
+        .call(() => collapse(nm), [], 0.4)
+        .fromTo(cli, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 1)
+        .call(() => expand(nm), [], 2.4)
+        .to(rd, { autoAlpha: 1, duration: 0.45 }, 2.9);
+      hold(tl, 3.4, 2.6);
+      return tl;
+    },
+
+    wf1(root) {
+      const sts = $$(root, '[data-st]'), task = $(root, '[data-task]'), mail = $(root, '[data-mail]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(sts, { autoAlpha: 0, duration: 0.25 }, 0.4)
+        .to(mail, { autoAlpha: 0, y: 14, duration: 0.3 }, 0.4)
+        .call(() => collapse(task), [], 0.4)
+        .fromTo(sts, { autoAlpha: 0, x: -6 }, { autoAlpha: 1, x: 0, duration: 0.3, stagger: 0.4, clearProps: 'transform' }, 1.1)
+        .call(() => expand(task), [], 1.55);
+      flash(tl, [task], 1.65);
+      tl.to(mail, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 1.95);
+      hold(tl, 2.5, 3.5);
+      return tl;
+    },
+
+    wf2(root) {
+      const sub = $(root, '[data-sub]'), sts = $$(root, '[data-tst]'), ks = $$(root, '[data-k]');
+      const done = sub.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { sub.textContent = sub.dataset.run || ''; }, [], 0.4)
+        .to(sts, { autoAlpha: 0, duration: 0.25 }, 0.4);
+      ks.forEach((k) => count(tl, k, 0, Number(k.dataset.k), 0.5, (n) => String(Math.round(n)), 1));
+      tl.call(() => { sub.textContent = done; }, [], 1.8)
+        .fromTo(sts, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.35, stagger: 0.18, ease: 'power2.out', clearProps: 'transform' }, 1.9);
+      hold(tl, 3, 3);
+      return tl;
+    },
+
+    eq0(root) {
+      const row = $(root, '[data-rev]'), x = $(root, '[data-x]'), ca = $(root, '[data-ca]'), ci = $(root, '[data-ci]');
+      const toast = $(root, '[data-toast]'), arow = $(root, '[data-arow]');
+      const caT = ca.textContent || '', ciT = ci.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { row.classList.remove('is-rev'); ca.textContent = ca.dataset.was || ''; ci.textContent = ci.dataset.was || ''; collapse(arow); }, [], 0.4)
+        .call(() => x.classList.add('is-hover'), [], 1.3)
+        .to(x, { scale: 0.88, duration: 0.1, yoyo: true, repeat: 1 }, 1.8)
+        .call(() => { x.classList.remove('is-hover'); row.classList.add('is-rev'); ca.textContent = caT; ci.textContent = ciT; }, [], 2.05);
+      flash(tl, [row], 2.1);
+      tl.to(toast, { autoAlpha: 1, duration: 0.25 }, 2.1)
+        .to(toast, { autoAlpha: 0, duration: 0.3 }, 4.3)
+        .call(() => expand(arow), [], 2.6);
+      flash(tl, [arow], 2.7);
+      hold(tl, 4.6, 1.2);
+      return tl;
+    },
+
+    eq1(root) {
+      const tog = $(root, '[data-tog]'), code = $(root, '[data-code]'), digs = $$(code, 'span'), err = $(root, '[data-err]'), btn = $(root, '[data-btn]');
+      const vals = digs.map((d) => d.textContent || ''), idle = btn.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { tog.classList.remove('on'); digs.forEach((d) => { d.textContent = ''; }); code.classList.remove('is-err'); }, [], 0.4)
+        .to(err, { autoAlpha: 0, duration: 0.2 }, 0.4)
+        .call(() => tog.classList.add('on'), [], 1);
+      vals.forEach((v, i) => tl.call(() => { digs[i].textContent = v; }, [], 1.7 + i * 0.16));
+      tl.call(() => { btn.textContent = btn.dataset.busy || idle; }, [], 2.8)
+        .call(() => { btn.textContent = idle; code.classList.add('is-err'); }, [], 3.5)
+        .to(err, { autoAlpha: 1, duration: 0.25 }, 3.5)
+        .fromTo(code, { x: 0 }, { x: 5, duration: 0.06, yoyo: true, repeat: 5, clearProps: 'transform' }, 3.5);
+      hold(tl, 3.9, 2.1);
+      return tl;
+    },
+
+    eq2(root, loc) {
+      const bars = $$(root, '[data-bar]'), kc = $(root, '[data-kc]');
+      const w = bars.map((b) => b.style.width);
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.set(bars, { width: '0%' }, 0.4);
+      bars.forEach((b, i) => tl.to(b, { width: w[i], duration: 0.8, ease: 'power2.out' }, 0.55 + i * 0.08));
+      count(tl, kc, 0, 2280760, 0.55, (n) => `MXN ${num(loc, Math.round(n))}`, 1.1);
+      hold(tl, 2, 4);
+      return tl;
+    },
   };
 
   const init = () => {

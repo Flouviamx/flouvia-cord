@@ -21,19 +21,19 @@ const description = isEn
     ? 'Connect Cord with the tools your team already uses: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n and Mercado Pago. Included in every plan, starting with Free.'
     : 'Conecta Cord con las herramientas de tu equipo: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n y Mercado Pago. Incluidas en todos los planes, desde Gratis.';
 
-const ORDER: IntegrationLandingCategory[] = ['crm', 'cobros', 'comunicacion', 'automatizacion'];
+const ORDER: IntegrationLandingCategory[] = ['crm', 'ecommerce', 'cobros', 'comunicacion', 'automatizacion'];
 const groups = ORDER.map((cat) => ({ cat, label: CATEGORY_LABEL[cat][lang], items: INTEGRATION_PAGES.filter((p) => p.categoria === cat) }))
     .filter((g) => g.items.length);
 
 const faqs = isEn ? [
     { q: 'Do integrations cost extra?', a: 'No. Every integration is included in every Cord plan, starting with Free. Some tools charge on their side: Meta bills WhatsApp conversations to your account, Mercado Pago charges its fee on each payment and Webhooks by Zapier is on Zapier\'s paid plans.' },
     { q: 'Who can connect an integration?', a: 'Anyone with the Settings permission in the workspace. Integrations belong to the organization, not to a person: if whoever connected HubSpot leaves the team, the connection keeps working. Every connect, configure, sync or disconnect action is recorded in the audit log.' },
-    { q: 'Does Cord ask for my password to other tools?', a: 'Never. HubSpot and Slack are authorized on their own pages; Zapier and Make are authorized on a Cord screen you can revoke; Teams, WhatsApp and n8n use URLs or keys you generate and can revoke. Access is stored encrypted.' },
+    { q: 'Does Cord ask for my password to other tools?', a: 'Never. HubSpot, Shopify, Slack and Mercado Pago are authorized on their own pages; Zapier and Make are authorized on a Cord screen you can revoke; Teams, WhatsApp and n8n use URLs or keys you generate and can revoke. Access is stored encrypted.' },
     { q: 'What if my tool is not on the list?', a: 'With Cord webhooks and the public REST API you can connect any system that receives or makes HTTP calls, and Zapier, Make and n8n reach thousands of other apps. If you want a direct integration with another app, write to contacto@cordhq.app.' },
 ] : [
     { q: '¿Las integraciones cuestan extra?', a: 'No. Todas las integraciones están incluidas en todos los planes de Cord, desde Gratis. Algunas herramientas cobran de su lado: Meta cobra las conversaciones de WhatsApp a tu cuenta, Mercado Pago cobra su comisión en cada pago y Webhooks by Zapier está en los planes de pago de Zapier.' },
     { q: '¿Quién puede conectar una integración?', a: 'Quien tenga el permiso de Ajustes en el espacio de trabajo. Las integraciones son de la organización, no de una persona: si quien conectó HubSpot deja el equipo, la conexión sigue funcionando. Cada acción de conectar, configurar, sincronizar o desconectar queda en la auditoría.' },
-    { q: '¿Cord me pide la contraseña de otras herramientas?', a: 'Nunca. HubSpot y Slack se autorizan en su propia página; Zapier y Make, en una pantalla de Cord que puedes revocar; Teams, WhatsApp y n8n usan URLs o llaves que tú generas y puedes revocar. Los accesos se guardan cifrados.' },
+    { q: '¿Cord me pide la contraseña de otras herramientas?', a: 'Nunca. HubSpot, Shopify, Slack y Mercado Pago se autorizan en su propia página; Zapier y Make, en una pantalla de Cord que puedes revocar; Teams, WhatsApp y n8n usan URLs o llaves que tú generas y puedes revocar. Los accesos se guardan cifrados.' },
     { q: '¿Y si mi herramienta no está en la lista?', a: 'Con los webhooks y la API REST pública de Cord puedes conectar cualquier sistema que reciba o haga llamadas HTTP, y Zapier, Make y n8n llegan a miles de apps más. Si quieres una integración directa con otra app, escríbenos a contacto@cordhq.app.' },
 ];
 
