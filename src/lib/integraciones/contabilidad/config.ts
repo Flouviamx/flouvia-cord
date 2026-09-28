@@ -12,7 +12,19 @@ export type ProveedorConta = 'quickbooks' | 'xero';
  * transacciones — nada de nóminas, nada de la configuración de la empresa.
  */
 export const QBO_SCOPES = 'com.intuit.quickbooks.accounting';
-export const XERO_SCOPES = 'offline_access openid profile email accounting.transactions accounting.contacts';
+/**
+ * Permisos GRANULARES de Xero. Las apps creadas desde el 2 de marzo de 2026 solo
+ * los aceptan: `accounting.transactions` —el permiso amplio de antes— quedó
+ * reemplazado por `accounting.invoices`, `.payments`, `.banktransactions` y
+ * `.manualjournals`, y pedirlo en una app nueva devuelve `invalid_scope` antes
+ * de mostrar siquiera la pantalla de autorización. Las apps anteriores pueden
+ * seguir con el amplio hasta septiembre de 2027.
+ *
+ * Cord pide el mínimo que necesita: crear la factura y su contacto. Nada de
+ * pagos, bancos ni asientos manuales, que entrarían con el permiso amplio sin
+ * que nadie los use.
+ */
+export const XERO_SCOPES = 'offline_access openid profile email accounting.invoices accounting.contacts';
 
 export const QBO_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 export const QBO_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
