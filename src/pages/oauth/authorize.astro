@@ -61,9 +61,16 @@ if (!fatal && returnTo && orgs.length) {
 const preferred = currentActiveOrgId();
 const selected = orgs.find((o) => o.id === preferred) ?? orgs[0] ?? null;
 const puede = scope === 'write' ? ['write_1', 'write_2'] : ['read'];
-const appLogo = client?.dominio
-    ? `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${client.dominio}&size=128`
-    : null;
+// Algunos productos tienen un favicon de 32 px, que en esta pantalla se ve
+// borroso: el de Gmail es la G genérica de Google a 32 px. Para esos se usa el
+// ícono oficial del CDN de producto del proveedor, y el favicon queda de respaldo.
+const LOGO_OFICIAL: Record<string, string> = {
+    gmail: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_512dp.png',
+};
+const appLogo = (client?.slug && LOGO_OFICIAL[client.slug])
+    || (client?.dominio
+        ? `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${client.dominio}&size=128`
+        : null);
 ---
 
 <Layout title={t(L, 'oauth.eyebrow')} noindex={true} analyticsDisabled={true}>
