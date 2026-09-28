@@ -25,6 +25,7 @@ const APPS = INTEGRATION_APPS.map((app) => ({
         excel: conexiones.excel ?? null,
         quickbooks: conexiones.quickbooks ?? null,
         xero: conexiones.xero ?? null,
+        gmail: conexiones.gmail ?? null,
     }),
 }));
 const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');

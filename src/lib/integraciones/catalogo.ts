@@ -13,7 +13,7 @@ export interface IntegrationApp {
 }
 
 export const ZAPIER_INVITE_URL: string | null = 'https://zapier.com/developer/public-invite/246344/a3e1e697b77f2b9e803233fd998ef461/';
-/** Ficha del complemento en Google Workspace Marketplace; sin ella la tarjeta dice Próximamente (regla 15). */
+/** Ficha del complemento en Google Workspace Marketplace. Sin ella, la tarjeta de Gmail solo ofrece el envío desde Gmail (regla 15). */
 export const GMAIL_INSTALL_URL: string | null = null;
 export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-invitation/83a99178a8e30c3b36b5165225176c3f';
 
@@ -61,7 +61,7 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     // quedan dentro del contenedor.
     { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'sheets.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: 'https://www.gstatic.com/images/branding/product/2x/sheets_64dp.png', tile: true, guia: '/soporte/conectar-google-sheets' },
     { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'excel.cloud.microsoft', categoria: 'productividad', disponible: EXCEL_LISTO, logo: favicon('excel.cloud.microsoft', 128), tile: true, guia: '/soporte/conectar-excel' },
-    { slug: 'gmail', nombre: 'Gmail', dominio: 'mail.google.com', categoria: 'productividad', disponible: GMAIL_INSTALL_URL !== null, logo: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png', tile: false, guia: null },
+    { slug: 'gmail', nombre: 'Gmail', dominio: 'mail.google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO || GMAIL_INSTALL_URL !== null, logo: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png', tile: false, guia: null },
     // El favicon de slack.com mide 35x34 px y la API de favicons no da más
     // grande: cualquier tamaño de pantalla lo amplía y se pixelea. Este es el
     // activo oficial de Slack a 400 px, guardado en el repo para no depender
@@ -88,6 +88,8 @@ export interface IntegrationCtx {
     /** Estado de cada contabilidad: 'activa' | 'error' | null. */
     quickbooks?: string | null;
     xero?: string | null;
+    /** Envío desde el Gmail del negocio: 'activa' | 'error' | null. */
+    gmail?: string | null;
     slack: boolean;
     teams: boolean;
     /** Microsoft ya no acepta la conexión de Teams y hay que volver a iniciar sesión. */
@@ -105,6 +107,7 @@ export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): Inte
     if (app.slug === 'excel') return ctx.excel === 'activa' ? 'on' : ctx.excel === 'error' ? 'warn' : 'off';
     if (app.slug === 'quickbooks') return ctx.quickbooks === 'activa' ? 'on' : ctx.quickbooks === 'error' ? 'warn' : 'off';
     if (app.slug === 'xero') return ctx.xero === 'activa' ? 'on' : ctx.xero === 'error' ? 'warn' : 'off';
+    if (app.slug === 'gmail') return ctx.gmail === 'error' ? 'warn' : ctx.gmail === 'activa' || ctx.oauth?.includes('gmail') ? 'on' : 'off';
     if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teamsError ? 'warn' : ctx.teams ? 'on' : 'off';

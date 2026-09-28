@@ -7,6 +7,7 @@ import SlackCard from './SlackCard.astro';
 import TeamsCard from './TeamsCard.astro';
 import ShopifyCard from './ShopifyCard.astro';
 import HojaCard from './HojaCard.astro';
+import GmailCard from './GmailCard.astro';
 import ContaCard from './ContaCard.astro';
 import WhatsAppCard from './WhatsAppCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
@@ -27,12 +28,13 @@ interface Props {
     shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
     hoja?: { conexion: any; disponible: boolean; flash: string | null };
     conta?: { conexion: any; disponible: boolean; flash: string | null };
+    gmail?: { conexion: { cuenta: string; estado: string } | null; disponible: boolean; flash: string | null };
     teamsWebhook?: string;
     teams?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
     whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
 }
 
-const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, shopify, hoja, conta, whatsapp } = Astro.props;
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, shopify, hoja, conta, gmail, whatsapp } = Astro.props;
 
 const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
@@ -203,23 +205,25 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
 
     {app.slug === 'gmail' && (
         <Fragment>
+            {canAjustes && gmail && <GmailCard lang={L} conexion={gmail.conexion} disponible={gmail.disponible} flash={gmail.flash} />}
             <div class="s-block">
                 <h3>{t(L, 'set.integ.gmail.conectar_titulo')}</h3>
                 <div class="s-body">
-                    <ol class="ig-steps">
-                        <li>{t(L, 'set.integ.gmail.paso_1')}</li>
-                        <li>{t(L, 'set.integ.gmail.paso_2')}</li>
-                        <li>{t(L, 'set.integ.gmail.paso_3')}</li>
-                    </ol>
-                    <div class="ig-actions">
-                        {GMAIL_INSTALL_URL && <a class="ig-btn ig-btn-solid" href={GMAIL_INSTALL_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.gmail.abrir')}</a>}
-                        <a class="ig-link" href="?wb=api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
-                    </div>
-                </div>
-            </div>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.gmail.que_titulo')}</h3>
-                <div class="s-body">
+                    {GMAIL_INSTALL_URL ? (
+                        <Fragment>
+                            <ol class="ig-steps">
+                                <li>{t(L, 'set.integ.gmail.paso_1')}</li>
+                                <li>{t(L, 'set.integ.gmail.paso_2')}</li>
+                                <li>{t(L, 'set.integ.gmail.paso_3')}</li>
+                            </ol>
+                            <div class="ig-actions">
+                                <a class="ig-btn ig-btn-solid" href={GMAIL_INSTALL_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.gmail.abrir')}</a>
+                                <a class="ig-link" href="?wb=api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
+                            </div>
+                        </Fragment>
+                    ) : (
+                        <p class="ig-note">{t(L, 'set.integ.gmail.pronto')}</p>
+                    )}
                     <ul class="ig-steps ig-list">
                         <li>{t(L, 'set.integ.gmail.que_leer')}</li>
                         <li>{t(L, 'set.integ.gmail.que_redactar')}</li>

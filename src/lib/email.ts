@@ -11,6 +11,7 @@ import { planIncludes } from './entitlements';
 import { currencyDecimals, normalizeCurrency } from './currency';
 import { buildInvoicePdfAttachment } from './fiscal/invoice-attachment';
 import { publicDocumentUrl } from './public-links';
+import { enviarPorGmail, OPERACIONES_GMAIL } from './integraciones/gmail/envio';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@cordhq.app>';
@@ -61,7 +62,20 @@ export interface EmailAttachment {
     content: Uint8Array;
 }
 
+const tipoAdjunto = (nombre: string) => /\.pdf$/i.test(nombre) ? 'application/pdf' : /\.xml$/i.test(nombre) ? 'application/xml' : 'application/octet-stream';
+
 export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null; orgId?: string | null; operation?: string; attachments?: EmailAttachment[] }): Promise<SendResult> {
+    // Si el negocio conectó su Gmail, lo que va a SUS clientes sale desde ahí.
+    if (opts.orgId && opts.to && OPERACIONES_GMAIL.has(opts.operation || '')) {
+        const g = await enviarPorGmail(opts.orgId, {
+            to: opts.to, subject: opts.subject, html: opts.html, fromName: opts.fromName, replyTo: opts.replyTo,
+            attachments: opts.attachments?.map((a) => ({ ...a, contentType: tipoAdjunto(a.filename) })),
+        }).catch(() => ({ ok: false as const }));
+        if (g?.ok) {
+            await trackExternalUsage({ orgId: opts.orgId, provider: 'gmail', category: 'email', operation: opts.operation || 'transactional_email' });
+            return { sent: true, to: opts.to, messageId: g.id ?? undefined };
+        }
+    }
     if (!RESEND_KEY) {
         await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'skipped' });
         return { sent: false, skipped: 'sin RESEND_API_KEY' };

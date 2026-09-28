@@ -5155,7 +5155,7 @@ end $$;
 -- un tipo nuevo se EDITA lo de abajo, no se añade otro bloque.
 alter table integracion_conexiones drop constraint if exists integracion_conexiones_proveedor_check;
 alter table integracion_conexiones add constraint integracion_conexiones_proveedor_check
-  check (proveedor in ('hubspot', 'shopify', 'google_sheets', 'excel', 'quickbooks', 'xero'));
+  check (proveedor in ('hubspot', 'shopify', 'google_sheets', 'excel', 'quickbooks', 'xero', 'gmail'));
 
 -- La cuenta identifica al dueño del lado del proveedor, y cada uno la nombra a
 -- su manera: id numérico (HubSpot, el realmId de QuickBooks), dominio de la
@@ -5172,7 +5172,7 @@ alter table integracion_conexiones add constraint integracion_conexiones_cuenta_
 alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
 alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
   check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams', 'shopify',
-                       'google_sheets', 'excel', 'quickbooks', 'xero'));
+                       'google_sheets', 'excel', 'quickbooks', 'xero', 'gmail'));
 
 alter table integracion_vinculos drop constraint if exists integracion_vinculos_objeto_check;
 alter table integracion_vinculos add constraint integracion_vinculos_objeto_check

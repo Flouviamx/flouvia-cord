@@ -227,6 +227,34 @@ Contrato ejecutable en `lineasDe()` y `TIPOS` de
 `src/lib/integraciones/contabilidad/service.ts`, verificado por
 `test/contabilidad.test.ts`.
 
+## Enviar desde el Gmail del negocio
+
+El negocio conecta su Gmail en Ajustes › Integraciones › Gmail y los correos a
+SUS clientes (`OPERACIONES_GMAIL`: cotización enviada, factura, recordatorio de
+pago y el correo al cliente de un workflow) salen desde su dirección (28 sep
+2026). Los avisos internos siguen saliendo de Cord.
+
+- **Solo `gmail.send`**, más `openid email` para saber la dirección. Es un
+  permiso sensible, no restringido: pide la verificación de la pantalla de
+  consentimiento de Google, no la auditoría anual. Usa el MISMO cliente OAuth
+  de Google que Sheets (`GOOGLE_SHEETS_CLIENT_*`): un proyecto, una sola
+  verificación. Su regreso es `/api/integraciones/gmail/callback`, que hay que
+  registrar en ese cliente.
+- **El callback exige el permiso de enviar.** Google deja desmarcar permisos
+  uno por uno, y una conexión "activa" sin `gmail.send` fallaría en el primer
+  correo.
+- **Un envío fallido no pierde el correo.** `sendEmail` intenta Gmail y, si
+  falla, sale por Resend como siempre; un 401/403 deja la conexión en `error`
+  y la tarjeta pide reconectar. Es el orden correcto para correo de cobro: el
+  cliente recibe la factura aunque la conexión esté rota.
+- **El MIME se arma en Cord** (`src/lib/integraciones/gmail/mime.ts`) y se sube
+  por el endpoint de carga (`uploadType=media`, hasta 35 MB) para que quepan
+  los PDF. Todo dato del negocio pasa por `linea()`: un salto de línea en el
+  nombre o el asunto inyectaría encabezados. Lo verifica
+  `test/gmail-envio.test.ts`.
+- **Sin gate de plan**: no le cuesta nada a Cord (no pasa por Resend) y es la
+  forma en que el cliente reconoce al remitente.
+
 ## Cord para Gmail (complemento)
 
 Complemento de Google Workspace que abre una cotización desde el correo del
