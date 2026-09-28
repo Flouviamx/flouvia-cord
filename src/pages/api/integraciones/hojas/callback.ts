@@ -73,7 +73,13 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
         }));
         return redirect(`${VUELTA}?hoja=conectada`);
     } catch (err) {
-        log.error('no se pudo conectar la hoja', { route: 'hojas-callback', orgId, proveedor, err });
+        // `detalle` va aparte porque el serializador del log solo conserva
+        // message, name y stack: el código del proveedor y su id de traza se
+        // perdían justo cuando más falta hacen.
+        log.error('no se pudo conectar la hoja', {
+            route: 'hojas-callback', orgId, proveedor, err,
+            detalle: (err as { detalle?: string })?.detalle,
+        });
         return redirect(`${VUELTA}?hoja=error`);
     }
 };

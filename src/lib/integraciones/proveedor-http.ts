@@ -12,6 +12,13 @@ export class ProveedorError extends Error {
 
 const TIMEOUT_MS = 15_000;
 
+/**
+ * Encabezados con los que cada proveedor identifica una llamada concreta de su
+ * lado. Se guardan en el log del error: es lo que su soporte pide para
+ * rastrearla, y sin eso una investigación arranca dando la hora aproximada.
+ */
+const TRAZA = ['intuit_tid', 'xero-correlation-id', 'request-id', 'x-request-id', 'client-request-id'];
+
 export async function apiJson(url: string, init: RequestInit & { token?: string } = {}): Promise<any> {
     const { token, headers, ...resto } = init;
     const ctrl = new AbortController();
@@ -40,6 +47,14 @@ export async function apiJson(url: string, init: RequestInit & { token?: string 
         // acaba adivinando la causa en vez de leerla. Nunca llega al usuario,
         // que ve el mensaje traducido del motivo (regla 14).
         const cuerpo = await res.text().catch(() => '');
+        // El identificador de traza del proveedor. Es LO PRIMERO que pide su
+        // soporte para rastrear una llamada concreta en sus servidores, y sin
+        // él una investigación empieza por "mándanos la hora aproximada".
+        // Intuit lo exige capturar para pasar su revisión de producción.
+        const traza = TRAZA
+            .map((h) => { const v = res.headers.get(h); return v ? `${h}=${v}` : ''; })
+            .filter(Boolean)
+            .join(' ');
         let detalle = `${res.status}`;
         try {
             const j = JSON.parse(cuerpo);
@@ -50,6 +65,7 @@ export async function apiJson(url: string, init: RequestInit & { token?: string 
         } catch {
             if (cuerpo) detalle = `${res.status} ${cuerpo.slice(0, 200)}`;
         }
+        if (traza) detalle = `${detalle} [${traza}]`.slice(0, 400);
         if (res.status === 401) throw new ProveedorError('auth', detalle);
         if (res.status === 403) throw new ProveedorError('permiso', detalle);
         if (res.status === 429 || res.status >= 500) throw new ProveedorError('limite', detalle);

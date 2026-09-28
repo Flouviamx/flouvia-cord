@@ -64,7 +64,12 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
         });
         return redirect(`${VUELTA}?conta=conectada`);
     } catch (err) {
-        log.error('no se pudo conectar la contabilidad', { route: 'conta-callback', orgId, proveedor, err });
+        // `detalle` va aparte: el serializador del log solo conserva message,
+        // name y stack, y ahí se perdía el id de traza del proveedor.
+        log.error('no se pudo conectar la contabilidad', {
+            route: 'conta-callback', orgId, proveedor, err,
+            detalle: (err as { detalle?: string })?.detalle,
+        });
         return redirect(`${VUELTA}?conta=error`);
     }
 };

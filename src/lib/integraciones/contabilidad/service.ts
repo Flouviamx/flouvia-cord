@@ -327,7 +327,12 @@ export async function onDomainEventConta(orgId: string, type: string, objectId: 
         } catch (err) {
             const motivo = err instanceof ProveedorError ? err.motivo : 'proveedor';
             if (motivo === 'auth' || motivo === 'permiso') await marcarError(orgId, proveedor, motivo).catch(() => null);
-            log.error('no se pudo contabilizar la factura', { route: 'contabilidad', orgId, proveedor, motivo });
+            log.error('no se pudo contabilizar la factura', {
+                route: 'contabilidad', orgId, proveedor, motivo,
+                // El detalle trae el código del proveedor y su id de traza: es
+                // con lo que su soporte encuentra la llamada exacta.
+                detalle: err instanceof ProveedorError ? err.detalle : undefined,
+            });
         }
     }
 }

@@ -31,7 +31,10 @@ export const POST: APIRoute = async ({ request }) => {
         return json(await contabilizarPendientes(orgId, body.proveedor));
     } catch (err) {
         const motivo = err instanceof ProveedorError ? err.motivo : 'proveedor';
-        log.error('no se pudieron enviar las facturas', { route: 'conta-sync', orgId, motivo });
+        log.error('no se pudieron enviar las facturas', {
+            route: 'conta-sync', orgId, motivo,
+            detalle: err instanceof ProveedorError ? err.detalle : undefined,
+        });
         const clave = motivo === 'auth' || motivo === 'permiso' ? 'conta.err.reconectar' : 'conta.err.envio';
         return json({ error: t(L, clave as any) }, motivo === 'auth' ? 401 : 502);
     }

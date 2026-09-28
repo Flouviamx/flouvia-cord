@@ -31,7 +31,10 @@ export const POST: APIRoute = async ({ request }) => {
         return json(r);
     } catch (err) {
         const motivo = err instanceof HojaError ? err.motivo : 'proveedor';
-        log.error('no se pudo actualizar la hoja', { route: 'hojas-sync', orgId, motivo });
+        log.error('no se pudo actualizar la hoja', {
+            route: 'hojas-sync', orgId, motivo,
+            detalle: err instanceof HojaError ? err.detalle : undefined,
+        });
         // El texto del proveedor no sale nunca (regla 14): se traduce a un estado.
         const clave = motivo === 'auth' || motivo === 'permiso' ? 'hojas.err.reconectar' : 'hojas.err.sync';
         return json({ error: t(L, clave as any) }, motivo === 'auth' ? 401 : 502);

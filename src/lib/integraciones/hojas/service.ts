@@ -257,7 +257,10 @@ async function difundir(orgId: string, clave: Pestana, folio: string, celdas: Ce
             // la de Excel: cada una falla por su cuenta.
             const motivo = err instanceof HojaError ? err.motivo : 'proveedor';
             if (motivo === 'auth' || motivo === 'permiso') await marcarError(orgId, proveedor, motivo).catch(() => null);
-            log.error('no se pudo escribir en la hoja', { route: 'hojas', orgId, proveedor, motivo });
+            log.error('no se pudo escribir en la hoja', {
+                route: 'hojas', orgId, proveedor, motivo,
+                detalle: err instanceof HojaError ? err.detalle : undefined,
+            });
         }
     }
     return escritas;
