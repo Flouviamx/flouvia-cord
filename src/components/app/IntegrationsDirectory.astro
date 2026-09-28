@@ -7,6 +7,8 @@ interface Props {
     lang: AppLocale;
     hubspot: string | null;
     shopify: string | null;
+    /** Estado por proveedor de `integracion_conexiones`, tal como lo devuelve la base. */
+    conexiones?: Record<string, string>;
     slack: boolean;
     teams: boolean;
     teamsError?: boolean;
@@ -14,8 +16,17 @@ interface Props {
     oauth?: readonly string[];
 }
 
-const { lang: L, hubspot, shopify, slack, teams, teamsError = false, whatsapp, oauth = [] } = Astro.props;
-const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, shopify, slack, teams, teamsError, whatsapp, oauth }) }));
+const { lang: L, hubspot, shopify, conexiones = {}, slack, teams, teamsError = false, whatsapp, oauth = [] } = Astro.props;
+const APPS = INTEGRATION_APPS.map((app) => ({
+    app,
+    state: integrationState(app, {
+        hubspot, shopify, slack, teams, teamsError, whatsapp, oauth,
+        googleSheets: conexiones.google_sheets ?? null,
+        excel: conexiones.excel ?? null,
+        quickbooks: conexiones.quickbooks ?? null,
+        xero: conexiones.xero ?? null,
+    }),
+}));
 const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
 const RESTO = APPS.filter((a) => !CONECTADAS.includes(a));
 ---

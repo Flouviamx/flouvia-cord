@@ -46,6 +46,20 @@ function toConexion(r: Record<string, unknown>): Conexion {
     };
 }
 
+/**
+ * El estado de cada proveedor con conexión viva, en UNA consulta. El directorio
+ * pinta una tarjeta por app y necesita saberlo de todas: preguntar app por app
+ * multiplica las consultas y, peor, se olvida de las nuevas — que es justo cómo
+ * Google Sheets y Excel se quedaron dibujados como "sin conectar" estando
+ * conectados.
+ */
+export async function estadosPorProveedor(orgId: string): Promise<Record<string, string>> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select proveedor, estado from integracion_conexiones
+         where org_id = ${orgId} and estado <> 'desconectada'`);
+    return Object.fromEntries(rows.map((r: Record<string, unknown>) => [String(r.proveedor), String(r.estado)]));
+}
+
 export async function createOAuthState(orgId: string, userId: string, proveedor: Proveedor): Promise<string> {
     const state = randomBytes(32).toString('base64url');
     await withOrgTx(orgId,

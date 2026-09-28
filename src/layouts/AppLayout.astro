@@ -8,7 +8,7 @@ import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
 import TopbarApps from '../components/app/TopbarApps.astro';
-import { getConexion } from '../lib/integraciones/conexiones';
+import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — paleta oceánica del Centro de Ayuda
@@ -65,10 +65,20 @@ const canDev = memberCan(ME, 'ajustes');
 // La conexión de HubSpot se lee directa (una fila) en vez de `hubspotStatus`,
 // que además cuenta trabajos de sincronización — eso es de su pantalla, no de
 // un menú que se pinta en CADA página de la app.
+// Todas las conexiones en UNA consulta, no una por app: este menú se pinta en
+// cada página, y preguntar app por app además se olvidaba de las nuevas — así
+// se quedaron Google Sheets y Excel dibujados como "sin conectar" estándolo.
+const estadosApps: Record<string, string> = canDev
+    ? await estadosPorProveedor(ORG.id).catch(() => ({}))
+    : {};
 const appsCtx = canDev
     ? {
-        hubspot: (await getConexion(ORG.id, 'hubspot').catch(() => null))?.estado ?? null,
-        shopify: (await getConexion(ORG.id, 'shopify').catch(() => null))?.estado ?? null,
+        hubspot: estadosApps.hubspot ?? null,
+        shopify: estadosApps.shopify ?? null,
+        googleSheets: estadosApps.google_sheets ?? null,
+        excel: estadosApps.excel ?? null,
+        quickbooks: estadosApps.quickbooks ?? null,
+        xero: estadosApps.xero ?? null,
         slack: Boolean(ORG.slackWebhook),
         teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal),
         teamsError: ORG.teamsGraph === 'error',
