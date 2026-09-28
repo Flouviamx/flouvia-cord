@@ -7,31 +7,132 @@
  *    Google para complementos (`gmail.addons.current.message.readonly`). No lee
  *    tu bandeja: ese permiso es "restringido" y obliga a una auditoría de
  *    seguridad anual de un tercero.
- *  - La llave de Cord se guarda en las propiedades del USUARIO, no del script:
- *    cada persona conecta su propia cuenta y nadie ve la llave de nadie.
+ *  - Se conecta con el OAuth de Cord, el mismo que usan Zapier y Make: la
+ *    persona pulsa "Conectar con Cord", autoriza en la pantalla de Cord y ya.
+ *    Nadie copia ni pega llaves.
+ *  - Los tokens viven en las propiedades del USUARIO: cada persona conecta su
+ *    propio espacio de Cord y nadie ve los tokens de nadie. Las credenciales
+ *    del cliente OAuth viven en las propiedades del SCRIPT, que solo ve quien
+ *    lo publica: nunca en este archivo ni en git.
  *  - No manda el cuerpo del correo a Cord. Del mensaje salen el remitente y el
  *    asunto, y nada más; el contenido de un correo es del negocio, no nuestro.
  */
 
 var CORD = 'https://cordhq.app';
-var PROP_LLAVE = 'cord_api_key';
+var PROP_TOKENS = 'cord_oauth';
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
+// ── OAuth con Cord ────────────────────────────────────────────────────────────
 
-function llaveGuardada() {
-    return PropertiesService.getUserProperties().getProperty(PROP_LLAVE) || '';
+function credencialesCliente() {
+    var p = PropertiesService.getScriptProperties();
+    return { id: p.getProperty('CORD_CLIENT_ID') || '', secret: p.getProperty('CORD_CLIENT_SECRET') || '' };
+}
+
+function urlDeRegreso() {
+    return 'https://script.google.com/macros/d/' + ScriptApp.getScriptId() + '/usercallback';
 }
 
 /**
+ * El `state` lo firma Apps Script: identifica a qué función volver y caduca solo.
+ * Así una vuelta que no inició este complemento no llega a canjear nada.
+ */
+function urlAutorizacion() {
+    var state = ScriptApp.newStateToken().withMethod('alVolverDeCord').withTimeout(600).createToken();
+    return CORD + '/oauth/authorize'
+        + '?response_type=code'
+        + '&client_id=' + encodeURIComponent(credencialesCliente().id)
+        + '&redirect_uri=' + encodeURIComponent(urlDeRegreso())
+        + '&scope=write'
+        + '&state=' + encodeURIComponent(state);
+}
+
+function leerTokens() {
+    var crudo = PropertiesService.getUserProperties().getProperty(PROP_TOKENS);
+    if (!crudo) return null;
+    try { return JSON.parse(crudo); } catch (err) { return null; }
+}
+
+function guardarTokens(t) {
+    PropertiesService.getUserProperties().setProperty(PROP_TOKENS, JSON.stringify({
+        access: t.access_token,
+        refresh: t.refresh_token,
+        vence: Date.now() + (Number(t.expires_in) || 3600) * 1000,
+    }));
+}
+
+function borrarTokens() {
+    PropertiesService.getUserProperties().deleteProperty(PROP_TOKENS);
+}
+
+/** Pide tokens a Cord. Devuelve el objeto de tokens o null; nunca lanza. */
+function pedirTokens(params) {
+    var c = credencialesCliente();
+    params.client_id = c.id;
+    params.client_secret = c.secret;
+    try {
+        var res = UrlFetchApp.fetch(CORD + '/api/oauth/token', {
+            method: 'post', payload: params, muteHttpExceptions: true,
+        });
+        if (res.getResponseCode() !== 200) {
+            console.error('Cord rechazó el token', res.getResponseCode(), res.getContentText().slice(0, 300));
+            return null;
+        }
+        return JSON.parse(res.getContentText());
+    } catch (err) {
+        console.error('No se pudo pedir el token a Cord', err);
+        return null;
+    }
+}
+
+/** Adonde vuelve la ventana de autorización de Cord. */
+function alVolverDeCord(request) {
+    var p = request.parameter || {};
+    if (p.error || !p.code) {
+        return HtmlService.createHtmlOutput('<p style="font-family:sans-serif">No se conectó. Cierra esta ventana e inténtalo otra vez.</p>');
+    }
+    var tokens = pedirTokens({ grant_type: 'authorization_code', code: p.code, redirect_uri: urlDeRegreso() });
+    if (!tokens || !tokens.access_token) {
+        return HtmlService.createHtmlOutput('<p style="font-family:sans-serif">Cord no aceptó la conexión. Cierra esta ventana e inténtalo otra vez.</p>');
+    }
+    guardarTokens(tokens);
+    return HtmlService.createHtmlOutput('<p style="font-family:sans-serif">Listo, Cord quedó conectado. Ya puedes cerrar esta ventana.</p><script>setTimeout(function(){window.close()},800)</script>');
+}
+
+/**
+ * Un token vigente, renovándolo si está por vencer. Cord rota el refresh token
+ * en cada renovación y detecta el reuso, así que se guarda el nuevo SIEMPRE.
+ */
+function tokenVigente() {
+    var t = leerTokens();
+    if (!t) return '';
+    if (t.vence > Date.now() + 60000) return t.access;
+    var frescos = pedirTokens({ grant_type: 'refresh_token', refresh_token: t.refresh });
+    if (!frescos || !frescos.access_token) {
+        borrarTokens();
+        return '';
+    }
+    guardarTokens(frescos);
+    return frescos.access_token;
+}
+
+function conectado() {
+    return Boolean(leerTokens());
+}
+
+// ── Utilidades ────────────────────────────────────────────────────────────────
+
+/**
  * Llama a la API de Cord. Devuelve { ok, status, data }, nunca lanza: una tarjeta
- * de Gmail que revienta deja al vendedor sin nada que leer.
+ * de Gmail que revienta deja al vendedor sin nada que leer. El error sí queda en
+ * el registro de ejecuciones del script: tragárselo sin rastro es lo que dejó
+ * un "no se pudo hablar con Cord" imposible de diagnosticar.
  */
 function cordFetch(ruta, opciones) {
-    var llave = llaveGuardada();
-    if (!llave) return { ok: false, status: 401, data: null };
+    var token = tokenVigente();
+    if (!token) return { ok: false, status: 401, data: null };
     var config = {
         method: (opciones && opciones.method) || 'get',
-        headers: { Authorization: 'Bearer ' + llave },
+        headers: { Authorization: 'Bearer ' + token },
         contentType: 'application/json',
         muteHttpExceptions: true,
     };
@@ -39,9 +140,12 @@ function cordFetch(ruta, opciones) {
     try {
         var res = UrlFetchApp.fetch(CORD + ruta, config);
         var texto = res.getContentText();
-        var cuerpo = texto ? JSON.parse(texto) : null;
+        var cuerpo = null;
+        try { cuerpo = texto ? JSON.parse(texto) : null; } catch (e) { cuerpo = null; }
+        if (res.getResponseCode() >= 300) console.error('Cord respondió', res.getResponseCode(), ruta, texto.slice(0, 300));
         return { ok: res.getResponseCode() < 300, status: res.getResponseCode(), data: cuerpo };
     } catch (err) {
+        console.error('No se pudo llamar a Cord', ruta, err);
         return { ok: false, status: 0, data: null };
     }
 }
@@ -75,17 +179,15 @@ function notificar(mensaje) {
 function tarjetaConectar(mensajeError) {
     var seccion = CardService.newCardSection()
         .addWidget(textoSimple(
-            'Pega una llave de API de Cord con permiso de escritura. La creas en '
-            + 'Ajustes › API dentro de Cord.',
+            'Conecta tu espacio de Cord para crear cotizaciones desde tus correos. '
+            + 'Se autoriza en la pantalla de Cord; no tienes que copiar nada.',
         ))
-        .addWidget(CardService.newTextInput()
-            .setFieldName('llave')
-            .setTitle('Llave de API')
-            .setHint('Empieza con sk_'))
         .addWidget(CardService.newTextButton()
-            .setText('Conectar')
+            .setText('Conectar con Cord')
             .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-            .setOnClickAction(CardService.newAction().setFunctionName('guardarLlave')));
+            // La acción de autorización abre la pantalla de Cord en una ventana y,
+            // al cerrarla, Gmail vuelve a pintar el complemento ya conectado.
+            .setAuthorizationAction(CardService.newAuthorizationAction().setAuthorizationUrl(urlAutorizacion())));
 
     if (mensajeError) seccion.addWidget(textoSimple('<font color="#b3261e">' + mensajeError + '</font>'));
 
@@ -95,34 +197,22 @@ function tarjetaConectar(mensajeError) {
         .build();
 }
 
-function guardarLlave(e) {
-    var llave = ((e.formInput && e.formInput.llave) || '').trim();
-    if (!llave) return notificar('Escribe la llave primero.');
-
-    PropertiesService.getUserProperties().setProperty(PROP_LLAVE, llave);
-    // Se prueba contra Cord ANTES de dar por buena la conexión: una llave mal
-    // pegada que "se guarda bien" falla después, en medio de una venta.
-    var prueba = cordFetch('/api/v1/me');
-    if (!prueba.ok) {
-        PropertiesService.getUserProperties().deleteProperty(PROP_LLAVE);
-        return CardService.newActionResponseBuilder()
-            .setNavigation(CardService.newNavigation().updateCard(
-                tarjetaConectar(prueba.status === 401
-                    ? 'Esa llave no la reconoce Cord. Revisa que sea de escritura y que no esté revocada.'
-                    : 'No se pudo hablar con Cord. Inténtalo otra vez en un momento.'),
-            ))
-            .setNotification(CardService.newNotification().setText('No se conectó.'))
-            .build();
-    }
-
-    return CardService.newActionResponseBuilder()
-        .setNavigation(CardService.newNavigation().updateCard(tarjetaInicio()))
-        .setNotification(CardService.newNotification().setText('Cuenta conectada.'))
-        .build();
-}
-
 function desconectar() {
-    PropertiesService.getUserProperties().deleteProperty(PROP_LLAVE);
+    var t = leerTokens();
+    // Se revoca del lado de Cord, no solo se olvida aquí: un token que solo se
+    // borra localmente sigue vivo en Cord hasta que caduque.
+    if (t && t.refresh) {
+        var c = credencialesCliente();
+        try {
+            UrlFetchApp.fetch(CORD + '/api/oauth/revoke', {
+                method: 'post', muteHttpExceptions: true,
+                payload: { token: t.refresh, client_id: c.id, client_secret: c.secret },
+            });
+        } catch (err) {
+            console.error('No se pudo revocar en Cord', err);
+        }
+    }
+    borrarTokens();
     return CardService.newActionResponseBuilder()
         .setNavigation(CardService.newNavigation().updateCard(tarjetaConectar()))
         .setNotification(CardService.newNotification().setText('Cuenta desconectada.'))
@@ -132,7 +222,7 @@ function desconectar() {
 // ── Inicio ────────────────────────────────────────────────────────────────────
 
 function onHomepage() {
-    return llaveGuardada() ? tarjetaInicio() : tarjetaConectar();
+    return conectado() ? tarjetaInicio() : tarjetaConectar();
 }
 
 function tarjetaInicio() {
@@ -156,7 +246,7 @@ function tarjetaInicio() {
 // ── Tarjeta sobre un correo ───────────────────────────────────────────────────
 
 function onGmailMessage(e) {
-    if (!llaveGuardada()) return tarjetaConectar();
+    if (!conectado()) return tarjetaConectar();
 
     GmailApp.setCurrentMessageAccessToken(e.gmail.accessToken);
     var mensaje = GmailApp.getMessageById(e.gmail.messageId);
@@ -173,7 +263,10 @@ function onGmailMessage(e) {
     }
 
     var busqueda = cordFetch('/api/v1/clientes?email=' + encodeURIComponent(quien.email) + '&limit=1');
-    if (busqueda.status === 401) return tarjetaConectar('Tu llave dejó de funcionar. Pega una nueva.');
+    if (busqueda.status === 401) {
+        borrarTokens();
+        return tarjetaConectar('La conexión con Cord venció o se revocó. Vuelve a conectar.');
+    }
 
     var cliente = busqueda.ok && busqueda.data && busqueda.data.data && busqueda.data.data[0]
         ? busqueda.data.data[0]

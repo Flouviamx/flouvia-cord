@@ -20,15 +20,21 @@ precios y los impuestos.
   complemento está diseñado para no necesitarla nunca.
 - **No manda el cuerpo del correo a Cord.** Del mensaje salen el remitente y el
   asunto. El contenido de un correo es del negocio.
-- **La llave vive en las propiedades del USUARIO**
-  (`PropertiesService.getUserProperties()`), no del script: cada persona conecta
-  su cuenta y nadie ve la llave de nadie.
-- **La llave se prueba antes de darla por buena.** Al guardarla se llama a
-  `/api/v1/me`; si Cord no la reconoce, no se guarda. Una llave mal pegada que
-  "se guarda bien" falla después, a media venta.
-- **Autentica con llave de API, no con OAuth.** Es el mismo camino del nodo de
-  n8n. Cord ya es proveedor OAuth (Zapier, Make) y migrar a OAuth es una mejora
-  posterior; con llave se puede probar hoy sin registrar un cliente más.
+- **Se conecta con el OAuth de Cord**, el mismo de Zapier y Make: botón
+  "Conectar con Cord", autorización en la pantalla de Cord, y listo. Nadie copia
+  llaves. El cliente OAuth es `gmail` (registrado con `scripts/oauth-client.mjs`)
+  y su URL de regreso es la `usercallback` de este script.
+- **Los tokens viven en las propiedades del USUARIO**: cada persona conecta su
+  espacio y nadie ve los de nadie. El refresh token se guarda nuevo en cada
+  renovación porque Cord lo rota y detecta el reuso.
+- **Las credenciales del cliente viven en las propiedades del SCRIPT**
+  (`CORD_CLIENT_ID`, `CORD_CLIENT_SECRET`), que solo ve quien publica: nunca en
+  el código ni en git. El secreto está en `integrations/gmail/.env`, ignorado.
+- **Desconectar revoca en Cord**, no solo borra localmente: un token olvidado
+  aquí seguiría vivo allá hasta caducar.
+- **Los errores quedan en el registro de ejecuciones del script.** La primera
+  versión se tragaba las excepciones y mostraba "no se pudo hablar con Cord" sin
+  rastro, que es imposible de diagnosticar.
 
 ## Publicarlo
 
@@ -68,7 +74,16 @@ Después, en el proyecto de Google Cloud asociado:
 `.clasp.json` lleva el id del script y está ignorado por git, como el `.env` de
 las demás integraciones.
 
+## Configurarlo (una vez)
+
+En Apps Script: **Configuración del proyecto › Propiedades de la secuencia de
+comandos**, agrega `CORD_CLIENT_ID` y `CORD_CLIENT_SECRET` con los valores de
+`integrations/gmail/.env`.
+
+Si el ID del script cambia (un `clasp create` nuevo), la URL de regreso cambia
+con él y hay que actualizar el cliente:
+`node scripts/oauth-client.mjs --slug gmail --redirect https://script.google.com/macros/d/<SCRIPT_ID>/usercallback ...`
+
 ## Probarlo
 
-`clasp push` y luego, en Gmail, **Extensiones › Cord**. Pega una llave de API con
-permiso de escritura (Ajustes › API en Cord) y abre cualquier correo.
+`clasp push`, recarga Gmail, abre un correo y pulsa **Conectar con Cord**.
