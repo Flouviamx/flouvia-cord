@@ -350,8 +350,11 @@ no certifica publicación ni cambia el estado de los dominios propios.
 ## Integraciones y Cord Workflows
 
 - `/integraciones` y `/integraciones/[slug]` (ES/EN) salen de
-  `src/lib/integraciones-landing.ts`: HubSpot, Mercado Pago, Slack, Microsoft Teams,
-  WhatsApp Business, Zapier, Make y n8n. Plantilla en
+  `src/lib/integraciones-landing.ts`: HubSpot, Shopify, Mercado Pago, QuickBooks
+  Online, Xero, Google Sheets, Excel, Gmail, Slack, Microsoft Teams, WhatsApp
+  Business, Zapier, Make y n8n (14, al 28 sep 2026), agrupadas por categoría con
+  el orden de `IntegrationsHub.astro`. Cada una necesita su historia visual en
+  `src/lib/integraciones-historia.ts` (el tipo lo exige). Plantilla en
   `src/components/integraciones/`; cada página publica `HowTo`, `FAQPage` y
   `BreadcrumbList` desde los mismos datos que se ven, y una sección "Lo que todavía
   no hace" con los límites reales de cada app. El copy sigue los docs de
