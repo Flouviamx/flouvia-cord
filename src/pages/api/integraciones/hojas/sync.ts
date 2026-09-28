@@ -10,9 +10,10 @@ import { strictRateLimit, strictLimitResponse } from '../../../../lib/ratelimit'
 import { log } from '../../../../lib/log';
 import { HojaError } from '../../../../lib/integraciones/hojas/cliente';
 import { sincronizarTodo } from '../../../../lib/integraciones/hojas/service';
+import { esProveedorHoja } from '../../../../lib/integraciones/hojas/config';
 import { t } from '../../../../i18n/app';
 
-export const POST: APIRoute = async () => {
+export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
     const L = currentLocale();
     const orgId = await getActiveOrgId();
@@ -21,8 +22,12 @@ export const POST: APIRoute = async () => {
     const limitado = strictLimitResponse(await strictRateLimit(`hojas-sync:${orgId}`, 3, 300));
     if (limitado) return limitado;
 
+    let cuerpo: any;
+    try { cuerpo = await request.json(); } catch { cuerpo = {}; }
+    if (!esProveedorHoja(cuerpo?.proveedor)) return json({ error: t(L, 'hojas.err.proveedor') }, 400);
+
     try {
-        const r = await sincronizarTodo(orgId);
+        const r = await sincronizarTodo(orgId, cuerpo.proveedor);
         return json(r);
     } catch (err) {
         const motivo = err instanceof HojaError ? err.motivo : 'proveedor';

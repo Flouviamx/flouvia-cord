@@ -60,7 +60,7 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
         });
         // El relleno inicial puede tardar: no se hace esperar a la persona frente
         // a una pestaña en blanco del proveedor.
-        after(sincronizarTodo(orgId).catch((err) => {
+        after(sincronizarTodo(orgId, proveedor).catch((err) => {
             log.error('no se pudo rellenar la hoja', { route: 'hojas-callback', orgId, err });
         }));
         return redirect(`${VUELTA}?hoja=conectada`);

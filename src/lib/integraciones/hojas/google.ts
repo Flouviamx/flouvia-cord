@@ -2,7 +2,7 @@
 // único permiso que pide es `drive.file`; por eso Cord crea la hoja en vez de
 // pedirte que elijas una existente.
 
-import { CABECERAS, rangoFila, type Celda } from './columnas';
+import { CABECERAS, columnasMonto, rangoFila, type Celda } from './columnas';
 import { apiJson, HojaError, type ClienteHoja, type HojaRef, type LibroCreado, type TokensHoja } from './cliente';
 import { credencialesHoja, GOOGLE_SCOPES, GOOGLE_TOKEN } from './config';
 
@@ -92,20 +92,25 @@ export const googleSheets: ClienteHoja = {
     },
 
     async prepararPestanas(token, libroId, hojas) {
-        const meta = await apiJson(`${SHEETS}/${enc(libroId)}?fields=sheets.properties.title`, { token });
-        const existentes = new Set<string>(
-            (meta?.sheets ?? []).map((s: any) => String(s?.properties?.title ?? '')),
+        const meta = await apiJson(`${SHEETS}/${enc(libroId)}?fields=sheets.properties`, { token });
+        const idPorTitulo = new Map<string, number>(
+            (meta?.sheets ?? []).map((s: any) => [String(s?.properties?.title ?? ''), Number(s?.properties?.sheetId)]),
         );
-        const faltan = hojas.filter((h) => !existentes.has(h.titulo));
+        const faltan = hojas.filter((h) => !idPorTitulo.has(h.titulo));
         if (faltan.length) {
-            await apiJson(`${SHEETS}/${enc(libroId)}:batchUpdate`, {
+            const creadas = await apiJson(`${SHEETS}/${enc(libroId)}:batchUpdate`, {
                 token,
                 method: 'POST',
                 body: JSON.stringify({
                     requests: faltan.map((h) => ({ addSheet: { properties: { title: h.titulo } } })),
                 }),
             });
+            for (const r of creadas?.replies ?? []) {
+                const props = r?.addSheet?.properties;
+                if (props?.title) idPorTitulo.set(String(props.title), Number(props.sheetId));
+            }
         }
+
         // La cabecera se reescribe siempre: es barata y repara un archivo al que
         // le borraron la primera fila, que si no dejaría los datos sin nombre.
         for (const h of hojas) {
@@ -113,6 +118,52 @@ export const googleSheets: ClienteHoja = {
                 `${SHEETS}/${enc(libroId)}/values/${enc(rango(h.titulo, 'A1'))}?valueInputOption=RAW`,
                 { token, method: 'PUT', body: JSON.stringify({ values: [CABECERAS[h.clave]] }) },
             );
+        }
+
+        // Lo que hace que la hoja se sienta de Sheets y no un volcado de datos:
+        // cabecera congelada y en negrita, filtro puesto, importes con formato de
+        // número y columnas al ancho de su contenido. Es una sola llamada.
+        const requests: Record<string, unknown>[] = [];
+        for (const h of hojas) {
+            const sheetId = idPorTitulo.get(h.titulo);
+            if (sheetId === undefined || Number.isNaN(sheetId)) continue;
+            const columnas = CABECERAS[h.clave].length;
+            requests.push(
+                {
+                    updateSheetProperties: {
+                        properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+                        fields: 'gridProperties.frozenRowCount',
+                    },
+                },
+                {
+                    repeatCell: {
+                        range: { sheetId, startRowIndex: 0, endRowIndex: 1 },
+                        cell: {
+                            userEnteredFormat: {
+                                textFormat: { bold: true },
+                                backgroundColor: { red: 0.96, green: 0.96, blue: 0.97 },
+                            },
+                        },
+                        fields: 'userEnteredFormat(textFormat,backgroundColor)',
+                    },
+                },
+                { setBasicFilter: { filter: { range: { sheetId, startRowIndex: 0, endColumnIndex: columnas } } } },
+                { autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: columnas } } },
+            );
+            for (const col of columnasMonto(h.clave)) {
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId, startRowIndex: 1, startColumnIndex: col, endColumnIndex: col + 1 },
+                        cell: { userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern: '#,##0.00' } } },
+                        fields: 'userEnteredFormat.numberFormat',
+                    },
+                });
+            }
+        }
+        if (requests.length) {
+            await apiJson(`${SHEETS}/${enc(libroId)}:batchUpdate`, {
+                token, method: 'POST', body: JSON.stringify({ requests }),
+            });
         }
     },
 

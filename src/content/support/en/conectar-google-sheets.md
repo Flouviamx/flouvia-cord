@@ -1,24 +1,24 @@
 ---
-title: "Connect Google Sheets or Excel"
-description: "Every quote and every invoice as a row in your spreadsheet, kept current on its own, so you track your numbers where you already track them."
+title: "Connect Google Sheets"
+description: "Every quote and every invoice as a row in your Google spreadsheet, kept current on its own, so you track your numbers where you already track them."
 category: "Cuenta y Equipo"
 order: 25
 ---
 
-Cord writes your quotes and invoices into a spreadsheet of yours: one row per document, updated on its own when the document changes state. It is there for the usual work — totaling the month, filtering by client, building a chart — without exporting anything by hand.
+Cord writes your quotes and invoices into a Google spreadsheet of yours: one row per document, updated on its own when the document changes state. It is there for the usual work — totaling the month, filtering by client, building a chart — without exporting anything by hand.
 
-**Cord creates the file and can only open that one.** It never sees the rest of your Google Drive or your OneDrive. That is the narrowest permission either provider offers, and it is deliberate.
+**Cord creates the file and can only open that one.** It never sees anything else in your Google Drive. That is the narrowest permission Google offers (`drive.file`), and we ask for it that way on purpose.
 
 ### Connect it
 
-1. Go to **Settings › Integrations › Google Sheets and Excel**. You need the **Settings** permission.
-2. Choose **Connect Google Sheets** or **Connect Excel**, depending on where you keep your numbers.
-3. Authorize with your account. When you return, Cord creates the file and starts filling it with what you already had.
+1. Go to **Settings › Integrations › Google Sheets**. You need the **Settings** permission.
+2. Click **Connect Google Sheets** and authorize with your Google account.
+3. When you return, Cord creates the file in your Drive and starts filling it with what you already had.
 4. Click **Open the spreadsheet** to see it. The first fill takes a moment if you have a lot of history.
 
 ### What the spreadsheet holds
 
-Two tabs, **Quotes** and **Invoices**, with one row per document:
+Two tabs, **Quotes** and **Invoices**, with one row per document. They arrive with the header frozen and bold, the filter on, amounts formatted as numbers and columns sized to their content:
 
 - **Quotes:** number, client, status, date, valid until, currency, subtotal, discount, taxes, total, collected, and the public link.
 - **Invoices:** number, client, status, fiscal status, date, due date, currency, total, paid, balance, and the public link.

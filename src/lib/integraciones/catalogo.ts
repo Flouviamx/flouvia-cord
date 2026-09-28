@@ -1,4 +1,4 @@
-export type IntegrationSlug = 'hubspot' | 'shopify' | 'hojas' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
+export type IntegrationSlug = 'hubspot' | 'shopify' | 'google-sheets' | 'excel' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
 export type IntegrationCategory = 'crm' | 'ecommerce' | 'productividad' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationApp {
@@ -21,15 +21,17 @@ export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-in
  * error de Shopify (regla 15).
  */
 /**
- * La hoja aparece si al menos uno de los dos proveedores tiene app detrás. La
- * tarjeta ofrece solo el que esté listo; ofrecer los dos cuando uno no existe
- * sería mandar a la persona a un error del proveedor (regla 15).
+ * Cada hoja se ofrece por separado y solo si SU app existe (regla 15): son dos
+ * integraciones distintas para quien las usa, y una cuenta puede tener las dos.
+ * Excel reusa el registro de Entra de Teams, así que llega listo antes.
  */
-export const HOJAS_LISTO = Boolean(
-    ((import.meta.env.GOOGLE_SHEETS_CLIENT_ID || process.env.GOOGLE_SHEETS_CLIENT_ID)
-        && (import.meta.env.GOOGLE_SHEETS_CLIENT_SECRET || process.env.GOOGLE_SHEETS_CLIENT_SECRET))
-    || ((import.meta.env.TEAMS_CLIENT_ID || process.env.TEAMS_CLIENT_ID)
-        && (import.meta.env.TEAMS_CLIENT_SECRET || process.env.TEAMS_CLIENT_SECRET)),
+export const GOOGLE_SHEETS_LISTO = Boolean(
+    (import.meta.env.GOOGLE_SHEETS_CLIENT_ID || process.env.GOOGLE_SHEETS_CLIENT_ID)
+    && (import.meta.env.GOOGLE_SHEETS_CLIENT_SECRET || process.env.GOOGLE_SHEETS_CLIENT_SECRET),
+);
+export const EXCEL_LISTO = Boolean(
+    (import.meta.env.TEAMS_CLIENT_ID || process.env.TEAMS_CLIENT_ID)
+    && (import.meta.env.TEAMS_CLIENT_SECRET || process.env.TEAMS_CLIENT_SECRET),
 );
 
 export const SHOPIFY_LISTO = Boolean(
@@ -42,7 +44,8 @@ const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
     { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: '/imgs/integrations/shopify.svg', tile: true, guia: '/soporte/conectar-shopify' },
-    { slug: 'hojas', nombre: 'Google Sheets y Excel', dominio: 'google.com', categoria: 'productividad', disponible: HOJAS_LISTO, logo: '/imgs/integrations/hojas.svg', tile: true, guia: '/soporte/conectar-hoja' },
+    { slug: 'google-sheets', nombre: 'Google Sheets', dominio: 'google.com', categoria: 'productividad', disponible: GOOGLE_SHEETS_LISTO, logo: '/imgs/integrations/google-sheets.svg', tile: true, guia: '/soporte/conectar-google-sheets' },
+    { slug: 'excel', nombre: 'Microsoft Excel', dominio: 'microsoft.com', categoria: 'productividad', disponible: EXCEL_LISTO, logo: '/imgs/integrations/excel.svg', tile: true, guia: '/soporte/conectar-excel' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
@@ -57,8 +60,9 @@ export interface IntegrationCtx {
     hubspot: string | null;
     /** Estado de la conexión de Shopify: 'activa' | 'error' | null. */
     shopify: string | null;
-    /** Estado de la hoja de cálculo: 'activa' | 'error' | null. */
-    hojas?: string | null;
+    /** Estado de cada hoja: 'activa' | 'error' | null. Son independientes. */
+    googleSheets?: string | null;
+    excel?: string | null;
     slack: boolean;
     teams: boolean;
     /** Microsoft ya no acepta la conexión de Teams y hay que volver a iniciar sesión. */
@@ -72,7 +76,8 @@ export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): Inte
     if (!app.disponible) return 'soon';
     if (app.slug === 'hubspot') return ctx.hubspot === 'activa' ? 'on' : ctx.hubspot === 'error' ? 'warn' : 'off';
     if (app.slug === 'shopify') return ctx.shopify === 'activa' ? 'on' : ctx.shopify === 'error' ? 'warn' : 'off';
-    if (app.slug === 'hojas') return ctx.hojas === 'activa' ? 'on' : ctx.hojas === 'error' ? 'warn' : 'off';
+    if (app.slug === 'google-sheets') return ctx.googleSheets === 'activa' ? 'on' : ctx.googleSheets === 'error' ? 'warn' : 'off';
+    if (app.slug === 'excel') return ctx.excel === 'activa' ? 'on' : ctx.excel === 'error' ? 'warn' : 'off';
     if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teamsError ? 'warn' : ctx.teams ? 'on' : 'off';

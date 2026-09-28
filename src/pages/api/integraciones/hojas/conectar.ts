@@ -47,10 +47,15 @@ export const DELETE: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limitado = strictLimitResponse(await strictRateLimit(`hojas-connect:${orgId}`, 10, 60));
     if (limitado) return limitado;
-    await desconectarHoja(orgId);
+    // Desconectar es de ESTA hoja: la otra, si está conectada, sigue igual.
+    let cuerpo: any;
+    try { cuerpo = await request.json(); } catch { cuerpo = {}; }
+    if (!esProveedorHoja(cuerpo?.proveedor)) return json({ error: t(currentLocale(), 'hojas.err.proveedor') }, 400);
+    await desconectarHoja(orgId, cuerpo.proveedor);
     await logAudit(orgId, {
         accion: 'integracion.hoja_desconectada', entidad: 'org', entidad_id: orgId,
-        detalle: 'Desconectó la hoja de cálculo', ip: reqIp(request),
+        detalle: `Desconectó ${cuerpo.proveedor === 'google_sheets' ? 'Google Sheets' : 'Excel'}`,
+        ip: reqIp(request),
     });
     return json({ ok: true });
 };

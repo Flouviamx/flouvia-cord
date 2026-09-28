@@ -6,7 +6,7 @@
 // 1.9 KB— y a partir de ahí ya trabaja con la API normal. Se genera una sola
 // vez y se verifica abriéndola; no es un blob traído de internet.
 
-import { CABECERAS, type Celda } from './columnas';
+import { CABECERAS, columnasMonto, type Celda } from './columnas';
 import { apiJson, HojaError, type ClienteHoja, type HojaRef, type LibroCreado, type TokensHoja } from './cliente';
 import { credencialesHoja, EXCEL_SCOPES, MS_GRAPH, MS_LOGIN } from './config';
 
@@ -111,16 +111,26 @@ async function filasUsadas(token: string, libroId: string, titulo: string): Prom
     }
 }
 
-const direccion = (clave: keyof typeof CABECERAS, fila: number) => {
-    const ultima = CABECERAS[clave].length;
-    let n = ultima;
+function letraDe(numero: number): string {
+    let n = numero;
     let letra = '';
     while (n > 0) {
         letra = String.fromCharCode(65 + ((n - 1) % 26)) + letra;
         n = Math.floor((n - 1) / 26);
     }
-    return `A${fila}:${letra}${fila}`;
-};
+    return letra;
+}
+
+const direccion = (clave: keyof typeof CABECERAS, fila: number) =>
+    `A${fila}:${letraDe(CABECERAS[clave].length)}${fila}`;
+
+/**
+ * El nombre de la tabla sale de la CLAVE, no del título traducido: Excel no
+ * admite espacios ni acentos en el nombre de una tabla, y además el título
+ * cambia con el idioma de la organización.
+ */
+const nombreTabla = (clave: keyof typeof CABECERAS) =>
+    clave === 'cotizaciones' ? 'CordCotizaciones' : 'CordFacturas';
 
 export const excel: ClienteHoja = {
     urlDelLibro: (libroId) => `https://onedrive.live.com/edit?id=${encodeURIComponent(libroId)}`,
@@ -160,6 +170,39 @@ export const excel: ClienteHoja = {
             await apiJson(`${hojaUrl(libroId, h.titulo)}/range(address='${direccion(h.clave, 1)}')`, {
                 token, method: 'PATCH', body: JSON.stringify({ values: [CABECERAS[h.clave]] }),
             });
+
+            // Lo idiomático de Excel no es un rango con datos: es una TABLA.
+            // Da filtros, bandas, encabezado fijo al desplazar y fórmulas por
+            // nombre de columna (`=SUMA(CordCotizaciones[total])`), que es como
+            // de verdad se trabaja ahí. Si ya existe, no se toca.
+            const tabla = nombreTabla(h.clave);
+            const tablas = await apiJson(
+                `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/tables?$select=name`, { token },
+            ).catch(() => null);
+            const existeTabla = (tablas?.value ?? []).some((t: any) => String(t?.name ?? '') === tabla);
+            if (!existeTabla) {
+                const creada = await apiJson(`${hojaUrl(libroId, h.titulo)}/tables/add`, {
+                    token, method: 'POST',
+                    body: JSON.stringify({ address: direccion(h.clave, 1), hasHeaders: true }),
+                }).catch(() => null);
+                if (creada?.id) {
+                    await apiJson(`${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/tables/${enc(String(creada.id))}`, {
+                        token, method: 'PATCH', body: JSON.stringify({ name: tabla }),
+                    }).catch(() => null);
+                }
+            }
+
+            // Los importes con formato de número: una columna de dinero que se
+            // ve como texto plano no se lee, y es lo primero que nota quien abre.
+            for (const col of columnasMonto(h.clave)) {
+                const letra = letraDe(col + 1);
+                await apiJson(`${hojaUrl(libroId, h.titulo)}/range(address='${letra}2:${letra}1000')/format`, {
+                    token, method: 'PATCH', body: JSON.stringify({ numberFormat: '#,##0.00' }),
+                }).catch(() => null);
+            }
+            await apiJson(`${hojaUrl(libroId, h.titulo)}/usedRange/format/autofitColumns`, {
+                token, method: 'POST', body: '{}',
+            }).catch(() => null);
         }
         // La hoja de la plantilla sobra en cuanto existen las de Cord, y un libro
         // no puede quedarse sin ninguna: por eso se borra al final.
@@ -186,6 +229,14 @@ export const excel: ClienteHoja = {
     },
 
     async agregarFila(token, libroId, hoja, celdas: Celda[]) {
+        // Se agrega POR la tabla: escribir en el rango de abajo dejaría la fila
+        // fuera de ella, sin filtro ni banda, y las fórmulas por nombre de
+        // columna no la contarían. Si la tabla no existe, se cae al rango.
+        const porTabla = await apiJson(
+            `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/tables/${enc(nombreTabla(hoja.clave))}/rows/add`,
+            { token, method: 'POST', body: JSON.stringify({ values: [celdas] }) },
+        ).catch(() => null);
+        if (porTabla) return;
         const usadas = await filasUsadas(token, libroId, hoja.titulo);
         await this.escribirFila(token, libroId, hoja, Math.max(2, usadas + 1), celdas);
     },

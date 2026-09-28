@@ -152,11 +152,13 @@ el dominio: funciona con el `.onmicrosoft.com`.
 
 ## Google Sheets y Excel
 
-**Hecho (27 sep):** integración completa en `src/lib/integraciones/hojas/`. OAuth
-de los dos proveedores, creación del archivo, dos pestañas con una fila por
-documento, actualización por evento de dominio, relleno inicial de 500
-documentos por pestaña, tarjeta en Ajustes y artículo de ayuda en los dos
-idiomas. Contrato de columnas verificado en `test/hojas.test.ts`.
+**Hecho (27 sep):** dos integraciones separadas en el directorio, con motor
+compartido en `src/lib/integraciones/hojas/`. OAuth de cada proveedor, creación
+del archivo, dos pestañas con una fila por documento, actualización por evento de
+dominio, relleno inicial de 500 documentos por pestaña, tarjeta propia en Ajustes
+y artículo de ayuda por integración en los dos idiomas. Sheets sale con cabecera
+congelada, filtro y formato de número; Excel con tabla real. Contrato de columnas
+verificado en `test/hojas.test.ts`. Una organización puede conectar las dos.
 
 **Excel ya funciona** porque reusa la app de Entra de Teams. Falta agregarle el
 permiso delegado `Files.ReadWrite` al registro de la app; sin eso, la

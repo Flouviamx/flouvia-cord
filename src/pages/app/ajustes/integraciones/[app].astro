@@ -27,8 +27,9 @@ const canAjustes = memberCan(ME, 'ajustes');
 const HS = canAjustes && app.slug === 'hubspot' ? await hubspotStatus(await getActiveOrgId(), false).catch(() => null) : null;
 const OAUTH = app.slug === 'zapier' || app.slug === 'make' ? await connectedOAuthApps(await getActiveOrgId()).catch(() => []) : [];
 const SHOPIFY = canAjustes && app.slug === 'shopify' ? await getShopifyConexion(await getActiveOrgId()).catch(() => null) : null;
-const HOJA = canAjustes && app.slug === 'hojas' ? await estadoHoja(await getActiveOrgId()).catch(() => null) : null;
-const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, shopify: SHOPIFY?.estado ?? null, hojas: HOJA?.estado ?? null, slack: Boolean(ORG.slackWebhook), teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal), teamsError: ORG.teamsGraph === 'error', whatsapp: Boolean(ORG.whatsappConectado), oauth: OAUTH });
+const PROV_HOJA = app.slug === 'google-sheets' ? 'google_sheets' as const : app.slug === 'excel' ? 'excel' as const : null;
+const HOJA = canAjustes && PROV_HOJA ? await estadoHoja(await getActiveOrgId(), PROV_HOJA).catch(() => null) : null;
+const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, shopify: SHOPIFY?.estado ?? null, googleSheets: app.slug === 'google-sheets' ? HOJA?.estado ?? null : null, excel: app.slug === 'excel' ? HOJA?.estado ?? null : null, slack: Boolean(ORG.slackWebhook), teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal), teamsError: ORG.teamsGraph === 'error', whatsapp: Boolean(ORG.whatsappConectado), oauth: OAUTH });
 ---
 
 <SettingsShell title={`${app.nombre} — Integraciones`} tab="integraciones" perm="ajustes">
@@ -42,7 +43,7 @@ const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, sho
         slackWebhook={ORG.slackWebhook ?? ''}
         slack={{ canal: ORG.slackCanal ?? '', equipo: ORG.slackEquipo ?? '', oauth: Boolean(slackCredentials()), flash: Astro.url.searchParams.get('slack') }}
         shopify={{ conexion: SHOPIFY, disponible: SHOPIFY_LISTO, flash: Astro.url.searchParams.get('shopify'), tiendaSugerida: Astro.url.searchParams.get('tienda') }}
-        hojas={{ conexion: HOJA, google: Boolean(credencialesHoja('google_sheets')), excel: Boolean(credencialesHoja('excel')), flash: Astro.url.searchParams.get('hoja') }}
+        hoja={{ conexion: HOJA, disponible: Boolean(PROV_HOJA && credencialesHoja(PROV_HOJA)), flash: Astro.url.searchParams.get('hoja') }}
         teamsWebhook={ORG.teamsWebhook ?? ''}
         teams={{ canal: ORG.teamsCanal, equipo: ORG.teamsEquipo, usuario: ORG.teamsUsuario, estado: ORG.teamsGraph, oauth: Boolean(teamsCredentials()), flash: Astro.url.searchParams.get('teams') }}
         whatsapp={{ phoneId: ORG.whatsappPhoneId ?? '', plantilla: ORG.whatsappPlantilla ?? '', idioma: ORG.whatsappIdioma ?? '', conectado: Boolean(ORG.whatsappConectado) }}

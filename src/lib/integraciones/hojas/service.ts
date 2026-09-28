@@ -60,12 +60,12 @@ interface Ajustes {
  * Lee la conexión y garantiza un access token vivo. Los dos proveedores dan
  * tokens de una hora, así que renovar es el caso NORMAL, no la excepción.
  */
-export async function leerConexionHoja(orgId: string): Promise<ConexionHoja | null> {
+export async function leerConexionHoja(orgId: string, proveedor: ProveedorHoja): Promise<ConexionHoja | null> {
     const [[row]] = await withOrgTx(orgId, sql`
         select id, proveedor, estado, cuenta_externa, ajustes, ultima_sync_at,
                access_token_enc, access_expires_at, refresh_token_enc
           from integracion_conexiones
-         where org_id = ${orgId} and proveedor in ('google_sheets', 'excel')
+         where org_id = ${orgId} and proveedor = ${proveedor}
            and estado <> 'desconectada'
          limit 1`);
     if (!row || !esProveedorHoja(row.proveedor)) return null;
@@ -76,14 +76,13 @@ export async function leerConexionHoja(orgId: string): Promise<ConexionHoja | nu
     const titulos = (ajustes.titulos && typeof ajustes.titulos === 'object'
         ? ajustes.titulos : titulosPara('es')) as Record<Pestana, string>;
 
-    const proveedor = row.proveedor as ProveedorHoja;
     const vence = row.access_expires_at ? new Date(row.access_expires_at as string).getTime() : 0;
     let token = row.access_token_enc ? decryptSecret(row.access_token_enc as string) : '';
 
     if (!token || vence < Date.now() + 60_000) {
         const refresh = row.refresh_token_enc ? decryptSecret(row.refresh_token_enc as string) : '';
         if (!refresh) {
-            await marcarError(orgId, 'auth');
+            await marcarError(orgId, proveedor, 'auth');
             return null;
         }
         const frescos = proveedor === 'google_sheets' ? await googleRefresh(refresh) : await excelRefresh(refresh);
@@ -116,11 +115,11 @@ export interface EstadoHoja {
  * Lo que necesita la tarjeta de Ajustes. NO renueva tokens ni llama al
  * proveedor: pintar una pantalla no puede depender de que Google esté arriba.
  */
-export async function estadoHoja(orgId: string): Promise<EstadoHoja | null> {
+export async function estadoHoja(orgId: string, proveedor: ProveedorHoja): Promise<EstadoHoja | null> {
     const [[row]] = await withOrgTx(orgId, sql`
         select proveedor, estado, cuenta_externa, ajustes, ultima_sync_at
           from integracion_conexiones
-         where org_id = ${orgId} and proveedor in ('google_sheets', 'excel') and estado <> 'desconectada'
+         where org_id = ${orgId} and proveedor = ${proveedor} and estado <> 'desconectada'
          limit 1`);
     if (!row || !esProveedorHoja(row.proveedor)) return null;
     const ajustes = (row.ajustes ?? {}) as Ajustes;
@@ -149,11 +148,19 @@ async function guardarTokens(orgId: string, conexionId: string, t: TokensHoja, r
          where id = ${conexionId} and org_id = ${orgId}`);
 }
 
-async function marcarError(orgId: string, motivo: string): Promise<void> {
+async function marcarError(orgId: string, proveedor: ProveedorHoja, motivo: string): Promise<void> {
     await withOrgTx(orgId, sql`
         update integracion_conexiones
            set estado = 'error', ultimo_error = ${motivo.slice(0, 500)}, ultimo_error_at = now(), updated_at = now()
-         where org_id = ${orgId} and proveedor in ('google_sheets', 'excel') and estado <> 'desconectada'`);
+         where org_id = ${orgId} and proveedor = ${proveedor} and estado <> 'desconectada'`);
+}
+
+/** Los proveedores con hoja viva. Las dos pueden estar conectadas a la vez. */
+export async function proveedoresConectados(orgId: string): Promise<ProveedorHoja[]> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select proveedor from integracion_conexiones
+         where org_id = ${orgId} and proveedor in ('google_sheets', 'excel') and estado = 'activa'`);
+    return rows.map((r: any) => r.proveedor).filter(esProveedorHoja);
 }
 
 /** Guarda la conexión recién autorizada y crea el archivo. */
@@ -189,12 +196,12 @@ export async function conectarHoja(
     return { libroUrl: libro.url };
 }
 
-export async function desconectarHoja(orgId: string): Promise<void> {
+export async function desconectarHoja(orgId: string, proveedor: ProveedorHoja): Promise<void> {
     await withOrgTx(orgId, sql`
         update integracion_conexiones
            set estado = 'desconectada', access_token_enc = null, refresh_token_enc = null,
                access_expires_at = null, updated_at = now()
-         where org_id = ${orgId} and proveedor in ('google_sheets', 'excel')`);
+         where org_id = ${orgId} and proveedor = ${proveedor}`);
 }
 
 async function zonaDe(orgId: string): Promise<string> {
@@ -230,25 +237,45 @@ const FACTURA = (orgId: string, docId: string) => sql`
       left join clientes cq on cq.id = c.cliente_id and cq.org_id = d.org_id
      where d.org_id = ${orgId} and d.id = ${docId}`;
 
+/**
+ * Escribe la fila en TODAS las hojas conectadas. Google y Excel son dos
+ * integraciones distintas para quien las usa y se pueden tener las dos a la vez;
+ * el documento es el mismo, así que se lee una vez y se escribe en cada una.
+ */
+async function difundir(orgId: string, clave: Pestana, folio: string, celdas: Celda[]): Promise<number> {
+    const proveedores = await proveedoresConectados(orgId);
+    let escritas = 0;
+    for (const proveedor of proveedores) {
+        try {
+            const cx = await leerConexionHoja(orgId, proveedor);
+            if (!cx) continue;
+            await ponerFila(cx, clave, folio, celdas);
+            await tocarSync(orgId, cx.id);
+            escritas += 1;
+        } catch (err) {
+            // Que la hoja de Google esté caída no puede impedir que se escriba
+            // la de Excel: cada una falla por su cuenta.
+            const motivo = err instanceof HojaError ? err.motivo : 'proveedor';
+            if (motivo === 'auth' || motivo === 'permiso') await marcarError(orgId, proveedor, motivo).catch(() => null);
+            log.error('no se pudo escribir en la hoja', { route: 'hojas', orgId, proveedor, motivo });
+        }
+    }
+    return escritas;
+}
+
 export async function sincronizarCotizacion(orgId: string, quoteId: string): Promise<boolean> {
-    const cx = await leerConexionHoja(orgId);
-    if (!cx) return false;
     const [[q]] = await withOrgTx(orgId, COTIZACION(orgId, quoteId));
     if (!q?.folio) return false;
-    await ponerFila(cx, 'cotizaciones', String(q.folio), filaCotizacion(q as any, await zonaDe(orgId), siteOrigin()));
-    await tocarSync(orgId, cx.id);
-    return true;
+    const celdas = filaCotizacion(q as any, await zonaDe(orgId), siteOrigin());
+    return (await difundir(orgId, 'cotizaciones', String(q.folio), celdas)) > 0;
 }
 
 export async function sincronizarFactura(orgId: string, docId: string): Promise<boolean> {
-    const cx = await leerConexionHoja(orgId);
-    if (!cx) return false;
     const [[f]] = await withOrgTx(orgId, FACTURA(orgId, docId));
     // Una factura sin folio todavía no existe para el negocio: es un borrador.
     if (!f?.invoice_number) return false;
-    await ponerFila(cx, 'facturas', String(f.invoice_number), filaFactura(f as any, await zonaDe(orgId), siteOrigin()));
-    await tocarSync(orgId, cx.id);
-    return true;
+    const celdas = filaFactura(f as any, await zonaDe(orgId), siteOrigin());
+    return (await difundir(orgId, 'facturas', String(f.invoice_number), celdas)) > 0;
 }
 
 async function tocarSync(orgId: string, conexionId: string): Promise<void> {
@@ -258,8 +285,10 @@ async function tocarSync(orgId: string, conexionId: string): Promise<void> {
 }
 
 /** Rellena el archivo con lo que ya existía cuando se conectó. */
-export async function sincronizarTodo(orgId: string): Promise<{ cotizaciones: number; facturas: number }> {
-    const cx = await leerConexionHoja(orgId);
+export async function sincronizarTodo(
+    orgId: string, proveedor: ProveedorHoja,
+): Promise<{ cotizaciones: number; facturas: number }> {
+    const cx = await leerConexionHoja(orgId, proveedor);
     if (!cx) return { cotizaciones: 0, facturas: 0 };
     const zona = await zonaDe(orgId);
     const origen = siteOrigin();
@@ -321,9 +350,9 @@ export async function onDomainEventHoja(orgId: string, type: string, objectId: s
         if (esCotizacion) await sincronizarCotizacion(orgId, objectId);
         else await sincronizarFactura(orgId, objectId);
     } catch (err) {
-        const motivo = err instanceof HojaError ? err.motivo : 'proveedor';
-        if (motivo === 'auth' || motivo === 'permiso') await marcarError(orgId, motivo).catch(() => null);
-        log.error('no se pudo escribir en la hoja', { route: 'hojas', orgId, type, motivo });
+        // difundir() ya aísla el fallo de cada proveedor; esto solo atrapa lo
+        // que pueda romperse antes, al leer el documento.
+        log.error('no se pudo preparar la fila de la hoja', { route: 'hojas', orgId, type, err });
     }
 }
 

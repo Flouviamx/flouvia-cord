@@ -3,57 +3,55 @@ import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
     lang: AppLocale;
-    conexion: { proveedor: string; cuenta: string; libroUrl: string; ultimaSync: string | null; estado: string } | null;
-    /** Qué proveedor tiene app detrás. Sin app no se ofrece el botón (regla 15). */
-    google: boolean;
-    excel: boolean;
+    /** Cada hoja es una integración propia: esta tarjeta habla de UNA. */
+    proveedor: 'google_sheets' | 'excel';
+    conexion: { cuenta: string; libroUrl: string; ultimaSync: string | null; estado: string } | null;
+    disponible: boolean;
     flash: string | null;
 }
 
-const { lang: L, conexion, google, excel, flash } = Astro.props;
+const { lang: L, proveedor, conexion, disponible, flash } = Astro.props;
 const FLASH = ['conectada', 'cancelada', 'estado', 'cuenta', 'error'];
+const esGoogle = proveedor === 'google_sheets';
 const conectada = Boolean(conexion) && conexion?.estado !== 'desconectada';
 const fecha = conexion?.ultimaSync
     ? new Date(conexion.ultimaSync).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' })
     : null;
-const NOMBRE: Record<string, string> = { google_sheets: 'Google Sheets', excel: 'Microsoft Excel' };
 ---
 
-<div class="s-block" data-hoja>
-    <h3>{t(L, 'hojas.titulo')}</h3>
+<div class="s-block" data-hoja={proveedor}>
+    <h3>{t(L, 'set.integ.det.conexion')}</h3>
     <div class="s-body">
         {flash && FLASH.includes(flash) && (
             <p class="hj-flash" data-bad={flash !== 'conectada' ? '1' : undefined}>{t(L, `hojas.flash_${flash}` as any)}</p>
         )}
 
-        <p class="hj-que">{t(L, 'hojas.que_hace')}</p>
+        <p class="hj-que">{t(L, esGoogle ? 'hojas.g.que_hace' : 'hojas.x.que_hace')}</p>
 
         {conectada ? (
             <Fragment>
                 {conexion?.estado === 'error' && <p class="hj-flash" data-bad="1">{t(L, 'hojas.reconectar_aviso')}</p>}
                 <p class="hj-conn">
-                    {t(L, 'hojas.conectado_a')} <b>{NOMBRE[conexion?.proveedor ?? ''] ?? ''}</b>
-                    <span class="hj-sub">{conexion?.cuenta}</span>
+                    {t(L, 'hojas.conectado_a')} <b>{conexion?.cuenta}</b>
                 </p>
                 <p class="hj-sync">{t(L, 'hojas.ultima_sync')} {fecha ?? t(L, 'hojas.nunca')}</p>
                 <div class="hj-actions">
                     <a class="hj-btn-solid" href={conexion?.libroUrl} target="_blank" rel="noopener noreferrer">{t(L, 'hojas.abrir')}</a>
-                    <button class="hj-btn-ghost" id="hjSync">{t(L, 'hojas.actualizar')}</button>
-                    <button class="hj-btn-ghost" id="hjOff">{t(L, 'hojas.desconectar')}</button>
+                    <button class="hj-btn-ghost" data-hj-sync>{t(L, 'hojas.actualizar')}</button>
+                    <button class="hj-btn-ghost" data-hj-off>{t(L, 'hojas.desconectar')}</button>
                 </div>
             </Fragment>
         ) : (
             <div class="hj-actions">
-                <button class="hj-btn-solid" data-hj-conectar="google_sheets" disabled={!google}>
-                    {t(L, 'hojas.conectar_google')}{!google && ` · ${t(L, 'hojas.no_disponible')}`}
+                <button class="hj-btn-solid" data-hj-conectar disabled={!disponible}>
+                    {t(L, esGoogle ? 'hojas.conectar_google' : 'hojas.conectar_excel')}
                 </button>
-                <button class="hj-btn-solid" data-hj-conectar="excel" disabled={!excel}>
-                    {t(L, 'hojas.conectar_excel')}{!excel && ` · ${t(L, 'hojas.no_disponible')}`}
-                </button>
+                {!disponible && <span class="hj-pronto">{t(L, 'hojas.no_disponible')}</span>}
             </div>
         )}
 
-        <span class="hj-msg" id="hjMsg"
+        <span class="hj-msg" data-hj-msg
+            data-proveedor={proveedor}
             data-i18n-no-conecto={t(L, 'hojas.err.no_conecto')}
             data-i18n-no-desconecto={t(L, 'hojas.err.no_desconecto')}
             data-i18n-actualizando={t(L, 'hojas.actualizando')}
@@ -66,9 +64,9 @@ const NOMBRE: Record<string, string> = { google_sheets: 'Google Sheets', excel: 
     .hj-flash[data-bad] { color: var(--color-danger); }
     .hj-que { font-size: 0.85rem; line-height: 1.5; color: var(--color-text-muted); margin: 0 0 1rem; max-width: 62ch; }
     .hj-conn { font-size: 0.9rem; margin: 0 0 0.35rem; color: var(--color-text); }
-    .hj-sub { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--color-text-muted); }
     .hj-sync { font-size: 0.82rem; color: var(--color-text-muted); margin: 0 0 1rem; }
     .hj-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .hj-pronto { font-size: 0.78rem; color: var(--color-text-muted); }
     .hj-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; }
     .hj-msg:global(.ok) { color: var(--color-ok); }
     .hj-msg:global(.err) { color: var(--color-danger); }
@@ -85,36 +83,36 @@ const NOMBRE: Record<string, string> = { google_sheets: 'Google Sheets', excel: 
 
 <script>
     function initHoja() {
-        const msg = document.getElementById('hjMsg');
+        const msg = document.querySelector<HTMLElement>('[data-hj-msg]');
         if (!msg) return;
+        const proveedor = msg.dataset.proveedor;
         const flash = (text: string, ok: boolean) => {
             msg.textContent = text;
             msg.className = 'hj-msg ' + (ok ? 'ok' : 'err');
         };
-
-        document.querySelectorAll<HTMLButtonElement>('[data-hj-conectar]').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                btn.disabled = true;
-                try {
-                    const res = await fetch('/api/integraciones/hojas/conectar', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ proveedor: btn.dataset.hjConectar }),
-                    });
-                    const d = await res.json();
-                    if (!res.ok || !d.redirect) throw new Error(d.error || '');
-                    window.location.href = d.redirect;
-                } catch (err: any) {
-                    flash(err.message || msg.dataset.i18nNoConecto || '', false);
-                    btn.disabled = false;
-                }
-            });
+        const pedir = (metodo: string) => fetch('/api/integraciones/hojas/conectar', {
+            method: metodo, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proveedor }),
         });
 
-        const off = document.getElementById('hjOff') as HTMLButtonElement | null;
+        const conectar = document.querySelector<HTMLButtonElement>('[data-hj-conectar]');
+        conectar?.addEventListener('click', async () => {
+            conectar.disabled = true;
+            try {
+                const res = await pedir('POST');
+                const d = await res.json();
+                if (!res.ok || !d.redirect) throw new Error(d.error || '');
+                window.location.href = d.redirect;
+            } catch (err: any) {
+                flash(err.message || msg.dataset.i18nNoConecto || '', false);
+                conectar.disabled = false;
+            }
+        });
+
+        const off = document.querySelector<HTMLButtonElement>('[data-hj-off]');
         off?.addEventListener('click', async () => {
             off.disabled = true;
             try {
-                const res = await fetch('/api/integraciones/hojas/conectar', { method: 'DELETE' });
+                const res = await pedir('DELETE');
                 if (!res.ok) throw new Error();
                 window.location.href = window.location.pathname;
             } catch {
@@ -123,12 +121,14 @@ const NOMBRE: Record<string, string> = { google_sheets: 'Google Sheets', excel: 
             }
         });
 
-        const sync = document.getElementById('hjSync') as HTMLButtonElement | null;
+        const sync = document.querySelector<HTMLButtonElement>('[data-hj-sync]');
         sync?.addEventListener('click', async () => {
             sync.disabled = true;
             flash(msg.dataset.i18nActualizando || '', true);
             try {
-                const res = await fetch('/api/integraciones/hojas/sync', { method: 'POST' });
+                const res = await fetch('/api/integraciones/hojas/sync', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proveedor }),
+                });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || '');
                 const plantilla = msg.dataset.i18nResultado || '';

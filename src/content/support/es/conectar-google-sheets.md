@@ -1,24 +1,24 @@
 ---
-title: "Conectar Google Sheets o Excel"
-description: "Cada cotización y cada factura como una fila en tu hoja, al día sola, para que lleves tus números donde ya los llevas."
+title: "Conectar Google Sheets"
+description: "Cada cotización y cada factura como una fila en tu hoja de Google, al día sola, para que lleves tus números donde ya los llevas."
 category: "Cuenta y Equipo"
 order: 25
 ---
 
-Cord escribe tus cotizaciones y tus facturas en una hoja de cálculo tuya: una fila por documento, que se actualiza sola cuando el documento cambia de estado. Sirve para lo de siempre —sumar el mes, filtrar por cliente, armar una gráfica— sin exportar nada a mano.
+Cord escribe tus cotizaciones y tus facturas en una hoja de Google tuya: una fila por documento, que se actualiza sola cuando el documento cambia de estado. Sirve para lo de siempre —sumar el mes, filtrar por cliente, armar una gráfica— sin exportar nada a mano.
 
-**Cord crea la hoja y solo puede abrir esa.** No ve el resto de tu Google Drive ni de tu OneDrive. Es el permiso más estrecho que dan los dos proveedores, y es a propósito.
+**Cord crea la hoja y solo puede abrir esa.** No ve nada más de tu Google Drive. Es el permiso más estrecho que ofrece Google (`drive.file`), y lo pedimos así a propósito.
 
 ### Conectarla
 
-1. Entra a **Ajustes › Integraciones › Google Sheets y Excel**. Necesitas el permiso de **Ajustes**.
-2. Elige **Conectar Google Sheets** o **Conectar Excel**, según dónde lleves tus números.
-3. Autoriza con tu cuenta. Al volver, Cord crea el archivo y empieza a llenarlo con lo que ya tenías.
+1. Entra a **Ajustes › Integraciones › Google Sheets**. Necesitas el permiso de **Ajustes**.
+2. Pulsa **Conectar Google Sheets** y autoriza con tu cuenta de Google.
+3. Al volver, Cord crea el archivo en tu Drive y empieza a llenarlo con lo que ya tenías.
 4. Pulsa **Abrir la hoja** para verla. El primer llenado tarda un momento si tienes mucho histórico.
 
 ### Qué trae la hoja
 
-Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento:
+Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento. Llegan con la cabecera congelada y en negrita, el filtro puesto, los importes con formato de número y las columnas al ancho de su contenido:
 
 - **Cotizaciones:** folio, cliente, estado, fecha, vigencia, divisa, subtotal, descuento, impuestos, total, cobrado y el link público.
 - **Facturas:** folio, cliente, estado, estado fiscal, fecha, vencimiento, divisa, total, pagado, saldo y el link público.

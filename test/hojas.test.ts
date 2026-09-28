@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    CABECERAS, columnaA1, fechaEnZona, filaCotizacion, filaFactura, monto, rangoFila,
+    CABECERAS, columnaA1, columnasMonto, fechaEnZona, filaCotizacion, filaFactura, monto, rangoFila,
 } from '../src/lib/integraciones/hojas/columnas';
 
 const ORIGEN = 'https://cordhq.app';
@@ -82,5 +82,24 @@ describe('el texto no desborda la celda', () => {
     it('un nombre larguísimo se corta en vez de romper la escritura', () => {
         const fila = filaCotizacion({ folio: 'A', cliente: 'x'.repeat(500) }, 'UTC', ORIGEN);
         expect(String(fila[1])).toHaveLength(200);
+    });
+});
+
+describe('las columnas de dinero se derivan de la cabecera', () => {
+    it('señala exactamente las columnas con importes, en las dos pestañas', () => {
+        const cot = columnasMonto('cotizaciones');
+        expect(cot.map((i) => CABECERAS.cotizaciones[i]))
+            .toEqual(['subtotal', 'descuento', 'impuestos', 'total', 'cobrado']);
+        const fac = columnasMonto('facturas');
+        expect(fac.map((i) => CABECERAS.facturas[i])).toEqual(['total', 'pagado', 'saldo']);
+    });
+
+    it('lo que apunta es dinero y nada más', () => {
+        // Si alguien mueve una columna, el formato la sigue: se deriva del
+        // nombre, no de un número escrito a mano.
+        for (const i of columnasMonto('cotizaciones')) {
+            expect(typeof filaCotizacion({ folio: 'A', subtotal: 1, descuento: 2, iva: 3, total: 4, cobrado: 5 }, 'UTC', ORIGEN)[i])
+                .toBe('number');
+        }
     });
 });

@@ -127,12 +127,24 @@ escribe en el negocio de alguien más, así que todo está acotado a propósito:
 - **Un fallo aquí no rompe la venta.** `onQuoteEvent()` cuelga de
   `domain-events.ts` dentro de `after(...)` y nunca lanza.
 
-## Hojas de cálculo (Google Sheets y Excel)
+## Google Sheets y Excel
 
-Una fila por documento en una hoja del negocio, al día sola (27 sep 2026). Vive
-en `src/lib/integraciones/hojas/` y reusa el carril de HubSpot y Shopify
-(`integracion_conexiones`), con una conexión por organización: Google **o**
-Excel, no las dos.
+Una fila por documento en la hoja del negocio, al día sola (27 sep 2026). Son
+**dos integraciones distintas** en el directorio —con su tarjeta, su artículo y
+su estado— y una organización puede tener las dos conectadas a la vez: el
+documento se lee una vez y se escribe en cada una. Por dentro comparten motor
+(`src/lib/integraciones/hojas/`) y reusan el carril de HubSpot y Shopify
+(`integracion_conexiones`), una conexión por proveedor.
+
+- **Cada una se comporta como su plataforma.** Sheets recibe cabecera congelada
+  y en negrita, filtro básico, formato de número en las columnas de dinero y
+  anchos automáticos, todo en un `batchUpdate`. Excel recibe una **tabla de
+  Excel de verdad** (`CordCotizaciones`, `CordFacturas`), que es lo idiomático
+  ahí: da filtros, bandas, encabezado fijo y fórmulas por nombre de columna. Las
+  filas nuevas se agregan POR la tabla, porque escribir en el rango de abajo las
+  dejaría fuera de ella.
+- **Qué columna lleva dinero se DERIVA de la cabecera** (`columnasMonto()`), no
+  se escribe a mano: mover una columna movería el formato a la equivocada.
 
 - **El permiso es el más estrecho que existe, y eso decide el diseño.** Google
   recibe solo `drive.file` (más `openid email`), que no es un permiso sensible:

@@ -25,6 +25,21 @@ export const CABECERAS: Record<Pestana, readonly string[]> = {
 
 export type Celda = string | number;
 
+/** Nombres de columna que llevan dinero, para darles formato de número. */
+const NOMBRES_MONTO = new Set(['subtotal', 'descuento', 'impuestos', 'total', 'cobrado', 'pagado', 'saldo']);
+
+/**
+ * Índices de las columnas de dinero de una pestaña. Se derivan de la cabecera,
+ * no se escriben a mano: agregar una columna en medio movería los números y el
+ * formato quedaría sobre la columna equivocada.
+ */
+export function columnasMonto(pestana: Pestana): number[] {
+    return CABECERAS[pestana].reduce<number[]>((acc, nombre, i) => {
+        if (NOMBRES_MONTO.has(nombre)) acc.push(i);
+        return acc;
+    }, []);
+}
+
 /** Fecha en la zona de la organización. `en-CA` da YYYY-MM-DD sin armarlo a mano. */
 export function fechaEnZona(valor: unknown, zona: string): string {
     if (!valor) return '';

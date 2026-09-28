@@ -24,20 +24,21 @@ interface Props {
     slackWebhook?: string;
     slack?: { canal: string; equipo: string; oauth: boolean; flash: string | null };
     shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
-    hojas?: { conexion: any; google: boolean; excel: boolean; flash: string | null };
+    hoja?: { conexion: any; disponible: boolean; flash: string | null };
     teamsWebhook?: string;
     teams?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
     whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
 }
 
-const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, shopify, hojas, whatsapp } = Astro.props;
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, shopify, hoja, whatsapp } = Astro.props;
 
 const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
     slack: t(L, 'set.integ.slack_desc'),
     teams: t(L, 'set.integ.teams_desc'),
     shopify: t(L, 'set.integ.shopify_desc'),
-    hojas: t(L, 'set.integ.hojas_desc'),
+    'google-sheets': t(L, 'set.integ.google-sheets_desc'),
+    excel: t(L, 'set.integ.excel_desc'),
     whatsapp: t(L, 'set.integ.wa.desc'),
     n8n: t(L, 'set.integ.n8n.desc'),
     make: t(L, 'set.integ.make.desc'),
@@ -91,8 +92,9 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
             flash={shopify.flash} tiendaSugerida={shopify.tiendaSugerida} />
     )}
 
-    {app.slug === 'hojas' && hojas && (
-        <HojaCard lang={L} conexion={hojas.conexion} google={hojas.google} excel={hojas.excel} flash={hojas.flash} />
+    {(app.slug === 'google-sheets' || app.slug === 'excel') && hoja && (
+        <HojaCard lang={L} proveedor={app.slug === 'google-sheets' ? 'google_sheets' : 'excel'}
+            conexion={hoja.conexion} disponible={hoja.disponible} flash={hoja.flash} />
     )}
 
     {app.slug === 'whatsapp' && whatsapp && (
