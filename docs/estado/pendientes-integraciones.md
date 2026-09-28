@@ -179,9 +179,28 @@ verificado en `test/contabilidad.test.ts`.
   certificaciones ("los tokens viven solo en memoria volátil") es falsa para
   Cord, que los guarda cifrados.
 - [ ] Rotar las llaves de QuickBooks: se escribieron en el chat.
-- [ ] André: cuenta de desarrollador de Xero (gratis), app de tipo *Web app*, la
-  misma URI de redirección, y `XERO_CLIENT_ID` / `XERO_CLIENT_SECRET` en Vercel.
-  Una app sin certificar admite hasta 25 organizaciones conectadas.
+- [x] **Xero PROBADO en producción (28 sep)**: organización Flouvia conectada,
+  contacto y las dos facturas creadas como borrador. Una app sin certificar
+  admite hasta 25 organizaciones conectadas.
+
+  Dos cosas que encontró esta prueba:
+  - **Permisos granulares.** Las apps de Xero creadas desde el 2 de marzo de
+    2026 no aceptan `accounting.transactions`: quedó partido en
+    `accounting.invoices`, `.payments`, `.banktransactions` y `.manualjournals`,
+    y pedir el viejo devuelve `invalid_scope` antes de mostrar la pantalla de
+    autorización. Cord pide `accounting.invoices` y `accounting.contacts`.
+  - **`integracion_vinculos.externo_id` exigía solo dígitos** y Xero usa UUID,
+    así que el vínculo no se podía guardar.
+
+- [ ] **RIESGO CONOCIDO, sin cerrar: la ventana entre crear y vincular.** El
+  objeto se crea en el proveedor y DESPUÉS se guarda el vínculo. Si algo falla
+  entre esas dos cosas —como pasó con el UUID—, el documento queda creado allá y
+  Cord sin memoria de él: al reintentar, lo duplica. Esta vez no hubo daño solo
+  porque el insert que falló era el del cliente, que corre ANTES de crear la
+  factura: fue el orden, no el diseño. El cierre real es una clave de
+  idempotencia del lado del proveedor derivada del id del documento —Xero admite
+  `Idempotency-Key` e Intuit su `RequestId`—, para que el reintento devuelva el
+  mismo documento en vez de crear otro.
 - [ ] Probar de punta a punta: conectar, emitir una factura y confirmar que
   aparece con el cliente correcto y sin duplicar.
 - [ ] Mandar también los **pagos**, no solo la factura.
