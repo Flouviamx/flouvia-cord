@@ -9,8 +9,10 @@
 //  - **Un pedido por cotización, garantizado por el vínculo**, no por un `if`:
 //    si ya existe, se reusa. Un evento repetido no acuña un segundo pedido.
 //  - **Una divisa distinta no se "convierte".** Si la cotización va en otra
-//    divisa que la tienda, no se crea el pedido y se dice por qué (regla 21):
-//    mandar el número sin su divisa lo cobraría en la equivocada.
+//    divisa que la tienda, el pedido se crea EN esa divisa cuando la tienda la
+//    tiene activada en sus mercados (`presentmentCurrencyCode`), con el precio
+//    negociado exacto. Si no la tiene, no se crea y la cotización dice cómo
+//    activarla (reglas 21 y 22): Cord no inventa un tipo de cambio.
 //  - **El impuesto lo calcula Shopify** con la configuración de la tienda. Cord
 //    manda precios unitarios y cantidades; el documento fiscal sigue siendo el
 //    de Cord.
@@ -110,7 +112,7 @@ export interface ResultadoPedido {
 /** Un pedido que no se creó se dice en el historial de la cotización, no solo en el log. */
 function porQueNo(r: ResultadoPedido): string | null {
     if (r.motivo === 'divisa' && r.monedas) {
-        return `No se creó el pedido en Shopify: la cotización va en ${r.monedas.venta} y la tienda cobra en ${r.monedas.tienda}. Cord no convierte el importe.`;
+        return `No se creó el pedido en Shopify: la cotización va en ${r.monedas.venta} y la tienda no cobra en esa divisa. Actívala en Shopify › Configuración › Mercados, o cotiza en ${r.monedas.tienda}.`;
     }
     if (r.motivo === 'sin_permiso') return 'No se creó el pedido en Shopify: la tienda no tiene el permiso para crear pedidos. Reconéctala desde Integraciones.';
     if (r.motivo === 'shopify') return 'Shopify no aceptó el pedido de esta cotización. Revisa la conexión en Integraciones.';
@@ -134,6 +136,16 @@ export async function onQuoteEvent(orgId: string, type: string, quoteId: string)
     } catch (err) {
         log.error('no se pudo crear el pedido en Shopify', { route: 'shopify-orders', orgId, type, err });
     }
+}
+
+const MONEDAS_TIENDA = `{ shop { currencyCode enabledPresentmentCurrencies } }`;
+
+/** Divisas en las que la tienda cobra. `null` si Shopify no respondió. */
+async function monedasDeTienda(cx: Conexion): Promise<string[] | null> {
+    const res: any = await shopifyGraphQL<any>(cx.shop, cx.token, MONEDAS_TIENDA);
+    if (!res.ok) return null;
+    const lista = res.data?.shop?.enabledPresentmentCurrencies;
+    return Array.isArray(lista) ? lista.map((m: unknown) => String(m).toUpperCase()) : null;
 }
 
 const CREAR = `mutation($input: DraftOrderInput!) {
@@ -177,7 +189,13 @@ export async function crearPedido(
     }
 
     const moneda = normalizeCurrency(q.base_currency as string);
-    if (cx.monedaTienda && moneda !== cx.monedaTienda) return { ok: false, motivo: 'divisa', monedas: { venta: moneda, tienda: cx.monedaTienda } };
+    let enOtraDivisa = false;
+    if (cx.monedaTienda && moneda !== cx.monedaTienda) {
+        const monedas = await monedasDeTienda(cx);
+        if (!monedas) return { ok: false, motivo: 'shopify' };
+        if (!monedas.includes(moneda)) return { ok: false, motivo: 'divisa', monedas: { venta: moneda, tienda: cx.monedaTienda } };
+        enOtraDivisa = true;
+    }
 
     const [items] = await withOrgTx(orgId, sql`
         select i.descripcion, i.cantidad, i.precio_unitario, i.precio_negociado, i.descuento_pct,
@@ -205,6 +223,7 @@ export async function crearPedido(
         tags: ['cord'],
         customAttributes: [{ key: 'Cord', value: String(q.folio) }],
     };
+    if (enOtraDivisa) input.presentmentCurrencyCode = moneda;
     if (clienteVinculo?.externo_id) input.purchasingEntity = { customerId: `gid://shopify/Customer/${clienteVinculo.externo_id}` };
     else if (q.cliente_email) input.email = q.cliente_email;
 

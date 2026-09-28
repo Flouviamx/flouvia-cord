@@ -130,10 +130,11 @@ complemento y el envío desde Gmail comparten proyecto):
 | `gmail.addons.current.message.metadata` | Leer los destinatarios del borrador para listar sus cotizaciones. |
 | `gmail.addons.current.action.compose` | Insertar la cotización al redactar y crear la respuesta en el hilo. |
 | `script.external_request` | Hablar con la API de Cord. |
+| `script.locale` | Leer el idioma de Gmail para mostrar el complemento en español o inglés. |
 | `gmail.send` | Enviar desde el Gmail del negocio las cotizaciones y facturas (Cord, no el complemento). |
 | `drive.file` | Google Sheets: solo el archivo que Cord crea. |
 
-Ninguno es restringido, así que no hay auditoría de seguridad; los sensibles
+Ninguno es restringido (`script.locale` ni siquiera es sensible), así que no hay auditoría de seguridad; los sensibles
 piden la verificación de la pantalla de consentimiento con un video que muestre
 el uso de cada uno.
 
