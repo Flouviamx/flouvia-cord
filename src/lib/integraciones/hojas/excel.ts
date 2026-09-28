@@ -167,7 +167,7 @@ export async function excelCuenta(token: string): Promise<string | null> {
 /** Fila y columna finales que ya tienen algo, para saber dónde va la siguiente. */
 async function filasUsadas(token: string, libroId: string, titulo: string): Promise<number> {
     try {
-        const r = await apiJson(`${hojaUrl(libroId, titulo)}/usedRange(valuesOnly=true)?$select=rowIndex,rowCount`, { token });
+        const r = await apiJson(`${hojaUrl(libroId, titulo)}/usedRange(valuesOnly=true)`, { token });
         const inicio = Number(r?.rowIndex) || 0;
         const cuantas = Number(r?.rowCount) || 0;
         return inicio + cuantas;
@@ -232,7 +232,7 @@ export const excel: ClienteHoja = {
 
     async prepararPestanas(token, libroId, hojas) {
         const lista = await conReintento(() => apiJson(
-            `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/worksheets?$select=name`, { token },
+            `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/worksheets`, { token },
         ));
         const existentes = new Set<string>((lista?.value ?? []).map((h: any) => String(h?.name ?? '')));
         for (const h of hojas) {
@@ -251,7 +251,7 @@ export const excel: ClienteHoja = {
             // de verdad se trabaja ahí. Si ya existe, no se toca.
             const tabla = nombreTabla(h.clave);
             const tablas = await apiJson(
-                `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/tables?$select=name`, { token },
+                `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/tables`, { token },
             ).catch(() => null);
             const existeTabla = (tablas?.value ?? []).some((t: any) => String(t?.name ?? '') === tabla);
             if (!existeTabla) {
@@ -287,7 +287,7 @@ export const excel: ClienteHoja = {
 
     async leerFolios(token, libroId, hoja) {
         try {
-            const r = await apiJson(`${hojaUrl(libroId, hoja.titulo)}/usedRange(valuesOnly=true)?$select=values`, { token });
+            const r = await apiJson(`${hojaUrl(libroId, hoja.titulo)}/usedRange(valuesOnly=true)`, { token });
             const filas = Array.isArray(r?.values) ? r.values : [];
             return filas.slice(1).map((f: unknown[]) => String(f?.[0] ?? ''));
         } catch (err) {

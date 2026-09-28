@@ -34,10 +34,27 @@ export async function apiJson(url: string, init: RequestInit & { token?: string 
         clearTimeout(t);
     }
 
-    if (res.status === 401) throw new ProveedorError('auth');
-    if (res.status === 403) throw new ProveedorError('permiso');
-    if (res.status === 429 || res.status >= 500) throw new ProveedorError('limite');
-    if (!res.ok) throw new ProveedorError('proveedor', String(res.status));
+    if (!res.ok) {
+        // El cuerpo del error se LEE y se conserva en `detalle`, que solo va al
+        // log: sin él, un 500 de un proveedor es indistinguible de otro y se
+        // acaba adivinando la causa en vez de leerla. Nunca llega al usuario,
+        // que ve el mensaje traducido del motivo (regla 14).
+        const cuerpo = await res.text().catch(() => '');
+        let detalle = `${res.status}`;
+        try {
+            const j = JSON.parse(cuerpo);
+            const e = j?.error ?? j;
+            const codigo = e?.code ?? e?.error ?? '';
+            const msg = typeof e?.message === 'string' ? e.message : (e?.message?.value ?? '');
+            detalle = `${res.status} ${codigo} ${msg}`.trim().slice(0, 300);
+        } catch {
+            if (cuerpo) detalle = `${res.status} ${cuerpo.slice(0, 200)}`;
+        }
+        if (res.status === 401) throw new ProveedorError('auth', detalle);
+        if (res.status === 403) throw new ProveedorError('permiso', detalle);
+        if (res.status === 429 || res.status >= 500) throw new ProveedorError('limite', detalle);
+        throw new ProveedorError('proveedor', detalle);
+    }
 
     if (res.status === 204) return null;
     const texto = await res.text();
