@@ -20,7 +20,7 @@
 | **Microsoft Teams** | App de Entra registrada y credenciales en Vercel (23 sep 2026); falta probarlo | Conectar, elegir canal y mandar prueba; verificación de editor | André prueba | Nada; el mes de prueba de Microsoft 365 corre desde el 23 sep 2026 |
 | **Shopify** | Fases 1 y 2 en producción (catálogo y clientes hacia Cord; pedido de vuelta al cerrar) | Probar con una tienda de desarrollo; fases 3-5 (facturar pedidos, cotizar desde el admin, precios en vivo) | André prueba, Claude construye | Nada, es gratis |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
-| **Gmail** | Envío desde el Gmail del negocio y complemento probado (28 sep 2026) | Registrar el regreso en Google Cloud; verificación y ficha de Marketplace | André | Verificación de Google |
+| **Gmail** | Envío desde el Gmail del negocio y complemento en producción (28 sep 2026); conexión e inserción probadas | Registrar el regreso en Google Cloud; verificación y ficha de Marketplace | André | Verificación de Google |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 
 ---
@@ -213,9 +213,10 @@ verificado en `test/contabilidad.test.ts`.
 ## Gmail
 
 **Hecho (27-28 sep):**
-- Complemento en `integrations/gmail/`, conectado por el OAuth de Cord y probado
-  en Gmail: panel sobre el correo, estado en vivo de la cotización del hilo,
-  responder en el hilo, cotizar con IA e insertar al redactar. Versión 1
+- Complemento en `integrations/gmail/`, conectado por el OAuth de Cord. Probado
+  en Gmail: la conexión y la inserción al redactar. Construido y pendiente de
+  probar: estado en vivo de la cotización del hilo, responder en el hilo y
+  cotizar con IA. Versión 1
   desplegada para Marketplace (`clasp deploy`).
 - **Enviar desde el Gmail del negocio** (`gmail.send`), en producción. Falta
   registrar su regreso en Google Cloud para poder conectarlo.
