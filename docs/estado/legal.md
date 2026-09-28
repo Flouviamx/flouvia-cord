@@ -95,6 +95,14 @@ borradores de DPA, subencargados y retención, y en la revisión pendiente del A
 cambian hasta la siguiente versión revisada. Detalle en
 [`../historial/revisiones-legales/2026-09-15-integraciones.md`](../historial/revisiones-legales/2026-09-15-integraciones.md).
 
+El 28 de septiembre la misma revisión pendiente sumó Google (Sheets, envío desde
+Gmail y complemento para Gmail, con la declaración de Uso Limitado que exige la
+verificación de Google), Microsoft, QuickBooks, Xero, Shopify, WhatsApp Business
+y Mercado Pago, y los Términos reescribieron la sección 7 de integraciones.
+Mientras no se publique, la declaración de datos de Google vive en
+`/integraciones/gmail`. Detalle en
+[`../historial/revisiones-legales/2026-09-28-integraciones-google-contabilidad.md`](../historial/revisiones-legales/2026-09-28-integraciones-google-contabilidad.md).
+
 ## Corpus complementario — estado
 
 Además de las cuatro variantes públicas hay **22 extractos complementarios + 2
