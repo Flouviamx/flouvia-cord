@@ -4,7 +4,38 @@ vi.mock('../src/lib/db', () => ({ sql: vi.fn(() => ''), withOrgTx: vi.fn() }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: (v: string) => v, encryptRequiredSecret: (v: string) => v }));
 
-const { lineasDe, TIPOS } = await import('../src/lib/integraciones/contabilidad/service');
+const { lineasDe, lineasDeSnapshot, TIPOS } = await import('../src/lib/integraciones/contabilidad/service');
+
+describe('las líneas salen de la factura, no de la cotización', () => {
+    it('lee el snapshot de la factura, que es el que existe siempre', () => {
+        // Forma real de `line_items_snapshot`: los importes son SIN impuesto.
+        expect(lineasDeSnapshot([
+            { description: 'Pruebas 1', quantity: 1, unitPrice: 7431.63, subtotal: 7431.63, total: 8620.69, taxRate: 0.16 },
+        ])).toEqual([
+            { descripcion: 'Pruebas 1', cantidad: 1, precio: 7431.63, importe: 7431.63 },
+        ]);
+    });
+
+    it('una factura sin cotización tiene líneas igual', () => {
+        // El caso que rompió en producción: Cord Invoicing emite facturas
+        // directas con cotizacion_id en nulo. Leer la cotización daba cero
+        // líneas y se descartaban en silencio como "sin líneas".
+        const lineas = lineasDeSnapshot([{ description: 'Prueba', quantity: 2, unitPrice: 862.07 }]);
+        expect(lineas).toHaveLength(1);
+        expect(lineas[0]).toEqual({ descripcion: 'Prueba', cantidad: 2, precio: 862.07, importe: 1724.14 });
+    });
+
+    it('un snapshot vacío o ausente no inventa líneas', () => {
+        expect(lineasDeSnapshot([])).toEqual([]);
+        expect(lineasDeSnapshot(null)).toEqual([]);
+        expect(lineasDeSnapshot('[]')).toEqual([]);
+    });
+
+    it('datos ilegibles del snapshot entran en cero, nunca en NaN', () => {
+        const [l] = lineasDeSnapshot([{ description: null, quantity: 'dos', unitPrice: 'mil' }]);
+        expect(l).toEqual({ descripcion: 'Concepto', cantidad: 0, precio: 0, importe: 0 });
+    });
+});
 
 describe('las líneas que entran a la contabilidad', () => {
     it('contabiliza el precio negociado con su descuento, no el de lista', () => {

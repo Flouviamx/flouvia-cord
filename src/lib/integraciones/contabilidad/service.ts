@@ -171,6 +171,33 @@ export function lineasDe(items: Record<string, unknown>[]): LineaConta[] {
     });
 }
 
+/**
+ * Las líneas TAL COMO quedaron en la factura, no como estaban en la cotización.
+ *
+ * `line_items_snapshot` es el snapshot al emitir, y existe en TODA factura —
+ * venga o no de una cotización. Cord Invoicing emite facturas directas, con
+ * `cotizacion_id` en nulo, y leer las líneas de la cotización las dejaba en
+ * cero: se descartaban en silencio como "sin líneas" y jamás llegaban a la
+ * contabilidad. Además es la fuente correcta aunque haya cotización, porque una
+ * factura emitida no debe cambiar si alguien edita la cotización después.
+ */
+export function lineasDeSnapshot(snapshot: unknown): LineaConta[] {
+    if (!Array.isArray(snapshot)) return [];
+    return snapshot.map((l: Record<string, unknown>) => {
+        const cantidad = Math.max(0, Number(l?.quantity) || 0);
+        const crudo = Number(l?.unitPrice);
+        // Mismo contrato que el otro camino: el importe se calcula sobre el
+        // precio YA redondeado, para que la línea cuadre consigo misma.
+        const precio = Math.round(Math.max(0, Number.isFinite(crudo) ? crudo : 0) * 100) / 100;
+        return {
+            descripcion: String(l?.description || 'Concepto'),
+            cantidad,
+            precio,
+            importe: Math.round(precio * cantidad * 100) / 100,
+        };
+    });
+}
+
 const fechaISO = (valor: unknown, zona: string): string => {
     const d = valor ? new Date(String(valor)) : new Date();
     const real = Number.isNaN(d.getTime()) ? new Date() : d;
@@ -195,6 +222,7 @@ export async function contabilizarFactura(
 
     const [[doc]] = await withOrgTx(orgId, sql`
         select d.id, d.invoice_number, d.created_at, d.due_date, d.currency, d.cotizacion_id,
+               d.line_items_snapshot,
                coalesce(cl.empresa, cq.empresa, '') as cliente_nombre,
                coalesce(cl.email, cq.email) as cliente_email,
                coalesce(cl.telefono, cq.telefono) as cliente_telefono,
@@ -214,12 +242,17 @@ export async function contabilizarFactura(
            and objeto = 'invoice' and local_id = ${docId}`);
     if (yaEsta) return { ok: false, motivo: 'ya_existe' };
 
-    const [items] = await withOrgTx(orgId, sql`
-        select descripcion, cantidad, precio_unitario, precio_negociado, descuento_pct
-          from cotizacion_items
-         where cotizacion_id = ${doc.cotizacion_id}
-         order by orden asc`);
-    const lineas = lineasDe(items as Record<string, unknown>[]);
+    // El snapshot manda. La cotización solo se consulta si la factura no tiene
+    // snapshot, que son las filas anteriores a que existiera.
+    let lineas = lineasDeSnapshot(doc.line_items_snapshot);
+    if (!lineas.length && doc.cotizacion_id) {
+        const [items] = await withOrgTx(orgId, sql`
+            select descripcion, cantidad, precio_unitario, precio_negociado, descuento_pct
+              from cotizacion_items
+             where cotizacion_id = ${doc.cotizacion_id}
+             order by orden asc`);
+        lineas = lineasDe(items as Record<string, unknown>[]);
+    }
     if (!lineas.length) return { ok: false, motivo: 'sin_lineas' };
 
     const zona = String(doc.zona_horaria ?? 'America/Mexico_City');
@@ -293,9 +326,20 @@ export async function contabilizarPendientes(
          limit ${limite}`);
 
     let hechas = 0;
+    const motivos: string[] = [];
     for (const f of filas) {
         const r = await contabilizarFactura(orgId, String(f.id), proveedor);
         if (r.ok) hechas += 1;
+        else motivos.push(r.motivo ?? 'desconocido');
+    }
+    // Un "0 enviadas" habiendo candidatas es un fallo SILENCIOSO: la pantalla
+    // dice que todo salió bien y nadie sabe qué las descartó. Así se escondió
+    // que las facturas sin cotización se iban por "sin líneas".
+    if (filas.length && !hechas) {
+        log.error('ninguna factura llegó a la contabilidad', {
+            route: 'contabilidad', orgId, proveedor,
+            candidatas: filas.length, motivos: [...new Set(motivos)],
+        });
     }
     return { facturas: hechas };
 }
