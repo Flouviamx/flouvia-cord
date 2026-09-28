@@ -39,8 +39,20 @@ npm install --global @google/clasp
 clasp login
 cd integrations/gmail
 clasp create --type standalone --title "Cord para Gmail"   # genera .clasp.json (ignorado)
+git checkout -- appsscript.json                              # ver abajo
 clasp push
 ```
+
+**`clasp create` sobrescribe `appsscript.json`** con el manifiesto vacío por
+defecto, sin avisar: se pierden los permisos, la configuración del complemento y
+la zona horaria. Subirlo así deja un script que Gmail no reconoce como
+complemento. Por eso el `git checkout` va ANTES del `clasp push`. Solo pasa al
+crear el proyecto; los `clasp push` posteriores no lo tocan.
+
+En **Configuración del proyecto › Proyecto de Google Cloud** se pega el NÚMERO
+del proyecto, no su nombre. El número es el prefijo del ID de cliente OAuth
+(`<número>-<hash>.apps.googleusercontent.com`) y también aparece en la portada
+de Google Cloud.
 
 Después, en el proyecto de Google Cloud asociado:
 
