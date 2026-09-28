@@ -183,6 +183,14 @@ function cordFetch(ruta, opciones) {
 }
 
 /** "Ana López <ana@acme.com>" → { nombre: 'Ana López', email: 'ana@acme.com' } */
+/** El 429 de cuota no se arregla reintentando: se dice qué pasa. */
+function mensajeDeError(r, generico) {
+    if (r.status === 429 && r.data && r.data.code === 'api_quota_exceeded') {
+        return 'Tu espacio de Cord ya usó las llamadas incluidas en su plan este mes. Sube de plan en Cord para seguir usando el complemento.';
+    }
+    return generico;
+}
+
 function partirRemitente(from) {
     var texto = String(from || '');
     var m = texto.match(/^\s*"?([^"<]*)"?\s*<([^>]+)>\s*$/);
@@ -379,7 +387,7 @@ function crearCotizacion(e) {
         if (!alta.ok || !alta.data || !alta.data.data) {
             return notificar(alta.status === 402
                 ? 'Tu plan de Cord ya no admite más clientes.'
-                : 'No se pudo crear el cliente en Cord.');
+                : mensajeDeError(alta, 'No se pudo crear el cliente en Cord.'));
         }
         clienteId = String(alta.data.data.id);
     }
@@ -395,7 +403,7 @@ function crearCotizacion(e) {
         },
     });
     if (!cotizacion.ok || !cotizacion.data || !cotizacion.data.data) {
-        return notificar('No se pudo crear la cotización en Cord.');
+        return notificar(mensajeDeError(cotizacion, 'No se pudo crear la cotización en Cord.'));
     }
 
     var datos = cotizacion.data.data;
@@ -456,7 +464,7 @@ function onGmailCompose(e) {
         .setHeader(cliente ? 'Cotizaciones de ' + (cliente.empresa || email) : 'Cotizaciones recientes');
 
     if (!lista.ok) {
-        seccion.addWidget(textoSimple('No se pudieron traer tus cotizaciones de Cord. Inténtalo otra vez.'));
+        seccion.addWidget(textoSimple(mensajeDeError(lista, 'No se pudieron traer tus cotizaciones de Cord. Inténtalo otra vez.')));
     } else if (!cotizaciones.length) {
         seccion.addWidget(textoSimple(cliente
             ? 'Este cliente todavía no tiene cotizaciones enviadas.'
