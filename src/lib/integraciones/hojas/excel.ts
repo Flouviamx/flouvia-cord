@@ -44,6 +44,29 @@ const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
 const HOJA_PLANTILLA = 'Cord';
 
 const enc = (v: string) => encodeURIComponent(v);
+
+/**
+ * Un `.xlsx` recién subido NO acepta la API de libros de inmediato: Graph
+ * responde 5xx mientras termina de procesarlo, y también limita por ritmo. Los
+ * dos casos llegan aquí como `limite` y los dos se arreglan esperando, así que
+ * se reintenta con espera creciente en vez de dar la conexión por rota.
+ *
+ * Solo envuelve llamadas repetibles sin consecuencia: listar hojas, reescribir
+ * la misma cabecera, dar formato. Nada que cree algo nuevo.
+ */
+async function conReintento<T>(fn: () => Promise<T>, intentos = 4): Promise<T> {
+    let ultimo: unknown;
+    for (let i = 0; i < intentos; i += 1) {
+        try {
+            return await fn();
+        } catch (err) {
+            ultimo = err;
+            if (!(err instanceof HojaError) || err.motivo !== 'limite') throw err;
+            await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+        }
+    }
+    throw ultimo;
+}
 const hojaUrl = (libroId: string, titulo: string) =>
     `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/worksheets/${enc(titulo)}`;
 
@@ -154,12 +177,18 @@ export const excel: ClienteHoja = {
         const item = await res.json().catch(() => null);
         const id = item?.id;
         if (!id) throw new HojaError('proveedor', 'sin id');
-        await this.prepararPestanas(token, String(id), hojas);
+        // Las pestañas NO se preparan aquí. El relleno que corre después ya lo
+        // hace, y hacerlo también en este punto obligaba a la persona a esperar
+        // frente al proveedor a que el libro estuviera listo — y si no lo
+        // estaba, tiraba la conexión entera por algo que se resuelve solo.
+        void hojas;
         return { id: String(id), url: String(item.webUrl || this.urlDelLibro(String(id))) };
     },
 
     async prepararPestanas(token, libroId, hojas) {
-        const lista = await apiJson(`${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/worksheets?$select=name`, { token });
+        const lista = await conReintento(() => apiJson(
+            `${MS_GRAPH}/me/drive/items/${enc(libroId)}/workbook/worksheets?$select=name`, { token },
+        ));
         const existentes = new Set<string>((lista?.value ?? []).map((h: any) => String(h?.name ?? '')));
         for (const h of hojas) {
             if (!existentes.has(h.titulo)) {
@@ -167,9 +196,9 @@ export const excel: ClienteHoja = {
                     token, method: 'POST', body: JSON.stringify({ name: h.titulo }),
                 });
             }
-            await apiJson(`${hojaUrl(libroId, h.titulo)}/range(address='${direccion(h.clave, 1)}')`, {
+            await conReintento(() => apiJson(`${hojaUrl(libroId, h.titulo)}/range(address='${direccion(h.clave, 1)}')`, {
                 token, method: 'PATCH', body: JSON.stringify({ values: [CABECERAS[h.clave]] }),
-            });
+            }));
 
             // Lo idiomático de Excel no es un rango con datos: es una TABLA.
             // Da filtros, bandas, encabezado fijo al desplazar y fórmulas por
