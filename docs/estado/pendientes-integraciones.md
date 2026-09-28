@@ -150,6 +150,23 @@ el dominio: funciona con el `.onmicrosoft.com`.
 
 ---
 
+## Cord para Gmail
+
+**Hecho (27 sep):** complemento completo en `integrations/gmail/` (manifiesto,
+tarjetas y README de publicación). Lee solo el mensaje abierto, reconoce si el
+remitente ya es cliente y crea cliente y cotización con la API pública v1.
+
+**Falta:**
+- [ ] André: proyecto de Google Cloud, `clasp login` y `clasp push` desde
+  `integrations/gmail/` (necesita terminal interactiva), y habilitar el
+  **Google Workspace Marketplace SDK** para publicarlo, aunque sea privado para
+  el dominio.
+- [ ] Probarlo en Gmail con una llave de escritura real.
+- [ ] Mejora posterior: cambiar la llave de API por el OAuth propio de Cord, el
+  mismo que ya usan Zapier y Make.
+
+---
+
 ## Google Sheets y Excel
 
 **Hecho (27 sep):** dos integraciones separadas en el directorio, con motor

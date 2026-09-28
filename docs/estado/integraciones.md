@@ -185,6 +185,28 @@ documento se lee una vez y se escribe en cada una. Por dentro comparten motor
 Contrato ejecutable en `src/lib/integraciones/hojas/columnas.ts`, verificado por
 `test/hojas.test.ts`.
 
+## Cord para Gmail (complemento)
+
+Complemento de Google Workspace que abre una cotización desde el correo del
+cliente (27 sep 2026). Vive en `integrations/gmail/` como Apps Script, igual que
+las apps de Zapier, Make y n8n viven como código en el repo.
+
+- **El permiso es la decisión de diseño.** Usa
+  `gmail.addons.current.message.readonly`, que lee ÚNICAMENTE el mensaje abierto
+  y **no** está en la lista de permisos restringidos de Google —verificado
+  contra la lista oficial—. Leer la bandeja (`gmail.readonly`) sí lo está, y
+  obliga a una auditoría de seguridad anual de un tercero certificado. El
+  complemento está hecho para no necesitarla nunca.
+- **Del correo salen el remitente y el asunto, nunca el cuerpo.** El contenido
+  de un correo es del negocio.
+- **Autentica con llave de API**, como el nodo de n8n, guardada en las
+  propiedades del USUARIO y probada contra `/api/v1/me` antes de darla por
+  buena. Migrar al OAuth propio de Cord (el de Zapier y Make) es una mejora
+  posterior, no un rediseño.
+- La cotización nace con una línea a partir del asunto porque `createCotizacion`
+  exige al menos una; el vendedor la termina en Cord, donde están los productos,
+  los precios y los impuestos.
+
 ## Zapier y Make
 
 Ambas apps viven como código en el repo y se publican con el CLI o la API de cada
