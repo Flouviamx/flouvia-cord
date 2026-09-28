@@ -107,7 +107,7 @@ const PRODUCTOS_QUERY = `query($cursor: String) {
     pageInfo { hasNextPage endCursor }
     nodes {
       id title description status
-      variants(first: 100) { nodes { id title sku price availableForSale } }
+      variants(first: 100) { nodes { id title sku price } }
     }
   }
 }`;
@@ -273,7 +273,6 @@ export async function aplicarWebhook(orgId: string, topic: string, payload: any)
                     nodes: (payload?.variants ?? []).map((v: any) => ({
                         id: `gid://shopify/ProductVariant/${v?.id}`,
                         title: v?.title, sku: v?.sku, price: v?.price,
-                        availableForSale: v?.available !== false,
                     })),
                 },
             };

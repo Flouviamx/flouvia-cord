@@ -110,6 +110,14 @@ describe('mapeo a la forma de Cord', () => {
         ]);
     });
 
+    it('un producto agotado sigue activo: sin existencias también se cotiza', () => {
+        const [p] = mapProductVariants({
+            id: 'gid://shopify/Product/3', title: 'Agotado', status: 'ACTIVE',
+            variants: { nodes: [{ id: 'gid://shopify/ProductVariant/31', title: 'Default Title', price: '1000.00', availableForSale: false }] },
+        });
+        expect(p).toMatchObject({ activo: true, precio: 1000, sku: null });
+    });
+
     it('un producto borrador llega inactivo y un precio inválido no queda en NaN', () => {
         const [p] = mapProductVariants({
             id: 'gid://shopify/Product/2', title: 'Borrador', status: 'DRAFT',

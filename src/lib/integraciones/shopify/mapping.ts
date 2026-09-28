@@ -34,6 +34,8 @@ const texto = (v: unknown, max: number): string | null => {
 export function mapProductVariants(node: any): ProductoExterno[] {
     const base = texto(node?.title, 140) ?? '';
     const descripcion = texto(node?.description, 2000);
+    // Solo el estado del producto decide. `availableForSale` es falso con cero
+    // existencias, y un producto agotado se sigue cotizando: se surte después.
     const activo = String(node?.status ?? '').toUpperCase() === 'ACTIVE';
     const variantes = Array.isArray(node?.variants?.nodes) ? node.variants.nodes : [];
     const out: ProductoExterno[] = [];
@@ -51,7 +53,7 @@ export function mapProductVariants(node: any): ProductoExterno[] {
             descripcion,
             precio: Number.isFinite(precio) && precio >= 0 ? precio : 0,
             moneda: null,
-            activo: activo && v?.availableForSale !== false,
+            activo,
         });
     }
     return out;
