@@ -21,11 +21,11 @@ export const QBO_SCOPES = 'com.intuit.quickbooks.accounting';
  * de mostrar siquiera la pantalla de autorización. Las apps anteriores pueden
  * seguir con el amplio hasta septiembre de 2027.
  *
- * Cord pide el mínimo que necesita: crear la factura y su contacto, y leer las
- * tasas de impuesto para poner cada línea en la suya. Nada de pagos, bancos ni
- * asientos manuales, que entrarían con el permiso amplio sin que nadie los use.
+ * Cord pide el mínimo que necesita: crear la factura y su contacto, leer las
+ * tasas de impuesto y las cuentas de banco, y registrar los pagos de esas
+ * facturas. Nada de movimientos bancarios ni asientos manuales.
  */
-export const XERO_SCOPES = 'offline_access openid profile email accounting.invoices accounting.contacts accounting.settings.read';
+export const XERO_SCOPES = 'offline_access openid profile email accounting.invoices accounting.contacts accounting.settings.read accounting.payments';
 
 export const QBO_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 export const QBO_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';

@@ -5207,12 +5207,12 @@ alter table integracion_oauth_estados add constraint integracion_oauth_estados_p
 
 alter table integracion_vinculos drop constraint if exists integracion_vinculos_objeto_check;
 alter table integracion_vinculos add constraint integracion_vinculos_objeto_check
-  check (objeto in ('client', 'client_contact', 'quote', 'product', 'invoice'));
+  check (objeto in ('client', 'client_contact', 'quote', 'product', 'invoice', 'payment'));
 alter table integracion_vinculos drop constraint if exists integracion_vinculos_externo_tipo_check;
 alter table integracion_vinculos add constraint integracion_vinculos_externo_tipo_check
   check (externo_tipo in ('company', 'contact', 'deal',
                           'shopify_product', 'shopify_customer', 'shopify_draft_order', 'shopify_order',
-                          'qbo_customer', 'qbo_invoice', 'xero_contact', 'xero_invoice'));
+                          'qbo_customer', 'qbo_invoice', 'qbo_payment', 'xero_contact', 'xero_invoice', 'xero_payment'));
 
 -- El id externo no siempre es numérico: Xero usa UUID. Con la forma original
 -- —solo dígitos— el vínculo no se guardaba, la factura quedaba creada del lado

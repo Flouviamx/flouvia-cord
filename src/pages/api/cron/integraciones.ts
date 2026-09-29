@@ -6,6 +6,8 @@ import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
 import { processOrgSync, purgeOldSyncJobs } from '../../../lib/integraciones/sync';
+import { sincronizarPagos } from '../../../lib/integraciones/contabilidad/pagos';
+import type { ProveedorConta } from '../../../lib/integraciones/contabilidad/config';
 
 const MAX_ORGS = 200;
 
@@ -31,7 +33,22 @@ export const GET: APIRoute = async ({ request }) => {
             return processOrgSync(orgId, 50);
         });
     }
-    return new Response(JSON.stringify({ ok: true, organizaciones: orgIds.length, trabajos: procesados }), {
+    // Pagos que el contador registró en QuickBooks o Xero: el barrido descubre
+    // qué organizaciones tienen contabilidad y el trabajo vuelve a su carril.
+    const contas = await reqContext.run({ userId: null, cronScope: true }, async () => {
+        const [rows] = await withSystemTx(sql`
+            select org_id, proveedor from integracion_conexiones
+             where proveedor in ('quickbooks', 'xero') and estado = 'activa'
+             limit ${MAX_ORGS}`);
+        return rows.map((r) => ({ orgId: String(r.org_id), proveedor: String(r.proveedor) as ProveedorConta }));
+    });
+    let pagos = 0;
+    for (const c of contas) {
+        const r = await reqContext.run({ userId: null, orgId: c.orgId }, () => sincronizarPagos(c.orgId, c.proveedor)).catch(() => null);
+        pagos += (r?.recibidos ?? 0) + (r?.enviados ?? 0);
+    }
+
+    return new Response(JSON.stringify({ ok: true, organizaciones: orgIds.length, trabajos: procesados, pagos }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
     });
 };

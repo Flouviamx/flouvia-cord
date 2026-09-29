@@ -154,6 +154,8 @@ export async function applyPayment(
     if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
     // Un abono que no liquida no emite evento de dominio, pero cambia pagado y saldo en la hoja.
     else after(import('../integraciones/hojas/service').then((m) => m.onAbonoFactura(orgId, documentoId)));
+    // Cada cobro llega también a la contabilidad conectada, si la factura ya está allá.
+    after(import('../integraciones/contabilidad/pagos').then((m) => m.onPagoFactura(orgId, documentoId)));
   }
 
   return {

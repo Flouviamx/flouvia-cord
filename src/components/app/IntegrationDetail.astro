@@ -27,7 +27,7 @@ interface Props {
     slack?: { canal: string; equipo: string; oauth: boolean; flash: string | null };
     shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
     hoja?: { conexion: any; disponible: boolean; flash: string | null };
-    conta?: { conexion: any; disponible: boolean; flash: string | null };
+    conta?: { conexion: any; pagos: { permiso: boolean; cuenta: string | null } | null; disponible: boolean; flash: string | null };
     gmail?: { conexion: { cuenta: string; estado: string } | null; complemento: number; disponible: boolean; flash: string | null };
     teamsWebhook?: string;
     teams?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
@@ -100,7 +100,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     )}
 
     {(app.slug === 'quickbooks' || app.slug === 'xero') && conta && (
-        <ContaCard lang={L} proveedor={app.slug} conexion={conta.conexion}
+        <ContaCard lang={L} proveedor={app.slug} conexion={conta.conexion} pagos={conta.pagos}
             disponible={conta.disponible} flash={conta.flash} />
     )}
 

@@ -8,11 +8,13 @@ interface Props {
         cuenta: string; cuentaNombre: string | null; ultimaSync: string | null; estado: string;
         aviso?: { motivo: 'impuesto' | 'retenciones' | 'descuadre'; tasa: number | null } | null;
     } | null;
+    /** Pagos: si la conexión tiene permiso y, en Xero, la cuenta de banco elegida. */
+    pagos: { permiso: boolean; cuenta: string | null } | null;
     disponible: boolean;
     flash: string | null;
 }
 
-const { lang: L, proveedor, conexion, disponible, flash } = Astro.props;
+const { lang: L, proveedor, conexion, pagos, disponible, flash } = Astro.props;
 const FLASH = ['conectada', 'cancelada', 'estado', 'empresa', 'error'];
 const esQb = proveedor === 'quickbooks';
 const conectada = Boolean(conexion) && conexion?.estado !== 'desconectada';
@@ -48,6 +50,24 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
                     <button class="ct-btn-solid" data-ct-sync>{t(L, 'conta.contabilizar')}</button>
                     <button class="ct-btn-ghost" data-ct-off>{t(L, 'conta.desconectar')}</button>
                 </div>
+
+                <div class="ct-pagos">
+                    <h4>{t(L, 'conta.pagos_titulo')}</h4>
+                    <p class="ct-que">{t(L, esQb ? 'conta.qb.pagos' : 'conta.x.pagos')}</p>
+                    {!esQb && !pagos?.permiso && (
+                        <p class="ct-flash" data-bad="1">{t(L, 'conta.x.pagos_permiso')}
+                            <button class="ct-btn-ghost ct-inline" data-ct-conectar>{t(L, 'conta.x.reconectar_pagos')}</button>
+                        </p>
+                    )}
+                    {!esQb && pagos?.permiso && (
+                        <div class="s-field">
+                            <label for="ctCuenta">{t(L, 'conta.x.cuenta_label')}</label>
+                            <select class="s-input" id="ctCuenta" data-actual={pagos.cuenta ?? ''}>
+                                <option value="">{t(L, 'conta.x.cuenta_elige')}</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
             </Fragment>
         ) : (
             <div class="ct-actions">
@@ -68,7 +88,10 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
             data-i18n-impuesto={t(L, 'conta.aviso.impuesto')}
             data-i18n-impuesto-general={t(L, 'conta.aviso.impuesto_general')}
             data-i18n-retenciones={t(L, 'conta.aviso.retenciones')}
-            data-i18n-descuadre={t(L, 'conta.aviso.descuadre')}></span>
+            data-i18n-descuadre={t(L, 'conta.aviso.descuadre')}
+            data-i18n-pagos={t(L, 'conta.resultado_pagos')}
+            data-i18n-cuenta-guardada={t(L, 'conta.x.cuenta_guardada')}
+            data-i18n-sin-cuentas={t(L, 'conta.x.sin_cuentas')}></span>
     </div>
 </div>
 
@@ -79,6 +102,9 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
     .ct-conn { font-size: 0.9rem; margin: 0 0 0.35rem; color: var(--color-text); }
     .ct-sync { font-size: 0.82rem; color: var(--color-text-muted); margin: 0 0 1rem; }
     .ct-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .ct-pagos { margin-top: 1.6rem; padding-top: 1.3rem; border-top: 1px solid var(--color-border); }
+    .ct-pagos h4 { font-size: 0.86rem; font-weight: 650; color: var(--color-text); margin: 0 0 0.35rem; }
+    .ct-inline { margin-left: 0.5rem; padding: 5px 12px; }
     .ct-pronto { font-size: 0.78rem; color: var(--color-text-muted); }
     .ct-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; }
     .ct-msg:global(.ok) { color: var(--color-ok); }
@@ -142,7 +168,9 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
                 const res = await pedir('/api/integraciones/contabilidad/sync', 'POST');
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || '');
-                const listo = (msg.dataset.i18nResultado || '').replace('{facturas}', String(d.facturas ?? 0));
+                const facturas = (msg.dataset.i18nResultado || '').replace('{facturas}', String(d.facturas ?? 0));
+                const pagosTxt = d.pagos ? ' ' + (msg.dataset.i18nPagos || '').replace('{enviados}', String(d.pagos.enviados ?? 0)).replace('{recibidos}', String(d.pagos.recibidos ?? 0)) : '';
+                const listo = facturas + pagosTxt;
                 if (!d.omitidas) return flash(listo, true);
                 const a = d.aviso || {};
                 const plantilla = a.motivo === 'impuesto' && a.tasa == null ? msg.dataset.i18nImpuestoGeneral
@@ -159,6 +187,41 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
             }
         });
     }
+    function initCuenta() {
+        const sel = document.getElementById('ctCuenta') as HTMLSelectElement | null;
+        const msg = document.querySelector<HTMLElement>('[data-ct-msg]');
+        if (!sel || !msg) return;
+        const actual = sel.dataset.actual || '';
+        fetch('/api/integraciones/contabilidad/cuentas')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+                const cuentas = d && Array.isArray(d.cuentas) ? d.cuentas : [];
+                if (!cuentas.length) { msg.textContent = msg.dataset.i18nSinCuentas || ''; msg.className = 'ct-msg err'; return; }
+                for (const c of cuentas) {
+                    const o = document.createElement('option');
+                    o.value = c.id; o.textContent = c.nombre; o.selected = c.id === actual;
+                    sel.appendChild(o);
+                }
+            })
+            .catch(() => {});
+        sel.addEventListener('change', async () => {
+            if (!sel.value) return;
+            sel.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/contabilidad/cuentas', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cuenta: sel.value }),
+                });
+                if (!res.ok) throw new Error();
+                msg.textContent = msg.dataset.i18nCuentaGuardada || ''; msg.className = 'ct-msg ok';
+            } catch {
+                msg.className = 'ct-msg err';
+            } finally {
+                sel.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCuenta);
+    else initCuenta();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initConta);
     else initConta();
 </script>

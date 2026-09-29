@@ -16,6 +16,7 @@ import { estadoHoja } from '../../../../lib/integraciones/hojas/service';
 import { credencialesHoja } from '../../../../lib/integraciones/hojas/config';
 import { estadoConta } from '../../../../lib/integraciones/contabilidad/service';
 import { credencialesConta, esProveedorConta } from '../../../../lib/integraciones/contabilidad/config';
+import { cuentaDePagosXero, tienePermisoPagos } from '../../../../lib/integraciones/contabilidad/pagos';
 import { estadoGmail, GMAIL_ENVIO_LISTO } from '../../../../lib/integraciones/gmail/envio';
 
 export const prerender = false;
@@ -34,6 +35,7 @@ const PROV_HOJA = app.slug === 'google-sheets' ? 'google_sheets' as const : app.
 const HOJA = canAjustes && PROV_HOJA ? await estadoHoja(await getActiveOrgId(), PROV_HOJA).catch(() => null) : null;
 const PROV_CONTA = esProveedorConta(app.slug) ? app.slug : null;
 const CONTA = canAjustes && PROV_CONTA ? await estadoConta(await getActiveOrgId(), PROV_CONTA).catch(() => null) : null;
+const CONTA_PAGOS = CONTA && PROV_CONTA ? { permiso: await tienePermisoPagos(await getActiveOrgId(), PROV_CONTA).catch(() => false), cuenta: PROV_CONTA === 'xero' ? await cuentaDePagosXero(await getActiveOrgId()).catch(() => null) : null } : null;
 const GMAIL = canAjustes && app.slug === 'gmail' ? await estadoGmail(await getActiveOrgId()).catch(() => null) : null;
 const GMAIL_ADDON = canAjustes && app.slug === 'gmail' ? await oauthAppConnections(await getActiveOrgId(), 'gmail').catch(() => 0) : 0;
 const state = integrationState(app, { gmail: GMAIL?.estado ?? null, hubspot: HS?.conexion?.estado ?? null, shopify: SHOPIFY?.estado ?? null, googleSheets: app.slug === 'google-sheets' ? HOJA?.estado ?? null : null, excel: app.slug === 'excel' ? HOJA?.estado ?? null : null, quickbooks: app.slug === 'quickbooks' ? CONTA?.estado ?? null : null, xero: app.slug === 'xero' ? CONTA?.estado ?? null : null, slack: Boolean(ORG.slackWebhook), teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal), teamsError: ORG.teamsGraph === 'error', whatsapp: Boolean(ORG.whatsappConectado), oauth: OAUTH });
@@ -52,7 +54,7 @@ const state = integrationState(app, { gmail: GMAIL?.estado ?? null, hubspot: HS?
         shopify={{ conexion: SHOPIFY, disponible: SHOPIFY_LISTO, flash: Astro.url.searchParams.get('shopify'), tiendaSugerida: Astro.url.searchParams.get('tienda') }}
         hoja={{ conexion: HOJA, disponible: Boolean(PROV_HOJA && credencialesHoja(PROV_HOJA)), flash: Astro.url.searchParams.get('hoja') }}
         gmail={{ conexion: GMAIL, complemento: GMAIL_ADDON, disponible: GMAIL_ENVIO_LISTO, flash: Astro.url.searchParams.get('gmail') }}
-        conta={{ conexion: CONTA, disponible: Boolean(PROV_CONTA && credencialesConta(PROV_CONTA)), flash: Astro.url.searchParams.get('conta') }}
+        conta={{ conexion: CONTA, pagos: CONTA_PAGOS, disponible: Boolean(PROV_CONTA && credencialesConta(PROV_CONTA)), flash: Astro.url.searchParams.get('conta') }}
         teamsWebhook={ORG.teamsWebhook ?? ''}
         teams={{ canal: ORG.teamsCanal, equipo: ORG.teamsEquipo, usuario: ORG.teamsUsuario, estado: ORG.teamsGraph, oauth: Boolean(teamsCredentials()), flash: Astro.url.searchParams.get('teams') }}
         whatsapp={{ phoneId: ORG.whatsappPhoneId ?? '', plantilla: ORG.whatsappPlantilla ?? '', idioma: ORG.whatsappIdioma ?? '', conectado: Boolean(ORG.whatsappConectado) }}

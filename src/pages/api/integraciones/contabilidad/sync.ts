@@ -12,6 +12,7 @@ import { log } from '../../../../lib/log';
 import { ProveedorError } from '../../../../lib/integraciones/proveedor-http';
 import { esProveedorConta } from '../../../../lib/integraciones/contabilidad/config';
 import { contabilizarPendientes } from '../../../../lib/integraciones/contabilidad/service';
+import { sincronizarPagos } from '../../../../lib/integraciones/contabilidad/pagos';
 import { t } from '../../../../i18n/app';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -28,7 +29,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (!esProveedorConta(body?.proveedor)) return json({ error: t(L, 'conta.err.proveedor') }, 400);
 
     try {
-        return json(await contabilizarPendientes(orgId, body.proveedor));
+        const facturas = await contabilizarPendientes(orgId, body.proveedor);
+        const pagos = await sincronizarPagos(orgId, body.proveedor).catch((err) => {
+            log.error('no se pudieron sincronizar los pagos', { route: 'conta-sync', orgId, err });
+            return null;
+        });
+        return json({ ...facturas, pagos });
     } catch (err) {
         // `desconocido` y `proveedor` son cosas distintas y antes se escribían
         // igual: un fallo del proveedor y un error del propio código de Cord

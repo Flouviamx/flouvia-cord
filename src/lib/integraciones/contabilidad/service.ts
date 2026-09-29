@@ -480,6 +480,9 @@ export async function onDomainEventConta(orgId: string, type: string, objectId: 
     for (const proveedor of proveedores) {
         try {
             await contabilizarFactura(orgId, objectId, proveedor);
+            // Los cobros que llegaron antes de que la factura existiera allá.
+            const { sincronizarPagos } = await import('./pagos');
+            await sincronizarPagos(orgId, proveedor, objectId);
         } catch (err) {
             const esDelProveedor = err instanceof ProveedorError;
             const motivo = esDelProveedor ? err.motivo : 'desconocido';

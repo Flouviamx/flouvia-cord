@@ -307,6 +307,31 @@ pago y el correo al cliente de un workflow) salen desde su dirección (28 sep
 - **Sin gate de plan**: no le cuesta nada a Cord (no pasa por Resend) y es la
   forma en que el cliente reconoce al remitente.
 
+## Pagos con QuickBooks y Xero (29 sep 2026)
+
+`src/lib/integraciones/contabilidad/pagos.ts`, en los dos sentidos, solo para
+facturas ya contabilizadas (vínculo `invoice`):
+
+- **Salida:** cada fila de `documento_pagos` sin vínculo `payment` se crea allá
+  contra su factura: `Payment` con `LinkedTxn` en QuickBooks (Fondos no
+  depositados) y `PUT /Payments` en Xero en la cuenta de banco elegida
+  (`ajustes.cuentaPagos`, AccountID). La idempotencia del proveedor es el id del
+  pago de Cord (`requestid` / `Idempotency-Key`), lo que cierra la ventana entre
+  crear allá y vincular aquí. Xero cobra solo facturas `AUTHORISED`: en
+  borrador, el pago espera.
+- **Entrada:** pagos de la factura externa (LinkedTxn de QuickBooks leyendo la
+  parte aplicada a ESA factura; `Payments` de Xero) que no tienen vínculo se
+  aplican con `applyPayment` (`metodo` = proveedor, `referencia` "QuickBooks
+  <id>") y se vinculan. **Anti-eco:** la salida ignora los pagos con `metodo`
+  igual al proveedor.
+- **Cuándo:** `applyPayment` dispara `onPagoFactura` en `after()`; al
+  contabilizar una factura se mandan los cobros previos; el botón "Enviar las
+  facturas pendientes" hace las dos direcciones; y el cron diario
+  `/api/cron/integraciones` trae los pagos registrados allá.
+- **Permiso:** Xero pide `accounting.payments`; las conexiones anteriores deben
+  reconectar y la tarjeta lo dice. QuickBooks no pide nada nuevo.
+- Lo verifica `test/conta-pagos.test.ts`.
+
 ## Cord para Gmail (complemento)
 
 Complemento de Google Workspace que abre una cotización desde el correo del
