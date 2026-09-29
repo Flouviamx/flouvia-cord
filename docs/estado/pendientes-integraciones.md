@@ -394,6 +394,25 @@ interactiva y recargar la ventana.
 
 ---
 
+## Siguiente nivel (29 sep 2026): construido, falta probar
+
+- [ ] **HubSpot:** abrir un Deal y ver la tarjeta de Cord en la barra lateral
+  (si no aparece: Personalizar › Apps › Cord). Build #7 del proyecto.
+- [ ] **Shopify:** existencias en el editor con un producto que controle
+  inventario; encender "Facturar los pedidos de tu tienda" y pagar un pedido de
+  prueba. Los precios B2B solo se pueden probar en una tienda Plus con B2B.
+- [ ] **QuickBooks y Xero, pagos:** cobrar una factura ya contabilizada y ver el
+  pago allá; registrar un pago allá y pulsar "Enviar las facturas pendientes".
+  Xero: reconectar (permiso `accounting.payments`) y elegir la cuenta de banco.
+- [ ] **Slack:** reconectar con "Cambiar canal" (permisos nuevos), pegar un link
+  de cotización, probar `/cord COT-...` y una solicitud de aprobación (el
+  permiso de aprobaciones es del plan Scale).
+- [ ] **Docs públicas de pagos de QuickBooks y Xero:** otra sesión tenía cambios
+  sin guardar en esas páginas; agregar la sección de pagos cuando los suba.
+- [ ] **Teams con botones que deciden:** necesita un bot registrado en Azure Bot
+  Service, que pide una suscripción de Azure. Hoy la solicitud llega a Teams con
+  un botón que abre Cord.
+
 ## Apps que conviene conectar después
 
 Ordenadas por impacto para Cord (de la propuesta al pago, con fuerte uso en México,
