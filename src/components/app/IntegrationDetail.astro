@@ -28,7 +28,7 @@ interface Props {
     shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
     hoja?: { conexion: any; disponible: boolean; flash: string | null };
     conta?: { conexion: any; disponible: boolean; flash: string | null };
-    gmail?: { conexion: { cuenta: string; estado: string } | null; disponible: boolean; flash: string | null };
+    gmail?: { conexion: { cuenta: string; estado: string } | null; complemento: number; disponible: boolean; flash: string | null };
     teamsWebhook?: string;
     teams?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
     whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
@@ -205,7 +205,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
 
     {app.slug === 'gmail' && (
         <Fragment>
-            {canAjustes && gmail && <GmailCard lang={L} conexion={gmail.conexion} disponible={gmail.disponible} flash={gmail.flash} />}
+            {canAjustes && gmail && <GmailCard lang={L} conexion={gmail.conexion} complemento={gmail.complemento} disponible={gmail.disponible} flash={gmail.flash} />}
             <div class="s-block">
                 <h3>{t(L, 'set.integ.gmail.conectar_titulo')}</h3>
                 <div class="s-body">

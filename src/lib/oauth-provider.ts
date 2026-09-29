@@ -164,6 +164,34 @@ export async function connectedOAuthApps(orgId: string): Promise<string[]> {
     return rows.map((r) => r.slug as string);
 }
 
+/** Personas del equipo con la app autorizada (el complemento de Gmail se conecta una vez por persona). */
+export async function oauthAppConnections(orgId: string, slug: string): Promise<number> {
+    const [[row]] = await withOrgTx(orgId, sql`
+        select count(*)::int as n
+          from oauth_grants g
+          join oauth_clients c on c.client_id = g.client_id
+          join api_keys k on k.id = g.api_key_id
+         where g.org_id = ${orgId} and c.slug = ${slug}
+           and g.revoked_at is null and g.refresh_expires_at > now() and k.revoked_at is null`);
+    return Number(row?.n ?? 0);
+}
+
+/** Revoca todas las autorizaciones vivas de una app en la organización: el grant y su llave. */
+export async function revokeOAuthApp(orgId: string, slug: string): Promise<number> {
+    const [revocados] = await withOrgTx(orgId,
+        sql`update oauth_grants g set revoked_at = now()
+              from oauth_clients c
+             where c.client_id = g.client_id and c.slug = ${slug}
+               and g.org_id = ${orgId} and g.revoked_at is null
+         returning g.api_key_id`);
+    const llaves = revocados.map((r: any) => r.api_key_id as string);
+    if (llaves.length) {
+        await withOrgTx(orgId, sql`update api_keys set revoked_at = now()
+                                    where org_id = ${orgId} and id = any(${llaves}::uuid[]) and revoked_at is null`);
+    }
+    return llaves.length;
+}
+
 export async function revokeToken(client: OAuthClient, token: string): Promise<void> {
     await sql`select cord_oauth_revoke(${client.clientId}, ${sha256Hex(token)})`;
 }

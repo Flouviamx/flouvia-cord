@@ -4,11 +4,13 @@ import { t, type AppLocale } from '../../i18n/app';
 interface Props {
     lang: AppLocale;
     conexion: { cuenta: string; estado: string } | null;
+    /** Personas del equipo con el complemento de Gmail autorizado. */
+    complemento: number;
     disponible: boolean;
     flash: string | null;
 }
 
-const { lang: L, conexion, disponible, flash } = Astro.props;
+const { lang: L, conexion, complemento, disponible, flash } = Astro.props;
 const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error'];
 ---
 
@@ -36,9 +38,18 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error']
             </div>
         )}
         <p class="gm-nota">{t(L, 'gmail.nota')}</p>
+
+        <div class="gm-addon">
+            <p class="gm-addon-t">{t(L, 'gmail.complemento_titulo')}</p>
+            <p class="gm-conn">{complemento > 0
+                ? t(L, complemento === 1 ? 'gmail.complemento_uno' : 'gmail.complemento_varios').replace('{n}', String(complemento))
+                : t(L, 'gmail.complemento_ninguno')}</p>
+            {complemento > 0 && <button class="gm-btn-ghost" data-gm-addon-off>{t(L, 'gmail.complemento_desconectar')}</button>}
+        </div>
         <span class="gm-msg" data-gm-msg
             data-i18n-no-conecto={t(L, 'gmail.err.no_conecto')}
-            data-i18n-no-desconecto={t(L, 'gmail.err.no_desconecto')}></span>
+            data-i18n-no-desconecto={t(L, 'gmail.err.no_desconecto')}
+            data-i18n-confirmar-addon={t(L, 'gmail.complemento_confirmar')}></span>
     </div>
 </div>
 
@@ -48,6 +59,8 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error']
     .gm-que { font-size: 0.85rem; line-height: 1.5; color: var(--color-text-muted); margin: 0 0 1rem; max-width: 62ch; }
     .gm-conn { font-size: 0.9rem; margin: 0 0 1rem; color: var(--color-text); }
     .gm-nota { font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); margin: 1rem 0 0; max-width: 62ch; }
+    .gm-addon { border-top: 1px solid var(--color-border); margin-top: 1.4rem; padding-top: 1.2rem; }
+    .gm-addon-t { font-size: 0.82rem; font-weight: 700; margin: 0 0 0.4rem; color: var(--color-text); }
     .gm-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
     .gm-pronto { font-size: 0.78rem; color: var(--color-text-muted); }
     .gm-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; color: var(--color-danger); }
@@ -59,6 +72,7 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error']
     @media (max-width: 560px) {
         .gm-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
         .gm-btn-solid, .gm-btn-ghost { min-height: 46px; width: 100%; justify-content: center; text-align: center; }
+        .gm-addon .gm-btn-ghost { width: 100%; }
     }
 </style>
 
@@ -93,6 +107,20 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error']
             } catch {
                 fallo(msg.dataset.i18nNoDesconecto || '');
                 off.disabled = false;
+            }
+        });
+
+        const addonOff = document.querySelector<HTMLButtonElement>('[data-gm-addon-off]');
+        addonOff?.addEventListener('click', async () => {
+            if (!window.confirm(msg.dataset.i18nConfirmarAddon || '')) return;
+            addonOff.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/gmail/complemento', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                window.location.href = window.location.pathname;
+            } catch {
+                fallo(msg.dataset.i18nNoDesconecto || '');
+                addonOff.disabled = false;
             }
         });
     }
