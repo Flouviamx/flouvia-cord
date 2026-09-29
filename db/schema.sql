@@ -5186,11 +5186,7 @@ end $$;
 -- un tipo nuevo se EDITA lo de abajo, no se añade otro bloque.
 alter table integracion_conexiones drop constraint if exists integracion_conexiones_proveedor_check;
 alter table integracion_conexiones add constraint integracion_conexiones_proveedor_check
-  check (proveedor in ('hubspot', 'shopify', 'google_sheets', 'excel', 'quickbooks', 'xero', 'gmail'));
-
--- La cuenta identifica al dueño del lado del proveedor, y cada uno la nombra a
--- su manera: id numérico (HubSpot, el realmId de QuickBooks), dominio de la
--- tienda (Shopify), UUID (el tenant de Xero) o correo (Google y Microsoft).
+  check (proveedor in ('hubspot', 'shopify', 'google_sheets', 'excel', 'quickbooks', 'xero', 'gmail', 'slack'));
 alter table integracion_conexiones drop constraint if exists integracion_conexiones_cuenta_externa_check;
 alter table integracion_conexiones add constraint integracion_conexiones_cuenta_externa_check
   check (
@@ -5198,6 +5194,7 @@ alter table integracion_conexiones add constraint integracion_conexiones_cuenta_
     or cuenta_externa ~ '^[a-z0-9][a-z0-9-]{0,59}\.myshopify\.com$'
     or cuenta_externa ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
     or (cuenta_externa ~ '^[^@[:space:]]{1,128}@[^@[:space:]]{1,127}$' and length(cuenta_externa) <= 254)
+    or cuenta_externa ~ '^T[A-Z0-9]{6,20}$'
   );
 
 alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;

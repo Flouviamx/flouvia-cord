@@ -69,6 +69,28 @@ usuario bot porque Slack no acepta `incoming-webhook` sin él. Credenciales en
 `integrations/slack/.env` (ignorado) y en Vercel. Sin distribución pública activada
 solo se puede instalar en el workspace dueño de la app.
 
+**App interactiva** (29 sep 2026, `src/lib/integraciones/slack-app.ts`): el OAuth
+ahora pide `incoming-webhook,links:read,links:write,commands,users:read,
+users:read.email` (ninguno lee mensajes) y guarda el token del bot cifrado en
+`integracion_conexiones` (`proveedor = 'slack'`, cuenta = team id), que resuelve
+la organización cuando Slack llama sin sesión. Tres rutas firmadas con
+`SLACK_SIGNING_SECRET` (v0, 5 min), públicas y exentas de CSRF:
+
+- `/api/integraciones/slack/eventos` — `link_shared` → `chat.unfurl` con la
+  tarjeta de la cotización, SOLO si el token del link es de la organización de
+  ese equipo.
+- `/api/integraciones/slack/comando` — `/cord <folio o cliente>`, respuesta
+  efímera (5 resultados).
+- `/api/integraciones/slack/interaccion` — botones de `quote.approval_requested`
+  (publicado por el webhook del canal): `users.info` da el correo, que debe ser
+  de un miembro activo con permiso `aprobar`; decide con `runQuoteAction`
+  (`approve_request`/`reject_request`, actor `slack:<correo>`) y reemplaza el
+  mensaje por `response_url`.
+
+Las conexiones anteriores no tienen la app hasta reconectar; la tarjeta lo dice.
+El manifiesto (`integrations/slack/manifest.json`) declara los permisos, el
+dominio de vista previa, el comando y las URLs de eventos e interactividad.
+
 ## Shopify
 
 Dos direcciones: la tienda entra a Cord (fase 1, 22 sep 2026) y la cotización

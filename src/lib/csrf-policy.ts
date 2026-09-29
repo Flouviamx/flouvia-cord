@@ -18,6 +18,9 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/oauth/revoke',
     '/api/oauth/revoke/',
     '/api/oauth/entrega',
+    '/api/integraciones/slack/eventos',
+    '/api/integraciones/slack/comando',
+    '/api/integraciones/slack/interaccion',
     '/api/oauth/entrega/',
 ]);
 

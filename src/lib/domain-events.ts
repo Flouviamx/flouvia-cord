@@ -116,6 +116,10 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
         }
         // La contabilidad solo mira facturas definitivas; el módulo decide y sale
         // sin tocar la red si la organización no tiene contabilidad conectada.
+        // Una solicitud de aprobación llega al canal de Slack con sus botones.
+        if (id && objectId && type === 'quote.approval_requested') {
+            after(import('./integraciones/slack-app').then((m) => m.avisarAprobacion(orgId, objectId)));
+        }
         if (id && objectId && type.startsWith('invoice.')) {
             after(import('./integraciones/contabilidad/service').then((m) => m.onDomainEventConta(orgId, type, objectId)));
         }

@@ -7,10 +7,12 @@ interface Props {
     canal?: string;
     equipo?: string;
     oauth?: boolean;
+    /** La app (vista previa, /cord y aprobar) está conectada con sus permisos. */
+    app?: boolean;
     flash?: string | null;
 }
 
-const { lang: L, webhook, canal = '', equipo = '', oauth = false, flash = null } = Astro.props;
+const { lang: L, webhook, canal = '', equipo = '', oauth = false, app = false, flash = null } = Astro.props;
 const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
 const Manual = oauth ? 'details' : 'div';
 ---
@@ -30,6 +32,12 @@ const Manual = oauth ? 'details' : 'div';
                     </p>
                 )}
                 {!webhook && <p class="slk-hint">{t(L, 'set.integ.slack.elige_canal')}</p>}
+                <ul class="slk-app">
+                    <li>{t(L, 'set.integ.slack.app_vista')}</li>
+                    <li>{t(L, 'set.integ.slack.app_comando')}</li>
+                    <li>{t(L, 'set.integ.slack.app_aprobar')}</li>
+                </ul>
+                {webhook && !app && <p class="slk-flash" data-bad="1">{t(L, 'set.integ.slack.app_reconectar')}</p>}
                 <div class="slk-actions">
                     <button class="slk-btn-solid" id="slkAdd">{webhook ? t(L, 'set.integ.slack.cambiar') : t(L, 'set.integ.slack.anadir')}</button>
                     {webhook && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
@@ -72,6 +80,7 @@ const Manual = oauth ? 'details' : 'div';
 </div>
 
 <style>
+    .slk-app { margin: 0 0 1rem; padding-left: 1.1rem; font-size: 0.84rem; line-height: 1.55; color: var(--color-text-muted); display: grid; gap: 0.25rem; }
     .slk-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
     .slk-flash[data-bad] { color: var(--color-danger); }
     .slk-oauth { margin-bottom: 0.4rem; }

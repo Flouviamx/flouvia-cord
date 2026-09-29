@@ -1,20 +1,59 @@
 {
-  "_metadata": { "major_version": 2, "minor_version": 1 },
+  "_metadata": {
+    "major_version": 2,
+    "minor_version": 1
+  },
   "display_information": {
     "name": "Cord",
-    "description": "Avisos de tus cotizaciones de Cord en el canal que elijas.",
+    "description": "Avisos, vista previa de cotizaciones, el comando /cord y aprobaciones de Cord en Slack.",
     "background_color": "#0a192f"
   },
   "features": {
-    "bot_user": { "display_name": "Cord", "always_online": false }
+    "bot_user": {
+      "display_name": "Cord",
+      "always_online": false
+    },
+    "unfurl_domains": [
+      "cordhq.app"
+    ],
+    "slash_commands": [
+      {
+        "command": "/cord",
+        "url": "https://cordhq.app/api/integraciones/slack/comando",
+        "description": "Busca una cotización de Cord por folio o cliente",
+        "usage_hint": "COT-0152 o nombre del cliente",
+        "should_escape": false
+      }
+    ]
   },
   "oauth_config": {
-    "redirect_urls": ["https://cordhq.app/api/integraciones/slack/callback"],
-    "scopes": { "bot": ["incoming-webhook"] }
+    "redirect_urls": [
+      "https://cordhq.app/api/integraciones/slack/callback"
+    ],
+    "scopes": {
+      "bot": [
+        "incoming-webhook",
+        "links:read",
+        "links:write",
+        "commands",
+        "users:read",
+        "users:read.email"
+      ]
+    }
   },
   "settings": {
     "org_deploy_enabled": false,
     "socket_mode_enabled": false,
-    "token_rotation_enabled": false
+    "token_rotation_enabled": false,
+    "event_subscriptions": {
+      "request_url": "https://cordhq.app/api/integraciones/slack/eventos",
+      "bot_events": [
+        "link_shared"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://cordhq.app/api/integraciones/slack/interaccion"
+    }
   }
 }

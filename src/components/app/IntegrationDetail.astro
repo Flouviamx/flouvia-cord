@@ -24,7 +24,7 @@ interface Props {
     hubspot?: Awaited<ReturnType<typeof hubspotStatus>> | null;
     hubspotFlash?: string | null;
     slackWebhook?: string;
-    slack?: { canal: string; equipo: string; oauth: boolean; flash: string | null };
+    slack?: { canal: string; equipo: string; oauth: boolean; app?: boolean; flash: string | null };
     shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
     hoja?: { conexion: any; disponible: boolean; flash: string | null };
     conta?: { conexion: any; pagos: { permiso: boolean; cuenta: string | null } | null; disponible: boolean; flash: string | null };
@@ -90,7 +90,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
 <div class="ig-body">
     {app.slug === 'hubspot' && <HubSpotCard lang={L} status={HS} flash={hsFlash} />}
 
-    {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} canal={slack.canal} equipo={slack.equipo} oauth={slack.oauth} flash={slack.flash} />}
+    {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} canal={slack.canal} equipo={slack.equipo} oauth={slack.oauth} app={slack.app} flash={slack.flash} />}
 
     {app.slug === 'teams' && <TeamsCard lang={L} webhook={teamsWebhook} graph={teams} />}
 

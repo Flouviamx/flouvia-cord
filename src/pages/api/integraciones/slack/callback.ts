@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
     const install = await exchangeSlackCode(code.slice(0, 500), `${siteOrigin()}/api/integraciones/slack/callback`);
     if (!install) return redirect(`${VUELTA}?slack=error`);
 
-    await saveSlackInstall(orgId, install);
+    await saveSlackInstall(orgId, install, userId);
     await logAudit(orgId, {
         accion: 'integracion.slack_conectada', entidad: 'org', entidad_id: orgId,
         detalle: `Canal ${install.channel ?? 'sin nombre'}`, ip: reqIp(request),
