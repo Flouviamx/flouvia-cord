@@ -23,6 +23,16 @@ export const CABECERAS: Record<Pestana, readonly string[]> = {
     facturas: ['folio', 'cliente', 'estado', 'estado_fiscal', 'creada', 'vence', 'divisa', 'total', 'pagado', 'saldo', 'link'],
 };
 
+/** Lo que lee la persona en la fila 1, en el idioma de su cuenta. El orden es el de CABECERAS. */
+const CABECERAS_EN: Record<Pestana, readonly string[]> = {
+    cotizaciones: ['number', 'client', 'status', 'created', 'expires', 'currency', 'subtotal', 'discount', 'taxes', 'total', 'collected', 'link'],
+    facturas: ['number', 'client', 'status', 'tax_status', 'created', 'due', 'currency', 'total', 'paid', 'balance', 'link'],
+};
+
+export function cabecerasPara(pestana: Pestana, en: boolean): readonly string[] {
+    return en ? CABECERAS_EN[pestana] : CABECERAS[pestana];
+}
+
 export type Celda = string | number;
 
 /** Nombres de columna que llevan dinero, para darles formato de número. */

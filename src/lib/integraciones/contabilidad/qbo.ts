@@ -15,7 +15,8 @@ import { apiJson, ProveedorError } from '../proveedor-http';
 import {
     credencialesConta, QBO_API, QBO_MINOR, QBO_SCOPES, QBO_TOKEN,
 } from './config';
-import type { ContaCliente, FacturaConta, TokensConta } from './tipos';
+import { buscarTasa, cuadra, subtotalDe, tasasDe, type TasaExterna } from './impuestos';
+import { ContaImpuestoError, type ContaCliente, type FacturaConta, type LineaConta, type TokensConta } from './tipos';
 
 const ITEM_CORD = 'Cord';
 
@@ -129,10 +130,84 @@ export async function qboAsegurarCliente(token: string, realmId: string, cliente
     return String(id);
 }
 
+type ModeloQbo = { tipo: 'ast'; configurado: boolean } | { tipo: 'legacy_us' } | { tipo: 'global' };
+
+// Las empresas de EE.UU. calculan sales tax con el motor automático de Intuit
+// (AST); las demás usan códigos de impuesto propios con su tasa.
+async function modeloImpuesto(token: string, realmId: string): Promise<ModeloQbo> {
+    const pref = await apiJson(ruta(realmId, 'preferences'), { token });
+    const partner = pref?.Preferences?.TaxPrefs?.PartnerTaxEnabled;
+    if (typeof partner === 'boolean') return { tipo: 'ast', configurado: partner };
+    const info = await apiJson(ruta(realmId, `companyinfo/${encodeURIComponent(realmId)}`), { token });
+    return String(info?.CompanyInfo?.Country ?? '').toUpperCase() === 'US' ? { tipo: 'legacy_us' } : { tipo: 'global' };
+}
+
+async function codigosDeVenta(token: string, realmId: string): Promise<TasaExterna[]> {
+    const [codigos, tasas] = await Promise.all([
+        consultar(token, realmId, 'select * from TaxCode where Active = true maxresults 1000'),
+        consultar(token, realmId, 'select * from TaxRate where Active = true maxresults 1000'),
+    ]);
+    const pctDe = new Map<string, number>(
+        (tasas?.QueryResponse?.TaxRate ?? []).map((r: any) => [String(r?.Id), Number(r?.RateValue)]),
+    );
+    return (codigos?.QueryResponse?.TaxCode ?? []).flatMap((c: any): TasaExterna[] => {
+        const detalle = c?.SalesTaxRateList?.TaxRateDetail;
+        if (!Array.isArray(detalle) || !detalle.length) return [];
+        // Un impuesto sobre impuesto no es una suma de tasas: no se usa.
+        if (detalle.some((d: any) => d?.TaxTypeApplicable === 'TaxOnTax')) return [];
+        const pct = detalle.reduce((s: number, d: any) => s + (pctDe.get(String(d?.TaxRateRef?.value)) ?? NaN), 0);
+        return Number.isFinite(pct) ? [{ id: String(c.Id), pct }] : [];
+    });
+}
+
+interface ImpuestoQbo {
+    cabecera: Record<string, unknown>;
+    codigo: (l: LineaConta) => string | undefined;
+}
+
+async function impuestoQbo(token: string, realmId: string, f: FacturaConta): Promise<ImpuestoQbo> {
+    const tasas = tasasDe(f.lineas);
+    const gravadas = tasas.filter((t) => t > 0);
+    const modelo = await modeloImpuesto(token, realmId);
+    const tasaONada = (l: LineaConta) => (l.tasa > 0 ? 'TAX' : 'NON');
+
+    if (modelo.tipo === 'ast') {
+        if (!gravadas.length && f.impuestos <= 0) return { cabecera: {}, codigo: () => 'NON' };
+        if (!modelo.configurado) throw new ContaImpuestoError('impuesto', gravadas[0]);
+        // TotalTax fija el impuesto de Cord; sin él, Intuit lo recalcula con su propia tasa.
+        return { cabecera: { TxnTaxDetail: { TotalTax: f.impuestos } }, codigo: tasaONada };
+    }
+
+    const codigos = await codigosDeVenta(token, realmId);
+    if (modelo.tipo === 'legacy_us') {
+        if (!gravadas.length && f.impuestos <= 0) return { cabecera: {}, codigo: () => 'NON' };
+        // El sales tax manual de EE.UU. lleva UNA tasa por factura.
+        if (gravadas.length !== 1) throw new ContaImpuestoError('impuesto', gravadas[0]);
+        const id = buscarTasa(codigos, gravadas[0]);
+        if (!id) throw new ContaImpuestoError('impuesto', gravadas[0]);
+        return {
+            cabecera: { TxnTaxDetail: { TxnTaxCodeRef: { value: id }, TotalTax: f.impuestos } },
+            codigo: tasaONada,
+        };
+    }
+
+    const porTasa = new Map<number, string>();
+    for (const t of tasas) {
+        const id = buscarTasa(codigos, t);
+        if (!id) throw new ContaImpuestoError('impuesto', t);
+        porTasa.set(t, id);
+    }
+    return {
+        cabecera: { GlobalTaxCalculation: 'TaxExcluded' },
+        codigo: (l) => porTasa.get(Math.round(l.tasa * 1e6) / 1e6),
+    };
+}
+
 export async function qboCrearFactura(
     token: string, realmId: string, clienteExternoId: string, factura: FacturaConta,
-): Promise<{ id: string; numero: string | null }> {
+): Promise<{ id: string; numero: string | null; descuadre?: boolean }> {
     const itemId = await asegurarItem(token, realmId);
+    const impuesto = await impuestoQbo(token, realmId, factura);
     const creada = await apiJson(ruta(realmId, 'invoice'), {
         token,
         method: 'POST',
@@ -145,19 +220,36 @@ export async function qboCrearFactura(
             // numeración de la contabilidad es del contador, y pisarla puede
             // chocar con su propia secuencia.
             PrivateNote: `Cord ${factura.folio}`,
-            Line: factura.lineas.map((l) => ({
-                Amount: l.importe,
-                DetailType: 'SalesItemLineDetail',
-                Description: l.descripcion.slice(0, 4000),
-                SalesItemLineDetail: {
-                    ItemRef: { value: itemId },
-                    Qty: l.cantidad,
-                    UnitPrice: l.precio,
-                },
-            })),
+            ...impuesto.cabecera,
+            Line: factura.lineas.map((l) => {
+                const codigo = impuesto.codigo(l);
+                return {
+                    Amount: l.importe,
+                    DetailType: 'SalesItemLineDetail',
+                    Description: l.descripcion.slice(0, 4000),
+                    SalesItemLineDetail: {
+                        ItemRef: { value: itemId },
+                        Qty: l.cantidad,
+                        UnitPrice: l.precio,
+                        ...(codigo ? { TaxCodeRef: { value: codigo } } : {}),
+                    },
+                };
+            }),
         }),
     });
-    const id = creada?.Invoice?.Id;
-    if (!id) throw new ProveedorError('proveedor', 'no se creó la factura');
-    return { id: String(id), numero: creada?.Invoice?.DocNumber ? String(creada.Invoice.DocNumber) : null };
+    const inv = creada?.Invoice;
+    if (!inv?.Id) throw new ProveedorError('proveedor', 'no se creó la factura');
+    const resultado = { id: String(inv.Id), numero: inv.DocNumber ? String(inv.DocNumber) : null };
+
+    // QuickBooks asienta al crear: si su total no es el de Cord, la factura se borra.
+    const esperado = subtotalDe(factura.lineas) + factura.impuestos;
+    if (cuadra(inv.TotalAmt, esperado, factura.lineas.length)) return resultado;
+    try {
+        await apiJson(ruta(realmId, 'invoice?operation=delete'), {
+            token, method: 'POST', body: JSON.stringify({ Id: inv.Id, SyncToken: inv.SyncToken }),
+        });
+    } catch {
+        return { ...resultado, descuadre: true };
+    }
+    throw new ContaImpuestoError('descuadre');
 }

@@ -116,7 +116,7 @@ export const googleSheets: ClienteHoja = {
         for (const h of hojas) {
             await apiJson(
                 `${SHEETS}/${enc(libroId)}/values/${enc(rango(h.titulo, 'A1'))}?valueInputOption=RAW`,
-                { token, method: 'PUT', body: JSON.stringify({ values: [CABECERAS[h.clave]] }) },
+                { token, method: 'PUT', body: JSON.stringify({ values: [h.cabeceras] }) },
             );
         }
 

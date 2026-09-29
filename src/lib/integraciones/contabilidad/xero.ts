@@ -13,7 +13,8 @@
 
 import { apiJson, ProveedorError } from '../proveedor-http';
 import { credencialesConta, XERO_API, XERO_CONNECTIONS, XERO_SCOPES, XERO_TOKEN } from './config';
-import type { ContaCliente, FacturaConta, TokensConta } from './tipos';
+import { buscarTasa, cuadra, impuestoDe, subtotalDe, tasasDe, type TasaExterna } from './impuestos';
+import { ContaImpuestoError, type ContaCliente, type FacturaConta, type TokensConta } from './tipos';
 
 function basico(): string {
     const c = credencialesConta('xero');
@@ -93,9 +94,28 @@ export async function xeroAsegurarContacto(token: string, tenantId: string, clie
     return String(id);
 }
 
+// Solo tasas de VENTA activas. Para una línea exenta se prefiere NONE, la que
+// Xero trae para "sin impuesto", antes que otra que también valga cero.
+async function tiposDeImpuesto(token: string, tenantId: string): Promise<TasaExterna[]> {
+    const r = await apiJson(`${XERO_API}/TaxRates`, { token, headers: cabeceras(tenantId) });
+    return (r?.TaxRates ?? [])
+        .filter((t: any) => t?.Status === 'ACTIVE' && t?.CanApplyToRevenue === true && t?.TaxType)
+        .map((t: any) => ({ id: String(t.TaxType), pct: Number(t.EffectiveRate) }))
+        .filter((t: TasaExterna) => Number.isFinite(t.pct))
+        .sort((a: TasaExterna, b: TasaExterna) => Number(b.id === 'NONE') - Number(a.id === 'NONE'));
+}
+
 export async function xeroCrearFactura(
     token: string, tenantId: string, contactoId: string, factura: FacturaConta,
-): Promise<{ id: string; numero: string | null }> {
+): Promise<{ id: string; numero: string | null; descuadre?: boolean }> {
+    const tipos = await tiposDeImpuesto(token, tenantId);
+    const porTasa = new Map<number, string>();
+    for (const t of tasasDe(factura.lineas)) {
+        const id = buscarTasa(tipos, t);
+        if (!id) throw new ContaImpuestoError('impuesto', t);
+        porTasa.set(t, id);
+    }
+
     const creada = await apiJson(`${XERO_API}/Invoices`, {
         token,
         method: 'POST',
@@ -111,20 +131,32 @@ export async function xeroCrearFactura(
                 // Borrador a propósito: la aprueba el contador. Un sistema
                 // externo no asienta en los libros de alguien más por su cuenta.
                 Status: 'DRAFT',
-                // Los importes de Cord ya traen su impuesto calculado por línea;
-                // declararlos como exclusivos evita que Xero vuelva a aplicar el
-                // impuesto por defecto de la cuenta encima.
                 LineAmountTypes: 'Exclusive',
+                // TaxAmount fija el impuesto que calculó Cord, al centavo, sobre la tasa de la línea.
                 LineItems: factura.lineas.map((l) => ({
                     Description: l.descripcion.slice(0, 4000),
                     Quantity: l.cantidad,
                     UnitAmount: l.precio,
                     LineAmount: l.importe,
+                    TaxType: porTasa.get(Math.round(l.tasa * 1e6) / 1e6),
+                    TaxAmount: l.impuesto,
                 })),
             }],
         }),
     });
     const inv = creada?.Invoices?.[0];
     if (!inv?.InvoiceID) throw new ProveedorError('proveedor', 'no se creó la factura');
-    return { id: String(inv.InvoiceID), numero: inv.InvoiceNumber ? String(inv.InvoiceNumber) : null };
+    const resultado = { id: String(inv.InvoiceID), numero: inv.InvoiceNumber ? String(inv.InvoiceNumber) : null };
+
+    const esperado = subtotalDe(factura.lineas) + impuestoDe(factura.lineas);
+    if (cuadra(inv.Total, esperado, factura.lineas.length)) return resultado;
+    try {
+        await apiJson(`${XERO_API}/Invoices/${encodeURIComponent(resultado.id)}`, {
+            token, method: 'POST', headers: cabeceras(tenantId),
+            body: JSON.stringify({ Invoices: [{ InvoiceID: resultado.id, Status: 'DELETED' }] }),
+        });
+    } catch {
+        return { ...resultado, descuadre: true };
+    }
+    throw new ContaImpuestoError('descuadre');
 }

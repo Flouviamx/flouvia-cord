@@ -179,6 +179,93 @@ const waVars: { label: string; value: string; hint?: string }[] = [
     { label: L('Variable 3', 'Variable 3'), value: '{{total}} {{moneda}}' },
     { label: L('Variable 4', 'Variable 4'), value: '{{vence}}' },
 ];
+
+const GI: Record<string, string> = {
+    tune: '<path d="M4 7.5h9M17 7.5h3M4 16.5h3M11 16.5h9"/><circle cx="15" cy="7.5" r="2" fill="currentColor" fill-opacity=".16"/><circle cx="9" cy="16.5" r="2" fill="currentColor" fill-opacity=".16"/>',
+    inbox: '<path d="M4 13.5 6 5.5A1.5 1.5 0 0 1 7.4 4.5h9.2A1.5 1.5 0 0 1 18 5.5l2 8v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z" fill="currentColor" fill-opacity=".14"/><path d="M4 13.5h4.5l1.2 2.2h4.6l1.2-2.2H20"/>',
+    star: '<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.3L12 16l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6z" fill="currentColor" fill-opacity=".14"/>',
+    clock: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><path d="M12 7.5V12l3 2"/>',
+    archive: '<rect x="3.5" y="4.5" width="17" height="4" rx="1.2" fill="currentColor" fill-opacity=".16"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10M9.5 12.5h5"/>',
+    report: '<path d="M8.3 3.5h7.4l4.8 4.8v7.4l-4.8 4.8H8.3l-4.8-4.8V8.3z" fill="currentColor" fill-opacity=".14"/><path d="M12 8v4.6M12 15.8h.01"/>',
+    trash: '<path d="M6 7.5h12l-1 12a1.5 1.5 0 0 1-1.5 1.4h-7A1.5 1.5 0 0 1 7 19.5z" fill="currentColor" fill-opacity=".14"/><path d="M4.5 7.5h15M9.5 7.5V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2.5"/>',
+    folder: '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4.2l2 2.2H19A1.5 1.5 0 0 1 20.5 9.2v8.3A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" fill="currentColor" fill-opacity=".14"/><path d="m11 12.5 2.5 2-2.5 2M8 14.5h5"/>',
+    reply: '<path d="M10 7 5 12l5 5"/><path d="M5.5 12H14a5 5 0 0 1 5 5v1"/>',
+    forward: '<path d="m14 7 5 5-5 5"/><path d="M18.5 12H10a5 5 0 0 0-5 5v1"/>',
+    print: '<path d="M7 8.5V4.5h10v4"/><rect x="3.5" y="8.5" width="17" height="8" rx="2" fill="currentColor" fill-opacity=".14"/><path d="M7 14h10v6H7z"/>',
+    vmore: '<circle cx="12" cy="6" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="18" r="1.2" fill="currentColor"/>',
+    undo: '<path d="M9 14 4.5 9.5 9 5"/><path d="M5 9.5h9a5 5 0 0 1 0 10h-3"/>',
+    redo: '<path d="m15 14 4.5-4.5L15 5"/><path d="M19 9.5h-9a5 5 0 0 0 0 10h3"/>',
+    paint: '<rect x="5" y="3.5" width="12" height="5" rx="1.4" fill="currentColor" fill-opacity=".16"/><path d="M17 6h2.5v4.5H11v3M10 13.5h2v7h-2z"/>',
+    sigma: '<path d="M17 5.5H7l5.5 6.5L7 18.5h10"/>',
+    table: '<rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="currentColor" fill-opacity=".14"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/>',
+    save: '<path d="M5.5 4h10.5l3.5 3.5v11a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4.5 18.5v-13A1.5 1.5 0 0 1 5.5 4z" fill="currentColor" fill-opacity=".14"/><path d="M8 4v4.5h7V4M8 20v-6h8v6"/>',
+    filt: '<path d="M5 7h14M8 12h8M10.5 17h3"/>',
+    wrap: '<path d="M4 6h16M4 12h13a3 3 0 0 1 0 6h-4M4 18h5"/><path d="m14.5 16 -1.5 2 1.5 2"/>',
+    align: '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
+    border: '<rect x="4" y="4" width="16" height="16" rx="1.5" fill="currentColor" fill-opacity=".1" stroke-dasharray="2 2.4"/><path d="M4 12h16M12 4v16"/>',
+    merge: '<rect x="3.5" y="5.5" width="17" height="13" rx="1.5" fill="currentColor" fill-opacity=".14"/><path d="m8 12 2.5-2M8 12l2.5 2M8 12h8M16 12l-2.5-2M16 12l-2.5 2"/>',
+    feedback: '<path d="M4.5 6.5A2 2 0 0 1 6.5 4.5h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3.5v-3.5A2 2 0 0 1 4.5 14.5z" fill="currentColor" fill-opacity=".14"/><path d="M12 8v3.5M12 13.6h.01"/>',
+};
+
+const gmNav: { icon: string; label: string; count?: string; on?: boolean }[] = [
+    { icon: GI.inbox, label: L('Recibidos', 'Inbox'), count: '12', on: true },
+    { icon: GI.star, label: L('Destacados', 'Starred') },
+    { icon: GI.clock, label: L('Pospuestos', 'Snoozed') },
+    { icon: I.send, label: L('Enviados', 'Sent') },
+    { icon: I.file, label: L('Borradores', 'Drafts'), count: '3' },
+    { icon: I.down, label: L('Más', 'More') },
+];
+const gmLabels = [L('Clientes', 'Clients'), L('Obras', 'Job sites'), L('Proveedores', 'Suppliers')];
+
+type GsRow = { folio: string; cliente: string; estado: string; creada: string; vence: string; div: string; sub: string; desc: string; imp: string; total: string; cob: string; tk: string; cur?: boolean };
+const gsQuotes: GsRow[] = [
+    { folio: 'COT-0146', cliente: 'Textiles Monterrey', estado: 'invoiced', creada: '2026-09-03', vence: '2026-09-18', div: 'MXN', sub: '27,500.00', desc: '0.00', imp: '4,400.00', total: '31,900.00', cob: '0.00', tk: 'Lk4mT9aQ' },
+    { folio: 'COT-0148', cliente: 'Distribuidora del Bajío', estado: 'paid', creada: '2026-09-08', vence: '2026-09-23', div: 'MXN', sub: '42,000.00', desc: '0.00', imp: '6,720.00', total: '48,720.00', cob: '48,720.00', tk: '8fJq2LmX' },
+    { folio: 'COT-0149', cliente: 'Hormigones del Centro', estado: 'expired', creada: '2026-09-08', vence: '2026-09-23', div: 'MXN', sub: '35,200.00', desc: '0.00', imp: '5,632.00', total: '40,832.00', cob: '0.00', tk: 'Hc7pW2sN' },
+    { folio: 'COT-0150', cliente: 'Distribuidora El Zarco', estado: 'paid', creada: '2026-09-10', vence: '2026-09-25', div: 'MXN', sub: '169,370.00', desc: '0.00', imp: '27,099.20', total: '196,469.20', cob: '196,469.20', tk: 'Rz3vB8kD' },
+    { folio: 'COT-0151', cliente: 'Pacific Coast Supply LLC', estado: 'rejected', creada: '2026-09-11', vence: '2026-09-26', div: 'USD', sub: '12,480.00', desc: '0.00', imp: '0.00', total: '12,480.00', cob: '0.00', tk: 'Qm6tY1eF' },
+    { folio: 'COT-0152', cliente: 'Aceros del Norte', estado: 'approved', creada: '2026-09-14', vence: '2026-09-29', div: 'MXN', sub: '165,000.00', desc: '6,120.69', imp: '25,420.69', total: '184,300.00', cob: '92,150.00', tk: '5nRt8WcK', cur: true },
+    { folio: 'COT-0153', cliente: 'Inmobiliaria Cumbres', estado: 'viewed', creada: '2026-09-16', vence: '2026-10-01', div: 'MXN', sub: '109,948.28', desc: '0.00', imp: '17,591.72', total: '127,540.00', cob: '0.00', tk: 'Jw2xN7pL' },
+    { folio: 'COT-0155', cliente: 'Obras y Pavimentos del Sur', estado: 'viewed', creada: '2026-09-18', vence: '2026-10-03', div: 'MXN', sub: '50,827.59', desc: '0.00', imp: '8,132.41', total: '58,960.00', cob: '0.00', tk: 'Tb9cK4mZ' },
+    { folio: 'COT-0156', cliente: 'Constructora Apex', estado: 'sent', creada: '2026-09-21', vence: '2026-10-06', div: 'MXN', sub: '186,275.86', desc: '0.00', imp: '29,804.14', total: '216,080.00', cob: '0.00', tk: 'Vd1sG6hR' },
+    { folio: 'COT-0157', cliente: 'Grupo Ferretero Alba', estado: 'sent', creada: '2026-09-22', vence: '2026-10-07', div: 'MXN', sub: '83,103.45', desc: '0.00', imp: '13,296.55', total: '96,400.00', cob: '0.00', tk: 'Ya8eP3qU' },
+    { folio: 'COT-0158', cliente: 'Distribuidora El Zarco', estado: 'viewed', creada: '2026-09-25', vence: '2026-10-10', div: 'MXN', sub: '77,875.00', desc: '0.00', imp: '12,460.00', total: '90,335.00', cob: '0.00', tk: '9vKd3TmQ' },
+];
+const gsCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+const gsHead = ['folio', 'cliente', 'estado', 'creada', 'vence', 'divisa', 'subtotal', 'descuento', 'impuestos', 'total', 'cobrado', 'link'];
+const gsMenu = en ? ['File', 'Edit', 'View', 'Insert', 'Format', 'Data', 'Tools', 'Extensions', 'Help'] : ['Archivo', 'Editar', 'Ver', 'Insertar', 'Formato', 'Datos', 'Herramientas', 'Extensiones', 'Ayuda'];
+const LIBRO = 'Materiales del Valle — Cord 2026';
+const QUE = slug === 'excel'
+    ? L('Cada cotización y cada factura como una fila en tu libro de Excel, al día sola. Cord crea el archivo en tu OneDrive, con los datos en una tabla de Excel de verdad: filtros, bandas y fórmulas por nombre de columna.', 'Every quote and every invoice as a row in your Excel workbook, kept current on its own. Cord creates the file in your OneDrive, with the data in a real Excel table: filters, banded rows and formulas by column name.')
+    : L('Cada cotización y cada factura como una fila en tu hoja de Google, al día sola. Cord crea el archivo en tu Drive y solo puede abrir ese: no ve nada más de tu cuenta.', 'Every quote and every invoice as a row in your Google spreadsheet, kept current on its own. Cord creates the file in your Drive and can only open that one: it never sees anything else in your account.');
+
+type XlRow = { folio: string; cliente: string; estado: string; fiscal: string; creada: string; vence: string; div: string; total: string; pag: string; saldo: string; tk: string };
+const xlInv: XlRow[] = [
+    { folio: 'A-001041', cliente: 'Textiles Monterrey', estado: 'paid', fiscal: 'issued', creada: '2026-09-01', vence: '2026-10-01', div: 'MXN', total: '31,900.00', pag: '31,900.00', saldo: '0.00', tk: 'u3Fh8KqZ' },
+    { folio: 'A-001042', cliente: 'Constructora Apex', estado: 'paid', fiscal: 'issued', creada: '2026-09-01', vence: '2026-10-01', div: 'MXN', total: '38,280.00', pag: '38,280.00', saldo: '0.00', tk: 'c9Wm2TpR' },
+    { folio: 'A-001043', cliente: 'Distribuidora del Bajío', estado: 'paid', fiscal: 'issued', creada: '2026-09-02', vence: '2026-10-02', div: 'MXN', total: '48,720.00', pag: '48,720.00', saldo: '0.00', tk: 'Nx4bQ7sL' },
+    { folio: 'A-001044', cliente: 'Obras y Pavimentos del Sur', estado: 'open', fiscal: 'issued', creada: '2026-09-03', vence: '2026-09-18', div: 'MXN', total: '58,960.00', pag: '0.00', saldo: '58,960.00', tk: 'Ke2vH5dY' },
+    { folio: 'A-001045', cliente: 'Aceros del Norte', estado: 'void', fiscal: 'cancelled', creada: '2026-09-05', vence: '2026-10-05', div: 'MXN', total: '22,040.00', pag: '0.00', saldo: '0.00', tk: 'Pq8rJ1gW' },
+    { folio: 'A-001046', cliente: 'Pacific Coast Supply LLC', estado: 'open', fiscal: 'issued', creada: '2026-09-08', vence: '2026-10-08', div: 'USD', total: '12,480.00', pag: '0.00', saldo: '12,480.00', tk: 'Ft6yM3cB' },
+    { folio: 'A-001047', cliente: 'Inmobiliaria Cumbres', estado: 'paid', fiscal: 'issued', creada: '2026-09-09', vence: '2026-10-09', div: 'MXN', total: '127,540.00', pag: '127,540.00', saldo: '0.00', tk: 'Zb7nC4kV' },
+    { folio: 'A-001048', cliente: 'Distribuidora El Zarco', estado: 'open', fiscal: 'issued', creada: '2026-09-11', vence: '2026-10-11', div: 'MXN', total: '196,469.20', pag: '80,000.00', saldo: '116,469.20', tk: 'Wd5sR9hT' },
+];
+const xlCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+const xlHead = ['folio', 'cliente', 'estado', 'estado_fiscal', 'creada', 'vence', 'divisa', 'total', 'pagado', 'saldo', 'link'];
+const xlTabs = en ? ['File', 'Home', 'Insert', 'Share', 'Page Layout', 'Formulas', 'Data', 'Review', 'View', 'Automate', 'Help'] : ['Archivo', 'Inicio', 'Insertar', 'Compartir', 'Disposición de página', 'Fórmulas', 'Datos', 'Revisar', 'Vista', 'Automatizar', 'Ayuda'];
+const xlFormula = en ? '=SUMIFS(CordFacturas[saldo],CordFacturas[divisa],"MXN")' : '=SUMAR.SI.CONJUNTO(CordFacturas[saldo],CordFacturas[divisa],"MXN")';
+
+const invLines = [
+    { d: L('Cemento gris 50kg', 'Grey cement 50kg'), q: '120', p: '182.00', a: '21,840.00' },
+    { d: L('Varilla corrugada 3/8"', 'Rebar 3/8"'), q: '340', p: '168.50', a: '57,290.00' },
+    { d: L('Block hueco 15×20×40', 'Hollow block 15×20×40'), q: '2,400', p: '14.20', a: '34,080.00' },
+    { d: L('Arena de río m³', 'River sand m³'), q: '180', p: '312.00', a: '56,160.00' },
+];
+const xrDrafts = [
+    { n: 'INV-0040', ref: 'Cord A-001046', to: 'Pacific Coast Supply LLC', date: '8 Sep 2026', due: '8 Oct 2026', amt: '12,480.00', cur: 'USD' },
+    { n: 'INV-0041', ref: 'Cord A-001047', to: 'Inmobiliaria Cumbres', date: '9 Sep 2026', due: '9 Oct 2026', amt: '109,948.28', cur: 'MXN' },
+    { n: 'INV-0042', ref: 'Cord A-001048', to: 'Distribuidora El Zarco', date: '11 Sep 2026', due: '11 Oct 2026', amt: '169,370.00', cur: 'MXN', on: true },
+];
 ---
 
 <div class={`iam iam-${slug}`} data-iam>
@@ -1023,6 +1110,556 @@ const waVars: { label: string; value: string; hint?: string }[] = [
             </aside>
         </div>
     )}
+
+    {slug === 'gmail' && (
+        <div class="iam-stage iam-gm">
+            <div class="iam-win iam-gm-win">
+                <div class="iam-gm-top">
+                    <svg class="iam-i iam-gm-burger" viewBox="0 0 24 24" set:html={I.rows} />
+                    <span class="iam-gm-brand"><img src={logo} alt="" width="22" height="22" loading="lazy" /><b>Gmail</b></span>
+                    <span class="iam-gm-search">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />
+                        <span>{L('Buscar correo', 'Search mail')}</span>
+                        <svg class="iam-i iam-gm-tune" viewBox="0 0 24 24" set:html={GI.tune} />
+                    </span>
+                    <span class="iam-gm-topr">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.help} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.apps} />
+                        <i class="iam-av c3">AS</i>
+                    </span>
+                </div>
+                <div class="iam-gm-body">
+                    <nav class="iam-gm-nav">
+                        <span class="iam-gm-compose"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.pencil} />{L('Redactar', 'Compose')}</span>
+                        {gmNav.map((n) => (
+                            <span class={`iam-gm-ni${n.on ? ' is-on' : ''}`}>
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={n.icon} />{n.label}
+                                {n.count && <em class="editorial">{n.count}</em>}
+                            </span>
+                        ))}
+                        <span class="iam-gm-lh">{L('Etiquetas', 'Labels')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></span>
+                        {gmLabels.map((l) => <span class="iam-gm-ni"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.deal} />{l}</span>)}
+                    </nav>
+                    <main class="iam-gm-main">
+                        <div class="iam-gm-tools">
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.back} />
+                            <i class="iam-gm-sep"></i>
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.archive} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.report} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.trash} />
+                            <i class="iam-gm-sep"></i>
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.mail} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.clock} />
+                            <svg class="iam-i iam-gm-hide-s" viewBox="0 0 24 24" set:html={I.task} />
+                            <i class="iam-gm-sep iam-gm-hide-s"></i>
+                            <svg class="iam-i iam-gm-hide-s" viewBox="0 0 24 24" set:html={GI.folder} />
+                            <svg class="iam-i iam-gm-hide-s" viewBox="0 0 24 24" set:html={I.deal} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.vmore} />
+                            <span class="iam-gm-pager">{L('3 de 248', '3 of 248')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.left} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /></span>
+                        </div>
+                        <div class="iam-gm-subj">
+                            <h4>{L('Cotización COT-0158 — Materiales del Valle', 'Quote COT-0158 — Materiales del Valle')}</h4>
+                            <span class="iam-gm-chip">{L('Recibidos', 'Inbox')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} /></span>
+                        </div>
+                        <article class="iam-gm-msg">
+                            <i class="iam-av c3 iam-gm-av">AS</i>
+                            <div class="iam-gm-mb">
+                                <p class="iam-gm-from"><b>Materiales del Valle</b><span>&lt;andres@materialesdelvalle.mx&gt;</span><time>{L('vie, 25 sept, 16:20', 'Fri, Sep 25, 4:20 PM')}</time></p>
+                                <p class="iam-gm-to">{L('para', 'to')} raul@elzarco.mx<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></p>
+                                <div class="iam-gm-mail">
+                                    <img class="iam-gm-cord" src="/imgs/logo-cord-navy.png" alt="Cord" width="54" height="15" loading="lazy" />
+                                    <p class="iam-gm-hi">{L('Estimado equipo de Distribuidora El Zarco,', 'Dear Distribuidora El Zarco team,')}</p>
+                                    <p>{en
+                                        ? <Fragment>Materiales del Valle has shared quote <b>COT-0158</b> for <b class="editorial">MX$90,335.00</b> with you. You can review it, leave comments, and approve it online:</Fragment>
+                                        : <Fragment>Materiales del Valle le comparte la cotización <b>COT-0158</b> por <b class="editorial">$90,335.00</b>. Puede revisarla, dejar comentarios y aprobarla en línea:</Fragment>}</p>
+                                    <span class="iam-gm-cta">{L('Ver cotización COT-0158', 'View quote COT-0158')}</span>
+                                    <p class="iam-gm-copy">{L('O copie este enlace en su navegador:', 'Or copy this link into your browser:')}<br /><span>https://cordhq.app/q/9vKd3TmQ</span></p>
+                                    <p class="iam-gm-pow">Materiales del Valle{L(' · enviado con Cord', ' · sent with Cord')}</p>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="iam-gm-msg is-last">
+                            <i class="iam-av c2 iam-gm-av">RM</i>
+                            <div class="iam-gm-mb">
+                                <p class="iam-gm-from"><b>Raúl Mendoza</b><span>&lt;raul@elzarco.mx&gt;</span><time>{L('11:42 (hace 18 minutos)', '11:42 AM (18 minutes ago)')}</time></p>
+                                <p class="iam-gm-to">{L('para mí', 'to me')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></p>
+                                <p class="iam-gm-txt">{L(
+                                    'Andrés, buen día. La revisamos con el residente de obra y va bien. ¿Nos pueden sumar 60 bultos de mortero y 40 varillas de 1/2"? Si el precio se mantiene, la aprobamos hoy mismo.',
+                                    'Morning Andrés. We went over it with the site manager and it looks good. Can you add 60 bags of mortar and 40 bars of 1/2" rebar? If the price holds, we will approve it today.',
+                                )}</p>
+                                <p class="iam-gm-txt">{L('Saludos, Raúl', 'Best, Raúl')}</p>
+                                <span class="iam-gm-dots"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.more} /></span>
+                            </div>
+                        </article>
+                        <div class="iam-gm-replies">
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.reply} />{L('Responder', 'Reply')}</span>
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.forward} />{L('Reenviar', 'Forward')}</span>
+                        </div>
+                    </main>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-gm-addon">
+                <div class="iam-gma-panel">
+                    <div class="iam-gma-bar">
+                        <img src={CORD} alt="" width="16" height="16" />
+                        <b>Cord</b>
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.vmore} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                    </div>
+                    <div class="iam-gma-scroll">
+                        <header class="iam-gma-head">
+                            <img src={CORD} alt="" width="30" height="30" />
+                            <span><b>Cord</b><i>{L('Re: Cotización COT-0158 — Materiales del Valle', 'Re: Quote COT-0158 — Materiales del Valle')}</i></span>
+                        </header>
+                        <section class="iam-gma-sec">
+                            <p class="iam-gma-h">{L('Cotización en este hilo', 'Quote in this thread')}</p>
+                            <div class="iam-gma-dt">
+                                <small>COT-0158 · {L('Vista', 'Viewed')}</small>
+                                <b class="editorial">{L('$90,335.00 MXN', 'MX$90,335.00 MXN')}</b>
+                                <small>Distribuidora El Zarco</small>
+                            </div>
+                            <div class="iam-gma-dt has-ic">
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.clock} />
+                                <span>
+                                    <small>{L('Última actividad', 'Latest activity')}</small>
+                                    <em>{L('Abierta por el cliente desde el link · hoy, 11:31', 'Opened by the client from the link · today, 11:31 AM')}</em>
+                                </span>
+                            </div>
+                            <div class="iam-gma-btns">
+                                <span>{L('Responder con ella', 'Reply with it')}</span>
+                                <span>{L('Reenviar por Cord', 'Resend via Cord')}</span>
+                                <span>{L('Abrir', 'Open')}</span>
+                            </div>
+                        </section>
+                        <section class="iam-gma-sec">
+                            <div class="iam-gma-dt has-ic">
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.person} />
+                                <span>
+                                    <small>{L('Cliente en Cord', 'Client in Cord')}</small>
+                                    <b>Distribuidora El Zarco</b>
+                                    <small>raul@elzarco.mx</small>
+                                </span>
+                            </div>
+                            <div class="iam-gma-btns"><span>{L('Ver cliente en Cord', 'View client in Cord')}</span></div>
+                        </section>
+                        <section class="iam-gma-sec">
+                            <p class="iam-gma-h">{L('Sus cotizaciones', 'Their quotes')}</p>
+                            <div class="iam-gma-dt">
+                                <small>COT-0150 · {L('Pagada', 'Paid')}</small>
+                                <b class="editorial">{L('$196,469.20 MXN', 'MX$196,469.20 MXN')}</b>
+                                <small>Distribuidora El Zarco</small>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="iam-gma-foot">
+                        <span class="iam-gma-primary">{L('Cotizar con IA', 'Quote with AI')}</span>
+                        <span class="iam-gma-ghost">{L('Cotización en blanco', 'Blank quote')}</span>
+                    </div>
+                </div>
+                <nav class="iam-gma-rail">
+                    {['calendar_2020q4', 'keep_2020q4v3', 'tasks_2021', 'contacts_2022'].map((a) => (
+                        <img src={`https://www.gstatic.com/companion/icon_assets/${a}_2x.png`} alt="" width="18" height="18" loading="lazy" />
+                    ))}
+                    <i class="iam-gma-rsep"></i>
+                    <span class="is-on"><img src={CORD} alt="" width="18" height="18" /></span>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />
+                </nav>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'google-sheets' && (
+        <div class="iam-stage iam-gsh">
+            <div class="iam-win iam-gsh-win">
+                <div class="iam-gsh-head">
+                    <img class="iam-gsh-logo" src={logo} alt="" width="26" height="26" loading="lazy" />
+                    <div class="iam-gsh-doc">
+                        <p class="iam-gsh-title"><b>{LIBRO}</b><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.star} /><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.folder} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.cloud} /></p>
+                        <p class="iam-gsh-menu">{gsMenu.map((m) => <span>{m}</span>)}</p>
+                    </div>
+                    <span class="iam-gsh-hr">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.history} />
+                        <svg class="iam-i iam-gsh-hide-s" viewBox="0 0 24 24" set:html={I.thread} />
+                        <svg class="iam-i iam-gsh-hide-s" viewBox="0 0 24 24" set:html={I.video} />
+                        <span class="iam-gsh-share"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.lock} />{L('Compartir', 'Share')}</span>
+                        <i class="iam-av c1">AR</i>
+                    </span>
+                </div>
+                <div class="iam-gsh-tb">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.undo} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.redo} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.print} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.paint} />
+                    <span class="iam-gsh-dd">100%<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <i class="iam-gsh-sep"></i>
+                    <b class="iam-gsh-t">$</b><b class="iam-gsh-t">%</b><b class="iam-gsh-t">.0<small>←</small></b><b class="iam-gsh-t">.00<small>→</small></b><span class="iam-gsh-dd">123<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <i class="iam-gsh-sep"></i>
+                    <span class="iam-gsh-dd iam-gsh-font">{L('Predeterminada...', 'Defaults (Ari...')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <i class="iam-gsh-sep"></i>
+                    <span class="iam-gsh-size"><b>−</b><em>10</em><b>+</b></span>
+                    <i class="iam-gsh-sep"></i>
+                    <b class="iam-gsh-t is-b">B</b><b class="iam-gsh-t is-i">I</b><b class="iam-gsh-t is-s">S</b><b class="iam-gsh-t is-a">A</b>
+                    <i class="iam-gsh-sep"></i>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.border} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.merge} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.align} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.wrap} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.link} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.funnel} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.sigma} />
+                </div>
+                <div class="iam-gsh-fx">
+                    <span class="iam-gsh-nb">K145<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <i>fx</i>
+                    <span class="editorial">92150</span>
+                </div>
+                <div class="iam-gsh-grid">
+                    <span class="iam-gsh-corner"></span>
+                    {gsCols.map((c) => <span class={`iam-gsh-ch c${c}${c === 'K' ? ' is-sel' : ''}`}>{c}</span>)}
+                    <span class="iam-gsh-rn is-frz">1</span>
+                    {gsHead.map((h, i) => (
+                        <span class={`iam-gsh-hc c${gsCols[i]}`}>{h}<svg class="iam-i" viewBox="0 0 24 24" set:html={GI.filt} /></span>
+                    ))}
+                    {gsQuotes.map((r, i) => (
+                        <Fragment>
+                            <span class={`iam-gsh-rn${r.cur ? ' is-sel' : ''}`}>{140 + i}</span>
+                            <span class="cA">{r.folio}</span>
+                            <span class="cB">{r.cliente}</span>
+                            <span class="cC">{r.estado}</span>
+                            <span class="cD r">{r.creada}</span>
+                            <span class="cE r">{r.vence}</span>
+                            <span class="cF">{r.div}</span>
+                            <span class="cG r editorial">{r.sub}</span>
+                            <span class="cH r editorial">{r.desc}</span>
+                            <span class="cI r editorial">{r.imp}</span>
+                            <span class="cJ r editorial">{r.total}</span>
+                            <span class={`cK r editorial${r.cur ? ' is-cur' : ''}`}>{r.cob}</span>
+                            <span class="cL">https://cordhq.app/q/{r.tk}</span>
+                        </Fragment>
+                    ))}
+                    {[151, 152].map((n) => (
+                        <Fragment>
+                            <span class="iam-gsh-rn">{n}</span>
+                            {gsCols.map((c) => <span class={`c${c}`}></span>)}
+                        </Fragment>
+                    ))}
+                </div>
+                <div class="iam-gsh-tabs">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.rows} />
+                    <span class="is-on">{L('Cotizaciones', 'Quotes')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span>{L('Facturas', 'Invoices')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-cc iam-gsh-cc">
+                <div class="iam-cc-hero">
+                    <img src={logo} alt="" width="34" height="34" loading="lazy" />
+                    <span>
+                        <span class="iam-cc-row"><b>Google Sheets</b><em class="iam-cc-pill">{L('Conectado', 'Connected')}</em></span>
+                        <i>{L('Productividad', 'Productivity')}</i>
+                    </span>
+                </div>
+                <div class="iam-cc-body">
+                    <p class="iam-cc-h">{L('Conexión', 'Connection')}</p>
+                    <p class="iam-cc-que">{QUE}</p>
+                    <p class="iam-cc-conn">{L('Conectada con', 'Connected with')} <b>finanzas@materialesdelvalle.mx</b></p>
+                    <p class="iam-cc-sync">{L('Última actualización: 28 sep 2026, 11:42 a.m.', 'Last update: Sep 28, 2026, 11:42 AM')}</p>
+                    <div class="iam-cc-acts">
+                        <span class="is-solid">{L('Abrir la hoja', 'Open the spreadsheet')}</span>
+                        <span>{L('Actualizar ahora', 'Update now')}</span>
+                        <span>{L('Desconectar', 'Disconnect')}</span>
+                    </div>
+                    <p class="iam-cc-msg">{L('Listo: 149 cotizaciones y 8 facturas.', 'Done: 149 quotes and 8 invoices.')}</p>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'excel' && (
+        <div class="iam-stage iam-xl">
+            <div class="iam-win iam-xl-win">
+                <div class="iam-xl-app">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.apps} />
+                    <span class="iam-xl-brand"><img src={logo} alt="" width="18" height="18" loading="lazy" /><b>Excel</b></span>
+                    <span class="iam-xl-file">{LIBRO}<em>· {L('Guardado', 'Saved')}</em><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="iam-xl-search"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />{L('Buscar (Alt + Q)', 'Search (Alt + Q)')}</span>
+                    <span class="iam-xl-appr"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} /><i class="iam-av c1">AR</i></span>
+                </div>
+                <div class="iam-xl-tabs">
+                    {xlTabs.map((t, i) => <span class={`${i === 1 ? 'is-on' : ''}${i > 3 ? ' iam-xl-hide-m' : ''}` || undefined}>{t}</span>)}
+                    <span class="iam-xl-tr">
+                        <span class="iam-xl-ghost iam-xl-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.thread} />{L('Comentarios', 'Comments')}</span>
+                        <span class="iam-xl-ghost iam-xl-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.pencil} />{L('Edición', 'Editing')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                        <span class="iam-xl-sharebtn"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.users} />{L('Compartir', 'Share')}</span>
+                    </span>
+                </div>
+                <div class="iam-xl-ribbon">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.undo} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.file} />
+                    <i class="iam-xl-sep"></i>
+                    <span class="iam-xl-dd iam-xl-font">Aptos Narrow<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="iam-xl-dd">11<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <i class="iam-xl-sep"></i>
+                    <b class="iam-xl-t is-b">{L('N', 'B')}</b><b class="iam-xl-t is-i">{L('K', 'I')}</b><b class="iam-xl-t is-u">S</b>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.border} />
+                    <i class="iam-xl-sep"></i>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={GI.align} />
+                    <svg class="iam-i iam-xl-hide-s" viewBox="0 0 24 24" set:html={GI.wrap} />
+                    <svg class="iam-i iam-xl-hide-s" viewBox="0 0 24 24" set:html={GI.merge} />
+                    <i class="iam-xl-sep"></i>
+                    <span class="iam-xl-dd iam-xl-fmt">{L('Número', 'Number')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <b class="iam-xl-t iam-xl-hide-s">$</b><b class="iam-xl-t iam-xl-hide-s">%</b><b class="iam-xl-t iam-xl-hide-s">,</b>
+                    <i class="iam-xl-sep iam-xl-hide-s"></i>
+                    <span class="iam-xl-rb iam-xl-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.table} />{L('Dar formato como tabla', 'Format as Table')}</span>
+                    <span class="iam-xl-rb iam-xl-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.sigma} />{L('Autosuma', 'AutoSum')}</span>
+                </div>
+                <div class="iam-xl-fx">
+                    <span class="iam-xl-nb">B11<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="iam-xl-fxi"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.check} /><i>fx</i></span>
+                    <span class="iam-xl-formula">{xlFormula}</span>
+                </div>
+                <div class="iam-xl-grid">
+                    <span class="iam-xl-corner"></span>
+                    {xlCols.map((c) => <span class={`iam-xl-ch c${c}${c === 'B' ? ' is-sel' : ''}`}>{c}</span>)}
+                    <span class="iam-xl-rn">1</span>
+                    {xlHead.map((h, i) => <span class={`iam-xl-th c${xlCols[i]}`}>{h}<i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></i></span>)}
+                    <span class="cL"></span>
+                    {xlInv.map((r, i) => (
+                        <Fragment>
+                            <span class="iam-xl-rn">{2 + i}</span>
+                            <span class={`cA t${i % 2}`}>{r.folio}</span>
+                            <span class={`cB t${i % 2}`}>{r.cliente}</span>
+                            <span class={`cC t${i % 2}`}>{r.estado}</span>
+                            <span class={`cD t${i % 2}`}>{r.fiscal}</span>
+                            <span class={`cE r t${i % 2}`}>{r.creada}</span>
+                            <span class={`cF r t${i % 2}`}>{r.vence}</span>
+                            <span class={`cG t${i % 2}`}>{r.div}</span>
+                            <span class={`cH r editorial t${i % 2}`}>{r.total}</span>
+                            <span class={`cI r editorial t${i % 2}`}>{r.pag}</span>
+                            <span class={`cJ r editorial t${i % 2}`}>{r.saldo}</span>
+                            <span class={`cK t${i % 2}`}>https://cordhq.app/i/{r.tk}</span>
+                            <span class="cL"></span>
+                        </Fragment>
+                    ))}
+                    {[10, 11, 12, 13, 14].map((n) => (
+                        <Fragment>
+                            <span class={`iam-xl-rn${n === 11 ? ' is-sel' : ''}`}>{n}</span>
+                            {xlCols.map((c) => (
+                                n === 11 && c === 'A' ? <span class="cA iam-xl-lbl">{L('Saldo MXN', 'MXN due')}</span>
+                                    : n === 11 && c === 'B' ? <span class="cB r editorial iam-xl-sum is-cur">175,429.20</span>
+                                        : <span class={`c${c}`}></span>
+                            ))}
+                        </Fragment>
+                    ))}
+                </div>
+                <div class="iam-xl-sheets">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.rows} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />
+                    <span>{L('Cotizaciones', 'Quotes')}</span>
+                    <span class="is-on">{L('Facturas', 'Invoices')}</span>
+                    <span class="iam-xl-zoom iam-xl-hide-s"><b>−</b><i></i><b>+</b>100%</span>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-cc iam-xl-cc">
+                <div class="iam-cc-hero">
+                    <img src={logo} alt="" width="34" height="34" loading="lazy" />
+                    <span>
+                        <span class="iam-cc-row"><b>Microsoft Excel</b><em class="iam-cc-pill">{L('Conectado', 'Connected')}</em></span>
+                        <i>{L('Productividad', 'Productivity')}</i>
+                    </span>
+                </div>
+                <div class="iam-cc-body">
+                    <p class="iam-cc-h">{L('Conexión', 'Connection')}</p>
+                    <p class="iam-cc-que">{QUE}</p>
+                    <p class="iam-cc-conn">{L('Conectada con', 'Connected with')} <b>finanzas@materialesdelvalle.mx</b></p>
+                    <p class="iam-cc-sync">{L('Última actualización: 28 sep 2026, 11:42 a.m.', 'Last update: Sep 28, 2026, 11:42 AM')}</p>
+                    <div class="iam-cc-acts">
+                        <span class="is-solid">{L('Abrir la hoja', 'Open the spreadsheet')}</span>
+                        <span>{L('Actualizar ahora', 'Update now')}</span>
+                        <span>{L('Desconectar', 'Disconnect')}</span>
+                    </div>
+                    <p class="iam-cc-msg">{L('Listo: 149 cotizaciones y 8 facturas.', 'Done: 149 quotes and 8 invoices.')}</p>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'quickbooks' && (
+        <div class="iam-stage iam-qb">
+            <div class="iam-win iam-qb-win">
+                <div class="iam-qb-top">
+                    <img src={logo} alt="" width="22" height="22" loading="lazy" />
+                    <b>Invoice 1037</b>
+                    <svg class="iam-i iam-qb-hist" viewBox="0 0 24 24" set:html={I.history} />
+                    <span class="iam-qb-topr">
+                        <span class="iam-qb-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={GI.feedback} />Feedback</span>
+                        <span class="iam-qb-hide-s"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />Manage</span>
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.help} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                    </span>
+                </div>
+                <div class="iam-qb-body">
+                    <div class="iam-qb-row">
+                        <div class="iam-qb-cust">
+                            <label>Customer</label>
+                            <span class="iam-qb-sel">Distribuidora El Zarco<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                            <span class="iam-qb-mail"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.mail} />raul@elzarco.mx</span>
+                        </div>
+                        <div class="iam-qb-bal">
+                            <span>Balance due</span>
+                            <b class="editorial">MXN 169,370.00</b>
+                        </div>
+                    </div>
+                    <div class="iam-qb-fields">
+                        <div><label>Invoice no.</label><span class="iam-qb-in editorial">1037</span></div>
+                        <div><label>Invoice date</label><span class="iam-qb-in">{L('11/09/2026', '09/11/2026')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.cal} /></span></div>
+                        <div><label>Due date</label><span class="iam-qb-in">{L('11/10/2026', '10/11/2026')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.cal} /></span></div>
+                        <div class="iam-qb-hide-s"><label>Currency</label><span class="iam-qb-in is-ro">MXN Mexican Peso</span></div>
+                    </div>
+                    <div class="iam-qb-lines">
+                        <div class="iam-qb-lh"><span>#</span><span>Product or service</span><span>Description</span><span class="r">Qty</span><span class="r">Rate</span><span class="r">Amount</span></div>
+                        {invLines.map((l, i) => (
+                            <div class={`iam-qb-lr${i === 0 ? ' is-first' : ''}`}>
+                                <span class="iam-qb-n">{i + 1}</span>
+                                <span class="iam-qb-ps">Cord</span>
+                                <span class="iam-qb-desc">{l.d}</span>
+                                <span class="r editorial">{l.q.replace(',', '')}</span>
+                                <span class="r editorial">{l.p}</span>
+                                <span class="r editorial">{l.a}</span>
+                            </div>
+                        ))}
+                        <div class="iam-qb-addl"><span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />Add product or service</span><span class="iam-qb-hide-s">Clear all lines</span></div>
+                    </div>
+                    <div class="iam-qb-foot">
+                        <div class="iam-qb-notes">
+                            <div><label>Note to customer</label><span class="iam-qb-ta is-ph">Thank you for your business.</span></div>
+                            <div class="is-memo"><label>Memo on statement (hidden)</label><span class="iam-qb-ta">Cord A-001048</span></div>
+                        </div>
+                        <dl class="iam-qb-tot">
+                            <div><dt>Subtotal</dt><dd class="editorial">MXN 169,370.00</dd></div>
+                            <div class="is-b"><dt>Invoice total</dt><dd class="editorial">MXN 169,370.00</dd></div>
+                        </dl>
+                    </div>
+                </div>
+                <div class="iam-qb-bar">
+                    <span class="iam-qb-link">Cancel</span>
+                    <span class="iam-qb-link iam-qb-hide-s">Print or download</span>
+                    <span class="iam-qb-btn">Save<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="iam-qb-btn is-go">Review and send</span>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-cc iam-qb-cc">
+                <div class="iam-cc-hero">
+                    <img src={logo} alt="" width="34" height="34" loading="lazy" />
+                    <span>
+                        <span class="iam-cc-row"><b>QuickBooks Online</b><em class="iam-cc-pill">{L('Conectado', 'Connected')}</em></span>
+                        <i>{L('Contabilidad', 'Accounting')}</i>
+                    </span>
+                </div>
+                <div class="iam-cc-body">
+                    <p class="iam-cc-h">{L('Conexión', 'Connection')}</p>
+                    <p class="iam-cc-que">{L('Cada factura definitiva de Cord entra a tu QuickBooks con su cliente, sus líneas y su divisa. QuickBooks no maneja borradores: lo que entra queda asentado, así que Cord solo manda facturas que ya son definitivas.', 'Every final Cord invoice lands in your QuickBooks with its customer, its lines and its currency. QuickBooks has no drafts: what goes in is posted, so Cord only sends invoices that are already final.')}</p>
+                    <p class="iam-cc-conn">{L('Empresa conectada:', 'Connected company:')} <b>Materiales del Valle</b></p>
+                    <p class="iam-cc-sync">{L('Última factura enviada: 12 sep 2026, 10:42 a.m.', 'Last invoice sent: Sep 12, 2026, 10:42 AM')}</p>
+                    <div class="iam-cc-acts">
+                        <span class="is-solid">{L('Enviar las facturas pendientes', 'Send the pending invoices')}</span>
+                        <span>{L('Desconectar', 'Disconnect')}</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'xero' && (
+        <div class="iam-stage iam-xr">
+            <div class="iam-win iam-xr-win">
+                <div class="iam-xr-nav">
+                    <img src={logo} alt="" width="22" height="22" loading="lazy" />
+                    <span class="iam-xr-org">Materiales del Valle<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="iam-xr-links">
+                        <span>Home</span><span class="is-on">Sales</span><span>Purchases</span><span class="iam-xr-hide-s">Reporting</span><span class="iam-xr-hide-m">Accounting</span><span class="iam-xr-hide-m">Tax</span><span class="iam-xr-hide-m">Contacts</span>
+                    </span>
+                    <span class="iam-xr-navr">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />
+                        <svg class="iam-i iam-xr-hide-s" viewBox="0 0 24 24" set:html={I.help} />
+                        <i class="iam-av c1">AR</i>
+                    </span>
+                </div>
+                <div class="iam-xr-head">
+                    <div>
+                        <p class="iam-xr-crumb">Sales overview <svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /> Invoices</p>
+                        <p class="iam-xr-title"><b>Invoice INV-0042</b><em>Draft</em></p>
+                    </div>
+                    <span class="iam-xr-acts">
+                        <span class="iam-xr-btn iam-xr-hide-s">Preview</span>
+                        <span class="iam-xr-btn iam-xr-hide-s">Save & close</span>
+                        <span class="iam-xr-btn is-go">Approve<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    </span>
+                </div>
+                <div class="iam-xr-body">
+                    <div class="iam-xr-fields">
+                        <div class="is-to"><label>To</label><span>Distribuidora El Zarco</span></div>
+                        <div><label>Issue date</label><span>11 Sep 2026</span></div>
+                        <div><label>Due date</label><span>11 Oct 2026</span></div>
+                        <div class="iam-xr-hide-s"><label>Invoice number</label><span>INV-0042</span></div>
+                        <div class="is-ref"><label>Reference</label><span>Cord A-001048</span></div>
+                    </div>
+                    <div class="iam-xr-opts">
+                        <span><label>Currency</label><b>MXN Mexican Peso<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></b></span>
+                        <span><label>Amounts are</label><b>Tax exclusive<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></b></span>
+                    </div>
+                    <div class="iam-xr-lines">
+                        <div class="iam-xr-lh"><span>Item</span><span>Description</span><span class="r">Qty.</span><span class="r">Price</span><span class="r iam-xr-hide-s">Disc.</span><span class="iam-xr-hide-s">Account</span><span class="iam-xr-hide-s">Tax rate</span><span class="r">Amount MXN</span></div>
+                        {invLines.map((l) => (
+                            <div class="iam-xr-lr">
+                                <span class="iam-xr-empty"></span>
+                                <span class="iam-xr-desc">{l.d}</span>
+                                <span class="r editorial">{l.q}.00</span>
+                                <span class="r editorial">{l.p}</span>
+                                <span class="r iam-xr-hide-s"></span>
+                                <span class="iam-xr-empty iam-xr-hide-s"></span>
+                                <span class="iam-xr-empty iam-xr-hide-s"></span>
+                                <span class="r editorial">{l.a}</span>
+                            </div>
+                        ))}
+                        <p class="iam-xr-addl"><span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />Add row</span></p>
+                    </div>
+                    <dl class="iam-xr-tot">
+                        <div><dt>Subtotal</dt><dd class="editorial">169,370.00</dd></div>
+                        <div class="is-b"><dt>Total</dt><dd class="editorial">169,370.00</dd></div>
+                    </dl>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-xr-list">
+                <div class="iam-xr-lhd">
+                    <b>Invoices</b>
+                    <span class="iam-xr-btn is-go">New invoice</span>
+                </div>
+                <div class="iam-xr-tabs">
+                    <span>All</span><span class="is-on">Draft (3)</span><span>Awaiting approval</span><span class="iam-xr-hide-s">Awaiting payment (12)</span><span class="iam-xr-hide-s">Paid</span>
+                </div>
+                <div class="iam-xr-row iam-xr-rh"><i></i><span>Number</span><span>Ref</span><span>To</span><span class="iam-xr-hide-s">Date</span><span class="r">Amount</span></div>
+                {xrDrafts.map((d) => (
+                    <div class={`iam-xr-row${d.on ? ' is-on' : ''}`}>
+                        <i></i>
+                        <span class="iam-xr-num">{d.n}</span>
+                        <span>{d.ref}</span>
+                        <span>{d.to}</span>
+                        <span class="iam-xr-hide-s">{d.date}</span>
+                        <span class="r editorial">{d.amt} <small>{d.cur}</small></span>
+                    </div>
+                ))}
+            </aside>
+        </div>
+    )}
 </div>
 
 <script>
@@ -1726,8 +2363,374 @@ const waVars: { label: string; value: string; hint?: string }[] = [
     .iam-wa-mic .iam-i { width: 15px; height: 15px; }
     .iam-wa-wf { top: 96px; left: calc(50% - 8px); width: 318px; }
 
+    /* Gmail */
+    .iam-gm { padding-bottom: 44px; }
+    .iam-gm-win { width: calc(100% - 152px); background: #f6f8fc; color: #1f1f1f; }
+    .iam-gm-top { display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 12px 0 14px; }
+    .iam-gm-burger { width: 16px; height: 16px; color: #444746; }
+    .iam-gm-brand { display: flex; align-items: center; gap: 6px; width: 128px; flex-shrink: 0; }
+    .iam-gm-brand img { width: 22px; height: 22px; }
+    .iam-gm-brand b { font-size: 16px; font-weight: 500; color: #444746; letter-spacing: -0.01em; }
+    .iam-gm-search { flex: 1; max-width: 360px; display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 12px; border-radius: 24px; background: #e9eef6; font-size: 12px; color: #444746; white-space: nowrap; overflow: hidden; }
+    .iam-gm-search .iam-i { width: 15px; height: 15px; }
+    .iam-gm-search > span { flex: 1; }
+    .iam-gm-topr { margin-left: auto; display: flex; align-items: center; gap: 14px; color: #444746; }
+    .iam-gm-topr > .iam-i { width: 16px; height: 16px; }
+    .iam-gm-topr .iam-av { width: 26px; height: 26px; font-size: 9px; }
+    .iam-gm-body { display: grid; grid-template-columns: 162px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 478px; }
+    .iam-gm-nav { display: flex; flex-direction: column; gap: 1px; padding: 2px 8px 0 0; overflow: hidden; }
+    .iam-gm-compose { display: inline-flex; align-self: flex-start; align-items: center; gap: 10px; height: 42px; margin: 0 0 12px 8px; padding: 0 18px 0 14px; border-radius: 14px; background: #c2e7ff; color: #001d35; font-size: 12px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .iam-gm-compose .iam-i { width: 15px; height: 15px; }
+    .iam-gm-ni { display: flex; align-items: center; gap: 14px; height: 28px; padding: 0 12px 0 22px; border-radius: 0 14px 14px 0; font-size: 11.5px; color: #1f1f1f; white-space: nowrap; }
+    .iam-gm-ni .iam-i { width: 15px; height: 15px; color: #444746; }
+    .iam-gm-ni em { margin-left: auto; font-size: 10.5px; font-weight: 600; }
+    .iam-gm-ni.is-on { background: #d3e3fd; color: #041e49; font-weight: 700; }
+    .iam-gm-ni.is-on .iam-i { color: #041e49; }
+    .iam-gm-lh { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 4px 12px 5px 22px; font-size: 12.5px; font-weight: 500; color: #1f1f1f; }
+    .iam-gm-lh .iam-i { width: 14px; height: 14px; color: #444746; }
+    .iam-gm-main { display: flex; flex-direction: column; min-width: 0; margin: 0 10px 10px 0; border-radius: 14px; background: #fff; overflow: hidden; }
+    .iam-gm-main > * { flex-shrink: 0; }
+    .iam-gm-tools { display: flex; align-items: center; gap: 17px; height: 42px; padding: 0 14px 0 18px; color: #444746; }
+    .iam-gm-tools .iam-i { width: 15px; height: 15px; }
+    .iam-gm-sep { width: 1px; height: 16px; background: #dadce0; margin: 0 -4px; }
+    .iam-gm-pager { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 10.5px; color: #444746; white-space: nowrap; }
+    .iam-gm-pager .iam-i { width: 13px; height: 13px; }
+    .iam-gm-subj { display: flex; align-items: center; gap: 9px; padding: 6px 18px 12px 60px; }
+    .iam-gm-subj h4 { margin: 0; font-size: 16.5px; font-weight: 400; letter-spacing: -0.01em; color: #1f1f1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-gm-chip { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; padding: 1px 3px 1px 6px; border-radius: 4px; background: #e8eaed; font-size: 10px; color: #444746; }
+    .iam-gm-chip .iam-i { width: 9px; height: 9px; stroke-width: 2.2; }
+    .iam-gm-msg { display: flex; gap: 12px; padding: 0 18px 12px; }
+    .iam-gm-msg.is-last { padding-top: 12px; border-top: 1px solid #eceff1; }
+    .iam-gm-av.iam-av { width: 30px; height: 30px; font-size: 10.5px; }
+    .iam-gm-mb { flex: 1; min-width: 0; }
+    .iam-gm-from { display: flex; align-items: baseline; gap: 5px; font-size: 12px; white-space: nowrap; }
+    .iam-gm-from b { font-weight: 700; color: #1f1f1f; }
+    .iam-gm-from span { font-size: 10.5px; color: #5e5e5e; overflow: hidden; text-overflow: ellipsis; }
+    .iam-gm-from time { margin-left: auto; padding-left: 10px; font-size: 10.5px; color: #5e5e5e; }
+    .iam-gm-to { display: flex; align-items: center; gap: 2px; margin-top: 1px !important; font-size: 10.5px; color: #5e5e5e; }
+    .iam-gm-to .iam-i { width: 10px; height: 10px; }
+    .iam-gm-mail { max-width: 330px; padding: 16px 0 2px; }
+    .iam-gm-cord { width: 54px; height: auto; margin-bottom: 13px; }
+    .iam-gm-mail p { font-size: 11.5px; line-height: 1.55; color: #374151; }
+    .iam-gm-mail .iam-gm-hi { margin-bottom: 6px !important; font-weight: 500; color: #111827; }
+    .iam-gm-mail b { font-weight: 700; color: #111827; }
+    .iam-gm-cta { display: inline-block; margin: 13px 0 12px; padding: 8px 15px; border-radius: 6px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 500; }
+    .iam-gm-mail .iam-gm-copy { font-size: 10px; line-height: 1.5; color: #6b7280; }
+    .iam-gm-copy span { color: #2563eb; }
+    .iam-gm-mail .iam-gm-pow { margin-top: 12px !important; padding-top: 9px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
+    .iam-gm-txt { margin-top: 10px !important; font-size: 12px; line-height: 1.55; color: #1f1f1f; max-width: 360px; }
+    .iam-gm-txt + .iam-gm-txt { margin-top: 8px !important; }
+    .iam-gm-dots { display: inline-grid; place-items: center; width: 22px; height: 12px; margin-top: 8px; border-radius: 6px; background: #e8eaed; color: #444746; }
+    .iam-gm-dots .iam-i { width: 12px; height: 12px; }
+    .iam-gm-replies { display: flex; gap: 10px; padding: 4px 18px 16px 60px; }
+    .iam-gm-replies span { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 16px 0 12px; border: 1px solid #747775; border-radius: 16px; font-size: 11.5px; font-weight: 500; color: #444746; }
+    .iam-gm-replies .iam-i { width: 14px; height: 14px; }
+    .iam-gm-addon { top: 56px; right: 0; width: 316px; display: grid; grid-template-columns: minmax(0, 1fr) 42px; border-radius: 16px; background: #fff; color: #1f1f1f; }
+    .iam-gma-panel { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #eceff1; }
+    .iam-gma-bar { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 10px 0 14px; border-bottom: 1px solid #eceff1; color: #444746; }
+    .iam-gma-bar img { width: 16px; height: 16px; border-radius: 4px; }
+    .iam-gma-bar b { flex: 1; font-size: 12.5px; font-weight: 500; color: #1f1f1f; }
+    .iam-gma-bar .iam-i { width: 14px; height: 14px; }
+    .iam-gma-scroll { display: flex; flex-direction: column; }
+    .iam-gma-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
+    .iam-gma-head img { width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0; }
+    .iam-gma-head > span { display: flex; flex-direction: column; min-width: 0; }
+    .iam-gma-head b { font-size: 13.5px; font-weight: 500; }
+    .iam-gma-head i { font-size: 10.5px; color: #444746; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-gma-sec { display: flex; flex-direction: column; gap: 9px; padding: 11px 14px 10px; border-top: 1px solid #eceff1; }
+    .iam-gma-h { font-size: 11px; font-weight: 600; color: #444746; }
+    .iam-gma-dt { display: flex; flex-direction: column; gap: 1px; }
+    .iam-gma-dt small { font-size: 10px; color: #444746; }
+    .iam-gma-dt b { font-size: 12.5px; font-weight: 700; color: #1f1f1f; }
+    .iam-gma-dt em { font-size: 11.5px; line-height: 1.4; color: #1f1f1f; }
+    .iam-gma-dt.has-ic { flex-direction: row; align-items: flex-start; gap: 11px; }
+    .iam-gma-dt.has-ic > .iam-i { width: 17px; height: 17px; margin-top: 6px; color: #444746; }
+    .iam-gma-dt.has-ic > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .iam-gma-btns { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-left: -1px; }
+    .iam-gma-btns span { font-size: 11px; font-weight: 600; color: #0b57d0; padding: 3px 0; white-space: nowrap; }
+    .iam-gma-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 10px 12px 12px; border-top: 1px solid #eceff1; }
+    .iam-gma-primary { display: inline-flex; align-items: center; height: 30px; padding: 0 16px; border-radius: 16px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .iam-gma-ghost { display: inline-flex; align-items: center; height: 30px; padding: 0 10px; font-size: 11px; font-weight: 600; color: #0b57d0; white-space: nowrap; }
+    .iam-gma-rail { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 14px; background: #f6f8fc; color: #444746; }
+    .iam-gma-rail img { width: 18px; height: 18px; }
+    .iam-gma-rail .iam-i { width: 15px; height: 15px; }
+    .iam-gma-rsep { width: 18px; height: 1px; background: #c4c7c5; }
+    .iam-gma-rail .is-on { display: grid; place-items: center; width: 30px; height: 30px; margin: -6px 0; border-radius: 50%; background: #d3e3fd; }
+    .iam-gma-rail .is-on img { width: 17px; height: 17px; border-radius: 4px; }
+
+    /* Cord: tarjeta de conexión (Ajustes › Integraciones) */
+    .iam-cc { width: 304px; border-radius: 16px; color: #0a192f; }
+    .iam-cc-hero { display: flex; align-items: center; gap: 11px; padding: 14px 16px 12px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .iam-cc-hero img { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+    .iam-cc-hero > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .iam-cc-row { display: flex; align-items: center; gap: 8px; }
+    .iam-cc-row b { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+    .iam-cc-hero i { font-size: 10px; font-weight: 600; color: #6b7686; }
+    .iam-cc-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 100px; background: rgba(16,185,129,0.12); color: #047857; font-size: 9.5px; font-weight: 600; white-space: nowrap; }
+    .iam-cc-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .iam-cc-body { display: flex; flex-direction: column; padding: 12px 16px 14px; }
+    .iam-cc-h { font-size: 12px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 7px !important; }
+    .iam-cc-que { font-size: 10px; line-height: 1.5; color: #6b7686; margin-bottom: 9px !important; }
+    .iam-cc-conn { font-size: 11px; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-cc-conn b { font-weight: 600; }
+    .iam-cc-sync { margin: 3px 0 11px !important; font-size: 10px; color: #6b7686; }
+    .iam-cc-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .iam-cc-acts span { display: inline-flex; align-items: center; height: 27px; padding: 0 10px; border: 1px solid rgba(10,25,47,0.12); border-radius: 8px; font-size: 10.5px; font-weight: 600; color: #6b7686; white-space: nowrap; }
+    .iam-cc-acts .is-solid { border-color: #0a192f; background: #0a192f; color: #fff; }
+    .iam-cc-msg { margin-top: 9px !important; font-size: 10px; font-weight: 600; color: #047857; }
+
+    /* Google Sheets */
+    .iam-gsh { padding-bottom: 120px; }
+    .iam-gsh-win { width: calc(100% - 26px); color: #1f1f1f; background: #f9fbfd; }
+    .iam-gsh-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px 4px 12px; }
+    .iam-gsh-logo { width: 26px; height: 26px; flex-shrink: 0; align-self: flex-start; margin-top: 2px; }
+    .iam-gsh-doc { flex: 1; min-width: 0; }
+    .iam-gsh-title { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #1f1f1f; }
+    .iam-gsh-title b { font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-gsh-title .iam-i { width: 13px; height: 13px; color: #444746; }
+    .iam-gsh-menu { display: flex; gap: 11px; margin-top: 2px !important; font-size: 11px; color: #1f1f1f; white-space: nowrap; overflow: hidden; }
+    .iam-gsh-hr { display: flex; align-items: center; gap: 13px; color: #444746; }
+    .iam-gsh-hr > .iam-i { width: 15px; height: 15px; }
+    .iam-gsh-share { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px 0 12px; border-radius: 16px; background: #c2e7ff; color: #001d35; font-size: 11.5px; font-weight: 600; }
+    .iam-gsh-share .iam-i { width: 12px; height: 12px; }
+    .iam-gsh-hr .iam-av { width: 26px; height: 26px; font-size: 9px; }
+    .iam-gsh-tb { display: flex; align-items: center; gap: 11px; height: 30px; margin: 4px 10px 6px; padding: 0 12px; border-radius: 16px; background: #edf2fa; color: #444746; overflow: hidden; white-space: nowrap; }
+    .iam-gsh-tb > .iam-i { width: 14px; height: 14px; flex-shrink: 0; }
+    .iam-gsh-sep { width: 1px; height: 16px; background: #c7c7c7; flex-shrink: 0; }
+    .iam-gsh-dd { display: inline-flex; align-items: center; gap: 2px; font-size: 10.5px; color: #1f1f1f; }
+    .iam-gsh-dd .iam-i { width: 9px; height: 9px; }
+    .iam-gsh-font { min-width: 84px; justify-content: space-between; }
+    .iam-gsh-t { font-size: 11px; font-weight: 600; color: #444746; }
+    .iam-gsh-t small { font-size: 8px; }
+    .iam-gsh-t.is-b { font-weight: 800; color: #1f1f1f; }
+    .iam-gsh-t.is-i { font-style: italic; font-family: Georgia, serif; font-weight: 400; }
+    .iam-gsh-t.is-s { text-decoration: line-through; font-weight: 500; }
+    .iam-gsh-t.is-a { text-decoration: underline; text-decoration-thickness: 2px; font-weight: 500; }
+    .iam-gsh-size { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+    .iam-gsh-size em { padding: 1px 6px; border: 1px solid #747775; border-radius: 4px; font-size: 10px; }
+    .iam-gsh-fx { display: flex; align-items: center; gap: 10px; height: 26px; padding: 0 10px; border-top: 1px solid #e1e3e1; border-bottom: 1px solid #e1e3e1; background: #fff; font-size: 11px; }
+    .iam-gsh-nb { display: inline-flex; align-items: center; justify-content: space-between; width: 66px; padding-right: 8px; border-right: 1px solid #e1e3e1; font-size: 10.5px; color: #1f1f1f; }
+    .iam-gsh-nb .iam-i { width: 9px; height: 9px; color: #444746; }
+    .iam-gsh-fx > i { font-family: Georgia, serif; font-style: italic; color: #9aa0a6; padding-right: 8px; border-right: 1px solid #e1e3e1; }
+    .iam-gsh-fx .editorial { font-weight: 400; }
+    .iam-gsh-grid { display: grid; grid-template-columns: 34px 64px 140px 62px 70px 70px 42px 74px 66px 70px 76px 76px 190px; background: #fff; font-size: 10.5px; overflow: hidden; }
+    .iam-gsh-grid > * { height: 21px; padding: 0 5px; display: flex; align-items: center; gap: 4px; border-right: 1px solid #e1e3e1; border-bottom: 1px solid #e1e3e1; white-space: nowrap; overflow: hidden; color: #1f1f1f; }
+    .iam-gsh-grid > .r { justify-content: flex-end; }
+    .iam-gsh-grid > .editorial { font-weight: 400; letter-spacing: 0; }
+    .iam-gsh-corner, .iam-gsh-ch, .iam-gsh-rn { justify-content: center; background: #f9fbfd; color: #444746; font-size: 9.5px; padding: 0 !important; }
+    .iam-gsh-ch.is-sel, .iam-gsh-rn.is-sel { background: #d3e3fd; color: #0b57d0; font-weight: 700; }
+    .iam-gsh-hc { justify-content: space-between; background: #f5f5f7; font-weight: 700; border-bottom: 3px solid #c4c7c5 !important; }
+    .iam-gsh-rn.is-frz { border-bottom: 3px solid #c4c7c5 !important; }
+    .iam-gsh-hc .iam-i { width: 11px; height: 11px; color: #1e8e3e; stroke-width: 2.2; }
+    .iam-gsh-grid > .is-cur { position: relative; box-shadow: inset 0 0 0 2px #1a73e8; background: #e8f0fe; }
+    .iam-gsh-grid > .is-cur::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 6px; height: 6px; border-radius: 1px; background: #1a73e8; border: 1px solid #fff; }
+    .iam-gsh-tabs { display: flex; align-items: center; gap: 12px; height: 36px; padding: 0 12px; background: #f9fbfd; border-top: 1px solid #e1e3e1; color: #444746; font-size: 11px; }
+    .iam-gsh-tabs > .iam-i { width: 14px; height: 14px; }
+    .iam-gsh-tabs span { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 6px; font-weight: 500; white-space: nowrap; }
+    .iam-gsh-tabs span .iam-i { width: 9px; height: 9px; }
+    .iam-gsh-tabs span.is-on { background: #e1e9f7; color: #0b57d0; font-weight: 700; }
+    .iam-gsh-cc { right: 0; bottom: 0; }
+
+    /* Microsoft Excel */
+    .iam-xl { padding-bottom: 172px; }
+    .iam-xl-win { width: calc(100% - 26px); color: #242424; background: #fff; }
+    .iam-xl-app { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; background: #107c41; color: #fff; }
+    .iam-xl-app > .iam-i { width: 15px; height: 15px; }
+    .iam-xl-brand { display: flex; align-items: center; gap: 7px; }
+    .iam-xl-brand img { width: 18px; height: 18px; border-radius: 3px; background: #fff; padding: 1px; }
+    .iam-xl-brand b { font-size: 13px; font-weight: 600; }
+    .iam-xl-file { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 11.5px; white-space: nowrap; overflow: hidden; }
+    .iam-xl-file em { color: rgba(255,255,255,0.78); }
+    .iam-xl-file .iam-i { width: 10px; height: 10px; }
+    .iam-xl-search { flex: 1; max-width: 250px; margin-left: auto; display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 4px; background: rgba(255,255,255,0.92); color: #616161; font-size: 10.5px; white-space: nowrap; overflow: hidden; }
+    .iam-xl-search .iam-i { width: 12px; height: 12px; color: #107c41; }
+    .iam-xl-appr { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+    .iam-xl-appr .iam-i { width: 15px; height: 15px; }
+    .iam-xl-appr .iam-av { width: 24px; height: 24px; font-size: 8.5px; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.7); }
+    .iam-xl-tabs { display: flex; align-items: center; gap: 14px; height: 34px; padding: 0 12px; background: #f5f5f5; font-size: 11px; color: #424242; white-space: nowrap; overflow: hidden; }
+    .iam-xl-tabs > span { display: flex; align-items: center; height: 100%; }
+    .iam-xl-tabs > .is-on { color: #107c41; font-weight: 700; box-shadow: inset 0 -2.5px 0 #107c41; }
+    .iam-xl-tr { margin-left: auto; gap: 8px; }
+    .iam-xl-ghost { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border: 1px solid #d1d1d1; border-radius: 4px; background: #fff; font-size: 10.5px; }
+    .iam-xl-ghost .iam-i { width: 12px; height: 12px; }
+    .iam-xl-sharebtn { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 4px; background: #107c41; color: #fff; font-size: 10.5px; font-weight: 600; }
+    .iam-xl-sharebtn .iam-i { width: 12px; height: 12px; }
+    .iam-xl-ribbon { display: flex; align-items: center; gap: 10px; height: 40px; margin: 0 8px; padding: 0 10px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.1); font-size: 10.5px; color: #242424; white-space: nowrap; overflow: hidden; transform: translateY(4px); position: relative; z-index: 1; }
+    .iam-xl-ribbon > .iam-i { width: 14px; height: 14px; color: #424242; }
+    .iam-xl-sep { width: 1px; height: 20px; background: #e0e0e0; flex-shrink: 0; }
+    .iam-xl-rb { display: inline-flex; align-items: center; gap: 5px; }
+    .iam-xl-dd { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid #d1d1d1; border-radius: 4px; font-size: 10.5px; }
+    .iam-xl-dd .iam-i { width: 9px; height: 9px; }
+    .iam-xl-font { min-width: 96px; }
+    .iam-xl-fmt { min-width: 70px; }
+    .iam-xl-t { font-size: 11.5px; font-weight: 500; color: #242424; }
+    .iam-xl-t.is-b { font-weight: 800; }
+    .iam-xl-t.is-i { font-style: italic; font-family: Georgia, serif; }
+    .iam-xl-t.is-u { text-decoration: underline; }
+    .iam-xl-formula { font-family: 'Aptos Narrow', 'Arial Narrow', var(--font-sans, Inter, system-ui, sans-serif); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-xl-th { justify-content: space-between; padding: 0 3px 0 5px !important; background: #156082; color: #fff; font-weight: 700; border-right-color: transparent !important; border-bottom-color: #156082 !important; }
+    .iam-xl-th i { width: 13px; height: 13px; display: grid; place-items: center; flex-shrink: 0; border: 1px solid #b3b3b3; border-radius: 2px; background: #fff; color: #424242; }
+    .iam-xl-th .iam-i { width: 8px; height: 8px; stroke-width: 2.4; }
+    .iam-xl-rb .iam-i { width: 14px; height: 14px; color: #107c41; }
+    .iam-xl-fx { display: flex; align-items: center; gap: 10px; height: 28px; margin-top: 10px; padding: 0 10px; border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; font-size: 11px; }
+    .iam-xl-nb { display: inline-flex; align-items: center; justify-content: space-between; width: 70px; padding-right: 8px; border-right: 1px solid #e0e0e0; font-size: 10.5px; }
+    .iam-xl-nb .iam-i { width: 9px; height: 9px; color: #616161; }
+    .iam-xl-fxi { display: inline-flex; align-items: center; gap: 9px; padding-right: 10px; border-right: 1px solid #e0e0e0; color: #9e9e9e; }
+    .iam-xl-fxi .iam-i { width: 11px; height: 11px; }
+    .iam-xl-fxi i { font-family: Georgia, serif; font-style: italic; color: #424242; }
+    .iam-xl-fx .editorial { font-weight: 400; }
+    .iam-xl-grid { display: grid; grid-template-columns: 34px 66px 146px 50px 80px 72px 72px 44px 78px 86px 76px 188px 60px; font-size: 10.5px; font-family: 'Aptos Narrow', 'Arial Narrow', var(--font-sans, Inter, system-ui, sans-serif); overflow: hidden; }
+    .iam-xl-grid > * { height: 21px; padding: 0 5px; display: flex; align-items: center; border-right: 1px solid #e1e1e1; border-bottom: 1px solid #e1e1e1; white-space: nowrap; overflow: hidden; }
+    .iam-xl-grid > .r { justify-content: flex-end; }
+    .iam-xl-grid > .editorial { font-weight: 400; letter-spacing: 0; }
+    .iam-xl-corner, .iam-xl-ch, .iam-xl-rn { justify-content: center; background: #f5f5f5; color: #616161; font-size: 9.5px; padding: 0 !important; }
+    .iam-xl-ch.is-sel { background: #d3f0e0; color: #0e5c2f; box-shadow: inset 0 -2px 0 #107c41; }
+    .iam-xl-rn.is-sel { background: #d3f0e0; color: #0e5c2f; box-shadow: inset -2px 0 0 #107c41; font-weight: 700; }
+    .iam-xl-grid > .t0 { background: #cfe8f4; border-bottom-color: #a9d3e8; border-right-color: transparent; }
+    .iam-xl-grid > .t1 { background: #fff; border-bottom-color: #a9d3e8; border-right-color: transparent; }
+    .iam-xl-grid > .is-cur { position: relative; box-shadow: inset 0 0 0 2px #107c41; }
+    .iam-xl-grid > .is-cur::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 6px; height: 6px; background: #107c41; border: 1px solid #fff; }
+    .iam-xl-lbl { font-weight: 700; }
+    .iam-xl-sum { font-weight: 700 !important; box-shadow: inset 0 -1px 0 #242424, inset 0 -3px 0 #fff, inset 0 -4px 0 #242424; }
+    .iam-xl-sheets { display: flex; align-items: center; gap: 12px; height: 34px; padding: 0 12px; border-top: 1px solid #e0e0e0; background: #f5f5f5; color: #424242; font-size: 11px; }
+    .iam-xl-sheets > .iam-i { width: 14px; height: 14px; }
+    .iam-xl-sheets span { display: inline-flex; align-items: center; height: 100%; padding: 0 6px; white-space: nowrap; }
+    .iam-xl-sheets span.is-on { color: #107c41; font-weight: 700; background: #fff; box-shadow: inset 0 -2.5px 0 #107c41; }
+    .iam-xl-zoom { margin-left: auto; gap: 7px; font-size: 10.5px; color: #616161; }
+    .iam-xl-zoom i { width: 60px; height: 1px; background: #8a8a8a; position: relative; }
+    .iam-xl-zoom i::after { content: ''; position: absolute; left: 28px; top: -4px; width: 3px; height: 9px; border-radius: 1px; background: #616161; }
+    .iam-xl-cc { right: 0; top: 372px; }
+
+    /* QuickBooks Online */
+    .iam-qb { padding-bottom: 176px; }
+    .iam-qb-win { width: calc(100% - 34px); color: #393a3d; background: #fff; }
+    .iam-qb-top { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border-bottom: 1px solid #e3e5e8; }
+    .iam-qb-top img { width: 22px; height: 22px; border-radius: 50%; }
+    .iam-qb-top > b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: #393a3d; }
+    .iam-qb-hist { width: 14px; height: 14px; color: #6b6c72; }
+    .iam-qb-topr { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 11px; font-weight: 600; color: #393a3d; }
+    .iam-qb-topr > span { display: inline-flex; align-items: center; gap: 5px; }
+    .iam-qb-topr .iam-i { width: 14px; height: 14px; color: #6b6c72; }
+    .iam-qb-body { display: flex; flex-direction: column; gap: 12px; padding: 14px 18px 12px; background: #fff; }
+    .iam-qb-row { display: flex; justify-content: space-between; gap: 16px; }
+    .iam-qb-cust { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .iam-qb label, .iam-qb-lh { font-size: 10px; font-weight: 600; color: #6b6c72; }
+    .iam-qb-sel { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 230px; height: 30px; padding: 0 9px; border: 1px solid #8d9096; border-radius: 4px; font-size: 11.5px; color: #393a3d; }
+    .iam-qb-sel .iam-i { width: 11px; height: 11px; }
+    .iam-qb-mail { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: #0077c5; }
+    .iam-qb-mail .iam-i { width: 12px; height: 12px; }
+    .iam-qb-bal { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .iam-qb-bal span { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b6c72; }
+    .iam-qb-bal b { font-size: 23px; color: #393a3d; }
+    .iam-qb-fields { display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #e3e5e8; }
+    .iam-qb-fields > div { display: flex; flex-direction: column; gap: 4px; }
+    .iam-qb-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 104px; height: 28px; padding: 0 8px; border: 1px solid #8d9096; border-radius: 4px; font-size: 11px; color: #393a3d; font-weight: 400; }
+    .iam-qb-in .iam-i { width: 12px; height: 12px; color: #6b6c72; }
+    .iam-qb-in.is-ro { border-color: transparent; background: #f4f5f8; }
+    .iam-qb-lines { display: flex; flex-direction: column; }
+    .iam-qb-lh, .iam-qb-lr { display: grid; grid-template-columns: 22px 112px minmax(0, 1fr) 54px 64px 86px; gap: 10px; align-items: center; padding: 0 8px; }
+    .iam-qb-lh { height: 26px; border-bottom: 1px solid #d4d7dc; text-transform: uppercase; letter-spacing: 0.04em; font-size: 9px; }
+    .iam-qb-lh .r, .iam-qb-lr .r { text-align: right; }
+    .iam-qb-lr { height: 31px; border-bottom: 1px solid #e3e5e8; font-size: 11px; color: #393a3d; }
+    .iam-qb-lr .editorial { font-weight: 400; letter-spacing: 0; }
+    .iam-qb-n { color: #6b6c72; font-size: 10px; }
+    .iam-qb-ps { font-weight: 600; }
+    .iam-qb-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-qb-addl { display: flex; gap: 16px; padding: 9px 8px 0; font-size: 10.5px; font-weight: 600; color: #0077c5; }
+    .iam-qb-addl span { display: inline-flex; align-items: center; gap: 4px; }
+    .iam-qb-addl .iam-i { width: 11px; height: 11px; stroke-width: 2.2; }
+    .iam-qb-foot { display: flex; justify-content: space-between; gap: 18px; padding-top: 4px; }
+    .iam-qb-notes { display: flex; gap: 12px; min-width: 0; }
+    .iam-qb-notes > div { display: flex; flex-direction: column; gap: 4px; width: 200px; }
+    .iam-qb-ta { display: block; height: 50px; padding: 7px 9px; border: 1px solid #8d9096; border-radius: 4px; font-size: 11px; color: #393a3d; }
+    .iam-qb-ta.is-ph { color: #8d9096; }
+    .iam-qb-notes .is-memo .iam-qb-ta { border-color: #2ca01c; box-shadow: 0 0 0 2px rgba(44,160,28,0.22); }
+    .iam-qb-tot { display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
+    .iam-qb-tot > div { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; }
+    .iam-qb-tot dt { color: #6b6c72; }
+    .iam-qb-tot .is-b { padding-top: 6px; border-top: 1px solid #d4d7dc; font-weight: 700; }
+    .iam-qb-tot .is-b dt { color: #393a3d; }
+    .iam-qb-bar { display: flex; align-items: center; gap: 16px; height: 50px; padding: 0 16px; border-top: 1px solid #e3e5e8; background: #fff; }
+    .iam-qb-link { font-size: 11px; font-weight: 600; color: #393a3d; }
+    .iam-qb-link + .iam-qb-btn, .iam-qb-link + .iam-qb-link + .iam-qb-btn { margin-left: auto; }
+    .iam-qb-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 14px; border: 1px solid #8d9096; border-radius: 16px; font-size: 11px; font-weight: 600; color: #393a3d; white-space: nowrap; }
+    .iam-qb-btn .iam-i { width: 10px; height: 10px; }
+    .iam-qb-btn.is-go { border-color: #2ca01c; background: #2ca01c; color: #fff; }
+    .iam-qb-cc { right: 0; top: 436px; }
+
+    /* Xero */
+    .iam-xr { padding: 0 0 150px 40px; }
+    .iam-xr-win { color: #000a1e; background: #f2f3f4; }
+    .iam-xr-nav { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 14px; background: #0b1c33; color: #fff; }
+    .iam-xr-nav > img { width: 22px; height: 22px; border-radius: 50%; }
+    .iam-xr-org { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .iam-xr-org .iam-i { width: 10px; height: 10px; }
+    .iam-xr-links { display: flex; gap: 15px; margin-left: 6px; font-size: 11.5px; color: rgba(255,255,255,0.86); white-space: nowrap; }
+    .iam-xr-links span { padding: 13px 0 12px; }
+    .iam-xr-links .is-on { color: #fff; font-weight: 600; box-shadow: inset 0 -3px 0 #13b5ea; }
+    .iam-xr-navr { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .iam-xr-navr .iam-i { width: 15px; height: 15px; }
+    .iam-xr-navr .iam-av { width: 24px; height: 24px; font-size: 8.5px; }
+    .iam-xr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px 12px; background: #fff; border-bottom: 1px solid #dcdfe3; }
+    .iam-xr-crumb { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #0078c8; }
+    .iam-xr-crumb .iam-i { width: 9px; height: 9px; color: #59606d; }
+    .iam-xr-title { display: flex; align-items: center; gap: 9px; margin-top: 3px !important; }
+    .iam-xr-title b { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+    .iam-xr-title em { padding: 2px 8px; border-radius: 4px; background: #e6e8eb; color: #3c4453; font-size: 10px; font-weight: 700; }
+    .iam-xr-acts { display: flex; gap: 8px; }
+    .iam-xr-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 13px; border: 1px solid #a7adb6; border-radius: 4px; background: #fff; font-size: 11px; font-weight: 600; color: #000a1e; white-space: nowrap; }
+    .iam-xr-btn .iam-i { width: 10px; height: 10px; }
+    .iam-xr-btn.is-go { border-color: #0078c8; background: #0078c8; color: #fff; }
+    .iam-xr-body { display: flex; flex-direction: column; gap: 12px; margin: 12px 14px 14px; padding: 14px 16px 16px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px #dcdfe3; }
+    .iam-xr-fields { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.1fr; gap: 10px; }
+    .iam-xr-fields > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .iam-xr label { font-size: 10px; font-weight: 600; color: #3c4453; }
+    .iam-xr-fields span { display: flex; align-items: center; height: 29px; padding: 0 8px; border: 1px solid #a7adb6; border-radius: 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-xr-fields .is-ref span { border-color: #0078c8; box-shadow: 0 0 0 2px rgba(0,120,200,0.2); }
+    .iam-xr-opts { display: flex; justify-content: flex-end; gap: 18px; }
+    .iam-xr-opts > span { display: inline-flex; align-items: center; gap: 7px; }
+    .iam-xr-opts b { display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 8px; border: 1px solid #a7adb6; border-radius: 4px; font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+    .iam-xr-opts .iam-i { width: 10px; height: 10px; }
+    .iam-xr-lines { display: flex; flex-direction: column; border: 1px solid #dcdfe3; border-radius: 4px; overflow: hidden; }
+    .iam-xr-lh, .iam-xr-lr { display: grid; grid-template-columns: 58px minmax(0, 1fr) 62px 56px 40px 66px 66px 84px; gap: 8px; align-items: center; padding: 0 10px; }
+    .iam-xr-lh { height: 27px; background: #f2f3f4; border-bottom: 1px solid #dcdfe3; font-size: 10px; font-weight: 600; color: #3c4453; }
+    .iam-xr-lh .r, .iam-xr-lr .r { text-align: right; }
+    .iam-xr-lr { height: 31px; border-bottom: 1px solid #e6e8eb; font-size: 11px; }
+    .iam-xr-lr .editorial { font-weight: 400; letter-spacing: 0; }
+    .iam-xr-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-xr-empty { height: 20px; border-radius: 3px; background: #f7f8f9; box-shadow: inset 0 0 0 1px #eceef1; }
+    .iam-xr-addl { padding: 7px 10px 8px; font-size: 10.5px; font-weight: 600; color: #0078c8; }
+    .iam-xr-addl span { display: inline-flex; align-items: center; gap: 4px; }
+    .iam-xr-addl .iam-i { width: 11px; height: 11px; stroke-width: 2.2; }
+    .iam-xr-tot { display: flex; flex-direction: column; gap: 6px; align-self: flex-end; width: 230px; }
+    .iam-xr-tot > div { display: flex; justify-content: space-between; font-size: 11px; }
+    .iam-xr-tot .is-b { padding-top: 7px; border-top: 2px solid #000a1e; font-size: 13px; font-weight: 700; }
+    .iam-xr-list { left: 0; bottom: 0; width: 476px; border-radius: 10px; color: #000a1e; }
+    .iam-xr-lhd { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 10px; }
+    .iam-xr-lhd b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .iam-xr-tabs { display: flex; gap: 14px; padding: 0 14px; border-bottom: 1px solid #dcdfe3; font-size: 10.5px; color: #3c4453; white-space: nowrap; overflow: hidden; }
+    .iam-xr-tabs span { padding: 6px 0 7px; }
+    .iam-xr-tabs .is-on { color: #000a1e; font-weight: 700; box-shadow: inset 0 -3px 0 #0078c8; }
+    .iam-xr-row { display: grid; grid-template-columns: 12px 56px 84px minmax(0, 1fr) 64px 108px; gap: 8px; align-items: center; height: 33px; padding: 0 14px; border-bottom: 1px solid #e6e8eb; font-size: 10.5px; }
+    .iam-xr-row:last-child { border-bottom: none; }
+    .iam-xr-row > i { width: 12px; height: 12px; border: 1px solid #a7adb6; border-radius: 2px; background: #fff; }
+    .iam-xr-row .r { text-align: right; white-space: nowrap; }
+    .iam-xr-row small { font-size: 9px; font-weight: 600; color: #59606d; }
+    .iam-xr-row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-xr-rh { height: 27px; background: #f7f8f9; font-size: 9.5px; font-weight: 600; color: #3c4453; }
+    .iam-xr-num { color: #0078c8; font-weight: 600; }
+    .iam-xr-row.is-on { background: #eaf5fc; }
+    .iam-xr-row .editorial { font-weight: 500; letter-spacing: 0; }
+
     @container iam (max-width: 760px) {
-        .iam-hs, .iam-sl, .iam-zp, .iam-mk, .iam-n8, .iam-tm, .iam-mp, .iam-wa { padding: 0; min-height: 0; }
+        .iam-hs, .iam-sl, .iam-zp, .iam-mk, .iam-n8, .iam-tm, .iam-mp, .iam-wa, .iam-gm, .iam-gsh, .iam-xl, .iam-qb, .iam-xr { padding: 0; min-height: 0; }
+        .iam-gm-win, .iam-gsh-win, .iam-xl-win, .iam-qb-win { width: 100%; }
+        .iam-gm-body { grid-template-columns: 138px minmax(0, 1fr); }
+        .iam-gm-brand { width: auto; }
+        .iam-gm-compose { padding: 0 12px; }
+        .iam-gm-ni { padding-left: 14px; gap: 10px; }
+        .iam-gm-pager, .iam-xl-hide-m, .iam-xr-hide-m { display: none !important; }
+        .iam-gm-addon { grid-template-columns: minmax(0, 1fr) 42px; }
         .iam-layer { position: relative; inset: auto; width: min(100% - 22px, 330px); margin: -34px 0 0 auto; }
         .iam-hs-win { width: 100%; }
         .iam-hs-hide-s { display: none !important; }
@@ -1806,5 +2809,61 @@ const waVars: { label: string; value: string; hint?: string }[] = [
         .iam-shc-sku { grid-area: sku; }
         .iam-shc-amt { grid-area: amt; }
         .iam-shc-st { grid-area: st; justify-self: end; }
+        .iam-gm-top { gap: 9px; padding: 0 10px; }
+        .iam-gm-brand b, .iam-gm-topr > .iam-i, .iam-gm-nav, .iam-gm-hide-s, .iam-gm-burger, .iam-gm-tune { display: none; }
+        .iam-gm-body { grid-template-columns: minmax(0, 1fr); height: 440px; }
+        .iam-gm-main { margin: 0 8px 8px; }
+        .iam-gm-tools { gap: 14px; padding: 0 12px; }
+        .iam-gm-subj { padding: 4px 12px 10px; }
+        .iam-gm-subj h4 { font-size: 14px; white-space: normal; }
+        .iam-gm-msg { padding: 0 12px 12px; gap: 9px; }
+        .iam-gm-msg.is-last { padding-top: 10px; }
+        .iam-gm-from { flex-wrap: wrap; }
+        .iam-gm-from time { margin-left: 0; padding-left: 0; flex-basis: 100%; }
+        .iam-gm-replies { padding-left: 12px; }
+        .iam-gsh-hide-s, .iam-gsh-menu, .iam-gsh-title .iam-i { display: none; }
+        .iam-gsh-title { font-size: 12px; }
+        .iam-gsh-hr { gap: 8px; }
+        .iam-gsh-share { padding: 0 10px; font-size: 10.5px; }
+        .iam-gsh-grid { grid-template-columns: 26px 56px 54px 32px minmax(0, 1fr) minmax(0, 1fr); font-size: 9.5px; }
+        .iam-gsh-grid > .cB, .iam-gsh-grid > .cD, .iam-gsh-grid > .cE, .iam-gsh-grid > .cG, .iam-gsh-grid > .cH, .iam-gsh-grid > .cI, .iam-gsh-grid > .cL { display: none; }
+        .iam-gsh-grid > * { padding: 0 4px; }
+        .iam-gsh-hc .iam-i { display: none; }
+        .iam-xl-hide-s, .iam-xl-search, .iam-xl-file em { display: none !important; }
+        .iam-xl-file { flex: 1; font-size: 10.5px; text-overflow: ellipsis; }
+        .iam-xl-app { gap: 9px; }
+        .iam-xl-tabs { gap: 11px; }
+        .iam-xl-grid { grid-template-columns: 24px 52px minmax(0, 1fr) 32px 62px 62px; font-size: 9.5px; }
+        .iam-xl-grid > .cC, .iam-xl-grid > .cD, .iam-xl-grid > .cE, .iam-xl-grid > .cF, .iam-xl-grid > .cI, .iam-xl-grid > .cK, .iam-xl-grid > .cL { display: none; }
+        .iam-xl-grid > * { padding: 0 4px; }
+        .iam-xl-th i { display: none; }
+        .iam-qb-hide-s { display: none !important; }
+        .iam-qb-body { padding: 12px 12px 44px; }
+        .iam-qb-bar { display: none; }
+        .iam-qb-lh > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .iam-qb-row { flex-direction: column; gap: 10px; }
+        .iam-qb-bal { align-items: flex-start; }
+        .iam-qb-bal b { font-size: 19px; }
+        .iam-qb-sel { width: 100%; }
+        .iam-qb-fields { flex-wrap: wrap; gap: 8px; }
+        .iam-qb-in { min-width: 92px; }
+        .iam-qb-lh, .iam-qb-lr { grid-template-columns: 12px 40px minmax(0, 1fr) 34px 68px; gap: 7px; padding: 0 4px; }
+        .iam-qb-lh > :nth-child(5), .iam-qb-lr > :nth-child(5) { display: none; }
+        .iam-qb-foot { flex-direction: column; }
+        .iam-qb-notes { flex-direction: column; }
+        .iam-qb-notes > div { width: 100%; }
+        .iam-qb-notes > div:first-child { display: none; }
+        .iam-xr-links, .iam-xr-hide-s { display: none !important; }
+        .iam-xr-head { padding: 10px 12px; }
+        .iam-xr-title b { font-size: 14.5px; }
+        .iam-xr-body { margin: 10px 8px 10px; padding: 12px 10px 44px; }
+        .iam-xr-fields { grid-template-columns: 1fr 1fr; }
+        .iam-xr-fields .is-to, .iam-xr-fields .is-ref { grid-column: 1 / -1; }
+        .iam-xr-opts { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+        .iam-xr-lh, .iam-xr-lr { grid-template-columns: minmax(0, 1fr) 48px 44px 68px; gap: 6px; padding: 0 8px; }
+        .iam-xr-lh > :first-child, .iam-xr-lr > :first-child { display: none; }
+        .iam-xr-tot { width: 100%; }
+        .iam-xr-row { grid-template-columns: 12px 54px minmax(0, 1fr) 96px; padding: 0 10px; }
+        .iam-xr-row > :nth-child(4) { display: none; }
     }
 </style>

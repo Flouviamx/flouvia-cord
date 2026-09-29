@@ -20,7 +20,8 @@ import { ProveedorError } from '../proveedor-http';
 import { esProveedorConta, type ProveedorConta } from './config';
 import { qboAsegurarCliente, qboCrearFactura, qboRefresh } from './qbo';
 import { xeroAsegurarContacto, xeroCrearFactura, xeroRefresh, xeroTenant } from './xero';
-import type { ContaCliente, FacturaConta, LineaConta, TokensConta } from './tipos';
+import { impuestoDe } from './impuestos';
+import { ContaImpuestoError, type ContaCliente, type FacturaConta, type LineaConta, type MotivoImpuesto, type TokensConta } from './tipos';
 
 export interface ConexionConta {
     id: string;
@@ -91,12 +92,23 @@ export interface EstadoConta {
     cuentaNombre: string | null;
     ultimaSync: string | null;
     estado: string;
+    /** La última factura que no se asentó por su impuesto, con la tasa que faltó. */
+    aviso: { motivo: MotivoImpuesto; tasa: number | null } | null;
+}
+
+const MOTIVOS_IMPUESTO = new Set<string>(['impuesto', 'retenciones', 'descuadre']);
+
+export function avisoDe(ultimoError: unknown): EstadoConta['aviso'] {
+    const [motivo, tasa] = String(ultimoError ?? '').split(':');
+    if (!MOTIVOS_IMPUESTO.has(motivo)) return null;
+    const n = Number(tasa);
+    return { motivo: motivo as MotivoImpuesto, tasa: tasa && Number.isFinite(n) ? n : null };
 }
 
 /** Para la tarjeta de Ajustes: no renueva tokens ni llama al proveedor. */
 export async function estadoConta(orgId: string, proveedor: ProveedorConta): Promise<EstadoConta | null> {
     const [[row]] = await withOrgTx(orgId, sql`
-        select proveedor, estado, cuenta_externa, cuenta_nombre, ultima_sync_at
+        select proveedor, estado, cuenta_externa, cuenta_nombre, ultima_sync_at, ultimo_error
           from integracion_conexiones
          where org_id = ${orgId} and proveedor = ${proveedor} and estado <> 'desconectada'
          limit 1`);
@@ -107,6 +119,7 @@ export async function estadoConta(orgId: string, proveedor: ProveedorConta): Pro
         cuentaNombre: (row.cuenta_nombre as string) ?? null,
         ultimaSync: row.ultima_sync_at ? new Date(row.ultima_sync_at as string).toISOString() : null,
         estado: String(row.estado ?? 'activa'),
+        aviso: row.estado === 'activa' ? avisoDe(row.ultimo_error) : null,
     };
 }
 
@@ -157,8 +170,18 @@ export const TIPOS: Record<ProveedorConta, { cliente: string; factura: string }>
     xero: { cliente: 'xero_contact', factura: 'xero_invoice' },
 };
 
-/** El precio que se contabiliza es el negociado, con su descuento aplicado. */
-export function lineasDe(items: Record<string, unknown>[]): LineaConta[] {
+const tasaValida = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 && n < 1 ? n : null;
+};
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * El precio que se contabiliza es el negociado, con su descuento aplicado. Una
+ * línea sin tasa propia es anterior al impuesto por línea y lleva la del documento.
+ */
+export function lineasDe(items: Record<string, unknown>[], tasaDocumento = 0): LineaConta[] {
     return items.map((i) => {
         const negociado = Number(i.precio_negociado);
         const base = Number.isFinite(negociado) && i.precio_negociado !== null && i.precio_negociado !== undefined
@@ -174,11 +197,15 @@ export function lineasDe(items: Record<string, unknown>[]): LineaConta[] {
         // de Cord es inherente a redondear, y es preferible a un renglón que se
         // contradice.
         const precio = Math.round(crudo * 100) / 100;
+        const importe = r2(precio * cantidad);
+        const tasa = tasaValida(i.tax_rate) ?? tasaDocumento;
         return {
             descripcion: String(i.descripcion || 'Concepto'),
             cantidad,
             precio,
-            importe: Math.round(precio * cantidad * 100) / 100,
+            importe,
+            tasa,
+            impuesto: r2(importe * tasa),
         };
     });
 }
@@ -201,11 +228,17 @@ export function lineasDeSnapshot(snapshot: unknown): LineaConta[] {
         // Mismo contrato que el otro camino: el importe se calcula sobre el
         // precio YA redondeado, para que la línea cuadre consigo misma.
         const precio = Math.round(Math.max(0, Number.isFinite(crudo) ? crudo : 0) * 100) / 100;
+        const importe = r2(precio * cantidad);
+        const tasa = tasaValida(l?.taxRate) ?? 0;
+        // El impuesto de la línea es el que quedó en la factura, no uno recalculado.
+        const guardado = Number(l?.taxAmount);
         return {
             descripcion: String(l?.description || 'Concepto'),
             cantidad,
             precio,
-            importe: Math.round(precio * cantidad * 100) / 100,
+            importe,
+            tasa,
+            impuesto: Number.isFinite(guardado) && l?.taxAmount !== null ? r2(guardado) : r2(importe * tasa),
         };
     });
 }
@@ -223,7 +256,17 @@ const fechaISO = (valor: unknown, zona: string): string => {
 export interface ResultadoConta {
     ok: boolean;
     externoId?: string;
-    motivo?: 'sin_conexion' | 'sin_factura' | 'ya_existe' | 'sin_lineas' | 'proveedor';
+    motivo?: 'sin_conexion' | 'sin_factura' | 'ya_existe' | 'sin_lineas' | 'proveedor' | MotivoImpuesto;
+    tasa?: number;
+}
+
+async function guardarAviso(orgId: string, conexionId: string, aviso: string | null): Promise<void> {
+    await withOrgTx(orgId, aviso
+        ? sql`update integracion_conexiones set ultimo_error = ${aviso}, ultimo_error_at = now(), updated_at = now()
+               where id = ${conexionId} and org_id = ${orgId} and estado = 'activa'`
+        : sql`update integracion_conexiones set ultimo_error = null, ultimo_error_at = null, updated_at = now()
+               where id = ${conexionId} and org_id = ${orgId} and estado = 'activa'
+                 and split_part(coalesce(ultimo_error, ''), ':', 1) in ('impuesto', 'retenciones', 'descuadre')`);
 }
 
 export async function contabilizarFactura(
@@ -233,8 +276,8 @@ export async function contabilizarFactura(
     if (!cx) return { ok: false, motivo: 'sin_conexion' };
 
     const [[doc]] = await withOrgTx(orgId, sql`
-        select d.id, d.invoice_number, d.created_at, d.due_date, d.currency, d.cotizacion_id,
-               d.line_items_snapshot,
+        select d.id, d.invoice_number, d.created_at, d.issued_at, d.due_date, d.currency, d.cotizacion_id,
+               d.line_items_snapshot, d.subtotal, d.tax_total, d.retencion_total,
                coalesce(cl.empresa, cq.empresa, '') as cliente_nombre,
                coalesce(cl.email, cq.email) as cliente_email,
                coalesce(cl.telefono, cq.telefono) as cliente_telefono,
@@ -245,7 +288,8 @@ export async function contabilizarFactura(
           left join cotizaciones c on c.id = d.cotizacion_id and c.org_id = d.org_id
           left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
           left join clientes cq on cq.id = c.cliente_id and cq.org_id = d.org_id
-         where d.org_id = ${orgId} and d.id = ${docId} and d.invoice_number is not null`);
+         where d.org_id = ${orgId} and d.id = ${docId} and d.invoice_number is not null
+           and coalesce(d.lifecycle, '') not in ('draft', 'void') and coalesce(d.status, '') <> 'cancelled'`);
     if (!doc) return { ok: false, motivo: 'sin_factura' };
 
     const [[yaEsta]] = await withOrgTx(orgId, sql`
@@ -259,13 +303,22 @@ export async function contabilizarFactura(
     let lineas = lineasDeSnapshot(doc.line_items_snapshot);
     if (!lineas.length && doc.cotizacion_id) {
         const [items] = await withOrgTx(orgId, sql`
-            select descripcion, cantidad, precio_unitario, precio_negociado, descuento_pct
+            select descripcion, cantidad, precio_unitario, precio_negociado, descuento_pct, tax_rate
               from cotizacion_items
              where cotizacion_id = ${doc.cotizacion_id}
              order by orden asc`);
-        lineas = lineasDe(items as Record<string, unknown>[]);
+        const subtotal = Number(doc.subtotal);
+        const tasaDoc = subtotal > 0 ? Math.round((Number(doc.tax_total) || 0) / subtotal * 1e4) / 1e4 : 0;
+        lineas = lineasDe(items as Record<string, unknown>[], tasaDoc);
     }
     if (!lineas.length) return { ok: false, motivo: 'sin_lineas' };
+
+    // Ninguna de las dos contabilidades sabe de retenciones en una factura de
+    // venta: asentarla sin ellas inflaría la cuenta por cobrar.
+    if ((Number(doc.retencion_total) || 0) > 0) {
+        await guardarAviso(orgId, cx.id, 'retenciones');
+        return { ok: false, motivo: 'retenciones' };
+    }
 
     const zona = String(doc.zona_horaria ?? 'America/Mexico_City');
     const cliente: ContaCliente = {
@@ -275,10 +328,12 @@ export async function contabilizarFactura(
     };
     const factura: FacturaConta = {
         folio: String(doc.invoice_number),
-        fecha: fechaISO(doc.created_at, zona),
+        // La fecha de la factura es la de emisión; created_at es la del borrador.
+        fecha: fechaISO(doc.issued_at ?? doc.created_at, zona),
         vence: doc.due_date ? fechaISO(doc.due_date, zona) : null,
         moneda: String(doc.currency || 'MXN').toUpperCase(),
         lineas,
+        impuestos: Number.isFinite(Number(doc.tax_total)) && doc.tax_total !== null ? r2(Number(doc.tax_total)) : impuestoDe(lineas),
     };
 
     // El cliente se resuelve una vez y se recuerda: sin el vínculo, cada factura
@@ -304,9 +359,23 @@ export async function contabilizarFactura(
         }
     }
 
-    const creada = proveedor === 'quickbooks'
-        ? await qboCrearFactura(cx.token, cx.cuenta, clienteExterno, factura)
-        : await xeroCrearFactura(cx.token, cx.cuenta, clienteExterno, factura);
+    let creada: { id: string; numero: string | null; descuadre?: boolean };
+    try {
+        creada = proveedor === 'quickbooks'
+            ? await qboCrearFactura(cx.token, cx.cuenta, clienteExterno, factura)
+            : await xeroCrearFactura(cx.token, cx.cuenta, clienteExterno, factura);
+    } catch (err) {
+        if (!(err instanceof ContaImpuestoError)) throw err;
+        await guardarAviso(orgId, cx.id, err.tasa === undefined ? err.motivo : `${err.motivo}:${err.tasa}`);
+        return { ok: false, motivo: err.motivo, tasa: err.tasa };
+    }
+    if (creada.descuadre) {
+        // No se pudo borrar: se vincula igual para no asentarla dos veces, y se avisa.
+        log.error('la factura quedó en la contabilidad con otro total', {
+            route: 'contabilidad', orgId, proveedor, docId, externoId: creada.id,
+        });
+        await guardarAviso(orgId, cx.id, 'descuadre');
+    }
 
     await withOrgTx(orgId,
         sql`insert into integracion_vinculos (org_id, conexion_id, objeto, local_id, externo_tipo, externo_id, sincronizado_at)
@@ -314,6 +383,7 @@ export async function contabilizarFactura(
             on conflict (conexion_id, objeto, local_id) do nothing`,
         sql`update integracion_conexiones set ultima_sync_at = now(), updated_at = now()
              where id = ${cx.id} and org_id = ${orgId}`);
+    if (!creada.descuadre) await guardarAviso(orgId, cx.id, null);
     return { ok: true, externoId: creada.id };
 }
 
@@ -322,11 +392,18 @@ export async function contabilizarFactura(
  * tope existe porque cada una son varias llamadas al proveedor, y porque una
  * cuenta con años de historia no debe volcarse entera de un clic.
  */
+export interface ResultadoPendientes {
+    facturas: number;
+    /** Las que no se asentaron por su impuesto, con la primera tasa que faltó. */
+    omitidas: number;
+    aviso: EstadoConta['aviso'];
+}
+
 export async function contabilizarPendientes(
     orgId: string, proveedor: ProveedorConta, limite = 50,
-): Promise<{ facturas: number }> {
+): Promise<ResultadoPendientes> {
     const cx = await leerConexionConta(orgId, proveedor);
-    if (!cx) return { facturas: 0 };
+    if (!cx) return { facturas: 0, omitidas: 0, aviso: null };
     const [filas] = await withOrgTx(orgId, sql`
         select d.id
           from documentos_fiscales d
@@ -334,10 +411,13 @@ export async function contabilizarPendientes(
             on v.local_id = d.id and v.org_id = d.org_id
            and v.conexion_id = ${cx.id} and v.objeto = 'invoice'
          where d.org_id = ${orgId} and d.invoice_number is not null and v.id is null
+           and coalesce(d.lifecycle, '') not in ('draft', 'void') and coalesce(d.status, '') <> 'cancelled'
       order by d.created_at desc
          limit ${limite}`);
 
     let hechas = 0;
+    let omitidas = 0;
+    let aviso: EstadoConta['aviso'] = null;
     const motivos: string[] = [];
     let primerFallo: unknown = null;
     for (const f of filas) {
@@ -345,6 +425,10 @@ export async function contabilizarPendientes(
             const r = await contabilizarFactura(orgId, String(f.id), proveedor);
             if (r.ok) hechas += 1;
             else motivos.push(r.motivo ?? 'desconocido');
+            if (!r.ok && r.motivo && MOTIVOS_IMPUESTO.has(r.motivo)) {
+                omitidas += 1;
+                aviso = aviso ?? { motivo: r.motivo as MotivoImpuesto, tasa: r.tasa ?? null };
+            }
         } catch (err) {
             // Una factura que revienta no puede llevarse las demás: antes, la
             // primera que fallaba abortaba el lote entero y las siguientes ni
@@ -367,7 +451,9 @@ export async function contabilizarPendientes(
         // facturas sin cotización.
         if (primerFallo) throw primerFallo;
     }
-    return { facturas: hechas };
+    // La última que se asentó limpia el aviso; si alguna quedó fuera, el aviso es el suyo.
+    if (aviso) await guardarAviso(orgId, cx.id, aviso.tasa === null ? aviso.motivo : `${aviso.motivo}:${aviso.tasa}`);
+    return { facturas: hechas, omitidas, aviso };
 }
 
 /** Los proveedores de contabilidad conectados en esta organización. */

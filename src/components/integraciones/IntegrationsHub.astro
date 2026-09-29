@@ -22,6 +22,24 @@ const description = isEn
     : 'Conecta Cord con las herramientas de tu equipo: HubSpot, Shopify, Gmail, Google Sheets, Excel, QuickBooks, Xero, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n y Mercado Pago. Incluidas en todos los planes, desde Gratis.';
 
 const ORDER: IntegrationLandingCategory[] = ['crm', 'ecommerce', 'cobros', 'contabilidad', 'productividad', 'comunicacion', 'automatizacion'];
+const TILE_ART: Record<string, { src: string; color: string; mode: 'tile' | 'mark' }> = {
+    hubspot: { src: '/imgs/integrations/tiles/hubspot.png', color: '#ff5c35', mode: 'tile' },
+    shopify: { src: '/imgs/integrations/shopify.svg', color: '#95bf47', mode: 'tile' },
+    'mercado-pago': { src: '/imgs/integrations/mercadopago.svg', color: '#00b1ea', mode: 'tile' },
+    slack: { src: '/imgs/integrations/slack.png', color: '#4a154b', mode: 'mark' },
+    zapier: { src: '/imgs/integrations/tiles/zapier.png', color: '#ff4f00', mode: 'tile' },
+    make: { src: '/imgs/integrations/tiles/make.png', color: '#6d00cc', mode: 'mark' },
+    n8n: { src: '/imgs/integrations/n8n.svg', color: '#ea4b71', mode: 'tile' },
+    teams: { src: '/imgs/integrations/tiles/teams.png', color: '#5b5fc7', mode: 'mark' },
+    whatsapp: { src: '/imgs/integrations/whatsapp.svg', color: '#25d366', mode: 'tile' },
+    gmail: { src: '/imgs/integrations/tiles/gmail.png', color: '#ea4335', mode: 'mark' },
+    'google-sheets': { src: '/imgs/integrations/tiles/google-sheets.png', color: '#1e8e3e', mode: 'mark' },
+    excel: { src: '/imgs/integrations/tiles/excel.png', color: '#217346', mode: 'mark' },
+    quickbooks: { src: '/imgs/integrations/tiles/quickbooks.png', color: '#2ca01c', mode: 'tile' },
+    xero: { src: '/imgs/integrations/tiles/xero.png', color: '#13b5ea', mode: 'tile' },
+};
+const marqueeTiles = INTEGRATION_PAGES.filter((p) => TILE_ART[p.slug]).map((p) => ({ ...TILE_ART[p.slug], href: `${pre}/integraciones/${p.slug}` }));
+
 const groups = ORDER.map((cat) => ({ cat, label: CATEGORY_LABEL[cat][lang], items: INTEGRATION_PAGES.filter((p) => p.categoria === cat) }))
     .filter((g) => g.items.length);
 
@@ -84,6 +102,7 @@ const schema = {
                 <p class="ih-eyebrow reveal">{isEn ? 'INTEGRATIONS' : 'INTEGRACIONES'}</p>
                 <h1 class="ih-title masked-title">{isEn ? 'Cord, connected to the tools your team already uses.' : 'Cord, conectado a las herramientas que tu equipo ya usa.'}</h1>
                 <p class="ih-sub reveal">{isEn ? 'Your CRM, your channels, your automations and your payment rail, in sync with every quote and every invoice. Nothing is required: Cord works complete without connecting anything.' : 'Tu CRM, tus canales, tus automatizaciones y tu riel de cobro, al día con cada cotización y cada factura. Nada es obligatorio: Cord funciona completo sin conectar nada.'}</p>
+                <div class="ih-marquee" data-tiles={JSON.stringify(marqueeTiles)} aria-hidden="true"></div>
                 <div class="ih-logos reveal" aria-hidden="true">
                     {INTEGRATION_PAGES.map((p) => <span class="ih-logo"><img src={p.logo} alt="" width="52" height="52" /></span>)}
                 </div>
@@ -147,6 +166,15 @@ const schema = {
     .ih-sub { font-size: 1.1rem; line-height: 1.65; color: var(--color-text-muted); max-width: 640px; margin: -1.4rem auto 2.6rem; }
     .ih-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
     .ih-logo { display: inline-flex; }
+    .ih-marquee {
+        position: relative; width: 100vw; margin: -1.4rem 0 -1.6rem calc(50% - 50vw); height: 0; touch-action: pan-y;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+        opacity: 0; transition: opacity 0.9s ease;
+    }
+    .ih-marquee.is-on { height: 200px; opacity: 1; }
+    .ih-marquee :global(canvas) { display: block; width: 100%; height: 100%; }
+    .ih-hero-inner.is-gl .ih-logos { display: none; }
     .ih-logo img { width: 52px; height: 52px; border-radius: 24%; object-fit: contain; }
 
     .ih-groups { max-width: 1120px; margin: 0 auto; padding: 2rem 6% 6rem; display: flex; flex-direction: column; gap: 3.4rem; }
@@ -178,9 +206,29 @@ const schema = {
     .ih-build-links a:hover b { color: var(--color-blue-deep); }
 
     @media (max-width: 880px) {
+        .ih-marquee.is-on { height: 150px; }
         .ih-hero-inner { padding: 8rem 5% 3.5rem; }
         .ih-groups { padding: 1rem 5% 4.5rem; }
         .ih-grid { grid-template-columns: 1fr; }
         .ih-build-inner { grid-template-columns: 1fr; padding: 4.5rem 5%; gap: 1.6rem; }
     }
 </style>
+
+<script>
+    const host = document.querySelector<HTMLElement>('.ih-marquee');
+    const canGl = (() => {
+        try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; }
+    })();
+    if (host && canGl) {
+        const start = async () => {
+            try {
+                const { mountLogoMarquee } = await import('./logo-marquee');
+                await mountLogoMarquee(host, JSON.parse(host.dataset.tiles || '[]'));
+                host.classList.add('is-on');
+                host.closest('.ih-hero-inner')?.classList.add('is-gl');
+            } catch {}
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(() => start(), { timeout: 1200 });
+        else setTimeout(start, 300);
+    }
+</script>

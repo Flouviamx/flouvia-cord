@@ -544,11 +544,29 @@ function cotizacionDelHilo(folios) {
     return null;
 }
 
+// El historial de Cord guarda su texto en español; en inglés se nombra por su tipo.
+var EVENTO_EN = {
+    created: 'Draft created',
+    sent: 'Quote sent',
+    viewed: 'Opened by the client from the link',
+    approved: 'Approved by the client',
+    rejected: 'Rejected by the client',
+    paid: 'Payment received',
+    expired: 'Quote expired',
+    comment: 'New comment',
+    counter: 'Counteroffer from the client',
+    reply: 'You replied to the client',
+    reminder: 'Reminder sent',
+    email: 'Email sent'
+};
+
 /** Lo último que pasó con la cotización, del historial de Cord. */
 function ultimaActividad(q) {
     var eventos = Array.isArray(q.eventos) ? q.eventos : [];
     var e = eventos[0];
-    return e ? e.detalle + (e.cuando ? ' · ' + e.cuando : '') : '';
+    if (!e) return '';
+    var texto = IDIOMA === 'en' && EVENTO_EN[e.tipo] ? EVENTO_EN[e.tipo] : e.detalle;
+    return texto + (e.cuando ? ' · ' + e.cuando : '');
 }
 
 function seccionCotizacionDelHilo(q) {

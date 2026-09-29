@@ -64,11 +64,17 @@ export interface EmailAttachment {
 
 const tipoAdjunto = (nombre: string) => /\.pdf$/i.test(nombre) ? 'application/pdf' : /\.xml$/i.test(nombre) ? 'application/xml' : 'application/octet-stream';
 
-export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null; orgId?: string | null; operation?: string; attachments?: EmailAttachment[] }): Promise<SendResult> {
+export async function sendEmail(opts: {
+    to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null;
+    /** La dirección de respuesta que el negocio configuró a propósito; el correo de contacto no cuenta. */
+    replyToPropio?: string | null;
+    orgId?: string | null; operation?: string; attachments?: EmailAttachment[];
+}): Promise<SendResult> {
     // Si el negocio conectó su Gmail, lo que va a SUS clientes sale desde ahí.
     if (opts.orgId && opts.to && OPERACIONES_GMAIL.has(opts.operation || '')) {
         const g = await enviarPorGmail(opts.orgId, {
-            to: opts.to, subject: opts.subject, html: opts.html, fromName: opts.fromName, replyTo: opts.replyTo,
+            // Sale desde el Gmail del negocio: la respuesta vuelve a esa bandeja salvo que haya elegido otra.
+            to: opts.to, subject: opts.subject, html: opts.html, fromName: opts.fromName, replyTo: opts.replyToPropio ?? null,
             attachments: opts.attachments?.map((a) => ({ ...a, contentType: tipoAdjunto(a.filename) })),
         }).catch(() => ({ ok: false as const }));
         if (g?.ok) {
@@ -200,6 +206,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
     });
 }
 
@@ -374,6 +381,7 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
         attachments: pdf ? [pdf] : undefined,
     });
     return result.sent;
@@ -419,6 +427,7 @@ export async function notifyInvoiceReminder(orgId: string, documentoId: string, 
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
     });
     return result.sent;
 }
@@ -491,6 +500,7 @@ export async function sendClientQuoteMessage(orgId: string, cotizacionId: string
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
     });
     return result.sent ? { sent: true } : { sent: false, reason: 'envio' };
 }
@@ -526,6 +536,7 @@ export async function sendClientInvoiceMessage(orgId: string, documentoId: strin
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        replyToPropio: canCustomizeEmail ? (r.email_reply_to || null) : null,
     });
     return result.sent ? { sent: true } : { sent: false, reason: 'envio' };
 }

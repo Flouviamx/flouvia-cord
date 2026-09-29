@@ -11,7 +11,7 @@ import { log } from '../../log';
 import { decryptSecret, encryptRequiredSecret } from '../../crypto-secret';
 import { siteOrigin } from '../../email';
 import {
-    CABECERAS, filaCotizacion, filaFactura, type Celda, type Pestana,
+    CABECERAS, cabecerasPara, filaCotizacion, filaFactura, type Celda, type Pestana,
 } from './columnas';
 import { HojaError, type ClienteHoja, type HojaRef, type TokensHoja } from './cliente';
 import { credencialesHoja, esProveedorHoja, nombreLibro, type ProveedorHoja } from './config';
@@ -32,10 +32,11 @@ export function titulosPara(idioma: string): Record<Pestana, string> {
 }
 
 export function hojasDe(titulos: Record<Pestana, string>): HojaRef[] {
-    return [
-        { clave: 'cotizaciones', titulo: titulos.cotizaciones },
-        { clave: 'facturas', titulo: titulos.facturas },
-    ];
+    // El idioma quedó fijado al conectar, en los títulos de las pestañas.
+    const en = titulos.cotizaciones === titulosPara('en').cotizaciones;
+    return (['cotizaciones', 'facturas'] as const).map((clave) => ({
+        clave, titulo: titulos[clave], cabeceras: cabecerasPara(clave, en),
+    }));
 }
 
 export interface ConexionHoja {
@@ -212,7 +213,7 @@ async function zonaDe(orgId: string): Promise<string> {
 /** Escribe una fila: la reemplaza si su folio ya está, y si no la agrega al final. */
 async function ponerFila(cx: ConexionHoja, clave: Pestana, folio: string, celdas: Celda[]): Promise<void> {
     const cliente = clienteDe(cx.proveedor);
-    const hoja: HojaRef = { clave, titulo: cx.titulos[clave] };
+    const hoja = hojasDe(cx.titulos).find((h) => h.clave === clave)!;
     const folios = await cliente.leerFolios(cx.token, cx.libroId, hoja);
     const idx = folios.findIndex((f) => f === folio);
     if (idx >= 0) await cliente.escribirFila(cx.token, cx.libroId, hoja, idx + 2, celdas);
@@ -345,6 +346,14 @@ const EVENTOS_FACTURA = new Set([
  * Lo que dispara el evento de dominio. Nunca lanza: que la hoja de alguien esté
  * llena, sin permiso o caída no puede tumbar la venta que la produjo.
  */
+export async function onAbonoFactura(orgId: string, docId: string): Promise<void> {
+    try {
+        await sincronizarFactura(orgId, docId);
+    } catch (err) {
+        log.error('no se pudo preparar la fila de la hoja', { route: 'hojas', orgId, type: 'abono', err });
+    }
+}
+
 export async function onDomainEventHoja(orgId: string, type: string, objectId: string | null): Promise<void> {
     if (!objectId) return;
     const esCotizacion = EVENTOS_COTIZACION.has(type);

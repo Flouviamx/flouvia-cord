@@ -245,7 +245,7 @@ export const excel: ClienteHoja = {
                 });
             }
             await conReintento(() => apiJson(`${hojaUrl(libroId, h.titulo)}/range(address='${direccion(h.clave, 1)}')`, {
-                token, method: 'PATCH', body: JSON.stringify({ values: [CABECERAS[h.clave]] }),
+                token, method: 'PATCH', body: JSON.stringify({ values: [h.cabeceras] }),
             }));
 
             // Lo idiomático de Excel no es un rango con datos: es una TABLA.

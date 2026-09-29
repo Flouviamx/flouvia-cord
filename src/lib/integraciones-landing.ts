@@ -2011,7 +2011,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             ],
             limites: [
                 'Todavía no manda los pagos: el cobro se registra en tu contabilidad como siempre.',
-                'Todavía no mapea tus códigos de impuesto: revisa el impuesto de la primera factura.',
+                'Cada línea entra con la tasa de impuesto de tu contabilidad que coincide con la de Cord. Si esa tasa no existe allá, o la factura lleva retenciones, no se envía y Ajustes te dice por qué.',
                 'El flujo va de Cord a tu contabilidad, no al revés.',
             ],
             faqs: [
@@ -2062,7 +2062,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             ],
             limites: [
                 'It does not send payments yet: record the payment in your accounting as usual.',
-                'It does not map your tax codes yet: check the tax on the first invoice.',
+                'Each line enters with the tax rate in your accounting that matches Cord\'s. If that rate does not exist there, or the invoice has withholdings, it is not sent and Settings tells you why.',
                 'It flows from Cord to your accounting, not the other way.',
             ],
             faqs: [
@@ -2111,8 +2111,8 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 {
                     eyebrow: 'CÓMO ENTRA',
                     titulo: 'En borrador, y la apruebas tú.',
-                    copy: 'Un sistema de fuera no debería asentar solo en los libros de nadie: la factura entra como borrador con el folio de Cord en la referencia, y tu contador la revisa antes de aprobarla. Los importes van sin impuesto incluido porque Cord ya calculó el impuesto por línea.',
-                    bullets: ['Factura de venta en estado borrador', 'El folio de Cord en la referencia', 'Permisos solo sobre facturas y contactos'],
+                    copy: 'Un sistema de fuera no debería asentar solo en los libros de nadie: la factura entra como borrador con el folio de Cord en la referencia, y tu contador la revisa antes de aprobarla. Cada línea entra con la tasa de impuesto de tu Xero que coincide con la de Cord, y con el impuesto que Cord ya calculó.',
+                    bullets: ['Factura de venta en estado borrador', 'El folio de Cord en la referencia', 'Permisos sobre facturas y contactos, y lectura de tus tasas de impuesto'],
                 },
             ],
             pasos: [
@@ -2122,7 +2122,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             ],
             limites: [
                 'Todavía no manda los pagos: el cobro se registra en tu contabilidad como siempre.',
-                'Todavía no mapea tus códigos de impuesto: revisa el impuesto de la primera factura.',
+                'Cada línea entra con la tasa de impuesto de tu contabilidad que coincide con la de Cord. Si esa tasa no existe allá, o la factura lleva retenciones, no se envía y Ajustes te dice por qué.',
                 'El flujo va de Cord a tu contabilidad, no al revés.',
             ],
             faqs: [
@@ -2162,8 +2162,8 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 {
                     eyebrow: 'HOW IT ARRIVES',
                     titulo: 'As a draft, and you approve it.',
-                    copy: 'An outside system should not post to anyone\'s books on its own: the invoice arrives as a draft with the Cord number as its reference, and your accountant reviews it before approving. Amounts are tax exclusive because Cord already computed tax per line.',
-                    bullets: ['Sales invoice in draft status', 'The Cord number as the reference', 'Permissions only over invoices and contacts'],
+                    copy: 'An outside system should not post to anyone\'s books on its own: the invoice arrives as a draft with the Cord number as its reference, and your accountant reviews it before approving. Each line enters with the tax rate in your Xero that matches Cord\'s, and with the tax Cord already computed.',
+                    bullets: ['Sales invoice in draft status', 'The Cord number as the reference', 'Permissions over invoices and contacts, plus reading your tax rates'],
                 },
             ],
             pasos: [
@@ -2173,7 +2173,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             ],
             limites: [
                 'It does not send payments yet: record the payment in your accounting as usual.',
-                'It does not map your tax codes yet: check the tax on the first invoice.',
+                'Each line enters with the tax rate in your accounting that matches Cord\'s. If that rate does not exist there, or the invoice has withholdings, it is not sent and Settings tells you why.',
                 'It flows from Cord to your accounting, not the other way.',
             ],
             faqs: [

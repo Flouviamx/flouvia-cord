@@ -13,6 +13,7 @@
 import { sql, withOrgTx } from '../db';
 import { normalizeCurrency } from '../currency';
 import { logInvoiceEvent } from './timeline';
+import { after } from '../after';
 import { invoiceBalanceLock, invoiceBalanceQuery, invoicePaymentLock } from './reconciliation';
 
 export interface ApplyPaymentInput {
@@ -151,6 +152,8 @@ export async function applyPayment(
   if (!duplicate) {
     await logInvoiceEvent(orgId, documentoId, 'payment', `Abono de ${money(monto)} ${String(doc.currency || '')}`.trim());
     if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
+    // Un abono que no liquida no emite evento de dominio, pero cambia pagado y saldo en la hoja.
+    else after(import('../integraciones/hojas/service').then((m) => m.onAbonoFactura(orgId, documentoId)));
   }
 
   return {

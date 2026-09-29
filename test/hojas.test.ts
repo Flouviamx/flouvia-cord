@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    CABECERAS, columnaA1, columnasMonto, fechaEnZona, filaCotizacion, filaFactura, monto, rangoFila,
+    CABECERAS, cabecerasPara, columnaA1, columnasMonto, fechaEnZona, filaCotizacion, filaFactura, monto, rangoFila,
 } from '../src/lib/integraciones/hojas/columnas';
 
 const ORIGEN = 'https://cordhq.app';
@@ -118,5 +118,16 @@ describe('las columnas de dinero se derivan de la cabecera', () => {
             expect(typeof filaCotizacion({ folio: 'A', subtotal: 1, descuento: 2, iva: 3, total: 4, cobrado: 5 }, 'UTC', ORIGEN)[i])
                 .toBe('number');
         }
+    });
+});
+
+describe('la cabecera va en el idioma de la cuenta', () => {
+    it('una cuenta en inglés lee la fila 1 en inglés, con las mismas columnas en el mismo orden', () => {
+        for (const p of ['cotizaciones', 'facturas'] as const) {
+            expect(cabecerasPara(p, true)).toHaveLength(CABECERAS[p].length);
+            expect(cabecerasPara(p, false)).toEqual(CABECERAS[p]);
+        }
+        expect(cabecerasPara('facturas', true)[0]).toBe('number');
+        expect(cabecerasPara('facturas', true)[9]).toBe('balance');
     });
 });

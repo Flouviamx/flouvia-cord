@@ -29,6 +29,7 @@ export interface LibroCreado {
 export interface HojaRef {
     clave: Pestana;
     titulo: string;
+    cabeceras: readonly string[];
 }
 
 export interface ClienteHoja {

@@ -8,8 +8,9 @@ export type ProveedorConta = 'quickbooks' | 'xero';
 
 /**
  * QuickBooks tiene UN permiso para toda la contabilidad: no se puede pedir solo
- * facturas. Xero sí los separa, y por eso Cord pide únicamente contactos y
- * transacciones — nada de nóminas, nada de la configuración de la empresa.
+ * facturas. Xero sí los separa, y por eso Cord pide contactos, facturas y la
+ * lectura de sus tasas de impuesto — nada de nóminas ni de escribir en su
+ * configuración.
  */
 export const QBO_SCOPES = 'com.intuit.quickbooks.accounting';
 /**
@@ -20,11 +21,11 @@ export const QBO_SCOPES = 'com.intuit.quickbooks.accounting';
  * de mostrar siquiera la pantalla de autorización. Las apps anteriores pueden
  * seguir con el amplio hasta septiembre de 2027.
  *
- * Cord pide el mínimo que necesita: crear la factura y su contacto. Nada de
- * pagos, bancos ni asientos manuales, que entrarían con el permiso amplio sin
- * que nadie los use.
+ * Cord pide el mínimo que necesita: crear la factura y su contacto, y leer las
+ * tasas de impuesto para poner cada línea en la suya. Nada de pagos, bancos ni
+ * asientos manuales, que entrarían con el permiso amplio sin que nadie los use.
  */
-export const XERO_SCOPES = 'offline_access openid profile email accounting.invoices accounting.contacts';
+export const XERO_SCOPES = 'offline_access openid profile email accounting.invoices accounting.contacts accounting.settings.read';
 
 export const QBO_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 export const QBO_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
