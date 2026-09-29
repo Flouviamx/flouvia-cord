@@ -161,8 +161,33 @@ export async function comando(ctx: ContextoSlack | null, texto: string, lang: La
     return { response_type: 'ephemeral', blocks, text: `${filas.length}` };
 }
 
+/**
+ * La solicitud de aprobación en el canal de Teams. Sin un bot registrado en
+ * Azure, Teams no admite botones que decidan; la tarjeta lleva a Cord.
+ */
+async function avisarAprobacionTeams(orgId: string, q: FilaCot, lang: Lang): Promise<void> {
+    const { adaptiveCard } = await import('../teams');
+    const { deliverTeams } = await import('./teams-graph');
+    const t = T[lang];
+    const card = adaptiveCard([
+        { type: 'TextBlock', text: `${t.cotizacion} ${q.folio} ${t.pide_aprobacion}`, weight: 'Bolder', size: 'Medium', wrap: true },
+        { type: 'FactSet', facts: [
+            { title: lang === 'en' ? 'Client' : 'Cliente', value: q.empresa || '—' },
+            { title: 'Total', value: dinero(q.total, q.base_currency, lang) },
+            ...(q.aprob_motivo ? [{ title: t.motivo, value: q.aprob_motivo }] : []),
+        ] },
+    ], [{ type: 'Action.OpenUrl', title: lang === 'en' ? 'Decide in Cord' : 'Decidir en Cord', url: `${siteOrigin()}/app/cotizaciones/${q.id}` }]);
+    await deliverTeams(orgId, card).catch(() => null);
+}
+
 /** Publica la solicitud con sus botones en el canal conectado. */
 export async function avisarAprobacion(orgId: string, quoteId: string): Promise<void> {
+    const [[org]] = await withOrgTx(orgId, sql`
+        select idioma, teams_webhook_url, teams_channel_id from orgs where id = ${orgId}`);
+    if (org?.teams_webhook_url || org?.teams_channel_id) {
+        const q = await leerCotizacion(orgId, quoteId);
+        if (q) await avisarAprobacionTeams(orgId, q, org.idioma === 'en' ? 'en' : 'es');
+    }
     const [[cx]] = await withOrgTx(orgId, sql`
         select c.id, o.slack_webhook_url, o.idioma from integracion_conexiones c join orgs o on o.id = c.org_id
          where c.org_id = ${orgId} and c.proveedor = 'slack' and c.estado = 'activa'`);

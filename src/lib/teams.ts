@@ -72,7 +72,7 @@ async function post(url: string, body: unknown): Promise<{ ok: boolean; status: 
 
 export type AdaptiveCard = Record<string, unknown>;
 
-function adaptiveCard(blocks: unknown[], actions: unknown[] = []): AdaptiveCard {
+export function adaptiveCard(blocks: unknown[], actions: unknown[] = []): AdaptiveCard {
     return {
         type: 'AdaptiveCard',
         $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
