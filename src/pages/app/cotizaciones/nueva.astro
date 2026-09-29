@@ -432,6 +432,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         let html = l.unidad + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
         html += pricingNoteHtml(l, idx);
         html += existenciasNote(l);
+        if (l.b2b && !l.negoTouched) html += ` · <b class="lr-b2b">${T.precioB2B}</b>`;
         return html;
     };
     function existenciasNote(l) {
@@ -489,6 +490,33 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const d = currentDesc();
         if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a los precios de lista.` : ''; $descNote.hidden = d <= 0; }
     };
+
+    // ── Lista de precios B2B de Shopify del cliente: manda sobre el descuento por
+    // nivel, producto por producto, y solo en la divisa de la lista.
+    let preciosB2B = null;
+    const precioB2B = (id) => {
+        if (!preciosB2B || !id || preciosB2B.moneda !== editorCurrency()) return null;
+        const v = preciosB2B.precios ? preciosB2B.precios[id] : undefined;
+        return typeof v === 'number' ? v : null;
+    };
+    function cargarPreciosB2B(clienteId, aplicar = true) {
+        preciosB2B = null;
+        if (!clienteId || clienteId === '__NEW__') return;
+        fetch('/api/integraciones/shopify/precios?cliente=' + encodeURIComponent(clienteId))
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (!data || !data.moneda || ($client && $client.value !== clienteId)) return;
+                preciosB2B = data;
+                if (!aplicar) return;
+                let cambio = false;
+                lines.forEach((l) => {
+                    const b = precioB2B(l.id);
+                    if (b !== null && !l.negoTouched) { l.negociado = b; l.b2b = true; cambio = true; }
+                });
+                if (cambio) render();
+            })
+            .catch(() => {});
+    }
 
     let lastTotal = 0;
     const currentTotal = () => lastTotal;
@@ -624,7 +652,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     let prodActive = -1;
 
     function addProduct(p) {
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX, existencias: p.existencias ?? null });
+        const b2b = precioB2B(p.id);
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: b2b ?? applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX, existencias: p.existencias ?? null, b2b: b2b !== null });
         render();
         // Micro-feedback: la fila nueva parpadea suave para ubicarla.
         const rows = $lines.querySelectorAll('.line-row');
@@ -830,6 +859,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         lines.forEach((l) => {
             if (l.id) { // Solo aplica a items del catálogo
                 l.negoTouched = false;
+                l.b2b = false;
                 l.negociado = d > 0 ? Math.round(l.lista * (1 - d / 100) * 100) / 100 : null;
             }
         });
@@ -837,6 +867,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         if (opt && !opt.disabled) setTermChip(opt.dataset.term);
         reflectDesc();
         render();
+        cargarPreciosB2B($client.value);
     });
 
     $lines.addEventListener('input', (e) => {
@@ -1363,6 +1394,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         $client.value = draftQuote.cliente_id;
         lastClientVal = draftQuote.cliente_id;
         reflectDesc();
+        cargarPreciosB2B(draftQuote.cliente_id, false);
     } else if (preselectCliente && $client && Array.from($client.options).some((o) => o.value === preselectCliente)) {
         $client.value = preselectCliente;
         lastClientVal = preselectCliente;
@@ -1448,6 +1480,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     /* Flash suave sobre la fila recién agregada (feedback de "ya se agregó") */
     .line-row.line-added { animation: line-added-flash 0.9s var(--ease-ios); }
     .lr-stock { color: var(--color-text-muted); font-weight: 500; }
+    .lr-b2b { color: var(--color-ok); font-weight: 600; }
     .lr-stock.is-low, .lr-stock.is-out, .prod-stock.is-out { color: var(--color-danger); font-weight: 600; }
     @keyframes line-added-flash {
         0% { background: rgba(16,185,129,0.12); }

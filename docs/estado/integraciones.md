@@ -157,6 +157,15 @@ escribe en el negocio de alguien más, así que todo está acotado a propósito:
   envío como línea, tasa validada por `resolve()` del catálogo. Encenderlo
   registra el webhook en tiendas conectadas antes. Pedidos de invitado no se
   facturan. Lo verifica `test/shopify-facturas.test.ts`.
+- **Precios B2B** (`src/lib/integraciones/shopify/precios.ts`): con el cliente
+  ligado a un `shopify_customer`, `customer.companyContactProfiles →
+  roleAssignments → companyLocation.catalogs → priceList.prices` (hasta 4
+  páginas de 250). Sin permisos nuevos (`read_customers` + `read_products`), pero
+  solo existe en tiendas con B2B (Shopify Plus); sin B2B responde vacío. El
+  editor lo pide a `GET /api/integraciones/shopify/precios` al elegir cliente y
+  lo usa como precio negociado por producto, sobre el descuento por nivel, solo
+  en la divisa de la lista y sin reescribir un borrador guardado. Sin probar
+  contra una tienda Plus real.
 
 ## Google Sheets y Excel
 

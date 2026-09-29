@@ -67,6 +67,15 @@ El impuesto del pedido lo calcula Shopify con la configuración de tu tienda. El
 
 Si tu tienda controla el inventario de un producto, Cord trae sus existencias. En el editor de cotizaciones, el buscador dice cuántas hay y, al agregar el producto, Cord le pregunta a tu tienda en ese momento. Si cotizas más de lo que hay, la línea lo avisa ("Solo hay 12 en existencia"), y un producto agotado dice **Agotado**. Cotizar de más no se bloquea: es normal vender algo que se surtirá después.
 
+## Precios B2B por cliente
+
+Si tu tienda usa **B2B de Shopify** (disponible en Shopify Plus), cada empresa compra con la lista de precios de su catálogo. Cuando cotizas a un cliente de Cord ligado a un cliente de Shopify que compra por una empresa, el editor usa **su lista B2B como precio pactado** de cada producto que viene de tu tienda, y la línea lo dice: "Precio de su lista B2B".
+
+- Manda sobre el descuento por nivel del cliente, producto por producto. Un producto sin precio en la lista sigue con el descuento por nivel.
+- Solo aplica si la cotización va en la divisa de la lista.
+- Puedes cambiar el precio de cualquier línea a mano; a partir de ahí, manda lo que escribiste.
+- Al abrir un borrador ya guardado, sus precios no se reescriben; la lista aplica a los productos que agregues.
+
 ## Facturar los pedidos de tu tienda
 
 En la tarjeta de Shopify, **Facturar los pedidos de tu tienda** nace apagado. Con **Crear el borrador cuando el pedido se paga**, cada pedido pagado de tu tienda crea en Cord el borrador de su factura:

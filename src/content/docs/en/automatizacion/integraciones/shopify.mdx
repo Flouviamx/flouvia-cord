@@ -67,6 +67,15 @@ The order's tax is computed by Shopify with your store settings. The tax documen
 
 If your store tracks a product's inventory, Cord brings its stock. In the quote editor, search shows how many are available and, when you add the product, Cord asks your store at that moment. If you quote more than is available, the line says so ("Only 12 in stock"), and an out-of-stock product says **Out of stock**. Quoting more is not blocked: selling something to be restocked is normal.
 
+## B2B prices per client
+
+If your store uses **Shopify B2B** (available on Shopify Plus), each company buys with its catalog's price list. When you quote a Cord client linked to a Shopify customer who buys for a company, the editor uses **their B2B list as the agreed price** of each product from your store, and the line says so: "Their B2B price list".
+
+- It takes precedence over the client's tier discount, product by product. A product without a price in the list keeps the tier discount.
+- It only applies if the quote is in the list's currency.
+- You can change any line's price by hand; from then on, what you typed wins.
+- When you open a saved draft, its prices are not rewritten; the list applies to products you add.
+
 ## Invoice your store orders
 
 On the Shopify card, **Invoice your store orders** starts off. With **Create the draft when the order is paid**, every paid store order creates its draft invoice in Cord:
