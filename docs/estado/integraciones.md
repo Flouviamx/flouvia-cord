@@ -40,6 +40,17 @@ una organización.
 La app pública vive en `integrations/hubspot/` como proyecto del CLI de HubSpot
 (plataforma 2026.03): scopes, URLs de regreso y webhooks de Empresas y Contactos.
 
+**Tarjeta de Cord en HubSpot** (29 sep 2026): UI extension (`src/app/cards/`,
+ubicación `crm.record.sidebar`) en Deals, Empresas y Contactos. Consulta con
+`hubspot.fetch` a `GET /api/integraciones/hubspot/tarjeta` (en
+`PUBLIC_API_EXACT` y en `permittedUrls.fetch`), que valida la firma v3 con el
+secreto de la app, resuelve la organización por `portalId` con
+`cord_resolve_integracion` y el registro por su vínculo (`deal` → la
+cotización; `company`/`contact` → el cliente y sus últimas 8). Solo lee: crear
+abre `/app/cotizaciones/nueva?cliente=` con la sesión de Cord, así que un
+usuario de HubSpot sin cuenta en Cord no puede escribir nada. Se sube con
+`hs project upload` (build #7).
+
 ## Slack
 
 Incoming webhook por organización (`orgs.slack_webhook_url`). Lo consumen
@@ -220,11 +231,23 @@ Vive en `src/lib/integraciones/contabilidad/` y reusa el carril de siempre
 - **El cliente se resuelve una vez y se recuerda** con su propio vínculo. Sin
   eso, cada factura crearía otro cliente con el mismo nombre.
 
-Lo que NO hace todavía: mandar los pagos, mapear los códigos de impuesto del
-proveedor y traer datos de vuelta. Está dicho en los dos artículos de ayuda.
+- **El impuesto viaja con su tasa, o no viaja.** Cada tasa de Cord busca la
+  tasa IDÉNTICA del catálogo de la contabilidad (`TaxRate` de Xero, que pide
+  `accounting.settings.read`; `TaxCode` de QuickBooks). Sin coincidencia la
+  factura no se asienta y el motivo queda en `ultimo_error` para que la tarjeta
+  lo diga. QuickBooks de EE.UU. con impuesto automático (`PartnerTaxEnabled`)
+  recibe `TxnTaxDetail.TotalTax` con el impuesto de Cord para que no lo
+  recalcule; si el total asentado no cuadra, la factura se borra.
+- **Las retenciones no viajan.** Ninguna de las dos las representa en una
+  factura de venta; asentarla sin ellas inflaría la cuenta por cobrar.
+- **La fecha es la de emisión** (`issued_at`), no la del borrador, y una factura
+  anulada no viaja.
+
+Lo que NO hace todavía: mandar los pagos y traer datos de vuelta. Está dicho en
+los dos artículos de ayuda.
 
 Contrato ejecutable en `lineasDe()` y `TIPOS` de
-`src/lib/integraciones/contabilidad/service.ts`, verificado por
+`src/lib/integraciones/contabilidad/service.ts` y en `impuestos.ts`, verificado por
 `test/contabilidad.test.ts`.
 
 ## Enviar desde el Gmail del negocio

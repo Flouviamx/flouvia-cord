@@ -85,6 +85,21 @@ Una vez conectado, la página de HubSpot muestra:
 
 Qué hacer con cada error: [Problemas con HubSpot](/docs/automatizacion/integraciones/hubspot-problemas).
 
+## La tarjeta de Cord dentro de HubSpot
+
+Con HubSpot conectado, cada **Deal**, **Empresa** y **Contacto** muestra en su barra lateral la tarjeta de Cord:
+
+| Registro | Qué muestra |
+|---|---|
+| **Deal** | La cotización de Cord ligada a ese Deal. |
+| **Empresa** o **Contacto** | El cliente de Cord ligado y sus últimas 8 cotizaciones. |
+
+Cada cotización trae folio, estado, importe con su divisa, fecha y el **link del cliente**, para copiarlo o abrirlo sin salir de HubSpot. El botón **Crear cotización en Cord** abre el editor de Cord con ese cliente ya elegido.
+
+La tarjeta **solo lee**: crear, editar o enviar siempre ocurre en Cord, con tu sesión. Cord verifica que cada consulta venga firmada por HubSpot y responde solo con los datos de la organización conectada a esa cuenta.
+
+Si la tarjeta no aparece, en HubSpot abre un Deal, pulsa **Personalizar** en la barra lateral y agrega la tarjeta **Cord** desde **Apps**.
+
 ## Cambiar a otra cuenta de HubSpot
 
 Desconecta la cuenta actual y conecta la nueva. Al conectar una cuenta **distinta**, Cord olvida los vínculos con la cuenta anterior y restablece la configuración de etapas, porque los pipelines de la otra cuenta no existen en la nueva. Después usa **Enviar datos existentes** para poblar la cuenta nueva.

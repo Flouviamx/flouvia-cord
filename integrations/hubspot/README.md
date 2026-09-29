@@ -7,6 +7,9 @@ webhooks que usa `src/pages/api/integraciones/hubspot/`.
   con `HUBSPOT_SCOPES` en `src/lib/integraciones/hubspot/config.ts`.
 - `src/app/webhooks/webhooks-hsmeta.json`: cambios de Empresas y Contactos hacia
   `/api/integraciones/hubspot/webhook`.
+- `src/app/cards/`: la tarjeta de Cord en Deals, Empresas y Contactos (React con
+  `@hubspot/ui-extensions`). Consulta `/api/integraciones/hubspot/tarjeta`, que
+  debe estar en `permittedUrls.fetch` de `app-hsmeta.json`.
 
 ## Subir cambios
 
