@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["terms"]
-sourceSections: ["terms@2026-08-11#sla"]
+sourceSections: ["terms@2026-09-28#sla"]
 releaseBlockers: ["continuous-monitoring", "metric-definition", "maintenance-policy", "incident-notification", "support-targets", "credit-remedy", "dependency-boundaries", "legal-review", "versioned-publication"]
 ---
 

@@ -31,9 +31,7 @@ escrita aquí.
 - Colección `legal` tipada + catálogo ejecutable. **Cuatro variantes públicas**:
   Términos y Aviso de Privacidad, cada uno en `es-MX` (`/…`) y `en-US` (`/en/…`),
   servidas desde el corpus por idioma con HTML literal (`sourceKind:
-  html-snapshot`). Versión vigente del Aviso: **`2026-08-29`** (sucede a
-  `2026-08-11` y obliga a nuevo reconocimiento personal). Términos siguen en
-  `2026-08-11`.
+  html-snapshot`). Versión vigente de ambos: **`2026-09-28`** (ver abajo).
 - Tablas: `legal_documents` (documento lógico + versión),
   `legal_document_variants` (locale, jurisdicción, ruta, hash de artefacto),
   `legal_acceptances` (usuario pseudónimo, versión y variante exactas, acción,
@@ -168,43 +166,28 @@ org, el rail degrada a `commercial_only`. Detalle operativo en
 [`../proyecto.md`](../proyecto.md) y regla 29 de
 [`../estandares-ingenieria.md`](../estandares-ingenieria.md).
 
-## Lista para publicar: revisión `2026-08-30.1` de Términos y Aviso
+## Versión vigente: `2026-09-28` de Términos y Aviso
 
-Revisada el 28 de septiembre de 2026 y **lista para publicar como versión
-`2026-09-28`**, sin marcadores de borrador. Incluye la corrección general de
-agosto, las integraciones de septiembre (HubSpot, Zapier, Make, Workflows,
-Google, Microsoft, QuickBooks, Xero, Shopify, WhatsApp, Mercado Pago), la
-sección de datos de usuario de Google con Uso Limitado y los plazos de
-respuesta a derechos de privacidad.
+Publicada el 28 de septiembre de 2026 por decisión explícita de André, sabiendo
+que obliga a toda la base de usuarios a volver a aceptar (la puerta
+`/app/aceptacion-legal` la pide en la siguiente entrada). Es la revisión
+`2026-08-30.1` —corrección general de agosto, integraciones de septiembre
+(HubSpot, Zapier, Make, Workflows, Google, Microsoft, QuickBooks, Xero, Shopify,
+WhatsApp, Mercado Pago), sección de datos de usuario de Google con Uso Limitado y
+plazos de derechos de privacidad— sin marcadores de borrador. Sucede a Términos
+`2026-08-11` y Aviso `2026-08-29`, cuyas filas y hashes se conservan para las
+aceptaciones históricas.
 
-**No está publicada.** El intento del 28 de septiembre lo bloqueó la política de
-permisos del agente (publicar obliga a toda la base de usuarios a volver a
-aceptar), y queda como decisión explícita de André. Publicarla es mecánico:
+Se publicó todavía **sin** los cinco campos de identidad y **sin** revisión
+jurídica externa (`reviewedBy` lo dice). `legal-providers.ts` ya lista los 19
+terceros de la tabla. Los borradores complementarios citan ahora secciones de
+`2026-09-28` y deben revisarse contra ese texto.
 
-1. En `src/lib/legal-providers.ts`, agregar los terceros nuevos de la tabla del
-   Aviso (Mercado Pago como proveedor con obligaciones propias; Google, Microsoft,
-   Intuit/Xero, Shopify y Meta como integraciones dirigidas por el Cliente) y
-   renombrar `customer-integrations` para nombrar HubSpot y las plataformas por
-   API. Cambia el `sourceInputsSha256` del Aviso.
-2. Reemplazar `src/content/legal/{es-MX,en-US}/{terms,privacy}.md` con el cuerpo
-   de la revisión (sin el aviso de borrador y con "Última actualización: 28 de
-   septiembre de 2026"), frontmatter con `version`/`effectiveDate`
-   `2026-09-28`, `supersedes` a la versión anterior, `sourceInputsSha256` de
-   `legalPublicationInputsHash()` y `artifactSha256` =
-   sha256(`restoreLegacyLegalHtml(body, legacyScope)`).
-3. `src/lib/legal-corpus.ts`: versiones y los cuatro hashes.
-4. `db/schema.sql`: filas nuevas en `legal_documents` (`requires_action`) y
-   `legal_document_variants` (`is_current = true`), y `is_current = false` para
-   las anteriores; `npm run db:migrate`. Las aceptaciones viejas conservan su
-   hash; la puerta `/app/aceptacion-legal` pide la nueva.
-5. Borrar las revisiones `src/content/legal-revisions/*-2026-08-30.1.md`, ajustar
-   `scripts/legal-revisions-check.mjs` y `test/legal-revisions.test.ts` para
-   permitir cero propuestas, y pasar sus aserciones de contenido al texto
-   publicado.
-6. `npm run build`, `npm run security:legal`, `npm test`.
-
-Lo que la haría más sólida antes de publicar: los cinco campos de identidad
-(abajo) y la revisión de un abogado.
+Para publicar la siguiente versión, el procedimiento es el mismo: nuevas filas
+en `legal_documents`/`legal_document_variants` (migrar ANTES de desplegar),
+archivos publicados con `artifactSha256` = sha256(`restoreLegacyLegalHtml`) y
+`sourceInputsSha256` de `legalPublicationInputsHash()`, catálogo en
+`legal-corpus.ts`, y `npm run security:legal`.
 
 ## Pendientes operativos, no de código
 

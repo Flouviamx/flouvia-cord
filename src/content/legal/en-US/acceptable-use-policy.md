@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["terms"]
-sourceSections: ["terms@2026-08-11#prohibidas","terms@2026-08-11#fairuse"]
+sourceSections: ["terms@2026-09-28#prohibidas","terms@2026-09-28#fairuse"]
 releaseBlockers: ["verified-identity", "provider-restriction-map", "organization-enforcement", "appeal-procedure", "mcp-tool-confirmation", "retention-evidence", "legal-review", "versioned-publication"]
 ---
 

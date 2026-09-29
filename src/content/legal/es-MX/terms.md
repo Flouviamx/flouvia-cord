@@ -1,8 +1,8 @@
 ---
 docId: terms
-version: "2026-08-11"
-effectiveDate: "2026-08-11"
-supersedes: null
+version: "2026-09-28"
+effectiveDate: "2026-09-28"
+supersedes: "2026-08-11"
 locale: es-MX
 jurisdiction: GLOBAL
 appliesToCountries: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -15,8 +15,8 @@ sourceInputsSha256: "0763ac85813e752056f011eb10355ebd940f97f69278d3c20f357a8d2d7
 legacyScope: data-astro-cid-mfyzunhh
 sourceOfTruth: src/content/legal/es-MX/terms.md
 artifactRoute: /terminos
-artifactSha256: "caca9992c20c9db7f6270285c57808f9a249d15579a03497b99bc621590db369"
-lastReviewed: "2026-08-29"
+artifactSha256: "c4cb2d15e207a20144620f7e3ab28e698b561ab5e65cbe916938caf8ee265260"
+lastReviewed: "2026-09-28"
 reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 ---
 
@@ -24,7 +24,7 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <div class="legal-header">
 <h1 class="editorial masked-title">Términos y<br>Condiciones</h1>
 <div class="reveal">
-<p class="last-updated">Última actualización: 11 de agosto de 2026</p>
+<p class="last-updated">Última actualización: 28 de septiembre de 2026</p>
 </div>
 </div>
 <!-- Grid de 2 columnas: Sidebar + Contenido -->
@@ -90,7 +90,7 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <div class="legal-content">
 <!-- Caja gris de introducción -->
 <div class="intro-box">
-<p>Bienvenido a CORD (<a href="https://cordhq.app">cordhq.app</a>). Al crear una cuenta o utilizar nuestra plataforma de software como servicio (SaaS), usted y la entidad legal a la que representa aceptan estar legalmente vinculados por los siguientes Términos y Condiciones, operados por <strong>Andre Valle Ortega</strong> (en adelante "Flouvia", "nosotros" o "CORD").</p>
+<p>CORD (cordhq.app) opera bajo la marca Flouvia por Andre Valle Ortega, la persona operadora identificada en la versión publicada. La aceptación contractual se registra mediante la acción afirmativa específica presentada en el alta o la reaceptación, contra una versión e idioma del documento. Crear una cuenta o continuar usando el servicio no se presenta como sustituto de esa evidencia. Quien actúe por un negocio deberá contar con facultades para hacerlo; el registro de aceptación personal no acredita por sí solo esas facultades. El reconocimiento del aviso de privacidad es independiente del consentimiento opcional de analítica y de las autorizaciones específicas de pagos.</p>
 </div>
 <p>Si no está de acuerdo con estos términos, no debe utilizar nuestros servicios ni acceder a nuestras APIs.</p>
 <h2 id="descripcion" class="editorial">
@@ -103,23 +103,21 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <strong>Feedback:</strong> Si usted nos proporciona sugerencias, comentarios o ideas para mejorar la plataforma ("Feedback"), nos otorga una licencia mundial, perpetua, irrevocable y libre de regalías para implementar, modificar y explotar dichas mejoras sin obligación de compensación o reconocimiento alguno.</p>
 <h2 id="facturacion" class="editorial">
 <span class="num">03</span> Planes de Facturación y Excedentes</h2>
-<p>El acceso a CORD se rige por un esquema de suscripción gestionado de forma automatizada:</p>
-<ul>
-<li>
-<strong>Límites del Plan:</strong> Cada suscripción incluye una cuota mensual base de usos de Inteligencia Artificial, facturas emitidas, Llamadas a la API y asientos de Usuarios.</li>
-<li>
-<strong>Facturación por Uso Medido (Metered Billing):</strong> Para no interrumpir sus operaciones, CORD <strong>no bloqueará</strong> su servicio si usted supera los límites de su plan. El sistema registrará los consumos adicionales y estos se facturarán automáticamente al cierre de su ciclo mensual mediante <em>Stripe</em>, a las tarifas unitarias vigentes en nuestra <a href="/precios">página de precios</a>.</li>
-</ul>
+<p>El plan distingue capacidades habilitadas, límites de recursos y cuotas mensuales de consumo. Alcanzar un límite duro impide crear recursos o ejecutar la operación correspondiente; no habilita automáticamente un excedente pagado. Algunas funciones requieren un plan específico y evidencia de suscripción vigente.</p>
+<p>Gratis no admite excedentes facturables. En los planes que sí los admiten, únicamente las dimensiones habilitadas generan consumo adicional a la cuota incluida. Starter conserva un asiento máximo; desde Pro pueden existir asientos adicionales facturables conforme al plan. Los envíos limitados de Gratis no se convierten en cargos por excedente.</p>
+<p>Incluso cuando una dimensión permite excedentes, existen límites de seguridad y controles de abuso. Una operación puede bloquearse si se alcanza el techo aplicable o no puede verificarse la autorización o cuota. No se promete continuidad ilimitada ni ausencia de bloqueos por superar un plan.</p>
+<p>Los importes, divisa, ciclo y consumos facturables aplicables se muestran al contratar y en las superficies de facturación. La medición reserva consumo antes de operaciones externas; las reservas fallidas se cancelan y el excedente elegible se comunica al procesador de suscripciones. Esta descripción no autoriza conceptos ajenos al plan contratado.</p>
 <h2 id="pagos-autorizacion" class="editorial">
 <span class="num">04</span> Condiciones de Pago y Autorización de Débito</h2>
+<p>El interés moratorio automático está deshabilitado en todos los países ofrecidos mientras se revisa la política aplicable. Que el Cliente acuerde un plazo de crédito o un pago en cuotas no significa que Cord calcule o cargue intereses. La cobranza opcional puede enviar correos en nombre del acreedor con su identificación y canal de respuesta; no garantiza recuperación, exactitud de la redacción de IA ni revisión humana previa de cada envío.</p>
 <p>Para utilizar nuestros planes de pago, usted debe proporcionar un método de pago válido. Al hacerlo, <strong>usted nos autoriza expresamente a nosotros y a nuestro procesador de pagos exclusivo (Stripe, Inc.)</strong> a realizar cargos automáticos y recurrentes en su tarjeta o cuenta bancaria por el monto de su suscripción y cualquier excedente generado.</p>
 <p>Asimismo, al procesar pagos a través de CORD, usted acepta estar sujeto al <a href="https://stripe.com/mx/legal/ssa" target="_blank" rel="noopener noreferrer">Acuerdo de Servicios de Stripe (Stripe Services Agreement)</a>. En caso de que el cobro automático falle, nos reservamos el derecho de suspender temporalmente el acceso a su cuenta hasta que se regularice el pago.</p>
 <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">Cobros a sus Clientes (Stripe Connect Custom)</h3>
-<p>Si usted opta por recibir pagos de sus propios clientes a través de nuestra plataforma, utilizará <strong>Stripe Connect Custom</strong>. CORD actúa como la plataforma tecnológica y recopila su información de KYC (Conoce a tu Cliente) únicamente para transmitirla de forma segura a Stripe vía API. Stripe es el procesador real de los pagos; CORD no es un banco y no retiene ni transfiere fondos. Al configurar cobros, usted acepta el <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer">Acuerdo de Cuenta Conectada de Stripe</a>. CORD se deslinda de cualquier retención, restricción o cierre de cuenta que Stripe imponga.</p>
+<p>Donde el cobro en línea está disponible y la cuenta conectada se encuentra habilitada, Stripe procesa los pagos de los compradores mediante esa cuenta. Cord proporciona la interfaz y envía instrucciones de pago mediante la integración; no actúa como banco ni mantiene los fondos bajo custodia propia. Cord trata datos de verificación y conserva ciertos registros técnicos descritos en el aviso de privacidad; no es un mero transmisor temporal de todos los datos. Las restricciones y requisitos del procesador pueden afectar la disponibilidad. El acuerdo de cuenta conectada aplicable se presenta durante el alta de pagos. Esta descripción no excluye las responsabilidades propias de Cord.</p>
 <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">Anticipos, Pagos Parciales y Planes en Cuotas</h3>
-<p>CORD le permite solicitar un anticipo (un porcentaje pagadero al aprobarse la cotización) y cobrar el saldo conforme a los términos de crédito que usted defina, o dividir un adeudo en cuotas. Cada porción es un cobro independiente procesado a través de su cuenta conectada de Stripe. <strong>Usted es el único responsable</strong> de las condiciones comerciales que ofrece (monto del anticipo, plazo de crédito, número de cuotas), de entregar los bienes o servicios acordados con su cliente, y del correcto tratamiento fiscal de cada pago ante el SAT (por ejemplo, si un pago parcial constituye un anticipo, un pago en parcialidades, o requiere Complemento de Recepción de Pagos/REP). CORD no determina, garantiza ni ejecuta el cobro de saldo alguno, y no genera el REP de forma automática. Los montos, fechas de vencimiento y estatus de pago mostrados en la plataforma son una ayuda de gestión y no constituyen un comprobante fiscal ni un registro contable.</p>
+<p>El Cliente puede configurar anticipos, saldos y cuotas donde estén habilitados. La ejecución de un cobro depende del método disponible, la autorización requerida y el estado de la cuenta conectada; una fecha de vencimiento no garantiza el pago. Cord no financia ni adquiere el crédito. El Cliente responde de las condiciones comerciales, la entrega y el tratamiento fiscal aplicable a cada pago. Esta función no genera automáticamente el Complemento de Recepción de Pagos (REP) mexicano. Los saldos y estados mostrados son información de gestión, no sustituyen el comprobante fiscal exigible.</p>
 <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">Cobranza Autónoma con IA</h3>
-<p>CORD ofrece un agente opcional de cobranza con IA que, una vez que usted lo activa para su negocio, puede contactar a sus clientes en su nombre (vía correo electrónico) respecto a saldos vencidos, incluir enlaces de pago y proponer planes en cuotas. Al activar esta función <strong>usted autoriza a CORD a enviar dichas comunicaciones en su nombre</strong> y confirma que tiene una relación comercial legítima y una base lícita para contactar a esos clientes. Usted es responsable de la exactitud de los datos de la cartera y de asegurar que estas comunicaciones cumplan las leyes aplicables de protección al consumidor, de datos personales y de cobranza. El agente utiliza inteligencia artificial y su redacción puede variar; CORD no se responsabiliza del tono, contenido o consecuencias comerciales de cualquier mensaje, ni de los montos que no logre recuperar. Usted puede desactivar la cobranza autónoma en cualquier momento.</p>
+<p>CORD ofrece un agente opcional de cobranza con IA que, una vez que usted lo activa para su negocio, puede contactar a sus clientes en su nombre (vía correo electrónico) respecto a saldos vencidos, incluir enlaces de pago y proponer planes en cuotas. Al activar esta función <strong>usted autoriza a CORD a enviar dichas comunicaciones en su nombre</strong> y confirma que tiene una relación comercial legítima y una base lícita para contactar a esos clientes. Usted es responsable de la exactitud de los datos de la cartera y de asegurar que estas comunicaciones cumplan las leyes aplicables de protección al consumidor, de datos personales y de cobranza. El agente utiliza inteligencia artificial y su redacción puede variar; Esto no excluye las obligaciones propias de Cord ni las responsabilidades que la ley aplicable no permita excluir. Usted puede desactivar la cobranza autónoma en cualquier momento.</p>
 <h2 id="prohibidas" class="editorial">
 <span class="num">05</span> Actividades Prohibidas y Restringidas</h2>
 <p>CORD es una plataforma para el comercio lícito. Como infraestructura que emite comprobantes de venta — incluida, para negocios en México, la interacción con el SAT para emitir CFDI —, está <strong>terminantemente prohibido</strong> utilizar nuestro software para:</p>
@@ -131,21 +129,22 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <p>Nos reservamos el derecho de suspender o cancelar permanentemente, sin previo aviso ni derecho a reembolso, cualquier cuenta que sospechemos está incurriendo en estas prácticas, y reportaremos dichas actividades a las autoridades competentes y a nuestros socios financieros.</p>
 <h2 id="fairuse" class="editorial">
 <span class="num">06</span> Política de Uso Justo (Fair Use)</h2>
-<p>Para proteger la estabilidad de la infraestructura compartida, las características comercializadas como "Ilimitadas" están sujetas a una Política de Uso Justo. Nos reservamos el derecho de auditar cuentas que presenten un consumo abusivo o anómalo (ej. uso de bots para saturar la API de Anthropic). En caso de detectar abuso, limitaremos temporalmente las peticiones (Rate Limiting) y contactaremos al Usuario para migrarlo a infraestructura dedicada.</p>
+<p>Una característica sin tope de recursos en un plan no elimina los límites de otras dimensiones, los controles de velocidad, la verificación de autorización ni los controles de seguridad. Cord puede limitar solicitudes que comprometan la operación o incumplan las condiciones aplicables. No se ofrece por defecto una migración a infraestructura dedicada; cualquier servicio especial requiere evaluación y acuerdo separado.</p>
 <h2 id="terceros" class="editorial">
 <span class="num">07</span> Aplicaciones e Integraciones de Terceros</h2>
-<p>El Servicio puede interactuar con productos, servicios o aplicaciones de terceros que no son propiedad ni están controlados por Flouvia (por ejemplo, Shopify, CRMs externos). Usted reconoce y acepta que no respaldamos dichas aplicaciones y no somos responsables de sus fallas, vulnerabilidades de seguridad ni de la pérdida de datos que resulte del uso de las mismas. Su uso de aplicaciones de terceros corre bajo su propio riesgo.</p>
+<p>El Servicio permite conectar cuentas de terceros que no son propiedad ni están controladas por Flouvia, como Google (Gmail, Sheets), Microsoft (Excel, Teams), Shopify, QuickBooks Online, Xero, HubSpot, Slack, WhatsApp Business, Mercado Pago, Zapier, Make o n8n. Cada integración se activa por separado y solo por instrucción del Cliente.</p>
+<p><strong>Autorización y términos del tercero.</strong> Al conectar una cuenta, usted declara que está facultado para hacerlo en nombre del negocio y que tiene una base lícita para que los datos de sus clientes se intercambien con ese tercero. Su uso de cada tercero se rige por los términos y políticas de ese tercero, que usted se obliga a cumplir. Cord no recibe la contraseña de esas cuentas y guarda sus credenciales técnicas cifradas.</p>
+<p><strong>Lo que Cord escribe en sus cuentas.</strong> Según la integración, Cord escribe por su instrucción en la cuenta conectada: filas en una hoja de cálculo, facturas y clientes en su contabilidad, pedidos en su tienda, mensajes en sus canales y correos enviados desde su cuenta. Usted es responsable de revisar esas escrituras y sus efectos, incluidos asientos contables, impuestos, inventario y surtido. Cord no convierte importes entre divisas para una integración: si la cuenta del tercero no admite la divisa del documento, la operación no se realiza y Cord lo informa.</p>
+<p><strong>Correo enviado desde su cuenta.</strong> Si conecta su correo para que Cord envíe documentos desde él, esos correos salen a nombre del Cliente, que es su remitente y responsable de su contenido, destinatarios y cumplimiento de las leyes sobre comunicaciones comerciales y protección de datos. Si el proveedor del correo rechaza un envío, Cord puede entregarlo por su propio canal de correo para que el documento no se pierda.</p>
+<p><strong>Propuestas con inteligencia artificial.</strong> Las propuestas que genera la IA, como las líneas de una cotización a partir de un correo, son sugerencias que usted debe revisar antes de enviarlas a sus clientes. El texto de un correo solo se procesa cuando usted invoca esa función.</p>
+<p><strong>Disponibilidad y cambios.</strong> Los terceros pueden cambiar sus servicios, limitar su uso, revocar accesos o suspender aplicaciones, y Cord puede modificar, pausar o retirar una integración. Una integración no forma parte de un compromiso de disponibilidad. Usted puede desconectarla en cualquier momento: Cord deja de sincronizar y elimina o revoca las credenciales, y los datos ya entregados al tercero permanecen en esa cuenta bajo su control.</p>
+<p><strong>Responsabilidad.</strong> Flouvia no respalda a esos terceros ni responde por sus fallas, vulnerabilidades, pérdida de datos o actos, ni por las decisiones que usted tome con base en lo que una integración registre. Esto no excluye las obligaciones propias de Cord respecto de su plataforma ni las responsabilidades que la ley aplicable no permita excluir.</p>
 <h2 id="fiscal" class="editorial">
 <span class="num">08</span> Responsabilidad Fiscal y Legal</h2>
-<p>CORD actúa estrictamente como un proveedor de tecnología y un canal de comunicación hacia las autoridades fiscales con las que se integra directamente: el Proveedor Autorizado de Certificación (PAC) y el SAT en México, y la Agencia Tributaria (AEAT) en España para negocios que conecten un certificado de Verifactu.</p>
-<ul>
-<li>
-<strong>Sin Asesoría Contable:</strong> Flouvia no es un despacho fiscal. La configuración de impuestos, retenciones (IVA, ISR, IRPF) y el uso de los catálogos del SAT o de la AEAT recaen enteramente en el Usuario.</li>
-<li>
-<strong>Errores de Facturación:</strong> Flouvia no se hace responsable por multas, recargos o auditorías derivadas de comprobantes (CFDI, Verifactu, o factura comercial) emitidos con errores de captura por parte del Usuario.</li>
-<li>
-<strong>Certificado de Verifactu:</strong> el certificado electrónico usado para firmar y remitir los registros de facturación a la AEAT lo emite al Usuario su propia autoridad certificadora; el Usuario es responsable de su custodia, vigencia y renovación antes de que caduque. Los registros generados antes de conectar el certificado, o después de que caduque, se emiten únicamente como documento comercial y no quedan registrados ante la AEAT.</li>
-</ul>
+<p>Cord ofrece herramientas tecnológicas de facturación, no asesoría contable ni una garantía general de cumplimiento fiscal por país. El Cliente debe verificar los datos, impuestos y requisitos aplicables a su operación. Esta responsabilidad no elimina las obligaciones propias de Cord ni las responsabilidades que la ley no permita excluir.</p>
+<p>En México, el timbrado de CFDI depende de los datos fiscales, las credenciales del emisor y la disponibilidad del proveedor configurado. Fuera del carril fiscal habilitado, el documento es comercial y no prueba recepción por una autoridad.</p>
+<p>En España, generar un documento comercial, generar un registro encadenado, enviarlo a la AEAT y obtener una respuesta son estados distintos. El modo comercial no remite registros. Si se activa el modo Verifactu, la generación exige los datos del emisor y la identidad del sistema; la falta de requisitos puede bloquear la emisión, no convertirla automáticamente en un envío correcto.</p>
+<p>Cargar un certificado no demuestra remisión ni aceptación por la AEAT. El envío depende de su habilitación operativa y debe comprobarse mediante el estado del registro y la respuesta de la autoridad. La configuración actual usa un procesamiento programado diario y no acredita remisión inmediata. Antes de ofrecer ese carril como operativo deben verificarse la declaración responsable del productor, la versión del sistema y el mecanismo de envío. No se afirma una homologación otorgada por la AEAT.</p>
 <h2 id="confidencialidad" class="editorial">
 <span class="num">09</span> Confidencialidad</h2>
 <p>Ambas partes ("Parte Receptora" y "Parte Divulgadora") pueden tener acceso a información técnica, financiera o comercial confidencial. La Parte Receptora se compromete a proteger la Información Confidencial de la Parte Divulgadora utilizando el mismo grado de cuidado que emplea para proteger la propia, y en ningún caso un grado menor al razonable. Esta obligación de confidencialidad sobrevivirá a la terminación de su suscripción a CORD.</p>
@@ -170,6 +169,7 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <p>A menos que el Cliente exprese explícitamente lo contrario por escrito, al utilizar los Servicios de CORD, el Cliente otorga a Flouvia el derecho no exclusivo de utilizar y mostrar el nombre, logotipo y marcas comerciales del Cliente en el sitio web de Flouvia y en materiales de marketing con el fin de identificarlo como cliente de la plataforma.</p>
 <h2 id="reembolsos" class="editorial">
 <span class="num">15</span> Pagos, Disputas y Reembolsos</h2>
+<p>El cuadro de tarifas que sigue corresponde al esquema en MXN y no debe extrapolarse a otras divisas. Los cargos de Cord y los del procesador son conceptos distintos: que no haya una comisión de plataforma habilitada para una divisa no vuelve gratuito el procesamiento. La aceptación general de estos términos no sustituye la aceptación específica del esquema de tarifas por un miembro autorizado de la organización.</p>
 <h3 id="cord-pagos">Tarifas transaccionales de Cord Payments</h3>
 <p>Cuando el Cliente activa el esquema vigente de Cord Payments, cada cobro queda sujeto a la tarifa total mostrada en Ajustes antes de aceptarla. Las tarifas combinadas vigentes son: pagos con tarjeta, 4% más $3 MXN, más IVA; pagos recurrentes con tarjeta, la misma tarifa combinada, que incluye el procesamiento de tarjeta y el margen de Cord de 0.4%; y transferencias SPEI, 1% más $7 MXN, más IVA, con un máximo total de $588.12 MXN por cobro. Los fondos se cobran en la cuenta de pagos conectada del Cliente y Flouvia nunca los retiene. Las tarifas transaccionales y de procesamiento no se devuelven cuando el Cliente realiza un reembolso voluntario, salvo confirmación expresa y por escrito de Flouvia. Las organizaciones heredadas conservan su esquema anterior hasta que un miembro autorizado acepte la nueva versión.</p>
 <h3>Contracargos, cuotas de disputa y saldos negativos</h3>
@@ -184,7 +184,8 @@ reviewedBy: Auditoría técnica interna; revisión jurídica externa pendiente
 <p>El presente Acuerdo se rige e interpreta de conformidad con las leyes vigentes de los <strong>Estados Unidos Mexicanos</strong>, sin dar efecto a sus principios de conflicto de leyes. Para cualquier controversia, disputa o reclamación derivada de o relacionada con estos Términos o el uso de la Plataforma, las partes se someten expresamente a la jurisdicción exclusiva de los <strong>Tribunales Federales o Locales competentes de la Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>
 <h2 id="cambios" class="editorial">
 <span class="num">17</span> Modificaciones a los Términos</h2>
-<p>Flouvia puede actualizar estos Términos y Condiciones en cualquier momento. Los cambios sustanciales serán notificados al Administrador de la cuenta vía correo electrónico o mediante un aviso en el Dashboard de la aplicación.</p>
+<p>Cada publicación tiene versión, idioma y huella del artefacto mostrado. Cuando una modificación requiera nueva aceptación o reconocimiento, Cord presentará la versión correspondiente mediante el flujo de aceptación y registrará una acción afirmativa. El uso continuado no sustituye esa acción. Los borradores no modifican el contrato vigente y la aceptación personal de términos no sustituye las autorizaciones organizacionales o de pagos que correspondan.</p>
+
 </div>
 </div>
 </main>

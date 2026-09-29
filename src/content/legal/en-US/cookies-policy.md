@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["privacy"]
-sourceSections: ["privacy@2026-08-29#cookies"]
+sourceSections: ["privacy@2026-09-28#cookies"]
 releaseBlockers: ["complete-cookie-inventory", "vercel-storage-access-assessment", "posthog-cookie-evidence", "granular-consent-review", "server-analytics-basis", "withdrawal-procedure", "legal-review", "versioned-publication"]
 ---
 

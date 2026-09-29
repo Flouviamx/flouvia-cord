@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-08-30"
 reviewedBy: Redacción técnica; revisión jurídica y fiscal pendiente
 dependsOn: ["terms"]
-sourceSections: ["terms@2026-08-11#descripcion","terms@2026-08-11#fiscal"]
+sourceSections: ["terms@2026-09-28#descripcion","terms@2026-09-28#fiscal"]
 releaseBlockers: ["verified-identity", "provider-account-contracts", "cfdi-tax-mapping", "cfdi-cancellation-state", "verifactu-readiness", "retention-evidence", "legal-review", "versioned-publication"]
 ---
 

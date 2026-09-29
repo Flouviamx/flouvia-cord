@@ -12,7 +12,7 @@ acceptanceScope: none
 publicationStatus: draft
 editorialStage: technical-draft
 dependsOn: ["terms", "privacy", "subprocessors", "retention-policy"]
-sourceSections: ["privacy@2026-08-29#dpa", "privacy@2026-08-29#internacionales"]
+sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
 releaseBlockers: ["verified-parties", "processing-schedules", "security-schedule", "account-contracts", "transfer-map", "subprocessor-notice", "incident-procedure", "retention-schedule", "legal-review", "execution-evidence", "versioned-publication"]
 sourceKind: markdown
 sourceOfTruth: src/content/legal/en-US/dpa.md

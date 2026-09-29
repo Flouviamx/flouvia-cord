@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["privacy"]
-sourceSections: ["privacy@2026-08-29#dpa", "privacy@2026-08-29#internacionales"]
+sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
 releaseBlockers: ["verified-identity", "provider-legal-entities", "account-contracts", "processing-locations", "transfer-mechanisms", "change-notice", "objection-procedure", "legal-review", "versioned-publication"]
 ---
 
@@ -64,6 +64,7 @@ name is not enough for a contractual appendix.
 | Stripe | Billing, payments, refunds, disputes, payouts, and financial/identity verification when used. |
 | Google | User-selected OAuth; Cord receives the authorized identifier, name, and email. |
 | Apple | User-selected authentication; Cord receives the authorized identifier and data. |
+| Mercado Pago | Collecting quotes and invoices with the Customer's account, and reading payments and refunds to reconcile them, when the Customer connects it. |
 
 Their role may vary by product, jurisdiction, and data. Keeping them outside the
 sub-processor table does not declare they never act as processors; it avoids a
@@ -90,6 +91,15 @@ Cord stores encrypted tokens, linked identifiers, and a sync queue. On
 disconnection, Cord attempts to revoke access, deletes the tokens, and stops
 syncing; data already sent to HubSpot is not deleted.
 
+Also Customer-directed, each only if Customer connects it: Google (Sheets with
+`drive.file`, sending from their Gmail with `gmail.send`, and the Gmail add-on),
+Microsoft (Excel in their OneDrive and Teams), Intuit QuickBooks Online, Xero
+(final invoices with customer, lines, currency and taxes), Shopify (catalog and
+customers into Cord and the order back if enabled) and Meta (WhatsApp Business
+with their templates). Cord stores their credentials encrypted and the linked
+identifiers; disconnecting stops syncing and data already delivered stays in
+Customer's account.
+
 Zapier, Make, and other platforms using the API act with a Customer key: they
 receive the events Customer chooses and run the actions the key allows. Cord
 Workflows runs automations defined by Customer: it creates tasks, emails only
@@ -111,8 +121,8 @@ per call, not per provider name.
 
 ## 6. Contracts, regions, and transfers
 
-Nine entries remain `account-evidence-pending`: Neon, Vercel, Anthropic, PostHog,
-Upstash, Ops Slack, Facturapi, Google, and Apple. Accepted terms, product, region,
+Ten entries remain `account-evidence-pending`: Neon, Vercel, Anthropic, PostHog,
+Upstash, Ops Slack, Facturapi, Google, Apple, and Mercado Pago. Accepted terms, product, region,
 retention, and transfer evidence remain missing.
 
 A public DPA or trust center describes general terms; it does not prove Cord's

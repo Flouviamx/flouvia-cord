@@ -28,8 +28,8 @@ export type SignupLegalBundle = {
   privacy: SignupLegalDocument;
 };
 
-const TERMS_VERSION = '2026-08-11';
-const PRIVACY_VERSION = '2026-08-29';
+const TERMS_VERSION = '2026-09-28';
+const PRIVACY_VERSION = '2026-09-28';
 
 export const SIGNUP_LEGAL_BUNDLES: Record<LegalLocale, SignupLegalBundle> = {
   'es-MX': {
@@ -38,12 +38,12 @@ export const SIGNUP_LEGAL_BUNDLES: Record<LegalLocale, SignupLegalBundle> = {
     terms: {
       docId: 'terms', version: TERMS_VERSION, locale: 'es-MX', jurisdiction: 'GLOBAL',
       action: 'accepted', href: '/terminos',
-      artifactSha256: 'caca9992c20c9db7f6270285c57808f9a249d15579a03497b99bc621590db369',
+      artifactSha256: 'c4cb2d15e207a20144620f7e3ab28e698b561ab5e65cbe916938caf8ee265260',
     },
     privacy: {
       docId: 'privacy', version: PRIVACY_VERSION, locale: 'es-MX', jurisdiction: 'GLOBAL',
       action: 'acknowledged', href: '/privacidad',
-      artifactSha256: '469dd0c23ed4626059b8869951d8bf8842cfc7e1dc0122b3c1da4652bae6dbf4',
+      artifactSha256: '1d4eed2370b940fb289f254ae24e06078dc522da5e0f0bbb05b067e4d85d70e3',
     },
   },
   'en-US': {
@@ -52,12 +52,12 @@ export const SIGNUP_LEGAL_BUNDLES: Record<LegalLocale, SignupLegalBundle> = {
     terms: {
       docId: 'terms', version: TERMS_VERSION, locale: 'en-US', jurisdiction: 'GLOBAL',
       action: 'accepted', href: '/en/terminos',
-      artifactSha256: '891f4c861dae2d5fcbf93737cb93e8470582b430c01de4ee33220a5e29c18fd7',
+      artifactSha256: 'b01410ff26503b98e6dcba483652b1f47cdd65d0f9795977096f544fae439ddb',
     },
     privacy: {
       docId: 'privacy', version: PRIVACY_VERSION, locale: 'en-US', jurisdiction: 'GLOBAL',
       action: 'acknowledged', href: '/en/privacidad',
-      artifactSha256: '4f10b3260909d902e7aaacf2ef40c05a000a4ed4a9154176b19050a3e0b9bb10',
+      artifactSha256: 'ec1e0d6f448dc1f2f2e125a88ba8d602bc4d4f4ac6260450d46f09ca72afb44d',
     },
   },
 };

@@ -1,65 +1,37 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { legalRevisionSchema } from '../src/lib/legal-revision-schema';
 import { SIGNUP_LEGAL_BUNDLES } from '../src/lib/legal-corpus';
-import { publishedLegalHtml, type PublishedLegalEntry } from '../src/lib/legal-publication';
 
-// Fixture reader for these flat frontmatters, not a replacement YAML loader.
-function read(path: string) {
-  const source = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-  const [header, ...rest] = source.split('\n---\n');
-  const data = Object.fromEntries([...header.matchAll(/^(\w+): (.*)$/gm)].map(([, key, raw]) => {
-    let value: unknown = raw;
-    try { value = JSON.parse(raw); } catch { /* plain YAML scalar/list of labels */ }
-    if (raw.startsWith('[') && typeof value === 'string') value = raw.slice(1, -1).split(',').map((v) => v.trim());
-    return [key, value];
-  }));
-  return { data, body: rest.join('\n---\n') };
+// La revisión 2026-08-30.1 se publicó como 2026-09-28. Estas aserciones eran
+// de la propuesta y ahora protegen el texto publicado: que no vuelvan las
+// afirmaciones retiradas y que se conserven las correcciones.
+function body(locale: string, docId: string) {
+  const source = readFileSync(new URL(`../src/content/legal/${locale}/${docId}.md`, import.meta.url), 'utf8');
+  return source.split('\n---\n').slice(1).join('\n---\n');
 }
 
-describe('technical legal revisions are isolated proposals', () => {
-  for (const locale of ['es-MX', 'en-US'] as const) {
-    for (const docId of ['terms', 'privacy'] as const) {
-      it(`${locale}/${docId} preserves its baseline and anchors without becoming a publication`, () => {
-        const path = `src/content/legal-revisions/${locale}/${docId}-2026-08-30.1.md`;
-        const entry = read(path);
-        const data = legalRevisionSchema.parse(entry.data);
-        const original = read(`src/content/legal/${locale}/${docId}.md`);
-        const published = SIGNUP_LEGAL_BUNDLES[locale][docId];
-        expect(data.basedOnArtifactSha256).toBe(published.artifactSha256);
-        expect(data.basedOnVersion).toBe(published.version);
-        expect(data.version).not.toBe(published.version);
-        expect(data.sourceOfTruth).toBe(path);
-        const ids = (body: string) => [...body.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
-        expect(ids(entry.body)).toEqual(ids(original.body));
-        expect(new Set(ids(entry.body)).size).toBe(ids(entry.body).length);
-        for (const [, anchor] of entry.body.matchAll(/href="#([^"]+)"/g)) expect(ids(entry.body)).toContain(anchor);
-        expect(entry.body).toContain(locale === 'es-MX' ? 'BORRADOR TÉCNICO' : 'TECHNICAL DRAFT');
-        expect(entry.body).not.toBe(original.body);
-        expect(legalRevisionSchema.safeParse({ ...data, publicationStatus: 'published' }).success).toBe(false);
-        expect(legalRevisionSchema.safeParse({ ...data, effectiveDate: '2026-08-30' }).success).toBe(false);
-        expect(legalRevisionSchema.safeParse({ ...data, requiresAction: true }).success).toBe(false);
-        expect(legalRevisionSchema.safeParse({ ...data, artifactSha256: published.artifactSha256 }).success).toBe(false);
-        expect(legalRevisionSchema.safeParse({ ...data, reviewStatus: 'approved' }).success).toBe(false);
-        expect(legalRevisionSchema.safeParse({ ...data, releaseBlockers: [] }).success).toBe(false);
-        // Even a caller bypassing the collection types must hit the public guard.
-        expect(() => publishedLegalHtml({ data: { ...original.data, publicationStatus: 'draft' } as PublishedLegalEntry['data'], body: entry.body }, published)).toThrow('not published');
-      });
-    }
-  }
-
-  it('covers matching section changes in ES and EN', () => {
-    for (const docId of ['terms', 'privacy']) {
-      const es = read(`src/content/legal-revisions/es-MX/${docId}-2026-08-30.1.md`);
-      const en = read(`src/content/legal-revisions/en-US/${docId}-2026-08-30.1.md`);
-      expect(es.data.changedSections).toEqual(en.data.changedSections);
+describe('versión publicada 2026-09-28 de términos y aviso', () => {
+  it('el catálogo apunta a la versión nueva', () => {
+    for (const locale of ['es-MX', 'en-US'] as const) {
+      expect(SIGNUP_LEGAL_BUNDLES[locale].terms.version).toBe('2026-09-28');
+      expect(SIGNUP_LEGAL_BUNDLES[locale].privacy.version).toBe('2026-09-28');
     }
   });
 
-  it('removes the specific unsupported claims rather than merely adding a draft label', () => {
+  it('no conserva el aviso de borrador ni marcadores de publicación', () => {
     for (const locale of ['es-MX', 'en-US']) {
-      const terms = read(`src/content/legal-revisions/${locale}/terms-2026-08-30.1.md`).body;
-      const privacy = read(`src/content/legal-revisions/${locale}/privacy-2026-08-30.1.md`).body;
+      for (const docId of ['terms', 'privacy']) {
+        const text = body(locale, docId);
+        expect(text).not.toMatch(/BORRADOR TÉCNICO|TECHNICAL DRAFT|Propuesta de revisión|Proposed revision/);
+        expect(text).not.toMatch(/antes de publicar esta revisión|before publishing this revision/);
+      }
+    }
+  });
+
+  it('mantiene retiradas las afirmaciones sin sustento y las correcciones de fondo', () => {
+    for (const locale of ['es-MX', 'en-US']) {
+      const terms = body(locale, 'terms');
+      const privacy = body(locale, 'privacy');
       expect(terms).not.toMatch(/<strong>(no bloqueará|will not block)<\/strong>/);
       expect(terms).not.toMatch(/CORD (?:no se responsabiliza del tono|is not liable for the tone)/);
       expect(privacy).not.toMatch(/25%|conforme a la normativa de prevención de lavado|as required by anti-money-laundering|corporate consent|consentimiento corporativo/);
@@ -67,6 +39,17 @@ describe('technical legal revisions are isolated proposals', () => {
       expect(terms).toContain(locale === 'es-MX' ? 'procesamiento programado diario' : 'daily scheduled processing');
       expect(privacy).toContain(locale === 'es-MX' ? 'antes de la presentación final' : 'before the final dispute response');
       expect(privacy).toContain('hashes');
+    }
+  });
+
+  it('declara el uso limitado de los datos de Google y las integraciones', () => {
+    for (const locale of ['es-MX', 'en-US']) {
+      const privacy = body(locale, 'privacy');
+      const terms = body(locale, 'terms');
+      expect(privacy).toContain('api-services-user-data-policy');
+      expect(privacy).toMatch(/Uso Limitado|Limited Use/);
+      expect(privacy).toContain('QuickBooks');
+      expect(terms).toMatch(/Correo enviado desde su cuenta|Email sent from your account/);
     }
   });
 });

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { legalRevisionSchema } from '../src/lib/legal-revision-schema.ts';
 import { SIGNUP_LEGAL_BUNDLES } from '../src/lib/legal-corpus.ts';
@@ -7,7 +7,7 @@ import { SIGNUP_LEGAL_BUNDLES } from '../src/lib/legal-corpus.ts';
 const root = join(import.meta.dirname, '..');
 const base = join(root, 'src/content/legal-revisions');
 const revisions = new Map();
-for (const locale of readdirSync(base)) {
+for (const locale of existsSync(base) ? readdirSync(base) : []) {
   assert.ok(Object.hasOwn(SIGNUP_LEGAL_BUNDLES, locale), `Unsupported revision locale: ${locale}`);
   for (const file of readdirSync(join(base, locale))) {
     assert.ok(file.endsWith('.md'), `Unexpected revision file: ${file}`);
@@ -49,7 +49,6 @@ for (const [key, pair] of revisions) {
   assert.equal(pair.size, 2, `${key}: incomplete ES/EN pair`);
   assert.deepEqual(pair.get('es-MX'), pair.get('en-US'), `${key}: section review mismatch`);
 }
-assert.ok(revisions.size >= 2, 'Missing terms/privacy proposals');
 process.stdout.write(`legal-revisions-check: ${revisions.size * 2} propuestas aisladas, sin vigencia, hash de publicación ni acción de aceptación\n`);
 if (process.argv.includes('--strict')) {
   process.stderr.write('Revisiones bloqueadas: requieren revisión jurídica, evidencia operativa y autorización de publicación.\n');

@@ -38,8 +38,8 @@ como sustituto de portugués.
 
 | Documento | ES / EN | PT-BR |
 |---|---|---|
-| `terms` | Texto completo publicado, versión 2026-08-11 | Pendiente |
-| `privacy` | Texto completo publicado, versión 2026-08-29 | Pendiente |
+| `terms` | Texto completo publicado, versión 2026-09-28 | Pendiente |
+| `privacy` | Texto completo publicado, versión 2026-09-28 | Pendiente |
 | `payments-terms` | Redacción técnica ES/EN, revisión externa pendiente | Pendiente |
 | `invoicing-terms` | Redacción técnica ES/EN, bloqueos fiscales abiertos | Pendiente |
 | `kyc-aml-policy` | Redacción técnica ES/EN, revisión externa pendiente | Pendiente |

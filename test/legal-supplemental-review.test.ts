@@ -153,7 +153,7 @@ describe('phase 5 supplemental proposals', () => {
         if (provider.id === 'customer-integrations') continue;
         expect(body).toContain(provider.name.split(' (')[0].split(',')[0]);
       }
-      expect(body).toContain(locale === 'es-MX' ? 'Nueve entradas' : 'Nine entries');
+      expect(body).toContain(locale === 'es-MX' ? 'Diez entradas' : 'Ten entries');
       expect(body).toContain(locale === 'es-MX' ? 'no dispone hoy de una suscripción pública' : 'no public subscription');
     }
   });

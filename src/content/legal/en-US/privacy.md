@@ -1,8 +1,8 @@
 ---
 docId: privacy
-version: "2026-08-29"
-effectiveDate: "2026-08-29"
-supersedes: "2026-08-11"
+version: "2026-09-28"
+effectiveDate: "2026-09-28"
+supersedes: "2026-08-29"
 locale: en-US
 jurisdiction: GLOBAL
 appliesToCountries: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
@@ -11,12 +11,12 @@ action: acknowledged
 acceptanceScope: personal
 publicationStatus: published
 sourceKind: html-snapshot
-sourceInputsSha256: "bfbe0bab8b861568dac9a3117d3c2f83fee7c491d901e44f5b3202d5b11a7038"
+sourceInputsSha256: "321a4b1ed50c910badaa723991840d1907ea87950c4d9322b344bf40597d55a3"
 legacyScope: data-astro-cid-dcn55ul3
 sourceOfTruth: src/content/legal/en-US/privacy.md
 artifactRoute: /en/privacidad
-artifactSha256: "4f10b3260909d902e7aaacf2ef40c05a000a4ed4a9154176b19050a3e0b9bb10"
-lastReviewed: "2026-08-29"
+artifactSha256: "ec1e0d6f448dc1f2f2e125a88ba8d602bc4d4f4ac6260450d46f09ca72afb44d"
+lastReviewed: "2026-09-28"
 reviewedBy: Internal technical audit; external legal review pending
 ---
 
@@ -24,7 +24,7 @@ reviewedBy: Internal technical audit; external legal review pending
 <div class="legal-header">
 <h1 class="editorial masked-title">Privacy<br>Policy</h1>
 <div class="reveal">
-<p class="last-updated">Last updated: August 29, 2026</p>
+<p class="last-updated">Last updated: September 28, 2026</p>
 </div>
 </div>
 <!-- Grid de 2 columnas: Sidebar + Contenido -->
@@ -98,28 +98,19 @@ reviewedBy: Internal technical audit; external legal review pending
 <p class="legal-warning">Open compliance item: the controller’s verified service address has not yet been published. This omission does not restrict any privacy right or request channel.</p>
 <h2 id="datos" class="editorial">
 <span class="num">02</span> Personal Data Collected</h2>
-<p>We collect information through three main channels:</p>
-<ul>
-<li>
-<strong>Identity Data:</strong> Name, email address, and passwords (managed securely via encrypted hashes).</li>
-<li>
-<strong>Tax Data (CFDI 4.0):</strong> RFC, Legal Name, Tax Regime, Zip Code, and Digital Seal Certificates (CSD).</li>
-<li>
-<strong>Tax Data (Verifactu, Spain):</strong> NIF/CIF, legal name, tax address, and, if the business configures the feature, an electronic certificate (.p12/.pfx). The certificate and password are stored encrypted. Real AEAT submission has an additional environment gate that is disabled by default; without the verified system identity and an enabled submission path, Cord produces a commercial document and must not claim remittance.</li>
-<li>
-<strong>Financial and Asset Data:</strong> Bank name, account holder, CLABE, payment movements, refunds, disputes, and negative balances. CORD stores the CLABE encrypted and keeps its last four digits for display. <em>CORD does not store card numbers or security codes; Stripe tokenizes them directly.</em>
-</li>
-<li>
-<strong>Identity Verification Data:</strong> Information on the legal representative, directors and beneficial owners (25% or more), and images of official identification and, where required, proof of address. Document images are transmitted directly to Stripe and are not persistently stored by CORD. Before transmitting them, CORD strips the file's metadata, including any GPS location the capturing device may have embedded. CORD retains a compliance record of each submission — which part of the document was sent, when, from which IP address, the technical form of the file and the verification system's reply — for five (5) years, as required by anti-money-laundering regulation. That record never includes the image, a thumbnail, the document number, the date of birth or the personal address.</li>
-<li>
-<strong>Business Data:</strong> Product catalog, price lists, and data of the companies you quote to.</li>
-<li>
-<strong>Buyer and Dispute Evidence:</strong> Buyer name, email, purchase IP address, commercial communications, receipts, delivery documents, service dates, and other evidence that the Client decides to save or send to contest a payment dispute.</li>
-</ul>
-<p>Because payment onboarding may involve financial, asset, or identity-verification data, we request the data subject's express electronic consent before completing it. Consent may be revoked through the procedure in section 13, without retroactive effect; however, revocation or failure to provide required data may prevent CORD and Stripe from enabling or maintaining payment services.</p>
+<p>Data comes from forms and files supplied by you or the business, activity on the service, and responses from configured providers and integrations. Categories depend on the feature used; not every category is requested from every person.</p>
+<p><strong>Account and access:</strong> name, email, account identifiers, session information and acceptance evidence. Native-login passwords are verified using hashes; they are not described as reversibly encrypted passwords. Alternative sign-in methods process the identifiers and technical credentials necessary for the selected method.</p>
+<p><strong>Business and tax data:</strong> catalogs, contacts, quotes, invoices, communications and issuer/recipient information. CFDI may involve RFC, tax regime, tax address and CSD. In Spain, a configured feature may process NIF/CIF and an electronic certificate and password. Possession of a certificate or chained record does not establish AEAT submission.</p>
+<p><strong>Financial data:</strong> bank account and holder, CLABE where applicable, payments, payouts, refunds and disputes. CLABE is stored encrypted with a suffix retained for display. Card data is collected through processor components; Cord does not store the full card number or security code.</p>
+<p><strong>Identity verification:</strong> information about individuals, representatives, directors and beneficial owners required by the processor for the specific account. No universal ownership threshold applies across all countries and entity types. Files are temporarily processed for transmission; the flow removes unnecessary image metadata, such as location, while retaining technical orientation when needed.</p>
+<p>Cord does not persistently retain the identity-document image sent through that flow. The technical submission record may include account/person identifiers, file hash, format, size, quality measurements, date, IP, user-agent and provider response. It is not an image copy or proof that every submission was recorded without failure. Current configuration provides for five years, as explained in the retention section; that period is not attributed to a universal anti-money-laundering obligation.</p>
+<p><strong>Signatures and disputes:</strong> name, contact information, signature or purchase IP, and relevant documents or communications the business retains or selects as evidence. Confirming evidence-file preparation may transmit files to the processor and save their identifiers in a draft before the final dispute response is submitted. Saving a draft does not mean files remain only within Cord.</p>
+<p><strong>Connected integrations:</strong> when the Customer connects a third-party account (for example Google, Microsoft, Shopify, QuickBooks, Xero, HubSpot, Slack, WhatsApp Business or Mercado Pago), Cord stores that connection’s technical credentials encrypted, the connected account’s identifier or email, the identifiers linking each Cord record to the third party’s record, and the technical fingerprint that prevents duplicates. Cord does not receive or store the password of those accounts.</p>
+<p>Payment onboarding requests electronic authorization concerning financial and identity data from the user completing it. That record does not by itself prove consent from every person whose data a representative supplies. The applicable basis, information to third parties and authority to act must be verified for each flow; acknowledging this notice is not blanket consent to all processing.</p>
 <h2 id="uso" class="editorial">
 <span class="num">03</span> Purposes</h2>
-<p>The collected data is used exclusively for the following essential purposes:</p>
+<p>Purposes are distinguished by feature and are not all treated as necessary to enter the contract. Security, authentication, support and contractual evidence relate to account operation. The newsletter is optional, uses double confirmation and provides an unsubscribe mechanism; optional browser analytics is managed separately. AI use or collections messages depend on enabling or invoking those features and may transmit context to their providers. The legal basis is assessed per processing activity and jurisdiction; the contract does not replace that assessment.</p>
+<p>Depending on the enabled functions, operational purposes include:</p>
 <ul>
 <li>Generate, store, and send quotes, and process the stamping of electronic invoices.</li>
 <li>Manage the billing of your monthly subscription and calculate excess usage.</li>
@@ -130,6 +121,10 @@ reviewedBy: Internal technical audit; external legal review pending
 <li>
 <strong>Autonomous AI Collections (optional):</strong> If the account Administrator enables it, Cord processes receivables data (client name, email, amount owed, due date, and the conversation context selected by the workflow) to draft or send reminders on the creditor's behalf. It is disabled by default.</li>
 <li>Send transactional emails and notifications.</li>
+<li>
+<strong>Customer-directed integrations:</strong> Exchange with a third-party account the Customer connects the data that integration needs, under the Customer’s instruction: write quotes and invoices to their spreadsheet; record final invoices, customers and lines in their accounting; bring in their store’s catalog and customers and create the order when a quote closes; post notifications to their channels; and send, from their email account, the documents addressed to their customers. Each integration is enabled separately and can be disconnected.</li>
+<li>
+<strong>Gmail add-on:</strong> On the email the user has open, read the sender, subject and a quote number to show whether the sender is a customer and that quote’s status. The email text is transmitted to Cord and its AI provider only when the user clicks “Quote with AI”, to propose quote lines that the user reviews before creating it. The add-on does not read the full inbox.</li>
 </ul>
 <h2 id="anonimizados" class="editorial">
 <span class="num">04</span> Anonymized and Aggregated Data</h2>
@@ -258,15 +253,65 @@ reviewedBy: Internal technical audit; external legal review pending
 </tr>
 <tr>
 <td>
-<strong>SAML, MCP, Slack y webhooks del Cliente</strong>
+<strong>Google (Sheets, Gmail and the Gmail add-on)</strong>
 </td>
 <td>Customer-directed integration</td>
-<td>Data exchange with the identity provider, MCP server, Slack workspace, or endpoint configured by the Customer. <em>Only under the Customer’s instruction and configuration.</em>
+<td>Google Sheets with the <code>drive.file</code> permission, limited to the file Cord creates; sending quotes, invoices and reminders from the Customer’s Gmail account with the <code>gmail.send</code> permission, without reading their email; and the Gmail add-on described under Purposes. <em>Only if the Customer connects each feature.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Microsoft (Excel and Teams)</strong>
+</td>
+<td>Customer-directed integration</td>
+<td>An Excel workbook in the Customer’s OneDrive with quotes and invoices, and notifications in the Teams channel the Customer chooses. <em>Only if the Customer connects each feature.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Intuit QuickBooks Online and Xero</strong>
+</td>
+<td>Customer-directed integration</td>
+<td>Recording final invoices with their customer, lines, amounts, currency and taxes in the Customer’s accounting. <em>Only if the Customer connects their accounting.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Shopify</strong>
+</td>
+<td>Customer-directed integration</td>
+<td>Reading the catalog and customers of the Customer’s store, and creating an order when a quote is approved or paid, if the Customer enables it. <em>Only if the Customer connects their store.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Meta (WhatsApp Business)</strong>
+</td>
+<td>Customer-directed integration</td>
+<td>Sending messages with the Customer’s templates to their customers from their WhatsApp Business number. <em>Only if the Customer configures it.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Mercado Pago</strong>
+</td>
+<td>Provider with its own obligations</td>
+<td>Collecting quotes and invoices with the Customer’s Mercado Pago account, and reading payments and refunds to reconcile them. <em>Only if the Customer connects their account.</em>
+</td>
+</tr>
+<tr>
+<td>
+<strong>Customer SAML, MCP, Slack, HubSpot, API-connected platforms, and webhooks</strong>
+</td>
+<td>Customer-directed integration</td>
+<td>Data exchange with the identity provider, MCP server, Slack workspace, HubSpot account, automation platform (such as Zapier or Make), or endpoint configured by the Customer. HubSpot receives customer contact data and sent quotes, and returns contact corrections for linked records. <em>Only under the Customer’s instruction and configuration, which the Customer can disconnect.</em>
 </td>
 </tr>
 </tbody>
 </table>
 </div>
+<h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">Google user data</h3>
+<p>Cord’s use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. In particular, Cord uses that information only to provide and improve the user-facing features the user enables; does not sell it; does not use it for advertising; does not allow humans to read it except with the user’s affirmative consent, for security purposes, to comply with applicable law, or when aggregated and anonymized for internal operations; and does not use it to develop, improve or train generalized artificial intelligence or machine learning models. The text of an email the user chooses to send to “Quote with AI” is processed with the AI provider listed in the table above solely to produce that proposal. The user can revoke access from Cord’s integration settings or from their Google account’s security settings.</p>
 <h2 id="internacionales" class="editorial">
 <span class="num">07</span> International Data Transfers</h2>
 <p>Some providers may process data outside the country where the user or Customer is located. A provider's public DPA or sub-processor list is evidence of its published terms, but it does not prove Cord's account-specific region, configuration, or executed transfer mechanism. Those records remain part of the release checklist. Where Chapter V GDPR applies, an adequacy decision, the applicable 2021 Standard Contractual Clauses, or another valid mechanism must be identified for the particular transfer; consent to this notice is not used as a blanket substitute.</p>
@@ -275,18 +320,23 @@ reviewedBy: Internal technical audit; external legal review pending
 <p>Information relevant to the Services may form part of a merger, acquisition, financing, restructuring, insolvency, or sale of assets, subject to confidentiality, purpose limitation, and notice duties that apply to the transaction. This does not authorize an unrelated buyer to disregard this notice or applicable law.</p>
 <h2 id="seguridad" class="editorial">
 <span class="num">09</span> Retention and Security</h2>
-<p>Cord uses TLS in transit and field-level encryption for stored CLABEs and configured secrets. Stamped CFDI and identity-submission compliance records are currently configured around five-year retention. When Verifactu mode is actually enabled, the database stores an append-only sequence whose records reference the previous hash; this technical property is not described as proof that every Spanish retention obligation is already operational. Payment, dispute, provider, backup, and legal-acceptance retention still requires a documented record-by-record schedule. Identity-document images sent to Stripe are not persistently stored by Cord.</p>
+<p>Cord uses protection in transit and encryption of specific fields such as CLABE and configured secrets. It does not claim that all data is application-level encrypted, that hashing is anonymization or that code controls alone establish production deployment status. Access, credentials and each integration’s configuration require their own controls.</p>
+<p>The technical KYC submission record currently uses a deletion threshold of five years from creation. Cleanup depends on successful execution of the scheduled task; this is not a guarantee of deletion at an exact time. That setting is an implemented policy requiring validation by purpose, role and jurisdiction, not proof of one legal obligation covering all records.</p>
+<p>Fiscal retention by a provider is not a guaranteed five-year archive within Cord. Organization deletion removes dependent primary records and may affect locally stored documents. Customers must retain the records for which they are responsible and verify retrieval; Cord does not promise a perpetual local archive or uniform retention of all data.</p>
+<p>A category-specific schedule remains to be completed for operational data, payments, disputes, acceptance evidence, logs, providers and backups, including justified exceptions and deletion verification. Storage capacity alone does not justify retaining data beyond what is necessary.</p>
 <h2 id="brechas" class="editorial">
 <span class="num">10</span> Security Breach Protocol</h2>
 <p>If Cord becomes aware of a personal-data breach affecting Customer Data for which it acts as processor, Cord will inform the applicable Customer without undue delay and provide information reasonably available for that Customer's assessment and notifications. When Cord acts as controller, it will assess notice to authorities and affected people under the law that applies to the incident. The GDPR's 72-hour supervisory-authority period is not described as a 72-business-hour processor-to-customer deadline.</p>
 <h2 id="portabilidad" class="editorial">
 <span class="num">11</span> Data Portability and Deletion</h2>
+<p>Deleting an organization also does not establish that an external subscription was successfully canceled or that the processor payment account was closed. The flow attempts subscription cancellation, but a failure requires follow-up; it does not automatically delete the connected account. Closure of each external service and any outstanding obligations must be confirmed separately.</p>
 <p>Account settings provide JSON export of organization data and CSV exports of products and clients. Deleting an organization removes its primary Cord database row and dependent operational rows. It does not by itself erase records that a provider keeps under its own legal duties, data already delivered under a Customer instruction, backups still within their rotation period, or the pseudonymous legal-acceptance evidence Cord retains to establish the contract. Requests concerning those records are assessed separately under the applicable law.</p>
 <h2 id="menores" class="editorial">
 <span class="num">12</span> Minors Privacy</h2>
-<p>CORD is a SaaS platform designed exclusively for businesses and professionals. We do not knowingly collect or solicit Personal Information from anyone under the age of 18. If we learn that we have collected information from a minor without proper verifiable corporate consent, we will delete that information from our servers as quickly as possible.</p>
+<p>Cord is directed to persons with capacity to contract and users authorized to operate a business, not to children as intended service users. Corporate authorization is not equivalent to authorization by a parent or guardian. If a child’s data is identified, the relationship, Cord’s role, the controller of the data and the appropriate response must be assessed; automatic immediate deletion is not promised as a solution in every case.</p>
 <h2 id="arco" class="editorial">
 <span class="num">13</span> Privacy Rights</h2>
+<p>You may also request withdrawal of consent or limitation of data use where applicable. Rejecting analytics or unsubscribing from the newsletter does not cancel the account or reject the contract. Non-automated requests are handled through the privacy channel, with proportionate verification, and are answered within the deadlines set by the applicable law (in Mexico, the LFPDPPP; in the European Economic Area, one month under the GDPR, extendable where the law allows).</p>
 <p>The name and legal basis of each right depends on the applicable law. Mexico provides Access, Rectification, Cancellation, and Objection (ARCO); GDPR regimes include access, rectification, erasure, restriction, portability, and objection; Brazil's LGPD provides its own statutory rights. Settings currently supports organization export, selected CSV exports, correction of account data, and organization deletion. Other requests require individual assessment and are not described as automated merely because a Settings page exists.</p>
 <p>Requests that cannot be completed in Settings may be sent to <strong>legal@flouvia.com</strong>. Describe the right and the account or relationship involved. Do not attach an identity document unless Cord asks for a proportionate verification method after reviewing the request; requesting a full ID by default would collect more data than necessary.</p>
 <h2 id="cambios" class="editorial">

@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Technical drafting; external legal review pending
 dependsOn: ["terms","privacy"]
-sourceSections: ["terms@2026-08-11#pagos-autorizacion","privacy@2026-08-29#uso"]
+sourceSections: ["terms@2026-09-28#pagos-autorizacion","privacy@2026-09-28#uso"]
 releaseBlockers: ["verified-identity", "debt-classification", "stop-channel", "participant-attribution", "provider-account-contracts", "legal-review", "versioned-publication"]
 ---
 

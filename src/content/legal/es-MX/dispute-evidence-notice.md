@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-08-30"
 reviewedBy: Redacción técnica; revisión jurídica externa pendiente
 dependsOn: ["payments-terms","privacy"]
-sourceSections: ["terms@2026-08-11#reembolsos","privacy@2026-08-29#datos"]
+sourceSections: ["terms@2026-09-28#reembolsos","privacy@2026-09-28#datos"]
 releaseBlockers: ["verified-identity", "processing-roles", "provider-account-contracts", "evidence-minimization", "retention-evidence", "legal-review", "versioned-publication"]
 ---
 

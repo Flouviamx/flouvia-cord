@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Redacción técnica; revisión jurídica externa pendiente
 dependsOn: ["privacy"]
-sourceSections: ["privacy@2026-08-29#dpa", "privacy@2026-08-29#internacionales"]
+sourceSections: ["privacy@2026-09-28#dpa", "privacy@2026-09-28#internacionales"]
 releaseBlockers: ["verified-identity", "provider-legal-entities", "account-contracts", "processing-locations", "transfer-mechanisms", "change-notice", "objection-procedure", "legal-review", "versioned-publication"]
 ---
 
@@ -64,6 +64,7 @@ fila. Un nombre comercial no basta para un anexo contractual.
 | Stripe | Billing, cobros, reembolsos, disputas, depósitos y verificación financiera/identidad cuando se usa esa función. |
 | Google | Autenticación OAuth elegida por la persona; Cord recibe identificador, nombre y correo autorizados. |
 | Apple | Autenticación elegida por la persona; Cord recibe identificador y datos autorizados. |
+| Mercado Pago | Cobro de cotizaciones y facturas con la cuenta del Cliente, y lectura de pagos y reembolsos para conciliarlos, cuando el Cliente la conecta. |
 
 Su rol puede variar por producto, jurisdicción y dato. Clasificarlos aquí fuera de
 la lista de subencargados no declara que nunca actúen como encargados; evita
@@ -90,6 +91,15 @@ guarda los tokens cifrados, los identificadores vinculados y una cola de
 sincronización. Al desconectar, Cord intenta revocar el acceso, borra los tokens
 y deja de sincronizar; lo ya enviado a HubSpot no se borra.
 
+También son integraciones dirigidas por el Cliente, cada una sólo si éste la
+conecta: Google (Sheets con `drive.file`, envío desde su Gmail con `gmail.send` y
+el complemento para Gmail), Microsoft (Excel en su OneDrive y Teams),
+Intuit QuickBooks Online, Xero (facturas definitivas con cliente, líneas, divisa e
+impuestos), Shopify (catálogo y clientes hacia Cord y el pedido de vuelta si lo
+activa) y Meta (WhatsApp Business con sus plantillas). Cord guarda sus
+credenciales cifradas y los identificadores vinculados; desconectar deja de
+sincronizar y lo ya entregado permanece en la cuenta del Cliente.
+
 Zapier, Make y otras plataformas que usan la API actúan con una llave del
 Cliente: reciben los eventos que éste elige y ejecutan las acciones que la llave
 permite. Cord Workflows ejecuta automatizaciones definidas por el Cliente: crea
@@ -111,8 +121,8 @@ del Cliente. La minimización debe evaluarse por llamada, no por nombre.
 
 ## 6. Contratos, regiones y transferencias
 
-Nueve entradas siguen marcadas `account-evidence-pending`: Neon, Vercel,
-Anthropic, PostHog, Upstash, Slack de Ops, Facturapi, Google y Apple. Faltan
+Diez entradas siguen marcadas `account-evidence-pending`: Neon, Vercel,
+Anthropic, PostHog, Upstash, Slack de Ops, Facturapi, Google, Apple y Mercado Pago. Faltan
 evidencia de términos aceptados, producto, región, retención y transferencias.
 
 Un DPA público o trust center informa términos generales; no demuestra dónde

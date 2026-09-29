@@ -18,7 +18,7 @@ artifactSha256: "000000000000000000000000000000000000000000000000000000000000000
 lastReviewed: "2026-09-01"
 reviewedBy: Redacción técnica; revisión jurídica externa pendiente
 dependsOn: ["privacy"]
-sourceSections: ["privacy@2026-08-29#seguridad", "privacy@2026-08-29#portabilidad"]
+sourceSections: ["privacy@2026-09-28#seguridad", "privacy@2026-09-28#portabilidad"]
 releaseBlockers: ["record-level-schedule", "kyc-deletion-conflict", "durable-deletion-evidence", "provider-retention", "backup-rotation", "legal-acceptance-period", "complete-export", "legal-review", "versioned-publication"]
 ---
 
