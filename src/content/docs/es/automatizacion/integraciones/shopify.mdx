@@ -63,6 +63,24 @@ En la tarjeta de Shopify eliges cuándo se crea el pedido. **Nace apagado**:
 
 El impuesto del pedido lo calcula Shopify con la configuración de tu tienda. El documento fiscal que vale es el de Cord.
 
+## Existencias al cotizar
+
+Si tu tienda controla el inventario de un producto, Cord trae sus existencias. En el editor de cotizaciones, el buscador dice cuántas hay y, al agregar el producto, Cord le pregunta a tu tienda en ese momento. Si cotizas más de lo que hay, la línea lo avisa ("Solo hay 12 en existencia"), y un producto agotado dice **Agotado**. Cotizar de más no se bloquea: es normal vender algo que se surtirá después.
+
+## Facturar los pedidos de tu tienda
+
+En la tarjeta de Shopify, **Facturar los pedidos de tu tienda** nace apagado. Con **Crear el borrador cuando el pedido se paga**, cada pedido pagado de tu tienda crea en Cord el borrador de su factura:
+
+| Del pedido | En el borrador |
+|---|---|
+| Cliente | El cliente de Cord ligado a ese cliente de Shopify; si no existe, se da de alta. |
+| Productos | Una línea por producto con su cantidad y el precio ya con el descuento del pedido. |
+| Envío | Una línea con su costo, si tuvo. |
+| Divisa | La que pagó el cliente. |
+| Impuesto | La tasa del pedido si existe en tu catálogo de impuestos; si no, la de tu cuenta. |
+
+Tú revisas el borrador y lo emites: Cord nunca emite solo, porque un CFDI es irreversible. Un pedido genera **un solo borrador**, y los pedidos que Cord creó desde una cotización no se facturan aquí, porque ya tienen la suya. Un pedido sin cliente (compra como invitado) no se factura.
+
 ## Desconectar
 
 Con **Desconectar** en la tarjeta. Productos y clientes que ya entraron se quedan en Cord y dejan de actualizarse. Si desinstalas la app desde Shopify, Cord lo detecta y marca la conexión como desconectada.

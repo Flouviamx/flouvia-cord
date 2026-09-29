@@ -24,6 +24,9 @@ export interface ShopifyConexion {
     ultimoError: string | null;
     /** Cuándo crear el pedido en la tienda: 'no' | 'aprobada' | 'pagada'. */
     pedidos: string;
+    /** Facturar en Cord los pedidos pagados de la tienda: 'no' | 'pagado'. */
+    facturas: string;
+    puedeFacturas: boolean;
     /** Falso cuando la tienda se conectó antes de que existieran los pedidos. */
     puedePedidos: boolean;
 }
@@ -42,11 +45,13 @@ export async function getShopifyConexion(orgId: string): Promise<ShopifyConexion
         ultimaSync: row.ultima_sync_at ? new Date(row.ultima_sync_at as string).toISOString() : null,
         ultimoError: (row.ultimo_error as string) ?? null,
         pedidos: typeof ajustes.pedidos === 'string' ? ajustes.pedidos : 'no',
+        facturas: ajustes.facturas === 'pagado' ? 'pagado' : 'no',
+        puedeFacturas: Array.isArray(row.scopes) && (row.scopes as string[]).includes('read_orders'),
         puedePedidos: Array.isArray(row.scopes) && (row.scopes as string[]).includes('write_draft_orders'),
     };
 }
 
-async function accessToken(orgId: string): Promise<{ shop: string; token: string; conexionId: string } | null> {
+export async function accessToken(orgId: string): Promise<{ shop: string; token: string; conexionId: string } | null> {
     const [[row]] = await withOrgTx(orgId, sql`
         select id, cuenta_externa, access_token_enc, estado from integracion_conexiones
          where org_id = ${orgId} and proveedor = 'shopify'`);
@@ -225,7 +230,7 @@ async function upsertProducto(orgId: string, conexionId: string, p: ProductoExte
     return true;
 }
 
-async function upsertCliente(orgId: string, conexionId: string, c: ClienteExterno): Promise<boolean> {
+export async function upsertCliente(orgId: string, conexionId: string, c: ClienteExterno): Promise<boolean> {
     const huella = huellaDe([c.empresa, c.contacto, c.email, c.telefono]);
     const [[vinculo]] = await withOrgTx(orgId, sql`
         select local_id, huella from integracion_vinculos
@@ -325,6 +330,11 @@ export async function aplicarWebhook(orgId: string, topic: string, payload: any)
             for (const p of mapProductVariants(node)) await upsertProducto(orgId, cred.conexionId, p);
             return;
         }
+        if (topic === 'orders/paid') {
+            const { facturarPedido } = await import('./facturas');
+            await facturarPedido(orgId, payload);
+            return;
+        }
         if (topic === 'customers/create' || topic === 'customers/update') {
             const c = mapCustomer({
                 id: `gid://shopify/Customer/${payload?.id}`,
@@ -355,7 +365,7 @@ export async function aplicarWebhook(orgId: string, topic: string, payload: any)
 
 const WEBHOOK_TOPICS = [
     'PRODUCTS_CREATE', 'PRODUCTS_UPDATE', 'PRODUCTS_DELETE',
-    'CUSTOMERS_CREATE', 'CUSTOMERS_UPDATE', 'APP_UNINSTALLED',
+    'CUSTOMERS_CREATE', 'CUSTOMERS_UPDATE', 'APP_UNINSTALLED', 'ORDERS_PAID',
 ] as const;
 
 /** Suscribe la tienda a los eventos que Cord necesita. Idempotente del lado de Shopify. */

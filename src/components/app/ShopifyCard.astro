@@ -3,7 +3,7 @@ import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
     lang: AppLocale;
-    conexion: { shop: string; estado: string; tienda: string | null; ultimaSync: string | null; pedidos: string; puedePedidos: boolean } | null;
+    conexion: { shop: string; estado: string; tienda: string | null; ultimaSync: string | null; pedidos: string; puedePedidos: boolean; facturas: string; puedeFacturas: boolean } | null;
     /** La app de Cord existe del lado de Shopify; sin esto no hay a dónde mandar a la persona. */
     disponible: boolean;
     flash: string | null;
@@ -59,6 +59,22 @@ const fecha = conexion?.ultimaSync
                             {t(L, 'set.integ.shopify.pedidos_permiso')}
                             <button class="shp-btn-ghost shp-reconectar" id="shpReconectar" data-shop={conexion?.shop}>{t(L, 'set.integ.shopify.reconectar')}</button>
                         </p>
+                    )}
+                </div>
+
+                <div class="shp-pedidos">
+                    <h4>{t(L, 'set.integ.shopify.facturas_titulo')}</h4>
+                    <p class="shp-que">{t(L, 'set.integ.shopify.facturas_desc')}</p>
+                    {conexion?.puedeFacturas ? (
+                        <div class="s-field">
+                            <label for="shpFacturas">{t(L, 'set.integ.shopify.facturas_titulo')}</label>
+                            <select class="s-input" id="shpFacturas">
+                                <option value="no" selected={conexion?.facturas !== 'pagado'}>{t(L, 'set.integ.shopify.facturas_no')}</option>
+                                <option value="pagado" selected={conexion?.facturas === 'pagado'}>{t(L, 'set.integ.shopify.facturas_pagado')}</option>
+                            </select>
+                        </div>
+                    ) : (
+                        <p class="shp-permiso">{t(L, 'set.integ.shopify.pedidos_permiso')}</p>
                     )}
                 </div>
             </Fragment>
@@ -169,6 +185,24 @@ const fecha = conexion?.ultimaSync
                 flash(err.message || '', false);
             } finally {
                 pedidos.disabled = false;
+            }
+        });
+
+        const facturas = document.getElementById('shpFacturas') as HTMLSelectElement | null;
+        facturas?.addEventListener('change', async () => {
+            facturas.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/shopify/facturas', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valor: facturas.value }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || '');
+                flash(msg.dataset.i18nPedidosGuardado || '', true);
+            } catch (err: any) {
+                flash(err.message || '', false);
+            } finally {
+                facturas.disabled = false;
             }
         });
 

@@ -63,6 +63,24 @@ On the Shopify card you choose when the order is created. **It starts off**:
 
 The order's tax is computed by Shopify with your store settings. The tax document that counts is Cord's.
 
+## Stock while quoting
+
+If your store tracks a product's inventory, Cord brings its stock. In the quote editor, search shows how many are available and, when you add the product, Cord asks your store at that moment. If you quote more than is available, the line says so ("Only 12 in stock"), and an out-of-stock product says **Out of stock**. Quoting more is not blocked: selling something to be restocked is normal.
+
+## Invoice your store orders
+
+On the Shopify card, **Invoice your store orders** starts off. With **Create the draft when the order is paid**, every paid store order creates its draft invoice in Cord:
+
+| From the order | In the draft |
+|---|---|
+| Customer | The Cord client linked to that Shopify customer; created if it does not exist. |
+| Products | One line per product with its quantity and the price after the order discount. |
+| Shipping | One line with its cost, if any. |
+| Currency | The one the customer paid in. |
+| Tax | The order's rate if it exists in your tax catalog; otherwise your account's. |
+
+You review the draft and issue it: Cord never issues on its own, because a CFDI is irreversible. An order creates **a single draft**, and orders Cord created from a quote are not invoiced here, since they already have theirs. An order without a customer (guest checkout) is not invoiced.
+
 ## Disconnect
 
 With **Disconnect** on the card. Products and customers already in Cord stay and stop updating. If you uninstall the app from Shopify, Cord detects it and marks the connection as disconnected.

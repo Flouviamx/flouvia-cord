@@ -138,6 +138,26 @@ escribe en el negocio de alguien más, así que todo está acotado a propósito:
 - **Un fallo aquí no rompe la venta.** `onQuoteEvent()` cuelga de
   `domain-events.ts` dentro de `after(...)` y nunca lanza.
 
+## Shopify para mayoreo (29 sep 2026)
+
+- **Existencias**: `productos.existencias` (null = sin control de inventario) y
+  `existencias_at`. Se escriben FUERA de la huella en cada sincronización y en
+  los webhooks de producto (`inventory_quantity` + `inventory_management`), y
+  el editor las pide al momento a `POST /api/integraciones/shopify/existencias`
+  (`refrescarExistencias`, nodos `ProductVariant`) al agregar un producto o
+  abrir un borrador. Cambios de inventario hechos en la tienda sin tocar el
+  producto no disparan webhook sin `read_inventory`; por eso la consulta en vivo.
+  Avisa, no bloquea.
+- **Facturar pedidos de la tienda** (`ajustes.facturas`, nace `no`): webhook
+  `orders/paid` → `facturarPedido()` en `src/lib/integraciones/shopify/facturas.ts`
+  crea un BORRADOR con `createInvoiceDraft` (nunca emite). Idempotencia: el
+  vínculo `shopify_order` (si el pedido ya está ligado a cualquier objeto, no se
+  hace nada); los pedidos con etiqueta `cord` se saltan. Divisa
+  `presentment_currency` con importes de presentación, descuentos por línea,
+  envío como línea, tasa validada por `resolve()` del catálogo. Encenderlo
+  registra el webhook en tiendas conectadas antes. Pedidos de invitado no se
+  facturan. Lo verifica `test/shopify-facturas.test.ts`.
+
 ## Google Sheets y Excel
 
 Una fila por documento en la hoja del negocio, al día sola (27 sep 2026). Son
