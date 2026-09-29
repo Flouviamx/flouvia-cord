@@ -1369,6 +1369,10 @@ alter table planes_pago_negociados force row level security;
 -- El editor de cotizaciones aplica el precio del nivel que corresponda a la
 -- cantidad de cada línea (sobre él se calcula el descuento por nivel de cliente).
 alter table productos add column if not exists precios_volumen jsonb not null default '[]'::jsonb;
+-- Existencias de la tienda conectada: null = el producto no controla inventario.
+alter table productos add column if not exists existencias numeric;
+alter table productos add column if not exists existencias_at timestamptz;
+
 
 -- 2) Promesas de pago — el cliente prometió pagar en una fecha. Útil para
 -- comercializadoras con cartera de crédito. Feature de seguimiento manual en

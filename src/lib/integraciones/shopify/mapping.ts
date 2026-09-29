@@ -15,6 +15,8 @@ export interface ProductoExterno {
     precio: number;
     moneda: string | null;
     activo: boolean;
+    /** Solo si la tienda controla el inventario de la variante; si no, null. */
+    existencias: number | null;
 }
 
 export interface ClienteExterno {
@@ -54,6 +56,7 @@ export function mapProductVariants(node: any): ProductoExterno[] {
             precio: Number.isFinite(precio) && precio >= 0 ? precio : 0,
             moneda: null,
             activo,
+            existencias: v?.inventoryItem?.tracked === true && Number.isFinite(Number(v?.inventoryQuantity)) ? Number(v.inventoryQuantity) : null,
         });
     }
     return out;

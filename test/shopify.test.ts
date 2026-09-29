@@ -105,8 +105,8 @@ describe('mapeo a la forma de Cord', () => {
             ] },
         });
         expect(productos).toEqual([
-            { externoId: '11', sku: 'CAM-CH', nombre: 'Camisa · Chica', descripcion: 'Algodón', precio: 199, moneda: null, activo: true },
-            { externoId: '12', sku: 'CAM', nombre: 'Camisa', descripcion: 'Algodón', precio: 249.5, moneda: null, activo: true },
+            { externoId: '11', sku: 'CAM-CH', nombre: 'Camisa · Chica', descripcion: 'Algodón', precio: 199, moneda: null, activo: true, existencias: null },
+            { externoId: '12', sku: 'CAM', nombre: 'Camisa', descripcion: 'Algodón', precio: 249.5, moneda: null, activo: true, existencias: null },
         ]);
     });
 
@@ -116,6 +116,18 @@ describe('mapeo a la forma de Cord', () => {
             variants: { nodes: [{ id: 'gid://shopify/ProductVariant/31', title: 'Default Title', price: '1000.00', availableForSale: false }] },
         });
         expect(p).toMatchObject({ activo: true, precio: 1000, sku: null });
+    });
+
+    it('las existencias solo viajan si la tienda controla el inventario', () => {
+        const [conteo, libre] = mapProductVariants({
+            id: 'gid://shopify/Product/4', title: 'Varilla', status: 'ACTIVE',
+            variants: { nodes: [
+                { id: 'gid://shopify/ProductVariant/41', title: 'Default Title', price: '42', inventoryQuantity: 12, inventoryItem: { tracked: true } },
+                { id: 'gid://shopify/ProductVariant/42', title: 'Servicio', price: '10', inventoryQuantity: 0, inventoryItem: { tracked: false } },
+            ] },
+        });
+        expect(conteo.existencias).toBe(12);
+        expect(libre.existencias).toBeNull();
     });
 
     it('un producto borrador llega inactivo y un precio inválido no queda en NaN', () => {

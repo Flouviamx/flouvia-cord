@@ -107,7 +107,7 @@ const PRODUCTOS_QUERY = `query($cursor: String) {
     pageInfo { hasNextPage endCursor }
     nodes {
       id title description status
-      variants(first: 100) { nodes { id title sku price } }
+      variants(first: 100) { nodes { id title sku price inventoryQuantity inventoryItem { tracked } } }
     }
   }
 }`;
@@ -193,12 +193,20 @@ async function upsertProducto(orgId: string, conexionId: string, p: ProductoExte
         select local_id, huella from integracion_vinculos
          where conexion_id = ${conexionId} and org_id = ${orgId}
            and externo_tipo = 'shopify_product' and externo_id = ${p.externoId}`);
-    if (vinculo?.huella === huella) return false;
+    // Las existencias cambian a cada venta: van fuera de la huella, que decide
+    // si el catálogo cambió, y se escriben siempre.
+    if (vinculo?.huella === huella) {
+        await withOrgTx(orgId, sql`
+            update productos set existencias = ${p.existencias}, existencias_at = now()
+             where id = ${vinculo.local_id as string} and org_id = ${orgId}`);
+        return false;
+    }
 
     if (vinculo) {
         await withOrgTx(orgId,
             sql`update productos set sku = ${p.sku}, nombre = ${p.nombre}, descripcion = ${p.descripcion},
-                       precio_lista = ${p.precio}, activo = ${p.activo}
+                       precio_lista = ${p.precio}, activo = ${p.activo},
+                       existencias = ${p.existencias}, existencias_at = now()
                  where id = ${vinculo.local_id as string} and org_id = ${orgId}`,
             sql`update integracion_vinculos set huella = ${huella}, sincronizado_at = now()
                  where conexion_id = ${conexionId} and org_id = ${orgId}
@@ -207,8 +215,8 @@ async function upsertProducto(orgId: string, conexionId: string, p: ProductoExte
     }
 
     const [[creado]] = await withOrgTx(orgId, sql`
-        insert into productos (org_id, sku, nombre, descripcion, precio_lista, activo)
-        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.descripcion}, ${p.precio}, ${p.activo})
+        insert into productos (org_id, sku, nombre, descripcion, precio_lista, activo, existencias, existencias_at)
+        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.descripcion}, ${p.precio}, ${p.activo}, ${p.existencias}, now())
         returning id`);
     await withOrgTx(orgId, sql`
         insert into integracion_vinculos (org_id, conexion_id, objeto, local_id, externo_tipo, externo_id, huella, sincronizado_at)
@@ -258,6 +266,42 @@ async function upsertCliente(orgId: string, conexionId: string, c: ClienteExtern
     return true;
 }
 
+const EXISTENCIAS_QUERY = `query($ids: [ID!]!) {
+  nodes(ids: $ids) { ... on ProductVariant { id inventoryQuantity inventoryItem { tracked } } }
+}`;
+
+/**
+ * Existencias al momento, para el editor de cotizaciones. Pregunta a la tienda
+ * solo por los productos que vienen de ella y actualiza lo guardado. Devuelve
+ * { productoId: existencias | null }; lo que no viene de Shopify no aparece.
+ */
+export async function refrescarExistencias(orgId: string, productoIds: string[]): Promise<Record<string, number | null>> {
+    const ids = productoIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 50);
+    if (!ids.length) return {};
+    const cred = await accessToken(orgId);
+    if (!cred) return {};
+    const [vinculos] = await withOrgTx(orgId, sql`
+        select local_id, externo_id from integracion_vinculos
+         where org_id = ${orgId} and conexion_id = ${cred.conexionId}
+           and externo_tipo = 'shopify_product' and local_id::text = any(${ids}::text[])`);
+    if (!vinculos.length) return {};
+    const porVariante = new Map(vinculos.map((v: any) => [String(v.externo_id), String(v.local_id)]));
+    const res: any = await shopifyGraphQL<any>(cred.shop, cred.token, EXISTENCIAS_QUERY, {
+        ids: [...porVariante.keys()].map((id) => `gid://shopify/ProductVariant/${id}`),
+    });
+    if (!res.ok) return {};
+    const out: Record<string, number | null> = {};
+    for (const n of res.data?.nodes ?? []) {
+        const local = porVariante.get(idFromGid(n?.id) ?? '');
+        if (!local) continue;
+        const cantidad = n?.inventoryItem?.tracked === true && Number.isFinite(Number(n?.inventoryQuantity)) ? Number(n.inventoryQuantity) : null;
+        out[local] = cantidad;
+        await withOrgTx(orgId, sql`update productos set existencias = ${cantidad}, existencias_at = now()
+                                    where id = ${local} and org_id = ${orgId}`);
+    }
+    return out;
+}
+
 /** Un webhook trae UN objeto ya listo: se aplica sin volver a pedir el catálogo entero. */
 export async function aplicarWebhook(orgId: string, topic: string, payload: any): Promise<void> {
     const cred = await accessToken(orgId);
@@ -273,6 +317,8 @@ export async function aplicarWebhook(orgId: string, topic: string, payload: any)
                     nodes: (payload?.variants ?? []).map((v: any) => ({
                         id: `gid://shopify/ProductVariant/${v?.id}`,
                         title: v?.title, sku: v?.sku, price: v?.price,
+                        inventoryQuantity: v?.inventory_quantity,
+                        inventoryItem: { tracked: v?.inventory_management === 'shopify' },
                     })),
                 },
             };

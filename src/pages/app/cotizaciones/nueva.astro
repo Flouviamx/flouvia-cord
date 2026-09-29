@@ -431,8 +431,15 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         const vm = volMin(l);
         let html = l.unidad + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
         html += pricingNoteHtml(l, idx);
+        html += existenciasNote(l);
         return html;
     };
+    function existenciasNote(l) {
+        if (!l.id || l.existencias === null || l.existencias === undefined) return '';
+        if (l.existencias <= 0) return ` · <b class="lr-stock is-out">${T.agotado}</b>`;
+        if (l.cantidad > l.existencias) return ` · <b class="lr-stock is-low">${tpl(T.soloHayTpl, { n: l.existencias })}</b>`;
+        return ` · <span class="lr-stock">${tpl(T.enExistenciaTpl, { n: l.existencias })}</span>`;
+    }
 
     // ── Precio sugerido por historial real (win-rate por banda de descuento) ──
     function pricingNoteHtml(l, idx) {
@@ -617,14 +624,37 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     let prodActive = -1;
 
     function addProduct(p) {
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX, existencias: p.existencias ?? null });
         render();
         // Micro-feedback: la fila nueva parpadea suave para ubicarla.
         const rows = $lines.querySelectorAll('.line-row');
         const last = rows[rows.length - 1];
         if (last) { last.classList.add('line-added'); setTimeout(() => last.classList.remove('line-added'), 900); }
         loadPricing(lines.length - 1);
+        if (p.existencias !== null && p.existencias !== undefined) refrescarExistencias([p.id]);
     }
+
+    // ── Existencias al momento de los productos que vienen de la tienda ──
+    function refrescarExistencias(ids) {
+        fetch('/api/integraciones/shopify/existencias', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }),
+        })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                const ex = data && data.existencias;
+                if (!ex) return;
+                let cambio = false;
+                for (const id of Object.keys(ex)) {
+                    if (catMap[id]) catMap[id].existencias = ex[id];
+                    lines.forEach((l) => { if (l.id === id && l.existencias !== ex[id]) { l.existencias = ex[id]; cambio = true; } });
+                }
+                if (cambio) render();
+            })
+            .catch(() => {});
+    }
+    const idsConExistencias = [...new Set(lines.filter((l) => l.id && catMap[l.id] && catMap[l.id].existencias !== null && catMap[l.id].existencias !== undefined).map((l) => l.id))];
+    lines.forEach((l) => { if (l.id && catMap[l.id] && l.existencias === undefined) l.existencias = catMap[l.id].existencias ?? null; });
+    if (idsConExistencias.length) refrescarExistencias(idsConExistencias);
 
     const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     function searchProds(q) {
@@ -641,7 +671,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         } else {
             $prodDrop.innerHTML = prodResults.map((p, i) => `
                 <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
-                    <span class="prod-item-name">${p.nombre}${p.sku ? `<small>${p.sku}</small>` : ''}</span>
+                    <span class="prod-item-name">${p.nombre}${p.sku ? `<small>${p.sku}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock ${p.existencias <= 0 ? 'is-out' : ''}">${p.existencias <= 0 ? T.agotado : tpl(T.enExistenciaTpl, { n: p.existencias })}</small>`}</span>
                     <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${p.unidad}</small></span>
                 </button>`).join('');
         }
@@ -1417,6 +1447,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
     /* Flash suave sobre la fila recién agregada (feedback de "ya se agregó") */
     .line-row.line-added { animation: line-added-flash 0.9s var(--ease-ios); }
+    .lr-stock { color: var(--color-text-muted); font-weight: 500; }
+    .lr-stock.is-low, .lr-stock.is-out, .prod-stock.is-out { color: var(--color-danger); font-weight: 600; }
     @keyframes line-added-flash {
         0% { background: rgba(16,185,129,0.12); }
         100% { background: transparent; }

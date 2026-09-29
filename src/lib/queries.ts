@@ -809,6 +809,8 @@ function mapProducto(p: DbRow) {
         createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
         // Matriz de precios por volumen: [{min, precio}] ordenada asc por min.
         preciosVolumen: normVolumen(p.precios_volumen),
+        // null = no controla inventario (producto propio o sin seguimiento en la tienda).
+        existencias: p.existencias === null || p.existencias === undefined ? null : num(p.existencias),
     };
 }
 
