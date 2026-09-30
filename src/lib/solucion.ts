@@ -63,6 +63,7 @@ export interface Solution {
     nav: string;              // nombre corto (megamenú, hub, cross-links)
     eyebrow: string;
     titulo: string;          // H1, admite HTML
+    tituloAcento?: string;   // fragmento del H1 que se pinta con el degradado de acento
     sub: string;
     metaTitle?: string;      // <title>/OG — keyword-rich
     metaDescription?: string;// meta description
@@ -94,6 +95,7 @@ export const SOLUCIONES: Solution[] = [
         nav: 'Empresas',
         eyebrow: 'PARA EMPRESAS',
         titulo: 'De la propuesta al cobro, con control corporativo.',
+        tituloAcento: 'control corporativo',
         sub: 'Centraliza negociaciones, aplica inteligencia de margen en tiempo real y sella contratos con firmas criptográficas inmutables.',
         metaTitle: 'Software de cotizaciones y operaciones para Empresas — Cord',
         metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento. Para cualquier empresa, en cualquier país.',

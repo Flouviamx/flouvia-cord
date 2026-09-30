@@ -1,0 +1,543 @@
+---
+// Stack de tarjetas del hero de /soluciones/empresas (clases ehs-*).
+// Tres capacidades reales, cada una con su calca de pantalla y su enlace a la
+// página de producto. Rotan solas; con prefers-reduced-motion no rotan y los
+// botones del pager siguen funcionando. El HTML por defecto es el estado final.
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+
+const cur = isEn ? 'USD' : 'MXN';
+const bars = [38, 44, 41, 52, 49, 58, 55, 63, 60, 71, 68, 82];
+const cards = isEn
+    ? [
+        { key: 'cobros', title: 'Online payments and reconciliation', href: '/en/producto/pagos' },
+        { key: 'margen', title: 'Margins and approvals under control', href: '/en/producto/aprobaciones' },
+        { key: 'facturas', title: 'Invoicing with automatic collections', href: '/en/producto/facturacion' },
+    ]
+    : [
+        { key: 'cobros', title: 'Cobro en línea y conciliación', href: '/producto/pagos' },
+        { key: 'margen', title: 'Márgenes y aprobaciones bajo control', href: '/producto/aprobaciones' },
+        { key: 'facturas', title: 'Facturación con cobranza automática', href: '/producto/facturacion' },
+    ];
+---
+
+<div class="ehs" data-ehs>
+    <div class="ehs-stage">
+        {cards.map((c, i) => (
+            <article class="ehs-card" data-ehs-card data-pos={String(i)} aria-hidden={i === 0 ? undefined : 'true'} inert={i === 0 ? undefined : true}>
+                <div class="ehs-shot">
+                    {c.key === 'cobros' && (
+                        <div class="ehs-panel">
+                            <div class="ehs-bar">
+                                <span class="ehs-crumb">{isEn ? 'Payments · This quarter' : 'Cobros · Este trimestre'}</span>
+                                <span class="ehs-live"><i></i>{isEn ? 'Live' : 'En vivo'}</span>
+                            </div>
+                            <div class="ehs-kpis">
+                                <div>
+                                    <span class="ehs-lbl">{isEn ? 'Collected' : 'Cobrado'} <em class="ehs-up">+18.4%</em></span>
+                                    <b class="editorial">{isEn ? '$2,429,777' : '$4,290,777'} <small>{cur}</small></b>
+                                </div>
+                                <div>
+                                    <span class="ehs-lbl">{isEn ? 'Avg. days to pay' : 'Días promedio de cobro'}</span>
+                                    <b class="editorial">21 <small>{isEn ? 'days' : 'días'}</small></b>
+                                </div>
+                            </div>
+                            <div class="ehs-chart" aria-hidden="true">
+                                {bars.map((h, j) => (
+                                    <span style={`--h:${h}%;--d:${j * 40}ms`}><i style={`height:${Math.round(h * 0.38)}%`}></i></span>
+                                ))}
+                            </div>
+                            <div class="ehs-axis"><span>{isEn ? 'Jul 1' : '1 jul'}</span><span>{isEn ? 'Today' : 'Hoy'}</span></div>
+                            <div class="ehs-rows">
+                                <div class="ehs-row">
+                                    <span class="ehs-av" style="--c:#6366f1">GV</span>
+                                    <span class="ehs-who"><b>Grupo Vértice</b><small>FAC-2031</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$65,340' : '$1,165,340'}</span>
+                                    <span class="ehs-pill ok">{isEn ? 'Paid' : 'Pagado'}</span>
+                                </div>
+                                <div class="ehs-row">
+                                    <span class="ehs-av" style="--c:#0ea5a4">AN</span>
+                                    <span class="ehs-who"><b>Aceros del Norte</b><small>FAC-2029</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$18,902' : '$389,940'}</span>
+                                    <span class="ehs-pill pend">{isEn ? 'In transit' : 'En tránsito'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {c.key === 'margen' && (
+                        <div class="ehs-panel">
+                            <div class="ehs-bar">
+                                <span class="ehs-crumb">COT-0149 · Grupo Vértice</span>
+                                <span class="ehs-pill warn">{isEn ? 'Pending approval' : 'En aprobación'}</span>
+                            </div>
+                            <div class="ehs-kpis">
+                                <div>
+                                    <span class="ehs-lbl">Total</span>
+                                    <b class="editorial">{isEn ? '$212,480' : '$1,284,500'} <small>{cur}</small></b>
+                                </div>
+                                <div>
+                                    <span class="ehs-lbl">{isEn ? 'Margin' : 'Margen'} <em class="ehs-down">{isEn ? 'min. 25%' : 'mín. 25%'}</em></span>
+                                    <b class="editorial ehs-warn-num">23.4%</b>
+                                </div>
+                            </div>
+                            <div class="ehs-table">
+                                <div class="ehs-th"><span>{isEn ? 'Item' : 'Concepto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Margin' : 'Margen'}</span></div>
+                                <div class="ehs-tr"><span>{isEn ? 'Steel beam IPR 12"' : 'Viga IPR 12"'}</span><span class="editorial">340</span><span class="editorial">27.1%</span></div>
+                                <div class="ehs-tr"><span>{isEn ? 'Galvanized sheet cal. 18' : 'Lámina galvanizada cal. 18'}</span><span class="editorial">1,200</span><span class="editorial ehs-warn-num">19.8%</span></div>
+                                <div class="ehs-tr"><span>{isEn ? 'Freight and installation' : 'Flete e instalación'}</span><span class="editorial">1</span><span class="editorial">31.0%</span></div>
+                            </div>
+                            <div class="ehs-approval">
+                                <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+                                <span><b>{isEn ? '18% discount exceeds your 12% limit' : 'Descuento de 18% excede tu límite de 12%'}</b><small>{isEn ? 'Routed to Finance · Laura Méndez' : 'Enviado a Finanzas · Laura Méndez'}</small></span>
+                            </div>
+                        </div>
+                    )}
+                    {c.key === 'facturas' && (
+                        <div class="ehs-panel">
+                            <div class="ehs-bar">
+                                <span class="ehs-crumb">{isEn ? 'Invoices · Receivables' : 'Facturas · Por cobrar'}</span>
+                                <span class="ehs-crumb-soft">{isEn ? '38 open' : '38 abiertas'}</span>
+                            </div>
+                            <div class="ehs-kpis">
+                                <div>
+                                    <span class="ehs-lbl">{isEn ? 'Outstanding' : 'Saldo por cobrar'}</span>
+                                    <b class="editorial">{isEn ? '$318,204' : '$2,771,810'} <small>{cur}</small></b>
+                                </div>
+                                <div>
+                                    <span class="ehs-lbl">{isEn ? 'Reminders sent' : 'Recordatorios enviados'}</span>
+                                    <b class="editorial">126</b>
+                                </div>
+                            </div>
+                            <div class="ehs-rows ehs-rows-tight">
+                                <div class="ehs-row">
+                                    <span class="ehs-who"><b>FAC-2034</b><small>Constructora Zarco</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$42,100' : '$742,100'}</span>
+                                    <span class="ehs-pill ok">{isEn ? 'Paid' : 'Pagada'}</span>
+                                </div>
+                                <div class="ehs-row">
+                                    <span class="ehs-who"><b>FAC-2033</b><small>Ferrex Industrial</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$9,880' : '$196,880'}</span>
+                                    <span class="ehs-pill info">{isEn ? 'Viewed' : 'Vista'}</span>
+                                </div>
+                                <div class="ehs-row">
+                                    <span class="ehs-who"><b>FAC-2030</b><small>Cementos Gama</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$27,415' : '$508,415'}</span>
+                                    <span class="ehs-pill late">{isEn ? '5 days late' : 'Vencida 5 d'}</span>
+                                </div>
+                                <div class="ehs-row">
+                                    <span class="ehs-who"><b>FAC-2028</b><small>Distribuidora Ámbar</small></span>
+                                    <span class="ehs-amt editorial">{isEn ? '$14,060' : '$261,060'}</span>
+                                    <span class="ehs-pill pend">{isEn ? 'Partial' : 'Abono parcial'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div class="ehs-cap">
+                    <h3>{c.title}</h3>
+                    <a href={c.href} class="ehs-link">
+                        <span>{isEn ? 'Explore' : 'Explorar'}</span>
+                        <span class="ehs-link-ic" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </span>
+                    </a>
+                </div>
+            </article>
+        ))}
+    </div>
+
+    <div class="ehs-pager" role="group" aria-label={isEn ? 'Featured capabilities' : 'Capacidades destacadas'}>
+        {cards.map((c, i) => (
+            <button type="button" class="ehs-dot" data-ehs-dot={String(i)} aria-label={c.title} aria-current={i === 0 ? 'true' : undefined}>
+                <i></i>
+            </button>
+        ))}
+    </div>
+</div>
+
+<script>
+    const INTERVAL = 5600;
+    document.querySelectorAll<HTMLElement>('[data-ehs]').forEach((root) => {
+        const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-ehs-card]'));
+        const dots = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ehs-dot]'));
+        const n = cards.length;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let front = 0;
+        let timer: number | undefined;
+        let hovering = false;
+        let visible = true;
+
+        const paint = (leaving?: HTMLElement) => {
+            cards.forEach((card, i) => {
+                const pos = (i - front + n) % n;
+                if (card === leaving) return;
+                card.dataset.pos = String(pos);
+                const isFront = pos === 0;
+                card.toggleAttribute('inert', !isFront);
+                if (isFront) card.removeAttribute('aria-hidden');
+                else card.setAttribute('aria-hidden', 'true');
+            });
+            dots.forEach((d, i) => {
+                if (i === front) d.setAttribute('aria-current', 'true');
+                else d.removeAttribute('aria-current');
+            });
+            root.style.setProperty('--ehs-cycle', `${INTERVAL}ms`);
+            root.classList.remove('ehs-tick');
+            void root.offsetWidth; // reinicia la barra de progreso del dot activo
+            if (!reduced) root.classList.add('ehs-tick');
+        };
+
+        const go = (next: number) => {
+            if (next === front) return;
+            const old = cards[front];
+            front = (next + n) % n;
+            if (reduced) { paint(); return; }
+            // La tarjeta que sale se desliza y se desvanece; luego vuelve al fondo.
+            old.dataset.pos = 'out';
+            old.setAttribute('inert', '');
+            old.setAttribute('aria-hidden', 'true');
+            paint(old);
+            window.setTimeout(() => {
+                old.dataset.pos = String((cards.indexOf(old) - front + n) % n);
+            }, 420);
+        };
+
+        const schedule = () => {
+            window.clearTimeout(timer);
+            if (reduced || hovering || !visible) { root.classList.remove('ehs-tick'); return; }
+            timer = window.setTimeout(() => { go(front + 1); schedule(); }, INTERVAL);
+        };
+
+        dots.forEach((d, i) => d.addEventListener('click', () => { go(i); paint(); schedule(); }));
+
+        // Pausa al pasar el cursor (solo escritorio: en táctil no hay hover y
+        // la rotación sigue). Pausa fuera de pantalla y con la pestaña oculta.
+        if (window.matchMedia('(hover: hover)').matches) {
+            root.addEventListener('mouseenter', () => { hovering = true; root.classList.add('ehs-paused'); schedule(); });
+            root.addEventListener('mouseleave', () => { hovering = false; root.classList.remove('ehs-paused'); paint(); schedule(); });
+        }
+        new IntersectionObserver(([e]) => { visible = e.isIntersecting; schedule(); }, { threshold: 0.2 }).observe(root);
+        document.addEventListener('visibilitychange', () => { visible = !document.hidden; schedule(); });
+
+        paint();
+        schedule();
+    });
+</script>
+
+<style>
+    .ehs {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        --ehs-cycle: 5600ms;
+    }
+    .ehs-stage {
+        position: relative;
+        height: 540px;
+    }
+
+    /* ── Tarjeta ── */
+    .ehs-card {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        background: #ffffff;
+        border-radius: 22px;
+        overflow: hidden;
+        transform-origin: 30% 100%;
+        box-shadow:
+            0 1px 1px rgba(10, 25, 47, 0.06),
+            0 8px 20px -6px rgba(10, 25, 47, 0.25),
+            0 40px 80px -20px rgba(10, 16, 36, 0.55);
+        transition:
+            transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 0.6s ease,
+            filter 0.6s ease;
+        will-change: transform;
+    }
+    .ehs-card[data-pos='0'] { z-index: 3; transform: none; }
+    .ehs-card[data-pos='1'] {
+        z-index: 2;
+        transform: translate(78px, 34px) rotate(7deg) scale(0.95);
+        filter: brightness(0.94);
+    }
+    .ehs-card[data-pos='2'] {
+        z-index: 1;
+        transform: translate(146px, 84px) rotate(13deg) scale(0.9);
+        filter: brightness(0.86);
+    }
+    .ehs-card[data-pos='out'] {
+        z-index: 4;
+        opacity: 0;
+        transform: translate(-60px, -26px) rotate(-5deg) scale(0.97);
+        transition: transform 0.42s cubic-bezier(0.4, 0, 1, 1), opacity 0.38s ease;
+    }
+
+    .ehs-shot {
+        background: #f5f5f7;
+        padding: 22px 22px 0;
+        height: 360px;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent);
+        mask-image: linear-gradient(180deg, #000 82%, transparent);
+    }
+    .ehs-panel {
+        background: #ffffff;
+        border-radius: 14px 14px 0 0;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 6px 18px -8px rgba(10, 25, 47, 0.18);
+        padding: 0 18px 18px;
+        min-height: 100%;
+        color: #0a192f;
+        font-size: 11px;
+    }
+    .ehs-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px 0;
+        margin-bottom: 14px;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.07);
+    }
+    .ehs-crumb { font-weight: 600; font-size: 11.5px; letter-spacing: -0.01em; }
+    .ehs-crumb-soft { color: rgba(10, 25, 47, 0.5); font-weight: 500; }
+    .ehs-live {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(10, 25, 47, 0.55);
+        font-weight: 500;
+    }
+    .ehs-live i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+    }
+
+    .ehs-kpis {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+    .ehs-lbl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(10, 25, 47, 0.55);
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .ehs-kpis b {
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .ehs-kpis small { font-size: 10px; color: rgba(10, 25, 47, 0.45); font-weight: 500; letter-spacing: 0; }
+    .ehs-up, .ehs-down {
+        font-style: normal;
+        font-size: 9.5px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 100px;
+    }
+    .ehs-up { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .ehs-down { color: #b45309; background: rgba(245, 158, 11, 0.14); }
+    .ehs-warn-num { color: #b45309; }
+
+    /* Barras apiladas: volumen cobrado vs. cobrado en línea */
+    .ehs-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        height: 92px;
+        padding-bottom: 2px;
+    }
+    .ehs-chart span {
+        position: relative;
+        flex: 1;
+        height: var(--h);
+        border-radius: 3px 3px 1px 1px;
+        background: linear-gradient(180deg, #7c83ff, #6366f1);
+        overflow: hidden;
+    }
+    .ehs-chart span i {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #22c3a6;
+    }
+    .ehs-axis {
+        display: flex;
+        justify-content: space-between;
+        color: rgba(10, 25, 47, 0.4);
+        font-size: 9.5px;
+        margin: 6px 0 12px;
+    }
+
+    .ehs-rows { display: flex; flex-direction: column; }
+    .ehs-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-top: 1px solid rgba(10, 25, 47, 0.06);
+    }
+    .ehs-rows-tight .ehs-row { grid-template-columns: 1fr auto auto; }
+    .ehs-av {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--c);
+        background: color-mix(in srgb, var(--c) 14%, #fff);
+    }
+    .ehs-who { display: flex; flex-direction: column; min-width: 0; }
+    .ehs-who b { font-weight: 600; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-who small { color: rgba(10, 25, 47, 0.45); font-size: 9.5px; }
+    .ehs-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ehs-pill {
+        font-size: 9.5px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 100px;
+        white-space: nowrap;
+    }
+    .ehs-pill.ok { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .ehs-pill.pend { color: #4338ca; background: rgba(99, 102, 241, 0.12); }
+    .ehs-pill.warn { color: #b45309; background: rgba(245, 158, 11, 0.15); }
+    .ehs-pill.info { color: #0369a1; background: rgba(14, 165, 233, 0.12); }
+    .ehs-pill.late { color: #be123c; background: rgba(244, 63, 94, 0.11); }
+
+    .ehs-table { margin-bottom: 12px; }
+    .ehs-th, .ehs-tr {
+        display: grid;
+        grid-template-columns: 1fr 52px 52px;
+        gap: 8px;
+        padding: 7px 0;
+    }
+    .ehs-th {
+        color: rgba(10, 25, 47, 0.45);
+        font-weight: 600;
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.07);
+    }
+    .ehs-tr { border-bottom: 1px solid rgba(10, 25, 47, 0.05); }
+    .ehs-th span:not(:first-child), .ehs-tr span:not(:first-child) { text-align: right; }
+    .ehs-approval {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(245, 158, 11, 0.08);
+        color: #b45309;
+    }
+    .ehs-approval svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+    .ehs-approval span { display: flex; flex-direction: column; gap: 2px; }
+    .ehs-approval b { color: #0a192f; font-weight: 600; font-size: 11px; }
+    .ehs-approval small { color: rgba(10, 25, 47, 0.55); font-size: 10px; }
+
+    /* ── Pie de la tarjeta ── */
+    .ehs-cap {
+        padding: 26px 28px 28px;
+        background: #ffffff;
+    }
+    .ehs-cap h3 {
+        margin: 0 0 22px;
+        font-size: 1.55rem;
+        line-height: 1.15;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: #050505;
+        text-wrap: balance;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.08);
+    }
+    .ehs-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #4f46e5;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        border-radius: 100px;
+    }
+    .ehs-link-ic {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgba(79, 70, 229, 0.1);
+        transition: transform 0.25s ease, background 0.25s ease;
+    }
+    .ehs-link-ic svg { width: 14px; height: 14px; }
+    .ehs-link:hover .ehs-link-ic { transform: translateX(3px); background: rgba(79, 70, 229, 0.16); }
+    .ehs-link:focus-visible { outline: 2px solid #4f46e5; outline-offset: 4px; }
+
+    /* ── Pager ── */
+    .ehs-pager {
+        display: flex;
+        gap: 4px;
+        margin-top: 18px;
+    }
+    .ehs-dot {
+        appearance: none;
+        background: none;
+        border: 0;
+        padding: 20px 0;
+        width: 44px;
+        cursor: pointer;
+    }
+    .ehs-dot i {
+        display: block;
+        position: relative;
+        height: 3px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.25);
+        overflow: hidden;
+    }
+    .ehs-dot i::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        transform: scaleX(0);
+        transform-origin: left;
+    }
+    .ehs-dot[aria-current='true'] i::after { transform: scaleX(1); }
+    .ehs.ehs-tick .ehs-dot[aria-current='true'] i::after {
+        animation: ehs-progress var(--ehs-cycle) linear forwards;
+    }
+    .ehs.ehs-paused .ehs-dot[aria-current='true'] i::after { animation-play-state: paused; }
+    .ehs-dot:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+    @keyframes ehs-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    @media (max-width: 880px) {
+        .ehs { max-width: 400px; margin: 0 auto; }
+        .ehs-stage { height: 500px; }
+        .ehs-card[data-pos='1'] { transform: translate(18px, 22px) rotate(3deg) scale(0.96); }
+        .ehs-card[data-pos='2'] { transform: translate(34px, 44px) rotate(6deg) scale(0.92); }
+        .ehs-shot { height: 320px; padding: 16px 16px 0; }
+        .ehs-cap { padding: 22px; }
+        .ehs-cap h3 { font-size: 1.3rem; }
+        .ehs-pager { justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ehs-card { transition: none; }
+    }
+</style>

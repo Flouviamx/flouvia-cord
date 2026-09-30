@@ -17,11 +17,11 @@ import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
 import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+import EmpresasRibbonBg from '../../components/EmpresasRibbonBg.jsx';
+import EmpresasHeroStack from '../../components/soluciones/EmpresasHeroStack.astro';
 
-// Paletas del shader estándar de Cord (CordDynamicBg) para esta página:
-// hero = navy + teal esmeralda + índigo (el mood dark original del hero);
-// tarjetas = misma familia, un punto más presente (el teal es el foco).
-const HERO_PAL = { base: '#0B0F19', color1: '#0E7C66', color2: '#2B1A6B', color3: '#0F63FA' };
+// El hero usa su propio shader (EmpresasRibbonBg). Las tarjetas siguen con el
+// shader estándar de Cord: navy + teal esmeralda + índigo (el teal es el foco).
 const CARD_PAL = { base: '#0B0F19', color1: '#0F8A6E', color2: '#3A2280', color3: '#1E64E0' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
@@ -52,6 +52,26 @@ const breadcrumbSchema = {
         { '@type': 'ListItem', position: 2, name: solucion.nav, item: `${base}/soluciones/${solucion.slug}` },
     ],
 };
+
+// H1 con el fragmento de acento pintado en degradado (misma paleta que la tela
+// del shader). El titulo admite HTML, así que el reemplazo es sobre el string.
+const heroTitle = solucion.tituloAcento
+    ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
+    : solucion.titulo;
+
+// Hechos verificables del producto (no métricas de clientes): cada uno tiene
+// su superficie real en /app/ajustes o en countries.ts.
+const heroFacts = isEn
+    ? [
+        { k: '12', v: 'countries' },
+        { k: 'SSO', v: 'SAML and roles' },
+        { k: 'Audit', v: 'log per action' },
+    ]
+    : [
+        { k: '12', v: 'países' },
+        { k: 'SSO', v: 'SAML y roles' },
+        { k: 'Auditoría', v: 'por acción' },
+    ];
 
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
@@ -93,23 +113,36 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         ) : (
             <header class="stripe-hero">
                 <div class="stripe-hero-bg">
-                    <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                    <EmpresasRibbonBg client:only="react" />
                 </div>
-                
-                <div class="stripe-hero-content stripe-container">
-                    <h1 class="stripe-title reveal" set:html={solucion.titulo} />
-                    
-                    <p class="stripe-sub">{solucion.sub}</p>
-                    
-                    <div class="stripe-actions">
-                        <a href="/sign-up" class="btn-luxe">
-                            <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                            <div class="btn-shimmer"></div>
-                        </a>
-                        <a href="/contacto/ventas" class="btn-ghost">
-                            <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
-                        </a>
+
+                <div class="stripe-hero-grid stripe-container">
+                    <div class="stripe-hero-content">
+                        <span class="stripe-hero-kicker">{solucion.eyebrow}</span>
+                        <h1 class="stripe-title reveal" set:html={heroTitle} />
+
+                        <p class="stripe-sub">{solucion.sub}</p>
+
+                        <div class="stripe-actions">
+                            <a href="/contacto/ventas" class="btn-luxe">
+                                <span>{isEn ? 'Contact sales' : 'Contactar a ventas'}</span>
+                                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                <div class="btn-shimmer"></div>
+                            </a>
+                            <a href="/sign-up" class="btn-ghost">
+                                <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
+                            </a>
+                        </div>
+
+                        <ul class="stripe-hero-facts">
+                            {heroFacts.map((f) => (
+                                <li><b>{f.k}</b><span>{f.v}</span></li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div class="stripe-hero-visual">
+                        <EmpresasHeroStack isEn={isEn} />
                     </div>
                 </div>
             </header>
@@ -998,60 +1031,122 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     ════════════════════════════════════════════════════════════════ */
     .stripe-hero {
         position: relative;
-        padding: 0 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
+        background: #0b1330;
     }
-    
+
+    /* Respaldo sin WebGL: la misma composición (navy a la izquierda, tela
+       cálida en diagonal a la derecha) hecha con degradados. El canvas la
+       cubre en cuanto monta. */
     .stripe-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #0a192f;
         overflow: hidden;
+        background:
+            linear-gradient(118deg, #0b1330 0%, #0b1330 42%, #ffb561 44%, #ff6f59 50%, #e2448f 60%, #8a4df0 76%, #3b2fc9 100%);
+    }
+    /* Legibilidad: un velo navy tenue detrás de la columna de texto. */
+    .stripe-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(11, 19, 48, 0.55) 0%, rgba(11, 19, 48, 0.2) 38%, transparent 55%);
     }
 
-    
-    .stripe-hero-content {
+    .stripe-hero-grid {
         position: relative;
         z-index: 10;
-        text-align: left;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        max-width: 1140px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
         width: 100%;
         margin: 0 auto;
     }
-    
-    .stripe-title {
-        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
-        line-height: 1.1;
-        font-weight: 700;
-        letter-spacing: -0.035em;
-        margin: 0 0 1.5rem;
-        color: #ffffff;
-        background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.75) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3));
-        text-wrap: balance;
-        max-width: 900px;
+
+    .stripe-hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
     }
-    
+
+    .stripe-hero-visual {
+        display: flex;
+        justify-content: center;
+        padding-right: 120px;
+    }
+
+    .stripe-hero-kicker {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 1.4rem;
+    }
+
+    .stripe-title {
+        font-size: clamp(2.5rem, 4.3vw, 4rem);
+        line-height: 1.04;
+        font-weight: 700;
+        letter-spacing: -0.045em;
+        margin: 0 0 1.75rem;
+        color: #ffffff;
+        text-wrap: balance;
+        max-width: 660px;
+    }
+    .stripe-title :global(.stripe-title-accent) {
+        background: linear-gradient(92deg, #ffc27a 0%, #ff8a5c 38%, #f0588f 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #ff8a5c;
+    }
+
     .stripe-sub {
-        font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
-        color: rgba(255, 255, 255, 0.85);
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        color: rgba(255, 255, 255, 0.78);
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
-    
+
+    .stripe-hero-facts {
+        list-style: none;
+        display: flex;
+        gap: 36px;
+        margin: 3.2rem 0 0;
+        padding: 1.6rem 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        width: 100%;
+        max-width: 540px;
+    }
+    .stripe-hero-facts li {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .stripe-hero-facts b {
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+    }
+    .stripe-hero-facts span {
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 0.85rem;
+    }
+
     .stripe-actions {
         display: flex;
         gap: 0.8rem;
@@ -1802,6 +1897,21 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     /* ════════════════════════════════════════════════════════════════
        RESPONSIVE
     ════════════════════════════════════════════════════════════════ */
+    @media (max-width: 1100px) {
+        .stripe-hero-visual { padding-right: 60px; }
+    }
+
+    @media (max-width: 880px) {
+        .stripe-hero-grid {
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+        .stripe-hero-visual { padding-right: 0; }
+        .stripe-hero-bg::after {
+            background: linear-gradient(180deg, rgba(11, 19, 48, 0.5) 0%, rgba(11, 19, 48, 0.15) 50%, transparent 70%);
+        }
+    }
+
     @media (max-width: 992px) {
         .stripe-hero {
             padding: 140px 0 80px;
@@ -1834,7 +1944,11 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         }
         
         .stripe-title {
-            font-size: 2.5rem;
+            font-size: 2.6rem;
+        }
+
+        .stripe-hero-facts {
+            gap: 24px;
         }
         
         .stripe-actions {

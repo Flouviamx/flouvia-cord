@@ -8,6 +8,7 @@ export const SOLUCIONES_EN: Solution[] = [
         nav: 'Enterprise',
         eyebrow: 'FOR ENTERPRISES',
         titulo: 'Scalable quoting for high-performance teams.',
+        tituloAcento: 'high-performance teams',
         sub: 'Modernize your company\'s commercial process. Cord eliminates approval bottlenecks, controls margin in real-time, and ensures every sent proposal complies with company guidelines.',
         metaTitle: 'Quoting & Operations Software for Enterprise — Cord',
         metaDescription: 'Enterprise platform to scale quoting processes, control volume pricing lists, and manage credit approvals with security and compliance. For any enterprise, anywhere.',
