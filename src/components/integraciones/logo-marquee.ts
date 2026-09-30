@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 export interface MarqueeTile {
     src: string;
@@ -118,8 +119,14 @@ export async function mountLogoMarquee(host: HTMLElement, tiles: MarqueeTile[]):
     const key = new THREE.DirectionalLight(0xffffff, 1.4);
     key.position.set(-2, 3, 5);
     scene.add(key);
-    const cursorLight = new THREE.PointLight(0xffffff, 0, 5, 1.6);
-    cursorLight.position.set(0, 0, 1.5);
+    // Luz que sigue al cursor: una luz de ÁREA (softbox) lejana, tenue y
+    // apenas cálida. La puntual de antes, pegada a los tiles y a 4.5, dejaba un
+    // manchón blanco redondo en el barniz y deslavaba el color; un área refleja
+    // como franja suave, que es como se ve un objeto fotografiado en estudio.
+    RectAreaLightUniformsLib.init();
+    const cursorLight = new THREE.RectAreaLight(0xfff4ea, 0, 2.6, 1.2);
+    cursorLight.position.set(0, 0.6, 3.2);
+    cursorLight.lookAt(0, 0, 0);
     scene.add(cursorLight);
 
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
@@ -261,8 +268,9 @@ export async function mountLogoMarquee(host: HTMLElement, tiles: MarqueeTile[]):
         canvas.style.cursor = hit ? 'pointer' : pointer.down ? 'grabbing' : 'grab';
 
         cursorLight.position.x += (pointer.x - cursorLight.position.x) * Math.min(1, dt * 8);
-        cursorLight.position.y += (pointer.y - cursorLight.position.y) * Math.min(1, dt * 8);
-        cursorLight.intensity += ((pointer.inside ? 4.5 : 0) - cursorLight.intensity) * Math.min(1, dt * 4);
+        cursorLight.position.y += (pointer.y + 0.6 - cursorLight.position.y) * Math.min(1, dt * 8);
+        cursorLight.intensity += ((pointer.inside ? 2.4 : 0) - cursorLight.intensity) * Math.min(1, dt * 3);
+        cursorLight.lookAt(cursorLight.position.x, cursorLight.position.y - 0.6, 0);
 
         for (const s of slots) {
             const x = wrap(s.base + offset);
@@ -280,7 +288,7 @@ export async function mountLogoMarquee(host: HTMLElement, tiles: MarqueeTile[]):
             g.rotation.x = -THREE.MathUtils.clamp(dy * 0.6, -0.6, 0.6) * s.f + Math.cos(t * 0.7 + s.phase) * 0.07 * idle;
             g.rotation.z = Math.sin(t * 0.4 + s.phase) * 0.03 * idle;
             g.scale.setScalar(1 + s.f * 0.08 + s.hover * 0.06);
-            s.body.emissiveIntensity = 0.06 + s.hover * 0.22;
+            s.body.emissiveIntensity = 0.06 + s.hover * 0.06;
             s.shadow.position.set(x + 0.04, g.position.y - 0.16 - s.f * 0.1, -0.45);
             s.shadow.scale.setScalar(1 + s.f * 0.35);
             s.shadowMat.opacity = 0.42 - s.f * 0.16;

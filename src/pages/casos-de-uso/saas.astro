@@ -11,7 +11,7 @@ import CasoHeroMockup from '../../components/casos/CasoHeroMockup.astro';
 // Ola de seda del hero (mismo shader que /soluciones), paleta TURQUESA → ÍNDIGO para empresas de software.
 const HERO_PAL = { base: '#F6F9FC', c1: '#5EEAD4', c2: '#22D3EE', c3: '#3B82F6', c4: '#6366F1', c5: '#8B5CF6' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
-import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
+import IntegrationsMarquee from '../../components/integraciones/IntegrationsMarquee.astro';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
@@ -59,10 +59,6 @@ const breadcrumbSchema = {
 
 
 
-
-// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
-// que no lo son.
-const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -98,17 +94,10 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
             </div>
         </header>
 
-        <!-- INTEGRACIONES (reales, del catálogo) -->
+        <!-- INTEGRACIONES: el mismo marquee 3D de /integraciones -->
         <section class="uc-trust reveal">
             <p>Se conecta con las herramientas que ya usa tu equipo</p>
-            <div class="uc-logos">
-                {CONECTA.map((a) => (
-                    <a href="/integraciones" class="trust-logo-item">
-                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
-                        <span>{a.nombre}</span>
-                    </a>
-                ))}
-            </div>
+            <IntegrationsMarquee />
         </section>
 
         <!-- SECONDARY BENEFITS SECTION -->
@@ -576,22 +565,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     }
     .uc-trust p {
         font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
-    }
-    .uc-logos {
-        display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
-    }
-    .trust-logo-item {
-        display: flex; align-items: center; gap: 8px; text-decoration: none;
-        font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
-        filter: grayscale(100%) opacity(0.8);
-        transition: all 0.3s ease;
-    }
-    .trust-logo-item:hover {
-        filter: grayscale(0%) opacity(1);
-        color: #0a2540;
-    }
-    .trust-logo-item img {
-        border-radius: 4px;
     }
 
     /* ── STRIPE-LIKE SPLIT FEATURE ── */
