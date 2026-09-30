@@ -26,7 +26,9 @@ With QuickBooks connected, every invoice you issue in Cord shows up in your acco
 ### What it does not do yet
 
 - **It does not send payments.** You record the payment in QuickBooks as usual. It is on the list.
-- **It does not map taxes to your QuickBooks tax codes.** Check the tax on the first invoice before trusting it.
+- **It does not send invoices with withholdings.** QuickBooks does not record them on a sales invoice.
+
+Each line enters with the QuickBooks tax code whose rate matches Cord's. If that rate does not exist, the invoice is not sent and the card tells you which one to create.
 - **Nothing flows from QuickBooks into Cord.** This runs one way.
 
 ### If something goes wrong

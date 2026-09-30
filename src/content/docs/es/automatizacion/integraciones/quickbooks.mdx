@@ -39,8 +39,12 @@ Cada factura que emites en Cord aparece en tu contabilidad con su cliente, sus c
 ## Qué no hace todavía
 
 - **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
-- **No mapea tus códigos de impuesto.** Revisa el impuesto de la primera factura antes de darla por buena.
+- **Las facturas con retenciones no se envían.** QuickBooks no las registra en una factura de venta; asiéntalas a mano.
 - **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+
+## Impuestos
+
+Cada línea entra con el código de impuesto de QuickBooks cuya tasa coincide con la de Cord. En Estados Unidos, donde QuickBooks calcula el impuesto sobre ventas solo, Cord le fija el total de impuesto de la factura para que no lo recalcule. Si QuickBooks termina con un total distinto al de Cord, la factura se borra y la tarjeta te lo dice.
 
 ## Garantías
 
@@ -58,4 +62,5 @@ Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabi
 |---|---|
 | **La tarjeta pide reconectar** | QuickBooks venció o revocó el acceso. Reconecta; las facturas que faltaron se mandan con **Enviar las facturas pendientes**. |
 | **"0 facturas enviadas"** | No hay facturas definitivas pendientes, o ya estaban todas registradas. |
-| **El impuesto no coincide** | QuickBooks aplica sus propios códigos de impuesto; ajústalo en la primera factura. |
+| **"Tu contabilidad no tiene una tasa de impuesto de ventas de…"** | Crea en QuickBooks un código de impuesto con esa tasa exacta y pulsa **Enviar las facturas pendientes**. En Estados Unidos, activa el impuesto sobre ventas automático. |
+| **"El total no coincidió"** | QuickBooks calculó otro total y Cord borró la factura en vez de dejarla mal asentada. Revisa que la tasa sea la misma en los dos lados. |

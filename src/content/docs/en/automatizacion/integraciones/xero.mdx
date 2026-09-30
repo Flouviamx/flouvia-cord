@@ -33,15 +33,16 @@ Every invoice you issue in Cord shows up in your Xero with its contact, lines an
 |---|---|
 | **Contact** | If it does not exist, looked up by email first. Cord remembers the link. |
 | **Sales invoice** | Type `ACCREC`, in **draft** status, with date, due date, currency, the Cord number as the reference and one line per item. |
-| **Amounts** | Tax exclusive (`Exclusive`): Cord already computed tax per line, so Xero does not add it again. |
+| **Amounts** | Tax exclusive (`Exclusive`), and each line with the Xero rate that matches Cord's and the tax Cord already computed. |
 
-Cord asks for Xero's granular permissions for invoices and contacts (`accounting.invoices` and `accounting.contacts`), not access to your whole ledger.
+Cord asks for Xero's granular permissions for invoices and contacts (`accounting.invoices` and `accounting.contacts`), plus reading your tax rates (`accounting.settings.read`), not access to your whole ledger. If you connected Xero before Cord asked for that permission, the card will ask you to reconnect once.
 
 ## What it does not do yet
 
 - **It does not approve the invoice.** That is deliberate: you approve it in Xero.
 - **It does not send payments.** You record the payment in your accounting as usual.
-- **It does not map your tax codes.** Check the tax on the first invoice before relying on it.
+- **Your tax arrives with its rate.** Each line carries the tax rate in your accounting that exactly matches Cord's. If that rate does not exist there, the invoice is not sent and the card tells you which one is missing: create it and click **Send the pending invoices**.
+- **Invoices with withholdings are not sent.** Your accounting does not record them on a sales invoice; post them by hand.
 - **It brings nothing from your accounting into Cord.** It flows one way.
 
 ## Guarantees

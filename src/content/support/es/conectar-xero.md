@@ -20,12 +20,13 @@ Con Xero conectado, cada factura que emites en Cord aparece en tu contabilidad c
 
 - **El contacto**, si no existe, buscándolo primero por correo para no duplicarlo. Una vez encontrado, lo recuerda.
 - **La factura de venta** (`ACCREC`) en estado **DRAFT**, con la fecha, el vencimiento, la divisa, el folio de Cord en la referencia y una línea por concepto con el precio negociado y su descuento ya aplicados.
-- Los importes se declaran **sin impuesto incluido** (`Exclusive`), porque Cord ya calculó el impuesto por línea de su lado y no queremos que Xero lo vuelva a aplicar encima.
+- Los importes se declaran **sin impuesto incluido** (`Exclusive`), y cada línea lleva la tasa de Xero que coincide con la de Cord y el impuesto que Cord ya calculó. Si esa tasa no existe en Xero, la factura no se envía y la tarjeta te dice cuál crear.
 
 ### Lo que no hace todavía
 
 - **No aprueba la factura.** Es deliberado: la apruebas tú en Xero.
-- **No manda los pagos** ni mapea tus códigos de impuesto. Revisa el impuesto de la primera factura antes de aprobarla.
+- **No manda los pagos.** Registras el cobro en Xero como siempre.
+- **No envía facturas con retenciones.** Xero no las registra en una factura de venta.
 - **No trae nada de Xero hacia Cord.** El flujo va en un solo sentido.
 
 ### Si algo falla

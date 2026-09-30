@@ -1,0 +1,809 @@
+---
+// Calcas de pantallas reales de Cord para /soluciones/startups (org demo: Nodo Labs).
+interface Props { scene: string; isEn?: boolean }
+const { scene, isEn = false } = Astro.props;
+const t = (es: string, en: string) => (isEn ? en : es);
+const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
+
+const fit = scene.startsWith('p-') ? 'pillar' : scene.startsWith('b-') || scene.startsWith('g-') ? 'block' : scene.startsWith('r-') ? 'res' : 'tab';
+
+const quotes = [
+    { folio: 'COT-0088', ini: 'EB', cli: 'Estudio Brava', sub: t('Contado', 'Due on receipt'), amt: 'MXN 24,500.00', st: 'draft', hl: true },
+    { folio: 'COT-0087', ini: 'FI', cli: 'Finmarket Inc.', sub: t('Contado', 'Due on receipt'), amt: 'USD 14,400.00', st: 'paid' },
+    { folio: 'COT-0086', ini: 'RL', cli: 'Rutas Logísticas', sub: 'Net 30', amt: 'MXN 86,000.00', st: 'viewed' },
+    { folio: 'COT-0085', ini: 'CA', cli: 'Clínica Aurora', sub: t('Contado', 'Due on receipt'), amt: 'USD 3,600.00', st: 'approved' },
+    { folio: 'COT-0084', ini: 'EB', cli: 'Estudio Brava', sub: t('Contado', 'Due on receipt'), amt: 'MXN 24,500.00', st: 'sent' },
+    { folio: 'COT-0083', ini: 'AS', cli: 'Altamar Seguros', sub: t('Contado', 'Due on receipt'), amt: 'MXN 58,000.00', st: 'invoiced' },
+];
+const ST: Record<string, [string, string]> = {
+    draft: [t('Borrador', 'Draft'), 'gray'],
+    sent: [t('Enviada', 'Sent'), 'blue'],
+    viewed: [t('Vista', 'Viewed'), 'violet'],
+    approved: [t('Aprobada', 'Approved'), 'green'],
+    paid: [t('Pagada', 'Paid'), 'green2'],
+    invoiced: [t('Facturada', 'Invoiced'), 'navy'],
+};
+const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const lock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5" fill="currentColor" fill-opacity="0.15"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const cardIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>';
+const cpuIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2"/></svg>';
+const shieldIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>';
+const taskIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="currentColor" fill-opacity="0.14"/><polyline points="8 12 11 15 16 9"/></svg>';
+const boltIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="M12.5 6.5 9 13h3l-.5 4.5L15 11h-3z"/></svg>';
+const filterIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V19l-4 1.5v-8z" fill="currentColor" fill-opacity="0.14"/></svg>';
+const docIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.13"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6M9 17h4"/></svg>';
+const linkIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.5-1.5"/></svg>';
+const copyIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5" fill="currentColor" fill-opacity="0.13"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
+const dupIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2.5" fill="currentColor" fill-opacity="0.18"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/><path d="M14.5 11.5v6M11.5 14.5h6"/></svg>';
+---
+
+<div class={`stp-root stp-canvas stp-fit-${fit} stp-s-${scene}`} aria-hidden="true">
+
+{scene === 'editor' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><span class="stp-crumb">{t('Nueva cotización', 'New quote')} /</span><b>Finmarket Inc.</b></div>
+            <span class="stp-pill stp-navy">USD</span>
+        </div>
+        <div class="stp-ai stp-in">
+            <span class="stp-ai-ic" set:html={cpuIc}></span>
+            <div class="stp-ai-copy">
+                <div class="stp-ai-q">{t('“Plan Growth anual para 12 personas, más el arranque.”', '“Annual Growth plan for 12 people, plus onboarding.”')}</div>
+                <div class="stp-ai-st"><span set:html={check}></span>{t('2 líneas armadas. Revisa cantidades y precios.', '2 lines built. Check quantities and prices.')}</div>
+            </div>
+        </div>
+        <div class="stp-th stp-g-ed"><span>{t('Producto', 'Product')}</span><span class="stp-r">{t('Cant.', 'Qty.')}</span><span class="stp-r">{t('Negociado', 'Negotiated')}</span><span class="stp-r">{t('Importe', 'Amount')}</span></div>
+        <div class="stp-tr stp-g-ed stp-in">
+            <span class="stp-2l"><b>{t('Plan Growth · anual', 'Growth plan · annual')}</b><small>GRW-ANU · {t('Exento', 'Exempt')}</small></span>
+            <span class="stp-r stp-num">12</span><span class="stp-r stp-num">1,000.00</span><span class="stp-r stp-num stp-strong">12,000.00</span>
+        </div>
+        <div class="stp-tr stp-g-ed stp-in">
+            <span class="stp-2l"><b>{'Onboarding'}</b><small>ONB-01 · {t('Exento', 'Exempt')}</small></span>
+            <span class="stp-r stp-num">1</span><span class="stp-r stp-num">2,400.00</span><span class="stp-r stp-num stp-strong">2,400.00</span>
+        </div>
+        <div class="stp-sum stp-in">
+            <div><span>Subtotal</span><span class="stp-num">USD 14,400.00</span></div>
+            <div class="stp-sum-t"><span>Total</span><span class="stp-num">USD 14,400.00</span></div>
+        </div>
+    </div>
+)}
+
+{scene === 'paylink' && (
+    <Fragment>
+        <div class="stp-phone">
+            <div class="stp-phone-scr">
+                <div class="stp-ph-url"><span set:html={lock}></span>cordhq.app/q/7Kx2…</div>
+                <div class="stp-ph-brand"><span class="stp-logo">N</span><b>Nodo Labs</b></div>
+                <div class="stp-eyebrow">{t('COTIZACIÓN', 'QUOTE')} · COT-0085</div>
+                <div class="stp-ph-for">{t('Para', 'For')} <b>Clínica Aurora</b></div>
+                <div class="stp-eyebrow stp-mt">{t('TOTAL A PAGAR', 'TOTAL DUE')}</div>
+                <div class="stp-ph-total stp-num">USD 3,600.00</div>
+                <div class="stp-ph-line"><span>{t('Plan Growth · anual × 3', 'Growth plan · annual × 3')}</span><span class="stp-num">3,000.00</span></div>
+                <div class="stp-ph-line"><span>Onboarding</span><span class="stp-num">600.00</span></div>
+                <div class="stp-sheet stp-in">
+                    <div class="stp-sheet-grab"></div>
+                    <b class="stp-sheet-t">{t('Firma digital', 'Digital signature')}</b>
+                    <label>{t('Nombre completo del firmante', "Signer's full name")}</label>
+                    <div class="stp-input">Dra. Paula Lozano<i></i></div>
+                    <div class="stp-chk"><span set:html={check}></span>{t('He revisado esta cotización y acepto los términos', 'I have reviewed this quote and accept the terms')}</div>
+                    <div class="stp-btn">{t('Confirmar y firmar', 'Confirm and sign')}</div>
+                </div>
+            </div>
+        </div>
+        <div class="stp-float stp-paynext stp-in">
+            <div class="stp-eyebrow">{t('A PAGAR AHORA', 'PAY NOW')}</div>
+            <div class="stp-pn-amt stp-num">USD 3,600.00</div>
+            <div class="stp-pn-card"><span set:html={cardIc}></span>•••• 4242</div>
+            <div class="stp-btn stp-btn-sm"><span set:html={lock}></span>{t('Pagar de forma segura', 'Pay securely')}</div>
+            <div class="stp-pn-foot">Cord Payments</div>
+        </div>
+    </Fragment>
+)}
+
+{scene === 'zapier' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><img src={fav('zapier.com')} alt="" width="16" height="16" loading="lazy" /><b>{t('Cobro → hoja y Slack', 'Payment → sheet and Slack')}</b></div>
+            <span class="stp-pill stp-green"><i class="stp-dot"></i>{t('Activo', 'On')}</span>
+        </div>
+        <div class="stp-flow">
+            <div class="stp-step stp-in">
+                <span class="stp-step-ic stp-step-cord">C</span>
+                <div class="stp-2l"><small>{t('1 · Disparador · Cord', '1 · Trigger · Cord')}</small><b>{t('Cotización pagada', 'Quote paid')}</b></div>
+                <code class="stp-code-chip">quote.paid</code>
+            </div>
+            <div class="stp-step-data stp-in">
+                <span>COT-0087</span><span>Finmarket Inc.</span><span>14400</span><span>USD</span>
+            </div>
+            <div class="stp-step stp-in">
+                <img class="stp-step-ic" src={fav('sheets.google.com')} alt="" width="22" height="22" loading="lazy" />
+                <div class="stp-2l"><small>{t('2 · Acción · Google Sheets', '2 · Action · Google Sheets')}</small><b>{t('Agregar fila en “Ventas 2026”', 'Add row to “Sales 2026”')}</b></div>
+            </div>
+            <div class="stp-step stp-in">
+                <img class="stp-step-ic" src={fav('slack.com')} alt="" width="22" height="22" loading="lazy" />
+                <div class="stp-2l"><small>{t('3 · Acción · Slack', '3 · Action · Slack')}</small><b>{t('Mensaje en #ventas', 'Message in #sales')}</b></div>
+            </div>
+            <div class="stp-alts stp-in">
+                <span>{t('También con', 'Also with')}</span>
+                <img src={fav('make.com')} alt="Make" width="16" height="16" loading="lazy" />
+                <img src={fav('n8n.io')} alt="n8n" width="16" height="16" loading="lazy" />
+            </div>
+        </div>
+    </div>
+)}
+
+{scene === 'webhooks' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>{t('Endpoints de webhook', 'Webhook endpoints')}</b></div>
+            <span class="stp-pill stp-green"><i class="stp-dot"></i>{t('Activo', 'Active')}</span>
+        </div>
+        <div class="stp-ep stp-in">
+            <code class="stp-ep-url"><b>POST</b> https://api.nodolabs.io/webhooks/cord</code>
+            <div class="stp-ep-sub">{t('4 eventos · firma HMAC-SHA256 en X-Cord-Signature', '4 events · HMAC-SHA256 signature in X-Cord-Signature')}</div>
+        </div>
+        <div class="stp-th stp-g-wh"><span>{t('Evento', 'Event')}</span><span>{t('Respuesta', 'Response')}</span><span class="stp-r">{t('Hora', 'Time')}</span></div>
+        {[
+            ['quote.paid', 'COT-0087', '200', '', '11:42'],
+            ['quote.approved', 'COT-0085', '200', t('intento 2', 'attempt 2'), '10:16'],
+            ['quote.approved', 'COT-0085', '503', t('intento 1', 'attempt 1'), '10:15'],
+            ['quote.viewed', 'COT-0086', '200', '', '09:58'],
+            ['client.created', 'Halden Logistik', '200', '', '09:31'],
+        ].map(([ev, ref, code, att, h]) => (
+            <div class="stp-tr stp-g-wh stp-in">
+                <span class="stp-2l"><code class="stp-ev">{ev}</code><small>{ref}</small></span>
+                <span class="stp-resp"><span class={`stp-code ${code === '200' ? 'ok' : 'err'}`}>{code}</span>{att && <small>{att}</small>}</span>
+                <span class="stp-r stp-muted stp-num">{h}</span>
+            </div>
+        ))}
+    </div>
+)}
+
+{scene === 'api' && (
+    <div class="stp-win stp-dark">
+        <div class="stp-bar stp-bar-dark">
+            <div class="stp-bar-l"><code>POST /api/v1/cotizaciones</code></div>
+            <span class="stp-pill stp-test">sk_test</span>
+        </div>
+        <pre class="stp-term stp-in"><span class="c-mu">$</span> curl https://cordhq.app/api/v1/cotizaciones \
+  -H <span class="c-gr">"Authorization: Bearer sk_test_51c9…"</span> \
+  -d <span class="c-ye">'&#123; "cliente_id": "7c1e…",
+        "base_currency": "USD", "send": true,
+        "items": [&#123; "descripcion": "{t('Plan Growth anual', 'Growth plan, annual')}",
+          "cantidad": 4, "precio_unitario": 1000 &#125;] &#125;'</span>
+
+<span class="c-mu">HTTP/2</span> <span class="c-gr">200</span>
+&#123; <span class="c-bl">"data"</span>: &#123;
+    <span class="c-bl">"folio"</span>: <span class="c-gr">"COT-0092"</span>,
+    <span class="c-bl">"link_publico"</span>: <span class="c-gr">"https://cordhq.app/q/k3Pz…"</span>,
+    <span class="c-bl">"needs_approval"</span>: <span class="c-ye">false</span>,
+    <span class="c-bl">"email"</span>: &#123; <span class="c-bl">"sent"</span>: <span class="c-ye">true</span> &#125; &#125; &#125;</pre>
+    </div>
+)}
+
+{scene === 'elements' && (
+    <Fragment>
+        <div class="stp-win stp-host">
+            <div class="stp-url"><span set:html={lock}></span>{t('app.nodolabs.io/cuenta/plan', 'app.nodolabs.io/account/plan')}</div>
+            <div class="stp-host-body">
+                <div class="stp-host-side"><span class="stp-logo stp-logo-sm">N</span><i></i><i></i><i class="on"></i><i></i></div>
+                <div class="stp-host-main">
+                    <div class="stp-host-h">{t('Tu plan', 'Your plan')}</div>
+                    <div class="stp-host-s">{t('Menta Pagos · 5 de 5 asientos en uso', 'Menta Pagos · 5 of 5 seats in use')}</div>
+                    <div class="stp-embed stp-in">
+                        <div class="stp-embed-top"><span class="stp-eyebrow">{t('COTIZACIÓN', 'QUOTE')} · COT-0090</span><span class="stp-pill stp-blue">{t('Enviada', 'Sent')}</span></div>
+                        <div class="stp-embed-l"><span>{t('Plan Growth · anual × 8', 'Growth plan · annual × 8')}</span><span class="stp-num">USD 8,000.00</span></div>
+                        <div class="stp-embed-tot"><span>Total</span><span class="stp-num">USD 8,000.00</span></div>
+                        <div class="stp-btn">{t('Aprobar cotización', 'Approve quote')}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="stp-float stp-snippet stp-in"><span class="c-mu">&lt;</span><span class="c-bl">cord-cotizador</span> <span class="c-ye">token</span>=<span class="c-gr">"Rm4t…"</span><span class="c-mu">&gt;&lt;/</span><span class="c-bl">cord-cotizador</span><span class="c-mu">&gt;</span></div>
+    </Fragment>
+)}
+
+{scene === 'p-pay' && (
+    <div class="stp-win stp-pay">
+        <div class="stp-pay-top"><span class="stp-eyebrow">{t('A PAGAR AHORA', 'PAY NOW')}</span><span class="stp-muted">COT-0087</span></div>
+        <div class="stp-pay-amt stp-num">USD 14,400.00</div>
+        <div class="stp-pay-sub">Finmarket Inc. · {t('Plan Growth anual', 'Annual Growth plan')}</div>
+        <div class="stp-pay-field stp-in"><span set:html={cardIc}></span><span class="stp-num">4242 4242 4242 4242</span><span class="stp-muted stp-num">12/28</span></div>
+        <div class="stp-btn stp-in"><span set:html={lock}></span>{t('Pagar de forma segura', 'Pay securely')}</div>
+        <div class="stp-pay-foot">{t('Pago protegido por Cord Payments', 'Payment protected by Cord Payments')}</div>
+    </div>
+)}
+
+{scene === 'p-track' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>{t('Atención del cliente', 'Client attention')}</b></div>
+            <span class="stp-pill stp-green"><i class="stp-dot stp-live"></i>{t('Viendo ahora', 'Viewing now')}</span>
+        </div>
+        <div class="stp-att">
+            <div class="stp-att-who">COT-0086 · Rutas Logísticas</div>
+            <div class="stp-att-stats"><b class="stp-num">{t('3 aperturas', '3 opens')}</b><span>{t('Primera: ayer 18:24', 'First: yesterday 6:24 pm')}</span><span>{t('Última: hace 4 min', 'Last: 4 min ago')}</span></div>
+            {[
+                [t('Partidas', 'Line items'), 92, '3m 10s'],
+                [t('Resumen', 'Summary'), 44, '1m 05s'],
+                [t('Aprobación y pago', 'Approval and payment'), 28, '40s'],
+                [t('Notas y términos', 'Notes and terms'), 16, '22s'],
+            ].map(([k, w, v], i) => (
+                <div class="stp-att-row stp-in"><span>{k}</span><i><em class={i === 0 ? 'on' : ''} style={`width:${w}%`}></em></i><span class="stp-num">{v}</span></div>
+            ))}
+        </div>
+    </div>
+)}
+
+{scene === 'p-usage' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>{t('Uso del plan este periodo', 'Plan usage this period')}</b></div>
+            <span class="stp-pill stp-navy">Starter</span>
+        </div>
+        <div class="stp-use">
+            <div class="stp-use-row stp-in">
+                <div class="stp-use-h"><span>{t('Facturas fiscales', 'Fiscal invoices')} <small>CFDI 4.0 · {t('México', 'Mexico')}</small></span><b class="stp-num">4 / 30</b></div>
+                <i class="stp-meter"><em style="width:13.3%"></em></i>
+            </div>
+            <div class="stp-use-row stp-in">
+                <div class="stp-use-h"><span>{t('Documentos comerciales', 'Commercial documents')}</span><b class="stp-num">12</b></div>
+                <div class="stp-use-inf">{t('∞ Ilimitado en tu plan', '∞ Unlimited on your plan')}</div>
+            </div>
+            <div class="stp-use-last stp-in">
+                <span class="stp-ic-sm" set:html={docIc}></span>
+                <span class="stp-2l"><b>FAC-0044 · Tlali Foods</b><small>CFDI 4.0 · {t('hoy 10:12', 'today 10:12')}</small></span>
+                <span class="stp-num stp-strong">MXN 31,320.00</span>
+            </div>
+        </div>
+    </div>
+)}
+
+{scene === 'b-list' && (
+    <Fragment>
+        <div class="stp-win">
+            <div class="stp-bar">
+                <div class="stp-bar-l"><b>{t('Cotizaciones', 'Quotes')}</b></div>
+                <span class="stp-mini-btn">+ {t('Nueva', 'New')}</span>
+            </div>
+            <div class="stp-kpis stp-in">
+                <div><b class="stp-num">MXN 110,500</b><span>{t('en pipeline · 2 abiertas', 'in pipeline · 2 open')}</span></div>
+                <div><b class="stp-num">USD 3,600</b><span>{t('aprobado, por cobrar', 'approved, to be collected')}</span></div>
+            </div>
+            <div class="stp-filters stp-in">
+                <span class="on">{t('Todas', 'All')}<em>6</em></span><span>{t('Abiertas', 'Open')}<em>2</em></span><span>{t('Aprobadas', 'Approved')}<em>2</em></span><span>{t('Pagadas', 'Paid')}<em>1</em></span>
+            </div>
+            {quotes.map((q) => (
+                <div class={`stp-qrow stp-in ${q.hl ? 'stp-qrow-hl' : ''}`}>
+                    <span class="stp-av">{q.ini}</span>
+                    <span class="stp-2l"><b>{q.cli}</b><small><span class="stp-folio">{q.folio}</span> · {q.sub}</small></span>
+                    <span class="stp-qrow-r"><span class="stp-num stp-strong">{q.amt}</span><span class={`stp-pill stp-${ST[q.st][1]}`}>{ST[q.st][0]}</span></span>
+                </div>
+            ))}
+        </div>
+        <div class="stp-float stp-actions stp-in">
+            <div class="stp-act-h">COT-0084 · {t('Acciones', 'Actions')}</div>
+            <div class="stp-act"><span set:html={linkIc}></span>{t('Abrir link', 'Open link')}</div>
+            <div class="stp-act"><span set:html={copyIc}></span>{t('Copiar link', 'Copy link')}</div>
+            <div class="stp-act on"><span set:html={dupIc}></span>{t('Duplicar cotización', 'Duplicate quote')}</div>
+        </div>
+    </Fragment>
+)}
+
+{scene === 'b-link' && (
+    <div class="stp-win">
+        <div class="stp-url"><span set:html={lock}></span>cordhq.app/q/r8Vd2m…</div>
+        <div class="stp-q">
+            <div class="stp-q-brand stp-in"><span class="stp-logo">N</span><b>Nodo Labs</b><span class="stp-ghost">{t('Descargar PDF', 'Download PDF')}</span></div>
+            <div class="stp-eyebrow stp-in">{t('COTIZACIÓN', 'QUOTE')} · COT-0083</div>
+            <div class="stp-q-meta stp-in">
+                <div><em>{t('PARA', 'FOR')}</em>Altamar Seguros</div>
+                <div><em>{t('VÁLIDA HASTA', 'VALID UNTIL')}</em>{t('30 sep 2026', 'Sep 30, 2026')}</div>
+                <div><em>{t('TÉRMINOS', 'TERMS')}</em>{t('Contado', 'Due on receipt')}</div>
+            </div>
+            <div class="stp-q-total stp-in"><em>{t('TOTAL A PAGAR', 'TOTAL DUE')}</em><b class="stp-num">MXN 58,000.00</b><small>{t('IVA incluido', 'Tax included')}</small></div>
+            <div class="stp-ph-line stp-in"><span>{t('Plan Growth · anual × 5', 'Growth plan · annual × 5')}</span><span class="stp-num">40,000.00</span></div>
+            <div class="stp-ph-line stp-in"><span>{t('Integración con su CRM', 'Integration with their CRM')}</span><span class="stp-num">10,000.00</span></div>
+            <div class="stp-thread stp-in">
+                <div class="stp-msg"><small>{t('Tú · 13 sep, 18:20', 'You · Sep 13, 18:20')}</small><span>{t('¿La integración incluye el CRM de siniestros?', 'Does the integration cover the claims CRM too?')}</span></div>
+                <div class="stp-msg stp-msg-in"><small>Nodo Labs · {t('13 sep, 18:34', 'Sep 13, 18:34')}</small><span>{t('Sí, los dos. Lo dejamos en las notas.', 'Yes, both. We added it to the notes.')}</span></div>
+            </div>
+            <div class="stp-verif stp-in">
+                <div class="stp-verif-h"><span set:html={shieldIc}></span><b>{t('Documento verificado', 'Document verified')}</b><span class="stp-pill stp-green">{t('Aprobada', 'Approved')}</span></div>
+                <div class="stp-kv"><span>{t('Firmante:', 'Signer:')}</span><span>Carlos Ibarra</span></div>
+                <div class="stp-kv"><span>{t('Fecha:', 'Date:')}</span><span>{t('14 sep 2026, 11:02 · IP 187.190.x.x', 'Sep 14, 2026, 11:02 · IP 187.190.x.x')}</span></div>
+                <div class="stp-kv"><span>{t('Sello:', 'Seal:')}</span><code>sha256 9f3c7a…e21a</code></div>
+            </div>
+            <div class="stp-q-notes stp-in"><em>{t('NOTAS', 'NOTES')}</em>{t('Incluye la integración con su CRM de ventas y con el de siniestros. Arranque en la semana del 21 de septiembre.', 'Includes the integration with their sales CRM and their claims CRM. Kickoff the week of September 21.')}</div>
+        </div>
+    </div>
+)}
+
+{scene === 'b-invoice' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>FAC-0043</b><span class="stp-pill stp-navy">CFDI 4.0</span></div>
+            <span class="stp-pill stp-blue">{t('Abierta', 'Open')}</span>
+        </div>
+        <div class="stp-inv-head stp-in">
+            <span class="stp-av stp-av-lg">AS</span>
+            <div class="stp-2l"><b>Altamar Seguros</b><small>{t('Emitida 15 sep · Vence 15 oct · Enviada', 'Issued Sep 15 · Due Oct 15 · Sent')}</small><a>{t('desde la cotización', 'from quote')} COT-0083</a></div>
+        </div>
+        <div class="stp-inv-tot stp-in"><em>TOTAL</em><b class="stp-num">MXN 58,000.00</b></div>
+        <div class="stp-kvs stp-in">
+            <div class="stp-kv"><span>{t('Folio fiscal', 'Tax folio')}</span><code>5E1F9C3A-…-8B21</code></div>
+            <div class="stp-kv"><span>RFC</span><span>ASE190822QK4</span></div>
+            <div class="stp-kv"><span>{t('Divisa', 'Currency')}</span><span>MXN</span></div>
+        </div>
+        <div class="stp-duo stp-in"><span>{t('Descargar PDF', 'Download PDF')}</span><span>{t('Descargar XML', 'Download XML')}</span></div>
+        <div class="stp-sec-h">{t('Actividad', 'Activity')}</div>
+        <div class="stp-tl">
+            <div class="stp-tl-i stp-in"><i></i><span>{t('Emitida', 'Issued')}</span><small>{t('15 sep, 10:20', 'Sep 15, 10:20')}</small></div>
+            <div class="stp-tl-i stp-in"><i></i><span>{t('Enviada al cliente · PDF y link de pago', 'Sent to the client · PDF and payment link')}</span><small>{t('15 sep, 10:20', 'Sep 15, 10:20')}</small></div>
+            <div class="stp-tl-i stp-in"><i class="v"></i><span>{t('El cliente la abrió', 'The client opened it')}</span><small>{t('15 sep, 12:47', 'Sep 15, 12:47')}</small></div>
+            <div class="stp-tl-i stp-tl-next stp-in"><i class="a"></i><span>{t('Próximo recordatorio: 7 días antes del vencimiento', 'Next reminder: 7 days before the due date')}</span><small>{t('8 oct', 'Oct 8')}</small></div>
+        </div>
+    </div>
+)}
+
+{scene === 'g-workflow' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>{t('Kickoff al cobrar', 'Kickoff on payment')}</b></div>
+            <span class="stp-pill stp-green"><i class="stp-dot"></i>{t('Activo', 'Active')}</span>
+        </div>
+        <div class="stp-wf">
+            <div class="stp-wf-lbl">{t('Cuando pase esto', 'When this happens')}</div>
+            <div class="stp-node stp-in"><span class="stp-node-ic" set:html={boltIc}></span><div class="stp-2l"><small>{t('Pagos', 'Payments')}</small><b>{t('Se paga por completo una cotización', 'A quote is paid in full')}</b></div></div>
+            <i class="stp-wf-line"></i>
+            <div class="stp-node stp-in"><span class="stp-node-ic stp-ic-amber" set:html={filterIc}></span><div class="stp-2l"><small>{t('Condición', 'Condition')}</small><b>Total <span class="stp-op">{t('es mayor o igual a', 'is at least')}</span> 5000</b></div></div>
+            <div class="stp-wf-branch">{t('Si se cumple', 'If the condition is met')}</div>
+            <div class="stp-node stp-in"><img class="stp-node-ic" src={fav('slack.com')} alt="" width="22" height="22" loading="lazy" /><div class="stp-2l"><small>{t('Acción · #ventas', 'Action · #sales')}</small><b>{t('Pagó', 'Paid:')} <span class="stp-var">{t('Cliente', 'Client')}</span> <span class="stp-var">Total</span></b></div></div>
+            <i class="stp-wf-line"></i>
+            <div class="stp-node stp-in"><span class="stp-node-ic" set:html={taskIc}></span><div class="stp-2l"><small>{t('Crear una tarea · vence en 2 días', 'Create a task · due in 2 days')}</small><b>Kickoff {t('con', 'with')} <span class="stp-var">{t('Cliente', 'Client')}</span></b></div></div>
+            <div class="stp-wf-runs stp-in">
+                <div class="stp-wf-runs-h"><b>{t('Ejecuciones', 'Runs')}</b><span>{t('1 de 5 workflows activos en tu plan', '1 of 5 active workflows on your plan')}</span></div>
+                <div class="stp-run"><span>COT-0087 · Finmarket Inc.</span><span class="stp-pill stp-green">{t('Completada', 'Completed')}</span><small>{t('hoy 11:42', 'today 11:42')}</small></div>
+                <div class="stp-run"><span>COT-0079 · Kora Seguros</span><span class="stp-pill stp-green">{t('Completada', 'Completed')}</span><small>{t('9 sep', 'Sep 9')}</small></div>
+            </div>
+        </div>
+    </div>
+)}
+
+{scene === 'g-team' && (
+    <Fragment>
+        <div class="stp-win">
+            <div class="stp-bar">
+                <div class="stp-bar-l"><b>{t('Equipo', 'Team')}</b></div>
+                <span class="stp-seats"><i><em style="width:40%"></em></i><span class="stp-num">{t('2 de 5 asientos', '2 of 5 seats')}</span></span>
+            </div>
+            <div class="stp-th stp-g-tm"><span>{t('Miembro', 'Member')}</span><span>{t('Rol', 'Role')}</span></div>
+            <div class="stp-tr stp-g-tm stp-in">
+                <span class="stp-who"><span class="stp-av">MS</span><span class="stp-2l"><b>Mariana Soto <em class="stp-you">{t('Tú', 'You')}</em></b><small>mariana@nodolabs.io</small></span></span>
+                <span class="stp-role">{t('Súper administrador', 'Super admin')}</span>
+            </div>
+            <div class="stp-tr stp-g-tm stp-in">
+                <span class="stp-who"><span class="stp-av stp-av-2">PR</span><span class="stp-2l"><b>Pablo Rincón</b><small>pablo@nodolabs.io</small></span></span>
+                <span class="stp-role">{t('Administrador', 'Admin')}</span>
+            </div>
+        </div>
+        <div class="stp-float stp-modal stp-in">
+            <b class="stp-modal-t">{t('Agregar miembro del equipo', 'Add team member')}</b>
+            <label>{t('Correo electrónico', 'Email')}</label>
+            <div class="stp-input">ivan@nodolabs.io</div>
+            <label>{t('Nivel de acceso', 'Access level')}</label>
+            <div class="stp-opt"><i></i><span class="stp-2l"><b>{t('Administrador', 'Admin')}</b><small>{t('Casi todo el control, incluido el equipo.', 'Almost full control, including the team.')}</small></span></div>
+            <div class="stp-opt on"><i></i><span class="stp-2l"><b>{t('Vendedor', 'Rep')}</b><small>{t('Cotiza y gestiona clientes/productos; no toca ajustes ni aprueba.', 'Quotes and manages clients/products; no access to settings or approvals.')}</small></span></div>
+            <div class="stp-opt"><i></i><span class="stp-2l"><b>{t('Solo lectura', 'Read-only')}</b><small>{t('Puede ver la app pero no modifica nada.', "Can view the app but can't change anything.")}</small></span></div>
+            <div class="stp-modal-f"><span class="stp-ghost">{t('Cancelar', 'Cancel')}</span><span class="stp-btn stp-btn-sm">{t('Enviar invitación', 'Send invitation')}</span></div>
+        </div>
+    </Fragment>
+)}
+
+{scene === 'g-fx' && (
+    <div class="stp-win">
+        <div class="stp-bar">
+            <div class="stp-bar-l"><b>COT-0089 · Halden Logistik GmbH</b></div>
+            <span class="stp-pill stp-blue">{t('Enviada', 'Sent')}</span>
+        </div>
+        <div class="stp-fx">
+            <div class="stp-fx-lbl stp-in">{t('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</div>
+            <div class="stp-fx-cur stp-in"><span>MXN</span><span>USD</span><span class="on">EUR</span><span>GBP</span><span>CAD</span><span class="stp-muted">+9</span></div>
+            <div class="stp-fx-big stp-in"><em>Total</em><b class="stp-num">EUR 9,600.00</b></div>
+            <div class="stp-kvs stp-in">
+                <div class="stp-kv"><span>{t('Divisa de venta', 'Selling currency')}</span><span>EUR</span></div>
+                <div class="stp-kv"><span>{t('Tus libros', 'Your books')}</span><span>MXN</span></div>
+                <div class="stp-kv"><span>{t('Tipo de cambio', 'Exchange rate')}</span><span class="stp-num">1 EUR = 21.64 MXN</span></div>
+                <div class="stp-kv"><span>{t('Fuente', 'Source')}</span><span>{t('BCE · 12 sep 2026', 'ECB · Sep 12, 2026')}</span></div>
+                <div class="stp-kv"><span>{t('Total contable', 'Ledger total')}</span><span class="stp-num stp-strong">MXN 207,744.00</span></div>
+            </div>
+            <div class="stp-note stp-in">{t('Le facturas en EUR y tus libros están en MXN. La factura declara el tipo de cambio.', 'You invoice in EUR and your books are in MXN. The invoice declares the exchange rate.')}</div>
+        </div>
+    </div>
+)}
+
+{scene === 'r-api' && (
+    <div class="stp-win stp-dark">
+        <div class="stp-bar stp-bar-dark"><div class="stp-bar-l"><code>{t('Terminal', 'Terminal')}</code></div><span class="stp-pill stp-test">sk_test</span></div>
+        <pre class="stp-term"><span class="c-mu">$</span> curl -X POST https://cordhq.app/api/v1/cotizaciones \
+  -H <span class="c-gr">"Authorization: Bearer sk_test_51c9…"</span> \
+  -d <span class="c-ye">'&#123;"base_currency":"USD","items":[…]&#125;'</span>
+<span class="c-mu">HTTP/2</span> <span class="c-gr">200</span>  <span class="c-bl">"folio"</span>: <span class="c-gr">"COT-0003"</span></pre>
+    </div>
+)}
+
+{scene === 'r-test' && (
+    <div class="stp-win stp-testq">
+        <div class="stp-ribbon">{t('Cotización de prueba — sin validez comercial ni fiscal', 'Test quote — no commercial or fiscal validity')}</div>
+        <div class="stp-testq-b">
+            <div class="stp-2l"><b>COT-0003 · {t('Cliente de prueba', 'Test client')}</b><small class="stp-num">USD 1,200.00</small></div>
+            <div class="stp-pay-field"><span set:html={cardIc}></span><span class="stp-num">4242 4242 4242 4242</span><span class="stp-pill stp-green2">{t('Pagada', 'Paid')}</span></div>
+        </div>
+    </div>
+)}
+
+{scene === 'r-guide' && (
+    <div class="stp-win stp-guide">
+        <div class="stp-guide-h"><b>{t('Configura Cord', 'Set up Cord')}</b><i class="stp-meter"><em style="width:50%"></em></i></div>
+        <div class="stp-gi done"><span set:html={check}></span>{t('Personaliza tu marca', 'Customize your brand')}</div>
+        <div class="stp-gi done"><span set:html={check}></span>{t('Crea tu catálogo', 'Create your catalog')}</div>
+        <div class="stp-gi now"><span></span>{t('Envía tu primera cotización', 'Send your first quote')}</div>
+        <div class="stp-gi"><span></span>{t('Activa los cobros en línea', 'Turn on online payments')}</div>
+    </div>
+)}
+
+</div>
+
+<style>
+    .stp-root { --ink: #0a192f; --mut: #64748b; --faint: #94a3b8; --line: #eef1f5; font-family: var(--font-sans, 'Inter', system-ui, sans-serif); color: var(--ink); text-align: left; font-size: 12px; line-height: 1.35; -webkit-font-smoothing: antialiased; }
+    .stp-root * { box-sizing: border-box; }
+    .stp-canvas { position: relative; overflow: hidden; }
+    .stp-fit-tab { height: 318px; width: 100%; border-radius: 18px; background: #f5f5f7; }
+    .stp-fit-pillar { position: absolute; inset: 0; }
+    .stp-fit-block { position: absolute; inset: 0; }
+    .stp-fit-res { position: absolute; inset: 0; background: #f5f5f7; }
+
+    .stp-win { background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 12px; overflow: hidden;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 22px 48px -20px rgba(10,25,47,0.24); }
+    .stp-fit-tab .stp-win { --bleed: 26px; position: absolute; top: 20px; left: 20px; width: calc(100% - 20px + var(--bleed)); min-height: 330px; padding-right: var(--bleed); border-radius: 12px 0 0 0; }
+    .stp-fit-pillar .stp-win { position: absolute; top: 26px; left: 22px; right: 22px; min-height: 240px; border-radius: 12px 12px 0 0; }
+    .stp-fit-block .stp-win { --bleed: 30px; position: absolute; top: 2.25rem; left: 1.75rem; width: calc(100% - 1.75rem + var(--bleed)); min-height: calc(100% - 1rem); padding-right: var(--bleed); border-radius: 14px 0 0 0; }
+    .stp-fit-res .stp-win { --bleed: 24px; position: absolute; top: 22px; left: 22px; width: calc(100% - 22px + var(--bleed)); min-height: 160px; padding-right: var(--bleed); border-radius: 10px 0 0 0; }
+
+    .stp-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 40px; padding: 0 14px; background: #fcfdfe; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .stp-bar-l { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
+    .stp-bar-l b { font-size: 12.5px; font-weight: 650; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; }
+    .stp-bar-l img { border-radius: 4px; flex-shrink: 0; }
+    .stp-crumb { color: var(--faint); font-weight: 500; }
+    .stp-bar-dark { background: #0d1b2e; border-bottom-color: rgba(255,255,255,0.07); }
+    .stp-bar-dark code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10.5px; color: #cbd5e1; }
+
+    .stp-num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .stp-strong { font-weight: 650; color: var(--ink); }
+    .stp-muted { color: var(--faint); }
+    .stp-r { text-align: right; }
+    .stp-2l { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+    .stp-2l b { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-2l small { font-size: 10.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-eyebrow { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; color: var(--faint); text-transform: uppercase; }
+
+    .stp-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; line-height: 1.2; }
+    .stp-gray { color: #64748b; background: rgba(100,116,139,0.1); }
+    .stp-blue { color: #2563eb; background: rgba(37,99,235,0.09); }
+    .stp-violet { color: #7c3aed; background: rgba(124,58,237,0.09); }
+    .stp-green { color: #047857; background: rgba(16,185,129,0.11); }
+    .stp-green2 { color: #047857; background: rgba(16,185,129,0.16); }
+    .stp-navy { color: #0a192f; background: rgba(10,25,47,0.08); }
+    .stp-bar-dark .stp-test { color: #fcd34d; background: rgba(245,158,11,0.16); }
+    .stp-test { color: #92400e; background: rgba(245,158,11,0.18); font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .stp-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+    .stp-live { box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    .stp-th, .stp-tr { display: grid; align-items: center; gap: 10px; padding: 0 14px; }
+    .stp-th { height: 28px; border-bottom: 1px solid var(--line); }
+    .stp-th span { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+    .stp-tr { min-height: 40px; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid #f3f5f8; }
+    .stp-g-ed { grid-template-columns: 1fr 24px 58px 66px; }
+    .stp-g-wh { grid-template-columns: 1fr 96px 40px; }
+    .stp-g-tm { grid-template-columns: 1fr auto; }
+
+    .stp-av { width: 26px; height: 26px; border-radius: 8px; background: #334155; color: #fff; font-size: 9.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0.02em; }
+    .stp-av-2 { background: #b45309; }
+    .stp-av-lg { width: 36px; height: 36px; border-radius: 10px; font-size: 11.5px; }
+    .stp-logo { width: 22px; height: 22px; border-radius: 6px; background: #0a192f; color: #fff; font-weight: 800; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stp-logo-sm { width: 18px; height: 18px; font-size: 9px; border-radius: 5px; }
+    .stp-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: #0a192f; color: #fff; font-weight: 600; font-size: 11.5px; height: 32px; border-radius: 9px; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); }
+    .stp-btn :global(svg), .stp-btn span :global(svg) { width: 12px; height: 12px; }
+    .stp-btn span { display: inline-flex; }
+    .stp-btn-sm { height: 26px; font-size: 10.5px; border-radius: 8px; padding: 0 10px; white-space: nowrap; }
+    .stp-ghost { font-size: 10.5px; font-weight: 600; color: #334155; border: 1px solid rgba(10,25,47,0.1); border-radius: 7px; padding: 4px 9px; background: #fff; white-space: nowrap; }
+    .stp-mini-btn { font-size: 10.5px; font-weight: 600; color: #fff; background: #0a192f; border-radius: 7px; padding: 5px 10px; }
+    .stp-float { position: absolute; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 26px 56px -16px rgba(10,25,47,0.3); z-index: 3; }
+    .stp-input { height: 28px; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.15); display: flex; align-items: center; padding: 0 9px; font-size: 11px; font-weight: 500; }
+    .stp-input i { width: 1px; height: 13px; background: #0a192f; margin-left: 1px; animation: stp-caret 1s steps(1) infinite; }
+    @keyframes stp-caret { 50% { opacity: 0; } }
+    .stp-kv { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f3f5f8; font-size: 11px; }
+    .stp-kv > span:first-child { color: var(--mut); }
+    .stp-kv > span:last-child, .stp-kv code { font-weight: 550; text-align: right; }
+    .stp-kv code, .stp-ev, .stp-code-chip, .stp-ep-url { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .stp-kv code { font-size: 10px; color: #334155; }
+    .stp-kvs { padding: 2px 16px 0; }
+    .stp-seg { display: flex; gap: 2px; background: #f1f3f6; border-radius: 8px; padding: 2px; }
+    .stp-seg span { font-size: 10.5px; font-weight: 600; color: var(--mut); padding: 3px 9px; border-radius: 6px; }
+    .stp-seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(10,25,47,0.1); }
+    .stp-meter { display: block; height: 6px; border-radius: 99px; background: #edf0f4; overflow: hidden; }
+    .stp-meter em { display: block; height: 100%; background: #0a192f; border-radius: 99px; }
+    .stp-url { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; font-size: 10.5px; color: var(--mut); background: #fcfdfe; border-bottom: 1px solid var(--line); font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .stp-url :global(svg), .stp-ph-url :global(svg) { width: 11px; height: 11px; color: #059669; }
+    .stp-url span, .stp-ph-url span { display: inline-flex; }
+    .stp-ic-sm { display: inline-flex; width: 28px; height: 28px; border-radius: 8px; background: #f1f4f8; align-items: center; justify-content: center; color: #334155; flex-shrink: 0; }
+    .stp-ic-sm :global(svg) { width: 15px; height: 15px; }
+
+    /* editor */
+    .stp-ai { display: flex; gap: 9px; margin: 10px 14px 8px; padding: 9px 11px; border-radius: 11px; background: #0a192f; color: #fff; }
+    .stp-ai-ic { display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.1); align-items: center; justify-content: center; flex-shrink: 0; }
+    .stp-ai-ic :global(svg) { width: 15px; height: 15px; }
+    .stp-ai-copy { min-width: 0; }
+    .stp-ai-q { font-size: 10px; color: rgba(255,255,255,0.72); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-ai-st { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: 10px; white-space: nowrap; font-weight: 600; color: #6ee7b7; }
+    .stp-ai-st span { display: inline-flex; }
+    .stp-ai-st :global(svg) { width: 11px; height: 11px; }
+        .stp-sum { padding: 8px 14px 10px; font-size: 11px; }
+    .stp-sum div { display: flex; justify-content: space-between; padding: 2px 0; color: var(--mut); }
+    .stp-sum-t { color: var(--ink) !important; font-weight: 650; font-size: 12.5px; }
+
+    /* paylink */
+    .stp-phone { position: absolute; left: 18px; top: 18px; width: 196px; height: 360px; border-radius: 34px; background: #0f172a; padding: 7px; box-shadow: 0 30px 60px -24px rgba(10,25,47,0.45); }
+    .stp-phone-scr { position: relative; height: 100%; border-radius: 28px; background: #fbfbfd; overflow: hidden; padding: 10px 14px; }
+    .stp-ph-url { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 8.5px; color: var(--mut); background: #eef0f4; border-radius: 99px; height: 18px; margin: 0 6px 10px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .stp-ph-brand { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 11.5px; }
+    .stp-ph-for { font-size: 10.5px; color: var(--mut); margin-top: 2px; }
+    .stp-ph-for b { color: var(--ink); font-weight: 600; }
+    .stp-mt { margin-top: 9px; }
+    .stp-ph-total { font-size: 19px; font-weight: 650; letter-spacing: -0.03em; margin: 1px 0 6px; }
+    .stp-ph-line { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: #475569; padding: 5px 0; border-top: 1px solid #eef1f5; }
+    .stp-sheet { position: absolute; left: 0; right: 0; top: 150px; bottom: 0; background: #fff; border-radius: 18px 18px 0 0; padding: 8px 12px 12px; box-shadow: 0 -10px 30px -12px rgba(10,25,47,0.3); display: flex; flex-direction: column; gap: 6px; }
+    .stp-sheet-grab { width: 30px; height: 4px; border-radius: 99px; background: #dfe3ea; margin: 0 auto 2px; }
+    .stp-sheet-t { font-size: 12px; font-weight: 650; }
+    .stp-sheet label, .stp-modal label { font-size: 9.5px; font-weight: 600; color: var(--mut); }
+    .stp-chk { display: flex; gap: 6px; font-size: 9px; color: #475569; line-height: 1.3; }
+    .stp-chk span { display: inline-flex; width: 13px; height: 13px; border-radius: 4px; background: #0a192f; color: #fff; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stp-chk :global(svg) { width: 9px; height: 9px; }
+    .stp-paynext { left: 188px; top: 104px; width: 168px; padding: 11px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .stp-pn-amt { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; }
+    .stp-pn-card { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; height: 26px; padding: 0 8px; border-radius: 7px; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); }
+    .stp-pn-card span { display: inline-flex; color: #334155; }
+    .stp-pn-card :global(svg) { width: 14px; height: 14px; }
+    .stp-pn-foot { font-size: 9px; color: var(--faint); text-align: center; }
+
+    /* zapier */
+    .stp-flow { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .stp-step { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #fafbfc; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.07); }
+    .stp-step-ic { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; background: #fff; padding: 3px; box-shadow: 0 0 0 1px rgba(10,25,47,0.07); }
+    .stp-step-cord { display: inline-flex; align-items: center; justify-content: center; background: #0a192f; color: #fff; font-weight: 800; font-size: 12px; padding: 0; }
+    .stp-code-chip { margin-left: auto; font-size: 9.5px; color: #1d4ed8; background: rgba(37,99,235,0.08); padding: 2px 6px; border-radius: 5px; }
+    .stp-step-data { display: flex; gap: 5px; margin: -2px 0 0 36px; }
+    .stp-step-data span { font-size: 9.5px; font-weight: 600; color: #475569; background: #f1f4f8; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+    .stp-alts { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--faint); margin-top: 2px; }
+    .stp-alts img { border-radius: 4px; }
+
+    /* webhooks */
+    .stp-ep { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .stp-ep-url { font-size: 10.5px; color: #0f172a; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-ep-url b { color: #047857; margin-right: 4px; }
+    .stp-ep-sub { font-size: 10px; color: var(--mut); margin-top: 3px; }
+    .stp-ev { font-size: 10.5px; font-weight: 600; color: var(--ink); }
+    .stp-resp { display: flex; align-items: center; gap: 5px; }
+    .stp-resp small { font-size: 9.5px; color: var(--mut); }
+    .stp-code { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .stp-code.ok { color: #047857; background: rgba(16,185,129,0.11); }
+    .stp-code.err { color: #b91c1c; background: rgba(239,68,68,0.1); }
+
+    /* terminal */
+    .stp-dark { background: #0a1628; border-color: rgba(255,255,255,0.06); }
+    .stp-term { margin: 0; padding: 12px 14px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 9.6px; line-height: 1.62; color: #cbd5e1; white-space: pre; overflow: hidden; }
+    .c-mu { color: #64748b; } .c-gr { color: #6ee7b7; } .c-ye { color: #fcd34d; } .c-bl { color: #93c5fd; }
+    .stp-fit-res .stp-term { font-size: 9px; padding: 10px 12px; }
+
+    /* elements */
+    .stp-host-body { display: flex; min-height: 260px; }
+    .stp-host-side { width: 44px; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 12px; background: #fbfcfd; }
+    .stp-host-side i { width: 18px; height: 5px; border-radius: 3px; background: #e3e8ef; }
+    .stp-host-side i.on { background: #94a3b8; }
+    .stp-host-main { flex: 1; padding: 12px 14px; }
+    .stp-host-h { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+    .stp-host-s { font-size: 10.5px; color: var(--mut); margin: 2px 0 10px; }
+    .stp-embed { border-radius: 12px; padding: 11px 12px; background: #fff; box-shadow: 0 0 0 1px rgba(10,25,47,0.09), 0 12px 26px -16px rgba(10,25,47,0.3); display: flex; flex-direction: column; gap: 7px; }
+    .stp-embed-top { display: flex; justify-content: space-between; align-items: center; }
+    .stp-embed-l, .stp-embed-tot { display: flex; justify-content: space-between; font-size: 10.5px; color: #475569; }
+    .stp-embed-tot { font-weight: 650; color: var(--ink); font-size: 12px; border-top: 1px solid var(--line); padding-top: 6px; }
+    .stp-snippet { right: 16px; bottom: 16px; background: #0a1628; border-color: rgba(255,255,255,0.08); padding: 8px 11px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10px; color: #e2e8f0; white-space: nowrap; }
+
+    /* pillars */
+    .stp-pay { padding: 16px 16px 0; display: flex; flex-direction: column; gap: 8px; }
+    .stp-pay-top { display: flex; justify-content: space-between; font-size: 10.5px; }
+    .stp-pay-amt { font-size: 22px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.1; }
+    .stp-pay-sub { font-size: 10.5px; color: var(--mut); margin-top: -4px; }
+    .stp-pay-field { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 9px; background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); font-size: 11px; font-weight: 600; }
+    .stp-pay-field > span:first-child { display: inline-flex; color: #334155; }
+    .stp-pay-field :global(svg) { width: 16px; height: 16px; }
+    .stp-pay-field > :last-child { margin-left: auto; }
+    .stp-pay-foot { font-size: 10px; color: var(--faint); text-align: center; }
+    .stp-att { padding: 10px 14px; }
+    .stp-att-who { font-size: 11px; font-weight: 600; color: #334155; }
+    .stp-att-stats { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 10px; color: var(--mut); margin: 3px 0 10px; }
+    .stp-att-stats b { color: var(--ink); font-weight: 650; }
+    .stp-att-row { display: grid; grid-template-columns: 96px 1fr 40px; align-items: center; gap: 8px; font-size: 10.5px; color: #475569; padding: 4px 0; }
+    .stp-att-row i { height: 6px; border-radius: 99px; background: #eef1f5; overflow: hidden; display: block; }
+    .stp-att-row em { display: block; height: 100%; border-radius: 99px; background: #cbd5e1; }
+    .stp-att-row em.on { background: #0a192f; }
+    .stp-att-row > span:last-child { text-align: right; font-weight: 600; color: var(--ink); }
+    .stp-use { padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
+    .stp-use-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 600; margin-bottom: 6px; }
+    .stp-use-h small { font-size: 9.5px; color: var(--mut); font-weight: 500; margin-left: 4px; }
+    .stp-use-h b { font-weight: 650; }
+    .stp-use-inf { font-size: 10.5px; color: #047857; font-weight: 600; }
+    .stp-use-last { display: flex; align-items: center; gap: 9px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .stp-use-last .stp-2l { flex: 1; }
+    .stp-use-last > .stp-num { font-size: 11px; }
+
+    /* list */
+    .stp-kpis { display: flex; gap: 18px; padding: 12px 14px 8px; }
+    .stp-kpis div { display: flex; flex-direction: column; }
+    .stp-kpis b { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; }
+    .stp-kpis span { font-size: 10px; color: var(--mut); }
+    .stp-filters { display: flex; gap: 5px; padding: 2px 14px 10px; border-bottom: 1px solid var(--line); }
+    .stp-filters span { font-size: 10.5px; font-weight: 600; color: var(--mut); padding: 4px 9px; border-radius: 99px; background: #f3f5f8; white-space: nowrap; }
+    .stp-filters span.on { background: #0a192f; color: #fff; }
+    .stp-filters em { font-style: normal; opacity: 0.6; margin-left: 4px; }
+    .stp-qrow { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid #f3f5f8; }
+    .stp-qrow .stp-2l { flex: 1; }
+    .stp-qrow-hl { background: #f7f9fc; box-shadow: inset 2px 0 0 #0a192f; }
+    .stp-qrow-r { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 11.5px; }
+    .stp-folio { font-weight: 650; color: #334155; font-variant-numeric: tabular-nums; }
+    .stp-actions { left: 46%; bottom: 26px; width: 176px; padding: 6px; }
+    .stp-act-h { font-size: 9.5px; font-weight: 700; color: var(--faint); letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 8px 6px; }
+    .stp-act { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 550; padding: 7px 8px; border-radius: 7px; color: #334155; }
+    .stp-act span { display: inline-flex; }
+    .stp-act :global(svg) { width: 14px; height: 14px; }
+    .stp-act.on { background: #0a192f; color: #fff; }
+
+    /* public link */
+    .stp-q { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .stp-q-brand { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-bottom: 4px; }
+    .stp-q-brand .stp-ghost { margin-left: auto; }
+    .stp-q-meta { display: grid; grid-template-columns: 1.2fr 1fr 0.9fr; gap: 8px; font-size: 10.5px; font-weight: 600; }
+    .stp-q-meta em, .stp-q-total em, .stp-inv-tot em, .stp-fx-big em { display: block; font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.07em; color: var(--faint); margin-bottom: 2px; text-transform: uppercase; }
+    .stp-q-total { padding: 8px 0 2px; border-top: 1px solid var(--line); }
+    .stp-q-total b { font-size: 21px; font-weight: 650; letter-spacing: -0.03em; }
+    .stp-q-total small { font-size: 10px; color: var(--mut); margin-left: 6px; }
+    .stp-verif { margin-top: 4px; padding: 10px 12px 4px; border-radius: 11px; background: #f7faf9; box-shadow: inset 0 0 0 1px rgba(16,185,129,0.18); }
+    .stp-verif-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; margin-bottom: 2px; }
+    .stp-verif-h > span:first-child { display: inline-flex; color: #059669; }
+    .stp-verif-h :global(svg) { width: 16px; height: 16px; }
+    .stp-verif-h .stp-pill { margin-left: auto; }
+    .stp-verif .stp-kv { border-bottom-color: rgba(16,185,129,0.12); }
+    .stp-verif .stp-kv:last-child { border-bottom: none; }
+
+    .stp-thread { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 2px 10px; border-left: 2px solid #eef1f5; }
+    .stp-msg { align-self: flex-end; max-width: 86%; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .stp-msg small { font-size: 9px; color: var(--faint); }
+    .stp-msg span { font-size: 10.5px; line-height: 1.35; padding: 6px 9px; border-radius: 10px 10px 3px 10px; background: #0a192f; color: #fff; }
+    .stp-msg-in { align-self: flex-start; align-items: flex-start; }
+    .stp-msg-in span { background: #f1f4f8; color: var(--ink); border-radius: 10px 10px 10px 3px; }
+
+    .stp-q-notes { font-size: 10.5px; color: #475569; line-height: 1.45; padding-top: 4px; }
+    .stp-q-notes em { display: block; font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.07em; color: var(--faint); margin-bottom: 2px; }
+
+    /* invoice */
+    .stp-inv-head { display: flex; gap: 10px; padding: 12px 16px 6px; }
+    .stp-inv-head a { font-size: 10.5px; color: #2563eb; font-weight: 600; margin-top: 2px; }
+    .stp-inv-tot { padding: 4px 16px 8px; }
+    .stp-inv-tot b { font-size: 20px; font-weight: 650; letter-spacing: -0.03em; }
+    .stp-duo { display: flex; gap: 8px; padding: 10px 16px 4px; }
+    .stp-duo span { flex: 1; text-align: center; font-size: 10.5px; font-weight: 600; color: #334155; padding: 6px 0; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.1); }
+    .stp-sec-h { font-size: 11px; font-weight: 650; padding: 12px 16px 4px; }
+    .stp-tl { padding: 0 16px; }
+    .stp-tl-i { position: relative; display: flex; justify-content: space-between; gap: 8px; padding: 5px 0 5px 16px; font-size: 10.5px; }
+    .stp-tl-i::before { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: #e3e8ef; }
+    .stp-tl-i i { position: absolute; left: 0; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: #0a192f; }
+    .stp-tl-i i.v { background: #7c3aed; }
+    .stp-tl-i i.a { background: #fff; box-shadow: inset 0 0 0 1.5px #b45309; }
+    .stp-tl-i small { color: var(--faint); white-space: nowrap; font-size: 10px; }
+    .stp-tl-next span { color: #92400e; font-weight: 550; }
+
+    /* workflow */
+    .stp-wf { padding: 12px 16px; background-image: radial-gradient(rgba(10,25,47,0.07) 1px, transparent 1px); background-size: 14px 14px; min-height: 100%; }
+    .stp-wf-lbl, .stp-wf-branch { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+    .stp-wf-branch { margin: 8px 0 6px 14px; color: #047857; }
+    .stp-node { display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: #fff; border-radius: 11px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08), 0 8px 18px -12px rgba(10,25,47,0.3); }
+    .stp-node-ic { width: 26px; height: 26px; border-radius: 8px; background: #f1f4f8; color: #0a192f; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 4px; }
+    .stp-node-ic :global(svg) { width: 16px; height: 16px; }
+    .stp-ic-amber { color: #b45309; background: rgba(245,158,11,0.12); }
+    .stp-node .stp-2l b { white-space: normal; line-height: 1.35; }
+    .stp-op { font-weight: 500; color: var(--mut); }
+    .stp-var { display: inline-block; font-size: 10px; font-weight: 600; color: #1d4ed8; background: rgba(37,99,235,0.08); padding: 0 5px; border-radius: 4px; }
+    .stp-wf-line { display: block; width: 1px; height: 12px; background: #cbd5e1; margin-left: 24px; }
+    .stp-wf-runs { margin-top: 14px; background: #fff; border-radius: 11px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); padding: 4px 11px; }
+    .stp-wf-runs-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0 5px; font-size: 11px; }
+    .stp-wf-runs-h span { font-size: 9.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-run { display: grid; grid-template-columns: 1fr auto 58px; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #f3f5f8; font-size: 10.5px; font-weight: 550; }
+    .stp-run span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stp-run small { color: var(--faint); text-align: right; font-size: 10px; white-space: nowrap; }
+
+    /* team */
+    .stp-seats { display: inline-flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 600; color: #334155; }
+    .stp-seats i { width: 42px; height: 5px; border-radius: 99px; background: #e8ecf1; overflow: hidden; display: block; }
+    .stp-seats em { display: block; height: 100%; background: #0a192f; }
+    .stp-who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .stp-you { font-style: normal; font-size: 9.5px; font-weight: 600; color: var(--mut); background: #f1f4f8; padding: 1px 5px; border-radius: 4px; margin-left: 3px; }
+    .stp-role { font-size: 10.5px; font-weight: 600; color: #334155; }
+    .stp-modal { left: 14%; right: -10px; top: 214px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px; border-radius: 14px; }
+    .stp-modal-t { font-size: 13px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 2px; }
+    .stp-opt { display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .stp-opt i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cbd5e1; margin-top: 2px; flex-shrink: 0; }
+    .stp-opt.on { box-shadow: inset 0 0 0 1.5px #0a192f; background: #f7f9fc; }
+    .stp-opt.on i { box-shadow: inset 0 0 0 3.5px #0a192f; }
+    .stp-opt .stp-2l small { white-space: normal; }
+    .stp-modal-f { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+
+    /* fx */
+    .stp-fx { padding: 12px 16px; }
+    .stp-fx-lbl { font-size: 10.5px; font-weight: 600; color: var(--mut); margin-bottom: 6px; }
+    .stp-fx-cur { display: flex; gap: 5px; margin-bottom: 12px; }
+    .stp-fx-cur span { font-size: 10.5px; font-weight: 650; padding: 4px 8px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.09); color: #334155; }
+    .stp-fx-cur span.on { background: #0a192f; color: #fff; box-shadow: none; }
+    .stp-fx-big b { font-size: 22px; font-weight: 650; letter-spacing: -0.03em; }
+    .stp-fx .stp-kvs { padding: 6px 0 0; }
+    .stp-note { margin-top: 10px; font-size: 10.5px; color: #475569; line-height: 1.45; padding: 8px 10px; border-radius: 9px; background: #f5f7fa; }
+
+    /* resource cards */
+    .stp-testq { background: #fff; }
+    .stp-ribbon { font-size: 9.5px; font-weight: 700; color: #92400e; background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18)); padding: 6px 12px; white-space: nowrap; }
+    .stp-testq-b { padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+    .stp-testq-b .stp-pay-field { height: 30px; }
+    .stp-guide { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .stp-guide-h { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+    .stp-guide-h b { font-size: 12px; white-space: nowrap; }
+    .stp-guide-h .stp-meter { flex: 1; max-width: 120px; }
+    .stp-gi { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 550; color: #334155; }
+    .stp-gi span { width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cbd5e1; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stp-gi.done { color: var(--faint); text-decoration: line-through; text-decoration-color: rgba(148,163,184,0.6); }
+    .stp-gi.done span { background: #0a192f; box-shadow: none; color: #fff; }
+    .stp-gi.done :global(svg) { width: 9px; height: 9px; }
+    .stp-gi.now { color: var(--ink); font-weight: 650; }
+    .stp-gi.now span { box-shadow: inset 0 0 0 1.5px #0a192f; }
+
+    @media (max-width: 768px) {
+        .stp-fit-tab { height: 318px; }
+        .stp-g-ed { grid-template-columns: 1fr 22px 70px; }
+        .stp-g-ed > :nth-child(3) { display: none; }
+        .stp-ai-st { white-space: normal; align-items: flex-start; }
+        .stp-fit-block .stp-win { top: 1.5rem; left: 1.25rem; width: calc(100% - 1.25rem + var(--bleed)); }
+        .stp-phone { left: 14px; }
+        .stp-paynext { left: auto; right: 10px; width: 136px; }
+        .stp-actions { left: auto; right: 18px; }
+        .stp-modal { left: 8%; }
+    }
+    @media (prefers-reduced-motion: reduce) { .stp-input i { animation: none; } }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll<HTMLElement>('.stp-root').forEach((root) => {
+            const items = root.querySelectorAll('.stp-in');
+            if (!items.length) return;
+            gsap.set(items, { opacity: 0, y: 8 });
+            ScrollTrigger.create({
+                trigger: root,
+                start: 'top 85%',
+                once: true,
+                onEnter: () => gsap.to(items, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.05 }),
+            });
+        });
+    }
+</script>

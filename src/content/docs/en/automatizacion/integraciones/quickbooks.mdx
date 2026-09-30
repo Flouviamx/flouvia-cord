@@ -39,8 +39,12 @@ Every invoice you issue in Cord shows up in your accounting with its customer, l
 ## What it does not do yet
 
 - **It does not send payments.** You record the payment in your accounting as usual.
-- **It does not map your tax codes.** Check the tax on the first invoice before relying on it.
+- **Invoices with withholdings are not sent.** QuickBooks does not record them on a sales invoice; post them by hand.
 - **It brings nothing from your accounting into Cord.** It flows one way.
+
+## Taxes
+
+Each line enters with the QuickBooks tax code whose rate matches Cord's. In the United States, where QuickBooks computes sales tax itself, Cord sets the invoice's total tax so it is not recalculated. If QuickBooks ends up with a total different from Cord's, the invoice is deleted and the card tells you.
 
 ## Guarantees
 
@@ -58,4 +62,5 @@ With **Disconnect** on the card. What was already recorded stays in your account
 |---|---|
 | **The card asks you to reconnect** | QuickBooks expired or revoked access. Reconnect; missed invoices go out with **Send pending invoices**. |
 | **"0 invoices sent"** | There are no pending final invoices, or they were all already recorded. |
-| **The tax does not match** | QuickBooks applies its own tax codes; adjust it on the first invoice. |
+| **"Your accounting has no … sales tax rate"** | Create a QuickBooks tax code with that exact rate and click **Send the pending invoices**. In the United States, turn on automated sales tax. |
+| **"The total did not match"** | QuickBooks computed a different total and Cord deleted the invoice instead of leaving it posted wrong. Check that the rate is the same on both sides. |

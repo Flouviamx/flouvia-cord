@@ -26,7 +26,9 @@ Con QuickBooks conectado, cada factura que emites en Cord aparece en tu contabil
 ### Lo que no hace todavía
 
 - **No manda los pagos.** Registras el cobro en QuickBooks como siempre. Está en la lista.
-- **No mapea impuestos a tus códigos de impuesto** de QuickBooks. Revisa el impuesto de la primera factura antes de darla por buena.
+- **No envía facturas con retenciones.** QuickBooks no las registra en una factura de venta.
+
+Cada línea entra con el código de impuesto de QuickBooks cuya tasa coincide con la de Cord. Si esa tasa no existe, la factura no se envía y la tarjeta te dice cuál crear.
 - **No trae nada de QuickBooks hacia Cord.** El flujo va en un solo sentido.
 
 ### Si algo falla

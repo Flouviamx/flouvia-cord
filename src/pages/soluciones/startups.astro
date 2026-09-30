@@ -7,16 +7,11 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
-import SolucionBlockMockup from '../../components/soluciones/SolucionBlockMockup.astro';
-import ProFeatures from '../../components/soluciones/ProFeatures.astro';
-import MockupCotizacion from '../../components/soluciones/MockupCotizacion.astro';
-import MockupPagos from '../../components/soluciones/MockupPagos.astro';
-import MockupCFDI from '../../components/soluciones/MockupCFDI.astro';
+import StpMockup from '../../components/soluciones/startups/StpMockup.astro';
+import StpDashboard from '../../components/soluciones/startups/StpDashboard.astro';
 import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
-import '../../styles/mockups.css';
-
 import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
 import SolucionHeroStack from '../../components/soluciones/SolucionHeroStack.astro';
 
@@ -53,6 +48,13 @@ const breadcrumbSchema = {
     ],
 };
 
+const APPS = [
+    { n: 'HubSpot', d: 'hubspot.com' }, { n: 'Slack', d: 'slack.com' }, { n: 'Microsoft Teams', d: 'teams.microsoft.com' },
+    { n: 'Google Sheets', d: 'sheets.google.com' }, { n: 'Excel', d: 'excel.cloud.microsoft' }, { n: 'Gmail', d: 'mail.google.com' },
+    { n: 'Shopify', d: 'shopify.com' }, { n: 'Xero', d: 'xero.com' }, { n: 'QuickBooks', d: 'quickbooks.intuit.com' },
+    { n: 'Zapier', d: 'zapier.com' }, { n: 'Make', d: 'make.com' }, { n: 'n8n', d: 'n8n.io' }, { n: 'WhatsApp', d: 'whatsapp.com' },
+];
+
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
 
@@ -60,7 +62,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 const heroTitle = solucion.tituloAcento
     ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
     : solucion.titulo;
-
 ---
 
 <Layout
@@ -85,12 +86,12 @@ const heroTitle = solucion.tituloAcento
 
                     <div class="stripe-actions">
                         <a href="/sign-up" class="btn-luxe">
-                            <span>{isEn ? 'Start building' : 'Empezar ahora'}</span>
+                            <span>{isEn ? 'Start for free' : 'Crear cuenta gratis'}</span>
                             <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             <div class="btn-shimmer"></div>
                         </a>
                         <a href="/contacto/ventas" class="btn-ghost">
-                            <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
+                            <span>{isEn ? 'Talk to our team' : 'Hablar con el equipo'}</span>
                         </a>
                     </div>
                 </div>
@@ -107,8 +108,8 @@ const heroTitle = solucion.tituloAcento
                 <div class="stripe-container">
                     <div class="startup-section-header">
                         <div class="startup-section-titles">
-                            <h2 class="startup-section-title">{isEn ? 'Ideal for every business model' : 'Ideal para todo tipo de empresas'}</h2>
-                            <p class="startup-section-sub">{isEn ? 'Thousands of successful companies automate their sales flow with Cord.' : 'Miles de empresas exitosas ya automatizan su proceso comercial con Cord.'}</p>
+                            <h2 class="startup-section-title">{isEn ? 'Four ways startups sell, already covered' : 'Cuatro formas de vender que Cord ya resuelve'}</h2>
+                            <p class="startup-section-sub">{isEn ? 'Pick the one closest to your business and see how the full flow looks, with the apps it usually connects to.' : 'Elige la que se parece a tu negocio y mira cómo se ve el flujo completo, con las apps que suele conectar.'}</p>
                         </div>
                         <div class="startup-carousel-controls">
                             <button id="startup-prev" class="carousel-btn" aria-label="Previous">
@@ -128,7 +129,7 @@ const heroTitle = solucion.tituloAcento
                                     <h3 class="uc-title">{uc.title}</h3>
                                     <p class="uc-desc">{uc.desc}</p>
                                     <a href={uc.link} class="uc-link">
-                                        <span>{isEn ? 'Learn more' : 'Más información'}</span>
+                                        <span>{isEn ? 'See the flow' : 'Ver el flujo'}</span>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                     </a>
                                 </div>
@@ -152,8 +153,8 @@ const heroTitle = solucion.tituloAcento
                 <div class="stripe-container">
                     <div class="integration-header-wrapper">
                         <div class="integration-header">
-                            <h2 class="integration-title">{isEn ? 'Integrate Cord your way' : 'Integra Cord a tu medida'}</h2>
-                            <p class="integration-sub">{isEn ? 'Stripe offers a wide range of options to accept payments, from no-code and low-code options to powerful APIs.' : 'Cord ofrece una amplia gama de opciones para automatizar tus ventas, desde configuraciones visuales sin código hasta potentes API REST.'}</p>
+                            <h2 class="integration-title">{isEn ? 'Three ways to plug Cord in, depending on how much you want to code' : 'Tres maneras de conectar Cord, según cuánto quieras programar'}</h2>
+                            <p class="integration-sub">{isEn ? 'Start without writing code, automate with Zapier, Make or n8n, or create quotes from your own product with the API and Cord Elements.' : 'Empieza sin escribir código, automatiza con Zapier, Make o n8n, o crea cotizaciones desde tu propio producto con la API y Cord Elements.'}</p>
                         </div>
                         <div class="integration-carousel-controls">
                             <button id="integration-prev" class="carousel-btn" aria-label="Previous">
@@ -171,16 +172,16 @@ const heroTitle = solucion.tituloAcento
                         </div>
                         <div class="stripe-tabs-buttons" role="tablist">
                             <button class="stripe-tab active" role="tab" aria-selected="true" data-target="tab-nocode">
-                                <span class="tab-label">Sin código</span>
-                                <span class="tab-sub">Más rápido</span>
+                                <span class="tab-label">{isEn ? 'No code' : 'Sin código'}</span>
+                                <span class="tab-sub">{isEn ? 'Live today' : 'Listo hoy'}</span>
                             </button>
                             <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-lowcode">
-                                <span class="tab-label">Bajo código</span>
-                                <span class="tab-sub">Optimizado</span>
+                                <span class="tab-label">{isEn ? 'Low code' : 'Bajo código'}</span>
+                                <span class="tab-sub">{isEn ? 'With your tools' : 'Con tus herramientas'}</span>
                             </button>
                             <button class="stripe-tab" role="tab" aria-selected="false" data-target="tab-api">
-                                <span class="tab-label">API REST</span>
-                                <span class="tab-sub">Control total</span>
+                                <span class="tab-label">{isEn ? 'REST API' : 'API REST'}</span>
+                                <span class="tab-sub">{isEn ? 'From your product' : 'Desde tu producto'}</span>
                             </button>
                         </div>
                     </div>
@@ -190,300 +191,66 @@ const heroTitle = solucion.tituloAcento
                         <!-- NO CODE -->
                         <div class="int-card" data-tab-group="tab-nocode">
                             <div class="int-card-text">
-                                <h3 class="int-card-title">Cotizador Visual</h3>
-                                <p class="int-card-desc">Crea cotizaciones interactivas arrastrando y soltando elementos de tu catálogo en segundos.</p>
-                                <a href="/producto/editor" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <h3 class="int-card-title">{isEn ? 'Quote editor' : 'Editor de cotizaciones'}</h3>
+                                <p class="int-card-desc">{isEn ? 'Build the proposal from your catalog, or paste your client\'s request and let AI suggest the lines. Prices always come from your catalog.' : 'Arma la propuesta desde tu catálogo o pega el pedido de tu cliente y deja que la IA proponga las líneas. El precio siempre sale de tu catálogo.'}</p>
+                                <a href="/producto/editor" class="int-link">{isEn ? 'See the editor' : 'Ver el editor'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-editor-bg">
-                                    <!-- Top chrome -->
-                                    <div class="imk-chrome-bar">
-                                        <div class="imk-chrome-title">Nueva cotización — Innovatech SA</div>
-                                        <div class="imk-chrome-send">Enviar</div>
-                                    </div>
-                                    <!-- Table header -->
-                                    <div class="imk-tbl-head imk-tbl-head-5">
-                                        <span>Producto</span><span class="imk-tc">Cant.</span><span class="imk-tr2">Lista</span><span class="imk-tr2">Negociado</span><span class="imk-tr2">Total</span>
-                                    </div>
-                                    <!-- Row 1 -->
-                                    <div class="imk-tbl-row imk-tbl-row-5">
-                                        <span class="imk-t1">Licencia Pro Anual</span>
-                                        <span class="imk-tc imk-t2">5</span>
-                                        <span class="imk-tr2 imk-t2 imk-strike">$24,000</span>
-                                        <span class="imk-tr2 imk-t1">$21,600</span>
-                                        <span class="imk-tr2 imk-t1">$108,000</span>
-                                    </div>
-                                    <!-- Row 2 active -->
-                                    <div class="imk-tbl-row imk-tbl-row-5 imk-row-active">
-                                        <span class="imk-t1">Soporte Premium <span class="imk-disc-badge">−10%</span></span>
-                                        <span class="imk-tc imk-t2">3</span>
-                                        <span class="imk-tr2 imk-t2 imk-strike">$2,500</span>
-                                        <span class="imk-tr2 imk-t1 imk-neg-price">$2,250</span>
-                                        <span class="imk-tr2 imk-t1">$6,750</span>
-                                    </div>
-                                    <!-- Row 3 -->
-                                    <div class="imk-tbl-row imk-tbl-row-5">
-                                        <span class="imk-t1">Implementación</span>
-                                        <span class="imk-tc imk-t2">1</span>
-                                        <span class="imk-tr2 imk-t2">$8,000</span>
-                                        <span class="imk-tr2 imk-t1">$8,000</span>
-                                        <span class="imk-tr2 imk-t1">$8,000</span>
-                                    </div>
-                                    <!-- Drag zone -->
-                                    <div class="imk-drag-zone">
-                                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        Agregar producto del catálogo
-                                    </div>
-                                    <!-- Totals footer -->
-                                    <div class="imk-tbl-foot imk-tbl-foot-breakdown">
-                                        <div class="imk-foot-row"><span class="imk-foot-label">Subtotal</span><span class="imk-foot-sub">$122,750</span></div>
-                                        <div class="imk-foot-row"><span class="imk-foot-label">IVA 16%</span><span class="imk-foot-sub">$19,640</span></div>
-                                        <div class="imk-foot-row imk-foot-total-row"><span class="imk-foot-label imk-foot-label-bold">Total</span><span class="imk-foot-total">$142,390</span></div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="editor" isEn={isEn} />
                             </div>
                         </div>
                         <div class="int-card" data-tab-group="tab-nocode">
                             <div class="int-card-text">
-                                <h3 class="int-card-title">Ligas de Pago</h3>
-                                <p class="int-card-desc">Genera links de cobro al instante y compártelos por WhatsApp sin escribir una línea de código.</p>
-                                <a href="/producto/link-publico" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <h3 class="int-card-title">{isEn ? 'A link with a pay button' : 'Link con botón de pago'}</h3>
+                                <p class="int-card-desc">{isEn ? 'Every quote and invoice has its own link: your client opens it from WhatsApp or email, approves and pays by card without creating an account.' : 'Cada cotización y cada factura tienen su link: tu cliente lo abre desde WhatsApp o el correo, aprueba y paga con tarjeta sin crear cuenta.'}</p>
+                                <a href="/producto/link-publico" class="int-link">{isEn ? 'See the public link' : 'Ver el link público'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-pay-bg">
-                                    <div class="imk-pay-card">
-                                        <!-- Header -->
-                                        <div class="imk-pay-head">
-                                            <div class="imk-pay-avatar">IN</div>
-                                            <div class="imk-pay-company">
-                                                <div class="imk-t1">Innovatech SA de CV</div>
-                                                <div class="imk-t2">COT-0342 · 3 conceptos</div>
-                                            </div>
-                                            <div class="imk-badge-green">Vigente</div>
-                                        </div>
-                                        <!-- Items -->
-                                        <div class="imk-pay-items">
-                                            <div class="imk-pay-item">
-                                                <span class="imk-t2 imk-pay-item-name">Licencia Pro Anual ×5</span>
-                                                <span class="imk-t1 imk-pay-item-price">$108,000</span>
-                                            </div>
-                                            <div class="imk-pay-item">
-                                                <span class="imk-t2 imk-pay-item-name">Soporte Premium ×3</span>
-                                                <span class="imk-t1 imk-pay-item-price">$6,750</span>
-                                            </div>
-                                            <div class="imk-pay-item">
-                                                <span class="imk-t2 imk-pay-item-name">Implementación ×1</span>
-                                                <span class="imk-t1 imk-pay-item-price">$8,000</span>
-                                            </div>
-                                        </div>
-                                        <!-- Divider + total -->
-                                        <div class="imk-pay-divider"></div>
-                                        <div class="imk-pay-amount">
-                                            <div class="imk-pay-total">$142,390</div>
-                                            <div class="imk-t2" style="text-align:center;margin-top:1px;">MXN · IVA incluido</div>
-                                        </div>
-                                        <!-- CTA -->
-                                        <button class="imk-pay-btn">Aprobar cotización</button>
-                                        <div class="imk-pay-reject">Rechazar</div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="paylink" isEn={isEn} />
                             </div>
                         </div>
 
                         <!-- LOW CODE -->
                         <div class="int-card" data-tab-group="tab-lowcode">
                             <div class="int-card-text">
-                                <h3 class="int-card-title">Zapier & Make</h3>
-                                <p class="int-card-desc">Conecta Cord con Zapier, Make o n8n usando webhooks para automatizar tu flujo de trabajo.</p>
-                                <a href="/desarrolladores/api" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <h3 class="int-card-title">Zapier, Make & n8n</h3>
+                                <p class="int-card-desc">{isEn ? 'Use the Cord apps for Zapier and Make or the n8n node: when a quote is approved or paid, the rest happens on its own.' : 'Usa las apps de Cord para Zapier y Make o el nodo de n8n: cuando una cotización se aprueba o se paga, lo demás pasa solo.'}</p>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'See how to connect' : 'Ver cómo conectarlo'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-flow-bg">
-                                    <!-- Step 1 -->
-                                    <div class="imk-flow-step">
-                                        <div class="imk-flow-node imk-flow-node-active">
-                                            <div class="imk-flow-node-label">TRIGGER</div>
-                                            <div class="imk-flow-node-brand">
-                                                <div class="imk-flow-brand-icon imk-navy">C</div>
-                                                <span class="imk-t1">Cord</span>
-                                            </div>
-                                            <div class="imk-flow-event imk-event-blue">quote.approved</div>
-                                        </div>
-                                        <div class="imk-flow-vline"></div>
-                                    </div>
-                                    <!-- Step 2 -->
-                                    <div class="imk-flow-step">
-                                        <div class="imk-flow-node">
-                                            <div class="imk-flow-node-label">ROUTER</div>
-                                            <div class="imk-flow-node-brand">
-                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://zapier.com&size=32" class="imk-flow-brand-img" alt="Zapier" />
-                                                <span class="imk-t1">Zapier</span>
-                                            </div>
-                                            <div class="imk-flow-event imk-event-orange">Enrutar</div>
-                                        </div>
-                                        <div class="imk-flow-vline"></div>
-                                    </div>
-                                    <!-- Step 3: two parallel actions -->
-                                    <div class="imk-flow-actions">
-                                        <div class="imk-flow-action-node">
-                                            <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sheets.google.com&size=32" class="imk-flow-brand-img" alt="Sheets" />
-                                            <span class="imk-t2" style="font-size:9px;">Sheets</span>
-                                            <span class="imk-flow-action-label">+ Fila</span>
-                                        </div>
-                                        <div class="imk-flow-action-node">
-                                            <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=32" class="imk-flow-brand-img" alt="Slack" />
-                                            <span class="imk-t2" style="font-size:9px;">Slack</span>
-                                            <span class="imk-flow-action-label">Notificar</span>
-                                        </div>
-                                    </div>
-                                    <!-- Also compatible with -->
-                                    <div class="imk-flow-alts">
-                                        <span class="imk-t2" style="font-size:9px;">También:</span>
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://make.com&size=32" class="imk-alt-img" alt="Make" />
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://n8n.io&size=32" class="imk-alt-img" alt="n8n" />
-                                        <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=32" class="imk-alt-img" alt="HubSpot" />
-                                    </div>
-                                </div>
+                                <StpMockup scene="zapier" isEn={isEn} />
                             </div>
                         </div>
                         <div class="int-card" data-tab-group="tab-lowcode">
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Webhooks</h3>
-                                <p class="int-card-desc">Conecta Cord con tu ERP o CRM actual usando webhooks que disparan acciones en tiempo real.</p>
-                                <a href="/desarrolladores/api" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <p class="int-card-desc">{isEn ? 'Get every quote, invoice, payment and client event in your backend, HMAC-signed and retried automatically if your server is down.' : 'Recibe en tu backend cada evento de cotización, factura, pago y cliente, firmado con HMAC y con reintentos automáticos si tu servidor no responde.'}</p>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Set up webhooks' : 'Configurar webhooks'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-wh-bg">
-                                    <div class="imk-wh-card">
-                                        <!-- Header with URL -->
-                                        <div class="imk-wh-head">
-                                            <div class="imk-wh-head-left">
-                                                <div class="imk-live-dot">
-                                                    <span class="imk-pulse-dot"></span>
-                                                    <span class="imk-t2" style="font-size:9px;color:#10b981;">En vivo</span>
-                                                </div>
-                                                <code class="imk-wh-endpoint">POST mi-erp.com/hooks/cord</code>
-                                            </div>
-                                            <span class="imk-t1">Log de entregas</span>
-                                        </div>
-                                        <!-- Column headers -->
-                                        <div class="imk-wh-cols">
-                                            <span>Evento</span><span>Status</span><span class="imk-tr2">ms</span>
-                                        </div>
-                                        <!-- Events -->
-                                        <div class="imk-wh-row">
-                                            <div class="imk-wh-info">
-                                                <span class="imk-wh-dot imk-wh-dot-green"></span>
-                                                <span class="imk-wh-event">quote.paid</span>
-                                            </div>
-                                            <span class="imk-status-ok">200 OK</span>
-                                            <span class="imk-wh-ms">124ms</span>
-                                        </div>
-                                        <div class="imk-wh-row">
-                                            <div class="imk-wh-info">
-                                                <span class="imk-wh-dot imk-wh-dot-green"></span>
-                                                <span class="imk-wh-event">quote.approved</span>
-                                            </div>
-                                            <span class="imk-status-ok">200 OK</span>
-                                            <span class="imk-wh-ms">98ms</span>
-                                        </div>
-                                        <div class="imk-wh-row" style="border-bottom:none;">
-                                            <div class="imk-wh-info">
-                                                <span class="imk-wh-dot imk-wh-dot-green"></span>
-                                                <span class="imk-wh-event">quote.viewed</span>
-                                            </div>
-                                            <span class="imk-status-ok">200 OK</span>
-                                            <span class="imk-wh-ms">87ms</span>
-                                        </div>
-                                        <!-- Footer action -->
-                                        <div class="imk-wh-foot">
-                                            <button class="imk-wh-btn">Reintentar</button>
-                                            <button class="imk-wh-btn">Ver payload</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="webhooks" isEn={isEn} />
                             </div>
                         </div>
 
                         <!-- API -->
                         <div class="int-card" data-tab-group="tab-api">
                             <div class="int-card-text">
-                                <h3 class="int-card-title">API RESTful</h3>
-                                <p class="int-card-desc">Crea cotizaciones, clientes y consulta tu cobranza desde tu propio software con nuestra API REST.</p>
-                                <a href="/desarrolladores/api" class="int-link">Ver documentación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <h3 class="int-card-title">{isEn ? 'REST API' : 'API REST'}</h3>
+                                <p class="int-card-desc">{isEn ? 'Create clients and quotes, send them and read invoices from your code. sk_test_ keys work against a separate test environment.' : 'Crea clientes y cotizaciones, envíalas y consulta facturas desde tu código. Las llaves sk_test_ trabajan sobre un entorno de prueba separado.'}</p>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Read the docs' : 'Leer la documentación'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-term-bg">
-                                    <!-- Dark terminal -->
-                                    <div class="imk-term">
-                                        <div class="imk-term-head">
-                                            <span class="imk-term-title">Terminal — cord API v1</span>
-                                            <span class="imk-term-status"><span class="imk-navy-dot" style="background:#34d399"></span>sk_live</span>
-                                        </div>
-                                        <div class="imk-term-body">
-                                            <div class="imk-term-line"><span class="imk-tc-gray">$ </span><span class="imk-tc-white">curl -s -X POST \</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-gray">https://</span><span class="imk-tc-white">cordhq.app/api/v1/cotizaciones</span><span class="imk-tc-white"> \</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-gray">-H </span><span class="imk-tc-green">"Authorization: Bearer sk_live_***"</span><span class="imk-tc-white"> \</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-gray">-d </span><span class="imk-tc-yellow">'&#123;"cliente_id":"cl_9Xv"&#125;'</span></div>
-                                            <div class="imk-term-blank"></div>
-                                            <div class="imk-term-line"><span class="imk-tc-gray">HTTP/2 </span><span class="imk-tc-green">201 Created</span></div>
-                                            <div class="imk-term-line"><span class="imk-tc-muted">&#123;</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-blue">"id"</span><span class="imk-tc-muted">: </span><span class="imk-tc-green">"cot_9Xvp2mKqR"</span><span class="imk-tc-muted">,</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-blue">"folio"</span><span class="imk-tc-muted">: </span><span class="imk-tc-green">"COT-0343"</span><span class="imk-tc-muted">,</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-blue">"total"</span><span class="imk-tc-muted">: </span><span class="imk-tc-yellow">142390.00</span><span class="imk-tc-muted">,</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-blue">"status"</span><span class="imk-tc-muted">: </span><span class="imk-tc-green">"draft"</span><span class="imk-tc-muted">,</span></div>
-                                            <div class="imk-term-line imk-term-indent"><span class="imk-tc-blue">"link"</span><span class="imk-tc-muted">: </span><span class="imk-tc-green">"cordhq.app/q/abc7..."</span></div>
-                                            <div class="imk-term-line"><span class="imk-tc-muted">&#125;</span></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="api" isEn={isEn} />
                             </div>
                         </div>
                         <div class="int-card" data-tab-group="tab-api">
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Cord Elements</h3>
-                                <p class="int-card-desc">Embebe el cotizador en tu web o app con Cord Elements: Web Component, React y Vue.</p>
-                                <a href={isEn ? "/en/elements" : "/elements"} class="int-link">{isEn ? "Learn more" : "Más información"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <p class="int-card-desc">{isEn ? 'Put the Cord quote builder inside your site or app as a Web Component, in React or in Vue.' : 'Pon el cotizador de Cord dentro de tu sitio o tu app como Web Component, en React o en Vue.'}</p>
+                                <a href={isEn ? "/en/elements" : "/elements"} class="int-link">{isEn ? "See Elements" : "Ver Elements"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
-                                <div class="mock-ui imk-embed-bg">
-                                    <!-- Browser frame -->
-                                    <div class="imk-browser">
-                                        <div class="imk-browser-chrome">
-                                            <div class="imk-browser-url">
-                                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                                portal.tucliente.com/mis-cotizaciones
-                                            </div>
-                                        </div>
-                                        <!-- Website content -->
-                                        <div class="imk-browser-body">
-                                            <div class="imk-browser-site-nav">
-                                                <div class="imk-site-logo"></div>
-                                                <div class="imk-site-links"><span></span><span></span><span style="width:28px;"></span></div>
-                                            </div>
-                                            <!-- Greeting -->
-                                            <div class="imk-browser-greeting">
-                                                <div class="imk-greeting-text">Hola, <strong>Carlos Vargas</strong></div>
-                                                <div class="imk-greeting-sub">Tu cotización está lista</div>
-                                            </div>
-                                            <!-- Embedded widget -->
-                                            <div class="imk-embed-widget">
-                                                <div class="imk-embed-header">
-                                                    <div class="imk-embed-eyebrow">COTIZACIÓN · COT-0342</div>
-                                                    <div class="imk-badge-green" style="font-size:8px;">Vigente</div>
-                                                </div>
-                                                <div class="imk-embed-amount">$142,390</div>
-                                                <div class="imk-embed-sub">MXN · IVA incluido · 3 conceptos</div>
-                                                <div class="imk-embed-cta">Revisar y Aprobar</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Cord badge -->
-                                    <div class="imk-embed-badge">
-                                        <div class="imk-navy-dot"></div>
-                                        <span>Powered by Cord Elements</span>
-                                    </div>
-                                </div>
+                                <StpMockup scene="elements" isEn={isEn} />
                             </div>
                         </div>
                     </div>
@@ -498,52 +265,9 @@ const heroTitle = solucion.tituloAcento
                         {solucion.pillars.map((p, i) => (
                             <div class="stripe-pillar-card reveal">
                                 <div class="stripe-pillar-graphic">
-                                    {i === 0 && (
-                                        <div class="pillar-mock-light">
-                                            <div class="stripe-light-card">
-                                                <div class="slc-header">Propuesta P-1042</div>
-                                                <div class="slc-body">
-                                                    <div class="slc-row">
-                                                        <span>Suscripción Anual</span>
-                                                        <strong>$120,000.00</strong>
-                                                    </div>
-                                                    <button class="slc-btn">Aceptar y Pagar</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {i === 1 && (
-                                        <div class="pillar-mock-light">
-                                            <div class="stripe-light-card">
-                                                <div class="slc-kpi">
-                                                    <span class="slc-kpi-label">Ingresos Mensuales</span>
-                                                    <strong class="slc-kpi-value">$450,000</strong>
-                                                </div>
-                                                <div class="slc-chart">
-                                                    <div class="slc-bar" style="height: 40%"></div>
-                                                    <div class="slc-bar" style="height: 60%"></div>
-                                                    <div class="slc-bar" style="height: 50%"></div>
-                                                    <div class="slc-bar" style="height: 80%"></div>
-                                                    <div class="slc-bar" style="height: 100%"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {i === 2 && (
-                                        <div class="pillar-mock-light">
-                                            <div class="stripe-light-card">
-                                                <div class="slc-header" style="border: none; margin-bottom: 8px;">
-                                                    <div class="slc-badge"><svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 3 4.5 8.5 2 6"></polyline></svg> Timbrado SAT</div>
-                                                </div>
-                                                <div class="slc-xml">
-                                                    &lt;cfdi:Comprobante&gt;<br/>
-                                                    &nbsp;&nbsp;&lt;cfdi:Emisor Rfc="CORD..."/&gt;<br/>
-                                                    &lt;/cfdi:Comprobante&gt;
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
+                                    {i === 0 && <StpMockup scene="p-pay" isEn={isEn} />}
+                                    {i === 1 && <StpMockup scene="p-track" isEn={isEn} />}
+                                    {i === 2 && <StpMockup scene="p-usage" isEn={isEn} />}
                                 </div>
                                 <div class="stripe-pillar-content">
                                     <h3 class="stripe-pillar-title">{p.titulo}</h3>
@@ -567,7 +291,7 @@ const heroTitle = solucion.tituloAcento
         <section class="stripe-feature-grid-section">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
+                    <h2 class="stripe-h2">{isEn ? 'Everything you need to close your first customers' : 'Todo lo que necesitas para cerrar a tus primeros clientes'}</h2>
                     <p class="stripe-p">{solucion.paraQuien}</p>
                 </div>
 
@@ -591,119 +315,9 @@ const heroTitle = solucion.tituloAcento
                                     </div>
                                 </div>
                                 <div class="stripe-fg-card-visual">
-                                    {idx === 0 && (
-                                        <div class="cmk-stage">
-                                            <div class="cmk-shot">
-                                                <div class="cmk-nav">
-                                                    <span class="cmk-nav-title">Cotizaciones</span>
-                                                    <div class="cmk-seg"><span class="on">Todas</span><span>Abiertas</span><span>Aprobadas</span></div>
-                                                </div>
-                                                <div class="cmk-th" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span>Folio</span><span>Cliente</span><span>Estado</span><span class="cmk-r">Total</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1042</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-1">SP</div> Synergy MX</span>
-                                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Aprobada</span>
-                                                    <span class="cmk-amt editorial">$161,400.00</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1041</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-2">GM</div> Grupo Modelo</span>
-                                                    <span class="cmk-badge cmk-b-blue"><span class="cmk-dot cmk-dot-blue"></span>Vista</span>
-                                                    <span class="cmk-amt editorial">$89,200.00</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1039</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-3">AN</div> Aceros Norte</span>
-                                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Pagada</span>
-                                                    <span class="cmk-amt editorial">$245,800.00</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1038</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-1" style="background:#475569">CA</div> Const. Apex</span>
-                                                    <span class="cmk-badge cmk-b-gray">Enviada</span>
-                                                    <span class="cmk-amt editorial">$52,300.00</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1036</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-2" style="background:#0ea5e9">DB</div> Dist. Bajío</span>
-                                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Aprobada</span>
-                                                    <span class="cmk-amt editorial">$128,750.00</span>
-                                                </div>
-                                                <div class="cmk-tr" style="grid-template-columns:70px 1.38fr 100px 90px">
-                                                    <span class="cmk-tcode">COT-1034</span>
-                                                    <span class="cmk-t1"><div class="cmk-av cmk-av-3" style="background:#8b5cf6">LV</div> Log. Vértice</span>
-                                                    <span class="cmk-badge cmk-b-blue"><span class="cmk-dot cmk-dot-blue"></span>Vista</span>
-                                                    <span class="cmk-amt editorial">$74,500.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {idx === 1 && (
-                                        <div class="cmk-stage">
-                                            <div class="cmk-shot">
-                                                <div class="cmk-chrome">
-                                                    <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> synergy.cord.app/q</div>
-                                                </div>
-                                                <div class="cmk-body">
-                                                    <div class="cmk-brand">
-                                                        <div class="cmk-brand-dot">SP</div>
-                                                        <div>
-                                                            <div class="cmk-t1" style="font-size:14px">Propuesta para Synergy Partners</div>
-                                                            <div class="cmk-t2">Folio COT-1042 · Vigencia 30 días</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="cmk-divider"></div>
-                                                    <div class="cmk-big editorial">$161,400.00 MXN</div>
-                                                    <div class="cmk-big-sub">3 conceptos · IVA incluido</div>
-                                                    <div style="display:flex; gap:10px; margin-top:16px">
-                                                        <span class="cmk-cta cmk-cta-solid">
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
-                                                            Aprobar y firmar
-                                                        </span>
-                                                        <span class="cmk-cta cmk-cta-ghost">
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                                            Descargar PDF
-                                                        </span>
-                                                    </div>
-                                                    <div class="cmk-divider"></div>
-                                                    <div style="display:flex; align-items:center; gap:8px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #f1f5f9;">
-                                                        <span class="cmk-dot cmk-dot-green"></span>
-                                                        <span class="cmk-t2" style="color:#475569; font-weight: 600;">Conectado en tiempo real · firma con validez legal</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {idx === 2 && (
-                                        <div class="cmk-stage">
-                                            <div class="cmk-shot">
-                                                <div class="cmk-nav">
-                                                    <div class="cmk-nav-l">
-                                                        <div class="cmk-nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></div>
-                                                        <div><div class="cmk-nav-title">Factura CFDI 4.0</div><div class="cmk-nav-sub">Generada automáticamente</div></div>
-                                                    </div>
-                                                    <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Timbrada</span>
-                                                </div>
-                                                <div class="cmk-body" style="padding-top:8px">
-                                                    <div class="cmk-kv"><span class="cmk-k">Folio fiscal (UUID)</span><span class="cmk-v cmk-v-mono">A1B2C3D4-5E6F-9A8B</span></div>
-                                                    <div class="cmk-kv"><span class="cmk-k">RFC receptor</span><span class="cmk-v">SYP180423K1A</span></div>
-                                                    <div class="cmk-kv"><span class="cmk-k">Uso CFDI</span><span class="cmk-v">G03 · Gastos en general</span></div>
-                                                    <div class="cmk-kv"><span class="cmk-k">Total</span><span class="cmk-v editorial">$161,400.00 MXN</span></div>
-                                                    <div class="cmk-kv" style="border-bottom:none"><span class="cmk-k">Timbrado</span><span class="cmk-v">Hoy 11:24</span></div>
-                                                    <div style="display:flex; gap:10px; margin-top:12px">
-                                                        <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">PDF</span>
-                                                        <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">XML</span>
-                                                    </div>
-                                                    <div class="cmk-alert cmk-alert-green" style="margin-top:14px;">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                        Emitida al aprobarse COT-1042. Sin entrar al portal del SAT.
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {idx === 0 && <StpMockup scene="b-list" isEn={isEn} />}
+                                    {idx === 1 && <StpMockup scene="b-link" isEn={isEn} />}
+                                    {idx === 2 && <StpMockup scene="b-invoice" isEn={isEn} />}
                                 </div>
                             </div>
                         ))}
@@ -741,9 +355,9 @@ const heroTitle = solucion.tituloAcento
                             </div>
                             <div class="stripe-resource-content">
                                 <span class="stripe-resource-eyebrow">Blog</span>
-                                <h4 class="stripe-resource-title">Últimas tendencias en ventas y estrategias de automatización</h4>
+                                <h4 class="stripe-resource-title">{isEn ? 'How to quote faster, why PDFs cost you deals and how to use Cord with your AI' : 'Cómo cotizar más rápido, por qué el PDF te cuesta cierres y cómo usar Cord con tu IA'}</h4>
                                 <a href="/blog" class="stripe-pillar-link">
-                                    Explorar artículos
+                                    {isEn ? 'Browse articles' : 'Ver artículos'}
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -752,14 +366,14 @@ const heroTitle = solucion.tituloAcento
                         </div>
 
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-gray">
-                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="width:120px; opacity:0.8;" />
+                            <div class="stripe-resource-visual stp-res">
+                                <StpMockup scene="r-guide" isEn={isEn} />
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Soporte</span>
-                                <h4 class="stripe-resource-title">Centro de ayuda y guías detalladas paso a paso</h4>
+                                <span class="stripe-resource-eyebrow">{isEn ? 'Getting started' : 'Primeros pasos'}</span>
+                                <h4 class="stripe-resource-title">{isEn ? 'Your catalog, your first quote and your first payment, step by step' : 'Tu catálogo, tu primera cotización y tu primer cobro, paso a paso'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
-                                    Buscar respuestas
+                                    {isEn ? 'Start the guide' : 'Empezar la guía'}
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -775,8 +389,8 @@ const heroTitle = solucion.tituloAcento
         <section class="stripe-feature-grid-section" style="padding-top: 0;">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <h2 class="stripe-h2">{isEn ? 'Built for enterprise-grade operations' : 'Construido para operaciones de grado empresarial'}</h2>
-                    <p class="stripe-p">{isEn ? 'Unleash the power of automation and global reach.' : 'Desata el poder de la automatización y el alcance global.'}</p>
+                    <h2 class="stripe-h2">{isEn ? 'What you will need next is already here' : 'Lo que vas a necesitar después ya está aquí'}</h2>
+                    <p class="stripe-p">{isEn ? 'Automations, your first hire and international sales, without switching tools.' : 'Automatizaciones, tu primer vendedor y ventas fuera de tu país, sin cambiar de herramienta.'}</p>
                 </div>
 
                 <div class="stripe-fg-layout">
@@ -786,32 +400,15 @@ const heroTitle = solucion.tituloAcento
                         <div class="stripe-fg-card aurora-card reveal">
                             <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
-                                <h3 class="stripe-fg-title">Motor de Reglas de Negocio</h3>
-                                <p class="stripe-fg-desc">Automatiza decisiones de riesgo, establece límites de crédito dinámicos y aplica reglas de aprobación según monto, descuento y margen en tiempo real.</p>
+                                <h3 class="stripe-fg-title">Cord Workflows</h3>
+                                <p class="stripe-fg-desc">{isEn ? 'When something is approved, paid or about to expire, Cord creates the task, posts in Slack or Teams, emails your client or sends the data to a URL. One active workflow on Free, five on Starter and unlimited from Professional.' : 'Cuando algo se aprueba, se paga o está por vencer, Cord crea la tarea, avisa en Slack o Teams, le escribe a tu cliente o manda los datos a una URL. Un workflow activo en Gratis, cinco en Starter y sin tope desde Profesional.'}</p>
                                 <div class="stripe-fg-tags">
-                                    <a class="stripe-fg-tag">Automatización</a>
-                                    <a class="stripe-fg-tag">Lógica custom</a>
+                                    <a class="stripe-fg-tag">{isEn ? 'Events and actions' : 'Eventos y acciones'}</a>
+                                    <a class="stripe-fg-tag">{isEn ? 'No code' : 'Sin programar'}</a>
                                 </div>
                             </div>
                             <div class="stripe-fg-card-visual">
-                                <div class="cmk-stage">
-                                    <div class="cmk-shot">
-                                        <div class="cmk-nav">
-                                            <span class="cmk-nav-title">Reglas de aprobación</span>
-                                            <div class="cmk-seg"><span class="on">Activas</span><span>Todas</span></div>
-                                        </div>
-                                        <div class="cmk-body">
-                                            <div class="cmk-rule">
-                                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span class="cmk-eyebrow" style="display:flex; align-items:center; gap:6px"><span class="cmk-dot cmk-dot-green"></span> Regla · margen y monto</span><span class="cmk-toggle"></span></div>
-                                                <div class="cmk-rule-line"><span class="cmk-kw">SI</span> <span class="cmk-tok cmk-tok-blue">Monto</span> &gt; <b>$500,000</b> <span class="cmk-kw">Y</span> <span class="cmk-tok cmk-tok-amber">Margen</span> &lt; <b>25%</b><br/><span class="cmk-kw">ENTONCES</span> <span class="cmk-tok cmk-tok-green">Requerir aprobación de un gerente</span></div>
-                                            </div>
-                                            <div class="cmk-rule dim">
-                                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span class="cmk-eyebrow">Regla · descuento</span><span class="cmk-toggle off"></span></div>
-                                                <div class="cmk-rule-line"><span class="cmk-kw">SI</span> <span class="cmk-tok cmk-tok-blue">Descuento</span> &gt; <b>15%</b> <span class="cmk-kw">ENTONCES</span> <span class="cmk-tok cmk-tok-green">Aprobación de dirección</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="g-workflow" isEn={isEn} />
                             </div>
                         </div>
 
@@ -819,40 +416,15 @@ const heroTitle = solucion.tituloAcento
                         <div class="stripe-fg-card aurora-card reveal">
                             <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
-                                <h3 class="stripe-fg-title">Reportes en Tiempo Real</h3>
-                                <p class="stripe-fg-desc">Audita absolutamente todo lo que ocurre. Tableros de Business Intelligence integrados para que nunca pierdas visibilidad de tu operación.</p>
+                                <h3 class="stripe-fg-title">{isEn ? 'Your first sales hire, no migration' : 'Tu primer vendedor, sin migrar'}</h3>
+                                <p class="stripe-fg-desc">{isEn ? 'On Professional you invite up to five people with per-section permissions, and the team report shows each person\'s quotes, close rate and amount collected.' : 'En Profesional invitas hasta cinco personas con permisos por sección, y el informe de equipo muestra las cotizaciones, la tasa de cierre y lo cobrado de cada una.'}</p>
                                 <div class="stripe-fg-tags">
-                                    <a class="stripe-fg-tag">Analytics</a>
-                                    <a class="stripe-fg-tag">Exportación API</a>
+                                    <a class="stripe-fg-tag">{isEn ? 'Team' : 'Equipo'}</a>
+                                    <a class="stripe-fg-tag">{isEn ? 'Reports' : 'Informes'}</a>
                                 </div>
                             </div>
                             <div class="stripe-fg-card-visual">
-                                <div class="cmk-stage">
-                                    <div class="cmk-shot">
-                                        <div class="cmk-nav">
-                                            <span class="cmk-nav-title">Analítica</span>
-                                            <div class="cmk-seg"><span class="on">30 días</span><span>Trim.</span><span>Año</span></div>
-                                        </div>
-                                        <div class="cmk-body">
-                                            <div class="cmk-kpis">
-                                                <div class="cmk-kpi-card"><div class="cmk-kpi-l">Cotizado</div><div class="cmk-kpi-v editorial">$4.2M <span class="cmk-up">18%</span></div></div>
-                                                <div class="cmk-kpi-card"><div class="cmk-kpi-l">Tasa de cierre</div><div class="cmk-kpi-v editorial">42% <span class="cmk-up">6%</span></div></div>
-                                                <div class="cmk-kpi-card"><div class="cmk-kpi-l">Ticket prom.</div><div class="cmk-kpi-v editorial">$128K <span class="cmk-up">9%</span></div></div>
-                                            </div>
-                                            <div class="cmk-divider"></div>
-                                            <div class="cmk-eyebrow" style="margin-bottom:12px">Cotizado vs. cerrado</div>
-                                            <div class="cmk-bars">
-                                                <div class="cmk-bar" style="height:42%"><span class="cmk-bar-tooltip">Ene: $240K</span></div>
-                                                <div class="cmk-bar" style="height:58%"><span class="cmk-bar-tooltip">Feb: $290K</span></div>
-                                                <div class="cmk-bar" style="height:50%"><span class="cmk-bar-tooltip">Mar: $265K</span></div>
-                                                <div class="cmk-bar" style="height:74%"><span class="cmk-bar-tooltip">Abr: $380K</span></div>
-                                                <div class="cmk-bar" style="height:64%"><span class="cmk-bar-tooltip">May: $340K</span></div>
-                                                <div class="cmk-bar on" style="height:96%"><span class="cmk-bar-tooltip">Jun: $480K</span></div>
-                                            </div>
-                                            <div class="cmk-axis"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="g-team" isEn={isEn} />
                             </div>
                         </div>
 
@@ -860,38 +432,15 @@ const heroTitle = solucion.tituloAcento
                         <div class="stripe-fg-card aurora-card reveal">
                             <div class="aurora-card-layer" aria-hidden="true"></div>
                             <div class="stripe-fg-card-content">
-                                <h3 class="stripe-fg-title">Multi-Entidad y Divisas</h3>
-                                <p class="stripe-fg-desc">Opera en varias divisas y entidades: convierte con tasa protegida (FX lock) y mantén cada negocio separado en una sola plataforma.</p>
+                                <h3 class="stripe-fg-title">{isEn ? 'Sell outside your country' : 'Vende fuera de tu país'}</h3>
+                                <p class="stripe-fg-desc">{isEn ? 'Quote in dollars, euros or any of 14 currencies and keep your books in yours. The rate comes from a published source, stays fixed on the quote and the invoice declares it; if no source publishes it, Cord will not make one up.' : 'Cotiza en dólares, euros o cualquiera de 14 divisas y lleva tus libros en la tuya. La tasa sale de una fuente publicada, queda fija en la cotización y la factura la declara; si ninguna fuente la publica, Cord no inventa una.'}</p>
                                 <div class="stripe-fg-tags">
-                                    <a class="stripe-fg-tag">Globalización</a>
-                                    <a class="stripe-fg-tag">Consolidación</a>
+                                    <a class="stripe-fg-tag">{isEn ? '14 currencies' : '14 divisas'}</a>
+                                    <a class="stripe-fg-tag">{isEn ? 'Published rates' : 'Tasas publicadas'}</a>
                                 </div>
                             </div>
                             <div class="stripe-fg-card-visual">
-                                <div class="cmk-stage">
-                                    <div class="cmk-shot">
-                                        <div class="cmk-nav">
-                                            <span class="cmk-nav-title">Multi-divisa</span>
-                                            <span class="cmk-badge cmk-b-blue">FX lock · 30 días</span>
-                                        </div>
-                                        <div class="cmk-body">
-                                            <div class="cmk-fx">
-                                                <div class="cmk-fx-leg"><div class="cmk-fx-cur">USD</div><div class="cmk-fx-val">$10,000</div></div>
-                                                <div class="cmk-fx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></div>
-                                                <div class="cmk-fx-leg"><div class="cmk-fx-cur">MXN</div><div class="cmk-fx-val">$182,400</div></div>
-                                            </div>
-                                            <div style="display:flex;justify-content:space-between;margin-top:14px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9;">
-                                                <span class="cmk-t2" style="display:flex; align-items:center; gap:6px"><span style="width:6px; height:6px; border-radius:50%; background:#94a3b8"></span> Tasa Banxico 17.92</span>
-                                                <span class="cmk-t2" style="color:#059669; font-weight:600; display:flex; align-items:center; gap:6px"><span class="cmk-dot cmk-dot-green"></span> Tu tasa protegida 18.24</span>
-                                            </div>
-                                            <div class="cmk-divider"></div>
-                                            <div class="cmk-eyebrow" style="margin-bottom:10px">Entidades</div>
-                                            <div class="cmk-kv"><span style="display:flex;align-items:center;gap:10px"><img src="https://flagcdn.com/w20/mx.png" width="20" style="border-radius:3px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" alt="" /><span class="cmk-t1">Cord México S.A.</span></span><span class="cmk-v editorial">$280.0M MXN</span></div>
-                                            <div class="cmk-kv"><span style="display:flex;align-items:center;gap:10px"><img src="https://flagcdn.com/w20/us.png" width="20" style="border-radius:3px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" alt="" /><span class="cmk-t1">Cord USA Inc.</span></span><span class="cmk-v editorial">$14.0M USD</span></div>
-                                            <div class="cmk-kv" style="border-bottom:none"><span style="display:flex;align-items:center;gap:10px"><img src="https://flagcdn.com/w20/co.png" width="20" style="border-radius:3px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" alt="" /><span class="cmk-t1">Cord Colombia</span></span><span class="cmk-v editorial">$3.2B COP</span></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <StpMockup scene="g-fx" isEn={isEn} />
                             </div>
                         </div>
                     </div>
@@ -899,49 +448,14 @@ const heroTitle = solucion.tituloAcento
                     <!-- Right Column: Resources Sidebar (Duplicated with different info) -->
                     <div class="stripe-fg-sidebar">
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-gray" style="background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 24px;">
-                                <!-- Background Glow -->
-                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 80% 20%, rgba(97, 175, 239, 0.15) 0%, transparent 60%); pointer-events: none; z-index: 1;"></div>
-                                <div style="position: absolute; bottom: 0; left: 20%; width: 60%; height: 50%; background: radial-gradient(circle at 50% 100%, rgba(198, 120, 221, 0.1) 0%, transparent 70%); pointer-events: none; z-index: 1;"></div>
-                                
-                                <!-- Code Window Mockup -->
-                                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; width: 100%; height: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; z-index: 2; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
-                                    <!-- Window Header -->
-                                    <div style="height: 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 10px; gap: 5px;">
-                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></div>
-                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #eab308;"></div>
-                                        <div style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e;"></div>
-                                    </div>
-                                    <!-- Code Content -->
-                                    <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px;">
-                                        <div style="display: flex; gap: 6px;">
-                                            <span style="color: #c678dd;">const</span>
-                                            <span style="color: #e5c07b;">api</span>
-                                            <span style="color: #56b6c2;">=</span>
-                                            <span style="color: #61afef;">new</span>
-                                            <span style="color: #e5c07b;">CordAPI</span><span style="color: #abb2bf;">(</span><span style="color: #98c379;">'sk_test...'</span><span style="color: #abb2bf;">);</span>
-                                        </div>
-                                        <div style="display: flex; gap: 6px; margin-top: 2px;">
-                                            <span style="color: #c678dd;">await</span>
-                                            <span style="color: #e5c07b;">api</span><span style="color: #abb2bf;">.</span><span style="color: #61afef;">quotes</span><span style="color: #abb2bf;">.</span><span style="color: #61afef;">create</span><span style="color: #abb2bf;">(&#123;</span>
-                                        </div>
-                                        <div style="display: flex; gap: 6px; padding-left: 10px;">
-                                            <span style="color: #d19a66;">amount</span><span style="color: #abb2bf;">:</span> <span style="color: #d19a66;">50000</span><span style="color: #abb2bf;">,</span>
-                                        </div>
-                                        <div style="display: flex; gap: 6px; padding-left: 10px;">
-                                            <span style="color: #d19a66;">currency</span><span style="color: #abb2bf;">:</span> <span style="color: #98c379;">'MXN'</span>
-                                        </div>
-                                        <div style="display: flex; gap: 6px;">
-                                            <span style="color: #abb2bf;">&#125;);</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="stripe-resource-visual stp-res">
+                                <StpMockup scene="r-api" isEn={isEn} />
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Documentación</span>
-                                <h4 class="stripe-resource-title">Referencia de la API REST para desarrolladores</h4>
+                                <span class="stripe-resource-eyebrow">API</span>
+                                <h4 class="stripe-resource-title">{isEn ? 'Create your first quote by API with test keys before going live' : 'Crea tu primera cotización por API con llaves de prueba antes de salir a producción'}</h4>
                                 <a href="/desarrolladores/api" class="stripe-pillar-link">
-                                    Ver documentación
+                                    {isEn ? 'See the API' : 'Ver la API'}
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -950,14 +464,14 @@ const heroTitle = solucion.tituloAcento
                         </div>
 
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-gray">
-                                <img src="/imgs/logo-cord-navy.png" alt="Cord" style="width:120px; opacity:0.8;" />
+                            <div class="stripe-resource-visual stp-res">
+                                <StpMockup scene="r-test" isEn={isEn} />
                             </div>
                             <div class="stripe-resource-content">
-                                <span class="stripe-resource-eyebrow">Recursos</span>
-                                <h4 class="stripe-resource-title">Centro de ayuda y guías paso a paso</h4>
+                                <span class="stripe-resource-eyebrow">{isEn ? 'Testing' : 'Pruebas'}</span>
+                                <h4 class="stripe-resource-title">{isEn ? 'Test cards and a sandbox to try payments without real money' : 'Tarjetas de prueba y un entorno para probar cobros sin dinero real'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
-                                    Ver centro de ayuda
+                                    {isEn ? 'See testing guides' : 'Ver guías de prueba'}
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
@@ -972,34 +486,20 @@ const heroTitle = solucion.tituloAcento
         <section class="cord-apps-section reveal">
             <div class="stripe-container">
                 <div class="cord-apps-header">
-                    <h2 class="cord-apps-title">{isEn ? 'Connect Cord to the tools you already use' : 'Conecta Cord con las herramientas que ya usas'}</h2>
-                    <p class="cord-apps-desc">{isEn ? 'Sync the tools that run your business, like HubSpot, Salesforce, or your ERP, with Cord using our REST API and webhooks.' : 'Sincroniza las herramientas que mueven tu empresa, como HubSpot, Salesforce o tu ERP, con Cord mediante nuestra API REST y webhooks.'}</p>
-                    <a href="/desarrolladores/api" class="cord-apps-link">{isEn ? 'Explore the API' : 'Explora la API'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                    <h2 class="cord-apps-title">{isEn ? 'The apps in your stack, connected from day one' : 'Las apps de tu stack, conectadas desde el primer día'}</h2>
+                    <p class="cord-apps-desc">{isEn ? 'HubSpot, Slack, Google Sheets, Shopify, Xero, Zapier, Make and n8n connect from Settings, and the REST API covers everything else.' : 'HubSpot, Slack, Google Sheets, Shopify, Xero, Zapier, Make y n8n se conectan desde Ajustes, y la API REST cubre todo lo demás.'}</p>
+                    <a href="/desarrolladores/api" class="cord-apps-link">{isEn ? 'Explore the REST API' : 'Explorar la API REST'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                 </div>
             </div>
             
             <div class="cord-apps-marquee">
                 <div class="marquee-track">
-                    <!-- First Set -->
-                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/webflow')"></div></div>
-                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/contentful')"></div></div>
-                    <div class="app-icon cord-indigo"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/zapier')"></div></div>
-                    <div class="app-icon cord-slate"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/intercom')"></div></div>
-                    <div class="app-icon cord-green"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/quickbooks')"></div></div>
-                    <div class="app-icon cord-cyan"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/xero')"></div></div>
-                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/stripe')"></div></div>
-                    <div class="app-icon cord-dark"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/notion')"></div></div>
-                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/salesforce')"></div></div>
-                    <!-- Second Set (Duplicate for smooth infinite scroll) -->
-                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/webflow')"></div></div>
-                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/contentful')"></div></div>
-                    <div class="app-icon cord-indigo"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/zapier')"></div></div>
-                    <div class="app-icon cord-slate"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/intercom')"></div></div>
-                    <div class="app-icon cord-green"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/quickbooks')"></div></div>
-                    <div class="app-icon cord-cyan"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/xero')"></div></div>
-                    <div class="app-icon cord-blue"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/stripe')"></div></div>
-                    <div class="app-icon cord-dark"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/notion')"></div></div>
-                    <div class="app-icon cord-navy"><div class="app-mask" style="-webkit-mask-image: url('https://cdn.simpleicons.org/salesforce')"></div></div>
+                    {[...APPS, ...APPS].map((a) => (
+                        <div class="app-icon">
+                            <img src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${a.d}&size=128`} alt="" width="52" height="52" loading="lazy" />
+                            <span>{a.n}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>
@@ -1008,352 +508,11 @@ const heroTitle = solucion.tituloAcento
         <section class="cord-dashboard-section reveal">
             <div class="stripe-container">
                 <div class="cord-dashboard-header">
-                    <h2 class="cord-dashboard-title">{isEn ? 'Manage your entire revenue lifecycle from one Dashboard' : 'Gestiona todo tu ciclo de ventas desde un solo Dashboard'}</h2>
-                    <p class="cord-dashboard-desc">{isEn ? 'Execute financial operations, collect insights, and track performance in a highly customizable interface.' : 'Centraliza tus propuestas, contratos, facturas y cobranza. Analiza el rendimiento de tu equipo comercial en una interfaz diseñada para la velocidad.'}</p>
+                    <h2 class="cord-dashboard-title">{isEn ? 'Proposals, payments and invoices on one screen' : 'Propuestas, cobros y facturas en una sola pantalla'}</h2>
+                    <p class="cord-dashboard-desc">{isEn ? 'Your home shows what is about to close, what you closed this month and your close rate, and every quote keeps its full history: sent, viewed, approved, paid and invoiced.' : 'Tu inicio muestra lo que está por cerrar, lo que cerraste en el mes y tu tasa de cierre, y cada cotización guarda su historia completa: enviada, vista, aprobada, pagada y facturada.'}</p>
                 </div>
                 
-                <div class="cord-dash-mockup animated-dashboard">
-                    <div class="mac-window-header">
-                        <div class="mac-dots">
-                            <span class="dot red"></span>
-                            <span class="dot yellow"></span>
-                            <span class="dot green"></span>
-                        </div>
-                        <div class="mac-title">
-                            <img src="/imgs/logo-cord-navy.png" alt="Cord" class="mac-logo" />
-                        </div>
-                        <div class="mac-spacer"></div>
-                    </div>
-
-                    <div class="dashboard-app-frame">
-                        <!-- Cursor Animado -->
-                        <div class="mockup-cursor">
-                            <svg width="22" height="34" viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2.5 2.5L2.5 28.5L8.5 22.5L13.5 32.5L17.5 30.5L12.5 20.5L20.5 20.5L2.5 2.5Z" fill="#000000" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-
-                        <!-- Sidebar premium con grupos -->
-                        <aside class="dash-sidebar">
-                            <div class="dash-org-sw">
-                                <div class="dash-org-icon">IS</div>
-                                <div class="dash-org-meta">
-                                    <strong>Innovatech SA</strong>
-                                    <span>Plan Pro</span>
-                                </div>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </div>
-
-                            <nav class="dash-nav-links">
-                                <div class="dash-nav-group">PRINCIPAL</div>
-                                <a class="dash-link">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.1"/></svg>
-                                    Inicio
-                                </a>
-                                <a class="dash-link active">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.1"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                    Cotizaciones
-                                    <span class="dash-nav-badge">4</span>
-                                </a>
-
-                                <div class="dash-nav-group">CATÁLOGO</div>
-                                <a class="dash-link">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.1"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                    Clientes
-                                </a>
-                                <a class="dash-link">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" fill="currentColor" fill-opacity="0.1"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                                    Productos
-                                </a>
-
-                                <div class="dash-nav-group">MI DINERO</div>
-                                <a class="dash-link">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" fill="currentColor" fill-opacity="0.1"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                    Cobranza
-                                </a>
-                                <a class="dash-link">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><rect x="5" y="13" width="2" height="7" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="11" y="3" width="2" height="17" fill="currentColor" fill-opacity="0.12" stroke="none"/></svg>
-                                    Analítica
-                                </a>
-                            </nav>
-
-                            <div class="dash-user">
-                                <div class="dash-avatar">AV</div>
-                                <div class="dash-user-info">
-                                    <strong>Andre Valle</strong>
-                                    <span>Administrador</span>
-                                </div>
-                                <svg class="dash-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </div>
-                        </aside>
-
-                        <!-- Main Content -->
-                        <main class="dash-main">
-                            <div class="dash-views-container">
-
-                                <!-- VIEW 1: Cotizaciones (Dashboard) -->
-                                <div class="dash-view dash-view-dashboard">
-                                    <header class="dash-header">
-                                        <h2 class="dash-page-title">Cotizaciones</h2>
-                                        <div class="dash-hdr-right">
-                                            <div class="dash-icon-btn">
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                            </div>
-                                            <div class="dash-icon-btn dash-bell-btn">
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                                                <span class="dash-notif-dot"></span>
-                                            </div>
-                                            <div class="dash-avatar dash-avatar-top">AV</div>
-                                        </div>
-                                    </header>
-
-                                    <div class="dash-content-body">
-                                        <!-- KPI Row con sparklines -->
-                                        <div class="dash-kpi-row">
-                                            <div class="dash-kpi-card">
-                                                <div class="dash-kpi-top-row">
-                                                    <span class="dash-kpi-lbl">Pipeline abierto</span>
-                                                    <span class="dash-trend up">+12%</span>
-                                                </div>
-                                                <div class="dash-kpi-num">$430,000</div>
-                                                <div class="dash-kpi-sub">MXN · vs mes anterior</div>
-                                                <div class="dash-sparkline">
-                                                    <div class="sp-bar" style="--h:38%"></div>
-                                                    <div class="sp-bar" style="--h:52%"></div>
-                                                    <div class="sp-bar" style="--h:45%"></div>
-                                                    <div class="sp-bar" style="--h:68%"></div>
-                                                    <div class="sp-bar" style="--h:72%"></div>
-                                                    <div class="sp-bar" style="--h:60%"></div>
-                                                    <div class="sp-bar sp-hi" style="--h:88%"></div>
-                                                </div>
-                                            </div>
-                                            <div class="dash-kpi-card">
-                                                <div class="dash-kpi-top-row">
-                                                    <span class="dash-kpi-lbl">Cerrado en jun</span>
-                                                    <span class="dash-trend up">+8%</span>
-                                                </div>
-                                                <div class="dash-kpi-num">$1,250,000</div>
-                                                <div class="dash-kpi-sub">12 aprobadas</div>
-                                                <div class="dash-sparkline">
-                                                    <div class="sp-bar" style="--h:55%"></div>
-                                                    <div class="sp-bar" style="--h:70%"></div>
-                                                    <div class="sp-bar" style="--h:62%"></div>
-                                                    <div class="sp-bar" style="--h:80%"></div>
-                                                    <div class="sp-bar" style="--h:75%"></div>
-                                                    <div class="sp-bar" style="--h:88%"></div>
-                                                    <div class="sp-bar sp-hi" style="--h:95%"></div>
-                                                </div>
-                                            </div>
-                                            <div class="dash-kpi-card">
-                                                <div class="dash-kpi-top-row">
-                                                    <span class="dash-kpi-lbl">Tasa de cierre</span>
-                                                    <span class="dash-trend down">-2%</span>
-                                                </div>
-                                                <div class="dash-kpi-num">82.4%</div>
-                                                <div class="dash-kpi-sub">18 cotizaciones · 90 días</div>
-                                                <div class="dash-sparkline">
-                                                    <div class="sp-bar sp-g" style="--h:78%"></div>
-                                                    <div class="sp-bar sp-g" style="--h:85%"></div>
-                                                    <div class="sp-bar sp-g" style="--h:80%"></div>
-                                                    <div class="sp-bar sp-g" style="--h:88%"></div>
-                                                    <div class="sp-bar sp-g" style="--h:83%"></div>
-                                                    <div class="sp-bar sp-g" style="--h:79%"></div>
-                                                    <div class="sp-bar sp-g sp-hi-g" style="--h:82%"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Table section -->
-                                        <div class="dash-tbl-hdr">
-                                            <h3 class="dash-view-title">Cotizaciones recientes</h3>
-                                            <div class="dash-ftabs">
-                                                <span class="dash-ftab dash-ftab-on">Todas<em>18</em></span>
-                                                <span class="dash-ftab">Activas<em>9</em></span>
-                                                <span class="dash-ftab">Aprobadas<em>6</em></span>
-                                            </div>
-                                            <div class="cmk-cta cmk-cta-solid anim-btn" style="padding: 7px 13px; font-size: 0.8rem; gap: 5px; margin-left: auto;">
-                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                                Nueva
-                                            </div>
-                                        </div>
-
-                                        <div class="dash-table-wrap">
-                                            <div class="dash-th-r">
-                                                <span>Folio</span>
-                                                <span>Cliente · Proyecto</span>
-                                                <span style="text-align:right">Monto</span>
-                                                <span>Estado</span>
-                                                <span style="text-align:right">Fecha</span>
-                                            </div>
-
-                                            <div class="dash-tr-r">
-                                                <div class="dash-folio">COT-0456</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://novatech.io&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Novatech Global</div><div class="dash-cl-proj">Implementación ERP</div></div>
-                                                </div>
-                                                <div class="dash-damt">$120,000.00</div>
-                                                <div><span class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div>Aceptada</span></div>
-                                                <div class="dash-ddate">Hoy, 10:42</div>
-                                            </div>
-
-                                            <div class="dash-tr-r hl anim-row">
-                                                <div class="dash-folio">COT-0455</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quantum.net&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Quantum Logistics</div><div class="dash-cl-proj">Optimización Fase 1</div></div>
-                                                </div>
-                                                <div class="dash-damt">$250,000.00</div>
-                                                <div><span class="cmk-badge anim-badge"></span></div>
-                                                <div class="dash-ddate">26 Jun 2026</div>
-                                            </div>
-
-                                            <div class="dash-tr-r">
-                                                <div class="dash-folio">COT-0454</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://synergy.com&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Synergy Partners</div><div class="dash-cl-proj">Consultoría</div></div>
-                                                </div>
-                                                <div class="dash-damt">$85,500.00</div>
-                                                <div><span class="cmk-badge cmk-b-amber"><div class="cmk-dot cmk-dot-amber"></div>Vista</span></div>
-                                                <div class="dash-ddate">Ayer, 4:15</div>
-                                            </div>
-
-                                            <div class="dash-tr-r">
-                                                <div class="dash-folio">COT-0453</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stellar.org&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Stellar Health</div><div class="dash-cl-proj">Auditoría Anual</div></div>
-                                                </div>
-                                                <div class="dash-damt">$42,000.00</div>
-                                                <div><span class="cmk-badge cmk-b-blue"><div class="cmk-dot cmk-dot-blue"></div>Enviada</span></div>
-                                                <div class="dash-ddate">25 Jun 2026</div>
-                                            </div>
-
-                                            <div class="dash-tr-r">
-                                                <div class="dash-folio">COT-0452</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://primedigital.mx&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Prime Digital MX</div><div class="dash-cl-proj">Dashboard Analytics</div></div>
-                                                </div>
-                                                <div class="dash-damt">$68,000.00</div>
-                                                <div><span class="cmk-badge cmk-b-green"><div class="cmk-dot cmk-dot-green"></div>Aceptada</span></div>
-                                                <div class="dash-ddate">24 Jun 2026</div>
-                                            </div>
-
-                                            <div class="dash-tr-r dash-tr-last">
-                                                <div class="dash-folio">COT-0451</div>
-                                                <div class="dash-cl">
-                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://tecnosolve.mx&size=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" />
-                                                    <div><div class="dash-cl-name">Tecnosolve MX</div><div class="dash-cl-proj">Migración Cloud</div></div>
-                                                </div>
-                                                <div class="dash-damt">$320,000.00</div>
-                                                <div><span class="cmk-badge cmk-b-gray"><div class="cmk-dot cmk-dot-gray"></div>Borrador</span></div>
-                                                <div class="dash-ddate">22 Jun 2026</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- VIEW 2: Quote Editor mejorado (4 líneas + margen) -->
-                                <div class="dash-view dash-view-quote">
-                                    <header class="dash-header" style="justify-content: space-between;">
-                                        <div style="display: flex; align-items: center; gap: 14px;">
-                                            <div class="dash-back-btn">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                                            </div>
-                                            <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin:0; letter-spacing: -0.01em;">Cotización #4082</h3>
-                                            <span class="cmk-badge cmk-b-gray anim-badge-quote"></span>
-                                        </div>
-                                        <div class="cmk-cta cmk-cta-solid anim-send-btn" style="padding: 7px 14px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #2563eb;">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                                            Enviar cotización
-                                        </div>
-                                    </header>
-
-                                    <div class="dash-content-body" style="background: #ffffff;">
-                                        <div class="quote-form">
-                                            <h4 class="dash-section-lbl">Detalles del Cliente</h4>
-
-                                            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
-                                                <div class="quote-field">
-                                                    <label>Cliente</label>
-                                                    <div class="quote-input" style="justify-content: space-between; cursor: default;">
-                                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
-                                                            <span class="anim-typing-text"></span>
-                                                        </div>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                                                    </div>
-                                                </div>
-                                                <div class="quote-field">
-                                                    <label>Vigencia</label>
-                                                    <div class="quote-input" style="justify-content: space-between; background: #f8fafc;">
-                                                        <div style="display: flex; align-items: center; gap: 8px; color:#0f172a;">
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                                            15 días
-                                                        </div>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <h4 class="dash-section-lbl">Conceptos</h4>
-
-                                            <!-- Items table with margin badges -->
-                                            <div class="dash-table-wrap" style="margin-bottom: 16px;">
-                                                <div class="dash-th-r" style="grid-template-columns: 2.6fr 0.7fr 1.1fr 1.1fr 0.75fr; background: #f8fafc;">
-                                                    <span>Concepto</span>
-                                                    <span style="text-align:right">Cant.</span>
-                                                    <span style="text-align:right">Precio U.</span>
-                                                    <span style="text-align:right">Total</span>
-                                                    <span style="text-align:right">Margen</span>
-                                                </div>
-                                                <div class="dash-tr-r" style="grid-template-columns: 2.6fr 0.7fr 1.1fr 1.1fr 0.75fr;">
-                                                    <div class="cmk-t1" style="font-weight:500;">UX/UI Design System</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">1</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">$45,000</div>
-                                                    <div class="dash-damt">$45,000.00</div>
-                                                    <div style="text-align:right;"><span class="dash-margin-badge g">68%</span></div>
-                                                </div>
-                                                <div class="dash-tr-r hl anim-row-quote" style="grid-template-columns: 2.6fr 0.7fr 1.1fr 1.1fr 0.75fr;">
-                                                    <div class="cmk-t1" style="font-weight:500;">Desarrollo Frontend</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">1</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">$60,000</div>
-                                                    <div class="dash-damt">$60,000.00</div>
-                                                    <div style="text-align:right;"><span class="dash-margin-badge g">72%</span></div>
-                                                </div>
-                                                <div class="dash-tr-r" style="grid-template-columns: 2.6fr 0.7fr 1.1fr 1.1fr 0.75fr;">
-                                                    <div class="cmk-t1" style="font-weight:500;">Integración API Backend</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">1</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">$28,000</div>
-                                                    <div class="dash-damt">$28,000.00</div>
-                                                    <div style="text-align:right;"><span class="dash-margin-badge a">55%</span></div>
-                                                </div>
-                                                <div class="dash-tr-r dash-tr-last" style="grid-template-columns: 2.6fr 0.7fr 1.1fr 1.1fr 0.75fr;">
-                                                    <div class="cmk-t1" style="font-weight:500;">Soporte Premium (6 meses)</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">1</div>
-                                                    <div class="cmk-t2 editorial" style="text-align:right;">$12,000</div>
-                                                    <div class="dash-damt">$12,000.00</div>
-                                                    <div style="text-align:right;"><span class="dash-margin-badge g">80%</span></div>
-                                                </div>
-                                            </div>
-
-                                            <div style="display: flex; justify-content: flex-end;">
-                                                <div style="width: 240px;">
-                                                    <div class="cmk-kv" style="padding: 6px 0; border-bottom: none;"><span class="cmk-k">Subtotal</span><span class="cmk-v editorial">$145,000.00</span></div>
-                                                    <div class="cmk-kv" style="padding: 6px 0; border-bottom: 1px solid #e2e8f0;"><span class="cmk-k">IVA (16%)</span><span class="cmk-v editorial">$23,200.00</span></div>
-                                                    <div class="cmk-kv" style="padding: 14px 0 0 0; border-bottom: none;"><span class="cmk-k" style="font-weight: 700; color: #0a192f;">Total MXN</span><span class="cmk-v editorial" style="font-size: 21px; color: #0a192f;">$168,200.00</span></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </main>
-                    </div>
-                </div>
+                <StpDashboard isEn={isEn} />
             </div>
         </section>
 
@@ -1363,7 +522,7 @@ const heroTitle = solucion.tituloAcento
         <!-- ── FAQ ── -->
         <FaqAccordion
             faqs={solucion.faqs}
-            title={isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}
+            title={isEn ? 'What founders ask first' : 'Lo que preguntan los fundadores'}
             id="startups-faq"
             class="sol-faq-acc"
             maxWidth="800px"
@@ -1422,12 +581,6 @@ const heroTitle = solucion.tituloAcento
         max-width: 1140px;
         margin: 0 auto;
         padding: 0 20px;
-    }
-    
-    .editorial {
-        font-family: var(--font-mono, ui-monospace, monospace);
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.02em;
     }
 
     /* ════════════════════════════════════════════════════════════════
@@ -1592,106 +745,7 @@ const heroTitle = solucion.tituloAcento
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0,0,0,0.05);
     }
-    
-    /* ════════════════════════════════════════════════════════════════
-       CORD MARQUEE
-    ════════════════════════════════════════════════════════════════ */
-    .cord-marquee {
-        position: absolute;
-        top: 64px; /* Right below the nav */
-        left: 0;
-        width: 100%;
-        overflow: hidden;
-        border-bottom: 1px solid rgba(10, 25, 47, 0.05);
-        padding: 12px 0;
-        z-index: 10;
-        background: rgba(255,255,255,0.4);
-        backdrop-filter: blur(10px);
-    }
-    
-    .cord-marquee-inner {
-        display: flex;
-        gap: 3rem;
-        width: max-content;
-        animation: marqueeScroll 25s linear infinite;
-    }
-    
-    .cm-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.85rem;
-        color: var(--stripe-text);
-        font-weight: 500;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-    
-    .cm-item:hover {
-        color: var(--stripe-cyan);
-    }
-    
-    .cm-tag {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: var(--stripe-cyan);
-        background: rgba(59, 130, 246, 0.1);
-        padding: 2px 8px;
-        border-radius: 100px;
-        text-transform: uppercase;
-    }
-    
-    .cm-item svg {
-        width: 14px;
-        height: 14px;
-        opacity: 0.5;
-    }
-    
-    @keyframes marqueeScroll {
-        0% { transform: translateX(10%); }
-        100% { transform: translateX(-100%); }
-    }
     .stripe-feature-grid-section {
-        padding: 6rem 0;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-clients {
-        padding: 4rem 0;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-clients-title {
-        text-align: center;
-        color: var(--stripe-muted);
-        font-size: 0.95rem;
-        font-weight: 500;
-        margin-bottom: 2rem;
-    }
-    
-    .stripe-logo-grid {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 2rem;
-        opacity: 0.6;
-    }
-    
-    .stripe-logo {
-        font-family: var(--font-mono);
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--stripe-text);
-    }
-
-    /* ════════════════════════════════════════════════════════════════
-       BENTO GRID
-    ════════════════════════════════════════════════════════════════ */
-    .stripe-bento-section {
         padding: 6rem 0;
         position: relative;
         z-index: 10;
@@ -1864,134 +918,6 @@ const heroTitle = solucion.tituloAcento
         min-height: 400px;
         overflow: visible;
     }
-
-    /* UI Mockup Base (Photorealistic) */
-    .real-ui {
-        width: 360px;
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 40px 80px -20px rgba(50,50,93,0.15), 0 20px 40px -20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,1);
-        background: #fff;
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-        color: #0f172a;
-        overflow: hidden;
-        transform: translateY(0);
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        text-align: left;
-    }
-    .stripe-fg-card:hover .real-ui {
-        transform: translateY(-8px);
-    }
-
-    /* ── PILOTO §MOCKUP_STANDARDS: screenshot que sangra y se recorta (estilo Stripe) ──
-       El mockup NO es una tarjeta centrada: llena el espacio, sin borde visible, y se
-       corta en el borde del card padre (overflow:hidden) como una imagen recortada. */
-    .cmk0-wrap { position: absolute; inset: 0; }
-    .cmk0 {
-        position: absolute; top: 2.4rem; left: 2.4rem; width: 560px;
-        background: #fff; text-align: left;
-        border-radius: 14px 0 0 0;
-        border-top: 1px solid rgba(10,25,47,0.06);
-        border-left: 1px solid rgba(10,25,47,0.06);
-        box-shadow: -24px 24px 60px -24px rgba(10,25,47,0.18);
-        overflow: hidden;
-        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .stripe-fg-card:hover .cmk0 { transform: translateY(-6px); }
-    .cmk0-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #f1f5f9; }
-    .cmk0-nav-title { font-size: 14px; font-weight: 700; color: #0a192f; letter-spacing: -0.01em; }
-    .cmk0-seg { display: flex; gap: 2px; background: #f5f5f7; border-radius: 9px; padding: 3px; }
-    .cmk0-seg span { font-size: 11px; font-weight: 600; color: #64748b; padding: 4px 11px; border-radius: 6px; }
-    .cmk0-seg span.on { background: #fff; color: #0a192f; box-shadow: 0 1px 2px rgba(10,25,47,0.08); }
-    .cmk0-th, .cmk0-tr { display: grid; grid-template-columns: 80px 1.5fr 96px 92px 52px; align-items: center; gap: 12px; padding: 0 22px; }
-    .cmk0-th { height: 36px; border-bottom: 1px solid #eef1f4; }
-    .cmk0-th span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
-    .cmk0-r { text-align: right; }
-    .cmk0-tr { height: 53px; border-bottom: 1px solid #f4f6f8; }
-    .cmk0-folio2 { font-size: 12px; font-weight: 700; color: #475569; font-variant-numeric: tabular-nums; }
-    .cmk0-cli { font-size: 13px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cmk0-amt { font-size: 13px; font-weight: 600; color: #0f172a; text-align: right; }
-    .cmk0-date { font-size: 11px; color: #94a3b8; font-weight: 500; text-align: right; white-space: nowrap; }
-    .cmk0-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; justify-self: start; }
-    .cmk0-b-green { background: rgba(16,185,129,0.12); color: #047857; }
-    .cmk0-b-blue { background: rgba(37,99,235,0.10); color: #1d4ed8; }
-    .cmk0-b-gray { background: rgba(10,25,47,0.06); color: #475569; }
-    @media (max-width: 768px) { .cmk0 { top: 1.6rem; left: 1.6rem; } }
-
-    /* Global RUI */
-    .rui-topbar { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #fafbfc; }
-    .mac-dots { display: flex; gap: 6px; }
-    .mac-dots .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot.red { background: #ff5f56; } .dot.yellow { background: #ffbd2e; } .dot.green { background: #27c93f; }
-    .dot.gray { background: #475569; opacity: 0.5; }
-    .rui-topbar-title { font-size: 12px; font-weight: 600; color: #475569; }
-    
-    /* Mockup 0 (Chart) */
-    .rui-header-flex { display: flex; justify-content: space-between; align-items: flex-start; }
-    .rui-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; color: #0f172a; }
-    .rui-label { font-size: 13px; font-weight: 600; }
-    .text-green { color: #10b981; }
-    .text-red { color: #ef4444; }
-    .rui-tabs-small { display: flex; background: #f1f5f9; padding: 2px; border-radius: 6px; }
-    .rui-tabs-small span { font-size: 11px; padding: 4px 10px; font-weight: 600; color: #64748b; border-radius: 4px; }
-    .rui-tabs-small span.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    
-    .rui-chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 110px; gap: 8px; margin-top: 24px; }
-    .rui-chart-bar { flex: 1; background: #e2e8f0; border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s; width: 100%; }
-    .bar-active { background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%); }
-    .rui-chart-labels { display: flex; justify-content: space-between; margin-top: 12px; }
-    .rui-chart-labels span { font-size: 11px; font-weight: 600; color: #94a3b8; width: 14%; text-align: center; }
-    
-    .rui-divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
-    .rui-dropdown-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #334155; }
-    .rui-table-mini { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-    .rt-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; }
-    .rt-label { color: #64748b; } .rt-val { color: #0f172a; font-weight: 600; }
-    
-    /* Mockup 1 (Terminal) */
-    .rui-sidebar-layout { display: flex; height: 350px; }
-    .rui-sidebar { width: 56px; background: #f8fafc; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 20px; }
-    .rs-item { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; }
-    .rs-item.active { background: #e0e7ff; color: #4f46e5; }
-    .rs-item svg { width: 20px; height: 20px; }
-    .rui-main { flex: 1; display: flex; flex-direction: column; }
-    .badge-blue { background: #dbeafe; color: #2563eb; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
-    
-    .rui-pipeline-visual { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-    .rp-node { width: 40px; height: 40px; border-radius: 10px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; }
-    .rp-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 16px; position: relative; overflow: hidden; }
-    .rp-dot { position: absolute; width: 6px; height: 6px; background: #0ea5e9; border-radius: 50%; top: -2px; left: 0; animation: slideRight 2s infinite linear; }
-    .delay-1 { animation-delay: 1s; }
-    
-    .rui-terminal { background: #0f172a; color: #cbd5e1; font-family: 'SF Mono', 'JetBrains Mono', monospace; font-size: 11px; padding: 16px; flex: 1; line-height: 1.7; border-top: 1px solid #1e293b; }
-    .rui-term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #64748b; font-size: 10px; }
-    .term-green { color: #4ade80; font-weight: 600; } .term-blue { color: #60a5fa; font-weight: 600; } .term-purple { color: #c084fc; font-weight: 600; }
-    
-    /* Mockup 2 (Security) */
-    .rui-btn-save { background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
-    .rui-setting-group { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    .rui-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
-    .rui-setting-row:last-child { border-bottom: none; }
-    .rs-info { display: flex; flex-direction: column; gap: 4px; }
-    .rs-title { font-size: 13px; font-weight: 600; color: #1e293b; }
-    .rs-desc { font-size: 12px; color: #64748b; }
-    
-    .rui-toggle { width: 44px; height: 24px; background: #e2e8f0; border-radius: 24px; position: relative; transition: 0.3s; cursor: pointer; }
-    .rui-toggle.active { background: #34d399; }
-    .rt-knob { width: 20px; height: 20px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .rui-toggle.active .rt-knob { left: 22px; }
-    
-    .rui-rbac-list { border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; overflow: hidden; }
-    .rbac-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
-    .rbac-row:last-child { border-bottom: none; }
-    .rbac-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
-    .rbac-grad-1 { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
-    .rbac-grad-2 { background: linear-gradient(135deg, #34d399, #059669); }
-    .rbac-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
-    .badge-admin { background: #f3e8ff; color: #7e22ce; }
-    .badge-gray { background: #f1f5f9; color: #475569; display: flex; align-items: center; gap: 4px; border: 1px solid #e2e8f0; }
-
-    @keyframes slideRight { 100% { left: 100%; } }
     
     .stripe-fg-sidebar {
         display: flex;
@@ -2019,6 +945,8 @@ const heroTitle = solucion.tituloAcento
     
     .stripe-resource-visual {
         height: 160px;
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2026,11 +954,6 @@ const heroTitle = solucion.tituloAcento
     
     .stripe-bg-purple {
         background: var(--stripe-cyan);
-    }
-    
-    .stripe-bg-gray {
-        background: #f7f9fc;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
     }
     
     .stripe-resource-content {
@@ -2057,12 +980,6 @@ const heroTitle = solucion.tituloAcento
         line-height: 1.4;
     }
     
-    .stripe-bento-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-    }
-    
     .stripe-bento-card {
         position: relative;
         background: var(--stripe-card-bg);
@@ -2072,10 +989,6 @@ const heroTitle = solucion.tituloAcento
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-    }
-    
-    .stripe-bento-card.span-2 {
-        grid-column: span 2;
     }
     
     /* Interactive Hover Glow (Stripe signature) */
@@ -2100,238 +1013,9 @@ const heroTitle = solucion.tituloAcento
     .stripe-bento-card:hover::before {
         opacity: 1;
     }
-    
-    .stripe-bento-inner {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: 2.5rem;
-    }
-    
-    .span-2 .stripe-bento-inner {
-        flex-direction: row;
-        align-items: center;
-        gap: 4rem;
-    }
-    
-    .stripe-bento-graphic {
-        flex: 1;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-    }
-    
-    .stripe-bento-text {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .stripe-bento-eyebrow {
-        color: var(--stripe-cyan);
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1rem;
-    }
-    
-    .stripe-bento-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: var(--stripe-text);
-        line-height: 1.2;
-        margin-bottom: 1rem;
-        letter-spacing: -0.02em;
-    }
-    
-    .stripe-bento-desc {
-        color: var(--stripe-muted);
-        line-height: 1.5;
-        font-size: 1.1rem;
-    }
-
-    /* ════════════════════════════════════════════════════════════════
-       STATS
-    ════════════════════════════════════════════════════════════════ */
-    .stripe-stats-section {
-        padding: 4rem 0;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2rem;
-        border-top: 1px solid var(--stripe-border);
-        padding-top: 4rem;
-    }
-    
-    .stripe-stat-card {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .stripe-stat-line {
-        width: 30px;
-        height: 2px;
-        background: var(--stripe-accent);
-        margin-bottom: 1.5rem;
-    }
-    
-    .stripe-stat-val {
-        font-size: 3rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 0.75rem;
-        color: var(--stripe-text);
-    }
-    
-    .stripe-stat-label {
-        font-size: 1rem;
-        color: var(--stripe-muted);
-        line-height: 1.4;
-    }
-
-    /* ════════════════════════════════════════════════════════════════
-       TESTIMONIAL
-    ════════════════════════════════════════════════════════════════ */
-    .stripe-testimonial-section {
-        padding: 6rem 0;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-testimonial-card {
-        background: var(--stripe-card-bg);
-        border: 1px solid var(--stripe-border);
-        border-radius: 24px;
-        padding: 4rem;
-        position: relative;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-    }
-    
-    .stripe-quote-mark {
-        font-size: 6rem;
-        color: var(--stripe-accent);
-        line-height: 0;
-        margin-bottom: 2rem;
-        font-family: serif;
-    }
-    
-    .stripe-testimonial-text {
-        font-size: clamp(1.5rem, 3vw, 2.5rem);
-        font-weight: 500;
-        line-height: 1.3;
-        margin-bottom: 3rem;
-        letter-spacing: -0.02em;
-    }
-    
-    .stripe-testimonial-author {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 3rem;
-    }
-    
-    .stripe-author-avatar {
-        width: 48px;
-        height: 48px;
-        background: #fff;
-        border-radius: 50%;
-        opacity: 0.9;
-    }
-    
-    .stripe-author-info b {
-        display: block;
-        font-size: 1.1rem;
-        color: var(--stripe-text);
-    }
-    
-    .stripe-author-info span {
-        font-size: 0.9rem;
-        color: var(--stripe-muted);
-    }
-    
-    .stripe-testimonial-metrics {
-        display: flex;
-        gap: 3rem;
-        border-top: 1px solid var(--stripe-border);
-        padding-top: 2rem;
-    }
-    
-    .stripe-testimonial-metrics b {
-        display: block;
-        font-size: 2rem;
-        color: var(--stripe-text);
-        margin-bottom: 0.25rem;
-    }
-    
-    .stripe-testimonial-metrics span {
-        font-size: 0.9rem;
-        color: var(--stripe-muted);
-    }
 
     /* ── FAQ padding override ── */
     :global(.sol-faq-acc) { padding: 5rem 5% 7rem; }
-
-    /* ════════════════════════════════════════════════════════════════
-       CTA
-    ════════════════════════════════════════════════════════════════ */
-    .stripe-cta-section {
-        padding: 6rem 0 10rem;
-        position: relative;
-        z-index: 10;
-    }
-    
-    .stripe-cta-card {
-        background: radial-gradient(circle at top, rgba(10, 25, 47, 0.1), transparent 50%), var(--stripe-card-bg);
-        border: 1px solid var(--stripe-border);
-        border-radius: 24px;
-        padding: 5rem 2rem;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .stripe-cta-card .stripe-p {
-        max-width: 600px;
-        margin-bottom: 3rem;
-    }
-    
-    .stripe-cta-card .stripe-actions {
-        justify-content: center;
-    }
-
-    /* Overrides para botones en fondo claro (CTA) */
-    .stripe-cta-card .btn-luxe {
-        background: #0a192f;
-        color: #fff;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 8px 24px rgba(10,25,47,0.18);
-    }
-    .stripe-cta-card .btn-luxe:hover {
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 12px 32px rgba(10,25,47,0.24);
-    }
-    .stripe-cta-card .btn-luxe .btn-shimmer {
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
-    }
-    .stripe-cta-card .btn-ghost {
-        color: #0a192f;
-        border-color: rgba(10,25,47,0.08);
-        background: rgba(255,255,255,0.6);
-    }
-    .stripe-cta-card .btn-ghost:hover {
-        background: #fff;
-        box-shadow: 0 6px 16px rgba(10,25,47,0.06);
-    }
 
     /* ════════════════════════════════════════════════════════════════
        RESPONSIVE
@@ -2340,24 +1024,6 @@ const heroTitle = solucion.tituloAcento
         .stripe-hero {
             padding: 140px 0 80px;
             min-height: 100dvh;
-        }
-        
-        .stripe-bento-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .stripe-bento-card.span-2 {
-            grid-column: 1;
-        }
-        
-        .span-2 .stripe-bento-inner {
-            flex-direction: column-reverse;
-            gap: 2rem;
-        }
-        
-        .stripe-stats-grid {
-            grid-template-columns: 1fr;
-            gap: 3rem;
         }
     }
     
@@ -2376,97 +1042,13 @@ const heroTitle = solucion.tituloAcento
             width: 100%;
         }
         
-        .btn-luxe, .btn-ghost {
+        .btn-luxe,
+    .btn-ghost {
             width: 100%;
             justify-content: center;
         }
-        
-        .stripe-testimonial-card {
-            padding: 2rem;
-        }
-        
-        .stripe-testimonial-metrics {
-            flex-direction: column;
-            gap: 2rem;
-        }
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       NUEVAS SECCIONES STRIPE ENTERPRISE
-    ════════════════════════════════════════════════════════════════ */
-    
-    .stripe-hero-eyebrow {
-        color: var(--stripe-cyan);
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        font-size: 0.85rem;
-        margin-bottom: 1.5rem;
-        background: rgba(59, 130, 246, 0.15);
-        padding: 4px 12px;
-        border-radius: 100px;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        display: inline-block;
-    }
-
-    
-    .stripe-eyebrow-light {
-        color: #60a5fa; /* Light Blue */
-    }
-
-    .text-white { color: #fff !important; }
-    .text-white-muted { color: rgba(255,255,255,0.7) !important; }
-
-    /* ── INTEGRATIONS TICKER ── */
-    .stripe-integrations-ticker {
-        position: relative;
-        z-index: 20;
-        margin-top: -60px;
-        margin-bottom: 4rem;
-        background: rgba(255,255,255,0.8);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-top: 1px solid var(--stripe-border);
-        border-bottom: 1px solid var(--stripe-border);
-        padding: 24px 0;
-        overflow: hidden;
-    }
-    
-    .stripe-ticker-track {
-        display: flex;
-        width: max-content;
-        animation: marquee 30s linear infinite;
-    }
-    
-    .stripe-ticker-tape {
-        display: flex;
-        align-items: center;
-        gap: 60px;
-        padding-right: 60px;
-    }
-    
-    .stripe-ticker-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        opacity: 0.6;
-        transition: opacity 0.3s;
-    }
-    
-    .stripe-ticker-item:hover {
-        opacity: 1;
-    }
-    
-    .stripe-ticker-icon {
-        color: var(--stripe-accent);
-        width: 24px; height: 24px;
-    }
-    
-    .stripe-ticker-name {
-        font-weight: 600;
-        font-size: 1.1rem;
-        letter-spacing: -0.02em;
-        color: var(--stripe-text);
-    }
     
     @keyframes marquee {
         to { transform: translateX(-50%); }
@@ -2538,47 +1120,6 @@ const heroTitle = solucion.tituloAcento
         border-bottom: 1px solid rgba(0,0,0,0.04);
         overflow: hidden;
     }
-    
-    .pillar-mock-light {
-        width: 100%; height: 100%;
-        display: flex; align-items: flex-end; justify-content: center;
-        position: relative; padding: 0 32px;
-    }
-
-    .stripe-light-card {
-        background: #ffffff;
-        width: 100%;
-        border-radius: 12px 12px 0 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        border-bottom: none;
-        padding: 24px;
-        transform: translateY(16px);
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s;
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-    }
-    .stripe-pillar-card:hover .stripe-light-card {
-        transform: translateY(0);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.03);
-    }
-
-    /* Shared Mockup Elements */
-    .slc-header { font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .slc-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 16px; }
-    .slc-row span { color: #64748b; font-weight: 500; }
-    .slc-row strong { color: #0f172a; font-weight: 700; font-size: 16px; }
-    .slc-btn { background: #0ea5e9; color: #ffffff; border: none; width: 100%; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-    .stripe-pillar-card:hover .slc-btn { background: #0284c7; }
-    
-    .slc-kpi { display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px; }
-    .slc-kpi-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .slc-kpi-value { font-size: 26px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; }
-    .slc-chart { display: flex; align-items: flex-end; gap: 8px; height: 60px; }
-    .slc-bar { flex: 1; background: linear-gradient(180deg, #6366f1 0%, #0ea5e9 100%); border-radius: 4px 4px 0 0; opacity: 0.8; transition: opacity 0.3s, transform 0.5s; transform-origin: bottom; transform: scaleY(0.85); }
-    .stripe-pillar-card:hover .slc-bar { opacity: 1; transform: scaleY(1); }
-    
-    .slc-xml { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; line-height: 1.6; border: 1px solid #f1f5f9; }
-    .slc-badge { display: inline-flex; align-items: center; gap: 4px; background: #ecfdf5; color: #059669; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
     
     .stripe-pillar-content {
         padding: 2.5rem;
@@ -2732,15 +1273,6 @@ const heroTitle = solucion.tituloAcento
     .startup-use-case-card:hover {
         transform: scale(1.02);
         box-shadow: 0 16px 40px rgba(0,0,0,0.08);
-    }
-    .startup-hero-graphic {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        right: 0;
-        width: 50%;
-        z-index: 1;
-        pointer-events: none;
     }
     .uc-content {
         padding: 3rem 2.5rem 2rem 2.5rem;
@@ -2989,258 +1521,15 @@ const heroTitle = solucion.tituloAcento
     .int-link:hover svg { transform: translateX(4px); }
 
     .int-card-graphic {
-        padding: 2.5rem;
+        padding: 2rem 2.5rem 2.5rem;
         margin-top: auto;
         display: flex;
         justify-content: center;
     }
-    .mock-ui {
-        width: 100%;
-        height: 220px;
-        border-radius: 16px;
-        background: #f6f9fc;
-        border: 1px solid rgba(0,0,0,0.04);
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .stripe-fg-card-visual { min-height: 480px; overflow: hidden; }
+    @media (max-width: 992px) {
+        .stripe-fg-card { grid-template-columns: 1fr; }
     }
-    
-    .int-mini-card {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 12px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.03);
-        border: 1px solid rgba(0,0,0,0.04);
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-    }
-    .int-card:hover .int-mini-card {
-        transform: translateY(-4px) scale(1.02) !important;
-        box-shadow: 0 16px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-    }
-
-    /* ─── IMK: Premium integration mockups ─── */
-    /* Shared token classes */
-    .imk-t1 { font-size: 11.5px; font-weight: 600; color: #0f172a; }
-    .imk-t2 { font-size: 10px; font-weight: 500; color: #94a3b8; }
-    .imk-tc { text-align: center; }
-    .imk-tr2 { text-align: right; }
-    .imk-badge-green { font-size: 9px; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-
-    /* (Los dots macOS se ELIMINARON — regla del proyecto: toolbar real, sin semáforo) */
-    .imk-term-status {
-        display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-        font-size: 8.5px; font-weight: 700; color: #94a3b8; letter-spacing: 0.04em;
-        font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    }
-
-    /* ── Card 1: Cotizador Visual ── */
-    .imk-editor-bg { background: #f5f5f7; flex-direction: column; padding: 0; align-items: stretch; }
-    .imk-chrome-bar {
-        height: 34px; background: #fafafa; border-bottom: 1px solid #e8e8e8;
-        display: flex; align-items: center; padding: 0 12px; gap: 8px; flex-shrink: 0;
-    }
-    .imk-chrome-title { font-size: 10px; color: #8e8e93; font-weight: 500; margin: 0 auto; }
-    .imk-chrome-send {
-        font-size: 9.5px; font-weight: 700; color: #fff; background: #0a192f;
-        padding: 3px 10px; border-radius: 6px; flex-shrink: 0;
-    }
-    .imk-tbl-head {
-        display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
-        padding: 0 12px; height: 24px; border-bottom: 1px solid #f0f0f0;
-        align-items: center; background: #fff;
-    }
-    .imk-tbl-head-5 { grid-template-columns: 2fr 0.4fr 1fr 1fr 1fr; }
-    .imk-tbl-head span { font-size: 8.5px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
-    .imk-tbl-row {
-        display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
-        padding: 0 12px; height: 34px; border-bottom: 1px solid #f8f8f8;
-        align-items: center; background: #fff;
-    }
-    .imk-tbl-row-5 { grid-template-columns: 2fr 0.4fr 1fr 1fr 1fr; }
-    .imk-row-active { background: rgba(37,99,235,0.04) !important; }
-    .imk-strike { text-decoration: line-through; opacity: 0.45; }
-    .imk-neg-price { color: #0a192f; }
-    .imk-disc-badge {
-        display: inline-flex; font-size: 7.5px; font-weight: 800; color: #047857;
-        background: rgba(16,185,129,0.12); padding: 1px 5px; border-radius: 4px;
-        vertical-align: middle; margin-left: 3px;
-    }
-    .imk-drag-zone {
-        margin: 5px 12px; border: 1.5px dashed #d1d5db; border-radius: 7px;
-        height: 24px; display: flex; align-items: center; justify-content: center;
-        gap: 5px; color: #9ca3af; font-size: 9px; font-weight: 500;
-        background: #fff;
-    }
-    .imk-tbl-foot { margin-top: auto; border-top: 1px solid #efefef; background: #fff; }
-    .imk-tbl-foot-breakdown { padding: 6px 12px 8px; display: flex; flex-direction: column; gap: 3px; }
-    .imk-foot-row { display: flex; justify-content: space-between; align-items: center; }
-    .imk-foot-label { font-size: 9.5px; font-weight: 500; color: #64748b; }
-    .imk-foot-label-bold { font-weight: 700; color: #0f172a; }
-    .imk-foot-sub { font-size: 9.5px; font-weight: 600; color: #475569; font-variant-numeric: tabular-nums; }
-    .imk-foot-total-row { margin-top: 2px; padding-top: 4px; border-top: 1px solid #f0f0f0; }
-    .imk-foot-total { font-size: 14px; font-weight: 700; color: #0a192f; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-
-    /* ── Card 2: Liga de Pago ── */
-    .imk-pay-bg { background: #f0ede8; }
-    .imk-pay-card {
-        background: #fff; border-radius: 16px; width: 82%; padding: 14px;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.04);
-        display: flex; flex-direction: column; gap: 10px;
-    }
-    .imk-pay-head { display: flex; align-items: center; gap: 9px; }
-    .imk-pay-avatar {
-        width: 28px; height: 28px; border-radius: 7px; background: #0a192f;
-        color: #fff; font-size: 9.5px; font-weight: 700; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .imk-pay-company { flex: 1; min-width: 0; }
-    .imk-pay-items { display: flex; flex-direction: column; gap: 0; border: 1px solid #f1f5f9; border-radius: 9px; overflow: hidden; }
-    .imk-pay-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid #f8f9fa; }
-    .imk-pay-item:last-child { border-bottom: none; }
-    .imk-pay-item-name { font-size: 9.5px; color: #64748b; }
-    .imk-pay-item-price { font-size: 10px; font-variant-numeric: tabular-nums; }
-    .imk-pay-divider { height: 1px; background: #f1f5f9; }
-    .imk-pay-amount { text-align: center; }
-    .imk-pay-total { font-size: 24px; font-weight: 700; color: #0a192f; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-    .imk-pay-btn {
-        width: 100%; background: #0a192f; color: #fff; border: none;
-        border-radius: 10px; padding: 8px; font-size: 11px; font-weight: 700; cursor: pointer;
-    }
-    .imk-pay-reject { text-align: center; font-size: 9px; color: #94a3b8; font-weight: 500; cursor: pointer; margin-top: -4px; }
-
-    /* ── Card 3: Zapier & Make ── */
-    .imk-flow-bg { background: #f5f5f7; flex-direction: column; gap: 0; justify-content: center; }
-    .imk-flow-step { display: flex; flex-direction: column; align-items: center; }
-    .imk-flow-vline {
-        width: 2px; height: 14px; flex-shrink: 0;
-        background: linear-gradient(180deg, #e2e8f0, #0071e3);
-    }
-    .imk-flow-node {
-        background: #fff; border-radius: 10px; border: 1.5px solid #e2e8f0;
-        padding: 8px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        width: 130px; text-align: center;
-    }
-    .imk-flow-node-active { border-color: rgba(37,99,235,0.3); box-shadow: 0 0 0 3px rgba(37,99,235,0.06), 0 4px 12px rgba(0,0,0,0.05); }
-    .imk-flow-node-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 6px; }
-    .imk-flow-node-brand { display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 5px; }
-    .imk-flow-brand-icon { width: 18px; height: 18px; border-radius: 5px; background: #0a192f; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .imk-flow-brand-img { width: 18px; height: 18px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
-    .imk-navy { background: #0a192f; }
-    .imk-flow-event { font-size: 8.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
-    .imk-event-blue { color: #1d4ed8; background: rgba(37,99,235,0.09); }
-    .imk-event-orange { color: #c2410c; background: rgba(234,88,12,0.09); }
-    .imk-flow-actions { display: flex; gap: 8px; }
-    .imk-flow-action-node {
-        background: #fff; border: 1.5px solid #e2e8f0; border-radius: 9px;
-        padding: 7px 10px; text-align: center; display: flex; flex-direction: column;
-        align-items: center; gap: 3px; box-shadow: 0 3px 8px rgba(0,0,0,0.04); flex: 1;
-    }
-    .imk-flow-action-label { font-size: 8px; font-weight: 700; color: #64748b; }
-    .imk-flow-alts { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
-    .imk-alt-img { width: 14px; height: 14px; border-radius: 3px; object-fit: cover; }
-    .imk-flow-sep { color: #d1d5db; font-size: 11px; }
-
-    /* ── Card 4: Webhooks ── */
-    .imk-wh-bg { background: #f5f5f7; }
-    .imk-wh-card {
-        background: #fff; border-radius: 14px; width: 92%;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 8px 28px rgba(0,0,0,0.07);
-        overflow: hidden;
-    }
-    .imk-wh-head {
-        display: flex; align-items: flex-start; justify-content: space-between;
-        padding: 10px 12px 8px; border-bottom: 1px solid #f1f5f9; background: #fafafa;
-        gap: 8px;
-    }
-    .imk-wh-head-left { display: flex; flex-direction: column; gap: 3px; }
-    .imk-live-dot { display: flex; align-items: center; gap: 5px; }
-    .imk-pulse-dot {
-        width: 6px; height: 6px; border-radius: 50%; background: #10b981;
-        box-shadow: 0 0 0 2.5px rgba(16,185,129,0.2);
-    }
-    .imk-wh-endpoint {
-        font-family: ui-monospace, "SF Mono", monospace; font-size: 8.5px;
-        color: #475569; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
-    }
-    .imk-wh-cols {
-        display: grid; grid-template-columns: 1fr auto auto;
-        padding: 5px 12px; gap: 8px; background: #fafafa; border-bottom: 1px solid #f1f5f9;
-    }
-    .imk-wh-cols span { font-size: 8.5px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
-    .imk-wh-row {
-        display: grid; grid-template-columns: 1fr auto auto;
-        align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #f8f9fa;
-    }
-    .imk-wh-info { display: flex; align-items: center; gap: 6px; }
-    .imk-wh-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .imk-wh-dot-green { background: #10b981; }
-    .imk-wh-event { font-size: 10px; font-weight: 700; color: #2563eb; font-family: ui-monospace, "SF Mono", monospace; }
-    .imk-wh-ms { font-size: 9px; color: #94a3b8; font-variant-numeric: tabular-nums; text-align: right; min-width: 32px; }
-    .imk-status-ok { font-size: 9px; font-weight: 700; color: #047857; background: rgba(16,185,129,0.1); padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
-    .imk-wh-foot { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #f1f5f9; background: #fafafa; }
-    .imk-wh-btn {
-        font-size: 9.5px; font-weight: 600; color: #475569; background: #fff;
-        border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 10px; cursor: pointer;
-    }
-
-    /* ── Card 5: API RESTful ── */
-    .imk-term-bg { background: #0d1117; border-radius: 14px; padding: 0; }
-    .imk-term { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; }
-    .imk-term-head {
-        height: 32px; background: #161b22; border-bottom: 1px solid #30363d;
-        display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0;
-    }
-    .imk-term-title { font-size: 9.5px; color: #8b949e; font-weight: 500; margin: 0 auto; }
-    .imk-term-body { padding: 11px 13px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 9.5px; line-height: 1.7; overflow: hidden; }
-    .imk-term-line { display: flex; flex-wrap: nowrap; gap: 2px; }
-    .imk-term-indent { padding-left: 14px; }
-    .imk-term-blank { height: 5px; }
-    .imk-tc-gray { color: #8b949e; }
-    .imk-tc-white { color: #e6edf3; }
-    .imk-tc-green { color: #3fb950; }
-    .imk-tc-yellow { color: #d29922; }
-    .imk-tc-blue { color: #79c0ff; }
-    .imk-tc-muted { color: #6e7681; }
-
-    /* ── Card 6: Cord Elements ── */
-    .imk-embed-bg { background: #eeeae4; flex-direction: column; gap: 8px; }
-    .imk-browser {
-        background: #fff; border-radius: 12px; width: 90%;
-        box-shadow: 0 12px 32px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(0,0,0,0.06);
-        overflow: hidden;
-    }
-    .imk-browser-chrome {
-        height: 30px; background: #f5f5f7; border-bottom: 1px solid #e8e8e8;
-        display: flex; align-items: center; gap: 8px; padding: 0 10px;
-    }
-    .imk-browser-url {
-        flex: 1; background: #fff; border-radius: 5px; padding: 2.5px 8px;
-        border: 1px solid #e2e8f0; font-size: 8.5px; color: #94a3b8;
-        margin: 0 4px; text-align: center;
-        display: flex; align-items: center; justify-content: center; gap: 4px;
-    }
-    .imk-browser-body { padding: 8px 11px; }
-    .imk-browser-site-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-    .imk-site-logo { width: 36px; height: 7px; background: #e2e8f0; border-radius: 3px; }
-    .imk-site-links { display: flex; gap: 6px; margin-left: auto; }
-    .imk-site-links span { width: 18px; height: 6px; background: #f1f5f9; border-radius: 2px; }
-    .imk-browser-greeting { margin-bottom: 7px; }
-    .imk-greeting-text { font-size: 10.5px; font-weight: 600; color: #0f172a; }
-    .imk-greeting-sub { font-size: 9px; color: #64748b; margin-top: 1px; }
-    .imk-embed-widget {
-        background: #fff; border-radius: 9px; border: 1.5px solid #e2e8f0;
-        padding: 9px 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .imk-embed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-    .imk-embed-eyebrow { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
-    .imk-embed-amount { font-size: 19px; font-weight: 700; color: #0a192f; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 1px; }
-    .imk-embed-sub { font-size: 8.5px; color: #94a3b8; margin-bottom: 7px; }
-    .imk-embed-cta { background: #0a192f; color: #fff; border-radius: 7px; padding: 6px; text-align: center; font-size: 10px; font-weight: 700; }
-    .imk-embed-badge { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #94a3b8; font-weight: 500; }
-    .imk-navy-dot { width: 5px; height: 5px; border-radius: 50%; background: #0a192f; }
 
     /* ── CORD APPS MARQUEE ── */
     .cord-apps-section {
@@ -3301,49 +1590,23 @@ const heroTitle = solucion.tituloAcento
         100% { transform: translateX(calc(-50% - 16px)); } /* 50% + half gap */
     }
     .app-icon {
-        width: 160px;
-        height: 160px;
-        border-radius: 36px;
+        width: 148px;
+        height: 148px;
+        border-radius: 34px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        position: relative;
-        overflow: hidden;
-        /* Outer soft drop shadow + Double Inner Shadow for 3D Gummy Effect */
-        box-shadow: 
-            0 24px 48px -12px rgba(0,0,0,0.15),
-            inset 0 8px 16px rgba(255,255,255,0.4),
-            inset 0 -8px 16px rgba(0,0,0,0.15);
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s;
-        will-change: transform;
+        gap: 14px;
+        background: #ffffff;
+        border: 1px solid rgba(10,25,47,0.06);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 22px 44px -22px rgba(10,25,47,0.22);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         user-select: none;
     }
-    .app-icon:hover {
-        transform: translateY(-8px) scale(1.02);
-        filter: brightness(1.05);
-    }
-    .app-mask {
-        width: 80px;
-        height: 80px;
-        background-color: currentColor;
-        -webkit-mask-size: contain;
-        -webkit-mask-repeat: no-repeat;
-        -webkit-mask-position: center;
-        mask-size: contain;
-        mask-repeat: no-repeat;
-        mask-position: center;
-        filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.2)) drop-shadow(-1px -1px 0px rgba(0,0,0,0.15));
-    }
-    .app-icon.cord-cyan .app-mask { width: 100px; height: 100px; } /* xero logo is wide */
-
-    /* Cord-curated Gradients */
-    .app-icon.cord-navy { background: linear-gradient(135deg, #2a4365, #0a2540); color: rgba(0,0,0,0.4); }
-    .app-icon.cord-blue { background: linear-gradient(135deg, #00C9FF, #0071e3); color: rgba(0,0,0,0.25); }
-    .app-icon.cord-indigo { background: linear-gradient(135deg, #818cf8, #4f46e5); color: rgba(0,0,0,0.25); }
-    .app-icon.cord-slate { background: linear-gradient(135deg, #64748b, #334155); color: rgba(0,0,0,0.3); }
-    .app-icon.cord-green { background: linear-gradient(135deg, #34d399, #059669); color: rgba(0,0,0,0.25); }
-    .app-icon.cord-cyan { background: linear-gradient(135deg, #67e8f9, #0891b2); color: rgba(0,0,0,0.25); }
-    .app-icon.cord-dark { background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(0,0,0,0.4); }
+    .app-icon img { width: 52px; height: 52px; border-radius: 12px; }
+    .app-icon span { font-size: 0.82rem; font-weight: 600; color: #425466; letter-spacing: -0.01em; }
+    .app-icon:hover { transform: translateY(-6px); }
 
     /* ── CORD DASHBOARD SECTION ── */
     .cord-dashboard-section {
@@ -3370,444 +1633,6 @@ const heroTitle = solucion.tituloAcento
         line-height: 1.6;
     }
 
-    /* ── DASHBOARD MOCKUP ── */
-    .cord-dash-mockup {
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -14px rgba(10,25,47,0.14), inset 0 1px 0 rgba(255,255,255,0.6);
-        border: 1px solid rgba(10,25,47,0.06);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 660px;
-        margin-bottom: 2rem;
-        position: relative;
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-    }
-
-    /* MAC CHROME */
-    .mac-window-header {
-        height: 44px;
-        background: #f1f5f9;
-        display: flex;
-        align-items: center;
-        padding: 0 1rem;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
-        flex-shrink: 0;
-    }
-    .mac-dots { display: flex; gap: 8px; flex: 1; }
-    .mac-dots .dot { width: 12px; height: 12px; border-radius: 50%; }
-    .mac-dots .red { background: #ff5f56; }
-    .mac-dots .yellow { background: #ffbd2e; }
-    .mac-dots .green { background: #27c93f; }
-    .mac-title { flex: 1; display: flex; justify-content: center; }
-    .mac-logo { height: 16px; opacity: 0.8; }
-    .mac-spacer { flex: 1; }
-
-    /* APP FRAME */
-    .dashboard-app-frame {
-        display: flex;
-        flex-direction: row;
-        flex: 1;
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* CURSOR */
-    .mockup-cursor {
-        position: absolute;
-        z-index: 100;
-        pointer-events: none;
-        filter: drop-shadow(0 6px 10px rgba(10,25,47,0.25));
-        animation: cursorAnim 16s infinite cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    @keyframes cursorAnim {
-        0%, 10% { top: 80%; left: 80%; transform: scale(1); }
-        22% { top: 32px; left: calc(100% - 90px); transform: scale(1); }
-        24% { transform: scale(0.85); }
-        26% { transform: scale(1); }
-        40% { top: 148px; left: 340px; transform: scale(1); }
-        42% { transform: scale(0.85); }
-        44% { transform: scale(1); }
-        72% { top: 30px; left: calc(100% - 90px); transform: scale(1); }
-        76% { transform: scale(0.85); }
-        78% { transform: scale(1); }
-        90%, 100% { top: 80%; left: 80%; transform: scale(1); }
-    }
-
-    /* SIDEBAR */
-    .dash-sidebar {
-        width: 220px;
-        background: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        border-right: 1px solid #e2e8f0;
-        flex-shrink: 0;
-    }
-    .dash-org-sw {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #e2e8f0;
-        cursor: pointer;
-        transition: background 0.15s;
-    }
-    .dash-org-sw:hover { background: #f1f5f9; }
-    .dash-org-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
-        background: linear-gradient(135deg, #0a192f, #1e3a5f);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.7rem;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-    .dash-org-meta { flex: 1; min-width: 0; }
-    .dash-org-meta strong { display: block; font-size: 0.82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-org-meta span { display: block; font-size: 0.7rem; color: #64748b; }
-    .dash-nav-links {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        padding: 0.5rem 0.75rem;
-        overflow: hidden;
-    }
-    .dash-nav-group {
-        font-size: 0.62rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        color: #94a3b8;
-        padding: 0.75rem 0.5rem 0.35rem;
-        text-transform: uppercase;
-    }
-    .dash-link {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        padding: 7px 10px;
-        color: #475569;
-        text-decoration: none;
-        font-size: 0.84rem;
-        font-weight: 600;
-        border-radius: 7px;
-        transition: background 0.15s, color 0.15s;
-    }
-    .dash-link:hover { background: #f1f5f9; color: #0f172a; }
-    .dash-link.active { background: #ffffff; color: #0f172a; box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.08); border: 1px solid rgba(226,232,240,0.6); }
-    .dash-link.active svg { color: #3b82f6; }
-    .dash-nav-badge {
-        margin-left: auto;
-        background: #eff6ff;
-        color: #1d4ed8;
-        border: 1px solid #bfdbfe;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 999px;
-    }
-    .dash-user {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 1rem 1.25rem;
-        border-top: 1px solid #e2e8f0;
-        cursor: pointer;
-        transition: background 0.15s;
-    }
-    .dash-user:hover { background: #f1f5f9; }
-    .dash-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #1e293b, #0f172a);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.72rem;
-        font-weight: 700;
-        flex-shrink: 0;
-        box-shadow: 0 2px 4px rgba(15,23,42,0.15);
-    }
-    .dash-user-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-    .dash-user-info strong { font-size: 0.82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-user-info span { font-size: 0.72rem; color: #64748b; }
-    .dash-chevron { color: #94a3b8; flex-shrink: 0; }
-
-    /* MAIN AREA */
-    .dash-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-    .dash-header {
-        height: 54px;
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 1.5rem;
-        flex-shrink: 0;
-    }
-    .dash-page-title { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.01em; }
-    .dash-hdr-right { display: flex; align-items: center; gap: 6px; }
-    .dash-icon-btn {
-        width: 32px; height: 32px; border-radius: 8px;
-        background: #f8fafc; border: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: center;
-        color: #64748b; cursor: pointer;
-    }
-    .dash-bell-btn { position: relative; }
-    .dash-notif-dot {
-        position: absolute; top: 6px; right: 7px;
-        width: 7px; height: 7px;
-        border-radius: 50%; background: #ef4444;
-        box-shadow: 0 0 0 1.5px #fff;
-    }
-    .dash-avatar-top {
-        width: 30px; height: 30px;
-        border-radius: 50%; background: linear-gradient(135deg, #1e293b, #0f172a);
-        color: white; display: flex; align-items: center; justify-content: center;
-        font-size: 0.7rem; font-weight: 700; cursor: pointer;
-        box-shadow: 0 2px 4px rgba(15,23,42,0.15);
-    }
-    .dash-content-body {
-        padding: 1.5rem;
-        flex: 1;
-        overflow-y: auto;
-        background: #f9fafc;
-    }
-
-    /* KPI ROW WITH SPARKLINES */
-    .dash-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
-    .dash-kpi-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.9rem;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-    }
-    .dash-kpi-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .dash-kpi-lbl { font-size: 0.75rem; font-weight: 600; color: #64748b; }
-    .dash-trend { font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-    .dash-trend.up { background: #ecfdf5; color: #047857; }
-    .dash-trend.down { background: #fef2f2; color: #b91c1c; }
-    .dash-kpi-num {
-        font-size: 1.3rem; font-weight: 700; color: #0f172a;
-        letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
-        margin-bottom: 2px; line-height: 1.2;
-    }
-    .dash-kpi-sub { font-size: 0.7rem; color: #94a3b8; margin-bottom: 0.6rem; }
-    .dash-sparkline {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 24px;
-    }
-    .sp-bar {
-        flex: 1;
-        height: var(--h);
-        border-radius: 2px 2px 0 0;
-        background: #e2e8f0;
-        transition: background 0.2s;
-    }
-    .sp-hi { background: #0a192f; }
-    .sp-g { background: #bbf7d0; }
-    .sp-hi-g { background: #10b981; }
-
-    /* TABLE SECTION */
-    .dash-tbl-hdr {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
-        flex-wrap: nowrap;
-    }
-    .dash-view-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.01em; white-space: nowrap; }
-    .dash-ftabs { display: flex; background: #f1f5f9; border-radius: 7px; padding: 2px; gap: 1px; }
-    .dash-ftab {
-        padding: 4px 10px; border-radius: 5px;
-        font-size: 0.76rem; font-weight: 600; color: #64748b;
-        cursor: pointer; white-space: nowrap;
-        display: flex; align-items: center; gap: 4px;
-    }
-    .dash-ftab em { font-style: normal; font-size: 0.7rem; color: #94a3b8; }
-    .dash-ftab-on { background: white; color: #0f172a; box-shadow: 0 1px 2px rgba(15,23,42,0.08); }
-    .dash-ftab-on em { color: #3b82f6; }
-
-    /* TABLE */
-    .dash-table-wrap {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        background: #fff;
-        overflow: hidden;
-        box-shadow: 0 1px 4px rgba(15,23,42,0.03);
-    }
-    .dash-th-r {
-        display: grid;
-        grid-template-columns: 85px 1fr 110px 105px 82px;
-        padding: 7px 14px;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: #64748b;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-    }
-    .dash-tr-r {
-        display: grid;
-        grid-template-columns: 85px 1fr 110px 105px 82px;
-        padding: 9px 14px;
-        border-bottom: 1px solid #f1f5f9;
-        align-items: center;
-        transition: background 0.12s;
-    }
-    .dash-tr-r:hover { background: #fafafa; }
-    .dash-tr-r.hl { background: #f8fafc; }
-    .dash-tr-last { border-bottom: none; }
-    .dash-folio {
-        font-family: 'SF Mono', 'Fira Code', monospace;
-        font-size: 0.76rem; font-weight: 700; color: #0a192f;
-        letter-spacing: -0.02em;
-    }
-    .dash-cl { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .dash-cl-name { font-size: 0.82rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-cl-proj { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-damt { font-size: 0.83rem; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; text-align: right; }
-    .dash-ddate { font-size: 0.74rem; color: #94a3b8; text-align: right; }
-
-    /* MARGIN BADGE (quote editor) */
-    .dash-margin-badge {
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.7rem; font-weight: 700;
-        padding: 2px 7px; border-radius: 4px;
-    }
-    .dash-margin-badge.g { background: #ecfdf5; color: #047857; }
-    .dash-margin-badge.a { background: #fffbeb; color: #b45309; }
-    .dash-margin-badge.r { background: #fef2f2; color: #b91c1c; }
-
-    /* QUOTE FORM */
-    .dash-section-lbl {
-        font-size: 0.78rem; font-weight: 700; color: #0a192f;
-        margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.06em;
-    }
-    .dash-back-btn {
-        width: 30px; height: 30px; border-radius: 7px;
-        display: flex; align-items: center; justify-content: center;
-        background: #f1f5f9; cursor: pointer; color: #64748b;
-    }
-    .quote-field { display: flex; flex-direction: column; gap: 6px; }
-    .quote-field label { font-size: 0.78rem; font-weight: 600; color: #64748b; }
-    .quote-input {
-        height: 38px; border: 1px solid #e2e8f0; border-radius: 7px;
-        background: white; padding: 0 11px; font-size: 0.88rem; color: #0f172a;
-        display: flex; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
-    }
-
-    /* DOT VARIANTS (local fallbacks in case not in mockups.css) */
-    .cmk-dot-blue { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.6); }
-    .cmk-dot-amber { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
-    .cmk-dot-gray { background: #94a3b8; }
-
-    /* ANIMATIONS */
-    .anim-btn { animation: btnAnim 16s infinite; }
-    @keyframes btnAnim {
-        0%, 22% { transform: translateY(0); box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
-        24%, 26% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(15,23,42,0.25); background: #334155; }
-        28%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
-    }
-    .anim-row { animation: rowHoverAnim 16s infinite; }
-    @keyframes rowHoverAnim {
-        0%, 8% { background: transparent; }
-        10%, 20% { background: #f1f5f9; }
-        22%, 100% { background: transparent; }
-    }
-
-    /* VIEW TRANSITIONS */
-    .dash-views-container { position: relative; flex: 1; overflow: hidden; }
-    .dash-view { position: absolute; inset: 0; display: flex; flex-direction: column; animation: 16s infinite cubic-bezier(0.22, 1, 0.36, 1); }
-    .dash-view-dashboard { animation-name: dashboardViewAnim; }
-    @keyframes dashboardViewAnim {
-        0%, 30% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
-        32%, 90% { opacity: 0; pointer-events: none; transform: translateX(-18px) scale(0.98); }
-        94%, 100% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
-    }
-    .dash-view-quote { opacity: 0; pointer-events: none; animation-name: quoteViewAnim; }
-    @keyframes quoteViewAnim {
-        0%, 30% { opacity: 0; pointer-events: none; transform: translateX(18px) scale(0.98); }
-        32%, 90% { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
-        94%, 100% { opacity: 0; pointer-events: none; transform: translateX(18px) scale(0.98); }
-    }
-
-    .anim-send-btn { animation: sendBtnAnim 16s infinite; }
-    @keyframes sendBtnAnim {
-        0%, 75% { transform: translateY(0); box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
-        76%, 78% { transform: translateY(1px); box-shadow: 0 2px 6px rgba(37,99,235,0.4); background: #1d4ed8; border-color: #1e40af; }
-        80%, 100% { transform: translateY(0); box-shadow: 0 4px 12px rgba(37,99,235,0.2); background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #2563eb; }
-    }
-    .anim-badge-quote { animation: badgeQuoteAnim 16s infinite; }
-    @keyframes badgeQuoteAnim {
-        0%, 80% { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
-        82%, 100% { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    }
-    .anim-badge-quote::after { content: "Borrador"; animation: badgeQuoteTextAnim 16s infinite; }
-    @keyframes badgeQuoteTextAnim {
-        0%, 80% { content: "Borrador"; }
-        82%, 100% { content: "Enviada"; }
-    }
-    .anim-row-quote { animation: rowQuoteAnim 16s infinite; }
-    @keyframes rowQuoteAnim {
-        0%, 44% { background: transparent; }
-        46%, 70% { background: #f0f9ff; }
-        72%, 100% { background: transparent; }
-    }
-
-    /* BADGE ANIM */
-    .anim-badge {
-        display: inline-flex; align-items: center; padding: 3px 10px;
-        border-radius: 999px; font-size: 10.5px; font-weight: 600;
-        letter-spacing: -0.01em; animation: badgeAnim 10s infinite;
-    }
-    .anim-badge::after { content: "Enviada"; animation: badgeTextAnim 10s infinite; }
-    @keyframes badgeAnim {
-        0%, 43% { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-        44%, 100% { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    }
-    @keyframes badgeTextAnim {
-        0%, 43% { content: "Enviada"; }
-        44%, 100% { content: "Aceptada"; }
-    }
-
-    /* TYPING ANIMATION */
-    .anim-typing-text::after {
-        content: "Quantum Logistics";
-        animation: typeAnim 16s infinite;
-    }
-    @keyframes typeAnim {
-        0%, 42% { content: ""; color: #94a3b8; }
-        44% { content: "Q"; color: #0f172a; }
-        45% { content: "Quan"; color: #0f172a; }
-        46% { content: "Quantum"; color: #0f172a; }
-        47%, 100% { content: "Quantum Logistics"; color: #0f172a; }
-    }
-
-    @media (max-width: 768px) {
-        .cord-dash-mockup { height: auto; margin-bottom: 0; }
-        .dashboard-app-frame { flex-direction: column; }
-        .dash-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
-        .dash-nav-links { display: none; }
-        .dash-user { border-top: none; padding: 0.75rem 1.25rem; }
-        .dash-main { width: 100%; }
-        .dash-kpi-row { grid-template-columns: 1fr; }
-        .dash-tbl-hdr { flex-wrap: wrap; }
-        .dash-header { padding: 0.75rem 1rem; }
-        .dash-table-wrap { overflow-x: auto; }
-        .dash-th-r, .dash-tr-r { grid-template-columns: 70px 1fr 90px 90px 70px; font-size: 0.7rem; }
-    }
-
     /* ══════════════════════════════════════════════════════════════════
        MÓVIL — los mockups de integraciones viven en una tarjeta de 85vw.
        A ese ancho la tabla de cinco columnas se encimaba, el teléfono se
@@ -3815,22 +1640,10 @@ const heroTitle = solucion.tituloAcento
     ══════════════════════════════════════════════════════════════════ */
     @media (max-width: 768px) {
         .int-card-graphic { padding: 1.1rem 1.1rem 1.4rem; }
-        .mock-ui { height: auto; min-height: 210px; padding: 12px 0; }
-
-        .imk-t1 { font-size: 12px; }
-        .imk-t2 { font-size: 10.5px; }
-
-        /* Se va el precio de lista: cantidad, negociado y total cuentan la historia */
-        .imk-tbl-head-5, .imk-tbl-row-5 { grid-template-columns: 1.8fr 0.45fr 1fr 1fr; }
-        .imk-tbl-head-5 > *:nth-child(3),
-        .imk-tbl-row-5 > *:nth-child(3) { display: none; }
-        .imk-tbl-head, .imk-tbl-row { padding: 0 10px; }
-        .imk-tbl-head span { font-size: 8px; }
-        .imk-tbl-row { height: auto; min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
-
-        /* La terminal reduce su cuerpo para que cada línea quepa entera */
-        .imk-term-body { font-size: 8px; line-height: 1.75; padding: 10px 11px; }
-        .imk-term-indent { padding-left: 9px; }
+        .stripe-fg-card-visual { min-height: 520px; }
+        .app-icon { width: 118px; height: 118px; border-radius: 28px; gap: 10px; }
+        .app-icon img { width: 42px; height: 42px; }
+        .app-icon span { font-size: 0.74rem; }
     }
 
 </style>
