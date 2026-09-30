@@ -20,6 +20,7 @@ import { currencyDecimals, normalizeCurrency } from '../currency';
 import { memberCan, type PermMap } from '../permissions';
 import { runQuoteAction } from '../actions/quotes';
 import { siteOrigin } from '../email';
+import { strictRateLimit } from '../ratelimit';
 
 type Lang = 'es' | 'en';
 const TOLERANCIA_S = 5 * 60;
@@ -52,6 +53,7 @@ const T: Record<Lang, Record<string, string>> = {
         no_conectado: 'Este espacio de Slack no está conectado a Cord. Conéctalo en Cord › Ajustes › Integraciones › Slack.',
         pide_aprobacion: 'pide aprobación', motivo: 'Motivo', aprobar: 'Aprobar', rechazar: 'Rechazar',
         aprobada_por: 'aprobada por', rechazada_por: 'rechazada por', sin_permiso: 'Tu cuenta de Slack no corresponde a un miembro de Cord con permiso de Aprobaciones. Decide desde Cord.',
+        demasiadas: 'Demasiadas decisiones seguidas. Espera un momento e inténtalo de nuevo.',
         ya_decidida: 'Esta solicitud ya se decidió o ya no está pendiente.', error: 'No se pudo registrar la decisión. Inténtalo desde Cord.',
     },
     en: {
@@ -59,6 +61,7 @@ const T: Record<Lang, Record<string, string>> = {
         no_conectado: 'This Slack workspace is not connected to Cord. Connect it in Cord › Settings › Integrations › Slack.',
         pide_aprobacion: 'needs approval', motivo: 'Reason', aprobar: 'Approve', rechazar: 'Reject',
         aprobada_por: 'approved by', rechazada_por: 'rejected by', sin_permiso: 'Your Slack account does not match a Cord member with the Approvals permission. Decide from Cord.',
+        demasiadas: 'Too many decisions in a row. Wait a moment and try again.',
         ya_decidida: 'This request was already decided or is no longer pending.', error: 'The decision could not be recorded. Try from Cord.',
     },
 };
@@ -234,6 +237,14 @@ export async function decidir(ctx: ContextoSlack, payload: any): Promise<void> {
     const m = (miembros as any[])[0];
     if (!m || !memberCan({ rol: m.rol, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' }, 'aprobar')) {
         await responder(responseUrl, { response_type: 'ephemeral', replace_original: false, text: t.sin_permiso });
+        return;
+    }
+
+    // Decidir una aprobación entra a runQuoteAction, que también mueve dinero
+    // (regla 33): límite propio por organización y persona, y falla cerrado.
+    const rl = await strictRateLimit(`slack-decidir:${ctx.orgId}:${String(m.user_id)}`, 20, 60);
+    if (!rl.ok) {
+        await responder(responseUrl, { response_type: 'ephemeral', replace_original: false, text: t.demasiadas });
         return;
     }
 

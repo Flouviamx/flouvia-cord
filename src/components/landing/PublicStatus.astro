@@ -260,7 +260,17 @@ const breadcrumbSchema = {
 
             <div class="st-banner reveal" role="status">
                 <div class="st-banner-main">
-                    <span class="st-pulse" aria-hidden="true"><i></i></span>
+                    <span class="st-state-ic" aria-hidden="true">
+                        {snapshot.state === 'operational' ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="M8.2 12.3l2.5 2.5 5.1-5.3"/></svg>
+                        ) : snapshot.state === 'degraded' ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.2L2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.14"/><path d="M12 9.5v4"/><path d="M12 16.6h.01"/></svg>
+                        ) : snapshot.state === 'outage' ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3z" fill="currentColor" fill-opacity="0.14"/><path d="M9.4 9.4l5.2 5.2M14.6 9.4l-5.2 5.2"/></svg>
+                        ) : (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M12 7.5V12l3 1.8"/></svg>
+                        )}
+                    </span>
                     <div class="st-banner-copy">
                         <h2>{t(...bannerCopy[snapshot.state].title)}</h2>
                         <p>
@@ -701,6 +711,20 @@ const breadcrumbSchema = {
     .st-pulse.sm { width: 16px; height: 16px; margin: 0; background: transparent; }
     .st-pulse.sm i { width: 7px; height: 7px; }
 
+    /* Ícono del estado global: cuadro redondeado con glifo, en el color del
+       estado. Sustituye al punto que latía, que se leía genérico. */
+    .st-state-ic {
+        flex: none; display: grid; place-items: center;
+        width: 44px; height: 44px; margin-top: -4px; border-radius: 14px;
+        color: #8a94a1;
+        background: color-mix(in srgb, currentColor 9%, #ffffff);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent),
+                    0 1px 2px rgba(10, 25, 47, 0.04);
+    }
+    .st-state-ic svg { width: 22px; height: 22px; }
+    .is-operational .st-banner .st-state-ic { color: var(--st-ok); }
+    .is-degraded .st-banner .st-state-ic { color: var(--st-warn); }
+    .is-outage .st-banner .st-state-ic { color: var(--st-danger); }
     .st-banner-counts { display: flex; flex: none; gap: 0; margin: 0; }
     .st-banner-counts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 2px 0 2px 22px; margin-left: 22px; border-left: 1px solid var(--st-line); }
     .st-banner-counts > div:first-child { margin-left: 0; border-left: 0; }
