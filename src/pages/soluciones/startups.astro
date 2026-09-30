@@ -632,10 +632,12 @@ const heroTitle = solucion.tituloAcento
 
 
     .stripe-title {
-        font-size: clamp(2.5rem, 4.3vw, 4rem);
-        line-height: 1.04;
+        /* Mismo tamaño que el estándar global de títulos (h1.masked-title,
+           Layout.astro) que usan la home y la plantilla de producto. */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
         font-weight: 700;
-        letter-spacing: -0.045em;
+        letter-spacing: -0.035em;
         margin: 0 0 1.75rem;
         color: #050505;
         text-wrap: balance;
@@ -1022,10 +1024,6 @@ const heroTitle = solucion.tituloAcento
         .stripe-hero {
             padding: 120px 20px 60px;
             min-height: 100dvh;
-        }
-        
-        .stripe-title {
-            font-size: 2.5rem;
         }
         
         .stripe-actions {
