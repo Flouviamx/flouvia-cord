@@ -20,6 +20,7 @@ import IntegrationsMarquee from '../../components/integraciones/IntegrationsMarq
 // rosa al fondo de la tela. Distinta a la cálida de empresas a propósito.
 const HERO_PAL = { base: '#FCFCFC', c1: '#5EEAD4', c2: '#38BDF8', c3: '#6366F1', c4: '#A855F7', c5: '#EC4899' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import BlogCover from '../../components/blog/BlogCover.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -321,37 +322,13 @@ const heroTitle = solucion.tituloAcento
                     <!-- Right Column: Resources Sidebar -->
                     <div class="stripe-fg-sidebar">
                         <div class="stripe-resource-card reveal">
-                            <div class="stripe-resource-visual stripe-bg-purple" style="position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 20px;">
-                                <!-- Abstract mesh background simulation -->
-                                <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15), transparent 60%); pointer-events: none;"></div>
-                                <div style="position: absolute; top: 0; right: 0; width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); filter: blur(20px); pointer-events: none;"></div>
-                                
-                                <!-- Floating Sales Cards -->
-                                <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                    <div style="position: absolute; width: 120px; height: 70px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: rotate(-8deg) translateX(-20px) translateY(10px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; padding: 10px; gap: 6px; z-index: 1;">
-                                        <div style="width: 30px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.6);"></div>
-                                        <div style="width: 80%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3);"></div>
-                                        <div style="width: 60%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3);"></div>
-                                    </div>
-                                    
-                                    <div style="position: absolute; width: 130px; height: 85px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transform: rotate(5deg) translateX(25px) translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; padding: 12px; gap: 8px; z-index: 2;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <div style="width: 40px; height: 6px; border-radius: 3px; background: #fff;"></div>
-                                            <div style="width: 16px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.3);"></div>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; align-items: flex-end; height: 35px; margin-top: 5px;">
-                                            <div style="width: 14px; height: 40%; background: rgba(255,255,255,0.4); border-radius: 2px;"></div>
-                                            <div style="width: 14px; height: 70%; background: rgba(255,255,255,0.6); border-radius: 2px;"></div>
-                                            <div style="width: 14px; height: 50%; background: rgba(255,255,255,0.5); border-radius: 2px;"></div>
-                                            <div style="width: 14px; height: 100%; background: #fff; border-radius: 2px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="stripe-resource-visual res-blog-cover">
+                                <BlogCover client:only="react" category={isEn ? 'B2B Sales' : 'Ventas B2B'} title={isEn ? 'Why sending PDF quotes is costing you deals' : 'Por qué enviar cotizaciones en PDF te está costando cierres'} />
                             </div>
                             <div class="stripe-resource-content">
                                 <span class="stripe-resource-eyebrow">Blog</span>
                                 <h4 class="stripe-resource-title">{isEn ? 'How to quote faster, why PDFs cost you deals and how to use Cord with your AI' : 'Cómo cotizar más rápido, por qué el PDF te cuesta cierres y cómo usar Cord con tu IA'}</h4>
-                                <a href="/blog" class="stripe-pillar-link">
+                                <a href={`${isEn ? "/en" : ""}/blog/error-pdf-ventas-b2b`} class="stripe-pillar-link">
                                     {isEn ? 'Browse articles' : 'Ver artículos'}
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
@@ -576,6 +553,37 @@ const heroTitle = solucion.tituloAcento
        hero, sin franjas ni filos entre secciones. */
     .stripe-main { background: #fcfcfc; }
     .stripe-main > section { background: transparent; border-top: 0; border-bottom: 0; }
+
+    /* Encabezados de sección: título a la izquierda, texto y enlace a la
+       derecha. (Los dos carruseles de arriba de startups conservan el suyo.) */
+    .stripe-main .stripe-section-header, .stripe-main .cord-apps-header, .stripe-main .cord-dashboard-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
+        margin: 0 0 3.5rem;
+        text-align: left;
+    }
+    .stripe-main .stripe-section-header > h2, .stripe-main .cord-apps-header > h2, .stripe-main .cord-dashboard-header > h2 {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        margin: 0;
+        align-self: start;
+    }
+    .stripe-main .stripe-section-header > :not(h2), .stripe-main .cord-apps-header > :not(h2), .stripe-main .cord-dashboard-header > :not(h2) {
+        grid-column: 2;
+        margin-top: 0;
+        max-width: 520px;
+    }
+    .stripe-main .stripe-section-header > p, .stripe-main .cord-apps-header > p, .stripe-main .cord-dashboard-header > p { margin-bottom: 1rem; }
+    @media (max-width: 880px) {
+        .stripe-main .stripe-section-header, .stripe-main .cord-apps-header, .stripe-main .cord-dashboard-header { grid-template-columns: 1fr; row-gap: 1.2rem; }
+        .stripe-main .stripe-section-header > h2, .stripe-main .cord-apps-header > h2, .stripe-main .cord-dashboard-header > h2, .stripe-main .stripe-section-header > :not(h2), .stripe-main .cord-apps-header > :not(h2), .stripe-main .cord-dashboard-header > :not(h2) { grid-column: 1; grid-row: auto; }
+    }
+
+    /* Portada real del artículo del blog en la tarjeta de recursos. */
+    .res-blog-cover { position: relative; overflow: hidden; }
 
     .stripe-hero {
         position: relative;
