@@ -3,45 +3,138 @@
 // Tres capacidades reales por variante, cada una con su calca de pantalla y su
 // enlace a la página de producto. Rotan solas; con prefers-reduced-motion no
 // rotan y el pager sigue funcionando. El HTML por defecto es el estado final.
+//
+// Las calcas NO son interpretaciones: replican la pantalla real de /app a ~75%
+// de escala (mismas columnas, etiquetas de i18n, pills y colores de estado).
+//   cobros   → src/pages/app/cobros.astro (zonas saldo/KPIs + cobros recientes)
+//   margen   → src/pages/app/cotizaciones/[id].astro (approval-banner + d-head)
+//              con la columna Margen del editor (nueva.astro, .lr-margen)
+//   facturas → src/pages/app/facturas/index.astro (cot-summary + filtros + tabla)
+// Si una de esas pantallas cambia, esta calca se desactualiza con ella.
 interface Props { isEn?: boolean; variant?: 'empresas' | 'startups' }
 const { isEn = false, variant = 'empresas' } = Astro.props;
 
 const cur = isEn ? 'USD' : 'MXN';
 const pre = isEn ? '/en' : '';
 const L = (es: string, en: string) => (isEn ? en : es);
+const locale = isEn ? 'en-US' : 'es-MX';
+
+// Mismo formato que money() de lib/fmt-server.ts; la divisa se dice aparte
+// (regla 21: un monto sin divisa es un número, no dinero).
+const money = (n: number, dec = 0) =>
+    new Intl.NumberFormat(locale, { style: 'currency', currency: cur, minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+const num = (n: number, dec = 0) =>
+    new Intl.NumberFormat(locale, { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+// fmtDate() de la app: '28 sep 2026' / 'Sep 28, 2026'.
+const fecha = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(`${iso}T12:00:00Z`)).replace('.', '');
+// fecha() del <script> de /app/cobros para la llegada del depósito: '02 oct'.
+const llegada = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', timeZone: 'UTC' })
+        .format(new Date(`${iso}T12:00:00Z`)).replace('.', '');
+
+type Metodo = 'tarjeta' | 'spei' | 'transferencia';
+// METODO_COLOR + metodoLabel de /app/cobros.
+const METODO: Record<Metodo, { label: string; color: string }> = {
+    tarjeta: { label: L('Tarjeta de crédito/débito', 'Credit/debit card'), color: '#6366f1' },
+    spei: { label: L('Transferencia SPEI', 'SPEI transfer'), color: '#10b981' },
+    transferencia: { label: L('Transferencia (Manual)', 'Transfer (Manual)'), color: '#0ea5e9' },
+};
+
+type FacSt = 'paid' | 'open' | 'overdue' | 'draft';
+interface Factura { num: string | null; draft?: string; who: string; total: number; saldo: number; st: FacSt; sent?: boolean }
+interface Cobro { folio: string; who: string; m: Metodo; amt: number }
+
+// Serie real de la factura: FAC en México, INV en el resto (countries.ts), con
+// el folio a seis dígitos que asigna la secuencia (lib/fiscal/invoices.ts).
+const FP = isEn ? 'INV' : 'FAC';
 
 // Cifras por variante: un corporativo y una startup no facturan lo mismo, y un
 // mockup con números fuera de escala delata que es de relleno.
 const D = variant === 'startups'
     ? {
         bars: [12, 16, 15, 21, 19, 26, 31, 29, 38, 44, 52, 61],
-        cobrado: L('$486,200', '$38,450'), growth: '+64%', dias: '9',
-        rowA: { av: 'NL', c: '#8b5cf6', name: 'Nómada Labs', ref: 'FAC-0118', amt: L('$48,000', '$3,200') },
-        rowB: { av: 'PV', c: '#0ea5a4', name: 'Pixel & Vela', ref: 'FAC-0117', amt: L('$22,500', '$1,450') },
-        saldo: L('$134,900', '$9,870'), recordatorios: '41', abiertas: L('12 abiertas', '12 open'),
+        saldo: isEn ? 4120.75 : 52380.4, camino: isEn ? 1450 : 22500, llegadaISO: '2026-10-02',
+        cobrado: isEn ? 38450 : 486200, ops: 41, growth: 64, fee: isEn ? 1153 : 15072,
+        recientes: [
+            { folio: 'COT-0042', who: 'Nómada Labs', m: 'tarjeta', amt: isEn ? 2730 : 48000 },
+            { folio: 'COT-0041', who: 'Pixel & Vela', m: isEn ? 'transferencia' : 'spei', amt: isEn ? 1450 : 22500 },
+            { folio: 'COT-0039', who: 'Kilo Studio', m: 'tarjeta', amt: isEn ? 2050 : 31250 },
+            { folio: 'COT-0037', who: 'Estudio Brote', m: isEn ? 'transferencia' : 'spei', amt: isEn ? 1190 : 18600 },
+        ] as Cobro[],
+        porCobrar: isEn ? 9870 : 134900, vencido: isEn ? 2050 : 31250, vencidas: 1, cobradoMes: isEn ? 14120 : 212480,
         fac: [
-            { id: 'FAC-0121', who: 'Nómada Labs', amt: L('$48,000', '$3,200'), st: 'ok' },
-            { id: 'FAC-0120', who: 'Estudio Brote', amt: L('$18,600', '$1,190'), st: 'info' },
-            { id: 'FAC-0119', who: 'Kilo Studio', amt: L('$31,250', '$2,050'), st: 'late' },
-            { id: 'FAC-0116', who: 'Ruta Norte', amt: L('$12,400', '$820'), st: 'pend' },
-        ],
+            { num: `${FP}-000121`, who: 'Nómada Labs', total: isEn ? 2730 : 48000, saldo: 0, st: 'paid', sent: true },
+            { num: `${FP}-000120`, who: 'Estudio Brote', total: isEn ? 1190 : 18600, saldo: isEn ? 1190 : 18600, st: 'open' },
+            { num: `${FP}-000119`, who: 'Kilo Studio', total: isEn ? 2050 : 31250, saldo: isEn ? 2050 : 31250, st: 'overdue', sent: true },
+            { num: `${FP}-000118`, who: 'Pixel & Vela', total: isEn ? 1450 : 22500, saldo: isEn ? 725 : 11250, st: 'open', sent: true },
+            { num: null, draft: 'BOR-4E90B1', who: 'Ruta Norte', total: isEn ? 820 : 12400, saldo: isEn ? 820 : 12400, st: 'draft' },
+        ] as Factura[],
     }
     : {
         bars: [38, 44, 41, 52, 49, 58, 55, 63, 60, 71, 68, 82],
-        cobrado: L('$4,290,777', '$2,429,777'), growth: '+18.4%', dias: '21',
-        rowA: { av: 'GV', c: '#6366f1', name: 'Grupo Vértice', ref: 'FAC-2031', amt: L('$1,165,340', '$65,340') },
-        rowB: { av: 'AN', c: '#0ea5a4', name: 'Aceros del Norte', ref: 'FAC-2029', amt: L('$389,940', '$18,902') },
-        saldo: L('$2,771,810', '$318,204'), recordatorios: '126', abiertas: L('38 abiertas', '38 open'),
+        saldo: isEn ? 68410.25 : 1184392.6, camino: isEn ? 18902 : 389940, llegadaISO: '2026-10-02',
+        cobrado: isEn ? 2429777 : 4290777, ops: 126, growth: 18.4, fee: isEn ? 71921 : 131727,
+        recientes: [
+            { folio: 'COT-0148', who: 'Distribuidora El Zarco', m: isEn ? 'transferencia' : 'spei', amt: isEn ? 11420 : 196469 },
+            { folio: 'COT-0147', who: 'Grupo Vértice', m: isEn ? 'transferencia' : 'spei', amt: isEn ? 32670 : 582670 },
+            { folio: 'COT-0146', who: 'Aceros del Norte', m: 'tarjeta', amt: isEn ? 18902 : 389940 },
+            { folio: 'COT-0144', who: 'Constructora Zarco', m: 'tarjeta', amt: isEn ? 42100 : 742100 },
+        ] as Cobro[],
+        porCobrar: isEn ? 318204 : 2771810, vencido: isEn ? 61535 : 1106215, vencidas: 3, cobradoMes: isEn ? 184250 : 3184250,
         fac: [
-            { id: 'FAC-2034', who: 'Constructora Zarco', amt: L('$742,100', '$42,100'), st: 'ok' },
-            { id: 'FAC-2033', who: 'Ferrex Industrial', amt: L('$196,880', '$9,880'), st: 'info' },
-            { id: 'FAC-2030', who: 'Cementos Gama', amt: L('$508,415', '$27,415'), st: 'late' },
-            { id: 'FAC-2028', who: 'Distribuidora Ámbar', amt: L('$261,060', '$14,060'), st: 'pend' },
-        ],
+            { num: `${FP}-002034`, who: 'Constructora Zarco', total: isEn ? 42100 : 742100, saldo: 0, st: 'paid', sent: true },
+            { num: `${FP}-002033`, who: 'Ferrex Industrial', total: isEn ? 9880 : 196880, saldo: isEn ? 9880 : 196880, st: 'open' },
+            { num: `${FP}-002031`, who: 'Grupo Vértice', total: isEn ? 65340 : 1165340, saldo: isEn ? 32670 : 582670, st: 'open', sent: true },
+            { num: `${FP}-002030`, who: 'Cementos Gama', total: isEn ? 27415 : 508415, saldo: isEn ? 27415 : 508415, st: 'overdue', sent: true },
+            { num: null, draft: 'BOR-7C21E4', who: 'Distribuidora Ámbar', total: isEn ? 14060 : 261060, saldo: isEn ? 14060 : 261060, st: 'draft' },
+        ] as Factura[],
     };
-const FAC_ST: Record<string, string> = {
-    ok: L('Pagada', 'Paid'), info: L('Vista', 'Viewed'), late: L('Vencida 5 d', '5 days late'), pend: L('Abono parcial', 'Partial'),
+const feePct = Math.round((D.fee / D.cobrado) * 10000) / 100;
+
+// Sparkline del KPI "Cobrado" (mountSparkline: línea navy suave, sin ejes).
+const spark = (() => {
+    const w = 120, h = 26, max = Math.max(...D.bars), min = Math.min(...D.bars);
+    const pts = D.bars.map((v, i) => [(i / (D.bars.length - 1)) * w, h - 2 - ((v - min) / (max - min || 1)) * (h - 4)]);
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const [x0, y0] = pts[Math.max(0, i - 1)], [x1, y1] = pts[i], [x2, y2] = pts[i + 1], [x3, y3] = pts[Math.min(pts.length - 1, i + 2)];
+        d += ` C${(x1 + (x2 - x0) / 6).toFixed(1)},${(y1 + (y2 - y0) / 6).toFixed(1)} ${(x2 - (x3 - x1) / 6).toFixed(1)},${(y2 - (y3 - y1) / 6).toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
+    }
+    return d;
+})();
+
+// ESTADO_META de /app/facturas (+ la rama "Vencida" que calcula la fila).
+const FAC_META: Record<FacSt, { label: string; color: string; bg: string }> = {
+    paid: { label: L('Pagada', 'Paid'), color: '#059669', bg: 'rgba(16,185,129,0.12)' },
+    open: { label: L('Abierta', 'Open'), color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+    overdue: { label: L('Vencida', 'Overdue'), color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
+    draft: { label: L('Borrador', 'Draft'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
 };
+// inicial() de /app/facturas: las dos primeras letras, no las iniciales.
+const inicial = (nombre: string) => nombre.trim().slice(0, 2).toUpperCase();
+const FILTROS = [L('Todas', 'All'), L('Borradores', 'Drafts'), L('Abiertas', 'Open'), L('Vencidas', 'Past due'), L('Pagadas', 'Paid'), L('Anuladas', 'Void')];
+
+// Cotización retenida por el flujo de aprobación. El motivo se arma igual que en
+// lib/cotizaciones.ts: descuento máximo y margen mínimo de las líneas con costo.
+const Q = {
+    folio: 'COT-0149', cliente: 'Grupo Vértice', ini: 'GV', version: 2,
+    minMargen: 25, maxDesc: 12, taxRate: isEn ? 0.0825 : 0.16,
+    items: [
+        { name: L('Viga IPR 12" × 31 lb/ft', 'W12×31 steel beam'), unit: L('pieza · 12 m', 'piece · 40 ft'), qty: 340, lista: isEn ? 146 : 2480, nego: isEn ? 138 : 2350, margen: 27.1 },
+        { name: L('Lámina galvanizada cal. 18', 'Galvanized sheet, 18 ga'), unit: L('hoja · 4 × 10 ft', 'sheet · 4 × 10 ft'), qty: 1200, lista: isEn ? 23.2 : 395, nego: isEn ? 19.35 : 329, margen: 19.8 },
+        { name: L('Flete e instalación en obra', 'Freight and on-site install'), unit: L('servicio', 'service'), qty: 1, lista: isEn ? 5340 : 90700, nego: null as number | null, margen: 31.0 },
+    ],
+};
+const qSub = Q.items.reduce((s, it) => s + (it.nego ?? it.lista) * it.qty, 0);
+const qTotal = Math.round(qSub * (1 + Q.taxRate) * 100) / 100;
+const qDesc = Math.round(Math.max(...Q.items.map((it) => (it.nego !== null && it.nego < it.lista ? (1 - it.nego / it.lista) * 100 : 0))));
+const qMin = Math.round(Math.min(...Q.items.map((it) => it.margen)));
+const qMotivo = L(
+    `descuento ${qDesc}% supera el ${Q.maxDesc}% permitido y margen bruto ${qMin}% está por debajo del mínimo de ${Q.minMargen}%`,
+    `${qDesc}% discount exceeds the ${Q.maxDesc}% allowed and ${qMin}% gross margin is below the ${Q.minMargen}% minimum`,
+);
 
 const cards = variant === 'startups'
     ? [
@@ -60,74 +153,8 @@ const cards = variant === 'startups'
     <div class="ehs-stage">
         {cards.map((c, i) => (
             <article class="ehs-card" data-ehs-card data-pos={String(i)} aria-hidden={i === 0 ? undefined : 'true'} inert={i === 0 ? undefined : true}>
-                <div class="ehs-shot">
-                    {c.key === 'cobros' && (
-                        <div class="ehs-panel">
-                            <div class="ehs-bar">
-                                <span class="ehs-crumb">{L('Cobros · Este trimestre', 'Payments · This quarter')}</span>
-                                <span class="ehs-live"><i></i>{L('En vivo', 'Live')}</span>
-                            </div>
-                            <div class="ehs-kpis">
-                                <div>
-                                    <span class="ehs-lbl">{L('Cobrado', 'Collected')} <em class="ehs-up">{D.growth}</em></span>
-                                    <b class="editorial">{D.cobrado} <small>{cur}</small></b>
-                                </div>
-                                <div>
-                                    <span class="ehs-lbl">{L('Días promedio de cobro', 'Avg. days to pay')}</span>
-                                    <b class="editorial">{D.dias} <small>{L('días', 'days')}</small></b>
-                                </div>
-                            </div>
-                            <div class="ehs-chart" aria-hidden="true">
-                                {D.bars.map((h) => (
-                                    <span style={`--h:${h}%`}><i style={`height:${Math.round(h * 0.38)}%`}></i></span>
-                                ))}
-                            </div>
-                            <div class="ehs-axis"><span>{L('1 jul', 'Jul 1')}</span><span>{L('Hoy', 'Today')}</span></div>
-                            <div class="ehs-rows">
-                                <div class="ehs-row">
-                                    <span class="ehs-av" style={`--c:${D.rowA.c}`}>{D.rowA.av}</span>
-                                    <span class="ehs-who"><b>{D.rowA.name}</b><small>{D.rowA.ref}</small></span>
-                                    <span class="ehs-amt editorial">{D.rowA.amt}</span>
-                                    <span class="ehs-pill ok">{L('Pagado', 'Paid')}</span>
-                                </div>
-                                <div class="ehs-row">
-                                    <span class="ehs-av" style={`--c:${D.rowB.c}`}>{D.rowB.av}</span>
-                                    <span class="ehs-who"><b>{D.rowB.name}</b><small>{D.rowB.ref}</small></span>
-                                    <span class="ehs-amt editorial">{D.rowB.amt}</span>
-                                    <span class="ehs-pill pend">{L('En tránsito', 'In transit')}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {c.key === 'margen' && (
-                        <div class="ehs-panel">
-                            <div class="ehs-bar">
-                                <span class="ehs-crumb">COT-0149 · Grupo Vértice</span>
-                                <span class="ehs-pill warn">{L('En aprobación', 'Pending approval')}</span>
-                            </div>
-                            <div class="ehs-kpis">
-                                <div>
-                                    <span class="ehs-lbl">Total</span>
-                                    <b class="editorial">{L('$1,284,500', '$212,480')} <small>{cur}</small></b>
-                                </div>
-                                <div>
-                                    <span class="ehs-lbl">{L('Margen', 'Margin')} <em class="ehs-down">{L('mín. 25%', 'min. 25%')}</em></span>
-                                    <b class="editorial ehs-warn-num">23.4%</b>
-                                </div>
-                            </div>
-                            <div class="ehs-table">
-                                <div class="ehs-th"><span>{L('Concepto', 'Item')}</span><span>{L('Cant.', 'Qty')}</span><span>{L('Margen', 'Margin')}</span></div>
-                                <div class="ehs-tr"><span>{L('Viga IPR 12"', 'Steel beam IPR 12"')}</span><span class="editorial">340</span><span class="editorial">27.1%</span></div>
-                                <div class="ehs-tr"><span>{L('Lámina galvanizada cal. 18', 'Galvanized sheet cal. 18')}</span><span class="editorial">1,200</span><span class="editorial ehs-warn-num">19.8%</span></div>
-                                <div class="ehs-tr"><span>{L('Flete e instalación', 'Freight and installation')}</span><span class="editorial">1</span><span class="editorial">31.0%</span></div>
-                            </div>
-                            <div class="ehs-approval">
-                                <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-                                <span><b>{L('Descuento de 18% excede tu límite de 12%', '18% discount exceeds your 12% limit')}</b><small>{L('Enviado a Finanzas · Laura Méndez', 'Routed to Finance · Laura Méndez')}</small></span>
-                            </div>
-                        </div>
-                    )}
-                    {c.key === 'link' && (
+                <div class="ehs-shot" aria-hidden="true">
+                    {c.key === 'link' ? (
                         <div class="ehs-panel">
                             <div class="ehs-bar">
                                 <span class="ehs-crumb">COT-0042 · Nómada Labs</span>
@@ -151,32 +178,195 @@ const cards = variant === 'startups'
                                 {L('Pagado con tarjeta', 'Paid by card')}
                             </div>
                         </div>
-                    )}
-                    {c.key === 'facturas' && (
-                        <div class="ehs-panel">
-                            <div class="ehs-bar">
-                                <span class="ehs-crumb">{L('Facturas · Por cobrar', 'Invoices · Receivables')}</span>
-                                <span class="ehs-crumb-soft">{D.abiertas}</span>
+                    ) : (
+                        <div class="ehs-app">
+                            <!-- Topbar real de AppLayout: búsqueda ⌘K, Crear y accesos. -->
+                            <div class="ehs-tb">
+                                <span class="ehs-tb-search">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20.5" y1="20.5" x2="16.2" y2="16.2"/></svg>
+                                    {L('Buscar…', 'Search…')}
+                                    <kbd>⌘K</kbd>
+                                </span>
+                                <span class="ehs-tb-right">
+                                    <span class="ehs-tb-create">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        {L('Crear', 'Create')}
+                                        <svg class="ehs-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                    </span>
+                                    <span class="ehs-tb-ic">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none"/></svg>
+                                    </span>
+                                    <span class="ehs-tb-av">AV</span>
+                                </span>
                             </div>
-                            <div class="ehs-kpis">
-                                <div>
-                                    <span class="ehs-lbl">{L('Saldo por cobrar', 'Outstanding')}</span>
-                                    <b class="editorial">{D.saldo} <small>{cur}</small></b>
-                                </div>
-                                <div>
-                                    <span class="ehs-lbl">{L('Recordatorios enviados', 'Reminders sent')}</span>
-                                    <b class="editorial">{D.recordatorios}</b>
-                                </div>
-                            </div>
-                            <div class="ehs-rows ehs-rows-tight">
-                                {D.fac.map((f) => (
-                                    <div class="ehs-row">
-                                        <span class="ehs-who"><b>{f.id}</b><small>{f.who}</small></span>
-                                        <span class="ehs-amt editorial">{f.amt}</span>
-                                        <span class={`ehs-pill ${f.st}`}>{FAC_ST[f.st]}</span>
+
+                            {c.key === 'cobros' && (
+                                <div class="ehs-pg">
+                                    <div class="ehs-ph">
+                                        <h4 class="ehs-ph-title">{L('Cobros', 'Collections')}</h4>
+                                        <span class="ehs-dp">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                                            {L('Este trimestre', 'This quarter')}
+                                            <svg class="ehs-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <div class="ehs-zone ehs-zone-bal">
+                                        <div class="ehs-bal">
+                                            <span class="ehs-kl">{L('Saldo disponible', 'Available balance')}<span class="ehs-snap">{L('en vivo', 'live')}</span></span>
+                                            <b class="editorial ehs-bal-val">{money(D.saldo, 2)}<i class="ehs-cur">{cur}</i></b>
+                                            <small>{L(`${money(D.camino, 2)} en camino`, `${money(D.camino, 2)} on the way`)}</small>
+                                        </div>
+                                        <div class="ehs-aside">
+                                            <span class="ehs-st">{L('Próximo depósito', 'Next payout')}</span>
+                                            <div class="ehs-next">
+                                                <i class="ehs-mdot" style="background:#3b82f6"></i>
+                                                <span><strong>{L('En camino', 'In transit')}</strong><small>{L('Llegada', 'Arrival')}: {llegada(D.llegadaISO)}</small></span>
+                                                <b class="editorial">{money(D.camino, 2)}</b>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="ehs-zone ehs-zone-2 ehs-zone-kpi">
+                                        <div class="ehs-kpi">
+                                            <span class="ehs-kl">{L('Cobrado', 'Collected')}</span>
+                                            <b class="editorial ehs-kpi-val">{money(D.cobrado)}<i class="ehs-cur">{cur}</i></b>
+                                            <small>{D.ops} {L('operaciones en el periodo', 'payments in the period')}</small>
+                                            <small class="ehs-delta">+{num(D.growth, D.growth % 1 ? 1 : 0)}% {L('vs. periodo anterior', 'vs. previous period')}</small>
+                                            <svg class="ehs-spark" viewBox="0 0 120 26" preserveAspectRatio="none"><path d={spark}/></svg>
+                                        </div>
+                                        <div class="ehs-kpi">
+                                            <span class="ehs-kl">{L('Neto depositado', 'Net deposited')}</span>
+                                            <b class="editorial ehs-kpi-val">{money(D.cobrado - D.fee)}<i class="ehs-cur">{cur}</i></b>
+                                            <small>{L('comisión', 'fees')} {money(D.fee)} · {num(feePct, 2)}% {L('efectivo', 'effective')}</small>
+                                            <span class="ehs-seg" title="">
+                                                <i style={`flex:${100 - feePct}`}></i><i class="ehs-seg-fee" style={`flex:${feePct}`}></i>
+                                            </span>
+                                            <span class="ehs-seg-key"><span><i class="ehs-mdot" style="background:#059669"></i>{L('Neto a tu banco', 'Net to your bank')}</span><span><i class="ehs-mdot" style="background:#f59e0b"></i>{L('Comisión', 'Fees')}</span></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="ehs-zone ehs-zone-tab">
+                                        <span class="ehs-st ehs-st-line">{L('Cobros recientes', 'Recent payments')}</span>
+                                        <div class="ehs-cth"><span>{L('Folio', 'Quote #')}</span><span>{L('Cliente', 'Client')}</span><span>{L('Método', 'Method')}</span><span class="ehs-r">{L('Monto', 'Amount')}</span></div>
+                                        {D.recientes.map((r) => (
+                                            <div class="ehs-ctr">
+                                                <span class="ehs-cfolio">{r.folio}</span>
+                                                <span class="ehs-ccli">{r.who}</span>
+                                                <span class="ehs-cmet"><i class="ehs-mdot" style={`background:${METODO[r.m].color}`}></i>{METODO[r.m].label}</span>
+                                                <span class="editorial ehs-r ehs-camt">{money(r.amt)}<i class="ehs-cur">{cur}</i></span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {c.key === 'margen' && (
+                                <div class="ehs-pg">
+                                    <div class="ehs-ph">
+                                        <div>
+                                            <span class="ehs-crumbs"><span>{L('Cotizaciones', 'Quotes')}</span><b>{Q.folio}</b></span>
+                                            <h4 class="ehs-ph-title">{Q.folio}</h4>
+                                        </div>
+                                        <span class="ehs-status" style="color:#64748b;background:rgba(100,116,139,0.1)">{L('Borrador', 'Draft')}</span>
+                                    </div>
+
+                                    <div class="ehs-apb">
+                                        <span class="ehs-apb-info">
+                                            <span class="ehs-apb-title">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                                                {L('Pendiente de aprobación', 'Pending approval')}
+                                            </span>
+                                            <span class="ehs-apb-why">{qMotivo}</span>
+                                        </span>
+                                        <span class="ehs-apb-acts">
+                                            <span class="ehs-apb-ok">{L('Aprobar y enviar', 'Approve and send')}</span>
+                                            <span class="ehs-apb-no">{L('Rechazar', 'Reject')}</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="ehs-dh">
+                                        <span class="ehs-dh-av">{Q.ini}</span>
+                                        <span class="ehs-dh-who">
+                                            <b>{Q.cliente} <em>V{Q.version}</em></b>
+                                            <small>Net 30 · {L('Vigente hasta', 'Valid until')} {fecha('2026-10-30')}</small>
+                                        </span>
+                                        <span class="ehs-dh-total">
+                                            <small>TOTAL</small>
+                                            <b class="editorial">{money(qTotal, 2)}<i class="ehs-cur">{cur}</i></b>
+                                        </span>
+                                    </div>
+
+                                    <span class="ehs-st ehs-st-line ehs-margen-sec">{L('Detalle', 'Detail')}</span>
+                                    <div class="ehs-dith">
+                                        <span>{L('Producto', 'Product')}</span><span>{L('Cant.', 'Qty.')}</span><span>{L('Precio', 'Price')}</span><span class="ehs-r">{L('Importe', 'Amount')}</span><span class="ehs-c">{L('Margen', 'Margin')}</span>
+                                    </div>
+                                    {Q.items.map((it) => (
+                                        <div class="ehs-ditr">
+                                            <span class="ehs-diname">{it.name}<small>{it.unit}</small></span>
+                                            <span class="ehs-diqty">{num(it.qty)}</span>
+                                            <span class="ehs-diprice">
+                                                {it.nego !== null && <s>{money(it.lista, 2)}</s>}
+                                                <span class="editorial">{money(it.nego ?? it.lista, 2)}</span>
+                                            </span>
+                                            <span class="editorial ehs-r ehs-diamt">{money((it.nego ?? it.lista) * it.qty, 2)}<i class="ehs-cur">{cur}</i></span>
+                                            <span class:list={['ehs-margen', { low: it.margen < Q.minMargen }]}>{Math.round(it.margen)}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {c.key === 'facturas' && (
+                                <div class="ehs-pg">
+                                    <div class="ehs-ph">
+                                        <h4 class="ehs-ph-title">{L('Facturas', 'Invoices')}</h4>
+                                        <span class="ehs-ph-acts">
+                                            <span class="ehs-ghost">{L('Ver recurrentes', 'View recurring')}</span>
+                                            <span class="ehs-new">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                {L('Nueva factura', 'New invoice')}
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <div class="ehs-sum">
+                                        <span><b class="editorial">{money(D.porCobrar)}<i class="ehs-cur">{cur}</i></b><small>{L('por cobrar', 'outstanding')}</small></span>
+                                        <span class="ehs-sum-warn"><b class="editorial">{money(D.vencido)}<i class="ehs-cur">{cur}</i></b><small>{L('vencido', 'past due')} · {D.vencidas}</small></span>
+                                        <span><b class="editorial">{money(D.cobradoMes)}<i class="ehs-cur">{cur}</i></b><small>{L('cobrado este mes', 'collected this month')}</small></span>
+                                    </div>
+
+                                    <div class="ehs-filters">
+                                        {FILTROS.map((f, fi) => <span class:list={['ehs-fp', { on: fi === 0 }]}>{f}</span>)}
+                                    </div>
+
+                                    <div class="ehs-fth">
+                                        <span class="ehs-chk"></span>
+                                        <span>{L('Factura', 'Invoice')}</span><span>{L('Cliente', 'Client')}</span>
+                                        <span class="ehs-r">Total</span><span class="ehs-r">{L('Saldo', 'Balance')}</span><span>{L('Estado', 'Status')}</span>
+                                    </div>
+                                    {D.fac.map((f) => {
+                                        const meta = FAC_META[f.st];
+                                        // Solo se selecciona una emitida, abierta y aún no enviada.
+                                        const enviable = f.st === 'open' && !f.sent;
+                                        return (
+                                            <div class="ehs-ftr">
+                                                <span class:list={['ehs-chk', { off: !enviable }]}></span>
+                                                <span class="ehs-ffolio">
+                                                    <strong>{f.num ?? L('Sin folio', 'No number')}</strong>
+                                                    {!f.num && <small>{L('Borrador', 'Draft')} · {f.draft}</small>}
+                                                </span>
+                                                <span class="ehs-fcli"><i class="ehs-fav">{inicial(f.who)}</i><span>{f.who}</span></span>
+                                                <span class="editorial ehs-r ehs-ftot">{money(f.total)}<i class="ehs-cur">{cur}</i></span>
+                                                <span class="editorial ehs-r ehs-fsal">{f.saldo > 0 ? <Fragment>{money(f.saldo)}<i class="ehs-cur">{cur}</i></Fragment> : '–'}</span>
+                                                <span class="ehs-fst">
+                                                    <span class="ehs-status" style={`color:${meta.color};background:${meta.bg}`}>{meta.label}</span>
+                                                    {f.sent && <small>{L('Enviada', 'Sent')}</small>}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -325,9 +515,526 @@ const cards = variant === 'startups'
         padding: 22px 22px 0;
         height: 360px;
         overflow: hidden;
-        -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent);
-        mask-image: linear-gradient(180deg, #000 82%, transparent);
+        -webkit-mask-image: linear-gradient(180deg, #000 86%, transparent);
+        mask-image: linear-gradient(180deg, #000 86%, transparent);
     }
+
+    /* ════════ Calca de /app (lienzo #f5f5f7 = --app-canvas) ════════
+       Escala ~75% de los valores reales de AppLayout y de cada página. El
+       lienzo gris del .ehs-shot ES el lienzo de la app: la topbar y las zonas
+       blancas se apoyan en él como en la pantalla real. */
+    .ehs-app {
+        --a-text: #0f1729;
+        --a-mut: #5b6472;
+        --a-bd: rgba(10, 25, 47, 0.08);
+        --a-navy: #0a192f;
+        --a-soft: #fafbfc;
+        margin: -14px -14px 0;
+        color: var(--a-text);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 10.5px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+    }
+    .ehs-app svg { display: block; flex: none; }
+    .ehs-r { text-align: right; justify-content: flex-end; }
+    .ehs-c { text-align: center; }
+    .ehs-cur {
+        font-style: normal;
+        font-size: 7.5px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--a-mut);
+        margin-left: 3px;
+        opacity: 0.85;
+    }
+    .ehs-mdot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex: none;
+    }
+    .ehs-caret { width: 9px; height: 9px; opacity: 0.7; }
+
+    /* Topbar: pill flotante de AppLayout (.topbar / .tb-search / .tb-create) */
+    .ehs-tb {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 4px 4px 4px 5px;
+        margin-bottom: 12px;
+        border-radius: 14px;
+        background: #ffffff;
+        box-shadow:
+            0 8px 24px -8px rgba(0, 0, 0, 0.08),
+            0 3px 9px -2px rgba(0, 0, 0, 0.04),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    }
+    .ehs-tb-search {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 150px;
+        padding: 4px 4px 4px 7px;
+        border-radius: 8px;
+        background: var(--a-soft);
+        border: 1px solid var(--a-bd);
+        color: var(--a-mut);
+        font-size: 9.5px;
+        line-height: 1;
+    }
+    .ehs-tb-search svg { width: 11px; height: 11px; }
+    .ehs-tb-search kbd {
+        margin-left: auto;
+        font: 700 7.5px/1 inherit;
+        color: var(--a-mut);
+        background: #fff;
+        border: 1px solid var(--a-bd);
+        border-radius: 4px;
+        padding: 2px 4px;
+        box-shadow: 0 1px 0 rgba(10, 25, 47, 0.06);
+    }
+    .ehs-tb-right { display: flex; align-items: center; gap: 3px; }
+    .ehs-tb-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 7px 5px 7px;
+        margin-right: 3px;
+        line-height: 1;
+        border-radius: 7px;
+        background: var(--a-navy);
+        color: #fff;
+        font-weight: 600;
+        font-size: 9.5px;
+        box-shadow: 0 5px 14px -7px rgba(10, 25, 47, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .ehs-tb-create svg { width: 9px; height: 9px; }
+    .ehs-tb-ic {
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        color: var(--a-mut);
+    }
+    .ehs-tb-ic svg { width: 12.5px; height: 12.5px; }
+    .ehs-tb-av {
+        width: 20px;
+        height: 20px;
+        margin-left: 2px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #1b3a64;
+        color: #fff;
+        font-size: 7px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    /* Page head (.page-head / .ph-title / .ph-crumbs) */
+    .ehs-pg { padding: 0 8px; }
+    .ehs-ph {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .ehs-ph-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.45px;
+        line-height: 1.1;
+        color: var(--a-text);
+    }
+    .ehs-crumbs {
+        display: flex;
+        gap: 4px;
+        font-size: 8.5px;
+        color: var(--a-mut);
+        margin-bottom: 2px;
+    }
+    .ehs-crumbs > span::after { content: '/'; margin-left: 4px; color: #c4cad3; }
+    .ehs-crumbs b { font-weight: 600; color: var(--a-text); }
+    .ehs-dp {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 100px;
+        background: #ffffff;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1;
+        color: var(--a-text);
+        box-shadow: 0 0 0 1px var(--a-bd);
+    }
+    .ehs-dp svg:first-child { width: 11px; height: 11px; color: var(--a-mut); }
+
+    /* Status pill global (.status-pill) */
+    .ehs-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 8.5px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        padding: 3px 7px;
+        border-radius: 100px;
+        white-space: nowrap;
+    }
+    .ehs-status::before {
+        content: '';
+        width: 4.5px;
+        height: 4.5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    /* ── cobros: zonas blancas de /app/cobros (.cbr-balance-zone / .cbr-kpi-zone) ── */
+    .ehs-zone {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow:
+            0 1px 2px rgba(10, 25, 47, 0.03),
+            0 16px 34px -20px rgba(10, 25, 47, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+    }
+    .ehs-zone + .ehs-zone { margin-top: 7px; }
+    .ehs-zone-bal > div { padding: 10px 12px; }
+    .ehs-zone-bal > div + div { border-top: 1px solid var(--a-bd); padding-top: 8px; padding-bottom: 9px; }
+    .ehs-zone-bal .ehs-aside { flex-direction: row; align-items: center; gap: 12px; }
+    .ehs-zone-2 { display: grid; grid-template-columns: 1.3fr 1fr; }
+    .ehs-zone-2 > div { padding: 10px 11px; display: flex; flex-direction: column; min-width: 0; }
+    .ehs-zone-2 > div + div { border-left: 1px solid var(--a-bd); }
+    .ehs-zone-kpi { grid-template-columns: 1fr 1fr; }
+    .ehs-zone small { color: var(--a-mut); font-size: 8.5px; line-height: 1.45; }
+    .ehs-kl {
+        display: flex;
+        align-items: center;
+        font-size: 7.5px;
+        font-weight: 800;
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: rgba(91, 100, 114, 0.8);
+    }
+    .ehs-snap {
+        display: inline-flex;
+        margin-left: 5px;
+        padding: 1.5px 5px;
+        border-radius: 999px;
+        background: rgba(10, 25, 47, 0.05);
+        color: var(--a-mut);
+        font-size: 6.5px;
+        font-weight: 750;
+        line-height: 1.2;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .ehs-bal { display: flex; flex-direction: column; }
+    .ehs-bal-val {
+        display: block;
+        margin: 7px 0 4px;
+        font-size: 24px;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: var(--a-navy);
+        white-space: nowrap;
+    }
+    .ehs-bal-val .ehs-cur, .ehs-kpi-val .ehs-cur { font-size: 8px; letter-spacing: 0.02em; }
+    .ehs-st {
+        display: flex;
+        align-items: center;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--a-text);
+    }
+    .ehs-aside .ehs-st { flex: none; font-size: 9.5px; }
+    .ehs-next {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+    }
+    .ehs-next > span { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 1; white-space: nowrap; }
+    .ehs-next strong { font-size: 9.5px; font-weight: 600; }
+    .ehs-next small { font-size: 8px !important; }
+    .ehs-next b { font-size: 10px; font-weight: 600; white-space: nowrap; }
+
+    .ehs-kpi { gap: 3px; }
+    .ehs-kpi-val {
+        display: block;
+        margin: 4px 0 1px;
+        font-size: 15.5px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        color: var(--a-navy);
+        white-space: nowrap;
+    }
+    .ehs-zone .ehs-delta { color: #10b981; font-weight: 650; font-size: 8.5px; }
+    .ehs-spark {
+        width: 100%;
+        height: 20px;
+        margin-top: 4px;
+        opacity: 0.72;
+        overflow: visible;
+    }
+    .ehs-spark path { fill: none; stroke: var(--a-navy); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    /* Barra 100% del widget "A dónde va cada peso" (.chx-segbar) */
+    .ehs-seg {
+        display: flex;
+        gap: 2px;
+        height: 7px;
+        margin-top: 9px;
+        border-radius: 100px;
+        overflow: hidden;
+    }
+    .ehs-seg i { background: #059669; border-radius: 2px; }
+    .ehs-seg .ehs-seg-fee { background: #f59e0b; min-width: 4px; }
+    .ehs-seg-key { display: flex; gap: 10px; margin-top: 6px; font-size: 8px; color: var(--a-mut); }
+    .ehs-seg-key span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+    .ehs-zone-tab { padding: 11px 12px 4px; }
+    .ehs-st-line { padding-bottom: 7px; margin-bottom: 2px; border-bottom: 1px solid var(--a-bd); }
+    .ehs-cth, .ehs-ctr {
+        display: grid;
+        grid-template-columns: 50px minmax(0, 1fr) minmax(0, 0.95fr) auto;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 0;
+    }
+    .ehs-cth, .ehs-fth, .ehs-dith {
+        font-size: 7.3px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--a-mut);
+        border-bottom: 1px solid var(--a-bd);
+    }
+    .ehs-ctr { border-bottom: 1px solid var(--a-bd); }
+    .ehs-cfolio { font-weight: 600; font-size: 9.5px; }
+    .ehs-ccli { font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-cmet {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 8.5px;
+        color: var(--a-mut);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+    .ehs-camt { font-size: 10px; white-space: nowrap; }
+
+    /* ── margen: detalle de cotización retenida (.approval-banner / .d-head / .di-row) ── */
+    .ehs-apb {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 7px 7px 9px;
+        margin-bottom: 10px;
+        border-radius: 9px;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .ehs-apb-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ehs-apb-title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #92600a;
+    }
+    .ehs-apb-title svg { width: 12px; height: 12px; }
+    .ehs-apb-why { font-size: 8px; line-height: 1.4; color: var(--a-mut); }
+    .ehs-apb-acts { display: flex; flex-direction: column; gap: 3px; flex: none; }
+    .ehs-apb-ok, .ehs-apb-no {
+        font-size: 8px;
+        border-radius: 6px;
+        padding: 4px 7px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .ehs-apb-ok { font-weight: 700; color: #fff; background: #10b981; }
+    .ehs-apb-no {
+        font-weight: 600;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.25);
+    }
+
+    .ehs-dh {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 9px;
+        margin-bottom: 9px;
+        border-bottom: 1px solid var(--a-bd);
+    }
+    .ehs-dh-av {
+        width: 26px;
+        height: 26px;
+        flex: none;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: var(--a-navy);
+        color: #fff;
+        font-size: 9.5px;
+        font-weight: 800;
+    }
+    .ehs-dh-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .ehs-dh-who b { font-size: 11px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; }
+    .ehs-dh-who em { font-style: normal; font-weight: 600; color: var(--a-mut); font-size: 10px; margin-left: 2px; }
+    .ehs-dh-who small { font-size: 8.5px; color: var(--a-mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-dh-total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+    .ehs-dh-total small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; color: #99a2af; }
+    .ehs-dh-total b { font-size: 15px; line-height: 1.1; color: var(--a-navy); white-space: nowrap; }
+    .ehs-dh-total .ehs-cur { font-size: 7.5px; }
+
+    .ehs-dith, .ehs-ditr {
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) 24px 50px minmax(0, 1.25fr) 34px;
+        gap: 6px;
+        align-items: center;
+        padding: 5px 2px;
+    }
+    .ehs-dith { padding-top: 6px; }
+    .ehs-ditr { border-bottom: 1px solid var(--a-bd); }
+    .ehs-diname { display: flex; flex-direction: column; font-size: 9px; font-weight: 600; line-height: 1.25; min-width: 0; white-space: nowrap; }
+    .ehs-diname, .ehs-diname small { overflow: hidden; text-overflow: ellipsis; }
+    .ehs-diname small { font-size: 7.5px; font-weight: 500; color: #99a2af; }
+    .ehs-diqty { font-size: 9px; color: var(--a-mut); }
+    .ehs-diprice { display: flex; flex-direction: column; line-height: 1.2; }
+    .ehs-diprice s { font-size: 7.5px; color: #b6bcc6; }
+    .ehs-diprice .editorial { font-size: 9.5px; color: var(--a-navy); }
+    .ehs-diamt { font-size: 9.5px; color: var(--a-navy); white-space: nowrap; }
+    .ehs-diamt .ehs-cur { font-size: 6.5px; margin-left: 2px; }
+    /* .lr-margen del editor: verde sano, rojo bajo el mínimo de la org */
+    .ehs-margen {
+        justify-self: center;
+        font-size: 8.5px;
+        font-weight: 600;
+        border-radius: 3px;
+        padding: 2px 4px;
+        color: #059669;
+        background: rgba(16, 185, 129, 0.1);
+    }
+    .ehs-margen.low { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+
+    /* ── facturas: bandeja de /app/facturas (.cot-summary / .filters / .t-row) ── */
+    .ehs-ph-acts { display: flex; align-items: center; gap: 5px; }
+    .ehs-ghost, .ehs-new {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 8.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        border-radius: 7px;
+        padding: 5px 8px;
+    }
+    .ehs-ghost { color: var(--a-mut); box-shadow: inset 0 0 0 1px var(--a-bd); }
+    .ehs-new {
+        color: #fff;
+        background: var(--a-navy);
+        box-shadow: 0 5px 14px -8px rgba(10, 25, 47, 0.5);
+    }
+    .ehs-new svg { width: 9px; height: 9px; }
+    .ehs-sum {
+        display: flex;
+        gap: 14px;
+        padding-bottom: 9px;
+        margin-bottom: 9px;
+        border-bottom: 1px solid var(--a-bd);
+    }
+    .ehs-sum > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ehs-sum b {
+        font-size: 13.5px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: var(--a-navy);
+        white-space: nowrap;
+    }
+    .ehs-sum small { font-size: 8px; color: var(--a-mut); }
+    .ehs-sum .ehs-cur { font-size: 6.5px; margin-left: 2px; }
+    .ehs-sum-warn b { color: #ef4444; }
+    .ehs-filters {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 8px;
+        overflow: hidden;
+    }
+    .ehs-fp {
+        flex: none;
+        font-size: 8px;
+        font-weight: 600;
+        color: var(--a-mut);
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px var(--a-bd);
+        padding: 3.5px 8px;
+        border-radius: 100px;
+    }
+    .ehs-fp.on {
+        color: #fff;
+        background: var(--a-navy);
+        box-shadow: 0 3px 10px -5px rgba(10, 25, 47, 0.45);
+    }
+    .ehs-fth, .ehs-ftr {
+        display: grid;
+        grid-template-columns: 10px 52px minmax(0, 1fr) 66px 60px 52px;
+        gap: 5px;
+        align-items: center;
+        padding: 5px 2px;
+    }
+    .ehs-ftr { border-bottom: 1px solid var(--a-bd); }
+    .ehs-chk {
+        width: 10px;
+        height: 10px;
+        border-radius: 3.5px;
+        box-shadow: inset 0 0 0 1.2px rgba(91, 100, 114, 0.42), 0 1px 1px rgba(10, 25, 47, 0.05);
+        background: #fff;
+    }
+    .ehs-fth .ehs-chk { opacity: 0.48; background: var(--a-soft); box-shadow: inset 0 0 0 1.2px var(--a-bd); }
+    .ehs-chk.off { opacity: 0.48; background: var(--a-soft); box-shadow: inset 0 0 0 1.2px var(--a-bd); }
+    .ehs-ffolio { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .ehs-ffolio strong { font-size: 8.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-ffolio small { font-size: 6.5px; font-weight: 600; color: var(--a-mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-fcli { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 8.5px; font-weight: 500; }
+    .ehs-fcli > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehs-fav {
+        width: 15px;
+        height: 15px;
+        flex: none;
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        background: var(--a-navy);
+        color: #fff;
+        font-style: normal;
+        font-size: 5.5px;
+        font-weight: 800;
+        line-height: 1;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+    .ehs-ftot { font-size: 9px; color: var(--a-navy); white-space: nowrap; }
+    .ehs-fsal { font-size: 8.5px; color: var(--a-text); white-space: nowrap; }
+    .ehs-ftot .ehs-cur, .ehs-fsal .ehs-cur { font-size: 5.5px; margin-left: 1.5px; }
+    .ehs-ftr .ehs-status { font-size: 7.5px; padding: 2.5px 5px; gap: 3px; }
+    .ehs-fst { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+    .ehs-fst small { font-size: 6.5px; font-weight: 650; color: var(--a-mut); line-height: 1.1; }
+
+    /* ── link: página pública de la cotización (no es /app, va en panel blanco) ── */
     .ehs-panel {
         background: #ffffff;
         border-radius: 14px 14px 0 0;
@@ -347,111 +1054,9 @@ const cards = variant === 'startups'
         border-bottom: 1px solid rgba(10, 25, 47, 0.07);
     }
     .ehs-crumb { font-weight: 600; font-size: 11.5px; letter-spacing: -0.01em; }
-    .ehs-crumb-soft { color: rgba(10, 25, 47, 0.5); font-weight: 500; }
-    .ehs-live {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: rgba(10, 25, 47, 0.55);
-        font-weight: 500;
-    }
-    .ehs-live i {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
-    }
-
-    .ehs-kpis {
-        display: grid;
-        grid-template-columns: 1.25fr 1fr;
-        gap: 14px;
-        margin-bottom: 14px;
-    }
-    .ehs-lbl {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: rgba(10, 25, 47, 0.55);
-        font-weight: 500;
-        margin-bottom: 4px;
-    }
-    .ehs-kpis b {
-        font-size: 19px;
-        font-weight: 600;
-        letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-    .ehs-kpis small { font-size: 10px; color: rgba(10, 25, 47, 0.45); font-weight: 500; letter-spacing: 0; }
-    .ehs-up, .ehs-down {
-        font-style: normal;
-        font-size: 9.5px;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 100px;
-    }
-    .ehs-up { color: #047857; background: rgba(16, 185, 129, 0.12); }
-    .ehs-down { color: #b45309; background: rgba(245, 158, 11, 0.14); }
-    .ehs-warn-num { color: #b45309; }
-
-    /* Barras apiladas: volumen cobrado vs. cobrado en línea */
-    .ehs-chart {
-        display: flex;
-        align-items: flex-end;
-        gap: 6px;
-        height: 92px;
-        padding-bottom: 2px;
-    }
-    .ehs-chart span {
-        position: relative;
-        flex: 1;
-        height: var(--h);
-        border-radius: 3px 3px 1px 1px;
-        background: linear-gradient(180deg, #7c83ff, #6366f1);
-        overflow: hidden;
-    }
-    .ehs-chart span i {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #22c3a6;
-    }
-    .ehs-axis {
-        display: flex;
-        justify-content: space-between;
-        color: rgba(10, 25, 47, 0.4);
-        font-size: 9.5px;
-        margin: 6px 0 12px;
-    }
-
-    .ehs-rows { display: flex; flex-direction: column; }
-    .ehs-row {
-        display: grid;
-        grid-template-columns: auto 1fr auto auto;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        border-top: 1px solid rgba(10, 25, 47, 0.06);
-    }
-    .ehs-rows-tight .ehs-row { grid-template-columns: 1fr auto auto; }
-    .ehs-av {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-size: 9px;
-        font-weight: 700;
-        color: var(--c);
-        background: color-mix(in srgb, var(--c) 14%, #fff);
-    }
     .ehs-who { display: flex; flex-direction: column; min-width: 0; }
     .ehs-who b { font-weight: 600; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ehs-who small { color: rgba(10, 25, 47, 0.45); font-size: 9.5px; }
-    .ehs-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
     .ehs-pill {
         font-size: 9.5px;
         font-weight: 600;
@@ -460,43 +1065,15 @@ const cards = variant === 'startups'
         white-space: nowrap;
     }
     .ehs-pill.ok { color: #047857; background: rgba(16, 185, 129, 0.12); }
-    .ehs-pill.pend { color: #4338ca; background: rgba(99, 102, 241, 0.12); }
-    .ehs-pill.warn { color: #b45309; background: rgba(245, 158, 11, 0.15); }
-    .ehs-pill.info { color: #0369a1; background: rgba(14, 165, 233, 0.12); }
-    .ehs-pill.late { color: #be123c; background: rgba(244, 63, 94, 0.11); }
-
     .ehs-table { margin-bottom: 12px; }
-    .ehs-th, .ehs-tr {
+    .ehs-tr {
         display: grid;
         grid-template-columns: 1fr 52px 52px;
         gap: 8px;
         padding: 7px 0;
+        border-bottom: 1px solid rgba(10, 25, 47, 0.05);
     }
-    .ehs-th {
-        color: rgba(10, 25, 47, 0.45);
-        font-weight: 600;
-        font-size: 9.5px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        border-bottom: 1px solid rgba(10, 25, 47, 0.07);
-    }
-    .ehs-tr { border-bottom: 1px solid rgba(10, 25, 47, 0.05); }
-    .ehs-th span:not(:first-child), .ehs-tr span:not(:first-child) { text-align: right; }
-    .ehs-approval {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: rgba(245, 158, 11, 0.08);
-        color: #b45309;
-    }
-    .ehs-approval svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
-    .ehs-approval span { display: flex; flex-direction: column; gap: 2px; }
-    .ehs-approval b { color: #0a192f; font-weight: 600; font-size: 11px; }
-    .ehs-approval small { color: rgba(10, 25, 47, 0.55); font-size: 10px; }
-
-    /* Link público: marca del vendedor, firma y pago */
+    .ehs-tr span:not(:first-child) { text-align: right; }
     .ehs-link-head {
         display: flex;
         align-items: center;
@@ -638,6 +1215,17 @@ const cards = variant === 'startups'
         .ehs-card[data-pos='1'] { transform: translate(18px, 22px) rotate(3deg) scale(0.96); }
         .ehs-card[data-pos='2'] { transform: translate(34px, 44px) rotate(6deg) scale(0.92); }
         .ehs-shot { height: 320px; padding: 16px 16px 0; }
+        .ehs-app { margin: -8px -8px 0; }
+        /* Tarjeta de ~310 px: la calca recorta columnas como un screenshot
+           más angosto, sin encimar importes ni estados. */
+        .ehs-sum > span:nth-child(3) { display: none; }
+        .ehs-sum b { font-size: 12.5px; }
+        .ehs-fth, .ehs-ftr { grid-template-columns: 10px 50px 15px 68px 56px minmax(0, 1fr); gap: 4px; }
+        .ehs-fcli > span { display: none; }
+        .ehs-fth > span:nth-child(3) { font-size: 0; }
+        .ehs-crumbs, .ehs-margen-sec { display: none; }
+        .ehs-dith, .ehs-ditr { grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) 32px; }
+        .ehs-dith > span:nth-child(3), .ehs-diprice { display: none; }
         .ehs-cap { padding: 22px; }
         .ehs-cap h3 { font-size: 1.3rem; }
         .ehs-pager { justify-content: center; }
