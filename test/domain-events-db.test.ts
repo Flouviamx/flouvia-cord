@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 
-const m = vi.hoisted(() => ({ db: null as any, enqueue: vi.fn(async (..._args: any[]) => [] as string[]) }));
+const m = vi.hoisted(() => ({ db: null as any, enqueue: vi.fn(async (..._args: any[]) => [] as string[]), pending: [] as Promise<unknown>[] }));
 
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: any[]) => ({ text: s.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values }),
@@ -14,7 +14,18 @@ vi.mock('../src/lib/db', () => ({
     }),
 }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn() } }));
-vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
+// after() recibe promesas ya en vuelo (los import() dinámicos de domain-events
+// se evalúan al llamarlo). Se juntan y se esperan en afterAll: si quedan
+// huérfanas, terminan de cargar con el entorno ya desmontado y Vitest falla la
+// corrida entera con EnvironmentTeardownError aunque todas las pruebas pasen.
+vi.mock('../src/lib/after', () => ({ after: vi.fn((p: Promise<unknown>) => { m.pending.push(p); }) }));
+// Los consumidores de fondo no son parte de lo que se prueba aquí.
+vi.mock('../src/lib/integraciones/sync', () => ({ processOrgSync: vi.fn() }));
+vi.mock('../src/lib/workflows/engine', () => ({ processOrgRuns: vi.fn() }));
+vi.mock('../src/lib/integraciones/shopify/orders', () => ({ onQuoteEvent: vi.fn() }));
+vi.mock('../src/lib/integraciones/hojas/service', () => ({ onDomainEventHoja: vi.fn() }));
+vi.mock('../src/lib/integraciones/slack-app', () => ({ avisarAprobacion: vi.fn() }));
+vi.mock('../src/lib/integraciones/contabilidad/service', () => ({ onDomainEventConta: vi.fn() }));
 vi.mock('../src/lib/public-links', () => ({ publicDocumentUrl: async () => 'https://cord.test/q/secreto' }));
 vi.mock('../src/lib/webhook-delivery', () => ({
     enqueueForSubscribers: m.enqueue, flushNow: vi.fn(), newEventId: () => 'evt_1',
@@ -39,7 +50,7 @@ beforeAll(async () => {
 }, 15000);
 
 beforeEach(async () => { await m.db.exec('reset role; delete from domain_events;'); });
-afterAll(async () => { await m.db.close(); });
+afterAll(async () => { await Promise.allSettled(m.pending); await m.db.close(); });
 
 describe('catálogo', () => {
     it('cubre exactamente los eventos públicos de webhook', () => {

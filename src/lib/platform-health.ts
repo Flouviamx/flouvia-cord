@@ -26,6 +26,60 @@ export const HEALTH_WINDOW_DAYS = 90;
 export const HEALTH_STALE_AFTER_MS = 26 * 60 * 60 * 1000;
 const PROBE_TIMEOUT_MS = 8_000;
 
+export interface PaymentsConfirmationState {
+    broken: boolean;
+    /** 'missed': Stripe tiene un pago cobrado que Cord no registró. 'unverified': no se pudo comprobar. */
+    reason: 'missed' | 'unverified' | null;
+    pendingCount: number;
+    lastSuccessAt: Date | null;
+}
+
+/**
+ * ¿Está detenida la confirmación de pagos?
+ *
+ * Un cobro queda 'pendiente' con su PaymentIntent desde que el cliente abre la
+ * pantalla de pago, y se queda así si nunca paga. Por eso "hay pendientes y no
+ * llegó un webhook en 26 h" no prueba nada: con poco tráfico es el estado
+ * normal, y así se leyó durante días como una caída que no existía.
+ *
+ * Solo en ese caso se le pregunta a Stripe por los pendientes más recientes: si
+ * alguno ya está `succeeded`, el pago entró y el aviso no llegó — eso sí es una
+ * falla. Si la verificación no se puede hacer (función aún sin migrar, Stripe
+ * sin responder), se conserva el criterio anterior: falla cerrada.
+ */
+export async function paymentsConfirmation(): Promise<PaymentsConfirmationState> {
+    const [rows] = await withSystemTx(sql`
+        select h.last_success_at, cord_pending_payment_count() as pending_count
+        from (values (1)) as seed(n)
+        left join platform_health h on h.key = 'stripe_webhook'
+        limit 1`);
+    const pendingCount = Number(rows[0]?.pending_count || 0);
+    const lastSuccessAt = rows[0]?.last_success_at ? new Date(String(rows[0].last_success_at)) : null;
+    const quiet = pendingCount > 0 && (!lastSuccessAt || Date.now() - lastSuccessAt.getTime() > PAYMENTS_WEBHOOK_MAX_QUIET_MS);
+    if (!quiet) return { broken: false, reason: null, pendingCount, lastSuccessAt };
+
+    let intents: Array<{ payment_intent: string; stripe_account: string | null }>;
+    try {
+        const [found] = await withSystemTx(sql`select payment_intent, stripe_account from cord_pending_payment_intents(10)`);
+        intents = found as any[];
+    } catch {
+        return { broken: true, reason: 'unverified', pendingCount, lastSuccessAt };
+    }
+    const checks = await Promise.allSettled(intents.map((i) => stripe(
+        `/v1/payment_intents/${encodeURIComponent(i.payment_intent)}`, undefined, 'GET',
+        i.stripe_account ? { stripeAccount: i.stripe_account } : undefined,
+    )));
+    if (checks.some((c) => c.status === 'fulfilled' && c.value?.status === 'succeeded')) {
+        return { broken: true, reason: 'missed', pendingCount, lastSuccessAt };
+    }
+    // Un intento borrado o de otra cuenta da 404 y no dice nada; que TODOS
+    // fallen sí significa que no se pudo verificar.
+    if (intents.length && checks.every((c) => c.status === 'rejected')) {
+        return { broken: true, reason: 'unverified', pendingCount, lastSuccessAt };
+    }
+    return { broken: false, reason: null, pendingCount, lastSuccessAt };
+}
+
 export interface HealthProbeResult {
     service: HealthService;
     ok: boolean;
@@ -191,20 +245,11 @@ export function defaultHealthProbeDependencies(): HealthProbeDependencies {
             const balance = await stripe('/v1/balance', undefined, 'GET');
             if (!balance || balance.object !== 'balance') throw new Error('stripe_unexpected_response');
         },
-        // Confirmación de pagos: solo falla si hay cobros esperando confirmación
-        // y los webhooks firmados de Stripe llevan demasiado tiempo sin llegar.
-        // Sin cobros pendientes, el silencio no es una caída.
+        // Confirmación de pagos: solo falla si Stripe cobró algo que Cord no ha
+        // registrado (el webhook no está llegando). Ver paymentsConfirmation().
         payments_webhook: async () => {
-            const [rows] = await withSystemTx(sql`
-                select h.last_success_at, cord_pending_payment_count() as pending_count
-                from (values (1)) as seed(n)
-                left join platform_health h on h.key = 'stripe_webhook'
-                limit 1`);
-            const pending = Number(rows[0]?.pending_count || 0);
-            const lastSuccess = rows[0]?.last_success_at ? new Date(String(rows[0].last_success_at)).getTime() : null;
-            if (pending > 0 && (!lastSuccess || Date.now() - lastSuccess > PAYMENTS_WEBHOOK_MAX_QUIET_MS)) {
-                throw new Error('payments_webhook_quiet');
-            }
+            const r = await paymentsConfirmation();
+            if (r.broken) throw new Error(`payments_webhook_${r.reason}`);
         },
         // Timbrado fiscal: lectura autenticada de la cuenta del PAC.
         fiscal: facturapiKey ? async () => {

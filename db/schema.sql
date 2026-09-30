@@ -2269,6 +2269,22 @@ as $$
    where status = 'pendiente' and stripe_payment_intent_id is not null
 $$;
 
+-- Los cobros pendientes más recientes con su PaymentIntent y la cuenta conectada
+-- donde vive. Lo usa la sonda de "confirmación de pagos" para preguntarle a
+-- Stripe si alguno ya se cobró sin que Cord lo registrara: un cobro pendiente
+-- casi siempre es un cliente que no ha pagado, y eso no es una caída.
+create or replace function cord_pending_payment_intents(p_limit int default 10)
+returns table (payment_intent text, stripe_account text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.stripe_payment_intent_id, o.stripe_account_id
+    from cotizacion_cobros c join orgs o on o.id = c.org_id
+   where c.status = 'pendiente' and c.stripe_payment_intent_id is not null
+   order by c.created_at desc
+   limit least(greatest(coalesce(p_limit, 10), 1), 25)
+$$;
+
 create or replace function cord_resolve_org_for_quote(p_quote uuid, p_account text default null)
 returns uuid
 language sql stable security definer
@@ -2308,6 +2324,7 @@ revoke all on function cord_resolve_org_for_connected_account(text) from public;
 revoke all on function cord_demo_org_id() from public;
 revoke all on function cord_resolve_public_quote(text) from public;
 revoke all on function cord_pending_payment_count() from public;
+revoke all on function cord_pending_payment_intents(int) from public;
 revoke all on function cord_resolve_org_for_quote(uuid, text) from public;
 revoke all on function cord_resolve_org_for_billing(text, text) from public;
 revoke all on function cord_resolve_org_for_quote_subscription(text, text) from public;
