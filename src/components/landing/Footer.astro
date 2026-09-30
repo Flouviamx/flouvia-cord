@@ -41,7 +41,7 @@ const {
             <div class="fc-features">
                 <div class="fc-feature">
                     <div class="fc-feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
                     </div>
                     <h3 class="fc-feature-title">{isEn ? "See what you'll pay" : "Ve lo que pagarás"}</h3>
                     <p class="fc-feature-text">{isEn ? "Integrated per-transaction pricing with no hidden fees." : "Precios transparentes desde el primer día sin comisiones ocultas."}</p>
@@ -50,7 +50,7 @@ const {
                 
                 <div class="fc-feature">
                     <div class="fc-feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                     </div>
                     <h3 class="fc-feature-title">{isEn ? "Start building" : "Empieza a construir"}</h3>
                     <p class="fc-feature-text">{isEn ? "Start operating and sending quotes in just 10 minutes." : "Empieza a operar y enviar cotizaciones en tan solo 10 minutos."}</p>
@@ -360,7 +360,7 @@ const {
         text-align: left;
     }
     .fc-title {
-        font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+        font-size: clamp(1.6rem, 2.5vw, 2.2rem);
         font-weight: 800;
         line-height: 1.1;
         letter-spacing: -1.2px;
@@ -434,11 +434,13 @@ const {
         display: flex;
         flex-direction: column;
         gap: 0.8rem;
+        height: 100%;
+        align-items: flex-start;
     }
     .fc-feature-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
@@ -448,8 +450,8 @@ const {
         margin-bottom: 0.4rem;
     }
     .fc-feature-icon svg {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
     }
     .fc-feature-title {
         font-size: 1rem;
@@ -462,6 +464,7 @@ const {
         line-height: 1.5;
         color: #8a8f98;
         margin: 0 0 0.5rem;
+        flex-grow: 1;
     }
     .fc-feature-link {
         font-size: 0.95rem;
