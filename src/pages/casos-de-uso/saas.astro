@@ -5,10 +5,11 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import CasoHeroMockup from '../../components/casos/CasoHeroMockup.astro';
 
-// Shader estándar de Cord — variante AZUL CIELO para SaaS.
-const HERO_PAL = { base: '#FFFFFF', color1: '#C7F0EA', color2: '#CFE8FB', color3: '#D9F5E3' };
+// Ola de seda del hero (mismo shader que /soluciones), paleta TURQUESA → ÍNDIGO para empresas de software.
+const HERO_PAL = { base: '#F6F9FC', c1: '#5EEAD4', c2: '#22D3EE', c3: '#3B82F6', c4: '#6366F1', c5: '#8B5CF6' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
@@ -75,10 +76,11 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         <!-- HERO -->
         <header class="startup-hero">
             <div class="startup-hero-bg">
-                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                <RibbonHeroBg client:only="react" light colors={HERO_PAL} />
             </div>
+            <div class="startup-hero-grid">
             <div class="startup-hero-content">
-                <h1 class="startup-title reveal">De la propuesta al cobro para empresas de software</h1>
+                <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">empresas de software</span></h1>
                 <p class="startup-sub">
                     Transforma los acuerdos verbales en transacciones pagadas. Gestiona renovaciones anuales, firmas de contratos y facturación (CFDI 4.0 para negocios en México). Construido para empresas de software en cualquier país.
                 </p>
@@ -90,6 +92,10 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                     </a>
                     <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                 </div>
+            </div>
+            <div class="startup-hero-visual">
+                <CasoHeroMockup variant="saas" />
+            </div>
             </div>
         </header>
 
@@ -386,57 +392,89 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         padding: 0 5%;
     }
 
-    /* ── HERO (idéntico a soluciones/startups) ── */
+    /* ── HERO — layout de soluciones/startups: texto a la izquierda y, a la
+       derecha, una calca de pantalla real (CasoHeroMockup) sobre la ola de seda. ── */
     .startup-hero {
         position: relative;
-        padding: 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
         background: #f6f9fc;
     }
 
+    /* Respaldo sin WebGL: la misma composición con degradados. */
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
         overflow: hidden;
+        background: linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #5EEAD4 44%, #22D3EE 52%, #3B82F6 64%, #6366F1 80%, #8B5CF6 100%);
+    }
+    /* Velo claro detrás del texto. */
+    .startup-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+    }
+
+    .startup-hero-grid {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
     .startup-hero-content {
-        position: relative;
-        z-index: 10;
-        text-align: left;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        max-width: 1140px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem 5% 0;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .startup-hero-visual {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 
     .startup-title {
-        font-size: clamp(3rem, 5vw, 5.5rem);
-        line-height: 1.05;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin: 0 0 1.5rem;
-        color: #0a2540;
+        font-size: clamp(2.5rem, 4.3vw, 4rem);
+        line-height: 1.04;
+        font-weight: 700;
+        letter-spacing: -0.045em;
+        margin: 0 0 1.75rem;
+        color: #050505;
         text-wrap: balance;
-        max-width: 900px;
+        max-width: 660px;
+    }
+    /* El vertical, en los tonos de su paleta (un paso más profundos para que
+       se lean sobre claro). */
+    .startup-title-accent {
+        background: linear-gradient(92deg, #0891b2 0%, #2563eb 55%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #2563eb;
     }
 
     .startup-sub {
-        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
         color: #425466;
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
 
@@ -450,12 +488,24 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     .startup-hero .btn-ghost {
         color: #0a2540;
         border: 1px solid rgba(10, 37, 64, 0.15);
-        background: rgba(10, 37, 64, 0.03);
+        background: rgba(255, 255, 255, 0.55);
     }
 
     .startup-hero .btn-ghost:hover {
-        background: rgba(10, 37, 64, 0.08);
+        background: rgba(255, 255, 255, 0.8);
         box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 880px) {
+        .startup-hero { padding: 120px 0 64px; min-height: auto; }
+        .startup-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+        .startup-hero-visual { justify-content: center; }
+        .startup-hero-bg::after {
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.72) 0%, rgba(246, 249, 252, 0.3) 45%, transparent 65%);
+        }
+    }
+    @media (max-width: 520px) {
+        .startup-title { font-size: 2.35rem; }
     }
 
     .uc-hero-inner {

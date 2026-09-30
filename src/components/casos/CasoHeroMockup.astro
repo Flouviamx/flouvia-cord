@@ -1,0 +1,748 @@
+---
+// Pieza del hero de /casos-de-uso/* (clases chm-*). Una calca por vertical de
+// una pantalla REAL de Cord, más una tarjeta secundaria superpuesta que es un
+// fragmento real de la misma historia. Nada de lo que se ve aquí es inventado:
+//
+//   agencias          → link público /q/[token] (components/q/QuoteCard.astro)
+//                       ya aprobado con anticipo del 50 %: la nota "Hoy pagas…"
+//                       del total y, encima, el plan de pago + bloque de pago
+//                       (.ql-cobros / .ql-pay) del mismo link.
+//   saas              → /app/facturas/recurrentes (cadencia, próxima emisión,
+//                       emitidas, estado) y, encima, el sello de firma
+//                       "Documento verificado" (.ql-audit-stamp) del link.
+//   comercializadoras → editor /app/cotizaciones/nueva: nivel de cliente
+//                       (descNote), precio por volumen (.lr-volnote), términos
+//                       Net 30 y, encima, el panel "Revisa y envía" (.ed-summary).
+//   software-factory  → detalle /app/cotizaciones/[id]: stepper, d-head y
+//                       partidas por fase; encima, la "Actividad" con el evento
+//                       real del webhook "Anticipo de … pagado con Cord Payments
+//                       — saldo pendiente".
+//
+// Textos de estado, columnas y etiquetas: los de src/i18n/app.ts. Todas las
+// cifras llevan su divisa (regla 21). Si una de esas pantallas cambia, esta
+// calca se desactualiza con ella.
+interface Props { variant: 'agencias' | 'saas' | 'comercializadoras' | 'software-factory' }
+const { variant } = Astro.props;
+
+const CUR = 'MXN';
+const money = (n: number, dec = 2) =>
+    new Intl.NumberFormat('es-MX', { style: 'currency', currency: CUR, minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+const num = (n: number, dec = 2) =>
+    new Intl.NumberFormat('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+const r2 = (n: number) => Math.round(n * 100) / 100;
+const IVA = 0.16;
+
+// ── agencias: link público con anticipo 50 % ──
+const AG = (() => {
+    const items = [
+        { d: 'Estrategia y plataforma de marca', q: 1, u: 'servicio', p: 28000 },
+        { d: 'Identidad visual y manual de marca', q: 1, u: 'servicio', p: 24000 },
+        { d: 'Piezas para campaña de lanzamiento', q: 12, u: 'piezas', p: 2250 },
+    ];
+    const sub = items.reduce((s, it) => s + it.q * it.p, 0);
+    const total = r2(sub * (1 + IVA));
+    const anticipo = r2(total * 0.5);
+    return { items, sub, iva: r2(sub * IVA), total, anticipo, saldo: r2(total - anticipo) };
+})();
+
+// ── saas: facturas recurrentes ──
+const REC = [
+    { cli: 'Grupo Farmacéutico Arcos', nombre: 'Plan Business anual · 120 usuarios', cad: 'Anual', dia: 1, prox: '1 oct 2026', n: 2, on: true },
+    { cli: 'Logística Tarsa', nombre: 'Plan Growth · 35 usuarios', cad: 'Mensual', dia: 5, prox: '5 oct 2026', n: 14, on: true },
+    { cli: 'Kora Finanzas', nombre: 'Plan Growth · 20 usuarios', cad: 'Mensual', dia: 1, prox: '1 oct 2026', n: 9, on: true },
+    { cli: 'Clínicas Ámbar', nombre: 'Plan Business anual · 60 usuarios', cad: 'Anual', dia: 15, prox: '15 ene 2027', n: 1, on: true },
+    { cli: 'Hotel Boca Norte', nombre: 'Plan Starter · 5 usuarios', cad: 'Mensual', dia: 10, prox: '10 oct 2026', n: 6, on: false },
+    { cli: 'Agencia Lumen', nombre: 'Plan Growth · 12 usuarios', cad: 'Mensual', dia: 20, prox: '20 oct 2026', n: 4, on: true },
+    { cli: 'Constructora Apex', nombre: 'Plan Business anual · 80 usuarios', cad: 'Anual', dia: 1, prox: '1 mar 2027', n: 1, on: true },
+    { cli: 'Colegio Montebello', nombre: 'Plan Starter · 8 usuarios', cad: 'Mensual', dia: 1, prox: '1 oct 2026', n: 11, on: true },
+];
+
+// ── comercializadoras: editor con nivel Distribuidor (−12 %) y volumen ──
+const ED = (() => {
+    const desc = 12;
+    const lines = [
+        { d: 'Cemento gris CPC 30R', u: 'bulto 50 kg', vol: 500, q: 640, lista: 214, m: 18 },
+        { d: 'Varilla corrugada 3/8"', u: 'pieza 12 m', vol: 200, q: 260, lista: 178, m: 16 },
+        { d: 'Block hueco 15 × 20 × 40', u: 'pieza', vol: 1000, q: 1800, lista: 9.4, m: 24 },
+        { d: 'Malla electrosoldada 6×6 10/10', u: 'rollo 2.5 × 40 m', vol: 0, q: 18, lista: 2390, m: 21 },
+    ].map((l) => {
+        const nego = r2(l.lista * (1 - desc / 100));
+        return { ...l, nego, importe: r2(nego * l.q) };
+    });
+    const sub = r2(lines.reduce((s, l) => s + l.importe, 0));
+    const save = r2(lines.reduce((s, l) => s + (l.lista - l.nego) * l.q, 0));
+    const iva = r2(sub * IVA);
+    return { desc, lines, sub, save, iva, total: r2(sub + iva), pieces: lines.reduce((s, l) => s + l.q, 0) };
+})();
+
+// ── software-factory: detalle con partidas por fase y anticipo 40 % ──
+const SF = (() => {
+    const items = [
+        { d: 'Fase 1 · Discovery y arquitectura', u: 'servicio', q: 1, p: 86000 },
+        { d: 'Fase 2 · Desarrollo del MVP', u: 'sprint de 2 semanas', q: 4, p: 48500 },
+        { d: 'Fase 3 · QA, despliegue y handoff', u: 'servicio', q: 1, p: 42000 },
+    ];
+    const sub = items.reduce((s, it) => s + it.q * it.p, 0);
+    const iva = r2(sub * IVA);
+    const total = r2(sub + iva);
+    const anticipo = r2(total * 0.4);
+    return { items, sub, iva, total, anticipo };
+})();
+const SF_STEPS = ['Borrador', 'Enviada', 'Vista', 'Aprobada', 'Pagada'];
+const SF_IDX = 3;
+const SF_EVENTS = [
+    { c: '#10b981', t: `Anticipo de ${money(SF.anticipo)} ${CUR} pagado con Cord Payments — saldo pendiente`, w: 'hoy, 10:42' },
+    { c: '#10b981', t: 'Firmado digitalmente por "Daniela Ortiz" (IP 189.203.114.27)', w: 'ayer, 18:05' },
+    { c: '#7c3aed', t: 'Abierta por el cliente desde el link', w: 'ayer, 16:31' },
+    { c: '#3b82f6', t: 'Cotización enviada — link generado', w: '26 sep, 12:14' },
+    { c: '#cbd5e1', t: 'Borrador creado', w: '26 sep, 11:50' },
+];
+
+---
+
+<div class="chm" data-variant={variant} aria-hidden="true">
+
+    {variant === 'agencias' && (
+        <Fragment>
+            <div class="chm-win chm-win-q" style="--brand:#9f1239">
+                <div class="chm-url"><span class="chm-url-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>cordhq.app/q/131e21356318f9040d6bd1d59277fb84</span></div>
+                <div class="chm-shot chm-qc">
+                    <div class="chm-qcard">
+                        <div class="chm-qh">
+                            <span class="chm-qbrand">
+                                <span class="chm-qlogo">E</span>
+                                <span class="chm-qbrand-t"><b>Estudio Brío</b><small>RFC EBR190312KQ4</small></span>
+                            </span>
+                            <span class="chm-qfolio"><small>COTIZACIÓN</small><b>COT-0212</b></span>
+                        </div>
+                        <div class="chm-qrule"></div>
+                        <div class="chm-qmeta">
+                            <span><small>PARA</small><b>Grupo Alcázar</b></span>
+                            <span><small>VÁLIDA HASTA</small><b>12 oct 2026</b><i class="chm-qchip">Vence en 12 días</i></span>
+                            <span><small>TÉRMINOS</small><b>Net 30</b></span>
+                        </div>
+                        <div class="chm-qtotal">
+                            <small>TOTAL A PAGAR</small>
+                            <b class="editorial">{money(AG.total)}</b>
+                            <span class="chm-qtotal-note">MXN · IVA incluido</span>
+                            <span class="chm-qsplit">Hoy pagas {money(AG.anticipo)} de anticipo (50%) · Saldo: {money(AG.saldo)} — vence el 30 oct 2026</span>
+                        </div>
+                        <div class="chm-qi">
+                            <div class="chm-qi-h"><span>CONCEPTO</span><span class="c">CANT.</span><span class="r">P. UNIT.</span><span class="r">IMPORTE</span></div>
+                            {AG.items.map((it) => (
+                                <div class="chm-qi-r">
+                                    <span class="chm-qi-n">{it.d}</span>
+                                    <span class="c chm-qi-q">{it.q} {it.u}</span>
+                                    <span class="r chm-qi-p editorial">{money(it.p)}</span>
+                                    <span class="r chm-qi-t editorial">{money(it.q * it.p)}</span>
+                                </div>
+                            ))}
+                            <div class="chm-qt">
+                                <span><em>Subtotal</em><b class="editorial">{money(AG.sub)}</b></span>
+                                <span><em>IVA 16%</em><b class="editorial">{money(AG.iva)}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chm-float at-r chm-float-pay" style="--brand:#9f1239">
+                <div class="chm-cobros">
+                    <span class="chm-cobros-t">Plan de pago</span>
+                    <span class="chm-cobro"><b>Anticipo</b><em class="editorial">{money(AG.anticipo)}</em><i>Por pagar</i></span>
+                    <span class="chm-cobro"><b>Saldo</b><em class="editorial">{money(AG.saldo)}</em><i>Vence el 30 oct 2026</i></span>
+                </div>
+                <div class="chm-pay">
+                    <span class="chm-pay-amt"><small>A PAGAR AHORA · ANTICIPO</small><b class="editorial">{money(AG.anticipo)} <i>MXN</i></b></span>
+                    <span class="chm-pay-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pagar de forma segura</span>
+                    <span class="chm-pay-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Tarjeta o transferencia SPEI · Cord Payments<span class="chm-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span></span>
+                </div>
+            </div>
+        </Fragment>
+    )}
+
+    {variant !== 'agencias' && (
+        <div class="chm-win chm-win-app">
+            <div class="chm-shot chm-app">
+                <!-- Topbar de AppLayout: búsqueda ⌘K, Crear y accesos. -->
+                <div class="chm-tb">
+                    <span class="chm-tb-search">
+                        <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20.5" y1="20.5" x2="16.2" y2="16.2"/></svg>
+                        Buscar…
+                        <kbd>⌘K</kbd>
+                    </span>
+                    <span class="chm-tb-r">
+                        <span class="chm-tb-create">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Crear
+                        </span>
+                        <span class="chm-tb-ic"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none"/></svg></span>
+                        <span class="chm-tb-av">{variant === 'saas' ? 'LC' : variant === 'comercializadoras' ? 'MV' : 'JR'}</span>
+                    </span>
+                </div>
+
+                {variant === 'saas' && (
+                    <div class="chm-pg">
+                        <div class="chm-ph"><h4 class="chm-ph-t">Facturas</h4></div>
+                        <div class="chm-sech">
+                            <h5>Facturas recurrentes</h5>
+                            <span class="chm-sech-link">Facturas →</span>
+                        </div>
+                        <p class="chm-intro">Cord emite y envía estas facturas por ti en la fecha que definiste. Cada emisión congela sus propios importes e impuestos.</p>
+                        <div class="chm-rec chm-th"><span>Cliente</span><span>Cadencia</span><span>Próxima emisión</span><span class="r">Emitidas</span><span>Estado</span></div>
+                        {REC.map((r) => (
+                            <div class="chm-rec chm-tr">
+                                <span class="chm-rec-n"><b>{r.cli}</b><small>{r.nombre}</small></span>
+                                <span class="chm-rec-c">{r.cad}<small>Día {r.dia} de cada periodo</small></span>
+                                <span class="editorial chm-rec-d">{r.prox}</span>
+                                <span class="editorial r">{r.n}</span>
+                                <span><span class:list={['chm-pill', r.on ? 'ok' : 'off']}>{r.on ? 'Activa' : 'Pausada'}</span></span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {variant === 'comercializadoras' && (
+                    <div class="chm-pg">
+                        <div class="chm-ph">
+                            <div>
+                                <span class="chm-crumbs"><span>Cotizaciones</span></span>
+                                <h4 class="chm-ph-t">Nueva cotización</h4>
+                            </div>
+                        </div>
+                        <div class="chm-step">
+                            <span class="chm-step-n">1</span>
+                            <span class="chm-step-t"><b>¿A quién le cotizas?</b><small>Elige el cliente y cómo te paga. Si tiene un nivel con descuento, se aplica solo a los precios.</small></span>
+                        </div>
+                        <div class="chm-client">
+                            <span class="chm-select">Distribuidora El Zarco — Raúl Mendoza</span>
+                            <span class="chm-chips"><span>Contado</span><span class="on">Net 30</span><span>Net 60</span></span>
+                        </div>
+                        <p class="chm-descnote">Nivel del cliente: −{ED.desc}% aplicado automáticamente a los precios de lista.</p>
+                        <div class="chm-step">
+                            <span class="chm-step-n">2</span>
+                            <span class="chm-step-t"><b>¿Qué le vas a cotizar?</b><small>Agrega productos de tu catálogo o una línea libre. Baja el precio en <em>Negociado</em> sin tocar tu lista.</small></span>
+                        </div>
+                        <div class="chm-ln chm-ln-h"><span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="r">Importe</span><span class="c">Margen</span></div>
+                        {ED.lines.map((l) => (
+                            <div class="chm-ln">
+                                <span class="chm-ln-n">{l.d}<small>{l.u}{l.vol > 0 && <Fragment> · <b>precio x volumen ({l.vol}+)</b></Fragment>}</small></span>
+                                <span class="chm-in">{new Intl.NumberFormat('es-MX').format(l.q)}</span>
+                                <span class="chm-ln-l">{money(l.lista)}</span>
+                                <span class="chm-in deal">{l.nego.toFixed(2)}</span>
+                                <span class="editorial r chm-ln-i">{money(l.importe)}</span>
+                                <span class="chm-mg">{l.m}%</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {variant === 'software-factory' && (
+                    <div class="chm-pg">
+                        <div class="chm-ph">
+                            <div>
+                                <span class="chm-crumbs"><span>Cotizaciones</span></span>
+                                <h4 class="chm-ph-t">COT-0187</h4>
+                            </div>
+                            <span class="chm-status" style="color:#059669;background:rgba(16,185,129,0.1)">Aprobada</span>
+                        </div>
+                        <div class="chm-stp">
+                            {SF_STEPS.map((s, i) => (
+                                <span class:list={['chm-stp-s', { done: i < SF_IDX, cur: i === SF_IDX }]}>
+                                    <i>{i < SF_IDX ? '✓' : i + 1}</i><em>{s}</em>
+                                </span>
+                            ))}
+                        </div>
+                        <div class="chm-dh">
+                            <span class="chm-dh-av">KF</span>
+                            <span class="chm-dh-who"><b>Kora Finanzas <em>V2</em></b><small>Net 30 · Vigente hasta 16 oct 2026 · Creada 26 sep 2026</small></span>
+                            <span class="chm-dh-tot"><small>TOTAL</small><b class="editorial">{money(SF.total)}<i class="chm-cur">MXN</i></b></span>
+                        </div>
+                        <div class="chm-sec-t">Detalle</div>
+                        <div class="chm-di chm-di-h"><span>Producto</span><span>Cant.</span><span>Precio</span><span class="r">Importe</span></div>
+                        {SF.items.map((it) => (
+                            <div class="chm-di">
+                                <span class="chm-di-n">{it.d}<small>{it.u}</small></span>
+                                <span class="chm-di-q">{it.q}</span>
+                                <span class="editorial chm-di-p">{money(it.p)}</span>
+                                <span class="editorial r chm-di-a">{money(it.q * it.p)}<i class="chm-cur">MXN</i></span>
+                            </div>
+                        ))}
+                        <div class="chm-dt">
+                            <span><em>Subtotal</em><b class="editorial">{money(SF.sub)}</b></span>
+                            <span><em>IVA 16%</em><b class="editorial">{money(SF.iva)}</b></span>
+                            <span class="g"><em>Total</em><b class="editorial">{money(SF.total)}<i class="chm-cur">MXN</i></b></span>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    )}
+
+    {variant === 'saas' && (
+        <div class="chm-float chm-float-sign">
+            <div class="chm-sign-ok">
+                <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="#0f3d56" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="#0f3d56" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><b>Cotización aprobada</b><small>Nimbo recibió tu confirmación y se pondrá en contacto contigo en breve.</small></span>
+            </div>
+            <div class="chm-audit">
+                <div class="chm-audit-h">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                    Documento verificado
+                </div>
+                <div class="chm-audit-r"><b>Firmante:</b> Andrea Salinas (IP: 187.190.44.12)</div>
+                <div class="chm-audit-r"><b>Fecha:</b> 29 sep 2026</div>
+                <div class="chm-audit-r"><b>Sello:</b> <span class="chm-hash">4a952e7d97396e8e5ca77d3f63f80ae95814187e10c4466c7605be82cd75514d</span></div>
+            </div>
+        </div>
+    )}
+
+    {variant === 'comercializadoras' && (
+        <div class="chm-float at-r chm-float-sum">
+            <div class="chm-sum-h">Revisa y envía</div>
+            <div class="chm-sum-c">{ED.lines.length} líneas · {ED.pieces} piezas</div>
+            <div class="chm-sum-l"><span>Subtotal</span><b class="editorial">{money(ED.sub)}</b></div>
+            <div class="chm-sum-l save"><span>Le descontaste</span><b class="editorial">−{money(ED.save)}</b></div>
+            <div class="chm-sum-tg"><span>Precios ya incluyen IVA</span><i class="chm-toggle"></i></div>
+            <div class="chm-sum-l"><span>IVA 16%</span><b class="editorial">{money(ED.iva)}</b></div>
+            <div class="chm-sum-div"></div>
+            <div class="chm-sum-l tot"><span>Total</span><b class="editorial">{money(ED.total)}<i class="chm-cur">MXN</i></b></div>
+            <div class="chm-sum-f"><small>Vigencia</small><span class="chm-select sm">30 días</span></div>
+            <span class="chm-send">Crear y enviar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+    )}
+
+    {variant === 'software-factory' && (
+        <div class="chm-float at-r chm-float-tl">
+            <div class="chm-tl-h">Actividad</div>
+            <div class="chm-tl">
+                {SF_EVENTS.map((e) => (
+                    <div class="chm-tl-i">
+                        <span class="chm-tl-dot" style={`background:${e.c}`}></span>
+                        <span class="chm-tl-b"><span>{e.t}</span><small>{e.w}</small></span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )}
+</div>
+
+<style>
+    .chm {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        padding: 0 0 34px;
+        text-align: left;
+    }
+    .chm svg { display: block; flex: none; }
+    .chm .r { text-align: right; justify-content: flex-end; }
+    .chm .c { text-align: center; }
+    .chm-cur {
+        font-style: normal;
+        font-size: 0.72em;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--mut);
+        margin-left: 3px;
+    }
+
+    /* ── Ventana principal ── */
+    .chm-win {
+        position: relative;
+        height: 510px;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #f5f5f7;
+        box-shadow:
+            0 1px 2px rgba(10, 25, 47, 0.06),
+            0 12px 28px -10px rgba(10, 25, 47, 0.18),
+            0 44px 90px -30px rgba(10, 16, 36, 0.45);
+        animation: chm-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+    }
+    .chm-shot {
+        height: 100%;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 99%);
+        mask-image: linear-gradient(180deg, #000 78%, transparent 99%);
+    }
+
+    /* ── Tarjeta superpuesta ── */
+    .chm-float {
+        position: absolute;
+        z-index: 3;
+        left: -46px;
+        bottom: 0;
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow:
+            0 1px 2px rgba(10, 25, 47, 0.06),
+            0 10px 24px -8px rgba(10, 25, 47, 0.16),
+            0 36px 70px -24px rgba(10, 16, 36, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(10, 25, 47, 0.06);
+        animation: chm-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both, chm-drift 6.5s ease-in-out 1.4s infinite;
+    }
+    /* Del lado derecho cuando la pieza real vive en la columna lateral de la
+       app (resumen del editor, actividad) o cuando a la izquierda taparía los
+       conceptos. */
+    .chm-float.at-r { left: auto; right: -34px; bottom: -6px; }
+    @keyframes chm-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes chm-drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+    @media (prefers-reduced-motion: reduce) {
+        .chm-win, .chm-float { animation: none; }
+    }
+
+    /* ════════ Link público /q (QuoteCard, Inter) ════════ */
+    .chm-win-q { background: #f3f2ef; display: flex; flex-direction: column; }
+    .chm-url {
+        flex: none;
+        display: flex;
+        justify-content: center;
+        padding: 10px 16px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--bd);
+    }
+    .chm-url-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #f5f5f7;
+        color: #6b7280;
+        font: 500 10px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .chm-url-pill svg { width: 10px; height: 10px; color: #059669; }
+    .chm-qc { flex: 1; min-height: 0; height: auto; padding: 16px 16px 0; }
+    .chm-qcard {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px 22px;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        color: #111;
+        font-size: 11px;
+    }
+    .chm-qh { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .chm-qbrand { display: flex; align-items: center; gap: 10px; }
+    .chm-qlogo {
+        width: 34px; height: 34px; border-radius: 10px; flex: none;
+        display: grid; place-items: center;
+        background: var(--brand); color: #fff; font-weight: 800; font-size: 13px;
+    }
+    .chm-qbrand-t { display: flex; flex-direction: column; gap: 1px; }
+    .chm-qbrand-t b { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .chm-qbrand-t small { font-size: 8.5px; color: #9ca3af; font-weight: 500; }
+    .chm-qfolio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .chm-qfolio small, .chm-qmeta small, .chm-qtotal small, .chm-qi-h, .chm-pay-amt small {
+        font-size: 6.5px; font-weight: 800; letter-spacing: 1.6px; color: #c4c9d1;
+    }
+    .chm-qfolio b { font-size: 11.5px; font-weight: 800; letter-spacing: -0.3px; }
+    .chm-qrule { height: 1px; margin: -5px 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.07) 15%, rgba(10,25,47,0.07) 85%, transparent); }
+    .chm-qmeta { display: flex; gap: 22px; }
+    .chm-qmeta > span { display: flex; flex-direction: column; gap: 3px; }
+    .chm-qmeta b { font-size: 11px; font-weight: 600; }
+    .chm-qchip {
+        font-style: normal; align-self: flex-start; margin-top: 2px;
+        font-size: 7.5px; font-weight: 700; color: #6b7280;
+        background: rgba(10,25,47,0.05); padding: 2px 7px; border-radius: 100px;
+    }
+    .chm-qtotal {
+        display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center;
+        background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 16px;
+        padding: 16px 12px;
+    }
+    .chm-qtotal > b { font-size: 34px; line-height: 1; letter-spacing: -0.04em; color: var(--brand); }
+    .chm-qtotal-note { font-size: 9px; color: #9ca3af; font-weight: 500; }
+    .chm-qsplit {
+        margin-top: 4px; padding: 5px 11px; border-radius: 999px;
+        background: rgba(10,25,47,0.05); color: var(--n);
+        font-size: 9px; font-weight: 600; line-height: 1.35; max-width: 92%;
+    }
+    .chm-qi-h, .chm-qi-r { display: grid; grid-template-columns: minmax(0, 1.9fr) 0.8fr 0.9fr 1fr; gap: 10px; align-items: center; }
+    .chm-qi-h { padding-bottom: 7px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .chm-qi-r { padding: 9px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 10.5px; }
+    .chm-qi-n { font-weight: 600; min-width: 0; }
+    .chm-qi-q { color: #9ca3af; font-size: 9.5px; }
+    .chm-qi-p { color: #9ca3af; font-size: 10px; }
+    .chm-qi-t { color: #111; }
+    .chm-qt { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; padding-top: 10px; }
+    .chm-qt > span { display: flex; justify-content: space-between; gap: 30px; min-width: 160px; font-size: 10px; color: #9ca3af; }
+    .chm-qt em { font-style: normal; }
+    .chm-qt b { color: #6b7280; }
+
+    /* Plan de pago + bloque de pago (.ql-cobros / .ql-pay) */
+    .chm-float-pay { width: 286px; padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 11px; color: #0a192f; }
+    .chm-cobros { display: flex; flex-direction: column; padding: 2px 12px 4px; border: 1px solid rgba(10,25,47,0.07); border-radius: 13px; }
+    .chm-cobros-t { font-size: 8px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: #8a93a2; padding: 8px 0 4px; }
+    .chm-cobro { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(10,25,47,0.06); }
+    .chm-cobro b { flex: 1; font-size: 10.5px; font-weight: 600; }
+    .chm-cobro em { font-style: normal; font-size: 10.5px; }
+    .chm-cobro i { font-style: normal; font-size: 8.5px; font-weight: 600; color: #8a93a2; min-width: 84px; text-align: right; }
+    .chm-pay { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 13px; }
+    .chm-pay-amt { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .chm-pay-amt small { color: #9ca3af; letter-spacing: 1px; white-space: nowrap; }
+    .chm-pay-amt b { font-size: 17px; line-height: 1; color: var(--brand); white-space: nowrap; }
+    .chm-pay-amt b i { font-style: normal; font-size: 8.5px; color: #9ca3af; letter-spacing: 0; }
+    .chm-pay-btn {
+        display: flex; align-items: center; justify-content: center; gap: 7px;
+        padding: 11px 14px; border-radius: 11px;
+        background: var(--brand); color: #fff; font-size: 11px; font-weight: 600;
+        box-shadow: 0 10px 22px -10px rgba(10,25,47,0.45);
+    }
+    .chm-pay-btn svg { width: 12px; height: 12px; }
+    .chm-pay-btn svg rect { fill-opacity: 0.25; }
+    .chm-pay-sec { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 8px; color: #9ca3af; }
+    .chm-pay-sec svg { width: 9px; height: 9px; }
+    .chm-pay-cards { display: inline-flex; gap: 3px; margin-left: auto; }
+    .chm-pay-cards span { font-size: 6px; font-weight: 800; letter-spacing: 0.4px; padding: 2px 4px; border-radius: 3px; background: #fff; border: 1px solid rgba(10,25,47,0.08); color: #6b7280; }
+
+    /* ════════ App (AppLayout, tipografía de sistema) ════════ */
+    .chm-app {
+        padding: 12px 12px 0;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 10.5px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+    }
+    .chm-tb {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 4px 4px 4px 5px; margin-bottom: 14px; border-radius: 14px; background: #fff;
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,0.08), 0 3px 9px -2px rgba(0,0,0,0.04);
+    }
+    .chm-tb-search {
+        display: flex; align-items: center; gap: 6px; width: 150px; padding: 4px 4px 4px 7px;
+        border-radius: 8px; background: var(--soft); border: 1px solid var(--bd);
+        color: var(--mut); font-size: 9.5px; line-height: 1;
+    }
+    .chm-tb-search svg { width: 11px; height: 11px; }
+    .chm-tb-search kbd {
+        margin-left: auto; font: 700 7.5px/1 inherit; color: var(--mut); background: #fff;
+        border: 1px solid var(--bd); border-radius: 4px; padding: 2px 4px;
+    }
+    .chm-tb-r { display: flex; align-items: center; gap: 3px; }
+    .chm-tb-create {
+        display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; margin-right: 3px;
+        border-radius: 7px; background: var(--n); color: #fff; font-weight: 600; font-size: 9.5px; line-height: 1;
+    }
+    .chm-tb-create svg { width: 9px; height: 9px; }
+    .chm-tb-ic { width: 22px; height: 22px; display: grid; place-items: center; color: var(--mut); }
+    .chm-tb-ic svg { width: 12.5px; height: 12.5px; }
+    .chm-tb-av {
+        width: 20px; height: 20px; margin-left: 2px; border-radius: 50%;
+        display: grid; place-items: center; background: #1b3a64; color: #fff; font-size: 7px; font-weight: 700;
+    }
+    .chm-pg { padding: 0 8px; }
+    .chm-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .chm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .chm-crumbs { display: flex; gap: 4px; font-size: 8.5px; color: var(--mut); margin-bottom: 2px; }
+    .chm-crumbs > span::after { content: '/'; margin-left: 4px; color: #c4cad3; }
+    .chm-status, .chm-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .chm-status::before, .chm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .chm-pill.ok { color: #059669; background: rgba(16,185,129,0.12); }
+    .chm-pill.off { color: var(--mut); background: rgba(0,0,0,0.05); }
+    .chm-th, .chm-tr { display: grid; gap: 10px; align-items: center; padding: 8px 4px; }
+    .chm-th {
+        padding-top: 0; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+        color: var(--mut); border-bottom: 1px solid var(--bd);
+    }
+    .chm-tr { border-bottom: 1px solid var(--bd); }
+
+    /* saas: /app/facturas/recurrentes */
+    .chm-sech {
+        display: flex; align-items: baseline; justify-content: space-between;
+        padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--bd);
+    }
+    .chm-sech h5 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: -0.2px; }
+    .chm-sech-link { font-size: 9px; font-weight: 600; color: var(--mut); }
+    .chm-intro { margin: 0 0 12px; font-size: 9.5px; line-height: 1.5; color: var(--mut); max-width: 58ch; }
+    .chm-rec { grid-template-columns: minmax(0, 2fr) 1fr 1fr 44px 58px; }
+    .chm-rec-n { display: flex; flex-direction: column; min-width: 0; }
+    .chm-rec-n b { font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chm-rec-n small, .chm-rec-c small { display: block; font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chm-rec-c { min-width: 0; }
+    .chm-rec-d { white-space: nowrap; }
+
+    /* Documento verificado (.ql-audit-stamp del link) */
+    .chm-float-sign { width: 262px; padding: 14px; display: flex; flex-direction: column; gap: 11px; }
+    .chm-sign-ok { display: flex; align-items: center; gap: 10px; }
+    .chm-sign-ok svg { width: 30px; height: 30px; }
+    .chm-sign-ok span { display: flex; flex-direction: column; gap: 1px; }
+    .chm-sign-ok b { font-size: 12px; font-weight: 700; color: #111; }
+    .chm-sign-ok small { font-size: 9px; color: #9ca3af; font-weight: 500; }
+    .chm-audit {
+        background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15); border-radius: 11px; padding: 10px 12px;
+        font: 8px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #6b7280;
+        word-break: break-all;
+    }
+    .chm-audit-h {
+        display: flex; align-items: center; gap: 5px; margin-bottom: 7px; padding-bottom: 7px;
+        border-bottom: 1px dashed rgba(5,150,105,0.2);
+        font: 600 9.5px/1 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; color: #059669;
+    }
+    .chm-audit-h svg { width: 11px; height: 11px; }
+    .chm-audit-r { margin-bottom: 3px; }
+    .chm-audit-r b { color: #374151; font-weight: 600; }
+    .chm-hash { color: #059669; font-weight: 600; }
+
+    /* comercializadoras: editor /app/cotizaciones/nueva */
+    .chm-step { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 9px; }
+    .chm-step-n {
+        width: 18px; height: 18px; flex: none; border-radius: 5px; display: grid; place-items: center;
+        background: var(--n); color: #fff; font-size: 9px; font-weight: 700;
+    }
+    .chm-step-t { display: flex; flex-direction: column; gap: 1px; }
+    .chm-step-t b { font-size: 11px; font-weight: 600; }
+    .chm-step-t small { font-size: 8.5px; color: var(--mut); line-height: 1.4; }
+    .chm-step-t em { font-style: normal; font-weight: 600; color: var(--tx); }
+    .chm-client { display: flex; align-items: center; gap: 7px; }
+    .chm-select {
+        position: relative; flex: 1; min-width: 0; padding: 7px 24px 7px 10px; border-radius: 8px;
+        background: #ffffff; box-shadow: inset 0 0 0 1px var(--bd);
+        font-size: 10px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chm-select::after {
+        content: ''; position: absolute; right: 10px; top: 50%; width: 5px; height: 5px; margin-top: -4px;
+        border-right: 1.4px solid #99a2af; border-bottom: 1.4px solid #99a2af; transform: rotate(45deg);
+    }
+    .chm-chips { display: flex; gap: 3px; flex: none; }
+    .chm-chips span { padding: 5px 10px; border-radius: 999px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--bd); font-size: 9px; font-weight: 600; color: var(--mut); }
+    .chm-chips span.on { background: var(--n); color: #fff; box-shadow: 0 2px 8px -2px rgba(10,25,47,0.3); }
+    .chm-descnote { margin: 7px 0 14px; font-size: 9px; font-weight: 500; color: #059669; }
+    .chm-ln {
+        display: grid; grid-template-columns: minmax(0, 1.8fr) 44px 54px 60px minmax(0, 1fr) 32px;
+        gap: 7px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--bd);
+    }
+    .chm-ln-h { padding: 0 0 5px; font-size: 8.5px; font-weight: 500; color: var(--mut); }
+    .chm-ln-n { display: flex; flex-direction: column; min-width: 0; font-size: 10.5px; font-weight: 500; }
+    .chm-ln-n, .chm-ln-n small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chm-ln-n small { font-size: 8px; color: var(--mut); font-weight: 500; }
+    .chm-ln-n small b { color: #059669; font-weight: 600; }
+    .chm-in { padding: 4px 6px; border-radius: 6px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--bd); font-size: 9.5px; font-weight: 500; }
+    .chm-in.deal { color: #059669; font-weight: 600; }
+    .chm-ln-l { font-size: 9px; color: var(--mut); text-decoration: line-through; }
+    .chm-ln-i { font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+    .chm-mg { font-size: 8.5px; font-weight: 600; text-align: center; border-radius: 4px; padding: 2px 3px; color: #059669; background: rgba(16,185,129,0.1); }
+
+    /* Panel "Revisa y envía" (.ed-summary) */
+    .chm-float-sum { width: 232px; padding: 15px; display: flex; flex-direction: column; gap: 7px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; color: var(--tx); }
+    .chm-sum-h { font-size: 11.5px; font-weight: 700; letter-spacing: -0.02em; padding-bottom: 7px; border-bottom: 1px solid var(--bd); }
+    .chm-sum-c { font-size: 9px; color: var(--mut); }
+    .chm-sum-l { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; color: var(--mut); }
+    .chm-sum-l b { color: var(--tx); font-size: 11px; }
+    .chm-sum-l.save, .chm-sum-l.save b { color: #059669; }
+    .chm-sum-tg { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--tx); }
+    .chm-toggle { width: 26px; height: 15px; border-radius: 999px; background: #d9dde3; position: relative; }
+    .chm-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .chm-sum-div { height: 1px; background: var(--bd); margin: 3px 0; }
+    .chm-sum-l.tot { color: var(--tx); font-weight: 700; }
+    .chm-sum-l.tot b { font-size: 19px; letter-spacing: -0.03em; }
+    .chm-sum-f { display: flex; flex-direction: column; gap: 4px; margin-top: 3px; }
+    .chm-sum-f small { font-size: 8.5px; color: var(--mut); font-weight: 500; }
+    .chm-select.sm { flex: none; background: #f5f5f7; box-shadow: none; }
+    .chm-send {
+        display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px;
+        padding: 9px 14px; border-radius: 999px; background: var(--n); color: #fff; font-size: 10.5px; font-weight: 600;
+    }
+    .chm-send svg { width: 11px; height: 11px; }
+
+    /* software-factory: detalle /app/cotizaciones/[id] */
+    .chm-stp { display: flex; align-items: center; margin: 2px 0 14px; }
+    .chm-stp-s { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+    .chm-stp-s:not(:last-child)::after { content: ''; flex: 1; height: 1.5px; background: var(--bd); margin: 0 6px; border-radius: 2px; }
+    .chm-stp-s.done:not(:last-child)::after { background: #10b981; }
+    .chm-stp-s i {
+        width: 16px; height: 16px; flex: none; border-radius: 50%; display: grid; place-items: center;
+        font-style: normal; font-size: 7.5px; font-weight: 800;
+        background: var(--soft); color: var(--mut); border: 1px solid var(--bd);
+    }
+    .chm-stp-s.done i { background: #10b981; color: #fff; border-color: #10b981; }
+    .chm-stp-s.cur i { background: var(--n); color: #fff; border-color: var(--n); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .chm-stp-s em { font-style: normal; font-size: 8.5px; font-weight: 600; color: var(--mut); white-space: nowrap; }
+    .chm-stp-s.done em, .chm-stp-s.cur em { color: var(--tx); }
+    .chm-dh { display: flex; align-items: center; gap: 9px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--bd); }
+    .chm-dh-av { width: 32px; height: 32px; flex: none; border-radius: 9px; display: grid; place-items: center; background: var(--n); color: #fff; font-size: 10px; font-weight: 800; }
+    .chm-dh-who { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .chm-dh-who b { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .chm-dh-who b em { font-style: normal; font-size: 7.5px; font-weight: 700; color: var(--mut); background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 100px; vertical-align: 2px; }
+    .chm-dh-who small { font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+    .chm-dh-tot small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; color: #99a2af; }
+    .chm-dh-tot b { font-size: 19px; color: var(--n); line-height: 1.1; }
+    .chm-sec-t { font-size: 11px; font-weight: 600; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .chm-di { display: grid; grid-template-columns: minmax(0, 1.8fr) 30px 76px minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--bd); }
+    .chm-di-h { padding-top: 2px; padding-bottom: 5px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); }
+    .chm-di-n { display: flex; flex-direction: column; min-width: 0; font-size: 10.5px; font-weight: 600; }
+    .chm-di-n, .chm-di-n small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chm-di-n small { font-size: 8px; font-weight: 500; color: #99a2af; }
+    .chm-di-q { color: var(--mut); }
+    .chm-di-p { color: var(--n); font-size: 10px; }
+    .chm-di-a { color: var(--n); font-size: 11px; white-space: nowrap; }
+    .chm-dt { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; padding: 10px 4px 0; }
+    .chm-dt > span { display: flex; justify-content: space-between; gap: 26px; min-width: 190px; font-size: 9.5px; color: var(--mut); }
+    .chm-dt em { font-style: normal; }
+    .chm-dt b { color: var(--n); font-size: 10.5px; }
+    .chm-dt .g { border-top: 1px solid var(--bd); padding-top: 5px; font-weight: 700; color: var(--tx); }
+    .chm-dt .g b { font-size: 14px; }
+
+    /* Actividad (.d-timeline) */
+    .chm-float-tl { width: 272px; padding: 14px 15px 15px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; color: var(--tx); }
+    .chm-tl-h { font-size: 11.5px; font-weight: 600; padding-bottom: 7px; margin-bottom: 10px; border-bottom: 1px solid var(--bd); }
+    .chm-tl { position: relative; display: flex; flex-direction: column; gap: 9px; }
+    .chm-tl::before { content: ''; position: absolute; left: 3px; top: 6px; bottom: 6px; width: 1px; background: var(--bd); }
+    .chm-tl-i { position: relative; display: flex; gap: 10px; }
+    .chm-tl-dot { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px #fff; }
+    .chm-tl-b { display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; font-weight: 500; line-height: 1.35; }
+    .chm-tl-b small { font-size: 8px; color: var(--mut); font-weight: 400; }
+
+    /* ── Anchos intermedios: la tarjeta superpuesta no invade el texto ── */
+    @media (max-width: 1180px) {
+        .chm-float { left: -18px; }
+        .chm-float.at-r { left: auto; right: -10px; }
+    }
+    /* ── Móvil: la pieza se apila bajo el texto; la tarjeta entra a la ventana ── */
+    @media (max-width: 880px) {
+        .chm { margin: 0 auto; padding-bottom: 24px; }
+        .chm-win { height: 460px; }
+        .chm-float, .chm-float.at-r { left: auto; right: -6px; bottom: 0; }
+    }
+    @media (max-width: 520px) {
+        .chm-win { height: 400px; border-radius: 16px; }
+        .chm-float, .chm-float.at-r { right: -4px; }
+        .chm-float-pay, .chm-float-tl, .chm-float-sign { width: 240px; }
+        .chm-float-sum { width: 208px; }
+        .chm-qc { padding: 12px 10px 0; }
+        .chm-qcard { padding: 16px 14px; gap: 12px; }
+        .chm-qmeta { gap: 14px; }
+        .chm-qtotal > b { font-size: 28px; }
+        .chm-qi-h, .chm-qi-r { grid-template-columns: minmax(0, 1.6fr) 0.9fr 1fr; }
+        .chm-qi-h > :nth-child(3), .chm-qi-r > :nth-child(3) { display: none; }
+        .chm-rec { grid-template-columns: minmax(0, 2fr) 1fr 58px; }
+        .chm-rec > :nth-child(3), .chm-rec > :nth-child(4) { display: none; }
+        .chm-tb-search { width: 110px; }
+        .chm-client { flex-wrap: wrap; }
+        .chm-select { flex-basis: 100%; }
+        .chm-ln { grid-template-columns: minmax(0, 1.7fr) 40px 56px minmax(0, 1fr); }
+        .chm-ln > :nth-child(3), .chm-ln > :nth-child(6) { display: none; }
+        .chm-stp-s em { display: none; }
+        .chm-di { grid-template-columns: minmax(0, 1.8fr) 24px minmax(0, 1.1fr); }
+        .chm-di > :nth-child(3) { display: none; }
+    }
+</style>
