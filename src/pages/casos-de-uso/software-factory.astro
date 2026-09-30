@@ -10,9 +10,9 @@ import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — variante LILA para equipos de desarrollo.
 const HERO_PAL = { base: '#FFFFFF', color1: '#DED2FA', color2: '#D2DEFB', color3: '#CDEAF6' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -55,56 +55,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128", alt: "GitHub", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128", alt: "Jira", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128", alt: "Linear", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128", alt: "GitLab", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'github',
-        name: 'GitHub',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/512px-Octicons-mark-github.svg.png',
-        quote: '«El cobro por hitos ha transformado nuestra forma de ejecutar proyectos. Cobramos al terminar sprints sin burocracia administrativa.»',
-        author: 'Lead Developer',
-        bgGradient: 'linear-gradient(135deg, #1e293b, #0f172a)',
-        bgImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'jira',
-        name: 'Jira',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Jira_%28Software%29_logo.svg/512px-Jira_%28Software%29_logo.svg.png',
-        quote: '«Ahora los cambios de alcance (change requests) se cotizan y aprueban desde el mismo ticket, acelerando el desarrollo.»',
-        author: 'Project Manager',
-        bgGradient: 'linear-gradient(135deg, #0369a1, #075985)'
-    },
-    {
-        id: 'linear',
-        name: 'Linear',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128',
-        logoUrlLarge: 'https://pbs.twimg.com/profile_images/1121395911849062400/7exmJEg4_400x400.png',
-        quote: '«La velocidad para enviar una propuesta técnica y que se convierta en factura es clave para mantener el ciclo ágil de desarrollo.»',
-        author: 'CTO',
-        bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
-        bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'slack',
-        name: 'Slack',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/512px-Slack_icon_2019.svg.png',
-        quote: '«Mantener a nuestros ingenieros enfocados en código y no persiguiendo pagos es el mayor valor que nos ha dado Cord.»',
-        author: 'VP of Engineering',
-        bgGradient: 'linear-gradient(135deg, #111827, #4a044e)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -135,26 +91,16 @@ const testimonialItems = [
             </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Las mejores agencias de desarrollo usan Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://cursor.sh&size=64" alt="Cursor" width="24" height="24" loading="lazy" />
-                    <span>Cursor</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=64" alt="Vercel" width="24" height="24" loading="lazy" />
-                    <span>Vercel</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=64" alt="GitLab" width="24" height="24" loading="lazy" />
-                    <span>GitLab</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=64" alt="Linear" width="24" height="24" loading="lazy" />
-                    <span>Linear</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -162,7 +108,6 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Sincroniza desarrollo y finanzas</span>
                     <h2 class="uc-split-title">Cobra por tus hitos técnicos a tiempo</h2>
                     <p class="uc-split-desc">
                         El desarrollo de software tiene su propio ritmo. Conecta tus repositorios y tableros de control con tu ciclo de facturación para que nunca se te olvide cobrar un entregable aprobado.
@@ -290,7 +235,6 @@ const testimonialItems = [
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -324,18 +268,16 @@ const testimonialItems = [
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} isDarkMode={true} />
 
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan los equipos de desarrollo antes de empezar."
             id="software-factory"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -602,7 +544,7 @@ const testimonialItems = [
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -633,13 +575,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a; /* Emerald */
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);

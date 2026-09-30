@@ -10,9 +10,9 @@ import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — variante AZUL ACERO (más fuerte) para distribución.
 const HERO_PAL = { base: '#FFFFFF', color1: '#C9D9F5', color2: '#D8DCF9', color3: '#CFE3F7' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -55,56 +55,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128", alt: "Salesforce", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128", alt: "SAP", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128", alt: "QuickBooks", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128", alt: "Shopify", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://oracle.com&size=128", alt: "Oracle", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128", alt: "WhatsApp", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'salesforce',
-        name: 'Salesforce',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/512px-Salesforce.com_logo.svg.png',
-        quote: '«Cord se integra perfecto a nuestro CRM para cerrar cotizaciones complejas y gestionar líneas de crédito sin fricción.»',
-        author: 'Directora Comercial',
-        bgGradient: 'linear-gradient(135deg, #0284c7, #0369a1)',
-        bgImage: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'sap',
-        name: 'SAP',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/512px-SAP_2011_logo.svg.png',
-        quote: '«La sincronización de pedidos por volumen y control de límites de crédito desde Cord ha optimizado la cartera vencida en un 40%.»',
-        author: 'Gerente de Finanzas',
-        bgGradient: 'linear-gradient(135deg, #1d4ed8, #1e3a8a)'
-    },
-    {
-        id: 'quickbooks',
-        name: 'QuickBooks',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/QuickBooks_logo.svg/512px-QuickBooks_logo.svg.png',
-        quote: '«La conciliación de pagos SPEI y tarjetas es automática. El CFDI 4.0 fluye directo a la contabilidad sin intervención manual.»',
-        author: 'Controller',
-        bgGradient: 'linear-gradient(135deg, #15803d, #14532d)',
-        bgImage: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'shopify',
-        name: 'Shopify',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/512px-Shopify_logo_2018.svg.png',
-        quote: '«Nuestros clientes al por mayor tienen ahora un portal de pagos y un proceso de compra tan ágil como en B2C.»',
-        author: 'Head of Wholesale',
-        bgGradient: 'linear-gradient(135deg, #16a34a, #166534)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -135,26 +91,16 @@ const testimonialItems = [
             </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Distribuidores modernos operan con Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://grainger.com&size=64" alt="Grainger" width="24" height="24" loading="lazy" />
-                    <span>Grainger</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uline.com&size=64" alt="Uline" width="24" height="24" loading="lazy" />
-                    <span>Uline</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://fastenal.com&size=64" alt="Fastenal" width="24" height="24" loading="lazy" />
-                    <span>Fastenal</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sysco.com&size=64" alt="Sysco" width="24" height="24" loading="lazy" />
-                    <span>Sysco</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -162,7 +108,6 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Elimina la fricción en ventas al por mayor</span>
                     <h2 class="uc-split-title">Acelera tu ciclo comercial desde la orden hasta el pago</h2>
                     <p class="uc-split-desc">
                         Olvida los procesos manuales que retrasan el despacho de mercancía. Con Cord, tus agentes de ventas cierran pedidos más rápido, el crédito se gestiona automáticamente y la cobranza se concilia sin esfuerzo humano.
@@ -301,7 +246,6 @@ const testimonialItems = [
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -335,17 +279,15 @@ const testimonialItems = [
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} />
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan las comercializadoras antes de empezar."
             id="comercializadoras"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -622,7 +564,7 @@ const testimonialItems = [
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -653,13 +595,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a; /* Emerald */
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);

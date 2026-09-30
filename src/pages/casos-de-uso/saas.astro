@@ -10,9 +10,9 @@ import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — variante AZUL CIELO para SaaS.
 const HERO_PAL = { base: '#FFFFFF', color1: '#C7F0EA', color2: '#CFE8FB', color3: '#D9F5E3' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -57,56 +57,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128", alt: "Stripe", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128", alt: "Notion", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=128", alt: "Vercel", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128", alt: "GitHub", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'stripe',
-        name: 'Stripe',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/512px-Stripe_Logo%2C_revised_2016.svg.png',
-        quote: '«Cord complementa nuestro ecosistema gestionando el ciclo de cierre de extremo a extremo. Es la pieza que faltaba para SaaS empresariales.»',
-        author: 'Partnerships',
-        bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
-        bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'notion',
-        name: 'Notion',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png',
-        quote: '«Nuestras renovaciones anuales de licencias corporativas ahora se gestionan solas. El cliente aprueba y el CFDI se genera sin intervención humana.»',
-        author: 'Head of Sales',
-        bgGradient: 'linear-gradient(135deg, #000000, #171717)'
-    },
-    {
-        id: 'vercel',
-        name: 'Vercel',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=128',
-        logoUrlLarge: 'https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png',
-        quote: '«Automatizar el timbrado de CFDI 4.0 nos ahorró cientos de horas de trabajo manual. Cord entiende perfectamente la velocidad del SaaS moderno.»',
-        author: 'Revenue Ops',
-        bgGradient: 'linear-gradient(135deg, #0f172a, #020617)',
-        bgImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'slack',
-        name: 'Slack',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/512px-Slack_icon_2019.svg.png',
-        quote: '«El flujo de aprobación digital ha reducido la fricción en nuestras ventas enterprise, permitiendo que los equipos cierren acuerdos directamente desde el chat.»',
-        author: 'Enterprise Sales',
-        bgGradient: 'linear-gradient(135deg, #111827, #4a044e)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -137,26 +93,16 @@ const testimonialItems = [
             </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Empresas de SaaS innovadoras crecen con Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=64" alt="Linear" width="24" height="24" loading="lazy" />
-                    <span>Linear</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=64" alt="Vercel" width="24" height="24" loading="lazy" />
-                    <span>Vercel</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=64" alt="Stripe" width="24" height="24" loading="lazy" />
-                    <span>Stripe</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=64" alt="Notion" width="24" height="24" loading="lazy" />
-                    <span>Notion</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -164,7 +110,6 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Sin trabajo manual</span>
                     <h2 class="uc-split-title">Cobra rápido y mantén a tu equipo enfocado en el producto</h2>
                     <p class="uc-split-desc">
                         Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba en un clic y el CFDI sale solo. Sin perseguir firmas ni capturar datos fiscales manualmente.
@@ -295,7 +240,6 @@ const testimonialItems = [
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -329,17 +273,15 @@ const testimonialItems = [
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} isDarkMode={true} />
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan las empresas de SaaS antes de empezar."
             id="saas"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -616,7 +558,7 @@ const testimonialItems = [
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -647,13 +589,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0a192f;
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);
