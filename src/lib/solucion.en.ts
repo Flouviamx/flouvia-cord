@@ -130,6 +130,7 @@ export const SOLUCIONES_EN: Solution[] = [
         nav: 'Startups',
         eyebrow: 'FOR STARTUPS',
         titulo: 'Grow fast, bill instantly.',
+        tituloAcento: 'bill instantly',
         sub: 'Agility is your biggest advantage. Cord lets you send professional proposals in minutes, iterate pricing, close deals with one click, and automate billing without touching a tax portal.',
         metaTitle: 'Fast Quoting and Billing for Startups — Cord',
         metaDescription: 'Cord helps startups and fast-growing agencies, anywhere, send proposals, close clients with one click, and automate invoicing (CFDI 4.0 e-invoicing for Mexican businesses). Scale without bureaucracy, no Flouvia customer relationship required.',

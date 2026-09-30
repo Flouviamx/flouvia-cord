@@ -16,11 +16,13 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 
-// Shader estándar de Cord en paleta CLARA (mood del hero light original):
-// fondo blanco + azul cielo + verde menta.
-const HERO_PAL = { base: '#FFFFFF', color1: '#CAE8FD', color2: '#CCF1DF', color3: '#DDE9FF' };
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import SolucionHeroStack from '../../components/soluciones/SolucionHeroStack.astro';
+
+// Ola del hero en versión clara: menta en la cresta, cielo, índigo, violeta y
+// rosa al fondo de la tela. Distinta a la cálida de empresas a propósito.
+const HERO_PAL = { base: '#F6F9FC', c1: '#5EEAD4', c2: '#38BDF8', c3: '#6366F1', c4: '#A855F7', c5: '#EC4899' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
@@ -53,6 +55,24 @@ const breadcrumbSchema = {
 
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
+
+// H1 con el fragmento de acento en degradado (misma familia que la ola).
+const heroTitle = solucion.tituloAcento
+    ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
+    : solucion.titulo;
+
+// Hechos verificables del producto, no métricas de clientes.
+const heroFacts = isEn
+    ? [
+        { k: 'Free', v: 'plan to start' },
+        { k: '1 link', v: 'proposal, signature, payment' },
+        { k: '12', v: 'countries' },
+    ]
+    : [
+        { k: 'Gratis', v: 'plan para empezar' },
+        { k: '1 link', v: 'propuesta, firma y pago' },
+        { k: '12', v: 'países' },
+    ];
 ---
 
 <Layout
@@ -66,23 +86,36 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         
         <header class="stripe-hero">
             <div class="stripe-hero-bg">
-                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                <RibbonHeroBg client:only="react" light colors={HERO_PAL} />
             </div>
 
-            <div class="stripe-hero-content stripe-container">
-                <h1 class="stripe-title reveal" set:html={solucion.titulo} />
+            <div class="stripe-hero-grid stripe-container">
+                <div class="stripe-hero-content">
+                    <span class="stripe-hero-kicker">{solucion.eyebrow}</span>
+                    <h1 class="stripe-title reveal" set:html={heroTitle} />
 
-                <p class="stripe-sub">{solucion.sub}</p>
+                    <p class="stripe-sub">{solucion.sub}</p>
 
-                <div class="stripe-actions">
-                    <a href="/sign-up" class="btn-luxe">
-                        <span>{isEn ? 'Start building' : 'Empezar ahora'}</span>
-                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        <div class="btn-shimmer"></div>
-                    </a>
-                    <a href="/contacto/ventas" class="btn-ghost">
-                        <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
-                    </a>
+                    <div class="stripe-actions">
+                        <a href="/sign-up" class="btn-luxe">
+                            <span>{isEn ? 'Start building' : 'Empezar ahora'}</span>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <div class="btn-shimmer"></div>
+                        </a>
+                        <a href="/contacto/ventas" class="btn-ghost">
+                            <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
+                        </a>
+                    </div>
+
+                    <ul class="stripe-hero-facts">
+                        {heroFacts.map((f) => (
+                            <li><b>{f.k}</b><span>{f.v}</span></li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div class="stripe-hero-visual">
+                    <SolucionHeroStack isEn={isEn} variant="startups" />
                 </div>
             </div>
         </header>
@@ -1424,55 +1457,124 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     ════════════════════════════════════════════════════════════════ */
     .stripe-hero {
         position: relative;
-        padding: 0 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
+        background: #f6f9fc;
     }
-    
+
+    /* Respaldo sin WebGL: misma composición con degradados. */
     .stripe-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
         overflow: hidden;
+        background:
+            linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #5eead4 44%, #38bdf8 52%, #6366f1 64%, #a855f7 80%, #ec4899 100%);
     }
-    
-    .stripe-hero-content {
+    .stripe-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+    }
+
+    .stripe-hero-grid {
         position: relative;
         z-index: 10;
-        text-align: left;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        max-width: 1140px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
         width: 100%;
         margin: 0 auto;
     }
-    
+
+    .stripe-hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .stripe-hero-visual {
+        display: flex;
+        justify-content: center;
+        padding-right: 120px;
+    }
+
+    .stripe-hero-kicker {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        color: #425466;
+        margin-bottom: 1.4rem;
+    }
+
     .stripe-title {
-        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
-        line-height: 1.1;
+        font-size: clamp(2.5rem, 4.3vw, 4rem);
+        line-height: 1.04;
         font-weight: 700;
-        letter-spacing: -0.035em;
-        margin: 0 0 1.5rem;
-        color: #0a2540;
+        letter-spacing: -0.045em;
+        margin: 0 0 1.75rem;
+        color: #050505;
         text-wrap: balance;
-        max-width: 900px;
+        max-width: 660px;
+    }
+    .stripe-title :global(.stripe-title-accent) {
+        background: linear-gradient(92deg, #0d9488 0%, #4f46e5 55%, #9333ea 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #4f46e5;
     }
 
     .stripe-sub {
-        font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
         color: #425466;
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
-    
+
+    .stripe-hero-facts {
+        list-style: none;
+        display: flex;
+        gap: 36px;
+        margin: 3.2rem 0 0;
+        padding: 1.6rem 0 0;
+        border-top: 1px solid rgba(10, 37, 64, 0.1);
+        width: 100%;
+        max-width: 540px;
+    }
+    .stripe-hero-facts li { display: flex; flex-direction: column; gap: 4px; }
+    .stripe-hero-facts b {
+        color: #0a2540;
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+    }
+    .stripe-hero-facts span { color: #6b7c93; font-size: 0.85rem; }
+
+    @media (max-width: 1100px) {
+        .stripe-hero-visual { padding-right: 60px; }
+    }
+    @media (max-width: 880px) {
+        .stripe-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+        .stripe-hero-visual { padding-right: 0; }
+        .stripe-hero-bg::after {
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.2) 50%, transparent 70%);
+        }
+        .stripe-hero-facts { gap: 24px; }
+    }
+
     .stripe-actions {
         display: flex;
         gap: 0.8rem;

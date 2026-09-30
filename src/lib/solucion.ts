@@ -222,6 +222,7 @@ export const SOLUCIONES: Solution[] = [
         nav: 'Startups',
         eyebrow: 'PARA STARTUPS',
         titulo: 'De la propuesta al cobro, sin burocracia.',
+        tituloAcento: 'sin burocracia',
         sub: 'Desde el pitch hasta el CFDI 4.0 automatizado. Transforma propuestas en ingresos sin la fricción del software back-office tradicional.',
         metaTitle: 'Cotizaciones y facturación rápida para Startups — Cord',
         metaDescription: 'Cord ayuda a startups y agencias de crecimiento rápido, en cualquier país, a enviar propuestas, cerrar clientes con un clic y automatizar la facturación (CFDI 4.0 para negocios en México). Escala sin burocracia, sin ser cliente de Flouvia.',

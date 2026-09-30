@@ -2,14 +2,16 @@ import { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-// Fondo del hero de /soluciones/empresas: una "ola de seda" diagonal que entra
-// por abajo a la izquierda y barre hacia arriba a la derecha. A la izquierda
-// del borde queda navy profundo (ahí vive el texto); a la derecha, el cuerpo
-// de la tela en ámbar → coral → magenta → violeta, con pliegues que brillan.
+// Fondo de los heroes de /soluciones (empresas y startups): una "ola de seda"
+// diagonal que entra por abajo a la izquierda y barre hacia arriba a la
+// derecha. A la izquierda del borde queda el fondo liso (ahí vive el texto); a
+// la derecha, el cuerpo de la tela en cinco tonos, con pliegues que brillan.
+// `light` invierte el tratamiento para fondos claros: sin viñeta y con el halo
+// mezclado en vez de sumado (sumar luz sobre blanco sólo satura).
 //
 // Es un shader propio, no una paleta de CordDynamicBg: el aurora estándar es
 // isotrópico (manchas por todo el lienzo) y aquí la composición necesita un
-// lado oscuro garantizado para la legibilidad del título.
+// lado liso garantizado para la legibilidad del título.
 
 const vertexShader = /* glsl */`
   varying vec2 vUv;
@@ -25,6 +27,7 @@ const fragmentShader = /* glsl */`
   uniform vec2  u_resolution;
   uniform vec2  u_mouse;
   uniform float u_compact;
+  uniform float u_light;
 
   uniform vec3 u_base;
   uniform vec3 u_c1;   // borde encendido (ámbar)
@@ -102,7 +105,7 @@ const fragmentShader = /* glsl */`
     gWide -= 0.10 * A * sin(p.y * 2.2 + 0.6);
     // Pantalla vertical: la tela entra por abajo y sube en diagonal suave
     // hasta la mitad, detrás de las tarjetas y lejos del título.
-    float gTall = (0.50 - p.y) + 0.9 * (p.x - 0.5 * A) + 0.04 * sin(p.x * 9.0 + 0.8);
+    float gTall = (0.36 - p.y) + 0.9 * (p.x - 0.5 * A) + 0.04 * sin(p.x * 9.0 + 0.8);
     float g = mix(gWide, gTall, u_compact);
     // Oleaje lento a lo largo del filo.
     g += 0.055 * sin(p.y * 3.4 - t * 1.6) + 0.035 * sin(p.y * 7.1 + t * 1.1);
@@ -142,21 +145,27 @@ const fragmentShader = /* glsl */`
     cloth = mix(cloth, u_c4, smoothstep(0.55, 1.0, p.y) * 0.35 * smoothstep(0.05, 0.3, g));
 
     // Luz: el filo es la cresta; los pliegues suman brillo cálido.
-    float light = 0.78 + 0.22 * dot(n, normalize(vec2(-0.6, 0.8)));
+    float ndl = dot(n, normalize(vec2(-0.6, 0.8)));
+    // En claro el sombreado es más plano y la tela se aclara al fondo: un
+    // pliegue oscuro sobre blanco se lee como mancha, no como volumen.
+    float light = mix(0.78 + 0.22 * ndl, 0.93 + 0.07 * ndl, u_light);
     cloth *= light;
+    cloth = mix(cloth, vec3(1.0), u_light * 0.10 * smoothstep(0.2, 0.9, depth));
     cloth += sheen * mix(u_c2, vec3(1.0, 0.86, 0.72), 0.35) * 0.22 * (1.0 - depth);
 
     // Cresta encendida justo en el filo.
     float crest = exp(-abs(g - 0.012) * 55.0);
-    cloth = mix(cloth, vec3(1.0, 0.80, 0.58), crest * 0.55);
+    cloth = mix(cloth, mix(vec3(1.0, 0.80, 0.58), vec3(1.0), u_light), crest * 0.55);
 
     // ── Lado navy ──
     vec3 col = u_base;
     // Halo de luz que la tela derrama sobre el navy.
     float spill = exp(g * 7.5) * (1.0 - body);
-    col += u_c2 * spill * 0.22 + u_c3 * spill * 0.10;
-    // Viñeta suave arriba a la izquierda (detrás del título).
-    col *= 0.85 + 0.15 * smoothstep(0.0, 1.0, vUv.x + (1.0 - vUv.y) * 0.3);
+    vec3 lit = col + u_c2 * spill * 0.22 + u_c3 * spill * 0.10;
+    vec3 tint = mix(col, u_c2, spill * 0.35);
+    col = mix(lit, tint, u_light);
+    // Viñeta suave arriba a la izquierda (detrás del título), sólo en oscuro.
+    col *= mix(0.85 + 0.15 * smoothstep(0.0, 1.0, vUv.x + (1.0 - vUv.y) * 0.3), 1.0, u_light);
 
     col = mix(col, cloth, body);
 
@@ -168,7 +177,7 @@ const fragmentShader = /* glsl */`
   }
 `
 
-function RibbonPlane({ colors, compact, animate }) {
+function RibbonPlane({ colors, compact, animate, light }) {
   const { gl, invalidate } = useThree()
   const mouseTarget = useRef(new THREE.Vector2(0.72, 0.4))
   const mouseSmooth = useRef(new THREE.Vector2(0.72, 0.4))
@@ -178,13 +187,14 @@ function RibbonPlane({ colors, compact, animate }) {
     u_resolution: { value: new THREE.Vector2(1440, 900) },
     u_mouse:      { value: new THREE.Vector2(0.72, 0.4) },
     u_compact:    { value: compact ? 1 : 0 },
+    u_light:      { value: light ? 1 : 0 },
     u_base:       { value: new THREE.Color(colors.base) },
     u_c1:         { value: new THREE.Color(colors.c1) },
     u_c2:         { value: new THREE.Color(colors.c2) },
     u_c3:         { value: new THREE.Color(colors.c3) },
     u_c4:         { value: new THREE.Color(colors.c4) },
     u_c5:         { value: new THREE.Color(colors.c5) },
-  }), [colors])
+  }), [colors, light])
 
   useEffect(() => {
     uniforms.u_compact.value = compact ? 1 : 0
@@ -249,7 +259,7 @@ const DEFAULT_COLORS = {
   c5: '#3B2FC9',
 }
 
-export default function EmpresasRibbonBg({ colors = DEFAULT_COLORS }) {
+export default function RibbonHeroBg({ colors = DEFAULT_COLORS, light = false }) {
   const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
   const [inView, setInView] = useState(true)
@@ -310,7 +320,7 @@ export default function EmpresasRibbonBg({ colors = DEFAULT_COLORS }) {
         }}
         resize={{ scroll: false, debounce: { scroll: 50, resize: 80 } }}
       >
-        <RibbonPlane colors={colors} compact={compact} animate={animate} />
+        <RibbonPlane colors={colors} compact={compact} animate={animate} light={light} />
       </Canvas>
     </div>
   )

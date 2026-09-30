@@ -17,10 +17,10 @@ import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
 import CordDynamicBg from '../../components/CordDynamicBg.jsx';
-import EmpresasRibbonBg from '../../components/EmpresasRibbonBg.jsx';
-import EmpresasHeroStack from '../../components/soluciones/EmpresasHeroStack.astro';
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import SolucionHeroStack from '../../components/soluciones/SolucionHeroStack.astro';
 
-// El hero usa su propio shader (EmpresasRibbonBg). Las tarjetas siguen con el
+// El hero usa su propio shader (RibbonHeroBg). Las tarjetas siguen con el
 // shader estándar de Cord: navy + teal esmeralda + índigo (el teal es el foco).
 const CARD_PAL = { base: '#0B0F19', color1: '#0F8A6E', color2: '#3A2280', color3: '#1E64E0' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
@@ -113,7 +113,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         ) : (
             <header class="stripe-hero">
                 <div class="stripe-hero-bg">
-                    <EmpresasRibbonBg client:only="react" />
+                    <RibbonHeroBg client:only="react" />
                 </div>
 
                 <div class="stripe-hero-grid stripe-container">
@@ -142,7 +142,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     </div>
 
                     <div class="stripe-hero-visual">
-                        <EmpresasHeroStack isEn={isEn} />
+                        <SolucionHeroStack isEn={isEn} variant="empresas" />
                     </div>
                 </div>
             </header>
