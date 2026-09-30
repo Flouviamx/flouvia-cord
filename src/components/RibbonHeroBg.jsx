@@ -2,16 +2,23 @@ import { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-// Fondo de los heroes de /soluciones (empresas y startups): una "ola de seda"
+// Fondo de los heroes de /soluciones y /casos-de-uso: una "ola de seda"
 // diagonal que entra por abajo a la izquierda y barre hacia arriba a la
 // derecha. A la izquierda del borde queda el fondo liso (ahí vive el texto); a
 // la derecha, el cuerpo de la tela en cinco tonos, con pliegues que brillan.
-// `light` invierte el tratamiento para fondos claros: sin viñeta y con el halo
-// mezclado en vez de sumado (sumar luz sobre blanco sólo satura).
+// `light` adapta el tratamiento a fondos claros: sin viñeta, halo mezclado en
+// vez de sumado y sombreado más plano.
 //
-// Es un shader propio, no una paleta de CordDynamicBg: el aurora estándar es
-// isotrópico (manchas por todo el lienzo) y aquí la composición necesita un
-// lado liso garantizado para la legibilidad del título.
+// Calidad:
+// - Los colores llegan en espacio LINEAL (three con ColorManagement convierte
+//   el hex al asignarlo), así que la mezcla se hace en lineal y la salida se
+//   convierte a sRGB al final. Sin esa conversión la tela salía oscura y turbia.
+// - Resolución nativa (hasta 2x); si el cuadro se alarga, baja sola.
+// - Normales por derivadas de pantalla (dFdx/dFdy): un solo cálculo del campo
+//   por píxel en lugar de tres.
+//
+// Reacción: el stack de tarjetas del hero emite `cord:hero-shift` al rotar; la
+// tela recibe un empujón amortiguado que viaja a lo largo del pliegue.
 
 const vertexShader = /* glsl */`
   varying vec2 vUv;
@@ -28,13 +35,15 @@ const fragmentShader = /* glsl */`
   uniform vec2  u_mouse;
   uniform float u_compact;
   uniform float u_light;
+  uniform float u_kickAge;
+  uniform float u_kickDir;
 
   uniform vec3 u_base;
-  uniform vec3 u_c1;   // borde encendido (ámbar)
-  uniform vec3 u_c2;   // coral
-  uniform vec3 u_c3;   // magenta
-  uniform vec3 u_c4;   // violeta
-  uniform vec3 u_c5;   // índigo profundo
+  uniform vec3 u_c1;   // cresta
+  uniform vec3 u_c2;
+  uniform vec3 u_c3;
+  uniform vec3 u_c4;
+  uniform vec3 u_c5;   // fondo de la tela
 
   varying vec2 vUv;
 
@@ -96,24 +105,36 @@ const fragmentShader = /* glsl */`
     return v;
   }
 
-  // Campo con signo respecto al borde de la tela: < 0 es el lado navy.
-  float field(vec2 p, float t, vec2 m) {
-    float A = u_resolution.x / u_resolution.y;
-    // Diagonal base: en el borde inferior el filo cae ~32% del ancho, arriba ~64%.
+  // Empujón de las tarjetas: sube rápido y se apaga con un rebote suave.
+  float kickEnv() {
+    return u_kickDir == 0.0 ? 0.0 : exp(-u_kickAge * 2.1) * smoothstep(0.0, 0.12, u_kickAge);
+  }
+
+  // Campo con signo respecto al borde de la tela: < 0 es el lado liso.
+  float field(vec2 p, float t, vec2 m, float A, float env) {
     float gWide = p.x - (0.30 * A + 0.34 * A * p.y);
-    // Curvatura: la ola se arquea, no es una recta.
     gWide -= 0.10 * A * sin(p.y * 2.2 + 0.6);
-    // Pantalla vertical: la tela entra por abajo y sube en diagonal suave
-    // hasta la mitad, detrás de las tarjetas y lejos del título.
     float gTall = (0.36 - p.y) + 0.9 * (p.x - 0.5 * A) + 0.04 * sin(p.x * 9.0 + 0.8);
     float g = mix(gWide, gTall, u_compact);
-    // Oleaje lento a lo largo del filo.
     g += 0.055 * sin(p.y * 3.4 - t * 1.6) + 0.035 * sin(p.y * 7.1 + t * 1.1);
     g += 0.07 * fbm(vec3(p * 1.1, t * 0.6));
-    // El cursor empuja la tela suavemente.
     vec2 d = p - m;
     g += 0.06 * exp(-dot(d, d) * 5.0);
+    // La onda del empujón recorre el filo de abajo hacia arriba.
+    g += u_kickDir * env * (0.03 + 0.055 * sin(p.y * 4.2 - u_kickAge * 6.5));
     return g;
+  }
+
+  vec3 toSRGB(vec3 c) {
+    c = max(c, 0.0);
+    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+  }
+
+  // Hombro suave para los brillos de la tela (el fondo no pasa por aquí, así
+  // que el tono base queda exacto y no hay costura con la página).
+  vec3 shoulder(vec3 c) {
+    vec3 k = max(c - 0.75, 0.0);
+    return c - k + k / (1.0 + k * 2.2);
   }
 
   void main() {
@@ -121,66 +142,90 @@ const fragmentShader = /* glsl */`
     vec2 p = vec2(vUv.x * A, vUv.y);
     vec2 m = vec2(u_mouse.x * A, u_mouse.y);
     float t = u_time * 0.35;
+    float env = kickEnv();
 
-    float g = field(p, t, m);
+    float g = field(p, t, m, A, env);
 
-    // Normal aproximada del "pliegue" para el brillo de la seda.
-    float e = 0.004;
-    float gx = field(p + vec2(e, 0.0), t, m) - g;
-    float gy = field(p + vec2(0.0, e), t, m) - g;
-    vec2 n = normalize(vec2(gx, gy) + 1e-5);
+    // Pliegues: crestas paralelas al filo. El empujón adelanta su fase.
+    float warp = fbm(vec3(p * 0.9, t * 0.4));
+    float phase = g * 15.0 - t * 2.2 + warp * 2.4 + u_kickDir * env * 2.6;
+    float folds = sin(phase);
+    // Arrugas finas (alta frecuencia, amplitud baja) para el detalle de cerca.
+    float micro = snoise(vec3(p * 9.0, t * 0.8)) * 0.18;
+    float H = 0.5 + 0.5 * folds + micro * 0.25;
 
-    // Pliegues internos: bandas paralelas al filo que se desplazan.
-    float folds = sin(g * 15.0 - t * 2.2 + fbm(vec3(p * 0.9, t * 0.4)) * 2.4);
-    float sheen = pow(0.5 + 0.5 * folds, 5.0);
+    // Normal de la superficie desde derivadas de pantalla.
+    float s = u_resolution.y * 0.045;
+    vec3 N = normalize(vec3(-dFdx(H) * s, -dFdy(H) * s, 1.0));
+    vec3 L = normalize(vec3(-0.55, 0.75, 0.62));
+    vec3 V = vec3(0.0, 0.0, 1.0);
+    vec3 Hh = normalize(L + V);
+    float diff = dot(N, L) * 0.5 + 0.5;
+    float spec = pow(max(dot(N, Hh), 0.0), 64.0);
+    float sheen = pow(max(dot(N, Hh), 0.0), 8.0);
 
-    // ── Cuerpo de la tela ──
-    float body = smoothstep(0.0, 0.018, g);
+    // ── Cuerpo de la tela (lineal) ──
+    float body = smoothstep(0.0, 0.012, g);
     float depth = clamp(g / (0.95 * A), 0.0, 1.0);
     vec3 cloth = mix(u_c1, u_c2, smoothstep(0.00, 0.10, g));
     cloth = mix(cloth, u_c3, smoothstep(0.06, 0.28, g));
     cloth = mix(cloth, u_c4, smoothstep(0.22, 0.55, g));
     cloth = mix(cloth, u_c5, smoothstep(0.45, 1.05, g + (1.0 - p.y) * 0.25));
-    // Arriba la tela se enfría hacia violeta; abajo guarda el calor.
     cloth = mix(cloth, u_c4, smoothstep(0.55, 1.0, p.y) * 0.35 * smoothstep(0.05, 0.3, g));
 
-    // Luz: el filo es la cresta; los pliegues suman brillo cálido.
-    float ndl = dot(n, normalize(vec2(-0.6, 0.8)));
-    // En claro el sombreado es más plano y la tela se aclara al fondo: un
-    // pliegue oscuro sobre blanco se lee como mancha, no como volumen.
-    float light = mix(0.78 + 0.22 * ndl, 0.93 + 0.07 * ndl, u_light);
-    cloth *= light;
-    cloth = mix(cloth, vec3(1.0), u_light * 0.10 * smoothstep(0.2, 0.9, depth));
-    cloth += sheen * mix(u_c2, vec3(1.0, 0.86, 0.72), 0.35) * 0.22 * (1.0 - depth);
+    // Segunda capa de tela: un filo interior que monta sobre la primera.
+    float g2 = g - 0.24 - 0.05 * sin(p.y * 2.7 + t * 0.9) - 0.03 * warp;
+    float layer = smoothstep(0.0, 0.01, g2);
+    cloth = mix(cloth, mix(cloth, u_c5, 0.35), layer * mix(0.55, 0.3, u_light));
+    float crest2 = exp(-abs(g2 - 0.006) * 70.0) * (1.0 - smoothstep(0.5, 1.0, depth));
 
-    // Cresta encendida justo en el filo.
-    float crest = exp(-abs(g - 0.012) * 55.0);
-    cloth = mix(cloth, mix(vec3(1.0, 0.80, 0.58), vec3(1.0), u_light), crest * 0.55);
+    // Luz: difusa según la normal, brillo especular de seda y sheen amplio.
+    float shade = mix(0.62 + 0.38 * diff, 0.86 + 0.14 * diff, u_light);
+    cloth *= shade;
+    vec3 warm = mix(u_c2, vec3(1.0, 0.86, 0.74), 0.5);
+    cloth += warm * sheen * 0.10 * (1.0 - depth);
+    cloth += vec3(1.0, 0.95, 0.9) * spec * mix(0.55, 0.35, u_light) * (1.0 - depth * 0.6);
+    cloth += vec3(1.0, 0.9, 0.8) * crest2 * 0.18;
 
-    // ── Lado navy ──
-    vec3 col = u_base;
-    // Halo de luz que la tela derrama sobre el navy.
+    // Cresta principal: filo fino y encendido más un halo suave. El empujón
+    // la enciende un poco más mientras dura.
+    float rim = exp(-abs(g - 0.006) * 90.0);
+    float glow = exp(-abs(g - 0.01) * 22.0);
+    vec3 rimCol = mix(vec3(1.0, 0.78, 0.55), vec3(1.0), u_light * 0.6);
+    cloth = mix(cloth, rimCol, rim * (0.55 + env * 0.3));
+    cloth += mix(u_c1, u_c2, 0.4) * glow * (0.12 + env * 0.12);
+
+    // Grano de película sólo en la tela: textura fina, no ruido.
+    float grain = fract(sin(dot(gl_FragCoord.xy + floor(u_time * 24.0) * 17.0, vec2(12.9898, 78.233))) * 43758.5453);
+    cloth *= 1.0 + (grain - 0.5) * 0.035;
+
+    cloth = shoulder(cloth);
+
+    // ── Lado liso ──
+    vec3 base = u_base;
     float spill = exp(g * 7.5) * (1.0 - body);
-    vec3 lit = col + u_c2 * spill * 0.22 + u_c3 * spill * 0.10;
-    vec3 tint = mix(col, u_c2, spill * 0.35);
-    col = mix(lit, tint, u_light);
-    // Viñeta suave arriba a la izquierda (detrás del título), sólo en oscuro.
-    col *= mix(0.85 + 0.15 * smoothstep(0.0, 1.0, vUv.x + (1.0 - vUv.y) * 0.3), 1.0, u_light);
+    vec3 lit = base + u_c2 * spill * 0.16 + u_c3 * spill * 0.07;
+    vec3 tint = mix(base, u_c2, spill * 0.28);
+    base = mix(lit, tint, u_light);
+    base *= mix(0.82 + 0.18 * smoothstep(0.0, 1.0, vUv.x + (1.0 - vUv.y) * 0.3), 1.0, u_light);
 
-    col = mix(col, cloth, body);
+    vec3 col = mix(base, cloth, body);
+    col = toSRGB(col);
 
-    // Grano mínimo contra el banding del degradado.
-    float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-    col += (grain - 0.5) / 255.0 * 2.0;
+    // Dither (interleaved gradient noise) contra bandas en los degradados.
+    float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    col += (ign - 0.5) / 255.0;
 
     gl_FragColor = vec4(col, 1.0);
   }
 `
 
-function RibbonPlane({ colors, compact, animate, light }) {
+function RibbonPlane({ colors, compact, animate, light, onSlow }) {
   const { gl, invalidate } = useThree()
   const mouseTarget = useRef(new THREE.Vector2(0.72, 0.4))
   const mouseSmooth = useRef(new THREE.Vector2(0.72, 0.4))
+  const kick = useRef({ at: -99, dir: 0 })
+  const perf = useRef({ acc: 0, n: 0 })
 
   const uniforms = useMemo(() => ({
     u_time:       { value: 6.0 },
@@ -188,6 +233,8 @@ function RibbonPlane({ colors, compact, animate, light }) {
     u_mouse:      { value: new THREE.Vector2(0.72, 0.4) },
     u_compact:    { value: compact ? 1 : 0 },
     u_light:      { value: light ? 1 : 0 },
+    u_kickAge:    { value: 99 },
+    u_kickDir:    { value: 0 },
     u_base:       { value: new THREE.Color(colors.base) },
     u_c1:         { value: new THREE.Color(colors.c1) },
     u_c2:         { value: new THREE.Color(colors.c2) },
@@ -200,6 +247,16 @@ function RibbonPlane({ colors, compact, animate, light }) {
     uniforms.u_compact.value = compact ? 1 : 0
     invalidate()
   }, [compact, uniforms, invalidate])
+
+  // Empujón de las tarjetas del hero.
+  useEffect(() => {
+    if (!animate) return
+    const onShift = (e) => {
+      kick.current = { at: performance.now() / 1000, dir: e.detail?.dir === -1 ? -1 : 1 }
+    }
+    window.addEventListener('cord:hero-shift', onShift)
+    return () => window.removeEventListener('cord:hero-shift', onShift)
+  }, [animate])
 
   useEffect(() => {
     if (!animate) return
@@ -228,12 +285,22 @@ function RibbonPlane({ colors, compact, animate, light }) {
     }
   }, [gl, animate])
 
-  useFrame(({ clock, size }) => {
-    uniforms.u_resolution.value.set(size.width, size.height)
+  useFrame(({ clock, size, viewport }, delta) => {
+    uniforms.u_resolution.value.set(size.width * viewport.dpr, size.height * viewport.dpr)
     if (!animate) return
     uniforms.u_time.value = 6.0 + clock.getElapsedTime()
     mouseSmooth.current.lerp(mouseTarget.current, 0.04)
     uniforms.u_mouse.value.copy(mouseSmooth.current)
+    uniforms.u_kickAge.value = performance.now() / 1000 - kick.current.at
+    uniforms.u_kickDir.value = kick.current.dir
+
+    // Si el cuadro promedio pasa de ~26 ms, pide bajar la resolución.
+    const pf = perf.current
+    pf.acc += delta; pf.n += 1
+    if (pf.n >= 90) {
+      if (pf.acc / pf.n > 0.026) onSlow()
+      pf.acc = 0; pf.n = 0
+    }
   })
 
   return (
@@ -266,6 +333,12 @@ export default function RibbonHeroBg({ colors = DEFAULT_COLORS, light = false })
   const [compact, setCompact] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 880px)').matches,
   )
+  // Resolución nativa hasta 2x (1.5x en móvil); baja por pasos si hace falta.
+  const [dpr, setDpr] = useState(() => {
+    if (typeof window === 'undefined') return 1
+    const cap = window.matchMedia('(max-width: 880px)').matches ? 1.5 : 2
+    return Math.min(window.devicePixelRatio || 1, cap)
+  })
   // Con prefers-reduced-motion la tela se pinta UNA vez (frameloop "demand"):
   // la composición se conserva, sólo se quita el movimiento.
   const [reduced] = useState(
@@ -290,6 +363,7 @@ export default function RibbonHeroBg({ colors = DEFAULT_COLORS, light = false })
   }, [])
 
   const animate = inView && !reduced
+  const onSlow = () => setDpr((d) => (d > 1 ? Math.max(1, +(d - 0.25).toFixed(2)) : d))
 
   return (
     <div
@@ -307,20 +381,20 @@ export default function RibbonHeroBg({ colors = DEFAULT_COLORS, light = false })
       <Canvas
         style={{ position: 'absolute', inset: 0 }}
         orthographic
-        dpr={1}
+        dpr={dpr}
         frameloop={animate ? 'always' : 'demand'}
         camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
         gl={{
           antialias: false,
           alpha: false,
-          powerPreference: 'low-power',
+          powerPreference: 'high-performance',
           preserveDrawingBuffer: false,
           stencil: false,
           depth: false,
         }}
         resize={{ scroll: false, debounce: { scroll: 50, resize: 80 } }}
       >
-        <RibbonPlane colors={colors} compact={compact} animate={animate} light={light} />
+        <RibbonPlane colors={colors} compact={compact} animate={animate} light={light} onSlow={onSlow} />
       </Canvas>
     </div>
   )
