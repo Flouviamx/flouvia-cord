@@ -93,296 +93,290 @@ export const SOLUCIONES: Solution[] = [
         slug: 'empresas',
         nav: 'Empresas',
         eyebrow: 'PARA EMPRESAS',
-        titulo: 'De la propuesta al cobro, con control corporativo.',
-        sub: 'Centraliza negociaciones, aplica inteligencia de margen en tiempo real y sella contratos con firmas criptográficas inmutables.',
-        metaTitle: 'Software de cotizaciones y operaciones para Empresas — Cord',
-        metaDescription: 'Plataforma empresarial para escalar procesos de cotización, controlar listas de precios por volumen y gestionar aprobaciones de crédito con seguridad y cumplimiento. Para cualquier empresa, en cualquier país.',
-        paraQuien: 'Cord para Empresas está diseñado para corporativos, distribuidores a gran escala y empresas consolidadas que manejan grandes volúmenes de propuestas, requieren control estricto sobre precios y márgenes, y necesitan visibilidad total sobre el pipeline de ventas.',
-        dolor: 'Los procesos comerciales descentralizados causan fugas de margen y pérdida de visibilidad en el cierre.',
-        
+        titulo: 'Todo tu equipo cotiza. Nadie cede margen sin autorización.',
+        sub: 'Cord pone topes de descuento, monto y margen a cada cotización, detiene la que los rebasa hasta que alguien con permiso la aprueba y registra quién hizo qué. Tus vendedores siguen cerrando en un solo link: aprobación del cliente, cobro y factura.',
+        metaTitle: 'Cotizaciones con aprobaciones, permisos y SSO para equipos comerciales — Cord',
+        metaDescription: 'Topes de descuento, monto y margen con aprobación interna, permisos por sección, SSO con SAML 2.0 y bitácora de auditoría. Tu equipo cotiza, cobra y factura desde un solo link en 12 países, con CFDI 4.0 en México.',
+        paraQuien: 'Para organizaciones donde cotizan varias personas y responden varias áreas: ventas arma la propuesta, dirección comercial autoriza lo que sale de la regla, finanzas factura y cobra, y TI decide cómo se entra. Cada quien ve lo que su permiso le deja ver.',
+        dolor: 'Cuando cada vendedor negocia por su cuenta, el margen se pierde en descuentos que nadie autorizó y que nadie puede rastrear después.',
+
         integrations: [
-            { name: 'SAP' },
-            { name: 'Salesforce' },
-            { name: 'Oracle NetSuite' },
             { name: 'HubSpot' },
-            { name: 'Microsoft Dynamics' }
+            { name: 'Xero' },
+            { name: 'QuickBooks Online' },
+            { name: 'Slack' },
+            { name: 'Microsoft Teams' }
         ],
 
         security: {
-            eyebrow: 'TRUST CENTER',
-            titulo: 'Seguridad y Compliance de Grado Bancario',
-            copy: 'Las grandes empresas no pueden permitirse riesgos en sus flujos financieros. Cord está construido desde sus cimientos bajo los más altos estándares de seguridad operativa e infraestructura cloud.',
+            eyebrow: 'SEGURIDAD',
+            titulo: 'Lo que tu área de TI va a preguntar, respondido.',
+            copy: 'Estas son las medidas que Cord aplica hoy, descritas tal como funcionan, sin sellos ni certificaciones que todavía no tenemos.',
             features: [
-                { title: 'Registro de auditoría', desc: 'Cada acción queda registrada con usuario, IP y fecha en un log inmutable de solo lectura.' },
-                { title: 'Firmas SHA-256', desc: 'Cada cotización aprobada genera un hash criptográfico inmutable en nuestros servidores.' },
-                { title: 'RBAC Avanzado', desc: 'Roles y permisos granulares. Define quién puede ver qué y quién puede aprobar descuentos.' },
-                { title: 'Data Residency', desc: 'Tus datos encriptados en reposo (AES-256) y en tránsito (TLS 1.3).' }
+                { title: 'Datos separados por organización', desc: 'Cada consulta declara a qué organización pertenece. Los clientes, el catálogo, las facturas y el equipo de una organización nunca aparecen en otra.' },
+                { title: 'Credenciales cifradas', desc: 'Los tokens de tus integraciones se guardan cifrados con AES-256-GCM, y las contraseñas, con Argon2id.' },
+                { title: 'Evidencia de cada aprobación', desc: 'Cuando tu cliente aprueba, Cord guarda su nombre, la fecha, la IP y una huella SHA-256 de las líneas que aceptó.' },
+                { title: 'Bitácora de auditoría', desc: 'Invitaciones, cambios de permisos, conexiones de SSO e integraciones y movimientos de facturas quedan registrados con fecha e IP. Desde el plan Profesional.' }
             ]
         },
 
         workflow: [
-            { step: '01', titulo: 'Cotización Controlada', desc: 'El vendedor arma la propuesta usando listas de precios bloqueadas y márgenes preaprobados.' },
-            { step: '02', titulo: 'Routing de Aprobación', desc: 'Si el descuento excede el umbral, Cord enruta la alerta a Finanzas o al Gerente Regional automáticamente.' },
-            { step: '03', titulo: 'Cierre Criptográfico', desc: 'El cliente firma digitalmente. Cord sella el PDF final garantizando su inmutabilidad legal.' },
-            { step: '04', titulo: 'Integra tu ERP', desc: 'Al aprobarse, Cord dispara un webhook con el payload para que tu ERP o CRM actualice la facturación.' }
+            { step: '01', titulo: 'Cotización con reglas', desc: 'El vendedor arma la propuesta con tu catálogo y el descuento de nivel de cada cliente.' },
+            { step: '02', titulo: 'Aprobación interna', desc: 'Si rebasa el descuento, el monto o el margen que fijaste, queda pendiente hasta que alguien con permiso la libera.' },
+            { step: '03', titulo: 'Aprobación del cliente', desc: 'Tu cliente aprueba desde el link y Cord guarda la evidencia con una huella SHA-256.' },
+            { step: '04', titulo: 'Datos hacia tus sistemas', desc: 'HubSpot, tu contabilidad y tus webhooks reciben el cambio sin que nadie lo capture otra vez.' }
         ],
 
         pillars: [
             {
-                titulo: 'Control centralizado',
-                desc: 'Define reglas de negocio complejas y controla el margen en tiempo real mediante niveles de aprobación.',
-                link: 'Explorar',
+                titulo: 'Aprobación por excepción',
+                desc: 'Fijas el descuento máximo, el monto máximo y el margen mínimo. Lo que los rebasa no llega al cliente hasta que alguien con el permiso de Aprobaciones lo libera.',
+                link: 'Ver aprobaciones',
                 href: '/producto/aprobaciones'
             },
             {
-                titulo: 'Integra tu ERP',
-                desc: 'Conéctate con tu ERP o CRM mediante nuestra API REST y webhooks para disparar acciones automáticamente.',
-                link: 'Explorar',
-                href: '/desarrolladores/api'
+                titulo: 'Conectado a tu CRM y a tu contabilidad',
+                desc: 'HubSpot, Xero, QuickBooks Online, Slack y Microsoft Teams se conectan desde Ajustes. Para tus propios sistemas, API REST y webhooks.',
+                link: 'Ver integraciones',
+                href: '/integraciones'
             },
             {
-                titulo: 'Seguridad corporativa',
-                desc: 'Firmas criptográficas inmutables y control de acceso basado en roles (RBAC) para proteger tu pipeline.',
-                link: 'Explorar',
-                href: '/producto/negociacion'
+                titulo: 'Acceso según el puesto',
+                desc: 'Administrador, Vendedor o Solo lectura como punto de partida, y diez permisos que ajustas persona por persona.',
+                link: 'Ver equipo y roles',
+                href: '/producto/equipo'
             }
         ],
 
         stats: [
-            { valor: 'RBAC', label: 'permisos por rol y organización' },
-            { valor: 'API', label: 'claves y webhooks administrables' },
-            { valor: 'SHA-256', label: 'huella de integridad en propuestas aprobadas' },
+            { valor: '3', label: 'topes por cotización: descuento, monto y margen' },
+            { valor: '10', label: 'permisos por sección para cada persona' },
+            { valor: 'SAML 2.0', label: 'SSO con Okta, Microsoft Entra o Google Workspace' },
         ],
         blocks: [
             {
-                eyebrow: 'CONTROL DE PRECIOS',
-                titulo: 'Protege tu margen a escala.',
-                copy: 'Configura reglas de negocio complejas, listas de precios por nivel de cliente y límites de descuento por representante. Cord asegura que ninguna cotización salga sin el margen esperado y centraliza la toma de decisiones financieras.',
+                eyebrow: 'MARGEN BAJO CONTROL',
+                titulo: 'Una excepción de precio necesita un nombre y una hora.',
+                copy: 'El vendedor arma la cotización con tu catálogo, y los niveles de cliente —Estándar, Plata, Oro y Distribuidor— aplican su descuento solos. Si la propuesta rebasa el descuento máximo, el monto tope o el margen mínimo que fijaste, no sale: queda pendiente con el motivo exacto hasta que alguien con el permiso de Aprobaciones la libera o la regresa.',
                 bullets: [
-                    'Listas de precios dinámicas por volumen y región',
-                    'Aprobaciones internas automatizadas por monto',
-                    'Auditoría y trazabilidad en cada cambio de precio',
+                    'Tres topes: descuento, monto y margen',
+                    'Margen cedido y flujo a 90 días en Finanzas',
+                    'La factura sale de la versión aprobada',
                 ],
             },
             {
-                eyebrow: 'INTEGRACIÓN EMPRESARIAL',
-                titulo: 'Conectado a tu ecosistema operativo.',
-                copy: 'Cord no es un silo. A través de nuestras APIs y Webhooks robustos, puedes sincronizar catálogos, actualizar CRMs (Salesforce, HubSpot) y disparar facturación en tu ERP en el milisegundo en que un cliente aprueba.',
+                eyebrow: 'SIN RECAPTURA',
+                titulo: 'Lo que se cierra en Cord llega solo al resto de tu operación.',
+                copy: 'HubSpot recibe cada cotización como Deal, con la etapa según su estado; Xero o QuickBooks Online reciben la factura definitiva, y Google Sheets o Excel llevan la fila de cada venta. Para tus propios sistemas, la API REST y los webhooks firmados con HMAC avisan de cada cotización, pago y factura, y reintentan durante casi cuatro días si tu servidor no responde.',
                 bullets: [
-                    'API REST para conectar tu ERP o CRM',
-                    'Webhooks en tiempo real para eventos de negocio',
-                    'Catálogos gigantes gestionados vía API',
+                    'Pagos y depósitos también llegan como eventos',
+                    'Facturas definitivas hacia Xero o QuickBooks Online',
+                    'Catálogo y clientes por API o importación CSV',
                 ],
             },
             {
-                eyebrow: 'SEGURIDAD Y CUMPLIMIENTO',
-                titulo: 'Arquitectura diseñada para compliance.',
-                copy: 'Desde firmas criptográficas SHA-256 en cada versión de la cotización, hasta controles de acceso basados en roles (RBAC). Cord cumple con los más altos estándares para que tu departamento de IT apruebe la plataforma en tiempo récord.',
+                eyebrow: 'GOBIERNO DE ACCESO',
+                titulo: 'TI decide cómo se entra. Nadie depende de una contraseña.',
+                copy: 'Con SSO por SAML 2.0 solo entran correos de dominios que verificaste por DNS, y el rol de cada persona puede venir del grupo que manda tu proveedor de identidad. Puedes exigir verificación en dos pasos a todo el equipo, cerrar sesiones inactivas y limitar las invitaciones a tus dominios. Revocar un acceso saca a esa persona en su siguiente clic.',
                 bullets: [
-                    'Firmas inmutables en propuestas aprobadas',
-                    'Roles y permisos granulares por equipo de ventas',
-                    'SLA empresarial con soporte dedicado 24/7',
+                    'Dominios verificados con un registro DNS',
+                    'Rol asignado según el grupo del proveedor',
+                    'SSO obligatorio, con el dueño como respaldo',
                 ],
             },
         ],
-        resultado: {
-            cliente: 'Grupo Nacional Distribuidor',
-            metricas: [
-                { valor: '+$14M', label: 'en ingresos recuperados por control de precios' },
-                { valor: '−45%', label: 'en tiempo de ciclo de ventas corporativas' },
-                { valor: '100%', label: 'de adopción en el equipo en 3 semanas' },
-            ],
-            nota: 'Al unificar sus operaciones en Cord, Grupo Nacional redujo sus tiempos de cotización y logró blindar sus márgenes frente a variaciones de mercado, eliminando aprobaciones por correo electrónico.',
-        },
         faqs: [
             {
-                q: '¿Cord soporta flujos de aprobación interna para descuentos?',
-                a: 'Sí. Puedes establecer umbrales lógicos. Si un representante ofrece un descuento mayor al permitido, la cotización se bloquea y requiere autorización de un gerente antes de poder ser enviada al cliente final.',
+                q: '¿Qué plan necesito para aprobaciones, SSO y auditoría?',
+                a: 'Las aprobaciones internas y el SSO están en el plan Scale, que incluye 15 usuarios. El trabajo en equipo, los permisos por sección y la bitácora de auditoría empiezan en Profesional, con 5 usuarios. Cada usuario adicional se cobra aparte; los precios están en la página de planes.',
             },
             {
-                q: '¿Cómo se integra Cord con nuestro ERP actual?',
-                a: 'Nuestra API REST y el sistema de Webhooks te permiten leer y escribir clientes, inventarios y listas de precios desde tu propio software. Cada evento (como la aprobación de una cotización) dispara un webhook con el payload para que tu ERP o CRM —SAP, Oracle, HubSpot u otro— lo consuma y dispare la facturación.',
+                q: '¿Puedo poner un tope distinto a cada vendedor?',
+                a: 'Hoy los topes son de la organización: el descuento máximo, el monto máximo y el margen mínimo aplican a todo el equipo. Lo que sí cambia por persona es quién puede aprobar, porque aprobar es un permiso aparte. Si dos unidades de negocio necesitan reglas distintas, cada una puede ser su propia organización.',
             },
             {
-                q: '¿Podemos migrar nuestro catálogo de miles de SKUs?',
-                a: 'Absolutamente. Cord está diseñado para escalar. Puedes importar vía CSV o conectar nuestra API para ingestar catálogos masivos. Las actualizaciones de precios se reflejan en tiempo real en todo el sistema sin afectar cotizaciones históricas.',
+                q: '¿Cómo llega a nuestros sistemas lo que se cierra en Cord?',
+                a: 'Con integraciones listas para HubSpot, Xero, QuickBooks Online, Google Sheets, Excel, Slack y Microsoft Teams, o con la API REST y los webhooks. Los webhooks van firmados con HMAC y, si tu servidor no responde, Cord reintenta hasta 11 veces durante unos cuatro días. Zapier, Make y n8n cubren el resto sin programar.',
             },
             {
-                q: '¿Cuáles son los estándares de seguridad de la plataforma?',
-                a: 'Cord separa el acceso por organización y rol, registra eventos relevantes y protege credenciales sensibles con cifrado. Las propuestas aprobadas conservan una huella SHA-256 para detectar cambios. Todavía no publicamos métricas históricas de disponibilidad ni un SLA estándar.',
+                q: '¿Cómo manejamos varias razones sociales?',
+                a: 'Cada razón social es su propia organización en Cord, con su país, su divisa, sus impuestos, su numeración y su equipo, y en México timbra con su propio RFC. Una persona puede estar en varias con un rol distinto en cada una. Cada organización lleva su propio plan, y Cord no suma varias en un mismo informe.',
+            },
+            {
+                q: '¿Podemos traer nuestro catálogo y nuestros clientes?',
+                a: 'Sí. Importas productos y clientes desde un archivo CSV, hasta 2,000 filas por carga, o los das de alta por API. Si un producto ya existe con el mismo SKU, se actualiza en lugar de duplicarse.',
+            },
+            {
+                q: '¿Qué garantías de seguridad y disponibilidad publican?',
+                a: 'Cord separa los datos por organización, guarda cifradas las credenciales de tus integraciones, permite exigir verificación en dos pasos y SSO, y registra en una bitácora los cambios sensibles con fecha e IP. Todavía no publicamos certificaciones de terceros, métricas históricas de disponibilidad ni un SLA estándar.',
             },
         ],
-        interlink: { href: '/desarrolladores/api', label: 'API y Webhooks para integraciones' },
-        cta: { titulo: 'Escala tu operación comercial con confianza.', sub: 'Agenda una sesión técnica con nuestro equipo de soluciones.' },
+        interlink: { href: '/producto/aprobaciones', label: 'aprobaciones y control de márgenes' },
+        cta: { titulo: 'Pon reglas a tus precios antes de sumar más vendedores.', sub: 'Agenda una demostración con tu equipo comercial y tu área de TI.' },
     },
     {
         slug: 'startups',
         nav: 'Startups',
         eyebrow: 'PARA STARTUPS',
-        titulo: 'De la propuesta al cobro, sin burocracia.',
-        sub: 'Desde el pitch hasta el CFDI 4.0 automatizado. Transforma propuestas en ingresos sin la fricción del software back-office tradicional.',
-        metaTitle: 'Cotizaciones y facturación rápida para Startups — Cord',
-        metaDescription: 'Cord ayuda a startups y agencias de crecimiento rápido, en cualquier país, a enviar propuestas, cerrar clientes con un clic y automatizar la facturación (CFDI 4.0 para negocios en México). Escala sin burocracia, sin ser cliente de Flouvia.',
-        paraQuien: 'Cord para Startups está diseñado para empresas de tecnología, agencias digitales y negocios de rápido crecimiento que necesitan velocidad extrema para proponer, iterar y cerrar clientes sin la sobrecarga administrativa tradicional.',
-        dolor: 'Pierdes horas armando propuestas en PDFs que no convierten y facturando a mano.',
-        
+        titulo: 'Manda la propuesta hoy. Cobra en el mismo link.',
+        sub: 'Cord le da a tu startup el flujo de ventas que no tienes tiempo de construir: propuesta con tu marca, aprobación del cliente, pago con tarjeta y factura. Empiezas gratis, sin tarjeta, y conectas tu producto por API cuando lo necesites.',
+        metaTitle: 'Propuestas, cobro con tarjeta y facturas para startups — Cord',
+        metaDescription: 'Manda propuestas con tu marca, cobra con tarjeta dentro del link y factura sin recapturar. Plan Gratis sin vencimiento, API REST, webhooks y MCP para tu producto, en 12 países. CFDI 4.0 para startups en México.',
+        paraQuien: 'Para fundadores y equipos chicos que venden servicios, software o producto y no quieren armar su propio sistema de cotización y cobro. Empiezas en el plan Gratis y subes de plan cuando llega tu primer vendedor, sin migrar nada.',
+        dolor: 'Armas la propuesta en un documento, cobras por transferencia y facturas a mano: tres herramientas para una sola venta.',
+
         integrations: [
-            { name: 'Stripe' },
-            { name: 'Slack' },
             { name: 'Zapier' },
-            { name: 'HubSpot' },
-            { name: 'Make' }
+            { name: 'Make' },
+            { name: 'n8n' },
+            { name: 'Slack' },
+            { name: 'HubSpot' }
         ],
 
         useCases: [
             {
-                title: 'Agencias y Consultoras',
-                desc: 'Envía propuestas de servicios profesionales al instante, con firmas electrónicas vinculantes y automatiza el cobro de igualas mensuales recurrentes sin fricción.',
+                title: 'Agencias y consultoras',
+                desc: 'Manda la propuesta de servicios, cobra un anticipo al aprobar y convierte el retainer en una iguala mensual que se cobra con la tarjeta que tu cliente autorizó una vez.',
                 link: '/casos-de-uso/agencias',
                 logos: [
-                    { name: 'Ogilvy', domain: 'ogilvy.com' },
-                    { name: 'Accenture', domain: 'accenture.com' },
-                    { name: 'IDEO', domain: 'ideo.com' }
+                    { name: 'HubSpot', domain: 'hubspot.com' },
+                    { name: 'Gmail', domain: 'mail.google.com' },
+                    { name: 'WhatsApp', domain: 'whatsapp.com' }
                 ]
             },
             {
                 title: 'SaaS',
-                desc: 'Gestiona suscripciones, contratos personalizados y planes Enterprise. Integra pagos recurrentes y emite facturas CFDI en automático sin tocar el portal del SAT.',
+                desc: 'Cotiza el plan anual o el contrato a la medida en la divisa de tu cliente, cóbralo con tarjeta en el link y crea cotizaciones desde tu propio producto con la API.',
                 link: '/casos-de-uso/saas',
                 logos: [
-                    { name: 'Linear', domain: 'linear.app' },
-                    { name: 'Stripe', domain: 'stripe.com' },
-                    { name: 'Vercel', domain: 'vercel.com' }
+                    { name: 'Zapier', domain: 'zapier.com' },
+                    { name: 'Make', domain: 'make.com' },
+                    { name: 'n8n', domain: 'n8n.io' }
                 ]
             },
             {
                 title: 'Comercializadoras',
-                desc: 'Cotiza volumen, aplica descuentos por tiers dinámicos, maneja catálogos extensos y automatiza la facturación de grandes pedidos al confirmar el pago.',
+                desc: 'Precios por nivel de cliente, catálogo importado por CSV o desde Shopify, y crédito a 30 o 60 días con aviso cuando un cliente rebasa su límite.',
                 link: '/casos-de-uso/comercializadoras',
                 logos: [
-                    { name: 'Grainger', domain: 'grainger.com' },
-                    { name: 'Uline', domain: 'uline.com' },
-                    { name: 'Fastenal', domain: 'fastenal.com' }
+                    { name: 'Shopify', domain: 'shopify.com' },
+                    { name: 'Google Sheets', domain: 'sheets.google.com' },
+                    { name: 'Excel', domain: 'excel.cloud.microsoft' }
                 ]
             },
             {
-                title: 'Software Factory',
-                desc: 'Envía propuestas de desarrollo a la medida, divide los pagos por hitos de entrega y recibe notificaciones en tiempo real cuando el cliente aprueba la propuesta.',
+                title: 'Software factory',
+                desc: 'Divide el proyecto en anticipo y saldo o en cuotas, deja que tu cliente comente línea por línea y recibe el aviso en Slack o Teams en cuanto aprueba.',
                 link: '/casos-de-uso/software-factory',
                 logos: [
-                    { name: 'Cursor', domain: 'cursor.com' },
-                    { name: 'OpenAI', domain: 'openai.com' },
-                    { name: 'GitLab', domain: 'gitlab.com' }
+                    { name: 'Slack', domain: 'slack.com' },
+                    { name: 'Microsoft Teams', domain: 'teams.microsoft.com' },
+                    { name: 'Xero', domain: 'xero.com' }
                 ]
             }
         ],
 
         security: {
             eyebrow: 'CONFIANZA',
-            titulo: 'Protección de Datos Garantizada',
-            copy: 'Construimos Cord pensando en la velocidad sin comprometer tu información ni la de tus clientes.',
+            titulo: 'Tus datos y los de tus clientes, en orden desde el primer día.',
+            copy: 'Lo básico de seguridad viene incluido en el plan Gratis; no tienes que configurarlo tú.',
             features: [
-                { title: 'Encriptación', desc: 'Tus datos viajan cifrados bajo los estándares más modernos de TLS.' },
-                { title: 'Backups Diarios', desc: 'Respaldos automatizados para que nunca pierdas una propuesta.' },
-                { title: 'Autenticación Segura', desc: 'Manejo de sesiones y tokens seguros en cada inicio de sesión.' },
-                { title: 'Timbrado CFDI Oficial', desc: 'Facturación directa con el SAT, sin intermediarios riesgosos.' }
+                { title: 'Verificación en dos pasos', desc: 'Con app de autenticación, y puedes exigirla a todo tu equipo en cualquier plan.' },
+                { title: 'Credenciales cifradas', desc: 'Los tokens de tus integraciones se guardan cifrados con AES-256-GCM.' },
+                { title: 'Entorno de prueba', desc: 'Las llaves sk_test_ operan sobre un entorno separado, para que tus pruebas nunca toquen datos reales.' },
+                { title: 'Timbrado con tu certificado', desc: 'En México, el CFDI 4.0 se emite con tu propio certificado de sello digital y tu RFC.' }
             ]
         },
 
         workflow: [
-            { step: '01', titulo: 'Propuesta Mágica', desc: 'Clonas una plantilla prearmada y ajustas precios en segundos.' },
-            { step: '02', titulo: 'Envío sin Fricción', desc: 'El cliente recibe un link web, revisa el plan y acepta con un solo clic.' },
-            { step: '03', titulo: 'Checkout', desc: 'Opcionalmente cobras al instante conectando tu cuenta de Stripe.' },
-            { step: '04', titulo: 'CFDI 4.0 Automático', desc: 'Emitimos la factura y se la mandamos al cliente. Cero burocracia.' }
+            { step: '01', titulo: 'Propuesta', desc: 'Duplicas la última cotización que funcionó o dejas que la IA arme las líneas desde el pedido del cliente.' },
+            { step: '02', titulo: 'Aprobación', desc: 'Tu cliente abre el link, sin crear cuenta, y aprueba con su nombre.' },
+            { step: '03', titulo: 'Cobro', desc: 'Paga con tarjeta en el mismo link, completo, con anticipo o en cuotas.' },
+            { step: '04', titulo: 'Factura', desc: 'Un botón la emite con los mismos datos; en México, CFDI 4.0 desde Starter.' }
         ],
 
         pillars: [
             {
-                titulo: 'Cierre instantáneo',
-                desc: 'Links mágicos de aprobación inmediata que permiten a tus clientes aceptar propuestas en un clic.',
-                link: 'Explorar',
-                href: '/producto/link-publico'
+                titulo: 'Cobra en el mismo link',
+                desc: 'Tu cliente aprueba y paga con tarjeta sin salir de tu propuesta. No hay cuota extra: pagas una comisión por cobro, también en el plan Gratis.',
+                link: 'Ver Cord Payments',
+                href: '/producto/pagos'
             },
             {
-                titulo: 'Presentación premium',
-                desc: 'Luce como una empresa pública desde el primer día con plantillas de diseño impecable.',
-                link: 'Explorar',
-                href: '/producto/editor'
+                titulo: 'Sabes cuándo la abren',
+                desc: 'Cord te avisa en cuanto tu cliente abre la propuesta y registra cada vez que vuelve a entrar, para que llames mientras todavía te tiene en la cabeza.',
+                link: 'Ver seguimiento',
+                href: '/producto/seguimiento'
             },
             {
-                titulo: 'Facturación automática',
-                desc: 'Genera el CFDI automáticamente al aceptar la propuesta, sin tocar el portal del SAT.',
-                link: 'Explorar',
+                titulo: 'Facturas desde el primer día',
+                desc: 'Diez facturas comerciales al mes en Gratis y sin tope desde Starter. En México, Starter incluye 30 CFDI 4.0 al mes.',
+                link: 'Ver facturación',
                 href: '/producto/facturacion'
             }
         ],
 
         stats: [
-            { valor: '2', suffix: ' min', label: 'para enviar una propuesta pulida' },
-            { valor: '1', suffix: ' clic', label: 'para que tu cliente apruebe y pague' },
-            { valor: '0', label: 'horas desperdiciadas facturando a mano' },
+            { valor: '0', label: 'de cuota mensual en el plan Gratis, que no vence' },
+            { valor: '8', label: 'países con cobro con tarjeta dentro del link' },
+            { valor: '14', label: 'divisas para cotizar y facturar' },
         ],
         blocks: [
             {
-                eyebrow: 'VELOCIDAD DE EJECUCIÓN',
-                titulo: 'Del pitch al cierre en el mismo día.',
-                copy: 'No dejes que el cliente se enfríe. Con plantillas preconfiguradas y un editor diseñado para la velocidad, puedes enviar propuestas interactivas y hermosas mientras el cliente todavía tiene tu reunión en la cabeza.',
+                eyebrow: 'VELOCIDAD',
+                titulo: 'De la llamada a la propuesta, la misma tarde.',
+                copy: 'Cargas tu catálogo una vez. Después duplicas la última cotización que funcionó o pegas lo que te pidió el cliente y la IA propone las líneas con los precios de tu catálogo. Los impuestos, el total y la vigencia se calculan solos, y la lista te dice en qué va cada propuesta.',
                 bullets: [
-                    'Editor súper rápido con soporte para markdown',
-                    'Métricas en tiempo real: sabe cuándo abren tu propuesta',
-                    'Links mágicos de aprobación inmediata',
+                    '3 armados con IA al mes en el plan Gratis',
+                    'Duplica una cotización y ajusta lo que cambia',
+                    'Enviada, vista, aprobada o pagada, de un vistazo',
                 ],
             },
             {
-                eyebrow: 'PRESENTACIÓN PREMIUM',
-                titulo: 'Luce como una empresa pública desde el Día 1.',
-                copy: 'Tus prospectos te juzgan por tu presentación. Cord envuelve tu oferta en una experiencia digital impecable (Quiet Luxury) que grita profesionalismo, diferenciándote de startups que mandan PDFs generados en Word.',
+                eyebrow: 'PRIMERA IMPRESIÓN',
+                titulo: 'Una propuesta que no delata que son tres personas.',
+                copy: 'Tu logo y tus colores en un link que tu cliente abre desde el celular, sin crear cuenta ni descargar nada. Aprueba con su nombre y Cord guarda la fecha, la IP y una huella SHA-256 de lo que aceptó. Desde Starter desaparece el "Powered by Cord".',
                 bullets: [
-                    'Diseño responsivo de clase mundial por defecto',
-                    'Tu logo y colores en cada interacción',
-                    'Flujos de aceptación limpios y sin fricción',
+                    'Aprobación con nombre, fecha e IP',
+                    'Tu marca sola, sin "Powered by", desde Starter',
+                    'Comentarios del cliente línea por línea',
                 ],
             },
             {
-                eyebrow: 'AUTOMATIZACIÓN PURA',
-                titulo: 'Menos back-office, más ventas.',
-                copy: 'Cuando el cliente aprueba, Cord toma el control. Genera el CFDI 4.0 con los datos exactos del trato y lo envía al cliente. Tú puedes enfocarte en entregar el producto, no en la talacha administrativa.',
+                eyebrow: 'MENOS ADMINISTRACIÓN',
+                titulo: 'La factura sale de la venta, no de otra captura.',
+                copy: 'Con la cotización aprobada o pagada, un botón emite la factura con el mismo cliente y las mismas partidas, y se la manda con el PDF y su link de pago. En México, Cord timbra CFDI 4.0 con tu propio certificado; en el plan Gratis emites una proforma. Si la factura queda abierta, los recordatorios de cobro salen solos.',
                 bullets: [
-                    'Facturación CFDI 4.0 automática en el plan Starter',
-                    'Pago en línea opcional directo en la propuesta',
-                    'Timeline automático con evidencia de aprobación',
+                    'CFDI 4.0 con tu propio certificado',
+                    'PDF y link de pago en el mismo correo',
+                    'Recordatorios antes y después del vencimiento',
                 ],
             },
         ],
-        resultado: {
-            cliente: 'Acme AI / Y Combinator W26',
-            metricas: [
-                { valor: '3x', label: 'más velocidad en ciclo de ventas' },
-                { valor: '100%', label: 'de facturación automatizada post-cierre' },
-                { valor: '0', label: 'fricción en onboarding de ventas' },
-            ],
-            nota: 'Con un equipo de solo 4 personas, Acme AI utiliza Cord para manejar todas sus suscripciones anuales empresariales, luciendo como una corporación y operando con la agilidad de una startup.',
-        },
         faqs: [
             {
-                q: '¿Cord sirve para startups que venden suscripciones (SaaS)?',
-                a: 'Sí. Puedes cotizar conceptos recurrentes (mensuales o anuales). Cuando el cliente aprueba la propuesta de suscripción, puedes conectarla con tu pasarela de pagos favorita usando nuestra API o cobrar los setup fees de inmediato.',
+                q: '¿Cuánto cuesta empezar?',
+                a: 'Nada. El plan Gratis no vence y no pide tarjeta: incluye 5 envíos al mes, hasta 5 cotizaciones activas, 10 facturas comerciales y cobro con tarjeta. Cuando necesites más envíos o quitar la marca de Cord, subes a Starter; los precios están en la página de planes.',
             },
             {
-                q: '¿Cómo sé si mi prospecto está interesado?',
-                a: 'El dashboard te notifica al instante en cuanto abren tu propuesta y cuenta cuántas veces la ven. Esto te da el timing perfecto para dar seguimiento y cerrar la venta antes de que se enfríen.',
+                q: '¿Puedo cobrar con tarjeta desde el plan Gratis?',
+                a: 'Sí. Cord Payments está en todos los planes, incluido Gratis, en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia; pagas una comisión por cobro, no una cuota. En Colombia, Argentina, Chile y Perú cobras con tu propia cuenta de Mercado Pago.',
             },
             {
-                q: '¿Puedo integrar Cord con mis herramientas No-Code?',
-                a: '¡Por supuesto! Cord cuenta con Webhooks que puedes conectar fácilmente a Zapier, Make o n8n para disparar notificaciones en Slack, actualizar bases de datos en Airtable o crear clientes en HubSpot.',
+                q: '¿Sirve para vender suscripciones o contratos anuales?',
+                a: 'Sí. Cotizas el plan anual en la divisa de tu cliente y lo cobras en el link. Si prefieres cobrar cada mes, tu cliente autoriza su tarjeta una vez en una iguala y Cord Payments la cobra mensualmente. Desde Profesional también puedes repetir una factura cada mes.',
             },
             {
-                q: '¿Necesito un equipo contable para facturar?',
-                a: 'No. Cord automatiza la emisión del CFDI 4.0 al momento de la aprobación del cliente. Solo conectas tus sellos digitales (CSD) una vez, y nosotros nos encargamos de timbrar y enviar la factura correctamente formada.',
+                q: '¿Puedo integrar Cord a mi producto?',
+                a: 'Sí, desde el plan Gratis, con 100 llamadas a la API al mes. La API REST crea clientes y cotizaciones, los webhooks avisan a tu backend de cada evento y Cord Elements pone el cotizador en tu web con Web Component, React o Vue. Las llaves de prueba operan sobre un entorno separado, y el servidor MCP deja que una IA como Claude consulte y arme cotizaciones.',
+            },
+            {
+                q: '¿Qué pasa cuando contrate a mi primer vendedor?',
+                a: 'Subes a Profesional e invitas hasta cinco personas con permisos por sección. Tus clientes, tu catálogo y tu historial siguen donde están: no migras nada.',
             },
         ],
-        interlink: { href: '/producto/facturacion', label: 'facturación automatizada CFDI' },
-        cta: { titulo: 'La herramienta secreta para crecer sin burocracia.', sub: 'Crea tu cuenta gratis hoy. Cierra tu primer trato mañana.' },
+        interlink: { href: '/producto/pagos', label: 'cobro con tarjeta dentro del link' },
+        cta: { titulo: 'Tu próxima propuesta ya puede cobrarse sola.', sub: 'Crea tu cuenta gratis, sin tarjeta, y manda la primera hoy.' },
     },
 ];
 

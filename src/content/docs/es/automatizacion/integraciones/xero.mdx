@@ -33,15 +33,16 @@ Cada factura que emites en Cord aparece en tu Xero con su contacto, sus concepto
 |---|---|
 | **Contacto** | Si no existe, buscándolo primero por correo. Cord recuerda el vínculo. |
 | **Factura de venta** | Tipo `ACCREC`, en estado **borrador**, con fecha, vencimiento, divisa, el folio de Cord en la referencia y una línea por concepto. |
-| **Importes** | Sin impuesto incluido (`Exclusive`): Cord ya calculó el impuesto por línea y Xero no lo vuelve a sumar. |
+| **Importes** | Sin impuesto incluido (`Exclusive`), y cada línea con la tasa de Xero que coincide con la de Cord y el impuesto que Cord ya calculó. |
 
-Cord pide los permisos granulares de Xero para facturas y contactos (`accounting.invoices` y `accounting.contacts`), no acceso a toda tu contabilidad.
+Cord pide los permisos granulares de Xero para facturas y contactos (`accounting.invoices` y `accounting.contacts`), más la lectura de tus tasas de impuesto (`accounting.settings.read`), no acceso a toda tu contabilidad. Si conectaste Xero antes de que Cord pidiera ese permiso, la tarjeta te pedirá reconectar una vez.
 
 ## Qué no hace todavía
 
 - **No aprueba la factura.** Es deliberado: la apruebas tú en Xero.
 - **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
-- **No mapea tus códigos de impuesto.** Revisa el impuesto de la primera factura antes de darla por buena.
+- **Tu impuesto entra con su tasa.** Cada línea lleva la tasa de impuesto de tu contabilidad que coincide exactamente con la de Cord. Si esa tasa no existe allá, la factura no se envía y la tarjeta te dice cuál falta: créala y pulsa **Enviar las facturas pendientes**.
+- **Las facturas con retenciones no se envían.** Tu contabilidad no las registra en una factura de venta; asiéntalas a mano.
 - **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
 
 ## Garantías

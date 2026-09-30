@@ -1,0 +1,856 @@
+---
+// Calcas de pantallas reales de Cord para /soluciones/empresas (org demo: Distribuidora Centauro).
+interface Props {
+    scene: 'aprobaciones' | 'integraciones' | 'equipo' | 'cotizacion' | 'webhooks' | 'sso' | 'cobranza' | 'desempeno' | 'divisas' | 'evidencia' | 'headers';
+    variant?: 'pillar' | 'block' | 'split' | 'dark';
+    isEn?: boolean;
+}
+const { scene, variant = 'block', isEn = false } = Astro.props;
+const T = (es: string, en: string) => (isEn ? en : es);
+const loc = isEn ? 'en-US' : 'es-MX';
+const cur = (n: number, c = 'MXN', d = 2) =>
+    new Intl.NumberFormat(loc, { style: 'currency', currency: c, minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const mxn = (n: number, d = 2) => cur(n, 'MXN', d);
+const mxnT = (n: number, d = 2) => (isEn ? mxn(n, d) : `${mxn(n, d)} MXN`);
+const num = (n: number) => new Intl.NumberFormat(loc).format(n);
+const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
+
+const LINES = [
+    { d: T('Varilla corrugada 3/8 in', 'Rebar 3/8 in'), u: T('ton', 'ton'), q: 42, list: 21400, neg: 17548 },
+    { d: T('Cemento gris 50 kg', 'Grey cement 50 kg'), u: T('saco', 'bag'), q: 1200, list: 238, neg: 219 },
+    { d: T('Malla electrosoldada 6x6', 'Welded wire mesh 6x6'), u: T('rollo', 'roll'), q: 30, list: 2150, neg: 1978 },
+    { d: T('Flete a obra', 'Freight to site'), u: T('servicio', 'service'), q: 1, list: 9809.52, neg: null as number | null },
+];
+const SUB = LINES.reduce((s, l) => s + l.q * (l.neg ?? l.list), 0);
+const IVA = Math.round(SUB * 0.16 * 100) / 100;
+const TOTAL = SUB + IVA;
+
+const MEMBERS = [
+    { i: 'LM', n: 'Laura Méndez', e: 'laura.mendez@centauro.mx', r: T('Administrador', 'Admin'), k: 'admin', a: T('Última sesión hoy', 'Last seen today') },
+    { i: 'DR', n: 'Diego Ruiz', e: 'diego.ruiz@centauro.mx', r: T('Vendedor', 'Rep'), k: 'vendedor', a: T('Última sesión hace 1 h', 'Last seen 1h ago') },
+    { i: 'SG', n: 'Sofía Garza', e: 'sofia.garza@centauro.mx', r: T('Solo lectura', 'Read only'), k: 'lectura', a: T('Última sesión ayer', 'Last seen yesterday') },
+];
+const PERMS = [
+    { l: T('Cotizaciones', 'Quotes'), on: true },
+    { l: T('Clientes', 'Clients'), on: true },
+    { l: T('Productos', 'Products'), on: true },
+    { l: T('Informes', 'Reports'), on: true },
+    { l: T('Aprobaciones', 'Approvals'), on: false },
+    { l: T('Cobranza', 'Collections'), on: false },
+];
+
+const DELIVERIES = [
+    { ev: 'invoice.sent', try: 2, ok: false, st: '503', ms: '4,812', at: '11:26' },
+    { ev: 'invoice.issued', try: 1, ok: true, st: '200', ms: '184', at: '11:14' },
+    { ev: 'quote.approved', try: 1, ok: true, st: '200', ms: '131', at: '11:09' },
+    { ev: 'quote.sent', try: 1, ok: true, st: '200', ms: '118', at: '11:02' },
+    { ev: 'quote.approval_decided', try: 1, ok: true, st: '200', ms: '96', at: '11:02' },
+    { ev: 'quote.approval_requested', try: 1, ok: true, st: '200', ms: '102', at: '10:47' },
+    { ev: 'quote.created', try: 1, ok: true, st: '200', ms: '88', at: '10:46' },
+];
+
+const AR = [
+    { c: 'Constructora Albarrada', f: 'FAC-1187', v: T('18 sep 2026', 'Sep 18, 2026'), over: 12, due: 0, prom: T('Promete 3 oct', 'Promises Oct 3'), s: 318400 },
+    { c: 'Hospitales Vértice', f: 'FAC-1179', v: T('30 ago 2026', 'Aug 30, 2026'), over: 31, due: 0, prom: '', s: 96250 },
+    { c: 'Inmobiliaria Cumbres', f: 'COT-2291', v: T('7 oct 2026', 'Oct 7, 2026'), over: 0, due: 7, prom: '', s: 512800 },
+    { c: 'Grupo Ferretero Anáhuac', f: 'FAC-1192', v: T('14 oct 2026', 'Oct 14, 2026'), over: 0, due: 14, prom: '', s: 184300 },
+    { c: 'Desarrollos Tamarindo', f: 'FAC-1195', v: T('21 oct 2026', 'Oct 21, 2026'), over: 0, due: 21, prom: '', s: 76900 },
+];
+const AR_TOTAL = AR.reduce((s, r) => s + r.s, 0);
+const AR_OVER = AR.filter((r) => r.over).reduce((s, r) => s + r.s, 0);
+const AGING = [
+    { l: T('Por vencer', 'Not yet due'), v: AR.filter((r) => !r.over).reduce((s, r) => s + r.s, 0), c: '#cbd5e1' },
+    { l: T('1–30 días', '1–30 days'), v: 318400, c: '#64748b' },
+    { l: T('31–60 días', '31–60 days'), v: 96250, c: '#0a192f' },
+];
+
+const REPS = [
+    { i: 'DR', n: 'Diego Ruiz', role: '', q: 42, rate: 38, won: 4120000, paid: 3260000, days: 18 },
+    { i: 'MO', n: 'Mariana Olvera', role: '', q: 35, rate: 31, won: 2870000, paid: 2410000, days: 22 },
+    { i: 'AP', n: 'Andrés Pineda', role: '', q: 28, rate: 29, won: 1960000, paid: 1380000, days: 26 },
+    { i: 'LM', n: 'Laura Méndez', role: T('Administrador', 'Admin'), q: 9, rate: 44, won: 1180000, paid: 1180000, days: 12 },
+];
+const REP_MAX = Math.max(...REPS.map((r) => r.won));
+const REP_TOTAL = REPS.reduce((s, r) => s + r.won, 0);
+const REP_RATE = Math.round(REPS.reduce((s, r) => s + r.rate, 0) / REPS.length);
+const ticket = (r: (typeof REPS)[number]) => Math.round(r.won / Math.max(1, Math.round((r.q * r.rate) / 100)));
+
+const INV = [
+    { d: T('Varilla corrugada 1/2 in', 'Rebar 1/2 in'), q: 60, p: 1080 },
+    { d: T('Malla electrosoldada 6x6', 'Welded wire mesh 6x6'), q: 120, p: 118 },
+    { d: T('Flete Laredo, TX', 'Freight to Laredo, TX'), q: 1, p: 2400 },
+];
+const INV_TOTAL = INV.reduce((s, l) => s + l.q * l.p, 0);
+const FX = 17.92;
+
+const AUDIT = [
+    { a: 'cotizacion.aprobacion_aprobada', d: 'COT-2318', m: T('hace 3 min', '3 min ago'), ip: '189.203.44.10' },
+    { a: 'cotizacion.aprobacion_rechazada', d: 'COT-2309', m: T('hace 1 h', '1 h ago'), ip: '189.203.44.10' },
+    { a: 'sso.exigir_activado', d: 'Okta · Distribuidora Centauro', m: T('hace 2 h', '2 h ago'), ip: '189.203.44.10' },
+    { a: 'sso.dominio_verificado', d: 'centauro.mx', m: T('hace 2 h', '2 h ago'), ip: '189.203.44.10' },
+    { a: 'equipo.actualizado', d: 'diego.ruiz@centauro.mx', m: T('ayer', 'yesterday'), ip: '187.190.12.63' },
+    { a: 'webhook.secreto_rotado', d: 'api.centauro.mx', m: T('ayer', 'yesterday'), ip: '187.190.12.63' },
+    { a: 'equipo.invitado', d: 'sofia.garza@centauro.mx', m: T('hace 3 días', '3 days ago'), ip: '189.203.44.10' },
+    { a: 'apikey.creada', d: T('Producción', 'Production'), m: T('hace 5 días', '5 days ago'), ip: '189.203.44.10' },
+];
+const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
+---
+
+<div class:list={['emk-stage', `emk-v-${variant}`, `emk-s-${scene}`]} data-emk aria-hidden="true">
+    <div class="emk-canvas">
+
+    {scene === 'aprobaciones' && (
+        <>
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Ajustes', 'Settings')}<i>/</i><b>{T('Aprobaciones y tesorería', 'Approvals and treasury')}</b></span>
+                <span class="emk-btn emk-btn-navy">{T('Guardar cambios', 'Save changes')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-h" data-emk-r>{T('Umbrales de aprobación', 'Approval thresholds')}</div>
+                <div class="emk-fields">
+                    <div class="emk-field" data-emk-r>
+                        <label>{T('Descuento máx. sin aprobación (%)', 'Max discount without approval (%)')}</label>
+                        <span class="emk-input editorial">12</span>
+                        <small>{T('Por encima, "Enviar" pide aprobación.', 'Above it, "Send" requires approval.')}</small>
+                    </div>
+                    <div class="emk-field" data-emk-r>
+                        <label>{T('Monto máx. sin aprobación (MXN)', 'Max amount without approval (MXN)')}</label>
+                        <span class="emk-input editorial">1,000,000</span>
+                        <small>{T('0 = sin tope.', '0 = no limit.')}</small>
+                    </div>
+                    <div class="emk-field" data-emk-r>
+                        <label>{T('Margen bruto mínimo sin aprobación (%)', 'Minimum gross margin without approval (%)')}</label>
+                        <span class="emk-input editorial">25</span>
+                        <small>{T('Si alguna línea baja de este margen, se bloquea.', 'If any line falls below it, the quote is held.')}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="emk-float emk-f-queue" data-emk-f>
+            <div class="emk-q-head">
+                <span class="emk-q-n editorial">1</span>
+                <span>{T('esperan tu aprobación', 'awaiting your approval')}</span>
+            </div>
+            <div class="emk-q-row">
+                <span class="emk-q-c">Constructora Albarrada</span>
+                <span class="emk-q-meta"><span class="emk-mono">COT-2318</span><b class="editorial">{mxn(TOTAL, 0)}</b></span>
+            </div>
+        </div>
+        </>
+    )}
+
+    {scene === 'integraciones' && (
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Ajustes', 'Settings')}<i>/</i><b>{T('Integraciones', 'Integrations')}</b></span>
+                <span class="emk-muted">{T('4 conectadas', '4 connected')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-h emk-h-muted" data-emk-r>{T('Conectadas', 'Connected')}</div>
+                <div class="emk-tiles">
+                    {[
+                        { n: 'HubSpot', d: 'hubspot.com', c: 'CRM', t: T('Clientes, contactos y Deals sincronizados con tus cotizaciones.', 'Clients, contacts and Deals synced with your quotes.') },
+                        { n: 'Xero', d: 'xero.com', c: T('Contabilidad', 'Accounting'), t: T('Tus facturas de Cord, en borrador dentro de tu Xero.', 'Your Cord invoices, as drafts inside your Xero.') },
+                        { n: 'Slack', d: 'slack.com', c: T('Comunicación', 'Messaging'), t: T('Un aviso en tu canal cada vez que una cotización avanza.', 'An alert in your channel every time a quote moves forward.') },
+                        { n: 'Microsoft Teams', d: 'teams.microsoft.com', c: T('Comunicación', 'Messaging'), t: T('Una tarjeta en tu canal de Teams cada vez que una cotización avanza.', 'A card in your Teams channel every time a quote moves forward.') },
+                    ].map((a) => (
+                        <div class="emk-tile" data-emk-r>
+                            <span class="emk-tile-top">
+                                <img src={fav(a.d)} alt="" width="26" height="26" loading="lazy" />
+                                <span class="emk-pill emk-ok"><i></i>{T('Conectado', 'Connected')}</span>
+                            </span>
+                            <b>{a.n}</b>
+                            <small>{a.c}</small>
+                            <p>{a.t}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )}
+
+    {scene === 'equipo' && (
+        <>
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Ajustes', 'Settings')}<i>/</i><b>{T('Equipo y permisos', 'Team and permissions')}</b></span>
+                <span class="emk-btn emk-btn-navy">{T('Agregar miembro', 'Add member')}</span>
+            </div>
+            <div class="emk-body emk-body-flush">
+                <div class="emk-seats" data-emk-r>
+                    <b class="editorial">{T('3 de 15 asientos', '3 of 15 seats')}</b>
+                    <span class="emk-seatbar"><i style="width:20%"></i></span>
+                </div>
+                <div class="emk-thead emk-g-team"><span>{T('Miembro · rol', 'Member · role')}</span></div>
+                {MEMBERS.map((m) => (
+                    <div class="emk-tr emk-g-team" data-emk-r>
+                        <span class="emk-who">
+                            <span class="emk-av">{m.i}</span>
+                            <span><b class="emk-name-role">{m.n}<span class:list={['emk-role', `emk-role-${m.k}`]}>{m.r}</span></b><small>{m.e}</small></span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+        <div class="emk-float emk-f-perms" data-emk-f>
+            <div class="emk-fp-head"><span class="emk-av emk-av-sm">DR</span><span><b>Diego Ruiz</b><small>{T('Vendedor', 'Rep')}</small></span></div>
+            <ul>
+                {PERMS.map((p) => (
+                    <li class:list={{ off: !p.on }}>
+                        {p.on
+                            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14" stroke="none"/><polyline points="8 12.5 11 15.5 16.5 9.5"/></svg>
+                            : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg>}
+                        {p.l}
+                    </li>
+                ))}
+            </ul>
+        </div>
+        </>
+    )}
+
+    {scene === 'cotizacion' && (
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Cotizaciones', 'Quotes')}<i>/</i><b>COT-2318</b></span>
+                <span class="emk-pill emk-muted-pill">{T('Borrador', 'Draft')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-approval" data-emk-r>
+                    <div class="emk-ap-info">
+                        <span class="emk-ap-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                            {T('Pendiente de aprobación', 'Pending approval')}
+                        </span>
+                        <span class="emk-ap-why">{T(
+                            `descuento 18% supera el 12% permitido y total ${mxnT(1240000, 0)} supera el tope de ${mxnT(1000000, 0)}`,
+                            `discount 18% exceeds the 12% allowed and total ${mxn(1240000, 0)} exceeds the ${mxn(1000000, 0)} limit`,
+                        )}</span>
+                    </div>
+                    <span class="emk-ap-actions">
+                        <span class="emk-btn emk-btn-navy">{T('Aprobar y enviar', 'Approve and send')}</span>
+                        <span class="emk-btn">{T('Rechazar', 'Reject')}</span>
+                    </span>
+                </div>
+                <div class="emk-qhead" data-emk-r>
+                    <span class="emk-who">
+                        <span class="emk-av emk-av-lg">C</span>
+                        <span><b>Constructora Albarrada <em class="emk-ver">V1</em></b><small>{T('Net 30 · Vigente hasta 14 oct 2026 · Creada 14 sep 2026', 'Net 30 · Valid until Oct 14, 2026 · Created Sep 14, 2026')}</small></span>
+                    </span>
+                    <span class="emk-qtotal"><small>TOTAL</small><b class="editorial">{mxnT(TOTAL)}</b></span>
+                </div>
+                <div class="emk-thead emk-g-items"><span>{T('Producto', 'Product')}</span><span class="r">{T('Cant.', 'Qty.')}</span><span class="r">{T('Precio', 'Price')}</span><span class="r">{T('Importe', 'Amount')}</span></div>
+                {LINES.map((l) => (
+                    <div class="emk-tr emk-g-items" data-emk-r>
+                        <span class="emk-item"><b>{l.d}</b><small>{l.u}</small></span>
+                        <span class="r editorial emk-dim">{num(l.q)}</span>
+                        <span class="r emk-price">
+                            {l.neg !== null && <s class="editorial">{mxn(l.list)}</s>}
+                            <b class="editorial">{mxn(l.neg ?? l.list)}</b>
+                        </span>
+                        <span class="r editorial emk-amt">{mxn(l.q * (l.neg ?? l.list))}</span>
+                    </div>
+                ))}
+                <div class="emk-totals" data-emk-r>
+                    <div><span>Subtotal</span><b class="editorial">{mxn(SUB)}</b></div>
+                    <div><span>{T('IVA 16%', 'VAT 16%')}</span><b class="editorial">{mxn(IVA)}</b></div>
+                    <div class="grand"><span>Total</span><b class="editorial">{mxn(TOTAL)}</b></div>
+                </div>
+            </div>
+        </div>
+    )}
+
+    {scene === 'webhooks' && (
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-tabs">
+                    <span>{T('Resumen', 'Overview')}</span><span class="on">Webhooks</span><span>API</span><span>{T('Registros', 'Logs')}</span><span>{T('Eventos', 'Events')}</span><span>{T('Salud', 'Health')}</span>
+                </span>
+                <span class="emk-pill emk-navy-pill">{T('Producción', 'Live')}</span>
+            </div>
+            <div class="emk-body emk-body-flush">
+                <div class="emk-hook" data-emk-r>
+                    <span class="emk-hook-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    <span class="emk-hook-info">
+                        <b class="emk-mono">https://api.centauro.mx/cord/webhooks</b>
+                        <small><code>whsec_8c1f2a••••••••••••••</code> <i>{T('· 6 eventos', '· 6 events')}</i> <i class="err">{T('· última hace 2 min (503)', '· last 2 min ago (503)')}</i></small>
+                    </span>
+                    <span class="emk-btn">{T('Probar', 'Test')}</span>
+                    <span class="emk-btn">{T('Editar', 'Edit')}</span>
+                    <span class="emk-toggle on"></span>
+                </div>
+                <div class="emk-dels">
+                    {DELIVERIES.map((x) => (
+                        <div class="emk-del" data-emk-r>
+                            <span class:list={['emk-dot', x.ok ? 'ok' : 'err']}></span>
+                            <span class="emk-mono emk-del-ev">{x.ev}{x.try > 1 && <em>{T(` · intento ${x.try}`, ` · attempt ${x.try}`)}</em>}</span>
+                            <span class:list={['emk-code', x.ok ? 'ok' : 'err']}>{x.st}</span>
+                            <span class="emk-del-meta editorial">{x.ms}ms · {x.at}</span>
+                            <span class:list={['emk-link', { strong: !x.ok }]}>{T('Reintentar', 'Retry')}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )}
+
+    {scene === 'sso' && (
+        <>
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Ajustes', 'Settings')}<i>/</i><b>SSO</b></span>
+                <span class="emk-btn emk-btn-navy">{T('Conectar proveedor', 'Connect provider')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-h" data-emk-r>{T('Conexiones', 'Connections')}</div>
+                <div class="emk-conn" data-emk-r>
+                    <img src={fav('okta.com')} alt="" width="30" height="30" loading="lazy" />
+                    <span><b>Okta · Distribuidora Centauro</b><small class="emk-mono">http://www.okta.com/exk9c3ntaur0mx</small></span>
+                    <span class="emk-pill emk-ok"><i></i>{T('Activa', 'Active')}</span>
+                </div>
+                <div class="emk-h" data-emk-r>{T('Dominios verificados', 'Verified domains')}</div>
+                {['centauro.mx', 'centauro.com.mx'].map((d) => (
+                    <div class="emk-dom" data-emk-r>
+                        <span class="emk-mono">{d}</span>
+                        <span class="emk-pill emk-ok"><i></i>{T('Verificado', 'Verified')}</span>
+                    </div>
+                ))}
+                <div class="emk-h emk-h-gap" data-emk-r>{T('Exigir SSO', 'Require SSO')}</div>
+                <div class="emk-switch" data-emk-r>
+                    <span class="emk-toggle on"></span>
+                    <span><b>{T('Exigir a tu equipo iniciar sesión por SSO', 'Require your team to sign in via SSO')}</b><small>{T('Bloquea contraseña, Google, Apple y llaves de acceso para todos menos el dueño de la cuenta, que conserva su contraseña como respaldo.', 'Blocks password, Google, Apple and passkeys for everyone except the account owner, who keeps their password as a fallback.')}</small></span>
+                </div>
+            </div>
+        </div>
+        <div class="emk-float emk-f-sec" data-emk-f>
+            <div class="emk-fs-title">{T('Seguridad', 'Security')}</div>
+            <div class="emk-switch emk-switch-sm">
+                <span class="emk-toggle on"></span>
+                <span><b>{T('Exigir verificación en dos pasos (2FA)', 'Require two-factor authentication (2FA)')}</b></span>
+            </div>
+            <div class="emk-fs-kv"><span>{T('Cierre por inactividad', 'Inactivity timeout')}</span><span class="emk-select">{T('8 horas', '8 hours')}</span></div>
+            <div class="emk-fs-kv"><span>{T('Dominios de invitación', 'Invitation domains')}</span><span class="emk-select emk-mono">centauro.mx</span></div>
+        </div>
+        </>
+    )}
+
+    {scene === 'cobranza' && (
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-tabs"><span class="on">{T('Cobranza', 'Collections')}</span><span>{T('Cobranza con IA', 'AI Collections')}</span></span>
+                <span class="emk-chip">{T('Al día de hoy · 30 de septiembre de 2026', 'As of today · September 30, 2026')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-kpis emk-kpis-3" data-emk-r>
+                    <div><span>{T('VENCIDO', 'OVERDUE')}</span><b class="editorial danger">{mxn(AR_OVER, 0)}</b><small>{T('2 cuentas', '2 accounts')}</small></div>
+                    <div><span>{T('VENCE ESTA SEMANA', 'DUE THIS WEEK')}</span><b class="editorial">{mxn(512800, 0)}</b><small>{T('1 cuenta', '1 account')}</small></div>
+                    <div><span>{T('PROMESAS POR VENCER', 'PROMISES COMING DUE')}</span><b class="editorial warn">1</b><small>{T('Constructora Albarrada · 3 oct', 'Constructora Albarrada · Oct 3')}</small></div>
+                </div>
+                <div class="emk-aging" data-emk-r>
+                    <div class="emk-aging-top"><b>{T('Antigüedad de la cartera', 'Receivables age')}</b><b class="editorial">{mxnT(AR_TOTAL, 0)}</b></div>
+                    <div class="emk-segbar">{AGING.map((a) => <i style={`flex:${a.v};background:${a.c}`}></i>)}</div>
+                    <div class="emk-legend">{AGING.map((a) => <span><i style={`background:${a.c}`}></i>{a.l} <b class="editorial">{mxn(a.v, 0)}</b></span>)}</div>
+                </div>
+                <div class="emk-tablehead" data-emk-r>
+                    <b>{T('Cuentas por cobrar', 'Accounts receivable')}</b>
+                    <span class="emk-chips"><span class="on">{T('Todas', 'All')}</span><span>{T('Vencidas', 'Overdue')}</span><span>{T('Con promesa', 'With promise')}</span><span>{T('Sin gestión', 'Untouched')}</span></span>
+                </div>
+                <div class="emk-thead emk-g-ar"><span>{T('Cliente', 'Client')}</span><span>{T('Folio', 'Number')}</span><span>{T('Estado', 'Status')}</span><span class="r">{T('Saldo', 'Balance')}</span></div>
+                {AR.map((r) => (
+                    <div class="emk-tr emk-g-ar" data-emk-r>
+                        <span class="emk-who"><span class="emk-av emk-av-sm">{r.c.charAt(0)}</span><b>{r.c}</b></span>
+                        <span class="emk-mono emk-folio">{r.f}</span>
+                        <span class="emk-states">
+                            {r.over
+                                ? <span class="emk-pill emk-danger">{T(`Vencida ${r.over} d`, `Overdue ${r.over}d`)}</span>
+                                : <span class="emk-pill emk-muted-pill">{T(`Vence en ${r.due} d`, `Due in ${r.due}d`)}</span>}
+                            {r.prom && <span class="emk-pill emk-warn">{r.prom}</span>}
+                        </span>
+                        <span class="r editorial emk-amt">{mxn(r.s, 0)}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )}
+
+    {scene === 'desempeno' && (
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-tabs"><span>{T('Informes', 'Reports')}</span><span class="on">{T('Equipo', 'Team')}</span></span>
+                <span class="emk-muted">{T('Desempeño', 'Performance')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-kpis emk-kpis-4" data-emk-r>
+                    <div><span>{T('CERRADO POR EL EQUIPO', 'CLOSED BY THE TEAM')}</span><b class="editorial ok">{mxn(REP_TOTAL, 0)}</b><small>{T('aprobadas, pagadas y facturadas', 'approved, paid and invoiced')}</small></div>
+                    <div><span>{T('TASA DE CIERRE PROMEDIO', 'AVERAGE CLOSE RATE')}</span><b class="editorial">{REP_RATE}%</b><small>{T('de lo enviado por vendedor', 'of what each rep sent')}</small></div>
+                    <div><span>{T('LÍDER DEL PERIODO', 'TOP PERFORMER')}</span><b class="editorial">Diego Ruiz</b><small>{mxn(4120000, 0)}{T(' cerrado', ' closed')}</small></div>
+                    <div><span>{T('VENDEDORES ACTIVOS', 'ACTIVE REPS')}</span><b class="editorial">4</b><small>{T('con cuenta activa', 'with an active account')}</small></div>
+                </div>
+                <div class="emk-tablehead" data-emk-r><b>{T('Ranking por vendedor', 'Ranking by rep')}</b><span class="emk-muted">{T('por monto cerrado', 'by amount closed')}</span></div>
+                <div class="emk-thead emk-g-rank"><span>{T('Vendedor', 'Rep')}</span><span class="r">{T('Cotiz.', 'Quotes')}</span><span class="r">{T('Cierre', 'Close')}</span><span>{T('Cerrado', 'Closed')}</span><span class="r">{T('Cobrado', 'Collected')}</span><span class="r">Ticket</span><span class="r">{T('Días', 'Days')}</span></div>
+                {REPS.map((r, i) => (
+                    <div class="emk-tr emk-g-rank" data-emk-r>
+                        <span class="emk-who"><span class="emk-rank">{i + 1}</span><span class="emk-av emk-av-sm">{r.i}</span><span><b>{r.n}</b>{r.role && <small>{r.role}</small>}</span></span>
+                        <span class="r editorial">{r.q}</span>
+                        <span class="r editorial">{r.rate}%</span>
+                        <span class="emk-barcell"><span class="emk-rbar"><i class:list={{ top: i === 0 }} style={`width:${Math.round((r.won / REP_MAX) * 100)}%`}></i></span><b class="editorial">{mxn(r.won, 0)}</b></span>
+                        <span class="r editorial emk-dim">{mxn(r.paid, 0)}</span>
+                        <span class="r editorial emk-dim">{mxn(ticket(r), 0)}</span>
+                        <span class="r editorial emk-dim">{r.days} d</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )}
+
+    {scene === 'divisas' && (
+        <>
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Facturas', 'Invoices')}<i>/</i><b>FAC-1194</b></span>
+                <span class="emk-pill emk-navy-pill">{T('Enviada', 'Sent')}</span>
+            </div>
+            <div class="emk-body">
+                <div class="emk-qhead" data-emk-r>
+                    <span class="emk-who">
+                        <span class="emk-av emk-av-lg">R</span>
+                        <span><b>Rio Bravo Builders LLC</b><small>{T('desde la cotización COT-2304', 'from quote COT-2304')}</small></span>
+                    </span>
+                    <span class="emk-qtotal"><small>TOTAL</small><b class="editorial">{cur(INV_TOTAL, 'USD')}</b></span>
+                </div>
+                <div class="emk-thead emk-g-items"><span>{T('Concepto', 'Item')}</span><span class="r">{T('Cant.', 'Qty.')}</span><span class="r">{T('Importe', 'Amount')}</span></div>
+                {INV.map((l) => (
+                    <div class="emk-tr emk-g-items" data-emk-r>
+                        <span class="emk-item"><b>{l.d}</b><small class="editorial">{cur(l.p, 'USD')}</small></span>
+                        <span class="r editorial emk-dim">{num(l.q)}</span>
+                        <span class="r editorial emk-amt">{cur(l.q * l.p, 'USD')}</span>
+                    </div>
+                ))}
+                <div class="emk-totals" data-emk-r>
+                    <div><span>Subtotal</span><b class="editorial">{cur(INV_TOTAL, 'USD')}</b></div>
+                    <div><span>{T('IVA 0%', 'VAT 0%')}</span><b class="editorial">{cur(0, 'USD')}</b></div>
+                    <div class="grand"><span>Total</span><b class="editorial">{cur(INV_TOTAL, 'USD')}</b></div>
+                </div>
+                <p class="emk-fx" data-emk-r>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M8 10h8l-2.5-2.5M16 14H8l2.5 2.5"/></svg>
+                    <span><span>{T('Tipo de cambio declarado', 'Stated exchange rate')}: <b class="editorial">1 USD = {FX} MXN</b></span><span>{T('Total contable', 'Ledger total')} <b class="editorial">{new Intl.NumberFormat(loc, { minimumFractionDigits: 2 }).format(INV_TOTAL * FX)} MXN</b></span></span>
+                </p>
+            </div>
+        </div>
+        <div class="emk-float emk-f-orgs" data-emk-f>
+            <div class="emk-org-btn">
+                <span class="emk-org-av">D</span>
+                <span><small>{T('Espacio de trabajo', 'Workspace')}</small><b>Distribuidora Centauro</b></span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 10 12 15 17 10"/></svg>
+            </div>
+            <div class="emk-org-menu">
+                <span class="emk-org-lbl">{T('Espacios de trabajo', 'Workspaces')}</span>
+                {[
+                    { a: 'D', n: 'Distribuidora Centauro', r: T('Dueño', 'Owner'), on: true },
+                    { a: 'C', n: 'Centauro Iberia S.L.', r: 'Admin', on: false },
+                    { a: 'C', n: 'Centauro USA LLC', r: 'Admin', on: false },
+                ].map((o) => (
+                    <div class:list={['emk-org-item', { on: o.on }]}>
+                        <span class="emk-org-av sm">{o.a}</span>
+                        <span><b>{o.n}</b><small>{o.r}</small></span>
+                        {o.on && <svg class="emk-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17 19 7.5"/></svg>}
+                    </div>
+                ))}
+                <div class="emk-org-act">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg>
+                    {T('Crear espacio de trabajo', 'Create workspace')}
+                </div>
+            </div>
+        </div>
+        </>
+    )}
+
+    {scene === 'evidencia' && (
+        <>
+        <div class="emk-win">
+            <div class="emk-bar">
+                <span class="emk-crumb">{T('Ajustes', 'Settings')}<i>/</i><b>{T('Auditoría', 'Audit log')}</b></span>
+                <span class="emk-muted">{T('Últimos 50 eventos', 'Last 50 events')}</span>
+            </div>
+            <div class="emk-body emk-body-flush">
+                {AUDIT.map((a) => (
+                    <div class="emk-audit" data-emk-r>
+                        <span class="emk-mono emk-audit-a">{a.a}</span>
+                        <span class="emk-audit-d">{a.d}</span>
+                        <span class="emk-audit-m">{a.m} · {a.ip}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+        <div class="emk-float emk-f-stamp" data-emk-f>
+            <div class="emk-st-top">
+                <span><small>COT-2318 · Constructora Albarrada</small><b class="editorial">{mxnT(TOTAL)}</b></span>
+                <span class="emk-pill emk-ok"><i></i>{T('Aprobada', 'Approved')}</span>
+            </div>
+            <div class="emk-stamp">
+                <div class="emk-st-head">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                    {T('Documento verificado', 'Document verified')}
+                </div>
+                <div class="emk-st-row"><strong>{T('Firmante:', 'Signer:')}</strong> Ing. Rosa Treviño (IP: 201.141.72.18)</div>
+                <div class="emk-st-row"><strong>{T('Fecha:', 'Date:')}</strong> {T('14 sep 2026, 11:02', 'Sep 14, 2026, 11:02')}</div>
+                <div class="emk-st-row"><strong>{T('Sello:', 'Seal:')}</strong> <span class="emk-hash">{HASH}</span></div>
+            </div>
+        </div>
+        </>
+    )}
+
+    {scene === 'headers' && (
+        <div class="emk-term">
+            <div class="emk-term-bar"><span>{T('Entrega', 'Delivery')} · quote.approval_decided</span><span class="emk-code ok">200</span></div>
+            <pre><span class="k">POST</span> /cord/webhooks
+<span class="h">X-Cord-Event:</span> quote.approval_decided
+<span class="h">X-Cord-Attempt:</span> 1
+<span class="h">Idempotency-Key:</span> evt_4b1e…90c2
+<span class="h">X-Cord-Signature-V1:</span> t=1789462920,v1=5f2a…d81c</pre>
+        </div>
+    )}
+
+    </div>
+</div>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) {
+        document.querySelectorAll<HTMLElement>('[data-emk]').forEach((stage) => {
+            const rows = stage.querySelectorAll<HTMLElement>('[data-emk-r]');
+            const floats = stage.querySelectorAll<HTMLElement>('[data-emk-f]');
+            if (!rows.length && !floats.length) return;
+            gsap.set(rows, { opacity: 0, y: 8 });
+            gsap.set(floats, { opacity: 0, y: 16 });
+            ScrollTrigger.create({
+                trigger: stage, start: 'top 82%', once: true,
+                onEnter: () => {
+                    gsap.to(rows, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.05, clearProps: 'transform,opacity' });
+                    gsap.to(floats, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out', delay: 0.25 + rows.length * 0.04, clearProps: 'transform,opacity' });
+                },
+            });
+        });
+    }
+</script>
+
+<style>
+    .emk-stage {
+        position: absolute; inset: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+        color: #0a192f; text-align: left; -webkit-font-smoothing: antialiased;
+        font-size: 12px; line-height: 1.35; letter-spacing: -0.005em;
+        pointer-events: none; user-select: none;
+    }
+    .emk-stage { --k: 1; }
+    .emk-canvas { position: absolute; transform-origin: 0 0; transform: scale(var(--k)); }
+
+    .emk-v-pillar { --k: 0.84; }
+    .emk-v-pillar .emk-canvas { left: 22px; top: 22px; width: max(430px, calc((100% + 18px) / var(--k))); height: calc((100% + 10px) / var(--k)); }
+    .emk-v-block .emk-canvas { left: 0; top: 0; width: calc((100% + 48px) / var(--k)); height: calc((100% + 48px) / var(--k)); }
+    .emk-v-block .emk-win { padding-right: calc(62px / var(--k)); }
+    .emk-v-pillar .emk-win { padding-right: calc(40px / var(--k)); }
+    .emk-v-split .emk-win { padding-right: 44px; }
+    .emk-v-split { --k: 1; z-index: 2; }
+    .emk-v-split .emk-canvas { left: 44px; top: 64px; width: calc((100% - 4px) / var(--k)); height: calc((100% - 24px) / var(--k)); }
+    .emk-v-dark .emk-canvas { inset: 18px 0 0 18px; }
+    @media (max-width: 720px) {
+        .emk-v-block { --k: 0.66; }
+        .emk-v-split { --k: 0.74; }
+        .emk-v-split .emk-canvas { left: 20px; top: 28px; }
+        .emk-v-pillar { --k: 0.74; }
+    }
+
+    .emk-win {
+        position: absolute; inset: 0; background: #fff; border-radius: 14px 0 0 0;
+        border: 1px solid rgba(10,25,47,0.08); border-right: 0; border-bottom: 0;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 18px 48px -18px rgba(10,25,47,0.3);
+        overflow: hidden; display: flex; flex-direction: column;
+    }
+    .emk-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        height: 44px; padding: 0 18px; flex-shrink: 0;
+        background: #fcfdfe; border-bottom: 1px solid rgba(10,25,47,0.07);
+    }
+    .emk-crumb { display: flex; align-items: center; gap: 7px; color: #64748b; font-size: 12px; white-space: nowrap; }
+    .emk-crumb i { font-style: normal; color: #cbd5e1; }
+    .emk-crumb b { color: #0a192f; font-weight: 600; }
+    .emk-body { padding: 16px 18px; flex: 1; min-height: 0; }
+    .emk-body-flush { padding: 0; }
+    .emk-h { font-size: 12.5px; font-weight: 650; margin: 0 0 10px; }
+    .emk-h-muted { color: #64748b; font-size: 11.5px; }
+    .emk-h-gap { margin-top: 16px; }
+    .emk-muted { color: #64748b; font-size: 11.5px; white-space: nowrap; }
+    .emk-dim { color: #475569; }
+    .emk-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 11px; letter-spacing: 0; }
+    .r { text-align: right; justify-self: end; }
+    .editorial { font-variant-numeric: tabular-nums; }
+
+    .emk-btn {
+        display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 999px;
+        font-size: 11.5px; font-weight: 600; color: #0a192f; white-space: nowrap;
+        background: #fff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12), 0 1px 2px rgba(10,25,47,0.04);
+    }
+    .emk-btn-navy { background: #0a192f; color: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.2); }
+    .emk-pill {
+        display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 999px;
+        font-size: 10.5px; font-weight: 600; white-space: nowrap; color: #475569; background: rgba(10,25,47,0.06);
+    }
+    .emk-pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .emk-ok { color: #047857; background: rgba(16,185,129,0.12); }
+    .emk-warn { color: #b45309; background: rgba(245,158,11,0.14); }
+    .emk-danger { color: #b91c1c; background: rgba(239,68,68,0.1); }
+    .emk-muted-pill { color: #64748b; background: rgba(100,116,139,0.1); }
+    .emk-navy-pill { color: #0a192f; background: rgba(10,25,47,0.07); }
+    .emk-chip { font-size: 11px; color: #64748b; padding: 4px 10px; border-radius: 999px; background: #f5f5f7; white-space: nowrap; }
+
+    .emk-tabs { display: flex; gap: 18px; height: 100%; align-items: stretch; }
+    .emk-tabs span { display: flex; align-items: center; font-size: 12px; font-weight: 550; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+    .emk-tabs span.on { color: #0a192f; font-weight: 650; border-bottom-color: #0a192f; }
+
+    .emk-av {
+        width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+        font-size: 10.5px; font-weight: 650; color: #334155; background: #eef1f5; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06);
+    }
+    .emk-av-sm { width: 22px; height: 22px; font-size: 9.5px; }
+    .emk-av-lg { width: 36px; height: 36px; font-size: 13px; background: #0a192f; color: #fff; box-shadow: none; }
+    .emk-who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .emk-who > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+    .emk-who b { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-who small { color: #64748b; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .emk-thead, .emk-tr { display: grid; align-items: center; gap: 12px; padding: 0 18px; }
+    .emk-thead { height: 30px; font-size: 10.5px; font-weight: 600; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-tr { min-height: 42px; border-bottom: 1px solid rgba(10,25,47,0.05); }
+    .emk-body:not(.emk-body-flush) .emk-thead, .emk-body:not(.emk-body-flush) .emk-tr { padding: 0; }
+    .emk-amt { font-weight: 600; }
+
+    .emk-toggle { width: 30px; height: 18px; border-radius: 999px; background: #cbd5e1; position: relative; flex-shrink: 0; }
+    .emk-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .emk-toggle.on { background: #34c759; }
+    .emk-toggle.on::after { left: 14px; }
+
+    .emk-float {
+        position: absolute; background: #fff; border-radius: 12px;
+        border: 1px solid rgba(10,25,47,0.08);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 22px 50px -16px rgba(10,25,47,0.34);
+    }
+
+    /* aprobaciones */
+    .emk-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+    .emk-field { display: flex; flex-direction: column; gap: 5px; }
+    .emk-field label { font-size: 11px; font-weight: 600; color: #334155; line-height: 1.3; min-height: 2.6em; }
+    .emk-input { height: 32px; display: flex; align-items: center; padding: 0 10px; border-radius: 8px; background: #f5f5f7; font-size: 13px; font-weight: 600; }
+    .emk-field small { font-size: 10px; color: #64748b; line-height: 1.35; }
+    .emk-f-queue { right: 48px; bottom: 40px; width: 192px; padding: 11px 13px; }
+    .emk-q-head { display: flex; align-items: baseline; gap: 7px; font-size: 11.5px; color: #64748b; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-q-n { font-size: 20px; font-weight: 650; color: #b45309; }
+    .emk-q-row { display: flex; flex-direction: column; gap: 3px; padding-top: 9px; }
+    .emk-q-meta { display: flex; justify-content: space-between; align-items: baseline; }
+    .emk-q-row .emk-mono { color: #475569; }
+    .emk-q-c { font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-q-row b { font-size: 13px; font-weight: 650; }
+
+    /* integraciones */
+    .emk-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .emk-tile { display: flex; flex-direction: column; gap: 2px; padding: 13px 14px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px rgba(10,25,47,0.07), 0 2px 6px -2px rgba(10,25,47,0.08); }
+    .emk-tile-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .emk-tile-top img { border-radius: 7px; }
+    .emk-tile b { font-size: 13px; font-weight: 650; }
+    .emk-tile small { font-size: 10.5px; color: #64748b; font-weight: 600; }
+    .emk-tile p { margin: 5px 0 0; font-size: 11px; color: #64748b; line-height: 1.45; }
+
+    /* equipo */
+    .emk-seats { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-seats b { font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+    .emk-seatbar { flex: 1; height: 5px; border-radius: 999px; background: #eef1f5; overflow: hidden; }
+    .emk-seatbar i { display: block; height: 100%; background: #0a192f; border-radius: inherit; }
+    .emk-g-team { grid-template-columns: 1fr; }
+    .emk-name-role { display: flex !important; align-items: center; gap: 7px; }
+    .emk-g-team.emk-tr { min-height: 48px; }
+    .emk-role { justify-self: start; flex-shrink: 0; font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(10,25,47,0.06); color: #334155; white-space: nowrap; }
+    .emk-role-admin { background: #0a192f; color: #fff; }
+    .emk-f-perms { right: 48px; bottom: 16px; width: 150px; padding: 10px 11px 7px; }
+    .emk-fp-head { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-fp-head > span:last-child { display: flex; flex-direction: column; }
+    .emk-fp-head b { font-size: 12px; }
+    .emk-fp-head small { font-size: 10.5px; color: #64748b; }
+    .emk-f-perms ul { list-style: none; margin: 6px 0 0; padding: 0; }
+    .emk-f-perms li { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 550; padding: 3px 0; }
+    .emk-f-perms li svg { width: 15px; height: 15px; color: #047857; flex-shrink: 0; }
+    .emk-f-perms li.off { color: #94a3b8; }
+    .emk-f-perms li.off svg { color: #94a3b8; }
+
+    /* cotización */
+    .emk-approval {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 11px 14px; border-radius: 10px; margin-bottom: 14px;
+        background: rgba(245,158,11,0.09); box-shadow: inset 0 0 0 1px rgba(245,158,11,0.28);
+    }
+    .emk-ap-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .emk-ap-title { display: flex; align-items: center; gap: 6px; font-weight: 650; font-size: 12.5px; color: #92400e; }
+    .emk-ap-title svg { width: 15px; height: 15px; }
+    .emk-ap-why { font-size: 11.5px; color: #78350f; line-height: 1.45; }
+    .emk-ap-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .emk-qhead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-qhead .emk-who b { font-size: 14px; display: flex; align-items: center; gap: 7px; }
+    .emk-ver { font-style: normal; font-size: 9.5px; font-weight: 650; color: #64748b; background: rgba(10,25,47,0.06); padding: 1px 6px; border-radius: 5px; }
+    .emk-qtotal { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .emk-qtotal small { font-size: 9.5px; font-weight: 650; letter-spacing: 0.08em; color: #64748b; }
+    .emk-qtotal b { font-size: 19px; font-weight: 650; letter-spacing: -0.03em; white-space: nowrap; }
+    .emk-g-items { grid-template-columns: minmax(0, 1.6fr) 56px 118px 118px; }
+    .emk-item { display: flex; flex-direction: column; min-width: 0; }
+    .emk-item b { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-item small { font-size: 10.5px; color: #94a3b8; }
+    .emk-price { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+    .emk-price s { font-size: 10.5px; color: #94a3b8; }
+    .emk-price b { font-weight: 600; }
+    .emk-totals { margin: 10px 0 0 auto; width: 250px; display: flex; flex-direction: column; gap: 5px; }
+    .emk-totals div { display: flex; justify-content: space-between; font-size: 11.5px; color: #64748b; }
+    .emk-totals div b { color: #0a192f; font-weight: 600; }
+    .emk-totals .grand { padding-top: 6px; border-top: 1px solid rgba(10,25,47,0.08); font-size: 13px; color: #0a192f; font-weight: 650; }
+
+    /* webhooks */
+    .emk-hook { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-hook-ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #f5f5f7; color: #475569; flex-shrink: 0; }
+    .emk-hook-ic svg { width: 13px; height: 13px; }
+    .emk-hook-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .emk-hook-info b { font-size: 12px; font-weight: 600; color: #0a192f; }
+    .emk-hook-info small { font-size: 10.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-hook-info code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10px; background: #f5f5f7; padding: 1px 5px; border-radius: 4px; color: #475569; }
+    .emk-hook-info u { text-decoration: none; color: #0a192f; font-weight: 600; margin: 0 2px; }
+    .emk-hook-info i { font-style: normal; }
+    .emk-hook-info i.err { color: #b91c1c; }
+    .emk-dels { background: #fbfbfc; }
+    .emk-del { display: grid; grid-template-columns: 8px minmax(0, 1fr) 44px 108px 70px; align-items: center; gap: 12px; height: 38px; padding: 0 18px 0 50px; border-bottom: 1px solid rgba(10,25,47,0.05); }
+    .emk-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .emk-dot.ok { background: #10b981; }
+    .emk-dot.err { background: #ef4444; }
+    .emk-del-ev { color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-del-ev em { font-style: normal; color: #b91c1c; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; font-size: 10.5px; }
+    .emk-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 5px; justify-self: start; }
+    .emk-code.ok { color: #047857; background: rgba(16,185,129,0.12); }
+    .emk-code.err { color: #b91c1c; background: rgba(239,68,68,0.1); }
+    .emk-del-meta { font-size: 10.5px; color: #64748b; white-space: nowrap; }
+    .emk-link { font-size: 11px; font-weight: 600; color: #94a3b8; justify-self: end; }
+    .emk-link.strong { color: #0a192f; }
+
+    /* sso */
+    .emk-conn { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); margin-bottom: 16px; }
+    .emk-conn img { border-radius: 7px; }
+    .emk-conn > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .emk-conn b { font-size: 12.5px; font-weight: 600; }
+    .emk-conn small { color: #64748b; }
+    .emk-dom { display: flex; align-items: center; justify-content: space-between; height: 34px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .emk-switch { display: flex; align-items: flex-start; gap: 11px; }
+    .emk-switch > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+    .emk-switch b { font-size: 12px; font-weight: 600; }
+    .emk-switch small { font-size: 11px; color: #64748b; line-height: 1.45; max-width: 460px; }
+    .emk-s-sso .emk-dom, .emk-s-sso .emk-switch { max-width: 300px; }
+    .emk-f-sec { left: 352px; top: 176px; width: 262px; padding: 13px 14px; display: flex; flex-direction: column; gap: 11px; }
+    .emk-fs-title { font-size: 12px; font-weight: 650; padding-bottom: 9px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-switch-sm b { font-size: 11.5px; line-height: 1.35; }
+    .emk-fs-kv { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #475569; }
+    .emk-select { height: 26px; display: inline-flex; align-items: center; padding: 0 9px; border-radius: 7px; background: #f5f5f7; color: #0a192f; font-weight: 600; font-size: 11px; white-space: nowrap; }
+
+    /* cobranza + desempeño */
+    .emk-kpis { display: grid; margin-bottom: 14px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-kpis-3 { grid-template-columns: repeat(3, 1fr); }
+    .emk-kpis-4 { grid-template-columns: repeat(4, 1fr); }
+    .emk-kpis > div { display: flex; flex-direction: column; gap: 3px; padding: 2px 14px 14px 0; min-width: 0; }
+    .emk-kpis > div + div { padding-left: 14px; border-left: 1px solid rgba(10,25,47,0.07); }
+    .emk-kpis span { font-size: 9.5px; font-weight: 650; letter-spacing: 0.05em; color: #64748b; line-height: 1.3; min-height: 2.6em; }
+    .emk-kpis-3 span { min-height: 0; }
+    .emk-kpis b { font-size: 18px; font-weight: 650; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-kpis b.danger { color: #b91c1c; }
+    .emk-kpis b.warn { color: #b45309; }
+    .emk-kpis b.ok { color: #047857; }
+    .emk-kpis small { font-size: 10.5px; color: #64748b; line-height: 1.35; }
+    .emk-aging { margin-bottom: 14px; }
+    .emk-aging-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 650; margin-bottom: 8px; }
+    .emk-segbar { display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; }
+    .emk-segbar i { display: block; }
+    .emk-legend { display: flex; gap: 16px; margin-top: 7px; font-size: 10.5px; color: #64748b; white-space: nowrap; }
+    .emk-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .emk-legend i { width: 7px; height: 7px; border-radius: 2px; }
+    .emk-legend b { color: #0a192f; font-weight: 600; }
+    .emk-tablehead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .emk-tablehead > b { font-size: 12.5px; font-weight: 650; }
+    .emk-chips { display: flex; gap: 5px; }
+    .emk-chips span { font-size: 10.5px; font-weight: 600; color: #64748b; padding: 3px 9px; border-radius: 999px; background: #f5f5f7; white-space: nowrap; }
+    .emk-chips span.on { background: #0a192f; color: #fff; }
+    .emk-g-ar { grid-template-columns: minmax(0, 1.6fr) 70px minmax(0, 1.5fr) 88px; }
+    .emk-folio { color: #475569; }
+    .emk-states { display: flex; gap: 4px; flex-wrap: nowrap; }
+    .emk-g-rank { grid-template-columns: minmax(0, 1.35fr) 36px 36px minmax(0, 1fr) 82px 72px 34px; gap: 10px; }
+    .emk-rank { width: 14px; font-size: 11px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
+    .emk-barcell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .emk-barcell b { font-weight: 600; white-space: nowrap; font-size: 11.5px; }
+    .emk-rbar { flex: 1; height: 6px; border-radius: 999px; background: #f1f5f9; overflow: hidden; min-width: 30px; }
+    .emk-rbar i { display: block; height: 100%; background: #cbd5e1; border-radius: inherit; }
+    .emk-rbar i.top { background: #0a192f; }
+
+    /* divisas */
+    .emk-s-divisas .emk-win { left: 262px; }
+    .emk-s-divisas .emk-qtotal b { font-size: 16px; }
+    .emk-s-divisas .emk-qhead .emk-who b { font-size: 13px; }
+    .emk-s-divisas .emk-g-items { grid-template-columns: minmax(0, 1fr) 40px 112px; }
+    .emk-fx { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed rgba(10,25,47,0.12); font-size: 11.5px; color: #475569; }
+    .emk-fx svg { width: 16px; height: 16px; color: #0a192f; flex-shrink: 0; }
+    .emk-fx b { color: #0a192f; font-weight: 650; white-space: nowrap; }
+    .emk-fx > span { display: flex; flex-direction: column; gap: 2px; }
+    .emk-f-orgs { left: 0; top: 22px; width: 244px; padding: 6px; }
+    .emk-org-btn { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 9px; background: #f5f5f7; }
+    .emk-org-btn > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .emk-org-btn small { font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; color: #64748b; text-transform: uppercase; }
+    .emk-org-btn b { font-size: 12px; font-weight: 650; }
+    .emk-org-btn svg { width: 15px; height: 15px; color: #64748b; }
+    .emk-org-av { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: #0a192f; color: #fff; font-size: 12px; font-weight: 650; flex-shrink: 0; }
+    .emk-org-av.sm { width: 24px; height: 24px; border-radius: 7px; font-size: 10.5px; background: #e8ecf1; color: #334155; }
+    .emk-org-menu { padding: 8px 2px 2px; }
+    .emk-org-lbl { display: block; font-size: 10px; font-weight: 650; color: #94a3b8; padding: 2px 8px 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .emk-org-item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 8px; }
+    .emk-org-item > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .emk-org-item b { font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .emk-org-item small { font-size: 10.5px; color: #64748b; }
+    .emk-org-item.on { background: rgba(10,25,47,0.05); }
+    .emk-org-item.on .emk-org-av.sm { background: #0a192f; color: #fff; }
+    .emk-check { width: 15px; height: 15px; color: #0a192f; }
+    .emk-org-act { display: flex; align-items: center; gap: 9px; margin-top: 4px; padding: 9px 8px 6px; border-top: 1px solid rgba(10,25,47,0.07); font-size: 11.5px; font-weight: 600; color: #334155; }
+    .emk-org-act svg { width: 20px; height: 20px; color: #475569; }
+
+    /* evidencia */
+    .emk-audit { display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: auto auto; column-gap: 12px; row-gap: 2px; padding: 10px 18px; border-bottom: 1px solid rgba(10,25,47,0.05); }
+    .emk-audit-a { color: #0a192f; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-audit-d { color: #475569; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emk-audit-m { grid-column: 1 / -1; font-size: 10.5px; color: #94a3b8; }
+    .emk-f-stamp { left: -26px; bottom: 58px; width: 300px; padding: 14px; }
+    .emk-st-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding-bottom: 11px; margin-bottom: 11px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .emk-st-top > span:first-child { display: flex; flex-direction: column; gap: 2px; }
+    .emk-st-top small { font-size: 10.5px; color: #64748b; }
+    .emk-st-top b { font-size: 16px; font-weight: 650; letter-spacing: -0.03em; }
+    .emk-stamp { padding: 10px 11px; border-radius: 8px; background: #f7faf8; box-shadow: inset 0 0 0 1px rgba(5,150,105,0.18); font-size: 10.5px; color: #475569; }
+    .emk-st-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 650; color: #047857; margin-bottom: 7px; }
+    .emk-st-head svg { width: 14px; height: 14px; }
+    .emk-st-row { display: flex; flex-direction: column; gap: 1px; margin-bottom: 5px; line-height: 1.4; }
+    .emk-st-row strong { color: #334155; font-weight: 600; }
+    .emk-hash { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 9.5px; word-break: break-all; color: #475569; }
+
+    /* headers (tarjeta lateral oscura) */
+    .emk-term { position: absolute; inset: 0; border-radius: 10px 0 0 0; background: #0d1830; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07); overflow: hidden; }
+    .emk-term-bar { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 10.5px; color: rgba(226,232,240,0.7); white-space: nowrap; }
+    .emk-term pre { margin: 0; padding: 10px 12px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 10px; line-height: 1.75; color: #cbd5e1; white-space: pre; }
+    .emk-term .k { color: #93c5fd; font-weight: 600; }
+    .emk-term .h { color: #94a3b8; }
+
+    @media (max-width: 720px) {
+        .emk-f-stamp { left: -10px; }
+        .emk-states { flex-wrap: wrap; }
+        .emk-s-divisas .emk-win { left: 0; }
+        .emk-f-orgs { left: 120px; top: 440px; }
+    }
+</style>

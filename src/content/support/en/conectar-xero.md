@@ -20,12 +20,13 @@ With Xero connected, every invoice you issue in Cord shows up in your accounting
 
 - **The contact**, if it does not exist, looking it up by email first so it is not duplicated. Once found, it remembers it.
 - **The sales invoice** (`ACCREC`) in **DRAFT** status, with its date, due date, currency, Cord's invoice number in the reference, and one line per item with the negotiated price and its discount already applied.
-- Amounts are declared **tax exclusive**, because Cord already calculated tax per line on its side and we do not want Xero applying its default tax on top.
+- Amounts are declared **tax exclusive**, and each line carries the Xero rate that matches Cord's and the tax Cord already computed. If that rate does not exist in Xero, the invoice is not sent and the card tells you which one to create.
 
 ### What it does not do yet
 
 - **It does not approve the invoice.** That is deliberate: you approve it in Xero.
-- **It does not send payments** or map your tax codes. Check the tax on the first invoice before approving it.
+- **It does not send payments.** Record the payment in Xero as usual.
+- **It does not send invoices with withholdings.** Xero does not record them on a sales invoice.
 - **Nothing flows from Xero into Cord.** This runs one way.
 
 ### If something goes wrong
