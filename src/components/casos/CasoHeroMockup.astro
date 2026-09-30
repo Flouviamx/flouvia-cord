@@ -234,6 +234,10 @@ const SF_EVENTS = [
                                 <span class="chm-mg">{l.m}%</span>
                             </div>
                         ))}
+                        <div class="chm-add">
+                            <span class="chm-add-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Busca un producto de tu catálogo… (nombre o SKU)</span>
+                            <span class="chm-add-b">+ Línea libre</span>
+                        </div>
                     </div>
                 )}
 
@@ -273,6 +277,8 @@ const SF_EVENTS = [
                             <span><em>IVA 16%</em><b class="editorial">{money(SF.iva)}</b></span>
                             <span class="g"><em>Total</em><b class="editorial">{money(SF.total)}<i class="chm-cur">MXN</i></b></span>
                         </div>
+                        <div class="chm-sec-t chm-notes-t">Notas</div>
+                        <p class="chm-notes">Anticipo del 40% al aprobar; el saldo se cubre a 30 días. Cada fase se entrega con demo en ambiente de pruebas y minuta firmada. Incluye 30 días de garantía después del lanzamiento.</p>
                     </div>
                 )}
             </div>
@@ -392,6 +398,7 @@ const SF_EVENTS = [
        app (resumen del editor, actividad) o cuando a la izquierda taparía los
        conceptos. */
     .chm-float.at-r { left: auto; right: -34px; bottom: -6px; }
+    .chm-float-sum.at-r { right: -52px; }
     @keyframes chm-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
     @keyframes chm-drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
     @media (prefers-reduced-motion: reduce) {
@@ -494,7 +501,7 @@ const SF_EVENTS = [
     .chm-pay { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 13px; }
     .chm-pay-amt { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .chm-pay-amt small { color: #9ca3af; letter-spacing: 1px; white-space: nowrap; }
-    .chm-pay-amt b { font-size: 17px; line-height: 1; color: var(--brand); white-space: nowrap; }
+    .chm-pay-amt b { font-size: 15px; line-height: 1; color: var(--brand); white-space: nowrap; }
     .chm-pay-amt b i { font-style: normal; font-size: 8.5px; color: #9ca3af; letter-spacing: 0; }
     .chm-pay-btn {
         display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -642,7 +649,7 @@ const SF_EVENTS = [
     .chm-mg { font-size: 8.5px; font-weight: 600; text-align: center; border-radius: 4px; padding: 2px 3px; color: #059669; background: rgba(16,185,129,0.1); }
 
     /* Panel "Revisa y envía" (.ed-summary) */
-    .chm-float-sum { width: 232px; padding: 15px; display: flex; flex-direction: column; gap: 7px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; color: var(--tx); }
+    .chm-float-sum { width: 216px; padding: 15px; display: flex; flex-direction: column; gap: 7px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; color: var(--tx); }
     .chm-sum-h { font-size: 11.5px; font-weight: 700; letter-spacing: -0.02em; padding-bottom: 7px; border-bottom: 1px solid var(--bd); }
     .chm-sum-c { font-size: 9px; color: var(--mut); }
     .chm-sum-l { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; color: var(--mut); }
@@ -701,6 +708,17 @@ const SF_EVENTS = [
     .chm-dt b { color: var(--n); font-size: 10.5px; }
     .chm-dt .g { border-top: 1px solid var(--bd); padding-top: 5px; font-weight: 700; color: var(--tx); }
     .chm-dt .g b { font-size: 14px; }
+
+    .chm-notes-t { margin-top: 18px; }
+    .chm-notes { margin: 8px 0 0; font-size: 9.5px; line-height: 1.55; color: var(--tx); max-width: 44ch; }
+    .chm-add { display: flex; gap: 6px; margin-top: 10px; }
+    .chm-add-s {
+        flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 8px;
+        background: #ffffff; box-shadow: inset 0 0 0 1px var(--bd); font-size: 9.5px; color: #99a2af;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chm-add-s svg { width: 11px; height: 11px; color: var(--mut); }
+    .chm-add-b { flex: none; padding: 7px 11px; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px var(--bd); font-size: 9.5px; font-weight: 600; color: var(--tx); }
 
     /* Actividad (.d-timeline) */
     .chm-float-tl { width: 272px; padding: 14px 15px 15px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; color: var(--tx); }

@@ -13,7 +13,6 @@ const HERO_PAL = { base: '#F6F9FC', c1: '#93C5FD', c2: '#60A5FA', c3: '#3B82F6',
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -129,39 +128,35 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                             <a href="/sign-up" class="uc-link-arrow">Controla tu cartera de crédito <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <div class="cmk-nav-l">
-                                            <span class="cmk-nav-title">Crédito · Distribuidora El Sol</span>
-                                        </div>
-                                        <span class="cmk-badge cmk-b-amber">57% utilizado</span>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-kv" style="border-bottom:none; padding-top:0;">
-                                            <span class="cmk-k">Crédito utilizado</span>
-                                            <span class="cmk-v editorial">$85,000</span>
-                                        </div>
-                                        <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:2px 0 6px;">
-                                            <div style="width:57%; height:100%; background:linear-gradient(90deg,#1e293b,#0f172a); border-radius:10px;"></div>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-k">Límite autorizado · Net 30</span>
-                                            <span class="cmk-v editorial">$150,000 MXN</span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-k">Saldo vencido</span>
-                                            <span class="cmk-badge cmk-b-red">$12,400 · 8 días</span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-k">Pedido nuevo PO-8931</span>
-                                            <span class="cmk-badge cmk-b-amber">Retenido</span>
-                                        </div>
-                                        <div class="cmk-alert cmk-alert-amber" style="margin-top:8px;">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                            Pedido retenido por saldo vencido. Tu equipo recibió la alerta para revisarlo.
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/clientes/[id]: nivel Distribuidor, KPIs y el bloque
+                                 Crédito con el aviso de saldo por encima del límite. -->
+                            <div class="ucm-shot">
+                                <div class="ucm-dh">
+                                    <span class="ucm-dh-av dist">DE</span>
+                                    <span class="ucm-dh-who">
+                                        <span class="ucm-badges"><span class="ucm-tier">Distribuidor</span><span class="ucm-fis">Datos fiscales completos</span></span>
+                                        <small>Raúl Mendoza · compras@elzarco.mx · 33 1845 2290</small>
+                                    </span>
+                                    <span class="ucm-dh-tot"><small>Cerrado</small><b class="editorial">$1,284,650<i class="ucm-cur">MXN</i></b></span>
+                                </div>
+                                <div class="ucm-card ucm-ckpis">
+                                    <span><small>Cotizaciones</small><b class="editorial">18</b></span>
+                                    <span><small>En pipeline</small><b class="editorial">$248,234<i class="ucm-cur">MXN</i></b></span>
+                                    <span><small>Cobrado</small><b class="editorial">$960,650<i class="ucm-cur">MXN</i></b></span>
+                                    <span><small>Ticket promedio</small><b class="editorial">$71,370<i class="ucm-cur">MXN</i></b></span>
+                                </div>
+                                <div class="ucm-card ucm-credit">
+                                    <div class="ucm-credit-h"><b>Crédito</b><span>108% usado</span></div>
+                                    <div class="ucm-credit-track"><i style="width:100%"></i></div>
+                                    <div class="ucm-credit-n"><b class="editorial">$324,000<i class="ucm-cur">MXN</i></b><span>Saldo abierto · $300,000 MXN crédito</span></div>
+                                    <p class="ucm-credit-w">Saldo abierto por encima del límite de crédito</p>
+                                </div>
+                                <div class="ucm-sec ucm-sec-gap">Estado de cuenta</div>
+                                <div class="ucm-aging">
+                                    <span><small>Corriente</small><b class="editorial">$165,000</b></span>
+                                    <span class="late"><small>1–30 días</small><b class="editorial">$124,300</b></span>
+                                    <span class="late"><small>31–60 días</small><b class="editorial">$34,700</b></span>
+                                    <span class="empty"><small>61–90 días</small><b class="editorial">$0</b></span>
                                 </div>
                             </div>
                         </div>
@@ -175,41 +170,20 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                             <a href="/sign-up" class="uc-link-arrow">Mejora tu ciclo de cobro <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <span class="cmk-nav-title">Cobranza</span>
-                                        <div class="cmk-seg"><span class="on">Aging</span><span>Por cliente</span></div>
-                                    </div>
-                                    <div class="cmk-th" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span>Cliente</span><span class="cmk-r">Saldo</span><span>Seguimiento</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-2">ES</div> Dist. El Sol</span>
-                                        <span class="cmk-amt editorial">$45,200</span>
-                                        <span class="cmk-badge cmk-b-red">Recordatorio · 3 días</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1">GN</div> Grupo Norteño</span>
-                                        <span class="cmk-amt editorial">$12,500</span>
-                                        <span class="cmk-badge cmk-b-amber">WhatsApp · mañana</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-3">FM</div> Ferre Mayoreo</span>
-                                        <span class="cmk-amt editorial">$8,900</span>
-                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px; border-bottom:none;">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1" style="background:#475569">AB</div> Abastos Bajío</span>
-                                        <span class="cmk-amt editorial">$21,300</span>
-                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
-                                    </div>
-                                    <div class="cmk-body" style="padding-top:12px;">
-                                        <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; padding-top:12px;">
-                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">DSO promedio</span>
-                                            <span class="cmk-badge cmk-b-green">34 días · saludable</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/cobranza: KPIs de hoy + cuentas por cobrar -->
+                            <div class="ucm-shot">
+                                <div class="ucm-ph">
+                                    <div><h4 class="ucm-ph-t">Cobranza</h4></div>
+                                    <span class="ucm-tabs"><span class="on">Cobranza</span><span>Cobranza con IA</span></span>
+                                </div>
+                                <div class="ucm-kpis4">
+                                    <div class="ucm-card ucm-kpi"><span class="ucm-kl">VENCIDO</span><b class="editorial ucm-bad">$184,300<i class="ucm-cur">MXN</i></b><small>3 cuenta(s) · toca para filtrar</small></div>
+                                    <div class="ucm-card ucm-kpi"><span class="ucm-kl">VENCE ESTA SEMANA</span><b class="editorial">$96,580<i class="ucm-cur">MXN</i></b><small>2 cuenta(s) en los próximos 7 días</small></div>
+                                </div>
+                                <div class="ucm-card">
+                                    <div class="ucm-sec ucm-sec-row"><span>Cuentas por cobrar</span><span class="ucm-chips"><span class="on">Todas</span><span>Vencidas</span><span>Con promesa</span><span>Sin gestión</span></span></div>
+                                    <div class="ucm-th ucm-cz"><span>Cliente</span><span>Folio</span><span>Vence</span><span>Estado</span><span class="ucm-r">Saldo</span></div>
+                                    <div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">GN</i>Grupo Norteño</span><span class="ucm-folio">COT-0131</span><span class="ucm-date">12 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 18 d</span></span><span class="editorial ucm-r ucm-amt">$96,420<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">FM</i>Ferre Mayoreo Bajío</span><span class="ucm-folio">COT-0138</span><span class="ucm-date">22 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 8 d</span></span><span class="editorial ucm-r ucm-amt">$52,180<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">DE</i>Distribuidora El Zarco</span><span class="ucm-folio">COT-0142</span><span class="ucm-date">26 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 4 d</span><span class="ucm-e prom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Promete 3 oct</span></span><span class="editorial ucm-r ucm-amt">$35,700<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">AC</i>Abastos del Centro</span><span class="ucm-folio">COT-0145</span><span class="ucm-date">3 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 3 d</span></span><span class="editorial ucm-r ucm-amt">$61,240<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">MC</i>Materiales Cárdenas</span><span class="ucm-folio">COT-0147</span><span class="ucm-date">6 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 6 d</span></span><span class="editorial ucm-r ucm-amt">$35,340<i class="ucm-cur">MXN</i></span></div>
                                 </div>
                             </div>
                         </div>
@@ -734,16 +708,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
             inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
-    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
-       para que los badges y montos que cuentan la historia queden visibles */
-    .uc-bc-mockup .cmk-shot {
-        top: 1.8rem;
-        left: 1.8rem;
-        right: -14px;
-        bottom: -40px;
-        width: auto;
-    }
-
     .uc-mockup-wrapper {
         position: relative;
         background: #f5f5f7;
@@ -1044,7 +1008,8 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         transform: translateX(4px);
     }
 
-    /* Mockups dentro de bento cards */
+    /* Mockups dentro de bento cards: el lienzo gris ES el de la app; la calca
+       (.ucm-shot) se recorta y se desvanece abajo. */
     .uc-bc-mockup {
         background: #f5f5f7;
         border-radius: 16px;
@@ -1053,9 +1018,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(10,37,64,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
     }
     .cord-bg-1 {
@@ -1442,6 +1404,151 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         transform: scale(1.05);
     }
     
+</style>
+
+<style>
+    /* ════════ Calcas de producto en las tarjetas (ucm-*) ════════
+       Cada .uc-bc-mockup es el lienzo gris de la app (#f5f5f7) y contiene la
+       calca de UNA pantalla real de Cord a ~75% de escala: mismas columnas,
+       etiquetas de src/i18n/app.ts y pills de estado. El corte inferior se
+       desvanece como un screenshot recortado (igual que .ehs-shot). */
+    .ucm-shot {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: absolute;
+        inset: 0;
+        padding: 22px 24px 0;
+        overflow: hidden;
+        text-align: left;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+    }
+    .ucm-shot.is-late {
+        -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+    }
+    .ucm-shot svg { display: block; flex: none; }
+    .ucm-shot .ucm-r { text-align: right; justify-content: flex-end; }
+    .ucm-cur { font-style: normal; font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; color: var(--mut); margin-left: 3px; }
+    .ucm-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .ucm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .ucm-pill {
+        display: inline-flex; align-items: center; gap: 4px; justify-self: start;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .ucm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .ucm-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.03), 0 16px 34px -24px rgba(10, 25, 47, 0.2);
+    }
+    .ucm-sec { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .ucm-sec-gap { margin-top: 16px; }
+    .ucm-th, .ucm-tr { display: grid; gap: 9px; align-items: center; }
+    .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
+    .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+    .ucm-tr:last-child { border-bottom: none; }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); }
+    .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
+    .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
+
+    /* /app/clientes/[id] (d-head, KPIs, crédito, cotizaciones, qué le vendes) */
+    .ucm-dh { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--bd); }
+    .ucm-dh-av {
+        width: 34px; height: 34px; flex: none; border-radius: 9px; display: grid; place-items: center;
+        background: var(--n); color: #fff; font-size: 10.5px; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55);
+    }
+    .ucm-dh-av.dist { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55), 0 0 0 2px rgba(10,25,47,0.3); }
+    .ucm-dh-who { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .ucm-dh-who small { font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-dh-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .ucm-badges { display: flex; gap: 5px; }
+    .ucm-tier { font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 100px; color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .ucm-fis { font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px; color: #10b981; background: rgba(16,185,129,0.12); }
+    .ucm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+    .ucm-dh-tot small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #99a2af; }
+    .ucm-dh-tot b { font-size: 17px; color: var(--n); line-height: 1.15; white-space: nowrap; }
+    .ucm-ckpis { display: grid; grid-template-columns: 0.7fr 1fr 1fr 1fr; padding: 10px 6px; margin-bottom: 10px; }
+    .ucm-ckpis > span { display: flex; flex-direction: column; gap: 4px; padding: 0 8px; border-left: 1px solid var(--bd); min-width: 0; }
+    .ucm-ckpis > span:first-child { border-left: none; }
+    .ucm-ckpis small { font-size: 6.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mut); opacity: 0.75; white-space: nowrap; }
+    .ucm-ckpis b { font-size: 12px; letter-spacing: -0.025em; white-space: nowrap; }
+    .ucm-credit-h { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--bd); }
+    .ucm-credit-h b { font-size: 11px; font-weight: 700; }
+    .ucm-credit-h span { font-size: 9.5px; font-weight: 600; color: #ef4444; }
+    .ucm-credit-track { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.05); overflow: hidden; margin-bottom: 7px; }
+    .ucm-credit-track i { display: block; height: 100%; border-radius: 100px; background: #ef4444; }
+    .ucm-credit-n { display: flex; align-items: baseline; gap: 7px; }
+    .ucm-credit-n b { font-size: 12px; }
+    .ucm-credit-n span { font-size: 9.5px; color: var(--mut); }
+    .ucm-credit-w { margin: 6px 0 0; font-size: 9.5px; color: #ef4444; }
+    .ucm-aging { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 8px; background: var(--bd); border-radius: 10px; overflow: hidden; }
+    .ucm-aging span { display: flex; flex-direction: column; gap: 2px; padding: 8px 9px; background: var(--soft); }
+    .ucm-aging small { font-size: 8px; color: var(--mut); }
+    .ucm-aging b { font-size: 10.5px; }
+    .ucm-aging .late b { color: #b45309; }
+    .ucm-aging .empty b { color: var(--mut); opacity: 0.6; }
+    .ucm-qrow { display: grid; grid-template-columns: 62px 70px minmax(0, 1fr) 72px 12px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-qfolio { font-size: 10.5px; font-weight: 600; }
+    .ucm-qrow .editorial { font-size: 11px; white-space: nowrap; }
+    .ucm-chev { width: 10px !important; height: 10px !important; color: #c4cad3; }
+    .ucm-prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-prow span { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-prow small { font-size: 9px; color: var(--mut); }
+    .ucm-prow b { font-size: 10.5px; white-space: nowrap; }
+
+    /* comercializadoras · /app/cobranza (KPIs + cuentas por cobrar) */
+    .ucm-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: rgba(10,25,47,0.06); }
+    .ucm-tabs span { padding: 5px 10px; border-radius: 8px; font-size: 9.5px; font-weight: 600; color: var(--mut); white-space: nowrap; }
+    .ucm-tabs span.on { background: #fff; color: var(--tx); box-shadow: 0 1px 2px rgba(10,25,47,0.13); }
+    .ucm-kpis4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .ucm-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ucm-kl { font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: var(--mut); }
+    .ucm-kpi b { font-size: 18px; letter-spacing: -0.03em; line-height: 1.15; white-space: nowrap; }
+    .ucm-kpi b.ucm-bad { color: #dc2626; }
+    .ucm-kpi small { font-size: 8.5px; color: var(--mut); }
+    .ucm-sec-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ucm-chips { display: flex; gap: 3px; }
+    .ucm-chips span { padding: 3px 7px; border-radius: 999px; background: var(--soft); font-size: 8px; font-weight: 650; color: var(--mut); white-space: nowrap; }
+    .ucm-chips span.on { background: var(--n); color: #fff; }
+    .ucm-cz { grid-template-columns: minmax(0, 1.75fr) 46px 54px minmax(0, 1fr) 72px; }
+    .ucm-av { width: 20px; height: 20px; flex: none; border-radius: 6px; display: grid; place-items: center; background: var(--n); color: #fff; font-style: normal; font-size: 6.5px; font-weight: 800; }
+    .ucm-est { display: flex; flex-wrap: wrap; gap: 3px; }
+    .ucm-e { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; font-weight: 700; padding: 3px 6px; border-radius: 100px; white-space: nowrap; }
+    .ucm-e.over { color: #ef4444; background: rgba(239,68,68,0.1); }
+    .ucm-e.due { color: #2563eb; background: rgba(59,130,246,0.1); }
+    .ucm-e.prom { color: #7c5cff; background: rgba(124,92,255,0.1); }
+    .ucm-e svg { width: 8px; height: 8px; }
+
+    @media (max-width: 600px) {
+        .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }
+        .ucm-shot.ucm-q { padding: 0; }
+        .ucm-qcard { margin-left: 10px; margin-right: 10px; padding-left: 14px; padding-right: 14px; }
+        .ucm-qi-h, .ucm-qi-r { grid-template-columns: minmax(0, 1.7fr) 0.8fr 1fr; }
+        .ucm-qi-h > :nth-child(3), .ucm-qi-r > :nth-child(3) { display: none; }
+        .ucm-ckpis { grid-template-columns: 0.6fr 1fr 1fr; }
+        .ucm-ckpis > span:nth-child(4) { display: none; }
+        .ucm-dh-tot b { font-size: 13px; }
+        .ucm-qrow { grid-template-columns: 56px 64px minmax(0, 1fr) 12px; }
+        .ucm-qrow > .ucm-date { display: none; }
+        .ucm-aging { grid-template-columns: repeat(2, 1fr); }
+        .ucm-cz { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) 70px; }
+        .ucm-cz > :nth-child(2), .ucm-cz > :nth-child(3) { display: none; }
+        .ucm-chips { display: none; }
+        .ucm-kpi b { font-size: 14px; }
+    }
 </style>
 
 <script>

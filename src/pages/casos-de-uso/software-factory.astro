@@ -13,7 +13,6 @@ const HERO_PAL = { base: '#F6F9FC', c1: '#C4B5FD', c2: '#A78BFA', c3: '#7C3AED',
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import '../../styles/mockups.css';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -129,37 +128,21 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                             <a href="/sign-up" class="uc-link-arrow">Crear propuesta por hitos <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <div class="cmk-nav-l">
-                                            <span class="cmk-nav-title">Hito 2 · Core Backend</span>
-                                        </div>
-                                        <span class="cmk-badge cmk-b-blue">$18,000 MXN</span>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Entregables de la fase</div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #42 · API Auth</span>
-                                            <span class="cmk-badge cmk-b-green">Merged</span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #45 · DB Schema</span>
-                                            <span class="cmk-badge cmk-b-green">Merged</span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">Staging · aprobación del cliente</span>
-                                            <span class="cmk-badge cmk-b-amber">Pendiente</span>
-                                        </div>
-                                        <div style="display:flex; gap:10px; margin-top:12px">
-                                            <span class="cmk-cta cmk-cta-solid" style="flex:1; justify-content:center">Enviar cotización del hito</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:12px;">
-                                            <span class="cmk-dot cmk-dot-blue"></span>
-                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Al aprobar el hito: firma digital + link de pago + CFDI</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/clientes/[id]: una cotización por fase del proyecto,
+                                 cada una con su propio estado ("Cotizaciones" y "Qué le vendes"). -->
+                            <div class="ucm-shot">
+                                <div class="ucm-dh">
+                                    <span class="ucm-dh-av">TA</span>
+                                    <span class="ucm-dh-who">
+                                        <b class="ucm-dh-name">Transportes Arrieta</b>
+                                        <small>Mónica Arrieta · ti@arrieta.mx · 81 2210 4476</small>
+                                    </span>
+                                    <span class="ucm-dh-tot"><small>Cerrado</small><b class="editorial">$301,600<i class="ucm-cur">MXN</i></b></span>
                                 </div>
+                                <div class="ucm-sec">Cotizaciones</div>
+                                <div class="ucm-qrow"><span class="ucm-qfolio">COT-0203</span><span class="ucm-pill" style="color:#2563eb;background:rgba(37,99,235,0.09)">Enviada</span><span class="editorial ucm-r">$162,400<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">29 sep 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div><div class="ucm-qrow"><span class="ucm-qfolio">COT-0202</span><span class="ucm-pill" style="color:#059669;background:rgba(16,185,129,0.1)">Aprobada</span><span class="editorial ucm-r">$208,800<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">1 sep 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div><div class="ucm-qrow"><span class="ucm-qfolio">COT-0201</span><span class="ucm-pill" style="color:#059669;background:rgba(16,185,129,0.14)">Pagada</span><span class="editorial ucm-r">$92,800<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">4 ago 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+                                <div class="ucm-sec ucm-sec-gap">Qué le vendes</div>
+                                <div class="ucm-prow"><span>Fase 3 · App móvil y lanzamiento</span><small>1×</small><b class="editorial">$140,000<i class="ucm-cur">MXN</i></b></div><div class="ucm-prow"><span>Fase 2 · Core backend y API</span><small>1×</small><b class="editorial">$180,000<i class="ucm-cur">MXN</i></b></div><div class="ucm-prow"><span>Fase 1 · Setup e infraestructura</span><small>1×</small><b class="editorial">$80,000<i class="ucm-cur">MXN</i></b></div>
                             </div>
                         </div>
                     </div>
@@ -172,33 +155,16 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                             <a href="/sign-up" class="uc-link-arrow">Genera propuestas técnicas <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-chrome">
-                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> buildship.cord.app/q/mvp2</div>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Módulos adicionales de la propuesta</div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="flex-direction:column; align-items:flex-start; gap:2px;">Infraestructura AWS + CI/CD<span class="cmk-t2" style="font-weight:500;">Setup inicial y pipelines</span></span>
-                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial">+$2,500</span><span class="cmk-toggle"></span></span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="color:#64748b; flex-direction:column; align-items:flex-start; gap:2px;">Soporte extendido · SLA 99%<span class="cmk-t2" style="font-weight:500;">Respuesta en menos de 2 h</span></span>
-                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial" style="color:#94a3b8;">+$800/mes</span><span class="cmk-toggle off"></span></span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con módulos</span>
-                                            <span class="cmk-v editorial" style="font-size:16px;">$28,700 MXN</span>
-                                        </div>
-                                        <div style="display:flex; gap:10px; margin-top:12px">
-                                            <span class="cmk-cta cmk-cta-solid" style="flex:1.4; justify-content:center">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
-                                                Firmar y pagar
-                                            </span>
-                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">Descargar PDF</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /q/[token] (QuoteCard): el cliente desmarca una línea y aprueba
+                                 solo lo que quiere; la nota y el total se recalculan. -->
+                            <div class="ucm-shot ucm-q is-late" style="--brand:#312e81">
+                                <div class="ucm-url"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>cordhq.app/q/c87399c8ec8eb69d80af3e05541e06f2</span></div>
+                                <div class="ucm-qcard ucm-qcard-cut">
+                                    <div class="ucm-qi-h"><span>CONCEPTO</span><span>CANT.</span><span class="ucm-r">P. UNIT.</span><span class="ucm-r">IMPORTE</span></div>
+                                    <div class="ucm-qi-r"><span class="ucm-qi-n"><i class="ucm-pick on"></i><span>App móvil iOS y Android</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$186,000.00</span><span class="editorial ucm-r">$186,000.00</span></div><div class="ucm-qi-r"><span class="ucm-qi-n"><i class="ucm-pick on"></i><span>Panel de administración web</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$94,000.00</span><span class="editorial ucm-r">$94,000.00</span></div><div class="ucm-qi-r off"><span class="ucm-qi-n"><i class="ucm-pick"></i><span>Soporte extendido 24/7 (12 meses)</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$72,000.00</span><span class="editorial ucm-r">$72,000.00</span></div>
+                                    <div class="ucm-qt"><span><em>Subtotal</em><b class="editorial">$280,000.00</b></span><span><em>IVA 16%</em><b class="editorial">$44,800.00</b></span><span class="g"><em>Total</em><b class="editorial">$324,800.00</b></span></div>
+                                    <div class="ucm-partial">Aprobarás <b>2 de 3 líneas</b> · Total a aprobar: <b class="editorial">$324,800.00 MXN</b></div>
+                                    <span class="ucm-cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Aprobar cotización</span>
                                 </div>
                             </div>
                         </div>
@@ -714,16 +680,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
             inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
-    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
-       para que los badges y montos que cuentan la historia queden visibles */
-    .uc-bc-mockup .cmk-shot {
-        top: 1.8rem;
-        left: 1.8rem;
-        right: -14px;
-        bottom: -40px;
-        width: auto;
-    }
-
     .uc-mockup-wrapper {
         position: relative;
         background: #f5f5f7;
@@ -994,7 +950,8 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         transform: translateX(4px);
     }
 
-    /* Mockups dentro de bento cards */
+    /* Mockups dentro de bento cards: el lienzo gris ES el de la app; la calca
+       (.ucm-shot) se recorta y se desvanece abajo. */
     .uc-bc-mockup {
         background: #f5f5f7;
         border-radius: 16px;
@@ -1003,9 +960,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(10,37,64,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
     }
     .cord-bg-1 {
@@ -1392,6 +1346,183 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         transform: scale(1.05);
     }
     
+</style>
+
+<style>
+    /* ════════ Calcas de producto en las tarjetas (ucm-*) ════════
+       Cada .uc-bc-mockup es el lienzo gris de la app (#f5f5f7) y contiene la
+       calca de UNA pantalla real de Cord a ~75% de escala: mismas columnas,
+       etiquetas de src/i18n/app.ts y pills de estado. El corte inferior se
+       desvanece como un screenshot recortado (igual que .ehs-shot). */
+    .ucm-shot {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: absolute;
+        inset: 0;
+        padding: 22px 24px 0;
+        overflow: hidden;
+        text-align: left;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+    }
+    .ucm-shot.is-late {
+        -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+    }
+    .ucm-shot svg { display: block; flex: none; }
+    .ucm-shot .ucm-r { text-align: right; justify-content: flex-end; }
+    .ucm-cur { font-style: normal; font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; color: var(--mut); margin-left: 3px; }
+    .ucm-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .ucm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .ucm-pill {
+        display: inline-flex; align-items: center; gap: 4px; justify-self: start;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .ucm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .ucm-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.03), 0 16px 34px -24px rgba(10, 25, 47, 0.2);
+    }
+    .ucm-sec { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .ucm-sec-gap { margin-top: 16px; }
+    .ucm-th, .ucm-tr { display: grid; gap: 9px; align-items: center; }
+    .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
+    .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+    .ucm-tr:last-child { border-bottom: none; }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); }
+    .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
+    .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
+
+    /* /app/clientes/[id] (d-head, KPIs, crédito, cotizaciones, qué le vendes) */
+    .ucm-dh { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--bd); }
+    .ucm-dh-av {
+        width: 34px; height: 34px; flex: none; border-radius: 9px; display: grid; place-items: center;
+        background: var(--n); color: #fff; font-size: 10.5px; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55);
+    }
+    .ucm-dh-av.dist { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55), 0 0 0 2px rgba(10,25,47,0.3); }
+    .ucm-dh-who { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .ucm-dh-who small { font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-dh-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .ucm-badges { display: flex; gap: 5px; }
+    .ucm-tier { font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 100px; color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .ucm-fis { font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px; color: #10b981; background: rgba(16,185,129,0.12); }
+    .ucm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+    .ucm-dh-tot small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #99a2af; }
+    .ucm-dh-tot b { font-size: 17px; color: var(--n); line-height: 1.15; white-space: nowrap; }
+    .ucm-ckpis { display: grid; grid-template-columns: 0.7fr 1fr 1fr 1fr; padding: 10px 6px; margin-bottom: 10px; }
+    .ucm-ckpis > span { display: flex; flex-direction: column; gap: 4px; padding: 0 8px; border-left: 1px solid var(--bd); min-width: 0; }
+    .ucm-ckpis > span:first-child { border-left: none; }
+    .ucm-ckpis small { font-size: 6.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mut); opacity: 0.75; white-space: nowrap; }
+    .ucm-ckpis b { font-size: 12px; letter-spacing: -0.025em; white-space: nowrap; }
+    .ucm-credit-h { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--bd); }
+    .ucm-credit-h b { font-size: 11px; font-weight: 700; }
+    .ucm-credit-h span { font-size: 9.5px; font-weight: 600; color: #ef4444; }
+    .ucm-credit-track { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.05); overflow: hidden; margin-bottom: 7px; }
+    .ucm-credit-track i { display: block; height: 100%; border-radius: 100px; background: #ef4444; }
+    .ucm-credit-n { display: flex; align-items: baseline; gap: 7px; }
+    .ucm-credit-n b { font-size: 12px; }
+    .ucm-credit-n span { font-size: 9.5px; color: var(--mut); }
+    .ucm-credit-w { margin: 6px 0 0; font-size: 9.5px; color: #ef4444; }
+    .ucm-aging { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 8px; background: var(--bd); border-radius: 10px; overflow: hidden; }
+    .ucm-aging span { display: flex; flex-direction: column; gap: 2px; padding: 8px 9px; background: var(--soft); }
+    .ucm-aging small { font-size: 8px; color: var(--mut); }
+    .ucm-aging b { font-size: 10.5px; }
+    .ucm-aging .late b { color: #b45309; }
+    .ucm-aging .empty b { color: var(--mut); opacity: 0.6; }
+    .ucm-qrow { display: grid; grid-template-columns: 62px 70px minmax(0, 1fr) 72px 12px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-qfolio { font-size: 10.5px; font-weight: 600; }
+    .ucm-qrow .editorial { font-size: 11px; white-space: nowrap; }
+    .ucm-chev { width: 10px !important; height: 10px !important; color: #c4cad3; }
+    .ucm-prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-prow span { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-prow small { font-size: 9px; color: var(--mut); }
+    .ucm-prow b { font-size: 10.5px; white-space: nowrap; }
+
+    /* Link público /q/[token] (QuoteCard) */
+    .ucm-shot.ucm-q { padding: 0; background: #f3f2ef; color: #111; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    .ucm-url { display: flex; justify-content: center; padding: 9px 14px; background: #ffffff; border-bottom: 1px solid var(--bd); }
+    .ucm-url span {
+        display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 12px; border-radius: 999px;
+        background: #f5f5f7; color: #6b7280; font: 500 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ucm-url svg { width: 10px; height: 10px; color: #059669; }
+    .ucm-qcard {
+        margin: 14px 16px 0; padding: 16px 20px; background: #ffffff; border-radius: 18px;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12);
+        display: flex; flex-direction: column;
+    }
+    /* La página va desplazada: el borde superior de la tarjeta queda fuera. */
+    .ucm-qcard-cut { margin-top: 0; padding-top: 4px; border-radius: 0 0 18px 18px; }
+    .ucm-qi-h, .ucm-qi-r { display: grid; grid-template-columns: minmax(0, 2.7fr) 0.7fr 0.8fr 0.9fr; gap: 10px; align-items: center; }
+    .ucm-qi-h { padding: 8px 0 6px; font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; color: #c4c9d1; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ucm-qi-r { padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 10px; }
+    .ucm-qi-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; }
+    .ucm-qi-n > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-qi-q { color: #9ca3af; font-size: 9px; }
+    .ucm-qi-p { color: #9ca3af; font-size: 9.5px; }
+    .ucm-qi-r.off { opacity: 0.5; }
+    .ucm-qi-r.off .ucm-qi-n > span { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+    .ucm-pick { width: 13px; height: 13px; flex: none; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #fff; position: relative; }
+    .ucm-pick.on { background: #0a192f; border-color: #0a192f; }
+    .ucm-pick.on::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-qt { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding: 7px 0 8px; }
+    .ucm-qt > span { display: flex; justify-content: space-between; gap: 28px; min-width: 150px; font-size: 9.5px; color: #9ca3af; }
+    .ucm-qt em { font-style: normal; }
+    .ucm-qt b { color: #6b7280; }
+    .ucm-qt .g { color: #111; font-weight: 700; border-top: 1px solid rgba(10,25,47,0.07); padding-top: 5px; }
+    .ucm-qt .g b { color: #111; font-size: 13px; }
+    .ucm-qtrust { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 0 9px; font-size: 8.5px; color: #9ca3af; }
+    .ucm-qtrust > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ucm-qtrust svg { width: 10px; height: 10px; }
+    .ucm-live { font-weight: 600; color: #065f46 !important; }
+    .ucm-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+    .ucm-sign { display: flex; flex-direction: column; gap: 5px; }
+    .ucm-sign-h { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; }
+    .ucm-back { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #f5f5f7; color: #6b7280; }
+    .ucm-back svg { width: 11px; height: 11px; }
+    .ucm-sign-p { margin: 0; font-size: 9.5px; color: #6b7280; }
+    .ucm-sign-p b { color: #111; }
+    .ucm-lbl { font-size: 8.5px; font-weight: 600; color: #6b7280; }
+    .ucm-input { padding: 6px 11px; border-radius: 10px; background: #f5f5f7; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.15); font-size: 10.5px; color: #111; }
+    .ucm-check { display: flex; align-items: flex-start; gap: 7px; font-size: 8.5px; color: #6b7280; line-height: 1.45; }
+    .ucm-check i { width: 12px; height: 12px; flex: none; border-radius: 3px; background: #0a192f; position: relative; }
+    .ucm-check i::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-cta {
+        display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;
+        padding: 10px 14px; border-radius: 11px; background: var(--brand); color: #fff;
+        font-size: 11px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10,25,47,0.42);
+    }
+    .ucm-cta svg { width: 12px; height: 12px; }
+    .ucm-partial { margin-bottom: 8px; padding: 7px 10px; border-radius: 9px; background: rgba(10,25,47,0.04); font-size: 9.5px; color: #374151; text-align: center; }
+    .ucm-partial b { color: #111; font-weight: 700; }
+
+    @media (max-width: 600px) {
+        .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }
+        .ucm-shot.ucm-q { padding: 0; }
+        .ucm-qcard { margin-left: 10px; margin-right: 10px; padding-left: 14px; padding-right: 14px; }
+        .ucm-qi-h, .ucm-qi-r { grid-template-columns: minmax(0, 1.7fr) 0.8fr 1fr; }
+        .ucm-qi-h > :nth-child(3), .ucm-qi-r > :nth-child(3) { display: none; }
+        .ucm-ckpis { grid-template-columns: 0.6fr 1fr 1fr; }
+        .ucm-ckpis > span:nth-child(4) { display: none; }
+        .ucm-dh-tot b { font-size: 13px; }
+        .ucm-qrow { grid-template-columns: 56px 64px minmax(0, 1fr) 12px; }
+        .ucm-qrow > .ucm-date { display: none; }
+        .ucm-aging { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <script>
