@@ -3,14 +3,15 @@
 Texto listo para publicar en Cord Ops (`ops.cordhq.app` → Estado → Incidentes).
 Los campos corresponden a la tabla `status_incidents`.
 
-- **Estado:** `monitoring` al publicar. Pasa a `resolved` cuando la sonda nueva
-  lleve 24 h en verde con la migración `2026-09-30-pending-payment-intents.sql`
-  aplicada.
+- **Estado:** `resolved`. La migración `2026-09-30-pending-payment-intents.sql`
+  está aplicada y los envíos del webhook en Stripe no muestran errores.
 - **Severidad:** `minor`
 - **Inicio (`started_at`):** `2026-09-23T11:25:00Z`. Es la primera muestra en
   falla en los registros del workflow *Status probe*; la del 22 a las 18:47 UTC
   estaba en verde.
-- **Fin (`resolved_at`):** vacío hasta resolverlo.
+- **Fin (`resolved_at`):** `2026-09-30T16:30:00Z`.
+- **Publicación:** corre `2026-09-23-confirmacion-de-pagos.sql` en Neon, o
+  captura estos campos en el formulario de Ops.
 
 ## Español
 
@@ -24,7 +25,7 @@ Desde el 23 de septiembre, esta página mostraba con falla la "confirmación de 
 
 Cambiamos la revisión. Ahora le preguntamos directamente al procesador de pagos por cada cobro pendiente reciente, y solo marcaremos falla si encontramos un pago ya cobrado que Cord no haya registrado. Si eso llegara a pasar, lo publicaremos aquí con los detalles.
 
-El procesador de pagos respondió con normalidad en cada revisión de estos días, y el resto de los servicios operó sin problemas. Seguiremos observando la nueva revisión antes de cerrar este aviso.
+También revisamos con el procesador de pagos los avisos de estos días: todos se entregaron sin errores y ningún pago quedó sin registrar. El procesador respondió con normalidad en cada revisión y el resto de los servicios operó sin problemas.
 
 ## English
 
@@ -38,4 +39,4 @@ Since September 23, this page showed "payment confirmation" as failing. We looke
 
 We changed the check. We now ask the payment processor directly about each recent pending charge, and we will only report a failure if we find a payment that was already collected but not recorded in Cord. If that ever happens, we will post the details here.
 
-The payment processor responded normally at every check during these days, and all other services operated without issues. We will keep watching the new check before closing this notice.
+We also reviewed this period's notifications with the payment processor: all were delivered without errors and no payment went unrecorded. The processor responded normally at every check and all other services operated without issues.
