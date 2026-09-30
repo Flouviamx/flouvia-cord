@@ -1,0 +1,94 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import OpsDist from '../../components/ops/OpsDist.astro';
+import { withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, OPS_LIFECYCLE_LABELS } from '../../lib/ops-format';
+import { OPS_INVOICE_FILTERS, opsInvoiceCounts, opsInvoicePage, opsInvoiceStats, opsOpenBalanceByCurrency } from '../../lib/ops-insights';
+import { normalizeOpsSearch, OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const params = Astro.url.searchParams;
+const filter = OPS_INVOICE_FILTERS.some((f) => f.id === params.get('estado')) ? String(params.get('estado')) : '';
+const query = normalizeOpsSearch(params.get('q'));
+const page = parseOpsPage(params.get('page'));
+
+let stats: any = {};
+let counts: any[] = [];
+let balances: any[] = [];
+let invoices: any[] = [];
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsInvoiceStats(),
+    opsInvoiceCounts(),
+    opsOpenBalanceByCurrency(),
+    opsInvoicePage(filter, query, OPS_PAGE_SIZE, opsPageOffset(page)),
+  );
+  [stats] = r[0] as any[];
+  [, counts, balances, invoices] = r as any[];
+} catch (cause) { error = true; console.error('[ops/invoices]', cause); }
+
+const total = Number(invoices[0]?.total_count || 0);
+const countFor = (id: string) => id === '' ? counts.reduce((a, c) => a + Number(c.n), 0)
+  : id === 'overdue' ? counts.reduce((a, c) => a + Number(c.overdue), 0)
+  : id === 'fiscal_error' ? counts.reduce((a, c) => a + Number(c.fiscal_errors), 0)
+  : Number(counts.find((c) => c.lifecycle === id)?.n || 0);
+const search = new URLSearchParams({ ...(filter ? { estado: filter } : {}), ...(query ? { q: query } : {}) }).toString();
+const chipHref = (id: string) => {
+  const q = new URLSearchParams({ ...(id ? { estado: id } : {}), ...(query ? { q: query } : {}) }).toString();
+  return `/ops/invoices${q ? `?${q}` : ''}`;
+};
+const fiscal: Record<string, [string, string]> = {
+  issued: ['Registrada', 'green'], pending: ['Pendiente', 'amber'], error: ['Error fiscal', 'red'], cancelled: ['Cancelada', ''],
+};
+const docType: Record<string, string> = { cfdi_40: 'CFDI 4.0', invoice: 'Factura', dian_einvoice: 'Factura DIAN' };
+---
+<OpsLayout title="Facturas | Cord Ops"><OpsShell active="invoices" title="Facturas" subtitle="Cord Invoicing en todas las organizaciones: emisión, cobro y estado fiscal.">
+  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Folio, organización o cliente" />{filter && <input type="hidden" name="estado" value={filter} />}</form>
+  {error && <div class="ops-inline-error">No se pudieron cargar las facturas.</div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Emitidas</span><strong>{opsNumber(stats.issued)}</strong><small><b>{opsNumber(stats.issued_30d)}</b> en 30 días · {opsNumber(stats.orgs)} organizaciones</small></div>
+    <div class="ops-metric"><span>Por cobrar</span><strong>{opsNumber(stats.open)}</strong><small>Con saldo abierto</small></div>
+    <div class="ops-metric"><span>Vencidas</span><strong>{opsNumber(stats.overdue)}</strong><small>{opsPct(stats.overdue, stats.open)}% de las abiertas</small></div>
+    <div class="ops-metric"><span>Pagadas</span><strong>{opsNumber(stats.paid)}</strong><small>{opsPct(stats.paid, stats.issued)}% de las emitidas</small></div>
+    <div class="ops-metric"><span>Abiertas por el cliente</span><strong>{opsPct(stats.viewed, stats.sent)}%</strong><small>{opsNumber(stats.viewed)} de {opsNumber(stats.sent)} enviadas</small></div>
+    <div class="ops-metric"><span>Error fiscal</span><strong>{opsNumber(stats.fiscal_errors)}</strong><small>{opsNumber(stats.drafts)} borradores</small></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Saldo por cobrar</h2><p>Por divisa, sin mezclar monedas; incluye lo que ya venció.</p></div></header>
+    <div class="ops-card"><OpsDist rows={balances.map((b) => ({ label: `${b.currency} · ${opsNumber(b.n)} facturas${Number(b.overdue) > 0 ? ` · ${opsMoney(b.overdue, b.currency)} vencido` : ''}`, value: Number(b.n), display: opsMoney(b.total, b.currency) }))} empty="No hay saldos abiertos." /></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Listado</h2><p>{opsNumber(total)} facturas con este filtro, de la más reciente a la más antigua.</p></div></header>
+    <nav class="ops-chips" aria-label="Estado de la factura">
+      {OPS_INVOICE_FILTERS.map((f) => <a class="ops-chip" href={chipHref(f.id)} aria-current={filter === f.id ? 'true' : undefined}>{f.label} <em>{opsNumber(countFor(f.id))}</em></a>)}
+    </nav>
+    <div class="ops-card ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Factura</th><th>Organización y cliente</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th><th>Vence</th><th>Vista</th></tr></thead>
+        <tbody>
+          {invoices.map((d) => {
+            const [label, tone] = OPS_LIFECYCLE_LABELS[d.lifecycle] ?? [d.lifecycle, ''];
+            const [fLabel, fTone] = fiscal[d.status] ?? [d.status, ''];
+            return <tr>
+              <td><strong>{d.invoice_number || 'Sin folio'}</strong><span class="ops-sub">{docType[d.document_type] || d.document_type} · {d.country_code} · {opsDate(d.issued_at || d.created_at)}</span></td>
+              <td><a href={`/ops/organizations/${d.org_id}`}>{d.org_nombre}</a><span class="ops-sub">{d.cliente || 'Sin cliente'}</span></td>
+              <td><span class:list={['ops-badge', d.overdue ? 'red' : tone]}>{d.overdue ? 'Vencida' : label}</span> <span class:list={['ops-badge', fTone]}>{fLabel}</span></td>
+              <td class="num">{opsMoney(d.total, d.currency)}</td>
+              <td class="num">{Number(d.amount_remaining) > 0 ? opsMoney(d.amount_remaining, d.currency) : <span class="ops-muted">—</span>}</td>
+              <td>{d.due_date ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(d.due_date)) : '—'}</td>
+              <td>{d.first_viewed_at ? <span title={opsDate(d.first_viewed_at)}>{opsAgo(d.first_viewed_at)}</span> : d.sent_at ? <span class="ops-muted">Aún no</span> : <span class="ops-muted">No enviada</span>}</td>
+            </tr>;
+          })}
+          {invoices.length === 0 && <tr><td colspan="7" class="ops-empty">No hay facturas con este filtro.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    {!error && total > 0 && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/invoices" search={search} />}
+  </section>
+</OpsShell></OpsLayout>

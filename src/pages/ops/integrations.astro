@@ -1,0 +1,106 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import { withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsFavicon, opsNumber, OPS_PROVIDER_DOMAINS, OPS_PROVIDER_LABELS } from '../../lib/ops-format';
+import { opsIntegrationPage, opsIntegrationProviders, opsIntegrationStats, opsSyncFailures } from '../../lib/ops-insights';
+import { OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const params = Astro.url.searchParams;
+const provider = Object.hasOwn(OPS_PROVIDER_LABELS, params.get('proveedor') || '') ? String(params.get('proveedor')) : '';
+const estado = ['activa', 'error', 'desconectada'].includes(params.get('estado') || '') ? String(params.get('estado')) : '';
+const page = parseOpsPage(params.get('page'));
+
+let stats: any = {};
+let providers: any[] = [];
+let connections: any[] = [];
+let failures: any[] = [];
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsIntegrationStats(),
+    opsIntegrationProviders(),
+    opsIntegrationPage(provider, estado, OPS_PAGE_SIZE, opsPageOffset(page)),
+    opsSyncFailures(10),
+  );
+  [stats] = r[0] as any[];
+  [, providers, connections, failures] = r as any[];
+} catch (cause) { error = true; console.error('[ops/integrations]', cause); }
+
+const total = Number(connections[0]?.total_count || 0);
+const name = (id: string) => OPS_PROVIDER_LABELS[id] || id;
+const logo = (id: string) => opsFavicon(OPS_PROVIDER_DOMAINS[id] || 'cordhq.app');
+const href = (next: Record<string, string>) => {
+  const q = new URLSearchParams({ ...(provider ? { proveedor: provider } : {}), ...(estado ? { estado } : {}), ...next });
+  for (const [k, v] of [...q.entries()]) if (!v) q.delete(k);
+  const s = q.toString();
+  return `/ops/integrations${s ? `?${s}` : ''}`;
+};
+const estadoBadge: Record<string, [string, string]> = { activa: ['Activa', 'green'], error: ['Con error', 'red'], desconectada: ['Desconectada', ''] };
+const search = new URLSearchParams({ ...(provider ? { proveedor: provider } : {}), ...(estado ? { estado } : {}) }).toString();
+const objeto: Record<string, string> = { client: 'cliente', quote: 'cotización', company: 'empresa', contact: 'contacto' };
+---
+<OpsLayout title="Integraciones | Cord Ops"><OpsShell active="integrations" title="Integraciones" subtitle="Cuentas externas conectadas por las organizaciones y el estado de su sincronización.">
+  {error && <div class="ops-inline-error">No se pudieron cargar las integraciones.</div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Conectadas</span><strong>{opsNumber(stats.active)}</strong><small>En <b>{opsNumber(stats.orgs)}</b> organizaciones</small></div>
+    <a class="ops-metric ops-metric-link" href={href({ estado: 'error', proveedor: '' })}><span>Con error</span><strong>{opsNumber(stats.errors)}</strong><small>El proveedor rechazó la conexión</small></a>
+    <div class="ops-metric"><span>Desconectadas</span><strong>{opsNumber(stats.disconnected)}</strong><small>Retiradas por el negocio</small></div>
+    <div class="ops-metric"><span>Sincronizaciones 24 h</span><strong>{opsNumber(stats.syncs_24h)}</strong><small>Entrada y salida</small></div>
+    <div class="ops-metric"><span>Fallidas 24 h</span><strong>{opsNumber(stats.failed_24h)}</strong><small>Detalle abajo</small></div>
+    <div class="ops-metric"><span>En cola</span><strong>{opsNumber(stats.queued)}</strong><small>Pendientes de correr</small></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Por proveedor</h2><p>Toca uno para filtrar el listado.</p></div></header>
+    <div class="ops-provider-grid">
+      {providers.map((p) => (
+        <a class="ops-card ops-provider" href={href({ proveedor: provider === p.proveedor ? '' : p.proveedor })} aria-current={provider === p.proveedor ? 'true' : undefined}>
+          <img src={logo(p.proveedor)} alt="" width="28" height="28" loading="lazy" />
+          <div><strong>{name(p.proveedor)}</strong><span>{opsNumber(p.active)} {Number(p.active) === 1 ? 'activa' : 'activas'}{Number(p.errors) > 0 && ` · ${opsNumber(p.errors)} con error`}</span></div>
+          {Number(p.errors) > 0 && <i aria-hidden="true"></i>}
+        </a>
+      ))}
+      {providers.length === 0 && <div class="ops-card ops-empty">Ninguna organización ha conectado una integración todavía.</div>}
+    </div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Conexiones</h2><p>{opsNumber(total)} con este filtro; primero las que tienen error.</p></div></header>
+    <nav class="ops-chips" aria-label="Estado de la conexión">
+      {[['', 'Todas'], ['activa', 'Activas'], ['error', 'Con error'], ['desconectada', 'Desconectadas']].map(([id, label]) => <a class="ops-chip" href={href({ estado: id })} aria-current={estado === id ? 'true' : undefined}>{label}</a>)}
+      {provider && <a class="ops-chip" href={href({ proveedor: '' })}>Quitar {name(provider)}</a>}
+    </nav>
+    <div class="ops-card ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Proveedor</th><th>Organización</th><th>Cuenta</th><th>Estado</th><th class="num">Sincronizaciones 7 días</th><th>Última sincronización</th></tr></thead>
+        <tbody>
+          {connections.map((c) => {
+            const [label, tone] = estadoBadge[c.estado] ?? [c.estado, ''];
+            return <tr>
+              <td><div class="ops-identity"><img class="ops-provider-logo" src={logo(c.proveedor)} alt="" width="22" height="22" loading="lazy" /><div><strong>{name(c.proveedor)}</strong><span class="ops-sub">Desde {opsDate(c.created_at)}</span></div></div></td>
+              <td><a href={`/ops/organizations/${c.org_id}`}>{c.org_nombre}</a></td>
+              <td><span class="ops-data-value">{c.cuenta_nombre || c.cuenta_externa}</span><span class="ops-sub ops-code">{c.cuenta_externa}</span></td>
+              <td class="ops-wrap"><span class:list={['ops-badge', tone]}>{label}</span>{c.ultimo_error && <span class="ops-sub">{c.ultimo_error} · {opsAgo(c.ultimo_error_at).toLowerCase()}</span>}</td>
+              <td class="num">{opsNumber(c.syncs_7d)}{Number(c.failed_7d) > 0 && <span class="ops-sub">{opsNumber(c.failed_7d)} {Number(c.failed_7d) === 1 ? 'fallida' : 'fallidas'}</span>}</td>
+              <td>{c.ultima_sync_at ? <span title={opsDate(c.ultima_sync_at)}>{opsAgo(c.ultima_sync_at)}</span> : <span class="ops-muted">Nunca</span>}</td>
+            </tr>;
+          })}
+          {connections.length === 0 && <tr><td colspan="6" class="ops-empty">No hay conexiones con este filtro.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    {!error && total > 0 && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/integrations" search={search} />}
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Sincronizaciones fallidas</h2><p>Las más recientes entre Cord y los proveedores.</p></div></header>
+    <div class="ops-card ops-list">
+      {failures.map((f) => <a class="ops-list-row two" href={`/ops/organizations/${f.org_id}`}><div><strong>{name(f.proveedor)} · {f.direccion === 'salida' ? 'de Cord hacia el proveedor' : 'del proveedor hacia Cord'} · {objeto[f.objeto] || f.objeto}</strong><span class="ops-sub">{f.org_nombre} · {f.error || 'Sin detalle'} · {opsNumber(f.attempts)} {Number(f.attempts) === 1 ? 'intento' : 'intentos'}</span></div><time title={opsDate(f.created_at)}>{opsAgo(f.created_at)}</time></a>)}
+      {failures.length === 0 && <div class="ops-empty">Ninguna sincronización ha fallado.</div>}
+    </div>
+  </section>
+</OpsShell></OpsLayout>

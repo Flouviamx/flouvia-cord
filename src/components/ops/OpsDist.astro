@@ -1,0 +1,21 @@
+---
+import { opsNumber } from '../../lib/ops-format';
+
+interface Props {
+  rows: { label: string; value: number; display?: string; href?: string }[];
+  empty?: string;
+}
+
+const { rows, empty = 'Sin datos en el periodo.' } = Astro.props;
+const max = Math.max(1, ...rows.map((row) => row.value));
+---
+<div class="ops-dist">
+  {rows.map((row) => (
+    <div class="ops-dist-row">
+      <span>{row.href ? <a href={row.href}>{row.label}</a> : row.label}</span>
+      <b>{row.display ?? opsNumber(row.value)}</b>
+      <i><u style={`width:${Math.max(2, Math.round((row.value / max) * 100))}%`}></u></i>
+    </div>
+  ))}
+  {rows.length === 0 && <div class="ops-empty compact">{empty}</div>}
+</div>

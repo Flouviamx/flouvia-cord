@@ -66,7 +66,7 @@ const startUrl = `/ops/database/${table}${query ? `?q=${encodeURIComponent(query
 <OpsLayout title={`${table} | Cord Ops`}>
   <OpsShell active="database" eyebrow="Base de datos" title={table} subtitle={`${query ? 'Resultados filtrados' : `Aproximadamente ${estimatedTotal.toLocaleString('es-MX')} registros`} · ${columns.length} columnas`}>
     <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar por identificador" /></form>
-    <a href="/ops/database" style="display:inline-block;margin-bottom:16px;color:#0066cc;text-decoration:none;font-size:12px">Volver al catálogo</a>
+    <a class="ops-back" href="/ops/database">Catálogo</a>
     {error && <div class="ops-inline-error">{error}</div>}
     {!error && <div class="ops-card ops-table-wrap">
       <table class="ops-table"><thead><tr>{columns.map((column) => <th title={column.data_type}>{column.column_name}</th>)}</tr></thead>

@@ -1,5 +1,5 @@
 import { INCLUDED } from './billing';
-import { sql } from './db';
+import { sql, withOpsTx } from './db';
 import { OPS_PAGE_SIZE, opsPageOffset } from './ops-pagination';
 import type { PlanId } from './precios';
 
@@ -14,7 +14,7 @@ function quotaCase(dimension: 'ia' | 'api' | 'cfdi'): string {
 }
 
 export async function getOpsUsagePage(period: string, selectedOrg: string, query: string, page: number) {
-  return sql.query(`
+  const [rows] = await withOpsTx(sql.query(`
     with page_orgs as (
       select o.id,o.nombre,coalesce(o.plan,'free') plan,o.subscription_status,
              count(*) over()::int total_count
@@ -64,14 +64,15 @@ export async function getOpsUsagePage(period: string, selectedOrg: string, query
     left join webhook_stats w on w.org_id=po.id
     left join external_stats e on e.org_id=po.id
     left join payment_stats p on p.org_id=po.id
-    order by po.nombre,po.id`, [selectedOrg, query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page), period]);
+    order by po.nombre,po.id`, [selectedOrg, query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page), period]));
+  return rows;
 }
 
 export async function getOpsUsageAlerts(period: string, selectedOrg: string, query: string) {
   const iaLimit = quotaCase('ia');
   const apiLimit = quotaCase('api');
   const cfdiLimit = quotaCase('cfdi');
-  return sql.query(`
+  const [rows] = await withOpsTx(sql.query(`
     with api_stats as (
       select org_id,count(*)::int requests,count(*) filter (where status>=400)::int errors
       from api_requests where created_at>=now()-interval '24 hours' group by org_id
@@ -104,11 +105,12 @@ export async function getOpsUsageAlerts(period: string, selectedOrg: string, que
       case when coalesce(a.requests,0)>=10 then coalesce(a.errors,0)::numeric/nullif(a.requests,0) else 0 end,
       case when coalesce(w.deliveries,0)>=10 then coalesce(w.failures,0)::numeric/nullif(w.deliveries,0) else 0 end
     ) desc,o.created_at desc
-    limit 50`, [period, selectedOrg, query, `%${query}%`]);
+    limit 50`, [period, selectedOrg, query, `%${query}%`]));
+  return rows;
 }
 
 export async function getOpsUsageSummary(period: string, selectedOrg: string) {
-  const [rows] = await Promise.all([
+  const [rows] = await withOpsTx(
     sql.query(`
       select
         (select coalesce(sum(ia),0)::bigint from uso_periodo where periodo=$1 and ($2='' or org_id=nullif($2,'')::uuid)) ia,
@@ -118,9 +120,8 @@ export async function getOpsUsageSummary(period: string, selectedOrg: string) {
         (select count(*)::bigint from webhook_deliveries where created_at>=now()-interval '24 hours' and ($2='' or org_id=nullif($2,'')::uuid)) webhook_24h,
         (select count(*)::bigint from webhook_deliveries where created_at>=now()-interval '24 hours' and not ok and ($2='' or org_id=nullif($2,'')::uuid)) webhook_failures_24h,
         (select count(*)::bigint from cotizacion_cobros where paid_at>=now()-interval '30 days' and ($2='' or org_id=nullif($2,'')::uuid)) payments_30d,
-        (select coalesce(sum(monto),0) from cotizacion_cobros where paid_at>=now()-interval '30 days' and ($2='' or org_id=nullif($2,'')::uuid)) payment_volume_30d,
         pg_database_size(current_database())::bigint database_bytes`, [period, selectedOrg]),
-  ]);
+  );
   return rows[0] || {};
 }
 

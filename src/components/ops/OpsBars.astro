@@ -1,0 +1,31 @@
+---
+import { opsNumber } from '../../lib/ops-format';
+
+interface Props {
+  title: string;
+  hint?: string;
+  series: { day: string; value: number }[];
+  total?: number;
+}
+
+const { title, hint, series, total } = Astro.props;
+const max = Math.max(1, ...series.map((point) => point.value));
+const sum = total ?? series.reduce((acc, point) => acc + point.value, 0);
+const short = (day: string) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
+---
+<article class="ops-card ops-chart">
+  <div class="ops-chart-head">
+    <div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>
+    <strong>{opsNumber(sum)}</strong>
+  </div>
+  <div class="ops-bars" role="img" aria-label={`${title}: ${opsNumber(sum)} en ${series.length} días`}>
+    {series.map((point, index) => (
+      <span
+        class:list={[point.value === 0 && 'zero', index === series.length - 1 && 'today']}
+        style={`height:${point.value === 0 ? 2 : Math.max(4, Math.round((point.value / max) * 100))}%;animation-delay:${index * 12}ms`}
+        title={`${short(point.day)}: ${opsNumber(point.value)}`}
+      ></span>
+    ))}
+  </div>
+  {series.length > 0 && <div class="ops-bars-axis"><span>{short(series[0].day)}</span><span>Hoy</span></div>}
+</article>

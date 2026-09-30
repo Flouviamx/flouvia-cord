@@ -2,46 +2,173 @@
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsActionDialog from '../../../components/ops/OpsActionDialog.astro';
+import OpsFeed from '../../../components/ops/OpsFeed.astro';
+import OpsDist from '../../../components/ops/OpsDist.astro';
 import { sql, withOpsTx } from '../../../lib/db';
-import { opsDate, opsNumber, OPS_AUDIT_LABELS } from '../../../lib/ops-format';
+import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS, OPS_LIFECYCLE_LABELS, OPS_PROVIDER_LABELS, OPS_QUOTE_STATUS, opsSubscription } from '../../../lib/ops-format';
+import { opsCollectedByCurrency, opsEventFeed, opsIntegrationPage, opsInvoicePage, opsOrgClosedByCurrency, opsOrgCommerce, opsWorkflowPage } from '../../../lib/ops-insights';
 
-if(!Astro.locals.opsOperator)return Astro.redirect('/ops/login');
-const id=String(Astro.params.id||'');
-if(!/^[0-9a-f-]{36}$/i.test(id))return Astro.redirect('/ops/organizations');
-const [orgRows,members,quotes,clients,products,keys,webhooks,sso,audit]=await withOpsTx(
-  sql`select o.id,o.nombre,o.plan,o.country_code,o.moneda,o.quote_prefix,o.created_at,o.onboarded_at,o.subscription_status,o.billing_cycle,o.current_period_end,o.stripe_charges_enabled,o.stripe_payouts_enabled,o.stripe_details_submitted,o.stripe_disabled_reason,o.require_2fa,o.require_sso,o.session_timeout_min,o.ai_cobranza_activa,o.is_demo,o.sandbox_of,owner.email owner_email,
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const id = String(Astro.params.id || '');
+if (!/^[0-9a-f-]{36}$/i.test(id)) return Astro.redirect('/ops/organizations');
+const r = await withOpsTx(
+  sql`select o.id,o.nombre,o.plan,o.country_code,o.moneda,o.quote_prefix,o.created_at,o.onboarded_at,o.subscription_status,o.billing_cycle,o.current_period_end,o.stripe_charges_enabled,o.stripe_payouts_enabled,o.stripe_details_submitted,o.stripe_disabled_reason,o.require_2fa,o.require_sso,o.session_timeout_min,o.ai_cobranza_activa,o.is_demo,o.sandbox_of,owner.email owner_email,owner.id owner_id,
       (select count(*)::int from org_members m where m.org_id=o.id) member_count,
       (select count(*)::int from clientes c where c.org_id=o.id) client_count,
       (select count(*)::int from productos p where p.org_id=o.id) product_count,
-      (select count(*)::int from cotizaciones q where q.org_id=o.id) quote_count,
-      (select coalesce(sum(q.total),0) from cotizaciones q where q.org_id=o.id and q.status in ('approved','paid','invoiced')) closed_value,
       (select count(*)::int from api_keys k where k.org_id=o.id) api_key_count,
       (select count(*)::int from api_keys k where k.org_id=o.id and k.revoked_at is null) active_api_keys,
       (select count(*)::int from webhooks w where w.org_id=o.id) webhook_count,
       (select count(*)::int from webhooks w where w.org_id=o.id and w.activo) active_webhooks,
       (select count(*)::int from sso_connections s where s.org_id=o.id) sso_count,
+      (select max(created_at) from domain_events e where e.org_id=o.id) last_event,
+      (select count(*)::int from domain_events e where e.org_id=o.id and e.created_at>=now()-interval '30 days') events_30d,
       exists(select 1 from users g where g.id=o.owner_id and lower(g.email) in ('andrevalleo13@gmail.com','hola@flouvia.com')) or exists(select 1 from org_members m join users u on u.id=m.user_id where m.org_id=o.id and lower(u.email) in ('andrevalleo13@gmail.com','hola@flouvia.com')) protected
       from orgs o left join users owner on owner.id=o.owner_id where o.id=${id} limit 1`,
-  sql`select u.id,u.email,u.first_name,u.last_name,m.rol,m.estado,m.joined_at from org_members m left join users u on u.id=m.user_id where m.org_id=${id} order by m.created_at desc limit 100`,
-  sql`select id,folio,status,total,moneda,created_at,sent_at,approved_at,paid_at from cotizaciones where org_id=${id} order by created_at desc limit 25`,
-  sql`select id,empresa,contacto,email,created_at from clientes where org_id=${id} order by created_at desc limit 20`,
-  sql`select id,sku,nombre,precio_lista,activo,created_at from productos where org_id=${id} order by created_at desc limit 20`,
+  sql`select u.id,u.email,u.first_name,u.last_name,m.rol,m.estado,m.joined_at,
+             (select max(last_used_at) from sessions s where s.user_id=u.id) last_seen,
+             (select count(*)::int from domain_events e where e.org_id=m.org_id and e.actor='user:'||u.id::text and e.created_at>=now()-interval '30 days') actions_30d
+      from org_members m left join users u on u.id=m.user_id where m.org_id=${id} order by m.created_at desc limit 100`,
+  sql`select id,folio,status,total,moneda,created_at,sent_at,approved_at,paid_at from cotizaciones where org_id=${id} order by created_at desc limit 15`,
+  sql`select id,empresa,contacto,email,created_at from clientes where org_id=${id} order by created_at desc limit 8`,
+  sql`select id,sku,nombre,precio_lista,activo,created_at from productos where org_id=${id} order by created_at desc limit 8`,
   sql`select id,nombre,prefix,last4,scope,mode,type,last_used_at,revoked_at,created_at from api_keys where org_id=${id} order by created_at desc limit 50`,
   sql`select id,url,activo,eventos,last_status,last_error,last_delivery_at,fallos_consecutivos,created_at from webhooks where org_id=${id} order by created_at desc limit 50`,
   sql`select id,nombre,proveedor,enabled,last_login_at,last_error,last_error_at,created_at from sso_connections where org_id=${id} order by created_at desc limit 50`,
-  sql`select action,result,actor_email,metadata,ip,created_at from ops_audit_log where target_type='organization' and target_id=${id} order by created_at desc limit 50`,
+  sql`select action,result,actor_email,metadata,ip,created_at from ops_audit_log where target_type='organization' and target_id=${id} order by created_at desc limit 30`,
+  opsEventFeed({ orgId: id, limit: 20 }),
+  opsInvoicePage('', '', 10, 0, id),
+  opsWorkflowPage('', '', 10, 0, id),
+  opsIntegrationPage('', '', 10, 0, id),
+  opsCollectedByCurrency(90, id),
+  opsOrgCommerce(id),
+  opsOrgClosedByCurrency(id),
 );
-if(!orgRows.length)return Astro.redirect('/ops/organizations');
-const org:any=orgRows[0]; const endpoint=`/api/ops/organizations/${id}`;
+const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed] = r as any[];
+if (!orgRows.length) return Astro.redirect('/ops/organizations');
+const org: any = orgRows[0];
+const commerce: any = commerceRows[0] || {};
+const endpoint = `/api/ops/organizations/${id}`;
+const plan = org.plan || 'free';
+const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Invitación pendiente';
 ---
-<OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={org.owner_email||'Sin propietario'}>
-  <div class="ops-detail-links"><a href="/ops/organizations">Volver a organizaciones</a><a href={`/ops/usage?org=${org.id}`}>Ver uso y costos</a></div>
-  <section class="ops-card"><div class="ops-detail-hero"><div class="ops-detail-identity"><span class="ops-avatar">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>{org.country_code} · {org.plan||'free'} · {org.subscription_status||'sin suscripción'}</p></div></div><div class="ops-detail-actions"><button class="ops-button secondary" data-ops-action="revoke_api_keys" data-endpoint={endpoint} data-title="Revocar llaves API" data-description={`Revocará ${org.active_api_keys} llaves activas.`}>Revocar API keys</button><button class="ops-button secondary" data-ops-action="disable_webhooks" data-endpoint={endpoint} data-title="Desactivar webhooks" data-description={`Desactivará ${org.active_webhooks} endpoints activos.`}>Desactivar webhooks</button><button class="ops-button danger" data-ops-action="revoke_member_sessions" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Cerrar sesiones del equipo" data-description="Cerrará las sesiones Cord de todos los miembros.">Cerrar sesiones</button>{!org.protected&&<button class="ops-button danger" data-ops-action="delete_organization" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Eliminar organización" data-description="Eliminará permanentemente el workspace y toda su información dependiente.">Eliminar</button>}</div></div>
-    <div class="ops-facts"><div class="ops-fact"><span>Miembros</span><strong>{opsNumber(org.member_count)}</strong></div><div class="ops-fact"><span>Cotizaciones</span><strong>{opsNumber(org.quote_count)}</strong></div><div class="ops-fact"><span>Cierre acumulado</span><strong>{new Intl.NumberFormat('es-MX',{style:'currency',currency:org.moneda||'MXN',maximumFractionDigits:0}).format(Number(org.closed_value||0))}</strong></div><div class="ops-fact"><span>Alta</span><strong>{opsDate(org.created_at)}</strong></div></div></section>
-  <div class="ops-grid-2 ops-section"><section><header class="ops-section-header"><div><h2>Configuración</h2><p>Estado operativo del workspace.</p></div></header><div class="ops-card ops-card-pad"><dl class="ops-key-value"><div><dt>ID</dt><dd class="ops-code">{org.id}</dd></div><div><dt>Onboarding</dt><dd>{opsDate(org.onboarded_at,'Pendiente')}</dd></div><div><dt>2FA obligatorio</dt><dd>{org.require_2fa?'Sí':'No'}</dd></div><div><dt>SSO obligatorio</dt><dd>{org.require_sso?'Sí':'No'}</dd></div><div><dt>Timeout</dt><dd>{org.session_timeout_min||'Default'} min</dd></div><div><dt>Cobranza autónoma</dt><dd>{org.ai_cobranza_activa?'Activa':'Inactiva'}</dd></div><div><dt>Entorno</dt><dd>{org.sandbox_of?'Sandbox':org.is_demo?'Demo':'Producción'}</dd></div></dl></div></section><section><header class="ops-section-header"><div><h2>Pagos</h2><p>Estado de Stripe y suscripción.</p></div></header><div class="ops-card ops-card-pad"><dl class="ops-key-value"><div><dt>Suscripción</dt><dd>{org.subscription_status||'Sin suscripción'}</dd></div><div><dt>Ciclo</dt><dd>{org.billing_cycle||'—'}</dd></div><div><dt>Próximo periodo</dt><dd>{opsDate(org.current_period_end,'—')}</dd></div><div><dt>Cobros</dt><dd>{org.stripe_charges_enabled?'Habilitados':'No habilitados'}</dd></div><div><dt>Retiros</dt><dd>{org.stripe_payouts_enabled?'Habilitados':'No habilitados'}</dd></div><div><dt>Detalle Stripe</dt><dd>{org.stripe_disabled_reason||'Sin incidencias'}</dd></div></dl></div></section></div>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Equipo</h2><p>{opsNumber(org.member_count)} miembros; últimos 100.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Persona</th><th>Rol</th><th>Estado</th><th>Ingreso</th></tr></thead><tbody>{members.map((m:any)=><tr><td>{m.id?<a href={`/ops/users/${m.id}`}>{[m.first_name,m.last_name].filter(Boolean).join(' ')||m.email}</a>:m.email||'Invitación pendiente'}<span class="ops-sub">{m.email}</span></td><td>{m.rol}</td><td><span class="ops-badge">{m.estado}</span></td><td>{opsDate(m.joined_at,'Pendiente')}</td></tr>)}{members.length===0&&<tr><td colspan="4" class="ops-empty">Sin miembros.</td></tr>}</tbody></table></div></section>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Cotizaciones recientes</h2><p>Últimos 25 registros.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Folio</th><th>Estado</th><th>Total</th><th>Creada</th><th>Cierre</th></tr></thead><tbody>{quotes.map((q:any)=><tr><td>{q.folio}</td><td><span class="ops-badge blue">{q.status}</span></td><td>{new Intl.NumberFormat('es-MX',{style:'currency',currency:q.moneda||org.moneda||'MXN'}).format(Number(q.total||0))}</td><td>{opsDate(q.created_at)}</td><td>{opsDate(q.paid_at||q.approved_at,'—')}</td></tr>)}{quotes.length===0&&<tr><td colspan="5" class="ops-empty">Sin cotizaciones.</td></tr>}</tbody></table></div></section>
-  <div class="ops-grid-2 ops-section"><section><header class="ops-section-header"><div><h2>Clientes</h2><p>{clients.length} recientes.</p></div></header><div class="ops-card ops-list">{clients.map((c:any)=><div class="ops-list-row"><strong>{c.empresa}</strong><span>{c.contacto||c.email||'Sin contacto'}</span><span>{opsDate(c.created_at)}</span></div>)}{clients.length===0&&<div class="ops-empty">Sin clientes.</div>}</div></section><section><header class="ops-section-header"><div><h2>Productos</h2><p>{products.length} recientes.</p></div></header><div class="ops-card ops-list">{products.map((p:any)=><div class="ops-list-row"><strong>{p.nombre}</strong><span>{p.sku||'Sin SKU'}</span><span class:list={['ops-badge',p.activo?'green':'']}>{p.activo?'Activo':'Inactivo'}</span></div>)}{products.length===0&&<div class="ops-empty">Sin productos.</div>}</div></section></div>
-  <div class="ops-grid-3 ops-section"><section><header class="ops-section-header"><div><h2>API keys</h2><p>{opsNumber(org.api_key_count)} llaves; últimas 50.</p></div></header><div class="ops-card ops-list">{keys.map((k:any)=><div class="ops-list-row"><strong>{k.nombre}</strong><span class="ops-code">{k.prefix}…{k.last4}</span><span class:list={['ops-badge',k.revoked_at?'red':'green']}>{k.revoked_at?'Revocada':'Activa'}</span></div>)}{keys.length===0&&<div class="ops-empty">Sin llaves.</div>}</div></section><section><header class="ops-section-header"><div><h2>Webhooks</h2><p>{opsNumber(org.webhook_count)} endpoints; últimos 50.</p></div></header><div class="ops-card ops-list">{webhooks.map((w:any)=><div class="ops-list-row"><strong class="ops-data-value">{w.url}</strong><span>{w.last_status||'Sin entregas'} · {w.fallos_consecutivos||0} fallos</span><span class:list={['ops-badge',w.activo?'green':'red']}>{w.activo?'Activo':'Inactivo'}</span></div>)}{webhooks.length===0&&<div class="ops-empty">Sin webhooks.</div>}</div></section><section><header class="ops-section-header"><div><h2>SSO</h2><p>{opsNumber(org.sso_count)} conexiones; últimas 50.</p></div></header><div class="ops-card ops-list">{sso.map((s:any)=><div class="ops-list-row"><strong>{s.nombre}</strong><span>{s.proveedor}</span><span class:list={['ops-badge',s.enabled?'green':'']}>{s.enabled?'Activa':'Inactiva'}</span></div>)}{sso.length===0&&<div class="ops-empty">Sin SSO.</div>}</div></section></div>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Historial administrativo</h2><p>Acciones de Ops sobre este workspace.</p></div></header><div class="ops-card">{audit.map((e:any)=><div class="ops-audit-row"><span class:list={['ops-audit-dot',e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action]||e.action}</strong><span class="ops-sub">{e.actor_email||'Sistema'}</span></div><span>{e.ip||'IP no disponible'}</span><time>{opsDate(e.created_at)}</time></div>)}{audit.length===0&&<div class="ops-empty">Sin acciones administrativas.</div>}</div></section>
-</OpsShell><OpsActionDialog /><style is:global>.ops-detail-links{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px}.ops-detail-links a{color:#0066cc;text-decoration:none;font-size:12px}.ops-detail-links a:hover{text-decoration:underline}.ops-grid-3 .ops-list-row{grid-template-columns:1fr;gap:6px}.ops-grid-3 .ops-list-row>*{min-width:0}</style></OpsLayout>
+<OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={`${org.owner_email || 'Sin propietario'} · ${org.country_code} · ${org.moneda}`}>
+  <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a></div>
+
+  <section class="ops-card">
+    <div class="ops-detail-hero">
+      <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p></div></div>
+      <div class="ops-detail-actions">
+        <button class="ops-button secondary sm" data-ops-action="revoke_api_keys" data-endpoint={endpoint} data-title="Revocar llaves API" data-description={`Revocará ${org.active_api_keys} llaves activas.`}>Revocar llaves API</button>
+        <button class="ops-button secondary sm" data-ops-action="disable_webhooks" data-endpoint={endpoint} data-title="Desactivar webhooks" data-description={`Desactivará ${org.active_webhooks} endpoints activos.`}>Desactivar webhooks</button>
+        <button class="ops-button danger-soft sm" data-ops-action="revoke_member_sessions" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Cerrar sesiones del equipo" data-description="Cerrará las sesiones Cord de todos los miembros.">Cerrar sesiones</button>
+        {!org.protected && <button class="ops-button danger sm" data-ops-action="delete_organization" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Eliminar organización" data-description="Eliminará permanentemente el workspace y toda su información dependiente.">Eliminar</button>}
+      </div>
+    </div>
+    <div class="ops-facts cols-6">
+      <div class="ops-fact"><span>Miembros</span><strong>{opsNumber(org.member_count)}</strong></div>
+      <div class="ops-fact"><span>Clientes</span><strong>{opsNumber(org.client_count)}</strong></div>
+      <div class="ops-fact"><span>Cotizaciones</span><strong>{opsNumber(commerce.quotes)} · {opsNumber(commerce.quotes_30d)} en 30 días</strong></div>
+      <div class="ops-fact"><span>Cierre</span><strong>{opsPct(commerce.won, commerce.sent)}% de las enviadas</strong></div>
+      <div class="ops-fact"><span>Eventos 30 días</span><strong>{opsNumber(org.events_30d)}</strong></div>
+      <div class="ops-fact"><span>Alta</span><strong>{opsDate(org.created_at)}</strong></div>
+    </div>
+  </section>
+
+  <div class="ops-grid-3 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Cerrado</h2><p>Cotizaciones aprobadas o pagadas, por divisa.</p></div></header>
+      <div class="ops-card"><OpsDist rows={closed.map((c: any) => ({ label: `${c.currency} · ${opsNumber(c.n)}`, value: Number(c.n), display: opsMoney(c.total, c.currency) }))} empty="Aún no cierra ninguna venta." /></div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Cobrado · 90 días</h2><p>Pagos registrados, por divisa.</p></div></header>
+      <div class="ops-card"><OpsDist rows={collected.map((c: any) => ({ label: `${c.currency} · ${opsNumber(c.payments)} pagos`, value: Number(c.payments), display: opsMoney(c.total, c.currency) }))} empty="Sin pagos en 90 días." /></div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Embudo</h2><p>Estado de todas sus cotizaciones.</p></div></header>
+      <div class="ops-card"><OpsDist rows={[
+        { label: 'Creadas', value: Number(commerce.quotes || 0) },
+        { label: 'Enviadas', value: Number(commerce.sent || 0) },
+        { label: 'Ganadas', value: Number(commerce.won || 0) },
+        { label: 'Perdidas', value: Number(commerce.lost || 0) },
+      ]} /></div>
+    </section>
+  </div>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Actividad reciente</h2><p>Lo que hicieron el equipo, sus clientes y los sistemas.</p></div><a href={`/ops/activity?org=${org.id}`}>Ver todo</a></header>
+      <div class="ops-card"><OpsFeed events={feed.slice(0, 20)} showOrg={false} /></div>
+    </section>
+    <div>
+      <section>
+        <header class="ops-section-header"><div><h2>Equipo</h2><p>{opsNumber(org.member_count)} miembros · acciones en 30 días.</p></div></header>
+        <div class="ops-card ops-list">
+          {members.map((m: any) => <a class="ops-list-row two" href={m.id ? `/ops/users/${m.id}` : undefined}><div class="ops-identity"><span class="ops-avatar">{fullName(m).charAt(0).toUpperCase()}</span><div><strong>{fullName(m)}</strong><span class="ops-sub">{m.rol} · {m.estado} · visto {opsAgo(m.last_seen, 'nunca').toLowerCase()}</span></div></div><time>{opsNumber(m.actions_30d)} acciones</time></a>)}
+          {members.length === 0 && <div class="ops-empty">Sin miembros.</div>}
+        </div>
+      </section>
+      <section class="ops-section">
+        <header class="ops-section-header"><div><h2>Configuración y cobros</h2><p>Estado operativo del workspace.</p></div></header>
+        <div class="ops-card ops-card-pad"><dl class="ops-key-value">
+          <div><dt>ID</dt><dd class="ops-code">{org.id}</dd></div>
+          <div><dt>Onboarding</dt><dd>{opsDate(org.onboarded_at, 'Pendiente')}</dd></div>
+          <div><dt>Suscripción</dt><dd>{opsSubscription(org.subscription_status)}{org.billing_cycle && ` · ${org.billing_cycle}`}{org.current_period_end && ` · renueva ${opsDate(org.current_period_end)}`}</dd></div>
+          <div><dt>Cobros en línea</dt><dd>{org.stripe_charges_enabled ? 'Habilitados' : 'No habilitados'} · depósitos {org.stripe_payouts_enabled ? 'habilitados' : 'no habilitados'}</dd></div>
+          <div><dt>Restricción del procesador</dt><dd>{org.stripe_disabled_reason || 'Ninguna'}</dd></div>
+          <div><dt>Seguridad</dt><dd>2FA {org.require_2fa ? 'obligatorio' : 'opcional'} · SSO {org.require_sso ? 'obligatorio' : 'opcional'} · sesión de {org.session_timeout_min || 'duración estándar'}{org.session_timeout_min ? ' min' : ''}</dd></div>
+          <div><dt>Cobranza autónoma</dt><dd>{org.ai_cobranza_activa ? 'Activa' : 'Inactiva'}</dd></div>
+        </dl></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Cotizaciones recientes</h2><p>Últimas 15.</p></div></header>
+    <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Folio</th><th>Estado</th><th class="num">Total</th><th>Creada</th><th>Enviada</th><th>Cierre</th></tr></thead><tbody>
+      {quotes.map((q: any) => { const [label, tone] = OPS_QUOTE_STATUS[q.status] ?? [q.status, '']; return <tr><td><strong>{q.folio}</strong></td><td><span class:list={['ops-badge', tone]}>{label}</span></td><td class="num">{opsMoney(q.total, q.moneda || org.moneda)}</td><td>{opsDate(q.created_at)}</td><td>{opsDate(q.sent_at, '—')}</td><td>{opsDate(q.paid_at || q.approved_at, '—')}</td></tr>; })}
+      {quotes.length === 0 && <tr><td colspan="6" class="ops-empty">Sin cotizaciones.</td></tr>}
+    </tbody></table></div>
+  </section>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Facturas</h2><p>{opsNumber(invoices[0]?.total_count || 0)} en total; últimas 10.</p></div><a href="/ops/invoices">Todas las facturas</a></header>
+    <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Factura</th><th>Cliente</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th><th>Vista</th></tr></thead><tbody>
+      {invoices.map((d: any) => { const [label, tone] = OPS_LIFECYCLE_LABELS[d.lifecycle] ?? [d.lifecycle, '']; return <tr><td><strong>{d.invoice_number || 'Sin folio'}</strong><span class="ops-sub">{opsDate(d.issued_at || d.created_at)}</span></td><td>{d.cliente || 'Sin cliente'}</td><td><span class:list={['ops-badge', d.overdue ? 'red' : tone]}>{d.overdue ? 'Vencida' : label}</span>{d.status === 'error' && <span class="ops-badge red">Error fiscal</span>}</td><td class="num">{opsMoney(d.total, d.currency)}</td><td class="num">{Number(d.amount_remaining) > 0 ? opsMoney(d.amount_remaining, d.currency) : '—'}</td><td>{d.first_viewed_at ? opsAgo(d.first_viewed_at) : <span class="ops-muted">Aún no</span>}</td></tr>; })}
+      {invoices.length === 0 && <tr><td colspan="6" class="ops-empty">Sin facturas.</td></tr>}
+    </tbody></table></div>
+  </section>
+
+  <div class="ops-grid-2 even ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Workflows</h2><p>Ejecuciones y fallas en 7 días.</p></div></header>
+      <div class="ops-card ops-list">
+        {workflows.map((w: any) => <div class="ops-list-row two"><div><strong>{w.nombre}</strong><span class="ops-sub">{w.estado === 'active' ? 'Activo' : w.estado === 'paused' ? 'Pausado' : 'Borrador'} · <span class="ops-code">{w.trigger_publicado || 'sin publicar'}</span></span></div><time>{opsNumber(w.runs_7d)} ejecuciones{Number(w.failed_7d) > 0 && ` · ${opsNumber(w.failed_7d)} fallidas`}</time></div>)}
+        {workflows.length === 0 && <div class="ops-empty">Sin workflows.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Integraciones</h2><p>Cuentas externas conectadas.</p></div></header>
+      <div class="ops-card ops-list">
+        {integrations.map((c: any) => <div class="ops-list-row two"><div><strong>{OPS_PROVIDER_LABELS[c.proveedor] || c.proveedor}</strong><span class="ops-sub">{c.cuenta_nombre || c.cuenta_externa}{c.ultimo_error && ` · ${c.ultimo_error}`}</span></div><time>{c.estado === 'error' ? <span class="ops-badge red">Con error</span> : c.estado === 'activa' ? `Sincronizó ${opsAgo(c.ultima_sync_at, 'nunca').toLowerCase()}` : 'Desconectada'}</time></div>)}
+        {integrations.length === 0 && <div class="ops-empty">Sin integraciones.</div>}
+      </div>
+    </section>
+  </div>
+
+  <div class="ops-grid-2 even ops-section">
+    <section><header class="ops-section-header"><div><h2>Clientes</h2><p>{opsNumber(org.client_count)} en total; últimos 8.</p></div></header><div class="ops-card ops-list">{clients.map((c: any) => <div class="ops-list-row"><strong>{c.empresa}</strong><span>{c.contacto || c.email || 'Sin contacto'}</span><time>{opsAgo(c.created_at)}</time></div>)}{clients.length === 0 && <div class="ops-empty">Sin clientes.</div>}</div></section>
+    <section><header class="ops-section-header"><div><h2>Productos</h2><p>{opsNumber(org.product_count)} en total; últimos 8.</p></div></header><div class="ops-card ops-list">{products.map((p: any) => <div class="ops-list-row"><strong>{p.nombre}</strong><span>{p.sku || 'Sin SKU'} · {opsMoney(p.precio_lista, org.moneda)}</span><span class:list={['ops-badge', p.activo ? 'green' : '']}>{p.activo ? 'Activo' : 'Inactivo'}</span></div>)}{products.length === 0 && <div class="ops-empty">Sin productos.</div>}</div></section>
+  </div>
+
+  <div class="ops-grid-3 ops-section">
+    <section><header class="ops-section-header"><div><h2>Llaves API</h2><p>{opsNumber(org.api_key_count)} llaves.</p></div></header><div class="ops-card ops-list">{keys.map((k: any) => <div class="ops-list-row two"><div><strong>{k.nombre}</strong><span class="ops-sub ops-code">{k.prefix}…{k.last4} · usada {opsAgo(k.last_used_at, 'nunca').toLowerCase()}</span></div><span class:list={['ops-badge', k.revoked_at ? 'red' : 'green']}>{k.revoked_at ? 'Revocada' : 'Activa'}</span></div>)}{keys.length === 0 && <div class="ops-empty">Sin llaves.</div>}</div></section>
+    <section><header class="ops-section-header"><div><h2>Webhooks</h2><p>{opsNumber(org.webhook_count)} endpoints.</p></div></header><div class="ops-card ops-list">{webhooks.map((w: any) => <div class="ops-list-row two"><div><strong class="ops-data-value">{w.url}</strong><span class="ops-sub">{w.last_status || 'Sin entregas'} · {w.fallos_consecutivos || 0} fallos seguidos</span></div><span class:list={['ops-badge', w.activo ? 'green' : 'red']}>{w.activo ? 'Activo' : 'Inactivo'}</span></div>)}{webhooks.length === 0 && <div class="ops-empty">Sin webhooks.</div>}</div></section>
+    <section><header class="ops-section-header"><div><h2>SSO</h2><p>{opsNumber(org.sso_count)} conexiones.</p></div></header><div class="ops-card ops-list">{sso.map((s: any) => <div class="ops-list-row two"><div><strong>{s.nombre}</strong><span class="ops-sub">{s.proveedor} · último acceso {opsAgo(s.last_login_at, 'nunca').toLowerCase()}</span></div><span class:list={['ops-badge', s.enabled ? 'green' : '']}>{s.enabled ? 'Activa' : 'Inactiva'}</span></div>)}{sso.length === 0 && <div class="ops-empty">Sin SSO.</div>}</div></section>
+  </div>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Historial administrativo</h2><p>Acciones de Ops sobre este workspace.</p></div></header>
+    <div class="ops-card">{audit.map((e: any) => <div class="ops-audit-row"><span class:list={['ops-audit-dot', e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action] || e.action}</strong><span class="ops-sub">{e.actor_email || 'Sistema'}</span></div><span>{e.ip || 'IP no disponible'}</span><time title={opsDate(e.created_at)}>{opsAgo(e.created_at)}</time></div>)}{audit.length === 0 && <div class="ops-empty">Sin acciones administrativas.</div>}</div>
+  </section>
+</OpsShell><OpsActionDialog /></OpsLayout>

@@ -1,0 +1,46 @@
+---
+import { opsAgo, opsActorLabel, opsDate, opsEventLabel } from '../../lib/ops-format';
+
+interface Props {
+  events: any[];
+  showOrg?: boolean;
+  empty?: string;
+}
+
+const { events, showOrg = true, empty = 'Sin actividad registrada.' } = Astro.props;
+
+const icon: Record<string, string> = {
+  quote: '<path d="M7 3.5h7l4 4v13H7z" fill="currentColor" fill-opacity=".13"/><path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M10 12h5M10 15.5h5"/>',
+  invoice: '<path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8z" fill="currentColor" fill-opacity=".13"/><path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8zM9 8.5h6M9 12h6"/>',
+  payment: '<rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="currentColor" fill-opacity=".13"/><rect x="3.5" y="6" width="17" height="12" rx="2.5"/><path d="M3.5 10h17M7.5 14.5h3"/>',
+  alert: '<path d="M12 4 3 19.5h18z" fill="currentColor" fill-opacity=".13"/><path d="M12 4 3 19.5h18zM12 10v4M12 16.8h.01"/>',
+  catalog: '<path d="m12 3.5 8 4.5-8 4.5-8-4.5z" fill="currentColor" fill-opacity=".13"/><path d="m12 3.5 8 4.5-8 4.5-8-4.5zM4 12l8 4.5 8-4.5M4 16l8 4.5 8-4.5"/>',
+  system: '<circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>',
+};
+
+function subject(e: any): string | null {
+  if (e.object === 'quote' && e.quote_folio) return e.quote_folio;
+  if (e.object === 'invoice' && e.invoice_number) return e.invoice_number.length > 20 ? null : e.invoice_number;
+  if ((e.object === 'client' || e.object === 'product') && e.subject_name) return e.subject_name;
+  return null;
+}
+---
+<div class="ops-feed">
+  {events.map((e) => {
+    const [label, kind] = opsEventLabel(String(e.type));
+    const who = opsActorLabel(String(e.actor), e.user_name);
+    const what = subject(e);
+    return (
+      <div class="ops-feed-row">
+        <span class:list={['ops-feed-icon', kind]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icon[kind]} /></span>
+        <div class="ops-feed-text">
+          {e.user_id ? <a href={`/ops/users/${e.user_id}`}>{who}</a> : <strong>{who}</strong>} {label}{what && <Fragment> <strong>{what}</strong></Fragment>}
+          {showOrg && <span class="ops-sub"><a href={`/ops/organizations/${e.org_id}`}>{e.org_nombre}</a> · <span class="ops-code">{e.type}</span></span>}
+          {!showOrg && <span class="ops-sub ops-code">{e.type}</span>}
+        </div>
+        <time datetime={new Date(e.created_at).toISOString()} title={opsDate(e.created_at)}>{opsAgo(e.created_at)}</time>
+      </div>
+    );
+  })}
+  {events.length === 0 && <div class="ops-empty">{empty}</div>}
+</div>

@@ -1,22 +1,54 @@
 ---
+type OpsSection =
+  | 'overview' | 'activity' | 'organizations' | 'users' | 'invoices' | 'workflows'
+  | 'integrations' | 'usage' | 'status' | 'security' | 'database';
+
 interface Props {
-  active: 'overview' | 'users' | 'organizations' | 'usage' | 'status' | 'database' | 'security';
+  active: OpsSection;
   eyebrow?: string;
   title: string;
   subtitle?: string;
 }
 
-const { active, eyebrow = 'Cord Platform', title, subtitle } = Astro.props;
+const { active, eyebrow = 'Cord Ops', title, subtitle } = Astro.props;
 const operator = Astro.locals.opsOperator;
-const nav = [
-  { id: 'overview', href: '/ops', label: 'Resumen' },
-  { id: 'users', href: '/ops/users', label: 'Usuarios' },
-  { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones' },
-  { id: 'usage', href: '/ops/usage', label: 'Uso y costos' },
-  { id: 'status', href: '/ops/status', label: 'Disponibilidad' },
-  { id: 'database', href: '/ops/database', label: 'Base de datos' },
-  { id: 'security', href: '/ops/security', label: 'Seguridad' },
+
+// Iconos Glass Duotone (regla 9): trazo 1.5 + relleno al 13 %.
+const icons: Record<OpsSection, string> = {
+  overview: '<rect x="3.5" y="3.5" width="7" height="7" rx="2" fill="currentColor" fill-opacity=".13"/><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor" fill-opacity=".13"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+  activity: '<path d="M3.5 12h3.6l2.4-6 5 12 2.4-6h3.6"/><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13" stroke="none"/>',
+  organizations: '<path d="M4.5 20.5v-13l7-3.5 7 3.5v13" fill="currentColor" fill-opacity=".13"/><path d="M4.5 20.5v-13l7-3.5 7 3.5v13M3 20.5h18M9 10h.01M14 10h.01M9 14h.01M14 14h.01M10 20.5v-3h3v3"/>',
+  users: '<circle cx="12" cy="8.5" r="3.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
+  invoices: '<path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8z" fill="currentColor" fill-opacity=".13"/><path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8zM9 8.5h6M9 12h6M9 15.5h3.5"/>',
+  workflows: '<rect x="3.5" y="4" width="6" height="5" rx="1.5" fill="currentColor" fill-opacity=".13"/><rect x="3.5" y="4" width="6" height="5" rx="1.5"/><rect x="14.5" y="15" width="6" height="5" rx="1.5" fill="currentColor" fill-opacity=".13"/><rect x="14.5" y="15" width="6" height="5" rx="1.5"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2h6"/>',
+  integrations: '<path d="M9 7.5V4M15 7.5V4M7 7.5h10v4a5 5 0 0 1-10 0z" fill="currentColor" fill-opacity=".13"/><path d="M9 7.5V4M15 7.5V4M7 7.5h10v4a5 5 0 0 1-10 0zM12 16.5v3.5"/>',
+  usage: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><rect x="8.5" y="4" width="3" height="16" fill="currentColor" fill-opacity=".13" stroke="none"/>',
+  status: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.3 4.6-5"/>',
+  security: '<path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6z" fill="currentColor" fill-opacity=".13"/><path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6z"/>',
+  database: '<ellipse cx="12" cy="6" rx="7" ry="2.5" fill="currentColor" fill-opacity=".13"/><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+};
+
+const groups: { label: string; items: { id: OpsSection; href: string; label: string }[] }[] = [
+  { label: 'General', items: [
+    { id: 'overview', href: '/ops', label: 'Resumen' },
+    { id: 'activity', href: '/ops/activity', label: 'Actividad' },
+  ] },
+  { label: 'Negocio', items: [
+    { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones' },
+    { id: 'users', href: '/ops/users', label: 'Usuarios' },
+    { id: 'invoices', href: '/ops/invoices', label: 'Facturas' },
+    { id: 'workflows', href: '/ops/workflows', label: 'Workflows' },
+    { id: 'integrations', href: '/ops/integrations', label: 'Integraciones' },
+  ] },
+  { label: 'Plataforma', items: [
+    { id: 'usage', href: '/ops/usage', label: 'Uso y costos' },
+    { id: 'status', href: '/ops/status', label: 'Disponibilidad' },
+    { id: 'security', href: '/ops/security', label: 'Seguridad' },
+    { id: 'database', href: '/ops/database', label: 'Base de datos' },
+  ] },
 ];
+const method = operator?.authMethod === 'passkey' ? 'Clave de acceso'
+  : operator?.authMethod === 'local_session_password' ? 'Sesión local' : 'Contraseña y TOTP';
 ---
 
 <div class="ops-app-shell">
@@ -26,16 +58,23 @@ const nav = [
     </a>
 
     <nav class="ops-app-nav" aria-label="Navegación de Ops">
-      {nav.map((item) => (
-        <a href={item.href} aria-current={active === item.id ? 'page' : undefined}>{item.label}</a>
+      {groups.map((group) => (
+        <Fragment>
+          <div class="ops-nav-group" aria-hidden="true">{group.label}</div>
+          {group.items.map((item) => (
+            <a href={item.href} aria-current={active === item.id ? 'page' : undefined}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[item.id]} />
+              {item.label}
+            </a>
+          ))}
+        </Fragment>
       ))}
     </nav>
 
     <div class="ops-app-sidebar-bottom">
-      <div class="ops-protection-state"><span></span><div><strong>Acceso protegido</strong><small>2 operadores autorizados</small></div></div>
       <div class="ops-operator-card">
         <strong>{operator?.email}</strong>
-        <small>{operator?.authMethod === 'passkey' ? 'Clave de acceso' : operator?.authMethod === 'local_session_password' ? 'Sesión local reforzada' : 'Contraseña y TOTP'}</small>
+        <small class="ops-operator-role">{operator?.role === 'admin' ? 'Administrador' : 'Solo lectura'} · {method}</small>
         <button id="ops-shell-logout" type="button">Cerrar sesión</button>
       </div>
     </div>

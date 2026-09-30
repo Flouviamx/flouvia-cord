@@ -1,26 +1,162 @@
 ---
 import OpsLayout from '../../layouts/OpsLayout.astro';
 import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsFeed from '../../components/ops/OpsFeed.astro';
+import OpsBars from '../../components/ops/OpsBars.astro';
+import OpsDist from '../../components/ops/OpsDist.astro';
 import { sql, withOpsTx } from '../../lib/db';
-import { opsDate,opsNumber,OPS_AUDIT_LABELS } from '../../lib/ops-format';
+import { getPublicStatusSnapshot } from '../../lib/platform-health';
+import { opsAgo, opsDate, opsEventLabel, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS } from '../../lib/ops-format';
+import { opsCollectedByCurrency, opsDailySeries, opsEventFeed, opsOverviewStats, opsTopEventTypes, opsTopOrgs } from '../../lib/ops-insights';
 
-if(!Astro.locals.opsOperator)return Astro.redirect('/ops/login');
-let stats:any={}; let recentUsers:any[]=[]; let recentOrgs:any[]=[]; let audit:any[]=[]; let error=false;
-try{
-  const result=await withOpsTx(
-    sql`select (select count(*)::int from users) users,(select count(*)::int from users where suspended_at is not null) suspended,(select count(*)::int from orgs) organizations,(select count(*)::int from sessions where revoked_at is null and expires_at>now()) sessions,(select count(*)::int from cotizaciones) quotes,(select coalesce(sum(total),0) from cotizaciones where status in ('approved','paid','invoiced')) closed_value,(select count(*)::int from api_keys where revoked_at is null) api_keys,(select count(*)::int from webhooks where activo) webhooks`,
-    sql`select u.id,u.email,u.first_name,u.last_name,u.created_at,u.suspended_at,(select max(last_used_at) from sessions s where s.user_id=u.id) last_seen from users u order by u.created_at desc limit 5`,
-    sql`select o.id,o.nombre,o.plan,o.created_at,u.email owner_email,(select count(*)::int from cotizaciones q where q.org_id=o.id) quotes from orgs o left join users u on u.id=o.owner_id order by o.created_at desc limit 5`,
-    sql`select action,result,actor_email,target_type,created_at from ops_audit_log order by created_at desc limit 8`,
-  );stats=result[0][0]||{};recentUsers=result[1] as any[];recentOrgs=result[2] as any[];audit=result[3] as any[];
-}catch(cause){error=true;console.error('[ops/overview]',cause)}
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+
+let s: any = {};
+let series: any[] = [];
+let feed: any[] = [];
+let collected: any[] = [];
+let topTypes: any[] = [];
+let topOrgs: any[] = [];
+let recentUsers: any[] = [];
+let recentOrgs: any[] = [];
+let blockedOrgs: any[] = [];
+let audit: any[] = [];
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsOverviewStats(),
+    opsDailySeries(30),
+    opsEventFeed({ limit: 12 }),
+    opsCollectedByCurrency(30),
+    opsTopEventTypes(7),
+    opsTopOrgs(7),
+    sql`select u.id, u.email, u.first_name, u.last_name, u.created_at, u.suspended_at, u.email_verified_at,
+               (select max(last_used_at) from sessions s where s.user_id = u.id) last_seen
+        from users u order by u.created_at desc limit 6`,
+    sql`select o.id, o.nombre, coalesce(o.plan, 'free') plan, o.country_code, o.created_at, u.email owner_email,
+               (select count(*)::int from cotizaciones q where q.org_id = o.id) quotes
+        from orgs o left join users u on u.id = o.owner_id order by o.created_at desc limit 6`,
+    sql`select id, nombre, stripe_disabled_reason from orgs
+        where stripe_disabled_reason is not null and stripe_disabled_reason <> '' order by created_at desc limit 3`,
+    sql`select action, result, actor_email, target_type, created_at from ops_audit_log order by created_at desc limit 6`,
+  );
+  [s] = r[0] as any[];
+  [, series, feed, collected, topTypes, topOrgs, recentUsers, recentOrgs, blockedOrgs, audit] = r as any[];
+} catch (cause) { error = true; console.error('[ops/overview]', cause); }
+
+let snapshot: Awaited<ReturnType<typeof getPublicStatusSnapshot>> | null = null;
+try { snapshot = await getPublicStatusSnapshot(); } catch { snapshot = null; }
+const failing = snapshot?.services.filter((service) => !service.ok && !service.stale) ?? [];
+const openIncidents = snapshot?.incidents.filter((incident) => incident.status !== 'resolved') ?? [];
+const platform = !snapshot ? { tone: 'gray', title: 'Sin señal de las sondas', text: 'No fue posible leer el historial de disponibilidad.' }
+  : snapshot.state === 'operational' && openIncidents.length === 0 ? { tone: '', title: 'Plataforma operativa', text: `${snapshot.services.length} sondas en verde · última muestra ${opsAgo(snapshot.windowEnd).toLowerCase()}.` }
+  : snapshot.state === 'outage' ? { tone: 'red', title: 'Hay un servicio interrumpido', text: failing.map((f) => f.service).join(', ') || 'Revisa Disponibilidad.' }
+  : { tone: 'amber', title: failing.length ? 'Servicio degradado' : 'Incidente abierto', text: failing.length ? `Falla: ${failing.map((f) => f.service).join(', ')}.` : `${openIncidents.length} incidente(s) publicado(s) sin resolver.` };
+
+const attention = [
+  ...failing.map((f) => ({ level: 'red', title: `La sonda ${f.service} está fallando`, text: `Última muestra ${opsAgo(f.checkedAt).toLowerCase()}.`, href: '/ops/status', n: '' })),
+  ...(s.integrations_error > 0 ? [{ level: 'red', title: 'Integraciones con error', text: 'El proveedor rechazó la conexión o la sincronización.', href: '/ops/integrations?estado=error', n: opsNumber(s.integrations_error) }] : []),
+  ...(s.runs_failed_24h > 0 ? [{ level: 'amber', title: 'Workflows fallidos en 24 h', text: `${opsPct(s.runs_failed_24h, s.runs_24h)}% de ${opsNumber(s.runs_24h)} ejecuciones.`, href: '/ops/workflows', n: opsNumber(s.runs_failed_24h) }] : []),
+  ...(s.invoices_overdue > 0 ? [{ level: 'amber', title: 'Facturas vencidas sin cobrar', text: 'Saldo abierto con fecha de vencimiento pasada.', href: '/ops/invoices?estado=overdue', n: opsNumber(s.invoices_overdue) }] : []),
+  ...(s.invoices_error > 0 ? [{ level: 'red', title: 'Facturas con error fiscal', text: 'El timbrado o el registro fiscal no se completó.', href: '/ops/invoices?estado=fiscal_error', n: opsNumber(s.invoices_error) }] : []),
+  ...(s.payment_failures_7d > 0 ? [{ level: 'amber', title: 'Pagos fallidos en 7 días', text: 'Tarjetas rechazadas o cobros que no se completaron.', href: '/ops/activity?cat=payments', n: opsNumber(s.payment_failures_7d) }] : []),
+  ...blockedOrgs.map((o) => ({ level: 'amber', title: `${o.nombre}: cobros restringidos`, text: `El procesador reporta: ${o.stripe_disabled_reason}.`, href: `/ops/organizations/${o.id}`, n: '' })),
+  ...(s.locked > 0 ? [{ level: 'amber', title: 'Cuentas bloqueadas por intentos fallidos', text: 'Se desbloquean solas o desde su ficha.', href: '/ops/security', n: opsNumber(s.locked) }] : []),
+];
+
+const pick = (key: string) => series.map((row) => ({ day: String(row.day), value: Number(row[key] || 0) }));
+const growth = Number(s.users_7d || 0) - Number(s.users_prev_7d || 0);
+const displayName = (u: any) => [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email;
 ---
-<OpsLayout title="Operaciones | Cord Ops"><OpsShell active="overview" title="Operaciones" subtitle="Control interno de toda la plataforma Cord.">
+<OpsLayout title="Resumen | Cord Ops"><OpsShell active="overview" title="Resumen" subtitle="Lo que pasa en Cord ahora: personas, negocio, dinero y sistemas.">
   <button slot="actions" id="ops-overview-refresh" class="ops-button secondary">Actualizar</button>
-  {error&&<div class="ops-inline-error">No fue posible cargar la plataforma. Ninguna acción se ejecutó.</div>}
-  <section class="ops-card ops-hero-card"><div style="display:flex;justify-content:space-between;gap:30px;align-items:flex-start"><div><span class="ops-kicker">Estado de plataforma</span><h2 style="margin:0;font-size:34px;letter-spacing:-.045em">Todo bajo control</h2><p style="margin:10px 0 0;color:#86868b;font-size:13px">Neon responde y el carril privilegiado está aislado.</p></div><span class="ops-badge green">Operativa</span></div></section>
-  <section class="ops-card ops-metrics" style="margin-top:18px"><div class="ops-metric"><span>Usuarios</span><strong>{opsNumber(stats.users)}</strong><small>{opsNumber(stats.suspended)} suspendidos</small></div><div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(stats.organizations)}</strong><small>Workspaces totales</small></div><div class="ops-metric"><span>Sesiones</span><strong>{opsNumber(stats.sessions)}</strong><small>Vigentes en Cord</small></div><div class="ops-metric"><span>Cotizaciones</span><strong>{opsNumber(stats.quotes)}</strong><small>Registros comerciales</small></div></section>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Áreas de control</h2><p>Entra directo a cada sistema.</p></div></header><div class="ops-grid-3"><a class="ops-card ops-link-card" href="/ops/users"><div><h3>Usuarios</h3><p>Identidad, sesiones y suspensión.</p></div><b>›</b></a><a class="ops-card ops-link-card" href="/ops/organizations"><div><h3>Organizaciones</h3><p>Equipo, ventas e integraciones.</p></div><b>›</b></a><a class="ops-card ops-link-card" href="/ops/usage"><div><h3>Uso y costos</h3><p>IA, API, CFDI, correo y proveedores.</p></div><b>›</b></a><a class="ops-card ops-link-card" href="/ops/database"><div><h3>Base de datos</h3><p>Todas las tablas, con secretos redactados.</p></div><b>›</b></a><a class="ops-card ops-link-card" href="/ops/security"><div><h3>Seguridad</h3><p>Sesiones privilegiadas y auditoría.</p></div><b>›</b></a><a class="ops-card ops-link-card" href="/ops/database/cotizaciones"><div><h3>Actividad comercial</h3><p>{new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(Number(stats.closed_value||0))} cerrados.</p></div><b>›</b></a></div></section>
-  <div class="ops-grid-2 ops-section"><section><header class="ops-section-header"><div><h2>Usuarios recientes</h2><p>Últimas identidades registradas.</p></div><a href="/ops/users">Ver todos</a></header><div class="ops-card ops-list">{recentUsers.map((u)=><a class="ops-list-row" href={`/ops/users/${u.id}`} style="text-decoration:none"><strong>{[u.first_name,u.last_name].filter(Boolean).join(' ')||u.email}</strong><span>{u.suspended_at?'Suspendida':u.email}</span><span>{opsDate(u.last_seen,'Sin actividad')}</span></a>)}{recentUsers.length===0&&<div class="ops-empty">Sin usuarios.</div>}</div></section><section><header class="ops-section-header"><div><h2>Organizaciones recientes</h2><p>Últimos workspaces.</p></div><a href="/ops/organizations">Ver todas</a></header><div class="ops-card ops-list">{recentOrgs.map((o)=><a class="ops-list-row" href={`/ops/organizations/${o.id}`} style="text-decoration:none"><strong>{o.nombre}</strong><span>{o.owner_email||'Sin propietario'}</span><span>{o.quotes} cotizaciones</span></a>)}{recentOrgs.length===0&&<div class="ops-empty">Sin organizaciones.</div>}</div></section></div>
-  <section class="ops-section"><header class="ops-section-header"><div><h2>Actividad privilegiada</h2><p>Últimos eventos de Ops.</p></div><a href="/ops/security">Auditoría completa</a></header><div class="ops-card">{audit.map((e)=><div class="ops-audit-row"><span class:list={['ops-audit-dot',e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action]||e.action}</strong><span class="ops-sub">{e.actor_email||'Sistema'} · {e.target_type||'plataforma'}</span></div><span>{e.result}</span><time>{opsDate(e.created_at)}</time></div>)}{audit.length===0&&<div class="ops-empty">Sin eventos.</div>}</div></section>
-</OpsShell><script>document.getElementById('ops-overview-refresh')?.addEventListener('click',()=>window.location.reload());</script></OpsLayout>
+  {error && <div class="ops-inline-error">No fue posible cargar todos los datos. Ninguna acción se ejecutó.</div>}
+
+  <section class="ops-card ops-summary">
+    <div class="ops-summary-main">
+      <span class:list={['ops-state-icon', platform.tone]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="12" r="8.5"/>{platform.tone === '' ? <path d="m8.5 12.2 2.4 2.3 4.6-5"/> : <path d="M12 8v4.5M12 15.8h.01"/>}</svg></span>
+      <div><h2>{platform.title}</h2><p>{platform.text}</p></div>
+    </div>
+    <a class="ops-button secondary sm" href="/ops/status">Ver disponibilidad</a>
+  </section>
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Usuarios</span><strong>{opsNumber(s.users)}</strong><small><b class:list={['ops-delta', growth < 0 && 'down']}>{growth >= 0 ? '+' : ''}{opsNumber(s.users_7d)}</b> en 7 días</small></div>
+    <div class="ops-metric"><span>Activos 7 días</span><strong>{opsNumber(s.active_users_7d)}</strong><small><b>{opsNumber(s.active_users_24h)}</b> en las últimas 24 h</small></div>
+    <div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(s.orgs)}</strong><small><b>{opsNumber(s.active_orgs_7d)}</b> con actividad en 7 días</small></div>
+    <div class="ops-metric"><span>De pago</span><strong>{opsNumber(s.paying_orgs)}</strong><small>{opsPct(s.paying_orgs, s.orgs)}% de las organizaciones</small></div>
+    <div class="ops-metric"><span>Cotizaciones 30 días</span><strong>{opsNumber(s.quotes_30d)}</strong><small><b>{opsNumber(s.approved_30d)}</b> aprobadas · {opsPct(s.approved_30d, s.sent_30d)}% de las enviadas</small></div>
+    <div class="ops-metric"><span>Eventos 24 h</span><strong>{opsNumber(s.events_24h)}</strong><small>{opsNumber(s.sessions)} sesiones vigentes</small></div>
+  </section>
+
+  <section class="ops-card ops-metrics cols-6">
+    <a class="ops-metric ops-metric-link" href="/ops/invoices"><span>Facturas 30 días</span><strong>{opsNumber(s.invoices_30d)}</strong><small><b>{opsNumber(s.invoices_open)}</b> por cobrar</small></a>
+    <a class="ops-metric ops-metric-link" href="/ops/invoices?estado=overdue"><span>Vencidas</span><strong>{opsNumber(s.invoices_overdue)}</strong><small>{opsNumber(s.invoices_error)} con error fiscal</small></a>
+    <div class="ops-metric"><span>Pagos 30 días</span><strong>{opsNumber(s.payments_30d)}</strong><small>{opsNumber(s.payment_failures_7d)} fallidos en 7 días</small></div>
+    <a class="ops-metric ops-metric-link" href="/ops/workflows"><span>Workflows activos</span><strong>{opsNumber(s.workflows_active)}</strong><small><b>{opsNumber(s.runs_24h)}</b> ejecuciones en 24 h</small></a>
+    <a class="ops-metric ops-metric-link" href="/ops/workflows"><span>Fallidas 24 h</span><strong>{opsNumber(s.runs_failed_24h)}</strong><small>{100 - opsPct(s.runs_failed_24h, s.runs_24h)}% de éxito</small></a>
+    <a class="ops-metric ops-metric-link" href="/ops/integrations"><span>Integraciones</span><strong>{opsNumber(s.integrations)}</strong><small><b>{opsNumber(s.integrations_error)}</b> con error</small></a>
+  </section>
+
+  <div class="ops-grid-3 ops-section">
+    <OpsBars title="Actividad" hint="Eventos de negocio por día · 30 días" series={pick('events')} />
+    <OpsBars title="Personas activas" hint="Usuarios con sesión usada por día" series={pick('active_users')} total={Number(s.active_users_7d || 0)} />
+    <OpsBars title="Altas" hint="Cuentas nuevas por día · 30 días" series={pick('signups')} />
+  </div>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Requiere atención</h2><p>Señales que alguien de Cord debería revisar hoy.</p></div></header>
+      <div class="ops-card ops-attention">
+        {attention.map((item) => <a class:list={['ops-attention-row', item.level]} href={item.href}><i></i><div><strong>{item.title}</strong><p>{item.text}</p></div><b>{item.n}</b></a>)}
+        {attention.length === 0 && <div class="ops-empty">Nada pendiente. Sondas, cobros, workflows e integraciones en orden.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Cobrado en 30 días</h2><p>Por divisa; nunca se suman monedas distintas.</p></div></header>
+      <div class="ops-card"><OpsDist rows={collected.map((row) => ({ label: `${row.currency} · ${opsNumber(row.payments)} pagos`, value: Number(row.payments), display: opsMoney(row.total, row.currency) }))} empty="Sin pagos registrados en los últimos 30 días." /></div>
+    </section>
+  </div>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Qué están haciendo</h2><p>Últimos movimientos en todas las organizaciones.</p></div><a href="/ops/activity">Ver toda la actividad</a></header>
+      <div class="ops-card"><OpsFeed events={feed.slice(0, 12)} /></div>
+    </section>
+    <div>
+      <section>
+        <header class="ops-section-header"><div><h2>Más activas · 7 días</h2><p>Eventos y personas por organización.</p></div></header>
+        <div class="ops-card"><OpsDist rows={topOrgs.map((o) => ({ label: `${o.nombre} · ${o.people} ${o.people === 1 ? 'persona' : 'personas'}`, value: Number(o.n), href: `/ops/organizations/${o.id}` }))} /></div>
+      </section>
+      <section class="ops-section">
+        <header class="ops-section-header"><div><h2>Acciones más comunes</h2><p>Tipos de evento en 7 días.</p></div></header>
+        <div class="ops-card"><OpsDist rows={topTypes.map((t) => { const [label] = opsEventLabel(String(t.type)); return { label: label.charAt(0).toUpperCase() + label.slice(1), value: Number(t.n) }; })} /></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="ops-grid-2 even ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Usuarios recientes</h2><p>Últimas cuentas creadas.</p></div><a href="/ops/users">Ver todos</a></header>
+      <div class="ops-card ops-list">
+        {recentUsers.map((u) => <a class="ops-list-row" href={`/ops/users/${u.id}`}><div class="ops-identity"><span class="ops-avatar">{displayName(u).charAt(0).toUpperCase()}</span><div><strong>{displayName(u)}</strong><span class="ops-sub">{u.email}</span></div></div><span>{u.suspended_at ? 'Suspendida' : u.email_verified_at ? 'Correo verificado' : 'Correo pendiente'}</span><time title={opsDate(u.created_at)}>{opsAgo(u.created_at)}</time></a>)}
+        {recentUsers.length === 0 && <div class="ops-empty">Sin usuarios.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Organizaciones recientes</h2><p>Últimos workspaces.</p></div><a href="/ops/organizations">Ver todas</a></header>
+      <div class="ops-card ops-list">
+        {recentOrgs.map((o) => <a class="ops-list-row" href={`/ops/organizations/${o.id}`}><div class="ops-identity"><span class="ops-avatar square">{o.nombre.charAt(0).toUpperCase()}</span><div><strong>{o.nombre}</strong><span class="ops-sub">{o.owner_email || 'Sin propietario'}</span></div></div><span>{o.country_code} · {o.plan} · {opsNumber(o.quotes)} cotizaciones</span><time title={opsDate(o.created_at)}>{opsAgo(o.created_at)}</time></a>)}
+        {recentOrgs.length === 0 && <div class="ops-empty">Sin organizaciones.</div>}
+      </div>
+    </section>
+  </div>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Actividad privilegiada</h2><p>Últimas acciones de operadores en Ops.</p></div><a href="/ops/security">Auditoría completa</a></header>
+    <div class="ops-card">
+      {audit.map((e) => <div class="ops-audit-row"><span class:list={['ops-audit-dot', e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action] || e.action}</strong><span class="ops-sub">{e.actor_email || 'Sistema'} · {e.target_type || 'plataforma'}</span></div><span>{e.result === 'success' ? 'Correcta' : e.result === 'denied' ? 'Denegada' : 'Falló'}</span><time title={opsDate(e.created_at)}>{opsAgo(e.created_at)}</time></div>)}
+      {audit.length === 0 && <div class="ops-empty">Sin eventos.</div>}
+    </div>
+  </section>
+</OpsShell><script>document.getElementById('ops-overview-refresh')?.addEventListener('click', () => window.location.reload());</script></OpsLayout>

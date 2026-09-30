@@ -1,11 +1,13 @@
 ---
 import OpsLayout from '../../layouts/OpsLayout.astro';
 import OpsShell from '../../components/ops/OpsShell.astro';
-import { getPublicStatusSnapshot, HEALTH_SERVICES } from '../../lib/platform-health';
-import { opsDate } from '../../lib/ops-format';
+import { sql } from '../../lib/db';
+import { getPublicStatusSnapshot, HEALTH_SERVICES, HEALTH_WINDOW_DAYS } from '../../lib/platform-health';
+import { opsAgo, opsDate } from '../../lib/ops-format';
 
 const operator = Astro.locals.opsOperator;
 if (!operator) return Astro.redirect('/ops/login');
+const canWrite = operator.role === 'admin';
 
 let snapshot;
 let unavailable = false;
@@ -16,129 +18,313 @@ try {
     snapshot = { state: 'unknown' as const, services: [], history: [], incidents: [], windowStart: null, windowEnd: null };
 }
 
-const serviceName: Record<(typeof HEALTH_SERVICES)[number], string> = {
-    app: 'App · render de /sign-in',
-    api: 'API pública · /api/v1 (401 sin llave)',
-    public_link: 'Link público /q/demo',
-    database: 'Neon / núcleo de datos',
-    stripe: 'Stripe API',
-    payments_webhook: 'Webhooks de pago (con cobros pendientes)',
-    fiscal: 'Facturapi · cuenta',
-    email: 'Resend · API',
-    ai: 'Anthropic · modelos',
+// Ops ve TODOS los incidentes; la página pública solo los abiertos y los
+// resueltos dentro de la ventana. status_incidents no es multi-tenant.
+let incidents: any[] = [];
+try {
+    incidents = await sql`
+        select id, status, severity, title_es, title_en, summary_es, summary_en,
+               started_at, resolved_at, created_at, updated_at,
+               (status <> 'resolved' or resolved_at >= now() - make_interval(days => ${HEALTH_WINDOW_DAYS})) as public
+        from status_incidents
+        order by (status = 'resolved'), started_at desc
+        limit 100`;
+} catch { unavailable = true; }
+
+const serviceName: Record<(typeof HEALTH_SERVICES)[number], [string, string]> = {
+    app: ['Aplicación', 'Render de /sign-in'],
+    api: ['API pública', '/api/v1 responde 401 sin llave'],
+    public_link: ['Link público', 'Cotización de demostración /q/demo'],
+    database: ['Base de datos', 'Neon, núcleo de datos'],
+    stripe: ['Procesador de pagos', 'API de Stripe'],
+    payments_webhook: ['Confirmación de pagos', 'Cobros cobrados en Stripe que Cord no registró'],
+    fiscal: ['Timbrado fiscal', 'Cuenta de Facturapi'],
+    email: ['Correo', 'API de Resend'],
+    ai: ['IA', 'Modelos de Anthropic'],
 };
-const stateLabel = {
-    operational: 'Operativa',
-    degraded: 'Degradada',
-    outage: 'Interrumpida',
-    unknown: 'Sin señal reciente',
+const stateLabel = { operational: 'Operativa', degraded: 'Degradada', outage: 'Interrumpida', unknown: 'Sin señal' };
+const incidentState: Record<string, [string, string]> = {
+    investigating: ['Investigando', 'amber'],
+    identified: ['Identificado', 'amber'],
+    monitoring: ['Monitoreando', 'blue'],
+    resolved: ['Resuelto', 'green'],
 };
-const incidentState = {
-    investigating: 'Investigando',
-    identified: 'Identificado',
-    monitoring: 'Monitoreando',
-    resolved: 'Resuelto',
+const severityLabel: Record<string, [string, string]> = { minor: ['Menor', 'blue'], major: ['Mayor', 'amber'], critical: ['Crítica', 'red'] };
+const open = incidents.filter((incident) => incident.status !== 'resolved').length;
+const duration = (start: unknown, end: unknown) => {
+    const minutes = Math.round((new Date(String(end ?? new Date())).getTime() - new Date(String(start)).getTime()) / 60_000);
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.round(minutes / 60);
+    return hours < 48 ? `${hours} h` : `${Math.round(hours / 24)} días`;
 };
+const shortDate = (value: unknown) => value
+    ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeZone: 'America/Mexico_City' }).format(new Date(String(value)))
+    : 'Sin datos';
+const payload = (incident: any) => JSON.stringify({
+    id: incident.id, status: incident.status, severity: incident.severity,
+    titleEs: incident.title_es, titleEn: incident.title_en, summaryEs: incident.summary_es, summaryEn: incident.summary_en,
+    startedAt: new Date(incident.started_at).toISOString(), resolvedAt: incident.resolved_at ? new Date(incident.resolved_at).toISOString() : null,
+});
 ---
 
 <OpsLayout title="Disponibilidad | Cord Ops">
-  <OpsShell active="status" title="Disponibilidad" subtitle="Sondas verificables e incidentes publicados; sin porcentajes sembrados.">
+  <OpsShell active="status" title="Disponibilidad" subtitle="Sondas verificables e incidentes publicados en la página pública de estado.">
     <a slot="actions" class="ops-button secondary" href="/desarrolladores/status" target="_blank" rel="noopener">Ver página pública</a>
 
+    {unavailable && <div class="ops-inline-warning">La migración de disponibilidad no está aplicada o la base no respondió. La página pública mostrará “sin datos verificables”.</div>}
+
     <section class="ops-card ops-metrics">
-      <div class="ops-metric"><span>Estado</span><strong>{stateLabel[snapshot.state]}</strong><small>Última muestra por servicio</small></div>
-      <div class="ops-metric"><span>Sondas</span><strong>{snapshot.services.length}/{HEALTH_SERVICES.length}</strong><small>Con señal en la ventana</small></div>
-      <div class="ops-metric"><span>Ventana</span><strong>{snapshot.windowStart ? opsDate(snapshot.windowStart) : 'Sin datos'}</strong><small>Primera muestra conservada</small></div>
-      <div class="ops-metric"><span>Incidentes</span><strong>{snapshot.incidents.filter((incident) => incident.status !== 'resolved').length}</strong><small>Abiertos</small></div>
+      <div class="ops-metric"><span>Estado</span><strong>{stateLabel[snapshot.state]}</strong><small>Según la última muestra de cada sonda</small></div>
+      <div class="ops-metric"><span>Sondas con señal</span><strong>{snapshot.services.length} de {HEALTH_SERVICES.length}</strong><small>{snapshot.services.filter((s) => !s.ok && !s.stale).length} fallando ahora</small></div>
+      <div class="ops-metric"><span>Historial desde</span><strong class="text">{shortDate(snapshot.windowStart)}</strong><small>Ventana de {HEALTH_WINDOW_DAYS} días</small></div>
+      <div class="ops-metric"><span>Incidentes abiertos</span><strong>{open}</strong><small>{incidents.length} registrados en total</small></div>
     </section>
 
-    {unavailable && <div class="ops-card ops-card-pad ops-status-warning">La migración de disponibilidad no está aplicada o Neon no respondió. La página pública mostrará “sin datos verificables”.</div>}
-
     <section class="ops-section">
-      <header class="ops-section-header"><div><h2>Sondas recientes</h2><p>El workflow <code>status-probe</code> de GitHub llama <code>/api/health</code> cada hora (el cron diario de Vercel queda de respaldo). Fiscal, correo e IA se omiten en entornos sin su llave.</p></div></header>
-      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Servicio</th><th>Estado</th><th>Latencia</th><th>Muestras correctas</th><th>Última muestra</th></tr></thead><tbody>
+      <header class="ops-section-header"><div><h2>Sondas</h2><p>El workflow status-probe de GitHub llama /api/health cada hora; el cron diario de Vercel queda de respaldo. Timbrado, correo e IA se omiten en entornos sin su llave.</p></div></header>
+      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Servicio</th><th>Estado</th><th class="num">Latencia</th><th class="num">Muestras correctas</th><th>Última muestra</th></tr></thead><tbody>
         {HEALTH_SERVICES.map((id) => {
           const service = snapshot.services.find((item) => item.service === id);
-          return <tr><td>{serviceName[id]}</td><td>{!service || service.stale ? <span class="ops-badge amber">Sin señal</span> : service.ok ? <span class="ops-badge green">Correcta</span> : <span class="ops-badge red">Falló</span>}</td><td>{service ? `${service.latencyMs} ms` : '—'}</td><td>{service ? `${service.successPct.toFixed(2)}% · ${service.checks} muestras` : '—'}</td><td>{service ? opsDate(service.checkedAt) : '—'}</td></tr>;
+          const [name, detail] = serviceName[id];
+          return <tr>
+            <td><strong>{name}</strong><span class="ops-sub">{detail}</span></td>
+            <td>{!service || service.stale ? <span class="ops-badge amber">Sin señal</span> : service.ok ? <span class="ops-badge green">Correcta</span> : <span class="ops-badge red">Falló</span>}</td>
+            <td class="num">{service ? `${service.latencyMs} ms` : '—'}</td>
+            <td class="num">{service ? <Fragment>{service.successPct.toFixed(2)}%<span class="ops-sub">{service.checks} muestras</span></Fragment> : '—'}</td>
+            <td>{service ? <span title={opsDate(service.checkedAt)}>{opsAgo(service.checkedAt)}</span> : '—'}</td>
+          </tr>;
         })}
       </tbody></table></div>
     </section>
 
-    <section class="ops-section">
-      <header class="ops-section-header"><div><h2>Publicar un incidente</h2><p>Ambos idiomas son obligatorios. La página pública nunca traduce ni completa contenido automáticamente.</p></div></header>
-      <form id="ops-incident-form" class="ops-card ops-card-pad ops-incident-form">
-        <label><span>Título ES</span><input name="titleEs" minlength="3" maxlength="160" required /></label>
-        <label><span>Title EN</span><input name="titleEn" minlength="3" maxlength="160" required /></label>
-        <label><span>Resumen ES</span><textarea name="summaryEs" minlength="3" maxlength="4000" rows="4" required></textarea></label>
-        <label><span>Summary EN</span><textarea name="summaryEn" minlength="3" maxlength="4000" rows="4" required></textarea></label>
-        <div class="ops-incident-grid"><label><span>Severidad</span><select name="severity"><option value="minor">Menor</option><option value="major">Mayor</option><option value="critical">Crítica</option></select></label><label><span>Inicio</span><input name="startedAt" type="datetime-local" required /></label></div>
-        <div class="ops-incident-actions"><p id="ops-incident-result" role="status"></p><button class="ops-button" type="submit">Publicar como “Investigando”</button></div>
+    <section class="ops-section" id="incidente">
+      <header class="ops-section-header">
+        <div><h2 id="ops-incident-heading">Publicar un incidente</h2><p>Escribe para cualquier persona, sin jerga técnica. Ambos idiomas son obligatorios: la página pública nunca traduce ni completa texto.</p></div>
+      </header>
+      {!canWrite && <div class="ops-inline-warning">Tu acceso es de solo lectura. Un administrador debe publicar o editar incidentes.</div>}
+      <form id="ops-incident-form" class="ops-card ops-card-pad ops-incident-form" novalidate>
+        <input type="hidden" name="id" />
+        <div class="ops-incident-grid three">
+          <label class="ops-field"><span>Estado</span>
+            <select class="ops-select" name="status">
+              <option value="investigating">Investigando</option>
+              <option value="identified">Identificado</option>
+              <option value="monitoring">Monitoreando</option>
+              <option value="resolved">Resuelto</option>
+            </select>
+            <small>Un incidente que ya terminó se registra directo como resuelto.</small>
+          </label>
+          <label class="ops-field"><span>Severidad</span>
+            <select class="ops-select" name="severity">
+              <option value="minor">Menor · afecta una parte</option>
+              <option value="major">Mayor · afecta a muchos</option>
+              <option value="critical">Crítica · Cord no funciona</option>
+            </select>
+          </label>
+          <label class="ops-field"><span>Inicio</span><input class="ops-input" name="startedAt" type="datetime-local" required /><small>En tu hora local.</small></label>
+          <label class="ops-field" data-resolved-only hidden><span>Fin</span><input class="ops-input" name="resolvedAt" type="datetime-local" /><small>Vacío = ahora.</small></label>
+        </div>
+        <div class="ops-incident-grid">
+          <div class="ops-incident-lang">
+            <span class="ops-lang">Español</span>
+            <label class="ops-field"><span>Título <em data-count="titleEs">0/160</em></span><input class="ops-input" name="titleEs" maxlength="160" required placeholder="Revisamos la alerta de confirmación de pagos" /></label>
+            <label class="ops-field"><span>Resumen <em data-count="summaryEs">0/4000</em></span><textarea class="ops-textarea" name="summaryEs" maxlength="4000" rows="7" required placeholder="Qué pasó, a quién afectó y qué hicimos."></textarea></label>
+          </div>
+          <div class="ops-incident-lang">
+            <span class="ops-lang">English</span>
+            <label class="ops-field"><span>Title <em data-count="titleEn">0/160</em></span><input class="ops-input" name="titleEn" maxlength="160" required placeholder="We reviewed the payment confirmation alert" /></label>
+            <label class="ops-field"><span>Summary <em data-count="summaryEn">0/4000</em></span><textarea class="ops-textarea" name="summaryEn" maxlength="4000" rows="7" required placeholder="What happened, who was affected and what we did."></textarea></label>
+          </div>
+        </div>
+        <div id="ops-incident-error" class="ops-inline-error" role="alert" hidden></div>
+        <div class="ops-incident-actions">
+          <p>Se publica en cuanto lo guardas. Los resueltos se muestran {HEALTH_WINDOW_DAYS} días.</p>
+          <button class="ops-button ghost" type="button" id="ops-incident-cancel" hidden>Cancelar edición</button>
+          <button class="ops-button" type="submit" disabled={!canWrite}>Publicar incidente</button>
+        </div>
       </form>
     </section>
 
     <section class="ops-section">
-      <header class="ops-section-header"><div><h2>Incidentes registrados</h2><p>Los incidentes se resuelven; no se eliminan desde la interfaz.</p></div></header>
-      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Incidente</th><th>Severidad</th><th>Estado</th><th>Inicio</th><th>Actualizar</th></tr></thead><tbody>
-        {snapshot.incidents.map((incident) => <tr><td><strong>{incident.titleEs}</strong><span class="ops-sub">{incident.titleEn}</span></td><td><span class:list={['ops-badge', incident.severity === 'critical' ? 'red' : incident.severity === 'major' ? 'amber' : 'blue']}>{incident.severity}</span></td><td>{incidentState[incident.status]}</td><td>{opsDate(incident.startedAt)}</td><td><form class="ops-status-form" data-id={incident.id}><select name="status" aria-label={`Estado de ${incident.titleEs}`}><option value="investigating" selected={incident.status === 'investigating'}>Investigando</option><option value="identified" selected={incident.status === 'identified'}>Identificado</option><option value="monitoring" selected={incident.status === 'monitoring'}>Monitoreando</option><option value="resolved" selected={incident.status === 'resolved'}>Resuelto</option></select><button class="ops-button secondary" type="submit">Guardar</button></form></td></tr>)}
-        {snapshot.incidents.length === 0 && <tr><td colspan="5" class="ops-empty">No hay incidentes reales registrados.</td></tr>}
+      <header class="ops-section-header"><div><h2>Incidentes registrados</h2><p>Se corrigen o se resuelven; no se eliminan desde la interfaz.</p></div></header>
+      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Incidente</th><th>Severidad</th><th>Estado</th><th>Periodo</th><th>Página pública</th><th></th></tr></thead><tbody>
+        {incidents.map((incident) => {
+          const [state, tone] = incidentState[incident.status] ?? [incident.status, ''];
+          const [sev, sevTone] = severityLabel[incident.severity] ?? [incident.severity, ''];
+          return <tr>
+            <td class="ops-wrap"><strong>{incident.title_es}</strong><span class="ops-sub">{incident.title_en}</span></td>
+            <td><span class:list={['ops-badge', sevTone]}>{sev}</span></td>
+            <td>
+              {canWrite ? <select class="ops-select sm" data-quick-status={incident.id} aria-label={`Estado de ${incident.title_es}`}>
+                {Object.entries(incidentState).map(([value, [label]]) => <option value={value} selected={incident.status === value}>{label}</option>)}
+              </select> : <span class:list={['ops-badge', tone]}>{state}</span>}
+            </td>
+            <td>{opsDate(incident.started_at)}<span class="ops-sub">{incident.resolved_at ? `Hasta ${opsDate(incident.resolved_at)} · ${duration(incident.started_at, incident.resolved_at)}` : `Abierto hace ${duration(incident.started_at, null)}`}</span></td>
+            <td>{incident.public ? <span class="ops-badge green">Visible</span> : <span class="ops-badge">Fuera de la ventana</span>}</td>
+            <td>{canWrite && <button class="ops-button secondary sm" type="button" data-edit-incident={payload(incident)}>Editar</button>}</td>
+          </tr>;
+        })}
+        {incidents.length === 0 && <tr><td colspan="6" class="ops-empty">No hay incidentes registrados.</td></tr>}
       </tbody></table></div>
     </section>
   </OpsShell>
+  <div id="ops-status-toast" class="ops-toast" role="status" hidden></div>
 </OpsLayout>
 
 <script>
   const endpoint = '/api/ops/status-incidents';
-  const form = document.getElementById('ops-incident-form') as HTMLFormElement | null;
-  const result = document.getElementById('ops-incident-result');
-  form?.addEventListener('submit', async (event) => {
+  const form = document.getElementById('ops-incident-form') as HTMLFormElement;
+  const errorBox = document.getElementById('ops-incident-error') as HTMLElement;
+  const heading = document.getElementById('ops-incident-heading') as HTMLElement;
+  const cancel = document.getElementById('ops-incident-cancel') as HTMLButtonElement;
+  const submit = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+  const toast = document.getElementById('ops-status-toast') as HTMLElement;
+  const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+
+  function notify(message: string, isError = false) {
+    toast.textContent = message;
+    toast.classList.toggle('error', isError);
+    toast.hidden = false;
+    window.clearTimeout(Number(toast.dataset.timer));
+    toast.dataset.timer = String(window.setTimeout(() => { toast.hidden = true; }, isError ? 7000 : 4500));
+  }
+
+  // El aviso sobrevive a la recarga: sin esto, "publicado" se perdía en el
+  // reload y parecía que no había pasado nada.
+  const remember = (message: string) => { try { sessionStorage.setItem('ops-status-flash', message); } catch { /* sin almacenamiento, solo se pierde el aviso */ } };
+  try {
+    const flash = sessionStorage.getItem('ops-status-flash');
+    if (flash) { sessionStorage.removeItem('ops-status-flash'); notify(flash); }
+  } catch { /* almacenamiento bloqueado */ }
+
+  const toLocalInput = (iso: string | null) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+  const toIso = (local: string) => local ? new Date(local).toISOString() : '';
+
+  function syncResolved() {
+    const resolved = field('status').value === 'resolved';
+    form.querySelector<HTMLElement>('[data-resolved-only]')!.hidden = !resolved;
+  }
+  function syncCounts() {
+    form.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+      const input = field(el.dataset.count!);
+      el.textContent = `${input.value.trim().length}/${input.maxLength}`;
+    });
+  }
+  field('status').addEventListener('change', syncResolved);
+  form.addEventListener('input', syncCounts);
+  if (!field('startedAt').value) field('startedAt').value = toLocalInput(new Date().toISOString());
+  syncResolved();
+  syncCounts();
+
+  function resetForm() {
+    form.reset();
+    field('id').value = '';
+    field('startedAt').value = toLocalInput(new Date().toISOString());
+    heading.textContent = 'Publicar un incidente';
+    submit.textContent = 'Publicar incidente';
+    cancel.hidden = true;
+    errorBox.hidden = true;
+    syncResolved();
+    syncCounts();
+  }
+  cancel.addEventListener('click', resetForm);
+
+  document.querySelectorAll<HTMLButtonElement>('[data-edit-incident]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const data = JSON.parse(button.dataset.editIncident || '{}');
+      field('id').value = data.id;
+      field('status').value = data.status;
+      field('severity').value = data.severity;
+      field('titleEs').value = data.titleEs;
+      field('titleEn').value = data.titleEn;
+      field('summaryEs').value = data.summaryEs;
+      field('summaryEn').value = data.summaryEn;
+      field('startedAt').value = toLocalInput(data.startedAt);
+      field('resolvedAt').value = toLocalInput(data.resolvedAt);
+      heading.textContent = 'Editar incidente';
+      submit.textContent = 'Guardar cambios';
+      cancel.hidden = false;
+      errorBox.hidden = true;
+      syncResolved();
+      syncCounts();
+      document.getElementById('incidente')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-    button.disabled = true;
-    if (result) result.textContent = '';
-    const data = new FormData(form);
-    const localStart = String(data.get('startedAt') || '');
-    const payload = Object.fromEntries(data.entries());
-    payload.startedAt = new Date(localStart).toISOString();
+    errorBox.hidden = true;
+    const id = field('id').value;
+    const status = field('status').value;
+    const body: Record<string, unknown> = {
+      status,
+      severity: field('severity').value,
+      titleEs: field('titleEs').value,
+      titleEn: field('titleEn').value,
+      summaryEs: field('summaryEs').value,
+      summaryEn: field('summaryEn').value,
+      startedAt: toIso(field('startedAt').value),
+      resolvedAt: status === 'resolved' ? toIso(field('resolvedAt').value) || null : null,
+    };
+    if (id) Object.assign(body, { action: 'edit', targetId: id });
+    submit.disabled = true;
+    const label = submit.textContent;
+    submit.textContent = 'Guardando';
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || 'No se pudo publicar');
+      const response = await fetch(endpoint, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `No se pudo guardar (error ${response.status}). No se publicó nada.`);
+      remember(id ? 'Cambios guardados. La página pública ya los muestra.' : 'Incidente publicado. Ya aparece en la página pública.');
       window.location.reload();
     } catch (error) {
-      if (result) result.textContent = error instanceof Error ? error.message : 'No se pudo publicar';
-      button.disabled = false;
+      const message = error instanceof Error ? error.message : 'No se pudo guardar el incidente.';
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+      notify(message, true);
+      submit.disabled = false;
+      submit.textContent = label;
     }
   });
 
-  document.querySelectorAll<HTMLFormElement>('.ops-status-form').forEach((statusForm) => {
-    statusForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const button = statusForm.querySelector('button') as HTMLButtonElement;
-      const select = statusForm.querySelector('select') as HTMLSelectElement;
-      button.disabled = true;
+  document.querySelectorAll<HTMLSelectElement>('[data-quick-status]').forEach((select) => {
+    const initial = select.value;
+    select.addEventListener('change', async () => {
+      select.disabled = true;
       try {
-        const response = await fetch(endpoint, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'set_status', targetId: statusForm.dataset.id, status: select.value }) });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || 'No se pudo actualizar');
+        const response = await fetch(endpoint, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'set_status', targetId: select.dataset.quickStatus, status: select.value }) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'No se pudo actualizar el estado.');
+        remember('Estado actualizado en la página pública.');
         window.location.reload();
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : 'No se pudo actualizar');
-        button.disabled = false;
+        select.value = initial;
+        select.disabled = false;
+        notify(error instanceof Error ? error.message : 'No se pudo actualizar el estado.', true);
       }
     });
   });
 </script>
 
 <style>
-  .ops-status-warning { margin-bottom: 30px; color: #8a5c17; background: #fff8e8; }
-  .ops-incident-form { display: grid; gap: 18px; }
-  .ops-incident-form label { display: grid; gap: 7px; }
-  .ops-incident-form label > span { color: #6e6e73; font-size: 12px; font-weight: 650; }
-  .ops-incident-form input,.ops-incident-form textarea,.ops-incident-form select,.ops-status-form select { width: 100%; border: 1px solid rgba(0,0,0,.12); border-radius: 12px; background: #fff; padding: 10px 12px; color: #1d1d1f; }
-  .ops-incident-form textarea { resize: vertical; line-height: 1.5; }
-  .ops-incident-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .ops-incident-actions,.ops-status-form { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-  .ops-incident-actions p { margin-right: auto; color: #c9343b; font-size: 13px; }
-  .ops-status-form select { min-width: 145px; }
-  @media (max-width: 760px) { .ops-incident-grid { grid-template-columns: 1fr; } .ops-status-form { align-items: stretch; flex-direction: column; } }
+  .ops-incident-form { display: grid; gap: 22px; }
+  .ops-incident-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .ops-incident-grid.three { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
+  .ops-incident-lang { display: grid; gap: 14px; align-content: start; padding: 18px; border-radius: 16px; background: #fbfbfc; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); }
+  .ops-incident-lang .ops-input, .ops-incident-lang .ops-textarea { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07); }
+  .ops-lang { font-size: 12px; font-weight: 650; color: var(--ops-navy); }
+  .ops-field em { float: right; font-style: normal; font-weight: 450; color: var(--ops-ghost); font-variant-numeric: tabular-nums; }
+  .ops-incident-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .ops-incident-actions p { margin: 0 auto 0 0; color: var(--ops-faint); font-size: 12.5px; }
+  .ops-incident-form .ops-inline-error { margin: 0; }
+  @media (max-width: 1100px) { .ops-incident-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 760px) {
+    .ops-incident-grid, .ops-incident-grid.three { grid-template-columns: minmax(0, 1fr); }
+    .ops-incident-actions { flex-direction: column; align-items: stretch; }
+    .ops-incident-actions p { margin: 0; }
+  }
 </style>

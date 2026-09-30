@@ -1,0 +1,113 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsFeed from '../../components/ops/OpsFeed.astro';
+import OpsBars from '../../components/ops/OpsBars.astro';
+import OpsDist from '../../components/ops/OpsDist.astro';
+import { sql, withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsNumber, opsPct, OPS_EVENT_CATEGORIES } from '../../lib/ops-format';
+import { OPS_FEED_PAGE, opsActivityStats, opsDailySeries, opsEventFeed, opsRecentLogins, opsTopUsers } from '../../lib/ops-insights';
+import { parseOpsPage } from '../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const params = Astro.url.searchParams;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const cat = OPS_EVENT_CATEGORIES.some((c) => c.id === params.get('cat')) ? String(params.get('cat')) : '';
+const orgId = UUID.test(params.get('org') || '') ? String(params.get('org')) : null;
+const userId = UUID.test(params.get('user') || '') ? String(params.get('user')) : null;
+const page = parseOpsPage(params.get('page'));
+
+let stats: any = {};
+let feed: any[] = [];
+let series: any[] = [];
+let topUsers: any[] = [];
+let logins: any[] = [];
+let scope: any = null;
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsActivityStats(),
+    opsEventFeed({ orgId, userId, category: cat, offset: (page - 1) * OPS_FEED_PAGE }),
+    opsDailySeries(30),
+    opsTopUsers(7),
+    opsRecentLogins(10),
+    sql`select (select nombre from orgs where id = ${orgId}::uuid) org_nombre,
+               (select coalesce(nullif(trim(concat_ws(' ', first_name, last_name)), ''), email) from users where id = ${userId}::uuid) user_name`,
+  );
+  [stats] = r[0] as any[];
+  [, feed, series, topUsers, logins] = r as any[];
+  scope = (r[5] as any[])[0];
+} catch (cause) { error = true; console.error('[ops/activity]', cause); }
+
+const hasMore = feed.length > OPS_FEED_PAGE;
+const rows = feed.slice(0, OPS_FEED_PAGE);
+const href = (next: Record<string, string | number | null>) => {
+  const q = new URLSearchParams();
+  const merged = { cat, org: orgId, user: userId, page: 1, ...next };
+  for (const [k, v] of Object.entries(merged)) if (v && !(k === 'page' && Number(v) <= 1)) q.set(k, String(v));
+  const s = q.toString();
+  return `/ops/activity${s ? `?${s}` : ''}`;
+};
+const trend = Number(stats.events_7d || 0) - Number(stats.events_prev_7d || 0);
+const device = (ua: string | null) => !ua ? 'Dispositivo desconocido'
+  : /iPhone|iPad/.test(ua) ? 'iPhone o iPad' : /Android/.test(ua) ? 'Android'
+  : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'Navegador';
+const browser = (ua: string | null) => !ua ? '' : /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '';
+---
+<OpsLayout title="Actividad | Cord Ops"><OpsShell active="activity" title="Actividad" subtitle="Todo lo que hacen las personas, sus clientes y los sistemas dentro de Cord.">
+  {error && <div class="ops-inline-error">No se pudo cargar la actividad.</div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Eventos 24 h</span><strong>{opsNumber(stats.events_24h)}</strong><small>En todas las organizaciones</small></div>
+    <div class="ops-metric"><span>Eventos 7 días</span><strong>{opsNumber(stats.events_7d)}</strong><small><b class:list={['ops-delta', trend < 0 && 'down']}>{trend >= 0 ? '+' : ''}{opsNumber(trend)}</b> contra la semana previa</small></div>
+    <div class="ops-metric"><span>Organizaciones activas</span><strong>{opsNumber(stats.orgs_7d)}</strong><small>Con al menos un evento en 7 días</small></div>
+    <div class="ops-metric"><span>Personas que actuaron</span><strong>{opsNumber(stats.people_7d)}</strong><small>Miembros con acciones en 7 días</small></div>
+    <div class="ops-metric"><span>Acciones de clientes</span><strong>{opsNumber(stats.client_7d)}</strong><small>{opsPct(stats.client_7d, stats.events_7d)}% del total en 7 días</small></div>
+    <div class="ops-metric"><span>Inicios de sesión</span><strong>{opsNumber(stats.logins_7d)}</strong><small>Sesiones nuevas en 7 días</small></div>
+  </section>
+
+  <div class="ops-grid-2 ops-section">
+    <OpsBars title="Eventos por día" hint="Cotizaciones, facturas, pagos, clientes y catálogo · 30 días" series={series.map((row) => ({ day: String(row.day), value: Number(row.events) }))} />
+    <OpsBars title="Cotizaciones creadas por día" hint="30 días" series={series.map((row) => ({ day: String(row.day), value: Number(row.quotes) }))} />
+  </div>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header">
+        <div><h2>Registro de actividad</h2><p>{scope?.org_nombre || scope?.user_name ? 'Filtrado' : 'Todas las organizaciones'}; {OPS_FEED_PAGE} eventos por página.</p></div>
+      </header>
+      <nav class="ops-chips" aria-label="Tipo de actividad">
+        {OPS_EVENT_CATEGORIES.map((c) => <a class="ops-chip" href={href({ cat: c.id })} aria-current={cat === c.id ? 'true' : undefined}>{c.label}</a>)}
+      </nav>
+      {(scope?.org_nombre || scope?.user_name) && (
+        <div class="ops-filter-note">
+          {scope?.org_nombre && <span class="ops-badge navy">Organización: {scope.org_nombre}</span>}
+          {scope?.user_name && <span class="ops-badge navy">Persona: {scope.user_name}</span>}
+          <a class="ops-link" href={href({ org: null, user: null })}>Quitar filtro</a>
+        </div>
+      )}
+      <div class="ops-card"><OpsFeed events={rows} empty="No hay eventos con este filtro." /></div>
+      <nav class="ops-pagination" aria-label="Paginación">
+        <span>Página {page}</span>
+        <div>
+          {page > 1 && <a class="ops-button secondary sm" href={href({ page: page - 1 })} rel="prev">Más recientes</a>}
+          {hasMore && <a class="ops-button secondary sm" href={href({ page: page + 1 })} rel="next">Anteriores</a>}
+        </div>
+      </nav>
+    </section>
+
+    <div>
+      <section>
+        <header class="ops-section-header"><div><h2>Personas más activas</h2><p>Acciones propias en 7 días.</p></div></header>
+        <div class="ops-card"><OpsDist rows={topUsers.map((u) => ({ label: u.name, value: Number(u.n), href: href({ user: u.id, org: null }) }))} /></div>
+      </section>
+      <section class="ops-section">
+        <header class="ops-section-header"><div><h2>Inicios de sesión</h2><p>Sesiones nuevas más recientes.</p></div><a href="/ops/security">Seguridad</a></header>
+        <div class="ops-card ops-list">
+          {logins.map((l) => <a class="ops-list-row two" href={`/ops/users/${l.user_id}`}><div><strong>{l.name}</strong><span class="ops-sub">{device(l.user_agent)}{browser(l.user_agent) && ` · ${browser(l.user_agent)}`} · <span class="ops-code">{l.ip || 'IP no disponible'}</span></span></div><time title={opsDate(l.created_at)}>{opsAgo(l.created_at)}</time></a>)}
+          {logins.length === 0 && <div class="ops-empty">Sin sesiones.</div>}
+        </div>
+      </section>
+    </div>
+  </div>
+</OpsShell></OpsLayout>

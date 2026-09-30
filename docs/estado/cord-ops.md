@@ -28,13 +28,10 @@ debe coincidir tanto con la allowlist compilada como con una fila activa en
 
 Rutas principales:
 
-- `/ops`
-- `/ops/users`
-- `/ops/organizations`
-- `/ops/usage`
-- `/ops/status`
-- `/ops/database`
-- `/ops/security`
+- General: `/ops` (resumen) y `/ops/activity` (actividad).
+- Negocio: `/ops/organizations`, `/ops/users`, `/ops/invoices`,
+  `/ops/workflows` y `/ops/integrations`.
+- Plataforma: `/ops/usage`, `/ops/status`, `/ops/security` y `/ops/database`.
 
 Incluyen fichas de usuario, organización y tabla. Las acciones reales permiten
 suspender, restaurar o eliminar usuarios no protegidos; revocar sesiones o API
@@ -42,12 +39,40 @@ keys; desactivar webhooks; cerrar sesiones de equipos; y eliminar organizaciones
 no protegidas.
 
 `/ops/status` muestra las sondas de disponibilidad y permite redactar en
-español e inglés un incidente público real.
+español e inglés un incidente público real. El formulario acepta el estado
+inicial —un incidente que ya terminó se registra directo como `resolved` con su
+fin real— y valida en servidor que inicio y fin no estén en el futuro y que el
+fin no sea anterior al inicio; cada error nombra el campo que falla y toda falla
+de base responde JSON legible, nunca un 500 mudo. Ops lista todos los
+incidentes, no solo los que caben en la ventana pública, y permite editarlos.
+
+Datos de negocio (sep 2026):
+
+- `/ops` resume personas, organizaciones, cotizaciones, facturas, pagos,
+  workflows e integraciones; grafica 30 días de eventos, personas activas y
+  altas; y arma "Requiere atención" con sondas en falla, integraciones con
+  error, workflows fallidos, facturas vencidas o con error fiscal, pagos
+  fallidos y cobros restringidos por el procesador.
+- `/ops/activity` es el registro de `domain_events` de todas las
+  organizaciones, filtrable por categoría, organización (`?org=`) y persona
+  (`?user=`), con los inicios de sesión recientes.
+- `/ops/invoices`, `/ops/workflows` e `/ops/integrations` listan Cord
+  Invoicing, las ejecuciones de workflows y las conexiones externas con sus
+  fallas recientes. Ops nunca selecciona los tokens cifrados de una integración.
+- Todo importe se muestra con su divisa y los totales se agrupan por divisa
+  (regla 21): Ops no suma MXN con USD en un mismo número.
+
+Las lecturas viven en `src/lib/ops-insights.ts` y viajan en `withOpsTx`. Las
+tablas que Ops lee y que no admitían `app.scope='ops'` (facturas, pagos,
+workflows, integraciones, eventos, consumo) tienen una política `ops_<tabla>`
+solo `for select` en `db/migrations/2026-09-30-ops-lectura.sql`: sin ella esas
+pantallas quedarían vacías al activar `cord_app`.
 
 Disponibilidad (sep 2026): `src/lib/platform-health.ts` mide nueve componentes
 reales —app (render de `/sign-in`), API pública (401 tipado de `/api/v1/me`),
 link público (`/q/demo`), núcleo de datos, Stripe, confirmación de pagos
-(webhooks firmados con cobros pendientes, umbral de 26 h), timbrado fiscal,
+(con cobros pendientes y sin webhook reciente, se pregunta a Stripe si alguno ya
+se cobró sin que Cord lo registrara), timbrado fiscal,
 correo e IA— y los guarda en `health_checks`. Fiscal, correo e IA se omiten si
 el entorno no tiene su llave: nunca se registra un fallo inventado. El muestreo
 es horario vía `.github/workflows/status-probe.yml` (requiere el secret

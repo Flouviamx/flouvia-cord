@@ -1,8 +1,8 @@
-import { sql } from './db';
+import { sql, withOpsTx } from './db';
 import { OPS_PAGE_SIZE, opsPageOffset } from './ops-pagination';
 
 export async function getOpsUsersPage(query: string, page: number) {
-  return sql.query(`
+  const [rows] = await withOpsTx(sql.query(`
     with page_users as (
       select u.id,u.email,u.first_name,u.last_name,u.created_at,u.email_verified_at,u.totp_enabled,
              u.locked_until,u.suspended_at,u.suspended_reason,
@@ -36,13 +36,14 @@ export async function getOpsUsersPage(query: string, page: number) {
     left join passkey_stats ps on ps.user_id=pu.id
     left join session_stats ss on ss.user_id=pu.id
     left join membership_stats ms on ms.user_id=pu.id
-    order by pu.created_at desc,pu.id desc`, [query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page)]);
+    order by pu.created_at desc,pu.id desc`, [query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page)]));
+  return rows;
 }
 
 export async function getOpsOrganizationsPage(query: string, page: number) {
-  return sql.query(`
+  const [rows] = await withOpsTx(sql.query(`
     with page_orgs as (
-      select o.id,o.nombre,o.plan,o.country_code,o.created_at,o.subscription_status,
+      select o.id,o.nombre,o.plan,o.country_code,o.moneda,o.created_at,o.subscription_status,
              o.stripe_charges_enabled,o.onboarded_at,o.owner_id,owner.email owner_email,
              count(*) over()::int total_count
       from orgs o left join users owner on owner.id=o.owner_id
@@ -65,21 +66,34 @@ export async function getOpsOrganizationsPage(query: string, page: number) {
       select p.org_id,count(*)::int products from productos p
       where p.org_id in (select id from page_orgs) group by p.org_id
     ),
+    -- El cierre se suma solo en la divisa de la organización (regla 21): una
+    -- cotización en USD no se mezcla con las de MXN en un mismo número.
     quote_stats as (
       select q.org_id,count(*)::int quotes,
-             coalesce(sum(q.total) filter (where q.status in ('approved','paid','invoiced')),0) closed_value
-      from cotizaciones q where q.org_id in (select id from page_orgs) group by q.org_id
+             count(*) filter (where q.created_at>=now()-interval '30 days')::int quotes_30d,
+             coalesce(sum(q.total) filter (where q.status in ('approved','paid','invoiced')
+               and coalesce(q.moneda,po.moneda)=po.moneda),0) closed_value,
+             max(q.created_at) last_quote
+      from cotizaciones q join page_orgs po on po.id=q.org_id group by q.org_id
+    ),
+    activity_stats as (
+      select e.org_id,max(e.created_at) last_event,
+             count(*) filter (where e.created_at>=now()-interval '7 days')::int events_7d
+      from domain_events e where e.org_id in (select id from page_orgs) group by e.org_id
     )
     select po.*,
            (lower(coalesce(po.owner_email,'')) in ('andrevalleo13@gmail.com','hola@flouvia.com')
              or coalesce(ms.protected_member,false)) protected,
            coalesce(ms.members,0) members,coalesce(cs.clients,0) clients,
            coalesce(ps.products,0) products,coalesce(qs.quotes,0) quotes,
-           coalesce(qs.closed_value,0) closed_value
+           coalesce(qs.closed_value,0) closed_value,coalesce(qs.quotes_30d,0) quotes_30d,
+           act.last_event,coalesce(act.events_7d,0) events_7d
     from page_orgs po
     left join member_stats ms on ms.org_id=po.id
     left join client_stats cs on cs.org_id=po.id
     left join product_stats ps on ps.org_id=po.id
     left join quote_stats qs on qs.org_id=po.id
-    order by po.created_at desc,po.id desc`, [query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page)]);
+    left join activity_stats act on act.org_id=po.id
+    order by po.created_at desc,po.id desc`, [query, `%${query}%`, OPS_PAGE_SIZE, opsPageOffset(page)]));
+  return rows;
 }

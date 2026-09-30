@@ -1,0 +1,109 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import OpsDist from '../../components/ops/OpsDist.astro';
+import { withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsNumber, opsPct } from '../../lib/ops-format';
+import { opsWorkflowFailures, opsWorkflowPage, opsWorkflowStats, opsWorkflowTriggers } from '../../lib/ops-insights';
+import { normalizeOpsSearch, OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const params = Astro.url.searchParams;
+const ESTADOS = [{ id: '', label: 'Todos' }, { id: 'active', label: 'Activos' }, { id: 'paused', label: 'Pausados' }, { id: 'draft', label: 'Borradores' }];
+const estado = ESTADOS.some((e) => e.id === params.get('estado')) ? String(params.get('estado')) : '';
+const query = normalizeOpsSearch(params.get('q'));
+const page = parseOpsPage(params.get('page'));
+
+let stats: any = {};
+let triggers: any[] = [];
+let workflows: any[] = [];
+let failures: any[] = [];
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsWorkflowStats(),
+    opsWorkflowTriggers(),
+    opsWorkflowPage(estado, query, OPS_PAGE_SIZE, opsPageOffset(page)),
+    opsWorkflowFailures(12),
+  );
+  [stats] = r[0] as any[];
+  [, triggers, workflows, failures] = r as any[];
+} catch (cause) { error = true; console.error('[ops/workflows]', cause); }
+
+const total = Number(workflows[0]?.total_count || 0);
+const finished = Number(stats.ok_7d || 0) + Number(stats.failed_7d || 0);
+const success = finished > 0 ? opsPct(stats.ok_7d, finished) : null;
+const TRIGGERS: Record<string, string> = {
+  'quote.created': 'Se crea una cotización', 'quote.sent': 'Se envía una cotización', 'quote.viewed': 'El cliente abre la cotización',
+  'quote.approved': 'El cliente aprueba', 'quote.rejected': 'El cliente rechaza', 'quote.expired': 'Vence una cotización',
+  'quote.expiring': 'Una cotización está por vencer', 'quote.paid': 'Se paga una cotización', 'quote.comment_added': 'Hay un comentario nuevo',
+  'invoice.finalized': 'Se emite una factura', 'invoice.sent': 'Se envía una factura', 'invoice.paid': 'Se paga una factura',
+  'invoice.overdue': 'Vence una factura', 'invoice.due_soon': 'Una factura está por vencer', 'invoice.past_due': 'Una factura sigue vencida',
+  'payment.failed': 'Falla un pago', 'payment.partial': 'Llega un abono', 'client.created': 'Se agrega un cliente',
+  'product.created': 'Se agrega un producto', 'promise.broken': 'Se incumple una promesa de pago',
+};
+const triggerLabel = (t: string | null) => !t || t === 'sin publicar' ? 'Sin publicar'
+  : t.startsWith('schedule.') ? 'Programado' : TRIGGERS[t] ?? t;
+const estadoBadge: Record<string, [string, string]> = { active: ['Activo', 'green'], paused: ['Pausado', 'amber'], draft: ['Borrador', ''] };
+const chipHref = (id: string) => {
+  const q = new URLSearchParams({ ...(id ? { estado: id } : {}), ...(query ? { q: query } : {}) }).toString();
+  return `/ops/workflows${q ? `?${q}` : ''}`;
+};
+const search = new URLSearchParams({ ...(estado ? { estado } : {}), ...(query ? { q: query } : {}) }).toString();
+---
+<OpsLayout title="Workflows | Cord Ops"><OpsShell active="workflows" title="Workflows" subtitle="Automatizaciones de las organizaciones: qué las dispara, cuántas corren y cuáles fallan.">
+  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Workflow u organización" />{estado && <input type="hidden" name="estado" value={estado} />}</form>
+  {error && <div class="ops-inline-error">No se pudieron cargar los workflows.</div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Workflows</span><strong>{opsNumber(stats.total)}</strong><small><b>{opsNumber(stats.orgs)}</b> organizaciones con alguno activo</small></div>
+    <div class="ops-metric"><span>Activos</span><strong>{opsNumber(stats.active)}</strong><small>{opsNumber(stats.paused)} pausados · {opsNumber(stats.drafts)} borradores</small></div>
+    <div class="ops-metric"><span>Ejecuciones 24 h</span><strong>{opsNumber(stats.runs_24h)}</strong><small>{opsNumber(stats.runs_7d)} en 7 días</small></div>
+    <div class="ops-metric"><span>Éxito 7 días</span><strong>{success === null ? '—' : `${success}%`}</strong><small>De las ejecuciones terminadas</small></div>
+    <div class="ops-metric"><span>Fallidas 7 días</span><strong>{opsNumber(stats.failed_7d)}</strong><small>Detalle abajo</small></div>
+    <div class="ops-metric"><span>En curso</span><strong>{opsNumber(stats.in_flight)}</strong><small>En cola, ejecutando o esperando</small></div>
+  </section>
+
+  <div class="ops-grid-2 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Ejecuciones fallidas</h2><p>Las más recientes, con el motivo que registró el motor.</p></div></header>
+      <div class="ops-card ops-list">
+        {failures.map((f) => <a class="ops-list-row two" href={`/ops/organizations/${f.org_id}`}><div><strong>{f.workflow}</strong><span class="ops-sub">{f.org_nombre} · {f.error || 'Sin detalle'} · {opsNumber(f.attempts)} {Number(f.attempts) === 1 ? 'intento' : 'intentos'}</span></div><time title={opsDate(f.created_at)}>{opsAgo(f.created_at)}</time></a>)}
+        {failures.length === 0 && <div class="ops-empty">Ninguna ejecución ha fallado.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Disparadores</h2><p>Qué evento arranca los workflows publicados.</p></div></header>
+      <div class="ops-card"><OpsDist rows={triggers.map((t) => ({ label: triggerLabel(t.trigger), value: Number(t.n) }))} empty="Ningún workflow publicado." /></div>
+    </section>
+  </div>
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Todos los workflows</h2><p>{opsNumber(total)} con este filtro; primero los activos con ejecución más reciente.</p></div></header>
+    <nav class="ops-chips" aria-label="Estado del workflow">
+      {ESTADOS.map((e) => <a class="ops-chip" href={chipHref(e.id)} aria-current={estado === e.id ? 'true' : undefined}>{e.label}</a>)}
+    </nav>
+    <div class="ops-card ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Workflow</th><th>Organización</th><th>Estado</th><th>Disparador</th><th class="num">Ejecuciones 7 días</th><th class="num">Fallidas</th><th>Última ejecución</th></tr></thead>
+        <tbody>
+          {workflows.map((w) => {
+            const [label, tone] = estadoBadge[w.estado] ?? [w.estado, ''];
+            return <tr>
+              <td><strong>{w.nombre}</strong><span class="ops-sub">Versión {w.version}{w.published_at ? ` · publicada ${opsAgo(w.published_at).toLowerCase()}` : ' · sin publicar'}</span></td>
+              <td><a href={`/ops/organizations/${w.org_id}`}>{w.org_nombre}</a></td>
+              <td><span class:list={['ops-badge', tone]}>{label}</span>{Number(w.in_flight) > 0 && <span class="ops-sub">{opsNumber(w.in_flight)} en curso</span>}</td>
+              <td>{triggerLabel(w.trigger_publicado)}<span class="ops-sub ops-code">{w.trigger_publicado || '—'}</span></td>
+              <td class="num">{opsNumber(w.runs_7d)}</td>
+              <td class="num">{Number(w.failed_7d) > 0 ? <span class="ops-badge red">{opsNumber(w.failed_7d)}</span> : <span class="ops-muted">0</span>}</td>
+              <td>{w.last_run ? <span title={opsDate(w.last_run)}>{opsAgo(w.last_run)}</span> : <span class="ops-muted">Nunca</span>}</td>
+            </tr>;
+          })}
+          {workflows.length === 0 && <tr><td colspan="7" class="ops-empty">No hay workflows con este filtro.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    {!error && total > 0 && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/workflows" search={search} />}
+  </section>
+</OpsShell></OpsLayout>
