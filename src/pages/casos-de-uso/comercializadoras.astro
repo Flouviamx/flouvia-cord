@@ -5,28 +5,28 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import CasoHeroMockup from '../../components/casos/CasoHeroMockup.astro';
 
-// Shader estándar de Cord — variante AZUL ACERO (más fuerte) para distribución.
-const HERO_PAL = { base: '#FFFFFF', color1: '#C9D9F5', color2: '#D8DCF9', color3: '#CFE3F7' };
+// Ola de seda del hero (mismo shader que /soluciones), paleta AZUL PROFUNDO para distribución y mayoreo.
+const HERO_PAL = { base: '#F6F9FC', c1: '#93C5FD', c2: '#60A5FA', c3: '#3B82F6', c4: '#4F46E5', c5: '#312E81' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
 const metaTitle = "Cord para Comercializadoras — Cotizaciones y Crédito";
-const metaDesc = "Digitaliza las ventas de tu comercializadora: cotiza por volumen, controla el crédito Net 30/60 por cliente y factura automáticamente (CFDI 4.0 para negocios en México). Para distribuidoras y mayoristas en cualquier país.";
+const metaDesc = "Digitaliza las ventas de tu comercializadora: cotiza por volumen y nivel de cliente, registra el crédito Net 30/60 y el límite de cada cliente, y emite tu factura desde la misma cotización (CFDI 4.0 para negocios en México). Para distribuidoras y mayoristas.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO) — preguntas ancladas a
 // capacidades reales del producto.
 const FAQS = [
     {
-        q: '¿Cord marca los pedidos de un cliente con saldo vencido?',
-        a: 'Sí. Defines el límite de crédito por cliente y, si un pedido nuevo lo rebasa por saldo vencido, Cord lo marca y avisa a tu equipo antes de aprobarlo — no se procesa solo.',
+        q: '¿Cómo veo qué clientes rebasaron su límite de crédito?',
+        a: 'Defines el límite de crédito y los términos (Contado, Net 30 o Net 60) de cada cliente. Cord muestra en su ficha el saldo abierto frente al límite, y en Cobranza lista a los clientes que lo rebasaron para que tu equipo decida antes de venderles más.',
     },
     {
         q: '¿Puedo dar precios por volumen y por nivel de cliente al mismo tiempo?',
@@ -34,11 +34,11 @@ const FAQS = [
     },
     {
         q: '¿Cómo veo qué tan vencida está mi cartera?',
-        a: 'El panel de Cobranza muestra el aging de tu cartera por antigüedad, el saldo vencido y los días promedio de cobro por cliente, con recordatorios automáticos por correo y WhatsApp.',
+        a: 'El panel de Cobranza muestra tu cartera por antigüedad, el saldo vencido y los días promedio de cobro por cliente, con recordatorios automáticos por correo (plan Profesional).',
     },
     {
-        q: '¿Cord timbra CFDI para pedidos con muchas líneas de producto?',
-        a: 'Sí, sin límite de líneas por cotización. Al aprobarse el pedido, Cord timbra el CFDI 4.0 completo ante el SAT vía Facturapi, sin recapturar los datos en otro sistema.',
+        q: '¿Cord timbra CFDI para ventas con muchas líneas de producto?',
+        a: 'Sí, hasta 200 líneas por cotización. Cuando la cotización está aprobada, emites el CFDI 4.0 completo desde ella, timbrado por un PAC certificado, sin recapturar los datos en otro sistema.',
     },
 ];
 const faqSchema = {
@@ -55,56 +55,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128", alt: "Salesforce", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128", alt: "SAP", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128", alt: "QuickBooks", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128", alt: "Shopify", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://oracle.com&size=128", alt: "Oracle", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128", alt: "WhatsApp", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'salesforce',
-        name: 'Salesforce',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://salesforce.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/512px-Salesforce.com_logo.svg.png',
-        quote: '«Cord se integra perfecto a nuestro CRM para cerrar cotizaciones complejas y gestionar líneas de crédito sin fricción.»',
-        author: 'Directora Comercial',
-        bgGradient: 'linear-gradient(135deg, #0284c7, #0369a1)',
-        bgImage: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'sap',
-        name: 'SAP',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sap.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/512px-SAP_2011_logo.svg.png',
-        quote: '«La sincronización de pedidos por volumen y control de límites de crédito desde Cord ha optimizado la cartera vencida en un 40%.»',
-        author: 'Gerente de Finanzas',
-        bgGradient: 'linear-gradient(135deg, #1d4ed8, #1e3a8a)'
-    },
-    {
-        id: 'quickbooks',
-        name: 'QuickBooks',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://quickbooks.intuit.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/QuickBooks_logo.svg/512px-QuickBooks_logo.svg.png',
-        quote: '«La conciliación de pagos SPEI y tarjetas es automática. El CFDI 4.0 fluye directo a la contabilidad sin intervención manual.»',
-        author: 'Controller',
-        bgGradient: 'linear-gradient(135deg, #15803d, #14532d)',
-        bgImage: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'shopify',
-        name: 'Shopify',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shopify.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/512px-Shopify_logo_2018.svg.png',
-        quote: '«Nuestros clientes al por mayor tienen ahora un portal de pagos y un proceso de compra tan ágil como en B2C.»',
-        author: 'Head of Wholesale',
-        bgGradient: 'linear-gradient(135deg, #16a34a, #166534)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -117,12 +73,13 @@ const testimonialItems = [
         <!-- HERO -->
         <header class="startup-hero">
             <div class="startup-hero-bg">
-                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                <RibbonHeroBg client:only="react" light colors={HERO_PAL} />
             </div>
+            <div class="startup-hero-grid">
             <div class="startup-hero-content">
-                <h1 class="startup-title reveal">De la propuesta al cobro para comercializadoras</h1>
+                <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">comercializadoras</span></h1>
                 <p class="startup-sub">
-                    Gobernanza sobre márgenes y flujos de aprobación. Cierra transacciones a volumen, controla niveles de precio y automatiza el CFDI 4.0 (para negocios en México).
+                    Precios por volumen y por nivel de cliente, crédito a la vista y aprobaciones internas. Cierra ventas a volumen y emite el CFDI 4.0 (para negocios en México) sin recapturar.
                 </p>
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
@@ -133,28 +90,22 @@ const testimonialItems = [
                     <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                 </div>
             </div>
+            <div class="startup-hero-visual">
+                <CasoHeroMockup variant="comercializadoras" />
+            </div>
+            </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Distribuidores modernos operan con Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://grainger.com&size=64" alt="Grainger" width="24" height="24" loading="lazy" />
-                    <span>Grainger</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uline.com&size=64" alt="Uline" width="24" height="24" loading="lazy" />
-                    <span>Uline</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://fastenal.com&size=64" alt="Fastenal" width="24" height="24" loading="lazy" />
-                    <span>Fastenal</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sysco.com&size=64" alt="Sysco" width="24" height="24" loading="lazy" />
-                    <span>Sysco</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -162,10 +113,9 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Elimina la fricción en ventas al por mayor</span>
                     <h2 class="uc-split-title">Acelera tu ciclo comercial desde la orden hasta el pago</h2>
                     <p class="uc-split-desc">
-                        Olvida los procesos manuales que retrasan el despacho de mercancía. Con Cord, tus agentes de ventas cierran pedidos más rápido, el crédito se gestiona automáticamente y la cobranza se concilia sin esfuerzo humano.
+                        Olvida los procesos manuales que retrasan el despacho de mercancía. Con Cord, tus agentes cierran ventas más rápido, el crédito de cada cliente queda a la vista y los pagos hechos por Cord se registran solos.
                     </p>
                 </div>
 
@@ -173,44 +123,40 @@ const testimonialItems = [
                     <!-- Tarjeta 1 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Límites de crédito por cliente con bloqueo automático</h3>
-                            <p>Define el límite de crédito de cada distribuidor en Cord. Si un cliente intenta pasar un nuevo pedido con saldo vencido, el sistema lo marca y tu equipo recibe la alerta antes de aprobar.</p>
+                            <h3>Límites de crédito por cliente a la vista</h3>
+                            <p>Define el límite y los términos de cada distribuidor. Cord muestra su saldo abierto frente al límite y lista en Cobranza a quienes lo rebasan, para que tu equipo lo vea antes de venderles más.</p>
                             <a href="/sign-up" class="uc-link-arrow">Controla tu cartera de crédito <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <div class="cmk-nav-l">
-                                            <span class="cmk-nav-title">Crédito · Distribuidora El Sol</span>
-                                        </div>
-                                        <span class="cmk-badge cmk-b-amber">57% utilizado</span>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-kv" style="border-bottom:none; padding-top:0;">
-                                            <span class="cmk-k">Crédito utilizado</span>
-                                            <span class="cmk-v editorial">$85,000</span>
-                                        </div>
-                                        <div style="width:100%; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:2px 0 6px;">
-                                            <div style="width:57%; height:100%; background:linear-gradient(90deg,#1e293b,#0f172a); border-radius:10px;"></div>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-k">Límite autorizado · Net 30</span>
-                                            <span class="cmk-v editorial">$150,000 MXN</span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-k">Saldo vencido</span>
-                                            <span class="cmk-badge cmk-b-red">$12,400 · 8 días</span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-k">Pedido nuevo PO-8931</span>
-                                            <span class="cmk-badge cmk-b-amber">Retenido</span>
-                                        </div>
-                                        <div class="cmk-alert cmk-alert-amber" style="margin-top:8px;">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                            Pedido retenido por saldo vencido. Tu equipo recibió la alerta para revisarlo.
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/clientes/[id]: nivel Distribuidor, KPIs y el bloque
+                                 Crédito con el aviso de saldo por encima del límite. -->
+                            <div class="ucm-shot">
+                                <div class="ucm-dh">
+                                    <span class="ucm-dh-av dist">DE</span>
+                                    <span class="ucm-dh-who">
+                                        <span class="ucm-badges"><span class="ucm-tier">Distribuidor</span><span class="ucm-fis">Datos fiscales completos</span></span>
+                                        <small>Raúl Mendoza · compras@elzarco.mx · 33 1845 2290</small>
+                                    </span>
+                                    <span class="ucm-dh-tot"><small>Cerrado</small><b class="editorial">$1,284,650<i class="ucm-cur">MXN</i></b></span>
+                                </div>
+                                <div class="ucm-card ucm-ckpis">
+                                    <span><small>Cotizaciones</small><b class="editorial">18</b></span>
+                                    <span><small>En pipeline</small><b class="editorial">$248,234<i class="ucm-cur">MXN</i></b></span>
+                                    <span><small>Cobrado</small><b class="editorial">$960,650<i class="ucm-cur">MXN</i></b></span>
+                                    <span><small>Ticket promedio</small><b class="editorial">$71,370<i class="ucm-cur">MXN</i></b></span>
+                                </div>
+                                <div class="ucm-card ucm-credit">
+                                    <div class="ucm-credit-h"><b>Crédito</b><span>108% usado</span></div>
+                                    <div class="ucm-credit-track"><i style="width:100%"></i></div>
+                                    <div class="ucm-credit-n"><b class="editorial">$324,000<i class="ucm-cur">MXN</i></b><span>Saldo abierto · $300,000 MXN crédito</span></div>
+                                    <p class="ucm-credit-w">Saldo abierto por encima del límite de crédito</p>
+                                </div>
+                                <div class="ucm-sec ucm-sec-gap">Estado de cuenta</div>
+                                <div class="ucm-aging">
+                                    <span><small>Corriente</small><b class="editorial">$165,000</b></span>
+                                    <span class="late"><small>1–30 días</small><b class="editorial">$124,300</b></span>
+                                    <span class="late"><small>31–60 días</small><b class="editorial">$34,700</b></span>
+                                    <span class="empty"><small>61–90 días</small><b class="editorial">$0</b></span>
                                 </div>
                             </div>
                         </div>
@@ -219,46 +165,25 @@ const testimonialItems = [
                     <!-- Tarjeta 2 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Cobranza vencida con recordatorios automáticos</h3>
-                            <p>Cord muestra el aging de tu cartera por cliente, los saldos vencidos y los días promedio de cobro. Cuando un cliente no ha pagado, manda recordatorios automáticos por correo y WhatsApp antes y después del vencimiento.</p>
+                            <h3>Cartera vencida con recordatorios por correo</h3>
+                            <p>Cord muestra el aging de tu cartera por cliente, los saldos vencidos y los días promedio de cobro. Cuando una factura no se ha pagado, Cord manda recordatorios por correo antes y después del vencimiento, y puedes abrir un WhatsApp con el mensaje ya redactado.</p>
                             <a href="/sign-up" class="uc-link-arrow">Mejora tu ciclo de cobro <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <span class="cmk-nav-title">Cobranza</span>
-                                        <div class="cmk-seg"><span class="on">Aging</span><span>Por cliente</span></div>
-                                    </div>
-                                    <div class="cmk-th" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span>Cliente</span><span class="cmk-r">Saldo</span><span>Seguimiento</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-2">ES</div> Dist. El Sol</span>
-                                        <span class="cmk-amt editorial">$45,200</span>
-                                        <span class="cmk-badge cmk-b-red">Recordatorio · 3 días</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1">GN</div> Grupo Norteño</span>
-                                        <span class="cmk-amt editorial">$12,500</span>
-                                        <span class="cmk-badge cmk-b-amber">WhatsApp · mañana</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-3">FM</div> Ferre Mayoreo</span>
-                                        <span class="cmk-amt editorial">$8,900</span>
-                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
-                                    </div>
-                                    <div class="cmk-tr" style="grid-template-columns:1.5fr 76px 116px; border-bottom:none;">
-                                        <span class="cmk-t1"><div class="cmk-av cmk-av-1" style="background:#475569">AB</div> Abastos Bajío</span>
-                                        <span class="cmk-amt editorial">$21,300</span>
-                                        <span class="cmk-badge cmk-b-gray">Al corriente</span>
-                                    </div>
-                                    <div class="cmk-body" style="padding-top:12px;">
-                                        <div class="cmk-kv" style="border-top:1px solid #e2e8f0; border-bottom:none; padding-top:12px;">
-                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">DSO promedio</span>
-                                            <span class="cmk-badge cmk-b-green">34 días · saludable</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/cobranza: KPIs de hoy + cuentas por cobrar -->
+                            <div class="ucm-shot">
+                                <div class="ucm-ph">
+                                    <div><h4 class="ucm-ph-t">Cobranza</h4></div>
+                                    <span class="ucm-tabs"><span class="on">Cobranza</span><span>Cobranza con IA</span></span>
+                                </div>
+                                <div class="ucm-kpis4">
+                                    <div class="ucm-card ucm-kpi"><span class="ucm-kl">VENCIDO</span><b class="editorial ucm-bad">$184,300<i class="ucm-cur">MXN</i></b><small>3 cuenta(s) · toca para filtrar</small></div>
+                                    <div class="ucm-card ucm-kpi"><span class="ucm-kl">VENCE ESTA SEMANA</span><b class="editorial">$96,580<i class="ucm-cur">MXN</i></b><small>2 cuenta(s) en los próximos 7 días</small></div>
+                                </div>
+                                <div class="ucm-card">
+                                    <div class="ucm-sec ucm-sec-row"><span>Cuentas por cobrar</span><span class="ucm-chips"><span class="on">Todas</span><span>Vencidas</span><span>Con promesa</span><span>Sin gestión</span></span></div>
+                                    <div class="ucm-th ucm-cz"><span>Cliente</span><span>Folio</span><span>Vence</span><span>Estado</span><span class="ucm-r">Saldo</span></div>
+                                    <div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">GN</i><span>Grupo Norteño</span></span><span class="ucm-folio">COT-0131</span><span class="ucm-date">12 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 18 d</span></span><span class="editorial ucm-r ucm-amt">$96,420<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">FM</i><span>Ferre Mayoreo Bajío</span></span><span class="ucm-folio">COT-0138</span><span class="ucm-date">22 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 8 d</span></span><span class="editorial ucm-r ucm-amt">$52,180<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">DE</i><span>Distribuidora El Zarco</span></span><span class="ucm-folio">COT-0142</span><span class="ucm-date">26 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 4 d</span><span class="ucm-e prom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Promete 3 oct</span></span><span class="editorial ucm-r ucm-amt">$35,700<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">AC</i><span>Abastos del Centro</span></span><span class="ucm-folio">COT-0145</span><span class="ucm-date">3 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 3 d</span></span><span class="editorial ucm-r ucm-amt">$61,240<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">MC</i><span>Materiales Cárdenas</span></span><span class="ucm-folio">COT-0147</span><span class="ucm-date">6 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 6 d</span></span><span class="editorial ucm-r ucm-amt">$35,340<i class="ucm-cur">MXN</i></span></div>
                                 </div>
                             </div>
                         </div>
@@ -288,20 +213,19 @@ const testimonialItems = [
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="7" r="4" fill="currentColor" fill-opacity="0.12"></circle><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2" fill="currentColor" fill-opacity="0.12"></path><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
                             </div>
                             <h4>Roles de aprobación</h4>
-                            <p>Establece <a href="/producto/equipo" class="uc-link-inline">flujos de validación</a> internos si un asesor otorga un descuento mayor al permitido.</p>
+                            <p>Establece <a href="/producto/aprobaciones" class="uc-link-inline">flujos de validación</a> internos si un asesor otorga un descuento mayor al permitido (plan Scale).</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.12"></path><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             </div>
-                            <h4>Notificaciones por WhatsApp</h4>
-                            <p>Envía actualizaciones de estatus de pedido, facturas y <a href="/producto/cobranza-ia" class="uc-link-inline">recordatorios de cobro</a> directamente al WhatsApp del cliente.</p>
+                            <h4>WhatsApp con Workflows</h4>
+                            <p>Con <a href="/producto/workflows" class="uc-link-inline">Cord Workflows</a> le escribes al cliente por WhatsApp, con tu plantilla aprobada por Meta, cuando cambia el estado de una cotización o factura.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -317,35 +241,33 @@ const testimonialItems = [
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
                         <h3>Líneas de crédito bajo control</h3>
-                        <p>Administra límites de crédito por cliente con precisión. Cord te permite definir plazos (Net 30, 60, 90) y bloquear automáticamente la autorización de nuevos pedidos si un cliente tiene facturas vencidas.</p>
+                        <p>Administra el crédito de cada cliente con precisión: define plazos (Contado, Net 30 o Net 60) y límite, y ve en Cobranza quién tiene saldo vencido o rebasó su límite.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Gestión activa de cobranza</h3>
-                        <p>Nuestro CRM de cobranza hace el seguimiento pesado por ti. Registra <a href="/producto/cobranza-ia">promesas de pago</a> y programa recordatorios automáticos multicanal (Email, SMS, WhatsApp) antes y después del vencimiento.</p>
+                        <p>El módulo de Cobranza hace el seguimiento pesado por ti: registra <a href="/producto/cobranza-ia">promesas de pago</a> y envía por correo recordatorios automáticos antes y después del vencimiento.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Multi-divisa con tasa protegida</h3>
-                        <p>Cotiza a clientes del extranjero en USD o EUR con tasa de cambio bloqueada (buffer configurable). Tu cliente ve el monto en su moneda; tú facturas y cobras en MXN con la tasa que fijaste al enviar la cotización.</p>
+                        <p>Cotiza a clientes del extranjero en USD o EUR con el tipo de cambio congelado 30 días, y un margen de cobertura de 1, 2 o 5%. Tu cliente ve y paga en su moneda; el CFDI declara ese tipo de cambio.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <h3>CFDI 4.0 al cerrar cada pedido</h3>
-                        <p>Cuando tu cliente aprueba la cotización, Cord timbra el CFDI 4.0 vía PAC certificado. El XML y el PDF quedan vinculados al pedido y disponibles para descarga desde el portal del cliente sin intervención de tu equipo.</p>
+                        <h3>CFDI 4.0 de cada venta, con un clic</h3>
+                        <p>Con un clic emites el CFDI 4.0 de la cotización aprobada, timbrado por un PAC certificado. El XML y el PDF quedan ligados a ella y tu cliente los descarga desde el link de la factura.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} />
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan las comercializadoras antes de empezar."
             id="comercializadoras"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -450,57 +372,90 @@ const testimonialItems = [
         padding: 0 5%;
     }
 
-    /* ── HERO (idéntico a soluciones/startups) ── */
+    /* ── HERO — layout de soluciones/startups: texto a la izquierda y, a la
+       derecha, una calca de pantalla real (CasoHeroMockup) sobre la ola de seda. ── */
     .startup-hero {
         position: relative;
-        padding: 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
         background: #f6f9fc;
     }
 
+    /* Respaldo sin WebGL: la misma composición con degradados. */
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
         overflow: hidden;
+        background: linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #93C5FD 44%, #60A5FA 52%, #3B82F6 64%, #4F46E5 80%, #312E81 100%);
+    }
+    /* Velo claro detrás del texto. */
+    .startup-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+    }
+
+    .startup-hero-grid {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
     .startup-hero-content {
-        position: relative;
-        z-index: 10;
-        text-align: left;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        max-width: 1140px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem 5% 0;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .startup-hero-visual {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 
     .startup-title {
-        font-size: clamp(3rem, 5vw, 5.5rem);
-        line-height: 1.05;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin: 0 0 1.5rem;
-        color: #0a2540;
+        /* Tamaño estándar de títulos (h1.masked-title, Layout.astro). */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        margin: 0 0 1.75rem;
+        color: #050505;
         text-wrap: balance;
-        max-width: 900px;
+        max-width: 660px;
+    }
+    /* El vertical, en los tonos de su paleta (un paso más profundos para que
+       se lean sobre claro). */
+    .startup-title-accent {
+        background: linear-gradient(92deg, #2563eb 0%, #1d4ed8 55%, #4338ca 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #1d4ed8;
     }
 
     .startup-sub {
-        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
         color: #425466;
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
 
@@ -514,12 +469,23 @@ const testimonialItems = [
     .startup-hero .btn-ghost {
         color: #0a2540;
         border: 1px solid rgba(10, 37, 64, 0.15);
-        background: rgba(10, 37, 64, 0.03);
+        background: rgba(255, 255, 255, 0.55);
     }
 
     .startup-hero .btn-ghost:hover {
-        background: rgba(10, 37, 64, 0.08);
+        background: rgba(255, 255, 255, 0.8);
         box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 880px) {
+        .startup-hero { padding: 120px 0 64px; min-height: auto; }
+        .startup-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+        .startup-hero-visual { justify-content: center; }
+        .startup-hero-bg::after {
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.72) 0%, rgba(246, 249, 252, 0.3) 45%, transparent 65%);
+        }
+    }
+    @media (max-width: 520px) {
     }
 
     .uc-hero-inner {
@@ -616,13 +582,13 @@ const testimonialItems = [
         padding: 3rem 5%;
     }
     .uc-trust p {
-        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+        font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
     }
     .uc-logos {
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -653,13 +619,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a; /* Emerald */
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);
@@ -747,16 +706,6 @@ const testimonialItems = [
             0 2px 4px rgba(10, 25, 47, 0.05),
             0 40px 80px -24px rgba(10, 25, 47, 0.18),
             inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
-       para que los badges y montos que cuentan la historia queden visibles */
-    .uc-bc-mockup .cmk-shot {
-        top: 1.8rem;
-        left: 1.8rem;
-        right: -14px;
-        bottom: -40px;
-        width: auto;
     }
 
     .uc-mockup-wrapper {
@@ -1003,8 +952,17 @@ const testimonialItems = [
     }
     .uc-benefits-intro {
         text-align: left;
-        max-width: 680px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
         margin-bottom: 4rem;
+    }
+    .uc-benefits-intro > .uc-split-title { margin: 0; }
+    .uc-benefits-intro > .uc-split-desc { margin: 0; max-width: 520px; }
+    @media (max-width: 880px) {
+        .uc-benefits-intro { grid-template-columns: 1fr; row-gap: 1.2rem; }
     }
     .uc-bento-cards {
         display: grid;
@@ -1059,7 +1017,8 @@ const testimonialItems = [
         transform: translateX(4px);
     }
 
-    /* Mockups dentro de bento cards */
+    /* Mockups dentro de bento cards: el lienzo gris ES el de la app; la calca
+       (.ucm-shot) se recorta y se desvanece abajo. */
     .uc-bc-mockup {
         background: #f5f5f7;
         border-radius: 16px;
@@ -1068,9 +1027,6 @@ const testimonialItems = [
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(10,37,64,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
     }
     .cord-bg-1 {
@@ -1457,6 +1413,152 @@ const testimonialItems = [
         transform: scale(1.05);
     }
     
+</style>
+
+<style>
+    /* ════════ Calcas de producto en las tarjetas (ucm-*) ════════
+       Cada .uc-bc-mockup es el lienzo gris de la app (#f5f5f7) y contiene la
+       calca de UNA pantalla real de Cord a ~75% de escala: mismas columnas,
+       etiquetas de src/i18n/app.ts y pills de estado. El corte inferior se
+       desvanece como un screenshot recortado (igual que .ehs-shot). */
+    .ucm-shot {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: absolute;
+        inset: 0;
+        padding: 22px 24px 0;
+        overflow: hidden;
+        text-align: left;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+    }
+    .ucm-shot.is-late {
+        -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+    }
+    .ucm-shot svg { display: block; flex: none; }
+    .ucm-shot .ucm-r { text-align: right; justify-content: flex-end; }
+    .ucm-cur { font-style: normal; font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; color: var(--mut); margin-left: 3px; }
+    .ucm-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .ucm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .ucm-pill {
+        display: inline-flex; align-items: center; gap: 4px; justify-self: start;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .ucm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .ucm-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.03), 0 16px 34px -24px rgba(10, 25, 47, 0.2);
+    }
+    .ucm-sec { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .ucm-sec-gap { margin-top: 16px; }
+    .ucm-th, .ucm-tr { display: grid; gap: 9px; align-items: center; }
+    .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
+    .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+    .ucm-tr:last-child { border-bottom: none; }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); white-space: nowrap; }
+    .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
+    .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
+
+    /* /app/clientes/[id] (d-head, KPIs, crédito, cotizaciones, qué le vendes) */
+    .ucm-dh { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--bd); }
+    .ucm-dh-av {
+        width: 34px; height: 34px; flex: none; border-radius: 9px; display: grid; place-items: center;
+        background: var(--n); color: #fff; font-size: 10.5px; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55);
+    }
+    .ucm-dh-av.dist { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55), 0 0 0 2px rgba(10,25,47,0.3); }
+    .ucm-dh-who { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .ucm-dh-who small { font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-dh-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .ucm-badges { display: flex; gap: 5px; }
+    .ucm-tier { font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 100px; color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .ucm-fis { font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px; color: #10b981; background: rgba(16,185,129,0.12); }
+    .ucm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+    .ucm-dh-tot small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #99a2af; }
+    .ucm-dh-tot b { font-size: 17px; color: var(--n); line-height: 1.15; white-space: nowrap; }
+    .ucm-ckpis { display: grid; grid-template-columns: 0.7fr 1fr 1fr 1fr; padding: 10px 6px; margin-bottom: 10px; }
+    .ucm-ckpis > span { display: flex; flex-direction: column; gap: 4px; padding: 0 8px; border-left: 1px solid var(--bd); min-width: 0; }
+    .ucm-ckpis > span:first-child { border-left: none; }
+    .ucm-ckpis small { font-size: 6.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mut); opacity: 0.75; white-space: nowrap; }
+    .ucm-ckpis b { font-size: 12px; letter-spacing: -0.025em; white-space: nowrap; }
+    .ucm-credit-h { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--bd); }
+    .ucm-credit-h b { font-size: 11px; font-weight: 700; }
+    .ucm-credit-h span { font-size: 9.5px; font-weight: 600; color: #ef4444; }
+    .ucm-credit-track { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.05); overflow: hidden; margin-bottom: 7px; }
+    .ucm-credit-track i { display: block; height: 100%; border-radius: 100px; background: #ef4444; }
+    .ucm-credit-n { display: flex; align-items: baseline; gap: 7px; }
+    .ucm-credit-n b { font-size: 12px; }
+    .ucm-credit-n span { font-size: 9.5px; color: var(--mut); }
+    .ucm-credit-w { margin: 6px 0 0; font-size: 9.5px; color: #ef4444; }
+    .ucm-aging { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 8px; background: var(--bd); border-radius: 10px; overflow: hidden; }
+    .ucm-aging span { display: flex; flex-direction: column; gap: 2px; padding: 8px 9px; background: var(--soft); }
+    .ucm-aging small { font-size: 8px; color: var(--mut); }
+    .ucm-aging b { font-size: 10.5px; }
+    .ucm-aging .late b { color: #b45309; }
+    .ucm-aging .empty b { color: var(--mut); opacity: 0.6; }
+    .ucm-qrow { display: grid; grid-template-columns: 62px 70px minmax(0, 1fr) 72px 12px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-qfolio { font-size: 10.5px; font-weight: 600; }
+    .ucm-qrow .editorial { font-size: 11px; white-space: nowrap; }
+    .ucm-chev { width: 10px !important; height: 10px !important; color: #c4cad3; }
+    .ucm-prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-prow span { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-prow small { font-size: 9px; color: var(--mut); }
+    .ucm-prow b { font-size: 10.5px; white-space: nowrap; }
+
+    /* comercializadoras · /app/cobranza (KPIs + cuentas por cobrar) */
+    .ucm-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: rgba(10,25,47,0.06); }
+    .ucm-tabs span { padding: 5px 10px; border-radius: 8px; font-size: 9.5px; font-weight: 600; color: var(--mut); white-space: nowrap; }
+    .ucm-tabs span.on { background: #fff; color: var(--tx); box-shadow: 0 1px 2px rgba(10,25,47,0.13); }
+    .ucm-kpis4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .ucm-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ucm-kl { font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: var(--mut); }
+    .ucm-kpi b { font-size: 18px; letter-spacing: -0.03em; line-height: 1.15; white-space: nowrap; }
+    .ucm-kpi b.ucm-bad { color: #dc2626; }
+    .ucm-kpi small { font-size: 8.5px; color: var(--mut); }
+    .ucm-sec-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ucm-chips { display: flex; gap: 3px; }
+    .ucm-chips span { padding: 3px 7px; border-radius: 999px; background: var(--soft); font-size: 8px; font-weight: 650; color: var(--mut); white-space: nowrap; }
+    .ucm-chips span.on { background: var(--n); color: #fff; }
+    .ucm-cz { grid-template-columns: minmax(0, 1.7fr) 50px 54px minmax(0, 0.95fr) 70px; gap: 8px; }
+    .ucm-cli > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-av { width: 20px; height: 20px; flex: none; border-radius: 6px; display: grid; place-items: center; background: var(--n); color: #fff; font-style: normal; font-size: 6.5px; font-weight: 800; }
+    .ucm-est { display: flex; flex-wrap: wrap; gap: 3px; }
+    .ucm-e { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; font-weight: 700; padding: 3px 6px; border-radius: 100px; white-space: nowrap; }
+    .ucm-e.over { color: #ef4444; background: rgba(239,68,68,0.1); }
+    .ucm-e.due { color: #2563eb; background: rgba(59,130,246,0.1); }
+    .ucm-e.prom { color: #7c5cff; background: rgba(124,92,255,0.1); }
+    .ucm-e svg { width: 8px; height: 8px; }
+
+    @media (max-width: 600px) {
+        .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }
+        .ucm-shot.ucm-q { padding: 0; }
+        .ucm-qcard { margin-left: 10px; margin-right: 10px; padding-left: 14px; padding-right: 14px; }
+        .ucm-qi-h, .ucm-qi-r { grid-template-columns: minmax(0, 1.7fr) 0.8fr 1fr; }
+        .ucm-qi-h > :nth-child(3), .ucm-qi-r > :nth-child(3) { display: none; }
+        .ucm-ckpis { grid-template-columns: 0.6fr 1fr 1fr; }
+        .ucm-ckpis > span:nth-child(4) { display: none; }
+        .ucm-dh-tot b { font-size: 13px; }
+        .ucm-qrow { grid-template-columns: 56px 64px minmax(0, 1fr) 12px; }
+        .ucm-qrow > .ucm-date { display: none; }
+        .ucm-aging { grid-template-columns: repeat(2, 1fr); }
+        .ucm-cz { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) 70px; }
+        .ucm-cz > :nth-child(2), .ucm-cz > :nth-child(3) { display: none; }
+        .ucm-chips { display: none; }
+        .ucm-kpi b { font-size: 14px; }
+    }
 </style>
 
 <script>

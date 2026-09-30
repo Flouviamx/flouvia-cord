@@ -5,28 +5,28 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import CasoHeroMockup from '../../components/casos/CasoHeroMockup.astro';
 
-// Shader estándar de Cord — variante LILA para equipos de desarrollo.
-const HERO_PAL = { base: '#FFFFFF', color1: '#DED2FA', color2: '#D2DEFB', color3: '#CDEAF6' };
+// Ola de seda del hero (mismo shader que /soluciones), paleta VIOLETA → CIELO para equipos de desarrollo.
+const HERO_PAL = { base: '#F6F9FC', c1: '#C4B5FD', c2: '#A78BFA', c3: '#7C3AED', c4: '#4F46E5', c5: '#0EA5E9' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para Software Factories — Propuestas y Cobro por Hitos";
-const metaDesc = "Envía propuestas técnicas detalladas, divide el cobro por hitos del proyecto (Setup, Core, Launch) y factura automáticamente (CFDI 4.0 para negocios en México). Para dev shops y equipos de desarrollo en cualquier país.";
+const metaTitle = "Cord para Software Factories — Propuestas por Fases y Anticipos";
+const metaDesc = "Envía propuestas técnicas por fases, cobra anticipos y saldos, y emite tu factura desde cada cotización (CFDI 4.0 para negocios en México). Para dev shops y equipos de desarrollo.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO) — preguntas ancladas a
 // capacidades reales del producto.
 const FAQS = [
     {
-        q: '¿Puedo cobrar un proyecto por hitos en vez de todo de una vez?',
-        a: 'Sí. Divides el proyecto en fases (por ejemplo Setup, Core, Launch), cotizas cada una por separado y envías la cotización correspondiente cuando completas esa fase — tu cliente la aprueba con firma digital desde su link.',
+        q: '¿Puedo cobrar un proyecto por fases en vez de todo de una vez?',
+        a: 'Sí. Divides el proyecto en fases (por ejemplo Setup, Core, Launch), cotizas cada una por separado y envías la cotización correspondiente cuando completas esa fase; tu cliente la aprueba con firma electrónica y paga desde su link. Dentro de una misma cotización también puedes pedir un anticipo y cobrar el saldo después, o dividir el pago en cuotas.',
     },
     {
         q: '¿Puedo agregar opciones (up-sells) que el cliente activa o desactiva antes de firmar?',
@@ -38,7 +38,7 @@ const FAQS = [
     },
     {
         q: '¿Necesito facturar en México para usar Cord con clientes extranjeros?',
-        a: 'No necesariamente. Puedes cotizar en USD con tipo de cambio protegido por 30 días y, para clientes fuera de México, usar el flujo de factura comercial en vez de CFDI.',
+        a: 'No necesariamente. Puedes cotizar y cobrar en USD con el tipo de cambio congelado 30 días. Si tu negocio es mexicano, emites CFDI 4.0 con esa divisa y ese tipo de cambio; si facturas desde fuera de México, Cord genera factura comercial.',
     },
 ];
 const faqSchema = {
@@ -55,56 +55,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128", alt: "GitHub", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128", alt: "Jira", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128", alt: "Linear", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=128", alt: "GitLab", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'github',
-        name: 'GitHub',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/512px-Octicons-mark-github.svg.png',
-        quote: '«El cobro por hitos ha transformado nuestra forma de ejecutar proyectos. Cobramos al terminar sprints sin burocracia administrativa.»',
-        author: 'Lead Developer',
-        bgGradient: 'linear-gradient(135deg, #1e293b, #0f172a)',
-        bgImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'jira',
-        name: 'Jira',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://jira.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Jira_%28Software%29_logo.svg/512px-Jira_%28Software%29_logo.svg.png',
-        quote: '«Ahora los cambios de alcance (change requests) se cotizan y aprueban desde el mismo ticket, acelerando el desarrollo.»',
-        author: 'Project Manager',
-        bgGradient: 'linear-gradient(135deg, #0369a1, #075985)'
-    },
-    {
-        id: 'linear',
-        name: 'Linear',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=128',
-        logoUrlLarge: 'https://pbs.twimg.com/profile_images/1121395911849062400/7exmJEg4_400x400.png',
-        quote: '«La velocidad para enviar una propuesta técnica y que se convierta en factura es clave para mantener el ciclo ágil de desarrollo.»',
-        author: 'CTO',
-        bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
-        bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'slack',
-        name: 'Slack',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/512px-Slack_icon_2019.svg.png',
-        quote: '«Mantener a nuestros ingenieros enfocados en código y no persiguiendo pagos es el mayor valor que nos ha dado Cord.»',
-        author: 'VP of Engineering',
-        bgGradient: 'linear-gradient(135deg, #111827, #4a044e)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -117,12 +73,13 @@ const testimonialItems = [
         <!-- HERO -->
         <header class="startup-hero">
             <div class="startup-hero-bg">
-                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                <RibbonHeroBg client:only="react" light colors={HERO_PAL} />
             </div>
+            <div class="startup-hero-grid">
             <div class="startup-hero-content">
-                <h1 class="startup-title reveal">De la propuesta al cobro para desarrollo de software</h1>
+                <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">desarrollo de software</span></h1>
                 <p class="startup-sub">
-                    Formaliza proyectos complejos con transacciones legalmente vinculantes. Envía propuestas técnicas, divide pagos por hitos y acelera el cobro de anticipos.
+                    Formaliza proyectos complejos con propuestas técnicas que tu cliente aprueba con firma electrónica. Cotiza por fases, cobra el anticipo al aprobar y el saldo al entregar.
                 </p>
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
@@ -133,28 +90,22 @@ const testimonialItems = [
                     <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                 </div>
             </div>
+            <div class="startup-hero-visual">
+                <CasoHeroMockup variant="software-factory" />
+            </div>
+            </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Las mejores agencias de desarrollo usan Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://cursor.sh&size=64" alt="Cursor" width="24" height="24" loading="lazy" />
-                    <span>Cursor</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=64" alt="Vercel" width="24" height="24" loading="lazy" />
-                    <span>Vercel</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://gitlab.com&size=64" alt="GitLab" width="24" height="24" loading="lazy" />
-                    <span>GitLab</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=64" alt="Linear" width="24" height="24" loading="lazy" />
-                    <span>Linear</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -162,10 +113,9 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Sincroniza desarrollo y finanzas</span>
-                    <h2 class="uc-split-title">Cobra por tus hitos técnicos a tiempo</h2>
+                    <h2 class="uc-split-title">Cobra cada fase técnica a tiempo</h2>
                     <p class="uc-split-desc">
-                        El desarrollo de software tiene su propio ritmo. Conecta tus repositorios y tableros de control con tu ciclo de facturación para que nunca se te olvide cobrar un entregable aprobado.
+                        El desarrollo de software tiene su propio ritmo. Conecta tus herramientas por API y webhooks para que cada entregable aprobado llegue a tu proceso de cobro.
                     </p>
                 </div>
 
@@ -174,41 +124,25 @@ const testimonialItems = [
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
                             <h3>Cobros por fase del proyecto</h3>
-                            <p>Divide el proyecto en hitos — Setup, Core, Launch — y cotiza cada uno por separado. Cuando completes una fase, envías la cotización correspondiente y el cliente la aprueba con firma digital desde su link.</p>
-                            <a href="/sign-up" class="uc-link-arrow">Crear propuesta por hitos <span>&rarr;</span></a>
+                            <p>Divide el proyecto en fases — Setup, Core, Launch — y cotiza cada una por separado. Cuando completes una fase, envías su cotización y el cliente la aprueba con firma electrónica desde su link.</p>
+                            <a href="/sign-up" class="uc-link-arrow">Crear propuesta por fases <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-nav">
-                                        <div class="cmk-nav-l">
-                                            <span class="cmk-nav-title">Hito 2 · Core Backend</span>
-                                        </div>
-                                        <span class="cmk-badge cmk-b-blue">$18,000 MXN</span>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Entregables de la fase</div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #42 · API Auth</span>
-                                            <span class="cmk-badge cmk-b-green">Merged</span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">PR #45 · DB Schema</span>
-                                            <span class="cmk-badge cmk-b-green">Merged</span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-t1" style="font-family:ui-monospace,Menlo,monospace; font-size:12px;">Staging · aprobación del cliente</span>
-                                            <span class="cmk-badge cmk-b-amber">Pendiente</span>
-                                        </div>
-                                        <div style="display:flex; gap:10px; margin-top:12px">
-                                            <span class="cmk-cta cmk-cta-solid" style="flex:1; justify-content:center">Enviar cotización del hito</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:12px;">
-                                            <span class="cmk-dot cmk-dot-blue"></span>
-                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Al aprobar el hito: firma digital + link de pago + CFDI</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /app/clientes/[id]: una cotización por fase del proyecto,
+                                 cada una con su propio estado ("Cotizaciones" y "Qué le vendes"). -->
+                            <div class="ucm-shot">
+                                <div class="ucm-dh">
+                                    <span class="ucm-dh-av">TA</span>
+                                    <span class="ucm-dh-who">
+                                        <b class="ucm-dh-name">Transportes Arrieta</b>
+                                        <small>Mónica Arrieta · ti@arrieta.mx · 81 2210 4476</small>
+                                    </span>
+                                    <span class="ucm-dh-tot"><small>Cerrado</small><b class="editorial">$301,600<i class="ucm-cur">MXN</i></b></span>
                                 </div>
+                                <div class="ucm-sec">Cotizaciones</div>
+                                <div class="ucm-qrow"><span class="ucm-qfolio">COT-0203</span><span class="ucm-pill" style="color:#2563eb;background:rgba(37,99,235,0.09)">Enviada</span><span class="editorial ucm-r">$162,400<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">29 sep 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div><div class="ucm-qrow"><span class="ucm-qfolio">COT-0202</span><span class="ucm-pill" style="color:#059669;background:rgba(16,185,129,0.1)">Aprobada</span><span class="editorial ucm-r">$208,800<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">1 sep 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div><div class="ucm-qrow"><span class="ucm-qfolio">COT-0201</span><span class="ucm-pill" style="color:#059669;background:rgba(16,185,129,0.14)">Pagada</span><span class="editorial ucm-r">$92,800<i class="ucm-cur">MXN</i></span><span class="ucm-date ucm-r">4 ago 2026</span><svg class="ucm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+                                <div class="ucm-sec ucm-sec-gap">Qué le vendes</div>
+                                <div class="ucm-prow"><span>Fase 3 · App móvil y lanzamiento</span><small>1×</small><b class="editorial">$140,000<i class="ucm-cur">MXN</i></b></div><div class="ucm-prow"><span>Fase 2 · Core backend y API</span><small>1×</small><b class="editorial">$180,000<i class="ucm-cur">MXN</i></b></div><div class="ucm-prow"><span>Fase 1 · Setup e infraestructura</span><small>1×</small><b class="editorial">$80,000<i class="ucm-cur">MXN</i></b></div>
                             </div>
                         </div>
                     </div>
@@ -221,33 +155,16 @@ const testimonialItems = [
                             <a href="/sign-up" class="uc-link-arrow">Genera propuestas técnicas <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-chrome">
-                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> buildship.cord.app/q/mvp2</div>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div class="cmk-eyebrow" style="margin-bottom:10px;">Módulos adicionales de la propuesta</div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="flex-direction:column; align-items:flex-start; gap:2px;">Infraestructura AWS + CI/CD<span class="cmk-t2" style="font-weight:500;">Setup inicial y pipelines</span></span>
-                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial">+$2,500</span><span class="cmk-toggle"></span></span>
-                                        </div>
-                                        <div class="cmk-kv">
-                                            <span class="cmk-t1" style="color:#64748b; flex-direction:column; align-items:flex-start; gap:2px;">Soporte extendido · SLA 99%<span class="cmk-t2" style="font-weight:500;">Respuesta en menos de 2 h</span></span>
-                                            <span style="display:inline-flex; align-items:center; gap:10px;"><span class="cmk-v editorial" style="color:#94a3b8;">+$800/mes</span><span class="cmk-toggle off"></span></span>
-                                        </div>
-                                        <div class="cmk-kv" style="border-bottom:none;">
-                                            <span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con módulos</span>
-                                            <span class="cmk-v editorial" style="font-size:16px;">$28,700 MXN</span>
-                                        </div>
-                                        <div style="display:flex; gap:10px; margin-top:12px">
-                                            <span class="cmk-cta cmk-cta-solid" style="flex:1.4; justify-content:center">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
-                                                Firmar y pagar
-                                            </span>
-                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">Descargar PDF</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de /q/[token] (QuoteCard): el cliente desmarca una línea y aprueba
+                                 solo lo que quiere; la nota y el total se recalculan. -->
+                            <div class="ucm-shot ucm-q is-late" style="--brand:#312e81">
+                                <div class="ucm-url"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>cordhq.app/q/c87399c8ec8eb69d80af3e05541e06f2</span></div>
+                                <div class="ucm-qcard ucm-qcard-cut">
+                                    <div class="ucm-qi-h"><span>CONCEPTO</span><span>CANT.</span><span class="ucm-r">P. UNIT.</span><span class="ucm-r">IMPORTE</span></div>
+                                    <div class="ucm-qi-r"><span class="ucm-qi-n"><i class="ucm-pick on"></i><span>App móvil iOS y Android</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$186,000.00</span><span class="editorial ucm-r">$186,000.00</span></div><div class="ucm-qi-r"><span class="ucm-qi-n"><i class="ucm-pick on"></i><span>Panel de administración web</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$94,000.00</span><span class="editorial ucm-r">$94,000.00</span></div><div class="ucm-qi-r off"><span class="ucm-qi-n"><i class="ucm-pick"></i><span>Soporte extendido 24/7 (12 meses)</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$72,000.00</span><span class="editorial ucm-r">$72,000.00</span></div>
+                                    <div class="ucm-qt"><span><em>Subtotal</em><b class="editorial">$280,000.00</b></span><span><em>IVA 16%</em><b class="editorial">$44,800.00</b></span><span class="g"><em>Total</em><b class="editorial">$324,800.00</b></span></div>
+                                    <div class="ucm-partial">Aprobarás <b>2 de 3 líneas</b> · Total a aprobar: <b class="editorial">$324,800.00 MXN</b></div>
+                                    <span class="ucm-cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Aprobar cotización</span>
                                 </div>
                             </div>
                         </div>
@@ -263,7 +180,7 @@ const testimonialItems = [
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6" fill="currentColor" fill-opacity="0.12"></polyline><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                             </div>
                             <h4>API REST nativa</h4>
-                            <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, consulta clientes y gestiona productos directamente desde tu código.</p>
+                            <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, y consulta y crea clientes y productos directamente desde tu código.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
@@ -277,20 +194,19 @@ const testimonialItems = [
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             </div>
                             <h4>Cobros Internacionales</h4>
-                            <p>Factura a clientes en el extranjero en su <a href="/producto/divisas" class="uc-link-inline">moneda local</a>, mientras tú recibes pesos mexicanos de forma segura.</p>
+                            <p>Cotiza y cobra a clientes en el extranjero en su <a href="/producto/divisas" class="uc-link-inline">moneda</a> (USD, EUR y otras divisas); el depósito llega a tu cuenta de cobros.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             </div>
-                            <h4>Gestión de horas extras</h4>
-                            <p>Añade fácilmente registros de <a href="/producto/equipo" class="uc-link-inline">horas por soporte</a> o consultoría como partidas a la siguiente factura del mes.</p>
+                            <h4>Soporte y horas adicionales</h4>
+                            <p>Agrega líneas de soporte o consultoría a cualquier cotización o <a href="/producto/facturacion" class="uc-link-inline">factura</a>, con su cantidad de horas y tarifa.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -305,37 +221,35 @@ const testimonialItems = [
                 <h2 class="uc-power-title reveal">Cobra cada entregable con precisión y sin fricciones</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <h3>CFDI 4.0 al cerrar cada hito</h3>
-                        <p>Cuando tu cliente aprueba la cotización del hito, Cord timbra el CFDI 4.0 automáticamente vía PAC certificado. El XML y el PDF quedan disponibles de inmediato para descarga sin salir de Cord.</p>
+                        <h3>CFDI 4.0 por cada fase</h3>
+                        <p>Cuando tu cliente aprueba la cotización de una fase, emites su CFDI 4.0 con un clic, timbrado por un PAC certificado. El XML y el PDF quedan disponibles al instante sin salir de Cord.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Propuestas con módulos opcionales</h3>
-                        <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso.</p>
+                        <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso (plan Scale).</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Multi-divisa para clientes internacionales</h3>
-                        <p>Cotiza en USD o EUR con tasa de cambio protegida (buffer configurable). Tu cliente ve el monto en su moneda, tú facturas y cobras en MXN con la tasa que bloqueaste al enviar la propuesta.</p>
+                        <p>Cotiza en USD o EUR con el tipo de cambio congelado 30 días, y un margen de cobertura de 1, 2 o 5%. Tu cliente ve y paga en su moneda; el CFDI declara ese tipo de cambio.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <h3>Analítica de margen por proyecto</h3>
-                        <p>El Auditor Silencioso de Cord revisa el margen bruto de cada línea y bloquea cotizaciones que estén por debajo del mínimo que tú defines. Entiende qué tipos de proyecto son más rentables para tu equipo.</p>
+                        <h3>Margen mínimo en cada cotización</h3>
+                        <p>El Auditor Silencioso revisa el margen bruto de cada línea con costo y, si baja del mínimo que defines, la cotización espera la aprobación de tu equipo antes de salir (plan Scale).</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} isDarkMode={true} />
 
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan los equipos de desarrollo antes de empezar."
             id="software-factory"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -440,57 +354,90 @@ const testimonialItems = [
         padding: 0 5%;
     }
 
-    /* ── HERO (idéntico a soluciones/startups) ── */
+    /* ── HERO — layout de soluciones/startups: texto a la izquierda y, a la
+       derecha, una calca de pantalla real (CasoHeroMockup) sobre la ola de seda. ── */
     .startup-hero {
         position: relative;
-        padding: 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
         background: #f6f9fc;
     }
 
+    /* Respaldo sin WebGL: la misma composición con degradados. */
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
         overflow: hidden;
+        background: linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #C4B5FD 44%, #A78BFA 52%, #7C3AED 64%, #4F46E5 80%, #0EA5E9 100%);
+    }
+    /* Velo claro detrás del texto. */
+    .startup-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+    }
+
+    .startup-hero-grid {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
     .startup-hero-content {
-        position: relative;
-        z-index: 10;
-        text-align: left;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        max-width: 1140px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem 5% 0;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .startup-hero-visual {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 
     .startup-title {
-        font-size: clamp(3rem, 5vw, 5.5rem);
-        line-height: 1.05;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin: 0 0 1.5rem;
-        color: #0a2540;
+        /* Tamaño estándar de títulos (h1.masked-title, Layout.astro). */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        margin: 0 0 1.75rem;
+        color: #050505;
         text-wrap: balance;
-        max-width: 900px;
+        max-width: 660px;
+    }
+    /* El vertical, en los tonos de su paleta (un paso más profundos para que
+       se lean sobre claro). */
+    .startup-title-accent {
+        background: linear-gradient(92deg, #7c3aed 0%, #6d28d9 55%, #4338ca 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #6d28d9;
     }
 
     .startup-sub {
-        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
         color: #425466;
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
 
@@ -504,12 +451,23 @@ const testimonialItems = [
     .startup-hero .btn-ghost {
         color: #0a2540;
         border: 1px solid rgba(10, 37, 64, 0.15);
-        background: rgba(10, 37, 64, 0.03);
+        background: rgba(255, 255, 255, 0.55);
     }
 
     .startup-hero .btn-ghost:hover {
-        background: rgba(10, 37, 64, 0.08);
+        background: rgba(255, 255, 255, 0.8);
         box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 880px) {
+        .startup-hero { padding: 120px 0 64px; min-height: auto; }
+        .startup-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+        .startup-hero-visual { justify-content: center; }
+        .startup-hero-bg::after {
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.72) 0%, rgba(246, 249, 252, 0.3) 45%, transparent 65%);
+        }
+    }
+    @media (max-width: 520px) {
     }
 
     .uc-title {
@@ -596,13 +554,13 @@ const testimonialItems = [
         padding: 3rem 5%;
     }
     .uc-trust p {
-        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+        font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
     }
     .uc-logos {
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -633,13 +591,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a; /* Emerald */
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);
@@ -727,16 +678,6 @@ const testimonialItems = [
             0 2px 4px rgba(10, 25, 47, 0.05),
             0 40px 80px -24px rgba(10, 25, 47, 0.18),
             inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
-       para que los badges y montos que cuentan la historia queden visibles */
-    .uc-bc-mockup .cmk-shot {
-        top: 1.8rem;
-        left: 1.8rem;
-        right: -14px;
-        bottom: -40px;
-        width: auto;
     }
 
     .uc-mockup-wrapper {
@@ -953,8 +894,17 @@ const testimonialItems = [
     }
     .uc-benefits-intro {
         text-align: left;
-        max-width: 680px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
         margin-bottom: 4rem;
+    }
+    .uc-benefits-intro > .uc-split-title { margin: 0; }
+    .uc-benefits-intro > .uc-split-desc { margin: 0; max-width: 520px; }
+    @media (max-width: 880px) {
+        .uc-benefits-intro { grid-template-columns: 1fr; row-gap: 1.2rem; }
     }
     .uc-bento-cards {
         display: grid;
@@ -1009,7 +959,8 @@ const testimonialItems = [
         transform: translateX(4px);
     }
 
-    /* Mockups dentro de bento cards */
+    /* Mockups dentro de bento cards: el lienzo gris ES el de la app; la calca
+       (.ucm-shot) se recorta y se desvanece abajo. */
     .uc-bc-mockup {
         background: #f5f5f7;
         border-radius: 16px;
@@ -1018,9 +969,6 @@ const testimonialItems = [
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(10,37,64,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
     }
     .cord-bg-1 {
@@ -1407,6 +1355,183 @@ const testimonialItems = [
         transform: scale(1.05);
     }
     
+</style>
+
+<style>
+    /* ════════ Calcas de producto en las tarjetas (ucm-*) ════════
+       Cada .uc-bc-mockup es el lienzo gris de la app (#f5f5f7) y contiene la
+       calca de UNA pantalla real de Cord a ~75% de escala: mismas columnas,
+       etiquetas de src/i18n/app.ts y pills de estado. El corte inferior se
+       desvanece como un screenshot recortado (igual que .ehs-shot). */
+    .ucm-shot {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: absolute;
+        inset: 0;
+        padding: 22px 24px 0;
+        overflow: hidden;
+        text-align: left;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+    }
+    .ucm-shot.is-late {
+        -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+    }
+    .ucm-shot svg { display: block; flex: none; }
+    .ucm-shot .ucm-r { text-align: right; justify-content: flex-end; }
+    .ucm-cur { font-style: normal; font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; color: var(--mut); margin-left: 3px; }
+    .ucm-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .ucm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .ucm-pill {
+        display: inline-flex; align-items: center; gap: 4px; justify-self: start;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .ucm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .ucm-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.03), 0 16px 34px -24px rgba(10, 25, 47, 0.2);
+    }
+    .ucm-sec { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .ucm-sec-gap { margin-top: 16px; }
+    .ucm-th, .ucm-tr { display: grid; gap: 9px; align-items: center; }
+    .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
+    .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+    .ucm-tr:last-child { border-bottom: none; }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); white-space: nowrap; }
+    .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
+    .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
+
+    /* /app/clientes/[id] (d-head, KPIs, crédito, cotizaciones, qué le vendes) */
+    .ucm-dh { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--bd); }
+    .ucm-dh-av {
+        width: 34px; height: 34px; flex: none; border-radius: 9px; display: grid; place-items: center;
+        background: var(--n); color: #fff; font-size: 10.5px; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55);
+    }
+    .ucm-dh-av.dist { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(10,25,47,0.55), 0 0 0 2px rgba(10,25,47,0.3); }
+    .ucm-dh-who { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .ucm-dh-who small { font-size: 8.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-dh-name { font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; }
+    .ucm-badges { display: flex; gap: 5px; }
+    .ucm-tier { font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; padding: 3px 8px; border-radius: 100px; color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .ucm-fis { font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px; color: #10b981; background: rgba(16,185,129,0.12); }
+    .ucm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+    .ucm-dh-tot small { font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #99a2af; }
+    .ucm-dh-tot b { font-size: 17px; color: var(--n); line-height: 1.15; white-space: nowrap; }
+    .ucm-ckpis { display: grid; grid-template-columns: 0.7fr 1fr 1fr 1fr; padding: 10px 6px; margin-bottom: 10px; }
+    .ucm-ckpis > span { display: flex; flex-direction: column; gap: 4px; padding: 0 8px; border-left: 1px solid var(--bd); min-width: 0; }
+    .ucm-ckpis > span:first-child { border-left: none; }
+    .ucm-ckpis small { font-size: 6.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mut); opacity: 0.75; white-space: nowrap; }
+    .ucm-ckpis b { font-size: 12px; letter-spacing: -0.025em; white-space: nowrap; }
+    .ucm-credit-h { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--bd); }
+    .ucm-credit-h b { font-size: 11px; font-weight: 700; }
+    .ucm-credit-h span { font-size: 9.5px; font-weight: 600; color: #ef4444; }
+    .ucm-credit-track { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.05); overflow: hidden; margin-bottom: 7px; }
+    .ucm-credit-track i { display: block; height: 100%; border-radius: 100px; background: #ef4444; }
+    .ucm-credit-n { display: flex; align-items: baseline; gap: 7px; }
+    .ucm-credit-n b { font-size: 12px; }
+    .ucm-credit-n span { font-size: 9.5px; color: var(--mut); }
+    .ucm-credit-w { margin: 6px 0 0; font-size: 9.5px; color: #ef4444; }
+    .ucm-aging { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 8px; background: var(--bd); border-radius: 10px; overflow: hidden; }
+    .ucm-aging span { display: flex; flex-direction: column; gap: 2px; padding: 8px 9px; background: var(--soft); }
+    .ucm-aging small { font-size: 8px; color: var(--mut); }
+    .ucm-aging b { font-size: 10.5px; }
+    .ucm-aging .late b { color: #b45309; }
+    .ucm-aging .empty b { color: var(--mut); opacity: 0.6; }
+    .ucm-qrow { display: grid; grid-template-columns: 62px 70px minmax(0, 1fr) 72px 12px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-qfolio { font-size: 10.5px; font-weight: 600; }
+    .ucm-qrow .editorial { font-size: 11px; white-space: nowrap; }
+    .ucm-chev { width: 10px !important; height: 10px !important; color: #c4cad3; }
+    .ucm-prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--bd); }
+    .ucm-prow span { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-prow small { font-size: 9px; color: var(--mut); }
+    .ucm-prow b { font-size: 10.5px; white-space: nowrap; }
+
+    /* Link público /q/[token] (QuoteCard) */
+    .ucm-shot.ucm-q { padding: 0; background: #f3f2ef; color: #111; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    .ucm-url { display: flex; justify-content: center; padding: 9px 14px; background: #ffffff; border-bottom: 1px solid var(--bd); }
+    .ucm-url span {
+        display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 12px; border-radius: 999px;
+        background: #f5f5f7; color: #6b7280; font: 500 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ucm-url svg { width: 10px; height: 10px; color: #059669; }
+    .ucm-qcard {
+        margin: 14px 16px 0; padding: 16px 20px; background: #ffffff; border-radius: 18px;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12);
+        display: flex; flex-direction: column;
+    }
+    /* La página va desplazada: el borde superior de la tarjeta queda fuera. */
+    .ucm-qcard-cut { margin-top: 0; padding-top: 4px; border-radius: 0 0 18px 18px; }
+    .ucm-qi-h, .ucm-qi-r { display: grid; grid-template-columns: minmax(0, 2.7fr) 0.7fr 0.8fr 0.9fr; gap: 10px; align-items: center; }
+    .ucm-qi-h { padding: 8px 0 6px; font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; color: #c4c9d1; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ucm-qi-r { padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 10px; }
+    .ucm-qi-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; }
+    .ucm-qi-n > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-qi-q { color: #9ca3af; font-size: 9px; }
+    .ucm-qi-p { color: #9ca3af; font-size: 9.5px; }
+    .ucm-qi-r.off { opacity: 0.5; }
+    .ucm-qi-r.off .ucm-qi-n > span { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+    .ucm-pick { width: 13px; height: 13px; flex: none; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #fff; position: relative; }
+    .ucm-pick.on { background: #0a192f; border-color: #0a192f; }
+    .ucm-pick.on::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-qt { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding: 7px 0 8px; }
+    .ucm-qt > span { display: flex; justify-content: space-between; gap: 28px; min-width: 150px; font-size: 9.5px; color: #9ca3af; }
+    .ucm-qt em { font-style: normal; }
+    .ucm-qt b { color: #6b7280; }
+    .ucm-qt .g { color: #111; font-weight: 700; border-top: 1px solid rgba(10,25,47,0.07); padding-top: 5px; }
+    .ucm-qt .g b { color: #111; font-size: 13px; }
+    .ucm-qtrust { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 0 9px; font-size: 8.5px; color: #9ca3af; }
+    .ucm-qtrust > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ucm-qtrust svg { width: 10px; height: 10px; }
+    .ucm-live { font-weight: 600; color: #065f46 !important; }
+    .ucm-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+    .ucm-sign { display: flex; flex-direction: column; gap: 5px; }
+    .ucm-sign-h { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; }
+    .ucm-back { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #f5f5f7; color: #6b7280; }
+    .ucm-back svg { width: 11px; height: 11px; }
+    .ucm-sign-p { margin: 0; font-size: 9.5px; color: #6b7280; }
+    .ucm-sign-p b { color: #111; }
+    .ucm-lbl { font-size: 8.5px; font-weight: 600; color: #6b7280; }
+    .ucm-input { padding: 6px 11px; border-radius: 10px; background: #f5f5f7; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.15); font-size: 10.5px; color: #111; }
+    .ucm-check { display: flex; align-items: flex-start; gap: 7px; font-size: 8.5px; color: #6b7280; line-height: 1.45; }
+    .ucm-check i { width: 12px; height: 12px; flex: none; border-radius: 3px; background: #0a192f; position: relative; }
+    .ucm-check i::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-cta {
+        display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;
+        padding: 10px 14px; border-radius: 11px; background: var(--brand); color: #fff;
+        font-size: 11px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10,25,47,0.42);
+    }
+    .ucm-cta svg { width: 12px; height: 12px; }
+    .ucm-partial { margin-bottom: 8px; padding: 7px 10px; border-radius: 9px; background: rgba(10,25,47,0.04); font-size: 9.5px; color: #374151; text-align: center; }
+    .ucm-partial b { color: #111; font-weight: 700; }
+
+    @media (max-width: 600px) {
+        .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }
+        .ucm-shot.ucm-q { padding: 0; }
+        .ucm-qcard { margin-left: 10px; margin-right: 10px; padding-left: 14px; padding-right: 14px; }
+        .ucm-qi-h, .ucm-qi-r { grid-template-columns: minmax(0, 1.7fr) 0.8fr 1fr; }
+        .ucm-qi-h > :nth-child(3), .ucm-qi-r > :nth-child(3) { display: none; }
+        .ucm-ckpis { grid-template-columns: 0.6fr 1fr 1fr; }
+        .ucm-ckpis > span:nth-child(4) { display: none; }
+        .ucm-dh-tot b { font-size: 13px; }
+        .ucm-qrow { grid-template-columns: 56px 64px minmax(0, 1fr) 12px; }
+        .ucm-qrow > .ucm-date { display: none; }
+        .ucm-aging { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <script>

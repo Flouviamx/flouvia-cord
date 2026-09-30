@@ -5,21 +5,21 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
+import CasoHeroMockup from '../../components/casos/CasoHeroMockup.astro';
 
-// Shader estándar de Cord — variante AZUL CIELO para SaaS.
-const HERO_PAL = { base: '#FFFFFF', color1: '#C7F0EA', color2: '#CFE8FB', color3: '#D9F5E3' };
+// Ola de seda del hero (mismo shader que /soluciones), paleta TURQUESA → ÍNDIGO para empresas de software.
+const HERO_PAL = { base: '#F6F9FC', c1: '#5EEAD4', c2: '#22D3EE', c3: '#3B82F6', c4: '#6366F1', c5: '#8B5CF6' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import { INTEGRATION_APPS } from '../../lib/integraciones/catalogo';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import '../../styles/mockups.css';
-import TestimonialCarousel from '../../components/soluciones/TestimonialCarousel.jsx';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
 const metaTitle = "Cord para SaaS — Contratos, Cobros y Facturación";
-const metaDesc = "Cierra contratos, cobra en línea y factura automáticamente (CFDI 4.0 para negocios en México). La plataforma de ventas para empresas de software en cualquier país.";
+const metaDesc = "Cierra propuestas con firma electrónica, cobra en línea y emite tu factura desde la misma cotización (CFDI 4.0 para negocios en México). Para empresas de software.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
 // /producto/*): esta página no tenía FAQ visible ni ningún dato
@@ -28,19 +28,19 @@ const metaDesc = "Cierra contratos, cobra en línea y factura automáticamente (
 const FAQS = [
     {
         q: '¿Cord reemplaza mi motor de facturación recurrente (Stripe Billing, Chargebee)?',
-        a: 'No. Cord no cobra suscripciones de forma recurrente — se especializa en el ciclo de cierre comercial: propuesta, aprobación digital y CFDI 4.0 por cada contrato o renovación. Sigues usando Stripe u otra pasarela para el cobro recurrente; Cord se integra vía API y webhooks para mantener todo sincronizado.',
+        a: 'No. Cord no es un motor de facturación por consumo, por asiento ni de planes con prorrateo; para eso sigue usando Stripe Billing o Chargebee. Sí cobra un monto fijo cada mes (iguala) con la tarjeta que tu cliente autoriza una vez, y emite facturas recurrentes. Su fuerte es el cierre: propuesta, aprobación y factura de cada contrato; las renovaciones se cotizan duplicando la propuesta anterior. Se integra por API y webhooks.',
     },
     {
         q: '¿Puedo sincronizar Cord con mi CRM o Slack?',
-        a: 'Sí. Cord emite webhooks (quote.sent, quote.approved, quote.paid) que puedes conectar a Zapier, Make, n8n o tu propio backend para sincronizar con Notion, Slack o el CRM que ya uses.',
+        a: 'Sí. Cord se conecta de forma nativa con HubSpot y Slack, y emite webhooks (quote.sent, quote.approved, quote.paid) que puedes llevar a Zapier, Make, n8n o tu propio backend para sincronizar el resto de tus herramientas.',
     },
     {
         q: '¿El CFDI 4.0 que emite Cord es real o simulado?',
-        a: 'Es real: Cord timbra ante el SAT vía un PAC certificado (Facturapi). El XML y el PDF quedan disponibles desde el portal del cliente y desde tu cuenta, sin recapturar datos en otro sistema.',
+        a: 'Es real cuando cargas tu CSD en Ajustes › Fiscal (plan Starter o superior): Cord timbra ante el SAT mediante un PAC certificado. El PDF y el XML se descargan desde tu cuenta y desde el link de la factura, sin recapturar datos en otro sistema.',
     },
     {
         q: '¿Necesito tarjeta para probar Cord con mi equipo?',
-        a: 'No. El plan gratuito de Cord no pide tarjeta: hasta 5 cotizaciones activas, catálogo y clientes limitados, y armado de cotizaciones con IA incluido para probar el flujo completo.',
+        a: 'No. El plan Gratis no pide tarjeta: incluye 1 usuario, 5 cotizaciones activas, 5 envíos al mes, hasta 50 productos y clientes, y 3 acciones de IA para probar el flujo. Para invitar a tu equipo necesitas un plan de pago.',
     },
 ];
 const faqSchema = {
@@ -57,56 +57,12 @@ const breadcrumbSchema = {
     ],
 };
 
-const magneticNodes = [
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128", alt: "Stripe", top: "10%", left: "30%", width: 100, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128", alt: "Notion", top: "25%", left: "65%", width: 140, zIndex: 3 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=128", alt: "Vercel", top: "50%", left: "15%", width: 120, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128", alt: "Slack", top: "75%", left: "45%", width: 90, zIndex: 2 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://aws.amazon.com&size=128", alt: "AWS", top: "60%", left: "80%", width: 110, zIndex: 1 },
-    { src: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://github.com&size=128", alt: "GitHub", top: "-5%", left: "75%", width: 70, zIndex: 1 }
-];
 
-const testimonialItems = [
-    {
-        id: 'stripe',
-        name: 'Stripe',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/512px-Stripe_Logo%2C_revised_2016.svg.png',
-        quote: '«Cord complementa nuestro ecosistema gestionando el ciclo de cierre de extremo a extremo. Es la pieza que faltaba para SaaS empresariales.»',
-        author: 'Partnerships',
-        bgGradient: 'linear-gradient(135deg, #4f46e5, #312e81)',
-        bgImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'notion',
-        name: 'Notion',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png',
-        quote: '«Nuestras renovaciones anuales de licencias corporativas ahora se gestionan solas. El cliente aprueba y el CFDI se genera sin intervención humana.»',
-        author: 'Head of Sales',
-        bgGradient: 'linear-gradient(135deg, #000000, #171717)'
-    },
-    {
-        id: 'vercel',
-        name: 'Vercel',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=128',
-        logoUrlLarge: 'https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png',
-        quote: '«Automatizar el timbrado de CFDI 4.0 nos ahorró cientos de horas de trabajo manual. Cord entiende perfectamente la velocidad del SaaS moderno.»',
-        author: 'Revenue Ops',
-        bgGradient: 'linear-gradient(135deg, #0f172a, #020617)',
-        bgImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop'
-    },
-    {
-        id: 'slack',
-        name: 'Slack',
-        logoUrl: 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128',
-        logoUrlLarge: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/512px-Slack_icon_2019.svg.png',
-        quote: '«El flujo de aprobación digital ha reducido la fricción en nuestras ventas enterprise, permitiendo que los equipos cierren acuerdos directamente desde el chat.»',
-        author: 'Enterprise Sales',
-        bgGradient: 'linear-gradient(135deg, #111827, #4a044e)'
-    }
-];
 
+
+// Integraciones reales y disponibles hoy (regla 15): nada de logos de clientes
+// que no lo son.
+const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
 ---
 
 
@@ -119,12 +75,13 @@ const testimonialItems = [
         <!-- HERO -->
         <header class="startup-hero">
             <div class="startup-hero-bg">
-                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
+                <RibbonHeroBg client:only="react" light colors={HERO_PAL} />
             </div>
+            <div class="startup-hero-grid">
             <div class="startup-hero-content">
-                <h1 class="startup-title reveal">De la propuesta al cobro para empresas de software</h1>
+                <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">empresas de software</span></h1>
                 <p class="startup-sub">
-                    Transforma los acuerdos verbales en transacciones pagadas. Gestiona renovaciones anuales, firmas de contratos y facturación (CFDI 4.0 para negocios en México). Construido para empresas de software en cualquier país.
+                    Convierte cada acuerdo en una propuesta aprobada y pagada. Cotiza, aprueba con firma electrónica, cobra y factura (CFDI 4.0 para negocios en México) desde un solo link.
                 </p>
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
@@ -135,28 +92,22 @@ const testimonialItems = [
                     <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
                 </div>
             </div>
+            <div class="startup-hero-visual">
+                <CasoHeroMockup variant="saas" />
+            </div>
+            </div>
         </header>
 
-        <!-- LOGOS / TRUST -->
+        <!-- INTEGRACIONES (reales, del catálogo) -->
         <section class="uc-trust reveal">
-            <p>Empresas de SaaS innovadoras crecen con Cord</p>
+            <p>Se conecta con las herramientas que ya usa tu equipo</p>
             <div class="uc-logos">
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://linear.app&size=64" alt="Linear" width="24" height="24" loading="lazy" />
-                    <span>Linear</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://vercel.com&size=64" alt="Vercel" width="24" height="24" loading="lazy" />
-                    <span>Vercel</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=64" alt="Stripe" width="24" height="24" loading="lazy" />
-                    <span>Stripe</span>
-                </div>
-                <div class="trust-logo-item">
-                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://notion.so&size=64" alt="Notion" width="24" height="24" loading="lazy" />
-                    <span>Notion</span>
-                </div>
+                {CONECTA.map((a) => (
+                    <a href="/integraciones" class="trust-logo-item">
+                        <img src={a.logo} alt="" width="24" height="24" loading="lazy" />
+                        <span>{a.nombre}</span>
+                    </a>
+                ))}
             </div>
         </section>
 
@@ -164,10 +115,9 @@ const testimonialItems = [
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <span class="uc-split-label">Sin trabajo manual</span>
                     <h2 class="uc-split-title">Cobra rápido y mantén a tu equipo enfocado en el producto</h2>
                     <p class="uc-split-desc">
-                        Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba en un clic y el CFDI sale solo. Sin perseguir firmas ni capturar datos fiscales manualmente.
+                        Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba con firma electrónica y tú emites el CFDI con un clic desde la cotización. Sin perseguir firmas ni capturar datos fiscales a mano.
                     </p>
                 </div>
 
@@ -176,38 +126,29 @@ const testimonialItems = [
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
                             <h3>Link de pago y CFDI en el mismo flujo</h3>
-                            <p>Tu cliente recibe el link de la cotización, paga con tarjeta o SPEI, y Cord emite el CFDI 4.0 al instante. Sin recapturar datos, sin coordinar por correo.</p>
+                            <p>Tu cliente recibe el link de la cotización y paga con tarjeta (o SPEI en México). Tú emites el CFDI 4.0 desde la misma cotización, sin recapturar datos ni coordinar por correo.</p>
                             <a href="/sign-up" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-chrome">
-                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> nexus.cord.app/q/8xk2</div>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                                            <div class="cmk-brand">
-                                                <div class="cmk-brand-dot" style="background:#0f172a;">N</div>
-                                                <div>
-                                                    <div class="cmk-t1" style="font-size:14px">Nexus SaaS</div>
-                                                    <div class="cmk-t2">COT-0342 · Acme Corp</div>
-                                                </div>
-                                            </div>
-                                            <span class="cmk-badge cmk-b-green"><span class="cmk-dot cmk-dot-green"></span>Pagada</span>
-                                        </div>
-                                        <div class="cmk-divider"></div>
-                                        <div class="cmk-big editorial">$97,440.00 MXN</div>
-                                        <div class="cmk-big-sub">Pagado con tarjeta ····4242 · hoy 11:24</div>
-                                        <div class="cmk-divider"></div>
-                                        <div class="cmk-kv"><span class="cmk-k">CFDI 4.0</span><span class="cmk-badge cmk-b-green">Timbrado y enviado</span></div>
-                                        <div class="cmk-kv" style="border-bottom:none"><span class="cmk-k">Folio fiscal (UUID)</span><span class="cmk-v cmk-v-mono">D4C2-88F1-A9E3</span></div>
-                                        <div style="display:flex; gap:10px; margin-top:10px">
-                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">PDF</span>
-                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">XML</span>
-                                        </div>
-                                    </div>
+                            <!-- Calca de la columna lateral de /app/cotizaciones/[id] en estado Pagada:
+                                 el CFDI se timbra con el botón del vendedor, después del pago. -->
+                            <div class="ucm-shot">
+                                <div class="ucm-tbr">
+                                    <span class="ucm-pill" style="color:#059669;background:rgba(16,185,129,0.14)">Pagada</span>
+                                    <span class="ucm-tb-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Crear</span>
+                                    <span class="ucm-tb-av">LC</span>
                                 </div>
+                                <div class="ucm-sec">Acciones</div>
+                                <span class="ucm-act-cfdi">Timbrar CFDI 4.0</span>
+                                <div class="ucm-act-grid">
+                                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Abrir link</span>
+                                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</span>
+                                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</span>
+                                    <span class="wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>WhatsApp</span>
+                                </div>
+                                <span class="ucm-act-sec">Duplicar cotización</span>
+                                <div class="ucm-sec ucm-sec-gap">Actividad</div>
+                                <div class="ucm-tl"><div class="ucm-tl-i"><span class="ucm-tl-dot" style="background:#10b981"></span><span class="ucm-tl-b"><span>Pago recibido con Cord Payments; cotización saldada</span><small>hoy, 11:24</small></span></div><div class="ucm-tl-i"><span class="ucm-tl-dot" style="background:#10b981"></span><span class="ucm-tl-b"><span>Firmado digitalmente por "Andrea Salinas" (IP 187.190.44.12)</span><small>ayer, 17:52</small></span></div><div class="ucm-tl-i"><span class="ucm-tl-dot" style="background:#7c3aed"></span><span class="ucm-tl-b"><span>Abierta por el cliente desde el link</span><small>ayer, 17:40</small></span></div><div class="ucm-tl-i"><span class="ucm-tl-dot" style="background:#3b82f6"></span><span class="ucm-tl-b"><span>Cotización enviada — link generado</span><small>28 sep, 10:05</small></span></div></div>
                             </div>
                         </div>
                     </div>
@@ -215,43 +156,26 @@ const testimonialItems = [
                     <!-- Tarjeta 2 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Portal de cliente con tu marca en minutos</h3>
-                            <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y el XML, aprueba o rechaza con firma digital. Todo en los colores de tu empresa.</p>
+                            <h3>Un link con tu marca para cada propuesta</h3>
+                            <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y aprueba o rechaza con firma electrónica. Con tu logo y el color de tu marca.</p>
                             <a href="/sign-up" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
-                            <div class="cmk-stage">
-                                <div class="cmk-shot">
-                                    <div class="cmk-chrome">
-                                        <div class="cmk-chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> propuestas.nexus.mx/q/8xk2</div>
-                                    </div>
-                                    <div class="cmk-body">
-                                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                                            <div class="cmk-brand">
-                                                <div class="cmk-brand-dot" style="background:#0f172a;">N</div>
-                                                <div>
-                                                    <div class="cmk-t1" style="font-size:14px">Propuesta para Acme Corp</div>
-                                                    <div class="cmk-t2">Folio COT-0342 · Vigencia 30 días</div>
-                                                </div>
-                                            </div>
-                                            <span class="cmk-badge cmk-b-blue">Vigente</span>
-                                        </div>
-                                        <div class="cmk-divider"></div>
-                                        <div class="cmk-kv"><span class="cmk-k">Licencias Pro ×50</span><span class="cmk-v editorial">$45,000</span></div>
-                                        <div class="cmk-kv"><span class="cmk-k">Onboarding dedicado</span><span class="cmk-v editorial">$15,000</span></div>
-                                        <div class="cmk-kv"><span class="cmk-k">Soporte prioritario SLA ×12</span><span class="cmk-v editorial">$24,000</span></div>
-                                        <div class="cmk-kv" style="border-bottom:none"><span class="cmk-k" style="font-weight:700; color:#0f172a;">Total con IVA</span><span class="cmk-v editorial" style="font-size:15px;">$97,440 MXN</span></div>
-                                        <div style="display:flex; gap:10px; margin-top:12px">
-                                            <span class="cmk-cta cmk-cta-solid" style="flex:1.4; justify-content:center">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M20 6L9 17l-5-5"></path></svg>
-                                                Aprobar y firmar
-                                            </span>
-                                            <span class="cmk-cta cmk-cta-ghost" style="flex:1; justify-content:center">Descargar PDF</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #f1f5f9; margin-top:14px;">
-                                            <span class="cmk-dot cmk-dot-green"></span>
-                                            <span class="cmk-t2" style="color:#475569; font-weight:600;">Conectado en tiempo real · firma con validez legal</span>
-                                        </div>
+                            <!-- Calca de /q/[token] (QuoteCard) con la página desplazada hasta la
+                                 aprobación: totales, estado en vivo y el paso de firma digital. -->
+                            <div class="ucm-shot ucm-q is-late" style="--brand:#0f3d56">
+                                <div class="ucm-url"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>cordhq.app/q/84de3ab68f5e35d047f54bc3ca93c1ac</span></div>
+                                <div class="ucm-qcard ucm-qcard-cut">
+                                    <div class="ucm-qi-r"><span class="ucm-qi-n"><span>Soporte prioritario (12 meses)</span></span><span class="ucm-qi-q">1 servicio</span><span class="editorial ucm-r ucm-qi-p">$36,000.00</span><span class="editorial ucm-r">$36,000.00</span></div>
+                                    <div class="ucm-qt"><span><em>Subtotal</em><b class="editorial">$360,000.00</b></span><span><em>IVA 16%</em><b class="editorial">$57,600.00</b></span><span class="g"><em>Total</em><b class="editorial">$417,600.00</b></span></div>
+                                    <div class="ucm-qtrust"><span class="ucm-live"><i></i>Conectado en tiempo real</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Cifrado · firma con validez legal</span></div>
+                                    <div class="ucm-sign">
+                                        <div class="ucm-sign-h"><span class="ucm-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span>Firma digital</div>
+                                        <p class="ucm-sign-p">Aprobando <b>COT-0342</b> por <b style="color:var(--brand)">$417,600.00 MXN</b></p>
+                                        <span class="ucm-lbl">Nombre completo del firmante</span>
+                                        <span class="ucm-input">Andrea Salinas</span>
+                                        <span class="ucm-check"><i></i>He revisado esta cotización y acepto los términos y condiciones indicados</span>
+                                        <span class="ucm-cta">Confirmar y firmar</span>
                                     </div>
                                 </div>
                             </div>
@@ -268,34 +192,33 @@ const testimonialItems = [
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.12"></path><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                             </div>
                             <h4>Webhooks en cada evento</h4>
-                            <p>Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier, Make o tu propio backend.</p>
+                            <p>Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>invoice.stamped</code> — que puedes escuchar desde Zapier, Make o tu propio backend.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path></svg>
                             </div>
-                            <h4>Cobranza automática</h4>
-                            <p>Si un contrato vence y no se ha pagado, Cord envía recordatorios por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
+                            <h4>Recordatorios automáticos</h4>
+                            <p>Si un pago se acerca a su vencimiento, Cord le manda a tu cliente un recordatorio por correo sin que tengas que intervenir.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="currentColor" fill-opacity="0.12"></rect><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             </div>
                             <h4>Control de aprobaciones</h4>
-                            <p>Define umbrales de descuento y margen mínimo. Si un vendedor se pasa, la propuesta se congela y espera aprobación del gerente antes de salir.</p>
+                            <p>Define umbrales de descuento y margen mínimo. Si un vendedor se pasa, la propuesta espera aprobación del gerente antes de salir (plan Scale).</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" fill="currentColor" fill-opacity="0.12"></path><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </div>
                             <h4>Correos al instante</h4>
-                            <p>Tu cliente recibe el link de la propuesta por correo al enviar, y tú recibes una notificación en cuanto la abre, la aprueba o la rechaza.</p>
+                            <p>Tu cliente recibe el link de la propuesta por correo al enviar, y tú recibes un aviso cuando la aprueba o la rechaza, y cuando la abre si lo activas.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-    </main>
     
 
         <!-- INTEGRATIONS SECTION -->
@@ -314,32 +237,30 @@ const testimonialItems = [
                         <p>Define niveles — Estándar, Plata, Oro, Distribuidor — y Cord aplica el descuento correspondiente automáticamente al elegir el cliente. Menos negociación improvisada, márgenes más controlados.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <h3>Portal de cliente con tu marca</h3>
-                        <p>Cada propuesta genera un link seguro donde tu cliente revisa el desglose, aprueba con firma digital y descarga el PDF y el XML del CFDI — sin que tengas que mandar documentos por correo.</p>
+                        <h3>Link de cliente con tu marca</h3>
+                        <p>Cada propuesta genera un link seguro donde tu cliente revisa el desglose, aprueba con firma electrónica y paga; la factura llega con su propio link para descargar el PDF y el XML. Sin mandar documentos por correo.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>CFDI 4.0 sin salir de Cord</h3>
-                        <p>Al aprobar la propuesta, Cord timbra el CFDI 4.0 vía PAC certificado. El XML y el PDF quedan vinculados a la cotización y disponibles para descarga desde el portal del cliente.</p>
+                        <p>Con un clic emites el CFDI 4.0 de una cotización aprobada, timbrado por un PAC certificado. El PDF y el XML quedan ligados a la cotización y tu cliente los descarga desde el link de la factura.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Seguimiento en vivo y cobranza</h3>
-                        <p>Sabes en tiempo real cuándo tu cliente abrió la propuesta. Si no ha pagado, Cord envía recordatorios automáticos por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
+                        <p>Sabes en tiempo real cuándo tu cliente abrió la propuesta. Si no ha pagado, Cord le manda recordatorios por correo antes del vencimiento sin que tengas que intervenir.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TESTIMONIALS CAROUSEL -->
-        <TestimonialCarousel client:visible items={testimonialItems} isDarkMode={true} />
         
 
         <FaqAccordion
             faqs={FAQS}
-            eyebrow="PREGUNTAS FRECUENTES"
             title="Lo que preguntan las empresas de SaaS antes de empezar."
             id="saas"
             class="uc-faq-acc"
         />
+    </main>
     <Footer />
 
 </Layout>
@@ -444,57 +365,90 @@ const testimonialItems = [
         padding: 0 5%;
     }
 
-    /* ── HERO (idéntico a soluciones/startups) ── */
+    /* ── HERO — layout de soluciones/startups: texto a la izquierda y, a la
+       derecha, una calca de pantalla real (CasoHeroMockup) sobre la ola de seda. ── */
     .startup-hero {
         position: relative;
-        padding: 0;
+        padding: 150px 0 90px;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
         overflow: hidden;
         background: #f6f9fc;
     }
 
+    /* Respaldo sin WebGL: la misma composición con degradados. */
     .startup-hero-bg {
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: #f6f9fc;
         overflow: hidden;
+        background: linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #5EEAD4 44%, #22D3EE 52%, #3B82F6 64%, #6366F1 80%, #8B5CF6 100%);
+    }
+    /* Velo claro detrás del texto. */
+    .startup-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+    }
+
+    .startup-hero-grid {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
     .startup-hero-content {
-        position: relative;
-        z-index: 10;
-        text-align: left;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        max-width: 1140px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem 5% 0;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .startup-hero-visual {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 
     .startup-title {
-        font-size: clamp(3rem, 5vw, 5.5rem);
-        line-height: 1.05;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin: 0 0 1.5rem;
-        color: #0a2540;
+        /* Tamaño estándar de títulos (h1.masked-title, Layout.astro). */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        margin: 0 0 1.75rem;
+        color: #050505;
         text-wrap: balance;
-        max-width: 900px;
+        max-width: 660px;
+    }
+    /* El vertical, en los tonos de su paleta (un paso más profundos para que
+       se lean sobre claro). */
+    .startup-title-accent {
+        background: linear-gradient(92deg, #0891b2 0%, #2563eb 55%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #2563eb;
     }
 
     .startup-sub {
-        font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+        font-size: clamp(1.05rem, 1.5vw, 1.2rem);
         line-height: 1.6;
         color: #425466;
-        max-width: 650px;
-        margin: 0 0 2.5rem 0;
+        max-width: 540px;
+        margin: 0 0 2.4rem 0;
         font-weight: 400;
     }
 
@@ -508,12 +462,23 @@ const testimonialItems = [
     .startup-hero .btn-ghost {
         color: #0a2540;
         border: 1px solid rgba(10, 37, 64, 0.15);
-        background: rgba(10, 37, 64, 0.03);
+        background: rgba(255, 255, 255, 0.55);
     }
 
     .startup-hero .btn-ghost:hover {
-        background: rgba(10, 37, 64, 0.08);
+        background: rgba(255, 255, 255, 0.8);
         box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 880px) {
+        .startup-hero { padding: 120px 0 64px; min-height: auto; }
+        .startup-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+        .startup-hero-visual { justify-content: center; }
+        .startup-hero-bg::after {
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.72) 0%, rgba(246, 249, 252, 0.3) 45%, transparent 65%);
+        }
+    }
+    @media (max-width: 520px) {
     }
 
     .uc-hero-inner {
@@ -610,13 +575,13 @@ const testimonialItems = [
         padding: 3rem 5%;
     }
     .uc-trust p {
-        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+        font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
     }
     .uc-logos {
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
     }
     .trust-logo-item {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; gap: 8px; text-decoration: none;
         font-size: 1.25rem; font-weight: 700; color: #a1a9b3; letter-spacing: -0.5px;
         filter: grayscale(100%) opacity(0.8);
         transition: all 0.3s ease;
@@ -647,13 +612,6 @@ const testimonialItems = [
         max-width: 480px;
     }
 
-    .uc-split-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0a192f;
-        margin-bottom: 1.2rem;
-        display: block;
-    }
 
     .uc-split-title {
         font-size: clamp(2.2rem, 3.5vw, 3rem);
@@ -741,16 +699,6 @@ const testimonialItems = [
             0 2px 4px rgba(10, 25, 47, 0.05),
             0 40px 80px -24px rgba(10, 25, 47, 0.18),
             inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    /* En los bentos el screenshot sangra por abajo y solo 14px a la derecha,
-       para que los badges y montos que cuentan la historia queden visibles */
-    .uc-bc-mockup .cmk-shot {
-        top: 1.8rem;
-        left: 1.8rem;
-        right: -14px;
-        bottom: -40px;
-        width: auto;
     }
 
     .uc-mockup-wrapper {
@@ -1084,8 +1032,17 @@ const testimonialItems = [
     }
     .uc-benefits-intro {
         text-align: left;
-        max-width: 680px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
         margin-bottom: 4rem;
+    }
+    .uc-benefits-intro > .uc-split-title { margin: 0; }
+    .uc-benefits-intro > .uc-split-desc { margin: 0; max-width: 520px; }
+    @media (max-width: 880px) {
+        .uc-benefits-intro { grid-template-columns: 1fr; row-gap: 1.2rem; }
     }
     .uc-bento-cards {
         display: grid;
@@ -1140,7 +1097,8 @@ const testimonialItems = [
         transform: translateX(4px);
     }
 
-    /* Mockups dentro de bento cards */
+    /* Mockups dentro de bento cards: el lienzo gris ES el de la app; la calca
+       (.ucm-shot) se recorta y se desvanece abajo. */
     .uc-bc-mockup {
         background: #f5f5f7;
         border-radius: 16px;
@@ -1149,9 +1107,6 @@ const testimonialItems = [
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(10,37,64,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
     }
     .cord-bg-1 {
@@ -1538,6 +1493,157 @@ const testimonialItems = [
         transform: scale(1.05);
     }
     
+</style>
+
+<style>
+    /* ════════ Calcas de producto en las tarjetas (ucm-*) ════════
+       Cada .uc-bc-mockup es el lienzo gris de la app (#f5f5f7) y contiene la
+       calca de UNA pantalla real de Cord a ~75% de escala: mismas columnas,
+       etiquetas de src/i18n/app.ts y pills de estado. El corte inferior se
+       desvanece como un screenshot recortado (igual que .ehs-shot). */
+    .ucm-shot {
+        --n: #0a192f;
+        --tx: #0f1729;
+        --mut: #5b6472;
+        --bd: rgba(10, 25, 47, 0.08);
+        --soft: #fafbfc;
+        position: absolute;
+        inset: 0;
+        padding: 22px 24px 0;
+        overflow: hidden;
+        text-align: left;
+        color: var(--tx);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 97%);
+    }
+    .ucm-shot.is-late {
+        -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+    }
+    .ucm-shot svg { display: block; flex: none; }
+    .ucm-shot .ucm-r { text-align: right; justify-content: flex-end; }
+    .ucm-cur { font-style: normal; font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; color: var(--mut); margin-left: 3px; }
+    .ucm-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .ucm-ph-t { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.45px; line-height: 1.1; color: var(--tx); }
+    .ucm-pill {
+        display: inline-flex; align-items: center; gap: 4px; justify-self: start;
+        font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+        padding: 3px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .ucm-pill::before { content: ''; width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; }
+    .ucm-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.03), 0 16px 34px -24px rgba(10, 25, 47, 0.2);
+    }
+    .ucm-sec { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .ucm-sec-gap { margin-top: 16px; }
+    .ucm-th, .ucm-tr { display: grid; gap: 9px; align-items: center; }
+    .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
+    .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
+    .ucm-tr:last-child { border-bottom: none; }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); white-space: nowrap; }
+    .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
+    .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
+
+    /* saas · columna lateral de /app/cotizaciones/[id] (acciones + actividad) */
+    .ucm-tbr {
+        display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+        margin: 0 0 14px auto; width: max-content; padding: 4px 4px 4px 8px; border-radius: 14px; background: #fff;
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,0.08), 0 3px 9px -2px rgba(0,0,0,0.04);
+    }
+    .ucm-tb-create { display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 7px; background: var(--n); color: #fff; font-weight: 600; font-size: 9.5px; line-height: 1; }
+    .ucm-tb-create svg { width: 9px; height: 9px; }
+    .ucm-tb-av { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #1b3a64; color: #fff; font-size: 7px; font-weight: 700; }
+    .ucm-act-cfdi { display: block; margin-top: 8px; padding: 8px; border-radius: 9px; background: #3b82f6; border: 1px solid #2563eb; color: #fff; font-size: 10.5px; font-weight: 600; text-align: center; }
+    .ucm-act-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
+    .ucm-act-grid span {
+        display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 3px 6px;
+        border-radius: 10px; background: #fff; border: 1px solid var(--bd); color: var(--mut);
+        font-size: 7.5px; font-weight: 600; white-space: nowrap;
+    }
+    .ucm-act-grid svg { width: 14px; height: 14px; }
+    .ucm-act-grid span.wa { color: #0b7a4b; }
+    .ucm-act-sec { display: block; margin-top: 6px; padding: 7px; border-radius: 9px; background: var(--soft); border: 1px solid var(--bd); font-size: 10px; font-weight: 600; text-align: center; }
+    .ucm-tl { position: relative; display: flex; flex-direction: column; gap: 9px; padding-top: 6px; }
+    .ucm-tl::before { content: ''; position: absolute; left: 3px; top: 12px; bottom: 6px; width: 1px; background: var(--bd); }
+    .ucm-tl-i { position: relative; display: flex; gap: 10px; }
+    .ucm-tl-dot { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px #f5f5f7; }
+    .ucm-tl-b { display: flex; flex-direction: column; gap: 1px; font-size: 10px; font-weight: 500; }
+    .ucm-tl-b small { font-size: 8.5px; color: var(--mut); font-weight: 400; }
+
+    /* Link público /q/[token] (QuoteCard) */
+    .ucm-shot.ucm-q { padding: 0; background: #f3f2ef; color: #111; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    .ucm-url { display: flex; justify-content: center; padding: 9px 14px; background: #ffffff; border-bottom: 1px solid var(--bd); }
+    .ucm-url span {
+        display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 12px; border-radius: 999px;
+        background: #f5f5f7; color: #6b7280; font: 500 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ucm-url svg { width: 10px; height: 10px; color: #059669; }
+    .ucm-qcard {
+        margin: 14px 16px 0; padding: 16px 20px; background: #ffffff; border-radius: 18px;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12);
+        display: flex; flex-direction: column;
+    }
+    /* La página va desplazada: el borde superior de la tarjeta queda fuera. */
+    .ucm-qcard-cut { margin-top: 0; padding-top: 4px; border-radius: 0 0 18px 18px; }
+    .ucm-qi-h, .ucm-qi-r { display: grid; grid-template-columns: minmax(0, 2.7fr) 0.7fr 0.8fr 0.9fr; gap: 10px; align-items: center; }
+    .ucm-qi-h { padding: 8px 0 6px; font-size: 6.5px; font-weight: 800; letter-spacing: 1.3px; color: #c4c9d1; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ucm-qi-r { padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 10px; }
+    .ucm-qi-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; }
+    .ucm-qi-n > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ucm-qi-q { color: #9ca3af; font-size: 9px; }
+    .ucm-qi-p { color: #9ca3af; font-size: 9.5px; }
+    .ucm-qi-r.off { opacity: 0.5; }
+    .ucm-qi-r.off .ucm-qi-n > span { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+    .ucm-pick { width: 13px; height: 13px; flex: none; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #fff; position: relative; }
+    .ucm-pick.on { background: #0a192f; border-color: #0a192f; }
+    .ucm-pick.on::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-qt { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding: 7px 0 8px; }
+    .ucm-qt > span { display: flex; justify-content: space-between; gap: 28px; min-width: 150px; font-size: 9.5px; color: #9ca3af; }
+    .ucm-qt em { font-style: normal; }
+    .ucm-qt b { color: #6b7280; }
+    .ucm-qt .g { color: #111; font-weight: 700; border-top: 1px solid rgba(10,25,47,0.07); padding-top: 5px; }
+    .ucm-qt .g b { color: #111; font-size: 13px; }
+    .ucm-qtrust { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 0 9px; font-size: 8.5px; color: #9ca3af; }
+    .ucm-qtrust > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ucm-qtrust svg { width: 10px; height: 10px; }
+    .ucm-live { font-weight: 600; color: #065f46 !important; }
+    .ucm-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+    .ucm-sign { display: flex; flex-direction: column; gap: 5px; }
+    .ucm-sign-h { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; }
+    .ucm-back { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #f5f5f7; color: #6b7280; }
+    .ucm-back svg { width: 11px; height: 11px; }
+    .ucm-sign-p { margin: 0; font-size: 9.5px; color: #6b7280; }
+    .ucm-sign-p b { color: #111; }
+    .ucm-lbl { font-size: 8.5px; font-weight: 600; color: #6b7280; }
+    .ucm-input { padding: 6px 11px; border-radius: 10px; background: #f5f5f7; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.15); font-size: 10.5px; color: #111; }
+    .ucm-check { display: flex; align-items: flex-start; gap: 7px; font-size: 8.5px; color: #6b7280; line-height: 1.45; }
+    .ucm-check i { width: 12px; height: 12px; flex: none; border-radius: 3px; background: #0a192f; position: relative; }
+    .ucm-check i::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+    .ucm-cta {
+        display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;
+        padding: 10px 14px; border-radius: 11px; background: var(--brand); color: #fff;
+        font-size: 11px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10,25,47,0.42);
+    }
+    .ucm-cta svg { width: 12px; height: 12px; }
+    .ucm-partial { margin-bottom: 8px; padding: 7px 10px; border-radius: 9px; background: rgba(10,25,47,0.04); font-size: 9.5px; color: #374151; text-align: center; }
+    .ucm-partial b { color: #111; font-weight: 700; }
+
+    @media (max-width: 600px) {
+        .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }
+        .ucm-shot.ucm-q { padding: 0; }
+        .ucm-qcard { margin-left: 10px; margin-right: 10px; padding-left: 14px; padding-right: 14px; }
+        .ucm-qi-h, .ucm-qi-r { grid-template-columns: minmax(0, 1.7fr) 0.8fr 1fr; }
+        .ucm-qi-h > :nth-child(3), .ucm-qi-r > :nth-child(3) { display: none; }
+    }
 </style>
 
 <script>
