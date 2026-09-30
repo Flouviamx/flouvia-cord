@@ -59,19 +59,6 @@ const heroTitle = solucion.tituloAcento
     ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
     : solucion.titulo;
 
-// Hechos verificables del producto (no métricas de clientes): cada uno tiene
-// su superficie real en /app/ajustes o en countries.ts.
-const heroFacts = isEn
-    ? [
-        { k: '12', v: 'countries' },
-        { k: 'SSO', v: 'SAML and roles' },
-        { k: 'Audit', v: 'log per action' },
-    ]
-    : [
-        { k: '12', v: 'países' },
-        { k: 'SSO', v: 'SAML y roles' },
-        { k: 'Auditoría', v: 'por acción' },
-    ];
 
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
@@ -118,7 +105,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                 <div class="stripe-hero-grid stripe-container">
                     <div class="stripe-hero-content">
-                        <span class="stripe-hero-kicker">{solucion.eyebrow}</span>
                         <h1 class="stripe-title reveal" set:html={heroTitle} />
 
                         <p class="stripe-sub">{solucion.sub}</p>
@@ -133,12 +119,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                 <span>{isEn ? 'Start now' : 'Empezar ahora'}</span>
                             </a>
                         </div>
-
-                        <ul class="stripe-hero-facts">
-                            {heroFacts.map((f) => (
-                                <li><b>{f.k}</b><span>{f.v}</span></li>
-                            ))}
-                        </ul>
                     </div>
 
                     <div class="stripe-hero-visual">
@@ -464,7 +444,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         <section class="stripe-feature-grid-section">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <span class="stripe-section-eyebrow">CAPACIDADES CORE</span>
                     <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
                     <p class="stripe-p">{solucion.paraQuien}</p>
                 </div>
@@ -687,7 +666,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         <section class="stripe-feature-grid-section" style="padding-top: 0;">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <span class="stripe-section-eyebrow">HERRAMIENTAS AVANZADAS</span>
                     <h2 class="stripe-h2">{isEn ? 'Built for enterprise-grade operations' : 'Construido para operaciones de grado empresarial'}</h2>
                     <p class="stripe-p">{isEn ? 'Unleash the power of automation and global reach.' : 'Desata el poder de la automatización y el alcance global.'}</p>
                 </div>
@@ -894,7 +872,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                         <!-- Left Side: Text and Features -->
                         <div class="split-text-side">
                             <div class="split-header reveal">
-                                <span class="split-eyebrow">{solucion.security.eyebrow}</span>
                                 <h2 class="split-title">{solucion.security.titulo}</h2>
                                 <p class="split-subtitle">{solucion.security.copy}</p>
                             </div>
@@ -958,7 +935,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         <!-- ── FAQ ── -->
         <FaqAccordion
             faqs={solucion.faqs}
-            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
             title={isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}
             id="empresas-faq"
             class="sol-faq-acc"
@@ -1085,13 +1061,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         padding-right: 120px;
     }
 
-    .stripe-hero-kicker {
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.14em;
-        color: rgba(255, 255, 255, 0.6);
-        margin-bottom: 1.4rem;
-    }
 
     .stripe-title {
         font-size: clamp(2.5rem, 4.3vw, 4rem);
@@ -1120,32 +1089,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         font-weight: 400;
     }
 
-    .stripe-hero-facts {
-        list-style: none;
-        display: flex;
-        gap: 36px;
-        margin: 3.2rem 0 0;
-        padding: 1.6rem 0 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-        width: 100%;
-        max-width: 540px;
-    }
-    .stripe-hero-facts li {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    .stripe-hero-facts b {
-        color: #fff;
-        font-size: 1.35rem;
-        font-weight: 600;
-        letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-    }
-    .stripe-hero-facts span {
-        color: rgba(255, 255, 255, 0.55);
-        font-size: 0.85rem;
-    }
 
     .stripe-actions {
         display: flex;
@@ -1946,10 +1889,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         .stripe-title {
             font-size: 2.6rem;
         }
-
-        .stripe-hero-facts {
-            gap: 24px;
-        }
         
         .stripe-actions {
             flex-direction: column;
@@ -1988,14 +1927,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         display: inline-block;
     }
 
-    .stripe-section-eyebrow {
-        color: var(--stripe-cyan);
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        font-size: 0.85rem;
-        margin-bottom: 1rem;
-        display: block;
-    }
     
     .stripe-eyebrow-light {
         color: #60a5fa; /* Light Blue */
@@ -2357,15 +2288,6 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         padding-top: 2rem;
     }
 
-    .split-eyebrow {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #6366f1; /* Indigo */
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1rem;
-        display: block;
-    }
 
     .split-title {
         font-size: clamp(2.2rem, 3vw, 3rem);

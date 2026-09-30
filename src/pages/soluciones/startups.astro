@@ -61,18 +61,6 @@ const heroTitle = solucion.tituloAcento
     ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
     : solucion.titulo;
 
-// Hechos verificables del producto, no métricas de clientes.
-const heroFacts = isEn
-    ? [
-        { k: 'Free', v: 'plan to start' },
-        { k: '1 link', v: 'proposal, signature, payment' },
-        { k: '12', v: 'countries' },
-    ]
-    : [
-        { k: 'Gratis', v: 'plan para empezar' },
-        { k: '1 link', v: 'propuesta, firma y pago' },
-        { k: '12', v: 'países' },
-    ];
 ---
 
 <Layout
@@ -91,7 +79,6 @@ const heroFacts = isEn
 
             <div class="stripe-hero-grid stripe-container">
                 <div class="stripe-hero-content">
-                    <span class="stripe-hero-kicker">{solucion.eyebrow}</span>
                     <h1 class="stripe-title reveal" set:html={heroTitle} />
 
                     <p class="stripe-sub">{solucion.sub}</p>
@@ -106,12 +93,6 @@ const heroFacts = isEn
                             <span>{isEn ? 'Book a demo' : 'Contactar a ventas'}</span>
                         </a>
                     </div>
-
-                    <ul class="stripe-hero-facts">
-                        {heroFacts.map((f) => (
-                            <li><b>{f.k}</b><span>{f.v}</span></li>
-                        ))}
-                    </ul>
                 </div>
 
                 <div class="stripe-hero-visual">
@@ -586,7 +567,6 @@ const heroFacts = isEn
         <section class="stripe-feature-grid-section">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <span class="stripe-section-eyebrow">CAPACIDADES CORE</span>
                     <h2 class="stripe-h2">{isEn ? 'A complete ecosystem for your commercial process' : 'Un ecosistema completo para tu proceso comercial'}</h2>
                     <p class="stripe-p">{solucion.paraQuien}</p>
                 </div>
@@ -795,7 +775,6 @@ const heroFacts = isEn
         <section class="stripe-feature-grid-section" style="padding-top: 0;">
             <div class="stripe-container">
                 <div class="stripe-section-header reveal">
-                    <span class="stripe-section-eyebrow">HERRAMIENTAS AVANZADAS</span>
                     <h2 class="stripe-h2">{isEn ? 'Built for enterprise-grade operations' : 'Construido para operaciones de grado empresarial'}</h2>
                     <p class="stripe-p">{isEn ? 'Unleash the power of automation and global reach.' : 'Desata el poder de la automatización y el alcance global.'}</p>
                 </div>
@@ -1384,7 +1363,6 @@ const heroFacts = isEn
         <!-- ── FAQ ── -->
         <FaqAccordion
             faqs={solucion.faqs}
-            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
             title={isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}
             id="startups-faq"
             class="sol-faq-acc"
@@ -1508,13 +1486,6 @@ const heroFacts = isEn
         padding-right: 120px;
     }
 
-    .stripe-hero-kicker {
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.14em;
-        color: #425466;
-        margin-bottom: 1.4rem;
-    }
 
     .stripe-title {
         font-size: clamp(2.5rem, 4.3vw, 4rem);
@@ -1543,25 +1514,6 @@ const heroFacts = isEn
         font-weight: 400;
     }
 
-    .stripe-hero-facts {
-        list-style: none;
-        display: flex;
-        gap: 36px;
-        margin: 3.2rem 0 0;
-        padding: 1.6rem 0 0;
-        border-top: 1px solid rgba(10, 37, 64, 0.1);
-        width: 100%;
-        max-width: 540px;
-    }
-    .stripe-hero-facts li { display: flex; flex-direction: column; gap: 4px; }
-    .stripe-hero-facts b {
-        color: #0a2540;
-        font-size: 1.35rem;
-        font-weight: 600;
-        letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-    }
-    .stripe-hero-facts span { color: #6b7c93; font-size: 0.85rem; }
 
     @media (max-width: 1100px) {
         .stripe-hero-visual { padding-right: 60px; }
@@ -1572,7 +1524,6 @@ const heroFacts = isEn
         .stripe-hero-bg::after {
             background: linear-gradient(180deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.2) 50%, transparent 70%);
         }
-        .stripe-hero-facts { gap: 24px; }
     }
 
     .stripe-actions {
@@ -2457,14 +2408,6 @@ const heroFacts = isEn
         display: inline-block;
     }
 
-    .stripe-section-eyebrow {
-        color: var(--stripe-cyan);
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        font-size: 0.85rem;
-        margin-bottom: 1rem;
-        display: block;
-    }
     
     .stripe-eyebrow-light {
         color: #60a5fa; /* Light Blue */
