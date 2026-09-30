@@ -18,15 +18,15 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 
-const metaTitle = "Cord para Software Factories — Propuestas y Cobro por Hitos";
-const metaDesc = "Envía propuestas técnicas detalladas, divide el cobro por hitos del proyecto (Setup, Core, Launch) y factura automáticamente (CFDI 4.0 para negocios en México). Para dev shops y equipos de desarrollo en cualquier país.";
+const metaTitle = "Cord para Software Factories — Propuestas por Fases y Anticipos";
+const metaDesc = "Envía propuestas técnicas por fases, cobra anticipos y saldos, y emite tu factura desde cada cotización (CFDI 4.0 para negocios en México). Para dev shops y equipos de desarrollo.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO) — preguntas ancladas a
 // capacidades reales del producto.
 const FAQS = [
     {
-        q: '¿Puedo cobrar un proyecto por hitos en vez de todo de una vez?',
-        a: 'Sí. Divides el proyecto en fases (por ejemplo Setup, Core, Launch), cotizas cada una por separado y envías la cotización correspondiente cuando completas esa fase — tu cliente la aprueba con firma digital desde su link.',
+        q: '¿Puedo cobrar un proyecto por fases en vez de todo de una vez?',
+        a: 'Sí. Divides el proyecto en fases (por ejemplo Setup, Core, Launch), cotizas cada una por separado y envías la cotización correspondiente cuando completas esa fase; tu cliente la aprueba con firma electrónica y paga desde su link. Dentro de una misma cotización también puedes pedir un anticipo y cobrar el saldo después, o dividir el pago en cuotas.',
     },
     {
         q: '¿Puedo agregar opciones (up-sells) que el cliente activa o desactiva antes de firmar?',
@@ -38,7 +38,7 @@ const FAQS = [
     },
     {
         q: '¿Necesito facturar en México para usar Cord con clientes extranjeros?',
-        a: 'No necesariamente. Puedes cotizar en USD con tipo de cambio protegido por 30 días y, para clientes fuera de México, usar el flujo de factura comercial en vez de CFDI.',
+        a: 'No necesariamente. Puedes cotizar y cobrar en USD con el tipo de cambio congelado 30 días. Si tu negocio es mexicano, emites CFDI 4.0 con esa divisa y ese tipo de cambio; si facturas desde fuera de México, Cord genera factura comercial.',
     },
 ];
 const faqSchema = {
@@ -79,7 +79,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
             <div class="startup-hero-content">
                 <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">desarrollo de software</span></h1>
                 <p class="startup-sub">
-                    Formaliza proyectos complejos con transacciones legalmente vinculantes. Envía propuestas técnicas, divide pagos por hitos y acelera el cobro de anticipos.
+                    Formaliza proyectos complejos con propuestas técnicas que tu cliente aprueba con firma electrónica. Cotiza por fases, cobra el anticipo al aprobar y el saldo al entregar.
                 </p>
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
@@ -113,9 +113,9 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         <section class="uc-benefits">
             <div class="uc-container">
                 <div class="uc-benefits-intro reveal">
-                    <h2 class="uc-split-title">Cobra por tus hitos técnicos a tiempo</h2>
+                    <h2 class="uc-split-title">Cobra cada fase técnica a tiempo</h2>
                     <p class="uc-split-desc">
-                        El desarrollo de software tiene su propio ritmo. Conecta tus repositorios y tableros de control con tu ciclo de facturación para que nunca se te olvide cobrar un entregable aprobado.
+                        El desarrollo de software tiene su propio ritmo. Conecta tus herramientas por API y webhooks para que cada entregable aprobado llegue a tu proceso de cobro.
                     </p>
                 </div>
 
@@ -124,8 +124,8 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
                             <h3>Cobros por fase del proyecto</h3>
-                            <p>Divide el proyecto en hitos — Setup, Core, Launch — y cotiza cada uno por separado. Cuando completes una fase, envías la cotización correspondiente y el cliente la aprueba con firma digital desde su link.</p>
-                            <a href="/sign-up" class="uc-link-arrow">Crear propuesta por hitos <span>&rarr;</span></a>
+                            <p>Divide el proyecto en fases — Setup, Core, Launch — y cotiza cada una por separado. Cuando completes una fase, envías su cotización y el cliente la aprueba con firma electrónica desde su link.</p>
+                            <a href="/sign-up" class="uc-link-arrow">Crear propuesta por fases <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
                             <!-- Calca de /app/clientes/[id]: una cotización por fase del proyecto,
@@ -180,7 +180,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6" fill="currentColor" fill-opacity="0.12"></polyline><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                             </div>
                             <h4>API REST nativa</h4>
-                            <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, consulta clientes y gestiona productos directamente desde tu código.</p>
+                            <p>Integra Cord con tus herramientas internas vía nuestra <a href="/desarrolladores/api" class="uc-link-inline">API REST</a>. Crea cotizaciones, y consulta y crea clientes y productos directamente desde tu código.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
@@ -194,14 +194,14 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             </div>
                             <h4>Cobros Internacionales</h4>
-                            <p>Factura a clientes en el extranjero en su <a href="/producto/divisas" class="uc-link-inline">moneda local</a>, mientras tú recibes pesos mexicanos de forma segura.</p>
+                            <p>Cotiza y cobra a clientes en el extranjero en su <a href="/producto/divisas" class="uc-link-inline">moneda</a> (USD, EUR y otras divisas); el depósito llega a tu cuenta de cobros.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             </div>
-                            <h4>Gestión de horas extras</h4>
-                            <p>Añade fácilmente registros de <a href="/producto/equipo" class="uc-link-inline">horas por soporte</a> o consultoría como partidas a la siguiente factura del mes.</p>
+                            <h4>Soporte y horas adicionales</h4>
+                            <p>Agrega líneas de soporte o consultoría a cualquier cotización o <a href="/producto/facturacion" class="uc-link-inline">factura</a>, con su cantidad de horas y tarifa.</p>
                         </div>
                     </div>
                 </div>
@@ -221,20 +221,20 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                 <h2 class="uc-power-title reveal">Cobra cada entregable con precisión y sin fricciones</h2>
                 <div class="uc-power-grid">
                     <div class="uc-power-item reveal">
-                        <h3>CFDI 4.0 al cerrar cada hito</h3>
-                        <p>Cuando tu cliente aprueba la cotización del hito, Cord timbra el CFDI 4.0 automáticamente vía PAC certificado. El XML y el PDF quedan disponibles de inmediato para descarga sin salir de Cord.</p>
+                        <h3>CFDI 4.0 por cada fase</h3>
+                        <p>Cuando tu cliente aprueba la cotización de una fase, emites su CFDI 4.0 con un clic, timbrado por un PAC certificado. El XML y el PDF quedan disponibles al instante sin salir de Cord.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Propuestas con módulos opcionales</h3>
-                        <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso.</p>
+                        <p>Agrega partidas opcionales a tu cotización — "Soporte extendido 3 meses", "Setup de infraestructura" — y el cliente decide qué incluir antes de firmar. Tú controlas los márgenes con el Auditor Silencioso (plan Scale).</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Multi-divisa para clientes internacionales</h3>
-                        <p>Cotiza en USD o EUR con tasa de cambio protegida (buffer configurable). Tu cliente ve el monto en su moneda, tú facturas y cobras en MXN con la tasa que bloqueaste al enviar la propuesta.</p>
+                        <p>Cotiza en USD o EUR con el tipo de cambio congelado 30 días, y un margen de cobertura de 1, 2 o 5%. Tu cliente ve y paga en su moneda; el CFDI declara ese tipo de cambio.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <h3>Analítica de margen por proyecto</h3>
-                        <p>El Auditor Silencioso de Cord revisa el margen bruto de cada línea y bloquea cotizaciones que estén por debajo del mínimo que tú defines. Entiende qué tipos de proyecto son más rentables para tu equipo.</p>
+                        <h3>Margen mínimo en cada cotización</h3>
+                        <p>El Auditor Silencioso revisa el margen bruto de cada línea con costo y, si baja del mínimo que defines, la cotización espera la aprobación de tu equipo antes de salir (plan Scale).</p>
                     </div>
                 </div>
             </div>
@@ -412,10 +412,11 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     }
 
     .startup-title {
-        font-size: clamp(2.5rem, 4.3vw, 4rem);
-        line-height: 1.04;
+        /* Tamaño estándar de títulos (h1.masked-title, Layout.astro). */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
         font-weight: 700;
-        letter-spacing: -0.045em;
+        letter-spacing: -0.035em;
         margin: 0 0 1.75rem;
         color: #050505;
         text-wrap: balance;
@@ -467,7 +468,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         }
     }
     @media (max-width: 520px) {
-        .startup-title { font-size: 2.2rem; }
     }
 
     .uc-title {
@@ -554,7 +554,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         padding: 3rem 5%;
     }
     .uc-trust p {
-        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+        font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
     }
     .uc-logos {
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
@@ -894,8 +894,17 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     }
     .uc-benefits-intro {
         text-align: left;
-        max-width: 680px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
         margin-bottom: 4rem;
+    }
+    .uc-benefits-intro > .uc-split-title { margin: 0; }
+    .uc-benefits-intro > .uc-split-desc { margin: 0; max-width: 520px; }
+    @media (max-width: 880px) {
+        .uc-benefits-intro { grid-template-columns: 1fr; row-gap: 1.2rem; }
     }
     .uc-bento-cards {
         display: grid;

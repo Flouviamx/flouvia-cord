@@ -19,7 +19,7 @@ const isEn = lang === 'en';
 const t = useTranslations(lang);
 
 const metaTitle = "Cord para SaaS — Contratos, Cobros y Facturación";
-const metaDesc = "Cierra contratos, cobra en línea y factura automáticamente (CFDI 4.0 para negocios en México). La plataforma de ventas para empresas de software en cualquier país.";
+const metaDesc = "Cierra propuestas con firma electrónica, cobra en línea y emite tu factura desde la misma cotización (CFDI 4.0 para negocios en México). Para empresas de software.";
 
 // FAQ + JSON-LD (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
 // /producto/*): esta página no tenía FAQ visible ni ningún dato
@@ -28,19 +28,19 @@ const metaDesc = "Cierra contratos, cobra en línea y factura automáticamente (
 const FAQS = [
     {
         q: '¿Cord reemplaza mi motor de facturación recurrente (Stripe Billing, Chargebee)?',
-        a: 'No. Cord no cobra suscripciones de forma recurrente — se especializa en el ciclo de cierre comercial: propuesta, aprobación digital y CFDI 4.0 por cada contrato o renovación. Sigues usando Stripe u otra pasarela para el cobro recurrente; Cord se integra vía API y webhooks para mantener todo sincronizado.',
+        a: 'No. Cord no es un motor de facturación por consumo, por asiento ni de planes con prorrateo; para eso sigue usando Stripe Billing o Chargebee. Sí cobra un monto fijo cada mes (iguala) con la tarjeta que tu cliente autoriza una vez, y emite facturas recurrentes. Su fuerte es el cierre: propuesta, aprobación y factura de cada contrato; las renovaciones se cotizan duplicando la propuesta anterior. Se integra por API y webhooks.',
     },
     {
         q: '¿Puedo sincronizar Cord con mi CRM o Slack?',
-        a: 'Sí. Cord emite webhooks (quote.sent, quote.approved, quote.paid) que puedes conectar a Zapier, Make, n8n o tu propio backend para sincronizar con Notion, Slack o el CRM que ya uses.',
+        a: 'Sí. Cord se conecta de forma nativa con HubSpot y Slack, y emite webhooks (quote.sent, quote.approved, quote.paid) que puedes llevar a Zapier, Make, n8n o tu propio backend para sincronizar el resto de tus herramientas.',
     },
     {
         q: '¿El CFDI 4.0 que emite Cord es real o simulado?',
-        a: 'Es real: Cord timbra ante el SAT vía un PAC certificado (Facturapi). El XML y el PDF quedan disponibles desde el portal del cliente y desde tu cuenta, sin recapturar datos en otro sistema.',
+        a: 'Es real cuando cargas tu CSD en Ajustes › Fiscal (plan Starter o superior): Cord timbra ante el SAT mediante un PAC certificado. El PDF y el XML se descargan desde tu cuenta y desde el link de la factura, sin recapturar datos en otro sistema.',
     },
     {
         q: '¿Necesito tarjeta para probar Cord con mi equipo?',
-        a: 'No. El plan gratuito de Cord no pide tarjeta: hasta 5 cotizaciones activas, catálogo y clientes limitados, y armado de cotizaciones con IA incluido para probar el flujo completo.',
+        a: 'No. El plan Gratis no pide tarjeta: incluye 1 usuario, 5 cotizaciones activas, 5 envíos al mes, hasta 50 productos y clientes, y 3 acciones de IA para probar el flujo. Para invitar a tu equipo necesitas un plan de pago.',
     },
 ];
 const faqSchema = {
@@ -81,7 +81,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
             <div class="startup-hero-content">
                 <h1 class="startup-title reveal">De la propuesta al cobro para <span class="startup-title-accent">empresas de software</span></h1>
                 <p class="startup-sub">
-                    Transforma los acuerdos verbales en transacciones pagadas. Gestiona renovaciones anuales, firmas de contratos y facturación (CFDI 4.0 para negocios en México). Construido para empresas de software en cualquier país.
+                    Convierte cada acuerdo en una propuesta aprobada y pagada. Cotiza, aprueba con firma electrónica, cobra y factura (CFDI 4.0 para negocios en México) desde un solo link.
                 </p>
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
@@ -117,7 +117,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                 <div class="uc-benefits-intro reveal">
                     <h2 class="uc-split-title">Cobra rápido y mantén a tu equipo enfocado en el producto</h2>
                     <p class="uc-split-desc">
-                        Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba en un clic y el CFDI sale solo. Sin perseguir firmas ni capturar datos fiscales manualmente.
+                        Tu equipo de ventas genera la propuesta en Cord, el cliente la aprueba con firma electrónica y tú emites el CFDI con un clic desde la cotización. Sin perseguir firmas ni capturar datos fiscales a mano.
                     </p>
                 </div>
 
@@ -126,7 +126,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
                             <h3>Link de pago y CFDI en el mismo flujo</h3>
-                            <p>Tu cliente recibe el link de la cotización, paga con tarjeta o SPEI, y Cord emite el CFDI 4.0 al instante. Sin recapturar datos, sin coordinar por correo.</p>
+                            <p>Tu cliente recibe el link de la cotización y paga con tarjeta (o SPEI en México). Tú emites el CFDI 4.0 desde la misma cotización, sin recapturar datos ni coordinar por correo.</p>
                             <a href="/sign-up" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
@@ -156,8 +156,8 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                     <!-- Tarjeta 2 -->
                     <div class="uc-bento-card reveal">
                         <div class="uc-bc-text">
-                            <h3>Portal de cliente con tu marca en minutos</h3>
-                            <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y el XML, aprueba o rechaza con firma digital. Todo en los colores de tu empresa.</p>
+                            <h3>Un link con tu marca para cada propuesta</h3>
+                            <p>Cada cotización tiene su propio link seguro donde tu cliente revisa el desglose, descarga el PDF y aprueba o rechaza con firma electrónica. Con tu logo y el color de tu marca.</p>
                             <a href="/sign-up" class="uc-link-arrow">Empieza ahora mismo <span>&rarr;</span></a>
                         </div>
                         <div class="uc-bc-mockup">
@@ -192,28 +192,28 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.12"></path><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                             </div>
                             <h4>Webhooks en cada evento</h4>
-                            <p>Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>quote.invoiced</code> — que puedes escuchar desde Zapier, Make o tu propio backend.</p>
+                            <p>Cord emite eventos reales — <code>quote.approved</code>, <code>quote.paid</code>, <code>invoice.stamped</code> — que puedes escuchar desde Zapier, Make o tu propio backend.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><circle cx="12" cy="12" r="10"></circle><path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path></svg>
                             </div>
-                            <h4>Cobranza automática</h4>
-                            <p>Si un contrato vence y no se ha pagado, Cord envía recordatorios por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
+                            <h4>Recordatorios automáticos</h4>
+                            <p>Si un pago se acerca a su vencimiento, Cord le manda a tu cliente un recordatorio por correo sin que tengas que intervenir.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="currentColor" fill-opacity="0.12"></rect><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             </div>
                             <h4>Control de aprobaciones</h4>
-                            <p>Define umbrales de descuento y margen mínimo. Si un vendedor se pasa, la propuesta se congela y espera aprobación del gerente antes de salir.</p>
+                            <p>Define umbrales de descuento y margen mínimo. Si un vendedor se pasa, la propuesta espera aprobación del gerente antes de salir (plan Scale).</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" fill="currentColor" fill-opacity="0.12"></path><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </div>
                             <h4>Correos al instante</h4>
-                            <p>Tu cliente recibe el link de la propuesta por correo al enviar, y tú recibes una notificación en cuanto la abre, la aprueba o la rechaza.</p>
+                            <p>Tu cliente recibe el link de la propuesta por correo al enviar, y tú recibes un aviso cuando la aprueba o la rechaza, y cuando la abre si lo activas.</p>
                         </div>
                     </div>
                 </div>
@@ -237,16 +237,16 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                         <p>Define niveles — Estándar, Plata, Oro, Distribuidor — y Cord aplica el descuento correspondiente automáticamente al elegir el cliente. Menos negociación improvisada, márgenes más controlados.</p>
                     </div>
                     <div class="uc-power-item reveal">
-                        <h3>Portal de cliente con tu marca</h3>
-                        <p>Cada propuesta genera un link seguro donde tu cliente revisa el desglose, aprueba con firma digital y descarga el PDF y el XML del CFDI — sin que tengas que mandar documentos por correo.</p>
+                        <h3>Link de cliente con tu marca</h3>
+                        <p>Cada propuesta genera un link seguro donde tu cliente revisa el desglose, aprueba con firma electrónica y paga; la factura llega con su propio link para descargar el PDF y el XML. Sin mandar documentos por correo.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>CFDI 4.0 sin salir de Cord</h3>
-                        <p>Al aprobar la propuesta, Cord timbra el CFDI 4.0 vía PAC certificado. El XML y el PDF quedan vinculados a la cotización y disponibles para descarga desde el portal del cliente.</p>
+                        <p>Con un clic emites el CFDI 4.0 de una cotización aprobada, timbrado por un PAC certificado. El PDF y el XML quedan ligados a la cotización y tu cliente los descarga desde el link de la factura.</p>
                     </div>
                     <div class="uc-power-item reveal">
                         <h3>Seguimiento en vivo y cobranza</h3>
-                        <p>Sabes en tiempo real cuándo tu cliente abrió la propuesta. Si no ha pagado, Cord envía recordatorios automáticos por correo y WhatsApp antes del vencimiento sin que tengas que intervenir.</p>
+                        <p>Sabes en tiempo real cuándo tu cliente abrió la propuesta. Si no ha pagado, Cord le manda recordatorios por correo antes del vencimiento sin que tengas que intervenir.</p>
                     </div>
                 </div>
             </div>
@@ -423,10 +423,11 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     }
 
     .startup-title {
-        font-size: clamp(2.5rem, 4.3vw, 4rem);
-        line-height: 1.04;
+        /* Tamaño estándar de títulos (h1.masked-title, Layout.astro). */
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        line-height: 1.1;
         font-weight: 700;
-        letter-spacing: -0.045em;
+        letter-spacing: -0.035em;
         margin: 0 0 1.75rem;
         color: #050505;
         text-wrap: balance;
@@ -478,7 +479,6 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         }
     }
     @media (max-width: 520px) {
-        .startup-title { font-size: 2.2rem; }
     }
 
     .uc-hero-inner {
@@ -575,7 +575,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         padding: 3rem 5%;
     }
     .uc-trust p {
-        font-size: 0.9rem; font-weight: 600; color: #687385; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem;
+        font-size: 0.95rem; font-weight: 500; color: #687385; margin-bottom: 1.5rem;
     }
     .uc-logos {
         display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; align-items: center;
@@ -1032,8 +1032,17 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     }
     .uc-benefits-intro {
         text-align: left;
-        max-width: 680px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 4rem;
+        align-items: start;
+        max-width: none;
         margin-bottom: 4rem;
+    }
+    .uc-benefits-intro > .uc-split-title { margin: 0; }
+    .uc-benefits-intro > .uc-split-desc { margin: 0; max-width: 520px; }
+    @media (max-width: 880px) {
+        .uc-benefits-intro { grid-template-columns: 1fr; row-gap: 1.2rem; }
     }
     .uc-bento-cards {
         display: grid;
