@@ -170,7 +170,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
                                 <div class="ucm-card">
                                     <div class="ucm-sec">Cobros recientes</div>
                                     <div class="ucm-th ucm-cbr"><span>Folio</span><span>Cliente</span><span>Método</span><span>Fecha</span><span class="ucm-r">Monto</span></div>
-                                    <div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0209</span><span class="ucm-cli">Vela Foods</span><span class="ucm-met"><i style="background:#6366f1"></i>Tarjeta de crédito/débito</span><span class="ucm-date">29 sep 2026</span><span class="editorial ucm-r ucm-amt">$44,080<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0204</span><span class="ucm-cli">Nimbus Retail</span><span class="ucm-met"><i style="background:#10b981"></i>Transferencia SPEI</span><span class="ucm-date">28 sep 2026</span><span class="editorial ucm-r ucm-amt">$52,200<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0207</span><span class="ucm-cli">Casa Olmo</span><span class="ucm-met"><i style="background:#6366f1"></i>Tarjeta de crédito/débito</span><span class="ucm-date">26 sep 2026</span><span class="editorial ucm-r ucm-amt">$25,520<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0198</span><span class="ucm-cli">Hotel Marea</span><span class="ucm-met"><i style="background:#10b981"></i>Transferencia SPEI</span><span class="ucm-date">24 sep 2026</span><span class="editorial ucm-r ucm-amt">$37,120<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0195</span><span class="ucm-cli">Grupo Alcázar</span><span class="ucm-met"><i style="background:#6366f1"></i>Tarjeta de crédito/débito</span><span class="ucm-date">22 sep 2026</span><span class="editorial ucm-r ucm-amt">$38,000<i class="ucm-cur">MXN</i></span></div>
+                                    <div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0209</span><span class="ucm-cli">Vela Foods</span><span class="ucm-met"><i style="background:#6366f1"></i><span>Tarjeta de crédito/débito</span></span><span class="ucm-date">29 sep 2026</span><span class="editorial ucm-r ucm-amt">$44,080<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0204</span><span class="ucm-cli">Nimbus Retail</span><span class="ucm-met"><i style="background:#10b981"></i><span>Transferencia SPEI</span></span><span class="ucm-date">28 sep 2026</span><span class="editorial ucm-r ucm-amt">$52,200<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0207</span><span class="ucm-cli">Casa Olmo</span><span class="ucm-met"><i style="background:#6366f1"></i><span>Tarjeta de crédito/débito</span></span><span class="ucm-date">26 sep 2026</span><span class="editorial ucm-r ucm-amt">$25,520<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0198</span><span class="ucm-cli">Hotel Marea</span><span class="ucm-met"><i style="background:#10b981"></i><span>Transferencia SPEI</span></span><span class="ucm-date">24 sep 2026</span><span class="editorial ucm-r ucm-amt">$37,120<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cbr"><span class="ucm-folio">COT-0195</span><span class="ucm-cli">Grupo Alcázar</span><span class="ucm-met"><i style="background:#6366f1"></i><span>Tarjeta de crédito/débito</span></span><span class="ucm-date">22 sep 2026</span><span class="editorial ucm-r ucm-amt">$38,000<i class="ucm-cur">MXN</i></span></div>
                                 </div>
                             </div>
                         </div>
@@ -472,7 +472,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
         }
     }
     @media (max-width: 520px) {
-        .startup-title { font-size: 2.35rem; }
+        .startup-title { font-size: 2.2rem; }
     }
 
     .uc-hero-inner {
@@ -1424,7 +1424,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     .ucm-th { padding: 5px 0 6px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--bd); }
     .ucm-tr { padding: 8px 0; border-bottom: 1px solid var(--bd); }
     .ucm-tr:last-child { border-bottom: none; }
-    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); }
+    .ucm-folio { font-size: 10px; font-weight: 700; color: var(--n); white-space: nowrap; }
     .ucm-cli { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ucm-date { font-size: 9.5px; color: var(--mut); white-space: nowrap; }
     .ucm-amt { font-size: 11px; color: var(--n); white-space: nowrap; }
@@ -1475,6 +1475,7 @@ const CONECTA = INTEGRATION_APPS.filter((a) => a.disponible);
     .ucm-cbr { grid-template-columns: 50px minmax(0, 1.1fr) minmax(0, 1.2fr) 58px 76px; }
     .ucm-met { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 9.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ucm-met i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+    .ucm-met > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
     @media (max-width: 600px) {
         .ucm-shot { padding: 18px 16px 0; font-size: 10.5px; }

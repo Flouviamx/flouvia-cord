@@ -742,10 +742,14 @@ const SF_EVENTS = [
         .chm-float, .chm-float.at-r { left: auto; right: -6px; bottom: 0; }
     }
     @media (max-width: 520px) {
-        .chm-win { height: 400px; border-radius: 16px; }
-        .chm-float, .chm-float.at-r { right: -4px; }
-        .chm-float-pay, .chm-float-tl, .chm-float-sign { width: 240px; }
-        .chm-float-sum { width: 208px; }
+        .chm-win { height: 470px; border-radius: 16px; }
+        /* En teléfono la tarjeta deja de tapar la ventana: entra en el flujo,
+           debajo, y solo se monta sobre el borde desvanecido. */
+        .chm { padding-bottom: 0; }
+        .chm-float, .chm-float.at-r, .chm-float-sum.at-r {
+            position: relative; left: auto; right: auto; bottom: auto;
+            width: 86%; margin: -72px -4px 0 auto;
+        }
         .chm-qc { padding: 12px 10px 0; }
         .chm-qcard { padding: 16px 14px; gap: 12px; }
         .chm-qmeta { gap: 14px; }
