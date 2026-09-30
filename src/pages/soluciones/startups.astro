@@ -14,10 +14,11 @@ import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import RibbonHeroBg from '../../components/RibbonHeroBg.jsx';
 import SolucionHeroStack from '../../components/soluciones/SolucionHeroStack.astro';
+import IntegrationsMarquee from '../../components/integraciones/IntegrationsMarquee.astro';
 
 // Ola del hero en versión clara: menta en la cresta, cielo, índigo, violeta y
 // rosa al fondo de la tela. Distinta a la cálida de empresas a propósito.
-const HERO_PAL = { base: '#F6F9FC', c1: '#5EEAD4', c2: '#38BDF8', c3: '#6366F1', c4: '#A855F7', c5: '#EC4899' };
+const HERO_PAL = { base: '#FCFCFC', c1: '#5EEAD4', c2: '#38BDF8', c3: '#6366F1', c4: '#A855F7', c5: '#EC4899' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
@@ -48,12 +49,6 @@ const breadcrumbSchema = {
     ],
 };
 
-const APPS = [
-    { n: 'HubSpot', d: 'hubspot.com' }, { n: 'Slack', d: 'slack.com' }, { n: 'Microsoft Teams', d: 'teams.microsoft.com' },
-    { n: 'Google Sheets', d: 'sheets.google.com' }, { n: 'Excel', d: 'excel.cloud.microsoft' }, { n: 'Gmail', d: 'mail.google.com' },
-    { n: 'Shopify', d: 'shopify.com' }, { n: 'Xero', d: 'xero.com' }, { n: 'QuickBooks', d: 'quickbooks.intuit.com' },
-    { n: 'Zapier', d: 'zapier.com' }, { n: 'Make', d: 'make.com' }, { n: 'n8n', d: 'n8n.io' }, { n: 'WhatsApp', d: 'whatsapp.com' },
-];
 
 // Array estático de logos (Stripe-style logo cloud)
 const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS'];
@@ -492,16 +487,7 @@ const heroTitle = solucion.tituloAcento
                 </div>
             </div>
             
-            <div class="cord-apps-marquee">
-                <div class="marquee-track">
-                    {[...APPS, ...APPS].map((a) => (
-                        <div class="app-icon">
-                            <img src={`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${a.d}&size=128`} alt="" width="52" height="52" loading="lazy" />
-                            <span>{a.n}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <IntegrationsMarquee isEn={isEn} />
         </section>
 
         <!-- ── CORD DASHBOARD MOCKUP ── -->
@@ -586,6 +572,11 @@ const heroTitle = solucion.tituloAcento
     /* ════════════════════════════════════════════════════════════════
        HERO (Stripe Enterprise)
     ════════════════════════════════════════════════════════════════ */
+    /* Fondo continuo como la home: una sola superficie #fcfcfc debajo del
+       hero, sin franjas ni filos entre secciones. */
+    .stripe-main { background: #fcfcfc; }
+    .stripe-main > section { background: transparent; border-top: 0; border-bottom: 0; }
+
     .stripe-hero {
         position: relative;
         padding: 150px 0 90px;
@@ -594,7 +585,7 @@ const heroTitle = solucion.tituloAcento
         flex-direction: column;
         justify-content: center;
         overflow: hidden;
-        background: #f6f9fc;
+        background: #fcfcfc;
     }
 
     /* Respaldo sin WebGL: misma composición con degradados. */
@@ -604,14 +595,14 @@ const heroTitle = solucion.tituloAcento
         z-index: 0;
         overflow: hidden;
         background:
-            linear-gradient(118deg, #f6f9fc 0%, #f6f9fc 42%, #5eead4 44%, #38bdf8 52%, #6366f1 64%, #a855f7 80%, #ec4899 100%);
+            linear-gradient(118deg, #fcfcfc 0%, #fcfcfc 42%, #5eead4 44%, #38bdf8 52%, #6366f1 64%, #a855f7 80%, #ec4899 100%);
     }
     .stripe-hero-bg::after {
         content: '';
         position: absolute;
         inset: 0;
         pointer-events: none;
-        background: linear-gradient(90deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.25) 38%, transparent 55%);
+        background: linear-gradient(90deg, rgba(252, 252, 252, 0.6) 0%, rgba(252, 252, 252, 0.25) 38%, transparent 55%);
     }
 
     .stripe-hero-grid {
@@ -675,7 +666,7 @@ const heroTitle = solucion.tituloAcento
         .stripe-hero-grid { grid-template-columns: 1fr; gap: 40px; }
         .stripe-hero-visual { padding-right: 0; }
         .stripe-hero-bg::after {
-            background: linear-gradient(180deg, rgba(246, 249, 252, 0.6) 0%, rgba(246, 249, 252, 0.2) 50%, transparent 70%);
+            background: linear-gradient(180deg, rgba(252, 252, 252, 0.6) 0%, rgba(252, 252, 252, 0.2) 50%, transparent 70%);
         }
     }
 
@@ -1049,10 +1040,6 @@ const heroTitle = solucion.tituloAcento
         }
     }
 
-    
-    @keyframes marquee {
-        to { transform: translateX(-50%); }
-    }
 
     /* ── AIRY BENTO PILLARS ── */
     .stripe-pillars-section {
@@ -1177,7 +1164,7 @@ const heroTitle = solucion.tituloAcento
        ========================================================== */
     .startup-use-cases-section {
         padding: 6rem 0;
-        background: #f6f9fc;
+        background: transparent;
     }
     .startup-section-header {
         display: flex;
@@ -1348,7 +1335,7 @@ const heroTitle = solucion.tituloAcento
        ========================================================== */
     .integration-tabs-section {
         padding: 6rem 0;
-        background: #f6f9fc;
+        background: transparent;
     }
     .integration-header-wrapper {
         display: flex;
@@ -1568,50 +1555,10 @@ const heroTitle = solucion.tituloAcento
     .cord-apps-link svg { width: 16px; height: 16px; transition: transform 0.2s; }
     .cord-apps-link:hover svg { transform: translateX(4px); }
 
-    .cord-apps-marquee {
-        width: 100vw;
-        position: relative;
-        left: 50%;
-        transform: translateX(-50%);
-        overflow: hidden;
-        padding: 2rem 0; /* Room for shadow */
-    }
-    .marquee-track {
-        display: flex;
-        gap: 32px;
-        width: max-content;
-        animation: marquee 35s linear infinite;
-    }
-    .marquee-track:hover {
-        animation-play-state: paused;
-    }
-    @keyframes marquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(calc(-50% - 16px)); } /* 50% + half gap */
-    }
-    .app-icon {
-        width: 148px;
-        height: 148px;
-        border-radius: 34px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
-        background: #ffffff;
-        border: 1px solid rgba(10,25,47,0.06);
-        box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 22px 44px -22px rgba(10,25,47,0.22);
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        user-select: none;
-    }
-    .app-icon img { width: 52px; height: 52px; border-radius: 12px; }
-    .app-icon span { font-size: 0.82rem; font-weight: 600; color: #425466; letter-spacing: -0.01em; }
-    .app-icon:hover { transform: translateY(-6px); }
-
     /* ── CORD DASHBOARD SECTION ── */
     .cord-dashboard-section {
         padding: 4rem 0 6rem 0;
-        background: #f6f9fc;
+        background: transparent;
         position: relative;
         overflow: hidden;
     }

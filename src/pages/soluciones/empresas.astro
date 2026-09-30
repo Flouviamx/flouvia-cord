@@ -404,6 +404,11 @@ const heroTitle = solucion.tituloAcento
     /* ════════════════════════════════════════════════════════════════
        HERO (Stripe Enterprise)
     ════════════════════════════════════════════════════════════════ */
+    /* Fondo continuo como la home: una sola superficie #fcfcfc debajo del
+       hero, sin franjas ni filos entre secciones. */
+    .stripe-main { background: #fcfcfc; }
+    .stripe-main > section { background: transparent; border-top: 0; border-bottom: 0; }
+
     .stripe-hero {
         position: relative;
         padding: 150px 0 90px;

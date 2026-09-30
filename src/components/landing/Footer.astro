@@ -24,7 +24,6 @@ const {
 <section class="final-cta">
     <div class="fc-glow" aria-hidden="true"></div>
     <div class="fc-inner reveal">
-        <p class="fc-eyebrow">{t("footer.cta.eyebrow")}</p>
         <h2 class="fc-title masked-title" set:html={ctaTitle} />
         <p class="fc-sub">{ctaSub}</p>
         <div class="fc-actions">
@@ -346,13 +345,6 @@ const {
         z-index: 2;
         max-width: 700px;
         margin: 0 auto;
-    }
-    .fc-eyebrow {
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 3px;
-        color: rgba(255, 255, 255, 0.45);
-        margin: 0 0 1.4rem;
     }
     .fc-title {
         font-size: clamp(1.9rem, 3.6vw, 3.4rem);

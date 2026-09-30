@@ -1,0 +1,74 @@
+---
+// Marquee de integraciones en 3D (WebGL, logo-marquee.ts). Fuente única: lo usan
+// /integraciones y /soluciones/startups, así que las dos superficies muestran
+// exactamente los mismos tiles. Sin WebGL2 queda la fila de logos plana.
+import { INTEGRATION_PAGES } from '../../lib/integraciones-landing';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const pre = isEn ? '/en' : '';
+
+const TILE_ART: Record<string, { src: string; color: string; mode: 'tile' | 'mark' }> = {
+    hubspot: { src: '/imgs/integrations/tiles/hubspot.png', color: '#ff5c35', mode: 'tile' },
+    shopify: { src: '/imgs/integrations/shopify.svg', color: '#95bf47', mode: 'tile' },
+    'mercado-pago': { src: '/imgs/integrations/mercadopago.svg', color: '#00b1ea', mode: 'tile' },
+    slack: { src: '/imgs/integrations/slack.png', color: '#4a154b', mode: 'mark' },
+    zapier: { src: '/imgs/integrations/tiles/zapier.png', color: '#ff4f00', mode: 'tile' },
+    make: { src: '/imgs/integrations/tiles/make.png', color: '#6d00cc', mode: 'mark' },
+    n8n: { src: '/imgs/integrations/n8n.svg', color: '#ea4b71', mode: 'tile' },
+    teams: { src: '/imgs/integrations/tiles/teams.png', color: '#5b5fc7', mode: 'mark' },
+    whatsapp: { src: '/imgs/integrations/whatsapp.svg', color: '#25d366', mode: 'tile' },
+    gmail: { src: '/imgs/integrations/tiles/gmail.png', color: '#ea4335', mode: 'mark' },
+    'google-sheets': { src: '/imgs/integrations/tiles/google-sheets.png', color: '#1e8e3e', mode: 'mark' },
+    excel: { src: '/imgs/integrations/tiles/excel.png', color: '#217346', mode: 'mark' },
+    quickbooks: { src: '/imgs/integrations/tiles/quickbooks.png', color: '#2ca01c', mode: 'tile' },
+    xero: { src: '/imgs/integrations/tiles/xero.png', color: '#13b5ea', mode: 'tile' },
+};
+const marqueeTiles = INTEGRATION_PAGES.filter((p) => TILE_ART[p.slug]).map((p) => ({ ...TILE_ART[p.slug], href: `${pre}/integraciones/${p.slug}` }));
+---
+
+<div class="ilm" data-ilm>
+    <div class="ih-marquee" data-tiles={JSON.stringify(marqueeTiles)} aria-hidden="true"></div>
+    <div class="ih-logos reveal" aria-hidden="true">
+        {INTEGRATION_PAGES.map((p) => <span class="ih-logo"><img src={p.logo} alt="" width="52" height="52" /></span>)}
+    </div>
+</div>
+
+<style>
+    .ih-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
+    .ih-logo { display: inline-flex; }
+    .ih-marquee {
+        position: relative; width: 100vw; margin: -1.4rem 0 -1.6rem calc(50% - 50vw); height: 0; touch-action: pan-y;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+        opacity: 0; transition: opacity 0.9s ease;
+    }
+    .ih-marquee.is-on { height: 200px; opacity: 1; }
+    .ih-marquee :global(canvas) { display: block; width: 100%; height: 100%; }
+    .ilm.is-gl .ih-logos { display: none; }
+    .ih-logo img { width: 52px; height: 52px; border-radius: 24%; object-fit: contain; }
+
+    @media (max-width: 880px) {
+        .ih-marquee.is-on { height: 150px; }
+    }
+</style>
+
+<script>
+    const canGl = (() => {
+        try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; }
+    })();
+    document.querySelectorAll<HTMLElement>('[data-ilm]').forEach((wrap) => {
+        const host = wrap.querySelector<HTMLElement>('.ih-marquee');
+        if (!host || !canGl) return;
+        const start = async () => {
+            try {
+                const { mountLogoMarquee } = await import('./logo-marquee');
+                await mountLogoMarquee(host, JSON.parse(host.dataset.tiles || '[]'));
+                host.classList.add('is-on');
+                wrap.classList.add('is-gl');
+            } catch {}
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(() => start(), { timeout: 1200 });
+        else setTimeout(start, 300);
+    });
+</script>

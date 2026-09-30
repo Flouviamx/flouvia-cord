@@ -75,7 +75,6 @@ export const ui = {
     'nav.mobile.plans': 'Ver planes',
     'nav.mobile.footer.op': 'CDMX — OP. GLOBAL',
 
-    'footer.cta.eyebrow': 'EMPIEZA HOY',
     'footer.cta.btn': 'Empezar gratis',
     'footer.cta.micro': 'Sin tarjeta · Plan gratis para siempre',
     'footer.tagline': 'La plataforma moderna para gestionar propuestas, firmas y cobranza. Para cualquier negocio, en cualquier país.',
@@ -327,7 +326,6 @@ export const ui = {
     'nav.mobile.plans': 'View plans',
     'nav.mobile.footer.op': 'CDMX — GLOBAL OP.',
 
-    'footer.cta.eyebrow': 'START TODAY',
     'footer.cta.btn': 'Start for free',
     'footer.cta.micro': 'No credit card required · Free plan forever',
     'footer.tagline': 'The modern platform to manage proposals, signatures, and collections. For any business, anywhere.',
