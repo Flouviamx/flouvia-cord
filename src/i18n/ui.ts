@@ -78,7 +78,6 @@ export const ui = {
     'nav.mobile.footer.op': 'CDMX — OP. GLOBAL',
 
     'footer.cta.btn': 'Empezar gratis',
-    'footer.cta.micro': 'Sin tarjeta · Plan gratis para siempre',
     'footer.tagline': 'La plataforma moderna para gestionar propuestas, firmas y cobranza. Para cualquier negocio, en cualquier país.',
     'footer.by': 'Hecho por el equipo de',
     'footer.col.empresa': 'EMPRESA',
@@ -331,7 +330,6 @@ export const ui = {
     'nav.mobile.footer.op': 'CDMX — GLOBAL OP.',
 
     'footer.cta.btn': 'Start for free',
-    'footer.cta.micro': 'No credit card required · Free plan forever',
     'footer.tagline': 'The modern platform to manage proposals, signatures, and collections. For any business, anywhere.',
     'footer.by': 'Made by the team at',
     'footer.col.empresa': 'COMPANY',
