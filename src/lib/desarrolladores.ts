@@ -419,15 +419,6 @@ export const DEV_PAGES: DevPage[] = [
             { q: '¿El cliente puede pagar dentro del embed?', a: 'Sí, cuando tienes Cord Payments activo. El botón de pago dispara el evento pay con la URL del cobro, para que tu página decida si abrirlo en la misma pestaña o en una nueva.' },
         ],
         cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primera cotización hoy.' },
-        trust: {
-            eyebrow: 'DETALLES QUE IMPORTAN',
-            titulo: 'Lo fino, resuelto de fábrica',
-            items: [
-                { icon: 'lock', titulo: 'Los eventos sólo llegan a tu dominio', copy: 'Con allowlist, el postMessage se dirige al origen exacto de tu sitio, no a cualquier ventana que esté escuchando.' },
-                { icon: 'doc', titulo: 'Tipos generados del código real', copy: 'Los .d.ts salen del build del SDK. Si algo cambia, tu editor lo refleja sin un tipo desincronizado.' },
-                { icon: 'key', titulo: 'Una pk_ no puede leer tu CRM', copy: 'En el navegador sólo crea cotizaciones y lee el catálogo, sin costos ni márgenes. Leer clientes exige tu proxy.' },
-            ],
-        },
     },
     {
         slug: 'fx',

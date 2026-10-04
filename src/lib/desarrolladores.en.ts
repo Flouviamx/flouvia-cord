@@ -369,15 +369,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'Can the client pay inside the embed?', a: 'Yes, when Cord Payments is active. The pay button fires the pay event with the payment URL, so your page decides whether to open it in the same tab or a new one.' },
         ],
         cta: { titulo: 'Bring your quote builder to where your clients are.', sub: 'Create your free account and embed your first quote today.' },
-        trust: {
-            eyebrow: 'DETAILS THAT MATTER',
-            titulo: 'The fine print, handled out of the box',
-            items: [
-                { icon: 'lock', titulo: 'Events only reach your domain', copy: "With an allowlist, the postMessage targets your site's exact origin, not any window that happens to be listening." },
-                { icon: 'doc', titulo: 'Types generated from the real code', copy: "The .d.ts files come from the SDK build. If something changes, your editor shows it with no out-of-sync type." },
-                { icon: 'key', titulo: 'A pk_ cannot read your CRM', copy: 'In the browser it only creates quotes and reads the catalog, without costs or margins. Reading clients requires your proxy.' },
-            ],
-        },
     },
     {
         slug: 'fx',

@@ -11,6 +11,7 @@ import PageAnims from '../../components/landing/PageAnims.astro';
 import DevMock from '../../components/desarrolladores/DevMock.astro';
 import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import DevHeroBand from '../../components/desarrolladores/DevHeroBand.astro';
 
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
@@ -86,6 +87,7 @@ const articleSchema = {
         <!-- ── HERO ── -->
         <section class="pp-hero">
             <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <DevHeroBand />
             <div class="pp-hero-inner">
                 <div class="pp-hero-text">
                     <h1 class="pp-title masked-title" set:html={page.titulo} />
@@ -240,10 +242,13 @@ const articleSchema = {
 <style>
     /* ════════ HERO — split layout, llena 100dvh (mismo patrón que /producto) ════════ */
     .pp-hero {
+        --band-t: clamp(150px, 16vw, 260px);
+        --band-rise: 21.3vw;
         position: relative;
         min-height: 100dvh;
         display: flex; align-items: center;
         overflow: hidden;
+        padding-bottom: calc(var(--band-t) + 8.5vw - 1rem);
         background: var(--color-bg);
     }
     .pp-hero-mesh {
@@ -365,7 +370,7 @@ const articleSchema = {
 
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 1000px) {
-        .pp-hero { align-items: flex-start; }
+        .pp-hero { align-items: flex-start; padding-bottom: calc(var(--band-t) * 0.5); }
         .pp-hero-inner { grid-template-columns: 1fr; gap: 0; padding: 6rem 6% 3rem; }
         .pp-hero-text { padding-bottom: 2.5rem; }
         .pp-hero-visual { margin-left: -6%; margin-right: -6%; justify-content: flex-start; }

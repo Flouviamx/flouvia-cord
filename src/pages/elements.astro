@@ -1,7 +1,7 @@
 ---
 // /elements — Cord Elements: el SDK para llevar las cotizaciones de Cord al
 // sitio de un tercero. Misma familia visual que /producto y /desarrolladores
-// (hero 100dvh, bento de tarjetas blancas, TrustGrid, FAQ, cross-link) más lo
+// (hero 100dvh con banda diagonal, bento de tarjetas blancas, FAQ, cross-link) más lo
 // que necesita un SDK: el hero es una calca 1:1 de /embed/demo dentro del
 // portal de un cliente con su consola de eventos, instalación por stack, y un
 // explorador de TODO lo que exporta el paquete — cada nombre de esta página
@@ -13,7 +13,7 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
-import TrustGrid from '../components/desarrolladores/TrustGrid.astro';
+import DevHeroBand from '../components/desarrolladores/DevHeroBand.astro';
 import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
@@ -287,6 +287,7 @@ const howToSchema = {
         <!-- ════════ HERO ════════ -->
         <section class="pp-hero">
             <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <DevHeroBand />
             <div class="pp-hero-inner">
                 <div class="pp-hero-text">
                     <p class="el-kicker reveal">{devPage.eyebrow}</p>
@@ -406,7 +407,6 @@ const howToSchema = {
         <!-- ════════ INSTALAR ════════ -->
         <section class="eli" id="instalar">
             <div class="eli-head">
-                <p class="el-eyebrow reveal">{tx('INSTALACIÓN', 'INSTALLATION')}</p>
                 <h2 class="el-h2 masked-title">{tx('Elige tu stack. El resultado es el mismo.', 'Pick your stack. The result is the same.')}</h2>
                 <p class="el-lead reveal">{tx('Cambia sólo cómo cargas el cotizador. La cotización, tu marca y los eventos son idénticos en todos.', 'Only the way you load the quote builder changes. The quote, your brand and the events are identical in every one.')}</p>
             </div>
@@ -537,7 +537,6 @@ const howToSchema = {
         <!-- ════════ EXPLORADOR DEL SDK ════════ -->
         <section class="els" id="sdk">
             <div class="eli-head">
-                <p class="el-eyebrow reveal">{tx('TODO EL SDK', 'THE WHOLE SDK')}</p>
                 <h2 class="el-h2 masked-title">{tx('Todo lo que trae @flouviahq/elements.', 'Everything inside @flouviahq/elements.')}</h2>
                 <p class="el-lead reveal">{tx('Seis módulos en npm, el loader embed.js y los mismos tipos en todos. Elige un módulo para ver cada pieza que exporta.', 'Six npm modules, the embed.js loader and the same types across all of them. Pick a module to see every piece it exports.')}</p>
             </div>
@@ -571,7 +570,6 @@ const howToSchema = {
         <!-- ════════ SERVER SDK ════════ -->
         <section class="elsv">
             <div class="elsv-text">
-                <p class="el-eyebrow reveal">SERVER SDK</p>
                 <h2 class="el-h2 masked-title">{tx('Tu backend se entera, y verifica que fue Cord.', 'Your backend hears about it, and verifies it was Cord.')}</h2>
                 <p class="el-copy reveal">{tx('El mismo paquete trae el cliente de servidor. Verifica la firma de cada webhook antes de procesarlo, con protección contra reenvíos por timestamp, y crea o lista cotizaciones, clientes y productos con tu secret key.', 'The same package ships the server client. It verifies every webhook signature before you process it, with timestamp replay protection, and creates or lists quotes, clients and products with your secret key.')}</p>
                 <ul class="elsv-chips reveal">
@@ -592,8 +590,8 @@ const howToSchema = {
         <!-- ════════ CAPACIDADES ════════ -->
         <section class="el-features">
             <div class="eli-head">
-                <p class="el-eyebrow reveal">{tx('DENTRO DEL EMBED', 'INSIDE THE EMBED')}</p>
                 <h2 class="el-h2 masked-title">{tx('El cotizador completo, no un widget de juguete.', 'The full quote builder, not a toy widget.')}</h2>
+                <p class="el-lead reveal">{tx('Lo mismo que tu cliente ve en el link público, ahora dentro de su portal.', 'Everything your client sees on the public link, now inside their portal.')}</p>
             </div>
             <div class="el-feat-list">
                 <div class="el-feat reveal"><span class="el-feat-ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" class="f"/><path d="M8.5 12l2.3 2.3L15.5 9.5"/></svg></span><div><b>{tx('Aprobación con firma', 'Signed approval')}</b><span>{tx('Cada aprobación queda firmada con hash SHA-256, IP y fecha. En México queda lista para timbrarse como CFDI 4.0.', 'Every approval is signed with a SHA-256 hash, IP and timestamp. In Mexico it is ready to be stamped as CFDI 4.0.')}</span></div></div>
@@ -606,8 +604,6 @@ const howToSchema = {
                 <div class="el-feat reveal"><span class="el-feat-ico"><svg viewBox="0 0 24 24"><path d="M12 3.5l8 4.2-8 4.2-8-4.2z" class="f"/><path d="M4 12l8 4.2 8-4.2M4 15.8l8 4.2 8-4.2"/></svg></span><div><b>{tx('Licencia MIT', 'MIT license')}</b><span>{tx('El paquete es abierto: léelo, audítalo y míralo en tu propio bundle.', 'The package is open: read it, audit it and inspect it in your own bundle.')}</span></div></div>
             </div>
         </section>
-
-        {devPage.trust && <TrustGrid trust={devPage.trust} />}
 
         <!-- ════════ CTA secundario ════════ -->
         <section class="el-mid">
@@ -843,7 +839,13 @@ const howToSchema = {
 
 <style>
     /* ════════ HERO ════════ */
-    .pp-hero { position: relative; min-height: 100dvh; display: flex; align-items: center; overflow-x: clip; background: var(--color-bg); }
+    .pp-hero {
+        --band-t: clamp(150px, 16vw, 260px);
+        --band-rise: 21.3vw;
+        position: relative; min-height: 100dvh; display: flex; align-items: center; overflow-x: clip;
+        padding-bottom: calc(var(--band-t) + 8.5vw - 1rem);
+        background: var(--color-bg);
+    }
     .pp-hero-mesh {
         position: absolute; inset: -20% -10% auto; height: 80%; pointer-events: none;
         background: radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%), radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
@@ -994,10 +996,11 @@ const howToSchema = {
 
     /* ════════ COMPARTIDOS ════════ */
     .el-h2 { font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.035em; color: #050505; margin: 0 0 1rem; }
-    .el-eyebrow { font-size: 0.64rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #8a93a2; margin: 0 0 1.1rem; }
     .el-lead, .el-copy { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; }
-    .eli-head { max-width: 720px; margin: 0 auto 2.8rem; text-align: center; }
-    .eli-head .el-lead { max-width: 560px; margin: 0 auto; }
+    /* Encabezado de sección: título a la izquierda, texto a la derecha */
+    .eli-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 1.5rem 4rem; align-items: end; margin: 0 0 3rem; text-align: left; }
+    .eli-head .el-h2 { margin: 0; max-width: 620px; }
+    .eli-head .el-lead { max-width: 460px; justify-self: end; }
 
     /* Código (oscuro, igual que los snippets del resto del sitio) */
     .el-code { background: #0b1526; border-radius: 16px; overflow: hidden; min-width: 0; box-shadow: 0 30px 70px -36px rgba(5,11,20,0.6), inset 0 0 0 1px rgba(255,255,255,0.05); }
@@ -1219,7 +1222,7 @@ const howToSchema = {
         .els-tab span { grid-row: 1; }
     }
     @media (max-width: 1000px) {
-        .pp-hero { align-items: flex-start; }
+        .pp-hero { align-items: flex-start; padding-bottom: calc(var(--band-t) * 0.5); }
         .pp-hero-inner { grid-template-columns: 1fr; gap: 2.5rem; padding: 6rem 6% 3rem; }
         .pp-hero-visual { margin: 0; }
         .elh-stage { margin: 0 auto; }
@@ -1235,6 +1238,8 @@ const howToSchema = {
         .pp-bcard-3 .elx-3 { flex-direction: column; align-items: stretch; }
     }
     @media (max-width: 860px) {
+        .eli-head { grid-template-columns: 1fr; }
+        .eli-head .el-lead { justify-self: start; }
         .pp-hero { padding-top: 2.5rem; }
         .elh-scene { padding-bottom: 0; }
         .elh-console { position: relative; left: auto; bottom: auto; width: 100%; margin-top: 1rem; }

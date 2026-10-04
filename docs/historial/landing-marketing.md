@@ -22,6 +22,11 @@
   `folio`), la marca se quita desde Starter en Ajustes › Marca y apariencia (no en
   Developers) y React es `>=17`.
 • `DevBlockMockup.astro` se eliminó: sus únicos consumidores eran `/elements` y `TrustGrid`.
+• **Banda diagonal en los heroes de desarrolladores:** la misma geometría de 12° de
+  `/producto` (`DevHeroBand.astro`, compartida por `/desarrolladores/*` y `/elements`) con
+  una gama propia ámbar/brasa (`#7C2D12` → `#FACC15`) que ninguna otra banda usa.
+• En `/elements` los encabezados de sección van título a la izquierda y texto a la derecha,
+  sin eyebrow, y se retiró la sección "Lo fino, resuelto de fábrica" (con su `trust`).
 
 **SEO técnico de los tres hosts, páginas de integraciones y Cord Workflows (21 sep 2026)** —
 Auditoría en vivo de los sitemaps de `cordhq.app`, `docs.` y `dev.` (843 URLs rastreadas).
