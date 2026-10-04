@@ -12,6 +12,7 @@ import DevMock from '../../components/desarrolladores/DevMock.astro';
 import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import DevHeroBand from '../../components/desarrolladores/DevHeroBand.astro';
+import DevMore from '../../components/desarrolladores/DevMore.astro';
 
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
@@ -27,8 +28,6 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
 const currentPage = Astro.props.page || Astro.props.page;
 const page = isEn && currentPage ? DEV_PAGES_EN.find((p) => p.slug === currentPage.slug) || currentPage : currentPage;
-const ORDER = (isEn ? DEV_PAGES_EN : DEV_PAGES).filter((p) => p.slug !== 'elements');
-const otra = ORDER[(ORDER.findIndex((p) => p.slug === page.slug) + 1) % ORDER.length];
 const updatedLabel = page.updated
     ? new Intl.DateTimeFormat(isEn ? 'en-US' : 'es-MX', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${page.updated}T12:00:00Z`))
     : null;
@@ -158,19 +157,7 @@ const articleSchema = {
             class="dv-faq-acc"
         />
 
-        <!-- ── CROSS-LINK (estilo lista, no cards) — última sección antes del footer ── -->
-        <section class="dv-more">
-            <a href={`/desarrolladores/${otra.slug}`} class="dv-more-row reveal">
-                <div>
-                    <span class="dv-more-eyebrow">{otra.eyebrow}</span>
-                    <b>{otra.nav}</b>
-                    <i>{otra.sub.split('.')[0]}.</i>
-                </div>
-                <span class="dv-more-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </span>
-            </a>
-        </section>
+        <DevMore current={page.slug} />
     </main>
 
     <Footer ctaTitle={page.cta.titulo.replace(/\. /, '.<br />')} ctaSub={page.cta.sub} />
@@ -347,27 +334,6 @@ const articleSchema = {
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
 
-    /* ════════ CROSS-LINK (última sección) ════════ */
-    .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
-    .dv-more-row {
-        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
-        padding: 1.8rem 2rem; border-radius: 20px;
-        background: var(--color-bg-soft); border: 1px solid var(--color-border); text-decoration: none;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
-    }
-    .dv-more-row:hover { transform: translateY(-3px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); border-color: rgba(10,25,47,0.12); }
-    .dv-more-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
-    .dv-more-row b { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
-    .dv-more-row i { display: block; font-style: normal; font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
-    .dv-more-arrow {
-        flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
-    }
-    .dv-more-arrow svg { width: 16px; height: 16px; }
-    .dv-more-row:hover .dv-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
-
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 1000px) {
         .pp-hero { align-items: flex-start; padding-bottom: calc(var(--band-t) * 0.5); }
@@ -383,7 +349,6 @@ const articleSchema = {
     }
     @media (max-width: 860px) {
         .pp-hero { padding-top: 8.5rem; }
-        .dv-more-row { padding: 1.4rem 1.4rem; }
     }
 
     :global(.dv-faq-acc) { padding: 0 5% 7rem; }

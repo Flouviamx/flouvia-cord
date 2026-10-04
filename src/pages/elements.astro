@@ -1,7 +1,7 @@
 ---
 // /elements — Cord Elements: el SDK para llevar las cotizaciones de Cord al
 // sitio de un tercero. Misma familia visual que /producto y /desarrolladores
-// (hero 100dvh con banda diagonal, bento de tarjetas blancas, FAQ, cross-link) más lo
+// (hero 100dvh con banda diagonal, bento de tarjetas blancas, FAQ, cross-links de /producto) más lo
 // que necesita un SDK: el hero es una calca 1:1 de /embed/demo dentro del
 // portal de un cliente con su consola de eventos, instalación por stack, y un
 // explorador de TODO lo que exporta el paquete — cada nombre de esta página
@@ -15,6 +15,7 @@ import PageAnims from '../components/landing/PageAnims.astro';
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
 import DevHeroBand from '../components/desarrolladores/DevHeroBand.astro';
 import DevPlatform from '../components/landing/DevPlatform.astro';
+import DevMore from '../components/desarrolladores/DevMore.astro';
 import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
@@ -25,7 +26,6 @@ const l = (p: string) => publicPath(p, lang);
 const tx = (es: string, en: string) => (isEn ? en : es);
 const pages = isEn ? DEV_PAGES_EN : DEV_PAGES;
 const devPage = pages.find((p) => p.slug === 'elements')!;
-const crossPage = pages.find((p) => p.slug === 'api')!;
 
 // ── Resaltado mínimo de código en build (sin dependencias) ──
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -593,13 +593,6 @@ const howToSchema = {
         <!-- ════════ PLATAFORMA (sección oscura compartida con el home) ════════ -->
         <DevPlatform />
 
-        <!-- ════════ CTA secundario ════════ -->
-        <section class="el-mid">
-            <h2 class="el-mid-title masked-title">{tx('¿Prefieres no embeber? Comparte el link.', 'Prefer not to embed? Share the link.')}</h2>
-            <p class="el-mid-sub reveal">{tx('Cada cotización vive también en su propia página pública, con el mismo cotizador y sin tocar código. El embed es para cuando quieres que viva dentro de tu sitio.', 'Every quote also lives on its own public page, with the same quote builder and no code. Embedding is for when you want it to live inside your site.')}</p>
-            <a href={l('/q/demo')} class="el-btn-ghost reveal" target="_blank" rel="noopener">{tx('Abrir una cotización de demostración', 'Open a demo quote')}</a>
-        </section>
-
         <FaqAccordion
             faqs={devPage.faqs}
             eyebrow={tx('PREGUNTAS FRECUENTES', 'FREQUENTLY ASKED QUESTIONS')}
@@ -608,16 +601,7 @@ const howToSchema = {
         />
         {devPage.updated && <p class="pp-updated">{tx('Última revisión', 'Last reviewed')}: <time datetime={devPage.updated}>{devPage.updated}</time></p>}
 
-        <section class="dv-more">
-            <a href={l(`/desarrolladores/${crossPage.slug}`)} class="dv-more-row reveal">
-                <div>
-                    <span class="dv-more-eyebrow">{crossPage.eyebrow}</span>
-                    <b>{crossPage.nav}</b>
-                    <i>{crossPage.sub.split('.')[0]}.</i>
-                </div>
-                <span class="dv-more-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-            </a>
-        </section>
+        <DevMore current="elements" />
     </main>
 
     <Footer ctaTitle={devPage.cta.titulo} ctaSub={devPage.cta.sub} />
@@ -1208,24 +1192,6 @@ const howToSchema = {
     .elsv-note { margin: 1rem 0 0; font-size: 0.8rem; color: #8a93a2; }
     .elsv-note a { color: var(--color-blue-deep); font-weight: 600; }
 
-    /* ════════ MID CTA ════════ */
-    .el-mid { max-width: 720px; margin: 0 auto; padding: 6rem 5% 5rem; text-align: center; }
-    .el-mid-title { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.035em; color: #050505; margin: 0 0 1rem; }
-    .el-mid-sub { font-size: 1rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 1.6rem; }
-    .el-btn-ghost { display: inline-block; color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.96rem; padding: 13px 22px; border-radius: 999px; border: 1px solid var(--color-border); transition: color 0.3s, border-color 0.3s, background 0.3s; }
-    .el-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
-
-    /* ════════ CROSS-LINK ════════ */
-    .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
-    .dv-more-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.8rem 2rem; border-radius: 20px; background: #fff; text-decoration: none; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 18px 40px -24px rgba(10,25,47,0.2); transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring); }
-    .dv-more-row:hover { transform: translateY(-3px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.24); }
-    .dv-more-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
-    .dv-more-row b { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
-    .dv-more-row i { display: block; font-style: normal; font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
-    .dv-more-arrow { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: rgba(10,25,47,0.05); color: var(--color-blue-deep); display: grid; place-items: center; transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring); }
-    .dv-more-arrow svg { width: 16px; height: 16px; }
-    .dv-more-row:hover .dv-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
-
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 1100px) {
         .elsv { grid-template-columns: 1fr; gap: 2.2rem; }
@@ -1263,7 +1229,6 @@ const howToSchema = {
         .elx1-cards { gap: 0.5rem; }
         .elx2-r { grid-template-columns: 54px 1fr; }
         .elx2-r span { grid-column: 1 / -1; }
-        .dv-more-row { padding: 1.4rem; }
     }
 </style>
 
