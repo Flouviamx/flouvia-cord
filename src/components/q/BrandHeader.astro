@@ -1,0 +1,21 @@
+---
+import { resolveBrandProfile } from '../../lib/brand-profile';
+interface Props { org: any; folio: string; label: string; demo?: boolean; }
+const { org, folio, label, demo = false } = Astro.props;
+const profile = resolveBrandProfile(org.brandProfile);
+const logo = profile.header === 'contrast' && profile.logoDark ? profile.logoDark : org.logoUrl;
+---
+<header class="q-header brand-header" data-brand-header={profile.header}>
+    <div class="q-brand-row">
+        <img src={logo || undefined} alt={org.nombre} class="q-logo-img" data-brand-logo hidden={!logo} />
+        <div class="q-logo-initial" data-brand-initial hidden={!!logo}>{org.inicial}</div>
+        <div class="q-brand-text" hidden={demo && !!logo}>
+            <span class="q-company">{org.nombre}</span>
+            {org.rfc && <span class="q-rfc">RFC {org.rfc}</span>}
+        </div>
+    </div>
+    <div class="q-folio-tag">
+        <span class="q-folio-eyebrow">{label}</span>
+        <span class="q-folio-num">{folio}</span>
+    </div>
+</header>

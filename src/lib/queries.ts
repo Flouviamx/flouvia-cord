@@ -3,6 +3,7 @@
 // re-exporta sus helpers puros, STATUS_META y `money()` de `lib/fmt-server`
 // para que las páginas tengan un solo import.
 
+import { resolveBrandProfile } from './brand-profile';
 import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx, type DbRow } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
@@ -82,6 +83,7 @@ export async function getOrg() {
         prefix: o.quote_prefix as string,
         moneda: o.moneda as string,
         ivaPct: num(o.iva_pct),
+        brandProfile: resolveBrandProfile(o.brand_profile),
         logoUrl: (o.logo_url as string) ?? '',
         colorMarca: (o.color_marca as string) || '#0a192f',
         pdfMensaje: (o.pdf_mensaje as string) ?? '',
@@ -1860,7 +1862,7 @@ export async function getCotizacionByToken(token: string) {
     const [rows, items, conv, comentarios, firmas, cobrosRows, susRows] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
-               o.logo_url as org_logo_url,
+               o.logo_url as org_logo_url, o.brand_profile as org_brand_profile, o.color_secundario as org_secondary,
                o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct,
                o.embed_domains as org_embed_domains,
                o.email_contacto as org_email, o.telefono as org_tel, o.whatsapp as org_wa,
@@ -2028,6 +2030,8 @@ export async function getCotizacionByToken(token: string) {
             rfc: (rows[0].org_rfc as string) ?? '',
             colorMarca: (rows[0].org_color as string) || '#0a192f',
             logoUrl: (rows[0].org_logo_url as string) ?? '',
+            brandProfile: resolveBrandProfile(rows[0].org_brand_profile),
+            colorSecundario: (rows[0].org_secondary as string) || '',
             pdfMensaje: (rows[0].org_pdf_mensaje as string) ?? '',
             ivaPct: num(rows[0].org_iva_pct) || 16,
             embedDomains: (rows[0].org_embed_domains as string) ?? '',

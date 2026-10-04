@@ -2289,3 +2289,14 @@
    • Los permisos se evalúan antes de las consultas; Inicio oculta y evita cargar widgets
    financieros sin autorización. `getDashboard()` dejó de hidratar hasta 100,000
    cotizaciones y usa agregados SQL más cinco filas recientes.
+
+## 2026-10-03 — Marca y apariencia, primera fase
+
+Identidad y Portal comparten un editor con paletas, tipografías, composición,
+logo alternativo, densidad y bordes. La vista previa autenticada reutiliza la
+cotización real sin registrar actividad. El contrato cerrado vive en
+`brand-profile.ts` y se persiste por organización en una columna JSONB aditiva;
+el build de Vercel la prepara antes de publicar. El guardado usa el componente
+compartido con estados de carga, éxito y error. PDF/correos conservan sus ajustes
+anteriores; su extensión queda para la siguiente fase. Estado y archivos:
+[`personalizacion-marca.md`](../estado/personalizacion-marca.md).

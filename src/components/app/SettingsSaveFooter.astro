@@ -1,0 +1,9 @@
+---
+import SettingsSaveButton from './SettingsSaveButton.astro';
+interface Props { buttonId:string; messageId:string; label?:string; }
+const {buttonId,messageId,label} = Astro.props;
+---
+<div class="settings-save-footer">
+    <span class="s-saved" id={messageId} role="status" aria-live="polite" aria-atomic="true"><span class="s-saved-text"></span></span>
+    <SettingsSaveButton id={buttonId} label={label} />
+</div>

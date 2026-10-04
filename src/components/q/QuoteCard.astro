@@ -2,6 +2,9 @@
 // QuoteCard — Quiet Luxury edition.
 // Flujo de aprobación en 3 pasos: revisar → firmar digitalmente → confirmado/pagar.
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
+import BrandHeader from './BrandHeader.astro';
+import { resolveBrandProfile, brandStyle } from '../../lib/brand-profile';
+import '../../styles/brand-surface.css';
 import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
 import { canCollectOnline } from '../../lib/payment-rail';
@@ -34,7 +37,6 @@ const color = `var(--cord-color-primary, ${ORG.colorMarca || '#0a192f'})`;
 const mostrarChat = ORG.portalMostrarChat !== false;
 const banner = (ORG.portalBanner ?? '').trim();
 const bienvenida = (ORG.portalBienvenida ?? '').trim();
-const logoUrl = (ORG.logoUrl ?? '').trim();
 const folio = q.folio as string;
 const total = money(quoteTotal(q));
 const viva = !yaAprobada && !yaRechazada;
@@ -152,7 +154,7 @@ const demoRuntimeJson = esDemo
     : '';
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined}>
+<div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined}>
     <script type="application/json" id="qRetenciones" is:inline set:html={JSON.stringify((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
@@ -176,25 +178,7 @@ const demoRuntimeJson = esDemo
     {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
 
     <!-- Cabecera: marca del emisor -->
-    <header class="q-header">
-        <div class="q-brand-row">
-            {logoUrl
-                ? <img src={logoUrl} alt={ORG.nombre} class="q-logo-img" />
-                : <div class="q-logo-initial" style={`background:${color}`}>{ORG.inicial}</div>
-            }
-            {/* En la demo el logo de Cord ya es el wordmark: repetir "Cord" al lado se lee doble. */}
-            {!(esDemo && logoUrl) && (
-                <div class="q-brand-text">
-                    <span class="q-company">{ORG.nombre}</span>
-                    {ORG.rfc && <span class="q-rfc">RFC {ORG.rfc}</span>}
-                </div>
-            )}
-        </div>
-        <div class="q-folio-tag">
-            <span class="q-folio-eyebrow">{t(L, 'q.folio_eyebrow')}</span>
-            <span class="q-folio-num">{folio}</span>
-        </div>
-    </header>
+    <BrandHeader org={ORG} folio={folio} label={t(L, 'q.folio_eyebrow')} demo={esDemo} />
 
     <div class="q-rule"></div>
 

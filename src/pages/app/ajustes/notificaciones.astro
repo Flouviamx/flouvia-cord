@@ -4,6 +4,7 @@
 // verdad la consulta antes de mandar algo (ver historial-app-features.md).
 // No usa el guardado genérico del shell (por eso NO pasa `save`): tiene su
 // propia barra.
+import SettingsSaveFooter from '../../../components/app/SettingsSaveFooter.astro';
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
@@ -86,16 +87,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
         </div>
     </div>
 
-    <div class="s-save-row">
-        <button class="s-save" id="nBtn" data-i18n-saved={t(L, 'settings.cambios_guardados')} data-i18n-err={t(L, 'settings.no_se_pudo_guardar')}>
-            <span class="s-save-label">{t(L, 'settings.guardar_cambios')}</span>
-            <svg class="s-save-spinner" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" opacity="0.25"/><path d="M18 10a8 8 0 0 1-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-        <span class="s-saved" id="nMsg">
-            <svg class="s-check-icon" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4.5 4L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="s-saved-text">{t(L, 'settings.cambios_guardados')}</span>
-        </span>
-    </div>
+    <SettingsSaveFooter buttonId="nBtn" messageId="nMsg" />
 </SettingsShell>
 
 <style>
@@ -122,6 +114,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
 </style>
 
 <script>
+    import { setSaveState } from '../../../lib/settings-save-feedback';
     function initNotif() {
         const btn = document.getElementById('nBtn') as HTMLButtonElement | null;
         const msg = document.getElementById('nMsg');
@@ -130,7 +123,6 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
         const teams = document.getElementById('oTeams') as HTMLInputElement | null;
         if (!btn || !msg || !grid) return;
 
-        const msgText = msg.querySelector('.s-saved-text') as HTMLElement | null;
         const M = btn.dataset;
 
         btn.addEventListener('click', async () => {
@@ -145,11 +137,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
                 notif_prefs[ev] = canales;
             });
 
-            // Estado: saving (spinner)
-            btn.disabled = true;
-            btn.classList.remove('saved');
-            btn.classList.add('saving');
-            msg.className = 's-saved';
+            setSaveState(btn, 'saving');
 
             try {
                 const res = await fetch('/api/org/prefs', {
@@ -159,28 +147,10 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nErr || 'No se pudo guardar');
 
-                // Estado: saved (pulse verde + check animado)
-                btn.classList.remove('saving');
-                btn.classList.add('saved');
-                if (msgText) msgText.textContent = M.i18nSaved || 'Cambios guardados';
-                msg.className = 's-saved show';
-
-                setTimeout(() => {
-                    btn.classList.remove('saved');
-                    btn.disabled = false;
-                }, 500);
-                setTimeout(() => msg.classList.remove('show'), 2800);
+                setSaveState(btn, 'saved');
 
             } catch (err: any) {
-                // Estado: error (shake + mensaje rojo)
-                btn.classList.remove('saving');
-                btn.disabled = false;
-                btn.style.animation = 's-shake 0.4s var(--ease-spring)';
-                btn.addEventListener('animationend', () => { btn.style.animation = ''; }, { once: true });
-
-                if (msgText) msgText.textContent = err.message || M.i18nErr || 'No se pudo guardar';
-                msg.className = 's-saved show error';
-                setTimeout(() => msg.classList.remove('show'), 3500);
+                setSaveState(btn, 'error', err.message || M.i18nErr);
             }
         });
     }

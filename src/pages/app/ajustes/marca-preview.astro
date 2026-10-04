@@ -1,0 +1,47 @@
+---
+import { currentLocale } from '../../../lib/context';
+import QuoteCard from '../../../components/q/QuoteCard.astro';
+import { getDemoQuote } from '../../../lib/demo-quote';
+import { getOrg, requirePerm } from '../../../lib/queries';
+const denied = await requirePerm('ajustes');
+if (denied) return denied;
+const org = await getOrg();
+const sample = getDemoQuote();
+const brandOrg = { ...sample.org, nombre:org.nombre, inicial:org.inicial, logoUrl:org.logoUrl, rfc:'', colorMarca:org.colorMarca, colorSecundario:org.colorSecundario, brandProfile:org.brandProfile, portalBanner:'…', portalBienvenida:'…', portalMostrarChat:true, portalPowered:true };
+Astro.response.headers.set('Cache-Control','private, no-store');
+---
+<html lang={currentLocale()}><head><title>{currentLocale() === 'en' ? 'Brand preview' : 'Vista previa de marca'}</title><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
+<body><main inert><QuoteCard quote={sample.quote} org={brandOrg} conversacion={[]} yaAprobada={false} yaRechazada={false} puedePagar={false} /></main></body></html>
+<style is:global>
+    * { box-sizing:border-box; } [hidden] { display:none!important; } body { margin:0; background:#f4f5f7; color:#111827; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; } main { padding:22px; } .q-card { margin:auto; animation:none!important; } .q-demo-ribbon { display:none!important; } a { color:inherit; } .editorial { font-variant-numeric:tabular-nums; } :root { --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; --color-blue-deep:#0a192f; }
+</style>
+<script>
+    import { resolveBrandProfile, brandVariables, brandColor } from '../../../lib/brand-profile';
+    window.addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'cord:brand-preview') return;
+        const { profile:raw, primary, secondary, logo, banner, welcome, chat, powered } = event.data;
+        const profile = resolveBrandProfile(raw);
+        const card = document.querySelector<HTMLElement>('[data-brand-surface]');
+        if (!card) return;
+        for (const [key,value] of Object.entries(brandVariables(profile,primary,secondary))) card.style.setProperty(key,value);
+        card.style.setProperty('--cord-color-primary',brandColor(primary));
+        const header = card.querySelector<HTMLElement>('[data-brand-header]')!;
+        header.dataset.brandHeader = profile.header;
+        const src = profile.header === 'contrast' && profile.logoDark ? profile.logoDark : logo;
+        const img = header.querySelector<HTMLImageElement>('[data-brand-logo]')!;
+        const safe = typeof src === 'string' && /^(https?:\/\/|data:image\/(png|jpeg|webp|svg\+xml);base64,)/.test(src);
+        if (safe) img.src = src; else img.removeAttribute('src');
+        img.hidden = !safe;
+        header.querySelector<HTMLElement>('[data-brand-initial]')!.hidden = !!safe;
+        const text = header.querySelector<HTMLElement>('.q-brand-text')!; text.hidden = false;
+        // Existing quote markup is used for both populated and empty draft text.
+        for (const [selector,value] of [['.q-banner',banner],['.q-welcome',welcome]] as const) {
+            const node = card.querySelector<HTMLElement>(selector);
+            if (node) { node.textContent = typeof value === 'string' ? value : ''; node.hidden = !value; }
+        }
+        const footer = card.querySelector<HTMLElement>('.q-cord-badge');
+        if (footer) footer.hidden = !powered;
+        for (const node of card.querySelectorAll<HTMLElement>('.qi-chat-btn, .q-chat')) node.hidden = !chat;
+    });
+    parent.postMessage({type:'cord:brand-preview-ready'},location.origin);
+</script>

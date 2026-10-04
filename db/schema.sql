@@ -5654,3 +5654,6 @@ begin
       'ops_' || t, t);
   end loop;
 end $$;
+
+-- Shared public brand presentation (portal and embed).
+alter table orgs add column if not exists brand_profile jsonb not null default '{}'::jsonb;

@@ -33,12 +33,12 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'branding', label: 'Branding', labelEn: 'Branding',
+        id: 'branding', label: 'Marca y apariencia', labelEn: 'Brand appearance',
         desc: 'Logo, colores de marca y portal de tus clientes.',
         descEn: 'Logo, brand colors, and your clients’ portal.',
         icon: '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" stroke="none"/>',
         tabs: [
-            { id: 'branding', label: 'Branding',          labelEn: 'Branding',      href: '/app/ajustes/branding' },
+            { id: 'branding', label: 'Identidad',         labelEn: 'Identity',      href: '/app/ajustes/branding' },
             { id: 'portal',   label: 'Portal del cliente', labelEn: 'Client portal', href: '/app/ajustes/portal' },
             { id: 'dominio',  label: 'Dominio propio', labelEn: 'Custom domain', href: '/app/ajustes/dominio', keywords: 'dominio dominios domain domains subdominio subdomain dns cname txt tls ssl hostname marca branding' },
         ],

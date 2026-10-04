@@ -1,0 +1,20 @@
+/* Shared by the actual quote, its embed and the editor's real quote preview. */
+.q-card[data-brand-surface] { --font-sans:var(--brand-font); font-family:var(--brand-font); border-radius:var(--brand-radius); gap:var(--brand-gap); }
+.q-card[data-brand-surface] .editorial { font-family:var(--brand-font); }
+.q-card[data-brand-surface] .brand-header { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.brand-header .q-brand-row { display:flex; align-items:center; min-width:0; gap:13px; }
+.brand-header .q-brand-text { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.brand-header .q-company { font-size:1rem; font-weight:700; letter-spacing:-.3px; color:#111; overflow-wrap:anywhere; }
+.brand-header .q-rfc { font-size:.68rem; color:#6b7280; }
+.brand-header .q-folio-tag { text-align:right; display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+.brand-header .q-folio-eyebrow { font-size:.55rem; letter-spacing:1.5px; color:#6b7280; }
+.brand-header .q-folio-num { font-size:.92rem; font-weight:700; color:#111; }
+.brand-header .q-logo-img { height:var(--brand-logo-height); max-width:160px; width:auto; object-fit:contain; }
+.brand-header .q-logo-initial { width:var(--brand-logo-height); height:var(--brand-logo-height); border-radius:10px; flex-shrink:0; background:var(--brand-primary); color:var(--brand-on-primary); display:flex; align-items:center; justify-content:center; font-weight:700; }
+.brand-header [hidden] { display:none; }
+.q-card[data-brand-surface] .brand-header[data-brand-header="soft"] { padding:22px; background:color-mix(in srgb,var(--brand-secondary) 9%,white); border-radius:var(--brand-button-radius); }
+.q-card[data-brand-surface] .brand-header[data-brand-header="contrast"] { padding:22px; background:var(--brand-primary); color:var(--brand-on-primary); border-radius:var(--brand-button-radius); }
+.brand-header[data-brand-header="contrast"] :is(.q-company,.q-folio-num,.q-rfc,.q-folio-eyebrow) { color:inherit; }
+.brand-header[data-brand-header="contrast"] .q-logo-initial { background:color-mix(in srgb,currentColor 14%,transparent); }
+.q-card[data-brand-surface] :is(.ql-cta:not(.ql-danger),.q-banner) { color:var(--cord-color-on-primary,var(--brand-on-primary)); border-radius:var(--brand-button-radius); }
+@media(max-width:520px) { .brand-header .q-logo-img { max-width:110px; } .q-card[data-brand-surface] .brand-header { gap:12px; flex-wrap:wrap; } }

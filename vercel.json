@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/migrate-brand-profile.mjs && npm run build",
   "crons": [
     {
       "path": "/api/health",

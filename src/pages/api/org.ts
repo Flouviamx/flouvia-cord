@@ -7,6 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
+import { brandProfileSchema } from '../../lib/brand-profile';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
 import { currentUserId, currentLocale } from '../../lib/context';
@@ -82,6 +83,17 @@ export const PATCH: APIRoute = async ({ request }) => {
             body.interes_moratorio_pct,
         );
         if (!checkedInterest.ok) return json({ error: checkedInterest.error }, 422);
+    }
+
+    let brandProfile = actual.brand_profile ?? {};
+    if (body.brand_profile !== undefined) {
+        let value = body.brand_profile;
+        if (typeof value === 'string') {
+            try { value = JSON.parse(value); } catch { return json({ error: 'Invalid brand profile' }, 400); }
+        }
+        const parsed = brandProfileSchema.safeParse(value);
+        if (!parsed.success) return json({ error: 'Invalid brand profile' }, 400);
+        brandProfile = parsed.data;
     }
 
     // Cada campo: si viene en el body lo tomamos (saneado), si no, conservamos.
@@ -368,6 +380,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             country_code = ${countryCode},
             fiscal_metadata = ${JSON.stringify(currentFiscalMetadata)},
             moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
+            brand_profile = ${JSON.stringify(brandProfile)}::jsonb,
             color_secundario = ${colorSec}, portal_bienvenida = ${portalBien},
             require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},
             require_sso = ${requireSso},
