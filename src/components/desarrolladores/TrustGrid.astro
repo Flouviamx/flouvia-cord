@@ -28,10 +28,14 @@ const ICONS: Record<DevTrustIcon, string> = {
 ---
 
 <section class="dvt-section">
-    <div class="dvt-mockups">
-        <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={3} /></div>
-        <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={4} /></div>
-    </div>
+    {/* Solo /elements conserva sus dos mockups extra; las páginas de
+        /desarrolladores muestran sus pantallas reales en el bento (DevMock). */}
+    {slug === 'elements' && (
+        <div class="dvt-mockups">
+            <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={3} /></div>
+            <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={4} /></div>
+        </div>
+    )}
 
     <div class="dvt-head">
         <p class="dvt-eyebrow">{trust.eyebrow}</p>

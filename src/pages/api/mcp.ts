@@ -7,7 +7,7 @@
 // El motor JSON-RPC (`handle()`) vive en `src/lib/mcp/rpc.ts` — este archivo
 // es solo el transporte HTTP; el transporte SSE (`/api/mcp/sse` +
 // `/api/mcp/message`) usa el MISMO motor, así que ambos exponen exactamente
-// el mismo catálogo de 7 tools sin duplicar lógica.
+// el mismo catálogo de tools sin duplicar lógica.
 //
 // Paridad con /api/v1 (jul 2026): rate-limit por llave, medición de uso
 // (Stripe Billing, dimensión 'api') y bitácora en `api_requests` — las MISMAS

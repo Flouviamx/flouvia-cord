@@ -1,15 +1,14 @@
 ---
-// Página para desarrolladores — una por tema (api, mcp). Mismo lenguaje visual y
-// de animación que /producto/* (PageAnims, masked-title, reveal, editorial), pero
-// con mockups de CÓDIGO/CHAT en vez de mockups de cotización. Copy en
-// src/lib/desarrolladores.ts.
+// Página para desarrolladores — una por tema (api, workbench, mcp, integraciones,
+// fx, fiscal). Mismo lenguaje visual que /producto/*, con mockups 1:1 de la UI
+// real (DevMock.astro). Copy, datos y fecha de revisión en src/lib/desarrolladores.ts.
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
-import DevBlockMockup from '../../components/desarrolladores/DevBlockMockup.astro';
+import DevMock from '../../components/desarrolladores/DevMock.astro';
 import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import CordDynamicBg from '../../components/CordDynamicBg.jsx';
@@ -30,7 +29,11 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
 const currentPage = Astro.props.page || Astro.props.page;
 const page = isEn && currentPage ? DEV_PAGES_EN.find((p) => p.slug === currentPage.slug) || currentPage : currentPage;
-const otra = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug !== page.slug)!;
+const ORDER = (isEn ? DEV_PAGES_EN : DEV_PAGES).filter((p) => p.slug !== 'elements');
+const otra = ORDER[(ORDER.findIndex((p) => p.slug === page.slug) + 1) % ORDER.length];
+const updatedLabel = page.updated
+    ? new Intl.DateTimeFormat(isEn ? 'en-US' : 'es-MX', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${page.updated}T12:00:00Z`))
+    : null;
 
 // Datos estructurados (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
 // /producto/*): esta plantilla no tenía metaTitle/metaDescription propios
@@ -51,14 +54,36 @@ const breadcrumbSchema = {
     '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
-        { '@type': 'ListItem', position: 2, name: page.nav, item: `${base}/desarrolladores/${page.slug}` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Developers' : 'Desarrolladores', item: `${base}/desarrolladores/api` },
+        { '@type': 'ListItem', position: 3, name: page.nav, item: `${base}/desarrolladores/${page.slug}` },
     ],
+};
+// HowTo con los pasos reales y TechArticle con fecha de revisión: las páginas de
+// desarrolladores responden "cómo conecto X" y "qué es X" — los dos formatos que
+// más citan los buscadores con IA (skill ai-seo).
+const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: isEn ? `How to get started with ${page.nav} in Cord` : `Cómo empezar con ${page.nav} en Cord`,
+    step: page.steps.map((st: { titulo: string; copy: string }, i: number) => ({ '@type': 'HowToStep', position: i + 1, name: st.titulo, text: st.copy })),
+};
+const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: page.metaTitle ?? page.nav,
+    description: page.metaDescription ?? page.sub,
+    inLanguage: isEn ? 'en' : 'es',
+    url: `${base}/desarrolladores/${page.slug}`,
+    ...(page.updated ? { dateModified: page.updated } : {}),
+    publisher: { '@type': 'Organization', name: 'Cord', url: SITE },
 };
 ---
 
 <Layout title={page.metaTitle ?? `${page.nav} — Cord`} description={page.metaDescription ?? page.sub}>
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(howToSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
     <Nav />
     <main>
         <!-- ── HERO ── -->
@@ -76,6 +101,7 @@ const breadcrumbSchema = {
                         <a href="/precios" class="pp-btn-ghost">{isEn ? 'View plans' : 'Ver planes'}</a>
                     </div>
                     <p class="pp-plan reveal">{page.plan}</p>
+                    {updatedLabel && <p class="pp-updated reveal">{isEn ? 'Updated' : 'Actualizado'} <time datetime={page.updated}>{updatedLabel}</time></p>}
                 </div>
 
                 <!-- Mockup del hero (panel de código CLARO estilo Stripe/GitHub Docs — toolbar real, sin dots macOS) -->
@@ -83,148 +109,21 @@ const breadcrumbSchema = {
                 <div class="pp-mockup-wrap reveal-mockup">
                     <div class="pp-glow" aria-hidden="true"></div>
                     <div class="pp-mockup">
-                        {page.slug === 'api' && (
-                            <div class="dv-term dv-api">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title"><span class="dv-method">POST</span> /api/v1/cotizaciones</span>
-                                    <span class="dv-term-stat" id="apiStat">{isEn ? 'sending…' : 'enviando…'}</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <pre class="dv-req"><code><span class="dv-line"><span class="c-prompt">$</span> curl -X POST <span class="c-path">cordhq.app/api/v1/cotizaciones</span> \</span>
-<span class="dv-line">  -H <span class="c-str">"Authorization: Bearer </span><span class="c-key2">sk_live_8f2a••••</span><span class="c-str">"</span> \</span>
-<span class="dv-line">  -H <span class="c-str">"Content-Type: application/json"</span> \</span>
-<span class="dv-line">  -d <span class="c-str">'{`{`} "cliente_id": "c_8f2a", "vigencia_dias": 15,</span></span>
-<span class="dv-line">    <span class="c-str">"items": [{`{`} "sku": "CEM-050", "cantidad": 340 {`}`}] {`}`}'</span></span></code></pre>
-                                    <div class="dv-req-div"><span class="dv-sending" id="apiSending">● {isEn ? 'sending' : 'enviando'}</span></div>
-                                    <pre class="dv-res"><code><span class="dv-line">{`{`}</span>
-<span class="dv-line">  <span class="c-key">"id"</span>: <span class="c-str">"q_19a4f…"</span>,</span>
-<span class="dv-line">  <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>,</span>
-<span class="dv-line">  <span class="c-key">"cliente"</span>: <span class="c-str">"{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}"</span>,</span>
-<span class="dv-line">  <span class="c-key">"status"</span>: <span class="c-str">"sent"</span>,</span>
-<span class="dv-line">  <span class="c-key">"vigencia"</span>: <span class="c-str">"2026-07-17"</span>,</span>
-<span class="dv-line">  <span class="c-key">"link_publico"</span>: <span class="c-str">"cord.mx/q/8f2a"</span>,</span>
-<span class="dv-line">  <span class="c-key">"subtotal"</span>: <span class="c-num">169370.0</span>,</span>
-<span class="dv-line">  <span class="c-key">"iva"</span>: <span class="c-num">27099.2</span>,</span>
-<span class="dv-line">  <span class="c-key">"total"</span>: <span class="c-num">196469.2</span></span>
-<span class="dv-line">{`}`}</span></code></pre>
-                                    <div class="dv-term-foot"><span id="apiLatency">142 ms · {isEn ? 'MX region' : 'región MX'}</span><span class="c-mut">~500 req/min · v1</span></div>
-                                </div>
-                            </div>
-                        )}
-                        {page.slug === 'mcp' && (
-                            <div class="dv-term dv-mcp">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title">tools/call · cordhq.app/api/mcp</span>
-                                    <span class="dv-term-stat dv-stat-ok" id="mcpStat">JSON-RPC 2.0</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <div class="dv-mcp-flow">
-                                        <div class="dv-mcp-node dv-mcp-ai">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3" fill="none"/><circle cx="12" cy="12" r="3.4" fill="currentColor" fill-opacity="0.2"/></svg>
-                                            <span>Claude · IA</span>
-                                        </div>
-                                        <div class="dv-mcp-wire dv-wire-1"><span class="dv-mcp-dot" id="mcpD1"></span><span class="dv-mcp-chip" id="mcpChip1">cartera_vencida</span></div>
-                                        <div class="dv-mcp-node dv-mcp-cord" id="mcpCord"><img src="/imgs/logo-cord-navy.png" alt="Cord" /></div>
-                                        <div class="dv-mcp-wire dv-wire-2"><span class="dv-mcp-dot dv-dot-g" id="mcpD2"></span></div>
-                                        <div class="dv-mcp-node dv-mcp-ext">{isEn ? 'Your CRM' : 'Tu CRM'}</div>
-                                    </div>
-                                    <pre class="dv-res dv-mcp-res"><code><span class="dv-line dv-mcp-l" data-mcp="0"><span class="c-mut">→</span> tools/call <span class="c-key">"cartera_vencida"</span></span>
-<span class="dv-line dv-mcp-l" data-mcp="1"><span class="c-mut">→</span> get_saldo(<span class="c-str">"El Zarco"</span>) · <span class="c-mut">{isEn ? 'your CRM' : 'tu CRM'}</span></span>
-<span class="dv-line dv-mcp-l" data-mcp="2"><span class="c-key">"vencido"</span>: <span class="c-num">412300</span>, <span class="c-key">"dso"</span>: <span class="c-num">47</span></span>
-<span class="dv-line dv-mcp-l" data-mcp="3"><span class="c-ok">✓</span> {isEn ? 'the AI drafts the quote with full context' : 'la IA arma la cotización con contexto'}</span></code></pre>
-                                    <div class="dv-term-foot"><span>{isEn ? 'bidirectional · with your permission' : 'bidireccional · con tu permiso'}</span><span class="c-mut">7 tools</span></div>
-                                </div>
-                            </div>
-                        )}
-                        {page.slug === 'elements' && (
-                            <div class="dv-term dv-api">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title">portal.tucliente.com</span>
-                                    <span class="dv-term-stat dv-stat-ok">embed.js</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <pre class="dv-req"><code><span class="dv-line"><span class="c-mut">// {isEn ? 'one line — mount it anywhere' : 'una línea — móntalo donde sea'}</span></span>
-<span class="dv-line"><span class="c-tag">&lt;script src=</span><span class="c-str">"cord.mx/embed.js"</span><span class="c-tag">&gt;&lt;/script&gt;</span></span>
-<span class="dv-line"><span class="c-tag">&lt;div</span> <span class="c-key">data-cord-token</span>=<span class="c-str">"8f2a…"</span><span class="c-tag">&gt;&lt;/div&gt;</span></span></code></pre>
-                                    <div class="dv-req-div"></div>
-                                    <pre class="dv-res"><code><span class="dv-line"><span class="c-mut">→</span> {`{`} <span class="c-key">"event"</span>: <span class="c-str">"ready"</span>, <span class="c-key">"height"</span>: <span class="c-num">412</span> {`}`}</span>
-<span class="dv-line"><span class="c-mut">→</span> {`{`} <span class="c-key">"event"</span>: <span class="c-str">"viewed"</span>, <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span> {`}`}</span>
-<span class="dv-line"><span class="c-mut">→</span> {`{`} <span class="c-key">"event"</span>: <span class="c-str">"approved"</span>, <span class="c-key">"total"</span>: <span class="c-num">196469.2</span> {`}`}</span></code></pre>
-                                    <div class="dv-term-foot"><span>{isEn ? 'secure iframe · your brand' : 'iframe seguro · tu marca'}</span><span class="c-mut">frame-ancestors</span></div>
-                                </div>
-                            </div>
-                        )}
-                        {page.slug === 'fx' && (
-                            <div class="dv-term dv-api dv-t-emerald">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title"><span class="dv-method dv-m-get">GET</span> /api/v1/fx/rates?base=USD&target=MXN</span>
-                                    <span class="dv-term-stat dv-stat-ok">200 OK</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <pre class="dv-res"><code><span class="dv-line">{`{`}</span>
-<span class="dv-line">  <span class="c-key">"source"</span>: <span class="c-str">"banxico_fix"</span>,</span>
-<span class="dv-line">  <span class="c-key">"base"</span>: <span class="c-str">"USD"</span>, <span class="c-key">"target"</span>: <span class="c-str">"MXN"</span>,</span>
-<span class="dv-line">  <span class="c-key">"spot"</span>: <span class="c-num">18.4520</span>,</span>
-<span class="dv-line">  <span class="c-key">"buffer_pct"</span>: <span class="c-num">2.0</span>,</span>
-<span class="dv-line">  <span class="c-key">"rate_locked"</span>: <span class="c-num">18.8210</span>,</span>
-<span class="dv-line">  <span class="c-key">"lock_until"</span>: <span class="c-str">"2026-07-26"</span>,</span>
-<span class="dv-line">  <span class="c-key">"timestamp"</span>: <span class="c-str">"2026-06-26T12:00:00Z"</span></span>
-<span class="dv-line">{`}`}</span></code></pre>
-                                    <div class="dv-term-foot"><span>{isEn ? 'rate frozen for 30 days' : 'tasa congelada 30 días'}</span><span class="c-mut">Banxico FIX</span></div>
-                                </div>
-                            </div>
-                        )}
-                        {page.slug === 'integraciones' && (
-                            <div class="dv-term dv-api dv-t-emerald">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title"><span class="dv-method">POST</span> tu-erp.com/webhooks/cord</span>
-                                    <span class="dv-term-stat dv-stat-ok">200 OK</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <pre class="dv-req"><code><span class="dv-line"><span class="c-key">X-Cord-Event</span>: <span class="c-str">quote.paid</span></span>
-<span class="dv-line"><span class="c-key">X-Cord-Signature</span>: <span class="c-str">sha256=4f1ad8c…</span></span>
-<span class="dv-line"><span class="c-key">Content-Type</span>: <span class="c-str">application/json</span></span></code></pre>
-                                    <div class="dv-req-div"></div>
-                                    <pre class="dv-res"><code><span class="dv-line">{`{`}</span>
-<span class="dv-line">  <span class="c-key">"event"</span>: <span class="c-str">"quote.paid"</span>,</span>
-<span class="dv-line">  <span class="c-key">"created_at"</span>: <span class="c-str">"2026-06-26T12:41Z"</span>,</span>
-<span class="dv-line">  <span class="c-key">"data"</span>: {`{`}</span>
-<span class="dv-line">    <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>,</span>
-<span class="dv-line">    <span class="c-key">"status"</span>: <span class="c-str">"paid"</span>,</span>
-<span class="dv-line">    <span class="c-key">"total"</span>: <span class="c-num">196469.2</span>,</span>
-<span class="dv-line">    <span class="c-key">"cliente"</span>: <span class="c-str">"{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}"</span></span>
-<span class="dv-line">  {`}`}</span>
-<span class="dv-line">{`}`}</span></code></pre>
-                                    <div class="dv-term-foot"><span>{isEn ? 'delivered · auto-retry on failure' : 'entregado · reintento auto si falla'}</span><span class="c-mut">HMAC-SHA256</span></div>
-                                </div>
-                            </div>
-                        )}
-                        {page.slug === 'fiscal' && (
-                            <div class="dv-term dv-api dv-t-indigo">
-                                <div class="dv-term-bar">
-                                    <span class="dv-term-title"><span class="dv-method dv-m-indigo">POST</span> /api/v1/tax/calculate</span>
-                                    <span class="dv-term-stat dv-stat-indigo">200 OK</span>
-                                </div>
-                                <div class="dv-term-body">
-                                    <pre class="dv-res"><code><span class="dv-line">{`{`}</span>
-<span class="dv-line">  <span class="c-key">"region"</span>: <span class="c-str">"MX-NLE"</span>,</span>
-<span class="dv-line">  <span class="c-key">"receptor_rfc"</span>: <span class="c-str">"DEZ981123QX1"</span>,</span>
-<span class="dv-line">  <span class="c-key">"subtotal"</span>: <span class="c-num">169370.00</span>,</span>
-<span class="dv-line">  <span class="c-key">"taxes"</span>: [</span>
-<span class="dv-line">    {`{`} <span class="c-key">"type"</span>: <span class="c-str">"IVA"</span>, <span class="c-key">"rate"</span>: <span class="c-num">0.16</span>, <span class="c-key">"amount"</span>: <span class="c-num">27099.20</span> {`}`},</span>
-<span class="dv-line">    {`{`} <span class="c-key">"type"</span>: <span class="c-str">"RET_ISR"</span>, <span class="c-key">"rate"</span>: <span class="c-num">0.0125</span>, <span class="c-key">"amount"</span>: <span class="c-num">-2117.13</span> {`}`}</span>
-<span class="dv-line">  ],</span>
-<span class="dv-line">  <span class="c-key">"cfdi_use"</span>: <span class="c-str">"G03"</span>,</span>
-<span class="dv-line">  <span class="c-key">"total"</span>: <span class="c-num">194352.07</span></span>
-<span class="dv-line">{`}`}</span></code></pre>
-                                    <div class="dv-term-foot"><span>{isEn ? 'local & global taxes' : 'impuestos locales, globales'}</span><span class="c-mut">CFDI 4.0</span></div>
-                                </div>
-                            </div>
-                        )}
+                        {page.heroMock && <DevMock id={page.heroMock} isEn={isEn} />}
                     </div>
                 </div>
                 </div>{/* /pp-hero-visual */}
             </div>
+        </section>
+
+        <!-- ── DATOS: cifras verificadas en código (ver cabecera de desarrolladores.ts) ── -->
+        <section class="dv-stats" aria-label={isEn ? 'Key facts' : 'Datos clave'}>
+            {page.stats.map((st) => (
+                <div class="dv-stat reveal">
+                    <strong class="editorial">{st.valor}{st.suffix && !st.valor.endsWith(st.suffix) ? st.suffix : ''}</strong>
+                    <span>{st.label}</span>
+                </div>
+            ))}
         </section>
 
         <!-- ── BLOQUES (bento de tarjetas — mismo patrón que /producto) ── -->
@@ -248,11 +147,20 @@ const breadcrumbSchema = {
                         </ul>
                     </div>
                     <div class="pp-bcard-visual">
-                        <DevBlockMockup slug={page.slug} index={i} />
+                        {b.mock && <DevMock id={b.mock} isEn={isEn} />}
                     </div>
                 </article>
                 );
             })}
+        </section>
+
+        <section class="dv-steps" aria-labelledby="dv-steps-t">
+            <h2 id="dv-steps-t" class="dv-steps-t masked-title">{isEn ? 'Get started in three steps' : 'Empieza en tres pasos'}</h2>
+            <ol>
+                {page.steps.map((st, i) => (
+                    <li class="reveal"><span class="dv-step-n">{String(i + 1).padStart(2, '0')}</span><h3>{st.titulo}</h3><p>{st.copy}</p></li>
+                ))}
+            </ol>
         </section>
 
         {page.trust && <TrustGrid trust={page.trust} slug={page.slug} />}
@@ -289,284 +197,60 @@ const breadcrumbSchema = {
     import { ScrollTrigger } from 'gsap/ScrollTrigger';
     gsap.registerPlugin(ScrollTrigger);
 
+    // Los mockups (DevMock.astro) ya son el estado final en HTML; aquí solo hay
+    // entradas y loops discretos. Con prefers-reduced-motion no corre nada.
     window.addEventListener('load', () => {
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const isEn = document.documentElement.lang === 'en';
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-        // ── Entrada limpia de los BlockMockups del bento: fade + rise (igual a /producto) ──
-        if (!reduced) {
-            document.querySelectorAll('.pp-bcard-visual').forEach((block) => {
-                const win = block.querySelector('.dbm-app, .dbm-term');
-                if (!win) return;
-                gsap.set(win, { y: 26, opacity: 0 });
-                ScrollTrigger.create({ trigger: block, start: 'top 88%', once: true,
-                    onEnter: () => {
-                        gsap.to(win, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
-                        // cascada de filas internas
-                        const rows = win.querySelectorAll('.dbm-kv, .dbm-toolrow, .dbm-scope, .dbm-log > div:not([style]), .dbm-sync-row');
-                        gsap.from(rows, { opacity: 0, y: 8, duration: 0.5, stagger: 0.05, delay: 0.15, ease: 'power2.out' });
-                    } });
-            });
+        // Entrada de las ventanas del bento + cascada de sus filas.
+        document.querySelectorAll<HTMLElement>('.pp-bcard-visual .dm-win').forEach((win) => {
+            gsap.set(win, { y: 26, opacity: 0 });
+            ScrollTrigger.create({ trigger: win, start: 'top 90%', once: true, onEnter: () => {
+                gsap.to(win, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
+                const rows = win.querySelectorAll('.dm-logrow, .dm-keyrow, .dm-eprow, .dm-whrow, .dm-tool, .dm-invrow, .dm-step, .dm-ctry, .dm-evs code, .dm-kv');
+                gsap.from(rows, { opacity: 0, y: 6, duration: 0.45, stagger: 0.025, delay: 0.2, ease: 'power2.out' });
+            } });
+        });
+
+        // Barras del Workbench (hero): crecen desde la base.
+        const bars = document.querySelectorAll('.dm-hero-workbench .dm-bars > span');
+        if (bars.length) gsap.from(bars, { scaleY: 0, duration: 0.8, stagger: 0.035, delay: 0.4, ease: 'power3.out' });
+
+        // Hero API: la respuesta llega línea por línea y el estado pasa a 200 OK (loop).
+        const res = document.getElementById('dmApiRes');
+        const stat = document.getElementById('dmApiStat');
+        if (res && stat) {
+            const code = res.querySelector('code')!;
+            const lines = code.innerHTML.split('\n');
+            code.innerHTML = lines.map((l) => `<span class="dm-ln-a">${l}</span>`).join('\n');
+            const spans = code.querySelectorAll('.dm-ln-a');
+            const isEn = document.documentElement.lang === 'en';
+            gsap.timeline({ repeat: -1, repeatDelay: 2.6, delay: 0.8 })
+                .call(() => { stat.textContent = isEn ? 'sending…' : 'enviando…'; stat.classList.add('dm-pending'); })
+                .set(spans, { opacity: 0 })
+                .to({}, { duration: 0.7 })
+                .to(spans, { opacity: 1, duration: 0.25, stagger: 0.08 })
+                .call(() => { stat.textContent = '200 OK'; stat.classList.remove('dm-pending'); })
+                .fromTo(stat, { scale: 0.85 }, { scale: 1, duration: 0.35, ease: 'back.out(1.8)' })
+                .to({}, { duration: 2 });
         }
 
-        // ════════════════════════════ HERO ════════════════════════════
-
-        // HERO API — request → response: la respuesta JSON entra en streaming y el status salta a 200 OK.
-        const apiHero = document.querySelector('.pp-mockup .dv-api');
-        if (apiHero && !reduced && document.querySelector('.dv-mcp') === null) {
-            const stat = document.getElementById('apiStat');
-            const sending = document.getElementById('apiSending');
-            const foot = apiHero.querySelector('.dv-term-foot');
-            const lines = apiHero.querySelectorAll('.dv-res .dv-line');
-            const isDynamic = !!(stat && sending && lines.length);
-            if (isDynamic) {
-                ScrollTrigger.create({ trigger: apiHero, start: 'top 82%', once: true,
-                    onEnter: () => {
-                        const tl = gsap.timeline({ repeat: -1, repeatDelay: 2.2 });
-                        tl.call(() => { if (stat) { stat.textContent = isEn ? 'sending…' : 'enviando…'; stat.classList.remove('dv-stat-ok'); } })
-                          .set(lines, { opacity: 0 })
-                          .set(sending, { opacity: 1 })
-                          .set(foot, { opacity: 0, y: 4 })
-                          .to(sending, { opacity: 0.3, duration: 0.4, yoyo: true, repeat: 2, ease: 'sine.inOut' })
-                          .to(lines, { opacity: 1, duration: 0.3, stagger: 0.09, ease: 'power1.out' })
-                          .to(sending, { opacity: 0, duration: 0.25 }, '<')
-                          .call(() => { if (stat) { stat.textContent = '200 OK'; stat.classList.add('dv-stat-ok'); } })
-                          .fromTo(stat, { scale: 0.82 }, { scale: 1, duration: 0.4, ease: 'back.out(1.8)' })
-                          .to(foot, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '<')
-                          .to({}, { duration: 2 });
-                    } });
-            }
+        // Registros: la fila seleccionada recorre la lista (loop).
+        const logRows = document.querySelectorAll<HTMLElement>('.dm-wb-logs .dm-logrow');
+        if (logRows.length) {
+            let i = 4;
+            gsap.timeline({ repeat: -1, repeatDelay: 1.6, delay: 1.5 }).call(() => {
+                logRows.forEach((r) => r.classList.remove('sel'));
+                i = (i + 3) % logRows.length;
+                logRows[i].classList.add('sel');
+            }).to({}, { duration: 1.6 });
         }
 
-        // HERO MCP — loop bidireccional: la IA invoca, Cord consulta el CRM, el contexto regresa (log en vivo).
-        const mcpHero = document.querySelector('.dv-mcp');
-        if (mcpHero && !reduced) {
-            const d1 = document.getElementById('mcpD1');
-            const d2 = document.getElementById('mcpD2');
-            const chip = document.getElementById('mcpChip1');
-            const cord = document.getElementById('mcpCord');
-            const logs = mcpHero.querySelectorAll('.dv-mcp-l');
-            ScrollTrigger.create({ trigger: mcpHero, start: 'top 80%', once: true,
-                onEnter: () => {
-                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
-                    tl.set([d1, d2], { left: '0%', opacity: 0 })
-                      .set(chip, { opacity: 0, scale: 0.6 })
-                      .set(logs, { opacity: 0, x: -6 })
-                      .call(() => { if (cord) cord.classList.remove('dv-mcp-active'); })
-                      .to(chip, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.6)' })
-                      .to(logs[0], { opacity: 1, x: 0, duration: 0.35 }, '<')
-                      .to(d1, { opacity: 1, duration: 0.2 }, '<')
-                      .to(d1, { left: '100%', duration: 0.7, ease: 'power1.inOut' })
-                      .to(d1, { opacity: 0, duration: 0.2 })
-                      .call(() => { if (cord) cord.classList.add('dv-mcp-active'); })
-                      .to(logs[1], { opacity: 1, x: 0, duration: 0.35 })
-                      .to(d2, { opacity: 1, duration: 0.2 }, '+=0.1')
-                      .to(d2, { left: '100%', duration: 0.7, ease: 'power1.inOut' })
-                      .to(d2, { opacity: 0, duration: 0.2 })
-                      .to(logs[2], { opacity: 1, x: 0, duration: 0.35 })
-                      .call(() => { if (cord) cord.classList.remove('dv-mcp-active'); }, undefined, '+=0.3')
-                      .to(logs[3], { opacity: 1, x: 0, duration: 0.4, ease: 'back.out(1.4)' })
-                      .to({}, { duration: 1.8 })
-                      .to([chip], { opacity: 0, duration: 0.4 });
-                } });
-        }
-        // (Los heroes de fx/fiscal/integraciones/elements son screenshots estáticos — no requieren JS.)
-
-        // ═══════════════════════ BLOCK MOCKUPS (motion en loop) ═══════════════════════
-
-        // API 0 — sync ERP ↔ Cord: el dot entrante viaja a la derecha, el saliente regresa.
-        const apiB0 = document.querySelector('.dbm-api-m0');
-        if (apiB0 && !reduced) {
-            const dr = document.getElementById('apiSyncR');
-            const dl = document.getElementById('apiSyncL');
-            ScrollTrigger.create({ trigger: apiB0, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.4 })
-                      .set(dr, { left: '0%', opacity: 0 })
-                      .set(dl, { left: '100%', opacity: 0 })
-                      .to(dr, { opacity: 1, duration: 0.2 })
-                      .to(dr, { left: '100%', duration: 0.75, ease: 'power1.inOut' })
-                      .to(dr, { opacity: 0, duration: 0.2 })
-                      .to(dl, { opacity: 1, duration: 0.2 }, '+=0.35')
-                      .to(dl, { left: '0%', duration: 0.75, ease: 'power1.inOut' })
-                      .to(dl, { opacity: 0, duration: 0.2 })
-                      .to({}, { duration: 1.2 });
-                } });
-        }
-
-        // API 1 — una llave revocable: 200 OK → "Revocar" → 401 (loop).
-        const apiB1 = document.querySelector('.dbm-api-m1');
-        if (apiB1 && !reduced) {
-            const key = document.getElementById('apiKey');
-            const status = document.getElementById('apiAuthStatus');
-            const revoke = document.getElementById('apiRevoke');
-            const keyTag = document.getElementById('apiKeyTag');
-            ScrollTrigger.create({ trigger: apiB1, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
-                      .call(() => { if (key) key.classList.remove('dbm-key-revoked'); if (status) { status.textContent = '200 OK'; status.classList.remove('dbm-status-fail'); } if (keyTag) { keyTag.textContent = 'Producción'; keyTag.className = 'dbm-tg dbm-tg-gray'; } })
-                      .to({}, { duration: 1.6 })
-                      .to(revoke, { scale: 0.9, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.in' })
-                      .call(() => { if (key) key.classList.add('dbm-key-revoked'); if (keyTag) { keyTag.textContent = 'Revocada'; keyTag.className = 'dbm-tg dbm-tg-red'; } })
-                      .to({}, { duration: 0.35 })
-                      .call(() => { if (status) { status.textContent = '401 Unauthorized'; status.classList.add('dbm-status-fail'); } })
-                      .fromTo(status, { scale: 0.85 }, { scale: 1, duration: 0.3, ease: 'back.out(1.8)' })
-                      .to({}, { duration: 1.6 });
-                } });
-        }
-
-        // API 2 — los endpoints en JSON: el cuerpo y el total cambian por pestaña (loop).
-        const apiB2 = document.querySelector('.dbm-api-m2');
-        if (apiB2 && !reduced) {
-            const tabs = apiB2.querySelectorAll('.dbm-api-tabs span');
-            const pre = document.getElementById('apiJson');
-            const code = pre ? pre.querySelector('code') : null;
-            const totalEl = document.getElementById('apiMetaTotal');
-            const nameEl = document.getElementById('apiEndpointName');
-            const snaps = [
-                { name: 'cotizaciones', body: '{\n  <span class="dbm-jkey">"folio"</span>: <span class="dbm-jstr">"COT-0149"</span>,\n  <span class="dbm-jkey">"cliente"</span>: <span class="dbm-jstr">"Distribuidora El Zarco"</span>,\n  <span class="dbm-jkey">"status"</span>: <span class="dbm-jstr">"sent"</span>,\n  <span class="dbm-jkey">"total"</span>: <span class="dbm-jnum dbm-hl-target">196469.2</span>\n}', total: 'total 412' },
-                { name: 'clientes', body: '{\n  <span class="dbm-jkey">"empresa"</span>: <span class="dbm-jstr">"Distribuidora El Zarco"</span>,\n  <span class="dbm-jkey">"rfc"</span>: <span class="dbm-jstr">"DEZ981123QX1"</span>,\n  <span class="dbm-jkey">"terminos"</span>: <span class="dbm-jstr">"net30"</span>,\n  <span class="dbm-jkey">"credito"</span>: <span class="dbm-jnum dbm-hl-target">500000</span>\n}', total: 'total 318' },
-                { name: 'productos', body: '{\n  <span class="dbm-jkey">"sku"</span>: <span class="dbm-jstr">"CEM-050"</span>,\n  <span class="dbm-jkey">"nombre"</span>: <span class="dbm-jstr">"Cemento gris 50kg"</span>,\n  <span class="dbm-jkey">"precio"</span>: <span class="dbm-jnum dbm-hl-target">182</span>,\n  <span class="dbm-jkey">"costo"</span>: <span class="dbm-jnum">134</span>\n}', total: 'total 248' },
-                { name: 'cobranza', body: '{\n  <span class="dbm-jkey">"vencido"</span>: <span class="dbm-jnum dbm-hl-target">412300</span>,\n  <span class="dbm-jkey">"dso"</span>: <span class="dbm-jnum">47</span>,\n  <span class="dbm-jkey">"exposicion"</span>: <span class="dbm-jstr">"alta"</span>\n}', total: 'aging 4' },
-            ];
-            let i = 0;
-            ScrollTrigger.create({ trigger: apiB2, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.1 }).call(() => {
-                        tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
-                        if (code) code.innerHTML = snaps[i].body;
-                        if (totalEl) totalEl.textContent = snaps[i].total;
-                        if (nameEl) nameEl.textContent = snaps[i].name;
-                        const hl = pre ? pre.querySelector('.dbm-hl-target') : null;
-                        if (hl) gsap.fromTo(hl, { color: '#b45309' }, { color: '#059669', duration: 0.5, yoyo: true, repeat: 1 });
-                        i = (i + 1) % snaps.length;
-                    }).to({}, { duration: 1.4 });
-                } });
-        }
-
-        // MCP 0 — el transporte (HTTP ↔ SSE) alterna.
-        const mcpB0 = document.querySelector('.dbm-mcp-m0');
-        if (mcpB0 && !reduced) {
-            const t0 = document.getElementById('mcpT0');
-            const t1 = document.getElementById('mcpT1');
-            ScrollTrigger.create({ trigger: mcpB0, start: 'top 88%', once: true,
-                onEnter: () => {
-                    let on = 0;
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.8, delay: 1 }).call(() => {
-                        on = on ? 0 : 1;
-                        if (t0) t0.classList.toggle('dbm-seg-on', on === 0);
-                        if (t1) t1.classList.toggle('dbm-seg-on', on === 1);
-                    }).to({}, { duration: 1.8 });
-                } });
-        }
-
-        // MCP 1 — Cord consulta el CRM: el dot cruza y el log se enciende (loop).
-        const mcpB1 = document.querySelector('.dbm-mcp-m1');
-        if (mcpB1 && !reduced) {
-            const dot = document.getElementById('mcpClientDot');
-            const logs = document.querySelectorAll('#mcpClientLog > div');
-            ScrollTrigger.create({ trigger: mcpB1, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
-                        .set(dot, { left: '0%', opacity: 0 })
-                        .set(logs, { opacity: 0, y: 6 })
-                        .to(dot, { opacity: 1, duration: 0.2 })
-                        .to(dot, { left: '100%', duration: 0.85, ease: 'power1.inOut' })
-                        .to(dot, { opacity: 0, duration: 0.2 })
-                        .to(logs, { opacity: 1, y: 0, stagger: 0.24, duration: 0.4, ease: 'power2.out' }, '-=0.5')
-                        .to({}, { duration: 1.4 });
-                } });
-        }
-
-        // MCP 2 — gobernanza: el permiso del CRM externo alterna sin acceso ↔ permitido (loop).
-        const mcpB2 = document.querySelector('.dbm-mcp-m2');
-        if (mcpB2 && !reduced) {
-            const pill = document.getElementById('mcpGovPill');
-            ScrollTrigger.create({ trigger: mcpB2, start: 'top 88%', once: true,
-                onEnter: () => {
-                    if (!pill) return;
-                    gsap.timeline({ repeat: -1, repeatDelay: 2.2 })
-                      .call(() => { pill.textContent = 'sin acceso'; pill.classList.remove('dbm-gov-on'); pill.classList.add('dbm-gov-off'); })
-                      .to({}, { duration: 1.4 })
-                      .to(pill, { scale: 0.85, duration: 0.15, ease: 'power2.in' })
-                      .call(() => { pill.textContent = 'permitido'; pill.classList.remove('dbm-gov-off'); pill.classList.add('dbm-gov-on'); })
-                      .to(pill, { scale: 1, duration: 0.4, ease: 'back.out(1.8)' })
-                      .to({}, { duration: 1.6 });
-                } });
-        }
-
-        // FX 0 — el tipo de cambio parpadea vivo (Banxico FIX) + micro-movimiento del rate.
-        const fxB0 = document.querySelector('.dbm-fx-m0');
-        if (fxB0 && !reduced) {
-            const rate = document.getElementById('fxRate');
-            ScrollTrigger.create({ trigger: fxB0, start: 'top 88%', once: true,
-                onEnter: () => {
-                    const rates = ['1 USD = $18.4520', '1 USD = $18.4488', '1 USD = $18.4531', '1 USD = $18.4506'];
-                    let i = 0;
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 }).call(() => {
-                        if (rate) { rate.textContent = rates[i % rates.length]; gsap.fromTo(rate, { color: '#34d399' }, { color: '#94a3b8', duration: 0.8 }); }
-                        i++;
-                    }).to({}, { duration: 1.6 });
-                } });
-        }
-
-        // ELEMENTS 0/1/2 — animación de los bloques de /desarrolladores/elements.
-        const elB0 = document.querySelector('.dbm-el-m0');
-        if (elB0 && !reduced) {
-            const skel = document.getElementById('elSkel');
-            const mini = document.getElementById('elMini');
-            if (skel) gsap.to(skel, { backgroundPosition: '-200% 0', duration: 1.2, ease: 'none', repeat: -1 });
-            ScrollTrigger.create({ trigger: elB0, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
-                      .set(skel, { opacity: 1 }).set(mini, { opacity: 0 })
-                      .to({}, { duration: 1.1 })
-                      .to(skel, { opacity: 0, duration: 0.3 })
-                      .to(mini, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '<')
-                      .to({}, { duration: 1.4 });
-                } });
-        }
-        const elB1 = document.querySelector('.dbm-el-m1');
-        if (elB1 && !reduced) {
-            const tabs = elB1.querySelectorAll('.dbm-el-tabs span');
-            const code = document.getElementById('elCode');
-            const snippets = [
-                '<span class="dbm-jtag">&lt;script src=</span><span class="dbm-jstr">"…/embed.js"</span><span class="dbm-jtag">&gt;</span>',
-                'import { CordCotizador } from <span class="dbm-jstr">\'@flouviahq/elements/react\'</span>',
-                '<span class="dbm-jtag">&lt;cord-cotizador</span> token=<span class="dbm-jstr">"…"</span><span class="dbm-jtag">&gt;</span>',
-            ];
-            let i = 0;
-            ScrollTrigger.create({ trigger: elB1, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.4 }).call(() => {
-                        tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
-                        if (code) { code.style.opacity = '0'; setTimeout(() => { code.innerHTML = snippets[i]; code.style.opacity = '1'; }, 180); }
-                        i = (i + 1) % snippets.length;
-                    }).to({}, { duration: 1.4 });
-                } });
-        }
-        const elB2 = document.querySelector('.dbm-el-m2');
-        if (elB2 && !reduced) {
-            const cursor = document.getElementById('elCursor');
-            const approve = document.getElementById('elApprove');
-            const badge = document.getElementById('elBadge');
-            const evt = elB2.querySelector('.dbm-el2-event');
-            ScrollTrigger.create({ trigger: elB2, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.8 })
-                      .set(cursor, { x: 14, y: 16, opacity: 0 })
-                      .set(evt, { opacity: 0.35 })
-                      .call(() => { if (badge) { badge.textContent = isEn ? 'Review' : 'Revisar'; badge.style.color = ''; badge.style.background = ''; } })
-                      .to(cursor, { opacity: 1, duration: 0.3 })
-                      .to(cursor, { x: 0, y: 0, duration: 0.6, ease: 'power2.inOut' })
-                      .to(approve, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 })
-                      .call(() => { if (badge) { badge.textContent = isEn ? 'Approved' : 'Aprobada'; badge.style.color = '#059669'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
-                      .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 8px rgba(16,185,129,0)', duration: 0.7 })
-                      .to(cursor, { opacity: 0, duration: 0.3 }, '<')
-                      .to(evt, { opacity: 1, duration: 0.4 }, '-=0.2')
-                      .to({}, { duration: 1.6 });
-                } });
-        }
+        // Probar / Ejecutar: pulsación discreta (loop).
+        ['dmProbar', 'dmRun'].forEach((idBtn) => {
+            const btn = document.getElementById(idBtn);
+            if (btn) gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 2 }).to(btn, { scale: 0.92, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.in' });
+        });
     });
 </script>
 
@@ -635,66 +319,23 @@ const breadcrumbSchema = {
     .pp-glow { position: absolute; inset: -6% -4% 14%; background: radial-gradient(ellipse at center, rgba(10,25,47,0.05) 0%, transparent 72%); filter: blur(44px); z-index: 0; pointer-events: none; }
     .pp-mockup { position: relative; }
 
-    /* ════════ PANEL DE CÓDIGO LIGHT (hero de código/JSON) — estilo Stripe/GitHub Docs, sin dots macOS ════════ */
-    .dv-term {
-        position: relative;
-        background: #ffffff;
-        border-radius: 16px; overflow: hidden; width: 100%; max-width: 920px;
-        text-align: left; color: #334155;
-        box-shadow:
-            0 0 0 1px rgba(10,25,47,0.035),
-            0 2px 6px rgba(10,25,47,0.04),
-            0 14px 32px -8px rgba(10,25,47,0.12),
-            0 52px 100px -28px rgba(10,25,47,0.20);
-    }
-    .dv-term::before {
-        content: ''; position: absolute; inset: 0; border-radius: 16px; z-index: 6;
-        pointer-events: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-    }
-    /* variantes: solo cambia el acento del método/badge; superficie siempre blanca */
-    .dv-term-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; position: relative; z-index: 2; }
-    .dv-term-title { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dv-method { font-weight: 800; color: #2563eb; margin-right: 6px; }
-    .dv-m-get { color: #059669; }
-    .dv-m-indigo { color: #6d28d9; }
-    .dv-term-stat { flex-shrink: 0; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; padding: 4px 11px; border-radius: 100px; white-space: nowrap; color: #64748b; background: rgba(10,25,47,0.05); border: 1px solid rgba(10,25,47,0.08); transition: color 0.3s, background 0.3s, border-color 0.3s; }
-    .dv-term-stat.dv-stat-ok { color: #047857; background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.22); }
-    .dv-term-stat.dv-stat-indigo { color: #6d28d9; background: rgba(109,40,217,0.09); border-color: rgba(109,40,217,0.22); }
-    .dv-term-body { padding: 1.5rem 1.75rem 1.4rem; background: #fbfcfe; position: relative; z-index: 1; }
-    .dv-req { margin: 0; overflow-x: auto; }
-    .dv-req code, .dv-res code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.85; color: #334155; white-space: pre; }
-    .dv-req code { font-size: 0.78rem; display: block; }
-    .dv-res { margin: 0; overflow-x: auto; }
-    .dv-res code { font-size: 0.82rem; }
-    .dv-req-div { display: flex; align-items: center; gap: 10px; margin: 1.05rem 0; height: 1px; }
-    .dv-req-div::before, .dv-req-div::after { content: ''; flex: 1; height: 1px; background: rgba(10,25,47,0.08); }
-    .dv-sending { font-family: ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; color: #2563eb; white-space: nowrap; }
-    .dv-term-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 1.05rem; padding-top: 1.05rem; border-top: 1px solid rgba(10,25,47,0.07); font-family: ui-monospace, monospace; font-size: 0.66rem; color: #94a3b8; }
-    /* Syntax highlighting — paleta clara sobre fondo blanco (estilo GitHub Docs) */
-    .c-prompt { color: #059669; font-weight: 700; }
-    .c-path { color: #2563eb; }
-    .c-str { color: #0e7490; }
-    .c-key { color: #1d4ed8; }
-    .c-key2 { color: #b45309; }
-    .c-num { color: #b45309; }
-    .c-tag { color: #be185d; }
-    .c-ok { color: #059669; font-weight: 800; }
-    .c-mut { color: #94a3b8; }
+    .pp-updated { font-size: 0.74rem; color: #99a2af; margin: 0.4rem 0 0; }
+    :global(.dm-pending) { color: #64748b !important; background: rgba(10,25,47,0.05) !important; border-color: rgba(10,25,47,0.1) !important; }
 
-    /* ── HERO MCP — flujo bidireccional (panel claro) ── */
-    .dv-mcp-flow { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 1.2rem; }
-    .dv-mcp-node { flex-shrink: 0; display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-radius: 11px; font-size: 0.7rem; font-weight: 600; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); color: #334155; box-shadow: 0 1px 2px rgba(10,25,47,0.05); transition: box-shadow 0.35s; }
-    .dv-mcp-ai { color: #2563eb; }
-    .dv-mcp-ai svg { width: 16px; height: 16px; }
-    .dv-mcp-ext { color: #047857; border-color: rgba(16,185,129,0.28); }
-    .dv-mcp-cord { background: #ffffff; border-color: rgba(37,99,235,0.30); padding: 11px 16px; }
-    .dv-mcp-cord img { height: 13px; width: auto; display: block; }
-    .dv-mcp-cord.dv-mcp-active { box-shadow: 0 0 0 2px rgba(37,99,235,0.35), 0 6px 20px -4px rgba(37,99,235,0.25); }
-    .dv-mcp-wire { flex: 1; min-width: 34px; height: 2px; background: rgba(10,25,47,0.10); position: relative; margin: 0 4px; }
-    .dv-mcp-dot { position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 8px rgba(37,99,235,0.6); opacity: 0; }
-    .dv-mcp-dot.dv-dot-g { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.6); }
-    .dv-mcp-chip { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: ui-monospace, monospace; font-size: 0.58rem; font-weight: 700; color: #1d4ed8; background: #ffffff; border: 1px solid rgba(37,99,235,0.24); box-shadow: 0 4px 12px -4px rgba(10,25,47,0.15); padding: 4px 9px; border-radius: 7px; opacity: 0; }
-    .dv-mcp-res code { font-size: 0.76rem; line-height: 2; }
+    /* ════════ DATOS ════════ */
+    .dv-stats { max-width: 1360px; margin: 0 auto; padding: 1rem 5% 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .dv-stat { padding: 1.6rem 0 0; border-top: 1px solid var(--color-border); }
+    .dv-stat strong { display: block; font-size: clamp(2rem, 3.4vw, 2.8rem); color: #050505; line-height: 1; }
+    .dv-stat span { display: block; margin-top: 0.7rem; max-width: 300px; font-size: 0.9rem; line-height: 1.5; color: var(--color-text-muted); }
+
+    /* ════════ PASOS ════════ */
+    .dv-steps { max-width: 1360px; margin: 0 auto; padding: 2rem 5% 6rem; }
+    .dv-steps-t { font-size: clamp(1.6rem, 2.6vw, 2.3rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0 0 2.2rem; }
+    .dv-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .dv-steps li { padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+    .dv-step-n { font-family: ui-monospace, monospace; font-size: 0.75rem; font-weight: 700; color: #99a2af; }
+    .dv-steps h3 { margin: 0.8rem 0 0.5rem; font-size: 1.08rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
+    .dv-steps p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--color-text-muted); }
 
     /* ════════ BLOQUES — bento de tarjetas (mismo patrón que /producto) ════════ */
     .pp-bento {
@@ -770,6 +411,7 @@ const breadcrumbSchema = {
         .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
         .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
         .pp-bcard { min-height: 460px; }
+        .dv-stats, .dv-steps ol { grid-template-columns: 1fr; }
     }
     @media (max-width: 860px) {
         .pp-hero { padding-top: 8.5rem; }
@@ -782,32 +424,32 @@ const breadcrumbSchema = {
 <!-- Global override: GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid,
      por eso el override al título del hero DEBE ser is:global. Además aquí van los
      overrides del bento (mismo patrón que /producto/[slug].astro) para que las
-     ventanas .dbm-app/.dbm-term llenen la tarjeta y sangren por abajo. -->
+     ventanas .dm-win llenen la tarjeta y sangren por abajo. -->
 <style is:global>
     .pp-hero-text .pp-title { text-align: left !important; }
     .pp-hero-text .m-line   { text-align: left !important; width: 100%; }
     .pp-hero-text .m-line-in { display: block !important; text-align: left !important; }
 
     /* Ventana del bento: llena el ancho, arriba, sangra por abajo (screenshot cortado) */
-    .pp-bcard-visual .dbm-wrap {
+    .pp-bcard-visual .dm-wrap {
         position: absolute; inset: 0;
         padding: 1.7rem 1.6rem 0;
         align-items: flex-start; justify-content: center;
     }
-    .pp-bcard-visual .dbm-app,
-    .pp-bcard-visual .dbm-term { max-width: 560px; }
+    .pp-bcard-visual .dm-win { max-width: 600px; }
+    .pp-hero-visual .dm-win { max-width: 760px; }
 
     /* Tarjetas HORIZONTALES (texto izq + mockup der, pp-bcard-2/3): centrar la
        ventana en TODO el espacio visual disponible (no solo horizontal, sino
        también vertical) — antes quedaba pegada arriba con un hueco grande
        abajo y se veía desalineada. */
-    .pp-bcard-2 .pp-bcard-visual .dbm-wrap,
-    .pp-bcard-3 .pp-bcard-visual .dbm-wrap {
+    .pp-bcard-2 .pp-bcard-visual .dm-wrap,
+    .pp-bcard-3 .pp-bcard-visual .dm-wrap {
         padding: 1.6rem;
         align-items: center;
     }
 
     @media (max-width: 960px) {
-        .pp-bcard-visual .dbm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }
+        .pp-bcard-visual .dm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }
     }
 </style>

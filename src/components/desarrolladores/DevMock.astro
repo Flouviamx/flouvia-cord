@@ -1,0 +1,855 @@
+---
+// Mockups 1:1 de las páginas de /desarrolladores. Cada `id` calca una pantalla
+// REAL de Cord (no una UI inventada):
+//   wb-*    → Workbench de desarrolladores (src/components/app/DevWorkbench.astro
+//             + src/pages/app/wb/[tab].astro, tokens de src/styles/workbench.css)
+//   mcp-*   → Ajustes › MCP (src/pages/app/ajustes/mcp.astro)
+//   app-*   → pantallas de la app en modo claro (Facturas)
+//   code-*, hero-* de código → intercambios HTTP reales: rutas, headers y forma
+//             de respuesta salen de src/pages/api/v1, src/lib/apiv1.ts y
+//             src/lib/webhook-delivery.ts. Si un contrato cambia, cambia aquí.
+// El HTML es el estado final (prefers-reduced-motion lo ve completo).
+interface Props { id: string; isEn?: boolean }
+const { id, isEn = false } = Astro.props;
+const T = (es: string, en: string) => (isEn ? en : es);
+
+const WB_TABS = [
+    ['resumen', T('Resumen', 'Overview')],
+    ['webhooks', 'Webhooks'],
+    ['eventos', T('Eventos', 'Events')],
+    ['api', 'API'],
+    ['registros', T('Registros', 'Logs')],
+    ['salud', T('Salud', 'Health')],
+];
+const tabFor: Record<string, string> = {
+    'hero-workbench': 'resumen', 'wb-logs': 'registros', 'wb-keys': 'api', 'wb-endpoints': 'api',
+    'wb-webhooks': 'webhooks', 'wb-health': 'salud', 'oauth-apps': 'api',
+};
+const isWb = id in tabFor;
+
+// Serie de 14 días del Resumen (ok + error). Valores plausibles, error bajo.
+const SERIE = [182, 241, 236, 254, 248, 262, 229, 271, 266, 258, 280, 274, 289, 214].map((ok, i) => ({ ok, err: [4, 6, 3, 5, 9, 4, 3, 6, 2, 5, 4, 3, 5, 6][i] }));
+const maxSerie = Math.max(...SERIE.map((s) => s.ok + s.err));
+
+const LOGS = [
+    ['200', 'POST', '/api/v1/cotizaciones', T('30 sep, 16:43', 'Sep 30, 16:43')],
+    ['200', 'GET', '/api/v1/clientes', T('30 sep, 16:26', 'Sep 30, 16:26')],
+    ['200', 'GET', '/api/v1/productos', T('30 sep, 16:09', 'Sep 30, 16:09')],
+    ['200', 'PATCH', '/api/v1/clientes/9b41c2e0', T('30 sep, 15:52', 'Sep 30, 15:52')],
+    ['422', 'POST', '/api/v1/cotizaciones', T('30 sep, 15:47', 'Sep 30, 15:47')],
+    ['200', 'GET', '/api/v1/events', T('30 sep, 15:35', 'Sep 30, 15:35')],
+    ['200', 'POST', '/api/v1/facturas', T('30 sep, 15:18', 'Sep 30, 15:18')],
+    ['401', 'GET', '/api/v1/cobranza', T('30 sep, 15:02', 'Sep 30, 15:02')],
+    ['200', 'POST', '/api/v1/facturas/f3a8d1c4', T('30 sep, 14:44', 'Sep 30, 14:44')],
+    ['200', 'GET', '/api/v1/cotizaciones', T('30 sep, 14:27', 'Sep 30, 14:27')],
+];
+const MCP_TOOLS = [
+    [T('Listar cotizaciones', 'List quotes'), 'r', T('Lista las cotizaciones del negocio, de la más nueva a la más vieja. Filtra por estado. Paginado con next_cursor.', 'Lists the business quotes, newest first. Filter by status. Paginated with next_cursor.'), 'listar_cotizaciones'],
+    [T('Cartera vencida', 'Overdue receivables'), 'r', T('Resumen de cuentas por cobrar con foco en lo vencido: cuánto se debe, aging por antigüedad y detalle por cliente.', 'Receivables summary focused on overdue: how much is owed, aging buckets and per-client detail.'), 'cartera_vencida'],
+    [T('Resumen del negocio', 'Business summary'), 'r', T('Panorama: tasa de cierre, ticket promedio, días a cierre y pronóstico de pipeline.', 'Overview: win rate, average ticket, days to close and pipeline forecast.'), 'resumen_negocio'],
+    [T('Crear cotización (borrador)', 'Create quote (draft)'), 'w', T('Crea una cotización en BORRADOR, no la envía. Acepta idempotency_key: un reintento devuelve la misma cotización.', 'Creates a DRAFT quote, does not send it. Accepts idempotency_key: a retry returns the same quote.'), 'crear_cotizacion_borrador'],
+    [T('Listar facturas', 'List invoices'), 'r', T('Facturas con su saldo y estado. Filtra por vencidas para responder "¿quién me debe?".', 'Invoices with balance and status. Filter overdue to answer "who owes me?".'), 'listar_facturas'],
+    [T('Registrar pago de una cotización', 'Record a quote payment'), 'w', T('Registra que una cotización aprobada se pagó por fuera de Cord. Confirma con el usuario antes de llamarla.', 'Records that an approved quote was paid outside Cord. Confirm with the user before calling it.'), 'registrar_pago_cotizacion'],
+];
+const EVENTS = [
+    [T('Cotizaciones', 'Quotes'), ['quote.created', 'quote.sent', 'quote.viewed', 'quote.approved', 'quote.rejected', 'quote.updated', 'quote.expired', 'quote.deleted', 'quote.paid', 'quote.approval_requested', 'quote.approval_decided', 'quote.comment_added']],
+    [T('Facturas', 'Invoices'), ['invoice.issued', 'invoice.stamped', 'invoice.finalized', 'invoice.sent', 'invoice.paid', 'invoice.payment_failed', 'invoice.voided', 'invoice.marked_uncollectible', 'invoice.overdue']],
+    [T('Pagos y depósitos', 'Payments and payouts'), ['payment.partial', 'payment.failed', 'refund.succeeded', 'refund.failed', 'payout.paid', 'payout.failed', 'dispute.created', 'dispute.closed']],
+    [T('Clientes, catálogo y cobranza', 'Clients, catalog and collections'), ['client.created', 'client.updated', 'client.deleted', 'product.created', 'product.updated', 'product.deleted', 'task.created', 'task.completed', 'promise.created', 'promise.kept', 'promise.broken', 'account.updated']],
+] as const;
+const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=64`;
+const statusClass = (s: string) => (s.startsWith('2') ? 'ok' : 'bad');
+---
+
+<div class:list={['dm-wrap', `dm-${id}`]}>
+
+{/* ═════════════════════════ WORKBENCH (oscuro) ═════════════════════════ */}
+{isWb && (
+<div class="dm-win dm-wb">
+    <div class="dm-wb-tabs">
+        {WB_TABS.map(([k, label]) => <span class:list={[k === tabFor[id] && 'on']}>{label}</span>)}
+        <span class="dm-wb-chrome" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </span>
+    </div>
+
+    {id === 'hero-workbench' && (
+    <div class="dm-wb-body dm-wb-ov">
+        <div>
+            <div class="dm-wb-head"><b>{T('Tu integración', 'Your integration')}</b><span class="dm-seg"><i>{T('24 horas', '24 hours')}</i><i>{T('7 días', '7 days')}</i><i class="on">{T('14 días', '14 days')}</i></span></div>
+            <div class="dm-card">
+                <span class="dm-lbl">{T('Peticiones de API', 'API requests')}</span>
+                <strong class="dm-big" data-dm-count="3628">3,628</strong>
+                <div class="dm-bars">
+                    {SERIE.map((s) => <span style={`height:${Math.round(((s.ok + s.err) / maxSerie) * 100)}%`}><u style={`height:${Math.max(4, Math.round((s.err / (s.ok + s.err)) * 100))}%`}></u></span>)}
+                </div>
+                <div class="dm-axis"><span>17/9</span><span>30/9</span></div>
+                <div class="dm-legend"><span><i class="b"></i>{T('Correctas', 'Successful')} <b>3,563</b></span><span><i class="r"></i>{T('Con error', 'Failed')} <b>65</b></span><span class="dm-push">{T('Latencia prom.', 'Avg latency')} <b>142ms</b></span></div>
+            </div>
+            <div class="dm-two">
+                <div class="dm-card">
+                    <span class="dm-lbl">{T('Distribución de errores', 'Error breakdown')}</span>
+                    <div class="dm-meter"><span>4xx</span><i><u class="amber" style="width:78%"></u></i><b>52</b></div>
+                    <div class="dm-meter"><span>5xx</span><i><u class="red" style="width:20%"></u></i><b>13</b></div>
+                </div>
+                <div class="dm-card">
+                    <span class="dm-lbl">{T('Entregas de eventos', 'Event deliveries')}</span>
+                    <div class="dm-meter"><span>{T('Entregadas', 'Delivered')}</span><i><u class="green" style="width:96%"></u></i><b>1,284</b></div>
+                    <div class="dm-meter"><span>{T('Fallidas', 'Failed')}</span><i><u class="red" style="width:4%"></u></i><b>6</b></div>
+                </div>
+            </div>
+        </div>
+        <aside>
+            <b class="dm-side-t">{T('Salud', 'Health')}</b>
+            <div class="dm-card dm-ok-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.6L16 9.6"/></svg>
+                <b>{T('Sin alertas activas', 'No active alerts')}</b>
+                <span>{T('Tu integración funciona sin problemas.', 'Your integration is running smoothly.')}</span>
+            </div>
+            <div class="dm-kv"><span>{T('Endpoints activos', 'Active endpoints')}</span><b>3/3</b></div>
+            <div class="dm-kv"><span>{T('Eventos en cola', 'Queued events')}</span><b>0</b></div>
+            <b class="dm-side-t dm-mt">{T('Recursos para desarrolladores', 'Developer resources')}</b>
+            <div class="dm-link">{T('Documentación', 'Documentation')}<i>↗</i></div>
+            <div class="dm-link">{T('Especificación OpenAPI', 'OpenAPI spec')}<i>↗</i></div>
+            <div class="dm-link">{T('llms.txt (docs para IA)', 'llms.txt (AI docs)')}<i>↗</i></div>
+            <div class="dm-link">{T('Servidor MCP', 'MCP server')}<i>→</i></div>
+        </aside>
+    </div>
+    )}
+
+    {id === 'wb-logs' && (
+    <div class="dm-wb-body">
+        <div class="dm-filters">
+            <span class="dm-search">{T('Buscar por ruta…', 'Search by route…')}</span>
+            <span class="dm-seg"><i class="on">{T('Todos', 'All')}</i><i>GET</i><i>POST</i></span>
+            <span class="dm-seg"><i class="on">{T('Todos', 'All')}</i><i>2xx</i><i>4xx</i><i>5xx</i></span>
+        </div>
+        <div class="dm-logs">
+            <div class="dm-card dm-loglist">
+                {LOGS.map(([st, m, path, at], i) => (
+                    <div class:list={['dm-logrow', i === 4 && 'sel']}><code class:list={['dm-st', statusClass(st)]}>{st}</code><span class:list={['dm-m', m.toLowerCase()]}>{m}</span><code class="dm-path">{path}</code><time>{at}</time></div>
+                ))}
+            </div>
+            <div class="dm-card dm-detail">
+                <span class="dm-lbl">{T('Petición a la API', 'API request')}</span>
+                <code class="dm-detail-t"><b>POST</b> /api/v1/cotizaciones</code>
+                <div class="dm-kv"><span>{T('Estado', 'Status')}</span><b class="bad">422</b></div>
+                <div class="dm-kv"><span>{T('Fecha', 'Date')}</span><b>{T('30 sep 2026, 15:47:12', 'Sep 30, 2026, 15:47:12')}</b></div>
+                <div class="dm-kv"><span>{T('Latencia', 'Latency')}</span><b>88 ms</b></div>
+                <div class="dm-kv"><span>{T('Dirección IP', 'IP address')}</span><b>189.203.14.21</b></div>
+                <div class="dm-kv"><span>{T('Clave de API', 'API key')}</span><b>{T('ERP · Sincronización', 'ERP · Nightly sync')}</b></div>
+                <div class="dm-kv"><span>{T('Modo', 'Mode')}</span><b>live</b></div>
+                <p class="dm-note">{T('Cord no almacena el cuerpo de las peticiones ni de las respuestas del API, para no guardar datos de tus clientes.', 'Cord does not store API request or response bodies, so your clients\' data is not kept.')}</p>
+            </div>
+        </div>
+    </div>
+    )}
+
+    {(id === 'wb-keys' || id === 'oauth-apps') && (
+    <div class="dm-wb-body">
+        <div class="dm-card dm-section">
+            <div class="dm-sec-head">
+                <div><b class="dm-h">{T('Claves de API', 'API keys')}</b><p>{T('Conectan tu propio sistema o n8n con Cord. Zapier y Make no las necesitan: aparecen aquí como conexiones autorizadas.', 'They connect your own system or n8n to Cord. Zapier and Make do not need them: they show up here as authorized connections.')}</p></div>
+                <div class="dm-sec-act"><span class="dm-seg"><i>{T('Prueba', 'Test')}</i><i class="on">{T('Vivo', 'Live')}</i></span><span class="dm-plan">{T('Plan Profesional', 'Professional plan')}: <b>3/20</b></span><span class="dm-btn">+ {T('Generar clave', 'Generate key')}</span></div>
+            </div>
+            <div class="dm-keys">
+                <div class="dm-keyrow dm-keyhead"><span>{T('Nombre', 'Name')}</span><span>Token</span><span>{T('Permisos', 'Scope')}</span><span>{T('Último uso', 'Last used')}</span><span></span></div>
+                {id === 'oauth-apps' && (
+                    <Fragment>
+                        <div class="dm-keyrow"><span class="dm-kn"><img src={fav('zapier.com')} alt="" width="16" height="16" />Zapier <em class="tag sec">OAuth</em></span><span class="dm-mut">{T('Conexión autorizada', 'Authorized connection')}</span><em class="tag write">{T('Escritura', 'Write')}</em><span class="dm-mut">{T('hoy, 10:41', 'today, 10:41')}</span><span class="dm-btn ghost">{T('Revocar', 'Revoke')}</span></div>
+                        <div class="dm-keyrow"><span class="dm-kn"><img src={fav('make.com')} alt="" width="16" height="16" />Make <em class="tag sec">OAuth</em></span><span class="dm-mut">{T('Conexión autorizada', 'Authorized connection')}</span><em class="tag write">{T('Escritura', 'Write')}</em><span class="dm-mut">{T('ayer, 18:02', 'yesterday, 18:02')}</span><span class="dm-btn ghost">{T('Revocar', 'Revoke')}</span></div>
+                        <div class="dm-keyrow"><span class="dm-kn">n8n · {T('Automatizaciones', 'Automations')} <em class="tag live">{T('Vivo', 'Live')}</em><em class="tag sec">{T('Secreta', 'Secret')}</em></span><code class="dm-tok">sk_live_••••••••••••c71e</code><em class="tag write">{T('Escritura', 'Write')}</em><span class="dm-mut">{T('hoy, 09:15', 'today, 09:15')}</span><span class="dm-btn ghost">{T('Revocar', 'Revoke')}</span></div>
+                    </Fragment>
+                )}
+                {id === 'wb-keys' && (
+                    <Fragment>
+                        <div class="dm-keyrow"><span class="dm-kn">{T('Pruebas locales', 'Local testing')} <em class="tag test">{T('Prueba', 'Test')}</em><em class="tag sec">{T('Secreta', 'Secret')}</em></span><code class="dm-tok">sk_test_••••••••••••d77e</code><em class="tag write">{T('Escritura', 'Write')}</em><span class="dm-mut">{T('ayer, 11:00', 'yesterday, 11:00')}</span><span class="dm-btn ghost">{T('Revocar', 'Revoke')}</span></div>
+                        <div class="dm-keyrow"><span class="dm-kn">{T('Portal de clientes', 'Client portal')} <em class="tag live">{T('Vivo', 'Live')}</em><em class="tag pub">{T('Pública', 'Publishable')}</em></span><code class="dm-tok">pk_live_••••••••••••41c9</code><em class="tag read">{T('Lectura', 'Read')}</em><span class="dm-mut">{T('hoy, 09:00', 'today, 09:00')}</span><span class="dm-btn ghost">{T('Revocar', 'Revoke')}</span></div>
+                        <div class="dm-keyrow"><span class="dm-kn">{T('ERP · Sincronización', 'ERP · Nightly sync')} <em class="tag live">{T('Vivo', 'Live')}</em><em class="tag sec">{T('Secreta', 'Secret')}</em></span><code class="dm-tok">sk_live_••••••••••••8f2a</code><em class="tag write">{T('Escritura', 'Write')}</em><span class="dm-mut">{T('hoy, 10:57', 'today, 10:57')}</span><span class="dm-btn ghost" id="dmRevoke">{T('Revocar', 'Revoke')}</span></div>
+                        <div class="dm-keyrow revoked"><span class="dm-kn">{T('Script de reportes', 'Reports script')} <em class="tag live">{T('Vivo', 'Live')}</em><em class="tag sec">{T('Secreta', 'Secret')}</em></span><code class="dm-tok">sk_live_••••••••••••b0e3</code><em class="tag read">{T('Lectura', 'Read')}</em><span class="dm-mut">{T('10 sep, 11:00', 'Sep 10, 11:00')}</span><em class="tag revoked">{T('Revocada', 'Revoked')}</em></div>
+                    </Fragment>
+                )}
+            </div>
+        </div>
+    </div>
+    )}
+
+    {id === 'wb-endpoints' && (
+    <div class="dm-wb-body">
+        <div class="dm-card dm-section">
+            <div class="dm-sec-head"><div><b class="dm-h">{T('Endpoints disponibles', 'Available endpoints')}</b><p>Base: <code>https://cordhq.app/api/v1</code> · {T('autentícate con', 'authenticate with')} <code>Authorization: Bearer &lt;{T('tu_clave', 'your_key')}&gt;</code></p></div><div class="dm-sec-act"><span class="dm-ln">Spec OpenAPI ↗</span><span class="dm-ln">llms.txt ↗</span></div></div>
+            {[
+                ['GET', '/me', T('A qué negocio pertenece la clave', 'Which business the key belongs to')],
+                ['POST', '/cotizaciones', T('Crea una cotización (requiere escritura)', 'Creates a quote (write)')],
+                ['POST', '/cotizaciones/:id', T('send · approve · reject · mark_paid', 'send · approve · reject · mark_paid')],
+                ['POST', '/cotizaciones/ia', T('Propone líneas a partir del texto de un pedido', 'Proposes lines from an order text')],
+                ['POST', '/facturas', T('Crea una factura en borrador', 'Creates a draft invoice')],
+                ['POST', '/facturas/:id', T('finalize · send · payment · void · credit_note', 'finalize · send · payment · void · credit_note')],
+                ['GET', '/events', T('Historial de eventos con cursor', 'Cursor-paged event history')],
+                ['GET', '/cobranza', T('Cartera, vencidos y aging', 'Receivables, overdue and aging')],
+            ].map(([m, p, d]) => <div class="dm-eprow"><span class:list={['dm-m', m.toLowerCase()]}>{m}</span><code>{p}</code><span>{d}</span></div>)}
+        </div>
+    </div>
+    )}
+
+    {id === 'wb-webhooks' && (
+    <div class="dm-wb-body">
+        <div class="dm-card dm-section">
+            <div class="dm-sec-head"><div><b class="dm-h">{T('Endpoints de webhook', 'Webhook endpoints')}</b><p>{T('Cada aviso va firmado con', 'Every notice is signed with')} <code>X-Cord-Signature-V1</code>; {T('verifícalo con el secreto del endpoint.', 'verify it with the endpoint secret.')}</p></div><div class="dm-sec-act"><span class="dm-plan">{T('Plan Profesional', 'Professional plan')}: <b>3/16</b></span><span class="dm-btn">+ {T('Agregar endpoint', 'Add endpoint')}</span></div></div>
+            {[
+                ['https://erp.materialesdelvalle.mx/webhooks/cord', T('3 eventos', '3 events'), T('última 30 sep, 16:52 (200)', 'last Sep 30, 16:52 (200)'), true],
+                ['https://hooks.zapier.com/hooks/catch/1834/b7x2', T('2 eventos', '2 events'), T('última 30 sep, 16:00 (200)', 'last Sep 30, 16:00 (200)'), false],
+                ['https://api.crm-interno.mx/cord/events', T('2 eventos', '2 events'), T('última 30 sep, 16:40 (503)', 'last Sep 30, 16:40 (503)'), false],
+            ].map(([url, ev, last, open]) => (
+                <div class="dm-whrow">
+                    <div class="dm-whmain">
+                        <span class:list={['dm-chev', open && 'open']}>›</span>
+                        <div><b>{url}</b><span class="dm-whmeta"><code>s••••••••••••</code><u>{T('Rotar secreto', 'Rotate secret')}</u> · {ev} · <em class:list={[String(last).includes('503') ? 'bad' : 'ok']}>{last}</em></span></div>
+                        <span class="dm-whact"><span class="dm-btn ghost" id={open ? 'dmProbar' : undefined}>{T('Probar', 'Test')}</span><span class="dm-btn ghost">{T('Editar', 'Edit')}</span><span class="dm-toggle"></span></span>
+                    </div>
+                    {open && (
+                        <div class="dm-deliv">
+                            {[['quote.paid', '200', '1', '142 ms', '16:52'], ['quote.approved', '200', '1', '118 ms', '16:31'], ['invoice.finalized', '200', '2', '204 ms', '15:58']].map(([e, s, a, d, t]) => (
+                                <div class="dm-delrow"><code>{e}</code><code class="dm-st ok">{s}</code><span>{T('intento', 'attempt')} {a}</span><span>{d}</span><time>{t}</time></div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    </div>
+    )}
+
+    {id === 'wb-health' && (
+    <div class="dm-wb-body">
+        <div class="dm-card dm-alert-strip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16h.01"/></svg><b>{T('1 endpoint con fallos seguidos', '1 endpoint with consecutive failures')}</b><span>{T('Cord reintentará cada entrega hasta 11 veces.', 'Cord will retry each delivery up to 11 times.')}</span></div>
+        <div class="dm-three">
+            <div class="dm-card"><span class="dm-lbl">Endpoints</span>
+                <div class="dm-kv"><span class="dm-ell">erp.materialesdelvalle.mx</span><b>{T('Activo', 'Active')}</b></div>
+                <div class="dm-kv"><span class="dm-ell">hooks.zapier.com</span><b>{T('Activo', 'Active')}</b></div>
+                <div class="dm-kv"><span class="dm-ell">api.crm-interno.mx</span><b class="amber">{T('3 fallos seguidos', '3 failures in a row')}</b></div>
+            </div>
+            <div class="dm-card"><span class="dm-lbl">{T('Cola de eventos', 'Event queue')}</span>
+                <div class="dm-kv"><span>{T('Eventos en cola', 'Queued')}</span><b>2</b></div>
+                <div class="dm-kv"><span>{T('Reintentos vencidos', 'Overdue retries')}</span><b>0</b></div>
+                <div class="dm-kv"><span>{T('Eventos agotados', 'Exhausted')}</span><b>0</b></div>
+                <div class="dm-kv"><span>{T('Entregadas', 'Delivered')}</span><b>1,284</b></div>
+                <div class="dm-kv"><span>{T('Fallidas', 'Failed')}</span><b class="bad">6</b></div>
+            </div>
+            <div class="dm-card"><span class="dm-lbl">{T('Distribución de errores', 'Error breakdown')}</span>
+                <div class="dm-meter"><span>4xx</span><i><u class="amber" style="width:78%"></u></i><b>52</b></div>
+                <div class="dm-meter"><span>5xx</span><i><u class="red" style="width:20%"></u></i><b>13</b></div>
+                <span class="dm-cap">{T('Rutas con más errores', 'Routes with most errors')}</span>
+                <div class="dm-kv mono"><span>/api/v1/cotizaciones</span><b>31</b></div>
+                <div class="dm-kv mono"><span>/api/v1/clientes</span><b>18</b></div>
+            </div>
+        </div>
+    </div>
+    )}
+</div>
+)}
+
+{/* ═════════════════════════ CÓDIGO (intercambios HTTP reales) ═════════════════════════ */}
+{id === 'hero-api' && (
+<div class="dm-win dm-code dm-hero-api">
+    <div class="dm-code-bar"><code><b class="post">POST</b> /api/v1/cotizaciones</code><span class="dm-pill" id="dmApiStat">200 OK</span></div>
+    <div class="dm-code-body">
+<pre><code><span class="c-mut">$</span> curl https://cordhq.app/api/v1/cotizaciones \
+  -H <span class="c-str">"Authorization: Bearer </span><span class="c-num">sk_live_8f2a…</span><span class="c-str">"</span> \
+  -H <span class="c-str">"Idempotency-Key: pedido-7781"</span> \
+  -d <span class="c-str">'{`{`}"cliente_id": "9b41c2e0-…", "vigencia_dias": 15,
+       "items": [{`{`}"descripcion": "Cemento gris 50 kg",
+                  "cantidad": 340, "precio_unitario": 182{`}`}]{`}`}'</span></code></pre>
+        <div class="dm-sep"></div>
+<pre class="dm-res" id="dmApiRes"><code>{`{`}
+  <span class="c-key">"data"</span>: {`{`}
+    <span class="c-key">"id"</span>: <span class="c-str">"c2f9a1d4-7b3e-4c1a-9e55-01a6c3d8f2b7"</span>,
+    <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>,
+    <span class="c-key">"token"</span>: <span class="c-str">"q8Fz2LkP"</span>,
+    <span class="c-key">"link_publico"</span>: <span class="c-str">"https://cordhq.app/q/q8Fz2LkP"</span>,
+    <span class="c-key">"needs_approval"</span>: <span class="c-num">false</span>
+  {`}`}
+{`}`}</code></pre>
+        <div class="dm-code-foot"><span>142 ms · v1</span><span>{T('600 peticiones/min por llave', '600 requests/min per key')}</span></div>
+    </div>
+</div>
+)}
+
+{id === 'code-idempotency' && (
+<div class="dm-win dm-code dm-dark">
+    <div class="dm-code-bar"><code>{T('Reintento con la misma Idempotency-Key', 'Retry with the same Idempotency-Key')}</code></div>
+    <div class="dm-code-body">
+<pre><code><span class="c-mut"># {T('1er intento: se crea la cotización', '1st attempt: the quote is created')}</span>
+POST /api/v1/cotizaciones
+<span class="c-key">Idempotency-Key</span>: pedido-7781
+<span class="c-ok">← 200</span>  {`{`} <span class="c-key">"folio"</span>: <span class="c-str">"COT-0150"</span> {`}`}
+
+<span class="c-mut"># {T('2º intento (la red se cortó): misma llave', '2nd attempt (network dropped): same key')}</span>
+POST /api/v1/cotizaciones
+<span class="c-key">Idempotency-Key</span>: pedido-7781
+<span class="c-ok">← 200</span>  <span class="c-key">Idempotent-Replayed</span>: true
+      {`{`} <span class="c-key">"folio"</span>: <span class="c-str">"COT-0150"</span> {`}`}  <span class="c-mut"># {T('la misma, no una nueva', 'the same one, not a new one')}</span>
+
+<span class="c-mut"># {T('misma llave, otro cuerpo', 'same key, different body')}</span>
+<span class="c-bad">← 422</span>  {`{`} <span class="c-key">"code"</span>: <span class="c-str">"idempotency_key_reused"</span> {`}`}</code></pre>
+    </div>
+</div>
+)}
+
+{id === 'code-events' && (
+<div class="dm-win dm-code">
+    <div class="dm-code-bar"><code><b class="get">GET</b> /api/v1/events?type=quote.approved&amp;limit=2</code><span class="dm-pill">200 OK</span></div>
+    <div class="dm-code-body">
+<pre><code>{`{`}
+  <span class="c-key">"data"</span>: [
+    {`{`} <span class="c-key">"id"</span>: <span class="c-str">"5e0b…"</span>, <span class="c-key">"type"</span>: <span class="c-str">"quote.approved"</span>,
+      <span class="c-key">"object"</span>: <span class="c-str">"quote"</span>, <span class="c-key">"object_id"</span>: <span class="c-str">"c2f9a1d4-…"</span>,
+      <span class="c-key">"actor"</span>: <span class="c-str">"client"</span>, <span class="c-key">"created_at"</span>: <span class="c-str">"2026-09-30T16:31:08Z"</span> {`}`},
+    {`{`} <span class="c-key">"id"</span>: <span class="c-str">"a91d…"</span>, <span class="c-key">"type"</span>: <span class="c-str">"quote.approved"</span>,
+      <span class="c-key">"object"</span>: <span class="c-str">"quote"</span>, <span class="c-key">"object_id"</span>: <span class="c-str">"7d13e8b2-…"</span>,
+      <span class="c-key">"actor"</span>: <span class="c-str">"client"</span>, <span class="c-key">"created_at"</span>: <span class="c-str">"2026-09-30T11:04:52Z"</span> {`}`}
+  ],
+  <span class="c-key">"meta"</span>: {`{`} <span class="c-key">"next_cursor"</span>: <span class="c-str">"MjAyNi0wOS0zMFQxMTowNDo1Mi…"</span> {`}`}
+{`}`}</code></pre>
+    </div>
+</div>
+)}
+
+{id === 'hero-mcp' && (
+<div class="dm-win dm-code dm-hero-mcp">
+    <div class="dm-code-bar"><code><b class="post">POST</b> https://cordhq.app/api/mcp</code><span class="dm-pill">JSON-RPC 2.0</span></div>
+    <div class="dm-code-body">
+<pre><code><span class="c-mut">→</span> {`{`} <span class="c-key">"method"</span>: <span class="c-str">"tools/call"</span>, <span class="c-key">"params"</span>: {`{`}
+    <span class="c-key">"name"</span>: <span class="c-str">"cartera_vencida"</span>, <span class="c-key">"arguments"</span>: {`{}`} {`}`} {`}`}</code></pre>
+        <div class="dm-sep"></div>
+<pre class="dm-res"><code><span class="c-mut">←</span> {`{`} <span class="c-key">"result"</span>: {`{`} <span class="c-key">"isError"</span>: <span class="c-num">false</span>, <span class="c-key">"content"</span>: [{`{`} <span class="c-key">"type"</span>: <span class="c-str">"text"</span>,
+    <span class="c-key">"text"</span>: <span class="c-str">"{T('Vencido: $412,300.00 MXN en 9 facturas.', 'Overdue: MX$412,300.00 across 9 invoices.')}
+    {T('1-30 días: $186,120 · 31-60: $151,480 · +60: $74,700', '1-30 days: $186,120 · 31-60: $151,480 · 60+: $74,700')}
+    {T('Mayor saldo: Distribuidora El Zarco ($128,900, 47 días)', 'Largest balance: El Zarco Distribution ($128,900, 47 days)')}"</span> {`}`}] {`}`} {`}`}</code></pre>
+        <div class="dm-code-foot"><span>{T('19 herramientas · llave de lectura', '19 tools · read key')}</span><span>protocol 2025-06-18</span></div>
+    </div>
+</div>
+)}
+
+{id === 'hero-webhook' && (
+<div class="dm-win dm-code dm-hero-wh">
+    <div class="dm-code-bar"><code><b class="post">POST</b> https://erp.materialesdelvalle.mx/webhooks/cord</code><span class="dm-pill">200 OK</span></div>
+    <div class="dm-code-body">
+<pre><code><span class="c-key">X-Cord-Event</span>: quote.paid
+<span class="c-key">X-Cord-Event-Id</span>: evt_9c1f4be07a2d4e61b3f8a05c7d92e1aa
+<span class="c-key">X-Cord-Attempt</span>: 1
+<span class="c-key">X-Cord-Signature-V1</span>: t=1759250728,v1=5f2c09d1e4a7…</code></pre>
+        <div class="dm-sep"></div>
+<pre class="dm-res"><code>{`{`}
+  <span class="c-key">"id"</span>: <span class="c-str">"evt_9c1f4be07a2d4e61b3f8a05c7d92e1aa"</span>,
+  <span class="c-key">"event"</span>: <span class="c-str">"quote.paid"</span>,
+  <span class="c-key">"created_at"</span>: <span class="c-str">"2026-09-30T16:45:28.114Z"</span>,
+  <span class="c-key">"data"</span>: {`{`}
+    <span class="c-key">"folio"</span>: <span class="c-str">"COT-0149"</span>, <span class="c-key">"status"</span>: <span class="c-str">"paid"</span>,
+    <span class="c-key">"moneda"</span>: <span class="c-str">"MXN"</span>, <span class="c-key">"total"</span>: <span class="c-num">71780.80</span>,
+    <span class="c-key">"cliente"</span>: <span class="c-str">"{T('Distribuidora El Zarco', 'El Zarco Distribution')}"</span>,
+    <span class="c-key">"link_publico"</span>: <span class="c-str">"https://cordhq.app/q/q8Fz2LkP"</span>
+  {`}`}
+{`}`}</code></pre>
+        <div class="dm-code-foot"><span>{T('firmado · HMAC-SHA256', 'signed · HMAC-SHA256')}</span><span>{T('timeout 5 s · 11 intentos', '5 s timeout · 11 attempts')}</span></div>
+    </div>
+</div>
+)}
+
+{id === 'code-verify' && (
+<div class="dm-win dm-code dm-dark">
+    <div class="dm-code-bar"><code>verify-cord.js</code><span class="dm-pill">Node.js</span></div>
+    <div class="dm-code-body">
+<pre><code><span class="c-kw">import</span> crypto <span class="c-kw">from</span> <span class="c-str">'node:crypto'</span>;
+
+<span class="c-kw">export function</span> <span class="c-fn">verifyCord</span>(rawBody, header, secret) {`{`}
+  <span class="c-kw">const</span> parts = header.split(<span class="c-str">','</span>);
+  <span class="c-kw">const</span> t = parts.find((p) =&gt; p.startsWith(<span class="c-str">'t='</span>)).slice(<span class="c-num">2</span>);
+  <span class="c-kw">const</span> expected = crypto.createHmac(<span class="c-str">'sha256'</span>, secret)
+    .update(<span class="c-str">`$&#123;t&#125;.$&#123;rawBody&#125;`</span>).digest(<span class="c-str">'hex'</span>);
+  <span class="c-mut">// {T('durante una rotación llegan dos v1', 'during a rotation two v1 values arrive')}</span>
+  <span class="c-kw">const</span> ok = parts.filter((p) =&gt; p.startsWith(<span class="c-str">'v1='</span>))
+    .some((p) =&gt; crypto.timingSafeEqual(Buffer.from(p.slice(<span class="c-num">3</span>)), Buffer.from(expected)));
+  <span class="c-kw">return</span> ok &amp;&amp; Math.abs(Date.now() / <span class="c-num">1000</span> - Number(t)) &lt; <span class="c-num">300</span>;
+{`}`}</code></pre>
+    </div>
+</div>
+)}
+
+{id === 'hero-fx' && (
+<div class="dm-win dm-code dm-hero-fx">
+    <div class="dm-code-bar"><code><b class="get">GET</b> /api/v1/facturas/f3a8d1c4-…</code><span class="dm-pill">200 OK</span></div>
+    <div class="dm-code-body">
+<pre class="dm-res"><code>{`{`}
+  <span class="c-key">"data"</span>: {`{`}
+    <span class="c-key">"numero"</span>: <span class="c-str">"F-00231"</span>,
+    <span class="c-key">"cliente"</span>: <span class="c-str">"Lone Star Builders LLC"</span>,
+    <span class="c-key">"estado"</span>: <span class="c-str">"open"</span>,
+    <span class="c-key">"moneda"</span>: <span class="c-str">"USD"</span>,
+    <span class="c-key">"total"</span>: <span class="c-num">12480.00</span>,
+    <span class="c-key">"moneda_contable"</span>: <span class="c-str">"MXN"</span>,
+    <span class="c-key">"tipo_cambio"</span>: <span class="c-num dm-hl">18.8210</span>,
+    <span class="c-key">"total_contable"</span>: <span class="c-num">234886.08</span>,
+    <span class="c-key">"saldo"</span>: <span class="c-num">12480.00</span>,
+    <span class="c-key">"vence"</span>: <span class="c-str">"2026-10-30"</span>
+  {`}`}
+{`}`}</code></pre>
+        <div class="dm-code-foot"><span>{T('tasa congelada al cotizar · 30 días', 'rate locked at quote time · 30 days')}</span><span>{T('fuente: BCE', 'source: ECB')}</span></div>
+    </div>
+</div>
+)}
+
+{id === 'code-fx' && (
+<div class="dm-win dm-code">
+    <div class="dm-code-bar"><code><b class="post">POST</b> /api/v1/cotizaciones</code><span class="dm-pill">200 OK</span></div>
+    <div class="dm-code-body">
+<pre><code>{`{`}
+  <span class="c-key">"cliente_id"</span>: <span class="c-str">"4d7e…"</span>,
+  <span class="c-key">"base_currency"</span>: <span class="c-str">"USD"</span>,    <span class="c-mut">// {T('vendes y cobras', 'you sell and collect')}</span>
+  <span class="c-key">"fiscal_currency"</span>: <span class="c-str">"MXN"</span>,  <span class="c-mut">// {T('tus libros', 'your books')}</span>
+  <span class="c-key">"fx_buffer_pct"</span>: <span class="c-num">2</span>,          <span class="c-mut">// {T('colchón sobre la tasa del día', 'cushion over the daily rate')}</span>
+  <span class="c-key">"items"</span>: [{`{`} <span class="c-key">"descripcion"</span>: <span class="c-str">"Steel rebar #4"</span>,
+              <span class="c-key">"cantidad"</span>: <span class="c-num">800</span>, <span class="c-key">"precio_unitario"</span>: <span class="c-num">15.6</span> {`}`}]
+{`}`}</code></pre>
+        <div class="dm-sep"></div>
+        <div class="dm-fxcalc">
+            <div><span>{T('Tasa del día (BCE)', 'Daily rate (ECB)')}</span><b>18.4520</b></div>
+            <div><span>{T('Colchón', 'Cushion')}</span><b>+2 %</b></div>
+            <div class="hl"><span>{T('Tasa congelada', 'Locked rate')}</span><b>18.8210</b></div>
+            <div><span>{T('Vigente hasta', 'Valid until')}</span><b>{T('30 oct 2026', 'Oct 30, 2026')}</b></div>
+        </div>
+    </div>
+</div>
+)}
+
+{id === 'hero-fiscal' && (
+<div class="dm-win dm-code dm-hero-fiscal">
+    <div class="dm-code-bar"><code><b class="post">POST</b> /api/v1/facturas/f3a8d1c4-…</code><span class="dm-pill">200 OK</span></div>
+    <div class="dm-code-body">
+<pre><code>{`{`} <span class="c-key">"action"</span>: <span class="c-str">"finalize"</span> {`}`}</code></pre>
+        <div class="dm-sep"></div>
+<pre class="dm-res"><code>{`{`}
+  <span class="c-key">"data"</span>: {`{`}
+    <span class="c-key">"numero"</span>: <span class="c-str">"F-00231"</span>,
+    <span class="c-key">"folio_fiscal"</span>: <span class="c-str">"3F29A7C1-5D2E-4B8A-9C61-0E7A1B2C3D4F"</span>,
+    <span class="c-key">"estado"</span>: <span class="c-str">"open"</span>,
+    <span class="c-key">"estado_fiscal"</span>: <span class="c-str">"issued"</span>,
+    <span class="c-key">"pais"</span>: <span class="c-str">"MX"</span>, <span class="c-key">"tipo"</span>: <span class="c-str">"cfdi_40"</span>,
+    <span class="c-key">"moneda"</span>: <span class="c-str">"MXN"</span>, <span class="c-key">"total"</span>: <span class="c-num">71780.80</span>,
+    <span class="c-key">"saldo"</span>: <span class="c-num">71780.80</span>, <span class="c-key">"vence"</span>: <span class="c-str">"2026-10-30"</span>
+  {`}`}
+{`}`}</code></pre>
+        <div class="dm-code-foot"><span>{T('CFDI 4.0 timbrado ante el SAT', 'CFDI 4.0 stamped with the SAT')}</span><span>invoice.finalized → webhook</span></div>
+    </div>
+</div>
+)}
+
+{id === 'code-invoice' && (
+<div class="dm-win dm-code dm-dark">
+    <div class="dm-code-bar"><code>{T('Ciclo de una factura por API', 'An invoice lifecycle over the API')}</code></div>
+    <div class="dm-code-body">
+<pre><code>POST /api/v1/facturas                <span class="c-mut"># {T('borrador', 'draft')}</span>
+  {`{`} <span class="c-key">"cliente_id"</span>: <span class="c-str">"9b41…"</span>, <span class="c-key">"items"</span>: [ … ] {`}`}
+<span class="c-ok">← 200</span>  {`{`} <span class="c-key">"id"</span>: <span class="c-str">"f3a8d1c4-…"</span> {`}`}
+
+POST /api/v1/facturas/f3a8…  {`{`} <span class="c-key">"action"</span>: <span class="c-str">"finalize"</span> {`}`}
+<span class="c-ok">← 200</span>  <span class="c-key">estado_fiscal</span>: <span class="c-str">"issued"</span>       <span class="c-mut"># invoice.finalized</span>
+
+POST /api/v1/facturas/f3a8…  {`{`} <span class="c-key">"action"</span>: <span class="c-str">"send"</span> {`}`}
+<span class="c-ok">← 200</span>  <span class="c-mut"># {T('correo con el PDF adjunto', 'email with the PDF attached')}</span>
+
+POST /api/v1/facturas/f3a8…  {`{`} <span class="c-key">"action"</span>: <span class="c-str">"payment"</span>, <span class="c-key">"monto"</span>: <span class="c-num">35000</span> {`}`}
+<span class="c-ok">← 200</span>  <span class="c-key">saldo</span>: <span class="c-num">36780.80</span>                <span class="c-mut"># {T('abono parcial', 'partial payment')}</span></code></pre>
+    </div>
+</div>
+)}
+
+{/* ═════════════════════════ APP CLARA (MCP, Facturas) ═════════════════════════ */}
+{id === 'mcp-connect' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Ajustes', 'Settings')} › <b>MCP</b></span><span class="dm-live"><i></i>{T('Listo para conectar', 'Ready to connect')}</span></div>
+    <div class="dm-app-body">
+        <b class="dm-app-h">{T('Conecta tu cliente de IA', 'Connect your AI client')}</b>
+        <p class="dm-app-p">{T('Se autentica con la misma API key de Cord.', 'It authenticates with the same Cord API key.')}</p>
+        <span class="dm-lseg"><i class="on">Claude Desktop</i><i>Cursor</i><i>{T('URL directa', 'Direct URL')}</i></span>
+<pre class="dm-json"><code>{`{`}
+  <span class="j-k">"mcpServers"</span>: {`{`}
+    <span class="j-k">"cord"</span>: {`{`}
+      <span class="j-k">"url"</span>: <span class="j-s">"https://cordhq.app/api/mcp"</span>,
+      <span class="j-k">"headers"</span>: {`{`} <span class="j-k">"Authorization"</span>: <span class="j-s">"Bearer {T('TU_LLAVE', 'YOUR_KEY')}"</span> {`}`}
+    {`}`}
+  {`}`}
+{`}`}</code></pre>
+        <p class="dm-app-p sm">{T('Pega esto en la configuración de tu cliente MCP y reemplaza la clave por una tuya.', 'Paste this into your MCP client config and replace the key with one of yours.')}</p>
+    </div>
+</div>
+)}
+
+{id === 'mcp-tools' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Herramientas disponibles', 'Available tools')} <b>(19)</b></span><span class="dm-mut-l">{T('9 lectura · 10 escritura', '9 read · 10 write')}</span></div>
+    <div class="dm-app-body dm-toolgrid">
+        {MCP_TOOLS.map(([name, kind, desc, code]) => (
+            <div class="dm-tool"><div class="dm-tool-h"><b>{name}</b><em class:list={['lt', kind === 'w' ? 'w' : 'r']}>{kind === 'w' ? T('Escritura', 'Write') : T('Lectura', 'Read')}</em></div><p>{desc}</p><code>{code}</code></div>
+        ))}
+    </div>
+</div>
+)}
+
+{id === 'mcp-playground' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Probar una herramienta', 'Try a tool')}</span><span class="dm-mut-l">{T('con tu sesión, sin clave', 'with your session, no key')}</span></div>
+    <div class="dm-app-body">
+        <div class="dm-pg-row"><span class="dm-select">{T('Cartera vencida', 'Overdue receivables')}</span><span class="dm-input">{`{"limit": 3}`}</span><span class="dm-btn-l" id="dmRun">{T('Ejecutar', 'Run')}</span></div>
+<pre class="dm-json light"><code>{`{`}
+  <span class="j-k">"vencido_total"</span>: <span class="j-n">412300</span>, <span class="j-k">"moneda"</span>: <span class="j-s">"MXN"</span>,
+  <span class="j-k">"aging"</span>: {`{`} <span class="j-k">"1_30"</span>: <span class="j-n">186120</span>, <span class="j-k">"31_60"</span>: <span class="j-n">151480</span>, <span class="j-k">"60_mas"</span>: <span class="j-n">74700</span> {`}`},
+  <span class="j-k">"clientes"</span>: [
+    {`{`} <span class="j-k">"cliente"</span>: <span class="j-s">"Distribuidora El Zarco"</span>, <span class="j-k">"saldo"</span>: <span class="j-n">128900</span>, <span class="j-k">"dias"</span>: <span class="j-n">47</span> {`}`},
+    {`{`} <span class="j-k">"cliente"</span>: <span class="j-s">"Constructora Ávila"</span>, <span class="j-k">"saldo"</span>: <span class="j-n">96400</span>, <span class="j-k">"dias"</span>: <span class="j-n">33</span> {`}`},
+    {`{`} <span class="j-k">"cliente"</span>: <span class="j-s">"Ferretera del Norte"</span>, <span class="j-k">"saldo"</span>: <span class="j-n">61250</span>, <span class="j-k">"dias"</span>: <span class="j-n">12</span> {`}`}
+  ]
+{`}`}</code></pre>
+    </div>
+</div>
+)}
+
+{id === 'app-invoices' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span><b>{T('Facturas', 'Invoices')}</b></span><span class="dm-mut-l"><span class="dm-btn-l ghost">{T('Exportar CSV', 'Export CSV')}</span><span class="dm-btn-l">+ {T('Nueva factura', 'New invoice')}</span></span></div>
+    <div class="dm-app-body">
+        <div class="dm-inv-kpis"><div><b>$248,610</b><span>{T('por cobrar', 'open')}</span></div><div><b>$61,250</b><span>{T('vencido', 'overdue')}</span></div><div><b>$412,880</b><span>{T('cobrado este mes', 'collected this month')}</span></div></div>
+        <span class="dm-chips"><i class="on">{T('Todas', 'All')}</i><i>{T('Borradores', 'Drafts')}</i><i>{T('Abiertas', 'Open')}</i><i>{T('Vencidas', 'Overdue')}</i><i>{T('Pagadas', 'Paid')}</i></span>
+        <div class="dm-inv">
+            <div class="dm-invrow head"><span>{T('Factura', 'Invoice')}</span><span>{T('Cliente', 'Client')}</span><span>{T('Vence', 'Due')}</span><span class="r">Total</span><span>{T('Estado', 'Status')}</span></div>
+            {[
+                ['F-00231', T('Distribuidora El Zarco', 'El Zarco Distribution'), T('30 oct', 'Oct 30'), '$71,781', T('Por cobrar', 'Open'), 'blue'],
+                ['F-00230', T('Constructora Ávila', 'Ávila Construction'), T('12 oct', 'Oct 12'), '$96,400', T('Abono parcial', 'Partially paid'), 'amber'],
+                ['F-00229', 'Ferretera del Norte', T('21 sep', 'Sep 21'), '$61,250', T('Vencida', 'Overdue'), 'red'],
+                ['F-00228', T('Grupo Altamira', 'Altamira Group'), T('18 sep', 'Sep 18'), '$148,320', T('Pagada', 'Paid'), 'green'],
+                ['F-00227', 'Casa Serrano', T('15 sep', 'Sep 15'), '$22,040', T('Pagada', 'Paid'), 'green'],
+            ].map(([f, c, d, t, s, tone]) => <div class="dm-invrow"><b>{f}</b><span class="dm-cli"><i>{String(c).slice(0, 2).toUpperCase()}</i>{c}</span><span>{d}</span><b class="r">{t}</b><em class:list={['st', tone]}>{s}</em></div>)}
+        </div>
+    </div>
+</div>
+)}
+
+{id === 'fx-invoice' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Factura', 'Invoice')} <b>F-00231</b> · Lone Star Builders LLC</span><span class="dm-mut-l"><em class="st blue">{T('Por cobrar', 'Open')}</em></span></div>
+    <div class="dm-app-body">
+        <div class="dm-fxrow"><span>{T('Subtotal', 'Subtotal')}</span><b>US$12,480.00</b></div>
+        <div class="dm-fxrow"><span>{T('Impuestos', 'Taxes')}</span><b>US$0.00</b></div>
+        <div class="dm-fxrow total"><span>Total</span><b class="editorial">US$12,480.00</b></div>
+        <div class="dm-fxbox">
+            <div class="dm-fxrow"><span>{T('Moneda contable', 'Ledger currency')}</span><b>MXN</b></div>
+            <div class="dm-fxrow"><span>{T('Tipo de cambio declarado', 'Declared exchange rate')}</span><b>18.8210</b></div>
+            <div class="dm-fxrow"><span>{T('Total contable', 'Ledger total')}</span><b>$234,886.08 MXN</b></div>
+            <p>{T('Tasa congelada el 30 sep 2026 · Banco Central Europeo · +2 % de colchón', 'Rate locked Sep 30, 2026 · European Central Bank · +2% cushion')}</p>
+        </div>
+    </div>
+</div>
+)}
+
+{id === 'fx-sources' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Tipo de cambio', 'Exchange rate')} · <b>USD → COP</b></span><span class="dm-mut-l">{T('consulta en cadena', 'chained lookup')}</span></div>
+    <div class="dm-app-body dm-chain">
+        <div class="dm-step skip"><i>1</i><div><b>{T('Banco Central Europeo', 'European Central Bank')}</b><span>{T('No publica COP: cede el turno', 'Does not publish COP: passes on')}</span></div><em>{T('sin el par', 'no pair')}</em></div>
+        <div class="dm-step ok"><i>2</i><div><b>{T('Fuente de cobertura amplia', 'Broad-coverage source')}</b><span>{T('~160 divisas, actualización diaria', '~160 currencies, daily update')}</span></div><em>4,186.20</em></div>
+        <div class="dm-step idle"><i>3</i><div><b>{T('Respaldo sobre CDN', 'CDN fallback')}</b><span>{T('Solo si las anteriores no tienen el par', 'Only if the previous ones lack the pair')}</span></div><em>—</em></div>
+        <div class="dm-step stop"><i>×</i><div><b>{T('Ninguna fuente lo publica', 'No source publishes it')}</b><span>{T('La cotización no se crea. Nunca 1.0.', 'The quote is not created. Never 1.0.')}</span></div><em>503</em></div>
+    </div>
+</div>
+)}
+
+{id === 'fiscal-countries' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Documento por país', 'Document by country')}</span><span class="dm-mut-l">{T('según el país de tu negocio', 'by your business country')}</span></div>
+    <div class="dm-app-body dm-countries">
+        {[
+            ['MX', T('México', 'Mexico'), T('CFDI 4.0 timbrado ante el SAT · UUID, PDF y XML', 'CFDI 4.0 stamped with the SAT · UUID, PDF and XML'), T('Legal', 'Legal'), 'green'],
+            ['ES', T('España', 'Spain'), T('IVA e IRPF por línea · Verifactu construido, activación ante la AEAT pendiente', 'VAT and IRPF per line · Verifactu built, AEAT activation pending'), T('Comercial', 'Commercial'), 'amber'],
+            ['US', T('Estados Unidos', 'United States'), T('Sales tax por estado · factura comercial', 'State sales tax · commercial invoice'), T('Comercial', 'Commercial'), 'blue'],
+            ['CO', 'Colombia', T('IVA por línea · factura comercial', 'VAT per line · commercial invoice'), T('Comercial', 'Commercial'), 'blue'],
+        ].map(([c, n, d, s, tone]) => <div class="dm-ctry"><i>{c}</i><div><b>{n}</b><span>{d}</span></div><em class:list={['st', tone]}>{s}</em></div>)}
+    </div>
+</div>
+)}
+
+{id === 'event-catalog' && (
+<div class="dm-win dm-app">
+    <div class="dm-app-bar"><span>{T('Eventos del endpoint', 'Endpoint events')}</span><span class="dm-mut-l"><b>41</b> {T('disponibles', 'available')}</span></div>
+    <div class="dm-app-body dm-evcat">
+        {EVENTS.map(([group, list]) => (
+            <div><span class="dm-cap-l">{group}</span><div class="dm-evs">{list.map((e) => <code class:list={[['quote.approved', 'quote.paid', 'invoice.finalized', 'invoice.paid'].includes(e) && 'on']}>{e}</code>)}</div></div>
+        ))}
+    </div>
+</div>
+)}
+
+</div>
+
+<style>
+    .dm-wrap { display: flex; justify-content: center; align-items: flex-start; width: 100%; }
+    .dm-win { container-type: inline-size; width: 100%; max-width: 640px; border-radius: 16px; overflow: hidden; text-align: left; font-family: var(--font-sans, Inter, sans-serif); }
+    code, pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    pre { margin: 0; white-space: pre; overflow: hidden; }
+
+    /* ── Workbench (tokens de src/styles/workbench.css) ── */
+    .dm-wb { --bg: #0a1524; --card: #0f1d33; --line: rgba(255,255,255,0.09); --tx: #e8eef8; --mut: #93a3bb; --acc: #6b9bf2; background: var(--bg); color: var(--tx); box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 30px 70px -24px rgba(5,12,24,0.55), 0 12px 28px -12px rgba(5,12,24,0.35); }
+    .dm-wb-tabs { display: flex; align-items: center; gap: 1.15rem; padding: 0 1rem; height: 40px; border-bottom: 1px solid var(--line); font-size: 0.68rem; font-weight: 600; color: var(--mut); }
+    .dm-wb-tabs > span:not(.dm-wb-chrome) { position: relative; height: 100%; display: flex; align-items: center; white-space: nowrap; }
+    .dm-wb-tabs > span.on { color: #fff; }
+    .dm-wb-tabs > span.on::after { content: ''; position: absolute; left: -6px; right: -6px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--acc); }
+    .dm-wb-chrome { margin-left: auto; display: flex; gap: 0.7rem; }
+    .dm-wb-chrome svg { width: 12px; height: 12px; fill: currentColor; color: var(--mut); }
+    .dm-wb-chrome svg[fill="none"] { fill: none; }
+    .dm-wb-body { padding: 0.9rem; display: grid; gap: 0.7rem; }
+    .dm-card { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 11px; padding: 0.8rem 0.9rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); min-width: 0; }
+    .dm-lbl { display: block; font-size: 0.6rem; font-weight: 600; color: var(--mut); }
+    .dm-big { display: block; font-size: 1.35rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; margin-top: 0.15rem; font-variant-numeric: tabular-nums; }
+    .dm-wb-ov { grid-template-columns: minmax(0, 1fr) 190px; gap: 0.9rem; align-items: start; }
+    .dm-wb-ov > div { display: grid; gap: 0.6rem; min-width: 0; }
+    .dm-wb-head { display: flex; justify-content: space-between; align-items: center; }
+    .dm-wb-head b { font-size: 0.78rem; }
+    .dm-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 0.56rem; font-weight: 600; color: var(--mut); }
+    .dm-seg i { font-style: normal; padding: 3px 8px; border-radius: 6px; }
+    .dm-seg i.on { background: rgba(255,255,255,0.1); color: #fff; }
+    .dm-bars { display: flex; align-items: flex-end; gap: 5px; height: 86px; margin-top: 0.6rem; }
+    .dm-bars > span { flex: 1; display: flex; flex-direction: column; background: #6b9bf2; border-radius: 3px 3px 1px 1px; overflow: hidden; transform-origin: bottom; }
+    .dm-bars > span u { display: block; background: #ef4444; flex-shrink: 0; }
+    .dm-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.5rem; color: var(--mut); }
+    .dm-legend { display: flex; gap: 0.8rem; margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px solid var(--line); font-size: 0.56rem; color: var(--mut); }
+    .dm-legend b { color: #fff; }
+    .dm-legend i { display: inline-block; width: 6px; height: 6px; border-radius: 2px; margin-right: 4px; }
+    .dm-legend i.b { background: #6b9bf2; } .dm-legend i.r { background: #ef4444; }
+    .dm-push { margin-left: auto; }
+    .dm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .dm-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+    .dm-meter { display: grid; grid-template-columns: 52px 1fr 34px; gap: 6px; align-items: center; margin-top: 0.45rem; font-size: 0.56rem; color: var(--mut); }
+    .dm-meter i { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .dm-meter u { display: block; height: 100%; border-radius: inherit; }
+    .dm-meter b { text-align: right; color: #fff; font-variant-numeric: tabular-nums; }
+    u.amber { background: #f5a524; } u.red { background: #ef4444; } u.green { background: #10b981; }
+    .dm-side-t { display: block; font-size: 0.72rem; margin-bottom: 0.45rem; }
+    .dm-mt { margin-top: 0.8rem; }
+    .dm-ok-card { text-align: center; display: grid; gap: 3px; justify-items: center; padding: 0.9rem 0.6rem; }
+    .dm-ok-card svg { width: 20px; height: 20px; color: #10b981; }
+    .dm-ok-card b { font-size: 0.66rem; }
+    .dm-ok-card span { font-size: 0.52rem; color: var(--mut); }
+    .dm-kv { display: flex; justify-content: space-between; gap: 8px; padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.58rem; color: var(--mut); }
+    .dm-kv:last-child { border-bottom: 0; }
+    .dm-kv b { color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .dm-kv.mono span { font-family: ui-monospace, monospace; }
+    .dm-ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    b.bad, em.bad { color: #f87171 !important; } b.amber { color: #f5a524 !important; } em.ok { color: #34d399; }
+    .dm-link { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.58rem; color: var(--mut); }
+    .dm-link i { font-style: normal; }
+    .dm-cap { display: block; margin: 0.6rem 0 0.1rem; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mut); }
+
+    .dm-filters { display: flex; gap: 0.45rem; align-items: center; }
+    .dm-search { flex: 0 0 34%; padding: 5px 9px; border-radius: 7px; background: rgba(255,255,255,0.05); font-size: 0.56rem; color: var(--mut); }
+    .dm-logs { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 0.6rem; }
+    .dm-loglist { padding: 0; overflow: hidden; }
+    .dm-logrow { display: grid; grid-template-columns: 30px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 0.4rem 0.7rem; border-bottom: 1px solid var(--line); font-size: 0.56rem; }
+    .dm-logrow:last-child { border: 0; }
+    .dm-logrow.sel { background: rgba(107,155,242,0.12); box-shadow: inset 2px 0 0 var(--acc); }
+    .dm-logrow time { color: var(--mut); white-space: nowrap; }
+    .dm-st { font-weight: 700; font-size: 0.58rem; }
+    .dm-st.ok { color: #34d399; } .dm-st.bad { color: #f87171; }
+    .dm-m { justify-self: start; font-size: 0.48rem; font-weight: 800; letter-spacing: 0.03em; padding: 2px 6px; border-radius: 5px; color: #fff; }
+    .dm-m.get { background: rgba(107,155,242,0.16); color: #8fb3f5; }
+    .dm-m.post { background: rgba(245,165,36,0.14); color: #f5b041; }
+    .dm-path { color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-detail { align-self: start; }
+    .dm-detail-t { display: block; margin: 0.2rem 0 0.4rem; font-size: 0.64rem; color: #fff; }
+    .dm-detail-t b { color: var(--acc); }
+    .dm-note { margin: 0.6rem 0 0; font-size: 0.5rem; line-height: 1.5; color: var(--mut); }
+
+    .dm-section { padding: 0.9rem 1rem; }
+    .dm-sec-head { display: flex; justify-content: space-between; gap: 0.8rem; align-items: flex-start; padding-bottom: 0.7rem; border-bottom: 1px solid var(--line); }
+    .dm-h { font-size: 0.8rem; color: #fff; }
+    .dm-sec-head p { margin: 0.3rem 0 0; font-size: 0.55rem; line-height: 1.5; color: var(--mut); max-width: 330px; }
+    .dm-sec-head p code { font-size: 0.5rem; padding: 1px 4px; border-radius: 4px; background: rgba(255,255,255,0.07); color: var(--tx); }
+    .dm-sec-act { display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0; }
+    .dm-plan { font-size: 0.52rem; color: var(--mut); white-space: nowrap; }
+    .dm-plan b { color: #fff; }
+    .dm-btn { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 7px; background: #2f6df0; color: #fff; font-size: 0.55rem; font-weight: 700; white-space: nowrap; }
+    .dm-btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.14); color: var(--tx); font-weight: 600; }
+    .dm-ln { font-size: 0.55rem; font-weight: 700; color: var(--acc); white-space: nowrap; }
+    .dm-keys { margin-top: 0.7rem; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+    .dm-keyrow { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.25fr) 66px 66px 56px; gap: 8px; align-items: center; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--line); font-size: 0.56rem; }
+    .dm-keyrow:last-child { border: 0; }
+    .dm-keyhead { background: rgba(255,255,255,0.03); font-size: 0.48rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mut); }
+    .dm-keyrow.revoked { opacity: 0.45; }
+    .dm-kn { display: flex; align-items: center; gap: 4px; font-weight: 700; color: #fff; overflow: hidden; white-space: nowrap; }
+    .dm-kn img { border-radius: 4px; }
+    .dm-tok { color: var(--mut); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-mut { color: var(--mut); white-space: nowrap; }
+    em.tag { font-style: normal; justify-self: start; font-size: 0.44rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 5px; border-radius: 5px; white-space: nowrap; }
+    em.tag.test { background: rgba(245,165,36,0.14); color: #f5b041; }
+    em.tag.live { background: rgba(16,185,129,0.13); color: #34d399; }
+    em.tag.sec { background: rgba(255,255,255,0.08); color: #c3cede; }
+    em.tag.pub { background: rgba(129,140,248,0.16); color: #a5b4fc; }
+    em.tag.write { background: rgba(245,165,36,0.14); color: #f5b041; }
+    em.tag.read { background: rgba(107,155,242,0.16); color: #8fb3f5; }
+    em.tag.revoked { background: rgba(239,68,68,0.14); color: #f87171; }
+    .dm-eprow { display: grid; grid-template-columns: 44px 130px minmax(0, 1fr); gap: 8px; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--line); font-size: 0.56rem; }
+    .dm-eprow:last-child { border: 0; }
+    .dm-eprow code { color: #fff; font-weight: 700; }
+    .dm-eprow > span:last-child { color: var(--mut); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-whrow { border-bottom: 1px solid var(--line); }
+    .dm-whrow:last-child { border: 0; }
+    .dm-whmain { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 0.6rem 0; }
+    .dm-whmain b { display: block; font-size: 0.6rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-whmeta { display: block; margin-top: 3px; font-size: 0.5rem; color: var(--mut); white-space: nowrap; overflow: hidden; }
+    .dm-whmeta code { padding: 1px 4px; border-radius: 4px; background: rgba(255,255,255,0.07); color: var(--tx); margin-right: 4px; }
+    .dm-whmeta u { text-underline-offset: 2px; }
+    .dm-whmeta em { font-style: normal; }
+    .dm-chev { color: var(--mut); font-size: 0.8rem; transition: transform 0.2s; }
+    .dm-chev.open { transform: rotate(90deg); color: var(--acc); }
+    .dm-whact { display: flex; align-items: center; gap: 5px; }
+    .dm-toggle { width: 24px; height: 14px; border-radius: 14px; background: #2f6df0; position: relative; }
+    .dm-toggle::after { content: ''; position: absolute; right: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+    .dm-deliv { margin: 0 0 0.6rem 20px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,0.02); }
+    .dm-delrow { display: grid; grid-template-columns: minmax(0, 1fr) 30px 54px 48px 34px; gap: 6px; padding: 0.38rem 0.6rem; border-bottom: 1px solid var(--line); font-size: 0.52rem; color: var(--mut); }
+    .dm-delrow:last-child { border: 0; }
+    .dm-delrow code:first-child { color: var(--tx); }
+    .dm-alert-strip { display: flex; align-items: center; gap: 0.5rem; font-size: 0.62rem; }
+    .dm-alert-strip svg { width: 18px; height: 18px; color: #f5a524; flex-shrink: 0; }
+    .dm-alert-strip span { margin-left: auto; font-size: 0.52rem; color: var(--mut); }
+
+    /* ── Código (panel tipo terminal claro; variante oscura para tarjetas navy) ── */
+    .dm-code { background: #fff; color: #334155; box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 2px 6px rgba(10,25,47,0.04), 0 14px 32px -8px rgba(10,25,47,0.12), 0 52px 100px -28px rgba(10,25,47,0.2); }
+    .dm-code-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+    .dm-code-bar code { font-size: 0.72rem; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-code-bar b.post { color: #2563eb; } .dm-code-bar b.get { color: #059669; }
+    .dm-pill { flex-shrink: 0; font-size: 0.56rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; color: #047857; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.22); }
+    .dm-code-body { padding: 1.1rem 1.3rem; background: #fbfcfe; }
+    .dm-code-body pre code { font-size: 0.7rem; line-height: 1.75; color: #334155; }
+    .dm-sep { height: 1px; background: rgba(10,25,47,0.08); margin: 0.85rem 0; }
+    .dm-code-foot { display: flex; justify-content: space-between; margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid rgba(10,25,47,0.07); font-family: ui-monospace, monospace; font-size: 0.6rem; color: #94a3b8; }
+    .c-key { color: #1d4ed8; } .c-str { color: #0e7490; } .c-num { color: #b45309; } .c-mut { color: #94a3b8; }
+    .c-ok { color: #059669; font-weight: 700; } .c-bad { color: #dc2626; font-weight: 700; } .c-kw { color: #7c3aed; } .c-fn { color: #0f172a; font-weight: 700; }
+    .dm-hl { background: rgba(245,158,11,0.16); border-radius: 4px; padding: 0 3px; }
+    .dm-dark { background: #0a1524; color: #e8eef8; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 30px 60px -24px rgba(0,0,0,0.6); }
+    .dm-dark .dm-code-bar { background: #0d1c30; border-color: rgba(255,255,255,0.08); }
+    .dm-dark .dm-code-bar code { color: #e8eef8; }
+    .dm-dark .dm-code-body { background: #0a1524; }
+    .dm-dark pre code { color: #c9d4e4; }
+    .dm-dark .c-key { color: #8fb3f5; } .dm-dark .c-str { color: #7dd3c0; } .dm-dark .c-num { color: #f5b041; } .dm-dark .c-mut { color: #64748b; }
+    .dm-dark .c-ok { color: #34d399; } .dm-dark .c-bad { color: #f87171; } .dm-dark .c-kw { color: #c4b5fd; } .dm-dark .c-fn { color: #fff; }
+    .dm-dark .dm-pill { color: #a5b4fc; background: rgba(129,140,248,0.14); border-color: rgba(129,140,248,0.28); }
+    .dm-fxcalc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+    .dm-fxcalc div { padding: 0.55rem 0.6rem; border-radius: 9px; background: #fff; border: 1px solid rgba(10,25,47,0.07); }
+    .dm-fxcalc span { display: block; font-size: 0.52rem; color: #64748b; }
+    .dm-fxcalc b { display: block; margin-top: 2px; font-size: 0.78rem; color: #0a192f; font-variant-numeric: tabular-nums; }
+    .dm-fxcalc .hl { background: rgba(10,25,47,0.04); border-color: rgba(10,25,47,0.16); }
+
+    /* ── App clara (Ajustes, Facturas) ── */
+    .dm-app { background: #fff; color: #0a192f; box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 2px 6px rgba(10,25,47,0.04), 0 18px 40px -12px rgba(10,25,47,0.14), 0 50px 90px -30px rgba(10,25,47,0.18); }
+    .dm-app-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.7rem; color: #475569; }
+    .dm-app-bar b { color: #0a192f; }
+    .dm-live { display: inline-flex; align-items: center; gap: 5px; font-size: 0.6rem; font-weight: 600; color: #0a192f; }
+    .dm-live i { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+    .dm-mut-l { display: inline-flex; align-items: center; gap: 6px; font-size: 0.6rem; color: #64748b; }
+    .dm-app-body { padding: 1rem 1.2rem 1.2rem; }
+    .dm-app-h { display: block; font-size: 0.82rem; }
+    .dm-app-p { margin: 0.25rem 0 0.7rem; font-size: 0.62rem; color: #64748b; }
+    .dm-app-p.sm { margin: 0.6rem 0 0; font-size: 0.56rem; }
+    .dm-lseg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: #f1f2f5; font-size: 0.58rem; font-weight: 600; color: #64748b; margin-bottom: 0.6rem; }
+    .dm-lseg i { font-style: normal; padding: 4px 9px; border-radius: 7px; }
+    .dm-lseg i.on { background: #fff; color: #0a192f; box-shadow: 0 1px 2px rgba(10,25,47,0.12); }
+    .dm-json { padding: 0.9rem 1rem; border-radius: 10px; background: #0b1730; }
+    .dm-json code { font-size: 0.64rem; line-height: 1.7; color: #e2e8f0; }
+    .dm-json.light { background: #f7f8fa; border: 1px solid rgba(10,25,47,0.06); margin-top: 0.7rem; }
+    .dm-json.light code { color: #334155; }
+    .j-k { color: #93c5fd; } .j-s { color: #86efac; } .j-n { color: #fbbf24; }
+    .dm-json.light .j-k { color: #1d4ed8; } .dm-json.light .j-s { color: #0e7490; } .dm-json.light .j-n { color: #b45309; }
+    .dm-toolgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+    .dm-tool { padding: 0.7rem 0.75rem; border: 1px solid rgba(10,25,47,0.08); border-radius: 10px; background: #fff; }
+    .dm-tool-h { display: flex; justify-content: space-between; gap: 6px; align-items: flex-start; }
+    .dm-tool-h b { font-size: 0.62rem; }
+    .dm-tool p { margin: 0.3rem 0 0.4rem; font-size: 0.54rem; line-height: 1.5; color: #475569; }
+    .dm-tool code { font-size: 0.5rem; color: #94a3b8; }
+    em.lt { font-style: normal; flex-shrink: 0; font-size: 0.44rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; }
+    em.lt.r { background: #eef4ff; color: #2563eb; } em.lt.w { background: #fff4e5; color: #b45309; }
+    .dm-pg-row { display: grid; grid-template-columns: 34% 1fr auto; gap: 0.4rem; }
+    .dm-select, .dm-input { padding: 6px 9px; border-radius: 8px; background: #f5f5f7; font-size: 0.6rem; color: #0a192f; }
+    .dm-input { font-family: ui-monospace, monospace; color: #64748b; }
+    .dm-btn-l { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 99px; background: #0a192f; color: #fff; font-size: 0.58rem; font-weight: 700; white-space: nowrap; }
+    .dm-btn-l.ghost { background: #fff; color: #0a192f; border: 1px solid rgba(10,25,47,0.12); }
+    .dm-inv-kpis { display: flex; gap: 1.4rem; }
+    .dm-inv-kpis b { display: block; font-size: 1.05rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .dm-inv-kpis span { font-size: 0.55rem; color: #64748b; }
+    .dm-chips { display: flex; gap: 4px; margin: 0.8rem 0 0.4rem; }
+    .dm-chips i { font-style: normal; font-size: 0.55rem; font-weight: 600; padding: 4px 9px; border-radius: 99px; border: 1px solid rgba(10,25,47,0.1); color: #475569; }
+    .dm-chips i.on { background: #0a192f; border-color: #0a192f; color: #fff; }
+    .dm-invrow { display: grid; grid-template-columns: 58px minmax(0, 1.6fr) 46px 66px 82px; gap: 8px; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.6rem; }
+    .dm-invrow:last-child { border: 0; }
+    .dm-invrow.head { font-size: 0.48rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .dm-invrow .r { text-align: right; font-variant-numeric: tabular-nums; }
+    .dm-cli { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; }
+    .dm-cli i { font-style: normal; flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; background: #0a192f; color: #fff; font-size: 0.42rem; font-weight: 800; }
+    em.st { font-style: normal; justify-self: start; font-size: 0.5rem; font-weight: 700; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+    em.st.blue { background: #eef4ff; color: #2563eb; } em.st.amber { background: #fff4e5; color: #b45309; }
+    em.st.red { background: #fef0f0; color: #dc2626; } em.st.green { background: #ecfdf3; color: #047857; }
+    .dm-fxrow { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.64rem; color: #475569; }
+    .dm-fxrow b { color: #0a192f; font-variant-numeric: tabular-nums; }
+    .dm-fxrow.total { border: 0; font-size: 0.8rem; }
+    .dm-fxrow.total b { font-size: 1.05rem; letter-spacing: -0.03em; }
+    .dm-fxbox { margin-top: 0.6rem; padding: 0.4rem 0.85rem 0.7rem; border-radius: 11px; background: #f7f8fa; border: 1px solid rgba(10,25,47,0.06); }
+    .dm-fxbox .dm-fxrow:nth-last-of-type(1) { border: 0; }
+    .dm-fxbox p { margin: 0.35rem 0 0; font-size: 0.52rem; color: #94a3b8; }
+    .dm-chain { display: grid; gap: 0.5rem; }
+    .dm-step { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; padding: 0.6rem 0.75rem; border-radius: 10px; border: 1px solid rgba(10,25,47,0.07); }
+    .dm-step i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.56rem; font-weight: 800; background: #f1f2f5; color: #475569; }
+    .dm-step b { display: block; font-size: 0.64rem; }
+    .dm-step span { font-size: 0.54rem; color: #64748b; }
+    .dm-step em { font-style: normal; font-size: 0.6rem; font-weight: 700; font-family: ui-monospace, monospace; color: #94a3b8; }
+    .dm-step.ok { border-color: rgba(16,185,129,0.35); background: #f6fdf9; }
+    .dm-step.ok i { background: #10b981; color: #fff; } .dm-step.ok em { color: #047857; }
+    .dm-step.skip em { color: #b45309; }
+    .dm-step.idle { opacity: 0.55; }
+    .dm-step.stop { border-style: dashed; }
+    .dm-step.stop i { background: #fef0f0; color: #dc2626; } .dm-step.stop em { color: #dc2626; }
+    .dm-countries { display: grid; gap: 0.45rem; }
+    .dm-ctry { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 0.6rem 0.75rem; border-radius: 10px; border: 1px solid rgba(10,25,47,0.07); }
+    .dm-ctry > i { font-style: normal; width: 30px; height: 22px; border-radius: 5px; display: grid; place-items: center; background: #0a192f; color: #fff; font-size: 0.52rem; font-weight: 800; letter-spacing: 0.04em; }
+    .dm-ctry b { display: block; font-size: 0.64rem; }
+    .dm-ctry span { font-size: 0.54rem; color: #64748b; }
+    .dm-evcat { display: grid; gap: 0.7rem; }
+    .dm-cap-l { display: block; margin-bottom: 0.3rem; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .dm-evs { display: flex; flex-wrap: wrap; gap: 4px; }
+    .dm-evs code { font-size: 0.52rem; padding: 3px 7px; border-radius: 6px; background: #f5f5f7; color: #475569; }
+    .dm-evs code.on { background: #0a192f; color: #fff; }
+
+    /* Tarjetas angostas del bento: la misma respuesta que da el Workbench en
+       un panel estrecho (sin columna lateral), no texto truncado. */
+    @container (max-width: 600px) {
+        .dm-logs, .dm-wb-ov { grid-template-columns: 1fr; }
+        .dm-detail, .dm-wb-ov aside { display: none; }
+        .dm-keyrow { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) 62px 56px; }
+        .dm-keyrow > :nth-child(4) { display: none; }
+        .dm-three { grid-template-columns: 1fr 1fr; }
+        .dm-three > :nth-child(3) { display: none; }
+        .dm-whact .dm-btn:nth-child(2) { display: none; }
+    }
+    @media (max-width: 640px) {
+        .dm-wb-ov { grid-template-columns: 1fr; }
+        .dm-wb-ov aside { display: none; }
+        .dm-logs { grid-template-columns: 1fr; }
+        .dm-detail { display: none; }
+        .dm-three { grid-template-columns: 1fr; }
+        .dm-three > :nth-child(n+2) { display: none; }
+        .dm-keyrow { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 60px; }
+        .dm-keyrow > :nth-child(4), .dm-keyrow > :nth-child(5) { display: none; }
+        .dm-toolgrid { grid-template-columns: 1fr; }
+        .dm-fxcalc { grid-template-columns: 1fr 1fr; }
+        .dm-sec-head { flex-direction: column; }
+        .dm-whact .dm-btn:nth-child(2) { display: none; }
+    }
+</style>
