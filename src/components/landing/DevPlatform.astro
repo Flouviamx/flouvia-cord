@@ -51,10 +51,10 @@ const PATHS = [
     { id: 'b', d: 'M645 92 V158', dur: 2.2, delay: 1.1 },
     { id: 'c', d: 'M355 192 V214 H468 V240', dur: 2.4, delay: 0.4 },
     { id: 'd', d: 'M645 192 V214 H532 V240', dur: 2.4, delay: 1.6 },
-    { id: 'e', d: 'M206 290 H222', dur: 1.2, delay: 0.2 },
-    { id: 'f', d: 'M358 290 H450', dur: 2, delay: 0.9 },
-    { id: 'g', d: 'M550 290 H658', dur: 2, delay: 0.3 },
-    { id: 'h', d: 'M762 290 H862', dur: 2.2, delay: 1.3 },
+    { id: 'e', d: 'M217 290 H235', dur: 1.2, delay: 0.2 },
+    { id: 'f', d: 'M365 290 H450', dur: 2, delay: 0.9 },
+    { id: 'g', d: 'M550 290 H665', dur: 2, delay: 0.3 },
+    { id: 'h', d: 'M755 290 H867', dur: 2.2, delay: 1.3 },
     { id: 'i', d: 'M500 340 V392', dur: 1.6, delay: 0.6 },
     { id: 'j', d: 'M500 428 V452 H360 V484', dur: 2.2, delay: 1 },
     { id: 'k', d: 'M500 428 V484', dur: 1.8, delay: 1.7 },
@@ -137,11 +137,11 @@ const ROUTES = [
                         ))}
                     </div>
 
-                    <span class="dps-node" style={P(355, 175)}>{tx('API y SDK', 'API & SDK')}</span>
-                    <span class="dps-node" style={P(645, 175)}>{tx('Webhooks', 'Webhooks')}</span>
-                    <span class="dps-node" style={P(290, 290)}>{tx('Integraciones', 'Integrations')}</span>
-                    <span class="dps-node" style={P(710, 290)}>MCP</span>
-                    <span class="dps-node" style={P(500, 410)}>{tx('Cobros', 'Payments')}</span>
+                    <span class="dps-node" style={P(355, 175) + ";width:12cqw"}>{tx('API y SDK', 'API & SDK')}</span>
+                    <span class="dps-node" style={P(645, 175) + ";width:12cqw"}>{tx('Webhooks', 'Webhooks')}</span>
+                    <span class="dps-node" style={P(300, 290) + ";width:13cqw"}>{tx('Integraciones', 'Integrations')}</span>
+                    <span class="dps-node" style={P(710, 290) + ";width:9cqw"}>MCP</span>
+                    <span class="dps-node" style={P(500, 410) + ";width:10cqw"}>{tx('Cobros', 'Payments')}</span>
 
                     <span class="dps-core" style={P(500, 290)}><img src="/imgs/logo-cord-white.png" alt="" width="72" height="16" /></span>
 
@@ -154,7 +154,6 @@ const ROUTES = [
                     </span>
 
                     {RAILS.map((r, i) => <span class="dps-rail" style={P([360, 500, 650][i], 502)}>{r}</span>)}
-                    <span class="dps-rail empty" style={P(800, 502)} data-rail-ghost></span>
                 </div>
             </div>
         </div>
@@ -262,7 +261,6 @@ const ROUTES = [
         const slots = Array.from(dia.querySelectorAll<HTMLElement>('[data-slot]'));
         const apps = Array.from(dia.querySelectorAll<HTMLElement>('[data-app]'));
         const agentImgs = Array.from(dia.querySelectorAll<HTMLImageElement>('[data-agent] img'));
-        const ghost = dia.querySelector<HTMLElement>('[data-rail-ghost]');
         let tick = 0;
 
         const swapSlot = (el: HTMLElement) => {
@@ -290,7 +288,6 @@ const ROUTES = [
                 const cur = agentImgs.findIndex((x) => x.classList.contains('on'));
                 agentImgs.forEach((x, j) => x.classList.toggle('on', j === (cur + 1) % agentImgs.length));
             }
-            if (ghost && tick % 4 === 0) ghost.classList.toggle('blink');
         }, 1400);
     }
 
@@ -335,8 +332,8 @@ const ROUTES = [
             const k = Math.min(1, Math.max(0, (p - p0) / (p1 - p0)));
             return [r0 + (r1 - r0) * k, g0 + (g1 - g0) * k, b0 + (b1 - b0) * k].map(Math.round);
         };
-        const X0 = () => -0.04 * w;
-        const XW = () => 1.08 * w;
+        const X0 = () => -0.14 * w;
+        const XW = () => 1.28 * w;
         const theta = (p: number, t: number) => p * Math.PI * 1.45 - 0.55 + t * 0.00016;
 
         const point = (p: number, v: number, t: number) => {
@@ -398,16 +395,16 @@ const ROUTES = [
             ctx.lineWidth = 1;
             for (let i = 0; i < N; i++) {
                 const v = i / (N - 1) - 0.5;
-                ctx.globalAlpha = 0.4 + 0.6 * (1 - Math.abs(v) * 2) ** 1.5;
+                ctx.globalAlpha = 0.6 + 0.4 * (1 - Math.abs(v) * 2) ** 1.5;
                 strand(ctx, v, t, steps);
             }
 
             // 3 · Bordes
-            ctx.strokeStyle = gradient(ctx, t, 0.9);
-            ctx.lineWidth = 1.4;
-            ctx.globalAlpha = 0.9;
-            strand(ctx, -0.5, t, steps);
-            strand(ctx, 0.5, t, steps);
+            ctx.strokeStyle = gradient(ctx, t, 0.75);
+            ctx.lineWidth = 1.2;
+            ctx.globalAlpha = 0.8;
+            strand(ctx, -0.495, t, steps);
+            strand(ctx, 0.495, t, steps);
 
             ctx.globalAlpha = 1;
             ctx.globalCompositeOperation = 'source-over';
@@ -546,8 +543,6 @@ const ROUTES = [
     .dps-slot.empty, .dps-rail.empty { background: transparent; box-shadow: inset 0 0 0 1px rgba(147,165,255,0.3); outline: 1px dashed rgba(147,165,255,0.35); outline-offset: -1px; }
     .dps-slot.swap { opacity: 0; transform: scale(0.92); }
     .dps-rail { min-width: 9cqw; background: #172c63; }
-    .dps-rail.empty { transition: opacity 0.6s; }
-    .dps-rail.empty.blink { opacity: 0.35; }
 
     .dps-core {
         width: 8.6cqw; height: 8.6cqw; border-radius: 1.3cqw; display: grid; place-items: center;
@@ -573,10 +568,10 @@ const ROUTES = [
     .dps-wave { display: block; width: 100vw; max-width: none; height: clamp(300px, 36vw, 480px); margin: 0.5rem 0 0 calc(50% - 50vw); }
     .dps-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: -3.5rem; position: relative; }
     .dps-stat strong {
-        display: inline-block; font-size: clamp(2.8rem, 5.2vw, 4.4rem); font-weight: 600; letter-spacing: -0.045em; line-height: 1;
+        display: inline-block; font-size: clamp(2.1rem, 3.4vw, 3rem); font-weight: 500; letter-spacing: -0.035em; line-height: 1.05;
         background: linear-gradient(90deg, #fde68a, #fb923c 45%, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent;
     }
-    .dps-stat strong span { font-size: 0.55em; }
+    .dps-stat strong span { font-size: 0.7em; }
     .dps-stat p { margin: 0.9rem 0 0; max-width: 280px; font-size: 0.95rem; line-height: 1.55; color: #8892b0; }
 
     /* ── Rutas ── */

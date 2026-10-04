@@ -1,7 +1,7 @@
 ---
 // Cross-links al final de /desarrolladores/* y /elements — misma pieza que
 // "Explora el resto del producto" de /producto/[slug]: lista hairline con las
-// demás páginas para desarrolladores y una fila final a la documentación.
+// tres páginas para desarrolladores siguientes y una fila final a la documentación.
 import { getLangFromUrl, publicPath } from '../../i18n/utils';
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
@@ -12,7 +12,10 @@ const { current } = Astro.props;
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const l = (p: string) => publicPath(p, lang);
-const otros = (isEn ? DEV_PAGES_EN : DEV_PAGES).filter((p) => p.slug !== current);
+// Las tres páginas que siguen en el orden del menú (circular), más la documentación.
+const todas = isEn ? DEV_PAGES_EN : DEV_PAGES;
+const idx = Math.max(0, todas.findIndex((p) => p.slug === current));
+const otros = [1, 2, 3].map((k) => todas[(idx + k) % todas.length]);
 const href = (slug: string) => l(slug === 'elements' ? '/elements' : `/desarrolladores/${slug}`);
 const docsUrl = isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.app';
 ---
