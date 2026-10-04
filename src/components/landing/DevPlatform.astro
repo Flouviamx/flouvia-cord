@@ -1,0 +1,556 @@
+---
+// DevPlatform — sección oscura "para desarrolladores" (home y /elements), en la
+// línea de la de stripe.com pero con datos de Cord:
+//   1. Plataforma abierta + CTAs a la documentación y al SDK.
+//   2. Diagrama vivo: tus sistemas -> API/webhooks -> Cord -> MCP, integraciones
+//      y rieles de cobro, con pulsos que viajan por las líneas y casillas que
+//      cambian solas.
+//   3. Cinta de líneas (canvas) con tres cifras verificadas en código
+//      (apikey.ts: 600/min; domain-events.ts: 41 eventos; mcp.ts: 19 tools).
+//   4. Tres rutas de integración (sin código, plataformas, código propio), cada
+//      una con su visual animado y su página.
+// Las integraciones del diagrama son solo las que el catálogo marca
+// `disponible: true` sin depender de credenciales (catalogo.ts).
+import { getLangFromUrl, publicPath } from '../../i18n/utils';
+
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const tx = (es: string, en: string) => (isEn ? en : es);
+const l = (p: string) => publicPath(p, lang);
+const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
+
+const docsUrl = isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.app';
+
+// Casillas de la barra superior: cada una rota entre sus etiquetas; '' = vacía.
+const SLOTS = [
+    ['ERP', '', tx('Inventario', 'Inventory')],
+    ['', 'CRM', tx('Tu backend', 'Your backend')],
+    [tx('Tienda en línea', 'Online store'), ''],
+    [tx('Contabilidad', 'Accounting'), 'Backoffice', ''],
+    ['', tx('Sistema propio', 'In-house system'), 'CRM'],
+];
+const APPS = [
+    { n: 'HubSpot', src: fav('hubspot.com') },
+    { n: 'Slack', src: '/imgs/integrations/slack.png' },
+    { n: 'Microsoft Teams', src: fav('teams.microsoft.com') },
+    { n: 'WhatsApp', src: '/imgs/integrations/whatsapp.svg' },
+    { n: 'Make', src: fav('make.com') },
+    { n: 'n8n', src: '/imgs/integrations/n8n.svg' },
+];
+const AGENTS = [
+    { n: 'Claude', src: fav('claude.ai') },
+    { n: 'Cursor', src: fav('cursor.com') },
+];
+const RAILS = [tx('Tarjeta', 'Card'), 'SPEI', 'Mercado Pago'];
+
+// Geometría del diagrama en un lienzo de 1000 x 560 (las cajas se colocan en %).
+const P = (x: number, y: number) => `left:${x / 10}%;top:${(y / 560) * 100}%`;
+const PATHS = [
+    { id: 'a', d: 'M355 92 V158', dur: 2.2, delay: 0 },
+    { id: 'b', d: 'M645 92 V158', dur: 2.2, delay: 1.1 },
+    { id: 'c', d: 'M355 192 V214 H468 V240', dur: 2.4, delay: 0.4 },
+    { id: 'd', d: 'M645 192 V214 H532 V240', dur: 2.4, delay: 1.6 },
+    { id: 'e', d: 'M206 290 H222', dur: 1.2, delay: 0.2 },
+    { id: 'f', d: 'M358 290 H450', dur: 2, delay: 0.9 },
+    { id: 'g', d: 'M550 290 H658', dur: 2, delay: 0.3 },
+    { id: 'h', d: 'M762 290 H862', dur: 2.2, delay: 1.3 },
+    { id: 'i', d: 'M500 340 V392', dur: 1.6, delay: 0.6 },
+    { id: 'j', d: 'M500 428 V452 H360 V484', dur: 2.2, delay: 1 },
+    { id: 'k', d: 'M500 428 V484', dur: 1.8, delay: 1.7 },
+    { id: 'l', d: 'M500 428 V452 H650 V484', dur: 2.2, delay: 0.1 },
+];
+
+const STATS = [
+    { v: '600', u: '/min', l: tx('peticiones por minuto por llave secreta', 'requests per minute per secret key') },
+    { v: '41', u: '', l: tx('tipos de evento de webhook, firmados con HMAC-SHA256', 'webhook event types, signed with HMAC-SHA256') },
+    { v: '19', u: '', l: tx('herramientas MCP para Claude, Cursor y cualquier agente', 'MCP tools for Claude, Cursor and any agent') },
+];
+
+// Logos de la tarjeta 2: integraciones disponibles sin credenciales extra y
+// plataformas donde Elements se monta con su script.
+const LOGO_ROWS = [
+    [['HubSpot', fav('hubspot.com')], ['WordPress', fav('wordpress.org')], ['Slack', '/imgs/integrations/slack.png'], ['Webflow', fav('webflow.com')], ['Make', fav('make.com')]],
+    [['Microsoft Teams', fav('teams.microsoft.com')], ['Framer', fav('framer.com')], ['WhatsApp', '/imgs/integrations/whatsapp.svg'], ['Shopify', '/imgs/integrations/shopify.svg'], ['n8n', '/imgs/integrations/n8n.svg']],
+    [['React', fav('react.dev')], ['Vue', fav('vuejs.org')], ['Next.js', fav('nextjs.org')], ['Astro', fav('astro.build')], ['Claude', fav('claude.ai')]],
+];
+const ROUTES = [
+    {
+        t: tx('¿No programas?', 'Not a developer?'),
+        d: tx('Crea la cotización en la app y comparte su link por WhatsApp o correo: tu cliente la revisa, la aprueba y la paga sin que escribas una línea de código.', 'Create the quote in the app and share its link by WhatsApp or email: your client reviews, approves and pays it without you writing a line of code.'),
+        href: l('/producto/link-publico'), cta: tx('Explora el link público', 'Explore the public link'),
+    },
+    {
+        t: tx('Usa lo que ya tienes.', 'Use what you already have.'),
+        d: tx('HubSpot, Slack, Teams, WhatsApp, Make y n8n se conectan desde Ajustes, y Elements se monta en WordPress, Webflow, Framer o Shopify.', 'HubSpot, Slack, Teams, WhatsApp, Make and n8n connect from Settings, and Elements mounts on WordPress, Webflow, Framer or Shopify.'),
+        href: l('/integraciones'), cta: tx('Consulta las integraciones', 'Browse the integrations'),
+    },
+    {
+        t: tx('Crea tu propia integración.', 'Build your own integration.'),
+        d: tx('Usa la API REST, el SDK, el servidor MCP y el Workbench para construir, probar y depurar tu integración con Cord.', 'Use the REST API, the SDK, the MCP server and the Workbench to build, test and debug your Cord integration.'),
+        href: l('/desarrolladores/api'), cta: tx('Primeros pasos', 'Get started'),
+    },
+];
+---
+
+<section class="dps" aria-labelledby="dps-t1">
+    <div class="dps-frame">
+        <!-- 1 · Plataforma -->
+        <div class="dps-block">
+            <h2 id="dps-t1" class="dps-h reveal"><b>{tx('Una plataforma abierta para cada stack.', 'An open platform for every stack.')}</b> {tx('API REST, SDK, webhooks y MCP sobre los mismos datos que tu equipo usa en la app, con llaves de prueba aisladas de tu cuenta real.', 'REST API, SDK, webhooks and MCP on the same data your team uses in the app, with test keys isolated from your live account.')}</h2>
+            <div class="dps-ctas reveal">
+                <a class="dps-btn dps-btn-primary" href={docsUrl}>{tx('Ver documentación para desarrolladores', 'Read the developer docs')}<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+                <a class="dps-btn" href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener">{tx('Ver el SDK en npm', 'See the SDK on npm')}</a>
+            </div>
+        </div>
+
+        <!-- 2 · Diagrama -->
+        <div class="dps-block">
+            <h2 class="dps-h reveal"><b>{tx('Conecta con lo que ya usas.', 'Connect what you already use.')}</b> {tx('Tu ERP, tu CRM o tu tienda hablan con Cord por la API y webhooks firmados; HubSpot, Slack, Teams, WhatsApp, Make y n8n se conectan sin código, y tus agentes de IA entran por MCP.', 'Your ERP, CRM or store talk to Cord through the API and signed webhooks; HubSpot, Slack, Teams, WhatsApp, Make and n8n connect with no code, and your AI agents come in through MCP.')}</h2>
+            <div class="dps-scroll">
+                <div class="dps-dia" data-dps-dia aria-hidden="true">
+                    <svg class="dps-lines" viewBox="0 0 1000 560">
+                        <defs>
+                            <radialGradient id="dpsPulse"><stop offset="0" stop-color="#fde68a"/><stop offset="0.45" stop-color="#f59e0b" stop-opacity="0.9"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/></radialGradient>
+                        </defs>
+                        {PATHS.map((p) => <path id={`dps-p-${p.id}`} d={p.d} class="dps-path" />)}
+                        {PATHS.map((p) => (
+                            <circle r="6" fill="url(#dpsPulse)" class="dps-pulse">
+                                <animateMotion dur={`${p.dur}s`} begin={`${p.delay}s`} repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                                    <mpath href={`#dps-p-${p.id}`} />
+                                </animateMotion>
+                            </circle>
+                        ))}
+                    </svg>
+
+                    <div class="dps-bar" style={P(500, 66)}>
+                        {SLOTS.map((labels) => (
+                            <span class:list={['dps-slot', { empty: !labels[0] }]} data-slot={JSON.stringify(labels)} data-i="0">{labels[0]}</span>
+                        ))}
+                    </div>
+
+                    <span class="dps-node" style={P(355, 175)}>{tx('API y SDK', 'API & SDK')}</span>
+                    <span class="dps-node" style={P(645, 175)}>{tx('Webhooks', 'Webhooks')}</span>
+                    <span class="dps-node" style={P(290, 290)}>{tx('Integraciones', 'Integrations')}</span>
+                    <span class="dps-node" style={P(710, 290)}>MCP</span>
+                    <span class="dps-node" style={P(500, 410)}>{tx('Cobros', 'Payments')}</span>
+
+                    <span class="dps-core" style={P(500, 290)}><img src="/imgs/logo-cord-white.png" alt="" width="72" height="16" /></span>
+
+                    <div class="dps-apps" style={P(135, 290)}>
+                        {APPS.map((a) => <span class="dps-app" data-app><img src={a.src} alt="" width="22" height="22" loading="lazy" /></span>)}
+                    </div>
+
+                    <span class="dps-agent" style={P(890, 290)} data-agent>
+                        {AGENTS.map((a, i) => <img src={a.src} alt="" width="26" height="26" loading="lazy" class:list={{ on: i === 0 }} />)}
+                    </span>
+
+                    {RAILS.map((r, i) => <span class="dps-rail" style={P([360, 500, 650][i], 502)}>{r}</span>)}
+                    <span class="dps-rail empty" style={P(800, 502)} data-rail-ghost></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 · Cinta + cifras -->
+        <div class="dps-block dps-wave-block">
+            <h2 class="dps-h reveal"><b>{tx('Crece sin cambiar de integración.', 'Grow without rewriting your integration.')}</b> {tx('El mismo contrato en test y en live, llaves con su propio límite y eventos que se reintentan durante casi cuatro días si tu servidor se cae.', 'The same contract in test and live, keys with their own limits and events retried for almost four days if your server goes down.')}</h2>
+            <canvas class="dps-wave" data-dps-wave aria-hidden="true"></canvas>
+            <div class="dps-stats">
+                {STATS.map((s) => (
+                    <div class="dps-stat reveal"><strong>{s.v}<span>{s.u}</span></strong><p>{s.l}</p></div>
+                ))}
+            </div>
+        </div>
+
+        <!-- 4 · Rutas -->
+        <div class="dps-block">
+            <h2 class="dps-h reveal"><b>{tx('Elige cómo integrarte.', 'Choose how to integrate.')}</b> {tx('Con documentación, llaves de prueba y un Workbench para depurar cada petición, empiezas por la ruta que mejor le quede a tu negocio.', 'With docs, test keys and a Workbench to debug every request, you start with the route that fits your business best.')}</h2>
+            <div class="dps-routes">
+                <!-- Sin código: el link viaja por chat y abre la cotización -->
+                <article class="dps-route reveal">
+                    <div class="dps-vis dps-vis-chat" data-dps-chat aria-hidden="true">
+                        <div class="dps-chat">
+                            <p class="dps-msg in" data-m>{tx('Hola, ¿me mandas la cotización del cemento y la varilla?', 'Hi, can you send me the quote for the cement and rebar?')}</p>
+                            <p class="dps-msg out" data-m>{tx('Claro. Desde el link la apruebas y la pagas.', 'Sure. You can approve and pay it from the link.')}</p>
+                            <p class="dps-msg out link" data-m>cordhq.app/q/k7Qp…</p>
+                        </div>
+                        <div class="dps-qcard" data-m>
+                            <span class="dps-q-org"><i>MD</i>Materiales del Valle</span>
+                            <small>COT-0052</small>
+                            <strong>MXN 138,944.80</strong>
+                            <span class="dps-q-btn">{tx('Aprobar y pagar', 'Approve and pay')}</span>
+                        </div>
+                    </div>
+                    <p class="dps-route-t"><b>{ROUTES[0].t}</b> {ROUTES[0].d}</p>
+                    <a class="dps-route-cta" href={ROUTES[0].href}>{ROUTES[0].cta}<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+                </article>
+
+                <!-- Plataformas: filas de logos que se deslizan -->
+                <article class="dps-route reveal">
+                    <div class="dps-vis dps-vis-logos" aria-hidden="true">
+                        {LOGO_ROWS.map((row, r) => (
+                            <div class:list={['dps-lrow', { rev: r === 1 }]} style={`--d:${26 + r * 6}s`}>
+                                {[...row, ...row].map(([n, src]) => <span class="dps-logo" title={n}><img src={src} alt="" width="34" height="34" loading="lazy" /></span>)}
+                            </div>
+                        ))}
+                    </div>
+                    <p class="dps-route-t"><b>{ROUTES[1].t}</b> {ROUTES[1].d}</p>
+                    <a class="dps-route-cta" href={ROUTES[1].href}>{ROUTES[1].cta}<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+                </article>
+
+                <!-- Código propio: editor con autocompletado y terminal -->
+                <article class="dps-route reveal">
+                    <div class="dps-vis dps-vis-code" data-dps-code aria-hidden="true">
+                        <div class="dps-ed">
+                            <div><i>1</i><span><em class="k">import</em> {'{'} CordAPI {'}'} <em class="k">from</em> <em class="s">'@flouviahq/elements/server'</em>;</span></div>
+                            <div><i>2</i><span><em class="k">const</em> cord = <em class="k">new</em> <em class="f">CordAPI</em>(</span></div>
+                            <div><i>3</i><span>  <em class="s">'sk_test_4f9c…'</em></span></div>
+                            <div><i>4</i><span>);</span></div>
+                            <div><i>5</i><span><em class="k">await</em> cord.<b data-typed></b><u class="caret"></u></span></div>
+                            <div><i>6</i><span></span></div>
+                            <ul class="dps-ac" data-ac>
+                                <li>clients</li><li>products</li><li class="on">quotes</li><li>webhooks</li>
+                            </ul>
+                        </div>
+                        <div class="dps-status"><span>NORMAL</span><em>server.js</em><small>100% · ln 5</small></div>
+                        <div class="dps-term">
+                            <p>$ node server.js</p>
+                            <p data-term>&gt; {tx('Esperando peticiones…', 'Waiting for requests…')}</p>
+                        </div>
+                    </div>
+                    <p class="dps-route-t"><b>{ROUTES[2].t}</b> {ROUTES[2].d}</p>
+                    <a class="dps-route-cta" href={ROUTES[2].href}>{ROUTES[2].cta}<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Casillas que cambian, integraciones que entran y salen, y la cinta de
+    // líneas en canvas. Todo se pausa fuera de pantalla; con reduced-motion
+    // queda un cuadro fijo (los pulsos SVG se ocultan por CSS).
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function initDiagram() {
+        const dia = document.querySelector<HTMLElement>('[data-dps-dia]');
+        if (!dia) return;
+        // En móvil el diagrama se recorre de lado: arranca centrado en Cord.
+        const sc = dia.parentElement;
+        if (sc && sc.scrollWidth > sc.clientWidth) sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
+        if (reduced) return;
+        let visible = false;
+        new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.1 }).observe(dia);
+
+        const slots = Array.from(dia.querySelectorAll<HTMLElement>('[data-slot]'));
+        const apps = Array.from(dia.querySelectorAll<HTMLElement>('[data-app]'));
+        const agentImgs = Array.from(dia.querySelectorAll<HTMLImageElement>('[data-agent] img'));
+        const ghost = dia.querySelector<HTMLElement>('[data-rail-ghost]');
+        let tick = 0;
+
+        const swapSlot = (el: HTMLElement) => {
+            const labels: string[] = JSON.parse(el.dataset.slot || '[]');
+            const next = (Number(el.dataset.i || 0) + 1) % labels.length;
+            el.dataset.i = String(next);
+            el.classList.add('swap');
+            setTimeout(() => {
+                el.textContent = labels[next];
+                el.classList.toggle('empty', !labels[next]);
+                el.classList.remove('swap');
+            }, 260);
+        };
+
+        setInterval(() => {
+            if (!visible || document.hidden) return;
+            tick++;
+            swapSlot(slots[(tick * 3) % slots.length]);
+            if (tick % 2 === 0) {
+                const a = apps[(tick * 5) % apps.length];
+                a.classList.add('off');
+                setTimeout(() => a.classList.remove('off'), 1500);
+            }
+            if (tick % 3 === 0 && agentImgs.length > 1) {
+                const cur = agentImgs.findIndex((x) => x.classList.contains('on'));
+                agentImgs.forEach((x, j) => x.classList.toggle('on', j === (cur + 1) % agentImgs.length));
+            }
+            if (ghost && tick % 4 === 0) ghost.classList.toggle('blink');
+        }, 1400);
+    }
+
+    function initWave() {
+        const cv = document.querySelector<HTMLCanvasElement>('[data-dps-wave]');
+        if (!cv) return;
+        const ctx = cv.getContext('2d');
+        if (!ctx) return;
+        let w = 0, h = 0, visible = false, raf = 0;
+        const N = 72;
+
+        const resize = () => {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = cv.clientWidth; h = cv.clientHeight;
+            cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+
+        const draw = (t: number) => {
+            ctx.clearRect(0, 0, w, h);
+            const g = ctx.createLinearGradient(0, 0, w, 0);
+            g.addColorStop(0, 'rgba(251,191,36,0)');
+            g.addColorStop(0.12, 'rgba(251,191,36,0.55)');
+            g.addColorStop(0.42, 'rgba(249,115,22,0.7)');
+            g.addColorStop(0.72, 'rgba(99,102,241,0.75)');
+            g.addColorStop(1, 'rgba(56,189,248,0.65)');
+            ctx.strokeStyle = g;
+            ctx.lineWidth = 1;
+                        const cy = h * 0.58;
+            const steps = Math.max(60, Math.round(w / 14));
+            for (let i = 0; i < N; i++) {
+                const u = i / (N - 1) - 0.5;
+                ctx.beginPath();
+                for (let s = 0; s <= steps; s++) {
+                    const p = s / steps;
+                    const x = p * w;
+                    // La cinta se tuerce: el abanico se cierra cerca del centro y se abre a la derecha.
+                    const raw = Math.sin(Math.PI * (p * 1.15 - 0.18) + t * 0.00025);
+                    const spread = h * 0.42 * (Math.sign(raw) || 1) * Math.max(Math.abs(raw), 0.06) * (0.25 + p);
+                    const bend = h * 0.16 * Math.sin(p * Math.PI * 1.6 + t * 0.0004) - h * 0.22 * p * p;
+                    const y = cy + bend + spread * u;
+                    if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.globalAlpha = 0.22 + 0.4 * (1 - Math.abs(u) * 2) ** 2;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        };
+
+        const loop = (t: number) => { draw(t); raf = visible && !document.hidden ? requestAnimationFrame(loop) : 0; };
+        resize();
+        draw(0);
+        window.addEventListener('resize', () => { resize(); draw(performance.now()); });
+        if (reduced) return;
+        new IntersectionObserver(([e]) => {
+            visible = e.isIntersecting;
+            if (visible && !raf) raf = requestAnimationFrame(loop);
+        }, { threshold: 0.05 }).observe(cv);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && visible && !raf) raf = requestAnimationFrame(loop); });
+    }
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const watch = (el: Element) => {
+        const st = { on: false };
+        new IntersectionObserver(([e]) => { st.on = e.isIntersecting; }, { threshold: 0.2 }).observe(el);
+        return st;
+    };
+
+    // Sin código: el mensaje del cliente, la respuesta, el link y la cotización.
+    function initChat() {
+        const box = document.querySelector<HTMLElement>('[data-dps-chat]');
+        if (!box || reduced) return;
+        const parts = Array.from(box.querySelectorAll<HTMLElement>('[data-m]'));
+        const vis = watch(box);
+        (async () => {
+            for (;;) {
+                if (!vis.on || document.hidden) { await sleep(400); continue; }
+                parts.forEach((p) => p.classList.add('hide'));
+                await sleep(500);
+                for (const p of parts) { p.classList.remove('hide'); await sleep(750); }
+                await sleep(3600);
+            }
+        })();
+    }
+
+    // Código propio: escribe la llamada, el autocompletado elige y la terminal responde.
+    function initCode() {
+        const box = document.querySelector<HTMLElement>('[data-dps-code]');
+        const typed = box?.querySelector<HTMLElement>('[data-typed]');
+        const ac = box?.querySelector<HTMLElement>('[data-ac]');
+        const term = box?.querySelector<HTMLElement>('[data-term]');
+        if (!box || !typed || !ac || !term) return;
+        const items = Array.from(ac.querySelectorAll<HTMLElement>('li'));
+        const isEn = document.documentElement.lang === 'en';
+        const waiting = isEn ? '> Waiting for requests…' : '> Esperando peticiones…';
+        const done = isEn ? '> COT-0053 created · link ready' : '> COT-0053 creada · link listo';
+        if (reduced) { typed.textContent = 'quotes.create({ … })'; ac.classList.add('hide'); term.textContent = done; term.classList.add('ok'); return; }
+        const vis = watch(box);
+        const select = (k: number) => items.forEach((li, j) => li.classList.toggle('on', j === k));
+        (async () => {
+            for (;;) {
+                if (!vis.on || document.hidden) { await sleep(400); continue; }
+                typed.textContent = ''; ac.classList.remove('hide'); select(0);
+                term.textContent = waiting; term.classList.remove('ok');
+                await sleep(900);
+                for (const k of [1, 2]) { select(k); await sleep(420); }
+                ac.classList.add('hide');
+                for (const ch of 'quotes.create({ … })') { typed.textContent += ch; await sleep(55); }
+                await sleep(700);
+                term.textContent = done; term.classList.add('ok');
+                await sleep(3200);
+            }
+        })();
+    }
+
+    function init() { initDiagram(); initWave(); initChat(); initCode(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+</script>
+
+<style>
+    .dps { background: #081325; color: #e6ecf5; padding: 0 5%; overflow: hidden; }
+    .dps-frame { max-width: 1240px; margin: 0 auto; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); }
+    .dps-block { padding: 6.5rem 2.2rem 6rem; border-top: 1px solid rgba(255,255,255,0.06); }
+    .dps-block:first-child { border-top: 0; padding-top: 8rem; }
+    .dps-h { max-width: 860px; margin: 0; font-size: clamp(1.45rem, 2.4vw, 2.15rem); line-height: 1.24; font-weight: 500; letter-spacing: -0.025em; color: #8ea2c4; }
+    .dps-h b { color: #fff; font-weight: 600; }
+
+    .dps-ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2.4rem; }
+    .dps-btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 999px; font-size: 0.95rem; font-weight: 600; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.22); transition: background 0.25s, border-color 0.25s, transform 0.4s var(--ease-spring); }
+    .dps-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.4); transform: translateY(-2px); }
+    .dps-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .dps-btn-primary { background: #2f6df0; border-color: #2f6df0; box-shadow: 0 14px 34px -14px rgba(47,109,240,0.8); }
+    .dps-btn-primary:hover { background: #3d7bff; border-color: #3d7bff; }
+    .dps-btn:focus-visible, .dps-route-cta:focus-visible { outline: 2px solid #93c5fd; outline-offset: 3px; }
+
+    /* ── Diagrama ── */
+    .dps-scroll { margin-top: 3.5rem; }
+    .dps-dia {
+        position: relative; width: 100%; aspect-ratio: 1000 / 560; container-type: inline-size;
+        background-image: radial-gradient(rgba(148,163,184,0.16) 1px, transparent 1px);
+        background-size: 14px 14px;
+        -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 50%, #000 55%, transparent 100%);
+        mask-image: radial-gradient(ellipse 75% 85% at 50% 50%, #000 55%, transparent 100%);
+    }
+    .dps-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .dps-path { fill: none; stroke: rgba(147,165,255,0.42); stroke-width: 1.2; stroke-dasharray: 3 4; }
+    .dps-pulse { mix-blend-mode: screen; }
+    .dps-dia > span, .dps-dia > div { position: absolute; transform: translate(-50%, -50%); }
+
+    .dps-bar { display: flex; gap: 1cqw; padding: 0.9cqw; border-radius: 1.2cqw; background: rgba(47,109,240,0.08); box-shadow: inset 0 0 0 1px rgba(147,165,255,0.16); }
+    .dps-slot, .dps-node, .dps-rail {
+        display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+        height: 4cqw; padding: 0 1.8cqw; border-radius: 0.7cqw;
+        font-size: 1.55cqw; font-weight: 600; color: #fff;
+        background: linear-gradient(180deg, #2f6df0, #2456c9);
+        box-shadow: 0 1.2cqw 2.6cqw -1.2cqw rgba(47,109,240,0.75), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .dps-slot { width: 13.5cqw; padding: 0 0.8cqw; font-size: 1.4cqw; background: linear-gradient(180deg, #1d3a8a, #182f70); transition: opacity 0.26s, transform 0.26s, background 0.3s; }
+    .dps-slot.empty, .dps-rail.empty { background: transparent; box-shadow: inset 0 0 0 1px rgba(147,165,255,0.3); outline: 1px dashed rgba(147,165,255,0.35); outline-offset: -1px; }
+    .dps-slot.swap { opacity: 0; transform: scale(0.92); }
+    .dps-rail { min-width: 9cqw; background: linear-gradient(180deg, #1d3a8a, #182f70); }
+    .dps-rail.empty { transition: opacity 0.6s; }
+    .dps-rail.empty.blink { opacity: 0.35; }
+
+    .dps-core {
+        width: 10cqw; height: 10cqw; border-radius: 1.6cqw; display: grid; place-items: center;
+        background: radial-gradient(120% 120% at 30% 20%, #3b82f6 0%, #1e3a8a 55%, #0b1b46 100%);
+        box-shadow: 0 0 0 1px rgba(147,197,253,0.35), 0 0 5cqw rgba(59,130,246,0.45), 0 2cqw 4cqw -1cqw rgba(0,0,0,0.6);
+    }
+    .dps-core::after { content: ''; position: absolute; inset: -1.2cqw; border-radius: 2.4cqw; border: 1px solid rgba(147,197,253,0.25); animation: dpsRing 2.8s ease-out infinite; }
+    @keyframes dpsRing { from { opacity: 0.9; transform: scale(0.9); } to { opacity: 0; transform: scale(1.25); } }
+    .dps-core img { width: 7.2cqw; height: auto; }
+
+    .dps-apps { display: grid; grid-template-columns: repeat(3, 4.6cqw); gap: 0.9cqw; padding: 1cqw; border-radius: 1.2cqw; background: rgba(47,109,240,0.08); box-shadow: inset 0 0 0 1px rgba(147,165,255,0.16); }
+    .dps-app { width: 4.6cqw; height: 4.6cqw; border-radius: 0.9cqw; background: #fff; display: grid; place-items: center; transition: opacity 0.5s, transform 0.5s, background 0.5s; }
+    .dps-app img { width: 2.6cqw; height: 2.6cqw; object-fit: contain; }
+    .dps-app.off { opacity: 0.25; transform: scale(0.88); background: transparent; box-shadow: inset 0 0 0 1px rgba(147,165,255,0.4); }
+    .dps-app.off img { opacity: 0; }
+
+    .dps-agent { width: 5.4cqw; height: 5.4cqw; border-radius: 1cqw; background: #fff; display: grid; place-items: center; box-shadow: 0 1.2cqw 2.6cqw -1.2cqw rgba(0,0,0,0.7); }
+    .dps-agent img { grid-area: 1 / 1; width: 3cqw; height: 3cqw; object-fit: contain; opacity: 0; transition: opacity 0.6s; }
+    .dps-agent img.on { opacity: 1; }
+
+    /* ── Cinta + cifras ── */
+    .dps-wave-block { position: relative; }
+    .dps-wave { display: block; width: calc(100% + 4.4rem); height: clamp(260px, 32vw, 420px); margin: 1rem -2.2rem 0; }
+    .dps-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: -3rem; position: relative; }
+    .dps-stat strong {
+        display: inline-block; font-size: clamp(2.6rem, 5vw, 4.2rem); font-weight: 500; letter-spacing: -0.04em; line-height: 1;
+        background: linear-gradient(90deg, #fde68a, #fb923c 45%, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .dps-stat strong span { font-size: 0.55em; }
+    .dps-stat p { margin: 0.9rem 0 0; max-width: 280px; font-size: 0.98rem; line-height: 1.5; color: #e6ecf5; }
+
+    /* ── Rutas ── */
+    .dps-routes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; margin-top: 3.4rem; }
+    .dps-route { display: flex; flex-direction: column; min-width: 0; }
+    .dps-vis { position: relative; height: 300px; border-radius: 10px; overflow: hidden; background: linear-gradient(160deg, #13285a 0%, #0f1f47 100%); box-shadow: inset 0 0 0 1px rgba(147,165,255,0.12); }
+    .dps-route-t { margin: 1.5rem 0 0; font-size: 1.08rem; line-height: 1.55; color: #8ea2c4; font-weight: 450; }
+    .dps-route-t b { color: #fff; font-weight: 600; }
+    .dps-route-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 1.1rem; font-size: 1.02rem; font-weight: 600; color: #7fb0ff; text-decoration: none; align-self: flex-start; }
+    .dps-route-cta svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+    .dps-route-cta:hover { color: #a9c8ff; }
+    .dps-route-cta:hover svg { transform: translateX(3px); }
+
+    /* Sin código */
+    .dps-chat { position: absolute; left: 7%; top: 11%; width: 58%; padding: 14px; border-radius: 10px; background: #1f3a7a; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 20px 40px -20px rgba(0,0,0,0.6); }
+    .dps-msg { margin: 0; padding: 8px 11px; border-radius: 8px; font-size: 0.7rem; line-height: 1.4; max-width: 86%; transition: opacity 0.45s, transform 0.45s var(--ease-spring); }
+    .dps-msg.in { background: #fff; color: #0a192f; align-self: flex-start; }
+    .dps-msg.out { background: #2a4b96; color: #e6ecf5; align-self: flex-end; }
+    .dps-msg.link { background: #0f1f47; color: #fff; text-decoration: underline; font-family: ui-monospace, monospace; font-size: 0.66rem; }
+    .dps-qcard { position: absolute; right: -6%; top: 26%; width: 44%; padding: 16px 14px; border-radius: 10px; background: #2f6df0; color: #fff; box-shadow: 0 24px 50px -20px rgba(0,0,0,0.7); transition: opacity 0.5s, transform 0.6s var(--ease-spring); }
+    .dps-q-org { display: flex; align-items: center; gap: 6px; font-size: 0.66rem; font-weight: 600; white-space: nowrap; overflow: hidden; }
+    .dps-q-org i { font-style: normal; flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px; background: #0a192f; display: grid; place-items: center; font-size: 0.5rem; }
+    .dps-qcard small { display: block; margin-top: 12px; font-size: 0.6rem; opacity: 0.75; }
+    .dps-qcard strong { display: block; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; margin: 2px 0 12px; white-space: nowrap; }
+    .dps-q-btn { display: block; text-align: center; padding: 7px 0; border-radius: 99px; background: #fff; color: #0a192f; font-size: 0.64rem; font-weight: 700; }
+    .dps-vis-chat [data-m].hide { opacity: 0; transform: translateY(10px); }
+    .dps-vis-chat .dps-qcard.hide { transform: translateX(24px); }
+
+    /* Plataformas */
+    .dps-vis-logos { display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+    .dps-lrow { display: flex; gap: 14px; width: max-content; animation: dpsMarq var(--d) linear infinite; }
+    .dps-lrow.rev { animation-direction: reverse; }
+    @keyframes dpsMarq { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 7px)); } }
+    .dps-logo { flex-shrink: 0; width: 72px; height: 72px; border-radius: 14px; background: #fff; display: grid; place-items: center; box-shadow: 0 10px 22px -12px rgba(0,0,0,0.6); }
+    .dps-logo img { width: 36px; height: 36px; object-fit: contain; }
+    .dps-vis-logos::before, .dps-vis-logos::after { content: ''; position: absolute; top: 0; bottom: 0; width: 18%; z-index: 1; pointer-events: none; }
+    .dps-vis-logos::before { left: 0; background: linear-gradient(90deg, #12265a, transparent); }
+    .dps-vis-logos::after { right: 0; background: linear-gradient(-90deg, #0f1f47, transparent); }
+    .dps-vis-logos:hover .dps-lrow { animation-play-state: paused; }
+
+    /* Código propio */
+    .dps-vis-code { background: #0b1736; display: flex; flex-direction: column; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: #dbe4f0; }
+    .dps-ed { position: relative; flex: 1; padding: 16px 14px 0; }
+    .dps-ed > div { display: flex; gap: 14px; line-height: 2; white-space: pre; }
+    .dps-ed i { font-style: normal; width: 12px; text-align: right; color: #5b6f99; flex-shrink: 0; }
+    .dps-ed span { overflow: hidden; text-overflow: ellipsis; }
+    .dps-ed em { font-style: normal; }
+    .dps-ed .k { color: #c4b5fd; }
+    .dps-ed .s { color: #a5d6a7; }
+    .dps-ed .f { color: #fcd34d; }
+    .dps-ed b { font-weight: 400; color: #fcd34d; }
+    .caret { display: inline-block; width: 7px; height: 1.1em; margin-left: 1px; vertical-align: -2px; background: #93c5fd; text-decoration: none; animation: dpsBlink 1s steps(1) infinite; }
+    @keyframes dpsBlink { 50% { opacity: 0; } }
+    .dps-ac { position: absolute; left: 128px; top: calc(16px + 5 * 2em); list-style: none; margin: 0; padding: 4px 0; min-width: 130px; background: #152a5c; border-radius: 6px; box-shadow: 0 18px 30px -12px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(147,165,255,0.18); transition: opacity 0.25s; }
+    .dps-ac li { padding: 3px 12px; line-height: 1.8; }
+    .dps-ac li.on { background: rgba(47,109,240,0.45); color: #fff; }
+    .dps-ac.hide { opacity: 0; }
+    .dps-status { display: flex; align-items: center; gap: 10px; margin: 0 10px; padding: 0 10px 0 0; border-radius: 6px; background: #13285a; font-size: 0.68rem; line-height: 1.9; }
+    .dps-status span { padding: 0 10px; border-radius: 6px 0 0 6px; background: #93c5fd; color: #0b1736; font-weight: 700; }
+    .dps-status em { font-style: normal; color: #93c5fd; }
+    .dps-status small { margin-left: auto; color: #8ea2c4; font-size: inherit; }
+    .dps-term { padding: 10px 16px 16px; font-size: 0.72rem; line-height: 1.9; }
+    .dps-term p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dps-term [data-term].ok { color: #6ee7b7; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dps-pulse { display: none; }
+        .dps-lrow, .caret { animation: none; }
+        .dps-core::after { animation: none; }
+    }
+    @media (max-width: 1000px) {
+        .dps-routes { grid-template-columns: 1fr; max-width: 560px; }
+    }
+    @media (max-width: 760px) {
+        .dps { padding: 0 16px; }
+        .dps-frame { border: 0; }
+        .dps-block { padding: 4.5rem 0 4rem; }
+        .dps-block:first-child { padding-top: 5.5rem; }
+        /* El diagrama conserva un ancho legible y se recorre de lado. */
+        .dps-scroll { overflow-x: auto; margin: 2.5rem -16px 0; padding: 0 16px; scrollbar-width: none; }
+        .dps-scroll::-webkit-scrollbar { display: none; }
+        .dps-dia { width: 760px; }
+        .dps-wave { width: calc(100% + 32px); margin: 1rem -16px 0; }
+        .dps-stats { grid-template-columns: 1fr; gap: 1.8rem; margin-top: -2rem; }
+        .dps-routes { grid-template-columns: 1fr; }
+    }
+</style>

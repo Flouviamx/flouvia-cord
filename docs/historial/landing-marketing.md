@@ -27,6 +27,13 @@
   una gama propia ámbar/brasa (`#7C2D12` → `#FACC15`) que ninguna otra banda usa.
 • En `/elements` los encabezados de sección van título a la izquierda y texto a la derecha,
   sin eyebrow, y se retiró la sección "Lo fino, resuelto de fábrica" (con su `trust`).
+• **Sección oscura de plataforma (`DevPlatform.astro`)**, en el home y en `/elements` (sustituye
+  la lista "El cotizador completo"): plataforma abierta con CTAs a docs y npm; diagrama vivo
+  (tus sistemas, API, webhooks, Cord, MCP, integraciones y rieles de cobro, con pulsos SVG y
+  casillas que rotan); cinta de líneas en canvas con 600/min, 41 eventos y 19 tools MCP; y
+  tres rutas de integración (sin código, plataformas, código propio) con visual animado. Solo
+  usa integraciones `disponible: true` sin credenciales. El botón de copiar `npm install`
+  ahora anima el cambio a palomita con aviso "Copiado".
 
 **SEO técnico de los tres hosts, páginas de integraciones y Cord Workflows (21 sep 2026)** —
 Auditoría en vivo de los sitemaps de `cordhq.app`, `docs.` y `dev.` (843 URLs rastreadas).
