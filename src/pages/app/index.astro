@@ -6,6 +6,7 @@ import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import MetricWidget from '../../components/app/widgets/MetricWidget.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../components/app/WidgetEmpty.astro';
@@ -206,16 +207,10 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="kpi-ticket" data-title={t(L, 'dash.w_kpi_ticket')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
-            <div class="dash-card kpi-card">
-                <span class="kpi-label">{t(L, 'dash.kpi_ticket_promedio')}</span>
-                <span class="editorial kpi-num">{money(ANALYTICS.kpis.ticketPromedio, 0)}</span>
-                <div class="wx-kpi-foot">
-                    <span class="kpi-sub">{t(L, 'dash.kpi_ticket_sub')}</span>
-                    {ANALYTICS.funnel.aprobadas > 0 && <span class="kpi-sub">{tf('dash.kpi_ticket_n', { n: String(ANALYTICS.funnel.aprobadas) })}</span>}
-                </div>
-            </div>
-        </article>
+        <MetricWidget id="kpi-ticket" title={t(L, 'dash.w_kpi_ticket')} label={t(L, 'dash.kpi_ticket_promedio')}
+            group={t(L, 'widgets.grupo_kpis')} hidden={!canAnalytics} value={money(ANALYTICS.kpis.ticketPromedio, 0)}
+            description={t(L, 'dash.kpi_ticket_sub')}
+            details={ANALYTICS.funnel.aprobadas > 0 ? [{label:t(L, 'dash.kpi_ticket_promedio'), value:tf('dash.kpi_ticket_n', { n: String(ANALYTICS.funnel.aprobadas) })}] : []} />
 
         <article class="dash-widget" data-widget="kpi-seguimiento" data-title={t(L, 'dash.w_kpi_seguimiento')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1">
             <a class="dash-card kpi-card kpi-link" href="/app/cotizaciones">
@@ -225,7 +220,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </a>
         </article>
 
-        <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.funnel_titulo')}</h2></div>
                 <div class="chart-host" id="funnelChart" data-steps={JSON.stringify(funnelSteps)}
@@ -237,7 +232,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
@@ -247,7 +242,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-group={t(L, 'widgets.grupo_pipeline')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tendencia_titulo')}</h2></div>
                 <div class="chart-host chart-host-tall" id="tendenciaChart"
@@ -256,14 +251,14 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
+        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')}</h2></div>
                 <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: a.label, value: a.monto, color: a.color })))}></div>
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
@@ -275,7 +270,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
@@ -306,7 +301,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-group={t(L, 'widgets.grupo_rankings')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-group={t(L, 'widgets.grupo_rankings')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
                 {clientesTasa.length > 0
@@ -315,7 +310,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-group={t(L, 'widgets.grupo_rankings')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-group={t(L, 'widgets.grupo_rankings')} data-widget-tone="commercial" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
                 {topProductos.length > 0
@@ -324,7 +319,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="2" data-size-lg="4" data-span="2">
+        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="2">
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
@@ -350,7 +345,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="recientes" data-title={t(L, 'dash.w_recientes')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="2" data-size-lg="4" data-span="2">
+        <article class="dash-widget" data-widget="recientes" data-title={t(L, 'dash.w_recientes')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="2">
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.recientes_titulo')}</h2>
@@ -378,7 +373,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
+        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="4">
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
                 {eventosFeed.length > 0 ? (
@@ -399,7 +394,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
+        <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="4" data-size-lg="4" data-span="4">
             <div class="dash-card tasks-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
                 <form class="task-add" id="taskAdd">
@@ -424,6 +419,13 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
+        {canAnalytics && <MetricWidget id="opcional-conversion-pago" optional title={L === 'en' ? 'Sent to paid' : 'De enviada a pagada'} group={t(L, 'widgets.grupo_kpis')}
+            value={ANALYTICS.funnel.enviadas ? Math.round(ANALYTICS.funnel.pagadas / ANALYTICS.funnel.enviadas * 100) : '—'} suffix={ANALYTICS.funnel.enviadas ? '%' : ''}
+            description={L === 'en' ? 'Conversion in the selected range' : 'Conversión en el rango seleccionado'}
+            details={[{label:L === 'en' ? 'Sent' : 'Enviadas',value:ANALYTICS.funnel.enviadas},{label:L === 'en' ? 'Paid' : 'Pagadas',value:ANALYTICS.funnel.pagadas}]} />}
+        {canCfo && <MetricWidget id="opcional-ponderado" optional title={L === 'en' ? 'Expected pipeline' : 'Pipeline esperado'} group={t(L, 'widgets.grupo_kpis')}
+            value={money(ingresoEsperado,0)} description={L === 'en' ? 'Probability-weighted open pipeline today' : 'Pipeline abierto ponderado por probabilidad, hoy'}
+            details={[{label:L === 'en' ? 'Open pipeline' : 'Pipeline abierto',value:money(totalPipeline,0)}]} />}
     </WidgetGrid>
 
     {showTour && (

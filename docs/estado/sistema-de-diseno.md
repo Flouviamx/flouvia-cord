@@ -7,6 +7,40 @@
 
 ---
 
+## Tarjetas en Ajustes
+
+A petición de André, Ajustes usa ahora tarjetas compartidas. Esta decisión
+reemplaza para `/app/ajustes` el patrón anterior de listas con líneas divisorias.
+
+- `src/styles/settings.css`: superficies, radios, sombras discretas, campos,
+  títulos, modo oscuro y adaptación móvil. Lo importan `SettingsShell.astro` y el índice.
+- `src/components/app/settings/SettingsSection.astro`: sección reutilizable con
+  slot `heading`, icono SVG gris y atributos HTML preservados. Conserva `.s-block`
+  para los selectores existentes; los ids y atributos de guardado no cambian.
+- `SettingsIcon.astro`: repertorio de iconos de sección. Los SVG son decorativos.
+- El índice mantiene las categorías de `src/lib/settings.ts` y ofrece búsqueda
+  local por títulos, descripciones y sinónimos; respeta el modo desarrollador.
+- Cuenta, Marca, Dominio, Cobros e Integraciones conservan sus componentes
+  específicos y usan los mismos tokens de superficie. Equipo conserva WidgetGrid.
+- Los formularios manuales mantienen el pie de guardado alineado a la derecha.
+  Evitar tarjetas anidadas para cada campo: una tarjeta agrupa una tarea.
+
+## Guardado en Ajustes
+
+Los formularios con guardado manual usan `SettingsSaveFooter.astro` al final del
+contenido, alineado a la derecha también en móvil. `SettingsShell` lo incluye con
+la prop `save`; los formularios con endpoint propio lo incluyen directamente.
+Los modales y formularios nativos usan `SettingsSaveButton.astro` (con
+`type="submit"` cuando corresponde). No agregar un botón a controles que ya se
+guardan automáticamente.
+
+`src/lib/settings-save-feedback.ts` concentra los estados: `saving` mientras se
+espera la respuesta, `saved` solo después del éxito y `error` con mensaje accesible
+y posibilidad de reintentar. El botón mantiene su tamaño, pasa de navy a verde,
+dibuja un check y vuelve al estado inicial. Respeta `prefers-reduced-motion`.
+Los scripts inline pueden emitir `cord:save-state` desde el botón para usar el
+mismo controlador. Los errores no deben mostrar confirmación de éxito.
+
 ## Diseño — sistema Flouvia adaptado a producto
 
 Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.astro`
@@ -40,7 +74,8 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   scrolled, mockups). Recortados a 780×300. NO recrear el wordmark con texto.
 
 **Layout / componentes:**
-- ⛔ **NADA de rejillas de tarjetas/cards como patrón de UI nueva (jun 2026, regla
+- **Antecedente de junio de 2026 (reemplazado en Ajustes por el contrato anterior):**
+  **NADA de rejillas de tarjetas/cards como patrón de UI nueva (jun 2026, regla
   de André: "las cards no me gustan").** No construir hubs, índices, listados de
   features/integraciones ni settings con grids de tiles con borde+sombra. Preferir
   el estilo **Stripe/Linear de LISTAS**: filas con hairline (`border-bottom`),
@@ -435,3 +470,47 @@ Para secciones dirigidas a ingenieros (ej. `/dev-blog`), se utiliza una variante
 - **Hovers de "Radar Grid":** En lugar de cambiar a colores neón exagerados, los hovers (`.dev-nav-btn:hover::before`) revelan suavemente un patrón de cuadrícula de puntos hecho con `radial-gradient` que se desplaza en diagonal, imitando un HUD técnico limpio.
 - **Contenedores de Figuras `[ FIG. 1 ]`:** Las imágenes abstractas se encapsulan en "ventanas" (wireframes) con barras superiores grises y bordes sólidos de 1px. El contenido de estas ventanas suele ser modelos geométricos CSS puros (`.wireframe-shape`) rotando, dando la impresión de interfaces de cálculo avanzadas similares al estilo de ingeniería de Stripe.
 - **No simular consolas flotantes desordenadas:** Si se integra una terminal (como la `DevConsole`), esta debe ir anclada al 100% del ancho inferior (docked) con una cabecera nativa limpia (`#cbd5e1`), íconos vectoriales abstractos (`◱ ⇋`) y tipografía monospace (`var(--dev-mono)`), evitando parecer un popup invasivo.
+
+
+### Widgets personalizables de la app
+
+`WidgetGrid.astro`, `WidgetEditButtons.astro`, `WidgetCustomizeButtons.astro` y
+`styles/widgets.css` son el sistema compartido de Dashboard, Informes, Cobros,
+Cobranza, Cobranza IA, Equipo en configuración y Desempeño. No crear un editor
+independiente por página. `widget-catalog.ts` registra las claves persistidas.
+
+El arrastre de escritorio conserva el widget real como posición de destino y
+mueve una vista previa. Escape cancela el arrastre; fuera de él sale de edición.
+El orden respeta las zonas de cada página. En móvil se usan botones de subir y
+bajar de 44 px. El selector explícito Compacto/Ampliado refleja el tamaño guardado.
+
+Los indicadores sin gráfica ni detalle tienen un único tamaño compacto. No se
+impone una altura mínima universal: cada vista debe justificar su espacio con
+contenido. Las listas compactas conservan sus filas con scroll; ampliadas usan
+dos columnas cuando hay espacio. La biblioteca de gráficas (`lib/chart.ts` y
+`styles/charts.css`) añade conversión por etapa al embudo, proporciones por estado
+al pipeline y resúmenes de series a las gráficas ampliadas. Los títulos conservan el estándar de Inicio: `kpi-label` para indicadores y
+`sec-title` para secciones, sin puntos decorativos. Los valores y subtítulos usan
+`kpi-num` y `kpi-sub`. Los acentos de categoría se reservan para los datos de las
+gráficas; no modifican el encabezado de las tarjetas.
+
+Durante la edición, Biblioteca muestra vistas previas inertes de todos los widgets
+disponibles, búsqueda y estado En pantalla/Agregar. Ocultar un widget abre esta
+biblioteca para recuperarlo. Las vistas previas no duplican IDs ni atributos de
+los controladores de la página.
+
+Configuración de equipo usa `cord.equipo.v1`; sus diálogos e invitación quedan
+fuera del grid. Desempeño usa `cord.desempeno.v1`, con cuatro indicadores de detalle
+adaptable, contribución, actividad comercial y ranking completo. Identifica sus
+datos como histórico acumulado y conserva las consultas y permisos existentes.
+
+La biblioteca de componentes comienza en `src/components/app/widgets/README.md`.
+`WidgetCard` encapsula el contrato del editor; `MetricWidget` define indicadores
+y desgloses ampliados. Lo consumen los cuatro indicadores de Desempeño y el
+ticket promedio de Inicio. El README mantiene el alcance de la migración.
+
+El catálogo de `widgets/README.md` incluye 13 widgets opcionales, desactivados por
+defecto. Los siete informes consumen `WidgetCard`; `ChartWidget`, `WidgetHeader`
+y `ListWidget` centralizan las familias migradas. La biblioteca filtra Todos/Para
+agregar; sus previews se ajustan al contenido y las gráficas ocultas usan una
+miniatura estática de los mismos datos. Los gates no se confunden con opcionales.

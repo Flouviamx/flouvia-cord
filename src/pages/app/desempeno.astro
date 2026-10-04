@@ -3,6 +3,9 @@
 // Atribución vía cotizaciones.creado_por (user_id de quien crea/duplica la
 // cotización); ver "Desempeño por vendedor" en docs/historial/app-features.md.
 import AppLayout from '../../layouts/AppLayout.astro';
+import MetricWidget from '../../components/app/widgets/MetricWidget.astro';
+import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import AccessGate from '../../components/app/AccessGate.astro';
 import { getDesempeno, getMyMembership, money } from '../../lib/queries';
 import { memberCan, ROL_LABEL } from '../../lib/permissions';
@@ -13,6 +16,14 @@ const L = currentLocale();
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'analitica');
 const D = hasAccess ? await getDesempeno() : null;
+
+const en = L === 'en';
+const vendedores = D?.vendedores ?? [];
+const totalEnviadas = vendedores.reduce((sum, v) => sum + v.enviadas, 0);
+const totalGanadas = vendedores.reduce((sum, v) => sum + v.cerradas, 0);
+const totalCobrado = vendedores.reduce((sum, v) => sum + v.cobradoTotal, 0) + (D?.sinAsignar.cobradoTotal ?? 0);
+const conCierres = vendedores.filter((v) => v.cerradas > 0).length;
+const maxCreadas = Math.max(1, ...vendedores.map((v) => v.creadas));
 
 const maxCerrado = Math.max(1, ...(D?.vendedores ?? []).map((v) => v.cerradoTotal), D?.sinAsignar.cerradoTotal ?? 0);
 const top = D?.vendedores.find((v) => v.cerradoTotal > 0) ?? null;
@@ -42,30 +53,43 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
 
     {hasAccess && D && D.hayDatos && (
         <>
-        <section class="kpis">
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'des.kpi_cerrado')}</span>
-                <span class="editorial kpi-num kpi-ok">{money(D.totalCerrado, 0)}</span>
-                <span class="kpi-sub">{t(L, 'des.kpi_cerrado_sub')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'des.kpi_tasa')}</span>
-                <span class="editorial kpi-num">{tasaEquipo}<span class="kpi-pct">%</span></span>
-                <span class="kpi-sub">{t(L, 'des.kpi_tasa_sub')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'des.kpi_lider')}</span>
-                <span class="editorial kpi-num kpi-lead" title={top?.nombre}>{top ? top.nombre : '—'}</span>
-                <span class="kpi-sub">{top ? money(top.cerradoTotal, 0) + t(L, 'des.cerrado_suffix') : t(L, 'des.sin_cierres')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'des.kpi_vendedores')}</span>
-                <span class="editorial kpi-num">{D.vendedores.length}</span>
-                <span class="kpi-sub">{t(L, 'des.kpi_vendedores_sub')}</span>
-            </div>
-        </section>
+        <div class="des-toolbar">
+            <div><span class="des-eyebrow">{en ? 'Team overview' : 'Visión del equipo'}</span><p>{en ? 'Cumulative history · Results attributed to each quote’s creator.' : 'Histórico acumulado · Resultados atribuidos al creador de cada cotización.'}</p></div>
+            <div class="des-customize"><WidgetCustomizeButtons editId="desEdit" doneId="desDone" resetId="desReset" /></div>
+        </div>
+        <WidgetGrid storageKey="cord.desempeno.v1" serverPrefs={ME.widgetPrefs?.['cord.desempeno.v1'] as Record<string, unknown> | undefined}
+            editButtonId="desEdit" doneButtonId="desDone" resetButtonId="desReset"
+            trayTitle={t(L, 'dash.widgets_ocultos')} resetConfirm={t(L, 'dash.confirmar_restablecer')}
+            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
+            labels={{drag:t(L, 'dash.widget_arrastrar'),up:t(L, 'dash.widget_subir'),down:t(L, 'dash.widget_bajar'),resize:t(L, 'dash.widget_tamano'),remove:t(L, 'dash.widget_ocultar')}}>
+            <MetricWidget id="des-cerrado" title={t(L, 'des.kpi_cerrado')} tone="finance"
+                value={money(D.totalCerrado, 0)} description={t(L, 'des.kpi_cerrado_sub')}
+                details={[{label:t(L, 'des.col_cobrado'),value:money(totalCobrado,0)}, {label:t(L, 'des.sin_asignar'),value:money(D.sinAsignar.cerradoTotal,0)}]} />
+            <MetricWidget id="des-tasa" title={t(L, 'des.kpi_tasa')} tone="commercial"
+                value={tasaEquipo} suffix="%" description={t(L, 'des.kpi_tasa_sub')}
+                details={[{label:en ? 'Sent by active members' : 'Enviadas por miembros activos',value:totalEnviadas}, {label:en ? 'Won by active members' : 'Ganadas por miembros activos',value:totalGanadas}]} />
+            <MetricWidget id="des-lider" title={t(L, 'des.kpi_lider')} tone="team"
+                description={top ? money(top.cerradoTotal,0) + t(L, 'des.cerrado_suffix') : t(L, 'des.sin_cierres')}
+                details={[{label:t(L, 'des.col_cierre'),value:top ? `${top.tasaCierre}%` : '—'}, {label:t(L, 'des.col_ticket'),value:top ? money(top.ticketPromedio,0) : '—'}]}>
+                <div slot="value" class="des-leader"><span class="des-leader-avatar">{top?.inicial ?? '—'}</span><strong>{top?.nombre ?? '—'}</strong></div>
+            </MetricWidget>
+            <MetricWidget id="des-activos" title={t(L, 'des.kpi_vendedores')} tone="team"
+                value={D.vendedores.length} description={t(L, 'des.kpi_vendedores_sub')}
+                details={[{label:en ? 'With closed sales' : 'Con ventas cerradas',value:conCierres}, {label:en ? 'Without closed sales yet' : 'Aún sin ventas cerradas',value:vendedores.length-conCierres}]} />
+            <article class="dash-widget" data-widget="des-contribucion" data-widget-tone="finance" data-title={en ? 'Contribution to closed sales' : 'Contribución al cierre'} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card"><div class="sec-head"><div><h2 class="sec-title">{en ? 'Contribution to closed sales' : 'Contribución al cierre'}</h2><p>{en ? 'Each member’s share of the team total.' : 'El peso de cada persona en el resultado del equipo.'}</p></div></div>
+                    <div class="des-contributions">{vendedores.map((v) => <div class="des-contribution"><span class="lb-avatar">{v.inicial}</span><div class="des-contribution-main"><div><strong>{v.nombre}</strong><span>{money(v.cerradoTotal,0)}</span></div><div class="des-track"><i style={`width:${D.totalCerrado > 0 ? v.cerradoTotal / D.totalCerrado * 100 : 0}%`}></i></div></div><strong class="des-share">{D.totalCerrado > 0 ? Math.round(v.cerradoTotal / D.totalCerrado * 100) : 0}%</strong><span class="des-contribution-detail">{v.cerradas} {en ? 'won' : 'ganadas'} · {t(L, 'des.col_ticket')}: {money(v.ticketPromedio,0)}</span></div>)}</div>
+                    {mostrarSinAsignar && <p class="des-note">{t(L, 'des.sin_asignar')}: {money(D.sinAsignar.cerradoTotal,0)}</p>}
+                </div>
+            </article>
+            <article class="dash-widget" data-widget="des-actividad" data-widget-tone="commercial" data-title={en ? 'Sales activity' : 'Actividad comercial'} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card"><div class="sec-head"><div><h2 class="sec-title">{en ? 'Sales activity' : 'Actividad comercial'}</h2><p>{en ? 'Quotes created, sent and won by each member.' : 'Cotizaciones creadas, enviadas y ganadas por persona.'}</p></div></div>
+                    <div class="des-contributions">{vendedores.map((v) => <div class="des-activity-row"><div><strong>{v.nombre}</strong><span>{v.creadas} {en ? 'created' : 'creadas'}</span></div><div class="des-track"><i style={`width:${v.creadas / maxCreadas * 100}%`}></i></div><p><span>{v.enviadas} {en ? 'sent' : 'enviadas'}</span><span>{v.cerradas} {en ? 'won' : 'ganadas'}</span><span class="des-contribution-detail">{t(L, 'des.col_cierre')}: {v.tasaCierre}% · {t(L, 'des.col_dias')}: {v.diasCierre || '—'}</span></p></div>)}</div>
+                </div>
+            </article>
+            <article class="dash-widget" data-widget="des-ranking" data-widget-tone="team" data-title={t(L, 'des.ranking_titulo')} data-span="4" data-size-sm="4" data-size-lg="4">
 
-        <section class="rank-card lb-card">
+        <section class="dash-card rank-card lb-card">
             <div class="sec-head"><h2 class="sec-title">{t(L, 'des.ranking_titulo')}</h2><span class="rank-sub">{t(L, 'des.ranking_sub')}</span></div>
 
             <div class="lb-head">
@@ -119,27 +143,17 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
                 </div>
             )}
         </section>
+            </article>
+            <MetricWidget id="des-opcional-ticket-equipo" optional title={en ? 'Team average deal' : 'Ticket del equipo'} tone="team"
+                value={totalGanadas ? money(vendedores.reduce((sum,v) => sum+v.cerradoTotal,0)/totalGanadas,0) : '—'}
+                description={en ? 'Closed value per won quote · active members' : 'Valor cerrado por cotización ganada · miembros activos'}
+                details={[{label:en ? 'Won quotes' : 'Cotizaciones ganadas',value:totalGanadas}]} />
+        </WidgetGrid>
         </>
     )}
 </AppLayout>
 
 <style>
-    /* KPIs — misma tira que Informes */
-    .kpis {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
-        margin-bottom: 2.6rem;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
-    }
-    .kpi { padding: 1.5rem 1.7rem; display: flex; flex-direction: column; gap: 0.45rem; border-left: 1px solid var(--color-border); min-width: 0; }
-    .kpi:first-child { border-left: none; padding-left: 0; }
-    .kpi-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; color: #99a2af; }
-    .kpi-num { font-size: 2.1rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .kpi-lead { font-size: 1.4rem; }
-    .kpi-ok { color: #059669; }
-    .kpi-pct { font-size: 1.1rem; }
-    .kpi-sub { font-size: 0.78rem; color: var(--color-text-muted); }
-
     .rank-sub { font-size: 0.72rem; color: var(--color-text-muted); }
     .lb-card { display: flex; flex-direction: column; gap: 0; }
 
@@ -173,7 +187,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
     .lb-n { text-align: right; font-size: 0.82rem; color: var(--color-text); font-variant-numeric: tabular-nums; }
     .lb-close { display: grid; grid-template-columns: minmax(42px, 1fr) auto; align-items: center; gap: 0.55rem; min-width: 0; }
     .lb-barwrap { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
-    .lb-bar { display: block; height: 100%; background: var(--chart-fill); border-radius: 100px; min-width: 3px; transition: width 0.7s var(--ease-spring); }
+    .lb-bar { display: block; height: 100%; background: var(--chart-fill); border-radius: 100px; min-width: 0; transition: width 0.7s var(--ease-spring); }
     .lb-bar-muted { background: #c6d0dd; }
     .lb-amt { text-align: right; font-size: 0.88rem; color: var(--color-blue-deep); white-space: nowrap; }
     .lb-amt-muted { color: #059669; font-size: 0.82rem; }
@@ -185,27 +199,39 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
     .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
     .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
 
-    @media (max-width: 1080px) {
-        .kpis { grid-template-columns: repeat(2, 1fr); }
-        .kpi:nth-child(odd) { border-left: none; padding-left: 0; }
-        .kpi:nth-child(3), .kpi:nth-child(4) { border-top: 1px solid var(--color-border); }
-    }
     @media (max-width: 640px) {
-        .kpis { grid-template-columns: 1fr; }
-        .kpi { border-left: none; padding-left: 0; border-top: 1px solid var(--color-border); }
-        .kpi:first-child { border-top: none; }
         .rank-card {
-            margin-inline: calc(var(--mobile-gutter) * -1);
+            margin-inline: 0;
             padding-inline: var(--mobile-gutter);
             overflow-x: auto;
             overscroll-behavior-inline: contain;
             scroll-padding-inline: var(--mobile-gutter);
         }
-        .rank-card .sec-head { position: sticky; left: 0; min-width: calc(100vw - (var(--mobile-gutter) * 2)); }
+        .rank-card .sec-head { position: sticky; left: 0; min-width: 260px; }
         .lb-head, .lb-row {
             grid-template-columns: 210px 64px 68px 170px 120px 110px 70px;
             min-width: 860px;
         }
         .lb-row.is-me { margin-inline: 0; }
     }
+    .des-toolbar { display:flex; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:1.5rem; }
+    .des-eyebrow { font-size:1.08rem; font-weight:650; letter-spacing:-.025em; }
+    .des-toolbar p { font-size:.78rem; color:var(--color-text-muted); margin:.5rem 0 0; }
+    .des-customize { display:flex; gap:.5rem; flex-shrink:0; }
+    .des-leader { display:flex; align-items:center; gap:.7rem; min-width:0; }
+    .des-leader strong { font-size:1.1rem; letter-spacing:-.035em; overflow-wrap:anywhere; }
+    .des-leader-avatar { display:grid; place-items:center; width:40px; height:40px; border-radius:14px; color:var(--color-blue-deep); background:var(--color-bg-soft); flex-shrink:0; font-weight:650; }
+    .des-contributions { display:flex; flex-direction:column; gap:1.2rem; }
+    .des-contribution { display:grid; grid-template-columns:32px minmax(0,1fr) 38px; align-items:center; gap:.8rem; }
+    .des-contribution-main > div:first-child, .des-activity-row > div:first-child { display:flex; align-items:center; justify-content:space-between; gap:1rem; font-size:.8rem; margin-bottom:.65rem; }
+    .des-contribution-main strong, .des-activity-row strong { overflow-wrap:anywhere; }
+    .des-contribution-main span, .des-activity-row span { color:var(--color-text-muted); font-variant-numeric:tabular-nums; }
+    .des-track { height:6px; border-radius:10px; background:var(--chart-track); overflow:hidden; }
+    .des-track i { display:block; height:100%; background:var(--widget-accent,var(--chart-fill)); border-radius:inherit; }
+    .des-share { font-size:.78rem; text-align:right; }
+    .des-contribution-detail { display:none; grid-column:2 / -1; font-size:.72rem; color:var(--color-text-muted); }
+    [data-widget-size="lg"] .des-contribution-detail { display:block; }
+    .des-activity-row p { display:flex; flex-wrap:wrap; gap:.6rem 1.2rem; font-size:.73rem; margin:.6rem 0 0; }
+    .des-note { color:var(--color-text-muted); font-size:.75rem; margin:1.2rem 0 0; }
+    @media (max-width:880px) { .des-toolbar { align-items:flex-start; flex-direction:column; } }
 </style>

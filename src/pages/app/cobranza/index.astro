@@ -1,4 +1,5 @@
 ---
+import MetricWidget from '../../../components/app/widgets/MetricWidget.astro';
 // /app/cobranza — trabajo OPERATIVO de cartera: qué cobrar hoy y con qué acción.
 //
 // Deliberadamente NO es un informe. La analítica de cartera (aging completo, exposición,
@@ -129,7 +130,7 @@ const CBZ_T = {
             labels={widgetLabels}
         >
             <!-- 1 · Vencido. Clic → filtra la tabla. -->
-            <article class="dash-widget" data-widget="cbz-vencido" data-title={t(L, 'cob.k_vencido')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-vencido" data-title={t(L, 'cob.k_vencido')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="vencidas" role="button" tabindex="0">
                     <span class="kpi-label">{t(L, 'cob.k_vencido')}</span>
                     <strong class="editorial report-kpi-value is-danger" data-cbz-bind="vencido-monto">{money(C.resumen.totalVencido, 0)}</strong>
@@ -139,7 +140,7 @@ const CBZ_T = {
             </article>
 
             <!-- 2 · Lo que vence en los próximos 7 días -->
-            <article class="dash-widget" data-widget="cbz-semana" data-title={t(L, 'cob.k_semana')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-semana" data-title={t(L, 'cob.k_semana')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi">
                     <span class="kpi-label">{t(L, 'cob.k_semana')}</span>
                     <strong class="editorial report-kpi-value" data-cbz-bind="semana-monto">{money(venceSemana.reduce((s, i) => s + i.total, 0), 0)}</strong>
@@ -148,7 +149,7 @@ const CBZ_T = {
             </article>
 
             <!-- 3 · Promesas que ya vencen -->
-            <article class="dash-widget" data-widget="cbz-promesas-hoy" data-title={t(L, 'cob.k_promesas')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-promesas-hoy" data-title={t(L, 'cob.k_promesas')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="promesa" role="button" tabindex="0">
                     <span class="kpi-label">{t(L, 'cob.k_promesas')}</span>
                     <strong class="editorial report-kpi-value is-warn" data-cbz-bind="promesas-n">{promesasHoy.length}</strong>
@@ -158,7 +159,7 @@ const CBZ_T = {
             </article>
 
             <!-- 4 · Vencido que nadie ha tocado -->
-            <article class="dash-widget" data-widget="cbz-singestion" data-title={t(L, 'cob.k_singestion')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-singestion" data-title={t(L, 'cob.k_singestion')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="singestion" role="button" tabindex="0">
                     <span class="kpi-label">{t(L, 'cob.k_singestion')}</span>
                     <strong class="editorial report-kpi-value is-danger" data-cbz-bind="singestion-monto">{money(sinGestion.reduce((s, i) => s + i.total, 0), 0)}</strong>
@@ -167,7 +168,7 @@ const CBZ_T = {
             </article>
 
             <!-- 5 · Atiende primero -->
-            <article class="dash-widget" data-widget="cbz-prioridad" data-title={t(L, 'cob.prioridad')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-prioridad" data-title={t(L, 'cob.prioridad')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.prioridad')}</h2><p>{t(L, 'cob.prioridad_sub')}</p></div></div>
                     <div class="report-list cbz-mini" data-cbz-list="prioridad">
@@ -192,7 +193,7 @@ const CBZ_T = {
             </article>
 
             <!-- 6 · Promesas de pago abiertas -->
-            <article class="dash-widget" data-widget="cbz-promesas" data-title={t(L, 'cob.promesas_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-promesas" data-title={t(L, 'cob.promesas_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.promesas_titulo')}</h2><p>{t(L, 'cob.promesas_sub')}</p></div></div>
                     <div class="report-list cbz-mini" data-cbz-list="promesas">
@@ -216,7 +217,7 @@ const CBZ_T = {
             </article>
 
             <!-- 6b · Tasa de cumplimiento de promesas (D1 — sin query nueva, ya la calcula getCobranza()) -->
-            <article class="dash-widget" data-widget="cbz-cumplimiento" data-title={t(L, 'cob.w_cumplimiento')} data-group={t(L, 'widgets.grupo_finanzas')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-cumplimiento" data-title={t(L, 'cob.w_cumplimiento')} data-group={t(L, 'widgets.grupo_finanzas')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.cumplimiento_titulo')}</h2><p>{t(L, 'cob.cumplimiento_sub')}</p></div></div>
                     {C.promesas.total > 0 ? (
@@ -235,7 +236,7 @@ const CBZ_T = {
             </article>
 
             <!-- 7 · Clientes que rebasaron su límite de crédito -->
-            <article class="dash-widget" data-widget="cbz-limites" data-title={t(L, 'cob.limites')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-limites" data-title={t(L, 'cob.limites')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.limites')}</h2><p>{t(L, 'cob.limites_sub')}</p></div></div>
                     <div class="report-list">
@@ -255,7 +256,7 @@ const CBZ_T = {
 
             <!-- 8 · Antigüedad de la cartera. Barra de orientación compacta (segbar),
                  NO la dona analítica de /app/informes?r=cobranza. -->
-            <article class="dash-widget" data-widget="cbz-aging" data-title={t(L, 'cob.aging_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-aging" data-title={t(L, 'cob.aging_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head">
                         <div><h2 class="sec-title">{t(L, 'cob.aging_titulo')}</h2><p>{t(L, 'cob.aging_sub')}</p></div>
@@ -267,7 +268,7 @@ const CBZ_T = {
             </article>
 
             <!-- 9 · La tabla accionable: el centro de la página -->
-            <article class="dash-widget" data-widget="cbz-tabla" data-title={t(L, 'cob.cuentas_por_cobrar')} data-span="4" data-size-sm="4" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cbz-tabla" data-title={t(L, 'cob.cuentas_por_cobrar')} data-span="4" data-size-sm="4" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head">
                         <div><h2 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h2></div>
@@ -322,6 +323,7 @@ const CBZ_T = {
                     </div>
                 </div>
             </article>
+        <MetricWidget id="cbz-opcional-excedidos" optional tone="finance" title={L === 'en' ? 'Credit limits exceeded' : 'Límites de crédito excedidos'} value={excedidos.length} description={L === 'en' ? 'Clients above their configured credit limit today' : 'Clientes por encima de su límite de crédito configurado, hoy'} />
         </WidgetGrid>
         </div>
 

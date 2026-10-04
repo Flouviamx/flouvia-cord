@@ -9,6 +9,9 @@
 // renderizaban la clave cruda en el picker, el picker estaba duplicado literal
 // entre los dos modales, y el límite de asientos que promete /precios no
 // existía en código ni se mostraba.
+import WidgetGrid from '../../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
+import SettingsSaveButton from '../../../components/app/SettingsSaveButton.astro';
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import '../../../styles/modal.css';
 import PermPicker from '../../../components/app/PermPicker.astro';
@@ -48,7 +51,7 @@ const tienePlanEquipo = planTieneEquipo(seats.plan);
 const teamPlan = minimumPlan('team');
 const dominios = (ORG.inviteDomains || '').split(',').map((d: string) => d.trim()).filter(Boolean);
 
-// Todo lo que el <script> necesita traducido (no es is:inline, no puede llamar
+// Todo lo que el script necesita traducido (no es is:inline, no puede llamar
 // t() en runtime). Antes se emitían 13 data-i18n-* que el script jamás leía.
 const EQ_T = {
     invitado: t(L, 'set.eq.toast_invitado'),
@@ -113,6 +116,34 @@ const EQ_T = {
             <p class="eq-domains">{tf('set.eq.dominios_aviso', { dominios: dominios.join(', ') })}</p>
         )}
 
+        <div class="eq-workspace-head">
+            <div><h3>{L === 'en' ? 'Your team, at a glance' : 'Tu equipo, de un vistazo'}</h3><p>{L === 'en' ? 'People, invitations and access in one place.' : 'Personas, invitaciones y accesos en un solo lugar.'}</p></div>
+            <div class="eq-customize"><WidgetCustomizeButtons editId="eqEditWidgets" doneId="eqDoneWidgets" resetId="eqResetWidgets" /></div>
+        </div>
+        <WidgetGrid storageKey="cord.equipo.v1" serverPrefs={ME.widgetPrefs?.['cord.equipo.v1'] as Record<string, unknown> | undefined}
+            editButtonId="eqEditWidgets" doneButtonId="eqDoneWidgets" resetButtonId="eqResetWidgets"
+            trayTitle={t(L, 'dash.widgets_ocultos')} resetConfirm={t(L, 'dash.confirmar_restablecer')}
+            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
+            labels={{ drag: t(L, 'dash.widget_arrastrar'), up: t(L, 'dash.widget_subir'), down: t(L, 'dash.widget_bajar'), resize: t(L, 'dash.widget_tamano'), remove: t(L, 'dash.widget_ocultar') }}>
+            <article class="dash-widget" data-widget="eq-overview" data-title={t(L, 'set.eq.activos')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card eq-summary">
+                    <div class="sec-head"><h3 class="sec-title">{t(L, 'set.eq.activos')}</h3><span class="eq-total editorial" data-eq-active-total>{activos.length}</span></div>
+                    <div class="eq-summary-list" data-eq-active-list>
+                        {activos.map((m) => <div class="eq-summary-person" data-summary-id={m.id}><span class="eq-avatar" aria-hidden="true">{m.inicial}</span><span><strong>{m.nombre}</strong><small>{ROL_LABEL[m.rol] ?? t(L, 'set.eq.rol.miembro')}</small></span></div>)}
+                    </div>
+                </div>
+            </article>
+            <article class="dash-widget" data-widget="eq-invitations" data-title={t(L, 'set.eq.invitaciones_pendientes')} data-span="2" data-size-sm="2" data-size-lg={pendientes.length > 2 ? "4" : "2"}>
+                <div class="dash-card eq-summary">
+                    <div class="sec-head"><h3 class="sec-title">{t(L, 'set.eq.invitaciones_pendientes')}</h3><span class="eq-total editorial" data-eq-pending-total>{pendientes.length}</span></div>
+                    <div class="eq-summary-list" data-eq-pending-list>
+                        {pendientes.map((m) => <div class="eq-summary-person" data-summary-id={m.id}><span class="eq-avatar" aria-hidden="true">{m.inicial}</span><span><strong>{m.nombre}</strong><small>{m.invitacionExpirada ? t(L, 'set.eq.invite_expirada') : m.email}</small></span></div>)}
+                    </div>
+                    <p class="eq-summary-empty" data-eq-pending-empty hidden={pendientes.length > 0}>{L === 'en' ? 'No pending invitations. Your team is up to date.' : 'Sin invitaciones pendientes. Tu equipo está al día.'}</p>
+                </div>
+            </article>
+            <article class="dash-widget" data-widget="eq-directory" data-title={t(L, 'set.eq.col_miembro')} data-span="4" data-size-sm="4" data-size-lg="4">
+            <div class="dash-card eq-directory">
         {/* ── Filtros ── */}
         <div class="eq-filters" data-eq-filters>
             <button type="button" class="eq-chip is-active" data-eq-filter="todos">{t(L, 'set.eq.todos')} <b>{members.length}</b></button>
@@ -198,6 +229,9 @@ const EQ_T = {
             </div>
             <p class="eq-count" data-eq-count>{tf('set.eq.viendo', { n: String(members.length), total: String(members.length) })}</p>
         </div>
+            </div>
+            </article>
+        </WidgetGrid>
     </div>
 
     <dialog class="modal eq-drawer" id="eqFicha">
@@ -271,7 +305,7 @@ const EQ_T = {
         </div>
         <div class="m-foot">
             <button type="button" class="eq-btn" data-eq-act="cerrar-modal">{t(L, 'set.eq.cancelar')}</button>
-            <button type="button" class="eq-btn eq-btn-primary" id="eqEditSave">{t(L, 'set.eq.guardar_cambios')}</button>
+            <SettingsSaveButton id="eqEditSave" label={t(L, 'set.eq.guardar_cambios')} />
         </div>
     </dialog>
     </>
@@ -302,7 +336,7 @@ const EQ_T = {
    el prefijo `eq-`, exclusivo de esta página. */
 
 /* Asientos */
-[data-eq-shell] .eq-seats { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding-bottom: 1.4rem; }
+[data-eq-shell] .eq-seats { background: var(--surface); border-radius: 24px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding-bottom: 1.4rem; }
 [data-eq-shell] .eq-seats-copy { display: flex; flex-direction: column; gap: 2px; }
 [data-eq-shell] .eq-seats-copy strong { font-size: .95rem; color: var(--color-text); }
 [data-eq-shell] .eq-seats-copy small { font-size: .74rem; color: var(--color-warn); }
@@ -414,9 +448,27 @@ const EQ_T = {
 .eq-fi-note[hidden] { display: none; }
 .eq-fi-perms { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: .7rem 0 0; padding: 0; }
 .eq-fi-perms li { font-size: .74rem; font-weight: 500; padding: 5px 11px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text); }
+[data-eq-shell] .eq-workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
+[data-eq-shell] .eq-workspace-head h3 { margin: 0; font-size: 1.25rem; letter-spacing: -.035em; }
+[data-eq-shell] .eq-workspace-head p { margin: .4rem 0 0; color: var(--color-text-muted); font-size: .82rem; }
+[data-eq-shell] .eq-customize { display: flex; gap: .5rem; flex-wrap: wrap; }
+[data-eq-shell] .eq-summary { min-height: 220px; }
+[data-eq-shell] .eq-total { font-size: 2rem; letter-spacing: -.05em; }
+[data-eq-shell] .eq-summary-person { display: flex; gap: .8rem; align-items: center; padding: .8rem 0; border-bottom: 1px solid var(--color-border); min-width: 0; }
+[data-eq-shell] .eq-summary-person > span:last-child { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+[data-eq-shell] .eq-summary-person strong { font-size: .85rem; overflow-wrap: anywhere; }
+[data-eq-shell] .eq-summary-person small { font-size: .74rem; color: var(--color-text-muted); overflow-wrap: anywhere; }
+[data-eq-shell] .eq-summary-empty { padding: 1.5rem 0; color: var(--color-text-muted); font-size: .85rem; line-height: 1.6; max-width: 32ch; }
+[data-eq-shell] .eq-summary-empty[hidden] { display: none; }
+@media (max-width: 880px) {
+    [data-eq-shell] .eq-workspace-head { align-items: flex-start; flex-direction: column; }
+    [data-eq-shell] .eq-directory { padding-inline: 1rem; }
+}
+
 </style>
 
 <script>
+    import { setSaveState } from '../../../lib/settings-save-feedback';
     import { PRESETS, ALL_PERM_KEYS, type PermKey, type PermMap } from '../../../lib/permissions';
 
     const shellEl = document.querySelector<HTMLElement>('[data-eq-shell]');
@@ -516,6 +568,24 @@ const EQ_T = {
             };
             set('todos', all.length); set('activo', n('activo'));
             set('invitado', n('invitado')); set('revocado', n('revocado'));
+            for (const [estado, name] of [['activo', 'active'], ['invitado', 'pending']]) {
+                const total = shell.querySelector(`[data-eq-${name}-total]`);
+                if (total) total.textContent = String(n(estado));
+                const list = shell.querySelector(`[data-eq-${name}-list]`);
+                if (list) {
+                    list.replaceChildren();
+                    all.filter((r) => r.dataset.estado === estado).forEach((r) => {
+                        const item = document.createElement('div'); item.className = 'eq-summary-person';
+                        const avatar = document.createElement('span'); avatar.className = 'eq-avatar'; avatar.textContent = r.dataset.inicial || ''; avatar.setAttribute('aria-hidden', 'true');
+                        const copy = document.createElement('span');
+                        const title = document.createElement('strong'); title.textContent = r.dataset.nombre || '';
+                        const detail = document.createElement('small'); detail.textContent = estado === 'activo' ? r.querySelector('.eq-role')?.textContent || '' : r.dataset.email || '';
+                        copy.append(title, detail); item.append(avatar, copy); list.append(item);
+                    });
+                }
+            }
+            const emptyPending = shell.querySelector<HTMLElement>('[data-eq-pending-empty]');
+            if (emptyPending) emptyPending.hidden = n('invitado') > 0;
         }
 
         // ── Modales ──
@@ -690,8 +760,8 @@ const EQ_T = {
         // ── Guardar permisos ──
         document.getElementById('eqEditSave')?.addEventListener('click', async (e) => {
             const b = e.currentTarget as HTMLButtonElement;
-            if (!editingId) return;
-            b.disabled = true;
+            if (!editingId || b.disabled) return;
+            setSaveState(b, 'saving');
             if (editErr) editErr.hidden = true;
             try {
                 const perms = readPerms('edit');
@@ -707,11 +777,14 @@ const EQ_T = {
                     if (chip) chip.textContent = key ? (label?.textContent?.trim() || key) : T.custom_label;
                     if (chip) chip.className = `eq-role ${key ?? 'miembro'}`;
                 }
+                syncCounts();
                 toast(T.actualizado, 'ok');
-                editModal?.close();
+                setSaveState(b, 'saved');
+                setTimeout(() => editModal?.close(), 650);
             } catch (err: any) {
+                setSaveState(b, 'error');
                 if (editErr) { editErr.textContent = err.message || T.error; editErr.hidden = false; }
-            } finally { b.disabled = false; }
+            }
         });
 
         // Estado inicial de los pickers

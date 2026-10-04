@@ -6,6 +6,7 @@ export interface AdjuntoMime {
     filename: string;
     content: Uint8Array;
     contentType?: string;
+    contentId?: string;
 }
 
 export interface CorreoMime {
@@ -40,25 +41,33 @@ export function construirMime(m: CorreoMime, boundary = `cord_${Date.now().toStr
         'MIME-Version: 1.0',
         `Content-Type: multipart/mixed; boundary="${boundary}"`,
     ];
-    const partes = [
-        [
-            `--${boundary}`,
-            'Content-Type: text/html; charset="UTF-8"',
+    const relatedBoundary = `${boundary}_related`;
+    const inline = (m.attachments ?? []).filter(a => a.contentId);
+    const files = (m.attachments ?? []).filter(a => !a.contentId);
+    const attachment = (a: AdjuntoMime, b: string) => {
+        const nombre = nombreArchivo(a.filename);
+        return [
+            `--${b}`,
+            `Content-Type: ${linea(a.contentType || 'application/octet-stream')}; name="${nombre}"`,
+            `Content-Disposition: ${a.contentId ? 'inline' : 'attachment'}; filename="${nombre}"`,
+            ...(a.contentId ? [`Content-ID: <${linea(a.contentId).replace(/[<>]/g, '')}>`] : []),
             'Content-Transfer-Encoding: base64',
             '',
-            base64Lineas(Buffer.from(m.html, 'utf8')),
-        ].join('\r\n'),
-        ...(m.attachments ?? []).map((a) => {
-            const nombre = nombreArchivo(a.filename);
-            return [
-                `--${boundary}`,
-                `Content-Type: ${a.contentType || 'application/octet-stream'}; name="${nombre}"`,
-                `Content-Disposition: attachment; filename="${nombre}"`,
-                'Content-Transfer-Encoding: base64',
-                '',
-                base64Lineas(Buffer.from(a.content)),
-            ].join('\r\n');
-        }),
+            base64Lineas(Buffer.from(a.content)),
+        ].join('\r\n');
+    };
+    const htmlPart = (b: string) => [
+        `--${b}`, 'Content-Type: text/html; charset="UTF-8"',
+        'Content-Transfer-Encoding: base64', '', base64Lineas(Buffer.from(m.html, 'utf8')),
+    ].join('\r\n');
+    // CID images belong to the HTML document; PDFs/XML remain downloadable files.
+    const partes = [
+        inline.length ? [
+            `--${boundary}`, `Content-Type: multipart/related; boundary="${relatedBoundary}"`, '',
+            htmlPart(relatedBoundary), ...inline.map(a => attachment(a,relatedBoundary)),
+            `--${relatedBoundary}--`,
+        ].join('\r\n') : htmlPart(boundary),
+        ...files.map(a => attachment(a,boundary)),
     ];
     return `${cabeza.join('\r\n')}\r\n\r\n${partes.join('\r\n')}\r\n--${boundary}--\r\n`;
 }

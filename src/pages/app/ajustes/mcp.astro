@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › MCP. Conecta una IA (Claude, Cursor…) al servidor MCP de Cord:
 // consulta y crea información del negocio en lenguaje natural. Se autentica
 // con una API key. La gobernanza de servidores MCP SALIENTES y los agentes de
@@ -38,8 +39,8 @@ const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' 
 <SettingsShell title="MCP — Ajustes" tab="mcp" perm="ajustes"
     intro={t(L, 'set.mcp.intro')}>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.mcp.estado_titulo')}</h3>
+    <SettingsSection icon="key" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.mcp.estado_titulo')}</Fragment>
         <div class="mcp-status" data-estado={estado} data-placeholder={t(L, 'set.mcp.llave_placeholder')}
             data-i18n-estado-listo={t(L, 'set.mcp.estado_listo')} data-i18n-estado-listo-desc={t(L, 'set.mcp.estado_listo_desc')}>
             <span class="mcp-status-dot"></span>
@@ -61,10 +62,10 @@ const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' 
         </div>
         {hasActiveKey && <a class="mcp-manage-link" href="/app?wb=api">{t(L, 'set.mcp.gestionar_llaves')}</a>}
         <p class="mcp-key-banner" id="mcpKeyBanner" hidden>{t(L, 'set.mcp.llave_creada_aviso')}</p>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.mcp.conecta_titulo')}</h3>
+    <SettingsSection icon="link" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.mcp.conecta_titulo')}</Fragment>
         <p class="mcp-note">{t(L, 'set.mcp.conecta_desc_pre')} <a href="/app?wb=api">API</a> {t(L, 'set.mcp.conecta_desc_post')}</p>
 
         <div class="mcp-connect">
@@ -79,10 +80,10 @@ const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' 
             </div>
             <p class="mcp-note">{t(L, 'set.mcp.pega_config')}</p>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block" data-i18n-json-invalido={t(L, 'set.mcp.json_invalido')} data-i18n-ejecutando={t(L, 'set.mcp.ejecutando')} data-i18n-fallo={t(L, 'set.mcp.fallo')} data-i18n-error-red={t(L, 'set.mcp.error_red')}>
-        <h3>{tf('set.mcp.herramientas_titulo', { n: String(MCP_TOOLS.length) })}</h3>
+    <SettingsSection icon="code" class="s-block" data-i18n-json-invalido={t(L, 'set.mcp.json_invalido')} data-i18n-ejecutando={t(L, 'set.mcp.ejecutando')} data-i18n-fallo={t(L, 'set.mcp.fallo')} data-i18n-error-red={t(L, 'set.mcp.error_red')}>
+        <Fragment slot="heading">{tf('set.mcp.herramientas_titulo', { n: String(MCP_TOOLS.length) })}</Fragment>
         <p class="mcp-note" set:html={t(L, 'set.mcp.herramientas_desc')} />
         <div class="mcp-tools">
             {MCP_TOOLS.map((tool) => (
@@ -109,7 +110,7 @@ const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' 
             </div>
             <pre class="mcp-out" id="mcpOut" hidden></pre>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <style>

@@ -1,4 +1,5 @@
 ---
+import SettingsSaveFooter from '../../../components/app/SettingsSaveFooter.astro';
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import ConnectCustomOnboarding from '../../../components/app/ConnectCustomOnboarding';
 import MercadoPagoCard from '../../../components/app/MercadoPagoCard.astro';
@@ -98,7 +99,7 @@ const pasos = [
     {soloMercadoPago && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={false} />}
 
     {!cobrosEnLinea && estado === 'nuevo' ? (
-        <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
+        <div class="settings-surface">
             <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">{countryName(PAIS, L)}</span>
             {/* Con Mercado Pago el cobro en línea SÍ existe: lo que no está es Cord
                 Payments, y eso es lo único que este aviso puede decir. */}
@@ -108,7 +109,7 @@ const pasos = [
         </div>
     ) : estado === 'nuevo' ? (
         <>
-        <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
+        <div class="settings-surface">
             <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">{t(L, 'set.cobros.eyebrow')}</span>
             <h2 class="editorial" style="font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--color-text);">{t(L, 'set.cobros.titulo')}</h2>
             <p style="font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.6; max-width: 60ch; margin: 0 0 1.5rem;">{t(L, 'set.cobros.desc')}</p>
@@ -142,13 +143,13 @@ const pasos = [
                 <span class={`cs-step ${p.done ? 'is-complete' : ''} ${p.active ? 'is-active' : ''}`}>{i + 1}. {p.label}</span>
             ))}
         </div>
-        <div class="connect-frame">
+        <div class="connect-frame settings-surface">
             <ConnectCustomOnboarding client:only="react" org={WIZARD_ORG} locale={L} />
         </div>
         </>
     ) : (
         <>
-        <div style="margin-bottom: 3rem;">
+        <div class="settings-surface">
             <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">{t(L, 'set.cobros.estado_cuenta')}</h3>
             <div>
                 {estado === 'activo' ? (
@@ -185,7 +186,7 @@ const pasos = [
         </>
     )}
 
-    <div style="margin-bottom: 2rem;" id="cobrosMeta"
+    <div class="settings-surface" id="cobrosMeta"
         data-i18n-desc-titulo={t(L, 'set.cobros.desconectar_titulo')} data-i18n-desc-body={t(L, 'set.cobros.desconectar_body')}
         data-i18n-desc-confirm={t(L, 'set.cobros.desconectar')} data-i18n-desc-native={t(L, 'set.cobros.desconectar_confirm')}
         data-i18n-desc-ok={t(L, 'set.cobros.desconectada_ok')} data-i18n-desc-err={t(L, 'set.cobros.error_desconectar')}>
@@ -269,7 +270,7 @@ const pasos = [
         </div>
 
     {activo && cobrosEnLinea && (
-        <section class="payout-sched" id="payoutSched">
+        <section class="payout-sched settings-surface" id="payoutSched">
             <h3>{L === 'en' ? 'Payout frequency' : 'Frecuencia de depósito'}</h3>
             <p>{L === 'en'
                 ? 'How often your money leaves for your bank account. Daily payouts pay the fixed transfer fee more often; monthly ones pool the money but keep it further away.'
@@ -302,13 +303,12 @@ const pasos = [
                         : 'Se topa en 28: un 31 se saltaría febrero en silencio.'}</span>
                 </div>
             </div>
-            <button type="button" class="payout-sched-btn" id="poSave">{L === 'en' ? 'Save frequency' : 'Guardar frecuencia'}</button>
-            <span class="payout-sched-msg" id="poMsg" role="status"></span>
+            <SettingsSaveFooter buttonId="poSave" messageId="poMsg" />
         </section>
     )}
 
     {conectado && !tarifaVigenteAceptada && !ORG.sandboxOf && (
-        <section class="fee-accept" id="feeAccept" data-version={FEE_TERMS_VERSION}>
+        <section class="fee-accept settings-surface" id="feeAccept" data-version={FEE_TERMS_VERSION}>
             <h3>{t(L, 'set.cobros.tarifa_titulo')}</h3>
             <p>{t(L, 'set.cobros.tarifa_desc')}</p>
             <div class="fee-lines">
@@ -480,13 +480,6 @@ const pasos = [
     .payout-sched { margin-top: 26px; padding: 22px 24px; border: 1px solid var(--color-border); border-radius: 20px; display: flex; flex-direction: column; gap: 12px; }
     .payout-sched h3 { margin: 0; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); }
     .payout-sched p { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); max-width: 62ch; }
-    .payout-sched-btn { min-height: 44px; align-self: flex-start; padding: 0 20px; border-radius: 999px; border: none; background: #0a192f; color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: transform 0.12s ease; }
-    .payout-sched-btn:active { transform: scale(0.98); }
-    .payout-sched-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
-    .payout-sched-msg { font-size: 0.76rem; color: var(--color-text-muted); min-height: 1em; }
-    @media (max-width: 880px) {
-        .payout-sched-btn { align-self: stretch; width: 100%; }
-    }
 
     /* ── Paso de personas y control (UBO) ──────────────────────────────────
        Tarjetas apiladas en UNA columna, nunca tabla: por debajo de 880 px una
@@ -707,6 +700,7 @@ const pasos = [
 </style>
 
 <script>
+    import { setSaveState } from '../../../lib/settings-save-feedback';
     // Frecuencia de depósito. El estado inicial se pide al endpoint en vez de
     // renderizarse desde `orgs`: el espejo local puede ir un paso atrás si el
     // proveedor cambió el calendario por su cuenta (verificación pendiente,
@@ -738,7 +732,8 @@ const pasos = [
                 if (d.schedule.monthly_anchor) month.value = String(d.schedule.monthly_anchor);
                 sync();
                 if (d.payoutsEnabled === false) {
-                    msg.textContent = en
+                    msg.classList.add('show');
+                    msg.querySelector('.s-saved-text')!.textContent = en
                         ? 'Payouts are paused until verification completes.'
                         : 'Los depósitos están pausados hasta que se complete la verificación.';
                 }
@@ -746,8 +741,8 @@ const pasos = [
             .catch(() => { /* el panel sigue usable con los valores por defecto */ });
 
         btn.addEventListener('click', async () => {
-            btn.disabled = true;
-            msg.textContent = '';
+            if (btn.disabled) return;
+            setSaveState(btn, 'saving');
             const body: any = { interval: sel.value };
             if (sel.value === 'weekly') body.weekly_anchor = week.value;
             if (sel.value === 'monthly') body.monthly_anchor = Number(month.value) || 1;
@@ -765,13 +760,11 @@ const pasos = [
                     res = await enviar();
                 }
                 const data = await res.json();
-                if (!data?.ok) throw new Error(data?.error || (en ? 'Could not save.' : 'No se pudo guardar.'));
-                msg.textContent = en ? 'Saved.' : 'Guardado.';
+                if (!res.ok || !data?.ok) throw new Error(data?.error || (en ? 'Could not save.' : 'No se pudo guardar.'));
+                setSaveState(btn, 'saved');
                 (window as any).cordToast?.(en ? 'Payout frequency updated' : 'Frecuencia de depósito actualizada', 'ok');
             } catch (e: any) {
-                msg.textContent = e?.message || (en ? 'Could not save.' : 'No se pudo guardar.');
-            } finally {
-                btn.disabled = false;
+                setSaveState(btn, 'error', e?.message || (en ? 'Could not save.' : 'No se pudo guardar.'));
             }
         });
 

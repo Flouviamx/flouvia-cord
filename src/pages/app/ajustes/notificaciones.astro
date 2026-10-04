@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Notificaciones — matriz evento → canal (correo / Slack / Teams). Guarda en
 // orgs.notif_prefs (jsonb) vía /api/org/prefs; src/lib/notify.ts es quien de
 // verdad la consulta antes de mandar algo (ver historial-app-features.md).
@@ -36,8 +37,8 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
 <SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"
     intro={t(L, 'set.notif.intro')}>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.notif.eventos')}</h3>
+    <SettingsSection icon="mail" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.notif.eventos')}</Fragment>
         <div class="notif-grid" data-notif>
             <div class="notif-row notif-head">
                 <span></span>
@@ -54,7 +55,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
                             <span class="notif-na" title={t(L, 'set.notif.sin_canal')}>—</span>
                         ) : (
                             <label class="notif-cell">
-                                <input type="checkbox" data-canal={c.id} checked={on(ev.id, c.id)} />
+                                <input type="checkbox" aria-label={`${ev.label} · ${c.label}`} data-settings-track data-canal={c.id} checked={on(ev.id, c.id)} />
                                 <span class="notif-box"></span>
                             </label>
                         )
@@ -62,14 +63,14 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
                 </div>
             ))}
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.notif.slack_canal')}</h3>
+    <SettingsSection icon="link" advanced hint={L==='en'?'External channels · configure only those your team uses.':'Canales externos · configura solo los que use tu equipo.'} class="s-block">
+        <Fragment slot="heading">{t(L, 'set.notif.slack_canal')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label for="oSlack">{t(L, 'set.notif.slack_webhook')}</label>
-                <input class="s-input" id="oSlack" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
+                <input class="s-input" id="oSlack" data-settings-track value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
                 <span class="s-hint">{t(L, 'set.notif.slack_hint')}</span>
             </div>
             {ORG.teamsCanal ? (
@@ -80,12 +81,12 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
             ) : (
                 <div class="s-field">
                     <label for="oTeams">{t(L, 'set.notif.teams_webhook')}</label>
-                    <input class="s-input" id="oTeams" value={ORG.teamsWebhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
+                    <input class="s-input" id="oTeams" data-settings-track value={ORG.teamsWebhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
                     <span class="s-hint">{t(L, 'set.notif.teams_hint')}</span>
                 </div>
             )}
         </div>
-    </div>
+    </SettingsSection>
 
     <SettingsSaveFooter buttonId="nBtn" messageId="nMsg" />
 </SettingsShell>
@@ -101,6 +102,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
     .notif-cell { display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .notif-cell input { position: absolute; opacity: 0; pointer-events: none; }
     .notif-box { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--color-border); background: var(--color-bg-soft); position: relative; transition: background 0.2s, border-color 0.2s; }
+    .notif-cell input:focus-visible + .notif-box { outline: 2px solid var(--color-text-muted); outline-offset: 3px; }
     .notif-box::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform 0.2s var(--ease-spring); }
     .notif-cell input:checked + .notif-box { background: var(--color-ok); border-color: var(--color-ok); }
     .notif-cell input:checked + .notif-box::after { transform: rotate(45deg) scale(1); }

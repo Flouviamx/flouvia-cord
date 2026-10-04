@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
@@ -19,8 +20,8 @@ const fecha = conexion?.ultimaSync
     : null;
 ---
 
-<div class="s-block" data-shopify>
-    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+<SettingsSection icon="sliders" class="s-block" data-shopify>
+    <Fragment slot="heading">{t(L, 'set.integ.det.conexion')}</Fragment>
     <div class="s-body">
         {flash && FLASH.includes(flash) && (
             <p class="shp-flash" data-bad={flash !== 'conectada' ? '1' : undefined}>{t(L, `set.integ.shopify.flash_${flash}` as any)}</p>
@@ -100,7 +101,7 @@ const fecha = conexion?.ultimaSync
             data-i18n-resultado={t(L, 'set.integ.shopify.resultado')}
             data-i18n-pedidos-guardado={t(L, 'set.integ.shopify.pedidos_guardado')}></span>
     </div>
-</div>
+</SettingsSection>
 
 <style>
     .shp-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }

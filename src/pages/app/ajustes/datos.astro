@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Avanzado › Datos y privacidad — exportar todo + zona de peligro.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getUserProfile, getMyMembership } from '../../../lib/queries';
@@ -19,8 +20,8 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 <SettingsShell title="Datos y privacidad — Ajustes" tab="datos" perm="ajustes"
     intro={t(L, 'set.datos.intro')}>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.datos.exportar_titulo')}</h3>
+    <SettingsSection icon="archive" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.datos.exportar_titulo')}</Fragment>
         <div class="s-body">
             <div class="datos-row">
                 <span class="datos-info">
@@ -40,15 +41,15 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
                 </span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.datos.retencion_titulo')}</h3>
+    <SettingsSection icon="clock" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.datos.retencion_titulo')}</Fragment>
         <p class="datos-note" set:html={t(L, 'set.datos.retencion_desc')} />
-    </div>
+    </SettingsSection>
 
-    <div class="s-block danger">
-        <h3>{t(L, 'set.datos.zona_peligro')}</h3>
+    <SettingsSection icon="alert" class="s-block danger">
+        <Fragment slot="heading">{t(L, 'set.datos.zona_peligro')}</Fragment>
         <div class="danger-box">
             <div class="datos-row">
                 <span class="datos-info">
@@ -62,7 +63,7 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
                 )}
             </div>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 {ME.esOwner && (

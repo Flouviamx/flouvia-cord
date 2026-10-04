@@ -36,7 +36,17 @@ if (!url) {
 // query, que es justo lo que el comentario prometía.
 // Un corte de red momentáneo no debe tumbar la página: se reintenta, pero SOLO
 // cuando la petición garantizadamente no salió (ver db-fetch.ts).
-neonConfig.fetchFunction = withConnectRetry((input, init) => fetch(input, init));
+const databaseFetch = withConnectRetry((input, init) => fetch(input, init));
+neonConfig.fetchFunction = async (input: Parameters<typeof databaseFetch>[0], init?: Parameters<typeof databaseFetch>[1]) => {
+    try { return await databaseFetch(input, init); }
+    catch (error) {
+        // Deliberately omit URL, headers, SQL, parameters and raw error messages.
+        const cause = (error as { cause?: {code?:string} })?.cause;
+        const code = typeof cause?.code === 'string' && /^[A-Z0-9_]{1,40}$/.test(cause.code) ? cause.code : 'UNKNOWN_TRANSPORT';
+        log.error('Conexión de base de datos no disponible tras reintentos seguros', { route:'db', code });
+        throw error;
+    }
+};
 
 export const sql = neon(url || 'postgresql://unset:unset@db.invalid/unset');
 

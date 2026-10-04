@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // /app/ajustes/sso — SSO empresarial (SAML 2.0). Reemplaza el wizard cosmético
 // anterior (generaba el código DNS en el navegador y nunca lo mandaba a ningún
 // lado — ver docs/historial/auth-clerk.md). Lista de conexiones reales +
@@ -65,7 +66,7 @@ const showIntro = !hasPlan || connections.length > 0;
 
     {hasPlan && connections.length > 0 && (
         <>
-            <div class="s-block full">
+            <SettingsSection icon="link" class="s-block full">
                 <div class="sso-list-head">
                     <h3>{t(L, 'set.sso.conexiones')}</h3>
                     {canEdit && <button type="button" class="sso-btn-primary" id="ssoNewBtn">{t(L, 'set.sso.conectar_proveedor')}</button>}
@@ -89,10 +90,10 @@ const showIntro = !hasPlan || connections.length > 0;
                         </a>
                     ))}
                 </div>
-            </div>
+            </SettingsSection>
 
-            <div class="s-block">
-                <h3>{t(L, 'set.sso.exigir_titulo')}</h3>
+            <SettingsSection icon="shield" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.sso.exigir_titulo')}</Fragment>
                 <div class="s-body">
                     <label class="s-toggle">
                         <input type="checkbox" data-field="require_sso" checked={org.requireSso} id="ssoRequireToggle" />
@@ -111,7 +112,7 @@ const showIntro = !hasPlan || connections.length > 0;
                         </div>
                     )}
                 </div>
-            </div>
+            </SettingsSection>
         </>
     )}
 

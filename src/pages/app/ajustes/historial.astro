@@ -1,0 +1,51 @@
+---
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
+import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
+import { requirePerm } from '../../../lib/queries';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { currentLocale } from '../../../lib/context';
+import { parseSettingsRevision, settingsFieldLabel } from '../../../lib/settings-history';
+const denied=await requirePerm('ajustes');if(denied)return denied;
+const orgId=await getActiveOrgId();const gate=await checkEntitlement(orgId,'audit_log');
+const L=currentLocale(),en=L==='en';const say=(es:string,eng:string)=>en?eng:es;
+const [rows]=gate.ok?await withOrgTx(orgId,sql`
+ select a.id,a.detalle,a.created_at,coalesce(nullif(m.nombre,''),m.email,a.actor) as actor
+ from audit_log a left join org_members m on m.org_id=${orgId} and m.user_id::text=a.actor
+ where a.org_id=${orgId} and a.accion in ('org.configuracion','org.actualizada')
+ order by a.created_at desc,a.id desc limit 50`):[[]];
+const format=(v:unknown)=>v===null||v===''?say('Vacío','Empty'):typeof v==='boolean'?(v?say('Sí','Yes'):say('No','No')):typeof v==='object'?Object.entries(v as object).map(([k,x])=>`${k}: ${x}`).join(' · '):String(v);
+---
+<SettingsShell title={say('Historial de ajustes','Settings history')} tab="historial" perm="ajustes" intro={say('Quién cambió la configuración y cuándo. Puedes recuperar apariencia y textos si no tienen cambios posteriores.','Who changed settings and when. Restore appearance and copy when no later edits affect them.')}>
+ {gate.ok?<SettingsSection icon="clock" class="settings-history">
+ <Fragment slot="heading">{say('Cambios recientes','Recent changes')}</Fragment>
+ <p class="s-hint">{say('Últimos 50 registros. La recuperación de valores está disponible para cambios guardados desde esta actualización. No restaura logos, cobros, permisos ni datos fiscales.','Latest 50 records. Value recovery is available for changes saved since this update. Logos, payments, permissions and tax details cannot be restored.')}</p>
+ {!rows.length&&<p>{say('Todavía no hay cambios registrados.','No changes recorded yet.')}</p>}
+ {rows.map(r=>{const revision=parseSettingsRevision(String(r.detalle));const changes=Object.entries(revision?.changes??{});return <article>
+ <header><strong>{r.actor}</strong><time datetime={new Date(r.created_at).toISOString()}>{new Date(r.created_at).toLocaleString(en?'en-US':'es-MX')}</time></header>
+ <p>{revision?revision.fields.map(f=>settingsFieldLabel(f,en)).join(' · '):r.detalle}</p>
+ {!!changes.length&&<details><summary>{say('Ver cambios y recuperar','Review and restore')}</summary><div class="settings-history-values">{changes.map(([field,c])=><div><b>{settingsFieldLabel(field,en)}</b><span><small>{say('Antes','Before')}</small>{format(c.before)}</span><span><small>{say('Guardado','Saved')}</small>{format(c.after)}</span></div>)}</div><p class="s-hint">{say('Se recuperarán juntos estos valores anteriores. Esta acción quedará registrada y no cambiará otros ajustes.','These previous values will be restored together. The action is recorded and other settings remain unchanged.')}</p><button type="button" data-restore-revision={r.id}>{say('Restaurar valores anteriores','Restore previous values')}</button></details>}
+ </article>})}
+ <p id="historyStatus" role="status" aria-live="polite"/>
+ </SettingsSection>:<PlanGate id="settingsHistoryGate" class="is-inset" title={say('Historial de configuración','Settings history')} desc={say('El historial utiliza el acceso de auditoría de tu plan.','History uses your plan’s audit access.')} requiredPlan={gate.requiredPlan} locale={L} returnHref="/app/ajustes"/>}
+</SettingsShell>
+<script>
+ const status=document.getElementById('historyStatus');
+ for(const button of document.querySelectorAll<HTMLButtonElement>('[data-restore-revision]'))button.addEventListener('click',async()=>{
+  const en=document.documentElement.lang.startsWith('en');
+  if(!confirm(en?'Restore the previous values shown here?':'¿Restaurar los valores anteriores que aparecen aquí?'))return;
+  button.disabled=true;if(status)status.textContent=en?'Restoring…':'Restaurando…';
+  try{const res=await fetch('/api/org',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({restore_revision:button.dataset.restoreRevision})});const data=await res.json();if(!res.ok)throw new Error(data.error);location.reload();}
+  catch(error){if(status)status.textContent=error instanceof Error?error.message:(en?'Could not restore.':'No se pudo restaurar.');button.disabled=false;}
+ });
+</script>
+<style>
+ .settings-history article{padding:18px 0;border-bottom:1px solid var(--color-border);min-width:0;}
+ .settings-history header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.85rem;}
+ .settings-history time,.settings-history p,.settings-history summary{font-size:.8rem;color:var(--color-text-muted);line-height:1.6;}
+ .settings-history summary{cursor:pointer;min-height:36px;}
+ .settings-history-values>div{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;background:var(--color-bg-soft);border-radius:12px;margin:10px 0;overflow-wrap:anywhere;white-space:pre-wrap;font-size:.8rem;}
+ .settings-history-values b{grid-column:1/-1;}.settings-history-values small{display:block;color:var(--color-text-muted);margin-bottom:4px;}
+ @media(max-width:600px){.settings-history-values>div{grid-template-columns:1fr;}}
+</style>

@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
@@ -14,8 +15,8 @@ const { lang: L, conexion, complemento, disponible, flash } = Astro.props;
 const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error'];
 ---
 
-<div class="s-block">
-    <h3>{t(L, 'gmail.titulo')}</h3>
+<SettingsSection icon="sliders" class="s-block">
+    <Fragment slot="heading">{t(L, 'gmail.titulo')}</Fragment>
     <div class="s-body">
         {flash && FLASH.includes(flash) && (
             <p class="gm-flash" data-bad={flash !== 'conectado' ? '1' : undefined}>{t(L, `gmail.flash_${flash}` as any)}</p>
@@ -51,7 +52,7 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'cuenta', 'permiso', 'error']
             data-i18n-no-desconecto={t(L, 'gmail.err.no_desconecto')}
             data-i18n-confirmar-addon={t(L, 'gmail.complemento_confirmar')}></span>
     </div>
-</div>
+</SettingsSection>
 
 <style>
     .gm-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }

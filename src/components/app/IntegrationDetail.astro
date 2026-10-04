@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 import IntegrationLogo from './IntegrationLogo.astro';
 import IntegrationPill from './IntegrationPill.astro';
@@ -111,8 +112,8 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
 
     {app.slug === 'whatsapp' && whatsapp && (
         <Fragment>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.wa.pasos_titulo')}</h3>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.wa.pasos_titulo')}</Fragment>
                 <div class="s-body">
                     <ol class="ig-steps">
                         <li>{t(L, 'set.integ.wa.paso_1')}</li>
@@ -120,14 +121,14 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                         <li>{t(L, 'set.integ.wa.paso_3')}</li>
                     </ol>
                 </div>
-            </div>
+            </SettingsSection>
             <WhatsAppCard lang={L} phoneId={whatsapp.phoneId} plantilla={whatsapp.plantilla} idioma={whatsapp.idioma} conectado={whatsapp.conectado} />
         </Fragment>
     )}
 
     {app.slug === 'n8n' && (
-        <div class="s-block">
-            <h3>{t(L, 'set.integ.n8n.conectar_titulo')}</h3>
+        <SettingsSection icon="sliders" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.integ.n8n.conectar_titulo')}</Fragment>
             <div class="s-body">
                 <ol class="ig-steps">
                     <li>{t(L, 'set.integ.n8n.paso_1')}</li>
@@ -139,13 +140,13 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     <a class="ig-link" href="https://www.npmjs.com/package/n8n-nodes-cord" target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.n8n.ver_npm')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h6.5V10M12.5 3.5 4 12"/></svg></a>
                 </div>
             </div>
-        </div>
+        </SettingsSection>
     )}
 
     {app.slug === 'make' && (
         <Fragment>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.make.conectar_titulo')}</h3>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.make.conectar_titulo')}</Fragment>
                 <div class="s-body">
                     <ol class="ig-steps">
                         <li>{t(L, 'set.integ.make.paso_1')}</li>
@@ -157,9 +158,9 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                         <a class="ig-link" href="?wb=api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
                     </div>
                 </div>
-            </div>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.make.que_titulo')}</h3>
+            </SettingsSection>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.make.que_titulo')}</Fragment>
                 <div class="s-body">
                     <ul class="ig-steps ig-list">
                         <li>{t(L, 'set.integ.make.disparador')}</li>
@@ -169,14 +170,14 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     </ul>
                     <p class="ig-note">{t(L, 'set.integ.make.cupo')}</p>
                 </div>
-            </div>
+            </SettingsSection>
         </Fragment>
     )}
 
     {app.slug === 'zapier' && (
         <Fragment>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.zapier.conectar_titulo')}</h3>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.zapier.conectar_titulo')}</Fragment>
                 <div class="s-body">
                     <ol class="ig-steps">
                         <li>{t(L, 'set.integ.zapier.paso_1')}</li>
@@ -188,9 +189,9 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                         <a class="ig-link" href="?wb=api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
                     </div>
                 </div>
-            </div>
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.zapier.que_titulo')}</h3>
+            </SettingsSection>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.zapier.que_titulo')}</Fragment>
                 <div class="s-body">
                     <ul class="ig-steps ig-list">
                         <li>{t(L, 'set.integ.zapier.disparadores')}</li>
@@ -199,15 +200,15 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     </ul>
                     <p class="ig-note">{t(L, 'set.integ.zapier.cupo')}</p>
                 </div>
-            </div>
+            </SettingsSection>
         </Fragment>
     )}
 
     {app.slug === 'gmail' && (
         <Fragment>
             {canAjustes && gmail && <GmailCard lang={L} conexion={gmail.conexion} complemento={gmail.complemento} disponible={gmail.disponible} flash={gmail.flash} />}
-            <div class="s-block">
-                <h3>{t(L, 'set.integ.gmail.conectar_titulo')}</h3>
+            <SettingsSection icon="sliders" class="s-block">
+                <Fragment slot="heading">{t(L, 'set.integ.gmail.conectar_titulo')}</Fragment>
                 <div class="s-body">
                     {GMAIL_INSTALL_URL ? (
                         <Fragment>
@@ -230,13 +231,13 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     </ul>
                     <p class="ig-note">{t(L, 'set.integ.gmail.privacidad')}</p>
                 </div>
-            </div>
+            </SettingsSection>
         </Fragment>
     )}
 
     {canAjustes && IDEAS.length > 0 && (
-        <div class="s-block" data-ig-ideas data-error={t(L, 'wf.error_guardar')}>
-            <h3>{t(L, 'set.integ.det.workflows_titulo')}</h3>
+        <SettingsSection icon="sliders" class="s-block" data-ig-ideas data-error={t(L, 'wf.error_guardar')}>
+            <Fragment slot="heading">{t(L, 'set.integ.det.workflows_titulo')}</Fragment>
             <div class="s-body">
                 <p class="ig-note">{t(L, 'set.integ.det.workflows_desc').replace('{app}', app.nombre)}</p>
                 <ul class="ig-ideas">
@@ -251,7 +252,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     ))}
                 </ul>
             </div>
-        </div>
+        </SettingsSection>
     )}
 </div>
 

@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Cotizaciones e impuestos — folio, IVA, defaults, retenciones y leyenda.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getImpuestos } from '../../../lib/queries';
@@ -22,8 +23,8 @@ const TERMS = [
         : (L === 'en'
             ? 'Numbering, taxes, and defaults used by every new quote. Configure the rate that applies to your business.'
             : 'Folio, impuestos y valores con los que arranca cada cotización. Configura la tasa que corresponda a tu negocio.')} save>
-    <div class="s-block">
-        <h3>{t(L, 'set.cot.folio')}</h3>
+    <SettingsSection icon="document" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.cot.folio')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -38,10 +39,10 @@ const TERMS = [
                 </div>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.cot.impuestos')}</h3>
+    <SettingsSection icon="chart" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.cot.impuestos')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -71,10 +72,10 @@ const TERMS = [
                 <a class="ret-link" href="/app/ajustes/impuestos">{t(L, 'set.cot.ir_impuestos')} →</a>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.cot.defaults')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.cot.defaults')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -98,10 +99,10 @@ const TERMS = [
                 </div>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.cot.leyenda')}</h3>
+    <SettingsSection icon="document" advanced hint={L==='en'?'Additional text · leave blank if no general note is needed.':'Texto adicional · déjalo vacío si no necesitas una nota general.'} class="s-block">
+        <Fragment slot="heading">{t(L, 'set.cot.leyenda')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label for="oLegal">{t(L, 'set.cot.texto_legal')}</label>
@@ -109,7 +110,7 @@ const TERMS = [
                 <span class="s-hint">{t(L, 'set.cot.texto_legal_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <style>

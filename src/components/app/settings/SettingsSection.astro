@@ -1,0 +1,12 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import SettingsIcon from './SettingsIcon.astro';
+interface Props extends HTMLAttributes<'div'> { icon?: string; advanced?: boolean; hint?: string; }
+const {icon='sliders',advanced=false,hint,class:className,...attributes}=Astro.props;
+const Tag = advanced ? 'details' : 'div';
+---
+<Tag {...attributes} class:list={['s-block',className,{'settings-advanced':advanced}]}>
+    {advanced ? <summary><span class="settings-section-title"><SettingsIcon name={icon}/><span><slot name="heading"/></span></span>{hint && <small>{hint}</small>}<span class="settings-disclosure" aria-hidden="true">⌄</span></summary> : Astro.slots.has('heading') && <h3 class="settings-section-title"><SettingsIcon name={icon}/><span><slot name="heading"/></span></h3>}
+
+    <slot/>
+</Tag>

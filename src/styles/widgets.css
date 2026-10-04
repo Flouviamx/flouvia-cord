@@ -15,7 +15,7 @@
     gap: 1.4rem;
     position: relative;
     z-index: 1;
-    align-items: stretch;
+    align-items: start;
 }
 [data-widget-grid] > .dash-widget { position: relative; grid-column: span 1; min-width: 0; }
 [data-widget-grid] > .dash-widget[data-span="2"] { grid-column: span 2; }
@@ -31,7 +31,7 @@
 [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="2"] { grid-column: span 2; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="4"] { grid-column: span 4; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget[hidden] { display: none; }
-/* La tarjeta llena su celda para que una fila de KPIs quede pareja. */
+/* Cards follow their content; a short pipeline never inherits a neighbour's height. */
 [data-widget-grid] > .dash-widget > .dash-card,
 [data-widget-grid] > .dash-widget > .surface-card { height: 100%; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget > .dash-card,
@@ -79,7 +79,7 @@
 [data-widget-grid][data-editing="1"] > [data-widget-zone] > .dash-widget:not(.is-dragging) > .surface-card {
     outline: 1.5px dashed var(--color-border);
     outline-offset: 3px;
-    animation: widget-wiggle 1.6s ease-in-out infinite;
+    transition: outline-color .2s;
 }
 [data-widget-grid][data-editing="1"] > .dash-widget:nth-child(even):not(.is-dragging) > .dash-card { animation-delay: 0.05s; }
 [data-widget-grid][data-editing="1"] > .dash-widget:nth-child(3n):not(.is-dragging) > .dash-card { animation-delay: 0.09s; }
@@ -99,10 +99,8 @@
 .widget-tray-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--color-text); background: var(--color-bg-soft); border-radius: 100px; padding: 7px 8px 7px 14px; }
 .widget-tray-add { appearance: none; border: none; cursor: pointer; background: var(--color-blue-deep); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem; line-height: 1; }
 
-/* ══ Catálogo de widgets (modo biblioteca) — se activa en renderTray() cuando
-   hay ≥6 widgets ocultos: buscador + filas con preview real (clon del propio
-   widget oculto, inert, sin gráficas montadas). Con menos de 6, sigue usando
-   la fila simple de pills de arriba. ══ */
+/* Biblioteca: búsqueda y vistas previas inertes, independientemente del número de widgets. */
+.wx-library > [data-widget-tray-list] { display: block; }
 .wx-lib-search { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; padding: 0.68rem 0.85rem; border-radius: 14px; background: var(--color-bg-soft); }
 .wx-lib-search svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-text-muted); }
 .wx-lib-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.84rem; }
@@ -116,15 +114,15 @@
 .wx-lib-info { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
 .wx-lib-info strong { overflow: hidden; font-size: 0.82rem; font-weight: 650; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
 .wx-lib-info small { overflow: hidden; color: var(--color-text-muted); font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
-.wx-lib-add { flex-shrink: 0; appearance: none; border: none; cursor: pointer; min-height: 36px; padding: 0 1rem; border-radius: 100px; background: var(--color-blue-deep); color: #fff; font-size: 0.76rem; font-weight: 650; touch-action: manipulation; }
+.wx-lib-add { flex-shrink: 0; appearance: none; border: none; cursor: pointer; min-height: 44px; padding: 0 1rem; border-radius: 100px; background: var(--color-blue-deep); color: #fff; font-size: 0.76rem; font-weight: 650; touch-action: manipulation; }
 .wx-lib-add:active { transform: scale(0.96); }
 .wx-lib-noresults { padding: 1.2rem 0.5rem; color: var(--color-text-muted); font-size: 0.8rem; text-align: center; }
 
 @media (max-width: 880px) {
     [data-widget-grid] > .widget-tray.wx-library {
-        position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+        position: relative; display: flex; flex-direction: column;
         margin: 0; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
-        border-radius: 0; background: var(--surface);
+        border-radius: 24px; background: var(--surface);
     }
     .wx-lib-row { min-height: 64px; padding: 0.6rem; }
     .wx-lib-preview { width: 72px; height: 48px; }
@@ -208,4 +206,107 @@
 /* Regla 16: por debajo de 880 px el objetivo táctil sube a 44 px. */
 @media (max-width: 880px) {
     .widget-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
+}
+
+/* Shared editing surface: a stable landing slot and a pointer-only preview. */
+[data-widget-grid] [data-widget] { container-type: inline-size; }
+[data-widget-grid][data-editing="1"] [data-widget] { touch-action: none; }
+[data-widget-grid][data-editing="1"] [data-widget] > :is(.dash-card, .surface-card) { padding-top: 3.5rem; }
+[data-widget-grid] [data-widget].is-dragging { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; border-radius: 24px; }
+[data-widget-grid] [data-widget].is-dragging > * { opacity: .18; }
+.widget-drag-ghost { position: absolute !important; left: 0; top: 0; z-index: 1200; pointer-events: none !important; margin: 0; opacity: .96; will-change: transform; }
+.widget-drag-ghost > :is(.dash-card, .surface-card) { height: 100%; box-shadow: 0 24px 60px -16px rgba(10,25,47,.3); }
+.widget-editbar .we-btn { width: 32px; height: 32px; }
+.we-btn:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+[data-widget-grid][data-editing="1"] [data-widget] > :is(.dash-card, .surface-card) { pointer-events: none; }
+@media (max-width: 880px) {
+    [data-widget-grid][data-editing="1"] [data-widget] { touch-action: pan-y; }
+    .widget-editbar .we-btn { width: 44px; height: 44px; }
+    [data-widget-grid][data-editing="1"] [data-widget] > :is(.dash-card, .surface-card) { padding-top: 4rem; }
+}
+/* Compact lists scroll instead of dropping business data. Expanded lists use
+   the extra width for parallel rows; chart.ts redraws via ResizeObserver. */
+@media (min-width: 881px) {
+    [data-widget-size="sm"] :is(.report-list, .eq-summary-list, .quote-list, .silence-list, .cia-threads, .feed) { max-height: 260px; overflow: auto; scrollbar-width: thin; }
+
+    @container (min-width: 620px) {
+        [data-widget-size="lg"] :is(.report-list, .eq-summary-list, .quote-list, .silence-list, .cia-threads, .feed) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; align-content: start; }
+        [data-widget-size="lg"] .report-list > :nth-child(2) { border-top: 0; }
+        [data-widget-size="lg"] :is(.report-list, .eq-summary-list, .quote-list, .silence-list, .cia-threads, .feed) > .wx-empty { grid-column: 1 / -1; }
+        [data-widget-size="lg"] :is(.kpi-card, .report-kpi):has([data-chart]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(100px, 1fr); align-items: center; }
+        [data-widget-size="lg"] :is(.kpi-card, .report-kpi) .wx-kpi-foot { grid-column: 2; grid-row: 1 / span 4; margin: 0; }
+        [data-widget-size="lg"] .wx-kpi-spark { height: 80px; }
+    }
+}
+
+/* An explicit view selector, kept out of the content's reading area. */
+.we-sizes { display: flex; gap: 2px; padding: 2px; border-radius: 999px; background: var(--color-bg-soft); }
+.we-size { border: 0; border-radius: 999px; background: transparent; color: var(--color-text-muted); padding: 6px 9px; font: 600 .68rem var(--font-sans); cursor: pointer; }
+.we-size[aria-pressed="true"] { color: var(--color-text); background: var(--surface); box-shadow: 0 1px 4px #00000012; }
+.we-size:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+.widget-editbar { box-shadow: 0 3px 12px -4px #0a192f26; border: 1px solid var(--color-border); }
+.widget-drag-ghost > :is(.dash-card, .surface-card) { animation: none !important; }
+@media (max-width: 880px) { .we-sizes { display: none; } }
+/* Content-driven chart families. Height belongs to the graph, never to the
+   generic widget or an HTML-only chart with a naturally measured height. */
+[data-widget-grid] .chart-host[data-chart-layout="funnel"],
+[data-widget-grid] .chart-host[data-chart-layout="segments"],
+[data-widget-grid] .chart-host[data-chart-layout="ranking"],
+[data-widget-grid] .chart-host[data-chart-layout="donut"] { min-height: 0; height: auto; }
+[data-widget-grid] .dash-widget:has(.kpi-card, .report-kpi) { align-self: stretch; }
+[data-widget-grid] .chart-host:is([data-chart-layout="line"], [data-chart-layout="combo"], [data-chart-layout="bar"]) { min-height: 220px; }
+[data-widget-grid] [data-widget-size="lg"] .chart-host:is([data-chart-layout="line"], [data-chart-layout="combo"], [data-chart-layout="bar"]) { min-height: 260px; }
+.wx-library { padding: 1.5rem; }
+.widget-tray-title { font-size: 1rem; font-weight: 650; letter-spacing: -.025em; margin: 0 0 1rem; }
+.wx-lib-preview { width: 132px; height: 88px; border-radius: 16px; background: var(--color-bg-soft); }
+.wx-lib-preview > * { width: 380px; transform: scale(.34); }
+.wx-lib-row { padding: .8rem; gap: 1rem; }
+.wx-lib-info strong { white-space: normal; }
+@media (max-width: 880px) { .wx-lib-preview { width: 76px; height: 64px; } .wx-lib-preview > * { transform: scale(.22); } }
+
+/* Restrained category accents; values and status colors retain their meaning. */
+[data-widget-tone="finance"] { --widget-accent: #16846b; }
+[data-widget-tone="commercial"] { --widget-accent: #426cc5; }
+[data-widget-tone="team"] { --widget-accent: #8170b5; }
+[data-widget-tone="activity"] { --widget-accent: #ad793b; }
+@container (min-width: 430px) {
+    [data-widget-size="lg"] .kpi-card:has(.kpi-spark) { display:grid; grid-template-columns:minmax(0,1fr) minmax(100px,1fr); align-items:center; column-gap:1.5rem; }
+    [data-widget-size="lg"] .kpi-card .kpi-spark { grid-column:2; grid-row:1 / span 3; margin:0; }
+    [data-widget-size="lg"] .kpi-card-gauge { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:1rem; }
+    [data-widget-size="lg"] .kpi-card-gauge .kpi-gauge { grid-column:2; grid-row:1 / span 3; }
+}
+
+.wx-lib-add:disabled { background:var(--color-bg-soft); color:var(--color-text-muted); cursor:default; }
+.wx-lib-search:focus-within { outline:2px solid var(--color-blue-deep); outline-offset:2px; }
+@media (min-width:1200px) {
+    .wx-lib-rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem 1rem; }
+    .wx-lib-group-label, .wx-lib-noresults { grid-column:1 / -1; }
+}
+
+[data-widget-grid] a.kpi-card { display:flex; }
+@container (max-width: 320px) {
+    .widget-editbar { gap:0; padding:3px; }
+    .widget-editbar .we-drag { display:none; }
+    .widget-editbar .we-btn { width:26px; }
+    .we-size { padding:6px; font-size:.62rem; }
+}
+@media (max-width:880px) { .widget-editbar .we-btn { width:44px; } }
+
+/* A single miniature surface, fitted to its source instead of stacked frames. */
+.wx-lib-preview { width:144px; height:102px; background:transparent; box-shadow:none; border-radius:0; }
+.wx-lib-preview > * { top:50%; left:50%; transform-origin:center; min-height:0 !important; box-shadow:0 5px 18px -9px #0a192f30; overflow:hidden; }
+.wx-lib-row { border-radius:18px; transition:background .18s ease; }
+.wx-lib-row:has(.wx-lib-add:not(:disabled)):hover { background:var(--color-bg-soft); }
+@media (max-width:880px) { .wx-lib-preview { width:144px; height:102px; } .wx-lib-row { flex-wrap:wrap; } }
+@media (prefers-reduced-motion:reduce) { .wx-lib-row { transition:none; } }
+.wx-lib-filters { display:flex; gap:.3rem; width:fit-content; padding:4px; border-radius:999px; background:var(--color-bg-soft); margin-bottom:1rem; }
+.wx-lib-filters button { border:0; padding:.6rem 1rem; border-radius:999px; background:transparent; font:600 .75rem var(--font-sans); color:var(--color-text-muted); cursor:pointer; }
+.wx-lib-filters button[aria-pressed="true"] { background:var(--surface); color:var(--color-text); box-shadow:0 2px 7px #0000000a; }
+.wx-lib-filters button:focus-visible { outline:2px solid var(--color-blue-deep); outline-offset:2px; }
+@media (max-width:880px) { .wx-lib-filters button { min-height:44px; } }
+.wx-lib-info strong, .wx-lib-info small { white-space:normal; overflow-wrap:anywhere; }
+@media (max-width:880px) {
+    .wx-lib-row { display:grid; grid-template-columns:144px minmax(0,1fr); gap:.35rem .7rem; padding:.65rem 0; }
+    .wx-lib-preview { grid-row:1 / span 2; }
+    .wx-lib-add { grid-column:2; justify-self:start; max-width:100%; padding:0 .85rem; }
 }

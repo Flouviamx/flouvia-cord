@@ -160,6 +160,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
         tabs: [
             { id: 'datos',     label: 'Datos y privacidad', labelEn: 'Data & privacy', href: '/app/ajustes/datos', keywords: 'exportar export datos data privacidad privacy gdpr retencion eliminar borrar cuenta delete' },
+            { id: 'historial', label: 'Historial de ajustes', labelEn: 'Settings history', href: '/app/ajustes/historial', keywords: 'restaurar restore cambios changes historial history' },
             { id: 'auditoria', label: 'Auditoría',          labelEn: 'Audit log',      href: '/app/ajustes/auditoria', keywords: 'auditoria audit log bitacora historial actividad registro' },
         ],
     },

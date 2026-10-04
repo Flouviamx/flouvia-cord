@@ -1,0 +1,23 @@
+---
+import { currentLocale } from '../../../lib/context';
+import { memberCan } from '../../../lib/permissions';
+import { estadosPorProveedor } from '../../../lib/integraciones/conexiones';
+import SettingsIcon from './SettingsIcon.astro';
+const { org, member }=Astro.props;
+const en=currentLocale()==='en';const say=(es:string,enText:string)=>en?enText:es;
+const connections=await estadosPorProveedor(org.id).catch(()=>null);
+const fiscal=org.countryCode==='MX'?!!(org.rfc&&org.razonSocial&&org.cpFiscal):!!(org.fiscalMetadata?.legal_name&&org.fiscalMetadata?.tax_id);
+const errors=connections?Object.values(connections).filter(s=>s==='error').length:0;
+const active=connections?Object.values(connections).some(s=>s==='activa'):false;
+const checks=[
+ {icon:'building',label:say('Identidad','Identity'),detail:org.logoUrl?say('Logo configurado','Logo configured'):say('Personaliza tu logotipo','Customize your logo'),state:org.logoUrl?'ready':'pending',href:'/app/ajustes/branding#brandLogoSize'},
+ {icon:'document',label:say('Datos fiscales','Tax details'),detail:fiscal?say('Datos principales capturados','Main details entered'):say('Completa los datos de tu negocio','Complete your business details'),state:fiscal?'ready':'pending',href:'/app/ajustes/fiscal'},
+ ...(memberCan(member,'cobros_config')?[{icon:'card',label:say('Cobros','Payments'),detail:org.stripeChargesEnabled||org.mpChargesEnabled?say('Cobros en línea habilitados','Online payments enabled'):say('Revisa las opciones de cobro','Review payment options'),state:org.stripeChargesEnabled||org.mpChargesEnabled?'ready':'pending',href:'/app/ajustes/cobros'}]:[]),
+ {icon:'link',label:say('Integraciones','Integrations'),detail:connections===null?say('No pudimos consultar su estado','Unable to check status'):errors?say(`${errors} conexiones requieren atención`,`${errors} connections need attention`):active?say('Conexiones activas','Active connections'):say('Explora conexiones opcionales','Explore optional connections'),state:connections===null||errors?'attention':active?'ready':'optional',href:'/app/ajustes/integraciones'},
+];
+---
+<section class="settings-overview" aria-label={say('Estado de tu configuración','Configuration status')}>
+ <div class="settings-overview-heading"><h3>{say('Tu negocio, en orden','Your business at a glance')}</h3><a href="/app/ajustes/historial">{say('Historial de cambios','Change history')} →</a></div>
+ <div class="settings-overview-grid">{checks.map(c=><a href={c.href} class="settings-overview-item" data-state={c.state}><SettingsIcon name={c.icon}/><div><b>{c.label}</b><span>{c.detail}</span></div><i aria-hidden="true"/></a>)}</div>
+ <p class="s-hint">{say('Estado registrado en Cord. Los datos fiscales capturados no sustituyen la verificación de facturación.','Status recorded in Cord. Entered tax details do not replace invoicing verification.')}</p>
+</section>

@@ -11,7 +11,7 @@ export function initBrandEditor() {
     const stage = root.querySelector<HTMLElement>('.be-preview-stage')!;
     const resizePreview = () => {
         const available = stage.clientWidth - 20;
-        const width = stage.dataset.size === 'mobile' ? 375 : 760;
+        const width = stage.dataset.size === 'mobile' && surface!=='pdf' ? 375 : surface==='pdf'?820:760;
         const scale = Math.min(1, available / width);
         frame.style.width = `${width}px`;
         frame.style.height = `${(stage.clientHeight - 20) / scale}px`;
@@ -24,6 +24,8 @@ export function initBrandEditor() {
     let saved = snapshot();
     let profile = resolveBrandProfile(JSON.parse(config.value));
     let uploadRevision = 0;
+    let comparingSaved=false;
+    let surface='portal';
     const value = (selector: string, fallback = '') => root.querySelector<HTMLInputElement>(selector)?.value ?? fallback;
     const checked = (selector: string, fallback: boolean) => root.querySelector<HTMLInputElement>(selector)?.checked ?? fallback;
     const notify = () => config.dispatchEvent(new Event('input', { bubbles: true }));
@@ -34,9 +36,14 @@ export function initBrandEditor() {
         const logo = value('#brandLogo', root.dataset.logo);
         root.style.setProperty('--be-primary', primary);
         root.style.setProperty('--be-on-primary', onBrandColor(primary));
-        frame.contentWindow?.postMessage({type:'cord:brand-preview',profile,primary,secondary,logo,
-            banner:value('#brandBanner',root.dataset.banner),welcome:value('#brandWelcome',root.dataset.welcome),
-            chat:checked('#brandChat',root.dataset.chat==='true'),powered:checked('#brandPowered',root.dataset.powered==='true')},location.origin);
+        const state=comparingSaved?saved:snapshot();
+        frame.contentWindow?.postMessage({type:'cord:brand-preview',
+            profile:resolveBrandProfile(JSON.parse(String(state.brand_profile||config.value))),
+            primary:state.color_marca ?? root.dataset.primary,secondary:state.color_secundario ?? root.dataset.secondary,
+            logo:state.logo_url ?? root.dataset.logo,banner:state.portal_banner ?? root.dataset.banner,
+            welcome:state.portal_bienvenida ?? root.dataset.welcome,chat:state.portal_mostrar_chat ?? root.dataset.chat==='true',
+            powered:state.portal_powered ?? root.dataset.powered==='true'},location.origin);
+
         for (const kind of ['primary','dark']) {
             const url = kind === 'dark' ? profile.logoDark : logo;
             const img = root.querySelector<HTMLImageElement>(`[data-logo-img="${kind}"]`);
@@ -78,6 +85,17 @@ export function initBrandEditor() {
         stage.dataset.size=button.dataset.previewSize;
         resizePreview();
         root.querySelectorAll('[data-preview-size]').forEach((b) => b.setAttribute('aria-pressed',String(b===button)));
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-brand-compare]').forEach(button=>button.addEventListener('click',()=>{
+        comparingSaved=button.dataset.brandCompare==='saved';
+        root.querySelectorAll('[data-brand-compare]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));update();
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-brand-surface-view]').forEach(button=>button.addEventListener('click',()=>{
+        surface=button.dataset.brandSurfaceView!;
+        const urls:Record<string,string>={portal:'/app/ajustes/marca-preview',quote:'/app/ajustes/marca-preview?view=quote',pdf:'/app/ajustes/documento-preview',email:'/app/ajustes/correo-preview'};
+        frame.src=urls[surface];
+        frame.title=button.textContent||'';
+        root.querySelectorAll('[data-brand-surface-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));resizePreview();
     }));
     root.querySelector('#brandReset')?.addEventListener('click', () => {
         ++uploadRevision;
@@ -121,7 +139,7 @@ export function initBrandEditor() {
         showError(); notify();
     }));
     window.addEventListener('message',(event) => {
-        if (event.origin===location.origin && event.source===frame.contentWindow && event.data?.type==='cord:brand-preview-ready') update();
+        if (event.origin===location.origin && event.source===frame.contentWindow && ['cord:brand-preview-ready','cord:pdf-preview-ready','cord:email-preview-ready'].includes(event.data?.type)) update();
     });
     frame.addEventListener('load',update);
     update();

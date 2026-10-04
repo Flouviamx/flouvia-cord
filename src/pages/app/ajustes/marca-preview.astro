@@ -8,11 +8,13 @@ if (denied) return denied;
 const org = await getOrg();
 const sample = getDemoQuote();
 const brandOrg = { ...sample.org, nombre:org.nombre, inicial:org.inicial, logoUrl:org.logoUrl, rfc:'', colorMarca:org.colorMarca, colorSecundario:org.colorSecundario, brandProfile:org.brandProfile, portalBanner:'…', portalBienvenida:'…', portalMostrarChat:true, portalPowered:true };
+const quoteOnly=Astro.url.searchParams.get('view')==='quote';
 Astro.response.headers.set('Cache-Control','private, no-store');
 ---
 <html lang={currentLocale()}><head><title>{currentLocale() === 'en' ? 'Brand preview' : 'Vista previa de marca'}</title><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
-<body><main inert><QuoteCard quote={sample.quote} org={brandOrg} conversacion={[]} yaAprobada={false} yaRechazada={false} puedePagar={false} /></main></body></html>
+<body class:list={{'quote-only':quoteOnly}}><main inert><QuoteCard quote={sample.quote} org={brandOrg} conversacion={[]} yaAprobada={false} yaRechazada={false} puedePagar={false} /></main></body></html>
 <style is:global>
+    .quote-only .q-chat,.quote-only .q-cord-badge,.quote-only .q-actions,.quote-only .qi-chat-btn { display:none!important; }
     * { box-sizing:border-box; } [hidden] { display:none!important; } body { margin:0; background:#f4f5f7; color:#111827; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; } main { padding:22px; } .q-card { margin:auto; animation:none!important; } .q-demo-ribbon { display:none!important; } a { color:inherit; } .editorial { font-variant-numeric:tabular-nums; } :root { --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; --color-blue-deep:#0a192f; }
 </style>
 <script>

@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Plan — QUÉ plan tienes y CUÁNTO consumes.
 //
 // El dinero (tarjetas, comprobantes, datos fiscales, cancelar) vive en la pestaña
@@ -57,8 +58,8 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         </div>
     )}
 
-    <div class="s-block">
-        <h3>{t(L, 'set.plan.suscripcion_actual')}</h3>
+    <SettingsSection icon="card" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.plan.suscripcion_actual')}</Fragment>
         <div class="plan-row">
             <div class="plan-meta">
                 <span class="plan-name">
@@ -73,11 +74,11 @@ const planActual = PLANES.find((p) => p.id === planRaw);
             </div>
             {BILL.canManage && !isTestEnv && <a class="plan-btn solid" href="/api/billing/handoff">{t(L, 'set.plan.gestionar')}</a>}
         </div>
-    </div>
+    </SettingsSection>
 
     <!-- ── ELEGIR / CAMBIAR DE PLAN (tarjetas estilo /precios) ── -->
-    <div class="s-block full">
-        <h3>{esPago ? t(L, 'set.plan.cambiar') : t(L, 'set.plan.sube')}</h3>
+    <SettingsSection icon="card" class="s-block full">
+        <Fragment slot="heading">{esPago ? t(L, 'set.plan.cambiar') : t(L, 'set.plan.sube')}</Fragment>
         <div class="cycle-toggle" role="tablist" aria-label={t(L, 'set.plan.ciclo')}>
             <button class="cyc-btn is-active" data-cycle="mensual">{t(L, 'set.plan.mensual')}</button>
             <button class="cyc-btn" data-cycle="anual">{t(L, 'set.plan.anual')} <span class="cyc-save">{t(L, 'set.plan.anual_ahorro')}</span></button>
@@ -137,11 +138,11 @@ const planActual = PLANES.find((p) => p.id === planRaw);
             })}
         </div>
         <p class="pick-foot">{t(L, 'set.plan.pick_foot')}</p>
-    </div>
+    </SettingsSection>
 
     <!-- ── MEDIDORES DE USO ── -->
-    <div class="s-block">
-        <h3>{t(L, 'set.plan.uso_periodo')}</h3>
+    <SettingsSection icon="chart" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.plan.uso_periodo')}</Fragment>
 
         <div class="usage">
             <div class="usage-top">
@@ -177,10 +178,10 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                 )}
             </div>
         ))}
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.plan.metodo_pago')}</h3>
+    <SettingsSection icon="card" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.plan.metodo_pago')}</Fragment>
         {isTestEnv ? (
             <p class="plan-empty">{t(L, 'set.plan.pagos_no_aplican')}</p>
         ) : BILL.canManage ? (
@@ -188,7 +189,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         ) : (
             <p class="plan-empty">{t(L, 'set.plan.agrega_metodo')}</p>
         )}
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <script is:inline define:vars={{

@@ -33,7 +33,8 @@ export interface LogContext {
 }
 
 const env = (key: string): string | undefined =>
-    (import.meta.env?.[key] as string | undefined) ?? process.env?.[key];
+    (import.meta.env?.[key] as string | undefined) ??
+    (typeof process !== 'undefined' ? process.env?.[key] : undefined);
 
 const isProd = env('NODE_ENV') === 'production' || !!env('VERCEL');
 

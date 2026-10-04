@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
@@ -29,8 +30,8 @@ const textoAviso = (a: { motivo: string; tasa: number | null }) =>
 const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
 ---
 
-<div class="s-block" data-conta={proveedor}>
-    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+<SettingsSection icon="sliders" class="s-block" data-conta={proveedor}>
+    <Fragment slot="heading">{t(L, 'set.integ.det.conexion')}</Fragment>
     <div class="s-body">
         {flash && FLASH.includes(flash) && (
             <p class="ct-flash" data-bad={flash !== 'conectada' ? '1' : undefined}>{t(L, `conta.flash_${flash}` as any)}</p>
@@ -93,7 +94,7 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
             data-i18n-cuenta-guardada={t(L, 'conta.x.cuenta_guardada')}
             data-i18n-sin-cuentas={t(L, 'conta.x.sin_cuentas')}></span>
     </div>
-</div>
+</SettingsSection>
 
 <style>
     .ct-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }

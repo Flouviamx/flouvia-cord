@@ -7,6 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
+import { createSettingsRevision, parseSettingsRevision, restoreSettingsRevision } from '../../lib/settings-history';
 import { brandProfileSchema } from '../../lib/brand-profile';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
@@ -40,6 +41,21 @@ export const PATCH: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Invalid settings' }, 400);
+    let restoreRecord: ReturnType<typeof parseSettingsRevision> = null;
+    if (body.restore_revision !== undefined) {
+        const denied=await requirePerm('ajustes'); if(denied)return denied;
+        const oid=await getActiveOrgId(); const gate=await requireEntitlement(oid,'audit_log');if(gate)return gate;
+        if(Object.keys(body).length!==1 || typeof body.restore_revision!=='string' || !/^[0-9a-f-]{36}$/i.test(body.restore_revision))return json({error:'Invalid revision'},400);
+        const [[entry],[current]]=await withOrgTx(oid,
+            sql`select detalle from audit_log where org_id=${oid} and id=${body.restore_revision}::uuid and accion='org.configuracion'`,
+            sql`select * from orgs where id=${oid}`);
+        const revision=entry?parseSettingsRevision(String(entry.detalle)):null;
+        const patch=revision&&current?restoreSettingsRevision(revision,current):null;
+        if(!patch)return json({error:currentLocale()==='en'?'These settings changed again or cannot be restored. Refresh the history.':'Estos ajustes cambiaron de nuevo o no se pueden restaurar. Actualiza el historial.'},409);
+        restoreRecord=revision;
+        body=patch;
+    }
     const bankFields = new Set(['banco_nombre', 'banco_clabe', 'banco_beneficiario', 'acepta_transferencia', 'acepta_tarjeta', 'cobro_spei_auto']);
     const bodyKeys = Object.keys(body);
     const bankFieldTouched = bodyKeys
@@ -76,7 +92,8 @@ export const PATCH: APIRoute = async ({ request }) => {
         const entitlementDenied = await requireEntitlement(orgId, feature);
         if (entitlementDenied) return entitlementDenied;
     }
-    const [[actual]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
+    const [[actual]] = await withOrgTx(orgId, sql`select *, xmin::text as _revision from orgs where id = ${orgId}`);
+    if (restoreRecord && !restoreSettingsRevision(restoreRecord,actual)) return json({error:currentLocale()==='en'?'Settings changed. Refresh the history.':'Los ajustes cambiaron. Actualiza el historial.'},409);
     if (body.interes_moratorio_pct !== undefined) {
         const checkedInterest = validateLateInterestRate(
             body.country_code ?? actual.country_code,
@@ -98,7 +115,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     // Cada campo: si viene en el body lo tomamos (saneado), si no, conservamos.
     const nombre = body.nombre !== undefined ? String(body.nombre).trim() : actual.nombre;
-    if (!nombre) return json({ error: 'El nombre del negocio es obligatorio' }, 400);
+    if (!nombre) return json({ error: 'El nombre del negocio es obligatorio', field: 'nombre' }, 400);
 
     const rfc = body.rfc !== undefined ? (String(body.rfc).trim().toUpperCase() || null) : actual.rfc;
     const razon = body.razon_social !== undefined ? (String(body.razon_social).trim() || null) : actual.razon_social;
@@ -114,8 +131,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     const email = body.email_contacto !== undefined ? (String(body.email_contacto).trim() || null) : actual.email_contacto;
     const telefono = body.telefono !== undefined ? (String(body.telefono).trim() || null) : actual.telefono;
     const direccion = body.direccion !== undefined ? (String(body.direccion).trim() || null) : actual.direccion;
-    const pdfMensaje = body.pdf_mensaje !== undefined ? (String(body.pdf_mensaje).trim() || null) : actual.pdf_mensaje;
-    const pdfCond = body.pdf_condiciones !== undefined ? (String(body.pdf_condiciones).trim() || null) : actual.pdf_condiciones;
+    const pdfMensaje = body.pdf_mensaje !== undefined ? (String(body.pdf_mensaje ?? '').trim() || null) : actual.pdf_mensaje;
+    const pdfCond = body.pdf_condiciones !== undefined ? (String(body.pdf_condiciones ?? '').trim() || null) : actual.pdf_condiciones;
     const pdfLista = body.pdf_mostrar_lista !== undefined ? Boolean(body.pdf_mostrar_lista) : actual.pdf_mostrar_lista;
     const ivaIncluidoDef = body.iva_incluido_defecto !== undefined ? Boolean(body.iva_incluido_defecto) : actual.iva_incluido_defecto;
     const pdfTemplate = body.pdf_template !== undefined
@@ -134,7 +151,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     // ── Superpoderes de configuración (jun 2026) ──
     const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
     const TERMS = new Set(['contado', 'net30', 'net60']);
-    const str = (v: unknown, max = 200) => { const s = String(v).trim(); return s ? s.slice(0, max) : null; };
+    const str = (v: unknown, max = 200) => { const s = String(v ?? '').trim(); return s ? s.slice(0, max) : null; };
 
     // Perfil fiscal internacional. El JSON solo contiene este allowlist; no se
     // acepta fiscal_metadata arbitrario desde el cliente. México conserva sus
@@ -274,7 +291,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         const propuesta = str(body.zona_horaria, 64);
         if (!propuesta) zona = perfilNuevo.timeZone;
         else if (isValidTimeZone(propuesta)) zona = propuesta;
-        else return json({ error: 'Esa zona horaria no existe. Elige una de la lista.' }, 400);
+        else return json({ error: 'Esa zona horaria no existe. Elige una de la lista.', field: 'zona_horaria' }, 400);
     }
     // El idioma sigue al país con el mismo criterio que la divisa: se hereda solo
     // si nunca se personalizó. Un país hispanohablante deja la app en español;
@@ -290,7 +307,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         ? (IDIOMAS_APP.has(String(body.idioma)) ? String(body.idioma) : actual.idioma)
         : (idiomaHeredado ? idiomaDelPais(countryCode) : actual.idioma);
     const colorSec = body.color_secundario !== undefined
-        ? (String(body.color_secundario) === '' ? null : (HEX.test(String(body.color_secundario).trim()) ? String(body.color_secundario).trim() : actual.color_secundario))
+        ? (String(body.color_secundario ?? '') === '' ? null : (HEX.test(String(body.color_secundario ?? '').trim()) ? String(body.color_secundario ?? '').trim() : actual.color_secundario))
         : actual.color_secundario;
     const portalBien = body.portal_bienvenida !== undefined ? str(body.portal_bienvenida, 280) : actual.portal_bienvenida;
 
@@ -348,7 +365,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const bancoNombre = body.banco_nombre !== undefined ? str(body.banco_nombre, 100) : actual.banco_nombre;
     const previousClabe = decryptSecret(actual.banco_clabe_enc as string) || (actual.banco_clabe as string) || null;
     const bancoClabe = body.banco_clabe !== undefined ? (String(body.banco_clabe) === '' ? null : String(body.banco_clabe).replace(/\D/g, '').slice(0, 18) || null) : previousClabe;
-    if (bancoClabe && !/^\d{18}$/.test(bancoClabe)) return json({ error: 'La CLABE debe tener 18 dígitos.' }, 400);
+    if (bancoClabe && !/^\d{18}$/.test(bancoClabe)) return json({ error: 'La CLABE debe tener 18 dígitos.', field: 'banco_clabe' }, 400);
     let bancoClabeEnc = actual.banco_clabe_enc;
     if (body.banco_clabe !== undefined) {
         try {
@@ -360,8 +377,13 @@ export const PATCH: APIRoute = async ({ request }) => {
     const bancoClabeLast4 = body.banco_clabe !== undefined ? bancoClabe?.slice(-4) || null : actual.banco_clabe_last4;
     const bancoBen = body.banco_beneficiario !== undefined ? str(body.banco_beneficiario, 150) : actual.banco_beneficiario;
 
-    await withOrgTx(orgId, sql`
-        update orgs set
+    const revision = createSettingsRevision(actual, {
+        color_marca:color,color_secundario:colorSec,brand_profile:brandProfile,
+        pdf_template:pdfTemplate,pdf_mensaje:pdfMensaje,pdf_condiciones:pdfCond,pdf_mostrar_lista:pdfLista,
+        portal_bienvenida:portalBien,portal_banner:portalBanner,email_intro:emailIntro,email_firma:emailFirma,
+    }, Object.keys(body));
+    const [recorded] = await withOrgTx(orgId, sql`
+        with updated as (update orgs set
             nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
             color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva}, iva_incluido_defecto = ${ivaIncluidoDef},
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
@@ -390,7 +412,12 @@ export const PATCH: APIRoute = async ({ request }) => {
             acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAuto},
             banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${bancoClabeEnc},
             banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
-        where id = ${orgId}`);
+        where id = ${orgId} and xmin::text = ${actual._revision}
+        returning id)
+        insert into audit_log (org_id,actor,accion,entidad,entidad_id,detalle,ip)
+        select id,${currentUserId() ?? 'system'},'org.configuracion','org',id::text,${JSON.stringify(revision)},${reqIp(request)} from updated
+        returning id`);
+    if (!recorded.length) return json({error:currentLocale()==='en'?'Another change was saved. Reload before saving again.':'Se guardó otro cambio. Recarga antes de volver a guardar.'},409);
 
     const submittedFields = Object.keys(body).filter((key) => key !== 'banco_clabe').sort();
     if (body.banco_clabe !== undefined) submittedFields.push(`banco_clabe(last4:${actual.banco_clabe_last4 || 'ninguna'}->${bancoClabeLast4 || 'ninguna'})`);

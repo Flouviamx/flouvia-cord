@@ -1,0 +1,20 @@
+---
+/** Structural contract with WidgetGrid. Keep IDs stable across migrations. */
+export interface Props {
+    id: string;
+    title: string;
+    group?: string;
+    tone?: 'finance' | 'commercial' | 'team' | 'activity';
+    compact?: 1 | 2 | 4;
+    expanded?: 1 | 2 | 4;
+    hidden?: boolean;
+    optional?: boolean;
+    description?: string;
+    contentClass?: string;
+}
+const { id, title, group, tone, compact = 2, expanded = compact, hidden = false, optional = false, description, contentClass } = Astro.props;
+---
+<article class="dash-widget" data-widget={id} data-title={title} data-group={group}
+    data-widget-optional={optional && !hidden ? "1" : undefined} data-desc={description} data-widget-tone={tone} data-span={compact} data-size-sm={compact} data-size-lg={expanded} hidden={hidden || optional}>
+    <div class:list={['dash-card', contentClass]}><slot /></div>
+</article>

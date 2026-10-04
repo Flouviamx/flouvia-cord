@@ -1,4 +1,5 @@
 ---
+import SettingsSaveButton from '../../../components/app/SettingsSaveButton.astro';
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { currentLocale, currentFormatLocale, currentTimeZone } from '../../../lib/context';
 
@@ -154,10 +155,10 @@ const copy = {
                         <label for="domain-hostname">{copy.hostname}</label>
                         <div class="domain-form-row">
                             <input id="domain-hostname" name="hostname" type="text" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="253" placeholder={copy.example} aria-describedby="domain-hostname-hint domain-hostname-error" disabled />
-                            <button type="submit" class="domain-button domain-primary" data-save disabled>{copy.save}</button>
                         </div>
                         <p class="domain-hint" id="domain-hostname-hint">{copy.hostnameHint}</p>
                         <p class="domain-field-error" id="domain-hostname-error" role="alert" hidden>{copy.invalidHostname}</p>
+                        <div class="settings-save-footer"><SettingsSaveButton type="submit" data-save disabled label={copy.save} /></div>
                     </form>
                     <div data-saved-domain hidden>
                         <span class="domain-label">{copy.savedDomain}</span>
@@ -270,6 +271,7 @@ const copy = {
 </style>
 
 <script>
+    import { setSaveState } from '../../../lib/settings-save-feedback';
     type DomainStatus = 'pending' | 'dns_pending' | 'tls_pending' | 'active' | 'error';
     interface DomainState {
         enabled: boolean;
@@ -449,7 +451,8 @@ const copy = {
             el('[data-request-error]').hidden = true;
             feedback.textContent = action === 'load' ? (state ? c.refreshing : c.loading) : action === 'save' ? c.saving : action === 'verify' ? c.verifying : c.disconnecting;
             const button = action === 'save' ? save : action === 'verify' ? verify : action === 'disconnect' ? disconnect : refresh;
-            button.textContent = feedback.textContent;
+            if (action === 'save') setSaveState(save, 'saving');
+            else button.textContent = feedback.textContent;
             render();
             try {
                 let result: unknown;
@@ -469,7 +472,9 @@ const copy = {
                 renderRecords();
                 if (action === 'disconnect') input.value = '';
                 feedback.textContent = action === 'load' ? '' : action === 'save' ? c.saved : action === 'disconnect' ? c.disconnected : c.checked;
+                if (action === 'save') setSaveState(save, 'saved');
             } catch (error) {
+                if (action === 'save') setSaveState(save, 'error');
                 stale = true;
                 feedback.textContent = '';
                 el('[data-error-message]').textContent = error instanceof Error && error.name !== 'AbortError' && !(error instanceof TypeError)
@@ -477,7 +482,6 @@ const copy = {
                 el('[data-request-error]').hidden = false;
             } finally {
                 busy = false;
-                save.textContent = c.save;
                 verify.textContent = c.verify;
                 disconnect.textContent = c.disconnect;
                 refresh.textContent = c.retry;

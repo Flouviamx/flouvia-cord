@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Aprobaciones y tesorería
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
@@ -10,8 +11,8 @@ const L = currentLocale();
 
 <SettingsShell title={t(L, 'ajustes.titulo_aprobaciones')} tab="aprobaciones" perm="ajustes"
     intro={t(L, 'set.aprob.intro')} save>
-    <div class="s-block">
-        <h3>{t(L, 'set.aprob.umbrales')}</h3>
+    <SettingsSection icon="shield" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.aprob.umbrales')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -33,10 +34,10 @@ const L = currentLocale();
                 </div>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.aprob.tesoreria')}</h3>
+    <SettingsSection icon="clock" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.aprob.tesoreria')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label for="oInteres">{t(L, 'set.aprob.interes')}</label>
@@ -44,5 +45,5 @@ const L = currentLocale();
                 <span class="s-hint" id="late-interest-note">{t(L, 'set.aprob.interes_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>

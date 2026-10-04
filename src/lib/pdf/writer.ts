@@ -1,3 +1,4 @@
+import { SERIF_WIDTHS } from './serif-metrics';
 // Escritor PDF vectorial mínimo, sin dependencias.
 //
 // Reemplaza al generador de texto plano (`simple-pdf.ts`) para los documentos
@@ -18,6 +19,7 @@
 import { deflateSync, inflateSync } from 'node:zlib';
 
 export type RGB = [number, number, number];
+export type FontFamily = 'sans' | 'serif';
 export type FontKey = 'regular' | 'bold' | 'italic';
 export type Align = 'left' | 'center' | 'right';
 
@@ -126,30 +128,30 @@ function glyphWidth(byte: number, bold: boolean): number {
 }
 
 /** Ancho del texto en puntos, con las métricas reales de la fuente. */
-export function measureText(text: string, size: number, font: FontKey = 'regular'): number {
+export function measureText(text: string, size: number, font: FontKey = 'regular', family: FontFamily = 'sans'): number {
     const bold = font === 'bold';
     let total = 0;
-    for (const byte of encodeWinAnsi(text)) total += glyphWidth(byte, bold);
+    for (const byte of encodeWinAnsi(text)) total += family === 'serif' ? SERIF_WIDTHS[font][byte-32] ?? 250 : glyphWidth(byte, bold);
     return (total * size) / 1000;
 }
 
 /** Recorta con puntos suspensivos para que quepa en `maxWidth`. */
-export function truncateText(text: string, maxWidth: number, size: number, font: FontKey = 'regular'): string {
+export function truncateText(text: string, maxWidth: number, size: number, font: FontKey = 'regular', family: FontFamily = 'sans'): string {
     const value = String(text ?? '');
-    if (measureText(value, size, font) <= maxWidth) return value;
+    if (measureText(value, size, font, family) <= maxWidth) return value;
     const ellipsis = '…';
     let low = 0;
     let high = value.length;
     while (low < high) {
         const mid = Math.ceil((low + high) / 2);
-        if (measureText(value.slice(0, mid) + ellipsis, size, font) <= maxWidth) low = mid;
+        if (measureText(value.slice(0, mid) + ellipsis, size, font, family) <= maxWidth) low = mid;
         else high = mid - 1;
     }
     return low > 0 ? value.slice(0, low).trimEnd() + ellipsis : ellipsis;
 }
 
 /** Parte el texto en líneas que caben en `maxWidth`, respetando palabras. */
-export function wrapText(text: string, maxWidth: number, size: number, font: FontKey = 'regular'): string[] {
+export function wrapText(text: string, maxWidth: number, size: number, font: FontKey = 'regular', family: FontFamily = 'sans'): string[] {
     const out: string[] = [];
     for (const paragraph of String(text ?? '').split(/\r?\n/)) {
         const words = paragraph.split(/\s+/).filter(Boolean);
@@ -157,13 +159,13 @@ export function wrapText(text: string, maxWidth: number, size: number, font: Fon
         let line = '';
         for (const word of words) {
             const candidate = line ? `${line} ${word}` : word;
-            if (measureText(candidate, size, font) <= maxWidth) { line = candidate; continue; }
+            if (measureText(candidate, size, font, family) <= maxWidth) { line = candidate; continue; }
             if (line) out.push(line);
             // Palabra sola más ancha que la caja: se parte por caracteres.
-            if (measureText(word, size, font) <= maxWidth) { line = word; continue; }
+            if (measureText(word, size, font, family) <= maxWidth) { line = word; continue; }
             let chunk = '';
             for (const char of word) {
-                if (measureText(chunk + char, size, font) > maxWidth) { out.push(chunk); chunk = char; }
+                if (measureText(chunk + char, size, font, family) > maxWidth) { out.push(chunk); chunk = char; }
                 else chunk += char;
             }
             line = chunk;
@@ -344,11 +346,13 @@ const color = (rgb: RGB) => `${PT(rgb[0] / 255)} ${PT(rgb[1] / 255)} ${PT(rgb[2]
 export class PdfDocument {
     readonly width: number;
     readonly height: number;
+    readonly fontFamily: FontFamily;
     private pages: string[][] = [];
     private current: string[] = [];
     private images = new Map<string, EmbeddedImage>();
 
-    constructor(options: { width?: number; height?: number } = {}) {
+    constructor(options: { width?: number; height?: number; fontFamily?: FontFamily } = {}) {
+        this.fontFamily = options.fontFamily ?? 'sans';
         this.width = options.width ?? 595.28;   // A4
         this.height = options.height ?? 841.89;
         this.addPage();
@@ -432,7 +436,7 @@ export class PdfDocument {
         const tracking = options.tracking ?? 0;
         let drawX = x;
         if (options.align && options.align !== 'left' && options.width) {
-            const textWidth = measureText(raw, size, font) + tracking * Math.max(0, raw.length - 1);
+            const textWidth = measureText(raw, size, font, this.fontFamily) + tracking * Math.max(0, raw.length - 1);
             drawX = options.align === 'right'
                 ? x + options.width - textWidth
                 : x + (options.width - textWidth) / 2;
@@ -477,9 +481,9 @@ export class PdfDocument {
         };
 
         const fontIds = {
-            regular: push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),
-            bold: push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'),
-            italic: push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>'),
+            regular: push(`<< /Type /Font /Subtype /Type1 /BaseFont /${this.fontFamily === 'serif' ? 'Times-Roman' : 'Helvetica'} /Encoding /WinAnsiEncoding >>`),
+            bold: push(`<< /Type /Font /Subtype /Type1 /BaseFont /${this.fontFamily === 'serif' ? 'Times-Bold' : 'Helvetica-Bold'} /Encoding /WinAnsiEncoding >>`),
+            italic: push(`<< /Type /Font /Subtype /Type1 /BaseFont /${this.fontFamily === 'serif' ? 'Times-Italic' : 'Helvetica-Oblique'} /Encoding /WinAnsiEncoding >>`),
         };
 
         const imageIds = new Map<string, number>();

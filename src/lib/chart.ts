@@ -244,6 +244,23 @@ function emptyState(container: HTMLElement, opts: ChartEmptyOpts) {
 
 const isEmptySeries = (vals: number[]) => vals.every((v) => !v);
 
+/** Extra reading layer shared by chart widgets; outside the measured plot. */
+function fillChartSummary(summary: HTMLElement, rows: Array<[string, string, string]>) {
+    summary.replaceChildren();
+    for (const [label, value, note] of rows) {
+        const item = document.createElement('div');
+        const name = document.createElement('span'); name.textContent = label;
+        const amount = document.createElement('strong'); amount.textContent = value;
+        const context = document.createElement('small'); context.textContent = note;
+        item.append(name, amount, context); summary.append(item);
+    }
+}
+function widgetChartSummary(container: HTMLElement) {
+    const summary = document.createElement('div'); summary.className = 'chx-series-summary';
+    if (container.closest('[data-widget]')) container.after(summary);
+    return summary;
+}
+
 // ── 1. Line / Area chart — hero de ingreso ─────────────────────────────────
 
 export interface LineChartOptions extends ChartEmptyOpts {
@@ -271,10 +288,25 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
     const valueLabel = opts.valueLabel ?? '';
     const compareLabel = opts.compareLabel ?? '';
 
+    container.dataset.chartLayout = 'line';
     container.classList.add('cd-chart-wrap');
     clear(container);
     container.style.height = height + 'px';
 
+    const summary = widgetChartSummary(container);
+    const en = document.documentElement.lang.startsWith('en');
+    function updateSummary() {
+        summary.replaceChildren();
+        if (!points.length) return;
+        const high = points.reduce((best, point) => point.y > best.y ? point : best);
+        const last = points[points.length - 1];
+        const mean = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+        fillChartSummary(summary, [
+            [en ? 'Latest value' : 'Último valor', formatY(last.y), formatX(last.x)],
+            [en ? 'Highest value' : 'Valor máximo', formatY(high.y), formatX(high.x)],
+            [en ? 'Average per interval' : 'Promedio por intervalo', formatY(mean), `${points.length} ${en ? 'intervals' : 'intervalos'}`],
+        ]);
+    }
     let points = opts.points.slice();
     let comparePoints = opts.comparePoints?.slice() ?? [];
     let disconnectRO = () => {};
@@ -344,6 +376,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
         const maxY = Math.max(...points.map((p) => p.y), ...comparePoints.map((p) => p.y));
         const scale = niceScale(maxY, 4);
         scaleMax = scale.max;
+        PAD.left = Math.min(w / 3, Math.max(52, ...scale.ticks.map((tick) => formatYAxis(tick).length * 6.4 + 16)));
         plotW = w - PAD.left - PAD.right;
         plotH = h - PAD.top - PAD.bottom;
         const usableH = plotH - FLOOR;
@@ -461,16 +494,18 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
         });
     }
 
+    updateSummary();
     disconnectRO = observeSize(container, draw);
 
     return {
         setPoints(next, nextCompare) {
             points = next.slice();
+            updateSummary();
             comparePoints = (nextCompare ?? []).slice();
             const rect = container.getBoundingClientRect();
             if (rect.width > 0) draw(rect.width, rect.height || height);
         },
-        destroy() { disconnectRO(); container.innerHTML = ''; },
+        destroy() { disconnectRO(); summary.remove(); container.innerHTML = ''; },
     };
 }
 
@@ -496,6 +531,7 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
     const barColor = opts.barColor ?? 'var(--chart-track-strong, var(--chart-track))';
     const lineColor = opts.lineColor ?? 'var(--chart-fill)';
 
+    container.dataset.chartLayout = 'combo';
     container.classList.add('cd-chart-wrap');
     clear(container);
     container.style.height = height + 'px';
@@ -503,6 +539,16 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
 
     const PAD = { top: 14, right: 10, bottom: 24, left: 46 };
     const n = opts.labels.length;
+    const summary = widgetChartSummary(container);
+    const en = document.documentElement.lang.startsWith('en');
+    if (n) {
+        const peak = opts.lineValues.reduce((best, value, index, values) => value > values[best] ? index : best, 0);
+        fillChartSummary(summary, [
+            [opts.barLabel, formatY(opts.barValues.reduce((sum, value) => sum + value, 0)), en ? 'Total in selected range' : 'Total del rango seleccionado'],
+            [opts.lineLabel, formatY(opts.lineValues.reduce((sum, value) => sum + value, 0)), en ? 'Total in selected range' : 'Total del rango seleccionado'],
+            [`${en ? 'Peak' : 'Máximo'} · ${opts.lineLabel}`, formatY(opts.lineValues[peak] ?? 0), opts.labels[peak] ?? ''],
+        ]);
+    }
 
     let svg: SVGSVGElement;
     const hitRects: SVGRectElement[] = [];
@@ -520,6 +566,8 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
 
         svg = svgEl('svg', { width: String(w), height: String(h), viewBox: `0 0 ${w} ${h}` });
         svg.style.display = 'block'; svg.style.width = '100%'; svg.style.height = '100%';
+        const axisScale = niceScale(Math.max(...opts.barValues, ...opts.lineValues), 4);
+        PAD.left = Math.min(w / 3, Math.max(52, ...axisScale.ticks.map((tick) => formatYAxis(tick).length * 6.4 + 16)));
         const plotW = w - PAD.left - PAD.right;
         const plotH = h - PAD.top - PAD.bottom;
         const maxY = Math.max(...opts.barValues, ...opts.lineValues);
@@ -598,7 +646,7 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
     }
 
     const disconnect = observeSize(container, draw);
-    return { destroy() { disconnect(); container.innerHTML = ''; } };
+    return { destroy() { disconnect(); summary.remove(); container.innerHTML = ''; } };
 }
 
 // ── 3. Bar chart vertical con ejes — flujo esperado ─────────────────────────
@@ -618,6 +666,7 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
     const formatYAxis = opts.formatYAxis ?? ((v: number) => compactNumber(v));
     const color = opts.color ?? 'var(--chart-fill)';
 
+    container.dataset.chartLayout = 'bar';
     container.classList.add('cd-chart-wrap');
     clear(container);
     container.style.height = height + 'px';
@@ -625,6 +674,17 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
 
     const PAD = { top: 12, right: 8, bottom: 30, left: 46 };
     const n = opts.items.length;
+    const summary = widgetChartSummary(container);
+    const en = document.documentElement.lang.startsWith('en');
+    if (n) {
+        const high = opts.items.reduce((best, item) => item.value > best.value ? item : best);
+        const low = opts.items.reduce((best, item) => item.value < best.value ? item : best);
+        fillChartSummary(summary, [
+            [en ? 'Highest value' : 'Valor máximo', formatY(high.value), high.label],
+            [en ? 'Lowest value' : 'Valor mínimo', formatY(low.value), low.label],
+            [en ? 'Average' : 'Promedio', formatY(opts.items.reduce((sum, item) => sum + item.value, 0) / n), `${n} ${en ? 'values' : 'valores'}`],
+        ]);
+    }
 
     function draw(w: number, h: number) {
         container.querySelectorAll('svg').forEach((s) => s.remove());
@@ -637,6 +697,8 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
 
         const svg = svgEl('svg', { width: String(w), height: String(h), viewBox: `0 0 ${w} ${h}` });
         svg.style.display = 'block'; svg.style.width = '100%'; svg.style.height = '100%';
+        const axisScale = niceScale(Math.max(...opts.items.map((item) => item.value)), 4);
+        PAD.left = Math.min(w / 3, Math.max(52, ...axisScale.ticks.map((tick) => formatYAxis(tick).length * 6.4 + 16)));
         const plotW = w - PAD.left - PAD.right;
         const plotH = h - PAD.top - PAD.bottom;
         const maxY = Math.max(...opts.items.map((i) => i.value));
@@ -702,7 +764,7 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
     }
 
     const disconnect = observeSize(container, draw);
-    return { destroy() { disconnect(); container.innerHTML = ''; } };
+    return { destroy() { disconnect(); summary.remove(); container.innerHTML = ''; } };
 }
 
 // ── 4. Barras horizontales — rankings ───────────────────────────────────────
@@ -723,6 +785,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
     const formatY = opts.formatY ?? ((v: number) => String(Math.round(v)));
     const color = opts.color ?? 'var(--chart-fill)';
 
+    container.dataset.chartLayout = 'ranking';
     container.classList.add('cd-chart-wrap', 'chx-hbar-host');
     clear(container);
     const tooltip = ensureTooltip(container);
@@ -748,7 +811,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
         fill.style.background = it.color ?? color;
         fill.style.width = '0%';
         row.tabIndex = 0;
-        requestAnimationFrame(() => { fill.style.width = Math.max(3, (it.value / max) * 100) + '%'; });
+        requestAnimationFrame(() => { fill.style.width = Math.max(0, (it.value / max) * 100) + '%'; });
         track.appendChild(fill);
         fills.push(fill);
         const val = document.createElement('span');
@@ -802,6 +865,7 @@ export interface FunnelOptions extends ChartEmptyOpts {
 export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartHandle {
     const formatY = opts.formatY ?? ((v: number) => String(Math.round(v)));
     const color = opts.color ?? 'var(--chart-fill)';
+    container.dataset.chartLayout = 'funnel';
     container.classList.add('cd-chart-wrap');
     clear(container);
     const tooltip = ensureTooltip(container);
@@ -811,6 +875,22 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
     if (!steps.length) { emptyState(container, opts); return { destroy() { container.innerHTML = ''; } }; }
     const total = steps[0].value || 1;
 
+    const en = document.documentElement.lang.startsWith('en');
+    const detail = document.createElement('div');
+    detail.className = 'chx-funnel-detail';
+    const finalRate = steps[0].value > 0 ? Math.round(steps[steps.length - 1].value / steps[0].value * 100) : null;
+    const headline = document.createElement('div'); headline.className = 'chx-conversion';
+    const headlineLabel = document.createElement('span'); headlineLabel.textContent = en ? 'End-to-end conversion' : 'Conversión de principio a fin';
+    const headlineValue = document.createElement('strong'); headlineValue.textContent = finalRate === null ? '—' : `${finalRate}%`;
+    const headlineNote = document.createElement('small'); headlineNote.textContent = `${steps[0].label} → ${steps[steps.length - 1].label}`;
+    headline.append(headlineLabel, headlineValue, headlineNote); detail.append(headline);
+    steps.forEach((step) => {
+        const row = document.createElement('div'); row.className = 'chx-conversion-row';
+        const label = document.createElement('span'); label.textContent = step.label;
+        const value = document.createElement('strong'); value.textContent = steps[0].value > 0 ? `${Math.round(step.value / steps[0].value * 100)}%` : '—';
+        row.append(label, value); detail.append(row);
+    });
+    const caption = document.createElement('small'); caption.textContent = en ? 'Share of the first stage' : 'Porcentaje respecto a la primera etapa'; detail.append(caption);
     const wrap = document.createElement('div');
     wrap.className = 'chx-funnel';
     const listeners: Array<() => void> = [];
@@ -838,11 +918,11 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
         row.appendChild(bar);
 
         if (i > 0) {
-            const prev = steps[i - 1].value || 1;
-            const convPrev = Math.round((s.value / prev) * 100);
+            const prev = steps[i - 1].value;
+            const convPrev = prev > 0 ? Math.round((s.value / prev) * 100) : null;
             const note = document.createElement('span');
             note.className = 'chx-funnel-note';
-            note.textContent = `${convPrev}%`;
+            note.textContent = convPrev === null ? '—' : `${convPrev}%`;
             row.appendChild(note);
         }
 
@@ -881,7 +961,7 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
             bar.removeEventListener('pointerleave', unshow); bar.removeEventListener('focus', show); bar.removeEventListener('blur', unshow);
         });
     });
-    container.appendChild(wrap);
+    container.append(wrap, detail);
 
     return { destroy() { listeners.forEach((fn) => fn()); container.innerHTML = ''; } };
 }
@@ -899,6 +979,7 @@ export interface DonutOptions extends ChartEmptyOpts {
 export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHandle {
     const formatY = opts.formatY ?? ((v: number) => String(Math.round(v)));
     const size = opts.size ?? 168;
+    container.dataset.chartLayout = 'donut';
     container.classList.add('cd-chart-wrap');
     clear(container);
     const tooltip = ensureTooltip(container);
@@ -1008,6 +1089,7 @@ export interface SegBarOptions extends ChartEmptyOpts {
 
 export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartHandle {
     const formatY = opts.formatY ?? ((v: number) => String(Math.round(v)));
+    container.dataset.chartLayout = 'segments';
     container.classList.add('cd-chart-wrap');
     clear(container);
     const tooltip = ensureTooltip(container);
@@ -1041,6 +1123,10 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
         item.className = 'chx-legend-item';
         item.tabIndex = 0;
         item.innerHTML = `<span class="chx-legend-dot" style="background:${sg.color}"></span><span class="chx-legend-label">${sg.label}</span><span class="chx-legend-val editorial">${formatY(sg.value)}</span>`;
+        const share = document.createElement('span'); share.className = 'chx-seg-share'; share.textContent = `${new Intl.NumberFormat(document.documentElement.lang || 'es', { maximumFractionDigits: 1 }).format(pct)}%`;
+        const track = document.createElement('span'); track.className = 'chx-seg-track';
+        const fill = document.createElement('i'); fill.style.width = `${pct}%`; fill.style.background = sg.color;
+        track.append(fill); item.append(share, track);
         legend.appendChild(item);
         legendItems.push(item);
     });

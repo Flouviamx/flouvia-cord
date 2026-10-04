@@ -146,3 +146,13 @@ Este bloque **no cierra la fase 1**: siguen pendientes recuperación durable de
 los eventos de negocio, aislamiento con la conexión real, restauración demostrada
 de respaldos y pruebas integradas con proveedores. Recuperar el consumo de una
 factura no equivale a recuperar todos sus eventos ni una emisión fiscal incierta.
+
+### Fallos de transporte de base de datos al abrir la app
+
+El wrapper HTTP de Neon registra únicamente el código de transporte final, sin
+URL, SQL, parámetros ni credenciales. Conserva los reintentos acotados a fallos
+de conexión seguros. La capa exterior del middleware devuelve una página 503
+no cacheable con reintento manual para errores de transporte Neon en GET de
+`/app`; no acepta una sesión sin validarla, no muestra datos sustitutos y no
+repite mutaciones. Los errores SQL y las demás rutas mantienen su tratamiento.
+Contrato: `database-unavailable.ts` y `test/database-unavailable.test.ts`.

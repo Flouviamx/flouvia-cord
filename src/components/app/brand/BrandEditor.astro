@@ -24,7 +24,7 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
             {mode === 'identity' ? <>
                 <section class="be-section">
                     <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.image}/></svg>{say('Logotipo','Logo')}</h3>
-                    <p class="be-description">{say('Una identidad compartida con tus documentos y enlaces. La variante de contraste se usa en el encabezado de color del portal.','A shared identity for documents and links. The alternate logo is used on the portal’s colored header.')}</p>
+                    <p class="be-description">{say('Una identidad compartida con tus documentos y enlaces. La variante de contraste se usa en encabezados de color de documentos, portal y correos.','A shared identity for documents and links. The alternate logo is used on colored document, portal and email headers.')}</p>
                     <div class="be-logos">
                         {[['primary',say('Principal','Primary'),org.logoUrl],['dark',say('Sobre color','On color'),profile.logoDark]].map(([kind,label,url]) => <div class:list={['be-logo-tile',{'on-color':kind === 'dark'}]}>
                             <span class="be-label">{label}</span>
@@ -35,7 +35,7 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
                     </div>
                     <input type="hidden" id="brandLogo" data-field="logo_url" value={org.logoUrl}/>
                     <p class="be-help">PNG, JPG, SVG, WEBP · {say('Hasta 1 MB. Se conserva la proporción.','Up to 1 MB. Original proportions preserved.')}</p>
-                    <label class="be-label" for="brandLogoSize">{say('Tamaño en el portal','Size in the portal')}</label>
+                    <label class="be-label" for="brandLogoSize">{say('Tamaño del logo','Logo size')}</label>
                     <select class="s-input" id="brandLogoSize" data-brand-option="logoSize">{[['small','Pequeño','Small'],['medium','Mediano','Medium'],['large','Grande','Large']].map(([v,es,en])=><option value={v} selected={profile.logoSize===v}>{say(es,en)}</option>)}</select>
                 </section>
                 <section class="be-section">
@@ -46,15 +46,18 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
                     <p class="be-help">{say('El texto del botón se adapta al color para mantener su legibilidad.','Button text adapts to your color to stay readable.')}</p>
                 </section>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.text}/></svg>{say('Tipografía del portal','Portal typography')}</h3>
+                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.text}/></svg>{say('Tipografía','Typography')}</h3>
                     <div class="be-options">{[['system','Sistema','System','-apple-system,sans-serif'],['humanist','Humanista','Humanist','Verdana,sans-serif'],['editorial','Editorial','Editorial','Georgia,serif']].map(([value,es,en,font])=><label class="be-option"><input type="radio" name="brandFont" data-brand-option="font" value={value} checked={profile.font===value}/><span class="be-type" style={`font-family:${font}`}>Aa</span><b>{say(es,en)}</b></label>)}</div>
-                    <p class="be-help">{say('Esta elección cambia el portal y el cotizador embebido. PDF y correo conservan sus ajustes actuales.','This choice changes the portal and embedded quote. PDF and email keep their current settings.')}</p>
+                    <p class="be-help">{say('Se aplica al portal, cotizaciones y correos. Las facturas comerciales usan una fuente equivalente para impresión.','Applies to the portal, quotes and emails. Commercial invoices use an equivalent print font.')}</p>
                 </section>
                 <a class="be-next" href="/app/ajustes/portal">{say('Personalizar la composición y los mensajes del portal','Customize portal layout and messages')} <span>→</span></a>
+                <a class="be-next" href="/app/ajustes/pdf">{say('Diseñar el documento PDF','Design your PDF document')} <span>→</span></a>
+                <a class="be-next" href="/app/ajustes/correo">{say('Personalizar los correos al cliente','Customize client emails')} <span>→</span></a>
             </> : <>
                 <div class="be-inherited"><span class="be-swatch" style={`background:${org.colorMarca}`}></span><div><b>{say('Identidad compartida','Shared identity')}</b><p>{say('Usa el logo, la paleta y la tipografía de tu marca.','Uses your brand’s logo, palette and typography.')}</p></div><a href="/app/ajustes/branding">{say('Editar','Edit')} →</a></div>
                 <section class="be-section">
                     <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.layout}/></svg>{say('Composición','Layout')}</h3>
+                    <p class="be-help">{say('Este estilo también se comparte con los correos y las facturas comerciales. Las cotizaciones tienen su propia composición en Documento PDF.','This style is also shared with emails and commercial invoices. Quotes have their own layout in PDF document settings.')}</p>
                     <div class="be-options">{[['classic','Esencial','Essential'],['soft','Suave','Soft'],['contrast','Contraste','Contrast']].map(([value,es,en])=><label class="be-option"><input type="radio" name="brandHeader" data-brand-option="header" value={value} checked={profile.header===value}/><span class={`be-layout-sample ${value}`}><i></i><i></i><i></i></span><b>{say(es,en)}</b></label>)}</div>
                     <div class="be-selects"><div><label class="be-label" for="brandCorners">{say('Bordes','Corners')}</label><select class="s-input" id="brandCorners" data-brand-option="corners">{[['precise','Definidos','Precise'],['soft','Suaves','Soft'],['round','Redondeados','Rounded']].map(([v,es,en])=><option value={v} selected={profile.corners===v}>{say(es,en)}</option>)}</select></div><div><label class="be-label" for="brandDensity">{say('Espaciado','Spacing')}</label><select class="s-input" id="brandDensity" data-brand-option="density"><option value="comfortable" selected={profile.density==='comfortable'}>{say('Amplio','Comfortable')}</option><option value="compact" selected={profile.density==='compact'}>{say('Compacto','Compact')}</option></select></div></div>
                 </section>
@@ -76,6 +79,10 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
         </div>
         <aside class="be-preview">
             <div class="be-preview-bar"><span>{say('Vista del cliente','Client view')}</span><div class="be-devices" role="group" aria-label={say('Tamaño de vista previa','Preview size')}><button type="button" data-preview-size="desktop" aria-pressed="true">{say('Escritorio','Desktop')}</button><button type="button" data-preview-size="mobile" aria-pressed="false">{say('Móvil','Mobile')}</button></div></div>
+            <div class="be-preview-surfaces" role="group" aria-label={say('Vista previa','Preview')}>
+                {[['portal','Portal','Portal'],['quote','Cotización','Quote'],['pdf','PDF','PDF'],['email','Correo','Email']].map(([key,es,en])=><button type="button" data-brand-surface-view={key} aria-pressed={key==='portal'?'true':'false'}>{say(es,en)}</button>)}
+            </div>
+            <div class="be-preview-compare" role="group" aria-label={say('Comparar cambios','Compare changes')}><button type="button" data-brand-compare="draft" aria-pressed="true">{say('Con tus cambios','Your draft')}</button><button type="button" data-brand-compare="saved" aria-pressed="false">{say('Guardado','Saved')}</button></div>
             <div class="be-preview-stage" data-size="desktop"><iframe id="brandPreview" src="/app/ajustes/marca-preview" title={say('Vista previa de cotización con tu marca','Quote preview with your brand')}></iframe></div>
             <p class="be-preview-note">{say('Cotización de ejemplo · No genera actividad ni envíos.','Sample quote · No activity or messages are generated.')}</p>
         </aside>

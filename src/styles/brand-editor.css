@@ -78,3 +78,15 @@
 .be-preview-stage { height:672px; }
 .be-preview-stage iframe { max-width:none; transform-origin:top left; transition:none; }
 @media(max-width:800px) { .be-preview-stage { height:582px; } .brand-editor .s-input { font-size:16px; } }
+
+/* Shared document/email settings follow the identity editor spacing. */
+.be-section > .s-input + .be-label { margin-top:20px; }
+.be-preview-bar > a { font-size:.73rem; color:var(--color-text); text-decoration:none; }
+.be-preview-bar > a:hover { text-decoration:underline; }
+.be-layout-sample.contrast i:first-child { background:var(--be-primary,var(--color-text)); }
+.be-layout-sample.minimal i:first-child { height:4px; width:40%; }
+.be-preview-surfaces,.be-preview-compare { display:flex;flex-wrap:wrap;gap:5px;padding:0 0 10px; }
+.be-preview-surfaces button,.be-preview-compare button { font:inherit;font-size:.75rem;min-height:36px;padding:8px 11px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-bg-soft);color:var(--color-text-muted);cursor:pointer; }
+.be-preview-surfaces button[aria-pressed=true],.be-preview-compare button[aria-pressed=true] { background:var(--surface);color:var(--color-text);box-shadow:0 2px 5px #0a192f10; }
+.be-preview-surfaces button:focus-visible,.be-preview-compare button:focus-visible { outline:2px solid var(--color-text-muted);outline-offset:2px; }
+@media(max-width:600px){.be-preview-surfaces button,.be-preview-compare button{min-height:44px;}}

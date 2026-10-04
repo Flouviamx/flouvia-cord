@@ -1,4 +1,5 @@
 ---
+import MetricWidget from '../../../components/app/widgets/MetricWidget.astro';
 // /app/cobranza/agente — el agente de cobranza con IA.
 //
 // Antes vivía en /app/tesoreria/cobranza y era un feed plano de 50 mensajes sin
@@ -180,7 +181,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             labels={widgetLabels}
         >
             {/* 1 · La cifra que justifica el feature */}
-            <article class="dash-widget" data-widget="cia-recuperado" data-title={t(L, 'cia.k_recuperado')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-recuperado" data-title={t(L, 'cia.k_recuperado')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi">
                     <span class="kpi-label">{t(L, 'cia.k_recuperado')}</span>
                     <strong class="editorial report-kpi-value is-ok">{money(M!.recuperado30d, 0)}</strong>
@@ -189,7 +190,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 2 · Esperan tu aprobación */}
-            <article class="dash-widget" data-widget="cia-pendientes" data-title={t(L, 'cia.k_pendientes')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-pendientes" data-title={t(L, 'cia.k_pendientes')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi cia-kpi-click" data-cia-goto="cia-bandeja" role="button" tabindex="0">
                     <span class="kpi-label">{t(L, 'cia.k_pendientes')}</span>
                     <strong class="editorial report-kpi-value is-warn" data-cia-bind="n-pendientes">{D.pendientes.length}</strong>
@@ -198,7 +199,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 3 · Planes de pago vivos */}
-            <article class="dash-widget" data-widget="cia-planes" data-title={t(L, 'cia.k_planes')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-planes" data-title={t(L, 'cia.k_planes')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi">
                     <span class="kpi-label">{t(L, 'cia.k_planes')}</span>
                     <strong class="editorial report-kpi-value">{M!.planesActivos}</strong>
@@ -207,7 +208,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 4 · Actividad de correo */}
-            <article class="dash-widget" data-widget="cia-correos" data-title={t(L, 'cia.k_correos')} data-span="1" data-size-sm="1" data-size-lg="2">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-correos" data-title={t(L, 'cia.k_correos')} data-span="1" data-size-sm="1" data-size-lg="2">
                 <div class="dash-card report-kpi">
                     <span class="kpi-label">{t(L, 'cia.k_correos')}</span>
                     <strong class="editorial report-kpi-value">{M!.enviados30d}</strong>
@@ -219,7 +220,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 5 · LA BANDEJA — el centro de la página */}
-            <article class="dash-widget" data-widget="cia-bandeja" data-title={t(L, 'cia.bandeja')} data-span="4" data-size-sm="4" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-bandeja" data-title={t(L, 'cia.bandeja')} data-span="4" data-size-sm="4" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head">
                         <div>
@@ -273,7 +274,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 6 · Conversaciones agrupadas por cotización (antes: feed plano) */}
-            <article class="dash-widget" data-widget="cia-hilos" data-title={t(L, 'cia.hilos')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-hilos" data-title={t(L, 'cia.hilos')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.hilos')}</h2><p>{t(L, 'cia.hilos_sub')}</p></div></div>
                     <div class="cia-threads">
@@ -314,7 +315,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 7 · Planes negociados con avance real */}
-            <article class="dash-widget" data-widget="cia-planes-lista" data-title={t(L, 'cia.planes_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-planes-lista" data-title={t(L, 'cia.planes_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.planes_titulo')}</h2><p>{t(L, 'cia.planes_sub')}</p></div></div>
                     <div class="report-list">
@@ -337,7 +338,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 8 · En la mira — qué va a pasar en la próxima corrida */}
-            <article class="dash-widget" data-widget="cia-mira" data-title={t(L, 'cia.mira')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-mira" data-title={t(L, 'cia.mira')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head">
                         <div><h2 class="sec-title">{t(L, 'cia.mira')}</h2><p>{t(L, 'cia.mira_sub')}</p></div>
@@ -362,7 +363,7 @@ const MOTIVO_LABEL: Record<string, string> = {
             </article>
 
             {/* 9 · Exclusiones */}
-            <article class="dash-widget" data-widget="cia-exclusiones" data-title={t(L, 'cia.exclusiones')} data-span="2" data-size-sm="2" data-size-lg="4">
+            <article class="dash-widget" data-widget-tone="finance" data-widget="cia-exclusiones" data-title={t(L, 'cia.exclusiones')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.exclusiones')}</h2><p>{t(L, 'cia.exclusiones_sub')}</p></div></div>
                     <div class="cia-excl" data-cia-excl>
@@ -376,6 +377,7 @@ const MOTIVO_LABEL: Record<string, string> = {
                     </div>
                 </div>
             </article>
+        <MetricWidget id="cia-opcional-fallidos" optional tone="finance" title={L === 'en' ? 'Email delivery failures' : 'Fallos de envío'} value={M!.fallidos30d} description={L === 'en' ? 'Collection emails · last 30 days' : 'Correos de cobranza · últimos 30 días'} details={[{label:L === 'en' ? 'Sent' : 'Enviados',value:M!.enviados30d}]} />
         </WidgetGrid>
         </>
         )}

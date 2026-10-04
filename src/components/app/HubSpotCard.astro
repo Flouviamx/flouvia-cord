@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 import { fmtRelative } from '../../lib/fmt-server';
 import { QUOTE_STATUSES } from '../../lib/integraciones/hubspot/mapping';
@@ -45,8 +46,8 @@ const HS_I18N = {
 ---
 
 <div class="hsc" data-hubspot data-i18n={JSON.stringify(HS_I18N)}>
-    <div class="s-block">
-        <h3>{t(L, 'set.integ.det.conexion')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.integ.det.conexion')}</Fragment>
         <div class="s-body">
             {!HS?.disponible && !HS_CONN && <p class="hs-note">{t(L, 'set.integ.hs.no_disponible')}</p>}
 
@@ -82,11 +83,11 @@ const HS_I18N = {
                 )}
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
     {HS_CONN?.estado === 'activa' && (
-        <div class="s-block">
-            <h3>{t(L, 'set.integ.hs.etapas_titulo')}</h3>
+        <SettingsSection icon="sliders" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.integ.hs.etapas_titulo')}</Fragment>
             <div class="s-body hs-stages" data-hs-stages data-ajustes={JSON.stringify(HS_CONN.ajustes)}>
                 <div class="s-field">
                     <label for="hsPipeline">{t(L, 'set.integ.hs.pipeline')}</label>
@@ -105,19 +106,19 @@ const HS_I18N = {
                     <button type="button" class="hsc-btn-solid" data-hs-save disabled>{t(L, 'set.integ.hs.guardar_etapas')}</button>
                 </div>
             </div>
-        </div>
+        </SettingsSection>
     )}
 
     {HS_CONN?.estado === 'activa' && (
-        <div class="s-block">
-            <h3>{t(L, 'set.integ.hs.existentes_titulo')}</h3>
+        <SettingsSection icon="sliders" class="s-block">
+            <Fragment slot="heading">{t(L, 'set.integ.hs.existentes_titulo')}</Fragment>
             <div class="s-body">
                 <p class="hs-note">{t(L, 'set.integ.hs.existentes_desc')}</p>
                 <div class="hsc-actions">
                     <button type="button" class="hsc-btn-ghost" data-hs-backfill>{t(L, 'set.integ.hs.enviar_existentes')}</button>
                 </div>
             </div>
-        </div>
+        </SettingsSection>
     )}
 </div>
 

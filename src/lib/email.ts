@@ -1,7 +1,10 @@
+import { renderQuoteEmail } from './brand-quote-email';
 // Correos transaccionales vía Resend (REST, sin SDK). Mismo patrón que el cron
 // de recordatorios. TODO está gated por RESEND_API_KEY: si no está configurada,
 // no se manda nada y se devuelve { sent:false, skipped:'sin RESEND_API_KEY' }
 // (la app sigue funcionando — el link se genera igual).
+import { brandEmailShell, emailBrandFromRow, emailButtonStyle } from './brand-email';
+import { inlineBrandLogo } from './brand-image';
 import { sql, withOrgTx } from './db';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
@@ -60,6 +63,8 @@ export interface EmailAttachment {
     filename: string;
     /** Contenido binario. Se codifica a base64 aquí, no en el llamador. */
     content: Uint8Array;
+    contentId?: string;
+    contentType?: string;
 }
 
 const tipoAdjunto = (nombre: string) => /\.pdf$/i.test(nombre) ? 'application/pdf' : /\.xml$/i.test(nombre) ? 'application/xml' : 'application/octet-stream';
@@ -70,12 +75,14 @@ export async function sendEmail(opts: {
     replyToPropio?: string | null;
     orgId?: string | null; operation?: string; attachments?: EmailAttachment[];
 }): Promise<SendResult> {
+    const branded = await inlineBrandLogo(opts.html);
+    opts = {...opts, html:branded.html, attachments:[...(opts.attachments || []),...branded.attachments]};
     // Si el negocio conectó su Gmail, lo que va a SUS clientes sale desde ahí.
     if (opts.orgId && opts.to && OPERACIONES_GMAIL.has(opts.operation || '')) {
         const g = await enviarPorGmail(opts.orgId, {
             // Sale desde el Gmail del negocio: la respuesta vuelve a esa bandeja salvo que haya elegido otra.
             to: opts.to, subject: opts.subject, html: opts.html, fromName: opts.fromName, replyTo: opts.replyToPropio ?? null,
-            attachments: opts.attachments?.map((a) => ({ ...a, contentType: tipoAdjunto(a.filename) })),
+            attachments: opts.attachments?.map((a) => ({ ...a, contentType: a.contentType || tipoAdjunto(a.filename) })),
         }).catch(() => ({ ok: false as const }));
         if (g?.ok) {
             await trackExternalUsage({ orgId: opts.orgId, provider: 'gmail', category: 'email', operation: opts.operation || 'transactional_email' });
@@ -102,6 +109,7 @@ export async function sendEmail(opts: {
                 payload.attachments = cabe.map((a) => ({
                     filename: a.filename,
                     content: Buffer.from(a.content).toString('base64'),
+                    ...(a.contentId ? {content_id:a.contentId,content_type:a.contentType} : {}),
                 }));
             }
         }
@@ -136,6 +144,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
     const [rows] = await withOrgTx(orgId, sql`
         select c.folio, c.total, c.public_token, c.base_currency, cl.empresa, cl.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.logo_url, o.color_secundario, o.brand_profile,
                coalesce(o.pdf_mensaje, '') as mensaje,
                o.email_from_name, o.email_reply_to, o.email_intro, o.email_firma,
                o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda
@@ -151,7 +160,6 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
 
     const L = currentLocale();
-    const quoteCurrency = normalizeCurrency((r.base_currency as string) || (r.moneda as string));
     const tf = (key: string, vars: Record<string, string> = {}) => {
         let s = t(L, key as any);
         for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
@@ -159,42 +167,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, _orig
     };
 
     const link = await publicDocumentUrl(orgId, 'q', r.public_token);
-    const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
-    // Variables disponibles en intro/firma: {cliente} {folio} {total} {negocio}.
-    // (Texto propio del vendedor, capturado en Ajustes › Correo — no se traduce.)
-    const fill = (txt: string) => esc(txt)
-        .replace(/\{cliente\}/g, esc(r.empresa || t(L, 'email.cliente_generico')))
-        .replace(/\{folio\}/g, esc(r.folio))
-        .replace(/\{total\}/g, moneyFmt(r.total, L, quoteCurrency))
-        .replace(/\{negocio\}/g, esc(r.org_nombre));
-    const intro = (canCustomizeEmail && r.email_intro && r.email_intro.trim())
-        ? fill(r.email_intro)
-        : tf('email.intro_default', { org: esc(r.org_nombre), folio: esc(r.folio), total: moneyFmt(r.total, L, quoteCurrency) });
-    const firma = (canCustomizeEmail && r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
-    const poweredLine = canRemoveBranding && r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
-    const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:540px;margin:0 auto;">
-            <div style="margin-bottom:32px;">
-                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
-            </div>
-
-            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${tf('email.saludo', { empresa: esc(r.empresa || t(L, 'email.cliente_generico')) })}</p>
-            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${intro}</p>
-
-            <div style="margin:40px 0;">
-                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${tf('email.ver_cotizacion', { folio: esc(r.folio) })}</a>
-            </div>
-
-            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
-
-            ${r.mensaje ? `<div style="margin-top:40px;padding-top:32px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${esc(r.mensaje)}</p></div>` : ''}
-            ${firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${t(L, 'email.atentamente')}<br>${firma}</p></div>` : ''}
-
-            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
-            </div>
-        </div>
-    </div>`;
+    const html = renderQuoteEmail(r,{locale:L,link,canCustomizeEmail,canRemoveBranding});
     // Entorno de PRUEBA: el correo sale marcado — que nadie confunda una
     // cotización de prueba con una real.
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
@@ -235,6 +208,9 @@ interface InvoiceEmailRow {
     empresa: string | null;
     org_nombre: string;
     color: string;
+    logo_url: string | null;
+    color_secundario: string | null;
+    brand_profile: unknown;
     email_from_name: string | null;
     email_reply_to: string | null;
     email_contacto: string | null;
@@ -253,6 +229,7 @@ async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<Inv
                coalesce(cl.email, cq.email) as email,
                coalesce(cl.empresa, cq.empresa) as empresa,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.logo_url, o.color_secundario, o.brand_profile,
                o.email_from_name, o.email_reply_to, o.email_contacto,
                o.portal_powered, o.sandbox_of, o.moneda,
                o.email_intro, o.email_firma, o.pdf_mensaje
@@ -278,7 +255,6 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
     firma?: string;
     mensaje?: string;
 }): string {
-    const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
     const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
     const L = opts.locale;
     const vence = r.due_date
@@ -290,13 +266,7 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
         ? `<tr><td style="padding:6px 0;font-size:14px;color:#6B7280;">${t(L, 'fact.e_vence')}</td>
              <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">${esc(vence)}</td></tr>`
         : '';
-    return `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:540px;margin:0 auto;">
-            <div style="margin-bottom:32px;">
-                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
-            </div>
-
-            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'fact.e_hola'))}</p>
+    return brandEmailShell(emailBrandFromRow(r), `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'fact.e_hola'))}</p>
             <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${opts.intro || opts.cuerpo}</p>
 
             <table style="width:100%;border-collapse:collapse;margin:32px 0;border-top:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;padding:8px 0;">
@@ -308,7 +278,7 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
             </table>
 
             <div style="margin:40px 0;">
-                <a href="${opts.link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${esc(opts.cta)}</a>
+                <a href="${opts.link}" style="${emailButtonStyle(emailBrandFromRow(r))}">${esc(opts.cta)}</a>
             </div>
 
             <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${opts.link}" style="color:#2563EB;text-decoration:none;">${opts.link}</a></p>
@@ -316,11 +286,7 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
             ${opts.mensaje ? `<div style="margin-top:40px;padding-top:32px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${opts.mensaje}</p></div>` : ''}
             ${opts.firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${t(L, 'email.atentamente')}<br>${opts.firma}</p></div>` : ''}
 
-            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${opts.poweredLine}</p>
-            </div>
-        </div>
-    </div>`;
+        `, opts.poweredLine);
 }
 
 /**
@@ -454,6 +420,7 @@ export async function sendClientQuoteMessage(orgId: string, cotizacionId: string
     const [rows] = await withOrgTx(orgId, sql`
         select c.folio, c.total, c.public_token, c.base_currency, cl.empresa, cl.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.logo_url, o.color_secundario, o.brand_profile,
                o.email_from_name, o.email_reply_to, o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda
           from cotizaciones c
           join orgs o on o.id = c.org_id
@@ -468,28 +435,18 @@ export async function sendClientQuoteMessage(orgId: string, cotizacionId: string
     const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
     const link = await publicDocumentUrl(orgId, 'q', r.public_token);
-    const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
     const poweredLine = canRemoveBranding && r.portal_powered === false
         ? esc(r.org_nombre)
         : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
     const cta = t(L, 'email.ver_cotizacion').replace('{folio}', esc(r.folio));
 
-    const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:540px;margin:0 auto;">
-            <div style="margin-bottom:32px;">
-                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
-            </div>
-            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'email.cliente_generico'))}</p>
+    const html = brandEmailShell(emailBrandFromRow(r), `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'email.cliente_generico'))}</p>
             <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${paragraph(msg.mensaje)}</p>
             <div style="margin:40px 0;">
-                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${cta}</a>
+                <a href="${link}" style="${emailButtonStyle(emailBrandFromRow(r))}">${cta}</a>
             </div>
             <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
-            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
-            </div>
-        </div>
-    </div>`;
+        `, poweredLine);
 
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
     const result = await sendEmail({

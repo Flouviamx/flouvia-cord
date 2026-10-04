@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › General — identidad del negocio, contacto, presencia y localización.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
@@ -47,8 +48,8 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
 <SettingsShell title="General — Ajustes" tab="general" perm="ajustes"
     intro={t(L, 'set.general.intro')} save>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.general.identidad')}</h3>
+    <SettingsSection icon="building" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.general.identidad')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -64,10 +65,10 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
                 </div>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.general.contacto')}</h3>
+    <SettingsSection icon="contact" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.general.contacto')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -84,10 +85,10 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
                 <input class="s-input" id="oDireccion" data-field="direccion" value={ORG.direccion} placeholder={t(L, 'set.general.direccion_ph')} />
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.general.presencia')}</h3>
+    <SettingsSection icon="globe" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.general.presencia')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -101,10 +102,10 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
                 </div>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.general.localizacion')}</h3>
+    <SettingsSection icon="clock" advanced hint={L==='en'?'Advanced localization · keep your current time zone and language.':'Localización avanzada · conserva tu zona e idioma actuales.'} class="s-block">
+        <Fragment slot="heading">{t(L, 'set.general.localizacion')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -152,5 +153,5 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
                         : 'Aplica a la aplicación, a tus links públicos y a los correos que Cord envía en tu nombre.'}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>

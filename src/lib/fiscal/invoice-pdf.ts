@@ -1,3 +1,4 @@
+import { resolveBrandProfile, onBrandColor } from '../brand-profile';
 // Factura comercial de Cord: el documento que descarga y reenvía el cliente de
 // nuestro cliente. Fuera de México es LA factura que ve el comprador, así que se
 // diseña como pieza de marca del negocio emisor, no como un volcado de datos.
@@ -14,12 +15,14 @@ import QRCode from 'qrcode';
 import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import {
-  PdfDocument, measureText, prepareImage, truncateText, wrapText,
+  PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
 import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
 
 export interface InvoicePdfInput {
+  brandProfile?: unknown;
+  brandSecondary?: string | null;
   invoiceNumber: string;
   countryCode: string;
   documentType?: string;
@@ -88,12 +91,6 @@ function tint(rgb: RGB, amount: number): RGB {
   return rgb.map((channel) => Math.round(channel + (255 - channel) * amount)) as RGB;
 }
 
-/** Tinta legible sobre un fondo dado. Una marca clara no puede llevar texto blanco. */
-function readableOn(rgb: RGB): RGB {
-  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
-  return luminance > 0.6 ? INK : WHITE;
-}
-
 /**
  * QR de Verifactu dibujado como una cuadrícula de rectángulos vectoriales, no
  * como un PNG incrustado: `QRCode.create()` es síncrono y puro (sin canvas ni
@@ -130,6 +127,12 @@ function addressLines(party: FiscalParty, locale: 'es' | 'en'): string[] {
 }
 
 export function createInvoicePdf(input: InvoicePdfInput): Buffer {
+  const appearance = resolveBrandProfile(input.brandProfile);
+  const fontFamily = appearance.font === 'editorial' ? 'serif' : 'sans';
+  const measureText = (text:string,size:number,font:FontKey='regular') => measure(text,size,font,fontFamily);
+  const truncateText = (text:string,width:number,size:number,font:FontKey='regular') => truncate(text,width,size,font,fontFamily);
+  const wrapText = (text:string,width:number,size:number,font:FontKey='regular') => wrap(text,width,size,font,fontFamily);
+  const corner = {precise:0,soft:5,round:10}[appearance.corners];
   const profile = getCountryProfile(input.countryCode);
   const isSpanish = profile.locale.startsWith('es');
   const t = (es: string, en: string) => (isSpanish ? es : en);
@@ -157,19 +160,23 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     : '—');
 
   const brand = hexToRgb(input.brandColor, [10, 25, 47]);
-  const onBrand = readableOn(brand);
+  const onBrand = hexToRgb(onBrandColor(input.brandColor || '#0a192f'),WHITE);
+  const secondary = hexToRgb(input.brandSecondary,brand);
   const logo = prepareImage(input.logo);
 
-  const doc = new PdfDocument({ width: PAGE_W, height: PAGE_H });
+  const doc = new PdfDocument({ width: PAGE_W, height: PAGE_H, fontFamily });
   const contentW = PAGE_W - MARGIN * 2;
 
   // ── Cabecera de marca ──────────────────────────────────────────────────────
   const HEADER_H = 104;
-  doc.rect(0, 0, PAGE_W, HEADER_H, { fill: brand });
+  const contrast = appearance.header === 'contrast';
+  const headerInk = contrast ? onBrand : INK;
+  doc.rect(0, 0, PAGE_W, HEADER_H, { fill: contrast ? brand : appearance.header === 'soft' ? tint(secondary,.9) : WHITE });
+  if (appearance.header === 'classic') doc.line(MARGIN,HEADER_H,MARGIN+contentW,HEADER_H,{color:brand,width:2});
 
   if (logo) {
-    const { w, h } = PdfDocument.fit(logo, 160, 44);
-    doc.image(logo, MARGIN, 30, w, h);
+    const { w, h } = PdfDocument.fit(logo,160,{small:30,medium:42,large:60}[appearance.logoSize]);
+    doc.image(logo, MARGIN, (HEADER_H-h)/2, w, h);
   } else {
     // Sin logo, el nombre del negocio ES la marca: se ENCOGE para caber entero
     // antes de recortarse. "Distribuidora Peñafiel y Asociados S.A. de C.V."
@@ -178,19 +185,19 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     const maxW = PAGE_W - MARGIN - 240;
     const size = [17, 15, 13, 11.5].find((candidate) => measureText(name, candidate, 'bold') <= maxW) ?? 11.5;
     doc.text(truncateText(name, maxW, size, 'bold'), MARGIN, 52, {
-      size, font: 'bold', color: onBrand,
+      size, font: 'bold', color: headerInk,
     });
   }
 
   const headRight = PAGE_W - MARGIN - 220;
   doc.text(input.documentType === 'proforma' ? 'PROFORMA' : input.creditNoteOfNumber ? t('NOTA DE CRÉDITO', 'CREDIT NOTE') : t('FACTURA', 'INVOICE'), headRight, 42, {
-    size: 9, font: 'bold', color: onBrand, align: 'right', width: 220, tracking: 2.4,
+    size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
   });
   doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
-    size: 19, font: 'bold', color: onBrand, align: 'right', width: 220,
+    size: 19, font: 'bold', color: headerInk, align: 'right', width: 220,
   });
   doc.text(fmtDate(input.issuedAt), headRight, 84, {
-    size: 8.5, color: onBrand, align: 'right', width: 220,
+    size: 8.5, color: headerInk, align: 'right', width: 220,
   });
 
   let y = HEADER_H + 26;
@@ -274,12 +281,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     { title: t('Importe', 'Amount'), width: 82, align: 'right' },
   ];
   const colX = (index: number) => MARGIN + COLS.slice(0, index).reduce((sum, c) => sum + c.width, 0);
-  const PAD = 8;
+  const PAD = appearance.density === 'compact' ? 5 : 8;
   const LINE_H = 12;
   const HEAD_H = 26;
 
   const drawTableHead = (top: number): number => {
-    doc.rect(MARGIN, top, contentW, HEAD_H, { fill: tint(brand, 0.87), radius: 4 });
+    doc.rect(MARGIN, top, contentW, HEAD_H, { fill: tint(secondary, 0.87), radius: corner });
     COLS.forEach((col, index) => {
       const left = colX(index) + (col.align === 'left' ? 10 : 0);
       doc.text(col.title.toUpperCase(), left, top + 17, {
@@ -367,7 +374,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // El total va en el color de la marca: es el número que todos buscan primero.
   const TOTAL_H = 36;
-  doc.rect(totalsX, ty - 6, totalsW, TOTAL_H, { fill: brand, radius: 5 });
+  doc.rect(totalsX, ty - 6, totalsW, TOTAL_H, { fill: brand, radius: corner });
   doc.text(t('TOTAL', 'TOTAL'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
   doc.text(`${money(input.total)} ${currency}`, totalsX, ty + 16, {
     size: 13, font: 'bold', color: onBrand, align: 'right', width: totalsW - 13,

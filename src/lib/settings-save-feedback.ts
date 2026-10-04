@@ -6,6 +6,7 @@ export function setSaveState(
     state: 'saving' | 'saved' | 'error',
     message?: string,
 ) {
+    button.dispatchEvent(new CustomEvent('cord:save-feedback', { bubbles: true, detail: { state } }));
     const previous = timers.get(button);
     if (previous) clearTimeout(previous);
     timers.delete(button);

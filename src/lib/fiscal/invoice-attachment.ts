@@ -1,3 +1,5 @@
+import { resolveBrandProfile } from '../brand-profile';
+import { brandImagePng } from '../brand-image';
 // PDF de una factura, listo para adjuntar a un correo.
 //
 // El comentario de `/api/facturas/[id].ts` prometía mandar la factura "con su
@@ -55,7 +57,7 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
                    d.status, d.issued_at,
                    d.public_token as invoice_token, d.due_date as invoice_due,
                    orig.invoice_number as credit_note_of_number,
-                   o.logo_url, o.color_marca, o.pdf_condiciones,
+                   o.logo_url, o.color_marca, o.color_secundario, o.brand_profile, o.pdf_condiciones,
                    c.terminos, c.public_token,
                    coalesce(c.approved_at, c.created_at) as base_date
               from documentos_fiscales d
@@ -72,7 +74,12 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
         if (['cfdi_40', 'cfdi_egreso'].includes(doc.document_type) && doc.provider_data?.facturapi_id) return null;
 
         const term = String(doc.terminos || '');
+        const appearance = resolveBrandProfile(doc.brand_profile);
+        const source = appearance.header === 'contrast' && appearance.logoDark ? appearance.logoDark : doc.logo_url;
+        const logoBytes = await brandImagePng(source);
         const pdf = createInvoicePdf({
+            brandProfile: appearance,
+            brandSecondary: doc.color_secundario as string | null,
             invoiceNumber: String(doc.invoice_number || 'INV'),
             documentType: String(doc.document_type),
             countryCode: String(doc.country_code || 'US'),
@@ -89,7 +96,7 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
             fxRate: doc.fx_rate !== null && doc.fx_rate !== undefined ? Number(doc.fx_rate) : null,
             ledgerTotal: doc.ledger_total !== null && doc.ledger_total !== undefined ? Number(doc.ledger_total) : null,
             simulated: Boolean(doc.provider_data?.simulado),
-            logo: (doc.logo_url as string) || null,
+            logo: logoBytes ? `data:image/png;base64,${logoBytes.toString('base64')}` : null,
             brandColor: (doc.color_marca as string) || null,
             dueDate: doc.invoice_due ? new Date(doc.invoice_due as string) : dueDateFrom(doc.terminos, doc.base_date),
             paymentTerms: TERM_LABEL[term] || null,

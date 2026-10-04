@@ -1,4 +1,4 @@
-// Allowlist de storageKey válidas para los 5 grids de widgets — NO es un
+// Allowlist de storageKey válidas para los grids de widgets — NO es un
 // registro de los ~90 widgets individuales (esos ya viven en el markup:
 // data-widget/data-title/data-span/data-size-*, y duplicarlos aquí solo
 // generaría drift). Único consumidor real: src/pages/api/app/widget-prefs.ts,
@@ -8,6 +8,8 @@ import { REPORT_IDS } from './informes';
 
 export const STATIC_GRID_KEYS = [
     'cord.dash.v1',
+    'cord.equipo.v1',
+    'cord.desempeno.v1',
     'cord.cobros.v1',
     'cord.cobranza.v1',
     'cord.cobranza-ia.v1',

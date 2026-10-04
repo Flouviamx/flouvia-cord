@@ -1,3 +1,4 @@
+import { brandEmailShell, emailBrandFromRow, emailButtonStyle } from '../../../lib/brand-email';
 // GET /api/cron/recordatorios — recordatorios de cobro automáticos.
 // Busca cuentas por cobrar cuyo vencimiento cae en los próximos 3 días y, si hay
 // RESEND_API_KEY, envía un correo con la marca de Cord vía Resend (mismo helper y
@@ -60,6 +61,7 @@ export const GET: APIRoute = async ({ request }) => {
                coalesce(c.approved_at, c.created_at) as base,
                cl.empresa, cl.email,
                o.id as org_id, o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.logo_url, o.color_secundario, o.brand_profile,
                (o.portal_powered = false and cord_effective_plan(o.id) <> 'free') as powered_off
         from cotizaciones c
         join clientes cl on cl.id = c.cliente_id
@@ -80,6 +82,7 @@ export const GET: APIRoute = async ({ request }) => {
             token: r.public_token as string, empresa: r.empresa as string, email: r.email as string,
             orgId: r.org_id as string, orgNombre: (r.org_nombre as string) || 'Cord',
             color: /^#[0-9a-fA-F]{6}$/.test(r.color as string) ? (r.color as string) : '#0a192f',
+            brand: emailBrandFromRow(r),
             poweredOff: r.powered_off === true,
             // La query trae base_currency y moneda, pero este map los TIRABA: río
             // abajo `c.base_currency` era undefined, normalizeCurrency caía a MXN
@@ -101,26 +104,16 @@ export const GET: APIRoute = async ({ request }) => {
         const link = await publicDocumentUrl(c.orgId, 'q', c.token);
         const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
         const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
-        const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            <div style="max-width:540px;margin:0 auto;">
-                <div style="margin-bottom:32px;">
-                    <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
-                </div>
-
-                <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
+        const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
                 <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total, c.moneda)}</b> vence el <b>${venceTxt}</b>.</p>
 
                 <div style="margin:40px 0;">
-                    <a href="${link}" style="display:inline-block;background-color:${c.color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Ver y pagar ${esc(c.folio)}</a>
+                    <a href="${link}" style="${emailButtonStyle(c.brand)}">Ver y pagar ${esc(c.folio)}</a>
                 </div>
 
                 <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copia y pega este enlace en tu navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
 
-                <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                    <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
-                </div>
-            </div>
-        </div>`;
+        `, poweredLine);
         const res = await sendEmail({
             orgId: c.orgId,
             operation: 'payment_reminder',

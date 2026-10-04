@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Equipo y permisos › Seguridad — políticas de acceso de la org.
 // Usa el guardado genérico del shell (data-field → PATCH /api/org).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
@@ -20,8 +21,8 @@ const TIMEOUTS = [
 <SettingsShell title="Seguridad — Ajustes" tab="seguridad" perm="ajustes"
     intro={t(L, 'set.seg.intro')} save>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.seg.autenticacion')}</h3>
+    <SettingsSection icon="shield" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.seg.autenticacion')}</Fragment>
         <div class="s-body">
             <div class="sec-toggle-row">
                 <span class="sec-info">
@@ -38,10 +39,10 @@ const TIMEOUTS = [
                 <span>{t(L, 'set.seg.hint_box')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.seg.sesiones')}</h3>
+    <SettingsSection icon="clock" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.seg.sesiones')}</Fragment>
         <div class="s-body">
             <div class="s-field" style="max-width:50%">
                 <label for="oTimeout">{t(L, 'set.seg.cierre_inactividad')}</label>
@@ -51,10 +52,10 @@ const TIMEOUTS = [
                 <span class="s-hint">{t(L, 'set.seg.cierre_inactividad_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.seg.dominios_invitacion')}</h3>
+    <SettingsSection icon="users" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.seg.dominios_invitacion')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label for="oDomains">{t(L, 'set.seg.dominios_permitidos')}</label>
@@ -62,7 +63,7 @@ const TIMEOUTS = [
                 <span class="s-hint">{t(L, 'set.seg.dominios_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <style>

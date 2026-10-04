@@ -1,3 +1,4 @@
+import { brandEmailShell, emailButtonStyle, emailBrandFromRow, type EmailBrand } from '../brand-email';
 // Motor ÚNICO de la cobranza autónoma. Antes esta lógica vivía duplicada en dos
 // sitios que habían divergido: `api/cron/cobranza.ts` (la buena) y
 // `runCobranzaForOrg` de `api/agentes.ts` (la que ejecutaba el botón "Forzar
@@ -20,6 +21,7 @@ import { checkEntitlement } from '../org-entitlements';
 import { MERCADOPAGO_COUNTRY_LIST } from '../countries';
 
 export interface CobranzaConfig {
+    brand?: EmailBrand;
     activa: boolean;
     modo: 'aprobacion' | 'automatico';
     graciaDias: number;
@@ -59,6 +61,7 @@ function rowToConfig(row: any): CobranzaConfig {
     const idioma = row.ai_cobranza_idioma === 'en' ? 'en' : 'es';
     const tono = ['cercano', 'profesional', 'firme'].includes(row.ai_cobranza_tono) ? row.ai_cobranza_tono : 'profesional';
     return {
+        brand: emailBrandFromRow({...row,nombre:row.creditor_name || row.nombre}),
         activa: !!row.ai_cobranza_activa,
         modo,
         // Los `clamp` no son decorativos: la config viaja por PATCH /api/org y un
@@ -88,7 +91,7 @@ export const CONFIG_COLUMNS = `ai_cobranza_activa, ai_cobranza_modo, ai_cobranza
     ai_cobranza_idioma, ai_cobranza_firma, ai_cobranza_monto_min, ai_cobranza_max_corrida,
     coalesce(fiscal_metadata->>'legal_name', razon_social, nombre) as creditor_name,
     coalesce(fiscal_metadata->>'tax_id', rfc) as creditor_tax_id,
-    coalesce(email_reply_to, email_contacto) as contact_email`;
+    coalesce(email_reply_to, email_contacto) as contact_email, logo_url, color_marca, color_secundario, brand_profile`;
 
 export async function getCobranzaConfig(orgId: string): Promise<CobranzaConfig> {
     const [[row]] = await withOrgTx(orgId, sql`
@@ -98,7 +101,7 @@ export async function getCobranzaConfig(orgId: string): Promise<CobranzaConfig> 
                ai_cobranza_monto_min, ai_cobranza_max_corrida,
                coalesce(fiscal_metadata->>'legal_name', razon_social, nombre) as creditor_name,
                coalesce(fiscal_metadata->>'tax_id', rfc) as creditor_tax_id,
-               coalesce(email_reply_to, email_contacto) as contact_email
+               coalesce(email_reply_to, email_contacto) as contact_email, logo_url, color_marca, color_secundario, brand_profile
         from orgs where id = ${orgId}`);
     return rowToConfig(row);
 }
@@ -114,6 +117,7 @@ const linkify = (escaped: string, url: string) => {
 
 /** Plantilla del correo de cobranza (la buena del cron; el clon la tenía sin botón). */
 export function renderCollectionEmail(opts: {
+    brand?: EmailBrand;
     cuerpo: string; payUrl: string; cobraOnline: boolean; montoBoton: number; idioma: 'es' | 'en';
     creditorName: string; creditorTaxId?: string | null; contactEmail?: string | null;
 }): string {
@@ -132,14 +136,10 @@ export function renderCollectionEmail(opts: {
     const contact = contactEmail
         ? `<a href="mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(en ? 'Stop automated collections messages' : 'Detener mensajes automáticos de cobranza')}" style="color:#6B7280;">${escapeHtml(contactEmail)}</a>`
         : (en ? 'Use the contact information previously provided by the creditor.' : 'Usa los datos de contacto proporcionados previamente por el acreedor.');
-    return `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:540px;margin:0 auto;">
-    <div style="margin-bottom:32px;">
-      <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
-    </div>
-    <p style="font-size:16px;line-height:1.6;color:#374151;margin:0;font-weight:400;white-space:pre-wrap;">${linkify(escapeHtml(cuerpo), payUrl)}</p>
+    const brand = opts.brand || {name:creditorName};
+    return brandEmailShell(brand, `<p style="font-size:16px;line-height:1.6;color:#374151;margin:0;font-weight:400;white-space:pre-wrap;">${linkify(escapeHtml(cuerpo), payUrl)}</p>
     <div style="margin:32px 0 0;">
-      <a href="${escapeHtml(payUrl)}" style="display:inline-block;background:#0a192f;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:13px 28px;border-radius:999px;">${cta}</a>
+      <a href="${escapeHtml(payUrl)}" style="${emailButtonStyle(brand)}">${cta}</a>
       ${cobraOnline ? `<p style="font-size:12px;color:#9CA3AF;margin:10px 0 0;">${seguro}</p>` : ''}
     </div>
     <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
@@ -148,8 +148,7 @@ export function renderCollectionEmail(opts: {
       <p style="font-size:12px;color:#6B7280;margin:0;line-height:1.55;">${escapeHtml(disclosure)}</p>
       <p style="font-size:12px;color:#6B7280;margin:8px 0 0;line-height:1.55;">${escapeHtml(stop)} ${contact}</p>
     </div>
-  </div>
-</div>`;
+`);
 }
 
 /** Digest al owner cuando el modo es `aprobacion`: UN correo por corrida, no N. */
@@ -373,7 +372,7 @@ export async function runCobranzaOrg(
                 replyTo: cfg.contactEmail,
                 html: renderCollectionEmail({
                     cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton, idioma: cfg.idioma,
-                    creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
+                    brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
                 }),
             })
             : { sent: false, skipped: 'sin email' as string, messageId: undefined };

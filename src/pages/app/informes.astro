@@ -216,7 +216,7 @@ const widgetLabels = {
        /app/cobranza. Aquí solo queda lo que ESTA página emite: las acciones de la topbar
        y el estado sin acceso. Los breakpoints del grid siguen en widgets.css. */
     @media (max-width: 880px) {
-        .reports-top-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; padding-bottom: 2px; scrollbar-width: none; }
+        .reports-top-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; padding-bottom: 2px; scrollbar-width: none; }
         .reports-top-actions::-webkit-scrollbar { display: none; }
         .reports-top-actions > * { flex: 0 0 auto; }
         .snapshot-chip { min-height: 44px; }

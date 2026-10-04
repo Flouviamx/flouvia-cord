@@ -1,5 +1,18 @@
 # Historial — App interna: features y UX
 
+## 2026-10-04 — Ajustes con tarjetas compartidas
+
+- Se reemplaza, a petición de André, el formato plano de Ajustes por un sistema
+  compartido de tarjetas: `SettingsSection`, `SettingsIcon` y `settings.css`.
+- Índice por categorías con búsqueda local, sinónimos, estado vacío y acceso
+  por teclado; se conservan las rutas y la visibilidad del modo desarrollador.
+- Formularios, Cuenta, Cobros, Marca, Dominio e Integraciones comparten superficies,
+  espaciado y campos. Se mantienen los permisos, endpoints y pies de guardado.
+- Matriz de notificaciones con nombres accesibles para cada evento/canal y foco visible.
+- La comprobación visual detectó que el logger compartido por el catálogo de
+  Connect accedía a `process` en navegador; ahora protege ese acceso.
+
+
 > Todo lo que vive dentro de `/app/**`: shell (sidebar/topbar/ajustes), editor de
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat y tiempo real. Registro acumulativo: cada entrada conserva su fecha,
@@ -2300,3 +2313,17 @@ el build de Vercel la prepara antes de publicar. El guardado usa el componente
 compartido con estados de carga, éxito y error. PDF/correos conservan sus ajustes
 anteriores; su extensión queda para la siguiente fase. Estado y archivos:
 [`personalizacion-marca.md`](../estado/personalizacion-marca.md).
+
+
+## 2026-10-04 — Identidad compartida en documentos y correos (fase 2)
+
+La identidad configurada en Marca se conecta a impresión de cotizaciones,
+facturas comerciales y correos al cliente. Documento PDF y Correo usan tarjetas
+compartidas y vistas previas autenticadas del mismo renderizador del consumidor.
+Los logos subidos se normalizan con Sharp para incrustarse en PDF y correo CID;
+Gmail mantiene PDFs/XML separados del bloque HTML con imágenes relacionadas.
+Editorial usa métricas Times en el escritor vectorial y los importes siguen
+procediendo del snapshot fiscal. El PDF timbrado del proveedor queda intacto.
+Permisos y entitlements existentes se conservan; no hay nueva migración.
+
+Estado y archivos del contrato: [personalización de marca](../estado/personalizacion-marca.md).

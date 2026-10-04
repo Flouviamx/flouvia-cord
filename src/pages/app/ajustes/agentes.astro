@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Avanzado › Inteligencia artificial.
 //
 // Rediseño ago 2026. Antes esta página: (1) duplicaba el interruptor de la
@@ -68,8 +69,8 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
     ) : <Fragment>
 
     <!-- ── Cobranza con IA: tarjeta de estado, NO un segundo interruptor ── -->
-    <div class="s-block">
-        <h3>{t(L, 'set.ag.cobranza_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.ag.cobranza_titulo')}</Fragment>
         <div class="s-body">
             <div class="ag-card">
                 <div class="ag-card-top">
@@ -105,10 +106,10 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
             </div>
             <p class="ag-note">{t(L, 'set.ag.cobranza_nota')}</p>
         </div>
-    </div>
+    </SettingsSection>
 
     <!-- ── Conexiones (MCP explicado por lo que HACE) ── -->
-    <div class="s-block"
+    <SettingsSection icon="link" class="s-block"
         data-mcp-block
         data-i18n-perm-on={t(L, 'set.ag.permiso_otorgado')} data-i18n-perm-off={t(L, 'set.ag.permiso_revocado')}
         data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} data-i18n-del-titulo={t(L, 'set.ag.eliminar_servidor_titulo')}
@@ -116,7 +117,7 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
         data-i18n-del-ok={t(L, 'set.ag.servidor_eliminado')} data-i18n-del-err={t(L, 'set.ag.no_pudo_eliminar')}
         data-i18n-add-err={t(L, 'set.ag.no_pudo_agregar')}
         data-i18n-conectado={t(L, 'set.ag.conectado')} data-i18n-pausado={t(L, 'set.ag.pausado')}>
-        <h3>{t(L, 'set.ag.conex_titulo')}</h3>
+        <Fragment slot="heading">{t(L, 'set.ag.conex_titulo')}</Fragment>
         <div class="s-body">
             <p class="ag-sub">{t(L, 'set.ag.conex_desc')}</p>
 
@@ -184,7 +185,7 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
                 <p>{t(L, 'set.ag.que_es_body')}</p>
             </details>
         </div>
-    </div>
+    </SettingsSection>
     </Fragment>}
 </SettingsShell>
 

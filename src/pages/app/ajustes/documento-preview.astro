@@ -1,0 +1,10 @@
+---
+import QuotePrint from '../../../components/q/QuotePrint.astro';
+import { getOrg, requirePerm } from '../../../lib/queries';
+import { getDemoQuote } from '../../../lib/demo-quote';
+const denied = await requirePerm('ajustes'); if (denied) return denied;
+const org = await getOrg();
+const {quote} = getDemoQuote();
+Astro.response.headers.set('Cache-Control','private, no-store');
+---
+<QuotePrint q={quote} org={org} preview />

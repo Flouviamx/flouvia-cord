@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
@@ -17,8 +18,8 @@ const Manual = oauth ? 'details' : 'div';
 ---
 
 {!oauth && (
-    <div class="s-block">
-        <h3>{t(L, 'set.integ.teams.pasos_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.integ.teams.pasos_titulo')}</Fragment>
         <div class="s-body">
             <ol class="tms-steps">
                 <li>{t(L, 'set.integ.teams.paso_1')}</li>
@@ -26,11 +27,11 @@ const Manual = oauth ? 'details' : 'div';
                 <li>{t(L, 'set.integ.teams.paso_3')}</li>
             </ol>
         </div>
-    </div>
+    </SettingsSection>
 )}
 
-<div class="s-block" data-teams>
-    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+<SettingsSection icon="sliders" class="s-block" data-teams>
+    <Fragment slot="heading">{t(L, 'set.integ.det.conexion')}</Fragment>
     <div class="s-body">
         {graph.flash && FLASH.includes(graph.flash) && (
             <p class="tms-flash" data-bad={graph.flash !== 'conectado' ? '1' : undefined}>{t(L, `set.integ.teams.flash_${graph.flash}` as any)}</p>
@@ -113,7 +114,7 @@ const Manual = oauth ? 'details' : 'div';
             data-i18n-no-envio={t(L, 'set.integ.no_envio')} data-i18n-no-conecto={t(L, 'set.integ.teams.no_conecto')}
             data-i18n-no-desconecto={t(L, 'set.integ.teams.no_desconecto')} data-i18n-no-lista={t(L, 'teams.err.lista')}></span>
     </div>
-</div>
+</SettingsSection>
 
 <style>
     .tms-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.84rem; line-height: 1.55; color: var(--color-text); }

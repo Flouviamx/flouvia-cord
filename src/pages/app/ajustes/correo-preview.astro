@@ -1,0 +1,34 @@
+---
+import { getOrg, requirePerm } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { getEntitlementContext } from '../../../lib/org-entitlements';
+import { planIncludes } from '../../../lib/entitlements';
+import { renderQuoteEmail } from '../../../lib/brand-quote-email';
+const denied = await requirePerm('ajustes'); if (denied) return denied;
+const org = await getOrg();
+const plan = (await getEntitlementContext(org.id)).effectivePlan;
+const row = {org_nombre:org.nombre,logo_url:org.logoUrl,color:org.colorMarca,color_secundario:org.colorSecundario,brand_profile:org.brandProfile,email_intro:org.emailIntro,email_firma:org.emailFirma,mensaje:org.pdfMensaje,portal_powered:org.portalPowered,empresa:currentLocale()==='en'?'Sample client':'Cliente de ejemplo',folio:'COT-0149',total:13100,base_currency:'MXN'};
+const options = {locale:currentLocale(),link:'https://negocio.example/q/COT-0149',canCustomizeEmail:planIncludes(plan,'custom_email'),canRemoveBranding:planIncludes(plan,'remove_branding')};
+Astro.response.headers.set('Cache-Control','private, no-store');
+---
+<html lang={currentLocale()}><head><meta charset="utf-8"/><meta name="robots" content="noindex, nofollow"/><meta name="viewport" content="width=device-width"/><title>{currentLocale()==='en'?'Email preview':'Vista previa del correo'}</title></head>
+<body><div class="envelope"><strong id="sender">{options.canCustomizeEmail && org.emailFromName || org.nombre}</strong><span>{row.folio} — {org.nombre}</span><small id="reply">{options.canCustomizeEmail && org.emailReplyTo || org.email}</small></div><main id="emailBody" inert set:html={renderQuoteEmail(row,options)}/>
+<script type="application/json" id="emailSample" is:inline set:html={JSON.stringify({row,options,name:org.nombre,reply:org.email}).replace(/</g,'\\u003c')}/>
+</body></html>
+<style is:global>body{margin:0;background:#f5f5f7}.envelope{max-width:552px;padding:24px;margin:24px auto 0;font:14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:white;border-radius:16px;color:#111827}.envelope span,.envelope small{display:block;color:#6b7280}</style>
+<script>
+    import { renderQuoteEmail } from '../../../lib/brand-quote-email';
+    const sample=JSON.parse(document.getElementById('emailSample')!.textContent!);
+    window.addEventListener('message', e=>{
+        if(e.origin!==location.origin||e.source!==parent||!['cord:email-preview','cord:brand-preview'].includes(e.data?.type))return;
+        const d=e.data;
+        if(d.type==='cord:brand-preview'){
+            document.getElementById('emailBody')!.innerHTML=renderQuoteEmail({...sample.row,color:d.primary,color_secundario:d.secondary,logo_url:d.logo,brand_profile:d.profile,portal_powered:d.powered},sample.options);
+            return;
+        }
+        document.getElementById('emailBody')!.innerHTML=renderQuoteEmail({...sample.row,email_intro:String(d.intro||''),email_firma:String(d.signature||'')},sample.options);
+        document.getElementById('sender')!.textContent=sample.options.canCustomizeEmail&&d.name||sample.name;
+        document.getElementById('reply')!.textContent=sample.options.canCustomizeEmail&&d.reply||sample.reply;
+    });
+    parent.postMessage({type:'cord:email-preview-ready'},location.origin);
+</script>

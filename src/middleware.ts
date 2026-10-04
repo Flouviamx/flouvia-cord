@@ -1,3 +1,4 @@
+import { isDatabaseUnavailable, databaseUnavailableResponse } from './lib/database-unavailable';
 
 import { sequence } from "astro:middleware";
 import { customerDomainBoundary } from './lib/customer-domain-middleware';
@@ -697,7 +698,13 @@ const mainHandler = async (context: any, next: any) => {
 // handler principal devuelve antes de renderizar. Antes esas salidas tempranas
 // podian escapar con cache publica y la CSP general.
 const securityHeaders = async (context: any, next: any) => {
-    const response = await next();
+    let response: Response;
+    try { response = await next(); }
+    catch (error) {
+        const appPage = context.url.pathname === '/app' || context.url.pathname.startsWith('/app/');
+        if (context.request.method !== 'GET' || !appPage || !isDatabaseUnavailable(error)) throw error;
+        response = databaseUnavailableResponse(preferredPublicLang(context.request.headers.get('accept-language')) === 'en');
+    }
     const path = context.url.pathname;
     const secureRes = new Response(response.body, response);
     const isEmbed = path === "/embed" || path.startsWith("/embed/");

@@ -193,7 +193,7 @@ export const POST: APIRoute = async ({ request, params }) => {
                 html: renderCollectionEmail({
                     cuerpo: msg.mensaje, payUrl: ctx.payUrl, cobraOnline: ctx.cobraOnline,
                     montoBoton: ctx.montoBoton, idioma: cfg.idioma,
-                    creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
+                    brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
                 }),
             });
 

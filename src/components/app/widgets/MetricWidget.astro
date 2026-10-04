@@ -1,0 +1,31 @@
+---
+import WidgetCard from './WidgetCard.astro';
+import type { Props as CardProps } from './WidgetCard.astro';
+interface Props extends Pick<CardProps, 'id' | 'title' | 'group' | 'tone' | 'hidden' | 'optional'> {
+    label?: string;
+    value?: string | number;
+    suffix?: string;
+    description: string;
+    details?: Array<{ label: string; value: string | number }>;
+}
+const { id, title, group, tone, hidden, optional, label = title, value, suffix, description, details = [] } = Astro.props;
+---
+<WidgetCard id={id} title={title} group={group} tone={tone} hidden={hidden} optional={optional} description={description}
+    compact={1} expanded={details.length ? 2 : 1} contentClass="kpi-card widget-metric">
+    <span class="kpi-label">{label}</span>
+    <slot name="value"><strong class="kpi-num editorial">{value}{suffix && <small>{suffix}</small>}</strong></slot>
+    <span class="kpi-sub">{description}</span>
+    {details.length > 0 && <dl class="widget-metric-details" data-widget-detail>
+        {details.map(detail => <div><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
+    </dl>}
+</WidgetCard>
+<style is:global>
+    .widget-metric { min-height:155px; }
+    .widget-metric .kpi-num { overflow-wrap:anywhere; }
+    .widget-metric .kpi-num small { font-size:.6em; margin-left:2px; }
+    .widget-metric-details { display:none; border-top:1px solid var(--color-border); padding-top:1rem; margin:.7rem 0 0; gap:.65rem; }
+    [data-widget-size="lg"] .widget-metric-details { display:grid; }
+    .widget-metric-details > div { display:flex; justify-content:space-between; gap:1rem; font-size:.77rem; }
+    .widget-metric-details dt { color:var(--color-text-muted); }
+    .widget-metric-details dd { margin:0; font-weight:650; font-variant-numeric:tabular-nums; }
+</style>

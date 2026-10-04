@@ -1,4 +1,5 @@
 ---
+import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
@@ -12,8 +13,8 @@ interface Props {
 const { lang: L, phoneId, plantilla, idioma, conectado } = Astro.props;
 ---
 
-<div class="s-block" data-whatsapp>
-    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+<SettingsSection icon="sliders" class="s-block" data-whatsapp>
+    <Fragment slot="heading">{t(L, 'set.integ.det.conexion')}</Fragment>
     <div class="s-body">
         <div class="s-field">
             <label for="waPhone">{t(L, 'set.integ.wa.phone_id')}</label>
@@ -44,7 +45,7 @@ const { lang: L, phoneId, plantilla, idioma, conectado } = Astro.props;
                 data-i18n-enviada={t(L, 'set.integ.wa.enviada')} data-i18n-desconectado={t(L, 'set.integ.wa.desconectado')}></span>
         </div>
     </div>
-</div>
+</SettingsSection>
 
 <style>
     .wa-grid { display: grid; grid-template-columns: 1fr 160px; gap: 0.9rem; }

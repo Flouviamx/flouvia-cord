@@ -1,4 +1,5 @@
 ---
+import MetricWidget from '../../components/app/widgets/MetricWidget.astro';
 // /app/cobros — "Mi dinero": el dinero que ENTRA vía Stripe Connect Custom.
 //
 // La página cuenta la historia completa del peso: se cobró en bruto (Neon) → Stripe se
@@ -139,7 +140,7 @@ const CBR_T = {
                 </header>
 
                 <!-- 1 · Saldo, próximo depósito y salud comparten una sola superficie. -->
-                <article class="dash-widget" data-widget="cbr-disponible" data-title={t(L, 'cbr.saldo_disponible')} data-span="2" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-disponible" data-title={t(L, 'cbr.saldo_disponible')} data-span="2" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-balance-primary" data-cbr-stripe="saldo" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.saldo_disponible')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></span>
                         <strong class="editorial report-kpi-value" data-cbr-bind="disponible" data-skel>&nbsp;</strong>
@@ -147,14 +148,14 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-payouts" data-title={t(L, 'cbr.depositos')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-payouts" data-title={t(L, 'cbr.depositos')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card cbr-balance-aside" data-cbr-stripe="payouts" aria-busy="true">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.next_deposit')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></h2><p>{t(L, 'cbr.depositos_sub')}</p></div></div>
                         <div class="report-list" data-cbr-bind="payouts"></div>
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-salud" data-title={t(L, 'cbr.salud')} data-span={conectado ? '1' : '4'} data-size-sm={conectado ? '1' : '4'} data-size-lg={conectado ? '2' : '4'}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-salud" data-title={t(L, 'cbr.salud')} data-span={conectado ? '1' : '4'} data-size-sm={conectado ? '1' : '4'} data-size-lg={conectado ? '2' : '4'}>
                     <div class="dash-card cbr-balance-aside" data-cbr-stripe="salud">
                         <div class="sec-head">
                             <div><h2 class="sec-title">{t(L, 'cbr.salud')}</h2><p>{t(L, 'cbr.salud_sub')}</p></div>
@@ -175,7 +176,7 @@ const CBR_T = {
                     </div>
                 </header>
 
-                <article class="dash-widget" data-widget="cbr-cobrado" data-title={t(L, 'cbr.cobrado_rango')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-cobrado" data-title={t(L, 'cbr.cobrado_rango')} data-span="1" data-size-sm="1" data-size-lg="2">
                     <div class="dash-card report-kpi cbr-kpi-tile">
                         <span class="kpi-label">{t(L, 'cbr.cobrado_rango')}</span>
                         <strong class="editorial report-kpi-value" data-cbr-bind="cobrado">{money(D.neon.totalCobrado, 0)}</strong>
@@ -189,7 +190,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-neto" data-title={t(L, 'cbr.neto')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-neto" data-title={t(L, 'cbr.neto')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="neto" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.neto')}</span>
                         <strong class="editorial report-kpi-value" data-cbr-bind="neto" data-skel>&nbsp;</strong>
@@ -197,7 +198,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-mrr" data-title={t(L, 'cbr.mrr')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-mrr" data-title={t(L, 'cbr.mrr')} data-span="1" data-size-sm="1" data-size-lg="2">
                     <div class="dash-card report-kpi cbr-kpi-tile">
                         <span class="kpi-label">{t(L, 'cbr.mrr')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></span>
                         <strong class="editorial report-kpi-value">{money(D.mrr.mrr, 0)}</strong>
@@ -206,7 +207,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-disputas" data-title={t(L, 'cbr.disputas')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-disputas" data-title={t(L, 'cbr.disputas')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="disputas" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.disputas')}</span>
                         <strong class="editorial report-kpi-value" data-cbr-bind="disputas" data-skel>&nbsp;</strong>
@@ -225,7 +226,7 @@ const CBR_T = {
                     <p>{t(L, 'cbr.zone_detail_sub')}</p>
                 </header>
 
-                <article class="dash-widget" data-widget="cbr-evolucion" data-title={t(L, 'cbr.evolucion')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-evolucion" data-title={t(L, 'cbr.evolucion')} data-span="2" data-size-sm="2" data-size-lg="4">
                     <div class="dash-card cbr-detail-card">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.evolucion')}</h2><p>{t(L, 'cbr.evolucion_sub')}</p></div></div>
                         <div class="chart-host report-chart cbr-primary-chart" data-chart="line"
@@ -236,7 +237,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-mensual" data-title={t(L, 'cbr.volumen_mensual')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-mensual" data-title={t(L, 'cbr.volumen_mensual')} data-span="2" data-size-sm="2" data-size-lg="4">
                     <div class="dash-card cbr-detail-card">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.volumen_mensual')}</h2><p>{t(L, 'cbr.mensual_sub')}</p></div></div>
                         <div class="chart-host report-chart cbr-compact-chart" data-chart="bar"
@@ -246,7 +247,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-destino" data-title={t(L, 'cbr.destino')} data-span="2" data-size-sm="2" data-size-lg="4" hidden={!conectado}>
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-destino" data-title={t(L, 'cbr.destino')} data-span="2" data-size-sm="2" data-size-lg="4" hidden={!conectado}>
                     <div class="dash-card cbr-detail-card" data-cbr-stripe="destino" aria-busy="true">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.destino')}</h2><p>{t(L, 'cbr.destino_sub')}</p></div></div>
                         <div class="chart-host report-chart cbr-segbar-chart" data-chart="segbar" data-format="pct" data-segments="[]"></div>
@@ -255,7 +256,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-metodos" data-title={t(L, 'cbr.desglose_metodo')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-metodos" data-title={t(L, 'cbr.desglose_metodo')} data-span="2" data-size-sm="2" data-size-lg="4">
                     <div class="dash-card cbr-detail-card">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.desglose_metodo')}</h2><p>{t(L, 'cbr.metodos_sub')}</p></div></div>
                         <div class="chart-host report-chart cbr-donut-chart" data-chart="donut"
@@ -265,7 +266,7 @@ const CBR_T = {
                     </div>
                 </article>
 
-                <article class="dash-widget" data-widget="cbr-recientes" data-title={t(L, 'cbr.cobros_recientes')} data-span="4" data-size-sm="2" data-size-lg="4">
+                <article class="dash-widget" data-widget-tone="finance" data-widget="cbr-recientes" data-title={t(L, 'cbr.cobros_recientes')} data-span="4" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card">
                     <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.cobros_recientes')}</h2></div></div>
                     <div class="cbr-table" data-cbr-bind="recientes">
@@ -290,6 +291,7 @@ const CBR_T = {
                 </div>
             </article>
             </section>
+        <MetricWidget id="cbr-opcional-contratos" optional tone="finance" title={L === 'en' ? 'Recurring contracts' : 'Contratos recurrentes'} value={D.mrr.n} description={L === 'en' ? 'Current recurring revenue snapshot' : 'Ingreso recurrente actual'} details={[{label:'MRR',value:money(D.mrr.mrr,0)}]} />
         </WidgetGrid>
         </div>
     )}

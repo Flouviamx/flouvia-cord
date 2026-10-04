@@ -269,8 +269,9 @@ APIs de cobros (ago 2026)
                            editor. CRUD vía /api/kits (+/api/kits/[id]), incluye
                            precio de combo opcional (precio total fijo prorrateado
                            al insertar). Ver tabla `kits`/`kit_items` arriba.
-/app/ajustes     → ÍNDICE (estilo Stripe): LISTA de CATEGORÍAS (no tarjetas, no
-                   rail). Ajustes YA NO va en el sidebar — se entra por el engrane de
+/app/ajustes     → ÍNDICE de tarjetas por categoría con búsqueda local (sin rail).
+                   Superficies compartidas en `settings.css` y `SettingsSection.astro`.
+                   Ajustes YA NO va en el sidebar — se entra por el engrane de
                    la topbar. Modelo en `src/lib/settings.ts`: **CATEGORÍAS → pestañas**
                    (`SETTINGS_CATEGORIES`, `categoryOfTab()`). Cada categoría abre su
                    primera pestaña; dentro, las sub-páginas son **PESTAÑAS horizontales**

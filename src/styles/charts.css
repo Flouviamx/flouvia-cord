@@ -43,7 +43,7 @@ circle.is-focus, .chx-legend-item.is-focus { opacity: 1; transition: opacity 0.2
 .chx-hbar-row { display: grid; grid-template-columns: minmax(0, 1.05fr) 1.5fr auto; align-items: center; gap: 0.8rem; }
 .chx-hbar-name { font-size: 0.8rem; font-weight: 550; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chx-hbar-track { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; }
-.chx-hbar-fill { height: 100%; border-radius: 100px; min-width: 4px; cursor: pointer; transition: width 0.7s var(--ease-spring), filter 0.2s, opacity 0.2s var(--ease-ios, ease); }
+.chx-hbar-fill { height: 100%; border-radius: 100px; min-width: 0; cursor: pointer; transition: width 0.7s var(--ease-spring), filter 0.2s, opacity 0.2s var(--ease-ios, ease); }
 .chx-hbar-fill:hover, .chx-hbar-fill:focus-visible { filter: brightness(1.15); outline: none; }
 .chx-hbar-val { font-size: 0.82rem; color: var(--color-blue-deep); white-space: nowrap; }
 
@@ -142,3 +142,36 @@ circle.is-focus, .chx-legend-item.is-focus { opacity: 1; transition: opacity 0.2
 @media (max-width: 420px) {
     .chx-segbar-legend { grid-template-columns: 1fr; gap: 0.25rem; }
 }
+
+/* Widget views share data, but use the available width differently. */
+.chx-funnel-detail, .chx-series-summary, .chx-seg-share, .chx-seg-track { display: none; }
+[data-widget-grid] .chx-segbar-legend { display: flex; flex-direction: column; gap: .35rem; }
+[data-widget-grid] .chx-segbar-legend .chx-legend-item { min-height: 30px; padding: .35rem 0; margin: 0; }
+.chx-conversion { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+.chx-conversion > span, .chx-conversion small, .chx-funnel-detail > small { font-size: .72rem; color: var(--color-text-muted); }
+.chx-conversion > strong { font-size: 2.6rem; line-height: 1; letter-spacing: -.055em; font-weight: 650; color: var(--color-blue-deep); }
+.chx-conversion-row { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem 0; font-size: .76rem; border-top: 1px solid var(--color-border); }
+.chx-conversion-row strong { font-variant-numeric: tabular-nums; }
+@container (min-width: 600px) {
+    [data-widget-size="lg"] [data-chart-layout="funnel"] { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(180px, 1fr); gap: 2rem; align-items: center; }
+    [data-widget-size="lg"] .chx-funnel-detail { display: block; padding-left: 2rem; border-left: 1px solid var(--color-border); }
+    [data-widget-size="lg"] .chx-segbar-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1.4rem; }
+    [data-widget-size="lg"] .chx-segbar-legend .chx-legend-item { display: grid; grid-template-columns: 8px 1fr auto; gap: .65rem; padding: .8rem 0; }
+    [data-widget-size="lg"] .chx-segbar-legend .chx-legend-label { grid-column: 2 / -1; font-size: .72rem; }
+    [data-widget-size="lg"] .chx-segbar-legend .chx-legend-val { grid-column: 1 / 3; font-size: 1.2rem; letter-spacing: -.03em; }
+    [data-widget-size="lg"] .chx-seg-share { display: block; font-size: .72rem; color: var(--color-text-muted); }
+    [data-widget-size="lg"] .chx-seg-track { display: block; grid-column: 1 / -1; height: 5px; border-radius: 10px; overflow: hidden; background: var(--chart-track); }
+    .chx-seg-track i { display: block; height: 100%; border-radius: inherit; }
+    [data-widget-size="lg"] .chx-series-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.5rem; padding-top: 1.2rem; margin-top: 1rem; border-top: 1px solid var(--color-border); }
+    .chx-series-summary > div { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+    .chx-series-summary span, .chx-series-summary small { color: var(--color-text-muted); font-size: .72rem; }
+    .chx-series-summary strong { font-size: 1.2rem; letter-spacing: -.035em; font-weight: 650; overflow-wrap: anywhere; }
+}
+
+@container (min-width:600px) {
+    [data-widget-size="lg"] .chx-hbar { gap:1rem; }
+    [data-widget-size="lg"] .chx-hbar-name { white-space:normal; overflow-wrap:anywhere; }
+    [data-widget-size="lg"] .chx-hbar-row { grid-template-columns:minmax(140px,1fr) 2fr auto; }
+}
+
+[data-widget-size="lg"] .chx-series-summary:empty { display: none; }

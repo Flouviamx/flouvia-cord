@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
         replyTo: cfg.contactEmail,
         html: renderCollectionEmail({
             cuerpo: texto, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
-            creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
+            brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
         }),
     });
 

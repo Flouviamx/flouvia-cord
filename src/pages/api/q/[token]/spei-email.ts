@@ -1,3 +1,4 @@
+import { brandEmailShell, emailBrandFromRow } from '../../../../lib/brand-email';
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -22,7 +23,7 @@ export const POST: APIRoute = async ({ request, params }) => {
     if (!identity) return json({ error: 'Cobro no encontrado' }, 404);
     const [[row]] = await withOrgTx(identity.orgId, sql`
         select co.org_id, co.stripe_payment_intent_id, co.metodo_pago, co.payment_method,
-               c.folio, cl.email, o.nombre as org_nombre, o.stripe_account_id
+               c.folio, cl.email, o.nombre as org_nombre, o.stripe_account_id, o.logo_url, o.color_marca, o.color_secundario, o.brand_profile
           from cotizacion_cobros co
           join cotizaciones c on c.id = co.cotizacion_id
           join orgs o on o.id = co.org_id
@@ -48,13 +49,13 @@ export const POST: APIRoute = async ({ request, params }) => {
             fromName: row.org_nombre as string,
             orgId: row.org_id as string,
             operation: 'spei_instructions',
-            html: `<p>Estas son tus instrucciones de pago para <strong>${esc(row.folio)}</strong>.</p>
+            html: brandEmailShell(emailBrandFromRow(row), `<p>Estas son tus instrucciones de pago para <strong>${esc(row.folio)}</strong>.</p>
               <p><strong>Monto:</strong> ${esc(amount)} ${esc(currency)}<br>
               <strong>CLABE:</strong> ${esc(spei.clabe)}<br>
               <strong>Banco:</strong> ${esc(spei.bank_name || '')}<br>
               <strong>Beneficiario:</strong> ${esc(row.org_nombre)}<br>
               <strong>Referencia:</strong> ${esc(display.reference)}</p>
-              <p>Transfiere el monto exacto y conserva este correo como referencia.</p>`,
+              <p>Transfiere el monto exacto y conserva este correo como referencia.</p>`, 'Enviado con Cord'),
         });
         if (!sent.sent) return json({ error: 'No pudimos enviar las instrucciones en este momento' }, 502);
         return json({ ok: true });

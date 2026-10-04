@@ -1,5 +1,8 @@
 ---
 import WidgetEditButtons from './WidgetEditButtons.astro';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+const L = currentLocale();
 
 interface Props {
     id?: string;
@@ -13,7 +16,7 @@ interface Props {
     labels: { drag: string; up: string; down: string; resize: string; remove: string };
     /** Layout guardado en servidor para ESTE grid (ME.widgetPrefs?.[storageKey]), si existe. */
     serverPrefs?: Record<string, unknown>;
-    /** Copy del catálogo — solo se usa cuando hay ≥6 widgets ocultos (modo biblioteca). */
+    /** Copy de la biblioteca de widgets ocultos. */
     librarySearchPlaceholder?: string;
     libraryNoResults?: string;
     libraryAddLabel?: string;
@@ -37,10 +40,11 @@ const {
     data-library-search-ph={librarySearchPlaceholder}
     data-library-no-results={libraryNoResults}
     data-library-add-label={libraryAddLabel}
+    data-library-visible-label={t(L, 'widgets.en_pantalla')}
 >
     <slot />
     <section class="dash-card widget-tray" data-widget-tray hidden>
-        <p class="widget-tray-title">{trayTitle}</p>
+        <p class="widget-tray-title">{t(L, 'widgets.biblioteca')}</p>
         <div class="widget-tray-list" data-widget-tray-list></div>
     </section>
     <WidgetEditButtons {...labels} />
@@ -73,7 +77,15 @@ const {
             var sizes = raw.sizes && typeof raw.sizes === 'object' ? raw.sizes : {};
             var widgets = Array.prototype.slice.call(host.querySelectorAll('[data-widget]')).filter(function (w) { return w.closest('[data-widget-grid]') === host; });
             var byId = {};
-            widgets.forEach(function (w) { byId[w.dataset.widget] = w; });
+            widgets.forEach(function (w) {
+                byId[w.dataset.widget] = w;
+                if (w.dataset.widgetOptional === '1') w.hidden = hidden.indexOf(w.dataset.widget) !== -1 || order.indexOf(w.dataset.widget) === -1;
+                // A metric without a chart or detailed view has one honest size.
+                if (w.dataset.sizeSm === '1' && !w.querySelector('[data-chart], .kpi-spark, .kpi-gauge, [data-widget-detail]')) {
+                    w.dataset.sizeLg = w.dataset.sizeSm;
+                    w.dataset.span = w.dataset.sizeSm;
+                }
+            });
             var finalOrder = order.filter(function (widgetId) { return byId[widgetId]; });
             widgets.forEach(function (w) { if (finalOrder.indexOf(w.dataset.widget) === -1) finalOrder.push(w.dataset.widget); });
             var rank = {}; finalOrder.forEach(function (widgetId, index) { rank[widgetId] = index; });
@@ -82,7 +94,7 @@ const {
             parents.forEach(function (parent) {
                 widgets.filter(function (w) { return w.parentElement === parent; })
                     .sort(function (a, b) { return rank[a.dataset.widget] - rank[b.dataset.widget]; })
-                    .forEach(function (w) { parent.appendChild(w); });
+                    .forEach(function (w) { parent.insertBefore(w, parent === host ? host.querySelector('[data-widget-tray]') : null); });
             });
             hidden.forEach(function (widgetId) { if (byId[widgetId]) byId[widgetId].hidden = true; });
             Object.keys(sizes).forEach(function (widgetId) {
@@ -95,6 +107,7 @@ const {
 </script>
 
 <script>
+    import { optionalWidgetHidden } from '../../lib/widget-defaults';
     type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'>; rev?: number; at?: number };
 
     // Debounce compartido por TODOS los grids de la página: cada uno empuja bajo
@@ -145,6 +158,9 @@ const {
         const editButton = document.getElementById(host.dataset.editButton || '');
         const doneButton = document.getElementById(host.dataset.doneButton || '');
         const resetButton = document.getElementById(host.dataset.resetButton || '');
+        const libraryButton = document.getElementById(`${host.dataset.editButton}Library`);
+        let libraryOpen = false;
+        if (tray) host.prepend(tray);
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
         const mobileLayout = matchMedia('(max-width: 880px)');
         const syncInputMode = () => {
@@ -159,13 +175,13 @@ const {
             try {
                 const value = JSON.parse(localStorage.getItem(key) || '{}');
                 return {
-                    order: Array.isArray(value.order) ? value.order : [],
-                    hidden: Array.isArray(value.hidden) ? value.hidden : [],
+                    order: widgets().map(w => w.dataset.widget!),
+                    hidden: [...new Set([...(Array.isArray(value.hidden) ? value.hidden : []), ...widgets().filter(w => w.dataset.widgetOptional === '1' && optionalWidgetHidden(w.dataset.widget!, Array.isArray(value.order) ? value.order : [], Array.isArray(value.hidden) ? value.hidden : [])).map(w => w.dataset.widget!)])],
                     sizes: value.sizes && typeof value.sizes === 'object' ? value.sizes : {},
                     rev: typeof value.rev === 'number' ? value.rev : 0,
                     at: typeof value.at === 'number' ? value.at : 0,
                 };
-            } catch { return { order: [], hidden: [], sizes: {}, rev: 0, at: 0 }; }
+            } catch { return { order: widgets().map(w => w.dataset.widget!), hidden: widgets().filter(w => w.dataset.widgetOptional === '1').map(w => w.dataset.widget!), sizes: {}, rev: 0, at: 0 }; }
         };
         const setPrefs = (prefs: Prefs) => {
             const stamped: Prefs = { ...prefs, rev: (prefs.rev ?? 0) + 1, at: Date.now() };
@@ -194,29 +210,40 @@ const {
                 w.addEventListener('transitionend', () => { w.style.transition = ''; }, { once: true });
             }));
         }
-        // Catálogo de widgets ocultos. Con pocos (<6) es una fila de pills simple.
-        // Con más, se vuelve una mini-biblioteca: buscador + agrupado por
+        // Biblioteca de widgets ocultos: buscador + agrupado por
         // data-group + preview real del widget (clonado del DOM, sin montar sus
         // gráficas — mountAll() nunca ve el clon porque no se le pasa como root).
         // Nunca es un <dialog>: Regla 12, AppLayout no carga modal.css en estas páginas.
         let librarySearch = '';
+        let libraryFilter: 'all' | 'available' = 'all';
         function renderTray() {
             if (!tray || !trayList) return;
             const prefs = getPrefs();
-            const hidden = widgets().filter((w) => prefs.hidden.includes(w.dataset.widget!));
-            tray.hidden = hidden.length === 0; trayList.innerHTML = '';
-            if (!hidden.length) { librarySearch = ''; return; }
+            const available = widgets().filter((w) => !w.hidden || w.dataset.widgetOptional === '1' || prefs.hidden.includes(w.dataset.widget!));
+            tray.hidden = !libraryOpen; trayList.innerHTML = '';
+            if (!libraryOpen) return;
 
-            const asLibrary = hidden.length >= 6;
-            tray.classList.toggle('wx-library', asLibrary);
+            tray.classList.add('wx-library');
+            const filters = document.createElement('div'); filters.className = 'wx-lib-filters';
+            const en = document.documentElement.lang.startsWith('en');
+            for (const mode of ['all', 'available'] as const) {
+                const button = document.createElement('button'); button.type = 'button';
+                const count = mode === 'all' ? available.length : available.filter(w => w.hidden).length;
+                button.textContent = `${mode === 'all' ? (en ? 'All widgets' : 'Todos') : (en ? 'To add' : 'Para agregar')} · ${count}`;
+                button.setAttribute('aria-pressed', String(libraryFilter === mode));
+                button.addEventListener('click', () => { libraryFilter = mode; renderTray(); });
+                filters.appendChild(button);
+            }
+            trayList.appendChild(filters);
 
-            if (asLibrary) {
+            {
                 const search = document.createElement('label');
                 search.className = 'wx-lib-search';
                 search.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
                 const input = document.createElement('input');
                 input.type = 'search'; input.autocomplete = 'off';
                 input.placeholder = host.dataset.librarySearchPh || '';
+                input.setAttribute('aria-label', input.placeholder);
                 input.value = librarySearch;
                 input.addEventListener('input', () => { librarySearch = input.value; renderRows(); });
                 search.appendChild(input);
@@ -224,21 +251,18 @@ const {
             }
 
             const rowsHost = document.createElement('div');
-            rowsHost.className = asLibrary ? 'wx-lib-rows' : 'widget-tray-list';
+            rowsHost.className = 'wx-lib-rows';
             trayList.appendChild(rowsHost);
 
             function renderRows() {
                 rowsHost.innerHTML = '';
                 const q = librarySearch.trim().toLocaleLowerCase();
-                const visible = hidden.filter((w) => {
+                const visible = available.filter((w) => {
+                    if (libraryFilter === 'available' && !w.hidden) return false;
                     if (!q) return true;
                     const hay = `${w.dataset.title || ''} ${w.dataset.desc || ''}`.toLocaleLowerCase();
                     return hay.includes(q);
                 });
-                if (!asLibrary) {
-                    visible.forEach((w) => rowsHost.appendChild(pillItem(w)));
-                    return;
-                }
                 const groups = Array.from(new Set(visible.map((w) => w.dataset.group || '')));
                 const hasGroups = groups.some((g) => g) && groups.length > 1;
                 if (!hasGroups) {
@@ -265,21 +289,32 @@ const {
             }
             renderRows();
         }
-        function pillItem(w: HTMLElement) {
-            const item = document.createElement('div'); item.className = 'widget-tray-item';
-            const label = document.createElement('span'); label.textContent = w.dataset.title || w.dataset.widget || '';
-            const add = document.createElement('button'); add.type = 'button'; add.className = 'widget-tray-add'; add.textContent = '+'; add.setAttribute('aria-label', label.textContent || '');
-            add.addEventListener('click', () => setHidden(w.dataset.widget!, false)); item.append(label, add); return item;
-        }
         function libraryRow(w: HTMLElement) {
             const row = document.createElement('div'); row.className = 'wx-lib-row';
             const preview = document.createElement('div'); preview.className = 'wx-lib-preview';
-            const card = w.querySelector('.dash-card, .surface-card');
+            const previewTemplate = w.querySelector<HTMLTemplateElement>('template[data-widget-preview]');
+            const card = previewTemplate?.content.firstElementChild || w.querySelector('.dash-card, .surface-card');
             if (card) {
                 const clone = card.cloneNode(true) as HTMLElement;
                 clone.removeAttribute('id');
                 clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+                // Previews must not become inputs to page controllers (team rows,
+                // chart sinks, totals, etc.). Keep only Astro's styling attributes.
+                [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))].forEach((node) => {
+                    Array.from(node.attributes).forEach((attr) => {
+                        if (attr.name.startsWith('data-') && !attr.name.startsWith('data-astro-')) node.removeAttribute(attr.name);
+                    });
+                });
                 clone.setAttribute('inert', '');
+                preview.setAttribute('aria-hidden', 'true');
+                // Fit the actual card, without a second miniature card frame.
+                const rect = card.getBoundingClientRect();
+                const width = previewTemplate ? 360 : rect.width || (w.dataset.sizeSm === '1' ? 280 : 520);
+                const height = previewTemplate ? 220 : rect.height || 180;
+                const scale = Math.min(128 / width, 86 / height);
+                clone.style.width = `${width}px`;
+                clone.style.height = `${height}px`;
+                clone.style.transform = `translate(-50%, -50%) scale(${scale})`;
                 preview.appendChild(clone);
             }
             const info = document.createElement('div'); info.className = 'wx-lib-info';
@@ -287,8 +322,9 @@ const {
             info.appendChild(strong);
             if (w.dataset.desc) { const small = document.createElement('small'); small.textContent = w.dataset.desc; info.appendChild(small); }
             const add = document.createElement('button'); add.type = 'button'; add.className = 'wx-lib-add';
-            add.textContent = host.dataset.libraryAddLabel || '+';
-            add.setAttribute('aria-label', `${host.dataset.libraryAddLabel || '+'} ${strong.textContent}`);
+            add.textContent = w.hidden ? host.dataset.libraryAddLabel || '+' : host.dataset.libraryVisibleLabel || '';
+            add.disabled = !w.hidden;
+            add.setAttribute('aria-label', `${add.textContent} ${strong.textContent}`);
             add.addEventListener('click', () => setHidden(w.dataset.widget!, false));
             row.append(preview, info, add);
             return row;
@@ -296,13 +332,21 @@ const {
         function setHidden(id: string, hidden: boolean) {
             const prefs = getPrefs();
             prefs.hidden = hidden ? [...new Set([...prefs.hidden, id])] : prefs.hidden.filter((value) => value !== id);
-            setPrefs(prefs); const widget = widgets().find((w) => w.dataset.widget === id); if (widget) widget.hidden = hidden; renderTray();
+            setPrefs(prefs); const widget = widgets().find((w) => w.dataset.widget === id); if (widget) widget.hidden = hidden; if (hidden) { libraryOpen = true; libraryButton?.setAttribute('aria-expanded', 'true'); } renderTray();
         }
-        function enterEdit() { host.dataset.editing = '1'; renderTray(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
-        function exitEdit() { delete host.dataset.editing; if (tray) tray.hidden = true; if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
+        function setContentInert(inert: boolean) {
+            widgets().forEach((w) => Array.from(w.children).forEach((child) => {
+                if (!(child instanceof HTMLElement) || child.classList.contains('widget-editbar')) return;
+                if (inert && !child.inert) { child.inert = true; child.dataset.widgetInert = '1'; }
+                else if (!inert && child.dataset.widgetInert) { child.inert = false; delete child.dataset.widgetInert; }
+            }));
+        }
+        function enterEdit() { host.dataset.editing = '1'; setContentInert(true); if (libraryButton) libraryButton.hidden = false; renderTray(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
+        function exitEdit() { if (dragging) end(); delete host.dataset.editing; setContentInert(false); libraryOpen = false; if (libraryButton) { libraryButton.hidden = true; libraryButton.setAttribute('aria-expanded', 'false'); } if (tray) tray.hidden = true; if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
+        libraryButton?.addEventListener('click', () => { libraryOpen = !libraryOpen; libraryButton.setAttribute('aria-expanded', String(libraryOpen)); renderTray(); });
         editButton?.addEventListener('click', enterEdit); doneButton?.addEventListener('click', exitEdit);
         document.addEventListener('keydown', (event) => {
-            if (!mobileLayout.matches && event.key === 'Escape' && host.dataset.editing === '1') exitEdit();
+            if (event.key === 'Escape' && host.dataset.editing === '1') { if (dragging) end(false); else exitEdit(); }
         });
         resetButton?.addEventListener('click', async () => {
             const confirmFn = (window as any).cordConfirm;
@@ -312,40 +356,113 @@ const {
 
         widgets().forEach((widget) => {
             const id = widget.dataset.widget!;
-            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const previous = widget.previousElementSibling; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { widget.parentElement?.insertBefore(widget, previous); persistOrder(); }); });
-            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const next = widget.nextElementSibling; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); });
+            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const previous = siblings[siblings.indexOf(widget) - 1]; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { widget.parentElement?.insertBefore(widget, previous); persistOrder(); }); });
+            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const next = siblings[siblings.indexOf(widget) + 1]; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); });
             widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); });
-            const resize = widget.querySelector<HTMLElement>('.we-resize');
-            if (widget.dataset.sizeSm === widget.dataset.sizeLg) resize?.remove();
-            else resize?.addEventListener('click', (event) => { event.stopPropagation(); const prefs = getPrefs(); const next = widget.dataset.span === widget.dataset.sizeLg ? 'sm' : 'lg'; flip(() => { widget.dataset.span = next === 'lg' ? widget.dataset.sizeLg : widget.dataset.sizeSm; resize.classList.toggle('is-lg', next === 'lg'); prefs.sizes[id] = next; setPrefs(prefs); }); });
+            const sizeControls = widget.querySelector<HTMLElement>('.we-sizes');
+            const syncSize = () => {
+                widget.dataset.widgetSize = widget.dataset.span === widget.dataset.sizeLg && widget.dataset.sizeLg !== widget.dataset.sizeSm ? 'lg' : 'sm';
+                widget.querySelectorAll<HTMLButtonElement>('.we-size').forEach((button) => {
+                    button.setAttribute('aria-pressed', String(button.dataset.size === widget.dataset.widgetSize));
+                });
+            };
+            syncSize();
+            if (widget.dataset.sizeSm === widget.dataset.sizeLg) sizeControls?.remove();
+            else sizeControls?.addEventListener('click', (event) => {
+                const button = (event.target as HTMLElement).closest<HTMLElement>('.we-size');
+                if (!button) return;
+                event.stopPropagation();
+                const next = button.dataset.size === 'lg' ? 'lg' : 'sm';
+                if (next === widget.dataset.widgetSize) return;
+                flip(() => {
+                    widget.dataset.span = next === 'lg' ? widget.dataset.sizeLg : widget.dataset.sizeSm;
+                    syncSize(); const prefs = getPrefs(); prefs.sizes[id] = next; setPrefs(prefs);
+                });
+            });
         });
 
         let dragging: HTMLElement | null = null;
-        let startX = 0, startY = 0, originLeft = 0, originTop = 0;
+        let ghost: HTMLElement | null = null;
+        let startX = 0, startY = 0, pointerX = 0, pointerY = 0;
+        let scrollFrame = 0;
+        let originalNext: ChildNode | null = null;
+        let cleanupPointer: (() => void) | null = null;
         function begin(widget: HTMLElement, x: number, y: number) {
-            const parentRect = widget.parentElement?.getBoundingClientRect() ?? host.getBoundingClientRect();
             const rect = widget.getBoundingClientRect();
-            dragging = widget; startX = x; startY = y; originLeft = rect.left - parentRect.left; originTop = rect.top - parentRect.top;
-            widget.classList.add('is-dragging'); Object.assign(widget.style, { position: 'absolute', left: `${originLeft}px`, top: `${originTop}px`, width: `${rect.width}px`, zIndex: '50' });
+            dragging = widget; originalNext = widget.nextSibling;
+            startX = x - rect.left; startY = y - rect.top;
+            // Keep the real widget in flow as the landing position. A visual copy
+            // follows the pointer without collapsing the grid or moving live charts.
+            ghost = widget.cloneNode(true) as HTMLElement;
+            ghost.removeAttribute('id'); ghost.removeAttribute('data-widget');
+            ghost.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+            ghost.querySelector('.widget-editbar')?.remove();
+            ghost.classList.add('widget-drag-ghost'); ghost.setAttribute('inert', '');
+            ghost.setAttribute('aria-hidden', 'true');
+            Object.assign(ghost.style, { width: `${rect.width}px`, height: `${rect.height}px` });
+            widget.parentElement!.appendChild(ghost);
+            widget.classList.add('is-dragging');
+            move(x, y);
+            const autoScroll = () => {
+                if (!dragging) return;
+                const edge = 72;
+                const dy = pointerY < edge ? -12 : pointerY > innerHeight - edge ? 12 : 0;
+                if (dy) { window.scrollBy(0, dy); move(pointerX, pointerY); }
+                scrollFrame = requestAnimationFrame(autoScroll);
+            };
+            scrollFrame = requestAnimationFrame(autoScroll);
         }
         function move(x: number, y: number) {
-            if (!dragging) return;
-            dragging.style.left = `${originLeft + x - startX}px`; dragging.style.top = `${originTop + y - startY}px`;
-            dragging.style.pointerEvents = 'none'; const under = document.elementFromPoint(x, y) as HTMLElement | null; dragging.style.pointerEvents = '';
-            const target = under?.closest<HTMLElement>('[data-widget]');
-            if (target && target !== dragging && target.parentElement === dragging.parentElement && !target.hidden) {
-                const rect = target.getBoundingClientRect();
-                flip(() => target.parentElement?.insertBefore(dragging!, y < rect.top + rect.height / 2 ? target : target.nextSibling));
-            }
+            if (!dragging || !ghost) return;
+            pointerX = x; pointerY = y;
+            const parentRect = ghost.parentElement!.getBoundingClientRect();
+            ghost.style.transform = `translate3d(${x - startX - parentRect.left}px, ${y - startY - parentRect.top}px, 0) scale(1.015)`;
+            const target = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-widget]');
+            if (!target || target === dragging || target.hidden || target.parentElement !== dragging.parentElement) return;
+            const rect = target.getBoundingClientRect();
+            const own = dragging.getBoundingClientRect();
+            const sameRow = Math.abs(own.top - rect.top) < Math.min(own.height, rect.height) / 2;
+            const before = sameRow ? x < rect.left + rect.width / 2 : y < rect.top + rect.height / 2;
+            const anchor = before ? target : target.nextSibling;
+            if (anchor === dragging || dragging.nextSibling === anchor) return;
+            flip(() => target.parentElement?.insertBefore(dragging!, anchor));
         }
-        function end() { if (!dragging) return; const widget = dragging; dragging = null; widget.classList.remove('is-dragging'); Object.assign(widget.style, { position: '', left: '', top: '', width: '', zIndex: '' }); persistOrder(); }
+        function end(commit = true) {
+            cleanupPointer?.(); cleanupPointer = null;
+            cancelAnimationFrame(scrollFrame);
+            if (!dragging) return;
+            const widget = dragging; dragging = null;
+            ghost?.remove(); ghost = null;
+            widget.classList.remove('is-dragging');
+            if (commit) persistOrder();
+            else widget.parentElement?.insertBefore(widget, originalNext);
+        }
         host.addEventListener('pointerdown', (event) => {
-            if (mobileLayout.matches || host.dataset.editing !== '1' || (event.target as HTMLElement).closest('.widget-editbar')) return;
-            const widget = (event.target as HTMLElement).closest<HTMLElement>('[data-widget]'); if (!widget) return;
-            event.preventDefault(); begin(widget, event.clientX, event.clientY);
-            const onMove = (moveEvent: PointerEvent) => move(moveEvent.clientX, moveEvent.clientY);
-            const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); end(); };
-            document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
+            const target = event.target as HTMLElement;
+            if (event.button !== 0 || mobileLayout.matches || host.dataset.editing !== '1' || target.closest('.we-btn:not(.we-drag), .we-sizes')) return;
+            const widget = target.closest<HTMLElement>('[data-widget]');
+            if (!widget || widget.closest('[data-widget-grid]') !== host) return;
+            event.preventDefault();
+            const pointerId = event.pointerId;
+            const initialX = event.clientX, initialY = event.clientY;
+            const onMove = (e: PointerEvent) => {
+                if (e.pointerId !== pointerId) return;
+                if (!dragging && Math.hypot(e.clientX - initialX, e.clientY - initialY) < 5) return;
+                if (!dragging) begin(widget, initialX, initialY);
+                move(e.clientX, e.clientY);
+            };
+            const onUp = (e: PointerEvent) => { if (e.pointerId === pointerId) end(e.type !== 'pointercancel'); };
+            const onBlur = () => end(false);
+            cleanupPointer = () => {
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+                document.removeEventListener('pointercancel', onUp);
+                window.removeEventListener('blur', onBlur);
+            };
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+            document.addEventListener('pointercancel', onUp);
+            window.addEventListener('blur', onBlur);
         });
     }
 

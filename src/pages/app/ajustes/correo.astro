@@ -1,152 +1,56 @@
 ---
-// Ajustes › Notificaciones › Correo. Personaliza el correo transaccional que el
-// cliente recibe al enviarle una cotización (remitente, intro, firma, reply-to).
-// Guarda con el guardado genérico (PATCH /api/org). Preview en vivo del correo.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
-import { t } from '../../../i18n/app';
-const ORG = await getOrg();
-const L = currentLocale();
-const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY);
+import { getEntitlementContext } from '../../../lib/org-entitlements';
+import { planIncludes } from '../../../lib/entitlements';
+import '../../../styles/brand-editor.css';
+const org = await getOrg();
+const platformEmailEnabled = Boolean(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY);
+const custom = planIncludes((await getEntitlementContext(org.id)).effectivePlan,'custom_email');
+const en = currentLocale() === 'en';
+const say = (es:string, english:string) => en ? english : es;
 ---
-
-<SettingsShell title="Correo — Ajustes" tab="correo" perm="ajustes" save
-    intro={t(L, 'set.correo.intro')}>
-
-    {!RESEND_ON && (
-        <div class="mail-warn">
-            <span class="mail-warn-dot"></span>
-            <p><b>{t(L, 'set.correo.resend_off')}</b> {t(L, 'set.correo.resend_off_desc')}</p>
+<SettingsShell title={say('Correo — Ajustes','Email — Settings')} tab="correo" perm="ajustes" save={custom}>
+<div class="brand-editor" id="emailEditor">
+    <div class="be-toolbar"><p>{say('Tu marca, también en su bandeja de entrada.','Your brand, in their inbox too.')}<span>{say('Revisa el correo sin enviar una prueba al cliente.','Review the email without sending a test to a client.')}</span></p></div>
+    <div class="be-layout">
+        <div class="be-controls">
+            <div class="be-inherited"><div><b>{say('Identidad compartida','Shared identity')}</b><p>{say('Logo, colores, tipografía y composición de tu marca.','Your logo, colors, typography and composition.')}</p></div><a href="/app/ajustes/branding">{say('Editar →','Edit →')}</a></div>
+            {!platformEmailEnabled && <p class="be-help" role="status">{say('El envío desde Cord no está habilitado en este entorno. Puedes seguir editando la vista previa; si conectaste Gmail, los envíos compatibles usan esa cuenta.','Sending from Cord is not enabled in this environment. You can still edit the preview; if Gmail is connected, supported messages use that account.')}</p>}
+            {!custom && <p class="be-help">{say('Tu identidad ya se aplica a los correos. Para personalizar remitente, introducción y firma,','Your identity already applies to emails. To customize sender, introduction and signature,')} <a href="/app/ajustes/plan">{say('consulta tu plan.','review your plan.')}</a></p>}
+            <section class="be-section">
+                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3z M3 5l9 8 9-8"/></svg>{say('Remitente','Sender')}</h3>
+                <label class="be-label" for="emailName">{say('Nombre visible','Display name')}</label>
+                <input class="s-input" id="emailName" data-field={custom?'email_from_name':undefined} value={org.emailFromName} placeholder={org.nombre} disabled={!custom} maxlength="80"/>
+                <label class="be-label" for="emailReply">{say('Dirección de respuesta','Reply-to address')}</label>
+                <input class="s-input" id="emailReply" type="email" data-field={custom?'email_reply_to':undefined} value={org.emailReplyTo} placeholder={org.email} disabled={!custom}/>
+                <p class="be-help">{say('Las respuestas llegan a esta dirección. Esto no cambia el dominio de envío.','Replies go to this address. This does not change the sending domain.')}</p>
+            </section>
+            <section class="be-section">
+                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4z M8 8h8 M8 12h5"/></svg>{say('Mensaje y firma','Message and signature')}</h3>
+                <label class="be-label" for="emailIntro">{say('Introducción','Introduction')}</label>
+                <textarea class="s-input" id="emailIntro" data-field={custom?'email_intro':undefined} disabled={!custom} maxlength="500" rows="4">{org.emailIntro}</textarea>
+                <label class="be-label" for="emailSignature">{say('Firma','Signature')}</label>
+                <textarea class="s-input" id="emailSignature" data-field={custom?'email_firma':undefined} disabled={!custom} maxlength="300" rows="3">{org.emailFirma}</textarea>
+                <p class="be-help">{say('Personaliza con','Personalize with')} {'{cliente} · {folio} · {total} · {negocio}'}</p>
+                <p class="be-help">{say('El contenido propio se usa al enviar cotizaciones y facturas. Los recordatorios mantienen su mensaje correspondiente.','Custom content is used when sending quotes and invoices. Reminders retain their relevant message.')}</p>
+            </section>
         </div>
-    )}
-
-    <div class="mail-grid">
-        <div class="mail-form">
-            <div class="s-block">
-                <h3>{t(L, 'set.correo.remitente')}</h3>
-                <div class="s-body">
-                    <div class="s-row">
-                        <div class="s-field">
-                            <label for="mName">{t(L, 'set.correo.nombre_visible')}</label>
-                            <input class="s-input" id="mName" data-field="email_from_name" value={ORG.emailFromName} maxlength="80" placeholder={ORG.nombre} />
-                            <span class="s-hint">{t(L, 'set.correo.nombre_visible_hint')}</span>
-                        </div>
-                        <div class="s-field">
-                            <label for="mReply">{t(L, 'set.correo.responder_a')}</label>
-                            <input class="s-input" id="mReply" type="email" data-field="email_reply_to" value={ORG.emailReplyTo} placeholder={ORG.email || 'ventas@tunegocio.mx'} />
-                            <span class="s-hint">{t(L, 'set.correo.responder_a_hint')}</span>
-                        </div>
-                    </div>
-                    <p class="s-hint">{t(L, 'set.correo.dominio_hint')}</p>
-                </div>
-            </div>
-
-            <div class="s-block">
-                <h3>{t(L, 'set.correo.contenido')}</h3>
-                <div class="s-body">
-                    <div class="s-field">
-                        <label for="mIntro">{t(L, 'set.correo.parrafo_intro')}</label>
-                        <textarea class="s-input s-textarea" id="mIntro" data-field="email_intro" rows="3" maxlength="500" placeholder="{negocio} le comparte la cotización {folio} por {total}. Puede revisarla y aprobarla en línea:">{ORG.emailIntro}</textarea>
-                        <span class="s-hint">{t(L, 'set.correo.parrafo_intro_hint')}</span>
-                    </div>
-                    <div class="s-field">
-                        <label for="mFirma">{t(L, 'set.correo.firma')}</label>
-                        <textarea class="s-input s-textarea" id="mFirma" data-field="email_firma" rows="2" maxlength="300" placeholder={t(L, 'set.correo.firma_ph')}>{ORG.emailFirma}</textarea>
-                        <span class="s-hint">{t(L, 'set.correo.firma_hint')}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── PREVIEW DEL CORREO ── -->
-        <aside class="mail-pane">
-            <div class="mail-pane-head"><span>{t(L, 'set.correo.vista_previa')}</span></div>
-            <div class="mail-client"
-                data-i18n-saludo={t(L, 'set.correo.saludo')} data-i18n-ver={t(L, 'set.correo.ver_cotizacion')}
-                data-i18n-intro-default={t(L, 'email.intro_default')} data-i18n-enviado-cord={t(L, 'set.correo.enviado_con_cord')}
-                data-i18n-tu-negocio={t(L, 'set.correo.tu_negocio')}>
-                <div class="mail-from">
-                    <span class="mail-avatar" id="mvAvatar" style={`background:${ORG.colorMarca}`}>{ORG.inicial}</span>
-                    <div class="mail-from-info">
-                        <b id="mvFrom">{ORG.emailFromName || ORG.nombre}</b>
-                        <i id="mvSubject">Cotización COT-0149 — {ORG.nombre}</i>
-                    </div>
-                </div>
-                <div class="mail-body">
-                    <p>{t(L, 'set.correo.saludo')} <b>Constructora Demo</b>,</p>
-                    <p id="mvIntro"></p>
-                    <p style="margin:18px 0"><span class="mv-btn" id="mvBtn" style={`background:${ORG.colorMarca}`}>{t(L, 'set.correo.ver_cotizacion')} COT-0149</span></p>
-                    <p class="mv-link">{t(L, 'set.correo.o_copie')} <br><span style={`color:${ORG.colorMarca}`}>https://cordhq.app/q/demo</span></p>
-                    <p class="mv-firma" id="mvFirma" style="display:none"></p>
-                    <p class="mv-foot" id="mvFoot">{ORG.portalPowered === false ? ORG.nombre : `${ORG.nombre}${t(L, 'set.correo.enviado_con_cord')}`}</p>
-                </div>
-            </div>
-            <span class="mail-pane-hint">{t(L, 'set.correo.preview_hint')}</span>
+        <aside class="be-preview">
+            <div class="be-preview-bar"><span>{say('Correo de cotización','Quote email')}</span><span>{say('Vista previa','Preview')}</span></div>
+            <div class="be-preview-stage"><iframe id="emailPreview" src="/app/ajustes/correo-preview" title={say('Vista previa del correo','Email preview')}/></div>
+            <p class="be-preview-note">{say('Muestra en MXN. La apariencia puede variar según la aplicación de correo.','Sample in MXN. Appearance may vary by email application.')}</p>
         </aside>
     </div>
+</div>
 </SettingsShell>
-
-<style>
-    .mail-warn { display: flex; gap: 10px; align-items: flex-start; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 1.6rem; }
-    .mail-warn-dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; margin-top: 5px; }
-    .mail-warn p { font-size: 0.8rem; color: var(--color-text); line-height: 1.5; margin: 0; }
-    .mail-warn code { font-family: ui-monospace, monospace; font-size: 0.74rem; background: rgba(10,25,47,0.06); padding: 1px 5px; border-radius: 4px; }
-
-    .mail-grid { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 2rem; align-items: start; }
-    .mail-form { min-width: 0; }
-    .mail-pane { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 0.7rem; }
-    .mail-pane-head span { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
-    .mail-pane-hint { font-size: 0.66rem; color: #99a2af; text-align: center; }
-    .mail-client { background: var(--surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 50px -32px rgba(10,25,47,0.35); }
-    .mail-from { display: flex; align-items: center; gap: 10px; padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--color-border); }
-    .mail-avatar { width: 32px; height: 32px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.68rem; flex-shrink: 0; }
-    .mail-from-info b { display: block; font-size: 0.74rem; font-weight: 700; line-height: 1.2; }
-    .mail-from-info i { font-style: normal; font-size: 0.62rem; color: #99a2af; }
-    .mail-body { padding: 1rem; font-size: 0.7rem; color: #0f1729; line-height: 1.5; }
-    .mail-body p { margin: 0 0 0.6rem; }
-    .mv-btn { display: inline-block; color: #fff; font-weight: 600; font-size: 0.68rem; padding: 8px 16px; border-radius: 8px; }
-    .mv-link { font-size: 0.62rem; color: #5b6472; }
-    .mv-firma { font-size: 0.64rem; color: #5b6472; border-top: 1px solid #eee; padding-top: 0.5rem; }
-    .mv-foot { font-size: 0.62rem; color: #9aa1ad; }
-
-    @media (max-width: 1024px) { .mail-grid { grid-template-columns: 1fr; } .mail-pane { position: static; max-width: 360px; } }
-    @media (max-width: 600px) {
-        .mail-pane { width: 100%; max-width: none; }
-        .mail-client { border-radius: 16px; }
-        .mail-warn { padding: 0.85rem; }
-    }
-</style>
-
 <script>
-    function initCorreo() {
-        const form = document.querySelector('[data-settings-form]');
-        if (!form) return;
-        const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value ?? '';
-        const client = document.getElementById('mvAvatar')?.closest('.mail-client') as HTMLElement | null;
-        const M = client?.dataset || ({} as DOMStringMap);
-        const NEG = (document.getElementById('mvFrom')?.textContent || M.i18nTuNegocio || 'Tu negocio');
-        const SAMPLE = { cliente: 'Constructora Demo', folio: 'COT-0149', total: '$131,323.60' };
-        const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
-        const fill = (t: string, negocio: string) => esc(t)
-            .replace(/\{cliente\}/g, SAMPLE.cliente).replace(/\{folio\}/g, SAMPLE.folio)
-            .replace(/\{total\}/g, SAMPLE.total).replace(/\{negocio\}/g, esc(negocio));
-
-        const render = () => {
-            const negocio = val('mName').trim() || NEG;
-            const fromEl = document.getElementById('mvFrom'); if (fromEl) fromEl.textContent = negocio;
-            const introRaw = val('mIntro').trim();
-            const introDefault = (M.i18nIntroDefault || '{org} le comparte la cotización <b>{folio}</b> por <b>{total}</b>. Puede revisarla, dejar comentarios y aprobarla en línea:')
-                .replace('{org}', esc(negocio)).replace('{folio}', SAMPLE.folio).replace('{total}', SAMPLE.total);
-            const intro = introRaw ? fill(introRaw, negocio) : introDefault;
-            const introEl = document.getElementById('mvIntro'); if (introEl) introEl.innerHTML = intro;
-            const firmaRaw = val('mFirma').trim();
-            const firmaEl = document.getElementById('mvFirma') as HTMLElement;
-            if (firmaEl) { if (firmaRaw) { firmaEl.innerHTML = fill(firmaRaw, negocio); firmaEl.style.display = ''; } else firmaEl.style.display = 'none'; }
-        };
-        ['mName', 'mIntro', 'mFirma'].forEach((id) => document.getElementById(id)?.addEventListener('input', render));
-        render();
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCorreo);
-    else initCorreo();
+    import { initDocumentPreview } from '../../../lib/document-preview';
+    initDocumentPreview('emailEditor','emailPreview','cord:email-preview',() => ({
+        name:(document.getElementById('emailName') as HTMLInputElement).value,
+        intro:(document.getElementById('emailIntro') as HTMLTextAreaElement).value,
+        signature:(document.getElementById('emailSignature') as HTMLTextAreaElement).value,
+        reply:(document.getElementById('emailReply') as HTMLInputElement).value,
+    }),640);
 </script>

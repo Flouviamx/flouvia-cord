@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Datos fiscales
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
@@ -35,8 +36,8 @@ const FM = ORG.fiscalMetadata || {};
     )}
 
     {!isMx && (
-        <div class="s-block">
-            <h3>{L === 'en' ? 'Invoice identity' : 'Identidad de facturación'}</h3>
+        <SettingsSection icon="building" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Invoice identity' : 'Identidad de facturación'}</Fragment>
             <div class="s-body">
                 <div class="s-row">
                     <div class="s-field">
@@ -91,11 +92,11 @@ const FM = ORG.fiscalMetadata || {};
                 </div>
                 <a class="fact-link" href="/app/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
             </div>
-        </div>
+        </SettingsSection>
     )}
 
-    <div class="s-block" style={isMx ? undefined : 'display:none;'}>
-        <h3>{t(L, 'set.fiscal.identificacion')}</h3>
+    <SettingsSection icon="document" class="s-block" style={isMx ? undefined : 'display:none;'}>
+        <Fragment slot="heading">{t(L, 'set.fiscal.identificacion')}</Fragment>
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
@@ -130,10 +131,10 @@ const FM = ORG.fiscalMetadata || {};
                 <span class="s-hint">{t(L, 'set.fiscal.uso_cfdi_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block" style={isMx ? undefined : 'display:none;'}>
-        <h3>{t(L, 'set.fiscal.csd')}</h3>
+    <SettingsSection icon="key" class="s-block" style={isMx ? undefined : 'display:none;'}>
+        <Fragment slot="heading">{t(L, 'set.fiscal.csd')}</Fragment>
         <p class="csd-intro">{t(L, 'set.fiscal.csd_intro')}</p>
 
         <div class="csd-state" id="csdState" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}
@@ -179,11 +180,11 @@ const FM = ORG.fiscalMetadata || {};
             <span class="csd-msg" id="csdMsg"></span>
         </div>
         <a class="fact-link" href="/app/facturas">{t(L, 'set.fiscal.ver_facturas')}</a>
-    </div>
+    </SettingsSection>
 
     {isEs && (
-        <div class="s-block">
-            <h3>{L === 'en' ? 'Verifactu' : 'Verifactu'}</h3>
+        <SettingsSection icon="shield" class="s-block">
+            <Fragment slot="heading">{L === 'en' ? 'Verifactu' : 'Verifactu'}</Fragment>
             <p class="csd-intro">{L === 'en'
                 ? 'Verifactu is the certified invoicing system required by Spanish tax law (RD 1007/2023). Upload your electronic certificate (.p12/.pfx) to chain and register every invoice with the AEAT. Without it, invoices are still issued as commercial documents, but they are not registered with the tax authority.'
                 : 'Verifactu es el sistema de facturación certificado que exige la ley española (RD 1007/2023). Sube tu certificado electrónico (.p12/.pfx) para encadenar y registrar cada factura ante la AEAT. Sin él, las facturas se siguen emitiendo como documento comercial, pero no quedan registradas ante la autoridad fiscal.'}
@@ -224,7 +225,7 @@ const FM = ORG.fiscalMetadata || {};
                 <button type="button" class="csd-btn-solid" id="vfUpload">{L === 'en' ? 'Upload certificate' : 'Subir certificado'}</button>
                 <span class="csd-msg" id="vfMsg"></span>
             </div>
-        </div>
+        </SettingsSection>
     )}
 </SettingsShell>
 

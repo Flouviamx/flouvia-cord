@@ -1,3 +1,4 @@
+import { parseSettingsRevision } from './settings-history';
 // src/lib/queries.ts
 // Capa de datos sobre Neon. Devuelve el modelo de lectura de `lib/quote` y
 // re-exporta sus helpers puros, STATUS_META y `money()` de `lib/fmt-server`
@@ -3231,7 +3232,7 @@ export async function getAuditLog() {
             actor: (r.actor as string) || '—',
             accion: r.accion as string,
             entidad: (r.entidad as string) || '',
-            detalle: (r.detalle as string) || '',
+            detalle: r.accion === 'org.configuracion' ? (parseSettingsRevision(String(r.detalle))?.fields.join(', ') || '') : (r.detalle as string) || '',
             ip: (r.ip as string) || '',
             cuando: fmtRelative(r.created_at as string),
         }));

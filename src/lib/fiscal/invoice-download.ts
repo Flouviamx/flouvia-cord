@@ -1,3 +1,5 @@
+import { resolveBrandProfile } from '../brand-profile';
+import { brandImagePng } from '../brand-image';
 // Descarga provider-neutral de un documento fiscal. Para CFDI actúa como proxy
 // autenticado hacia Facturapi; para facturas comerciales genera el PDF desde el
 // snapshot inmutable guardado en Cord.
@@ -27,7 +29,7 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
            -- Marca y condiciones: son PRESENTACIÓN, no datos fiscales, así que se
            -- leen en vivo (el snapshot inmutable sigue mandando en importes y
            -- partes). Un cambio de logo debe reflejarse al re-descargar.
-           o.logo_url, o.color_marca, o.pdf_condiciones, o.moneda,
+           o.logo_url, o.color_marca, o.color_secundario, o.brand_profile, o.pdf_condiciones, o.moneda,
            c.terminos, c.vigencia, c.public_token,
            coalesce(c.approved_at, c.created_at) as base_date
       from documentos_fiscales d
@@ -99,7 +101,12 @@ const TERM_LABEL: Record<string, string> = {
 
 async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Response> {
   const term = String(doc.terminos || '');
+  const appearance = resolveBrandProfile(doc.brand_profile);
+  const source = appearance.header === 'contrast' && appearance.logoDark ? appearance.logoDark : doc.logo_url;
+  const logoBytes = await brandImagePng(source);
   const pdf = createInvoicePdf({
+    brandProfile: appearance,
+    brandSecondary: doc.color_secundario as string | null,
     invoiceNumber: String(doc.invoice_number || 'INV'),
     documentType: String(doc.document_type),
             countryCode: String(doc.country_code || 'US'),
@@ -116,7 +123,7 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
     fxRate: doc.fx_rate !== null && doc.fx_rate !== undefined ? Number(doc.fx_rate) : null,
     ledgerTotal: doc.ledger_total !== null && doc.ledger_total !== undefined ? Number(doc.ledger_total) : null,
     simulated,
-    logo: (doc.logo_url as string) || null,
+    logo: logoBytes ? `data:image/png;base64,${logoBytes.toString('base64')}` : null,
     brandColor: (doc.color_marca as string) || null,
     // El vencimiento propio de la factura manda; derivarlo de los términos de
     // la cotización es solo el respaldo de los documentos anteriores a que la

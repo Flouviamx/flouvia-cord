@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Auditoría — feature_min_plan `audit_log`. El gate por plan se
 // resuelve aquí (no en middleware, que antes redirigía duro a
 // /app/ajustes/plan antes de que la página cargara). SettingsShell ya resuelve
@@ -19,7 +20,7 @@ const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
 
 <SettingsShell title={t(L, 'ajustes.titulo_auditoria')} tab="auditoria" perm="ajustes"
     intro={t(L, 'set.aud.intro')}>
-    {entitlementCheck.ok && <div class="s-block full">
+    {entitlementCheck.ok && <SettingsSection icon="sliders" class="s-block full">
         <div class="audit-list">
             {AUDIT.length === 0 && <p class="audit-empty">{t(L, 'set.aud.vacio')}</p>}
             {AUDIT.map((a) => (
@@ -30,7 +31,7 @@ const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
                 </div>
             ))}
         </div>
-    </div>}
+    </SettingsSection>}
     {!entitlementCheck.ok && (
         <PlanGate
             id="auditoriaPlanModal"

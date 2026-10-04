@@ -200,7 +200,7 @@ export const POST: APIRoute = async ({ request }) => {
       fromName: `${cfg.creditorName} vía Cord`, replyTo: cfg.contactEmail,
       html: renderCollectionEmail({
         cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
-        creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
+        brand: cfg.brand, creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
       }),
     });
     await withOrgTx(orgId, sql`

@@ -1,9 +1,11 @@
 ---
+import SettingsSection from '../../../../components/app/settings/SettingsSection.astro';
 // /app/ajustes/sso/[id] — detalle/wizard de una conexión SSO. Reemplaza el
 // wizard cosmético "configuracion.astro" (generaba el código DNS en el
 // navegador y nunca lo mandaba a ningún lado). Todo aquí es real: PATCH a
 // /api/sso/connections/[id], POST/DELETE a /api/sso/connections/[id]/domains,
 // POST a /api/sso/domains/[id]/verify.
+import SettingsSaveFooter from '../../../../components/app/SettingsSaveFooter.astro';
 import SettingsShell from '../../../../components/app/SettingsShell.astro';
 import { getMyMembership } from '../../../../lib/queries';
 import { getActiveOrgId } from '../../../../lib/db';
@@ -31,8 +33,8 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
         {t(L, 'set.sso.volver')}
     </a>
 
-    <div class="s-block full">
-        <h3>{t(L, 'set.sso.sp_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block full">
+        <Fragment slot="heading">{t(L, 'set.sso.sp_titulo')}</Fragment>
         <p class="s-hint sso-sp-desc">{t(L, 'set.sso.sp_desc')}</p>
         <div class="sso-sp-rows">
             <div class="sso-sp-row">
@@ -51,10 +53,10 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 <button type="button" class="sso-copy-btn" data-copy={metadataUrl(conn.id)}>{t(L, 'set.sso.copiar')}</button>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block" id="ssoForm">
-        <h3>{t(L, 'set.sso.general_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block" id="ssoForm">
+        <Fragment slot="heading">{t(L, 'set.sso.general_titulo')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label>{t(L, 'set.sso.campo_nombre')}</label>
@@ -76,10 +78,10 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 <span class="s-toggle-text">{t(L, 'set.sso.campo_jit')}</span>
             </label>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.sso.idp_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.sso.idp_titulo')}</Fragment>
         <div class="s-body">
             <div class="s-field">
                 <label>{t(L, 'set.sso.campo_entity_id')}</label>
@@ -95,17 +97,11 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 <span class="s-hint">{t(L, 'set.sso.modal_metadata_hint')}</span>
             </div>
         </div>
-    </div>
+    </SettingsSection>
 
-    {canEdit && (
-        <div class="sso-save-row">
-            <button type="button" class="sso-btn-primary" id="ssoSaveBtn">{t(L, 'set.sso.guardar')}</button>
-            <span class="sso-save-msg" id="ssoSaveMsg"></span>
-        </div>
-    )}
 
-    <div class="s-block full">
-        <h3>{t(L, 'set.sso.dominios_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block full">
+        <Fragment slot="heading">{t(L, 'set.sso.dominios_titulo')}</Fragment>
         <p class="s-hint sso-sp-desc">{t(L, 'set.sso.dominios_desc')}</p>
 
         {canEdit && (
@@ -161,10 +157,10 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 </div>
             ))}
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block full">
-        <h3>{t(L, 'set.sso.roles_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block full">
+        <Fragment slot="heading">{t(L, 'set.sso.roles_titulo')}</Fragment>
         <p class="s-hint sso-sp-desc">{t(L, 'set.sso.roles_desc')}</p>
 
         <div class="sso-role-list" id="ssoRoleList">
@@ -194,13 +190,14 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 {rolePresets.map((p) => <option value={p} selected={p === conn.defaultPreset}>{p}</option>)}
             </select>
         </div>
-    </div>
+    </SettingsSection>
 
     {canEdit && (
-        <div class="s-block full">
+        <SettingsSection icon="sliders" class="s-block full">
             <button type="button" class="sso-btn-danger" id="ssoDeleteBtn">{t(L, 'set.sso.eliminar_conexion')}</button>
-        </div>
+        </SettingsSection>
     )}
+    {canEdit && <SettingsSaveFooter buttonId="ssoSaveBtn" messageId="ssoSaveMsg" />}
 </SettingsShell>
 
 <style>
@@ -223,10 +220,6 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
 
     .s-textarea { font-family: ui-monospace, monospace; font-size: 0.76rem; }
 
-    .sso-save-row { display: flex; align-items: center; gap: 1rem; padding: 1.2rem 0; }
-    .sso-save-msg { font-size: 0.8rem; color: var(--color-ok); opacity: 0; transition: opacity 0.3s; }
-    .sso-save-msg.show { opacity: 1; }
-    .sso-save-msg.error { color: var(--color-danger); }
 
     .sso-domain-add { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; }
     .sso-domain-add .s-input { flex: 1; }
@@ -294,8 +287,6 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
         .sso-sp-label { width: 100%; }
         .sso-sp-value { min-width: 0; }
         .sso-copy-btn { min-width: 44px; min-height: 44px; }
-        .sso-save-row { align-items: stretch; flex-direction: column; }
-        .sso-save-row .sso-btn-primary { width: 100%; }
         .sso-domain-add { flex-direction: column; }
         .sso-domain-add .sso-btn-primary { width: 100%; }
         .sso-domain-row { align-items: flex-start; flex-wrap: wrap; }
@@ -339,8 +330,9 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
 
         // ── Guardar general/IdP ──
         const saveBtn = document.getElementById('ssoSaveBtn');
-        const saveMsg = document.getElementById('ssoSaveMsg');
+        const saveFeedback = (state, message) => saveBtn?.dispatchEvent(new CustomEvent('cord:save-state', {bubbles:true,detail:{state,message}}));
         saveBtn?.addEventListener('click', async () => {
+            if (saveBtn.disabled) return;
             const body = {};
             document.querySelectorAll('[data-sso-field]').forEach((el) => {
                 const key = el.dataset.ssoField;
@@ -348,21 +340,25 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                 else if (el.tagName === 'TEXTAREA') body[key] = el.value.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
                 else body[key] = el.value;
             });
-            saveBtn.disabled = true;
+            body.role_mappings = Array.from(document.querySelectorAll('.sso-role-row')).map((row) => ({
+                attr: row.querySelector('[data-role-field="attr"]').value.trim(),
+                op: row.querySelector('[data-role-field="op"]').value,
+                value: row.querySelector('[data-role-field="value"]').value.trim(),
+                preset: row.querySelector('[data-role-field="preset"]').value,
+            })).filter((r) => r.attr && r.value);
+            body.default_preset = document.getElementById('ssoDefaultPreset')?.value;
+            saveFeedback('saving');
             try {
                 const res = await fetch('/api/sso/connections/' + connId, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
-                if (saveMsg) { saveMsg.textContent = 'Guardado'; saveMsg.className = 'sso-save-msg show'; }
+                saveFeedback('saved');
                 if (window.cordToast) window.cordToast('Guardado', 'ok');
             } catch (err) {
-                if (saveMsg) { saveMsg.textContent = err.message; saveMsg.className = 'sso-save-msg show error'; }
+                saveFeedback('error', err.message);
                 if (window.cordToast) window.cordToast(err.message, 'error');
-            } finally {
-                saveBtn.disabled = false;
-                setTimeout(() => { if (saveMsg) saveMsg.className = 'sso-save-msg'; }, 3000);
             }
         });
 
@@ -442,27 +438,7 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
             btn.addEventListener('click', () => btn.closest('.sso-role-row')?.remove());
         });
 
-        // El guardado de reglas de rol viaja junto con el resto del formulario
-        // general (mismo botón "Guardar cambios") — se agrega al body del PATCH.
-        if (saveBtn) {
-            const originalHandler = saveBtn.onclick;
-            saveBtn.addEventListener('click', async () => {
-                const rows = Array.from(roleList?.querySelectorAll('.sso-role-row') || []);
-                const role_mappings = rows.map((row) => ({
-                    attr: row.querySelector('[data-role-field="attr"]').value.trim(),
-                    op: row.querySelector('[data-role-field="op"]').value,
-                    value: row.querySelector('[data-role-field="value"]').value.trim(),
-                    preset: row.querySelector('[data-role-field="preset"]').value,
-                })).filter((r) => r.attr && r.value);
-                const default_preset = document.getElementById('ssoDefaultPreset')?.value;
-                try {
-                    await fetch('/api/sso/connections/' + connId, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ role_mappings, default_preset }),
-                    });
-                } catch { /* el botón principal ya reporta el resultado del resto del form */ }
-            });
-        }
+        // Role mappings are saved atomically with the connection above.
 
         // ── Eliminar conexión ──
         document.getElementById('ssoDeleteBtn')?.addEventListener('click', async () => {

@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Developers › Cotizador embebible (CORD Elements).
 // Permite (1) copiar el snippet de instalación del <iframe> en sitios de terceros
 // y (2) gestionar la allowlist de dominios (orgs.embed_domains) que alimenta el
@@ -33,7 +34,7 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
 <SettingsShell title="Cotizador embebible — Ajustes" tab="elements" perm="ajustes" save={true}
     intro={t(L, 'set.el.intro')}>
 
-    <div class="s-block full">
+    <SettingsSection icon="sliders" class="s-block full">
         <div class="el-preview-head">
             <h3>{t(L, 'set.el.preview_titulo')}</h3>
             <span class:list={['el-install-badge', hasDomains ? 'ok' : 'open']}>
@@ -55,29 +56,29 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
         ) : (
             <p class="el-p el-preview-empty">{t(L, 'set.el.preview_vacio')}</p>
         )}
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.el.paso1_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.el.paso1_titulo')}</Fragment>
         <p class="el-p">{t(L, 'set.el.paso1_desc')}</p>
         <div class="el-code">
             <pre><code id="elSnippet">{snippet}</code></pre>
             <button class="el-copy" id="elCopy" type="button" data-i18n-copiar={t(L, 'set.el.copiar')} data-i18n-copiado={t(L, 'set.el.copiado')}>{t(L, 'set.el.copiar')}</button>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.el.paso2_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.el.paso2_titulo')}</Fragment>
         <p class="el-p" set:html={t(L, 'set.el.paso2_desc')} />
         <textarea class="el-domains" data-field="embed_domains" rows="4"
             placeholder="cliente-a.com&#10;*.cliente-b.com">{ORG.embedDomains}</textarea>
         <p class:list={['el-status', hasDomains ? 'ok' : 'warn']}>
             {hasDomains ? t(L, 'set.el.status_ok') : t(L, 'set.el.status_warn')}
         </p>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.el.paso3_titulo')}</h3>
+    <SettingsSection icon="sliders" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.el.paso3_titulo')}</Fragment>
         <p class="el-p">{t(L, 'set.el.paso3_desc')}</p>
         <div class="el-code">
             <pre><code>{`document.querySelector('[data-cord-token]')
@@ -93,7 +94,7 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
             <li><code>cord:message</code> — {t(L, 'set.el.ev_message')}</li>
             <li><code>cord:pay</code> — {t(L, 'set.el.ev_pay')}</li>
         </ul>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <style>

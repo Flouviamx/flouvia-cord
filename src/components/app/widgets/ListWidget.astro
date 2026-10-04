@@ -1,0 +1,25 @@
+---
+import WidgetCard from './WidgetCard.astro';
+import WidgetHeader from './WidgetHeader.astro';
+import WidgetEmpty from '../WidgetEmpty.astro';
+import type { Props as CardProps } from './WidgetCard.astro';
+interface Props extends Omit<CardProps, 'contentClass'> {
+    rows: Array<{title:string; subtitle?:string; value:string | number; detail?:string; href?:string}>;
+    emptyTitle:string;
+}
+const { rows, emptyTitle, ...card } = Astro.props;
+---
+<WidgetCard {...card} compact={card.compact ?? 2} expanded={card.expanded ?? 4}>
+    <WidgetHeader title={card.title} description={card.description} />
+    <div class="report-list widget-list">
+        {rows.length ? rows.map(row => {
+            const Tag = row.href ? 'a' : 'div';
+            return <Tag href={row.href}><span><strong>{row.title}</strong>{row.subtitle && <small>{row.subtitle}</small>}{row.detail && <small class="widget-list-detail">{row.detail}</small>}</span><b class="editorial">{row.value}</b></Tag>;
+        }) : <WidgetEmpty icon="inbox" title={emptyTitle} />}
+    </div>
+</WidgetCard>
+<style is:global>
+    .widget-list-detail { display:none; }
+    [data-widget-size="lg"] .widget-list-detail { display:block; }
+    .widget-list > a:focus-visible { outline:2px solid var(--color-blue-deep); outline-offset:2px; border-radius:8px; }
+</style>

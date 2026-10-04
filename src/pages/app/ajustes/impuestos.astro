@@ -1,4 +1,5 @@
 ---
+import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
 // Ajustes › Cotizaciones › Impuestos. Catálogo de tasas de la organización.
 //
 // El vocabulario sale del PAÍS de la org, no de una constante: un impuesto de
@@ -37,8 +38,8 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
 <SettingsShell title="Impuestos — Ajustes" tab="impuestos" perm="ajustes"
     intro={t(L, 'set.imp.intro')}>
 
-    <div class="s-block">
-        <h3>{t(L, 'set.imp.perfiles')}</h3>
+    <SettingsSection icon="chart" class="s-block">
+        <Fragment slot="heading">{t(L, 'set.imp.perfiles')}</Fragment>
         <div class="s-body">
             <div class="imp-actions-row">
                 <button class="dev-new" id="impNew">{t(L, 'set.imp.nuevo')}</button>
@@ -92,13 +93,13 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
                     : 'Estas tasas se aplican por línea en cotizaciones y facturas, así que un documento puede mezclar un concepto gravado con uno exento. Las retenciones marcadas como predeterminadas se restan del total del documento.'}
             </p>
         </div>
-    </div>
+    </SettingsSection>
 
-    <div class="s-block" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
+    <SettingsSection icon="sliders" class="s-block" data-i18n-crear-err={t(L, 'set.imp.no_se_pudo_crear')} data-i18n-actualizar-err={t(L, 'set.imp.no_se_pudo_actualizar')}
         data-i18n-eliminar-titulo={t(L, 'set.imp.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'set.imp.eliminar_body')}
         data-i18n-eliminar-confirm={t(L, 'set.imp.eliminar')} data-i18n-eliminar-err={t(L, 'set.imp.no_se_pudo_eliminar')}
         data-i18n-config-err={t(L, 'set.imp.no_se_pudo_guardar_config')} id="impMeta">
-        <h3>{t(L, 'set.imp.comportamiento')}</h3>
+        <Fragment slot="heading">{t(L, 'set.imp.comportamiento')}</Fragment>
         <div class="s-body">
             <label class="s-toggle">
                 <input type="checkbox" id="ivaIncluidoDefecto" checked={ORG.ivaIncluidoDefecto} />
@@ -107,7 +108,7 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
             </label>
             <p class="dev-note">{t(L, 'set.imp.toggle_incluido_nota')}</p>
         </div>
-    </div>
+    </SettingsSection>
 </SettingsShell>
 
 <dialog id="impDlg" class="kdlg">
