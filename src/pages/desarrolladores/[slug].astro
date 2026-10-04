@@ -28,9 +28,6 @@ const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
 const currentPage = Astro.props.page || Astro.props.page;
 const page = isEn && currentPage ? DEV_PAGES_EN.find((p) => p.slug === currentPage.slug) || currentPage : currentPage;
-const updatedLabel = page.updated
-    ? new Intl.DateTimeFormat(isEn ? 'en-US' : 'es-MX', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${page.updated}T12:00:00Z`))
-    : null;
 
 // Datos estructurados (jul 2026, auditoría SEO/AI-SEO — mismo criterio que
 // /producto/*): esta plantilla no tenía metaTitle/metaDescription propios
@@ -99,7 +96,6 @@ const articleSchema = {
                         <a href="/precios" class="pp-btn-ghost">{isEn ? 'View plans' : 'Ver planes'}</a>
                     </div>
                     <p class="pp-plan reveal">{page.plan}</p>
-                    {updatedLabel && <p class="pp-updated reveal">{isEn ? 'Updated' : 'Actualizado'} <time datetime={page.updated}>{updatedLabel}</time></p>}
                 </div>
 
                 <!-- Mockup del hero (panel de código CLARO estilo Stripe/GitHub Docs — toolbar real, sin dots macOS) -->
@@ -294,7 +290,6 @@ const articleSchema = {
     .pp-glow { position: absolute; inset: -6% -4% 14%; background: radial-gradient(ellipse at center, rgba(10,25,47,0.05) 0%, transparent 72%); filter: blur(44px); z-index: 0; pointer-events: none; }
     .pp-mockup { position: relative; }
 
-    .pp-updated { font-size: 0.74rem; color: #99a2af; margin: 0.4rem 0 0; }
     :global(.dm-pending) { color: #64748b !important; background: rgba(10,25,47,0.05) !important; border-color: rgba(10,25,47,0.1) !important; }
 
 
