@@ -11,10 +11,7 @@ import PageAnims from '../../components/landing/PageAnims.astro';
 import DevMock from '../../components/desarrolladores/DevMock.astro';
 import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
-import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 
-// Shader estándar de Cord — azul/índigo técnico para la tarjeta oscura de devs.
-const DARK_PAL = { base: '#1E1B4B', color1: '#6366F1', color2: '#8B5CF6', color3: '#38BDF8' };
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
 import { getLangFromUrl } from '../../i18n/utils';
@@ -116,23 +113,10 @@ const articleSchema = {
             </div>
         </section>
 
-        <!-- ── DATOS: cifras verificadas en código (ver cabecera de desarrolladores.ts) ── -->
-        <section class="dv-stats" aria-label={isEn ? 'Key facts' : 'Datos clave'}>
-            {page.stats.map((st) => (
-                <div class="dv-stat reveal">
-                    <strong class="editorial">{st.valor}{st.suffix && !st.valor.endsWith(st.suffix) ? st.suffix : ''}</strong>
-                    <span>{st.label}</span>
-                </div>
-            ))}
-        </section>
-
         <!-- ── BLOQUES (bento de tarjetas — mismo patrón que /producto) ── -->
         <section class="pp-bento">
-            {page.blocks.map((b, i) => {
-                const dark = i === 0;
-                return (
-                <article class={`pp-bcard pp-bcard-${i}${dark ? ' pp-bcard-dark' : ''}`}>
-                    {dark && <CordDynamicBg client:only="react" colors={DARK_PAL} grain={false} />}
+            {page.blocks.map((b, i) => (
+                <article class={`pp-bcard pp-bcard-${i}`}>
                     <div class="pp-bcard-text">
                         <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
                         <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
@@ -150,8 +134,7 @@ const articleSchema = {
                         {b.mock && <DevMock id={b.mock} isEn={isEn} />}
                     </div>
                 </article>
-                );
-            })}
+            ))}
         </section>
 
         <section class="dv-steps" aria-labelledby="dv-steps-t">
@@ -163,7 +146,7 @@ const articleSchema = {
             </ol>
         </section>
 
-        {page.trust && <TrustGrid trust={page.trust} slug={page.slug} />}
+        {page.trust && <TrustGrid trust={page.trust} />}
 
         <FaqAccordion
             faqs={page.faqs}
@@ -322,11 +305,6 @@ const articleSchema = {
     .pp-updated { font-size: 0.74rem; color: #99a2af; margin: 0.4rem 0 0; }
     :global(.dm-pending) { color: #64748b !important; background: rgba(10,25,47,0.05) !important; border-color: rgba(10,25,47,0.1) !important; }
 
-    /* ════════ DATOS ════════ */
-    .dv-stats { max-width: 1360px; margin: 0 auto; padding: 1rem 5% 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .dv-stat { padding: 1.6rem 0 0; border-top: 1px solid var(--color-border); }
-    .dv-stat strong { display: block; font-size: clamp(2rem, 3.4vw, 2.8rem); color: #050505; line-height: 1; }
-    .dv-stat span { display: block; margin-top: 0.7rem; max-width: 300px; font-size: 0.9rem; line-height: 1.5; color: var(--color-text-muted); }
 
     /* ════════ PASOS ════════ */
     .dv-steps { max-width: 1360px; margin: 0 auto; padding: 2rem 5% 6rem; }
@@ -340,44 +318,29 @@ const articleSchema = {
     /* ════════ BLOQUES — bento de tarjetas (mismo patrón que /producto) ════════ */
     .pp-bento {
         max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem;
-        display: grid; grid-template-columns: 5fr 7fr; gap: 1.5rem;
+        display: grid; grid-template-columns: 5fr 7fr; gap: 1.2rem;
     }
     .pp-bcard-2, .pp-bcard-3 { grid-column: 1 / -1; }
     .pp-bcard {
-        background: #f5f5f7; border-radius: 24px; overflow: hidden;
+        background: #fff; border-radius: 28px; overflow: hidden;
         display: flex; flex-direction: column; min-height: 540px;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 24px 48px -14px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14), inset 0 1px 0 rgba(255,255,255,0.6);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .pp-bcard:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 38px 72px -18px rgba(10,25,47,0.2), inset 0 1px 0 rgba(255,255,255,0.6);
     }
     .pp-bcard-2, .pp-bcard-3 { flex-direction: row; min-height: 480px; }
     .pp-bcard-text { padding: 3rem 2.8rem 2rem; flex-shrink: 0; position: relative; z-index: 2; }
     .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
-    .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #f5f5f7; }
+    .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #fff; }
     .pp-bcard-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #b0b0b8; margin: 0 0 0.9rem; }
     .pp-bcard-h2 { font-size: clamp(1.35rem, 2.1vw, 1.85rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.035em; color: #050505; margin: 0 0 0.9rem; }
     .pp-bcard-copy { font-size: 0.875rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.4rem; }
     .pp-bcard-bullets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.55rem; }
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
-
-    /* ── Tarjeta oscura con aurora GLSL (CordDynamicBg, mismo shader del ROI
-       de /precios) — fondo #08152a navy evita el flash antes de que el canvas
-       cargue, contenido/mockup por encima en z-index 2, texto reestilizado a
-       modo oscuro. Siempre el bloque 0 (tarjeta izquierda) de CUALQUIER
-       página de /desarrolladores/[slug] — api, mcp, fx, fiscal, etc. ── */
-    .pp-bcard-dark {
-        position: relative;
-        background: #08152a;
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 28px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .pp-bcard-dark .pp-bcard-text,
-    .pp-bcard-dark .pp-bcard-visual { position: relative; z-index: 2; background: transparent; }
-    .pp-bcard-dark .pp-bcard-eyebrow { color: rgba(255,255,255,0.45); }
-    .pp-bcard-dark .pp-bcard-h2 { color: #ffffff; }
-    .pp-bcard-dark .pp-bcard-copy { color: rgba(226,232,240,0.72); }
-    .pp-bcard-dark .pp-bcard-bullets li { color: rgba(255,255,255,0.92); }
-    .pp-bcard-dark .pp-bcard-bullets svg { color: #34d399; }
 
     /* ════════ CROSS-LINK (última sección) ════════ */
     .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
@@ -411,7 +374,7 @@ const articleSchema = {
         .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
         .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
         .pp-bcard { min-height: 460px; }
-        .dv-stats, .dv-steps ol { grid-template-columns: 1fr; }
+        .dv-steps ol { grid-template-columns: 1fr; }
     }
     @media (max-width: 860px) {
         .pp-hero { padding-top: 8.5rem; }

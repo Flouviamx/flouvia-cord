@@ -17,11 +17,6 @@ export const DEV_PAGES_EN: DevPage[] = [
         plan: 'On every plan. Free includes 2 keys and 100 calls a month; test keys do not count against your quota.',
         heroMock: 'hero-api',
         updated: UPDATED,
-        stats: [
-            { valor: '14', countup: 14, label: 'routes under /api/v1: quotes, invoices, clients, products, events and more' },
-            { valor: '600', countup: 600, suffix: '/min', label: 'requests per minute per secret key' },
-            { valor: '50,000', countup: 50000, label: 'calls a month included in the Developer plan' },
-        ],
         blocks: [
             {
                 eyebrow: 'IDEMPOTENCY',
@@ -102,11 +97,6 @@ export const DEV_PAGES_EN: DevPage[] = [
         plan: 'Included on every plan. Any member with access to Settings can open it.',
         heroMock: 'hero-workbench',
         updated: UPDATED,
-        stats: [
-            { valor: '6', countup: 6, label: 'tabs: overview, webhooks, events, API, logs and health' },
-            { valor: '14', countup: 14, suffix: ' days', label: 'of request history with a daily chart' },
-            { valor: '2', countup: 2, label: 'environments, test and live, behind one switch' },
-        ],
         blocks: [
             {
                 eyebrow: 'LOGS',
@@ -175,11 +165,6 @@ export const DEV_PAGES_EN: DevPage[] = [
         plan: 'On every plan. It uses the same API key as the REST API; write tools require a key with write permission.',
         heroMock: 'hero-mcp',
         updated: UPDATED,
-        stats: [
-            { valor: '19', countup: 19, label: 'tools: 9 read and 10 write' },
-            { valor: '3', countup: 3, label: 'MCP protocol versions supported, up to 2025-06-18' },
-            { valor: '1', countup: 1, label: 'key for both the REST API and the MCP server' },
-        ],
         blocks: [
             {
                 eyebrow: 'CONNECTION',
@@ -249,11 +234,6 @@ export const DEV_PAGES_EN: DevPage[] = [
         plan: 'On every plan: 16 endpoints on Free, Starter and Professional, 32 on Scale and 100 on Developer.',
         heroMock: 'hero-webhook',
         updated: UPDATED,
-        stats: [
-            { valor: '41', countup: 41, label: 'event types: quotes, invoices, payments, refunds, payouts, clients and more' },
-            { valor: '11', countup: 11, label: 'delivery attempts with growing waits' },
-            { valor: '5', countup: 5, suffix: ' s', label: 'timeout per attempt' },
-        ],
         blocks: [
             {
                 eyebrow: 'SIGNATURE',
@@ -326,91 +306,76 @@ export const DEV_PAGES_EN: DevPage[] = [
     {
         slug: 'elements',
         nav: 'Cord Elements',
-        eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTER',
-        titulo: 'Your quoter, inside their site.',
-        sub: 'Bring Cord\'s quoter to your clients\' portal with one line of code. Your brand, approval, counteroffer, and online payment — all within their ecosystem, without them ever leaving their site.',
-        metaTitle: 'Cord Elements — embeddable quoter for your site',
-        metaDescription: 'Embed the Cord quoter in your portal with one line of code: an iframe, the <cord-cotizador> Web Component, or the @flouviahq/elements package for React/Vue. Free signup, no backend required.',
-        plan: 'Free signup. On the Free plan, the public link carries a discreet "via Cord"; you can remove it and leave only your brand from Settings › Developers, where you also define the allowlist of domains authorized to embed.',
-        stats: [
-            { valor: '1', countup: 1, label: 'line of code to mount it on any site' },
-            { valor: '6', countup: 6, label: 'ways to use it today: HTML (embed.js), React, Vue, Astro, Framer, and Webflow' },
-            { valor: '5', countup: 5, label: 'live events: ready, approved, rejected, message, and pay' },
-        ],
+        eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTE BUILDER',
+        titulo: "Your quote builder, inside your client's site.",
+        sub: "Cord Elements brings your quotes into your clients' portal with one line of code. They see your brand, review every line item, approve with a signature, negotiate or pay without leaving their site, and your page receives every step as a typed event.",
+        metaTitle: 'Cord Elements — embeddable quote builder for React, Vue and HTML',
+        metaDescription: 'Embed your quotes on any site with one line: embed.js, the <cord-cotizador> Web Component or @flouviahq/elements for React, Vue, Framer and Webflow. Signed approval, online payment and 8 typed events.',
+        plan: 'On every plan, including Free. From Starter you remove Cord branding in Settings › Brand appearance; the domains allowed to embed it are set in Settings › Embeddable quote builder.',
+        updated: UPDATED,
         blocks: [
             {
                 eyebrow: 'ONE LINE OF CODE',
                 titulo: 'Paste. Done. No backend.',
-                copy: 'A script and a <div>. The quoter appears as an <iframe> served by Cord, shows a skeleton while loading, and automatically adjusts its height to the content via postMessage. There\'s no server to maintain or data to sync: the quote\'s public token is all you need.',
+                copy: "A script and a <div>. The quote builder appears as an iframe served by Cord, measures its content and tells your page so the height adjusts on its own. There is no server to maintain and no data to sync: the quote's public token is all you need.",
                 bullets: [
-                    'Works on any stack: WordPress, plain HTML, whatever',
-                    'Auto-height — the embed measures its content and notifies your page',
-                    'Skeleton with shimmer while loading and fade-in when ready: no empty boxes',
+                    'WordPress, Webflow, Shopify or plain HTML: any site that accepts a script',
+                    'Automatic height: no scrollbars, no empty boxes',
+                    'The same quote builder as the public /q link, with no extra code',
                 ],
-                code: {
-                    label: 'On any HTML site',
-                    body: `<!-- One line + one div -->
-<script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
-                },
             },
             {
-                eyebrow: 'NATIVE IN YOUR FRAMEWORK',
-                titulo: 'An npm package. Typed, themeable, headless if you want.',
-                copy: 'Install @flouviahq/elements 1.0 and use it like any other component. In React you import <CordCotizador> with typed callbacks; in Vue, Astro, Svelte, or HTML you use the <cord-cotizador> Web Component. TypeScript types are generated straight from the real build (never hand-written), so they never drift from the SDK. And if you\'d rather build your own interface, the useQuoteBuilder() hook gives you the quoter\'s state without a single line of our UI.',
+                eyebrow: 'YOUR BRAND',
+                titulo: 'With your identity, or with their portal\'s.',
+                copy: 'Logo, color and business name come from your account. If the host portal has its own style, the Appearance API sets a light, dark or automatic theme, the primary color, radii and a typeface from Google Fonts or Bunny Fonts.',
                 bullets: [
-                    'import { CordCotizador } from \'@flouviahq/elements/react\'',
-                    'Web Component &lt;cord-cotizador token="…"&gt; for Vue, Astro, Svelte, and HTML — plus SDKs for Framer and Webflow',
-                    'Real Appearance API: theme the iframe (color, font, radii), or pass appearance.baseTheme:"none" to go fully headless',
+                    "theme: light, dark or auto, which follows the client's system",
+                    'variables: colorPrimary, colorText, colorBackground, borderRadius',
+                    'Values sanitized on the server: a theme cannot inject arbitrary CSS',
                 ],
-                code: {
-                    label: 'React / Next.js',
-                    body: `// npm install @flouviahq/elements
-import { CordCotizador } from '@flouviahq/elements/react';
-
-export function Cotizacion({ token }) {
-  return (
-    <CordCotizador
-      token={token}
-      appearance={{ theme: 'auto' }}
-      onApproved={(d) => console.log('Approved', d.folio)}
-      onPay={() => location.assign('/thanks')}
-    />
-  );
-}`,
-                },
             },
             {
-                eyebrow: 'YOUR BRAND · SECURE BY DESIGN',
-                titulo: 'The full quoter, not a toy widget.',
-                copy: 'Inside the embed is the exact same quoter from your account: your color, your logo, and your details, computed by the SAME engine the rest of Cord uses (never a total that drifts). The client approves, rejects, negotiates the price, or pays without leaving their portal, and you control access with separate keys: a publishable one (pk_, scoped to creating quotes and reading the catalog) for the browser, and a secret one (sk_) for your backend — plus the domain allowlist (CSP frame-ancestors) that shields against clickjacking.',
+                eyebrow: 'EVENTS',
+                titulo: 'Your page hears about every step your client takes.',
+                copy: 'When the client opens, approves, rejects, writes or pays, the iframe tells your page with a typed event and its detail. With React or Vue they arrive as callbacks; with the Web Component, as DOM events. Use them to redirect, open your checkout or notify your CRM.',
                 bullets: [
-                    'pk_ publishable keys (narrow scope) and sk_ secret keys — never expose your full CRM in the browser',
-                    'Approval, counteroffer, chat, SHA-256 legal signature, and online payment, all embedded',
-                    'Domain allowlist per account: only you decide where it can live',
+                    'onApproved carries signed_by and the signature hash',
+                    "onPay carries the payment URL; onRejected, the client's comment",
+                    "With an allowlist, events are sent only to your site's origin",
+                ],
+            },
+            {
+                eyebrow: 'HEADLESS',
+                titulo: 'Or build your own interface on top of our state.',
+                copy: "If you don't want our design, useQuoteBuilder() gives you the full state to put together a new quote from your own UI: line items, client, subtotal, taxes and total, computed with the same engine as the server. You bring the markup; Cord creates the quote and returns its link.",
+                bullets: [
+                    'A pk_ publishable key in the browser, or your own proxy with an sk_',
+                    'Stable .cord-* classes and styles inside @layer cord: your CSS always wins',
+                    'baseTheme: "none" to inject no CSS at all',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Copy your snippet', copy: 'Add the embed.js script, install @flouviahq/elements, or paste the Web Component — depending on your stack. The only thing that changes is how you load the quoter.' },
-            { titulo: 'Appears with your brand', copy: 'Pass the quote\'s public token. The color, logo, and data come from your Cord account — zero extra configuration on the host site.' },
-            { titulo: 'React to the client', copy: 'Listen to cord:approved, cord:pay, and other events on your own page to trigger your analytics, redirect, or sync your CRM in real time.' },
+            { titulo: 'Copy your snippet', copy: 'embed.js for any site, or npm install @flouviahq/elements if you use React, Vue, Framer or Webflow.' },
+            { titulo: 'Pass the token', copy: "The quote's public token. Your brand and your details come from your Cord account." },
+            { titulo: 'Listen to events', copy: 'onApproved, onPay and the rest to redirect, collect or sync your CRM in real time.' },
         ],
         faqs: [
-            { q: 'Does Cord Elements require me to run my own backend?', a: 'No. It\'s an embedded iframe (or the @flouviahq/elements package for React/Vue/Web Component) that talks directly to Cord — you paste the snippet and need no extra server. If you do have a backend, the Server SDK (@flouviahq/elements/server) gives you the same data plus webhooks verified with an HMAC signature.' },
-            { q: 'Can I use it fully headless, with no Cord UI at all?', a: 'Yes. The useQuoteBuilder() hook exposes the quoter\'s full state (line items, totals, client, submission) without rendering our UI — you build your own interface with your own components and just consume the logic.' },
-            { q: 'Does it ship with TypeScript types?', a: 'Yes, generated straight from the build\'s source code (never hand-written) — when a type changes in the SDK, your editor reflects it immediately, with no risk of the package and its .d.ts files drifting apart.' },
-            { q: 'Can I remove the "via Cord" branding from the embedded quoter?', a: 'Yes, on a paid plan you can remove the "via Cord" notice and leave only your brand from Settings › Developers. The Free plan shows that discreet notice.' },
-            { q: 'What framework does Cord Elements work with?', a: 'The <cord-cotizador> Web Component works in any HTML, Astro, or Vue site; there\'s a native React wrapper (@flouviahq/elements/react), SDKs for Framer and Webflow, and a one-line loader (embed.js) for WordPress or framework-less sites.' },
+            { q: 'What is Cord Elements?', a: "It's Cord's SDK for showing your quotes inside another site. It includes a one-line loader (embed.js), the <cord-cotizador> Web Component, wrappers for React, Vue, Framer and Webflow, a headless hook to build quotes with your own UI and a Server SDK to verify webhooks." },
+            { q: 'Do I need my own backend?', a: 'Not to show a quote: the iframe talks directly to Cord and the public token is enough. To create quotes from the browser you use a narrowly scoped publishable key (pk_); if you would rather expose no key at all, your backend acts as a proxy with a secret key (sk_).' },
+            { q: "Can I use it without Cord's interface?", a: 'Yes. useQuoteBuilder() exposes the quote builder state (line items, client, totals and submission) without rendering anything of ours, and with baseTheme: "none" the SDK injects no CSS.' },
+            { q: 'Who can embed my quotes?', a: 'You decide. In Settings › Embeddable quote builder you list the allowed domains and Cord enforces them with the frame-ancestors header, so no other site can show them inside an iframe. With no list, the embed stays open.' },
+            { q: 'Can I remove Cord branding?', a: 'Yes, from the Starter plan, in Settings › Brand appearance. On the Free plan the quote shows a discreet Cord notice at the bottom.' },
+            { q: 'Can the client pay inside the embed?', a: 'Yes, when Cord Payments is active. The pay button fires the pay event with the payment URL, so your page decides whether to open it in the same tab or a new one.' },
         ],
-        cta: { titulo: 'Bring your quoter to where your clients are.', sub: 'Create your free account and embed your first quoter today — one line of code.' },
+        cta: { titulo: 'Bring your quote builder to where your clients are.', sub: 'Create your free account and embed your first quote today.' },
         trust: {
             eyebrow: 'DETAILS THAT MATTER',
-            titulo: 'The fine print, handled for you',
+            titulo: 'The fine print, handled out of the box',
             items: [
-                { icon: 'route', titulo: '5 events, named without ambiguity', copy: 'ready, approved, rejected, message, and pay — the same in the iframe, the Web Component, and the React hook.' },
-                { icon: 'doc', titulo: 'TypeScript types are generated, not hand-written', copy: "They come straight from the SDK's real build — if something changes, your editor reflects it instantly, no drifting .d.ts." },
-                { icon: 'lock', titulo: "The iframe's message only reaches your domain", copy: "Event postMessages target the exact origin from your allowlist — not just any window that happens to be listening." },
+                { icon: 'lock', titulo: 'Events only reach your domain', copy: "With an allowlist, the postMessage targets your site's exact origin, not any window that happens to be listening." },
+                { icon: 'doc', titulo: 'Types generated from the real code', copy: "The .d.ts files come from the SDK build. If something changes, your editor shows it with no out-of-sync type." },
+                { icon: 'key', titulo: 'A pk_ cannot read your CRM', copy: 'In the browser it only creates quotes and reads the catalog, without costs or margins. Reading clients requires your proxy.' },
             ],
         },
     },
@@ -425,11 +390,6 @@ export function Cotizacion({ token }) {
         plan: 'On every plan. The API accepts base_currency, fiscal_currency and fx_buffer_pct when creating a quote.',
         heroMock: 'hero-fx',
         updated: UPDATED,
-        stats: [
-            { valor: '30', countup: 30, suffix: ' days', label: 'that a rate stays locked after quoting' },
-            { valor: '3', countup: 3, label: 'chained sources, with the European Central Bank first' },
-            { valor: '0', countup: 0, label: 'made-up rates: without real data the operation stops' },
-        ],
         blocks: [
             {
                 eyebrow: 'TWO CURRENCIES, TWO JOBS',
@@ -498,11 +458,6 @@ export function Cotizacion({ token }) {
         plan: 'Tax issuing is available from the Starter plan where enabled. Free issues commercial documents.',
         heroMock: 'hero-fiscal',
         updated: UPDATED,
-        stats: [
-            { valor: '5', countup: 5, label: 'API actions: issue, send, void, record payment and credit note' },
-            { valor: '4.0', label: 'CFDI version Cord stamps in Mexico' },
-            { valor: '12', countup: 12, label: 'countries where Cord invoices today, with each one\'s tax ID' },
-        ],
         blocks: [
             {
                 eyebrow: 'FULL CYCLE',

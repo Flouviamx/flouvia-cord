@@ -7,6 +7,22 @@
 
 ---
 
+**Desarrolladores y Cord Elements: bento blanco y página del SDK completa (4 oct 2026)** —
+• **Bento unificado:** `/desarrolladores/[slug]` usaba tarjetas grises `#f5f5f7` con borde y
+  una tarjeta 0 oscura con `CordDynamicBg`; ahora es el mismo bento blanco de `/producto`
+  (radio 28, sombra difusa, elevación en hover). Se retiró la franja de cifras (`stats`)
+  por decisión de André, junto con su campo en `DevPage`.
+• **`/elements` rehecha:** el hero era un `<iframe>` vivo que se veía vacío; ahora es una
+  calca 1:1 de `/embed/demo` dentro del portal de un cliente, con una consola que recibe
+  `cord:approved`/`cord:signed` cuando el cursor aprueba. Suma instalación por stack (HTML,
+  React, Next.js, Vue, Astro, Framer, Webflow), un explorador de TODO lo que exporta
+  `@flouviahq/elements` por módulo, y una sección del Server SDK.
+• **Copy corregido contra `packages/elements`:** 8 eventos (no 5), `useQuoteBuilder()` arma
+  cotizaciones nuevas y no recibe `token`, `onApproved` trae `signed_by`/`hash` (no
+  `folio`), la marca se quita desde Starter en Ajustes › Marca y apariencia (no en
+  Developers) y React es `>=17`.
+• `DevBlockMockup.astro` se eliminó: sus únicos consumidores eran `/elements` y `TrustGrid`.
+
 **SEO técnico de los tres hosts, páginas de integraciones y Cord Workflows (21 sep 2026)** —
 Auditoría en vivo de los sitemaps de `cordhq.app`, `docs.` y `dev.` (843 URLs rastreadas).
 • **Canonical roto en 285 URLs:** las páginas prerenderizadas publicaban canonical,

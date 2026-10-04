@@ -1,13 +1,11 @@
 ---
 // TrustGrid — sección de confianza/infraestructura debajo del bento en
-// /desarrolladores/[slug]. Un solo panel gris Apple con una cuadrícula de
-// tarjetas blancas squircle (icono + título + una línea corta) — nada de
-// bloques de texto largos ni sub-secciones separadas.
+// /desarrolladores/[slug] y /elements. Directo sobre el fondo de la página:
+// icono + una línea corta por detalle, sin tarjetas ni paneles.
 import type { DevTrust, DevTrustIcon } from '../../lib/desarrolladores';
-import DevBlockMockup from './DevBlockMockup.astro';
 
-export interface Props { trust: DevTrust; slug: string }
-const { trust, slug } = Astro.props;
+export interface Props { trust: DevTrust }
+const { trust } = Astro.props;
 const items = trust.items;
 
 const svg = (inner: string) => `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
@@ -28,15 +26,6 @@ const ICONS: Record<DevTrustIcon, string> = {
 ---
 
 <section class="dvt-section">
-    {/* Solo /elements conserva sus dos mockups extra; las páginas de
-        /desarrolladores muestran sus pantallas reales en el bento (DevMock). */}
-    {slug === 'elements' && (
-        <div class="dvt-mockups">
-            <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={3} /></div>
-            <div class="dvt-mock-card"><DevBlockMockup slug={slug} index={4} /></div>
-        </div>
-    )}
-
     <div class="dvt-head">
         <p class="dvt-eyebrow">{trust.eyebrow}</p>
         <h2 class="dvt-title masked-title" set:html={trust.titulo} />
@@ -58,19 +47,6 @@ const ICONS: Record<DevTrustIcon, string> = {
         max-width: 1360px; margin: 0 auto; padding: 5rem 5%;
     }
 
-    /* ── Dos mockups flotando sobre paneles suaves, como el hero — nunca sobre tarjeta gris ── */
-    .dvt-mockups {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
-        margin: 0 0 4.5rem;
-    }
-    .dvt-mock-card {
-        background: linear-gradient(160deg, rgba(10,25,47,0.035), rgba(10,25,47,0.065));
-        border-radius: 32px;
-        padding: clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2.25rem);
-        display: flex; align-items: center; justify-content: center;
-        min-height: 300px;
-    }
-    .dvt-mock-card :global(.dbm-wrap) { width: 100%; max-width: 420px; }
 
     .dvt-head { max-width: 620px; margin: 0 0 3.25rem; }
     .dvt-eyebrow {
@@ -108,10 +84,6 @@ const ICONS: Record<DevTrustIcon, string> = {
         overflow: hidden;
     }
 
-    @media (max-width: 780px) {
-        .dvt-mockups { grid-template-columns: 1fr; gap: 1rem; margin-bottom: 3.25rem; }
-        .dvt-mock-card { min-height: 220px; border-radius: 24px; }
-    }
     @media (max-width: 720px) {
         .dvt-section { padding: 3.5rem 5%; }
         .dvt-grid { grid-template-columns: 1fr; column-gap: 0; row-gap: 2.25rem; }
@@ -120,8 +92,7 @@ const ICONS: Record<DevTrustIcon, string> = {
 </style>
 
 <style is:global>
-    .js-anim .dvt-tile,
-    .js-anim .dvt-mock-card { opacity: 0; }
+    .js-anim .dvt-tile { opacity: 0; }
 </style>
 
 <script>
@@ -134,12 +105,10 @@ const ICONS: Record<DevTrustIcon, string> = {
         if (!section) return;
 
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const mocks = gsap.utils.toArray<HTMLElement>('.dvt-mock-card', section);
         const tiles = gsap.utils.toArray<HTMLElement>('.dvt-tile', section);
 
-        if (reduced) { gsap.set([...mocks, ...tiles], { clearProps: 'all', opacity: 1 }); return; }
+        if (reduced) { gsap.set(tiles, { clearProps: 'all', opacity: 1 }); return; }
 
-        gsap.set(mocks, { opacity: 0, y: 20 });
         gsap.set(tiles, { opacity: 0, y: 16 });
 
         ScrollTrigger.create({
@@ -147,14 +116,8 @@ const ICONS: Record<DevTrustIcon, string> = {
             start: 'top 85%',
             once: true,
             onEnter: () => {
-                gsap.to(mocks, {
-                    opacity: 1, y: 0, duration: 0.6, stagger: 0.1,
-                    ease: 'power3.out',
-                    clearProps: 'transform',
-                });
                 gsap.to(tiles, {
                     opacity: 1, y: 0, duration: 0.55, stagger: 0.06,
-                    delay: 0.15,
                     ease: 'power3.out',
                     clearProps: 'transform',
                 });

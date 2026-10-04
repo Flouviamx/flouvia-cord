@@ -26,7 +26,7 @@ Lee estos archivos completos ANTES de escribir una sola línea:
    flotantes", "`.bm-app`" y "screenshot-bleed" para ver el patrón más reciente
    y qué se descartó antes (exploded-view, tilt 3D, partículas — PROHIBIDOS).
 3. El archivo real que vas a editar (`BlockMockup.astro`, `SolucionBlockMockup.astro`,
-   `DevBlockMockup.astro`, o el `[slug].astro` correspondiente) — mira cómo están
+   `DevMock.astro`, o el `[slug].astro` correspondiente) — mira cómo están
    hechos los mockups vecinos ya aprobados antes de inventar un patrón nuevo.
 
 ## Reglas no-negociables (memorizadas, no hay excusa para saltárselas)

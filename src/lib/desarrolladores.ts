@@ -8,21 +8,11 @@
 // antes de escribirse (límites en entitlements.ts/billing.ts/apikey.ts, eventos
 // en domain-events.ts, herramientas en mcp.ts, fuentes FX en FXService.ts).
 
-export interface DevStat {
-    valor: string;
-    countup?: number;
-    decimals?: number;
-    prefix?: string;
-    suffix?: string;
-    label: string;
-}
-
 export interface DevBlock {
     eyebrow: string;
     titulo: string;       // admite HTML inline (nunca <br/>, regla 2)
     copy: string;
     bullets: string[];
-    code?: { label: string; body: string };
     mock?: string;        // id del mockup en DevMock.astro
 }
 
@@ -56,7 +46,6 @@ export interface DevPage {
     plan: string;
     heroMock?: string;       // id del mockup del hero en DevMock.astro
     updated?: string;        // fecha visible de la última revisión del contenido (AAAA-MM-DD)
-    stats: DevStat[];
     blocks: DevBlock[];
     steps: DevStep[];
     faqs: DevFaq[];
@@ -78,11 +67,6 @@ export const DEV_PAGES: DevPage[] = [
         plan: 'En todos los planes. Gratis incluye 2 llaves y 100 llamadas al mes; las llaves de prueba no consumen tu cuota.',
         heroMock: 'hero-api',
         updated: UPDATED,
-        stats: [
-            { valor: '14', countup: 14, label: 'rutas bajo /api/v1: cotizaciones, facturas, clientes, productos, eventos y más' },
-            { valor: '600', countup: 600, suffix: '/min', label: 'peticiones por minuto por llave secreta' },
-            { valor: '50,000', countup: 50000, label: 'llamadas al mes incluidas en el plan Developer' },
-        ],
         blocks: [
             {
                 eyebrow: 'IDEMPOTENCIA',
@@ -163,11 +147,6 @@ export const DEV_PAGES: DevPage[] = [
         plan: 'Incluido en todos los planes. Lo abre cualquier miembro con acceso a Ajustes.',
         heroMock: 'hero-workbench',
         updated: UPDATED,
-        stats: [
-            { valor: '6', countup: 6, label: 'pestañas: resumen, webhooks, eventos, API, registros y salud' },
-            { valor: '14', countup: 14, suffix: ' días', label: 'de historial de peticiones con gráfica diaria' },
-            { valor: '2', countup: 2, label: 'entornos, prueba y producción, con un solo interruptor' },
-        ],
         blocks: [
             {
                 eyebrow: 'REGISTROS',
@@ -236,11 +215,6 @@ export const DEV_PAGES: DevPage[] = [
         plan: 'En todos los planes. Usa la misma API key que la API REST; las herramientas de escritura exigen una llave con permiso de escritura.',
         heroMock: 'hero-mcp',
         updated: UPDATED,
-        stats: [
-            { valor: '19', countup: 19, label: 'herramientas: 9 de lectura y 10 de escritura' },
-            { valor: '3', countup: 3, label: 'versiones del protocolo MCP soportadas, hasta la 2025-06-18' },
-            { valor: '1', countup: 1, label: 'llave para la API REST y para el servidor MCP' },
-        ],
         blocks: [
             {
                 eyebrow: 'CONEXIÓN',
@@ -310,11 +284,6 @@ export const DEV_PAGES: DevPage[] = [
         plan: 'En todos los planes: 16 endpoints en Gratis, Starter y Profesional, 32 en Scale y 100 en Developer.',
         heroMock: 'hero-webhook',
         updated: UPDATED,
-        stats: [
-            { valor: '41', countup: 41, label: 'tipos de evento: cotizaciones, facturas, pagos, reembolsos, depósitos, clientes y más' },
-            { valor: '11', countup: 11, label: 'intentos de entrega con espera creciente' },
-            { valor: '5', countup: 5, suffix: ' s', label: 'de timeout por intento' },
-        ],
         blocks: [
             {
                 eyebrow: 'FIRMA',
@@ -388,90 +357,75 @@ export const DEV_PAGES: DevPage[] = [
         slug: 'elements',
         nav: 'Cord Elements',
         eyebrow: 'CORD ELEMENTS · COTIZADOR EMBEBIBLE',
-        titulo: 'Tu cotizador, dentro de su web.',
-        sub: 'Lleva el cotizador de Cord al portal de tus clientes con una línea de código. Tu marca, aprobación, contraoferta y pago en línea — todo dentro de su ecosistema, sin que salgan de su sitio.',
-        metaTitle: 'Cord Elements — cotizador embebible para tu sitio',
-        metaDescription: 'Embebe el cotizador de Cord en tu portal con una línea de código: iframe, Web Component <cord-cotizador> o el paquete @flouviahq/elements para React/Vue. Signup gratis, sin backend propio.',
-        plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
-        stats: [
-            { valor: '1', countup: 1, label: 'línea de código para montarlo en cualquier sitio' },
-            { valor: '6', countup: 6, label: 'formas de usarlo hoy: HTML (embed.js), React, Vue, Astro, Framer y Webflow' },
-            { valor: '5', countup: 5, label: 'eventos en vivo: ready, approved, rejected, message y pay' },
-        ],
+        titulo: 'Tu cotizador, dentro del sitio de tu cliente.',
+        sub: 'Cord Elements lleva tus cotizaciones al portal de tus clientes con una línea de código. Ven tu marca, revisan cada partida, aprueban con firma, negocian o pagan sin salir de su sitio, y tu página recibe cada paso como un evento tipado.',
+        metaTitle: 'Cord Elements — cotizador embebible para React, Vue y HTML',
+        metaDescription: 'Embebe tus cotizaciones en cualquier sitio con una línea: embed.js, el Web Component <cord-cotizador> o @flouviahq/elements para React, Vue, Framer y Webflow. Aprobación con firma, pago en línea y 8 eventos tipados.',
+        plan: 'En todos los planes, incluido Gratis. Desde Starter quitas la marca de Cord en Ajustes › Marca y apariencia; los dominios que pueden embeberlo se definen en Ajustes › Cotizador embebible.',
+        updated: UPDATED,
         blocks: [
             {
                 eyebrow: 'UNA LÍNEA DE CÓDIGO',
                 titulo: 'Pegar. Listo. Sin backend.',
-                copy: 'Un script y un <div>. El cotizador aparece como un <iframe> servido por Cord, muestra un skeleton mientras carga y se ajusta solo a la altura del contenido vía postMessage. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
+                copy: 'Un script y un <div>. El cotizador aparece como un iframe servido por Cord, mide su contenido y le avisa a tu página para ajustar la altura sola. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
                 bullets: [
-                    'Funciona en cualquier stack: WordPress, HTML plano, lo que sea',
-                    'Altura automática — el embed mide su contenido y le avisa a tu página',
-                    'Skeleton con shimmer mientras carga y fade-in al estar listo: nada de cajas vacías',
+                    'WordPress, Webflow, Shopify o HTML plano: cualquier sitio que acepte un script',
+                    'Altura automática: nada de barras de scroll ni cajas vacías',
+                    'El mismo cotizador que el link público /q, sin una línea más',
                 ],
-                code: {
-                    label: 'En cualquier sitio HTML',
-                    body: `<!-- Una línea + un div -->
-<script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
-                },
             },
             {
-                eyebrow: 'NATIVO EN TU FRAMEWORK',
-                titulo: 'Un paquete de npm. Tipado, tematizable y headless si quieres.',
-                copy: 'Instala @flouviahq/elements 1.0 y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro, Svelte o HTML usas el Web Component <cord-cotizador>. Los tipos de TypeScript se generan del build real (no se escriben a mano), así que nunca divergen del SDK. Y si prefieres construir tu propia interfaz, el hook useQuoteBuilder() te da el estado del cotizador sin una sola línea de nuestra UI.',
+                eyebrow: 'TU MARCA',
+                titulo: 'Con tu identidad, o con la de su portal.',
+                copy: 'El logo, el color y la razón social salen de tu cuenta. Si el portal anfitrión tiene su propio estilo, la Appearance API ajusta el tema claro, oscuro o automático, el color principal, los radios y la tipografía desde Google Fonts o Bunny Fonts.',
                 bullets: [
-                    'import { CordCotizador } from \'@flouviahq/elements/react\'',
-                    'Web Component &lt;cord-cotizador token="…"&gt; para Vue, Astro, Svelte y HTML — también SDKs para Framer y Webflow',
-                    'Appearance API real: tematiza el iframe (color, fuente, radios) o pasa appearance.baseTheme:"none" para 100% headless',
+                    'theme: light, dark o auto, que sigue al sistema del cliente',
+                    'variables: colorPrimary, colorText, colorBackground, borderRadius',
+                    'Valores saneados en servidor: el tema no puede inyectar CSS arbitrario',
                 ],
-                code: {
-                    label: 'React / Next.js',
-                    body: `// npm install @flouviahq/elements
-import { CordCotizador } from '@flouviahq/elements/react';
-
-export function Cotizacion({ token }) {
-  return (
-    <CordCotizador
-      token={token}
-      appearance={{ theme: 'auto' }}
-      onApproved={(d) => console.log('Aprobada', d.folio)}
-      onPay={() => location.assign('/gracias')}
-    />
-  );
-}`,
-                },
             },
             {
-                eyebrow: 'TU MARCA · SEGURO POR DISEÑO',
-                titulo: 'El cotizador completo, no un widget de juguete.',
-                copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos, calculados por el MISMO motor que usa el resto de Cord (nunca un total que diverja). El cliente aprueba, rechaza, negocia el precio o paga sin salir de su portal, y tú controlas el acceso con llaves separadas: una pública (pk_, solo para crear cotizaciones y leer catálogo) para el navegador, y una secreta (sk_) para tu backend — más la allowlist de dominios (CSP frame-ancestors) que blinda contra clickjacking.',
+                eyebrow: 'EVENTOS',
+                titulo: 'Tu página se entera de cada paso del cliente.',
+                copy: 'Cuando el cliente abre, aprueba, rechaza, escribe o paga, el iframe le avisa a tu página con un evento tipado y su detalle. Con React o Vue llegan como callbacks; con el Web Component, como eventos del DOM. Úsalos para redirigir, abrir tu checkout o avisarle a tu CRM.',
                 bullets: [
-                    'Llaves pk_ (públicas, de scope acotado) y sk_ (secretas) — nunca expongas tu CRM completo en el navegador',
-                    'Aprobación, contraoferta, chat, firma legal SHA-256 y pago en línea, todos embebidos',
-                    'Allowlist de dominios por cuenta: solo tú decides dónde puede vivir',
+                    'onApproved trae signed_by y el hash de la firma',
+                    'onPay trae la URL del pago; onRejected, el comentario del cliente',
+                    'Con allowlist, los eventos se dirigen sólo al origen de tu sitio',
+                ],
+            },
+            {
+                eyebrow: 'HEADLESS',
+                titulo: 'O construye tu propia interfaz sobre nuestro estado.',
+                copy: 'Si no quieres nuestro diseño, useQuoteBuilder() te da el estado completo para armar una cotización nueva desde tu UI: partidas, cliente, subtotal, impuestos y total, calculados con el mismo motor que el servidor. Tú pones el markup; Cord crea la cotización y te devuelve su link.',
+                bullets: [
+                    'Publishable key pk_ en el navegador, o tu propio proxy con una sk_',
+                    'Clases .cord-* estables y estilos dentro de @layer cord: tu CSS siempre gana',
+                    'baseTheme: "none" para no inyectar ni una línea de CSS',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Copia tu snippet', copy: 'Agrega el script de embed.js, instala @flouviahq/elements o pega el Web Component — según tu stack. Lo único que cambia es cómo cargas el cotizador.' },
-            { titulo: 'Aparece con tu marca', copy: 'Pasa el token público de la cotización. El color, logo y datos salen de tu cuenta de Cord — cero configuración extra en el sitio anfitrión.' },
-            { titulo: 'Reacciona al cliente', copy: 'Escucha cord:approved, cord:pay y los demás eventos en tu propia página para disparar tu analítica, redirigir o sincronizar tu CRM en tiempo real.' },
+            { titulo: 'Copia tu snippet', copy: 'embed.js para cualquier sitio, o npm install @flouviahq/elements si usas React, Vue, Framer o Webflow.' },
+            { titulo: 'Pasa el token', copy: 'El token público de la cotización. Tu marca y tus datos salen de tu cuenta de Cord.' },
+            { titulo: 'Escucha los eventos', copy: 'onApproved, onPay y los demás para redirigir, cobrar o sincronizar tu CRM en tiempo real.' },
         ],
         faqs: [
-            { q: '¿Cord Elements requiere que monte un backend propio?', a: 'No. Es un iframe embebido (o el paquete @flouviahq/elements para React/Vue/Web Component) que habla directo con Cord — pegas el snippet y no necesitas servidor adicional. Si sí tienes backend, el Server SDK (@flouviahq/elements/server) te da acceso a los mismos datos y a webhooks verificados con firma HMAC.' },
-            { q: '¿Puedo usarlo 100% headless, sin la interfaz de Cord?', a: 'Sí. El hook useQuoteBuilder() expone todo el estado del cotizador (líneas, totales, cliente, envío) sin renderizar nuestra UI — construyes tu propia interfaz con tus componentes y solo usas la lógica.' },
-            { q: '¿Tiene tipos de TypeScript?', a: 'Sí, generados directo del código fuente del build (no escritos a mano) — si un tipo cambia en el SDK, tu editor lo refleja de inmediato, sin que el paquete y sus .d.ts se desincronicen.' },
-            { q: '¿Puedo quitar la marca "vía Cord" del cotizador embebido?', a: 'Sí, desde un plan de pago puedes quitar el "vía Cord" y dejar solo tu marca desde Ajustes › Developers. En el plan Gratis se muestra ese aviso discreto.' },
-            { q: '¿En qué framework funciona Cord Elements?', a: 'El Web Component <cord-cotizador> funciona en cualquier HTML, Astro o Vue; hay un wrapper nativo de React (@flouviahq/elements/react), SDKs para Framer y Webflow, y un loader de una línea (embed.js) para WordPress o sitios sin framework.' },
+            { q: '¿Qué es Cord Elements?', a: 'Es el SDK de Cord para mostrar tus cotizaciones dentro de otro sitio. Incluye un loader de una línea (embed.js), el Web Component <cord-cotizador>, wrappers para React, Vue, Framer y Webflow, un hook headless para armar cotizaciones con tu propia UI y un Server SDK para verificar webhooks.' },
+            { q: '¿Necesito montar un backend propio?', a: 'No para mostrar una cotización: el iframe habla directo con Cord y basta con el token público. Para crear cotizaciones desde el navegador usas una publishable key (pk_) de alcance acotado; si prefieres no exponer ninguna llave, tu backend hace de proxy con una secret key (sk_).' },
+            { q: '¿Puedo usarlo sin la interfaz de Cord?', a: 'Sí. useQuoteBuilder() expone el estado del cotizador (partidas, cliente, totales y envío) sin renderizar nada nuestro, y con baseTheme: "none" el SDK no inyecta CSS.' },
+            { q: '¿Quién puede embeber mis cotizaciones?', a: 'Tú decides. En Ajustes › Cotizador embebible defines los dominios autorizados y Cord los aplica con el header frame-ancestors, así que ningún otro sitio puede mostrarlas dentro de un iframe. Sin lista, el embed queda abierto.' },
+            { q: '¿Puedo quitar la marca de Cord?', a: 'Sí, desde el plan Starter, en Ajustes › Marca y apariencia. En el plan Gratis la cotización muestra un aviso discreto de Cord al pie.' },
+            { q: '¿El cliente puede pagar dentro del embed?', a: 'Sí, cuando tienes Cord Payments activo. El botón de pago dispara el evento pay con la URL del cobro, para que tu página decida si abrirlo en la misma pestaña o en una nueva.' },
         ],
-        cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
+        cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primera cotización hoy.' },
         trust: {
             eyebrow: 'DETALLES QUE IMPORTAN',
             titulo: 'Lo fino, resuelto de fábrica',
             items: [
-                { icon: 'route', titulo: '5 eventos, nombrados sin ambigüedad', copy: 'ready, approved, rejected, message y pay — los mismos en el iframe, el Web Component y el hook de React.' },
-                { icon: 'doc', titulo: 'Tipos de TypeScript generados, no escritos a mano', copy: 'Salen del build real del SDK — si algo cambia, tu editor lo refleja al instante, sin un .d.ts desincronizado.' },
-                { icon: 'lock', titulo: 'El mensaje del iframe solo llega a tu dominio', copy: 'El postMessage de eventos se dirige al origen exacto de tu allowlist, no a cualquier ventana que esté escuchando.' },
+                { icon: 'lock', titulo: 'Los eventos sólo llegan a tu dominio', copy: 'Con allowlist, el postMessage se dirige al origen exacto de tu sitio, no a cualquier ventana que esté escuchando.' },
+                { icon: 'doc', titulo: 'Tipos generados del código real', copy: 'Los .d.ts salen del build del SDK. Si algo cambia, tu editor lo refleja sin un tipo desincronizado.' },
+                { icon: 'key', titulo: 'Una pk_ no puede leer tu CRM', copy: 'En el navegador sólo crea cotizaciones y lee el catálogo, sin costos ni márgenes. Leer clientes exige tu proxy.' },
             ],
         },
     },
@@ -486,11 +440,6 @@ export function Cotizacion({ token }) {
         plan: 'En todos los planes. La API acepta base_currency, fiscal_currency y fx_buffer_pct al crear una cotización.',
         heroMock: 'hero-fx',
         updated: UPDATED,
-        stats: [
-            { valor: '30', countup: 30, suffix: ' días', label: 'de vigencia de la tasa congelada al cotizar' },
-            { valor: '3', countup: 3, label: 'fuentes en cadena, con el Banco Central Europeo primero' },
-            { valor: '0', countup: 0, label: 'tasas inventadas: sin dato real, la operación se detiene' },
-        ],
         blocks: [
             {
                 eyebrow: 'DOS MONEDAS, DOS TRABAJOS',
@@ -559,11 +508,6 @@ export function Cotizacion({ token }) {
         plan: 'La emisión fiscal está disponible desde el plan Starter donde está habilitada. Gratis emite documentos comerciales.',
         heroMock: 'hero-fiscal',
         updated: UPDATED,
-        stats: [
-            { valor: '5', countup: 5, label: 'acciones por API: emitir, enviar, anular, registrar pago y nota de crédito' },
-            { valor: '4.0', label: 'versión del CFDI que Cord timbra en México' },
-            { valor: '12', countup: 12, label: 'países donde Cord factura hoy, con la identificación fiscal de cada uno' },
-        ],
         blocks: [
             {
                 eyebrow: 'CICLO COMPLETO',
