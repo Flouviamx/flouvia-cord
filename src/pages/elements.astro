@@ -14,7 +14,6 @@ import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
 import DevHeroBand from '../components/desarrolladores/DevHeroBand.astro';
-import DevPlatform from '../components/landing/DevPlatform.astro';
 import DevMore from '../components/desarrolladores/DevMore.astro';
 import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
@@ -216,22 +215,6 @@ const STACK = [
     { label: 'Webflow', domain: 'webflow.com' }, { label: 'WordPress', domain: 'wordpress.org' }, { label: 'Shopify', domain: 'shopify.com' },
 ];
 
-const SERVER_CODE = lines(`import { CordAPI } from '@flouviahq/elements/server';
-
-const cord = new CordAPI(process.env.CORD_SECRET_KEY);
-
-export async function POST(req) {
-  const body = await req.text();
-  const event = cord.webhooks.constructEvent(
-    body, req.headers, process.env.CORD_WEBHOOK_SECRET,
-  );
-  if (event.event === 'quote.paid') {
-    await activarPedido(event.data.folio);
-  }
-  return new Response('ok');
-}`);
-const WEBHOOK_TYPES = ['quote.sent', 'quote.viewed', 'quote.approved', 'quote.rejected', 'quote.updated', 'quote.expired', 'quote.paid', 'payment.partial', 'payment.failed', 'invoice.stamped', 'invoice.issued'];
-
 const HEADLESS_CODE = lines(`const { items, updateItem, total, handleSubmit } =
   useQuoteBuilder({ catalog, onQuoteCreated });
 
@@ -244,6 +227,79 @@ return (
     <MiTotal value={total} />
   </form>
 );`);
+
+
+// ── País: la misma cotización según el país de la cuenta (regla 21/23/24).
+// Tasas reales de los presets: IVA 16% MX, Sales tax TX 6.25% (US_STATE_TAX),
+// IVA 21% + retención IRPF 15% ES. Cada negocio ve su cotización en su idioma.
+const COUNTRIES = [
+    {
+        id: 'mx', tab: tx('México', 'Mexico'), lang: 'es',
+        org: 'Materiales del Valle', ini: 'MD', taxId: 'RFC', taxVal: 'MVA190312KT4', date: '19 oct 2026',
+        th: ['Concepto', 'Cant.', 'Importe'],
+        items: [['Cemento gris 50 kg', '340', '$61,880.00'], ['Varilla corrugada 3/8', '120', '$23,820.00']],
+        lines: [['Subtotal', '$85,700.00'], ['IVA 16%', '$13,712.00']],
+        total: ['Total', 'MXN $99,412.00'],
+        methods: ['Tarjeta', 'SPEI', 'Mercado Pago'], pay: 'Pagar MXN $99,412.00', cfdi: 'Lista para CFDI 4.0',
+    },
+    {
+        id: 'us', tab: tx('Estados Unidos', 'United States'), lang: 'en',
+        org: 'Lone Star Supply Co.', ini: 'LS', taxId: 'EIN', taxVal: '74-3920158', date: 'Oct 19, 2026',
+        th: ['Item', 'Qty', 'Amount'],
+        items: [['Steel rebar #4, 20 ft', '200', '$2,500.00'], ['Ready-mix concrete, yd³', '40', '$4,500.00']],
+        lines: [['Subtotal', '$7,000.00'], ['Sales tax TX 6.25%', '$437.50']],
+        total: ['Total', 'USD $7,437.50'],
+        methods: ['Card'], pay: 'Pay USD $7,437.50', cfdi: '',
+    },
+    {
+        id: 'es', tab: tx('España', 'Spain'), lang: 'es',
+        org: 'Estudio Norte S.L.', ini: 'EN', taxId: 'NIF', taxVal: 'B12345674', date: '19 oct 2026',
+        th: ['Concepto', 'Cant.', 'Importe'],
+        items: [['Diseño de identidad', '1', '4.800,00 €'], ['Sesión de fotografía', '2', '1.600,00 €']],
+        lines: [['Base imponible', '6.400,00 €'], ['IVA 21%', '1.344,00 €'], ['Retención IRPF 15%', '−960,00 €']],
+        total: ['Total', '6.784,00 €'],
+        methods: ['Tarjeta'], pay: 'Pagar 6.784,00 €', cfdi: '',
+    },
+];
+const ADAPTS = [
+    tx('Divisa y formato de cada monto', 'Currency and amount format'),
+    tx('Impuesto por línea con su nombre local', 'Per-line tax with its local name'),
+    tx('Retenciones donde aplican: ISR, IRPF', 'Withholdings where they apply: ISR, IRPF'),
+    tx('Identificación fiscal: RFC, EIN, NIF', 'Tax ID: RFC, EIN, NIF'),
+    tx('Fechas en la zona horaria de tu cuenta', "Dates in your account's timezone"),
+    tx('Rieles de cobro del país: tarjeta, SPEI, Mercado Pago', "The country's payment rails: card, SPEI, Mercado Pago"),
+    tx('Español o inglés, según tu cuenta', 'Spanish or English, per your account'),
+    tx('CFDI 4.0 al facturar en México', 'CFDI 4.0 when invoicing in Mexico'),
+];
+
+// ── Carrusel "Conoce más de Elements": piezas del SDK que el bento no cubre.
+const MORE = [
+    {
+        id: 'builder',
+        t: tx('Arma cotizaciones desde tu sitio', 'Build quotes from your site'),
+        d: tx('<CordBuilder> trae el formulario completo: cliente, partidas, términos, notas y resumen. Reordénalo con sus piezas compuestas y dale estilo con tus propias clases.', '<CordBuilder> ships the full form: client, line items, terms, notes and summary. Reorder it with its compound parts and style it with your own classes.'),
+    },
+    {
+        id: 'webhooks',
+        t: tx('Webhooks verificados en tu backend', 'Verified webhooks on your backend'),
+        d: tx('El Server SDK verifica la firma X-Cord-Signature-V1 con su timestamp antes de que proceses el evento, y acepta dos firmas a la vez para rotar el secreto sin perder entregas.', 'The Server SDK verifies the X-Cord-Signature-V1 signature and its timestamp before you process the event, and accepts two signatures at once so you rotate the secret without losing deliveries.'),
+    },
+    {
+        id: 'framer',
+        t: tx('Framer y Webflow, sin código', 'Framer and Webflow, no code'),
+        d: tx('En Framer es un Code Component con el token en el panel de propiedades. En Webflow basta el atributo data-cord-token en cualquier Div Block.', 'In Framer it is a Code Component with the token in the properties panel. In Webflow, the data-cord-token attribute on any Div Block is enough.'),
+    },
+    {
+        id: 'catalog',
+        t: tx('Tu catálogo, sin exponer márgenes', 'Your catalog, without exposing margins'),
+        d: tx('useCordCatalog() trae tus productos para tu propia interfaz. Con una llave pública, el servidor oculta el costo y el margen de cada uno.', 'useCordCatalog() loads your products for your own interface. With a publishable key, the server hides the cost and margin of each one.'),
+    },
+    {
+        id: 'errors',
+        t: tx('Errores que puedes programar', 'Errors you can program against'),
+        d: tx('Todo falla como CordError con status y uno de 12 códigos estables, así tu manejo de errores nunca depende de leer un mensaje.', 'Everything fails as a CordError with a status and one of 12 stable codes, so your error handling never depends on parsing a message.'),
+    },
+];
 
 // ── Datos estructurados ──
 const SITE = 'https://cordhq.app';
@@ -334,8 +390,8 @@ const howToSchema = {
                                 <div class="elh-main">
                                     <p class="elh-crumb">{tx('Compras', 'Purchasing')} / {tx('Cotizaciones', 'Quotes')} / <b>COT-0052</b></p>
                                     <div class="elh-embed">
-                                        <span class="elh-tag">&lt;cord-cotizador&gt;</span>
-                                        <div class="elq">
+                                        <span class="elh-tag" id="elhTag">appearance: {"{"} theme: <b>'light'</b> {"}"}</span>
+                                        <div class="elq" id="elhCard" data-theme="light">
                                             <div class="elq-head">
                                                 <span class="elq-logo">MD</span>
                                                 <b class="elq-org">Materiales del Valle</b>
@@ -537,6 +593,123 @@ const howToSchema = {
             ))}
         </section>
 
+
+        <!-- ════════ PAÍS: la cotización se adapta (estilo "lógica integrada" de Stripe) ════════ -->
+        <section class="elc">
+            <div class="elc-text">
+                <h2 class="el-h2 masked-title">{tx('Se adapta al país de tu negocio.', "It adapts to your business's country.")}</h2>
+                <p class="el-copy reveal">{tx('El mismo embed muestra la divisa, los impuestos, la identificación fiscal y los rieles de cobro que corresponden a tu cuenta, en cualquiera de los 12 países donde opera Cord. Tú no programas nada por país.', 'The same embed shows the currency, taxes, tax ID and payment rails that match your account, in any of the 12 countries where Cord operates. You write nothing per country.')}</p>
+                <ul class="elc-list">
+                    {ADAPTS.map((a) => (
+                        <li class="reveal"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9"/><path d="M6.5 10.2l2.4 2.4 4.6-5"/></svg>{a}</li>
+                    ))}
+                </ul>
+            </div>
+            <div class="elc-demo reveal-mockup" data-elc>
+                <div class="elc-tabs" role="tablist" aria-label={tx('País de la cuenta', 'Account country')}>
+                    {COUNTRIES.map((c, i) => (
+                        <button type="button" role="tab" class:list={['elc-tab', { on: i === 0 }]} aria-selected={i === 0 ? 'true' : 'false'} data-c={c.id}>{c.tab}</button>
+                    ))}
+                </div>
+                <div class="elc-stage">
+                    {COUNTRIES.map((c, i) => (
+                        <div class:list={['elc-card', { on: i === 0 }]} data-card={c.id} lang={c.lang} aria-hidden={i === 0 ? 'false' : 'true'}>
+                            <div class="elc-head">
+                                <span class="elc-logo">{c.ini}</span>
+                                <div><b>{c.org}</b><small>{c.taxId} {c.taxVal}</small></div>
+                                <em>{c.date}</em>
+                            </div>
+                            <div class="elc-th"><span>{c.th[0]}</span><span>{c.th[1]}</span><span>{c.th[2]}</span></div>
+                            {c.items.map((it) => <div class="elc-tr"><span>{it[0]}</span><span>{it[1]}</span><b>{it[2]}</b></div>)}
+                            <div class="elc-sum">
+                                {c.lines.map((ln) => <><span>{ln[0]}</span><b>{ln[1]}</b></>)}
+                                <span class="elc-total">{c.total[0]}</span><b class="elc-total editorial">{c.total[1]}</b>
+                            </div>
+                            <div class="elc-methods">
+                                {c.methods.map((m, k) => <span class:list={['elc-m', { on: k === 0 }]}>{m}</span>)}
+                            </div>
+                            <span class="elc-pay">{c.pay}</span>
+                            {c.cfdi && <span class="elc-cfdi">{c.cfdi}</span>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ MÁS DE ELEMENTS (carrusel) ════════ -->
+        <section class="elm" data-elm>
+            <div class="elm-head">
+                <h2 class="el-h2 masked-title">{tx('Conoce más de Elements.', 'More from Elements.')}</h2>
+                <div class="elm-nav">
+                    <button type="button" class="elm-arrow" data-dir="-1" aria-label={tx('Anterior', 'Previous')} disabled><svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 6 5 12 11 18"/></svg></button>
+                    <button type="button" class="elm-arrow" data-dir="1" aria-label={tx('Siguiente', 'Next')}><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></button>
+                </div>
+            </div>
+            <ul class="elm-track" data-elm-track>
+                {MORE.map((m) => (
+                    <li class="elm-item">
+                        <div class="elm-vis" aria-hidden="true">
+                            {m.id === 'builder' && (
+                                <div class="mk mk-builder">
+                                    <p class="mk-h">{tx('Nueva cotización', 'New quote')}</p>
+                                    <label>{tx('Cliente', 'Client')}<span class="mk-in">Grupo Constructor Norte<i></i></span></label>
+                                    <div class="mk-row"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><em>340</em><b>$61,880.00</b></div>
+                                    <div class="mk-row"><span>{tx('Varilla 3/8 x 12 m', 'Rebar 3/8 x 12 m')}</span><em>120</em><b>$23,820.00</b></div>
+                                    <div class="mk-add">+ {tx('Agregar partida', 'Add line item')}</div>
+                                    <div class="mk-tot"><span>Total · MXN</span><b class="editorial">$99,412.00</b></div>
+                                    <span class="mk-btn">{tx('Crear cotización', 'Create quote')}</span>
+                                </div>
+                            )}
+                            {m.id === 'webhooks' && (
+                                <div class="mk mk-term">
+                                    <p class="mk-tbar"><span>route.ts</span><span>POST /api/webhooks/cord</span></p>
+                                    <p><em class="mk-ok">200</em> quote.viewed <small>{tx('firma verificada', 'signature verified')}</small></p>
+                                    <p><em class="mk-ok">200</em> quote.approved <small>{tx('firma verificada', 'signature verified')}</small></p>
+                                    <p><em class="mk-ok">200</em> payment.partial <small>{tx('firma verificada', 'signature verified')}</small></p>
+                                    <p><em class="mk-ok">200</em> quote.paid <small>{tx('firma verificada', 'signature verified')}</small></p>
+                                    <p><em class="mk-bad">400</em> quote.paid <small>{tx('timestamp fuera de tolerancia', 'timestamp outside tolerance')}</small></p>
+                                    <p class="mk-code">cord.webhooks.<b>constructEvent</b>(body, headers, secret)</p>
+                                </div>
+                            )}
+                            {m.id === 'framer' && (
+                                <div class="mk mk-framer">
+                                    <div class="mk-canvas"><div class="mk-mini"><i>MD</i><b>$99,412.00</b><span>{tx('Aprobar', 'Approve')}</span></div></div>
+                                    <div class="mk-props">
+                                        <p class="mk-ph">FramerCordCotizador</p>
+                                        <label>Token<span>k7Qp9xLw…</span></label>
+                                        <label>Base URL<span>https://cordhq.app</span></label>
+                                        <p class="mk-ph2">Webflow</p>
+                                        <label>data-cord-token<span>k7Qp9xLw…</span></label>
+                                    </div>
+                                </div>
+                            )}
+                            {m.id === 'catalog' && (
+                                <div class="mk mk-cat">
+                                    <p class="mk-tbar"><span>useCordCatalog()</span><span>pk_live_…</span></p>
+                                    {[[tx('Cemento gris 50 kg', 'Gray cement 50 kg'), 'CEM-50', '$182.00'], [tx('Varilla corrugada 3/8', 'Rebar 3/8'), 'VAR-38', '$198.50'], [tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), 'BLK-15', '$14.20'], [tx('Malla electrosoldada 6x6', 'Welded wire mesh 6x6'), 'MAL-66', '$312.00']].map(([n, sku, pr]) => (
+                                        <div class="mk-prod"><span>{n}<small>{sku}</small></span><b>{pr}</b><em>{tx('costo oculto', 'cost hidden')}</em></div>
+                                    ))}
+                                </div>
+                            )}
+                            {m.id === 'errors' && (
+                                <div class="mk mk-err">
+                                    <p><span class="c-kw">catch</span> (err) {'{'}</p>
+                                    <p>  <span class="c-kw">if</span> (err <span class="c-kw">instanceof</span> <span class="c-fn">CordError</span>) {'{'}</p>
+                                    <p>    <span class="c-kw">switch</span> (err.code) {'{'}</p>
+                                    {['invalid_key', 'unauthorized_origin', 'rate_limited', 'clients_require_proxy'].map((c, k) => <p class:list={{ hl: k === 2 }}>      <span class="c-kw">case</span> <span class="c-str">'{c}'</span>:</p>)}
+                                    <p>    {'}'}</p>
+                                    <p>  {'}'}</p>
+                                    <p>{'}'}</p>
+                                </div>
+                            )}
+                        </div>
+                        <h3 class="elm-t">{m.t}</h3>
+                        <p class="elm-d">{m.d}</p>
+                    </li>
+                ))}
+            </ul>
+        </section>
+
         <!-- ════════ EXPLORADOR DEL SDK ════════ -->
         <section class="els" id="sdk">
             <div class="eli-head">
@@ -569,29 +742,6 @@ const howToSchema = {
                 </div>
             </div>
         </section>
-
-        <!-- ════════ SERVER SDK ════════ -->
-        <section class="elsv">
-            <div class="elsv-text">
-                <h2 class="el-h2 masked-title">{tx('Tu backend se entera, y verifica que fue Cord.', 'Your backend hears about it, and verifies it was Cord.')}</h2>
-                <p class="el-copy reveal">{tx('El mismo paquete trae el cliente de servidor. Verifica la firma de cada webhook antes de procesarlo, con protección contra reenvíos por timestamp, y crea o lista cotizaciones, clientes y productos con tu secret key.', 'The same package ships the server client. It verifies every webhook signature before you process it, with timestamp replay protection, and creates or lists quotes, clients and products with your secret key.')}</p>
-                <ul class="elsv-chips reveal">
-                    {WEBHOOK_TYPES.map((w) => <li><code>{w}</code></li>)}
-                </ul>
-                <p class="elsv-note reveal">{tx('Tipos incluidos para estos eventos. El catálogo completo de webhooks está en', 'Types included for these events. The full webhook catalog lives in')} <a href={l('/desarrolladores/integraciones')}>{tx('Webhooks e integraciones', 'Webhooks and integrations')}</a>.</p>
-            </div>
-            <div class="el-code elsv-code reveal-mockup">
-                <div class="el-code-bar"><span class="el-code-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z"/><path d="M14 3.5v4h4"/></svg>app/api/webhooks/cord/route.ts</span></div>
-                <div class="el-panel">
-                    {SERVER_CODE.map((ln, li) => (
-                        <div class:list={['el-cl', { 'el-cl-hl': li === 6 }]}><span class="el-ln">{li + 1}</span><span class="el-lc" set:html={ln.html} /></div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
-        <!-- ════════ PLATAFORMA (sección oscura compartida con el home) ════════ -->
-        <DevPlatform />
 
         <FaqAccordion
             faqs={devPage.faqs}
@@ -687,12 +837,28 @@ const howToSchema = {
     window.addEventListener('load', () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // ── HERO ──
+        // ── HERO: el cliente aprueba y luego el mismo embed cambia de tema
+        //    (light -> dark -> marca del portal), como el Appearance API real. ──
         const stage = document.querySelector<HTMLElement>('[data-elh]');
         const approve = document.getElementById('elhApprove');
         const cursor = document.getElementById('elhCursor');
+        const card = document.getElementById('elhCard');
+        const tag = document.getElementById('elhTag');
         const ln = (n: number) => stage?.querySelector<HTMLElement>(`[data-ln="${n}"]`);
-        if (stage && approve && cursor) {
+        const TAGS: Record<string, string> = {
+            light: "appearance: { theme: <b>'light'</b> }",
+            dark: "appearance: { theme: <b>'dark'</b> }",
+            brand: "variables: { colorPrimary: <b>'#0F766E'</b> }",
+        };
+        const morph = async (theme: string) => {
+            if (!card) return;
+            await gsap.to(card, { rotateY: -16, rotateX: 4, scale: 0.95, opacity: 0.55, duration: 0.34, ease: 'power2.in', transformPerspective: 1300 });
+            card.dataset.theme = theme;
+            approve?.classList.remove('is-done');
+            if (tag) { tag.innerHTML = TAGS[theme]; gsap.fromTo(tag, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.4 }); }
+            await gsap.to(card, { rotateY: 0, rotateX: 0, scale: 1, opacity: 1, duration: 0.6, ease: 'power3.out' });
+        };
+        if (stage && approve && cursor && card) {
             if (reduced) {
                 [0, 1].forEach((n) => ln(n)?.classList.add('on'));
             } else {
@@ -702,12 +868,12 @@ const howToSchema = {
                     await sleep(700); ln(1)?.classList.add('on');
                     for (;;) {
                         if (idle(vis)) { await sleep(400); continue; }
-                        approve.classList.remove('is-done'); ln(2)?.classList.remove('on'); ln(3)?.classList.remove('on');
-                        await sleep(1100);
+                        ln(2)?.classList.remove('on'); ln(3)?.classList.remove('on');
+                        await sleep(900);
                         const r = approve.getBoundingClientRect();
-                        const s = stage.getBoundingClientRect();
-                        const tx = r.left - s.left + r.width * 0.58;
-                        const ty = r.top - s.top + r.height * 0.5;
+                        const st = stage.getBoundingClientRect();
+                        const tx = r.left - st.left + r.width * 0.58;
+                        const ty = r.top - st.top + r.height * 0.5;
                         gsap.set(cursor, { x: tx + 150, y: ty - 120, opacity: 0 });
                         await gsap.to(cursor, { opacity: 1, duration: 0.3 });
                         await gsap.to(cursor, { x: tx, y: ty, duration: 1, ease: 'power2.inOut' });
@@ -716,10 +882,61 @@ const howToSchema = {
                         await sleep(260); ln(2)?.classList.add('on');
                         await sleep(220); ln(3)?.classList.add('on');
                         gsap.to(cursor, { opacity: 0, duration: 0.35, delay: 0.4 });
-                        await sleep(3400);
+                        await sleep(2400);
+                        await morph('dark');
+                        await sleep(2800);
+                        await morph('brand');
+                        await sleep(2800);
+                        await morph('light');
                     }
                 })();
             }
+        }
+
+        // ── PAÍS: pestañas con cambio animado; rotan solas hasta que alguien elige ──
+        const elc = document.querySelector<HTMLElement>('[data-elc]');
+        if (elc) {
+            const tabs = Array.from(elc.querySelectorAll<HTMLButtonElement>('.elc-tab'));
+            const cards = Array.from(elc.querySelectorAll<HTMLElement>('.elc-card'));
+            let cur = 0, auto = !reduced;
+            const show = (k: number) => {
+                if (k === cur) return;
+                const from = cards[cur], to = cards[k];
+                tabs.forEach((t, j) => { t.classList.toggle('on', j === k); t.setAttribute('aria-selected', String(j === k)); });
+                cards.forEach((c, j) => c.setAttribute('aria-hidden', String(j !== k)));
+                if (reduced) { from.classList.remove('on'); to.classList.add('on'); cur = k; return; }
+                gsap.to(from, { opacity: 0, y: -10, rotateX: 6, duration: 0.3, ease: 'power2.in', transformPerspective: 1200, onComplete: () => from.classList.remove('on') });
+                to.classList.add('on');
+                gsap.fromTo(to, { opacity: 0, y: 14, rotateX: -6, transformPerspective: 1200 }, { opacity: 1, y: 0, rotateX: 0, duration: 0.55, delay: 0.15, ease: 'power3.out' });
+                gsap.from(to.querySelectorAll('.elc-tr, .elc-sum > *, .elc-m, .elc-pay'), { opacity: 0, x: 8, duration: 0.4, stagger: 0.03, delay: 0.25 });
+                cur = k;
+            };
+            tabs.forEach((t, k) => t.addEventListener('click', () => { auto = false; show(k); }));
+            const vis = watch(elc);
+            (async () => {
+                for (;;) {
+                    await sleep(4200);
+                    if (!auto) return;
+                    if (idle(vis)) continue;
+                    show((cur + 1) % cards.length);
+                }
+            })();
+        }
+
+        // ── CARRUSEL "Conoce más" ──
+        const elm = document.querySelector<HTMLElement>('[data-elm]');
+        const track = elm?.querySelector<HTMLElement>('[data-elm-track]');
+        if (elm && track) {
+            const [prev, next] = Array.from(elm.querySelectorAll<HTMLButtonElement>('.elm-arrow'));
+            const step = () => (track.querySelector<HTMLElement>('.elm-item')?.offsetWidth ?? 400) + 24;
+            const sync = () => {
+                prev.disabled = track.scrollLeft < 8;
+                next.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
+            };
+            prev.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+            next.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
+            track.addEventListener('scroll', sync, { passive: true });
+            sync();
         }
 
         // ── Entrada del bento ──
@@ -1155,6 +1372,133 @@ const howToSchema = {
     .elx3-toast svg { stroke: #059669; width: 11px; height: 11px; }
     .elx3-toast.on { opacity: 1; transform: none; }
 
+
+    /* ── Temas del cotizador en el hero (Appearance API) ── */
+    .elh-embed { perspective: 1300px; }
+    .elh-tag b { font-weight: 600; color: #0f766e; }
+    .elq { transform-style: preserve-3d; transition: background 0.4s, color 0.4s, border-radius 0.4s, box-shadow 0.4s; }
+    .elq * { transition: background-color 0.4s, color 0.4s, border-color 0.4s, border-radius 0.4s; }
+    .elq[data-theme='dark'] { background: #0f172a; color: #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 18px 40px -18px rgba(0,0,0,0.6); }
+    .elq[data-theme='dark'] small, .elq[data-theme='dark'] .elq-th { color: #64748b; }
+    .elq[data-theme='dark'] .elq-head, .elq[data-theme='dark'] .elq-th, .elq[data-theme='dark'] .elq-tr, .elq[data-theme='dark'] .elq-sum .elq-sum-t { border-color: rgba(255,255,255,0.08); }
+    .elq[data-theme='dark'] .elq-logo, .elq[data-theme='dark'] .elq-chk { background: #e5e7eb; color: #0f172a; }
+    .elq[data-theme='dark'] .elq-chk svg { stroke: #0f172a; }
+    .elq[data-theme='dark'] .elq-meta em { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+    .elq[data-theme='dark'] .elq-total { background: #111c33; border-color: rgba(255,255,255,0.08); }
+    .elq[data-theme='dark'] .elq-total span, .elq[data-theme='dark'] .elq-tr, .elq[data-theme='dark'] .elq-sum, .elq[data-theme='dark'] .elq-live { color: #94a3b8; }
+    .elq[data-theme='dark'] .elq-tr b, .elq[data-theme='dark'] .elq-d, .elq[data-theme='dark'] .elq-sum .elq-sum-t { color: #f1f5f9; }
+    .elq[data-theme='dark'] .elq-sum b, .elq[data-theme='dark'] .elq-live span:first-child { color: #cbd5e1; }
+    .elq[data-theme='dark'] .elq-approve { background: #e5e7eb; color: #0f172a; }
+    .elq[data-theme='dark'] .elq-approve svg { stroke: #0f172a; }
+    .elq[data-theme='dark'] .elq-sec span:first-child { border-color: rgba(255,255,255,0.16); color: #cbd5e1; }
+    .elq[data-theme='brand'] { background: #f4faf8; border-radius: 22px; }
+    .elq[data-theme='brand'] .elq-org, .elq[data-theme='brand'] .elq-total strong { font-family: Georgia, 'Times New Roman', serif; }
+    .elq[data-theme='brand'] .elq-logo { background: #0f766e; border-radius: 50%; }
+    .elq[data-theme='brand'] .elq-chk { background: #0f766e; border-radius: 50%; }
+    .elq[data-theme='brand'] .elq-total { background: #e6f4f1; border-color: #c7e6df; border-radius: 18px; }
+    .elq[data-theme='brand'] .elq-total strong { color: #0f766e; }
+    .elq[data-theme='brand'] .elq-meta em { background: #dcefea; color: #0f766e; }
+    .elq[data-theme='brand'] .elq-approve { background: #0f766e; border-radius: 14px; }
+    .elq[data-theme='brand'] .elq-sec span:first-child { border-color: #c7e6df; border-radius: 14px; color: #0f766e; }
+
+    /* ════════ PAÍS ════════ */
+    .elc { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 4rem; align-items: center; }
+    .elc-text .el-h2 { margin-bottom: 1.2rem; }
+    .elc-list { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.6rem; }
+    .elc-list li { display: flex; gap: 9px; align-items: flex-start; font-size: 0.9rem; line-height: 1.45; color: var(--color-text); }
+    .elc-list svg { flex-shrink: 0; width: 17px; height: 17px; margin-top: 1px; fill: rgba(16,185,129,0.12); stroke: #059669; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .elc-demo { min-width: 0; }
+    .elc-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+    .elc-tab { border: 0; cursor: pointer; padding: 9px 18px; border-radius: 999px; background: transparent; font: 600 0.92rem var(--font-sans); color: #5b6575; transition: background 0.3s, color 0.3s, box-shadow 0.3s; }
+    .elc-tab:hover { color: #0a192f; background: rgba(10,25,47,0.05); }
+    .elc-tab.on { background: #0a192f; color: #fff; box-shadow: 0 10px 22px -12px rgba(10,25,47,0.6); }
+    .elc-tab:focus-visible { outline: 2px solid #2f6df0; outline-offset: 2px; }
+    .elc-stage { position: relative; display: grid; padding: 2.2rem; border-radius: 28px; background: #fff; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14); }
+    .elc-card { grid-area: 1 / 1; visibility: hidden; opacity: 0; max-width: 460px; width: 100%; justify-self: center; padding: 1.4rem 1.5rem 1.5rem; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 16px 36px -20px rgba(10,25,47,0.35), inset 0 0 0 1px rgba(10,25,47,0.07); }
+    .elc-card.on { visibility: visible; opacity: 1; }
+    .elc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid #eef0f3; }
+    .elc-logo { width: 32px; height: 32px; border-radius: 9px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+    .elc-head b { display: block; font-size: 0.9rem; font-weight: 600; color: #0a192f; }
+    .elc-head small { display: block; font-size: 0.7rem; color: #8a93a2; margin-top: 2px; }
+    .elc-head em { margin-left: auto; font-style: normal; font-size: 0.74rem; color: #5b6575; white-space: nowrap; }
+    .elc-th, .elc-tr { display: grid; grid-template-columns: 1fr 44px 110px; gap: 8px; text-align: right; align-items: center; }
+    .elc-th { padding: 8px 0 6px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
+    .elc-tr { padding: 8px 0; border-top: 1px solid #f1f2f5; font-size: 0.82rem; color: #8a93a2; }
+    .elc-th span:first-child, .elc-tr span:first-child { text-align: left; color: #0a192f; font-weight: 500; }
+    .elc-th span:first-child { color: #a3aab6; font-weight: 600; }
+    .elc-tr b { font-weight: 600; color: #0a192f; }
+    .elc-sum { display: grid; grid-template-columns: auto 130px; justify-content: end; gap: 4px 24px; padding-top: 10px; border-top: 1px solid #eef0f3; font-size: 0.8rem; color: #8a93a2; text-align: right; }
+    .elc-sum b { color: #3b4658; font-weight: 600; }
+    .elc-sum .elc-total { margin-top: 4px; padding-top: 6px; border-top: 1px solid #eef0f3; font-size: 0.95rem; font-weight: 700; color: #0a192f; }
+    .elc-methods { display: flex; gap: 8px; margin: 1.1rem 0 0.8rem; }
+    .elc-m { flex: 1; padding: 10px 12px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; color: #5b6575; box-shadow: inset 0 0 0 1px #e5e7eb; }
+    .elc-m.on { color: #0a192f; box-shadow: inset 0 0 0 1.5px #0a192f; }
+    .elc-pay { display: block; text-align: center; padding: 12px 0; border-radius: 10px; background: #0d1b33; color: #fff; font-size: 0.86rem; font-weight: 600; }
+    .elc-cfdi { display: block; margin-top: 10px; text-align: center; font-size: 0.72rem; color: #059669; font-weight: 600; }
+
+    /* ════════ CARRUSEL ════════ */
+    .elm { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 5rem; }
+    .elm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 2.4rem; }
+    .elm-head .el-h2 { margin: 0; }
+    .elm-nav { display: flex; gap: 0.6rem; flex-shrink: 0; }
+    .elm-arrow { width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; background: #fff; color: #0a192f; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 8px 18px -10px rgba(10,25,47,0.3); transition: transform 0.4s var(--ease-spring), opacity 0.3s; }
+    .elm-arrow svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .elm-arrow:hover:not(:disabled) { transform: translateY(-2px); }
+    .elm-arrow:disabled { opacity: 0.35; cursor: default; }
+    .elm-track { list-style: none; margin: 0 -5%; padding: 0.6rem 5% 1.4rem; display: grid; grid-auto-flow: column; grid-auto-columns: min(460px, 82vw); gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 5%; scrollbar-width: none; }
+    .elm-track::-webkit-scrollbar { display: none; }
+    .elm-item { scroll-snap-align: start; min-width: 0; }
+    .elm-vis { position: relative; height: 300px; border-radius: 24px; background: #fff; overflow: hidden; display: grid; place-items: center; padding: 1.6rem; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 44px -18px rgba(10,25,47,0.16); transition: transform 0.5s var(--ease-spring), box-shadow 0.5s; }
+    .elm-item:hover .elm-vis { transform: translateY(-4px); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 32px 60px -20px rgba(10,25,47,0.22); }
+    .elm-t { margin: 1.4rem 0 0.5rem; padding-left: 12px; border-left: 2px solid #f59e0b; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
+    .elm-d { margin: 0; padding-left: 14px; font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); }
+
+    /* Mockups del carrusel */
+    .mk { width: 100%; max-width: 360px; font-size: 0.74rem; color: #0a192f; }
+    .mk-builder { padding: 16px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .mk-h { margin: 0 0 10px; font-weight: 700; font-size: 0.86rem; }
+    .mk-builder label { display: block; font-size: 0.64rem; color: #8a93a2; font-weight: 600; margin-bottom: 10px; }
+    .mk-in { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding: 7px 10px; border-radius: 8px; background: #f5f5f7; color: #0a192f; font-size: 0.74rem; font-weight: 500; }
+    .mk-in i { width: 6px; height: 6px; border-right: 1.5px solid #8a93a2; border-bottom: 1.5px solid #8a93a2; transform: rotate(45deg) translateY(-2px); }
+    .mk-row { display: grid; grid-template-columns: 1fr 36px 80px; gap: 6px; padding: 7px 0; border-top: 1px solid #f1f2f5; text-align: right; }
+    .mk-row span { text-align: left; }
+    .mk-row em { font-style: normal; color: #8a93a2; }
+    .mk-add { padding: 7px 0; border-top: 1px dashed #d8dce3; color: #2f6df0; font-weight: 600; }
+    .mk-tot { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 10px; color: #8a93a2; }
+    .mk-tot b { font-size: 1.05rem; color: #0a192f; }
+    .mk-btn { display: block; text-align: center; padding: 8px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-weight: 600; }
+    .mk-term { padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.68rem; }
+    .mk-term p, .mk-cat p { margin: 0; }
+    .mk-term p { padding: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-tbar { display: flex; justify-content: space-between; padding-bottom: 8px !important; margin-bottom: 4px !important; border-bottom: 1px solid rgba(255,255,255,0.08); color: #6b7a90; }
+    .mk-term em { font-style: normal; font-weight: 700; margin-right: 8px; }
+    .mk-ok { color: #6ee7b7; }
+    .mk-bad { color: #fca5a5; }
+    .mk-term small { color: #6b7a90; margin-left: 6px; font-size: inherit; }
+    .mk-code { margin-top: 8px !important; padding-top: 10px !important; border-top: 1px solid rgba(255,255,255,0.08); color: #93c5fd; }
+    .mk-code b { color: #fcd34d; font-weight: 400; }
+    .mk-framer { display: grid; grid-template-columns: 1fr 1fr; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); max-width: 380px; }
+    .mk-canvas { display: grid; place-items: center; background: #ececf0; background-image: radial-gradient(rgba(10,25,47,0.12) 1px, transparent 1px); background-size: 12px 12px; padding: 18px; }
+    .mk-mini { width: 100%; padding: 12px; border-radius: 10px; background: #fff; box-shadow: 0 10px 22px -12px rgba(10,25,47,0.4), 0 0 0 1.5px #2f6df0; display: flex; flex-direction: column; gap: 8px; }
+    .mk-mini i { font-style: normal; width: 20px; height: 20px; border-radius: 6px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.5rem; font-weight: 700; }
+    .mk-mini b { font-size: 0.9rem; }
+    .mk-mini span { text-align: center; padding: 5px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-size: 0.62rem; font-weight: 600; }
+    .mk-props { padding: 12px; background: #1e1e22; color: #d4d4d8; font-size: 0.64rem; }
+    .mk-ph, .mk-ph2 { margin: 0 0 10px; font-weight: 700; color: #fff; font-size: 0.68rem; }
+    .mk-ph2 { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .mk-props label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; color: #a1a1aa; }
+    .mk-props label span { padding: 5px 7px; border-radius: 5px; background: #2b2b31; color: #f4f4f5; font-family: ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-cat { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .mk-cat .mk-tbar { padding: 10px 14px !important; margin: 0 !important; background: #0b1526; font-family: ui-monospace, monospace; font-size: 0.66rem; }
+    .mk-prod { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 14px; border-top: 1px solid #f1f2f5; }
+    .mk-prod span { font-weight: 600; }
+    .mk-prod small { display: block; font-weight: 400; color: #8a93a2; font-size: 0.62rem; }
+    .mk-prod b { text-align: right; }
+    .mk-prod em { grid-column: 2; font-style: normal; text-align: right; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #059669; }
+    .mk-err { padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; }
+    .mk-err p { margin: 0; line-height: 1.85; white-space: pre; }
+    .mk-err p.hl { background: rgba(59,130,246,0.16); box-shadow: inset 2px 0 0 #3b82f6; margin: 0 -16px; padding: 0 16px; }
+
     /* ════════ EXPLORADOR DEL SDK ════════ */
     .els { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; }
     .els-card { display: grid; grid-template-columns: 300px 1fr; background: #fff; border-radius: 28px; overflow: hidden; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14); }
@@ -1182,17 +1526,8 @@ const howToSchema = {
     .k-event { background: #ecfdf5; color: #047857; }
     .els-list p { flex-basis: 100%; margin: 0; font-size: 0.84rem; line-height: 1.55; color: var(--color-text-muted); }
 
-    /* ════════ SERVER SDK ════════ */
-    .elsv { max-width: 1240px; margin: 0 auto; padding: 2rem 5% 6rem; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 3.5rem; align-items: center; }
-    .elsv .el-h2 { font-size: clamp(1.8rem, 2.8vw, 2.4rem); }
-    .elsv-chips { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-    .elsv-chips code { display: inline-block; padding: 5px 10px; border-radius: 99px; background: #fff; font-family: ui-monospace, monospace; font-size: 0.7rem; color: #3b4658; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
-    .elsv-note { margin: 1rem 0 0; font-size: 0.8rem; color: #8a93a2; }
-    .elsv-note a { color: var(--color-blue-deep); font-weight: 600; }
-
     /* ════════ RESPONSIVE ════════ */
     @media (max-width: 1100px) {
-        .elsv { grid-template-columns: 1fr; gap: 2.2rem; }
         .els-card { grid-template-columns: 1fr; }
         .els-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid rgba(10,25,47,0.06); padding: 0.8rem; }
         .els-tab { flex: 0 0 auto; min-height: 44px; }
@@ -1214,7 +1549,14 @@ const howToSchema = {
         .elx, .pp-bcard-2 .elx, .pp-bcard-3 .elx { position: relative; inset: auto; padding: 0.4rem 1.2rem 1.8rem; }
         .pp-bcard-3 .elx-3 { flex-direction: column; align-items: stretch; }
     }
+    @media (max-width: 1000px) {
+        .elc { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
     @media (max-width: 860px) {
+        .elc-list { grid-template-columns: 1fr; }
+        .elc-stage { padding: 1rem; border-radius: 22px; }
+        .elc-card { padding: 1.1rem; }
+        .elm-head { align-items: flex-start; flex-direction: column; gap: 1rem; }
         .eli-head { grid-template-columns: 1fr; }
         .eli-head .el-lead { justify-self: start; }
         .pp-hero { padding-top: 2.5rem; }
