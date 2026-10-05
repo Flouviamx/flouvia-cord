@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import type { CordElements } from './elements.js';
 import type { FiscalReceptorInput } from './fiscal/receptor.js';
+import type { AppearanceSelector } from './appearance.js';
 import type { ReadableStore } from './headless/store.js';
 import type { QuoteViewState } from './headless/quote-view.js';
 
@@ -219,46 +220,62 @@ export interface PaginatedResponse<T> {
 // ==== Appearance API ====
 export interface CordAppearanceVariables {
     colorPrimary?: string;
-    colorText?: string;
+    colorOnPrimary?: string;
     colorBackground?: string;
+    colorSurface?: string;
+    colorText?: string;
+    colorTextSecondary?: string;
+    colorTextPlaceholder?: string;
+    colorBorder?: string;
+    colorDanger?: string;
+    colorSuccess?: string;
+    colorInput?: string;
+    colorInputText?: string;
+    colorInputBorder?: string;
+    colorFocus?: string;
     fontFamily?: string;
+    fontSize?: string;
+    fontWeightBold?: string;
     borderRadius?: string;
-    [key: string]: string | undefined;
+    borderRadiusButton?: string;
+    borderRadiusInput?: string;
+    spacingCard?: string;
+    /** 'none' quita la sombra; 'default' conserva la de Cord. */
+    shadowCard?: 'none' | 'default';
 }
 
+/** Propiedades permitidas en `rules`; los valores se validan por tipo y lo demás se descarta. */
+export type CordAppearanceRule = Partial<Record<
+    'color' | 'background-color' | 'border-color' | 'border-width' | 'border-style' | 'border-radius' | 'font-size'
+    | 'font-weight' | 'letter-spacing' | 'text-transform' | 'padding' | 'box-shadow' | 'opacity',
+    string
+>>;
+
 /**
- * Define el sistema de diseño visual inyectado en el Iframe (CordEmbed)
- * para mantener consistencia con tu aplicación anfitriona.
+ * Define el sistema de diseño visual del cotizador embebido y de los
+ * componentes nativos, para que coincida con tu aplicación.
  */
 export interface CordAppearance {
-    /** Fuerza el tema claro, oscuro, o usa la preferencia del sistema. */
-    theme?: 'light' | 'dark' | 'auto';
+    /** light, dark (alias night), auto (sigue al sistema) o flat (sin sombras). */
+    theme?: 'light' | 'dark' | 'night' | 'auto' | 'flat';
     /**
      * 'none' desactiva la hoja de estilos default de los componentes NATIVOS
-     * (CordBuilder y sus slots) — headless real: las clases `.cord-*` se
-     * siguen emitiendo en el markup para que puedas estilizarlas tú mismo,
-     * pero sin ningún CSS de Cord de por medio. No afecta al iframe.
+     * (CordBuilder y sus slots). No afecta al iframe.
      */
     baseTheme?: 'default' | 'none';
-    /**
-     * Variables CSS. Modifican colores, tipografías y bordes globales de los componentes.
-     * Soporta valores como '#fff', 'hsl(210 100% 50%)', '12px', 'Inter, sans-serif'.
-     */
     variables?: CordAppearanceVariables;
-    /**
-     * (Solo componentes NATIVOS — CordBuilder y sus slots, NO el iframe)
-     * className/estilo extra por elemento interno. La clase base `.cord-<key>`
-     * SIEMPRE se conserva — ver CordElementKey en './elements'.
-     */
+    /** (Solo componentes nativos) className/estilo extra por elemento interno. */
     elements?: CordElements;
-    /** Fuentes externas a cargar (ej. Google Fonts). */
+    /** Fuentes de Google Fonts o Bunny Fonts (https). */
     fonts?: Array<{ cssSrc: string }>;
+    /**
+     * Estilo por elemento del cotizador embebido. Solo selectores de la lista
+     * pública y propiedades permitidas; el servidor descarta lo demás.
+     */
+    rules?: Partial<Record<AppearanceSelector, CordAppearanceRule>>;
+    /** Opciones de layout del cotizador embebido. */
+    layout?: { compact?: boolean; hideChat?: boolean; hideNotes?: boolean };
 }
-// Nota: `rules` (selectores CSS arbitrarios dentro del iframe) NUNCA se
-// implementó — el servidor los elimina por seguridad desde que se agregó el
-// campo. Un tipo que promete algo que el runtime descarta es peor que no
-// tener el campo: se quitó a propósito. Para estilizar los componentes
-// NATIVOS (no el iframe) usa `appearance.elements` (ver CordElements).
 
 interface CordProviderCommonProps {
     /** Origen de Cord. Default: https://cordhq.app (self-host/staging). */

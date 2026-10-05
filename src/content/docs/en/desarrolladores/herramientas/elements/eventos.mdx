@@ -43,3 +43,25 @@ All events have the `cord:` prefix to avoid naming collisions with other librari
 - **`cord:rejected`**: Fired if the client explicitly marks the proposal as declined. The `detail` includes the `comentario` they left, if any.
 - **`cord:message`**: Triggered whenever the client leaves a general comment or counter-offer in the quote chat.
 - **`cord:item_comment`**: Fired when the user leaves a specific comment on an item (product line) of the quote, with the corresponding `item_id` in the `detail`.
+
+### State
+- **`cord:updated`**: The quote changed while it was open (the seller edited lines, amounts or terms). The quote has already redrawn itself; use it to refresh whatever your page shows around it.
+- **`cord:status_changed`**: The status changed (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). The `detail` carries the new `status`.
+
+`cord:ready` also carries `status`, `moneda` and `total`, so your page can draw its own summary without another call.
+
+## Read-only mode
+
+If your organization has no allowed domains in Settings › Elements, or the host page is not on that list, the quote renders **read-only**: it doesn't offer approve, sign, pay or chat, and its button opens the quote's public link in a new tab. In that mode events arrive **without `detail`**: a page that isn't on your list doesn't receive who signed, amounts or the payment URL.
+
+## Debug bar
+
+With `debug` on, Elements draws a panel on your site with the iframe's events, every API request with its `request_id` and configuration warnings (for example, `appearance` values Cord dropped).
+
+```html
+<cord-quote token="a1b2c3d4e5f60718" debug></cord-quote>
+<!-- or with embed.js -->
+<div data-cord-token="a1b2c3d4e5f60718" data-cord-debug></div>
+```
+
+In React, `<CordProvider debug>`. The panel only shows with a `pk_test_` key; with `pk_live_` it is limited to a console warning. Without a key (Web Component or `embed.js`), it only shows on `localhost` or when the URL has `?cord_debug=1`, so a forgotten attribute never shows it to your customers.

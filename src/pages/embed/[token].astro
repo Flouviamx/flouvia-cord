@@ -15,6 +15,7 @@ import { getCotizacionByToken } from '../../lib/queries';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { readVisitorId } from '../../lib/public-viewer';
 import { sanitizeAppearance, appearanceToCss, MAX_APPEARANCE_BYTES } from '../../../packages/elements/src/appearance';
+import { embedAppearanceCss } from '../../lib/embed-appearance';
 
 const { token } = Astro.params;
 const result = await getCotizacionByToken(token ?? '');
@@ -40,7 +41,8 @@ const appearanceParam = Astro.url.searchParams.get('appearance');
 let appearanceCSS = '';
 if (appearanceParam && appearanceParam.length <= MAX_APPEARANCE_BYTES) {
     try {
-        appearanceCSS = appearanceToCss(sanitizeAppearance(JSON.parse(appearanceParam)));
+        const appearance = sanitizeAppearance(JSON.parse(appearanceParam));
+        appearanceCSS = appearanceToCss(appearance) + embedAppearanceCss(appearance);
     } catch { /* appearance inválido: se ignora */ }
 }
 
@@ -97,7 +99,7 @@ const puedePagar = pagoActivo && pagoDisponible && (
 ---
 
 <EmbedLayout title={`Cotización ${q.folio}`}>
-    <div class="embed-wrap">
+    <div class="embed-wrap" data-cord-appearance={appearanceCSS ? '1' : undefined}>
         <QuoteCard
             quote={q}
             org={ORG}

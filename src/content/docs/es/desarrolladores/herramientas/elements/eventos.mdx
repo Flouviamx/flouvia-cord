@@ -43,3 +43,25 @@ Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres co
 - **`cord:rejected`**: Disparado si el cliente marca explícitamente la propuesta como declinada. El `detail` incluye el `comentario` que haya dejado.
 - **`cord:message`**: Se activa cada que el cliente deja un comentario general o una contraoferta en el chat de la cotización.
 - **`cord:item_comment`**: Se dispara cuando el usuario deja un comentario específico sobre una partida (línea de producto) de la cotización, con el `item_id` correspondiente en el `detail`.
+
+### Estado
+- **`cord:updated`**: La cotización cambió mientras estaba abierta (el vendedor editó partidas, importes o condiciones). El cotizador ya se redibujó solo; úsalo para refrescar lo que tu página muestre alrededor.
+- **`cord:status_changed`**: El estado cambió (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). El `detail` trae el nuevo `status`.
+
+`cord:ready` también trae `status`, `moneda` y `total`, para que tu página dibuje su propio resumen sin otra llamada.
+
+## Modo de solo lectura
+
+Si tu organización no tiene dominios permitidos en Ajustes › Elements, o la página anfitriona no está en esa lista, el cotizador se muestra en **solo lectura**: no ofrece aprobar, firmar, pagar ni escribir, y el botón lleva al link público de la cotización en una pestaña nueva. En ese modo los eventos llegan **sin `detail`**: una página que no está en tu lista no recibe quién firmó, importes ni la URL de pago.
+
+## Barra de depuración
+
+Con `debug` activo, Elements dibuja en tu sitio un panel con los eventos del iframe, cada petición a la API con su `request_id` y los avisos de configuración (por ejemplo, valores de `appearance` que Cord descartó).
+
+```html
+<cord-quote token="a1b2c3d4e5f60718" debug></cord-quote>
+<!-- o con embed.js -->
+<div data-cord-token="a1b2c3d4e5f60718" data-cord-debug></div>
+```
+
+En React, `<CordProvider debug>`. El panel solo aparece con una llave `pk_test_`; con `pk_live_` se limita a un aviso en la consola. Sin llave (Web Component o `embed.js`), solo aparece en `localhost` o si la URL lleva `?cord_debug=1`, para que un atributo olvidado no se lo muestre a tus clientes.

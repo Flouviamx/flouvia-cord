@@ -1,98 +1,168 @@
 ---
 title: "Apariencia de Elements"
-description: "Personaliza el aspecto de Cord Elements con variables CSS, Dark Mode y fuentes personalizadas."
+description: "Personaliza Cord Elements con temas, más de veinte variables, reglas por componente, layout y fuentes, validados en el servidor."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Apariencia</h1>
-  <p class="page-subtitle">Haz que el cotizador parezca haber sido desarrollado in-house por tu equipo de producto.</p>
+  <p class="page-subtitle">Haz que el cotizador parezca construido por tu propio equipo de producto.</p>
 </header>
 
 ## La API de Apariencia
 
-Por defecto, Cord Elements se renderiza con nuestra paleta de colores limpia y neutral, pero puedes controlar profundamente su estética mediante un objeto JSON de configuración: `appearance`.
+Un solo objeto `appearance` controla el aspecto del cotizador embebido y de los componentes
+nativos. Se compone de cinco piezas: `theme`, `variables`, `rules`, `layout` y `fonts`.
 
 <Callout type="info">
-**Dos mecanismos distintos según dónde vive el componente.** Para el **iframe**
-(`embed.js`/`<cord-cotizador>`/`<CordCotizador>`) — que vive bajo el dominio de Cord y no puedes
-tocar con tu propio CSS — `appearance` viaja como parámetro al servidor, que renderiza el CSS
-validado del lado de Cord. Para los **componentes nativos de React** (`<CordBuilder>` y sus
-slots, vía `<CordProvider appearance={{...}}>`) no hay ningún iframe ni ida y vuelta al
-servidor: el SDK genera un `<style>` con variables CSS e inyecta las tuyas directamente en el
-`<head>` de TU página. El objeto `appearance` es el mismo en ambos casos; el mecanismo que lo
-aplica es distinto.
+**El mismo objeto, dos mecanismos.** En el **iframe** (`embed.js`, `<cord-quote>`,
+`<CordCotizador>`) el objeto viaja al servidor de Cord, que lo valida y genera el CSS dentro de su
+propio origen: tu página nunca escribe estilos dentro del iframe. En los **componentes nativos**
+(`<CordBuilder>` vía `<CordProvider appearance={...}>`) el SDK aplica las variables como CSS en
+tu página. `rules` y `layout` solo aplican al iframe; `elements` y `baseTheme`, solo a lo nativo.
 </Callout>
-
-### El parámetro Appearance
-
-El script embebible lee de tu etiqueta HTML o configuración de inicialización el objeto `appearance`.
 
 ```html
 <script src="https://cordhq.app/embed.js" async></script>
-<div 
-  data-cord-token="a1b2c3d4e5f60718" 
-  data-appearance='{
-    "theme": "dark",
+<div
+  data-cord-token="a1b2c3d4e5f60718"
+  data-cord-appearance='{
+    "theme": "flat",
     "variables": {
-      "colorBackground": "#18181b",
-      "colorText": "#f4f4f5",
-      "colorPrimary": "#3b82f6",
-      "borderRadius": "8px"
+      "colorPrimary": "#0f766e",
+      "colorText": "#0b1220",
+      "borderRadius": "10px",
+      "borderRadiusButton": "999px"
     },
-    "fonts": [
-      {
-        "cssSrc": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-      }
-    ]
+    "rules": {
+      "Button": { "text-transform": "uppercase", "letter-spacing": "0.04em" },
+      "Total": { "font-weight": "700" }
+    },
+    "layout": { "compact": true, "hideChat": true },
+    "fonts": [{ "cssSrc": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" }]
   }'>
 </div>
 ```
 
-## Opciones Disponibles
+Con el Web Component, el mismo JSON va en el atributo `appearance` o en la propiedad
+`element.appearance`; en React, en la prop `appearance` de `<CordCotizador>`.
 
-### 1. Temas (`theme`)
-Puedes instruir al iframe para que renderice usando un tema base. 
-- `light` (Por defecto)
-- `dark` (Renderiza el diseño con fondos negros e invierte la paleta)
-- `auto` (El iframe usa `@media (prefers-color-scheme: dark)` para respetar la preferencia del sistema operativo del visitante).
+## Temas (`theme`)
 
-### 2. Variables CSS (`variables`)
-Cord expone una serie de variables CSS internamente que puedes sobreescribir. Escribe las variables en formato `camelCase` dentro del JSON.
+| Tema | Qué hace |
+|---|---|
+| `light` | Por defecto. |
+| `dark` | Paleta oscura completa: fondo, superficies, texto, bordes y campos. `night` es un alias. |
+| `auto` | Sigue `prefers-color-scheme` del visitante. |
+| `flat` | Sin sombra y con bordes visibles, para sitios que no usan elevación. |
 
-- `colorBackground`: Fondo principal de la tarjeta.
-- `colorText`: Color de texto general.
-- `colorPrimary`: Color principal para botones y acentos.
-- `borderRadius`: Redondeo de las esquinas (ej. `0px` para bordes afilados, `12px` para curvas suaves).
-- `fontFamily`: Familia tipográfica a aplicar en todos los textos.
+El tema se aplica primero y tus `variables` siempre ganan sobre él.
 
-### 3. Fuentes Externas (`fonts`)
-Cord te permite cargar tu propia familia tipográfica comercial o libre directamente dentro del iframe.
+## Variables (`variables`)
 
-Pasa un arreglo `fonts` con objetos que contengan el `cssSrc`. 
-> **Nota:** Por motivos estrictos de seguridad y para prevenir inyecciones de interfaz (UI-redressing), Cord solo ejecutará directivas `@import` provenientes de hosts de tipografía comprobados, como `fonts.googleapis.com` o `fonts.bunny.net`. Cualquier otra URL externa será descartada silenciosamente.
+Se escriben en `camelCase`. Cada una llega a una superficie real del cotizador; una variable
+que no defines conserva el valor de Cord.
 
-### 4. Modo headless (`baseTheme: 'none'`) — solo componentes nativos
+| Variable | Tipo | Dónde se ve |
+|---|---|---|
+| `colorPrimary` | color | Botón principal, acentos, burbujas propias del chat |
+| `colorOnPrimary` | color | Texto sobre el color primario |
+| `colorBackground` | color | Fondo de la tarjeta |
+| `colorSurface` | color | Paneles internos: notas, total, chat, avisos |
+| `colorText` | color | Texto principal e importes |
+| `colorTextSecondary` | color | Etiquetas, RFC, notas |
+| `colorTextPlaceholder` | color | Encabezados de tabla, ayudas, placeholders |
+| `colorBorder` | color | Divisores y bordes |
+| `colorDanger` | color | Rechazar y errores |
+| `colorSuccess` | color | Confirmaciones |
+| `colorInput` | color | Fondo de los campos |
+| `colorInputText` | color | Texto de los campos |
+| `colorInputBorder` | color | Borde de los campos |
+| `colorFocus` | color | Borde del campo enfocado |
+| `fontFamily` | familia | Toda la tarjeta |
+| `fontSize` | longitud | Partidas |
+| `fontWeightBold` | peso | Botones |
+| `borderRadius` | longitud | Tarjeta |
+| `borderRadiusButton` | longitud | Botones |
+| `borderRadiusInput` | longitud | Campos |
+| `spacingCard` | espaciado | Relleno de la tarjeta (`2rem` o `1.5rem 2rem`) |
+| `shadowCard` | `none` o `default` | Sombra de la tarjeta |
 
-Si usas `<CordBuilder>` (o `useQuoteBuilder` con tu propia UI) y NO quieres ni una sola regla
-CSS de Cord de por medio, pasa `appearance={{ baseTheme: 'none' }}` a tu `<CordProvider>`. Las
-clases `.cord-*` se siguen emitiendo en el markup — no desaparecen — pero el SDK no inyecta su
-hoja de estilos base: el look completo queda en tus manos (Tailwind, CSS Modules, lo que uses).
-No aplica al iframe (`<CordCotizador>`), que siempre mantiene su hoja de estilos propia.
+Un **color** acepta hexadecimal, `rgb()`, `hsl()`, `oklch()`, `oklab()`, `lab()`, `lch()` o un
+nombre. Una **longitud** acepta `px`, `rem`, `em` o `%`.
 
-### 5. Overrides por elemento (`elements`) — solo componentes nativos
+## Reglas por componente (`rules`)
 
-Cada nodo interno de `<CordBuilder>` lleva una clase estable `.cord-<key>` (`builderRoot`,
-`formField`, `itemRow`, `summaryRoot`, `submitButton`…) que nunca cambia entre versiones. Puedes
-sumarle tu propio `className` y/o `style` inline por elemento con `appearance.elements`:
+Para lo que las variables no alcanzan, `rules` aplica propiedades a componentes con nombre
+público. No son selectores CSS: son nombres estables que Cord traduce a su markup, así que no se
+rompen cuando el markup cambia.
+
+```json
+"rules": {
+  "Button": { "text-transform": "uppercase" },
+  "Button:hover": { "opacity": "0.9" },
+  "Input:focus": { "border-color": "#0f766e" },
+  "Bubble--mine": { "background-color": "#0f766e" }
+}
+```
+
+**Componentes:** `Card`, `Header`, `Total`, `Table`, `Row`, `SummaryRow`, `Notes`, `Button`,
+`Button:hover`, `ButtonSecondary`, `ButtonSecondary:hover`, `Input`, `Input:focus`, `Chat`,
+`Bubble`, `Bubble--mine`.
+
+**Propiedades:** `color`, `background-color`, `border-color`, `border-width`, `border-style`,
+`border-radius`, `font-size`, `font-weight`, `letter-spacing`, `text-transform`, `padding`,
+`box-shadow` (`none` o `default`) y `opacity`.
+
+## Layout (`layout`)
+
+| Opción | Efecto |
+|---|---|
+| `compact: true` | Menos aire en la tarjeta, para columnas angostas. |
+| `hideChat: true` | Oculta la conversación y los comentarios por partida. |
+| `hideNotes: true` | Oculta el bloque de notas de la cotización. |
+
+Ocultar es solo presentación: la cotización y sus acciones siguen siendo las mismas en el link
+público.
+
+## Fuentes (`fonts`)
+
+Hasta cuatro hojas de `fonts.googleapis.com` o `fonts.bunny.net` por `https`. Si no declaras
+`fontFamily`, Cord usa la primera familia de la primera hoja.
+
+## Qué valida Cord y por qué
+
+Todo valor que termina en CSS pasa por un validador con listas cerradas de claves, componentes y
+propiedades, y una gramática por tipo de valor. Se descartan `url()`, `expression()`, `@`,
+`!important`, `;`, llaves y `<`, y el objeto completo se ignora si pesa más de 8 KB. Lo
+descartado no rompe el resto: se ignora, el SDK lo avisa en la consola durante el desarrollo y
+aparece en la [barra de depuración](/docs/desarrolladores/herramientas/elements/eventos#barra-de-depuración) con una llave
+de prueba.
+
+Esto cierra la puerta a usar la apariencia para ocultar botones, tapar el total o cargar recursos
+de terceros dentro del iframe: el diseño es tuyo, la integridad de la cotización es de Cord.
+
+## Componentes nativos
+
+### Modo headless (`baseTheme: 'none'`)
+
+Con `<CordBuilder>` o `useQuoteBuilder` y tu propia UI, `appearance={{ baseTheme: 'none' }}` en
+`<CordProvider>` desactiva la hoja de estilos base. Las clases `.cord-*` siguen en el markup y el
+aspecto queda en tus manos (Tailwind, CSS Modules o lo que uses).
+
+### Overrides por elemento (`elements`)
+
+Cada nodo de `<CordBuilder>` lleva una clase estable `.cord-<key>` (`builderRoot`, `formField`,
+`itemRow`, `summaryRoot`, `submitButton`...). `appearance.elements` le suma tu `className` y tu
+`style`:
 
 ```tsx
 <CordProvider
   publishableKey={pk}
   appearance={{
+    variables: { colorPrimary: '#0f766e', borderRadiusInput: '6px' },
     elements: {
-      submitButton: 'mi-boton-tailwind',
+      submitButton: 'mi-boton',
       itemRow: { style: { gap: '18px' } },
-      formFieldInput: { className: 'mi-input', style: { borderRadius: '6px' } },
     },
   }}
 >
@@ -100,14 +170,4 @@ sumarle tu propio `className` y/o `style` inline por elemento con `appearance.el
 </CordProvider>
 ```
 
-La clase base `.cord-<key>` **nunca se reemplaza**, solo se le agrega la tuya encima — mismo
-patrón que `appearance.elements` de Clerk. Al igual que `baseTheme`, esto solo afecta a los
-componentes nativos, no al iframe.
-
-<Callout type="warning">
-**Lo que NO existe (a propósito):** un campo `rules` para inyectar selectores CSS arbitrarios
-DENTRO del iframe nunca llegó a funcionar en producción — el servidor lo descarta por
-seguridad desde que se agregó el campo, para cerrar la puerta a una inyección de interfaz vía
-un selector malicioso. Si ves ese campo mencionado en un ejemplo viejo o en un fork, ignóralo:
-usa `variables` y `elements` para lo nativo, y las opciones documentadas arriba para el iframe.
-</Callout>
+La clase base `.cord-<key>` nunca se reemplaza; la tuya se agrega encima.

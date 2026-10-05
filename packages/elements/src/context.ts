@@ -5,7 +5,7 @@ import type * as React from 'react';
 import { CordError } from './api.js';
 import { createCordClient, newIdempotencyKey, type CordClient } from './headless/client.js';
 import type { ReadableStore } from './headless/store.js';
-import { sanitizeAppearance } from './appearance.js';
+import { sanitizeAppearance, DARK_PALETTE } from './appearance.js';
 import { enableDebug, debugLog } from './debug.js';
 import type { CordProviderProps, CordAppearance, CordProduct, CordClient as CordClientRecord, CreateQuoteInput, CreateQuoteResponse } from './types.js';
 
@@ -157,7 +157,7 @@ export function useStore<T>(store: ReadableStore<T>): T {
     return state;
 }
 
-const DARK: Record<string, string> = { '--cord-color-text': '#e5e7eb', '--cord-color-background': '#111827' };
+const DARK: Record<string, string> = Object.fromEntries(DARK_PALETTE);
 
 /**
  * Variables `--cord-*` de un appearance, ya validadas, como estilo inline. Se

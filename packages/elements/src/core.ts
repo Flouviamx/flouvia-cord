@@ -4,7 +4,7 @@
 // su propio listener (scoped por contentWindow) y se limpia con destroy().
 import type { CordElementOptions, CordController, CordEvent } from './types.js';
 import { resolveOrigin } from './config.js';
-import { sanitizeAppearance } from './appearance.js';
+import { sanitizeAppearance, MAX_APPEARANCE_BYTES } from './appearance.js';
 import { createStore } from './headless/store.js';
 import { INITIAL_QUOTE_VIEW, reduceQuoteView } from './headless/quote-view.js';
 import { debugLog } from './debug.js';
@@ -98,7 +98,11 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
     // postMessage (en vez de '*' siempre) cuando el origen matchea la
     // allowlist de orgs.embed_domains — mismo gate que ya protege frame-ancestors.
     const params = new URLSearchParams();
-    if (opts.appearance) params.set('appearance', JSON.stringify(opts.appearance));
+    const appearanceJson = opts.appearance ? JSON.stringify(opts.appearance) : '';
+    if (appearanceJson.length > MAX_APPEARANCE_BYTES) {
+        console.warn(`[Cord] appearance pesa ${appearanceJson.length} bytes; el límite es ${MAX_APPEARANCE_BYTES} y Cord lo ignora completo.`);
+        debugLog('error', 'appearance excede el límite de tamaño y se ignora');
+    } else if (appearanceJson) params.set('appearance', appearanceJson);
     if (typeof window !== 'undefined' && window.location?.origin) params.set('parentOrigin', window.location.origin);
     const query = params.toString();
 

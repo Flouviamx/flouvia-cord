@@ -24,9 +24,9 @@ const BASE_CSS = `
     color: var(--cord-color-text, #0A2240);
     background-color: var(--cord-color-background, #ffffff);
     border-radius: var(--cord-border-radius, 16px);
-    padding: 24px;
+    padding: var(--cord-spacing-card, 24px);
     border: 1px solid var(--cord-color-border, rgba(0, 0, 0, 0.08));
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--cord-shadow-card, 0 4px 6px rgba(0, 0, 0, 0.04));
     max-width: 100%;
     box-sizing: border-box;
     font-size: var(--cord-font-size, 14px);
@@ -40,16 +40,16 @@ const BASE_CSS = `
   .cord-formFieldGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
   .cord-formFieldLabel { display: block; font-size: 13px; font-weight: 600; color: inherit; opacity: 0.8; margin-bottom: 6px; }
   .cord-formFieldInput, .cord-formFieldSelect, .cord-formFieldTextarea {
-    width: 100%; padding: 10px 14px; border-radius: 8px;
-    border: 1px solid var(--cord-color-border, rgba(0, 0, 0, 0.15));
+    width: 100%; padding: 10px 14px; border-radius: var(--cord-border-radius-input, 8px);
+    border: 1px solid var(--cord-color-input-border, var(--cord-color-border, rgba(0, 0, 0, 0.15)));
     font-family: inherit; font-size: 14px;
-    background-color: var(--cord-color-background, #ffffff);
-    color: inherit;
+    background-color: var(--cord-color-input, var(--cord-color-background, #ffffff));
+    color: var(--cord-color-input-text, inherit);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .cord-formFieldInput:focus, .cord-formFieldSelect:focus, .cord-formFieldTextarea:focus {
     outline: none;
-    border-color: var(--cord-color-primary, #0A2240);
+    border-color: var(--cord-color-focus, var(--cord-color-primary, #0A2240));
     box-shadow: 0 0 0 3px rgba(10, 34, 64, 0.12);
   }
   .cord-formFieldTextarea { min-height: 80px; resize: vertical; }
@@ -87,7 +87,7 @@ const BASE_CSS = `
 
   .cord-submitRow { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
   .cord-errorText { color: var(--cord-color-danger, #dc2626); font-size: 13px; background-color: rgba(220, 38, 38, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.2); font-weight: 500; }
-  .cord-submitButton { background-color: var(--cord-color-primary, #0A2240); color: #ffffff; padding: 12px 24px; border-radius: var(--cord-border-radius, 12px); border: none; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 15px; transition: opacity 0.15s ease, transform 0.1s ease; }
+  .cord-submitButton { background-color: var(--cord-color-primary, #0A2240); color: var(--cord-color-on-primary, #ffffff); padding: 12px 24px; border-radius: var(--cord-border-radius-button, var(--cord-border-radius, 12px)); border: none; font-weight: var(--cord-font-weight-bold, 600); cursor: pointer; font-family: inherit; font-size: 15px; transition: opacity 0.15s ease, transform 0.1s ease; }
   .cord-submitButton:disabled { opacity: 0.7; cursor: not-allowed; }
   .cord-submitButton:active:not(:disabled) { transform: scale(0.98); }
   .cord-submitButton:focus-visible, .cord-addItemButton:focus-visible, .cord-itemRemoveButton:focus-visible { outline: 2px solid var(--cord-color-primary, #0A2240); outline-offset: 2px; }
