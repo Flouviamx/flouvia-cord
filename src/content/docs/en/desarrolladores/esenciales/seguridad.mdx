@@ -1,0 +1,74 @@
+---
+title: "Security"
+seoTitle: "Cord security for technical and compliance teams"
+description: "How Cord protects your organization's data: encryption, identity, isolation, API, webhooks, payments, payout identity and retention."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Security</h1>
+  <p class="page-subtitle">What Cord does to protect your data and your customers', with the level of detail a security team asks for.</p>
+</header>
+
+This page describes controls that exist in the product today. If your team needs something that isn't here, write to us.
+
+## Data in transit and at rest
+
+- All traffic goes over HTTPS. Cord sends `Strict-Transport-Security` with `includeSubDomains` and `preload`, a content security policy and `X-Content-Type-Options: nosniff`.
+- The secrets Cord stores on your behalf (integration credentials, webhook signing secrets) are encrypted with AES-256-GCM before they reach the database. The encryption key can be rotated without losing what was encrypted with the previous one.
+- Passwords are stored with Argon2id. Session tokens and API keys are stored only as hashes: someone reading the database would not get a usable credential.
+
+## Identity and access
+
+- Sign-in with password, Google, Apple or passkeys, and SAML SSO for teams.
+- Two-step verification (TOTP). The organization can require it for the whole team and set a maximum idle time.
+- Sensitive actions (changing the payout account or payout identity details) require signing in again.
+- Roles per team member, and allowed domains for invitations.
+
+## Isolation between organizations
+
+Every query on an organization's data runs in a context that declares which organization it works for, and an automated check in CI blocks adding a query outside that context. Public links (quote, invoice, mobile capture) resolve the organization with a token and then query inside that same context: the token never grants access on its own.
+
+## API
+
+- Keys are shown once and stored as hashes.
+- Three kinds: secret, [restricted per resource](/en/docs/desarrolladores/esenciales/autenticacion#restricted-keys) and publishable. Secret and restricted keys accept a list of allowed IPs, can expire and are rolled with a grace period.
+- A Secret Key arriving from a browser is rejected. Publishable keys can only use a fixed list of routes and, in live mode, only from the domains you registered.
+- Rate limits per key and per IP, and `Idempotency-Key` to retry without duplicates.
+
+## Webhooks
+
+- Every event is signed with HMAC-SHA256 over the body and a timestamp (`X-Cord-Signature-V1`), so your server can reject altered or replayed events. The SDKs check the signature and its age for you.
+- Cord only delivers to `https://` URLs on public hosts, never to internal addresses.
+
+## Embedded quote (Cord Elements)
+
+- The quote lives in a Cord iframe with its own origin: your page can't read or modify it, and Cord can't read your page.
+- Only the domains you register can frame it. With no registered domains it renders read-only, without approve, sign or pay, and without sending data to the host page.
+- Custom styles go through a validator with closed lists: it accepts no external URLs and no rules that hide or cover content.
+
+## Payments
+
+Card details are captured by the payment processor's form on its own domain. Cord never receives or stores the card number.
+
+## Identity verification for payouts
+
+- ID photos are checked on the device before they are sent, and their metadata (including GPS location) is removed, keeping only the orientation.
+- The link to take the photo from a phone is bound to the first device that uses it, has an attempt cap and is never recorded in analytics.
+
+## Audit log
+
+Creating, editing, rolling and revoking keys, organization security changes, payments and other sensitive actions are recorded with who, when, the IP and the browser. Admins review it in Settings › Audit.
+
+## Retention
+
+| Data | How long it is kept |
+|---|---|
+| Webhook delivery history | 30 days (failed ones, 90) |
+| Identity capture sessions from a phone | Deleted one hour after they close |
+| Identity verification evidence for payouts | 5 years from submission |
+
+You can export your organization's data from Settings and delete your account at any time.
+
+## Report a vulnerability
+
+Write to `security@flouvia.com`. Scope, commitments and safe harbor in [Report vulnerabilities](/en/support/reportar-vulnerabilidades); the contact is also in [`/.well-known/security.txt`](https://cordhq.app/.well-known/security.txt).

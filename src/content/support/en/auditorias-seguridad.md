@@ -1,16 +1,23 @@
 ---
-title: "SOC2 Audits and Certifications"
-description: "Technical audit reports available for Enterprise plans."
+title: "Security for compliance teams"
+description: "Which security controls Cord has and how to request information for a questionnaire or vendor review."
 category: "Security & Privacy"
 ---
 
-For Enterprise plan clients, we offer full transparency regarding our security postures.
+If your IT or compliance team is evaluating Cord as a vendor, this is what you can review today.
 
-### Compliance and Certifications
+### Documented controls
 
-- **PCI-DSS:** We do not store full card numbers or CVCs. Sensitive fields are isolated and tokenized directly with certified processors.
-- **Encryption:** Data at rest is encrypted using AES-256. Data in transit utilizes TLS 1.3.
-- **Independent Audits:** Cord undergoes annual penetration testing (*pentesting*) by third-party security firms.
+The [Security](/en/docs/desarrolladores/esenciales/seguridad) page describes in technical detail what Cord does today: secret encryption with AES-256-GCM, Argon2id passwords, mandatory HTTPS with HSTS, isolation between organizations, API keys restricted per resource and per IP, signed webhooks, an audit log and retention periods.
 
-**Requesting a Penetration Report:**
-If your company's IT or Compliance department requires our latest audit report, please contact your Account Executive. To share it, we require a mutually signed NDA (Non-Disclosure Agreement).
+### Payment cards
+
+Cord never receives or stores card numbers or CVC. They are captured by the payment processor's form on its own domain, and that processor operates under PCI-DSS.
+
+### Certifications and external audits
+
+Cord doesn't hold a certification such as SOC 2 or ISO 27001 today, nor a third-party penetration test report we can share. When we have them, we'll publish them here.
+
+### Security questionnaires
+
+If you need to complete a security or vendor questionnaire, write to `soporte@flouvia.com` and we'll answer it based on the controls that exist today. To report a flaw, use [Report vulnerabilities](/en/support/reportar-vulnerabilidades).

@@ -1,0 +1,74 @@
+---
+title: "Seguridad"
+seoTitle: "Seguridad de Cord para equipos técnicos y de cumplimiento"
+description: "Cómo protege Cord los datos de tu organización: cifrado, identidad, aislamiento, API, webhooks, pagos, identidad de cobros y retención."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Seguridad</h1>
+  <p class="page-subtitle">Qué hace Cord para proteger tus datos y los de tus clientes, contado con el detalle que pide un equipo de seguridad.</p>
+</header>
+
+Esta página describe controles que existen hoy en el producto. Si tu equipo necesita algo que no aparece aquí, escríbenos.
+
+## Datos en tránsito y en reposo
+
+- Todo el tráfico va por HTTPS. Cord envía `Strict-Transport-Security` con `includeSubDomains` y `preload`, una política de seguridad de contenido y `X-Content-Type-Options: nosniff`.
+- Los secretos que Cord guarda en tu nombre (credenciales de integraciones, secretos de firma de webhooks) se cifran con AES-256-GCM antes de llegar a la base de datos. La llave de cifrado se puede rotar sin perder lo cifrado con la anterior.
+- Las contraseñas se guardan con Argon2id. Los tokens de sesión y las API keys se guardan solo como hash: si alguien leyera la base de datos, no obtendría una credencial utilizable.
+
+## Identidad y acceso
+
+- Inicio de sesión con contraseña, Google, Apple o passkeys, y SSO con SAML para equipos.
+- Verificación en dos pasos (TOTP). La organización puede exigirla a todo el equipo y fijar un tiempo máximo de inactividad.
+- Las acciones sensibles (cambiar la cuenta de depósito o datos de identidad de cobros) piden volver a autenticarse.
+- Roles por miembro del equipo, y dominios permitidos para invitar.
+
+## Aislamiento entre organizaciones
+
+Cada consulta a datos de una organización corre en un contexto que declara para qué organización trabaja, y un verificador automático en CI impide agregar una consulta fuera de ese contexto. Los enlaces públicos (cotización, factura, captura móvil) resuelven la organización con un token y después consultan dentro del mismo contexto: el token nunca da acceso por sí solo.
+
+## API
+
+- Las llaves se muestran una sola vez y se guardan como hash.
+- Tres tipos: secretas, [restringidas por recurso](/docs/desarrolladores/esenciales/autenticacion#llaves-restringidas) y publicables. Las secretas y restringidas aceptan una lista de IPs permitidas, pueden vencer y se rotan con periodo de gracia.
+- Una Secret Key que llega desde un navegador se rechaza. Las publicables solo pueden usar una lista fija de rutas y, en vivo, solo desde los dominios que registraste.
+- Límites de peticiones por llave y por IP, e `Idempotency-Key` para reintentar sin duplicar.
+
+## Webhooks
+
+- Cada aviso va firmado con HMAC-SHA256 sobre el cuerpo y una marca de tiempo (`X-Cord-Signature-V1`), para que tu servidor rechace avisos alterados o repetidos. Los SDK verifican la firma y la antigüedad por ti.
+- Cord solo entrega a URL `https://` de hosts públicos; nunca a direcciones internas.
+
+## Cotizador embebido (Cord Elements)
+
+- La cotización vive en un iframe de Cord con su propio origen: tu página no puede leerla ni modificarla, y Cord no puede leer tu página.
+- Solo los dominios que registras pueden enmarcarla. Sin dominios registrados se muestra en solo lectura, sin aprobar, firmar ni pagar, y sin enviar datos a la página anfitriona.
+- Los estilos personalizados pasan por un validador con listas cerradas: no admite URL externas ni reglas que oculten o cubran el contenido.
+
+## Pagos
+
+Los datos de tarjeta los captura el formulario del procesador de pagos en su propio dominio. Cord nunca recibe ni guarda el número de tarjeta.
+
+## Verificación de identidad para cobros
+
+- Las fotos de identificación se validan en el dispositivo antes de enviarse, y se les quitan los metadatos (incluida la ubicación GPS) conservando solo la orientación.
+- El enlace para tomar la foto desde el teléfono se liga al primer dispositivo que lo usa, tiene un tope de intentos y no se registra en analítica.
+
+## Bitácora
+
+Crear, editar, rotar y revocar llaves, cambios de seguridad de la organización, pagos y otras acciones sensibles quedan registrados con quién, cuándo, la IP y el navegador. Los administradores la consultan en Ajustes › Auditoría.
+
+## Retención
+
+| Dato | Cuánto se conserva |
+|---|---|
+| Historial de entregas de webhooks | 30 días (los fallidos, 90) |
+| Sesiones de captura de identidad desde el teléfono | Se borran una hora después de cerrarse |
+| Evidencia de verificación de identidad para cobros | 5 años desde el envío |
+
+Puedes exportar los datos de tu organización desde Ajustes y eliminar tu cuenta en cualquier momento.
+
+## Reportar una vulnerabilidad
+
+Escribe a `security@flouvia.com`. Alcance, compromisos y puerto seguro en [Reportar vulnerabilidades](/soporte/reportar-vulnerabilidades); el contacto también está en [`/.well-known/security.txt`](https://cordhq.app/.well-known/security.txt).

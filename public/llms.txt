@@ -114,6 +114,7 @@ for prices, currencies and included usage.
 - [Cord Elements](https://docs.cordhq.app/docs/desarrolladores/herramientas/elements/resumen)
 - [API reference](https://docs.cordhq.app/docs/desarrolladores/referencia)
 - [API versions (Cord-Version header)](https://docs.cordhq.app/docs/desarrolladores/esenciales/versiones)
+- [Security controls, retention and vulnerability reporting](https://docs.cordhq.app/docs/desarrolladores/esenciales/seguridad); contact in https://cordhq.app/.well-known/security.txt
 - [Test mode and simulators](https://docs.cordhq.app/docs/desarrolladores/empezar/pruebas)
 - [Cord CLI](https://docs.cordhq.app/docs/desarrolladores/herramientas/cli)
 - [OpenAPI 3.1 specification](https://cordhq.app/openapi.json) (also at /openapi.yaml)
