@@ -1,135 +1,109 @@
 ---
-title: "Cord Elements Server SDK"
-description: "Verifica webhooks y realiza llamadas a la API de Cord de forma segura desde tu backend de Node.js o Edge."
+title: "SDK de servidor (@flouviahq/node)"
+description: "Llama la API de Cord y verifica webhooks desde tu backend con @flouviahq/node: Node, Bun, Deno, Cloudflare Workers y Vercel."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Server SDK</h1>
-  <p class="page-subtitle">Poder para tu backend: validación criptográfica y acceso directo a la API con tu Clave Secreta.</p>
+  <h1 class="page-title">SDK de servidor</h1>
+  <p class="page-subtitle">@flouviahq/node: la API de Cord y la verificación de webhooks desde tu backend, con tu Secret Key.</p>
 </header>
 
-El SDK de Cord Elements no es solo para el navegador. También expone un módulo dedicado al servidor (`@flouviahq/elements/server`) diseñado para ejecutarse en entornos de Node.js, Next.js Route Handlers, o entornos de ejecución perimetral (Edge Runtimes como Cloudflare Workers).
-
-## Instalación
+Cord Elements vive en el navegador; `@flouviahq/node` vive en tu servidor. Es un paquete aparte, sin dependencias, que corre en Node 20+, Bun, Deno, Cloudflare Workers y Vercel. Reemplaza al antiguo `@flouviahq/elements/server`, que sigue funcionando pero ya no recibe cambios.
 
 ```bash
-npm install @flouviahq/elements
+npm install @flouviahq/node
 ```
 
-## Configurar el Cliente
+```ts
+import { Cord } from '@flouviahq/node';
 
-Importa `CordAPI` y provee tu **Clave Secreta** (`sk_live_...`).
+const cord = new Cord(process.env.CORD_SECRET_KEY!); // sk_live_…, sk_test_… o una restringida rk_…
+
+const quote = await cord.quotes.create({
+  cliente: { empresa: 'Acme', email: 'compras@acme.mx' },
+  items: [{ descripcion: 'Instalación', cantidad: 1, precio_unitario: 12500, tax_rate: 0.16 }],
+  base_currency: 'MXN',
+});
+console.log(quote.folio, quote.link_publico);
+```
 
 <Callout type="warning">
-**Advertencia:** Nunca importes el Server SDK ni expongas tu Clave Secreta en entornos de frontend.
+Una Secret Key vive solo en tu servidor. El SDK se niega a correr en un navegador y la API rechaza una `sk_` que llega desde uno.
 </Callout>
 
-```ts
-import { CordAPI } from '@flouviahq/elements/server';
+## Recursos
 
-const cord = new CordAPI(process.env.CORD_SECRET_KEY);
+`cord.quotes`, `cord.clients`, `cord.products`, `cord.invoices`, `cord.collections`, `cord.events`, `cord.tasks`, `cord.webhookEndpoints`, `cord.elements` y `cord.me`. Las listas se recorren completas con `listAll()`:
+
+```ts
+for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
+  // recorre todas las páginas
+}
 ```
 
-## Verificar Webhooks
+## Reintentos sin duplicados
 
-Uno de los principales casos de uso del Server SDK es la verificación de firmas criptográficas (HMAC) provenientes de Cord. Esto garantiza que el webhook entrante fue emitido genuinamente por nuestros servidores y no es un atacante intentando inyectar datos falsos.
-
-### Node.js o Next.js Route Handler
-
-Para verificar un webhook de manera síncrona, utiliza `cord.webhooks.constructEvent()`. Debes proporcionarle el payload crudo (`raw text`), los encabezados de la petición, y tu **Secreto de Webhook** (lo obtienes al crear el endpoint en la pestaña Webhooks del [Cord Workbench](/docs/desarrolladores/herramientas/workbench)).
-
-El SDK revisa automáticamente las firmas de mitigación contra ataques de repetición (Replay Attacks) verificando `X-Cord-Signature-V1` y descartando eventos antiguos mediante una tolerancia de tiempo (por defecto 300 segundos). Durante una rotación de secreto, `X-Cord-Signature-V1` puede traer dos firmas a la vez (secreto nuevo y viejo) — el SDK acepta cualquiera de las dos automáticamente, sin que tengas que hacer nada. Detalle completo en la [guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#rotación-de-secreto).
+Cada operación que crea o cambia algo lleva una `Idempotency-Key`, la misma en todos sus reintentos: un corte de red nunca crea dos cotizaciones ni registra dos pagos. Los reintentos (red, 429, 5xx) respetan `Retry-After`. Para atar la operación a tu propio identificador:
 
 ```ts
-// app/api/webhooks/cord/route.ts
-import { CordAPI } from '@flouviahq/elements/server';
+await cord.invoices.recordPayment(id, { monto: 5000, moneda: 'MXN' }, { idempotencyKey: `pago-${tuId}` });
+```
 
-const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+Los errores son `CordError` con `status`, `code`, `requestId` y `docUrl`.
+
+## Versión de la API
+
+El SDK manda `Cord-Version` con la versión con la que se construyó, así que una actualización de Cord no cambia lo que lees. Para fijar otra: `new Cord(sk, { apiVersion: '2026-10-01' })`. Más en [Versiones de la API](/docs/desarrolladores/esenciales/versiones).
+
+## Webhooks
+
+```ts
+import { constructEvent } from '@flouviahq/node';
 
 export async function POST(req: Request) {
-  // 1. Obtener el texto en bruto
-  const body = await req.text();
-  
-  try {
-    // 2. Construir y validar el evento
-    const event = cord.webhooks.constructEvent(
-      body, 
-      req.headers, 
-      process.env.CORD_WEBHOOK_SECRET!
-    );
-    
-    // event es fuertemente tipado
-    // { id: 'evt_...', event: 'quote.paid', created_at: '...', data: { folio, status, ... } }
-    
-    if (event.event === 'quote.paid') {
-      console.log(`¡La cotización ${event.data.folio} fue pagada exitosamente!`);
-    }
-    
-    return new Response('Webhook recibido correctamente', { status: 200 });
-  } catch (err) {
-    // La firma es inválida o expiró
-    return new Response('Firma inválida', { status: 400 });
+  const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
+  if (event.event === 'invoice.paid') {
+    event.data.saldo; // TypeScript sabe que es una factura
   }
+  return new Response('ok');
 }
 ```
 
-<Callout type="warning">
-**Idempotencia:** Cord entrega "al menos una vez" — un mismo `event.id` puede llegarte más de
-una vez (reintentos automáticos o un replay manual desde el Workbench). Guarda los `id` ya
-procesados y descarta los repetidos antes de aplicar efectos secundarios. Más detalle en la
-[guía de Webhooks](/docs/desarrolladores/herramientas/webhooks#identidad-del-evento-e-idempotencia).
-</Callout>
+- Usa el cuerpo **crudo**, nunca uno ya parseado.
+- Exige `X-Cord-Signature-V1` con timestamp y 5 minutos de tolerancia: un aviso viejo reenviado se rechaza.
+- Durante una rotación de secreto llegan dos firmas; basta con que una cuadre.
+- Deduplica por `event.id`: un reintento trae el mismo id.
 
-### Edge Runtimes (Cloudflare Workers, Vercel Edge)
+## Proxy para Cord Elements
 
-En entornos donde el módulo nativo `node:crypto` no está disponible, el SDK expone un método alternativo basado en la API estándar `WebCrypto` (`crypto.subtle`). Utiliza `constructEventAsync()`:
+Si prefieres no usar una llave publicable en el navegador, tu backend hace de intermediario:
 
 ```ts
-const event = await cord.webhooks.constructEventAsync(
-  body, 
-  req.headers, 
-  process.env.CORD_WEBHOOK_SECRET!
-);
-```
+// app/api/cord/[...path]/route.ts
+import { createElementsProxy } from '@flouviahq/node';
 
-## API REST Directa
-
-El objeto `CordAPI` expone submódulos fuertemente tipados que envuelven los métodos de nuestra API REST oficial. Todos los métodos devuelven Promesas y manejan correctamente el formato JSON.
-
-### Crear una cotización
-
-```ts
-const quote = await cord.quotes.create({ 
-  items: [
-    { 
-      descripcion: 'Implementación Técnica B2B', 
-      cantidad: 1, 
-      precio_unitario: 50000 
-    }
-  ] 
+const proxy = createElementsProxy({
+  secretKey: process.env.CORD_SECRET_KEY!,
+  authorizeClients: async (req) => !!(await getSession(req)),
 });
-
-console.log('ID de la Cotización:', quote.id);
-console.log('Folio Visible:', quote.folio);
-console.log('Link para el Cliente:', quote.link_publico);
+export const GET = proxy;
+export const POST = proxy;
 ```
 
-## Errores Tipados (`CordError`)
+```tsx
+<CordProvider proxyUrl="/api/cord">…</CordProvider>
+```
 
-El Server SDK abandona el concepto de arrojar un `Error` genérico de JavaScript. Todos los errores provenientes de una petición de red fallida o una validación lanzarán un `CordError` estructurado.
+El proxy solo atiende la configuración, el catálogo, crear cotizaciones y, si lo autorizas, el directorio de clientes; solo desde tu origen, y sanea la cotización igual que una llave publicable.
 
-Esto permite crear flujos de recuperación o analíticas mucho más precisas basadas en el `code`.
+## Modo prueba
+
+Con una `sk_test_` puedes provocar lo que en producción hace un tercero, por el mismo código que producción:
 
 ```ts
-import { CordError } from '@flouviahq/elements/server';
-
-try {
-  await cord.quotes.create(data);
-} catch (err) {
-  if (err instanceof CordError) {
-    console.error('Status HTTP:', err.status); // ej. 400
-    console.error('Código del API:', err.code); // ej. 'invalid_request', 'rate_limited'
-    console.error('Mensaje Legible:', err.message);
-  }
-}
+await cord.testHelpers.fiscal.setNextOutcome('pac_caido');
+await cord.testHelpers.quotes.view(quoteId);
+await cord.testHelpers.webhooks.trigger('invoice.paid');
 ```
+
+Para recibir los webhooks en tu máquina, usa el [CLI](/docs/desarrolladores/herramientas/cli): `cord listen --forward-to localhost:3000/api/webhooks`.

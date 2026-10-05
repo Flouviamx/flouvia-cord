@@ -124,8 +124,8 @@ Knowing exactly when your client is evaluating your proposal completely changes 
             en: 'Cord Elements'
         },
         shortDesc: {
-            es: 'Embebe nuestro motor de cotizaciones directamente en el portal de tu empresa o sitio web. SDK estable (React, Vue, Web Component) con hooks headless para construir tu propia experiencia.',
-            en: 'Embed our quoting engine directly into your company portal or website. Stable SDK (React, Vue, Web Component) with headless hooks to build your own experience.'
+            es: 'Embebe cotizaciones y facturas en el portal de tu empresa o tu sitio web. SDK estable (React, Vue, Web Components) con un núcleo headless para construir tu propia experiencia, y SDK de servidor y CLI aparte.',
+            en: 'Embed quotes and invoices in your company portal or website. Stable SDK (React, Vue, Web Components) with a headless core to build your own experience, plus a separate server SDK and CLI.'
         },
         content: {
             es: `## Cotizaciones en piloto automático
@@ -133,16 +133,20 @@ Con Cord Elements, puedes ofrecer una experiencia de "autoservicio" a tus client
 
 ### Beneficios clave:
 - **Menor carga operativa:** Tus agentes de ventas no tienen que armar cotizaciones repetitivas para clientes habituales.
-- **Precios dinámicos respetados:** Elements lee la lista de precios específica asignada a ese cliente y muestra sus descuentos negociados automáticamente.
-- **UI personalizable de verdad:** Usa el cotizador con tu marca tal cual, o construye tu propia interfaz por completo con los hooks headless (\`useQuoteBuilder\`); el SDK nunca te obliga a pelear con estilos que no puedes sobreescribir.
+- **Tus impuestos y divisas, no unos fijos:** El cotizador toma de tu cuenta las divisas que ofreces, el impuesto de cada línea y tus retenciones; el total coincide con el que calcula Cord.
+- **Cotización, factura y datos fiscales:** \`<cord-quote>\` para aprobar y firmar, \`<cord-invoice>\` para cobrar una factura y \`<cord-fiscal-form>\` para capturar el RFC, el régimen y el uso de CFDI ya validados.
+- **UI personalizable de verdad:** Temas, 22 variables y reglas por componente sin escribir CSS, o tu propia interfaz completa con el núcleo headless (\`useQuoteBuilder\`, \`createQuoteBuilder\`).
+- **Seguro por diseño:** Solo en los dominios que autorizas se puede aprobar y pagar, y el pago siempre se abre en una ventana de Cord, nunca dentro de tu sitio.
 - **Tipado end-to-end:** Los tipos de TypeScript se generan del código real, no se escriben a mano; tu editor siempre sabe qué existe.`,
             en: `## Quotes on autopilot
 With Cord Elements, you can offer a "self-service" experience to your recurring wholesale clients. By embedding a few lines of code into your existing portal, you enable a specialized shopping cart for complex commercial deals.
 
 ### Key benefits:
 - **Lower operational load:** Your sales agents don't have to build repetitive quotes for regular clients.
-- **Dynamic pricing respected:** Elements reads the specific price list assigned to that client and automatically displays their negotiated discounts.
-- **Real customizable UI:** Use the quoter with your brand as-is, or build your entire own interface with the headless hooks (\`useQuoteBuilder\`); the SDK never forces you to fight styles you can't override.
+- **Your taxes and currencies, not fixed ones:** The quote builder takes the currencies you offer, each line's tax and your withholdings from your account; the total matches the one Cord computes.
+- **Quote, invoice and tax details:** \`<cord-quote>\` to approve and sign, \`<cord-invoice>\` to collect an invoice and \`<cord-fiscal-form>\` to capture the RFC, tax regime and CFDI use already validated.
+- **Real customizable UI:** Themes, 22 variables and per-component rules without writing CSS, or your own full interface with the headless core (\`useQuoteBuilder\`, \`createQuoteBuilder\`).
+- **Secure by design:** Approving and paying only work on the domains you authorize, and payment always opens in a Cord window, never inside your site.
 - **End-to-end typed:** TypeScript types are generated from the real code, never hand-written; your editor always knows what's there.`
         },
         area: 'cotizaciones',
@@ -849,7 +853,7 @@ const roadmapEnhancements = {
             es: ['Instala el paquete o registra el Web Component en el portal existente.', 'Autentica la sesión y carga catálogo, cliente y reglas desde Cord.', 'Escucha eventos o usa los hooks headless para controlar tu propia interfaz.'],
             en: ['Install the package or register the Web Component in the existing portal.', 'Authenticate the session and load catalog, client, and rules from Cord.', 'Listen for events or use headless hooks to control your own interface.']
         },
-        scope: { es: 'SDK tipado para React, Vue y Web Components, con una ruta headless para equipos que necesitan controlar por completo la presentación.', en: 'Typed SDK for React, Vue, and Web Components, with a headless path for teams that need full presentation control.' },
+        scope: { es: 'SDK tipado para React, Vue y Web Components (cotización, factura y formulario fiscal), con un núcleo headless para controlar por completo la presentación. @flouviahq/node y @flouviahq/cli cubren el backend y las pruebas locales.', en: 'Typed SDK for React, Vue, and Web Components (quote, invoice and tax form), with a headless core for full presentation control. @flouviahq/node and @flouviahq/cli cover the backend and local testing.' },
         boundaries: { es: 'Elements embebe el motor de cotización; no convierte un portal sin autenticación ni permisos en un entorno seguro por sí solo.', en: 'Elements embeds the quoting engine; it does not make a portal secure without its own authentication and permission model.' },
         related: ['editor-cotizaciones', 'integraciones-y-flujos', 'link-publico']
     },

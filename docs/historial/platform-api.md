@@ -6,6 +6,37 @@
 
 ---
 
+✅ **Versionado, CLI, OpenAPI, llaves restringidas, <cord-invoice> y accesibilidad (5 oct 2026)** —
+tercera entrega del plan. Decisiones que no eran obvias:
+   • **Versión por header, no por URL.** `Cord-Version` se fija en `api_keys.api_version` y
+     `webhooks.api_version` al crear; los handlers producen la forma más nueva y
+     `src/lib/api-versions.ts` la baja a la versión pedida. El webhook se transforma por
+     suscriptor al encolar, así un reintento manda bytes idénticos.
+   • **El contrato sale del código.** `src/lib/api-schema.ts` (zod) genera `public/openapi.json`;
+     `npm run security:api-spec` falla si divergen. Python y PHP se escriben sobre ese spec.
+   • **`cord listen` no abre un túnel.** Cord no puede llegar a localhost: crea un webhook efímero
+     (`webhooks.cli_hasta`) que el outbox no entrega por HTTP, y el CLI recoge las entregas ya
+     firmadas.
+   • **Llaves `rk_` derivan el recurso de la ruta.** Una ruta nueva de `/api/v1` nace prohibida
+     para las restringidas; `test/api-key-policy.test.ts` falla si queda sin recurso. Las IPs
+     permitidas se comparan contra la IP que escribe Vercel (`trustedIp`), no contra
+     `X-Forwarded-For`, que era falsificable también en el límite por IP de la autenticación.
+     Rotar deja la llave vieja con `replaced_by` y fuera del conteo del plan. `api_keys.hash`
+     no tenía índice: cada petición hacía un barrido.
+   • **`<cord-invoice>` no reutiliza `/i/[token]`.** Esa página cobra; el embed es una vista
+     aparte y el pago se abre en ella en una ventana propia. La política de enmarcado y la regla
+     de qué rieles cobran una factura viven en `src/lib/embed-frame.ts` y
+     `publicInvoicePayability()` para que las tres superficies no diverjan.
+   • **Contraste WCAG AA en `/q`.** Cantidades, precios, subtotales y encabezados estaban entre
+     1.5:1 y 2.5:1; el gris mínimo de texto pasa a `#6b7280`. `test/elements-a11y.test.ts` mide
+     el contraste leyendo los colores del código y corre axe-core sobre el Builder y el
+     formulario fiscal. Cada entrypoint del paquete tiene presupuesto gzip (`check-size`).
+   • **Divulgación responsable real.** La página de reporte prometía Bug Bounty con pago, GPG y
+     respuesta en 24 h, y la de auditorías afirmaba SOC 2 y pentests anuales: nada existía.
+     `/.well-known/security.txt` apunta a `security@flouvia.com`.
+   • Publicado: `@flouviahq/elements` 2.0.0. Pendiente de publicar: 2.0.1 (barra de depuración
+     en inglés), `@flouviahq/node` y `@flouviahq/cli`.
+
 ✅ **Elements 2.0 headless, @flouviahq/node, IA en streaming y simuladores (4 oct 2026)** —
 segunda entrega del plan. Decisiones que no eran obvias:
    • **Headless de verdad.** Todo el estado vive en `@flouviahq/elements/headless` (sin

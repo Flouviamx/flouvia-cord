@@ -1,135 +1,109 @@
 ---
-title: "Cord Elements Server SDK"
-description: "Verify webhooks and make secure calls to the Cord API from your Node.js or Edge backend."
+title: "Server SDK (@flouviahq/node)"
+description: "Call the Cord API and verify webhooks from your backend with @flouviahq/node: Node, Bun, Deno, Cloudflare Workers and Vercel."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Server SDK</h1>
-  <p class="page-subtitle">Power for your backend: cryptographic validation and direct API access with your Secret Key.</p>
+  <p class="page-subtitle">@flouviahq/node: the Cord API and webhook verification from your backend, with your Secret Key.</p>
 </header>
 
-The Cord Elements SDK isn't just for the browser. It also exposes a dedicated server module (`@flouviahq/elements/server`) designed to run in Node.js environments, Next.js Route Handlers, or Edge Runtimes (like Cloudflare Workers).
-
-## Installation
+Cord Elements lives in the browser; `@flouviahq/node` lives on your server. It is a separate package with no dependencies that runs on Node 20+, Bun, Deno, Cloudflare Workers and Vercel. It replaces the old `@flouviahq/elements/server`, which still works but no longer gets changes.
 
 ```bash
-npm install @flouviahq/elements
+npm install @flouviahq/node
 ```
 
-## Configure the Client
+```ts
+import { Cord } from '@flouviahq/node';
 
-Import `CordAPI` and provide your **Secret Key** (`sk_live_...`).
+const cord = new Cord(process.env.CORD_SECRET_KEY!); // sk_live_…, sk_test_… or a restricted rk_…
+
+const quote = await cord.quotes.create({
+  cliente: { empresa: 'Acme', email: 'purchasing@acme.com' },
+  items: [{ descripcion: 'Installation', cantidad: 1, precio_unitario: 12500, tax_rate: 0.16 }],
+  base_currency: 'MXN',
+});
+console.log(quote.folio, quote.link_publico);
+```
 
 <Callout type="warning">
-**Warning:** Never import the Server SDK or expose your Secret Key in frontend environments.
+A Secret Key lives only on your server. The SDK refuses to run in a browser and the API rejects an `sk_` arriving from one.
 </Callout>
 
-```ts
-import { CordAPI } from '@flouviahq/elements/server';
+## Resources
 
-const cord = new CordAPI(process.env.CORD_SECRET_KEY);
+`cord.quotes`, `cord.clients`, `cord.products`, `cord.invoices`, `cord.collections`, `cord.events`, `cord.tasks`, `cord.webhookEndpoints`, `cord.elements` and `cord.me`. Lists are walked in full with `listAll()`:
+
+```ts
+for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
+  // walks every page
+}
 ```
 
-## Verifying Webhooks
+## Retries without duplicates
 
-One of the primary use cases for the Server SDK is verifying cryptographic signatures (HMAC) coming from Cord. This ensures that the incoming webhook was genuinely emitted by our servers and is not an attacker attempting to inject false data.
-
-### Node.js or Next.js Route Handler
-
-To verify a webhook synchronously, use `cord.webhooks.constructEvent()`. You must provide the raw text payload, the request headers, and your **Webhook Secret** (you get it when creating the endpoint in the Webhooks tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)).
-
-The SDK automatically checks mitigation signatures against Replay Attacks by verifying `X-Cord-Signature-V1` and discarding old events using a time tolerance (default 300 seconds). During a secret rotation, `X-Cord-Signature-V1` may carry two signatures at once (new secret and old) — the SDK accepts whichever one matches automatically, no code changes needed on your end. Full detail in the [Webhooks guide](/en/docs/desarrolladores/herramientas/webhooks#secret-rotation).
+Every operation that creates or changes something carries an `Idempotency-Key`, the same on every retry: a network drop never creates two quotes or records two payments. Retries (network, 429, 5xx) honor `Retry-After`. To tie the operation to your own identifier:
 
 ```ts
-// app/api/webhooks/cord/route.ts
-import { CordAPI } from '@flouviahq/elements/server';
+await cord.invoices.recordPayment(id, { monto: 5000, moneda: 'MXN' }, { idempotencyKey: `payment-${yourId}` });
+```
 
-const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+Errors are `CordError` with `status`, `code`, `requestId` and `docUrl`.
+
+## API version
+
+The SDK sends `Cord-Version` with the version it was built with, so a Cord update never changes what you read. To pin another: `new Cord(sk, { apiVersion: '2026-10-01' })`. More in [API versions](/en/docs/desarrolladores/esenciales/versiones).
+
+## Webhooks
+
+```ts
+import { constructEvent } from '@flouviahq/node';
 
 export async function POST(req: Request) {
-  // 1. Get the raw text
-  const body = await req.text();
-  
-  try {
-    // 2. Construct and validate the event
-    const event = cord.webhooks.constructEvent(
-      body, 
-      req.headers, 
-      process.env.CORD_WEBHOOK_SECRET!
-    );
-    
-    // event is strongly typed
-    // { id: 'evt_...', event: 'quote.paid', created_at: '...', data: { folio, status, ... } }
-    
-    if (event.event === 'quote.paid') {
-      console.log(`Quote ${event.data.folio} was paid successfully!`);
-    }
-    
-    return new Response('Webhook correctly received', { status: 200 });
-  } catch (err) {
-    // The signature is invalid or expired
-    return new Response('Invalid signature', { status: 400 });
+  const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
+  if (event.event === 'invoice.paid') {
+    event.data.saldo; // TypeScript knows it's an invoice
   }
+  return new Response('ok');
 }
 ```
 
-<Callout type="warning">
-**Idempotency:** Cord delivers "at least once" — the same `event.id` can reach you more than
-once (automatic retries, or a manual replay from the Workbench). Store the `id`s you've already
-processed and skip duplicates before applying side effects. More detail in the
-[Webhooks guide](/en/docs/desarrolladores/herramientas/webhooks#event-identity--idempotency).
-</Callout>
+- Use the **raw** body, never a parsed one.
+- It requires `X-Cord-Signature-V1` with a timestamp and 5 minutes of tolerance: an old event replayed is rejected.
+- During a secret rotation two signatures arrive; one matching is enough.
+- Deduplicate by `event.id`: a retry carries the same id.
 
-### Edge Runtimes (Cloudflare Workers, Vercel Edge)
+## Proxy for Cord Elements
 
-In environments where the native `node:crypto` module is not available, the SDK exposes an alternative method based on the standard `WebCrypto` API (`crypto.subtle`). Use `constructEventAsync()`:
+If you'd rather not use a publishable key in the browser, your backend acts as the intermediary:
 
 ```ts
-const event = await cord.webhooks.constructEventAsync(
-  body, 
-  req.headers, 
-  process.env.CORD_WEBHOOK_SECRET!
-);
-```
+// app/api/cord/[...path]/route.ts
+import { createElementsProxy } from '@flouviahq/node';
 
-## Direct REST API
-
-The `CordAPI` object exposes strongly typed submodules that wrap our official REST API methods. All methods return Promises and properly handle JSON formatting.
-
-### Create a Quote
-
-```ts
-const quote = await cord.quotes.create({ 
-  items: [
-    { 
-      descripcion: 'B2B Technical Implementation', 
-      cantidad: 1, 
-      precio_unitario: 50000 
-    }
-  ] 
+const proxy = createElementsProxy({
+  secretKey: process.env.CORD_SECRET_KEY!,
+  authorizeClients: async (req) => !!(await getSession(req)),
 });
-
-console.log('Quote ID:', quote.id);
-console.log('Visible Folio:', quote.folio);
-console.log('Link for the Client:', quote.link_publico);
+export const GET = proxy;
+export const POST = proxy;
 ```
 
-## Typed Errors (`CordError`)
+```tsx
+<CordProvider proxyUrl="/api/cord">…</CordProvider>
+```
 
-The Server SDK abandons the concept of throwing a generic JavaScript `Error`. All errors arising from a failed network request or validation will throw a structured `CordError`.
+The proxy only serves the configuration, the catalog, quote creation and, if you authorize it, the client directory; only from your origin, and it sanitizes the quote the same way a publishable key does.
 
-This allows you to create much more precise recovery flows or analytics based on the `code`.
+## Test mode
+
+With an `sk_test_` you can trigger what a third party does in production, through the same code as production:
 
 ```ts
-import { CordError } from '@flouviahq/elements/server';
-
-try {
-  await cord.quotes.create(data);
-} catch (err) {
-  if (err instanceof CordError) {
-    console.error('HTTP Status:', err.status); // e.g. 400
-    console.error('API Code:', err.code); // e.g. 'invalid_request', 'rate_limited'
-    console.error('Readable Message:', err.message);
-  }
-}
+await cord.testHelpers.fiscal.setNextOutcome('pac_caido');
+await cord.testHelpers.quotes.view(quoteId);
+await cord.testHelpers.webhooks.trigger('invoice.paid');
 ```
+
+To receive webhooks on your machine, use the [CLI](/en/docs/desarrolladores/herramientas/cli): `cord listen --forward-to localhost:3000/api/webhooks`.

@@ -67,6 +67,12 @@ Implementación local apagada por defecto, pendiente de DNS/TLS real.
                    iframe: se abre en ventana propia. Appearance pasa por
                    packages/elements/src/appearance.ts. Loader: public/embed.js.
                    export const prerender = false.
+/embed/i/[token] → factura embebida (<cord-invoice>). Vista propia, no reutiliza /i/[token]:
+                   saldo, partidas, totales y PDF; "Pagar" abre /i/[token] en ventana
+                   propia. Misma política de enmarcado (src/lib/embed-frame.ts) y misma
+                   regla de rieles (publicInvoicePayability). Consulta GET /api/i/[token]
+                   cada 30 s mientras está abierta y emite status_changed y cord:paid.
+/.well-known/security.txt → RFC 9116, Expires siempre ~6 meses adelante.
 
 # Dev Blog (Subdominio dev.cordhq.app)
 /dev-blog/*      → El ecosistema técnico para desarrolladores. El rewrite de host lo
@@ -527,6 +533,9 @@ APIs de cobros (ago 2026)
                    el bloque no es autorización (Regla 17). Excluye a propósito las
                    visitas del propio equipo: mezclarlas vuelve ruido el panel.
 /api/v1/me           → whoami (scope any)
+/api/keys            → POST crea (sk_/rk_/pk_, permissions, allowed_ips, expires_in_days)
+                       o rota ({ action: 'roll', id, grace_hours }); PATCH edita nombre,
+                       permisos e IPs; DELETE revoca. Política en src/lib/api-key-policy.ts.
 /api/v1/cotizaciones → GET list (status/limit/offset, paginado en SQL) + POST crear
 /api/v1/cotizaciones/[id] → GET detalle · POST { action: send|resend|approve|reject|mark_paid }
                    · DELETE borrador. Misma capa de acciones que la app (src/lib/actions).

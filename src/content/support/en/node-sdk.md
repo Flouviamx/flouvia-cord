@@ -4,83 +4,66 @@ description: "How to call Cord's REST API from your Node.js or TypeScript backen
 category: "Developers"
 ---
 
-Cord publishes an official Node.js/TypeScript SDK inside the same package used by the frontend: `@flouviahq/elements`. Its `/server` entry point exposes a typed REST client (`CordAPI`) and the webhook signature verifier — you don't need a separate package for your backend.
+The official SDK for your backend is `@flouviahq/node`. It is a separate package from Cord Elements (which lives in the browser), has no dependencies, and runs on Node 20+, Bun, Deno, Cloudflare Workers and Vercel. If you used `@flouviahq/elements/server` with `CordAPI`, it still works but no longer gets changes.
 
-### Installation
+### Install
 
 ```bash
-npm install @flouviahq/elements
+npm install @flouviahq/node
 ```
 
-### The `CordAPI` client
+### Create and list
 
 ```typescript
-import { CordAPI, CordError } from '@flouviahq/elements/server';
+import { Cord, CordError } from '@flouviahq/node';
 
-const cord = new CordAPI(process.env.CORD_SECRET_KEY); // sk_live_... or sk_test_...
+const cord = new Cord(process.env.CORD_SECRET_KEY!); // sk_live_..., sk_test_... or rk_...
 
 try {
   const quote = await cord.quotes.create({
-    cliente_id: 'customer-id',      // optional
-    terminos: 'net30',
-    vigencia_dias: 15,
-    send: true,                     // emails the link to the customer
-    items: [
-      { descripcion: 'Development hours', cantidad: 10, precio_unitario: 1500 }
-    ],
+    cliente: { empresa: 'Acme', email: 'purchasing@acme.com' },
+    items: [{ descripcion: 'Installation', cantidad: 1, precio_unitario: 12500, tax_rate: 0.16 }],
+    base_currency: 'MXN',
   });
-  console.log(quote.folio, quote.link_publico); // e.g. COT-0149  https://cordhq.app/q/abc123
+  console.log(quote.folio, quote.link_publico);
 } catch (err) {
-  if (err instanceof CordError) {
-    // err.code: 'invalid_request' | 'missing_key' | 'invalid_key' | 'insufficient_scope'
-    //         | 'rate_limited' | 'network_error' | 'server_error' | 'unknown' | ...
-    console.error(err.status, err.code, err.message);
-  }
+  if (err instanceof CordError) console.error(err.code, err.requestId);
+}
+
+for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
+  console.log(invoice.numero, invoice.saldo);
 }
 ```
 
-`cord.quotes`, `cord.clients`, and `cord.products` expose `create()`/`list()` over `/cotizaciones`, `/clientes`, and `/productos` respectively; `link_publico` in the response is already absolute (no need to prefix the domain).
+The SDK retries only network errors, 429 and 5xx, and every operation carries an `Idempotency-Key` repeated across its retries: it never creates the same thing twice.
 
-### Verifying webhooks with the same client
-
-The SDK ships a ready-to-use signature verifier (see [Verifying webhook signatures](/en/support/firmas-webhooks) for how the mechanism works):
+### Verify webhooks
 
 ```typescript
-// Example with a Next.js Route Handler
+import { constructEvent } from '@flouviahq/node';
+
 export async function POST(req: Request) {
-  const body = await req.text();
-  try {
-    const event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
-    if (event.event === 'quote.paid') { /* ... */ }
-    return new Response('ok');
-  } catch {
-    return new Response('Invalid signature', { status: 400 });
-  }
+  const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
+  // event.event: 'quote.approved', 'invoice.paid', ...
+  return new Response('ok');
 }
 ```
+
+Pass it the **raw** request body. An event with an altered signature or older than 5 minutes is rejected. To test them on your machine, use `cord listen` from the [CLI](/en/docs/desarrolladores/herramientas/cli).
 
 ### Without the SDK
 
-Cord's API is standard REST, so you can also call it directly with `fetch` (built into Node 18+) without installing anything:
+Cord's API is standard REST, so you can also call it with `fetch`:
 
 ```typescript
-const BASE = 'https://cordhq.app/api/v1';
-
-async function cord(path: string, init: RequestInit = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: {
-      'Authorization': `Bearer ${process.env.CORD_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error ?? `Cord API ${res.status}`);
-  return body;
-}
+const res = await fetch('https://cordhq.app/api/v1/cotizaciones', {
+  headers: { Authorization: `Bearer ${process.env.CORD_SECRET_KEY}` },
+});
+const body = await res.json();
+if (!res.ok) throw new Error(`${body.code}: ${body.error} (${body.request_id})`);
 ```
 
 **Remember:**
-- Amounts are in **pesos** (`1500` = $1,500.00), not cents.
-- Creating quotes, clients, or products requires a key with **write** scope.
+- Amounts are in the document currency's unit (`1500` in MXN is $1,500.00), not cents, and always with their currency.
+- Creating quotes, clients or products requires a key with **write** permission. A restricted key (`rk_`) can only touch the resources you granted it.
+- If you retry a creation yourself, send the same `Idempotency-Key` header on every attempt.

@@ -192,6 +192,17 @@ const SDK: { id: string; path: string; label: string; lead: string; items: { n: 
         ],
     },
     {
+        id: 'server', path: '@flouviahq/node · @flouviahq/cli', label: tx('Servidor y CLI', 'Server and CLI'),
+        lead: tx('Paquetes aparte para tu backend y tu terminal. Elements vive en el navegador; tu secret key, nunca.', 'Separate packages for your backend and your terminal. Elements lives in the browser; your secret key never does.'),
+        items: [
+            { n: 'new Cord(sk)', k: 'class', d: tx('@flouviahq/node: la API completa con tu sk_ o rk_. Corre en Node, Bun, Deno, Cloudflare Workers y Vercel, sin dependencias.', '@flouviahq/node: the full API with your sk_ or rk_. Runs on Node, Bun, Deno, Cloudflare Workers and Vercel, with no dependencies.') },
+            { n: 'constructEvent()', k: 'fn', d: tx('Verifica la firma X-Cord-Signature-V1 y su antigüedad, y te devuelve el evento tipado. Un aviso viejo reenviado se rechaza.', 'Verifies the X-Cord-Signature-V1 signature and its age, and returns the typed event. An old event replayed is rejected.') },
+            { n: 'createElementsProxy()', k: 'fn', d: tx('Monta el modo proxyUrl de Elements en tu backend: el navegador nunca ve una llave.', 'Mounts Elements proxyUrl mode on your backend: the browser never sees a key.') },
+            { n: 'cord listen', k: 'fn', d: tx('@flouviahq/cli: recibe en localhost los webhooks de tu cuenta de prueba, firmados igual que en producción.', '@flouviahq/cli: receives your test account webhooks on localhost, signed exactly as in production.') },
+            { n: 'cord trigger', k: 'fn', d: tx('Dispara cualquier evento (quote.approved, invoice.paid…) a tus endpoints de prueba.', 'Fires any event (quote.approved, invoice.paid…) at your test endpoints.') },
+        ],
+    },
+    {
         id: 'events', path: tx('Eventos del iframe', 'Iframe events'), label: tx('11 eventos', '11 events'),
         lead: tx('Los mismos en React, Vue, los Web Components y embed.js. Sin dominios autorizados llegan sin datos.', 'The same in React, Vue, the Web Components and embed.js. Without authorized domains they arrive without data.'),
         items: [
