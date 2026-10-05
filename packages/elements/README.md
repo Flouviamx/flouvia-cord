@@ -6,7 +6,7 @@ impuestos por línea, retenciones, términos) y un Fiscal Element que valida RFC
 EIN igual que el servidor. Web Components + React, Vue, Framer y Webflow sobre un mismo
 núcleo sin framework (`@flouviahq/elements/headless`).
 
-Para tu servidor (API v1, webhooks, proxy) usa [`@flouviahq/node`](../node/README.md).
+Para tu servidor (API v1, webhooks, proxy) usa [`@flouviahq/node`](https://www.npmjs.com/package/@flouviahq/node).
 
 ## Instalación
 
@@ -381,7 +381,7 @@ Agrégalo como Code Component; `token` y `baseUrl` quedan expuestos en el panel 
 ## Servidor
 
 `@flouviahq/elements/server` está deprecado y se conserva por compatibilidad. Usa
-[`@flouviahq/node`](../node/README.md): API v1 completa con idempotencia y autopaginación,
+[`@flouviahq/node`](https://www.npmjs.com/package/@flouviahq/node): API v1 completa con idempotencia y autopaginación,
 `constructEvent` con WebCrypto que exige la firma V1 con timestamp, y el proxy para el modo
 `proxyUrl`.
 
