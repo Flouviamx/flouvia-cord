@@ -54,8 +54,10 @@ export const ui = {
 
     'nav.mega.dev.1.title': 'API REST',
     'nav.mega.dev.1.desc': 'Conecta tu ERP o sistema a Cord',
-    'nav.mega.dev.2.title': 'MCP bidireccional + gobernanza de agentes',
-    'nav.mega.dev.2.desc': 'Que una IA lea y cotice por ti',
+    'nav.mega.dev.2.title': 'Servidor MCP',
+    'nav.mega.dev.2.desc': 'Conecta Claude o Cursor a tu negocio',
+    'nav.mega.dev.5.title': 'Workbench',
+    'nav.mega.dev.5.desc': 'Registros de API, webhooks y salud',
     'nav.mega.dev.3.title': 'Cord Elements',
     'nav.mega.dev.3.desc': 'Embebe el cotizador en tu sitio',
     'nav.mega.dev.4.title': 'Estado de la API',
@@ -76,7 +78,6 @@ export const ui = {
     'nav.mobile.footer.op': 'CDMX — OP. GLOBAL',
 
     'footer.cta.btn': 'Empezar gratis',
-    'footer.cta.micro': 'Sin tarjeta · Plan gratis para siempre',
     'footer.tagline': 'La plataforma moderna para gestionar propuestas, firmas y cobranza. Para cualquier negocio, en cualquier país.',
     'footer.by': 'Hecho por el equipo de',
     'footer.col.empresa': 'EMPRESA',
@@ -305,8 +306,10 @@ export const ui = {
 
     'nav.mega.dev.1.title': 'REST API',
     'nav.mega.dev.1.desc': 'Connect your ERP or system to Cord',
-    'nav.mega.dev.2.title': 'Bidirectional MCP + agent governance',
-    'nav.mega.dev.2.desc': 'Let an AI read and quote for you',
+    'nav.mega.dev.2.title': 'MCP server',
+    'nav.mega.dev.2.desc': 'Connect Claude or Cursor to your business',
+    'nav.mega.dev.5.title': 'Workbench',
+    'nav.mega.dev.5.desc': 'API logs, webhooks and health',
     'nav.mega.dev.3.title': 'Cord Elements',
     'nav.mega.dev.3.desc': 'Embed the quoting tool on your site',
     'nav.mega.dev.4.title': 'API Status',
@@ -327,7 +330,6 @@ export const ui = {
     'nav.mobile.footer.op': 'CDMX — GLOBAL OP.',
 
     'footer.cta.btn': 'Start for free',
-    'footer.cta.micro': 'No credit card required · Free plan forever',
     'footer.tagline': 'The modern platform to manage proposals, signatures, and collections. For any business, anywhere.',
     'footer.by': 'Made by the team at',
     'footer.col.empresa': 'COMPANY',

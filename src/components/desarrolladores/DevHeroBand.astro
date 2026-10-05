@@ -1,0 +1,27 @@
+---
+// Banda diagonal del hero de las páginas para desarrolladores (/desarrolladores/*
+// y /elements). Misma geometría que la de /producto/[slug] — 12° estilo Stripe,
+// degradado CSS de base y el aurora de CordDynamicBg encima — con una gama
+// propia: ámbar/brasa, que no usa ninguna otra banda (producto va en azul,
+// verde y violeta-coral). La página deja el aire con
+// `padding-bottom: calc(var(--band-t) + 8.5vw - 1rem)` en su `.pp-hero`.
+import CordDynamicBg from '../CordDynamicBg.jsx';
+
+const STOPS = ['#7C2D12', '#C2410C', '#F59E0B', '#FACC15'];
+const SHADER = { base: '#E2580E', color1: '#FDE68A', color2: '#B91C1C', color3: '#FBBF24' };
+const style = STOPS.map((c, i) => `--band-${i}:${c}`).join(';');
+---
+
+<div class="dv-band" aria-hidden="true" style={style}>
+    <CordDynamicBg client:only="react" colors={SHADER} backdrop="transparent" grain={false} />
+</div>
+
+<style>
+    .dv-band {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: calc(var(--band-t) + var(--band-rise));
+        clip-path: polygon(0 calc(100% - var(--band-t)), 100% 0, 100% var(--band-t), 0 100%);
+        background: linear-gradient(100deg, var(--band-0) 5%, var(--band-1) 35%, var(--band-2) 68%, var(--band-3) 98%);
+        pointer-events: none;
+    }
+</style>

@@ -1,491 +1,432 @@
 // src/lib/desarrolladores.ts
 // Contenido de las páginas para desarrolladores (/desarrolladores/[slug]).
-// El copy y los ejemplos de código viven aquí; el layout y los mockups viven en
-// src/pages/desarrolladores/[slug].astro. Espejo del patrón de producto.ts.
-
-export interface DevStat {
-    valor: string;
-    countup?: number;
-    decimals?: number;
-    prefix?: string;
-    suffix?: string;
-    label: string;
-}
+// El copy vive aquí; el layout en src/pages/desarrolladores/[slug].astro y los
+// mockups en src/components/desarrolladores/DevMock.astro (calcas 1:1 del
+// Workbench, de Ajustes › MCP y de Facturas). Cada bloque declara su `mock`.
+//
+// Regla de este archivo: cada número y cada capacidad se verifica en código
+// antes de escribirse (límites en entitlements.ts/billing.ts/apikey.ts, eventos
+// en domain-events.ts, herramientas en mcp.ts, fuentes FX en FXService.ts).
 
 export interface DevBlock {
     eyebrow: string;
-    titulo: string;       // admite HTML
+    titulo: string;       // admite HTML inline (nunca <br/>, regla 2)
     copy: string;
     bullets: string[];
-    code?: { label: string; body: string };   // snippet opcional como visual del bloque
+    mock?: string;        // id del mockup en DevMock.astro
 }
 
 export interface DevStep { titulo: string; copy: string; }
 
 export interface DevFaq { q: string; a: string; }
 
-// Íconos disponibles en el mapa compartido de src/components/desarrolladores/TrustGrid.astro
-export type DevTrustIcon = 'shield' | 'key' | 'doc' | 'gauge' | 'globe' | 'unlock' | 'layers' | 'toggle' | 'route' | 'refresh' | 'lock';
-
-export interface DevTrustItem {
-    icon: DevTrustIcon;
-    titulo: string;
-    copy?: string;   // texto extendido que se revela al expandir la celda (grid del TrustGrid)
-}
-
-export interface DevTrust {
-    eyebrow: string;
-    titulo: string;
-    items: DevTrustItem[];  // exactamente 3 — útiles, no obvios, sin repetir blocks/faqs
-}
-
 export interface DevPage {
     slug: string;
     nav: string;
     eyebrow: string;
-    titulo: string;       // H1, admite <br/>
-    sub: string;
-    metaTitle?: string;      // <title>/OG — keyword-rich (cae a `${nav} — Cord`)
-    metaDescription?: string;// meta description (cae a `sub`)
+    titulo: string;
+    sub: string;             // primer párrafo: define qué es (lo extraen los buscadores con IA)
+    metaTitle?: string;
+    metaDescription?: string;
     plan: string;
-    stats: DevStat[];
+    heroMock?: string;       // id del mockup del hero en DevMock.astro
+    updated?: string;        // fecha visible de la última revisión del contenido (AAAA-MM-DD)
     blocks: DevBlock[];
-    steps: DevStep[];
-    faqs: DevFaq[];        // FAQ + FAQPage JSON-LD (mínimo 3 por página)
+    steps?: DevStep[];      // solo Elements: los pasos de instalación
+    faqs: DevFaq[];
     cta: { titulo: string; sub: string };
-    trust?: DevTrust;       // sección "confianza/infra" debajo del bento (TrustGrid.astro)
 }
+
+const UPDATED = '2026-09-30';
 
 export const DEV_PAGES: DevPage[] = [
     {
         slug: 'api',
         nav: 'API REST',
         eyebrow: 'API REST',
-        titulo: 'Tu motor de cotizaciones, conectado a todo.',
-        sub: 'Cord deja de ser solo una pantalla para humanos y se convierte en un sistema con el que tus otros sistemas pueden hablar. Lee y crea cotizaciones, clientes y productos desde tu ERP, tu CRM o un script — con una sola llave.',
-        metaTitle: 'API REST de cotizaciones — Cord Developers',
-        metaDescription: 'La API REST de Cord (/api/v1) lee y crea cotizaciones, clientes y productos con una llave Bearer. Disponible en todos los planes, incluido el Gratis, con llaves de prueba sin costo.',
-        plan: 'Disponible en todos los planes (Gratis incluido) · llaves de prueba gratis para integrar antes de pagar',
-        stats: [
-            { valor: '9', countup: 9, label: 'endpoints REST sobre tus datos reales' },
-            { valor: '1', countup: 1, label: 'API key para autenticar todo (Bearer)' },
-            { valor: '100', countup: 100, suffix: '%', label: 'JSON predecible, sin scraping ni exportar a mano' },
-        ],
+        titulo: 'Cotiza, factura y cobra desde tu propio código.',
+        sub: 'La API REST de Cord crea y consulta cotizaciones, clientes, productos y facturas con una llave Bearer, y ejecuta las mismas acciones que la app: enviar, aprobar, emitir o registrar un pago. Respuestas JSON predecibles, especificación OpenAPI y llaves de prueba que trabajan en un entorno aislado de tus datos reales.',
+        metaTitle: 'API REST de cotizaciones y facturas — Cord para desarrolladores',
+        metaDescription: 'Crea cotizaciones, clientes, productos y facturas por API REST con una llave Bearer. Idempotency-Key, eventos con cursor, especificación OpenAPI y llaves de prueba en un entorno aislado. Desde el plan Gratis.',
+        plan: 'En todos los planes. Gratis incluye 2 llaves y 100 llamadas al mes; las llaves de prueba no consumen tu cuota.',
+        heroMock: 'hero-api',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: '¿PARA QUÉ SIRVE?',
-                titulo: 'Tus clientes grandes ya tienen su sistema. Habla con él.',
-                copy: 'Imagina un cliente atado a un ERP lento que sus empleados odian. Con la API, sus programadores conectan ese ERP con Cord: tu equipo cotiza en el motor rápido de Cord y los datos regresan al ERP del cliente en el fondo. Nadie cambia de herramienta, todos ganan.',
+                eyebrow: 'IDEMPOTENCIA',
+                titulo: 'Reintenta sin miedo a duplicar.',
+                copy: 'Una red inestable no debería crear dos cotizaciones. Manda una Idempotency-Key en cualquier POST, PATCH o DELETE: si la petición se repite con la misma llave y el mismo cuerpo, Cord devuelve la respuesta original, marcada con Idempotent-Replayed, en vez de ejecutar dos veces. Si el cuerpo cambió, responde con un error explícito.',
                 bullets: [
-                    'Importa tu catálogo y clientes desde tu sistema, sin recapturar',
-                    'Crea cotizaciones automáticamente cuando algo pasa en tu ERP',
-                    'Sincroniza estados (vista, aprobada, pagada) de vuelta a tu sistema',
+                    'Funciona en todas las mutaciones de /api/v1',
+                    'La respuesta repetida es idéntica, byte por byte',
+                    'Misma llave con otro cuerpo: error, nunca un duplicado silencioso',
                 ],
+                mock: 'code-idempotency',
             },
             {
-                eyebrow: 'AUTENTICACIÓN',
-                titulo: 'Una llave. Dos permisos. Revocable al instante.',
-                copy: 'Genera una API key en Ajustes y mándala en el header de cada petición. Las llaves de solo lectura pueden consultar; las de escritura también crean. ¿Se filtró una? La revocas y deja de funcionar al momento. En la base solo guardamos su hash — nunca la llave en claro.',
+                eyebrow: 'RECURSOS',
+                titulo: 'Lo que ves en la app, también por API.',
+                copy: 'No es una API de solo lectura. Crea una cotización y envíala, apruébala o regístrala como pagada. Crea una factura como borrador y emítela, mándala, anótale un pago o una nota de crédito. Todo con los mismos permisos, validaciones y totales que usa la app.',
                 bullets: [
-                    'Header estándar: Authorization: Bearer sk_live_…',
-                    'Scopes de lectura y escritura por llave',
-                    'Llaves de prueba (sk_test_) gratis para integrar sin plan',
+                    'Cotizaciones, facturas, clientes, productos, tareas y cobranza',
+                    'Acciones con POST { "action": "send" | "approve" | "finalize" | … }',
+                    'Paginación con limit y offset, o con cursor en eventos y facturas',
                 ],
-                code: {
-                    label: 'Crear una cotización',
-                    body: `curl -X POST https://cordhq.app/api/v1/cotizaciones \\
-  -H "Authorization: Bearer sk_live_xxxx" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "cliente_id": "c_8f2a…",
-    "items": [
-      { "descripcion": "Cemento 50kg",
-        "cantidad": 120, "precio_unitario": 182 }
-    ]
-  }'`,
-                },
+                mock: 'wb-endpoints',
             },
             {
-                eyebrow: 'ENDPOINTS',
-                titulo: 'Todo lo que ves en la app, también por API.',
-                copy: 'Cotizaciones, clientes, productos y cobranza — los mismos datos de tu panel, en JSON. Pagina con limit y offset, filtra por estado, y construye lo que necesites encima.',
+                eyebrow: 'EVENTOS',
+                titulo: 'Sincroniza sin perderte nada.',
+                copy: 'GET /api/v1/events devuelve el historial de tu negocio, del más reciente al más antiguo: cotizaciones enviadas, vistas, aprobadas o pagadas, facturas emitidas, clientes nuevos. Filtra por tipo o por objeto y avanza con next_cursor. Es el complemento de los webhooks para reconstruir cualquier estado.',
                 bullets: [
-                    'GET/POST /cotizaciones · GET /cotizaciones/:id',
-                    'GET/POST /clientes · GET/POST /productos',
-                    'GET /cobranza — cartera, vencidos y aging',
+                    'Filtros ?type=quote.approved y ?object_id=',
+                    'Hasta 200 eventos por página con cursor estable',
+                    'Los mismos tipos que reciben tus webhooks',
                 ],
-                code: {
-                    label: 'Respuesta de /api/v1/cotizaciones',
-                    body: `{
-  "data": [
-    {
-      "id": "q_19a…",
-      "folio": "COT-0149",
-      "cliente": "Distribuidora El Zarco",
-      "status": "sent",
-      "total": 196469.2,
-      "terminos": "Net 30"
-    }
-  ],
-  "meta": { "limit": 50, "offset": 0, "total": 1 }
-}`,
-                },
+                mock: 'code-events',
             },
-        ],
-        steps: [
-            { titulo: 'Genera tu llave', copy: 'En Ajustes › Developers › API. Cópiala una vez — solo se muestra al crearla.' },
-            { titulo: 'Autentícate', copy: 'Manda Authorization: Bearer en cada petición a https://cordhq.app/api/v1.' },
-            { titulo: 'Lee y crea', copy: 'Consulta JSON o crea cotizaciones desde tu ERP, CRM o automatización.' },
         ],
         faqs: [
-            { q: '¿Necesito el plan Developer para tener acceso a la API?', a: 'No. La API está disponible en todos los planes, incluido el Gratis — cada plan trae un número de llaves y un límite mensual de llamadas distinto (Gratis 2 llaves, Developer 200 llaves + 50,000 llamadas al mes); no hay un plan exclusivo que "desbloquee" la API.' },
-            { q: '¿Las llaves de prueba (test) tienen costo?', a: 'No. Puedes generar una llave sk_test_ sin costo para integrar y probar antes de activar una llave sk_live_ real.' },
-            { q: '¿Qué puedo hacer con la API además de crear cotizaciones?', a: 'Leer y crear clientes y productos, y consultar tu cartera de cobranza — en general, lo mismo que ves en la app, expuesto como endpoints REST bajo /api/v1.' },
+            { q: '¿Qué es la API de Cord?', a: 'Es una API REST bajo https://cordhq.app/api/v1 que da acceso programático a cotizaciones, facturas, clientes, productos, tareas, cobranza y eventos de tu negocio. Se autentica con una llave Bearer y responde en JSON con la forma { data, meta } o { error, code }.' },
+            { q: '¿Necesito un plan de pago para usar la API?', a: 'No. La API está en todos los planes, incluido Gratis, con 2 llaves y 100 llamadas al mes. Starter incluye 1,000 llamadas, Profesional 5,000, Scale 10,000 y Developer 50,000. Las llaves de prueba no consumen cuota.' },
+            { q: '¿Cómo pruebo sin tocar mis datos reales?', a: 'Con una llave sk_test_. Opera sobre un entorno de prueba separado de tu cuenta, así que puedes crear y borrar cotizaciones sin afectar a tus clientes ni a tus reportes.' },
+            { q: '¿Cómo evito crear registros duplicados si reintento?', a: 'Manda el header Idempotency-Key en la petición. Si la repites con la misma llave y el mismo cuerpo, Cord devuelve la respuesta original sin ejecutarla otra vez.' },
+            { q: '¿Hay especificación OpenAPI?', a: 'Sí, en https://cordhq.app/openapi.yaml, y un resumen para asistentes de IA en https://cordhq.app/llms.txt. Los dos se enlazan desde el Workbench.' },
         ],
-        cta: { titulo: 'Conecta Cord a tu sistema.', sub: 'Genera una llave de prueba gratis y haz tu primera llamada hoy.' },
-        trust: {
-            eyebrow: 'HERRAMIENTAS',
-            titulo: 'Detalles que solo importan cuando integras de verdad',
-            items: [
-                { icon: 'gauge', titulo: '~500 peticiones por minuto, por IP', copy: 'El límite corre por ventana de 60 segundos — si lo alcanzas, la respuesta te dice cuánto esperar.' },
-                { icon: 'globe', titulo: 'Datos y cómputo alojados en México', copy: 'Sin saltos innecesarios a otro continente: tu base de datos y la API viven en la misma región.' },
-                { icon: 'doc', titulo: 'Errores siempre planos: { error, code }', copy: 'Nunca un objeto anidado que tengas que desempacar — un solo formato para manejar en tu código.' },
-            ],
-        },
+        cta: { titulo: 'Haz tu primera llamada hoy.', sub: 'Crea tu cuenta, genera una llave de prueba y llama a /api/v1/me en menos de un minuto.' },
+    },
+    {
+        slug: 'workbench',
+        nav: 'Workbench',
+        eyebrow: 'WORKBENCH PARA DESARROLLADORES',
+        titulo: 'Toda tu integración, en un panel dentro de la app.',
+        sub: 'El Workbench de Cord es un panel para desarrolladores que se abre dentro de la app, sobre la pantalla en la que estés. Reúne llaves de API, webhooks, el registro de cada petición, los eventos del negocio y la salud de tu integración, con un modo de prueba separado de tus datos reales.',
+        metaTitle: 'Workbench para desarrolladores: registros de API, webhooks y salud — Cord',
+        metaDescription: 'El Workbench de Cord muestra cada petición a la API con su estado y latencia, gestiona webhooks firmados, llaves de prueba y producción, y alerta cuando un endpoint falla. Incluido en todos los planes.',
+        plan: 'Incluido en todos los planes. Lo abre cualquier miembro con acceso a Ajustes.',
+        heroMock: 'hero-workbench',
+        updated: UPDATED,
+        blocks: [
+            {
+                eyebrow: 'REGISTROS',
+                titulo: 'Cada petición, con su respuesta.',
+                copy: 'Busca por ruta, filtra por método o por tipo de respuesta y abre cualquier petición para ver su estado, latencia, IP, la llave que la hizo y el entorno. Cuando algo falla sabes en segundos si fue un 401 por una llave revocada o un 422 por un campo mal formado.',
+                bullets: [
+                    'Filtros por método (GET, POST) y por clase (2xx, 4xx, 5xx)',
+                    'Detalle con la llave que hizo la llamada, por nombre',
+                    'Cord no guarda el cuerpo de tus peticiones: solo metadatos',
+                ],
+                mock: 'wb-logs',
+            },
+            {
+                eyebrow: 'WEBHOOKS',
+                titulo: 'Endpoints que puedes probar sin esperar un evento real.',
+                copy: 'Registra una URL, elige los eventos y guarda el secreto. Con Probar mandas una entrega de prueba al instante, con Rotar secreto cambias la firma sin cortar el tráfico, y el historial de cada endpoint muestra sus entregas con el código que devolvió tu servidor.',
+                bullets: [
+                    'Firma X-Cord-Signature-V1 con marca de tiempo',
+                    'Rotación de secreto con periodo de gracia',
+                    'Pausa un endpoint con un interruptor, sin borrarlo',
+                ],
+                mock: 'wb-webhooks',
+            },
+            {
+                eyebrow: 'SALUD',
+                titulo: 'Te enteras antes que tu cliente.',
+                copy: 'La pestaña Salud junta lo que puede romper una integración: endpoints con fallos seguidos, eventos en cola o agotados, y las rutas que más errores devuelven. Si un endpoint acumula fallos, lo ves aquí y recibes un aviso antes de que Cord lo desactive.',
+                bullets: [
+                    'Fallos seguidos por endpoint',
+                    'Cola de eventos: pendientes, vencidos y agotados',
+                    'Rutas con más errores 4xx y 5xx',
+                ],
+                mock: 'wb-health',
+            },
+        ],
+        faqs: [
+            { q: '¿Qué es el Workbench de Cord?', a: 'Es el panel para desarrolladores de Cord. Se abre dentro de la app y reúne llaves de API, webhooks, el registro de peticiones, los eventos del negocio y la salud de la integración, con un modo de prueba separado.' },
+            { q: '¿Qué guarda Cord de cada petición a la API?', a: 'Método, ruta, código de respuesta, latencia, IP, la llave y el entorno. No guarda el cuerpo de la petición ni el de la respuesta, para no almacenar datos de tus clientes fuera de su lugar.' },
+            { q: '¿Qué pasa si mi endpoint de webhook deja de responder?', a: 'Cord reintenta cada entrega hasta 11 veces con espera creciente, durante casi cuatro días. Si el endpoint acumula fallos seguidos, lo verás en Salud y recibirás un aviso; tras 5 fallos seguidos Cord lo desactiva para no insistir contra un servidor caído.' },
+            { q: '¿Quién puede abrir el Workbench?', a: 'Cualquier miembro de la organización con acceso a Ajustes. Está incluido en todos los planes.' },
+        ],
+        cta: { titulo: 'Integra con los ojos abiertos.', sub: 'Crea tu cuenta, abre el Workbench y sigue tu primera petición en vivo.' },
     },
     {
         slug: 'mcp',
-        nav: 'MCP bidireccional + gobernanza de agentes',
-        eyebrow: 'MCP BIDIRECCIONAL · GOBERNANZA DE AGENTES',
-        titulo: 'Tu negocio habla con la IA. Y la IA habla con tus sistemas.',
-        sub: 'El MCP de Cord ya no va en un solo sentido. Cord es servidor: una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas. Y Cord es cliente: se conecta a los servidores MCP de tu CRM o ERP, bajo permisos que tú firmas. Tú decides quién toca qué.',
-        metaTitle: 'Servidor MCP bidireccional para IA y agentes comerciales — Cord',
-        metaDescription: 'Cord es servidor MCP (una IA como Claude consulta tu cartera con 7 herramientas) y cliente MCP (se conecta a los servidores de tu CRM o ERP bajo permisos que tú controlas). Disponible en todos los planes.',
-        plan: 'Disponible en todos los planes · usa la misma API key (más llaves activas conforme subes de plan; el consumo en vivo se mide por uso)',
-        stats: [
-            { valor: '7', countup: 7, label: 'herramientas que Cord expone a la IA por JSON-RPC' },
-            { valor: '2', countup: 2, label: 'transportes entrantes: HTTP sin estado y HTTP/SSE con sesión' },
-            { valor: '5', countup: 5, label: 'iteraciones máximas del agent loop antes de cotizar (tope de seguridad)' },
-        ],
+        nav: 'Servidor MCP',
+        eyebrow: 'SERVIDOR MCP',
+        titulo: 'Tu negocio, disponible para Claude, Cursor y cualquier agente.',
+        sub: 'El servidor MCP de Cord conecta asistentes de IA como Claude o Cursor con los datos reales de tu negocio mediante el Model Context Protocol. Con 19 herramientas, la IA consulta cotizaciones, facturas y cartera vencida, y con una llave de escritura también crea borradores, envía cotizaciones o registra pagos.',
+        metaTitle: 'Servidor MCP para Claude y Cursor: cotizaciones y facturas con IA — Cord',
+        metaDescription: 'Conecta Claude, Cursor o cualquier cliente MCP a Cord con tu API key. 19 herramientas: 9 de lectura (cotizaciones, facturas, cartera vencida) y 10 de escritura (borradores, envío, pagos). En todos los planes.',
+        plan: 'En todos los planes. Usa la misma API key que la API REST; las herramientas de escritura exigen una llave con permiso de escritura.',
+        heroMock: 'hero-mcp',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'CORD COMO SERVIDOR',
-                titulo: '7 herramientas. Dos formas de conectarse.',
-                copy: 'Conectas Cord a un asistente como Claude y la IA trabaja con tus datos reales: revisa el pipeline, encuentra lo vencido, busca un cliente o arma un borrador. Hay dos puertas de entrada: JSON-RPC 2.0 sobre HTTP sin estado en /api/mcp, donde viven las 7 herramientas; y un canal HTTP/SSE con sesión en /api/mcp/sse + /api/mcp/message. Ambas se autentican con tu API key y respetan el scope de cada herramienta.',
+                eyebrow: 'CONEXIÓN',
+                titulo: 'Pega un bloque de configuración y listo.',
+                copy: 'En Ajustes › MCP copias la configuración exacta para Claude Desktop, para Cursor o la URL directa para cualquier otro cliente. La conexión es https://cordhq.app/api/mcp con tu llave en el header Authorization. Para clientes que necesitan sesión, Cord también expone un canal SSE.',
                 bullets: [
-                    'Las 7 tools corren dentro de tu org — la IA consulta, no inventa',
-                    'Las acciones de escritura exigen una llave con permiso de escritura',
-                    'La sesión SSE queda atada a tu org_id: cada query respeta tu RLS',
+                    'JSON-RPC 2.0 sobre HTTP, sin estado',
+                    'Canal SSE con sesión en /api/mcp/sse',
+                    'La misma llave que ya usas en la API REST',
                 ],
-                code: {
-                    label: 'Herramientas que expone Cord',
-                    body: `listar_cotizaciones       detalle_cotizacion
-cartera_vencida           resumen_negocio
-buscar_cliente            listar_productos
-crear_cotizacion_borrador`,
-                },
+                mock: 'mcp-connect',
             },
             {
-                eyebrow: 'CORD COMO CLIENTE',
-                titulo: 'Cord también consulta los sistemas de tu cliente.',
-                copy: 'Da la vuelta a la flecha. Registras la URL de los servidores MCP de tu CRM o ERP y Cord se conecta a ellos como cliente. Cuando armas una cotización con IA, el agent loop de /api/cotizaciones/ai-draft pregunta primero a esos sistemas remotos —saldo de un cliente, último pedido, condiciones pactadas— y luego arma las líneas con ese contexto. Hasta 5 vueltas como tope, y al terminar cierra cada conexión.',
+                eyebrow: 'HERRAMIENTAS',
+                titulo: '19 herramientas, cada una con su permiso.',
+                copy: 'La IA puede preguntar "¿qué facturas están vencidas?" o "¿cómo va el negocio?" con las 9 herramientas de lectura. Con una llave de escritura puede además crear una cotización o una factura en borrador, enviar una cotización, marcarla como aprobada o pagada, dar de alta un cliente o registrar una promesa de pago.',
                 bullets: [
-                    'Conecta por SSE inyectando el token de autorización de cada servidor remoto',
-                    'Cada herramienta externa se prefija por servidor para no colisionar',
-                    'El agent loop intercala tus tools y las remotas en una sola conversación',
+                    'Lectura: cotizaciones, facturas, clientes, productos, eventos y cartera',
+                    'Escritura: solo con una llave que tenga ese permiso',
+                    'Resultados paginados con next_cursor, igual que la API',
                 ],
-                code: {
-                    label: 'El agent loop arma con contexto remoto',
-                    body: `// /api/cotizaciones/ai-draft
-const { tools, toolMap } =
-  await mcpManager.getAnthropicTools();
-const allTools = [armar_cotizacion, ...tools];
-// la IA consulta tu CRM antes de cotizar (max 5 vueltas)
-await mcpManager.disconnectAll();`,
-                },
+                mock: 'mcp-tools',
             },
             {
-                eyebrow: 'GOBERNANZA DE AGENTES',
-                titulo: 'Cada agente toca solo lo que le firmas.',
-                copy: 'Nada de accesos abiertos. Cada org tiene un agente por defecto, el Asistente Cord, y una tabla de permisos que dicta a qué servidores externos puede conectarse. Si un servidor no está en su allowlist, el agente ni lo ve. Todo vive con Row Level Security en la base: cada consulta filtra por tu org_id y nadie cruza datos entre negocios.',
+                eyebrow: 'PROBADOR',
+                titulo: 'Mira exactamente lo que recibe la IA.',
+                copy: 'Antes de configurar un cliente, prueba cualquier herramienta de lectura desde Ajustes › MCP con tus datos reales. Eliges la herramienta, pasas argumentos en JSON y ves la respuesta tal como le llega al modelo. Las de escritura no se ejecutan ahí, para no crear datos por accidente.',
                 bullets: [
-                    'Registras y activas/desactivas servidores MCP en Ajustes › Developers',
-                    'Otorgas o revocas el permiso del agente por servidor, al instante',
-                    'RLS en mcp_servers, agentes_ia y agentes_permisos: aislamiento por org',
+                    'Corre con tu sesión, sin configurar ninguna llave',
+                    'Argumentos opcionales en JSON, por ejemplo {"limit": 5}',
+                    'Solo herramientas de lectura',
                 ],
+                mock: 'mcp-playground',
             },
-        ],
-        steps: [
-            { titulo: 'Genera tu llave', copy: 'La misma API key de Ajustes › Developers › API. Una llave sirve para la API REST y para el MCP entrante.' },
-            { titulo: 'Conecta el servidor', copy: 'Agrega https://cordhq.app/api/mcp en tu cliente de IA con el header de autorización. Para streaming con sesión, usa el canal SSE.' },
-            { titulo: 'Registra y permite', copy: 'Suma la URL de los servidores MCP de tu CRM o ERP y otorga a tu agente acceso a ellos. La IA ya consulta tus sistemas antes de cotizar.' },
         ],
         faqs: [
-            { q: '¿El MCP de Cord solo sirve para que una IA lea mis datos?', a: 'No. Cord funciona en los dos sentidos: como servidor MCP (una IA como Claude consulta tu cartera y arma cotizaciones con 7 herramientas) y como cliente MCP (se conecta a los servidores MCP de tu CRM o ERP bajo los permisos que tú autorices).' },
-            { q: '¿Cualquier agente de IA puede tocar cualquier dato de mi cuenta?', a: 'No. La gobernanza de agentes en Ajustes te deja definir, servidor por servidor, qué herramientas puede usar cada agente — el acceso es explícito, nunca total por defecto.' },
-            { q: '¿Necesito una llave distinta para el MCP y para la API REST?', a: 'No. Es la misma API key la que usas para ambos; el header de autorización es idéntico.' },
+            { q: '¿Qué es el servidor MCP de Cord?', a: 'Es un servidor del Model Context Protocol en https://cordhq.app/api/mcp que expone 19 herramientas sobre los datos de tu negocio. Cualquier cliente MCP, como Claude Desktop o Cursor, puede usarlas autenticándose con tu API key de Cord.' },
+            { q: '¿La IA puede modificar mis datos?', a: 'Solo si le das una llave con permiso de escritura. Con una llave de lectura, las 10 herramientas de escritura responden que la acción requiere ese permiso y no ejecutan nada.' },
+            { q: '¿Qué puedo preguntarle a Claude sobre mi negocio?', a: 'Cosas como qué facturas están vencidas, cómo va el pipeline, qué pasó con una cotización o cuánto te debe un cliente. Con una llave de escritura también puedes pedirle que arme una cotización en borrador para que la revises antes de enviarla.' },
+            { q: '¿Si la IA reintenta, puede duplicar una cotización?', a: 'No. La herramienta crear_cotizacion_borrador acepta un idempotency_key: un reintento con la misma clave devuelve la cotización que ya se creó en vez de hacer otra.' },
+            { q: '¿Necesito una llave distinta para MCP?', a: 'No. Es la misma API key de la API REST y va en el mismo header Authorization: Bearer.' },
         ],
-        cta: { titulo: 'Conecta la IA a tu negocio. En los dos sentidos.', sub: 'Mismo header, misma llave. Expón tus 7 herramientas y enlaza tus sistemas con permisos que tú controlas.' },
-        trust: {
-            eyebrow: 'DETALLES DE PROTOCOLO',
-            titulo: 'Lo que no se ve en el copy de marketing',
-            items: [
-                { icon: 'doc', titulo: 'Un error de negocio nunca rompe el protocolo', copy: 'Un cliente inexistente o un permiso faltante regresa isError:true dentro de la respuesta — la IA lo lee y sigue la conversación, sin un error crudo de transporte.' },
-                { icon: 'key', titulo: 'Auditoría por acción, no solo por sesión', copy: 'Cada llamada de una herramienta —tuya o de un servidor remoto— queda en el audit log de tu cuenta, con qué agente la invocó.' },
-                { icon: 'globe', titulo: '/api/mcp es stateless de verdad', copy: 'Cada llamada JSON-RPC es independiente, sin sesión que expire. Para streaming continuo, usa el canal SSE con sesión.' },
-            ],
-        },
+        cta: { titulo: 'Pregúntale a tu negocio.', sub: 'Crea tu cuenta, copia la configuración para Claude o Cursor y haz tu primera pregunta.' },
+    },
+    {
+        slug: 'integraciones',
+        nav: 'Webhooks e integraciones',
+        eyebrow: 'WEBHOOKS · INTEGRACIONES',
+        titulo: 'Que tu sistema se entere de cada venta, al momento.',
+        sub: 'Los webhooks de Cord avisan a tu servidor cada vez que pasa algo en tu ciclo de venta: una cotización enviada, vista, aprobada o pagada, una factura emitida, un cliente nuevo. Cada aviso es un POST en JSON firmado con HMAC-SHA256, con reintentos automáticos y un historial que puedes revisar en el Workbench.',
+        metaTitle: 'Webhooks firmados para cotizaciones y facturas (Zapier, Make, n8n) — Cord',
+        metaDescription: '41 eventos de venta —quote.approved, quote.paid, invoice.finalized— enviados como POST firmado con HMAC-SHA256, con 11 reintentos. Conéctalos a tu backend, Zapier, Make o n8n. En todos los planes.',
+        plan: 'En todos los planes: 16 endpoints en Gratis, Starter y Profesional, 32 en Scale y 100 en Developer.',
+        heroMock: 'hero-webhook',
+        updated: UPDATED,
+        blocks: [
+            {
+                eyebrow: 'FIRMA',
+                titulo: 'Verifica que el aviso vino de Cord.',
+                copy: 'Cada entrega lleva X-Cord-Signature-V1 con una marca de tiempo y el HMAC-SHA256 del cuerpo crudo, firmado con el secreto de tu endpoint. Lo validas en unas pocas líneas antes de procesar el evento, y la marca de tiempo te protege de que alguien reenvíe una entrega vieja.',
+                bullets: [
+                    'X-Cord-Event-Id para deduplicar sin leer el cuerpo',
+                    'X-Cord-Attempt dice qué intento de entrega es',
+                    'Durante una rotación firma con el secreto nuevo y el anterior',
+                ],
+                mock: 'code-verify',
+            },
+            {
+                eyebrow: 'CATÁLOGO',
+                titulo: '41 eventos para todo el ciclo de venta.',
+                copy: 'No solo cotizaciones. Recibe avisos de facturas finalizadas, enviadas, pagadas o vencidas, de pagos parciales o fallidos, reembolsos, contracargos, depósitos, clientes, productos, tareas y promesas de pago. Suscribe cada endpoint solo a lo que necesita.',
+                bullets: [
+                    'quote.* · invoice.* · payment.* · refund.* · payout.*',
+                    'client.* · product.* · task.* · promise.* · dispute.*',
+                    'Los mismos tipos que devuelve GET /api/v1/events',
+                ],
+                mock: 'event-catalog',
+            },
+            {
+                eyebrow: 'SIN CÓDIGO',
+                titulo: 'Zapier, Make y n8n, sin copiar llaves.',
+                copy: 'Zapier y Make se conectan con Cord por OAuth: autorizas la app una vez y aparece en el Workbench como conexión autorizada, que puedes revocar cuando quieras. n8n usa una API key. Las tres crean sus propias suscripciones de webhook, con un cupo aparte de 100 que no consume los endpoints de tu equipo.',
+                bullets: [
+                    'Autorización OAuth para Zapier y Make',
+                    'Revoca una app sin tocar tus llaves',
+                    'HubSpot, Slack y Microsoft Teams se conectan directo desde Ajustes',
+                ],
+                mock: 'oauth-apps',
+            },
+        ],
+        faqs: [
+            { q: '¿Qué es un webhook de Cord?', a: 'Es un aviso automático: cuando pasa un evento en tu cuenta, como una cotización aprobada o una factura pagada, Cord hace un POST en JSON a la URL que registraste, firmado con HMAC-SHA256 para que verifiques su origen.' },
+            { q: '¿Qué pasa si mi servidor no responde?', a: 'Cord reintenta hasta 11 veces con espera creciente durante casi cuatro días, con un timeout de 5 segundos por intento. Tras 3 fallos seguidos recibes un aviso y tras 5 el endpoint se desactiva hasta que lo reactives.' },
+            { q: '¿Cómo evito procesar el mismo evento dos veces?', a: 'Usa X-Cord-Event-Id, que también viaja como campo id en el cuerpo. Es el mismo en todos los reintentos de un evento, así que basta con guardar los que ya procesaste.' },
+            { q: '¿Cord tiene conector nativo para SAP, Salesforce u Oracle?', a: 'No. La conexión directa existe para HubSpot, Slack y Microsoft Teams, entre otras. Para SAP, Salesforce u Oracle apuntas un webhook a tu backend o a Zapier, Make o n8n, y usas la API REST para escribir de vuelta en Cord.' },
+            { q: '¿Cuántos endpoints puedo tener?', a: '16 en Gratis, Starter y Profesional, 32 en Scale y 100 en Developer. Las suscripciones que crean Zapier, Make o n8n tienen un cupo aparte de 100 por organización.' },
+        ],
+        cta: { titulo: 'Recibe tu primer evento en minutos.', sub: 'Registra un endpoint en el Workbench y usa Probar para ver la entrega llegar.' },
     },
     {
         slug: 'elements',
         nav: 'Cord Elements',
         eyebrow: 'CORD ELEMENTS · COTIZADOR EMBEBIBLE',
-        titulo: 'Tu cotizador, dentro de su web.',
-        sub: 'Lleva el cotizador de Cord al portal de tus clientes con una línea de código. Tu marca, aprobación, contraoferta y pago en línea — todo dentro de su ecosistema, sin que salgan de su sitio.',
-        metaTitle: 'Cord Elements — cotizador embebible para tu sitio',
-        metaDescription: 'Embebe el cotizador de Cord en tu portal con una línea de código: iframe, Web Component <cord-cotizador> o el paquete @flouviahq/elements para React/Vue. Signup gratis, sin backend propio.',
-        plan: 'Signup gratis. En el plan Gratis el link público lleva el discreto "vía Cord"; lo quitas y dejas solo tu marca desde Ajustes › Developers, donde también defines la allowlist de dominios autorizados para embeber.',
-        stats: [
-            { valor: '1', countup: 1, label: 'línea de código para montarlo en cualquier sitio' },
-            { valor: '6', countup: 6, label: 'formas de usarlo hoy: HTML (embed.js), React, Vue, Astro, Framer y Webflow' },
-            { valor: '5', countup: 5, label: 'eventos en vivo: ready, approved, rejected, message y pay' },
-        ],
+        titulo: 'Tu cotizador, dentro del sitio de tu cliente.',
+        sub: 'Cord Elements lleva tus cotizaciones al portal de tus clientes con una línea de código. Ven tu marca, revisan cada partida, aprueban con firma, negocian o pagan sin salir de su sitio, y tu página recibe cada paso como un evento tipado.',
+        metaTitle: 'Cord Elements — cotizador embebible para React, Vue y HTML',
+        metaDescription: 'Embebe tus cotizaciones en cualquier sitio con una línea: embed.js, el Web Component <cord-cotizador> o @flouviahq/elements para React, Vue, Framer y Webflow. Aprobación con firma, pago en línea y 8 eventos tipados.',
+        plan: 'En todos los planes, incluido Gratis. Desde Starter quitas la marca de Cord en Ajustes › Marca y apariencia; los dominios que pueden embeberlo se definen en Ajustes › Cotizador embebible.',
+        updated: UPDATED,
         blocks: [
             {
                 eyebrow: 'UNA LÍNEA DE CÓDIGO',
+                mock: 'el-oneline',
                 titulo: 'Pegar. Listo. Sin backend.',
-                copy: 'Un script y un <div>. El cotizador aparece como un <iframe> servido por Cord, muestra un skeleton mientras carga y se ajusta solo a la altura del contenido vía postMessage. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
+                copy: 'Un script y un <div>. El cotizador aparece como un iframe servido por Cord, mide su contenido y le avisa a tu página para ajustar la altura sola. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
                 bullets: [
-                    'Funciona en cualquier stack: WordPress, HTML plano, lo que sea',
-                    'Altura automática — el embed mide su contenido y le avisa a tu página',
-                    'Skeleton con shimmer mientras carga y fade-in al estar listo: nada de cajas vacías',
+                    'WordPress, Webflow, Shopify o HTML plano: cualquier sitio que acepte un script',
+                    'Altura automática: nada de barras de scroll ni cajas vacías',
+                    'El mismo cotizador que el link público /q, sin una línea más',
                 ],
-                code: {
-                    label: 'En cualquier sitio HTML',
-                    body: `<!-- Una línea + un div -->
-<script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
-                },
             },
             {
-                eyebrow: 'NATIVO EN TU FRAMEWORK',
-                titulo: 'Un paquete de npm. Tipado, tematizable y headless si quieres.',
-                copy: 'Instala @flouviahq/elements 1.0 y úsalo como un componente más. En React importas <CordCotizador> con callbacks tipados; en Vue, Astro, Svelte o HTML usas el Web Component <cord-cotizador>. Los tipos de TypeScript se generan del build real (no se escriben a mano), así que nunca divergen del SDK. Y si prefieres construir tu propia interfaz, el hook useQuoteBuilder() te da el estado del cotizador sin una sola línea de nuestra UI.',
+                eyebrow: 'EVENTOS',
+                mock: 'el-events',
+                titulo: 'Tu página se entera de cada paso del cliente.',
+                copy: 'Cuando el cliente abre, aprueba, rechaza, escribe o paga, el iframe le avisa a tu página con un evento tipado y su detalle. Con React o Vue llegan como callbacks; con el Web Component, como eventos del DOM. Úsalos para redirigir, abrir tu checkout o avisarle a tu CRM.',
                 bullets: [
-                    'import { CordCotizador } from \'@flouviahq/elements/react\'',
-                    'Web Component &lt;cord-cotizador token="…"&gt; para Vue, Astro, Svelte y HTML — también SDKs para Framer y Webflow',
-                    'Appearance API real: tematiza el iframe (color, fuente, radios) o pasa appearance.baseTheme:"none" para 100% headless',
+                    'onApproved trae signed_by y el hash de la firma',
+                    'onPay trae la URL del pago; onRejected, el comentario del cliente',
+                    'Con allowlist, los eventos se dirigen sólo al origen de tu sitio',
                 ],
-                code: {
-                    label: 'React / Next.js',
-                    body: `// npm install @flouviahq/elements
-import { CordCotizador } from '@flouviahq/elements/react';
-
-export function Cotizacion({ token }) {
-  return (
-    <CordCotizador
-      token={token}
-      appearance={{ theme: 'auto' }}
-      onApproved={(d) => console.log('Aprobada', d.folio)}
-      onPay={() => location.assign('/gracias')}
-    />
-  );
-}`,
-                },
             },
             {
-                eyebrow: 'TU MARCA · SEGURO POR DISEÑO',
-                titulo: 'El cotizador completo, no un widget de juguete.',
-                copy: 'Dentro del embed va el mismo cotizador de tu cuenta: tu color, tu logo y tus datos, calculados por el MISMO motor que usa el resto de Cord (nunca un total que diverja). El cliente aprueba, rechaza, negocia el precio o paga sin salir de su portal, y tú controlas el acceso con llaves separadas: una pública (pk_, solo para crear cotizaciones y leer catálogo) para el navegador, y una secreta (sk_) para tu backend — más la allowlist de dominios (CSP frame-ancestors) que blinda contra clickjacking.',
+                eyebrow: 'HEADLESS',
+                mock: 'el-headless',
+                titulo: 'O construye tu propia interfaz sobre nuestro estado.',
+                copy: 'Si no quieres nuestro diseño, useQuoteBuilder() te da el estado completo para armar una cotización nueva desde tu UI: partidas, cliente, subtotal, impuestos y total, calculados con el mismo motor que el servidor. Tú pones el markup; Cord crea la cotización y te devuelve su link.',
                 bullets: [
-                    'Llaves pk_ (públicas, de scope acotado) y sk_ (secretas) — nunca expongas tu CRM completo en el navegador',
-                    'Aprobación, contraoferta, chat, firma legal SHA-256 y pago en línea, todos embebidos',
-                    'Allowlist de dominios por cuenta: solo tú decides dónde puede vivir',
+                    'Publishable key pk_ en el navegador, o tu propio proxy con una sk_',
+                    'Clases .cord-* estables y estilos dentro de @layer cord: tu CSS siempre gana',
+                    'baseTheme: "none" para no inyectar ni una línea de CSS',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Copia tu snippet', copy: 'Agrega el script de embed.js, instala @flouviahq/elements o pega el Web Component — según tu stack. Lo único que cambia es cómo cargas el cotizador.' },
-            { titulo: 'Aparece con tu marca', copy: 'Pasa el token público de la cotización. El color, logo y datos salen de tu cuenta de Cord — cero configuración extra en el sitio anfitrión.' },
-            { titulo: 'Reacciona al cliente', copy: 'Escucha cord:approved, cord:pay y los demás eventos en tu propia página para disparar tu analítica, redirigir o sincronizar tu CRM en tiempo real.' },
+            { titulo: 'Copia tu snippet', copy: 'embed.js para cualquier sitio, o npm install @flouviahq/elements si usas React, Vue, Framer o Webflow.' },
+            { titulo: 'Pasa el token', copy: 'El token público de la cotización. Tu marca y tus datos salen de tu cuenta de Cord.' },
+            { titulo: 'Escucha los eventos', copy: 'onApproved, onPay y los demás para redirigir, cobrar o sincronizar tu CRM en tiempo real.' },
         ],
         faqs: [
-            { q: '¿Cord Elements requiere que monte un backend propio?', a: 'No. Es un iframe embebido (o el paquete @flouviahq/elements para React/Vue/Web Component) que habla directo con Cord — pegas el snippet y no necesitas servidor adicional. Si sí tienes backend, el Server SDK (@flouviahq/elements/server) te da acceso a los mismos datos y a webhooks verificados con firma HMAC.' },
-            { q: '¿Puedo usarlo 100% headless, sin la interfaz de Cord?', a: 'Sí. El hook useQuoteBuilder() expone todo el estado del cotizador (líneas, totales, cliente, envío) sin renderizar nuestra UI — construyes tu propia interfaz con tus componentes y solo usas la lógica.' },
-            { q: '¿Tiene tipos de TypeScript?', a: 'Sí, generados directo del código fuente del build (no escritos a mano) — si un tipo cambia en el SDK, tu editor lo refleja de inmediato, sin que el paquete y sus .d.ts se desincronicen.' },
-            { q: '¿Puedo quitar la marca "vía Cord" del cotizador embebido?', a: 'Sí, desde un plan de pago puedes quitar el "vía Cord" y dejar solo tu marca desde Ajustes › Developers. En el plan Gratis se muestra ese aviso discreto.' },
-            { q: '¿En qué framework funciona Cord Elements?', a: 'El Web Component <cord-cotizador> funciona en cualquier HTML, Astro o Vue; hay un wrapper nativo de React (@flouviahq/elements/react), SDKs para Framer y Webflow, y un loader de una línea (embed.js) para WordPress o sitios sin framework.' },
+            { q: '¿Qué es Cord Elements?', a: 'Es el SDK de Cord para mostrar tus cotizaciones dentro de otro sitio. Incluye un loader de una línea (embed.js), el Web Component <cord-cotizador>, wrappers para React, Vue, Framer y Webflow, un hook headless para armar cotizaciones con tu propia UI y un Server SDK para verificar webhooks.' },
+            { q: '¿Necesito montar un backend propio?', a: 'No para mostrar una cotización: el iframe habla directo con Cord y basta con el token público. Para crear cotizaciones desde el navegador usas una publishable key (pk_) de alcance acotado; si prefieres no exponer ninguna llave, tu backend hace de proxy con una secret key (sk_).' },
+            { q: '¿Puedo usarlo sin la interfaz de Cord?', a: 'Sí. useQuoteBuilder() expone el estado del cotizador (partidas, cliente, totales y envío) sin renderizar nada nuestro, y con baseTheme: "none" el SDK no inyecta CSS.' },
+            { q: '¿Quién puede embeber mis cotizaciones?', a: 'Tú decides. En Ajustes › Cotizador embebible defines los dominios autorizados y Cord los aplica con el header frame-ancestors, así que ningún otro sitio puede mostrarlas dentro de un iframe. Sin lista, el embed queda abierto.' },
+            { q: '¿Puedo quitar la marca de Cord?', a: 'Sí, desde el plan Starter, en Ajustes › Marca y apariencia. En el plan Gratis la cotización muestra un aviso discreto de Cord al pie.' },
+            { q: '¿El cliente puede pagar dentro del embed?', a: 'Sí, cuando tienes Cord Payments activo. El botón de pago dispara el evento pay con la URL del cobro, para que tu página decida si abrirlo en la misma pestaña o en una nueva.' },
         ],
-        cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo — una línea de código.' },
-        trust: {
-            eyebrow: 'DETALLES QUE IMPORTAN',
-            titulo: 'Lo fino, resuelto de fábrica',
-            items: [
-                { icon: 'route', titulo: '5 eventos, nombrados sin ambigüedad', copy: 'ready, approved, rejected, message y pay — los mismos en el iframe, el Web Component y el hook de React.' },
-                { icon: 'doc', titulo: 'Tipos de TypeScript generados, no escritos a mano', copy: 'Salen del build real del SDK — si algo cambia, tu editor lo refleja al instante, sin un .d.ts desincronizado.' },
-                { icon: 'lock', titulo: 'El mensaje del iframe solo llega a tu dominio', copy: 'El postMessage de eventos se dirige al origen exacto de tu allowlist, no a cualquier ventana que esté escuchando.' },
-            ],
-        },
+        cta: { titulo: 'Lleva tu cotizador a donde están tus clientes.', sub: 'Crea tu cuenta gratis y embebe tu primera cotización hoy.' },
     },
     {
         slug: 'fx',
-        nav: 'Multi-divisa FX',
-        eyebrow: 'API MULTI-DIVISA FX',
-        titulo: 'Cotiza en USD, cobra en MXN.',
-        sub: 'Conéctate a nuestra API de tipos de cambio en tiempo real (Banxico/FIX o interbancario) para mantener tus listas de precios estables en dólares, pero cotizar y cobrar siempre en moneda local exacta.',
-        metaTitle: 'API de multi-divisa y cobertura cambiaria (FX) — Cord',
-        metaDescription: 'Cotiza en USD o EUR con tasa de cambio protegida por 30 días (FX lock) y factura en tu moneda local — CFDI 4.0 en pesos para negocios en México. Fix de Banxico (aplica a México) incluido en todos los planes; tasa interbancaria en vivo desde el plan Profesional.',
-        plan: 'Gratis en todos los planes. Fix de Banxico sin costo extra; tipos interbancarios en vivo en plan Profesional.',
-        stats: [
-            { valor: '3', countup: 3, label: 'fuentes de FX (Banxico, FIX, Interbancario real-time)' },
-            { valor: '0', countup: 0, suffix: '%', label: 'margen de error en fluctuaciones cambiarias' },
-            { valor: '24/7', label: 'disponibilidad de la API cambiaria' },
-        ],
+        nav: 'Multi-divisa',
+        eyebrow: 'MULTI-DIVISA · TIPO DE CAMBIO',
+        titulo: 'Vende en la moneda de tu cliente. Lleva tus libros en la tuya.',
+        sub: 'Cord separa la moneda en la que vendes de la moneda en la que llevas tu contabilidad. Cotizas y cobras en dólares o euros, el tipo de cambio se congela al cotizar con una fuente publicada y fechada, y la factura declara esa tasa y el total en tu moneda contable. Si no hay una tasa real, Cord no inventa una.',
+        metaTitle: 'Cotizaciones y facturas en varias monedas con tipo de cambio congelado — Cord',
+        metaDescription: 'Cotiza en USD o EUR y lleva tus libros en MXN: Cord congela el tipo de cambio 30 días con una fuente publicada (BCE primero) y la factura declara la tasa y el total contable. Disponible por API.',
+        plan: 'En todos los planes. La API acepta base_currency, fiscal_currency y fx_buffer_pct al crear una cotización.',
+        heroMock: 'hero-fx',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'TIPOS DE CAMBIO EN VIVO',
-                titulo: 'Protege tu margen.',
-                copy: 'No pierdas dinero por un tipo de cambio desactualizado. Nuestra API te permite congelar el tipo de cambio al momento de cotizar, con una vigencia específica (ej. 24 horas).',
+                eyebrow: 'DOS MONEDAS, DOS TRABAJOS',
+                titulo: 'La moneda de venta y la contable no se mezclan.',
+                copy: 'La moneda de venta es la que ve tu cliente: en ella se capturan los precios, se muestra el link, se cobra y se emite la factura. La contable es la de tus libros. Cuando son distintas, la factura declara el tipo de cambio y el total convertido; nunca se reetiquetan los importes.',
                 bullets: [
-                    'Tipos de cambio oficiales actualizados al día',
-                    'Vigencia por cotización con congelamiento de FX',
-                    'Soporte nativo en el Web Component',
+                    'base_currency: la moneda en la que vendes y cobras',
+                    'fiscal_currency: la moneda de tu contabilidad',
+                    'La factura devuelve tipo_cambio y total_contable por API',
                 ],
-                code: {
-                    label: 'Petición FX',
-                    body: `// Obtener tipo de cambio del día\nconst fx = await cord.fx.getRate({ from: 'USD', to: 'MXN' });\nconsole.log('USD/MXN:', fx.rate);`,
-                }
+                mock: 'fx-invoice',
+            },
+            {
+                eyebrow: 'TASA CONGELADA',
+                titulo: 'El margen no se mueve a mitad de la negociación.',
+                copy: 'Al crear la cotización, Cord toma la tasa del día y la congela durante 30 días. Puedes sumarle un colchón con fx_buffer_pct para cubrirte de la volatilidad de ese cliente. Esa tasa es la que usa después la factura: no hay tres cálculos distintos para la misma venta.',
+                bullets: [
+                    'Colchón por cotización, no uno fijo para toda la cuenta',
+                    'La misma tasa en la cotización, el cobro y la factura',
+                    'Una tasa en caché solo vale si tiene menos de 24 horas',
+                ],
+                mock: 'code-fx',
+            },
+            {
+                eyebrow: 'FUENTES',
+                titulo: 'Si ninguna fuente publica el par, Cord se detiene.',
+                copy: 'Cord consulta primero la referencia diaria del Banco Central Europeo. Como publica unas 30 divisas, para pares como COP, CLP, PEN o ARS pasa a dos fuentes de cobertura amplia. Si ninguna tiene el par, la cotización no se crea y el mensaje dice por qué. Una tasa de 1.0 inventada nunca llega a tu factura.',
+                bullets: [
+                    'Banco Central Europeo como primera referencia',
+                    'Dos fuentes de respaldo para divisas latinoamericanas',
+                    '"Esta fuente no cubre el par" y "no hubo respuesta" se tratan distinto',
+                ],
+                mock: 'fx-sources',
             },
         ],
-        steps: [
-            { titulo: 'Define tu moneda base', copy: 'Tus productos pueden estar en USD y cotizarse en MXN.' },
-            { titulo: 'Aplica el FX', copy: 'El cotizador consulta la API y muestra el equivalente en MXN exacto.' },
-            { titulo: 'Cobra exacto', copy: 'El cliente paga la cantidad en MXN calculada en ese instante.' },
-        ],
         faqs: [
-            { q: '¿La tasa de cambio se actualiza en tiempo real?', a: 'Sí. Cord consulta una fuente de tipo de cambio (fix de Banxico o interbancario según tu plan) al momento de cotizar, y puedes congelar esa tasa hasta por 30 días (FX lock) para proteger tu margen.' },
-            { q: '¿Facturo en dólares o siempre en pesos?', a: 'Tu cliente puede ver el precio en USD o EUR, pero el CFDI 4.0 se timbra en pesos mexicanos ante el SAT — Cord hace la conversión con la tasa que congelaste al cotizar.' },
-            { q: '¿El tipo de cambio interbancario tiene costo extra?', a: 'El fix de Banxico está incluido en todos los planes; los tipos interbancarios en vivo están disponibles desde el plan Profesional.' },
+            { q: '¿Qué fuente usa Cord para el tipo de cambio?', a: 'Primero la referencia diaria del Banco Central Europeo, vía Frankfurter. Para divisas que el BCE no publica, como COP, CLP, PEN o ARS, consulta en orden dos fuentes de cobertura amplia. Si ninguna tiene el par, la operación se detiene con un mensaje claro.' },
+            { q: '¿Cuánto tiempo se congela la tasa?', a: '30 días desde que se crea la cotización. Durante ese tiempo la tasa no cambia aunque el mercado se mueva.' },
+            { q: '¿Puedo cotizar en dólares y facturar en pesos?', a: 'Puedes cotizar, cobrar y facturar en dólares mientras tu contabilidad va en pesos: la factura declara el tipo de cambio congelado y el total en tu moneda contable. En México, el CFDI se emite en la moneda de la venta con su tipo de cambio.' },
+            { q: '¿Qué pasa si no hay tipo de cambio disponible?', a: 'Cord no crea la cotización y responde con un error claro (503 en la API). Usa una tasa en caché solo si tiene menos de 24 horas; nunca sustituye por 1.0 ni por una estimación.' },
         ],
-        cta: { titulo: 'Mantén tu rentabilidad blindada.', sub: 'Integra tipos de cambio en vivo hoy mismo.' },
-        trust: {
-            eyebrow: 'CÓMO SE USA EN LA PRÁCTICA',
-            titulo: 'Más allá de "congela la tasa"',
-            items: [
-                { icon: 'gauge', titulo: 'El buffer se define por cotización', copy: 'Ajusta cuánto colchón quieres sobre la tasa spot según el cliente o el riesgo del trato — no un número fijo para toda la cuenta.' },
-                { icon: 'toggle', titulo: 'El cliente ve su moneda; tu contabilidad ve la tuya', copy: 'El precio en pantalla puede ser USD o EUR mientras tus reportes internos siguen en pesos, sin conversiones manuales.' },
-                { icon: 'refresh', titulo: 'Se re-congela solo si vuelves a cotizar', copy: 'Una vez fijada, la tasa no cambia sola a mitad de negociación — solo se actualiza al generar una nueva versión.' },
-            ],
-        },
+        cta: { titulo: 'Vende en cualquier moneda sin perder el margen.', sub: 'Crea tu cuenta y cotiza en dólares o euros con la tasa congelada.' },
     },
     {
         slug: 'fiscal',
-        nav: 'Fiscal US/MX',
-        eyebrow: 'ARQUITECTURA FISCAL',
-        titulo: 'CFDI 4.0 real para México. Lista para crecer a más países.',
-        sub: 'El timbrado fiscal de Cord corre en producción ante el SAT vía un PAC certificado. La arquitectura es multi-país por diseño — cada mercado nuevo se agrega como su propio adaptador, sin reescribir el core.',
-        metaTitle: 'CFDI 4.0 y arquitectura fiscal multi-país — Cord Developers',
-        metaDescription: 'Timbrado CFDI 4.0 real ante el SAT para México vía Facturapi, con una arquitectura de adaptadores lista para sumar más países. Documentación de la capa fiscal de Cord.',
-        plan: 'Plan Developer',
-        stats: [
-            { valor: '100', countup: 100, suffix: '%', label: 'timbrado CFDI 4.0 real ante el SAT (México)' },
-            { valor: '1', countup: 1, label: 'PAC certificado ya en producción (Facturapi)' },
-            { valor: 'MX', label: 'país fiscal en producción — arquitectura lista para sumar más' },
-        ],
+        nav: 'Facturación fiscal',
+        eyebrow: 'FACTURACIÓN FISCAL',
+        titulo: 'Facturas legales en México, comerciales en el resto, por API.',
+        sub: 'Cord Invoicing emite facturas desde la app o por API y adapta el documento al país de tu negocio: CFDI 4.0 timbrado ante el SAT en México, y factura comercial con los impuestos de cada país en el resto. España cuenta con el registro Verifactu construido y en proceso de activación ante la AEAT.',
+        metaTitle: 'API de facturación: CFDI 4.0 en México y facturas por país — Cord',
+        metaDescription: 'Crea, emite y cobra facturas por API: CFDI 4.0 timbrado ante el SAT en México, impuestos por línea y por país, pagos parciales y notas de crédito. Verifactu construido para España.',
+        plan: 'La emisión fiscal está disponible desde el plan Starter donde está habilitada. Gratis emite documentos comerciales.',
+        heroMock: 'hero-fiscal',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'CFDI COMPLIANCE',
-                titulo: 'Timbrado real, arquitectura para crecer.',
-                copy: 'Cada cotización aprobada se puede facturar como CFDI 4.0 real ante el SAT, con tu propio Certificado de Sello Digital (CSD) y tu RFC — no una simulación. El motor está construido como un adaptador por país, así que sumar un mercado nuevo no exige tocar el core.',
+                eyebrow: 'CICLO COMPLETO',
+                titulo: 'Crea, emite, cobra y corrige desde tu código.',
+                copy: 'POST /api/v1/facturas crea un borrador. Después, sobre la misma factura, emites, envías con el PDF adjunto, registras un pago total o parcial, anulas o generas una nota de crédito. Cada acción dispara su evento, así que tu sistema puede reaccionar por webhook.',
                 bullets: [
-                    'CFDI 4.0 timbrado vía un PAC certificado (Facturapi), UUID del SAT real',
-                    'Sin CSD conectado, el timbrado corre en modo simulado para probar el flujo sin comprometerte',
-                    'Régimen fiscal, uso de CFDI y código postal capturados por cliente para timbrar nominativo',
+                    'Borrador primero: nada se timbra hasta que emites',
+                    'Pagos parciales acotados al saldo real',
+                    'invoice.finalized, invoice.paid e invoice.voided como webhooks',
                 ],
-                code: {
-                    label: 'Documento fiscal emitido',
-                    body: `// CFDI 4.0 registrado tras facturar\n{\n  "tipo": "cfdi",\n  "uuid_sat": "3f29a7c1-...-a1b2",\n  "rfc_emisor": "XAXX010101000",\n  "rfc_receptor": "XEXX010101000",\n  "total": 1500.00,\n  "pdf_url": "/api/cotizaciones/{id}/cfdi?type=pdf",\n  "xml_url": "/api/cotizaciones/{id}/cfdi?type=xml"\n}`,
-                }
-            },
-        ],
-        steps: [
-            { titulo: 'Conecta tu CSD', copy: 'Sube tu Certificado de Sello Digital y tu RFC en Ajustes › Fiscal — cada cuenta de Cord opera su propia organización en el PAC.' },
-            { titulo: 'Captura los datos del receptor', copy: 'Régimen fiscal, uso de CFDI y código postal por cliente, para timbrar nominativo sin recapturar nada al facturar.' },
-            { titulo: 'Factura con un clic', copy: 'Al marcar una cotización aprobada como facturada, Cord genera el CFDI 4.0 real y te entrega el PDF/XML.' },
-        ],
-        faqs: [
-            { q: '¿El CFDI 4.0 para México es real o de prueba?', a: 'Es real: Cord timbra ante el SAT vía un PAC certificado (Facturapi) cuando conectas tu CSD. Sin una llave configurada, el timbrado corre en modo simulado para que puedas probar el flujo sin comprometerte.' },
-            { q: '¿Cord ya emite facturas fiscales completas para Estados Unidos?', a: 'Todavía no. La arquitectura está lista para un adaptador de facturación de EE.UU. (commercial invoice), pero hoy el único proveedor fiscal en producción es México vía CFDI 4.0. Si necesitas facturación real en EE.UU. hoy, no es un caso que Cord cubra todavía — contáctanos si quieres que lo prioricemos.' },
-            { q: '¿Puedo tener una entidad en México y otra en Estados Unidos en la misma cuenta?', a: 'No todavía. Cada cuenta de Cord tiene un solo país fiscal asociado. Para operar dos entidades legales en países distintos necesitas dos cuentas separadas — no hay soporte nativo para múltiples entidades bajo la misma organización.' },
-        ],
-        cta: { titulo: 'Factura real en México desde el día uno.', sub: 'Conecta tu CSD y timbra CFDI 4.0 de producción — sin simulaciones.' },
-        trust: {
-            eyebrow: 'CASOS QUE NADIE PREGUNTA HASTA QUE PASAN',
-            titulo: 'Los detalles que sí importan al facturar',
-            items: [
-                { icon: 'gauge', titulo: 'IVA y retenciones, configurables por negocio', copy: 'Cada organización define su tasa y sus retenciones ISR/IVA en Ajustes — el motor las aplica solo, sin que nadie las recuerde a mano.' },
-                { icon: 'doc', titulo: 'Cada emisión queda en tu historial fiscal', copy: 'Real o simulada, cada factura emitida se registra — nunca pierdes rastro de qué se timbró y cuándo.' },
-                { icon: 'unlock', titulo: 'RFC genérico, cobertura automática', copy: 'Si el cliente no tiene régimen fiscal capturado, Cord factura a público en general en vez de bloquear el timbrado.' },
-            ],
-        },
-    },
-    {
-        slug: 'integraciones',
-        nav: 'Integraciones y webhooks',
-        eyebrow: 'INTEGRACIONES · WEBHOOKS',
-        titulo: 'Conecta Cord a cualquier ERP o CRM. Sin esperar un conector.',
-        sub: 'HubSpot y Slack se conectan directo desde Ajustes. Para el resto (SAP, Oracle, Salesforce…) Cord emite webhooks firmados en cada evento de tu ciclo de venta — los apuntas a Zapier, Make, n8n o tu propio backend y reaccionas en tiempo real. Lo que ves en la app, también por API REST.',
-        metaTitle: 'Webhooks e integraciones (Zapier, Make, n8n) — Cord',
-        metaDescription: 'Cord emite webhooks firmados (HMAC-SHA256) en cada evento de venta — quote.sent, quote.approved, quote.paid — que conectas a Zapier, Make, n8n o tu backend. Disponible en todos los planes, con HubSpot y Slack directos.',
-        plan: 'En todos los planes · 16 endpoints desde el plan Gratis (hasta 100 en Developer) · HubSpot y Slack directos · llaves de prueba gratis para la API',
-        stats: [
-            { valor: '41', countup: 41, label: 'eventos: cotizaciones, facturas, pagos, contracargos, depósitos, clientes, productos, tareas y promesas' },
-            { valor: '11', countup: 11, label: 'intentos de entrega con backoff antes de dar un evento por fallido' },
-            { valor: '3', countup: 3, label: 'formas de integrar: webhooks salientes, API REST y MCP' },
-        ],
-        blocks: [
-            {
-                eyebrow: 'WEBHOOKS SALIENTES',
-                titulo: 'Tu sistema reacciona a cada evento de venta.',
-                copy: 'Registras una URL desde el Workbench de desarrolladores y eliges qué eventos te interesan. Cuando una cotización se crea, se envía, se aprueba o se paga, cuando se emite una factura o cuando cambia un cliente, un producto, una tarea o una promesa de pago, Cord hace un POST con el payload en JSON. Cada entrega va firmada con HMAC-SHA256 y un timestamp para que verifiques que vino de Cord. Si tu servidor falla, Cord reintenta con backoff hasta 11 veces, y cada intento queda en un log que puedes reenviar.',
-                bullets: [
-                    'Header X-Cord-Signature-V1: t=&lt;unix&gt;,v1=&lt;hmac&gt;, con protección contra replay',
-                    'Payload con id, folio, status, moneda, total, cliente y link público',
-                    'Log de entregas con estado, latencia y botón de reenvío',
-                ],
+                mock: 'code-invoice',
             },
             {
-                eyebrow: 'SIN CONECTORES PROPIETARIOS',
-                titulo: 'Zapier, Make, n8n o tu backend.',
-                copy: 'Para los sistemas sin conexión directa, apuntas el webhook a una plataforma no-code (Zapier, Make, n8n) y de ahí llegas a miles de apps —incluidos SAP, Oracle, Salesforce o Notion— sin que escribamos código por ti. ¿Prefieres control total? Llama directo a la API REST. HubSpot y Slack sí son directos: los clientes y cotizaciones llegan a HubSpot como Empresas, Contactos y Deals, y las alertas de cada evento llegan solas a Slack.',
+                eyebrow: 'FACTURAS EN LA APP',
+                titulo: 'Tu equipo ve lo mismo que tu integración.',
+                copy: 'Lo que creas por API aparece en Facturas con su estado comercial y fiscal: por cobrar, vencida, pagada o anulada, y si hubo un error al emitir. Por cobrar, vencido y cobrado del mes se calculan solos.',
                 bullets: [
-                    'Conecta a más de 5,000 apps vía Zapier / Make / n8n con un webhook',
-                    'Zapier y Make pueden crear y borrar sus propias suscripciones por API',
-                    'O usa la API REST: crea cotizaciones, clientes y productos, y cambia el estado de una cotización desde tu código',
-                    'Slack nativo: notificación automática en cada evento de cotización',
+                    'Estado comercial y estado fiscal separados',
+                    'Saldo y vencimiento de cada factura',
+                    'Exportación a CSV y facturas recurrentes',
                 ],
+                mock: 'app-invoices',
+            },
+            {
+                eyebrow: 'POR PAÍS',
+                titulo: 'El documento correcto para cada país.',
+                copy: 'En México, Cord timbra CFDI 4.0 ante el SAT con tu Certificado de Sello Digital, a través de un proveedor autorizado. En el resto de los países emite una factura comercial con los impuestos por línea de ese país, como el sales tax por estado en Estados Unidos o el IVA e IRPF en España. Para España, el registro Verifactu con huella SHA-256 encadenada está construido y verificado contra los ejemplos oficiales de la AEAT; se activa en cuanto concluya el alta ante la AEAT.',
+                bullets: [
+                    'México: CFDI 4.0 con UUID del SAT, PDF y XML',
+                    'Impuestos y retenciones por línea, no una tasa plana',
+                    'España: Verifactu construido, pendiente de activación ante la AEAT',
+                ],
+                mock: 'fiscal-countries',
             },
         ],
-        steps: [
-            { titulo: 'Registra tu endpoint', copy: 'Desde el Workbench de desarrolladores o por API. Elige los eventos y guarda el secret (se muestra una vez).' },
-            { titulo: 'Verifica la firma', copy: 'Calcula el HMAC-SHA256 del timestamp y el cuerpo crudo con tu secret y compáralo con X-Cord-Signature-V1.' },
-            { titulo: 'Enruta a tu sistema', copy: 'Procesa el JSON en tu backend, o déjalo caer en Zapier/Make/n8n para llegar a tu ERP o CRM.' },
-        ],
         faqs: [
-            { q: '¿Cord tiene un conector nativo para SAP, Salesforce u Oracle?', a: 'No para esos sistemas: la conexión directa existe para HubSpot y Slack. Para SAP, Salesforce u Oracle, Cord emite webhooks firmados (HMAC-SHA256) en cada evento del ciclo de venta que apuntas a Zapier, Make, n8n o tu propio backend para conectar con SAP, Salesforce o cualquier otro sistema.' },
-            { q: '¿Cuántos endpoints de webhook puedo configurar?', a: 'Tu equipo puede configurar 16 endpoints en Gratis, Starter y Pro, 32 en Scale y 100 en Developer. Las suscripciones que crean Zapier, Make u otras integraciones por API tienen un cupo aparte de 100 por organización en todos los planes, así que cada Zap no consume un endpoint de tu equipo.' },
-            { q: '¿Cómo verifico que un webhook realmente viene de Cord?', a: 'Cada entrega incluye el header X-Cord-Signature-V1 con un timestamp y un HMAC-SHA256 del cuerpo crudo, firmado con el secret que Cord te dio al crear el endpoint. Lo validas antes de procesar el evento; el timestamp te protege de que alguien reenvíe una entrega vieja.' },
+            { q: '¿Cord timbra CFDI 4.0 real?', a: 'Sí. En México, Cord timbra CFDI 4.0 ante el SAT con tu Certificado de Sello Digital a través de un proveedor autorizado (PAC), y te entrega el UUID, el PDF y el XML.' },
+            { q: '¿Puedo emitir facturas por API?', a: 'Sí. POST /api/v1/facturas crea un borrador y POST /api/v1/facturas/{id} con action finalize lo emite. La misma ruta acepta send, payment, void y credit_note.' },
+            { q: '¿Cord emite facturas fiscales en Estados Unidos?', a: 'Cord emite facturas comerciales con sales tax por estado. Estados Unidos no tiene un sistema nacional de factura electrónica como el CFDI, así que la factura comercial es el documento habitual.' },
+            { q: '¿Cord ya registra facturas ante la AEAT con Verifactu?', a: 'Todavía no. El registro Verifactu está construido y verificado contra los ejemplos oficiales de la AEAT, pero su activación depende del alta de Cord como productor del software ante la AEAT. Mientras tanto, en España las facturas se emiten como comerciales.' },
+            { q: '¿Qué pasa si hay un error al emitir?', a: 'La factura queda con el estado fiscal "error" y no se marca como emitida. Lo ves en la app y en la API, y puedes corregir los datos y volver a emitir.' },
         ],
-        cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },
-        trust: {
-            eyebrow: 'CÓMO SE COMPORTA DE VERDAD',
-            titulo: 'Lo que pasa cuando algo falla',
-            items: [
-                { icon: 'key', titulo: 'El secret se muestra una sola vez', copy: 'Cópialo al crearlo — después solo queda su huella para firmar, nunca vuelves a verlo completo.' },
-                { icon: 'refresh', titulo: 'Reintentos con backoff durante casi 4 días', copy: 'Si tu endpoint falla, Cord reintenta hasta 11 veces con esperas crecientes. Tras 5 fallos seguidos lo desactiva y te avisa por correo, en vez de bombardear un servidor caído.' },
-                { icon: 'gauge', titulo: 'Timeout de 5 segundos por intento', copy: 'Si tu endpoint no responde a tiempo, Cord corta la conexión y lo marca como fallo — nunca se queda colgado esperando.' },
-            ],
-        },
+        cta: { titulo: 'Factura desde tu sistema, con el documento correcto.', sub: 'Crea tu cuenta, configura tus datos fiscales y emite tu primera factura por API.' },
     },
 ];
 

@@ -1,0 +1,523 @@
+---
+// Hero de /elements: el portal de compras del cliente dibujado como wireframe
+// (hairlines, sin ventana de sistema operativo) y, encima, la cotización de
+// Cord embebida que recorre cuatro Apariencias reales. Cada tema cambia
+// propiedades de verdad —fondo, tipografía, radios, bordes, forma del botón,
+// mayúsculas de las etiquetas— no sólo el color. El chip de código muestra el
+// objeto `appearance` exacto del tema activo: los nombres salen de
+// CordAppearance en packages/elements/src/types.ts (theme light|dark|auto,
+// variables colorPrimary/colorText/colorBackground/fontFamily/borderRadius,
+// fonts[].cssSrc). Si cambia ese tipo, cambia este chip.
+//
+// Datos: los mismos de la calca de /embed/demo (COT-0052, $138,944.80 MXN).
+interface Props {
+    isEn?: boolean;
+}
+const { isEn = false } = Astro.props;
+const tx = (es: string, en: string) => (isEn ? en : es);
+
+const THEMES = [
+    { id: 'default', label: 'Cord', sw: ['#ffffff', '#0d1b33'] },
+    { id: 'dark', label: tx('Noche', 'Night'), sw: ['#0f172a', '#e5e9f0'] },
+    { id: 'mono', label: 'Terminal', sw: ['#0b1f2a', '#22d3ee'] },
+    { id: 'brand', label: tx('Marca', 'Brand'), sw: ['#f0faf6', '#0f766e'] },
+] as const;
+
+// Objeto `appearance` por tema, tal cual se escribiría en <CordCotizador>.
+const CODE: Record<string, string[]> = {
+    default: [
+        'appearance={{',
+        "  theme: 'light',",
+        '  variables: {',
+        "    colorPrimary: '#0D1B33',",
+        "    borderRadius: '16px',",
+        '  },',
+        '}}',
+    ],
+    dark: [
+        'appearance={{',
+        "  theme: 'dark',",
+        '  variables: {',
+        "    colorBackground: '#0F172A',",
+        "    colorText: '#E5E9F0',",
+        '  },',
+        '}}',
+    ],
+    mono: [
+        'appearance={{',
+        "  theme: 'dark',",
+        '  variables: {',
+        "    fontFamily: 'JetBrains Mono',",
+        "    colorBackground: '#0B1F2A',",
+        "    colorPrimary: '#22D3EE',",
+        "    borderRadius: '2px',",
+        '  },',
+        '}}',
+    ],
+    brand: [
+        'appearance={{',
+        "  theme: 'light',",
+        '  variables: {',
+        "    colorPrimary: '#0F766E',",
+        "    colorBackground: '#F0FAF6',",
+        "    borderRadius: '18px',",
+        '  },',
+        "  fonts: [{ cssSrc: 'https://fonts.bunny.net/css?family=fraunces:600' }],",
+        '}}',
+    ],
+};
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const hl = (line: string) =>
+    esc(line)
+        .replace(/('[^']*')/g, '<span class="ehv-s">$1</span>')
+        .replace(/^(\s*)(appearance|theme|variables|fonts|cssSrc|colorPrimary|colorText|colorBackground|fontFamily|borderRadius)\b/g, '$1<span class="ehv-k">$2</span>')
+        .replace(/\{ (cssSrc)/g, '{ <span class="ehv-k">$1</span>');
+
+const ITEMS = [
+    { d: tx('Cemento gris 50 kg', 'Grey cement 50 kg'), q: '340', p: '$182.00', t: '$61,880.00' },
+    { d: tx('Varilla corrugada 3/8 x 12 m', 'Rebar 3/8 x 12 m'), q: '120', p: '$198.50', t: '$23,820.00' },
+    { d: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), q: '2,400', p: '$14.20', t: '$34,080.00' },
+];
+---
+
+<div class="ehv" data-ehv>
+    <!-- Wireframe del portal anfitrión: contexto, no contenido -->
+    <div class="ehv-wire" aria-hidden="true">
+        <div class="ehv-w-top">
+            <span class="ehv-w-logo"><i></i>ACME</span>
+            <span class="ehv-w-nav"><i style="width:44px"></i><i style="width:58px"></i><i style="width:36px"></i></span>
+            <span class="ehv-w-av"></span>
+        </div>
+        <div class="ehv-w-left">
+            <p class="ehv-w-lbl">{tx('Pedido', 'Order')}</p>
+            {[64, 52, 70].map((w) => (
+                <div class="ehv-w-row">
+                    <span class="ehv-w-thumb"></span>
+                    <span class="ehv-w-lines"><i style={`width:${w}%`}></i><i style={`width:${w - 26}%`}></i></span>
+                    <i class="ehv-w-amt"></i>
+                </div>
+            ))}
+            <p class="ehv-w-lbl">{tx('Datos de envío', 'Shipping details')}</p>
+            <div class="ehv-w-fields">
+                <span class="ehv-w-f wide"><i></i></span>
+                <span class="ehv-w-f"><i></i></span>
+                <span class="ehv-w-f"><i></i></span>
+                <span class="ehv-w-f"><i></i></span>
+                <span class="ehv-w-f"><i></i></span>
+            </div>
+        </div>
+        <p class="ehv-w-sum">{tx('Resumen', 'Summary')}<code>&lt;cord-cotizador&gt;</code></p>
+    </div>
+
+    <div class="ehv-col">
+        <div class="ehv-float" data-ehv-float>
+            <div class="ehv-card" data-theme="default" data-ehv-card role="img" aria-label={tx('Cotización COT-0052 de Materiales del Valle embebida con Cord Elements, total $138,944.80 MXN', 'Quote COT-0052 from Materiales del Valle embedded with Cord Elements, total $138,944.80 MXN')}>
+                <div class="ehv-head ehv-sec">
+                    <span class="ehv-logo">MD</span>
+                    <span class="ehv-org">
+                        <b>Materiales del Valle</b>
+                        <small>{tx('Para', 'To')} Grupo Constructor Norte</small>
+                    </span>
+                    <span class="ehv-folio"><small class="ehv-lbl">{tx('Cotización', 'Quote')}</small>COT-0052</span>
+                </div>
+
+                <div class="ehv-due ehv-sec">
+                    <small class="ehv-lbl">{tx('Total a pagar', 'Total due')}</small>
+                    <strong class="ehv-num">$138,944.80<em>MXN</em></strong>
+                    <span>{tx('IVA incluido · Válida hasta el 19 oct 2026', 'Tax included · Valid until Oct 19, 2026')}</span>
+                </div>
+
+                <div class="ehv-items ehv-sec">
+                    <div class="ehv-ith"><small class="ehv-lbl">{tx('Concepto', 'Item')}</small><small class="ehv-lbl">{tx('Importe', 'Amount')} · MXN</small></div>
+                    {ITEMS.map((it) => (
+                        <div class="ehv-it">
+                            <i class="ehv-chk"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" /></svg></i>
+                            <span class="ehv-it-d"><b>{it.d}</b><small class="ehv-num">{it.q} × {it.p}</small></span>
+                            <b class="ehv-num">{it.t}</b>
+                        </div>
+                    ))}
+                    <dl class="ehv-tot">
+                        <dt>Subtotal</dt><dd class="ehv-num">$119,780.00</dd>
+                        <dt>{tx('IVA', 'VAT')} 16%</dt><dd class="ehv-num">$19,164.80</dd>
+                        <dt class="ehv-tot-t">Total</dt><dd class="ehv-tot-t ehv-num">$138,944.80 MXN</dd>
+                    </dl>
+                </div>
+
+                <div class="ehv-pay ehv-sec">
+                    <small class="ehv-lbl">{tx('Método de pago', 'Payment method')}</small>
+                    <div class="ehv-tiles">
+                        <span class="ehv-tile on">
+                            <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5" class="f" /><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 9.5h19M6 15h4" /></svg>
+                            <b>{tx('Tarjeta', 'Card')}</b>
+                            <i class="ehv-radio"></i>
+                        </span>
+                        <span class="ehv-tile">
+                            <svg viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5z" class="f" /><path d="M3 9.5L12 4l9 5.5M4.5 20h15M6 10.5v6.5M10 10.5v6.5M14 10.5v6.5M18 10.5v6.5" /></svg>
+                            <b>SPEI</b>
+                            <i class="ehv-radio"></i>
+                        </span>
+                        <span class="ehv-tile">
+                            <svg viewBox="0 0 24 24"><path d="M3.5 8.5A2.5 2.5 0 016 6h12a2.5 2.5 0 012.5 2.5V17A2.5 2.5 0 0118 19.5H6A2.5 2.5 0 013.5 17z" class="f" /><path d="M3.5 8.5A2.5 2.5 0 016 6h12a2.5 2.5 0 012.5 2.5V17A2.5 2.5 0 0118 19.5H6A2.5 2.5 0 013.5 17zM16 12.75h4.5M6 6l9-2.5 1.2 2.5" /></svg>
+                            <b>Mercado Pago</b>
+                            <i class="ehv-radio"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="ehv-btn ehv-sec">
+                    <span>{tx('Aprobar y pagar', 'Approve and pay')}</span>
+                    <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </div>
+
+                <div class="ehv-foot ehv-sec">
+                    <span><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.9-7 9.5-4-1.6-7-5.2-7-9.5V6z" class="f" /><path d="M12 3l7 3v5.5c0 4.3-3 7.9-7 9.5-4-1.6-7-5.2-7-9.5V6zM9 12l2.2 2.2L15.5 10" /></svg>{tx('Firma con validez legal', 'Legally binding signature')}</span>
+                    <span>{tx('Con tecnología de', 'Powered by')} <b>Cord</b></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ehv-pills" role="group" aria-label={tx('Tema de apariencia', 'Appearance theme')}>
+            {THEMES.map((t, i) => (
+                <button type="button" class:list={['ehv-pill', { on: i === 0 }]} data-theme-btn={t.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+                    <i class="ehv-sw" style={`--a:${t.sw[0]};--b:${t.sw[1]}`}></i>
+                    {t.label}
+                    <span class="ehv-prog" aria-hidden="true"></span>
+                </button>
+            ))}
+        </div>
+    </div>
+    <!-- Chip con el objeto appearance del tema activo -->
+    <div class="ehv-chip" aria-hidden="true">
+        <div class="ehv-chip-bar"><span>Cotizacion.jsx</span><em data-ehv-chiplbl>{THEMES[0].label}</em></div>
+        <div class="ehv-chip-body" data-ehv-chipbody>
+            {THEMES.map((t, i) => (
+                <pre class:list={['ehv-code', { on: i === 0 }]} data-code={t.id}>{CODE[t.id].map((ln) => <span class="ehv-ln" set:html={hl(ln)} />)}</pre>
+            ))}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Autoplay de temas: 3.2 s por tema, pausado fuera de pantalla o con la
+    // pestaña oculta. Un clic en una pastilla elige el tema y detiene el
+    // autoplay para siempre (el usuario ya tomó el control). Con
+    // reduced-motion no hay autoplay ni giro: el cambio es instantáneo.
+    import { gsap } from 'gsap';
+
+    const DWELL = 3.2;
+
+    document.querySelectorAll<HTMLElement>('[data-ehv]').forEach((root) => {
+        const card = root.querySelector<HTMLElement>('[data-ehv-card]');
+        const float = root.querySelector<HTMLElement>('[data-ehv-float]');
+        const chipBody = root.querySelector<HTMLElement>('[data-ehv-chipbody]');
+        const chipLbl = root.querySelector<HTMLElement>('[data-ehv-chiplbl]');
+        const pills = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-theme-btn]'));
+        if (!card || !chipBody || !pills.length) return;
+
+        const ids = pills.map((p) => p.dataset.themeBtn!);
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let idx = 0;
+        let auto = !reduced;
+        let visible = false;
+        let prog: gsap.core.Tween | null = null;
+        let tl: gsap.core.Timeline | null = null;
+
+        const setPills = (i: number) => {
+            pills.forEach((p, n) => {
+                p.classList.toggle('on', n === i);
+                p.setAttribute('aria-pressed', n === i ? 'true' : 'false');
+            });
+            if (chipLbl) chipLbl.textContent = pills[i].textContent?.trim() ?? '';
+        };
+
+        const swapCode = (id: string, animate: boolean) => {
+            const panes = Array.from(chipBody.querySelectorAll<HTMLElement>('[data-code]'));
+            const h0 = chipBody.offsetHeight;
+            panes.forEach((p) => p.classList.toggle('on', p.dataset.code === id));
+            if (!animate) return;
+            const h1 = chipBody.offsetHeight;
+            gsap.fromTo(chipBody, { height: h0 }, { height: h1, duration: 0.5, ease: 'power3.out', clearProps: 'height' });
+            const lines = chipBody.querySelectorAll<HTMLElement>(`[data-code="${id}"] .ehv-ln`);
+            gsap.fromTo(lines, { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.36, stagger: 0.035, ease: 'power2.out' });
+        };
+
+        const stopProg = () => { prog?.kill(); prog = null; pills.forEach((p) => p.classList.remove('run')); };
+
+        const schedule = () => {
+            stopProg();
+            if (!auto) return;
+            const bar = pills[idx].querySelector<HTMLElement>('.ehv-prog');
+            if (!bar) return;
+            pills[idx].classList.add('run');
+            prog = gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: DWELL, ease: 'none', onComplete: () => go((idx + 1) % ids.length) });
+            if (!visible || document.hidden) prog.pause();
+        };
+
+        const go = (next: number) => {
+            if (next === idx && !tl) { schedule(); return; }
+            tl?.progress(1).kill();
+            idx = next;
+            const id = ids[next];
+            setPills(next);
+            stopProg();
+            if (reduced) {
+                card.dataset.theme = id;
+                swapCode(id, false);
+                return;
+            }
+            const secs = card.querySelectorAll<HTMLElement>('.ehv-sec');
+            tl = gsap.timeline({ onComplete: () => { tl = null; schedule(); } });
+            tl.to(card, { rotationY: -14, rotationX: 7, skewY: 1.2, scale: 0.955, y: 8, opacity: 0.35, duration: 0.36, ease: 'power2.in', transformPerspective: 1400, transformOrigin: '40% 50%' })
+                .call(() => { card.dataset.theme = id; swapCode(id, true); })
+                .to(card, { rotationY: 0, rotationX: 0, skewY: 0, scale: 1, y: 0, opacity: 1, duration: 0.85, ease: 'expo.out' })
+                .fromTo(secs, { opacity: 0.2, y: 6 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power2.out', clearProps: 'opacity,transform' }, '<0.05');
+        };
+
+        pills.forEach((p, n) => p.addEventListener('click', () => {
+            auto = false;
+            stopProg();
+            root.classList.add('is-manual');
+            go(n);
+        }));
+
+        const sync = () => {
+            const on = visible && !document.hidden;
+            if (prog) on ? prog.resume() : prog.pause();
+            float && gsap.getTweensOf(float).forEach((t) => (on ? t.resume() : t.pause()));
+        };
+        new IntersectionObserver(([e]) => { visible = e.isIntersecting; sync(); }, { threshold: 0.2 }).observe(root);
+        document.addEventListener('visibilitychange', sync);
+
+        if (!reduced) {
+            if (float) gsap.to(float, { y: -7, duration: 4.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+            schedule();
+        }
+    });
+</script>
+
+<style>
+    /* ══════════ Escenario ══════════ */
+    .ehv {
+        position: relative; width: 100%; max-width: 900px; container-type: inline-size;
+        padding: 0 0 0.25rem; font-family: var(--font-sans, Inter, system-ui, sans-serif);
+    }
+
+    /* ── Wireframe del portal anfitrión ── */
+    .ehv-wire {
+        position: absolute; top: 0; left: 0; right: 26px; bottom: 96px;
+        background: rgba(255, 255, 255, 0.72); border-radius: 16px;
+        box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.1), 0 1px 2px rgba(10, 25, 47, 0.03), 0 30px 60px -40px rgba(10, 25, 47, 0.18);
+        -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+        overflow: hidden; pointer-events: none;
+    }
+    .ehv-w-top { display: flex; align-items: center; gap: 22px; height: 46px; padding: 0 18px; border-bottom: 1px solid rgba(10, 25, 47, 0.08); }
+    .ehv-w-logo { display: inline-flex; align-items: center; gap: 7px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; color: rgba(10, 25, 47, 0.34); }
+    .ehv-w-logo i { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.2); }
+    .ehv-w-nav { display: inline-flex; gap: 14px; }
+    .ehv-w-nav i, .ehv-w-lines i, .ehv-w-amt, .ehv-w-f i { display: block; height: 5px; border-radius: 99px; background: rgba(10, 25, 47, 0.08); }
+    .ehv-w-av { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.16); }
+    .ehv-w-left { width: calc(100% - 372px - 30px); padding: 18px 20px 0; }
+    .ehv-w-lbl, .ehv-w-sum {
+        margin: 0 0 10px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.58rem; font-weight: 500;
+        letter-spacing: 0.08em; text-transform: uppercase; color: rgba(10, 25, 47, 0.4);
+    }
+    .ehv-w-lbl:not(:first-child) { margin-top: 20px; }
+    .ehv-w-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.06); }
+    .ehv-w-thumb { flex-shrink: 0; width: 28px; height: 28px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.12); background: rgba(10, 25, 47, 0.02); }
+    .ehv-w-lines { flex: 1; display: grid; gap: 6px; }
+    .ehv-w-lines i:last-child { background: rgba(10, 25, 47, 0.05); }
+    .ehv-w-amt { width: 46px; flex-shrink: 0; }
+    .ehv-w-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ehv-w-f { height: 28px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.12); display: flex; align-items: center; padding: 0 10px; }
+    .ehv-w-f i { width: 42%; background: rgba(10, 25, 47, 0.06); }
+    .ehv-w-f.wide { grid-column: 1 / -1; }
+    .ehv-w-sum { position: absolute; top: 58px; left: calc(100% - 346px); display: flex; gap: 10px; align-items: baseline; }
+    .ehv-w-sum code { font: inherit; text-transform: none; letter-spacing: 0; color: rgba(47, 109, 240, 0.7); }
+
+    /* ── Chip de código ── */
+    .ehv-chip {
+        position: absolute; z-index: 2; left: 3.5%; bottom: 128px; width: min(318px, calc(100% - 372px - 8%));
+        min-width: 268px; background: #0b1526; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 1px 2px rgba(5, 11, 20, 0.2), 0 24px 48px -20px rgba(5, 11, 20, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+    .ehv-chip-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.6rem; font-weight: 600; color: #6b7a90; }
+    .ehv-chip-bar em { font-style: normal; color: #cbd5e1; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 99px; }
+    .ehv-chip-body { overflow: hidden; }
+    .ehv-code { display: none; margin: 0; padding: 10px 0 12px; font: 500 0.64rem/1.75 ui-monospace, 'SF Mono', Menlo, monospace; color: #94a3b8; }
+    .ehv-code.on { display: block; }
+    .ehv-ln { display: block; padding: 0 14px; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+    .ehv-code :global(.ehv-k) { color: #93c5fd; }
+    .ehv-code :global(.ehv-s) { color: #fcd34d; }
+
+    /* ── Columna de la tarjeta ── */
+    .ehv-col { position: relative; z-index: 3; width: min(372px, 100%); margin: 72px 0 0 auto; }
+    .ehv-float { perspective: 1400px; }
+
+    /* ══════════ La tarjeta y sus cuatro Apariencias ══════════ */
+    .ehv-card {
+        /* default: Cord light */
+        --bg: #ffffff; --fg: #0a192f; --mut: #8a93a2; --soft: #5b6575; --line: #eef0f3;
+        --well: #fafafb; --wellb: #eef0f3; --pri: #0d1b33; --onpri: #ffffff;
+        --r: 16px; --r2: 10px; --rb: 999px; --font: var(--font-sans, Inter, system-ui, sans-serif); --num: var(--font);
+        --numw: 700; --track: -0.04em; --tile: #ffffff; --tileb: #e5e7eb; --tilesel: #0d1b33; --tileselbg: rgba(13, 27, 51, 0.025);
+        --ring: 0 0 0 3px rgba(13, 27, 51, 0.07); --lblt: uppercase; --lbls: 0.16em; --lblsz: 0.52rem;
+        --logobg: #0d1b33; --logofg: #ffffff; --logob: transparent; --btnt: none; --btnls: 0; --bw: 1px;
+        --shadow: 0 1px 2px rgba(10, 25, 47, 0.05), 0 4px 10px -4px rgba(10, 25, 47, 0.06), 0 40px 80px -30px rgba(10, 25, 47, 0.34);
+        --edge: rgba(10, 25, 47, 0.07);
+
+        position: relative; padding: 18px 20px 14px; border-radius: var(--r); background: var(--bg); color: var(--fg);
+        font-family: var(--font); box-shadow: inset 0 0 0 1px var(--edge), var(--shadow);
+        transition: background-color 0.45s, color 0.45s, border-radius 0.45s, box-shadow 0.45s;
+        will-change: transform;
+    }
+    .ehv-card[data-theme='dark'] {
+        --bg: #0f172a; --fg: #e5e9f0; --mut: #7d8aa1; --soft: #a3b0c2; --line: rgba(255, 255, 255, 0.07);
+        --well: rgba(255, 255, 255, 0.035); --wellb: rgba(255, 255, 255, 0.07); --pri: #e5e9f0; --onpri: #0f172a;
+        --r: 14px; --r2: 10px; --rb: 10px; --tile: rgba(255, 255, 255, 0.025); --tileb: rgba(255, 255, 255, 0.1);
+        --tilesel: #e5e9f0; --tileselbg: rgba(255, 255, 255, 0.06); --ring: 0 0 0 3px rgba(229, 233, 240, 0.08);
+        --logobg: #e5e9f0; --logofg: #0f172a; --edge: rgba(255, 255, 255, 0.07);
+        --shadow: 0 1px 2px rgba(2, 6, 23, 0.3), 0 44px 90px -30px rgba(2, 6, 23, 0.62);
+    }
+    .ehv-card[data-theme='mono'] {
+        --bg: #0b1f2a; --fg: #cdeef2; --mut: #5f8b94; --soft: #8fb5bc; --line: rgba(34, 211, 238, 0.14);
+        --well: rgba(34, 211, 238, 0.03); --wellb: rgba(34, 211, 238, 0.45); --pri: #22d3ee; --onpri: #04212a;
+        --r: 4px; --r2: 2px; --rb: 2px; --font: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; --num: var(--font);
+        --numw: 600; --track: -0.03em; --tile: transparent; --tileb: rgba(34, 211, 238, 0.3); --tilesel: #22d3ee;
+        --tileselbg: rgba(34, 211, 238, 0.08); --ring: none; --lbls: 0.1em; --lblsz: 0.54rem;
+        --logobg: transparent; --logofg: #22d3ee; --logob: #22d3ee; --btnt: uppercase; --btnls: 0.08em; --bw: 1px;
+        --edge: rgba(34, 211, 238, 0.28);
+        --shadow: 0 1px 2px rgba(2, 12, 18, 0.35), 0 44px 90px -30px rgba(2, 18, 26, 0.6);
+    }
+    .ehv-card[data-theme='brand'] {
+        --bg: #f0faf6; --fg: #12302b; --mut: #6b8a83; --soft: #3f5f58; --line: rgba(15, 118, 110, 0.12);
+        --well: #ffffff; --wellb: rgba(15, 118, 110, 0.1); --pri: #0f766e; --onpri: #ffffff;
+        --r: 22px; --r2: 14px; --rb: 14px; --num: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+        --numw: 600; --track: -0.01em; --tile: #ffffff; --tileb: rgba(15, 118, 110, 0.14); --tilesel: #0f766e;
+        --tileselbg: #ffffff; --ring: 0 0 0 4px rgba(15, 118, 110, 0.1); --lblt: none; --lbls: 0.01em; --lblsz: 0.64rem;
+        --logobg: #0f766e; --logofg: #ffffff; --edge: rgba(15, 118, 110, 0.12);
+        --shadow: 0 1px 2px rgba(15, 60, 55, 0.05), 0 40px 80px -30px rgba(15, 80, 72, 0.32);
+    }
+
+    .ehv-card svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .ehv-card svg .f { fill: currentColor; fill-opacity: 0.15; stroke: none; }
+    .ehv-lbl { display: block; font-size: var(--lblsz); font-weight: 600; letter-spacing: var(--lbls); text-transform: var(--lblt); color: var(--mut); }
+    .ehv-num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+
+    /* Encabezado */
+    .ehv-head { display: flex; align-items: center; gap: 10px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
+    .ehv-logo {
+        flex-shrink: 0; width: 30px; height: 30px; border-radius: calc(var(--r2) - 2px); display: grid; place-items: center;
+        background: var(--logobg); color: var(--logofg); box-shadow: inset 0 0 0 1px var(--logob); font-size: 0.66rem; font-weight: 700;
+        transition: background-color 0.45s, color 0.45s, border-radius 0.45s;
+    }
+    .ehv-org { min-width: 0; display: grid; gap: 2px; }
+    .ehv-org b { font-size: 0.82rem; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehv-card[data-theme='brand'] .ehv-org b { font-family: var(--num); font-size: 0.9rem; }
+    .ehv-org small { font-size: 0.62rem; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehv-folio { margin-left: auto; text-align: right; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+    .ehv-folio .ehv-lbl { margin-bottom: 2px; }
+
+    /* Total a pagar */
+    .ehv-due {
+        margin-top: 13px; padding: 12px 14px 11px; text-align: center; border-radius: var(--r2);
+        background: var(--well); box-shadow: inset 0 0 0 var(--bw) var(--wellb);
+        transition: background-color 0.45s, border-radius 0.45s, box-shadow 0.45s;
+    }
+    .ehv-due strong { display: flex; justify-content: center; align-items: baseline; gap: 6px; margin: 4px 0 3px; font-size: 1.85rem; font-weight: var(--numw); letter-spacing: var(--track); line-height: 1.1; }
+    .ehv-due em { font-family: var(--font); font-style: normal; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.04em; color: var(--mut); }
+    .ehv-due > span { font-size: 0.6rem; color: var(--mut); }
+    .ehv-card[data-theme='mono'] .ehv-due { box-shadow: inset 0 0 0 1px var(--wellb); text-align: left; }
+    .ehv-card[data-theme='mono'] .ehv-due strong { justify-content: flex-start; color: var(--pri); font-size: 1.62rem; }
+
+    /* Partidas */
+    .ehv-items { margin-top: 10px; }
+    .ehv-ith { display: flex; justify-content: space-between; padding: 4px 0 6px; border-bottom: 1px solid var(--line); }
+    .ehv-it { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+    .ehv-chk { width: 14px; height: 14px; border-radius: min(4px, var(--r2)); background: var(--pri); color: var(--onpri); display: grid; place-items: center; transition: background-color 0.45s; }
+    .ehv-chk svg { width: 9px; height: 9px; stroke-width: 3; }
+    .ehv-it-d { min-width: 0; display: grid; gap: 1px; }
+    .ehv-it-d b { font-size: 0.7rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehv-it-d small { font-size: 0.6rem; color: var(--mut); }
+    .ehv-it > b { font-size: 0.72rem; font-weight: 600; }
+    .ehv-tot { display: grid; grid-template-columns: 1fr auto; gap: 3px 16px; margin: 0; padding-top: 8px; font-size: 0.66rem; color: var(--mut); }
+    .ehv-tot dt { text-align: right; }
+    .ehv-tot dd { margin: 0; text-align: right; color: var(--soft); font-weight: 600; }
+    .ehv-tot .ehv-tot-t { margin-top: 3px; padding-top: 5px; border-top: 1px solid var(--line); color: var(--fg); font-size: 0.78rem; font-weight: 700; }
+    .ehv-tot dt.ehv-tot-t { border-top-color: transparent; }
+
+    /* Métodos de pago */
+    .ehv-pay { margin-top: 13px; }
+    .ehv-pay > .ehv-lbl { margin-bottom: 7px; }
+    .ehv-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .ehv-tile {
+        position: relative; display: grid; gap: 5px; padding: 9px 10px 8px; border-radius: var(--r2);
+        background: var(--tile); box-shadow: inset 0 0 0 var(--bw) var(--tileb); color: var(--soft);
+        transition: background-color 0.45s, border-radius 0.45s, box-shadow 0.45s, color 0.45s;
+    }
+    .ehv-tile svg { width: 17px; height: 17px; }
+    .ehv-tile b { font-size: 0.62rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ehv-tile.on { background: var(--tileselbg); color: var(--fg); box-shadow: inset 0 0 0 1.5px var(--tilesel), var(--ring); }
+    .ehv-tile.on svg { color: var(--tilesel); }
+    .ehv-radio { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--tileb); }
+    .ehv-tile.on .ehv-radio { box-shadow: inset 0 0 0 3px var(--tilesel); }
+    .ehv-card[data-theme='mono'] .ehv-radio { border-radius: 1px; }
+
+    /* Botón */
+    .ehv-btn {
+        margin-top: 12px; height: 38px; border-radius: var(--rb); display: flex; align-items: center; justify-content: center; gap: 8px;
+        background: var(--pri); color: var(--onpri); font-size: 0.76rem; font-weight: 600; text-transform: var(--btnt); letter-spacing: var(--btnls);
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        transition: background-color 0.45s, color 0.45s, border-radius 0.45s;
+    }
+    .ehv-btn svg { width: 13px; height: 13px; stroke-width: 2.2; }
+    .ehv-card[data-theme='mono'] .ehv-btn { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 24px -8px rgba(34, 211, 238, 0.45); }
+    .ehv-card[data-theme='brand'] .ehv-btn { height: 40px; box-shadow: 0 1px 2px rgba(15, 118, 110, 0.2), 0 10px 20px -12px rgba(15, 118, 110, 0.6); }
+
+    /* Pie */
+    .ehv-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 11px; font-size: 0.58rem; color: var(--mut); }
+    .ehv-foot span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .ehv-foot svg { width: 12px; height: 12px; color: var(--soft); }
+    .ehv-foot b { color: var(--soft); font-weight: 700; }
+
+    /* ── Selector de temas ── */
+    .ehv-pills { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
+    .ehv-pill {
+        position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px 0 9px;
+        border: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.78); color: #5b6575; cursor: pointer;
+        font: 600 0.72rem var(--font-sans, Inter, system-ui, sans-serif);
+        box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.08), 0 1px 2px rgba(10, 25, 47, 0.04);
+        transition: background-color 0.25s, color 0.25s, box-shadow 0.25s, transform 0.2s;
+    }
+    .ehv-pill:hover { color: #0a192f; background: #fff; }
+    .ehv-pill:active { transform: scale(0.97); }
+    .ehv-pill.on { background: #fff; color: #0a192f; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.16), 0 1px 2px rgba(10, 25, 47, 0.06), 0 6px 14px -8px rgba(10, 25, 47, 0.25); }
+    .ehv-pill:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .ehv-sw { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.14); }
+    .ehv-prog { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 1.5px; border-radius: 99px; background: #0a192f; opacity: 0; transform: scaleX(0); transform-origin: left; }
+    .ehv-pill.run .ehv-prog { opacity: 0.32; }
+    .ehv.is-manual .ehv-prog { display: none; }
+
+    /* ── Contenedor angosto: se simplifica el wireframe ── */
+    @container (max-width: 680px) {
+        .ehv-wire { right: 0; bottom: auto; height: 440px; }
+        .ehv-w-left, .ehv-w-nav { display: none; }
+        .ehv-w-sum { left: 18px; top: 60px; }
+        .ehv-col { margin: 84px auto 0; width: min(372px, calc(100% - 24px)); }
+        .ehv-chip { position: relative; left: auto; bottom: auto; width: min(372px, calc(100% - 24px)); min-width: 0; margin: 18px auto 0; }
+    }
+    @container (max-width: 380px) {
+        .ehv-card { padding: 15px 14px 12px; }
+        .ehv-due strong { font-size: 1.55rem; }
+        .ehv-tile { padding: 8px 7px 7px; }
+        .ehv-tile b { font-size: 0.56rem; }
+        .ehv-foot span:last-child { display: none; }
+        .ehv-pills { gap: 5px; }
+        .ehv-pill { padding: 0 12px; font-size: 0.68rem; }
+        .ehv-sw { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ehv-card, .ehv-card *, .ehv-pill { transition: none; }
+    }
+</style>

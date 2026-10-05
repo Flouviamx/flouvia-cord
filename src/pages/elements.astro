@@ -1,11 +1,11 @@
 ---
-// /elements — CORD Elements: el cotizador embebible. Landing con el MISMO
-// lenguaje visual que /desarrolladores/[slug] (hero pp-hero 100dvh, bento con
-// tarjeta oscura + aurora, TrustGrid, cross-link) para que se sienta parte de
-// la misma familia — con el añadido de un <iframe> EN VIVO de /embed/demo en
-// el hero (la página se demuestra a sí misma) y las secciones extra que
-// necesita un SDK: instalación por framework (con selector de logos) y
-// lista de capacidades.
+// /elements — Cord Elements: el SDK para llevar las cotizaciones de Cord al
+// sitio de un tercero. Misma familia visual que /producto y /desarrolladores
+// (hero 100dvh con banda diagonal, bento de tarjetas blancas, FAQ, cross-links de /producto) más lo
+// que necesita un SDK: el hero es una calca 1:1 de /embed/demo dentro del
+// portal de un cliente con su consola de eventos, instalación por stack, y un
+// explorador de TODO lo que exporta el paquete — cada nombre de esta página
+// existe en packages/elements/src (verifícalo ahí antes de editar el copy).
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -13,269 +13,346 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
-import DevBlockMockup from '../components/desarrolladores/DevBlockMockup.astro';
-import TrustGrid from '../components/desarrolladores/TrustGrid.astro';
-import CordDynamicBg from '../components/CordDynamicBg.jsx';
-
-// Shader estándar de Cord — azul eléctrico + esmeralda para la tarjeta oscura.
-const DARK_PAL = { base: '#061F20', color1: '#10B981', color2: '#047857', color3: '#38BDF8' };
-import { getLangFromUrl, publicPath, useTranslations } from '../i18n/utils';
+import DevHeroBand from '../components/desarrolladores/DevHeroBand.astro';
+import DevMore from '../components/desarrolladores/DevMore.astro';
+import ElementsHeroVisual from '../components/elements/ElementsHeroVisual.astro';
+import ElementsAppearance from '../components/elements/ElementsAppearance.astro';
+import ElementsCountry from '../components/elements/ElementsCountry.astro';
+import ElementsMore from '../components/elements/ElementsMore.astro';
+import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
 
-// Reutiliza el copy de bloques/FAQ/trust ya escrito para 'elements' en
-// desarrolladores.ts (misma fuente, cero duplicación).
-const elementsData = (isEnPage: boolean) => (isEnPage ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'elements')!;
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+const l = (p: string) => publicPath(p, lang);
+const tx = (es: string, en: string) => (isEn ? en : es);
+const pages = isEn ? DEV_PAGES_EN : DEV_PAGES;
+const devPage = pages.find((p) => p.slug === 'elements')!;
 
-// Snippets de instalación por framework — selector de logos reales (Google Favicon
-// V2, regla de diseño 8) en vez de tabs de texto. `highlight` marca la línea que se
-// resalta en el panel (siempre la línea que "conecta" Cord: el import o el <script>).
-// El embed es el mismo iframe en todos; cambia sólo cómo cargas el script.
+// ── Resaltado mínimo de código en build (sin dependencias) ──
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const TOK = /(\/\/.*$|<!--.*?-->)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`]*`)|(=>)|(<\/?[A-Za-z][\w.-]*|\/?>)|\b(import|from|export|default|function|return|const|async|await|if|new|try|catch|true|false)\b|(\b[A-Za-z_$][\w$]*(?=\())/g;
+const hl = (line: string) => {
+    let out = '';
+    let last = 0;
+    for (const m of line.matchAll(TOK)) {
+        out += esc(line.slice(last, m.index));
+        const cls = m[1] ? 'c-com' : m[2] ? 'c-str' : m[3] ? 'c-op' : m[4] ? 'c-tag' : m[5] ? 'c-kw' : 'c-fn';
+        out += `<span class="${cls}">${esc(m[0])}</span>`;
+        last = (m.index ?? 0) + m[0].length;
+    }
+    return out + esc(line.slice(last));
+};
+const lines = (code: string) => code.split('\n').map((t) => ({ raw: t, html: hl(t) || ' ' }));
+
+const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
+
+// ── Snippets por stack. `hi` = línea que "conecta" Cord (se resalta). ──
+// Todos usan API real: CordCotizador (react/vue), <cord-cotizador> (Web
+// Component, eventos sin prefijo cord:), FramerCordCotizador, embed.js.
 const CODES = [
     {
-        id: 'html', label: 'HTML', file: 'index.html', icon: 'html', highlight: 1,
-        code: `<!-- En cualquier sitio HTML -->
+        id: 'html', label: 'HTML', file: 'index.html', hi: 1,
+        code: `<!-- ${tx('WordPress, Shopify, PHP o HTML plano', 'WordPress, Shopify, PHP or plain HTML')} -->
 <script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
+<div data-cord-token="${tx('TU_TOKEN', 'YOUR_TOKEN')}"></div>`,
     },
     {
-        id: 'react', label: 'React', file: 'Cotizacion.jsx', domain: 'react.dev', highlight: 1,
-        code: `// npm install @flouviahq/elements
-import { CordCotizador } from '@flouviahq/elements/react';
+        id: 'react', label: 'React', file: 'Cotizacion.jsx', domain: 'react.dev', hi: 0,
+        code: `import { CordCotizador } from '@flouviahq/elements/react';
 
 export function Cotizacion({ token }) {
   return (
     <CordCotizador
       token={token}
       appearance={{ theme: 'auto' }}
-      onApproved={(d) => console.log('Aprobada', d.folio)}
-      onPay={() => location.assign('/gracias')}
+      onApproved={(d) => console.log('${tx('Firmada por', 'Signed by')}', d.signed_by)}
+      onPay={(d) => window.location.assign(d.url)}
     />
   );
 }`,
     },
     {
-        id: 'headless', label: 'Headless', file: 'useQuoteBuilder.tsx', icon: 'headless', highlight: 1,
-        code: `// npm install @flouviahq/elements
-import { useQuoteBuilder } from '@flouviahq/elements/react';
-
-export function MiCotizador({ token }) {
-  const { items, total, addItem, submit } = useQuoteBuilder({ token });
-  // construyes tu propia UI — cero markup de Cord
-  return <MiPropioDiseno items={items} total={total} onSubmit={submit} />;
-}`,
-    },
-    {
-        id: 'next', label: 'Next.js', file: 'cotizacion.tsx', domain: 'nextjs.org', highlight: 2,
+        id: 'next', label: 'Next.js', file: 'app/cotizacion/page.tsx', domain: 'nextjs.org', hi: 1,
         code: `'use client';
-// npm install @flouviahq/elements
 import { CordCotizador } from '@flouviahq/elements/react';
 
-export default function Cotizacion() {
+export default function Page({ params }) {
   return (
     <CordCotizador
-      token="abc123"
-      onApproved={(d) => console.log('Aprobada', d.folio)}
+      token={params.token}
+      onApproved={(d) => track('quote_signed', d.hash)}
     />
   );
 }`,
     },
     {
-        id: 'astro', label: 'Astro', file: 'Cotizacion.astro', domain: 'astro.build', highlight: 7,
-        code: `---
-// npm install @flouviahq/elements
-const { token } = Astro.props;
----
-<cord-cotizador token={token}></cord-cotizador>
-
-<script>
-  import '@flouviahq/elements'; // registra <cord-cotizador>
-</script>`,
-    },
-    {
-        id: 'vue', label: 'Vue', file: 'Cotizacion.vue', domain: 'vuejs.org', highlight: 2,
+        id: 'vue', label: 'Vue', file: 'Cotizacion.vue', domain: 'vuejs.org', hi: 1,
         code: `<script setup>
-// npm install @flouviahq/elements
-import '@flouviahq/elements'; // registra <cord-cotizador>
-defineProps({ token: String });
+import { CordCotizador } from '@flouviahq/elements/vue';
+const props = defineProps({ token: String });
+const onApproved = (d) => console.log(d.signed_by);
 </script>
 
 <template>
-  <cord-cotizador :token="token" @approved="onApproved" />
+  <CordCotizador :token="props.token" @approved="onApproved" />
 </template>`,
     },
     {
-        id: 'wordpress', label: 'WordPress', file: 'Bloque HTML', domain: 'wordpress.org', highlight: 1,
-        code: `<!-- Pega esto en un bloque "HTML personalizado" -->
-<script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
+        id: 'astro', label: 'Astro', file: 'Cotizacion.astro', domain: 'astro.build', hi: 6,
+        code: `---
+const { token } = Astro.props;
+---
+<cord-cotizador token={token} min-height="500"></cord-cotizador>
+
+<script>
+  import '@flouviahq/elements'; // ${tx('registra', 'registers')} <cord-cotizador>
+  document.querySelector('cord-cotizador')
+    ?.addEventListener('approved', (e) => console.log(e.detail));
+</script>`,
     },
-].map((c) => ({ ...c, lines: c.code.split('\n') }));
-const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
+    {
+        id: 'framer', label: 'Framer', file: 'Cotizador.tsx', domain: 'framer.com', hi: 1,
+        code: `// ${tx('Code File nuevo en tu proyecto de Framer', 'New Code File in your Framer project')}
+import { FramerCordCotizador } from '@flouviahq/elements/framer';
 
-const lang = getLangFromUrl(Astro.url);
-const isEn = lang === 'en';
-const l = (p: string) => publicPath(p, lang);
-const devPage = elementsData(isEn);
-const crossPage = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'api')!;
+// ${tx('token y baseUrl aparecen en el panel de propiedades', 'token and baseUrl show up in the properties panel')}
+export default FramerCordCotizador;`,
+    },
+    {
+        id: 'webflow', label: 'Webflow', file: 'Custom code', domain: 'webflow.com', hi: 1,
+        code: `<!-- ${tx('Ajustes del sitio › Custom code, antes de </body>', 'Site settings › Custom code, before </body>')} -->
+<script src="https://cordhq.app/embed.js" async></script>
 
-// Datos estructurados (mismo criterio que /producto y /desarrolladores — ver
-// docs/historial/landing-marketing.md, auditoría SEO/AI-SEO jul 2026): esta página no tenía nada.
-const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: devPage.faqs.map((f) => ({
-        '@type': 'Question',
-        name: f.q,
-        acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
+<!-- ${tx('En un Div Block, agrega el atributo personalizado', 'On a Div Block, add the custom attribute')} -->
+<div data-cord-token="${tx('TU_TOKEN', 'YOUR_TOKEN')}"></div>`,
+    },
+].map((c) => ({ ...c, lines: lines(c.code) }));
+
+// ── Explorador del SDK: cada export real del paquete, por punto de entrada ──
+type Kind = 'component' | 'hook' | 'fn' | 'class' | 'attr' | 'event';
+const KIND: Record<Kind, string> = {
+    component: tx('Componente', 'Component'),
+    hook: 'Hook',
+    fn: tx('Función', 'Function'),
+    class: tx('Clase', 'Class'),
+    attr: tx('Atributo', 'Attribute'),
+    event: tx('Evento', 'Event'),
 };
+const SDK: { id: string; path: string; label: string; lead: string; items: { n: string; k: Kind; d: string }[] }[] = [
+    {
+        id: 'react', path: '@flouviahq/elements/react', label: 'React',
+        lead: tx('Componentes y hooks para React 17 o superior y Next.js. Ya trae la directiva "use client".', 'Components and hooks for React 17 or later and Next.js. It already ships the "use client" directive.'),
+        items: [
+            { n: '<CordCotizador>', k: 'component', d: tx('Muestra una cotización ya creada para que el cliente la vea, apruebe, negocie o pague. Callbacks tipados para los 8 eventos.', 'Shows an existing quote so the client can view, approve, negotiate or pay. Typed callbacks for all 8 events.') },
+            { n: '<CordBuilder>', k: 'component', d: tx('Formulario listo para armar una cotización nueva. Compuesto: Header, Config, Items, Notes, Summary y SubmitButton, en el orden que quieras.', 'A ready-made form to build a new quote. Compound: Header, Config, Items, Notes, Summary and SubmitButton, in any order.') },
+            { n: '<CordProvider>', k: 'component', d: tx('Configura una vez: publishableKey o proxyUrl (nunca los dos), locale es o en, ivaPct y appearance.', 'Configure once: publishableKey or proxyUrl (never both), locale es or en, ivaPct and appearance.') },
+            { n: 'useQuoteBuilder()', k: 'hook', d: tx('El estado completo del builder sin UI: partidas, cliente, moneda, vigencia, términos, subtotal, IVA, total y handleSubmit.', 'The full builder state with no UI: line items, client, currency, validity, terms, subtotal, tax, total and handleSubmit.') },
+            { n: 'useCreateQuote()', k: 'hook', d: tx('Crea una cotización por tu proxy o con tu pk_ y te devuelve folio, token y link público.', 'Creates a quote through your proxy or with your pk_ and returns its number, token and public link.') },
+            { n: 'useCordCatalog()', k: 'hook', d: tx('Tu catálogo de productos. El servidor oculta costo y margen a una llave pública.', 'Your product catalog. The server hides cost and margin from a publishable key.') },
+            { n: 'useCordClients()', k: 'hook', d: tx('Tu directorio de clientes, sólo en modo proxy: con una pk_ responde clients_require_proxy sin tocar la red.', 'Your client directory, proxy mode only: with a pk_ it answers clients_require_proxy without touching the network.') },
+            { n: 'configureCord()', k: 'fn', d: tx('Origen alterno para staging o self-host. Precedencia: prop, Provider, configureCord, cordhq.app.', 'An alternate origin for staging or self-hosting. Precedence: prop, Provider, configureCord, cordhq.app.') },
+        ],
+    },
+    {
+        id: 'wc', path: '@flouviahq/elements', label: 'Web Component',
+        lead: tx('Importarlo registra <cord-cotizador>. Funciona en Astro, Svelte, Laravel, Rails o cualquier HTML.', 'Importing it registers <cord-cotizador>. Works in Astro, Svelte, Laravel, Rails or any HTML.'),
+        items: [
+            { n: '<cord-cotizador>', k: 'component', d: tx('Atributos token (requerido), base-url y min-height. Los eventos llegan sin el prefijo: approved, pay, rejected.', 'Attributes token (required), base-url and min-height. Events arrive without the prefix: approved, pay, rejected.') },
+            { n: 'mountCotizador()', k: 'fn', d: tx('Monta el iframe en el elemento que le pases y devuelve un controlador con destroy() para desmontarlo limpio.', 'Mounts the iframe on any element you pass and returns a controller with destroy() to unmount cleanly.') },
+            { n: 'calculateTotals()', k: 'fn', d: tx('El mismo motor de totales que usa Cord en servidor: tu UI propia nunca muestra un total distinto.', 'The same totals engine Cord runs on the server: your own UI never shows a different total.') },
+            { n: 'calculateDocumentTotals()', k: 'fn', d: tx('Impuesto por línea, varias tasas y retenciones, igual que las facturas de Cord.', 'Per-line tax, multiple rates and withholdings, exactly like Cord invoices.') },
+            { n: 'roundMoney()', k: 'fn', d: tx('Redondeo de dinero sin errores de punto flotante.', 'Money rounding without floating-point drift.') },
+            { n: 'CordError', k: 'class', d: tx('Todo error es un CordError con status y uno de 12 códigos estables: invalid_key, unauthorized_origin, rate_limited…', 'Every error is a CordError with a status and one of 12 stable codes: invalid_key, unauthorized_origin, rate_limited…') },
+        ],
+    },
+    {
+        id: 'server', path: '@flouviahq/elements/server', label: 'Server SDK',
+        lead: tx('Para Node y Cloudflare Workers con nodejs_compat. Usa una sk_ que nunca sale de tu backend.', 'For Node and Cloudflare Workers with nodejs_compat. Uses an sk_ key that never leaves your backend.'),
+        items: [
+            { n: 'new CordAPI(sk)', k: 'class', d: tx('Cliente de la API REST con tu secret key, en live o en test.', 'REST API client with your secret key, in live or test.') },
+            { n: 'cord.quotes', k: 'fn', d: tx('create() y list() con filtros de estado. link_publico ya viene absoluto.', 'create() and list() with status filters. link_publico comes back absolute.') },
+            { n: 'cord.clients · cord.products', k: 'fn', d: tx('create() y list() paginados para sincronizar tu CRM o tu catálogo.', 'Paginated create() and list() to sync your CRM or your catalog.') },
+            { n: 'webhooks.constructEvent()', k: 'fn', d: tx('Verifica X-Cord-Signature-V1 con timestamp (tolerancia de 300 s) y te devuelve el evento tipado.', 'Verifies X-Cord-Signature-V1 with its timestamp (300 s tolerance) and returns the typed event.') },
+            { n: 'webhooks.constructEventAsync()', k: 'fn', d: tx('La misma verificación con WebCrypto, para runtimes edge.', 'The same verification with WebCrypto, for edge runtimes.') },
+            { n: tx('Rotación de secreto', 'Secret rotation'), k: 'fn', d: tx('Acepta varias firmas v1= a la vez: rotas el secreto sin perder una sola entrega.', 'Accepts several v1= signatures at once: rotate the secret without losing a single delivery.') },
+        ],
+    },
+    {
+        id: 'more', path: '/vue · /framer · /webflow', label: 'Vue, Framer, Webflow',
+        lead: tx('Wrappers nativos para que cada plataforma lo sienta propio.', 'Native wrappers so each platform feels at home.'),
+        items: [
+            { n: 'CordCotizador (Vue)', k: 'component', d: tx('Props token, baseUrl y minHeight; emite ready, viewed, approved, signed, rejected, message, item-comment, pay y event.', 'Props token, baseUrl and minHeight; emits ready, viewed, approved, signed, rejected, message, item-comment, pay and event.') },
+            { n: 'FramerCordCotizador', k: 'component', d: tx('Code Component con token y baseUrl editables desde el panel de propiedades de Framer.', 'A Code Component with token and baseUrl editable from the Framer properties panel.') },
+            { n: 'data-cord-token', k: 'attr', d: tx('Webflow: agrega el atributo a cualquier Div Block y el script lo monta solo.', 'Webflow: add the attribute to any Div Block and the script mounts it on its own.') },
+            { n: 'data-cord-min-height', k: 'attr', d: tx('Alto inicial del skeleton mientras carga, en píxeles. Por defecto 420.', 'Initial skeleton height while loading, in pixels. 420 by default.') },
+            { n: 'data-cord-base-url', k: 'attr', d: tx('Origen alterno para staging o self-host, igual que en npm.', 'Alternate origin for staging or self-hosting, same as on npm.') },
+        ],
+    },
+    {
+        id: 'events', path: tx('Eventos del iframe', 'Iframe events'), label: tx('8 eventos', '8 events'),
+        lead: tx('Los mismos en React, Vue, el Web Component y embed.js.', 'The same in React, Vue, the Web Component and embed.js.'),
+        items: [
+            { n: 'cord:ready', k: 'event', d: tx('El cotizador terminó de cargar dentro del iframe.', 'The quote builder finished loading inside the iframe.') },
+            { n: 'cord:viewed', k: 'event', d: tx('El cliente abrió la cotización.', 'The client opened the quote.') },
+            { n: 'cord:approved', k: 'event', d: tx('Aprobó y firmó: { signed_by, hash }.', 'Approved and signed: { signed_by, hash }.') },
+            { n: 'cord:signed', k: 'event', d: tx('Se emite junto con approved, por la misma acción: no lo cuentes dos veces.', 'Fires together with approved, for the same action: do not count it twice.') },
+            { n: 'cord:rejected', k: 'event', d: tx('La rechazó: { comentario }.', 'Rejected it: { comentario }.') },
+            { n: 'cord:message', k: 'event', d: tx('Escribió o hizo una contraoferta: { action, mensaje, propuesta }.', 'Wrote or made a counteroffer: { action, mensaje, propuesta }.') },
+            { n: 'cord:item_comment', k: 'event', d: tx('Comentó una partida: { item_id, mensaje }.', 'Commented on a line item: { item_id, mensaje }.') },
+            { n: 'cord:pay', k: 'event', d: tx('Pulsó pagar: { url } del cobro.', 'Hit pay: the payment { url }.') },
+        ],
+    },
+];
+
+
+const STACK = [
+    { label: 'HTML' }, { label: 'React', domain: 'react.dev' }, { label: 'Next.js', domain: 'nextjs.org' },
+    { label: 'Vue', domain: 'vuejs.org' }, { label: 'Astro', domain: 'astro.build' }, { label: 'Framer', domain: 'framer.com' },
+    { label: 'Webflow', domain: 'webflow.com' }, { label: 'WordPress', domain: 'wordpress.org' }, { label: 'Shopify', domain: 'shopify.com' },
+];
+
+const HEADLESS_CODE = lines(`const { items, updateItem, total, handleSubmit } =
+  useQuoteBuilder({ catalog, onQuoteCreated });
+
+return (
+  <form onSubmit={handleSubmit}>
+    {items.map((it, i) => (
+      <MiFila item={it}
+        onChange={(v) => updateItem(i, v)} />
+    ))}
+    <MiTotal value={total} />
+  </form>
+);`);
+
+
+// ── Datos estructurados ──
 const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
+const faqSchema = {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: devPage.faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
 const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
-        { '@type': 'ListItem', position: 2, name: 'Cord Elements', item: `${base}/elements` },
+        { '@type': 'ListItem', position: 2, name: tx('Desarrolladores', 'Developers'), item: `${base}/desarrolladores/api` },
+        { '@type': 'ListItem', position: 3, name: 'Cord Elements', item: `${base}/elements` },
     ],
+};
+const sdkSchema = {
+    '@context': 'https://schema.org', '@type': 'SoftwareSourceCode',
+    name: '@flouviahq/elements',
+    description: devPage.metaDescription,
+    codeRepository: 'https://www.npmjs.com/package/@flouviahq/elements',
+    programmingLanguage: ['TypeScript', 'JavaScript'],
+    runtimePlatform: ['Browser', 'Node.js', 'React', 'Vue'],
+    license: 'https://opensource.org/licenses/MIT',
+    author: { '@type': 'Organization', name: 'Cord', url: SITE },
+    dateModified: devPage.updated,
+};
+const howToSchema = {
+    '@context': 'https://schema.org', '@type': 'HowTo',
+    name: tx('Cómo embeber una cotización de Cord en tu sitio', 'How to embed a Cord quote on your site'),
+    step: (devPage.steps ?? []).map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titulo, text: s.copy })),
 };
 ---
 
-<Layout
-    title={isEn ? "Cord Elements — your quote builder, embedded anywhere" : "Cord Elements — tu cotizador, embebido en cualquier sitio"}
-    description={isEn ? "Bring Cord's quote builder to your own portal or your clients' with one line of code. Your brand, approval, and online payment, inside their ecosystem." : "Lleva el cotizador de Cord a tu propio portal o al de tus clientes con una línea de código. Tu marca, aprobación y pago en línea, dentro de su ecosistema."}
->
+<Layout title={devPage.metaTitle!} description={devPage.metaDescription!}>
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(sdkSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(howToSchema)} />
     <Nav />
     <main>
-        <!-- ════════ HERO — split 100dvh, mismo patrón que /desarrolladores/[slug] ════════ -->
+        <!-- ════════ HERO ════════ -->
         <section class="pp-hero">
             <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <DevHeroBand />
             <div class="pp-hero-inner">
                 <div class="pp-hero-text">
-                    <h1 class="pp-title masked-title" set:html={isEn ? 'Your quote builder, embedded anywhere.' : 'Tu cotizador, en cualquier sitio.'} />
-                    <p class="pp-sub reveal">
-                        {isEn ? <Fragment>Bring Cord's quote builder to your clients' portal with <b>one line of code</b>. Your brand, your catalog, approval and online payment — all inside their ecosystem, without leaving their site.</Fragment> : <Fragment>Lleva el cotizador de Cord al portal de tus clientes con <b>una línea de código</b>. Tu marca, tu catálogo, aprobación y pago en línea — todo dentro de su ecosistema, sin que salgan de su web.</Fragment>}
-                    </p>
+                    <p class="el-kicker reveal">{devPage.eyebrow}</p>
+                    <h1 class="pp-title masked-title" set:html={devPage.titulo} />
+                    <p class="pp-sub reveal">{devPage.sub}</p>
                     <div class="pp-actions reveal">
-                        <a href={l("/registro")} class="pp-btn-primary">
-                            <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
+                        <a href={l('/registro')} class="pp-btn-primary">
+                            <span>{tx('Empezar gratis', 'Start for free')}</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
-                        <a href="#instalar" class="pp-btn-ghost">{isEn ? 'View code' : 'Ver el código'}</a>
+                        <a href="#sdk" class="pp-btn-ghost">{tx('Explorar el SDK', 'Explore the SDK')}</a>
                     </div>
-                    <p class="pp-plan reveal">{devPage.plan}</p>
-
                     <div class="el-cmd reveal" data-install-cmd>
                         <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
-                        <button class="el-cmd-copy" type="button" aria-label={isEn ? "Copy command" : "Copiar comando"}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <button class="el-cmd-copy" type="button" aria-label={tx('Copiar comando', 'Copy command')}>
+                            <svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                            <span class="cp-tip" aria-hidden="true">{tx('Copiado', 'Copied')}</span>
                         </button>
                     </div>
-                    <p class="el-npmline reveal">
-                        <a href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener" class="el-npm">
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z"/></svg>
-                            {isEn ? 'Available on npm · @flouviahq/elements · v1.0.0' : 'Disponible en npm · @flouviahq/elements · v1.0.0'}
-                        </a>
-                    </p>
+                    <p class="pp-plan reveal">{devPage.plan}</p>
                 </div>
 
-                <!-- Demo EN VIVO: un sitio de tercero con el cotizador embebido -->
                 <div class="pp-hero-visual">
-                <div class="pp-mockup-wrap reveal-mockup">
-                    <div class="pp-glow" aria-hidden="true"></div>
-                    <div class="pp-mockup">
-                        <div class="el-browser">
-                            <div class="el-browser-bar">
-                                <span class="el-url">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    portal.tucliente.com/cotizacion
-                                </span>
-                                <span class="el-live-badge"><i></i>{isEn ? 'live' : 'en vivo'}</span>
-                            </div>
-                            <div class="el-browser-body">
-                                <div class="el-host-chrome" aria-hidden="true">
-                                    <span class="el-host-logo">ACME Industrial</span>
-                                    <span class="el-host-nav"><i></i><i></i><i></i></span>
-                                </div>
-                                <p class="el-host-line" aria-hidden="true">{isEn ? 'Your quote is ready' : 'Tu cotización está lista'}</p>
-                                <!-- iframe REAL del producto -->
-                                <iframe class="el-demo-frame" src="/embed/demo" title={isEn ? "Cord Quote Builder (live demo)" : "Cotizador Cord (demo en vivo)"} loading="lazy"></iframe>
-                                <span class="el-host-foot" aria-hidden="true">{isEn ? '© ACME Industrial · client portal' : '© ACME Industrial · portal de clientes'}</span>
-                            </div>
-                        </div>
-                        <span class="el-demo-tag">{isEn ? '▲ Cord Quote Builder, embedded live' : '▲ Cotizador de Cord, embebido en vivo'}</span>
-                    </div>
+                    <div class="reveal-mockup"><div class="pp-mockup"><ElementsHeroVisual isEn={isEn} /></div></div>
                 </div>
-                </div>{/* /pp-hero-visual */}
             </div>
         </section>
 
-        <!-- ════════ TRUST / VALOR ════════ -->
-        <section class="el-strip">
-            <p class="el-strip-lead reveal">{isEn ? <Fragment>For companies that <b>already have their own portal</b> but don't want to build —or maintain— a quote builder that negotiates prices, tracks opens, and issues invoices (CFDI e-invoicing for Mexico).</Fragment> : <Fragment>Para empresas que <b>ya tienen su propio portal</b> pero no quieren construir —ni mantener— un cotizador que negocie precios, dé seguimiento y facture automáticamente (CFDI para negocios en México).</Fragment>}</p>
+        <!-- ════════ STACK ════════ -->
+        <section class="el-stack" aria-label={tx('Plataformas compatibles', 'Supported platforms')}>
+            <p class="el-stack-t reveal">{tx('Funciona donde ya vive tu cliente', 'Works where your client already lives')}</p>
+            <ul class="el-stack-row">
+                {STACK.map((s) => (
+                    <li class="reveal">
+                        {s.domain ? <img src={favicon(s.domain)} alt="" width="20" height="20" loading="lazy" /> : (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 5 3 12 8 19"/><polyline points="16 5 21 12 16 19"/></svg>
+                        )}
+                        <span>{s.label}</span>
+                    </li>
+                ))}
+            </ul>
         </section>
 
-        <!-- ════════ INSTALAR (snippet) — split izq/der, mismo patrón que el resto de la página ════════ -->
-        <section class="el-install" id="instalar">
-            <div class="el-install-inner">
-                <div class="el-install-text">
-                    <h2 class="el-h2 masked-title" set:html={isEn ? 'Paste. Done. No backend.' : 'Pegar. Listo. Sin backend.'} />
-                    <p class="el-copy reveal">{isEn ? <Fragment>A script and a <code>&lt;div&gt;</code>. The quote builder appears with your brand, auto-adjusts its height, and inherits the host page's style — or go fully <code>headless</code> and build your own UI on top of our state.</Fragment> : <Fragment>Un script y un <code>&lt;div&gt;</code>. El cotizador aparece con tu marca, se ajusta solo a la altura del contenido y hereda el estilo de la página anfitriona — o ve 100% <code>headless</code> y construye tu propia interfaz sobre nuestro estado.</Fragment>}</p>
-                    <div class="el-steps">
-                        <div class="el-step reveal">
-                            <span class="el-step-n">01</span>
-                            <div><b>{isEn ? 'Paste the snippet' : 'Pega el snippet'}</b><span>{isEn ? 'On the page where you want the quote builder. Works on any stack: WordPress, React, Webflow, plain HTML.' : 'En la página donde quieras el cotizador. Funciona en cualquier stack: WordPress, React, Webflow, HTML plano.'}</span></div>
-                        </div>
-                        <div class="el-step reveal">
-                            <span class="el-step-n">02</span>
-                            <div><b>{isEn ? 'Appears with your brand' : 'Aparece con tu marca'}</b><span>{isEn ? 'Color, logo, and tax details come from your Cord account. Zero extra setup on the host site.' : 'Color, logo y datos fiscales salen de tu cuenta de Cord. Cero configuración extra en el sitio anfitrión.'}</span></div>
-                        </div>
-                        <div class="el-step reveal">
-                            <span class="el-step-n">03</span>
-                            <div><b>{isEn ? 'Your client approves and pays' : 'Tu cliente aprueba y paga'}</b><span>{isEn ? 'Approval, counteroffers, and online payment — without leaving the portal. You receive the event in real time.' : 'Aprobación, contraoferta y pago en línea — sin salir del portal. Tú recibes el evento en tiempo real.'}</span></div>
-                        </div>
-                    </div>
+        <!-- ════════ INSTALAR ════════ -->
+        <section class="eli" id="instalar">
+            <div class="eli-head">
+                <h2 class="el-h2 masked-title">{tx('Elige tu stack. El resultado es el mismo.', 'Pick your stack. The result is the same.')}</h2>
+                <p class="el-lead reveal">{tx('Cambia sólo cómo cargas el cotizador. La cotización, tu marca y los eventos son idénticos en todos.', 'Only the way you load the quote builder changes. The quote, your brand and the events are identical in every one.')}</p>
+            </div>
+            <div class="eli-card reveal-mockup" data-el-tabs>
+                <div class="eli-tabs" role="tablist" aria-label={tx('Elige tu stack', 'Choose your stack')}>
+                    {CODES.map((c, i) => (
+                        <button class:list={['eli-tab', { active: i === 0 }]} role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-tab={c.id} data-file={c.file} type="button">
+                            {c.domain ? <img src={favicon(c.domain)} alt="" width="16" height="16" loading="lazy" /> : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 5 3 12 8 19"/><polyline points="16 5 21 12 16 19"/></svg>
+                            )}
+                            <span>{c.label}</span>
+                        </button>
+                    ))}
                 </div>
-
-                <div class="el-install-visual reveal-mockup" data-el-tabs>
-                    <!-- Selector de stack: logos reales (Google Favicon V2, regla 8), no tabs de texto -->
-                    <div class="el-fw-grid" role="tablist" aria-label={isEn ? 'Choose your stack' : 'Elige tu stack'}>
-                        {CODES.map((c, i) => (
-                            <button class:list={['el-fw-tile', { active: i === 0 }]} role="tab" aria-selected={i === 0} data-tab={c.id} data-file={c.file} title={c.label}>
-                                <span class="el-fw-ico">
-                                    {c.domain ? (
-                                        <img src={favicon(c.domain)} alt="" width="24" height="24" loading="lazy" />
-                                    ) : c.icon === 'html' ? (
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 4 3 12 8 20"/><polyline points="16 4 21 12 16 20"/><line x1="13.5" y1="3" x2="10.5" y2="21"/></svg>
-                                    ) : (
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"><path d="M12 3.5l8 4.2-8 4.2-8-4.2 8-4.2z" fill="currentColor" fill-opacity="0.16"/><path d="M4 12l8 4.2 8-4.2"/><path d="M4 15.8l8 4.2 8-4.2"/></svg>
-                                    )}
-                                </span>
-                                <span class="el-fw-label">{c.label}</span>
-                            </button>
+                <div class="eli-body">
+                    <ol class="eli-steps">
+                        {(devPage.steps ?? []).map((st, i) => (
+                            <li><span class="eli-n">{String(i + 1).padStart(2, '0')}</span><div><b>{st.titulo}</b><p>{st.copy}</p></div></li>
                         ))}
-                    </div>
-
+                    </ol>
                     <div class="el-code">
                         <div class="el-code-bar">
-                            <span class="el-code-bar-file">
+                            <span class="el-code-file">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z"/><path d="M14 3.5v4h4"/></svg>
                                 <span id="elActiveFile">{CODES[0].file}</span>
                             </span>
-                            <button class="el-copybtn" data-copy type="button" aria-label={isEn ? "Copy code" : "Copiar código"}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                <span>{isEn ? 'Copy' : 'Copiar'}</span>
+                            <button class="el-copybtn" data-copy type="button" aria-label={tx('Copiar código', 'Copy code')}>
+                                <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                                <span data-copy-label>{tx('Copiar', 'Copy')}</span>
                             </button>
                         </div>
                         {CODES.map((c, i) => (
-                            <div class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0}>
-                                {c.lines.map((line, li) => (
-                                    <div class:list={['el-cl', { 'el-cl-hl': li === c.highlight }]}>
-                                        <span class="el-ln">{li + 1}</span><span class="el-lc">{line || ' '}</span>
-                                    </div>
+                            <div class:list={['el-panel', { active: i === 0 }]} data-panel={c.id} hidden={i !== 0} role="tabpanel">
+                                {c.lines.map((ln, li) => (
+                                    <div class:list={['el-cl', { 'el-cl-hl': li === c.hi }]}><span class="el-ln">{li + 1}</span><span class="el-lc" data-raw={ln.raw} set:html={ln.html} /></div>
                                 ))}
                             </div>
                         ))}
@@ -284,13 +361,10 @@ const breadcrumbSchema = {
             </div>
         </section>
 
-        <!-- ════════ BENTO (3 tarjetas, mismo patrón que /producto y /desarrolladores — tarjeta 0 con aurora) ════════ -->
+        <!-- ════════ BENTO ════════ -->
         <section class="pp-bento">
-            {devPage.blocks.map((b, i) => {
-                const dark = i === 0;
-                return (
-                <article class={`pp-bcard pp-bcard-${i}${dark ? ' pp-bcard-dark' : ''}`}>
-                    {dark && <CordDynamicBg client:only="react" colors={DARK_PAL} grain={false} />}
+            {devPage.blocks.map((b, i) => (
+                <article class={`pp-bcard pp-bcard-${i}`}>
                     <div class="pp-bcard-text">
                         <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
                         <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
@@ -299,289 +373,301 @@ const breadcrumbSchema = {
                             {b.bullets.map((bl) => (
                                 <li class="reveal">
                                     <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
-                                    <span set:html={bl} />
+                                    <span>{bl}</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
-                    <div class="pp-bcard-visual">
-                        <DevBlockMockup slug="elements" index={i} />
+                    <div class="pp-bcard-visual" aria-hidden="true">
+                        {b.mock === 'el-oneline' && (
+                            <div class="elx elx-0" data-elx="0">
+                                <div class="elx-win">
+                                    <div class="elx-snip"><span class="c-tag">&lt;div</span> data-cord-token=<span class="c-str">"k7Qp…"</span><span class="c-tag">&gt;&lt;/div&gt;</span></div>
+                                    <div class="elx0-frame" id="elx0Frame">
+                                        <div class="elx0-skel" id="elx0Skel"><i></i><i></i><i></i><i></i></div>
+                                        <div class="elx0-mini" id="elx0Mini">
+                                            <div class="elx0-row"><span class="elq-logo sm">MD</span><b>Materiales del Valle</b><em>COT-0052</em></div>
+                                            <small>{tx('TOTAL A PAGAR', 'TOTAL DUE')}</small>
+                                            <strong class="editorial">$138,944.80 <span>MXN</span></strong>
+                                            <div class="elx0-lines"><i></i><i></i><i></i></div>
+                                            <span class="elx0-btn">{tx('Aprobar cotización', 'Approve quote')}</span>
+                                        </div>
+                                    </div>
+                                    <div class="elx0-ruler"><span class="c-fn">cord:resize</span> · height <b id="elx0H">420</b>px</div>
+                                </div>
+                            </div>
+                        )}
+                        {b.mock === 'el-events' && (
+                            <div class="elx elx-2" data-elx="2">
+                                <div class="elx-win elx2-win">
+                                    <div class="elx2-head"><span>{tx('Eventos', 'Events')}</span><span class="elx2-live"><i></i>{tx('escuchando', 'listening')}</span></div>
+                                    <div class="elx2-tbl">
+                                        <div class="elx2-r" data-r><time>10:42:03</time><em>cord:ready</em><span>{'{}'}</span></div>
+                                        <div class="elx2-r" data-r><time>10:42:04</time><em>cord:viewed</em><span>{'{ token: "k7Qp…" }'}</span></div>
+                                        <div class="elx2-r" data-r><time>10:44:19</time><em>cord:item_comment</em><span>{tx('{ item_id: 2, mensaje: "¿Tienen 1/2 pulgada?" }', '{ item_id: 2, mensaje: "Do you have 1/2 inch?" }')}</span></div>
+                                        <div class="elx2-r" data-r><time>10:46:51</time><em>cord:message</em><span>{'{ action: "counter", propuesta: 132000 }'}</span></div>
+                                        <div class="elx2-r is-ok" data-r><time>10:51:08</time><em>cord:approved</em><span>{'{ signed_by: "Laura Méndez", hash: "9f2c…41ab" }'}</span></div>
+                                        <div class="elx2-r is-pay" data-r><time>10:51:30</time><em>cord:pay</em><span>{'{ url: "https://cordhq.app/pay/…" }'}</span></div>
+                                    </div>
+                                    <div class="elx2-code"><span class="c-kw">onApproved</span>={'{'}(d) <span class="c-op">=&gt;</span> <span class="c-fn">crm.marcarGanada</span>(d.signed_by){'}'}</div>
+                                </div>
+                            </div>
+                        )}
+                        {b.mock === 'el-headless' && (
+                            <div class="elx elx-3" data-elx="3">
+                                <div class="elx3-code">
+                                    {HEADLESS_CODE.map((ln) => <div class="elx3-l" set:html={ln.html} />)}
+                                </div>
+                                <div class="elx3-ui">
+                                    <span class="elx3-badge">{tx('Tu interfaz', 'Your interface')}</span>
+                                    <p class="elx3-title">{tx('Nueva solicitud de material', 'New material request')}</p>
+                                    <div class="elx3-row"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><b>340</b><em>$61,880.00</em></div>
+                                    <div class="elx3-row"><span>{tx('Varilla 3/8 x 12 m', 'Rebar 3/8 x 12 m')}</span><b>120</b><em>$23,820.00</em></div>
+                                    <div class="elx3-row"><span>Block 15x20x40</span><b>2,400</b><em>$34,080.00</em></div>
+                                    <div class="elx3-tot"><span>Total · MXN</span><strong class="editorial">$138,944.80</strong></div>
+                                    <span class="elx3-btn" id="elx3Btn">{tx('Enviar solicitud', 'Send request')}</span>
+                                    <div class="elx3-toast" id="elx3Toast"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>COT-0053 · {tx('link listo', 'link ready')}</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </article>
-                );
-            })}
+            ))}
         </section>
 
-        <!-- ════════ CARACTERÍSTICAS (lista, no tarjetas) ════════ -->
-        <section class="el-features">
-            <div class="el-feat-head">
-                <p class="el-eyebrow reveal">{isEn ? 'WHY ELEMENTS' : 'POR QUÉ ELEMENTS'}</p>
-                <h2 class="el-h2 masked-title" set:html={isEn ? 'The complete quote builder, not a toy widget.' : 'El cotizador completo, no un widget de juguete.'} />
+
+        <ElementsAppearance isEn={isEn} />
+
+        <ElementsCountry isEn={isEn} />
+
+        <ElementsMore isEn={isEn} />
+
+        <!-- ════════ EXPLORADOR DEL SDK ════════ -->
+        <section class="els" id="sdk">
+            <div class="eli-head">
+                <h2 class="el-h2 masked-title">{tx('Todo lo que trae @flouviahq/elements.', 'Everything inside @flouviahq/elements.')}</h2>
+                <p class="el-lead reveal">{tx('Seis módulos en npm, el loader embed.js y los mismos tipos en todos. Elige un módulo para ver cada pieza que exporta.', 'Six npm modules, the embed.js loader and the same types across all of them. Pick a module to see every piece it exports.')}</p>
             </div>
-            <div class="el-feat-list">
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/></svg></span>
-                    <div><b>{isEn ? 'Your brand, not ours' : 'Tu marca, no la nuestra'}</b><span>{isEn ? 'Color, logo, and business name from your account. The client sees YOUR business, not Cord (except for the discreet "via Cord" on the free plan).' : 'Color, logo y razón social de tu cuenta. El cliente ve TU negocio, no a Cord (salvo el discreto "vía Cord" del plan gratis).'}</span></div>
+            <div class="els-card reveal-mockup" data-sdk>
+                <div class="els-nav" role="tablist" aria-label={tx('Módulos del SDK', 'SDK modules')}>
+                    {SDK.map((m, i) => (
+                        <button class:list={['els-tab', { active: i === 0 }]} role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-mod={m.id} type="button">
+                            <b>{m.label}</b><code>{m.path}</code><span>{m.items.length}</span>
+                        </button>
+                    ))}
                 </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
-                    <div><b>{isEn ? 'Approval and counteroffers' : 'Aprobación y contraoferta'}</b><span>{isEn ? 'The client approves, rejects, or negotiates the price without leaving their portal. The quote chat is also embedded.' : 'El cliente aprueba, rechaza o negocia el precio sin salir de su portal. El chat de la cotización viaja embebido.'}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-                    <div><b>{isEn ? 'Integrated online payment' : 'Pago en línea integrado'}</b><span>{isEn ? <Fragment>Card and SPEI checkout inside the iframe (<code>allow="payment"</code> attribute). Get paid without redirecting to another tab.</Fragment> : <Fragment>Checkout con tarjeta y SPEI dentro del iframe (atributo <code>allow="payment"</code>). Cobras sin redirigir a otra pestaña.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-                    <div><b>{isEn ? 'Automatic height' : 'Altura automática'}</b><span>{isEn ? <Fragment>The embed measures its content and notifies your page via <code>postMessage</code>. No scrollbars or empty boxes.</Fragment> : <Fragment>El embed mide su contenido y le avisa a tu página vía <code>postMessage</code>. Nada de barras de scroll ni cajas vacías.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-                    <div><b>{isEn ? 'Secure by design' : 'Seguro por diseño'}</b><span>{isEn ? <Fragment>Domain allowlist per account (CSP <code>frame-ancestors</code>) plus scoped <code>pk_</code> publishable keys — only YOU decide which sites can embed it and what a browser-exposed key can touch.</Fragment> : <Fragment>Allowlist de dominios por cuenta (CSP <code>frame-ancestors</code>) y llaves públicas <code>pk_</code> de scope acotado — solo TÚ decides en qué sitios puede embeberse y qué puede tocar una llave expuesta en el navegador.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                    <div><b>{isEn ? 'Real-time events' : 'Eventos en tiempo real'}</b><span>{isEn ? <Fragment>Your site listens to <code>cord:approved</code>, <code>cord:pay</code>, and more — to trigger your analytics, CRM, or whatever you need.</Fragment> : <Fragment>Tu sitio escucha <code>cord:approved</code>, <code>cord:pay</code> y más — para disparar tu analítica, CRM o lo que sea.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg></span>
-                    <div><b>{isEn ? 'Legally verifiable approval' : 'Aprobación con validez legal'}</b><span>{isEn ? <Fragment>Every approval is signed with a SHA-256 hash, IP, and timestamp — with a visible trust seal on the quote itself. In Mexico, it's also ready for CFDI 4.0 stamping.</Fragment> : <Fragment>Cada aprobación queda firmada con un hash SHA-256, IP y fecha — con un sello de confianza visible en la misma cotización. En México, además queda lista para timbrarse con CFDI 4.0.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg></span>
-                    <div><b>{isEn ? 'Typed SDK, or fully headless' : 'SDK tipado, o 100% headless'}</b><span>{isEn ? <Fragment>Use the quote builder as-is, or drop it entirely and build your own UI with <code>useQuoteBuilder()</code> — TypeScript types generated from the real code, not hand-written.</Fragment> : <Fragment>Usa el cotizador tal cual, o descártalo por completo y construye tu propia interfaz con <code>useQuoteBuilder()</code> — tipos de TypeScript generados del código real, no escritos a mano.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg></span>
-                    <div><b>{isEn ? 'Same engine as the app' : 'Mismo motor que la app'}</b><span>{isEn ? <Fragment>Totals and taxes run through the exact same <code>engine.ts</code> the rest of Cord uses — the total your embed shows can never drift from the one in your account.</Fragment> : <Fragment>Totales e impuestos corren por el MISMO <code>engine.ts</code> que usa el resto de Cord — el total que muestra tu embed jamás diverge del de tu cuenta.</Fragment>}</span></div>
-                </div>
-                <div class="el-feat reveal">
-                    <span class="el-feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M9 9h6v6H9z"/><path d="M4 9h2M4 15h2M18 9h2M18 15h2M9 4v2M15 4v2M9 18v2M15 18v2"/></svg></span>
-                    <div><b>{isEn ? 'Server SDK + verified webhooks' : 'Server SDK + webhooks verificados'}</b><span>{isEn ? <Fragment><code>@flouviahq/elements/server</code> for Node: read the same data from your backend and verify webhook signatures with <code>constructEvent</code> — no need to implement HMAC yourself.</Fragment> : <Fragment><code>@flouviahq/elements/server</code> para Node: lee los mismos datos desde tu backend y verifica firmas de webhooks con <code>constructEvent</code> — sin implementar HMAC a mano.</Fragment>}</span></div>
+                <div class="els-panels">
+                    {SDK.map((m, i) => (
+                        <div class="els-panel" data-mod-panel={m.id} hidden={i !== 0} role="tabpanel">
+                            <p class="els-lead"><code>{m.path}</code>{m.lead}</p>
+                            <ul class="els-list">
+                                {m.items.map((it) => (
+                                    <li>
+                                        <code class="els-name">{it.n}</code>
+                                        <span class={`els-kind k-${it.k}`}>{KIND[it.k]}</span>
+                                        <p>{it.d}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
                 </div>
             </div>
-        </section>
-
-        {devPage.trust && <TrustGrid trust={devPage.trust} slug="elements" />}
-
-        <!-- ════════ CTA secundario ════════ -->
-        <section class="el-mid">
-            <h2 class="el-mid-title masked-title" set:html={isEn ? 'Prefer not to embed? Share the link.' : '¿Prefieres no embeber? Comparte el link.'} />
-            <p class="el-mid-sub reveal">{isEn ? <Fragment>Each quote also lives on its own public page <code>/q/{'{'}token{'}'}</code> — the exact same builder, zero code. Embedding is for when you want it to live <i>inside</i> your site.</Fragment> : <Fragment>Cada cotización vive también en su propia página pública <code>/q/{'{'}token{'}'}</code> — el mismo cotizador, sin tocar código. El embed es para cuando quieres que viva <i>dentro</i> de tu sitio.</Fragment>}</p>
-            <a href={l("/q/demo")} class="el-btn-ghost reveal" target="_blank" rel="noopener">{isEn ? 'View a real quote ↗' : 'Ver una cotización real ↗'}</a>
         </section>
 
         <FaqAccordion
             faqs={devPage.faqs}
-            eyebrow={isEn ? 'FREQUENTLY ASKED QUESTIONS' : 'PREGUNTAS FRECUENTES'}
-            title={isEn ? 'What developers ask about Elements.' : 'Lo que preguntan los developers sobre Elements.'}
+            eyebrow={tx('PREGUNTAS FRECUENTES', 'FREQUENTLY ASKED QUESTIONS')}
+            title={tx('Lo que preguntan los developers sobre Elements.', 'What developers ask about Elements.')}
             id="elements-faq"
         />
 
-        <!-- ════════ CROSS-LINK (estilo lista, no cards) — misma pieza que /desarrolladores/[slug] ════════ -->
-        <section class="dv-more">
-            <a href={l(`/desarrolladores/${crossPage.slug}`)} class="dv-more-row reveal">
-                <div>
-                    <span class="dv-more-eyebrow">{crossPage.eyebrow}</span>
-                    <b>{crossPage.nav}</b>
-                    <i>{crossPage.sub.split('.')[0]}.</i>
-                </div>
-                <span class="dv-more-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </span>
-            </a>
-        </section>
+        <DevMore current="elements" />
     </main>
 
-    <Footer
-        ctaTitle={isEn ? 'Bring your quote builder<br />to where your clients are.' : 'Lleva tu cotizador<br />a donde están tus clientes.'}
-        ctaSub={isEn ? 'Create your free account and embed your first quote builder today.' : 'Crea tu cuenta gratis y embebe tu primer cotizador hoy mismo.'}
-    />
+    <Footer ctaTitle={devPage.cta.titulo} ctaSub={devPage.cta.sub} />
     <PageAnims />
 </Layout>
 
 <script>
-    // Selector de stack (logos) + copiar (sin dependencias).
-    function initElTabs() {
-        const wrap = document.querySelector('[data-el-tabs]');
+    // Pestañas de stack + copiar, explorador del SDK y comando npm (sin dependencias).
+    const isEnDoc = () => document.documentElement.lang === 'en';
+    function initTabs() {
+        const wrap = document.querySelector<HTMLElement>('[data-el-tabs]');
         if (!wrap) return;
-        const tabs = Array.from(wrap.querySelectorAll<HTMLElement>('.el-fw-tile'));
+        const tabs = Array.from(wrap.querySelectorAll<HTMLButtonElement>('.eli-tab'));
         const panels = Array.from(wrap.querySelectorAll<HTMLElement>('.el-panel'));
-        const fileLabel = wrap.querySelector<HTMLElement>('#elActiveFile');
-
+        const file = wrap.querySelector<HTMLElement>('#elActiveFile');
         const show = (id: string) => {
-            let file = '';
             tabs.forEach((t) => {
                 const on = t.dataset.tab === id;
                 t.classList.toggle('active', on);
                 t.setAttribute('aria-selected', String(on));
-                if (on) file = t.dataset.file || '';
+                if (on && file) file.textContent = t.dataset.file || '';
             });
-            panels.forEach((p) => {
-                const on = p.dataset.panel === id;
-                p.classList.toggle('active', on);
-                p.hidden = !on;
-            });
-            if (fileLabel && file) fileLabel.textContent = file;
+            panels.forEach((p) => { const on = p.dataset.panel === id; p.classList.toggle('active', on); p.hidden = !on; });
         };
         tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab!)));
-
-        const copyBtn = wrap.querySelector<HTMLButtonElement>('[data-copy]');
-        copyBtn?.addEventListener('click', async () => {
+        const btn = wrap.querySelector<HTMLButtonElement>('[data-copy]');
+        btn?.addEventListener('click', async () => {
             const active = wrap.querySelector<HTMLElement>('.el-panel.active');
-            const text = active ? Array.from(active.querySelectorAll<HTMLElement>('.el-lc')).map((l) => l.textContent || '').join('\n') : '';
+            const text = active ? Array.from(active.querySelectorAll<HTMLElement>('.el-lc')).map((x) => x.dataset.raw ?? '').join('\n') : '';
             try {
                 await navigator.clipboard.writeText(text);
-                const label = copyBtn.querySelector('span');
-                copyBtn.classList.add('done');
-                if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copied!' : '¡Copiado!';
-                setTimeout(() => { copyBtn.classList.remove('done'); if (label) label.textContent = document.documentElement.lang === 'en' ? 'Copy' : 'Copiar'; }, 2000);
-            } catch {}
-        });
-    }
-    // Copiar el comando `npm install` del hero.
-    function initInstallCmd() {
-        const box = document.querySelector('[data-install-cmd]');
-        if (!box) return;
-        const btn = box.querySelector<HTMLButtonElement>('.el-cmd-copy');
-        btn?.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText('npm install @flouviahq/elements');
+                const label = btn.querySelector<HTMLElement>('[data-copy-label]');
                 btn.classList.add('done');
-                setTimeout(() => btn.classList.remove('done'), 2000);
+                if (label) label.textContent = isEnDoc() ? 'Copied' : 'Copiado';
+                setTimeout(() => { btn.classList.remove('done'); if (label) label.textContent = isEnDoc() ? 'Copy' : 'Copiar'; }, 2000);
             } catch {}
         });
     }
-
-    function init() { initElTabs(); initInstallCmd(); }
+    function initSdk() {
+        const wrap = document.querySelector<HTMLElement>('[data-sdk]');
+        if (!wrap) return;
+        const tabs = Array.from(wrap.querySelectorAll<HTMLButtonElement>('.els-tab'));
+        const panels = Array.from(wrap.querySelectorAll<HTMLElement>('.els-panel'));
+        tabs.forEach((t) => t.addEventListener('click', () => {
+            tabs.forEach((x) => { const on = x === t; x.classList.toggle('active', on); x.setAttribute('aria-selected', String(on)); });
+            panels.forEach((p) => { p.hidden = p.dataset.modPanel !== t.dataset.mod; });
+        }));
+    }
+    function initCmd() {
+        const box = document.querySelector<HTMLElement>('[data-install-cmd]');
+        const btn = box?.querySelector<HTMLButtonElement>('.el-cmd-copy');
+        let timer = 0;
+        btn?.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText('npm install @flouviahq/elements'); } catch { return; }
+            // Reinicia la animación aunque se pulse dos veces seguidas.
+            box!.classList.remove('done'); btn.classList.remove('done');
+            void btn.offsetWidth;
+            box!.classList.add('done'); btn.classList.add('done');
+            clearTimeout(timer);
+            timer = window.setTimeout(() => { box!.classList.remove('done'); btn.classList.remove('done'); }, 2200);
+        });
+    }
+    function init() { initTabs(); initSdk(); initCmd(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 </script>
 
 <script>
-    // Motion del bento (mismo patrón que /desarrolladores/[slug]): entrada
-    // fade+rise de la ventana + cascada de filas internas, y las 3 animaciones
-    // específicas de los mockups dbm-el-m0/m1/m2.
+    // Motion: el hero es una demo en bucle (el cursor aprueba, la consola
+    // recibe cord:approved/cord:signed) y cada tarjeta del bento anima su
+    // propia historia. Con reduced-motion todo queda en su estado final.
     import { gsap } from 'gsap';
     import { ScrollTrigger } from 'gsap/ScrollTrigger';
     gsap.registerPlugin(ScrollTrigger);
 
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const watch = (el: Element) => {
+        const state = { on: false };
+        new IntersectionObserver(([e]) => { state.on = e.isIntersecting; }, { threshold: 0.15 }).observe(el);
+        return state;
+    };
+    const idle = (v: { on: boolean }) => !v.on || document.hidden;
+
     window.addEventListener('load', () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const isEn = document.documentElement.lang === 'en';
 
+        // ── Entrada del bento ──
         if (!reduced) {
-            document.querySelectorAll('.pp-bcard-visual').forEach((block) => {
-                const win = block.querySelector('.dbm-app, .dbm-term');
-                if (!win) return;
-                gsap.set(win, { y: 26, opacity: 0 });
-                ScrollTrigger.create({ trigger: block, start: 'top 88%', once: true,
-                    onEnter: () => {
-                        gsap.to(win, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
-                        const rows = win.querySelectorAll('.dbm-kv, .dbm-toolrow, .dbm-scope, .dbm-log > div:not([style]), .dbm-sync-row');
-                        gsap.from(rows, { opacity: 0, y: 8, duration: 0.5, stagger: 0.05, delay: 0.15, ease: 'power2.out' });
-                    } });
+            document.querySelectorAll<HTMLElement>('.pp-bcard-visual .elx').forEach((v) => {
+                gsap.set(v, { y: 24, opacity: 0 });
+                ScrollTrigger.create({ trigger: v.closest('.pp-bcard')!, start: 'top 85%', once: true, onEnter: () => gsap.to(v, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' }) });
             });
         }
 
-        // ELEMENTS 0 — el skeleton de carga cede su lugar a la card mini con el total.
-        const elB0 = document.querySelector('.dbm-el-m0');
-        if (elB0 && !reduced) {
-            const skel = document.getElementById('elSkel');
-            const mini = document.getElementById('elMini');
-            if (skel) gsap.to(skel, { backgroundPosition: '-200% 0', duration: 1.2, ease: 'none', repeat: -1 });
-            ScrollTrigger.create({ trigger: elB0, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.6 })
-                      .set(skel, { opacity: 1 }).set(mini, { opacity: 0 })
-                      .to({}, { duration: 1.1 })
-                      .to(skel, { opacity: 0, duration: 0.3 })
-                      .to(mini, { opacity: 1, duration: 0.4, ease: 'power2.out' }, '<')
-                      .to({}, { duration: 1.4 });
-                } });
+        // ── 0: skeleton -> cotización, con la altura que reporta cord:resize ──
+        const b0 = document.querySelector<HTMLElement>('[data-elx="0"]');
+        if (b0) {
+            const frame = document.getElementById('elx0Frame');
+            const skel = document.getElementById('elx0Skel');
+            const mini = document.getElementById('elx0Mini');
+            const h = document.getElementById('elx0H');
+            if (reduced) { skel?.classList.add('gone'); mini?.classList.add('on'); frame?.classList.add('grown'); if (h) h.textContent = '612'; }
+            else {
+                const vis = watch(b0);
+                (async () => {
+                    for (;;) {
+                        if (idle(vis)) { await sleep(400); continue; }
+                        skel?.classList.remove('gone'); mini?.classList.remove('on'); frame?.classList.remove('grown'); if (h) h.textContent = '420';
+                        await sleep(1500);
+                        skel?.classList.add('gone'); mini?.classList.add('on'); frame?.classList.add('grown');
+                        const o = { v: 420 };
+                        gsap.to(o, { v: 612, duration: 0.7, ease: 'power2.out', onUpdate: () => { if (h) h.textContent = String(Math.round(o.v)); } });
+                        await sleep(3600);
+                    }
+                })();
+            }
         }
-        // ELEMENTS 1 — el snippet de código cambia de tab (HTML → React → Web Component).
-        const elB1 = document.querySelector('.dbm-el-m1');
-        if (elB1 && !reduced) {
-            const tabs = elB1.querySelectorAll('.dbm-el-tabs span');
-            const code = document.getElementById('elCode');
-            const snippets = [
-                '<span class="dbm-jtag">&lt;script src=</span><span class="dbm-jstr">"…/embed.js"</span><span class="dbm-jtag">&gt;</span>',
-                'import { CordCotizador } from <span class="dbm-jstr">\'@flouviahq/elements/react\'</span>',
-                '<span class="dbm-jtag">&lt;cord-cotizador</span> token=<span class="dbm-jstr">"…"</span><span class="dbm-jtag">&gt;</span>',
-            ];
-            let i = 0;
-            ScrollTrigger.create({ trigger: elB1, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.4 }).call(() => {
-                        tabs.forEach((t, k) => t.classList.toggle('dbm-seg-on', k === i));
-                        if (code) { code.style.opacity = '0'; setTimeout(() => { code.innerHTML = snippets[i]; code.style.opacity = '1'; }, 180); }
-                        i = (i + 1) % snippets.length;
-                    }).to({}, { duration: 1.4 });
-                } });
+
+        // ── 2: los eventos llegan uno por uno ──
+        const b2 = document.querySelector<HTMLElement>('[data-elx="2"]');
+        if (b2) {
+            const rows = Array.from(b2.querySelectorAll<HTMLElement>('[data-r]'));
+            if (reduced) rows.forEach((r) => r.classList.add('on'));
+            else {
+                const vis = watch(b2);
+                (async () => {
+                    for (;;) {
+                        if (idle(vis)) { await sleep(400); continue; }
+                        rows.forEach((r) => r.classList.remove('on'));
+                        await sleep(500);
+                        for (const r of rows) { r.classList.add('on'); await sleep(650); }
+                        await sleep(3200);
+                    }
+                })();
+            }
         }
-        // ELEMENTS 2 — el cursor "clickea" Aprobar dentro del embed y dispara el evento.
-        const elB2 = document.querySelector('.dbm-el-m2');
-        if (elB2 && !reduced) {
-            const cursor = document.getElementById('elCursor');
-            const approve = document.getElementById('elApprove');
-            const badge = document.getElementById('elBadge');
-            const evt = elB2.querySelector('.dbm-el2-event');
-            ScrollTrigger.create({ trigger: elB2, start: 'top 88%', once: true,
-                onEnter: () => {
-                    gsap.timeline({ repeat: -1, repeatDelay: 1.8 })
-                      .set(cursor, { x: 14, y: 16, opacity: 0 })
-                      .set(evt, { opacity: 0.35 })
-                      .call(() => { if (badge) { badge.textContent = isEn ? 'Review' : 'Revisar'; badge.style.color = ''; badge.style.background = ''; } })
-                      .to(cursor, { opacity: 1, duration: 0.3 })
-                      .to(cursor, { x: 0, y: 0, duration: 0.6, ease: 'power2.inOut' })
-                      .to(approve, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 })
-                      .call(() => { if (badge) { badge.textContent = isEn ? 'Approved' : 'Aprobada'; badge.style.color = '#059669'; badge.style.background = 'rgba(16,185,129,0.12)'; } })
-                      .fromTo(approve, { boxShadow: '0 0 0 0 rgba(16,185,129,0.5)' }, { boxShadow: '0 0 0 8px rgba(16,185,129,0)', duration: 0.7 })
-                      .to(cursor, { opacity: 0, duration: 0.3 }, '<')
-                      .to(evt, { opacity: 1, duration: 0.4 }, '-=0.2')
-                      .to({}, { duration: 1.6 });
-                } });
+
+        // ── 3: tu UI envía y Cord devuelve el link ──
+        const b3 = document.querySelector<HTMLElement>('[data-elx="3"]');
+        if (b3) {
+            const btn = document.getElementById('elx3Btn');
+            const toast = document.getElementById('elx3Toast');
+            if (reduced) toast?.classList.add('on');
+            else {
+                const vis = watch(b3);
+                (async () => {
+                    for (;;) {
+                        if (idle(vis)) { await sleep(400); continue; }
+                        toast?.classList.remove('on');
+                        await sleep(1800);
+                        if (btn) await gsap.to(btn, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1 });
+                        await sleep(300);
+                        toast?.classList.add('on');
+                        await sleep(3000);
+                    }
+                })();
+            }
         }
     });
 </script>
 
 <style>
-    /* ════════ HERO — split layout, llena 100dvh (mismo patrón que /desarrolladores/[slug]) ════════ */
+    /* ════════ HERO ════════ */
     .pp-hero {
-        position: relative;
-        min-height: 100dvh;
-        display: flex; align-items: center;
-        overflow-x: clip;
+        --band-t: clamp(150px, 16vw, 260px);
+        --band-rise: 21.3vw;
+        position: relative; min-height: 100dvh; display: flex; align-items: center; overflow-x: clip;
+        padding-bottom: calc(var(--band-t) + 8.5vw - 1rem);
         background: var(--color-bg);
     }
     .pp-hero-mesh {
-        position: absolute; inset: -20% -10% auto; height: 80%;
-        background:
-            radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
-        pointer-events: none;
+        position: absolute; inset: -20% -10% auto; height: 80%; pointer-events: none;
+        background: radial-gradient(ellipse 50% 60% at 28% 20%, rgba(10,25,47,0.05) 0%, transparent 60%), radial-gradient(ellipse 44% 54% at 76% 12%, rgba(10,25,47,0.04) 0%, transparent 60%);
     }
     .pp-hero-inner {
-        position: relative; z-index: 1; width: 100%;
-        max-width: 1440px; margin: 0 auto;
+        position: relative; z-index: 1; width: 100%; max-width: 1440px; margin: 0 auto;
         padding: 7rem 5% 4rem 6%;
-        display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.55fr);
-        gap: 2.6rem; align-items: center;
+        display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr); gap: 3rem; align-items: center;
     }
     .pp-hero-text { text-align: left; min-width: 0; }
-    .pp-hero-visual {
-        position: relative; overflow: visible; min-width: 0;
-        margin-right: -12%;
-        display: flex; align-items: center; justify-content: center;
-    }
+    .pp-hero-visual { position: relative; min-width: 0; margin-right: -3%; }
+    .el-kicker { font-size: 0.66rem; font-weight: 800; letter-spacing: 2.6px; text-transform: uppercase; color: #8a93a2; margin: 0 0 1.2rem; }
     .pp-title { color: #050505; margin: 0 0 1.4rem; text-align: left; }
-    .pp-sub {
-        font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted);
-        max-width: 480px; margin: 0 0 2.1rem; text-align: left;
-    }
-    .pp-sub b { color: var(--color-text); font-weight: 600; }
-    .pp-actions { display: flex; gap: 0.9rem; justify-content: flex-start; align-items: center; flex-wrap: wrap; }
+    .pp-sub { font-size: 1.06rem; line-height: 1.65; color: var(--color-text-muted); max-width: 500px; margin: 0 0 2.1rem; text-align: left; }
+    .pp-actions { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
     .pp-btn-primary {
         display: inline-flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
         background: var(--color-blue-deep); color: #fff; text-decoration: none;
@@ -589,280 +675,131 @@ const breadcrumbSchema = {
         box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
-    .pp-btn-primary::after {
-        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%);
-        transform: translateX(-110%); transition: transform 0.55s ease;
-    }
-    .pp-btn-primary:hover::after { transform: translateX(110%); }
     .pp-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
     .pp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
     .pp-btn-primary:hover svg { transform: translateX(4px); }
     .pp-btn-primary:active { transform: scale(0.97); }
     .pp-btn-ghost {
         color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
-        padding: 14px 22px; border-radius: 999px;
-        border: 1px solid var(--color-border);
+        padding: 14px 22px; border-radius: 999px; border: 1px solid var(--color-border);
         transition: color 0.3s, border-color 0.3s, background 0.3s;
     }
     .pp-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
-    .pp-plan { font-size: 0.78rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; text-align: left; max-width: 480px; line-height: 1.55; }
+    .pp-plan { font-size: 0.76rem; color: #99a2af; margin: 1.3rem 0 0; font-weight: 600; max-width: 480px; line-height: 1.55; }
 
-    /* Comando de instalación copiable */
     .el-cmd {
-        display: inline-flex; align-items: center; gap: 10px;
-        margin-top: 1.1rem; padding: 4px 4px 4px 16px;
-        background: var(--color-blue-deep); border-radius: 12px;
-        box-shadow: 0 18px 44px -22px rgba(10,25,47,0.6);
-        max-width: 100%;
+        display: inline-flex; align-items: center; gap: 10px; margin-top: 1.5rem; padding: 4px 4px 4px 16px; max-width: 100%;
+        background: #fff; border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 10px 28px -14px rgba(10,25,47,0.25), inset 0 0 0 1px rgba(10,25,47,0.07);
     }
-    .el-cmd code {
-        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-        font-size: 0.86rem; color: #e6edf3; white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
-    }
-    .el-cmd-prompt { color: #6ee7b7; margin-right: 9px; user-select: none; }
+    .el-cmd code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.84rem; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .el-cmd-prompt { color: #99a2af; margin-right: 9px; user-select: none; }
     .el-cmd-copy {
-        flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
-        width: 34px; height: 34px; border-radius: 9px;
-        background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);
-        border: 1px solid rgba(255,255,255,0.12); cursor: pointer;
-        transition: background 0.2s, color 0.2s;
+        flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px;
+        background: #f5f5f7; color: #5b6575; border: 0; cursor: pointer; transition: background 0.2s, color 0.2s;
     }
+    .el-cmd { position: relative; transition: box-shadow 0.4s; }
+    .el-cmd code { transition: color 0.4s; }
+    .el-cmd.done { box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 10px 28px -14px rgba(5,150,105,0.45), inset 0 0 0 1.5px rgba(16,185,129,0.55); }
+    .el-cmd.done::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(100deg, transparent 20%, rgba(16,185,129,0.16) 50%, transparent 80%); background-size: 220% 100%; animation: cpSweep 0.9s ease-out both; }
+    @keyframes cpSweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+    .el-cmd-copy { position: relative; overflow: visible; }
     .el-cmd-copy svg { width: 15px; height: 15px; }
-    .el-cmd-copy:hover { background: rgba(255,255,255,0.18); color: #fff; }
-    .el-cmd-copy.done { color: #6ee7b7; }
-
-    .el-npmline { font-size: 0.78rem; color: #99a2af; margin: 0.9rem 0 0; font-weight: 600; }
-    .el-npm {
-        display: inline-flex; align-items: center; gap: 7px;
-        color: #99a2af; text-decoration: none; transition: color 0.2s;
-    }
-    .el-npm svg { width: 30px; height: 14px; color: #cb3837; }
-    .el-npm:hover { color: var(--color-blue-deep); }
-
-    /* ── Mockup del hero: llena el espacio (estilo /desarrolladores) ── */
-    .pp-mockup-wrap { position: relative; max-width: 1000px; width: 100%; min-width: 0; margin: 0; }
-    .pp-glow { position: absolute; inset: -6% -4% 14%; background: radial-gradient(ellipse at center, rgba(10,25,47,0.06) 0%, transparent 72%); filter: blur(44px); z-index: 0; pointer-events: none; }
-    .pp-mockup { position: relative; }
-
-    /* ── Demo en vivo (browser + iframe real) ── */
-    .el-browser {
-        position: relative;
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 50px 100px -36px rgba(5,11,20,0.55), inset 0 0 0 0.5px rgba(10,25,47,0.08);
-        overflow: hidden;
-    }
-    .el-browser-bar {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 16px;
-        background: #f4f6f9; border-bottom: 1px solid rgba(10,25,47,0.07);
-    }
-    .el-live-badge {
-        display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-        font-size: 0.66rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
-        color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.22);
-        border-radius: 100px; padding: 5px 10px;
-    }
-    .el-live-badge i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.6); }
-    .el-url {
-        display: inline-flex; align-items: center; gap: 7px;
-        font-size: 0.76rem; color: var(--color-text-muted); font-weight: 500;
-        background: #fff; border-radius: 8px; padding: 6px 12px; flex: 1;
-        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06);
-    }
-    .el-url svg { width: 12px; height: 12px; color: #10b981; flex-shrink: 0; }
-    .el-browser-body {
-        background: var(--color-bg-soft);
-        padding: 1.3rem 1.3rem 1rem;
-    }
-    .el-host-chrome { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .el-host-logo { font-size: 0.82rem; font-weight: 800; letter-spacing: -0.2px; color: #334; }
-    .el-host-nav { display: inline-flex; gap: 7px; }
-    .el-host-nav i { width: 20px; height: 5px; border-radius: 100px; background: rgba(10,25,47,0.1); }
-    .el-host-line { font-size: 0.84rem; color: var(--color-text-muted); margin: 0 0 0.8rem; font-weight: 500; }
-    .el-demo-frame {
-        width: 100%; height: 540px; border: 0;
-        border-radius: 14px; background: #fff; display: block;
-        box-shadow: 0 12px 36px -18px rgba(10,25,47,0.2);
-    }
-    .el-host-foot { display: block; text-align: center; font-size: 0.68rem; color: #aab; margin-top: 0.9rem; }
-    .el-demo-tag {
-        display: block; text-align: center;
-        font-size: 0.74rem; font-weight: 600; color: #99a2af;
-        margin-top: 1rem;
+    .el-cmd-copy .cp-ico, .el-cmd-copy .cp-ok { position: absolute; transition: transform 0.45s var(--ease-spring), opacity 0.25s; }
+    .el-cmd-copy .cp-ok { opacity: 0; transform: scale(0.4) rotate(-20deg); stroke-dasharray: 24; stroke-dashoffset: 24; }
+    .el-cmd-copy:hover { background: #eceef2; color: #0a192f; }
+    .el-cmd-copy.done { background: #059669; color: #fff; animation: cpPop 0.5s var(--ease-spring); }
+    .el-cmd-copy.done .cp-ico { opacity: 0; transform: scale(0.4) rotate(20deg); }
+    .el-cmd-copy.done .cp-ok { opacity: 1; transform: none; animation: cpDraw 0.42s 0.08s ease-out forwards; }
+    .el-cmd-copy::before { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0 rgba(16,185,129,0.55); pointer-events: none; }
+    .el-cmd-copy.done::before { animation: cpRing 0.75s ease-out; }
+    .cp-tip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 6px) scale(0.9); padding: 5px 10px; border-radius: 8px; background: #0a192f; color: #fff; font: 600 0.72rem var(--font-sans); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.4s var(--ease-spring); }
+    .cp-tip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: #0a192f; }
+    .el-cmd-copy.done .cp-tip { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    @keyframes cpPop { 0% { transform: scale(1); } 35% { transform: scale(0.86); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes cpDraw { to { stroke-dashoffset: 0; } }
+    @keyframes cpRing { from { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); } to { box-shadow: 0 0 0 12px rgba(16,185,129,0); } }
+    .el-copybtn .cp-swap { position: relative; width: 13px; height: 13px; display: inline-grid; }
+    .el-copybtn .cp-swap svg { grid-area: 1 / 1; transition: transform 0.4s var(--ease-spring), opacity 0.2s; }
+    .el-copybtn .cp-ok { opacity: 0; transform: scale(0.4); stroke-dasharray: 24; stroke-dashoffset: 24; }
+    .el-copybtn.done .cp-ico { opacity: 0; transform: scale(0.4); }
+    .el-copybtn.done .cp-ok { opacity: 1; transform: none; animation: cpDraw 0.4s 0.06s ease-out forwards; }
+    .el-copybtn.done { background: rgba(16,185,129,0.16); animation: cpPop 0.45s var(--ease-spring); }
+    @media (prefers-reduced-motion: reduce) {
+        .el-cmd.done::after, .el-cmd-copy.done, .el-cmd-copy.done::before, .el-copybtn.done { animation: none; }
+        .el-cmd-copy.done .cp-ok, .el-copybtn.done .cp-ok { animation: none; stroke-dashoffset: 0; }
     }
 
-    /* ════════ STRIP ════════ */
-    .el-strip {
-        max-width: 900px; margin: 0 auto;
-        padding: 5.5rem 5%;
-        text-align: center;
-    }
-    .el-strip-lead {
-        font-size: clamp(1.3rem, 2.6vw, 1.85rem);
-        font-weight: 600; line-height: 1.4; letter-spacing: -0.02em;
-        color: var(--color-text-muted);
-    }
-    .el-strip-lead b { color: var(--color-text); font-weight: 700; }
+    .elq-logo { width: 22px; height: 22px; border-radius: 6px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.56rem; font-weight: 700; flex-shrink: 0; }
+
+    /* ════════ STACK ════════ */
+    .el-stack { max-width: 1200px; margin: 0 auto; padding: 1.5rem 5% 2rem; text-align: center; }
+    .el-stack-t { font-size: 0.8rem; font-weight: 600; color: #8a93a2; margin: 0 0 1.3rem; }
+    .el-stack-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+    .el-stack-row li { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 99px; background: #fff; font-size: 0.82rem; font-weight: 600; color: #3b4658; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 8px 20px -14px rgba(10,25,47,0.2); }
+    .el-stack-row img { width: 18px; height: 18px; border-radius: 4px; }
+    .el-stack-row svg { width: 18px; height: 18px; color: #e34f26; }
 
     /* ════════ COMPARTIDOS ════════ */
-    .el-h2 {
-        font-size: clamp(1.9rem, 3.4vw, 2.8rem);
-        font-weight: 800; line-height: 1.08; letter-spacing: -0.032em;
-        color: var(--color-text); margin: 0 0 1.1rem;
-    }
-    .el-copy { font-size: 1.04rem; line-height: 1.7; color: var(--color-text-muted); margin: 0; }
-    .el-copy code, .el-feat code, .el-mid-sub code {
-        font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.86em;
-        background: rgba(10,25,47,0.06); padding: 1px 6px; border-radius: 5px; color: var(--color-blue-deep);
-    }
-    .el-eyebrow {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
-        text-transform: uppercase; color: #888; margin: 0 0 1.3rem;
-    }
+    .el-h2 { font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.035em; color: #050505; margin: 0 0 1rem; }
+    .el-lead, .el-copy { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; }
+    /* Encabezado de sección: título a la izquierda, texto a la derecha */
+    .eli-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 1.5rem 4rem; align-items: end; margin: 0 0 3rem; text-align: left; }
+    .eli-head .el-h2 { margin: 0; max-width: 620px; }
+    .eli-head .el-lead { max-width: 460px; justify-self: end; }
 
-    /* Bloque de código (dark) */
-    .el-code {
-        background: linear-gradient(165deg, #0e2240 0%, #0a192f 60%, #081424 100%);
-        border-radius: 16px; overflow: hidden;
-        box-shadow: 0 40px 90px -40px rgba(5,11,20,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.07);
-    }
-    .el-code-bar {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
-        font-size: 0.74rem; color: rgba(255,255,255,0.5); font-weight: 500;
-    }
-    .el-copybtn {
-        margin-left: auto; flex-shrink: 0;
-        display: inline-flex; align-items: center; gap: 6px;
-        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600;
-        color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
-        padding: 6px 11px; cursor: pointer; transition: background 0.2s, color 0.2s;
-    }
-    .el-copybtn svg { width: 13px; height: 13px; }
-    .el-copybtn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+    /* Código (oscuro, igual que los snippets del resto del sitio) */
+    .el-code { background: #0b1526; border-radius: 16px; overflow: hidden; min-width: 0; box-shadow: 0 30px 70px -36px rgba(5,11,20,0.6), inset 0 0 0 1px rgba(255,255,255,0.05); }
+    .el-code-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .el-code-file { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: rgba(255,255,255,0.62); white-space: nowrap; overflow: hidden; }
+    .el-code-file svg { width: 14px; height: 14px; flex-shrink: 0; color: rgba(255,255,255,0.4); }
+    .el-copybtn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font: 600 0.72rem var(--font-sans); color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 10px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .el-copybtn svg { width: 13px; height: 13px; display: block; }
+    .el-copybtn:hover { background: rgba(255,255,255,0.12); color: #fff; }
     .el-copybtn.done { color: #6ee7b7; border-color: rgba(110,231,183,0.4); }
-
-    /* ── Panel de código con números de línea + línea resaltada (el import que "conecta" Cord) ── */
     .el-panel { padding: 0.9rem 0 1.1rem; overflow-x: auto; }
     .el-panel[hidden] { display: none; }
-    .el-cl {
-        display: flex; padding: 1px 1.5rem;
-        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-        font-size: 0.83rem; line-height: 1.9; white-space: pre;
-    }
-    .el-ln { flex-shrink: 0; width: 26px; text-align: right; margin-right: 16px; color: rgba(255,255,255,0.22); user-select: none; }
-    .el-lc { color: #cde3ff; }
-    .el-cl-hl { background: rgba(59,130,246,0.14); box-shadow: inset 2px 0 0 #3b82f6; }
-    .el-cl-hl .el-ln { color: rgba(147,197,253,0.7); }
-    .el-cl-hl .el-lc { color: #dbeafe; }
+    .el-cl { display: flex; padding: 0 1.2rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; line-height: 1.85; white-space: pre; }
+    .el-ln { flex-shrink: 0; width: 22px; text-align: right; margin-right: 16px; color: rgba(255,255,255,0.2); user-select: none; }
+    .el-lc { color: #dbe4f0; }
+    .el-cl-hl { background: rgba(59,130,246,0.13); box-shadow: inset 2px 0 0 #3b82f6; }
+    :global(.c-com) { color: #6b7a90; }
+    :global(.c-str) { color: #a5d6a7; }
+    :global(.c-tag) { color: #93c5fd; }
+    :global(.c-kw) { color: #c4b5fd; }
+    :global(.c-fn) { color: #fcd34d; }
+    :global(.c-op) { color: #f9a8d4; }
 
-    /* ── Selector de stack: grilla de logos reales (estilo app-icon-grid) ── */
-    .el-fw-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 0.85rem;
-        margin-bottom: 1.4rem;
-    }
-    .el-fw-tile {
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        padding: 1rem 0.6rem 0.85rem; border-radius: 16px; cursor: pointer;
-        background: var(--color-bg-soft); border: 1px solid var(--color-border);
-        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s, border-color 0.3s, background 0.3s;
-    }
-    .el-fw-tile:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -14px rgba(10,25,47,0.18); }
-    .el-fw-tile.active {
-        background: #fff; border-color: rgba(10,25,47,0.16);
-        box-shadow: 0 0 0 1.5px var(--color-blue-deep), 0 16px 32px -14px rgba(10,25,47,0.22);
-    }
-    .el-fw-ico {
-        display: flex; align-items: center; justify-content: center;
-        width: 34px; height: 34px; border-radius: 10px;
-        color: var(--color-blue-deep);
-    }
-    .el-fw-ico img { width: 22px; height: 22px; object-fit: contain; border-radius: 5px; }
-    .el-fw-ico svg { width: 20px; height: 20px; }
-    .el-fw-label { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); letter-spacing: -0.01em; }
-    .el-fw-tile.active .el-fw-label { color: var(--color-text); }
+    /* ════════ INSTALAR ════════ */
+    .eli { max-width: 1200px; margin: 0 auto; padding: 5rem 5% 2rem; }
+    .eli-card { background: #fff; border-radius: 28px; padding: 1.4rem; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14); }
+    .eli-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; padding: 0.2rem 0.2rem 1.2rem; }
+    .eli-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 99px; border: 0; cursor: pointer; background: #f5f5f7; font: 600 0.8rem var(--font-sans); color: #5b6575; transition: background 0.25s, color 0.25s, box-shadow 0.25s; }
+    .eli-tab img { width: 16px; height: 16px; border-radius: 4px; }
+    .eli-tab svg { width: 16px; height: 16px; color: #e34f26; }
+    .eli-tab:hover { color: #0a192f; background: #eceef2; }
+    .eli-tab.active { background: #0a192f; color: #fff; box-shadow: 0 8px 20px -10px rgba(10,25,47,0.6); }
+    .eli-tab:focus-visible, .els-tab:focus-visible { outline: 2px solid #2f6df0; outline-offset: 2px; }
+    .eli-body { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1.4rem; align-items: stretch; }
+    .eli-steps { list-style: none; margin: 0; padding: 1rem 1rem 1rem 0.8rem; display: flex; flex-direction: column; justify-content: center; gap: 1.6rem; }
+    .eli-steps li { display: flex; gap: 14px; }
+    .eli-n { flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 0.72rem; font-weight: 700; color: #99a2af; padding-top: 3px; }
+    .eli-steps b { display: block; font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; margin-bottom: 4px; }
+    .eli-steps p { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); }
 
-    .el-code-bar-file {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.76rem;
-        color: rgba(255,255,255,0.65);
-    }
-    .el-code-bar-file svg { width: 14px; height: 14px; flex-shrink: 0; color: rgba(255,255,255,0.4); }
-
-    /* ════════ INSTALAR — split izq/der (mismo patrón que el bento) ════════ */
-    .el-install { max-width: 1180px; margin: 0 auto; padding: 6rem 5%; }
-    .el-install-inner {
-        display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 4rem; align-items: start;
-    }
-    .el-install-text { max-width: 440px; }
-    .el-install-visual { min-width: 0; }
-    .el-install .el-code { text-align: left; }
-    .el-steps { display: flex; flex-direction: column; margin-top: 2.4rem; }
-    .el-step {
-        display: flex; align-items: flex-start; gap: 16px;
-        padding: 1.3rem 0; border-top: 1px solid var(--color-border);
-    }
-    .el-step:first-child { border-top: none; padding-top: 0; }
-    .el-step-n { flex-shrink: 0; font-size: 0.74rem; font-weight: 800; letter-spacing: 1px; color: #99a2af; padding-top: 2px; }
-    .el-step b { display: block; font-size: 0.98rem; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 4px; }
-    .el-step span { font-size: 0.87rem; line-height: 1.55; color: var(--color-text-muted); }
-
-    /* ════════ FEATURES (lista, hairline — regla de André) ════════ */
-    .el-features { max-width: 1000px; margin: 0 auto; padding: 5rem 5%; }
-    .el-feat-head { text-align: center; margin-bottom: 3rem; }
-    .el-feat-list {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 0 3.5rem;
-    }
-    .el-feat {
-        display: flex; align-items: flex-start; gap: 16px;
-        padding: 1.5rem 0; border-bottom: 1px solid var(--color-border);
-    }
-    .el-feat-ico {
-        flex-shrink: 0; width: 40px; height: 40px; border-radius: 11px;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
-        display: inline-flex; align-items: center; justify-content: center;
-    }
-    .el-feat-ico svg { width: 19px; height: 19px; }
-    .el-feat b { display: block; font-size: 0.98rem; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 4px; }
-    .el-feat span { font-size: 0.87rem; line-height: 1.55; color: var(--color-text-muted); }
-
-    /* ════════ MID CTA ════════ */
-    .el-mid { max-width: 720px; margin: 0 auto; padding: 6rem 5% 5rem; text-align: center; }
-    .el-mid-title {
-        font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.12;
-        letter-spacing: -0.03em; margin: 0 0 1rem;
-    }
-    .el-mid-sub { font-size: 1rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 1.6rem; }
-    .el-mid-sub i { font-style: normal; color: var(--color-text); font-weight: 600; }
-    .el-btn-ghost {
-        display: inline-block;
-        color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.98rem;
-        padding: 14px 22px; border-radius: 999px;
-        border: 1px solid var(--color-border);
-        transition: color 0.3s, border-color 0.3s, background 0.3s;
-    }
-    .el-btn-ghost:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.2); background: rgba(10,25,47,0.03); }
-
-    /* ════════ BENTO — 3 tarjetas (mismo patrón que /producto y /desarrolladores) ════════ */
-    .pp-bento {
-        max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem;
-        display: grid; grid-template-columns: 5fr 7fr; gap: 1.5rem;
-    }
+    /* ════════ BENTO (idéntico a /producto) ════════ */
+    .pp-bento { max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem; display: grid; grid-template-columns: 5fr 7fr; gap: 1.2rem; }
     .pp-bcard-2, .pp-bcard-3 { grid-column: 1 / -1; }
     .pp-bcard {
-        background: #f5f5f7; border-radius: 24px; overflow: hidden;
-        display: flex; flex-direction: column; min-height: 540px;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 24px 48px -14px rgba(0,0,0,0.08);
+        background: #fff; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; min-height: 540px;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14), inset 0 1px 0 rgba(255,255,255,0.6);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
+    .pp-bcard:hover { transform: translateY(-6px); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 38px 72px -18px rgba(10,25,47,0.2), inset 0 1px 0 rgba(255,255,255,0.6); }
     .pp-bcard-2, .pp-bcard-3 { flex-direction: row; min-height: 480px; }
     .pp-bcard-text { padding: 3rem 2.8rem 2rem; flex-shrink: 0; position: relative; z-index: 2; }
     .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
-    .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #f5f5f7; }
+    .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #fff; }
     .pp-bcard-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #b0b0b8; margin: 0 0 0.9rem; }
     .pp-bcard-h2 { font-size: clamp(1.35rem, 2.1vw, 1.85rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.035em; color: #050505; margin: 0 0 0.9rem; }
     .pp-bcard-copy { font-size: 0.875rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.4rem; }
@@ -870,89 +807,140 @@ const breadcrumbSchema = {
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
 
-    /* Tarjeta oscura con aurora GLSL (CordDynamicBg, mismo shader del ROI de
-       /precios y de /desarrolladores/[slug]) — siempre la tarjeta 0. */
-    .pp-bcard-dark {
-        position: relative;
-        background: #08152a;
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 28px 60px -24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .pp-bcard-dark .pp-bcard-text,
-    .pp-bcard-dark .pp-bcard-visual { position: relative; z-index: 2; background: transparent; }
-    .pp-bcard-dark .pp-bcard-eyebrow { color: rgba(255,255,255,0.45); }
-    .pp-bcard-dark .pp-bcard-h2 { color: #ffffff; }
-    .pp-bcard-dark .pp-bcard-copy { color: rgba(226,232,240,0.72); }
-    .pp-bcard-dark .pp-bcard-bullets li { color: rgba(255,255,255,0.92); }
-    .pp-bcard-dark .pp-bcard-bullets svg { color: #34d399; }
+    /* Mockups del bento: ventanas claras sobre la tarjeta blanca */
+    .elx { position: absolute; inset: 0; padding: 1.6rem 1.8rem 0; display: flex; flex-direction: column; align-items: center; }
+    .pp-bcard-2 .elx, .pp-bcard-3 .elx { padding: 2rem 2.4rem; justify-content: center; }
+    .elx-win { width: 100%; max-width: 560px; background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 24px 50px -24px rgba(10,25,47,0.28), inset 0 0 0 1px rgba(10,25,47,0.07); overflow: hidden; }
+    .elx-snip { padding: 10px 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* ════════ CROSS-LINK (última sección) ════════ */
-    .dv-more { max-width: 1080px; margin: 0 auto; padding: 2rem 5% 8rem; }
-    .dv-more-row {
-        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
-        padding: 1.8rem 2rem; border-radius: 20px;
-        background: var(--color-bg-soft); border: 1px solid var(--color-border); text-decoration: none;
-        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring), border-color 0.4s;
-    }
-    .dv-more-row:hover { transform: translateY(-3px); box-shadow: 0 30px 70px -30px rgba(10,25,47,0.18); border-color: rgba(10,25,47,0.12); }
-    .dv-more-eyebrow { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #99a2af; margin-bottom: 0.5rem; }
-    .dv-more-row b { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
-    .dv-more-row i { display: block; font-style: normal; font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
-    .dv-more-arrow {
-        flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.35s, color 0.35s, transform 0.5s var(--ease-spring);
-    }
-    .dv-more-arrow svg { width: 16px; height: 16px; }
-    .dv-more-row:hover .dv-more-arrow { background: var(--color-blue-deep); color: #fff; transform: translateX(3px); }
+    /* 0 — carga y altura */
+    .elx-0 .elx-win { background: #f5f5f7; }
+    .elx0-frame { position: relative; margin: 14px; height: 150px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 10px 24px -16px rgba(10,25,47,0.3); transition: height 0.7s cubic-bezier(.2,.8,.2,1); overflow: hidden; }
+    .elx0-frame.grown { height: 228px; }
+    .elx0-skel { position: absolute; inset: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: opacity 0.35s; }
+    .elx0-skel i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #f0f1f4 0%, #e5e7ec 40%, #f0f1f4 80%); background-size: 200% 100%; animation: elxShimmer 1.3s linear infinite; }
+    .elx0-skel i:nth-child(1) { width: 45%; }
+    .elx0-skel i:nth-child(2) { height: 36px; }
+    .elx0-skel i:nth-child(3) { width: 80%; }
+    .elx0-skel i:nth-child(4) { width: 60%; }
+    .elx0-skel.gone { opacity: 0; }
+    @keyframes elxShimmer { to { background-position: -200% 0; } }
+    .elx0-mini { position: absolute; inset: 0; padding: 14px 16px; opacity: 0; transition: opacity 0.4s 0.15s; }
+    .elx0-mini.on { opacity: 1; }
+    .elx0-row { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; margin-bottom: 12px; color: #0a192f; }
+    .elx0-row em { margin-left: auto; font-style: normal; font-weight: 600; color: #5b6575; }
+    .elx0-mini small { font-size: 0.5rem; letter-spacing: 0.22em; color: #a3aab6; font-weight: 600; }
+    .elx0-mini strong { display: block; font-size: 1.35rem; letter-spacing: -0.04em; color: #0a192f; margin: 2px 0 10px; }
+    .elx0-mini strong span { font-size: 0.6rem; color: #8a93a2; letter-spacing: 0; font-weight: 600; }
+    .elx0-lines { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .elx0-lines i { height: 7px; border-radius: 4px; background: #f0f1f4; }
+    .elx0-lines i:nth-child(2) { width: 82%; }
+    .elx0-lines i:nth-child(3) { width: 64%; }
+    .elx0-btn { display: block; text-align: center; padding: 7px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-size: 0.66rem; font-weight: 600; }
+    .elx0-ruler { margin: 0 14px 14px; padding: 7px 10px; border-radius: 8px; background: #fff; font-family: ui-monospace, monospace; font-size: 0.66rem; color: #5b6575; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06); }
+    .elx0-ruler .c-fn { color: #b45309; }
+    .elx0-ruler b { color: #0a192f; }
+
+    /* 2 — eventos */
+    .elx2-win { max-width: 640px; }
+    .elx2-head { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid #eef0f3; font-size: 0.74rem; font-weight: 700; color: #0a192f; }
+    .elx2-live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.64rem; font-weight: 600; color: #059669; }
+    .elx2-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+    .elx2-tbl { padding: 6px 0; }
+    .elx2-r { display: grid; grid-template-columns: 62px 128px 1fr; gap: 10px; align-items: center; padding: 7px 16px; font-family: ui-monospace, monospace; font-size: 0.66rem; opacity: 0.15; transform: translateX(-6px); transition: opacity 0.4s, transform 0.4s, background 0.4s; }
+    .elx2-r.on { opacity: 1; transform: none; }
+    .elx2-r time { color: #a3aab6; }
+    .elx2-r em { font-style: normal; color: #2f6df0; font-weight: 600; }
+    .elx2-r span { color: #5b6575; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.6; }
+    .elx2-r.is-ok.on { background: rgba(16,185,129,0.07); }
+    .elx2-r.is-ok em { color: #059669; }
+    .elx2-r.is-pay em { color: #b45309; }
+    .elx2-code { padding: 10px 16px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.66rem; }
+
+    /* 3 — headless */
+    .pp-bcard-2 .elx-3 { flex-direction: row; align-items: center; gap: 1.2rem; }
+    .elx3-code { flex: 1.1; min-width: 0; padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.64rem; line-height: 1.75; white-space: pre; overflow: hidden; box-shadow: 0 24px 50px -28px rgba(5,11,20,0.6); }
+    .elx3-l { min-height: 1.75em; overflow: hidden; text-overflow: ellipsis; }
+    .elx3-ui { position: relative; flex: 0.9; min-width: 0; padding: 18px; border-radius: 6px; background: #fffaf3; border: 1.5px solid #1f2937; font-family: Georgia, 'Times New Roman', serif; color: #1f2937; box-shadow: 6px 6px 0 #1f2937; }
+    .elx3-badge { position: absolute; top: -11px; left: 14px; padding: 2px 8px; background: #fbbf24; border: 1.5px solid #1f2937; font-family: var(--font-sans); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .elx3-title { margin: 4px 0 12px; font-size: 0.92rem; font-weight: 700; }
+    .elx3-row { display: grid; grid-template-columns: 1fr 44px 78px; gap: 6px; padding: 6px 0; border-bottom: 1px dashed #d6cfc2; font-size: 0.66rem; }
+    .elx3-row b { text-align: right; font-weight: 400; }
+    .elx3-row em { text-align: right; font-style: normal; }
+    .elx3-tot { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 12px; font-size: 0.66rem; }
+    .elx3-tot strong { font-family: Georgia, serif; font-size: 1.05rem; }
+    .elx3-btn { display: block; text-align: center; padding: 8px 0; background: #1f2937; color: #fffaf3; font-family: var(--font-sans); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; }
+    .elx3-toast { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 10px; background: #ecfdf5; border: 1px solid #a7f3d0; font-family: var(--font-sans); font-size: 0.64rem; font-weight: 600; color: #065f46; opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
+    .elx3-toast svg { stroke: #059669; width: 11px; height: 11px; }
+    .elx3-toast.on { opacity: 1; transform: none; }
+
+
+    /* ════════ EXPLORADOR DEL SDK ════════ */
+    .els { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; }
+    .els-card { display: grid; grid-template-columns: 300px 1fr; background: #fff; border-radius: 28px; overflow: hidden; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14); }
+    .els-nav { display: flex; flex-direction: column; gap: 4px; padding: 1.2rem; background: #fafafb; border-right: 1px solid rgba(10,25,47,0.06); }
+    .els-tab { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left; padding: 12px 14px; border-radius: 14px; border: 0; background: transparent; cursor: pointer; transition: background 0.25s, box-shadow 0.25s; }
+    .els-tab b { font: 700 0.9rem var(--font-sans); letter-spacing: -0.01em; color: #3b4658; }
+    .els-tab code { grid-column: 1; font-family: ui-monospace, monospace; font-size: 0.66rem; color: #99a2af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .els-tab span { grid-row: 1 / span 2; grid-column: 2; align-self: center; min-width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; background: #eef0f3; font: 700 0.68rem var(--font-sans); color: #5b6575; }
+    .els-tab:hover { background: #f1f2f5; }
+    .els-tab.active { background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 10px 24px -14px rgba(10,25,47,0.25); }
+    .els-tab.active b { color: #050505; }
+    .els-tab.active span { background: #0a192f; color: #fff; }
+    .els-panels { padding: 2rem 2.4rem 2.2rem; min-width: 0; }
+    .els-panel[hidden] { display: none; }
+    .els-lead { margin: 0 0 1.4rem; font-size: 0.92rem; line-height: 1.55; color: var(--color-text-muted); }
+    .els-lead code { display: block; margin-bottom: 6px; font-family: ui-monospace, monospace; font-size: 0.84rem; font-weight: 600; color: #0a192f; }
+    .els-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; }
+    .els-list li { padding: 1rem 0; border-top: 1px solid var(--color-border); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+    .els-name { font-family: ui-monospace, monospace; font-size: 0.82rem; font-weight: 600; color: #050505; }
+    .els-kind { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 7px; border-radius: 99px; background: #f1f2f5; color: #5b6575; }
+    .k-component { background: #eef4ff; color: #2f5fc4; }
+    .k-hook { background: #f3efff; color: #6d4bc4; }
+    .k-fn { background: #fff6e6; color: #a15c07; }
+    .k-class { background: #eafaf3; color: #04785a; }
+    .k-event { background: #ecfdf5; color: #047857; }
+    .els-list p { flex-basis: 100%; margin: 0; font-size: 0.84rem; line-height: 1.55; color: var(--color-text-muted); }
 
     /* ════════ RESPONSIVE ════════ */
+    @media (max-width: 1100px) {
+        .els-card { grid-template-columns: 1fr; }
+        .els-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid rgba(10,25,47,0.06); padding: 0.8rem; }
+        .els-tab { flex: 0 0 auto; min-height: 44px; }
+        .els-tab code { display: none; }
+        .els-tab span { grid-row: 1; }
+    }
     @media (max-width: 1000px) {
-        .pp-hero { align-items: flex-start; }
-        .pp-hero-inner { grid-template-columns: 1fr; gap: 0; padding: 6rem 6% 3rem; }
-        .pp-hero-text { padding-bottom: 2.5rem; }
-        .pp-hero-visual { margin-left: -6%; margin-right: -6%; justify-content: flex-start; }
-        .pp-mockup-wrap { max-width: 100%; }
-        .el-feat-list { grid-template-columns: 1fr; gap: 0; }
-        .el-install-inner { grid-template-columns: 1fr; gap: 2.5rem; }
-        .el-install-text { max-width: none; }
-        .el-demo-frame { height: 480px; }
+        .pp-hero { align-items: flex-start; padding-bottom: calc(var(--band-t) * 0.5); }
+        .pp-hero-inner { grid-template-columns: 1fr; gap: 2.5rem; padding: 6rem 6% 3rem; }
+        .pp-hero-visual { margin: 0; }
+        .eli-body { grid-template-columns: 1fr; }
+        .eli-steps { padding: 0.4rem 0.4rem 0.6rem; }
         .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 4rem 5% 3rem; }
-        .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
+        .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 0; }
         .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
-        .pp-bcard { min-height: 460px; }
+        .pp-bcard { min-height: 0; }
+        .pp-bcard-visual { min-height: 0; }
+        .elx, .pp-bcard-2 .elx, .pp-bcard-3 .elx { position: relative; inset: auto; padding: 0.4rem 1.2rem 1.8rem; }
+        .pp-bcard-2 .elx-3 { flex-direction: column; align-items: stretch; }
     }
     @media (max-width: 860px) {
-        .pp-hero { padding-top: 8.5rem; }
-        .dv-more-row { padding: 1.4rem 1.4rem; }
+        .eli-head { grid-template-columns: 1fr; }
+        .eli-head .el-lead { justify-self: start; }
+        .pp-hero { padding-top: 2.5rem; }
+        .els-list { grid-template-columns: 1fr; }
+        .els-panels { padding: 1.4rem 1.3rem 1.6rem; }
+        .eli-card { padding: 1rem; border-radius: 22px; }
+        .eli-tab { min-height: 40px; }
+        .elx2-r { grid-template-columns: 54px 1fr; }
+        .elx2-r span { grid-column: 1 / -1; }
     }
 </style>
 
-<!-- Global override: GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid,
-     por eso el override al título del hero DEBE ser is:global. Además aquí van los
-     overrides del bento (mismo patrón que /desarrolladores/[slug].astro) para que las
-     ventanas .dbm-app/.dbm-term llenen la tarjeta y sangren por abajo. -->
+<!-- GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid: el override
+     del título del hero va global (regla 11). -->
 <style is:global>
     .pp-hero-text .pp-title { text-align: left !important; }
-    .pp-hero-text .m-line   { text-align: left !important; width: 100%; }
+    .pp-hero-text .m-line { text-align: left !important; width: 100%; }
     .pp-hero-text .m-line-in { display: block !important; text-align: left !important; }
-
-    .pp-bcard-visual .dbm-wrap {
-        position: absolute; inset: 0;
-        padding: 1.7rem 1.6rem 0;
-        align-items: flex-start; justify-content: center;
-    }
-    .pp-bcard-visual .dbm-app,
-    .pp-bcard-visual .dbm-term { max-width: 560px; }
-
-    .pp-bcard-2 .pp-bcard-visual .dbm-wrap,
-    .pp-bcard-3 .pp-bcard-visual .dbm-wrap {
-        padding: 1.6rem;
-        align-items: center;
-    }
-
-    @media (max-width: 960px) {
-        .pp-bcard-visual .dbm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }
-    }
 </style>

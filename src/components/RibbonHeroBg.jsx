@@ -375,7 +375,7 @@ export default function RibbonHeroBg({ colors = DEFAULT_COLORS, light = false })
         overflow: 'hidden',
         pointerEvents: 'none',
         opacity: visible ? 1 : 0,
-        transition: 'opacity 1.2s ease',
+        transition: 'opacity 0.25s ease',
       }}
     >
       <Canvas

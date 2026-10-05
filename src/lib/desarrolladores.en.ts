@@ -1,436 +1,398 @@
 // src/lib/desarrolladores.en.ts
+// English mirror of src/lib/desarrolladores.ts — same slugs, same mocks, same
+// verified numbers. Change a fact there and here in the same commit.
 import type { DevPage } from './desarrolladores';
+
+const UPDATED = '2026-09-30';
 
 export const DEV_PAGES_EN: DevPage[] = [
     {
         slug: 'api',
         nav: 'REST API',
         eyebrow: 'REST API',
-        titulo: 'Your quoting engine, connected to everything.',
-        sub: 'Cord stops being just a screen for humans and becomes a system your other systems can talk to. Read and create quotes, clients, and products from your ERP, CRM, or a script — with a single key.',
-        metaTitle: 'Quoting REST API — Cord Developers',
-        metaDescription: "Cord's REST API (/api/v1) reads and creates quotes, clients, and products with a Bearer key. Available on every plan, including Free, with no-cost test keys.",
-        plan: 'Available on every plan (Free included) · free test keys to integrate before paying',
-        stats: [
-            { valor: '9', countup: 9, label: 'REST endpoints on your real data' },
-            { valor: '1', countup: 1, label: 'API key to authenticate everything (Bearer)' },
-            { valor: '100', countup: 100, suffix: '%', label: 'predictable JSON, no scraping or manual exports' },
-        ],
+        titulo: 'Quote, invoice and collect from your own code.',
+        sub: "Cord's REST API creates and reads quotes, clients, products and invoices with a Bearer key, and runs the same actions as the app: send, approve, issue or record a payment. Predictable JSON responses, an OpenAPI spec and test keys that work in an environment isolated from your real data.",
+        metaTitle: 'Quotes and invoicing REST API — Cord for developers',
+        metaDescription: 'Create quotes, clients, products and invoices through a REST API with a Bearer key. Idempotency-Key, cursor-based events, an OpenAPI spec and test keys in an isolated environment. From the Free plan.',
+        plan: 'On every plan. Free includes 2 keys and 100 calls a month; test keys do not count against your quota.',
+        heroMock: 'hero-api',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'WHAT IS IT FOR?',
-                titulo: 'Your big clients already have their system. Talk to it.',
-                copy: 'Imagine a client tied to a slow ERP their employees hate. With the API, their developers connect that ERP to Cord: your team quotes in Cord\'s fast engine and the data returns to the client\'s ERP in the background. No one changes tools, everyone wins.',
+                eyebrow: 'IDEMPOTENCY',
+                titulo: 'Retry without fear of duplicates.',
+                copy: 'A flaky network should not create two quotes. Send an Idempotency-Key on any POST, PATCH or DELETE: if the request repeats with the same key and body, Cord returns the original response, marked Idempotent-Replayed, instead of running twice. If the body changed, you get an explicit error.',
                 bullets: [
-                    'Import your catalog and clients from your system, without retyping',
-                    'Create quotes automatically when something happens in your ERP',
-                    'Sync statuses (viewed, approved, paid) back to your system',
+                    'Works on every mutation under /api/v1',
+                    'The replayed response is identical, byte for byte',
+                    'Same key with a different body: an error, never a silent duplicate',
                 ],
+                mock: 'code-idempotency',
             },
             {
-                eyebrow: 'AUTHENTICATION',
-                titulo: 'One key. Two scopes. Revocable instantly.',
-                copy: 'Generate an API key in Settings and send it in the header of every request. Read-only keys can query; write keys can also create. Did one leak? Revoke it and it stops working instantly. We only store its hash in the database — never the plaintext key.',
+                eyebrow: 'RESOURCES',
+                titulo: 'What you see in the app, also over the API.',
+                copy: 'This is not a read-only API. Create a quote and send it, approve it or mark it paid. Create an invoice as a draft and issue it, email it, record a payment or a credit note. All with the same permissions, validation and totals the app uses.',
                 bullets: [
-                    'Standard header: Authorization: Bearer sk_live_…',
-                    'Read and write scopes per key',
-                    'Test keys (sk_test_) free to integrate without a plan',
+                    'Quotes, invoices, clients, products, tasks and collections',
+                    'Actions via POST { "action": "send" | "approve" | "finalize" | … }',
+                    'Pagination with limit and offset, or a cursor for events and invoices',
                 ],
-                code: {
-                    label: 'Create a quote',
-                    body: `curl -X POST https://cordhq.app/api/v1/cotizaciones \
-  -H "Authorization: Bearer sk_live_xxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cliente_id": "c_8f2a…",
-    "items": [
-      { "descripcion": "Cement 50kg",
-        "cantidad": 120, "precio_unitario": 182 }
-    ]
-  }'`,
-                },
+                mock: 'wb-endpoints',
             },
             {
-                eyebrow: 'ENDPOINTS',
-                titulo: 'Everything you see in the app, also via API.',
-                copy: 'Quotes, clients, products, and collections — the same data from your dashboard, in JSON. Paginate with limit and offset, filter by status, and build whatever you need on top.',
+                eyebrow: 'EVENTS',
+                titulo: 'Sync without missing a thing.',
+                copy: "GET /api/v1/events returns your business history, newest first: quotes sent, viewed, approved or paid, invoices issued, new clients. Filter by type or object and page with next_cursor. It is the webhooks' companion for rebuilding any state.",
                 bullets: [
-                    'GET/POST /cotizaciones · GET /cotizaciones/:id',
-                    'GET/POST /clientes · GET/POST /productos',
-                    'GET /cobranza — AR, overdue, and aging',
+                    'Filters ?type=quote.approved and ?object_id=',
+                    'Up to 200 events per page with a stable cursor',
+                    'The same types your webhooks receive',
                 ],
-                code: {
-                    label: 'Response from /api/v1/cotizaciones',
-                    body: `{
-  "data": [
-    {
-      "id": "q_19a…",
-      "folio": "COT-0149",
-      "cliente": "Distribuidora El Zarco",
-      "status": "sent",
-      "total": 196469.2,
-      "terminos": "Net 30"
-    }
-  ],
-  "meta": { "limit": 50, "offset": 0, "total": 1 }
-}`,
-                },
+                mock: 'code-events',
             },
-        ],
-        steps: [
-            { titulo: 'Generate your key', copy: 'In Settings › Developers › API. Copy it once — it\'s only shown when created.' },
-            { titulo: 'Authenticate', copy: 'Send Authorization: Bearer in every request to https://cordhq.app/api/v1.' },
-            { titulo: 'Read and create', copy: 'Query JSON or create quotes from your ERP, CRM, or automation.' },
         ],
         faqs: [
-            { q: 'Do I need the Developer plan to get API access?', a: 'No. The API is available on every plan, including Free — each plan comes with a different number of keys and a monthly call limit (Free: 2 keys, Developer: 200 keys + 50,000 calls/month); there is no single plan that "unlocks" the API.' },
-            { q: 'Are test keys free?', a: "Yes. You can generate an sk_test_ key at no cost to integrate and test before activating a real sk_live_ key." },
-            { q: 'What can I do with the API besides creating quotes?', a: 'Read and create clients and products, and query your collections pipeline — generally, the same things you see in the app, exposed as REST endpoints under /api/v1.' },
+            { q: 'What is the Cord API?', a: 'A REST API at https://cordhq.app/api/v1 that gives programmatic access to your quotes, invoices, clients, products, tasks, collections and events. It authenticates with a Bearer key and responds in JSON shaped as { data, meta } or { error, code }.' },
+            { q: 'Do I need a paid plan to use the API?', a: 'No. The API is on every plan, including Free, with 2 keys and 100 calls a month. Starter includes 1,000 calls, Professional 5,000, Scale 10,000 and Developer 50,000. Test keys do not count against your quota.' },
+            { q: 'How do I test without touching real data?', a: 'Use an sk_test_ key. It runs against a test environment separate from your account, so you can create and delete quotes without affecting your clients or your reports.' },
+            { q: 'How do I avoid duplicate records when I retry?', a: 'Send the Idempotency-Key header. If you repeat the request with the same key and body, Cord returns the original response without running it again.' },
+            { q: 'Is there an OpenAPI spec?', a: 'Yes, at https://cordhq.app/openapi.yaml, plus an AI-assistant summary at https://cordhq.app/llms.txt. Both are linked from the Workbench.' },
         ],
-        cta: { titulo: 'Connect Cord to your system.', sub: 'Generate a free test key and make your first call today.' },
-        trust: {
-            eyebrow: 'INFRASTRUCTURE',
-            titulo: "Details that only matter once you're actually integrating",
-            items: [
-                { icon: 'gauge', titulo: '~500 requests per minute, per IP', copy: 'The limit runs on a 60-second window — if you hit it, the response tells you exactly how long to wait.' },
-                { icon: 'globe', titulo: 'Data and compute hosted in Mexico', copy: 'No unnecessary hops to another continent: your database and the API live in the same region.' },
-                { icon: 'doc', titulo: 'Errors are always flat: { error, code }', copy: 'Never a nested object you have to unpack — one format to handle in your code.' },
-            ],
-        },
+        cta: { titulo: 'Make your first call today.', sub: 'Create your account, generate a test key and call /api/v1/me in under a minute.' },
+    },
+    {
+        slug: 'workbench',
+        nav: 'Workbench',
+        eyebrow: 'DEVELOPER WORKBENCH',
+        titulo: 'Your whole integration, in a panel inside the app.',
+        sub: "Cord's Workbench is a developer panel that opens inside the app, over whatever screen you're on. It brings together API keys, webhooks, a log of every request, business events and your integration's health, with a test mode kept apart from your real data.",
+        metaTitle: 'Developer Workbench: API logs, webhooks and health — Cord',
+        metaDescription: "Cord's Workbench shows every API request with its status and latency, manages signed webhooks, test and live keys, and flags failing endpoints. Included on every plan.",
+        plan: 'Included on every plan. Any member with access to Settings can open it.',
+        heroMock: 'hero-workbench',
+        updated: UPDATED,
+        blocks: [
+            {
+                eyebrow: 'LOGS',
+                titulo: 'Every request, with its response.',
+                copy: 'Search by route, filter by method or response class and open any request to see its status, latency, IP, the key that made it and the environment. When something fails you know within seconds whether it was a 401 from a revoked key or a 422 from a malformed field.',
+                bullets: [
+                    'Filters by method (GET, POST) and class (2xx, 4xx, 5xx)',
+                    'Detail shows the calling key by name',
+                    'Cord does not store your request bodies: only metadata',
+                ],
+                mock: 'wb-logs',
+            },
+            {
+                eyebrow: 'WEBHOOKS',
+                titulo: 'Endpoints you can test without waiting for a real event.',
+                copy: "Register a URL, pick the events and save the secret. Test sends a delivery right away, Rotate secret changes the signature without cutting traffic, and each endpoint's history shows its deliveries with the code your server returned.",
+                bullets: [
+                    'X-Cord-Signature-V1 signature with a timestamp',
+                    'Secret rotation with a grace period',
+                    'Pause an endpoint with a switch, without deleting it',
+                ],
+                mock: 'wb-webhooks',
+            },
+            {
+                eyebrow: 'HEALTH',
+                titulo: 'Find out before your customer does.',
+                copy: "The Health tab gathers what can break an integration: endpoints with consecutive failures, queued or exhausted events, and the routes returning the most errors. If an endpoint keeps failing you see it here and get a notice before Cord disables it.",
+                bullets: [
+                    'Consecutive failures per endpoint',
+                    'Event queue: pending, overdue and exhausted',
+                    'Routes with the most 4xx and 5xx errors',
+                ],
+                mock: 'wb-health',
+            },
+        ],
+        faqs: [
+            { q: "What is Cord's Workbench?", a: "It's Cord's developer panel. It opens inside the app and brings together API keys, webhooks, the request log, business events and integration health, with a separate test mode." },
+            { q: 'What does Cord keep from each API request?', a: 'Method, route, response code, latency, IP, the key and the environment. It does not store request or response bodies, so your clients\' data is not kept outside where it belongs.' },
+            { q: 'What happens if my webhook endpoint stops responding?', a: 'Cord retries each delivery up to 11 times with growing waits, over almost four days. If the endpoint keeps failing you see it in Health and get a notice; after 5 consecutive failures Cord disables it instead of hammering a server that is down.' },
+            { q: 'Who can open the Workbench?', a: 'Any member of the organization with access to Settings. It is included on every plan.' },
+        ],
+        cta: { titulo: 'Integrate with your eyes open.', sub: 'Create your account, open the Workbench and follow your first request live.' },
     },
     {
         slug: 'mcp',
-        nav: 'Bidirectional MCP + agent governance',
-        eyebrow: 'BIDIRECTIONAL MCP · AGENT GOVERNANCE',
-        titulo: 'Your business talks to AI. And AI talks to your systems.',
-        sub: 'Cord\'s MCP is no longer a one-way street. Cord is a server: an AI like Claude queries your AR and builds quotes using 7 tools. And Cord is a client: it connects to your CRM or ERP\'s MCP servers, under permissions you sign off on. You decide who touches what.',
-        metaTitle: 'Bidirectional MCP server for sales AI agents — Cord',
-        metaDescription: "Cord is an MCP server (an AI like Claude queries your pipeline with 7 tools) and an MCP client (it connects to your CRM or ERP's servers under permissions you control). Available on every plan.",
-        plan: 'Available on all plans · uses the same API key (more active keys as you upgrade; live consumption is metered by use)',
-        stats: [
-            { valor: '7', countup: 7, label: 'tools Cord exposes to AI via JSON-RPC' },
-            { valor: '2', countup: 2, label: 'inbound transports: stateless HTTP and session HTTP/SSE' },
-            { valor: '5', countup: 5, label: 'max agent loop iterations before quoting (safety limit)' },
-        ],
+        nav: 'MCP server',
+        eyebrow: 'MCP SERVER',
+        titulo: 'Your business, available to Claude, Cursor and any agent.',
+        sub: "Cord's MCP server connects AI assistants like Claude or Cursor to your real business data through the Model Context Protocol. With 19 tools the AI reads quotes, invoices and overdue receivables, and with a write key it can also create drafts, send quotes or record payments.",
+        metaTitle: 'MCP server for Claude and Cursor: quotes and invoices with AI — Cord',
+        metaDescription: 'Connect Claude, Cursor or any MCP client to Cord with your API key. 19 tools: 9 read (quotes, invoices, overdue receivables) and 10 write (drafts, sending, payments). On every plan.',
+        plan: 'On every plan. It uses the same API key as the REST API; write tools require a key with write permission.',
+        heroMock: 'hero-mcp',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'CORD AS A SERVER',
-                titulo: '7 tools. Two ways to connect.',
-                copy: 'Connect Cord to an assistant like Claude and the AI works with your real data: checks the pipeline, finds overdue accounts, looks up a client, or drafts a quote. There are two entry doors: JSON-RPC 2.0 over stateless HTTP at /api/mcp, where the 7 tools live; and an HTTP/SSE channel with session at /api/mcp/sse + /api/mcp/message. Both authenticate with your API key and respect each tool\'s scope.',
+                eyebrow: 'CONNECTION',
+                titulo: 'Paste one config block and you are done.',
+                copy: 'In Settings › MCP you copy the exact config for Claude Desktop, for Cursor, or the direct URL for any other client. The connection is https://cordhq.app/api/mcp with your key in the Authorization header. For clients that need a session, Cord also exposes an SSE channel.',
                 bullets: [
-                    'The 7 tools run inside your org — the AI queries, it doesn\'t make things up',
-                    'Write actions require a key with write permission',
-                    'The SSE session is tied to your org_id: every query respects your RLS',
+                    'Stateless JSON-RPC 2.0 over HTTP',
+                    'Session-based SSE channel at /api/mcp/sse',
+                    'The same key you already use for the REST API',
                 ],
-                code: {
-                    label: 'Tools exposed by Cord',
-                    body: `listar_cotizaciones       detalle_cotizacion
-cartera_vencida           resumen_negocio
-buscar_cliente            listar_productos
-crear_cotizacion_borrador`,
-                },
+                mock: 'mcp-connect',
             },
             {
-                eyebrow: 'CORD AS A CLIENT',
-                titulo: 'Cord also queries your client\'s systems.',
-                copy: 'Flip the arrow. You register the URL of your CRM or ERP\'s MCP servers and Cord connects to them as a client. When you build a quote with AI, the agent loop at /api/cotizaciones/ai-draft first asks those remote systems —a client\'s balance, last order, agreed conditions— and then builds the lines with that context. Up to 5 loops max, and it closes every connection when done.',
+                eyebrow: 'TOOLS',
+                titulo: '19 tools, each with its own permission.',
+                copy: 'The AI can ask "which invoices are overdue?" or "how is the business doing?" with the 9 read tools. With a write key it can also draft a quote or an invoice, send a quote, mark it approved or paid, add a client or record a promise to pay.',
                 bullets: [
-                    'Connects via SSE injecting each remote server\'s authorization token',
-                    'Each external tool is prefixed by server to prevent collisions',
-                    'The agent loop interleaves your tools and remote ones in a single conversation',
+                    'Read: quotes, invoices, clients, products, events and receivables',
+                    'Write: only with a key that has that permission',
+                    'Paginated results with next_cursor, just like the API',
                 ],
-                code: {
-                    label: 'The agent loop builds with remote context',
-                    body: `// /api/cotizaciones/ai-draft
-const { tools, toolMap } =
-  await mcpManager.getAnthropicTools();
-const allTools = [armar_cotizacion, ...tools];
-// the AI queries your CRM before quoting (max 5 loops)
-await mcpManager.disconnectAll();`,
-                },
+                mock: 'mcp-tools',
             },
             {
-                eyebrow: 'AGENT GOVERNANCE',
-                titulo: 'Each agent touches only what you sign off on.',
-                copy: 'No open access. Each org has a default agent, the Cord Assistant, and a permissions table dictating which external servers it can connect to. If a server isn\'t on its allowlist, the agent doesn\'t even see it. Everything lives with Row Level Security in the database: every query filters by your org_id and no one crosses data between businesses.',
+                eyebrow: 'PLAYGROUND',
+                titulo: 'See exactly what the AI receives.',
+                copy: 'Before configuring a client, try any read tool from Settings › MCP against your real data. Pick the tool, pass JSON arguments and see the response exactly as the model gets it. Write tools do not run there, so nothing is created by accident.',
                 bullets: [
-                    'Register and toggle MCP servers in Settings › Developers',
-                    'Grant or revoke the agent\'s permission per server, instantly',
-                    'RLS on mcp_servers, agentes_ia, and agentes_permisos: org isolation',
+                    'Runs with your session, no key to configure',
+                    'Optional JSON arguments, such as {"limit": 5}',
+                    'Read tools only',
                 ],
+                mock: 'mcp-playground',
             },
-        ],
-        steps: [
-            { titulo: 'Generate your key', copy: 'The same API key from Settings › Developers › API. One key works for the REST API and inbound MCP.' },
-            { titulo: 'Connect the server', copy: 'Add https://cordhq.app/api/mcp in your AI client with the authorization header. For session streaming, use the SSE channel.' },
-            { titulo: 'Register and allow', copy: 'Add your CRM or ERP\'s MCP server URL and grant your agent access to them. The AI now queries your systems before quoting.' },
         ],
         faqs: [
-            { q: 'Is Cord\'s MCP only for an AI to read my data?', a: 'No. Cord works both ways: as an MCP server (an AI like Claude queries your pipeline and builds quotes with 7 tools) and as an MCP client (it connects to your CRM or ERP\'s MCP servers under permissions you authorize).' },
-            { q: 'Can any AI agent touch any data in my account?', a: 'No. Agent governance in Settings lets you define, server by server, which tools each agent can use — access is explicit, never open by default.' },
-            { q: 'Do I need a different key for MCP and the REST API?', a: 'No, it\'s the same API key for both — the authorization header is identical.' },
+            { q: "What is Cord's MCP server?", a: 'A Model Context Protocol server at https://cordhq.app/api/mcp that exposes 19 tools over your business data. Any MCP client, such as Claude Desktop or Cursor, can use them by authenticating with your Cord API key.' },
+            { q: 'Can the AI change my data?', a: 'Only if you give it a key with write permission. With a read key, the 10 write tools answer that the action requires that permission and run nothing.' },
+            { q: 'What can I ask Claude about my business?', a: 'Things like which invoices are overdue, how the pipeline looks, what happened with a quote or how much a client owes you. With a write key you can also ask it to draft a quote for you to review before sending.' },
+            { q: 'If the AI retries, can it duplicate a quote?', a: 'No. The crear_cotizacion_borrador tool accepts an idempotency_key: a retry with the same key returns the quote already created instead of making another.' },
+            { q: 'Do I need a separate key for MCP?', a: 'No. It is the same API key as the REST API, in the same Authorization: Bearer header.' },
         ],
-        cta: { titulo: 'Connect AI to your business. In both directions.', sub: 'Same header, same key. Expose your 7 tools and link your systems with permissions you control.' },
-        trust: {
-            eyebrow: 'PROTOCOL DETAILS',
-            titulo: "What doesn't show up in the marketing copy",
-            items: [
-                { icon: 'doc', titulo: 'A business error never breaks the protocol', copy: "A missing client or a missing permission returns isError:true inside the response — the AI reads it and keeps the conversation going, no raw transport error." },
-                { icon: 'key', titulo: 'Audited per action, not just per session', copy: "Every tool call —yours or a remote server's— lands in your account's audit log, tagged with which agent invoked it." },
-                { icon: 'globe', titulo: '/api/mcp is genuinely stateless', copy: 'Every JSON-RPC call stands alone, with no session to expire. For continuous streaming, use the SSE channel with a session.' },
-            ],
-        },
+        cta: { titulo: 'Ask your business.', sub: 'Create your account, copy the config for Claude or Cursor and ask your first question.' },
+    },
+    {
+        slug: 'integraciones',
+        nav: 'Webhooks and integrations',
+        eyebrow: 'WEBHOOKS · INTEGRATIONS',
+        titulo: 'Let your system hear about every sale, the moment it happens.',
+        sub: "Cord's webhooks notify your server every time something happens in your sales cycle: a quote sent, viewed, approved or paid, an invoice issued, a new client. Each notice is a JSON POST signed with HMAC-SHA256, with automatic retries and a history you can review in the Workbench.",
+        metaTitle: 'Signed webhooks for quotes and invoices (Zapier, Make, n8n) — Cord',
+        metaDescription: '41 sales events —quote.approved, quote.paid, invoice.finalized— delivered as a POST signed with HMAC-SHA256, with 11 retries. Send them to your backend, Zapier, Make or n8n. On every plan.',
+        plan: 'On every plan: 16 endpoints on Free, Starter and Professional, 32 on Scale and 100 on Developer.',
+        heroMock: 'hero-webhook',
+        updated: UPDATED,
+        blocks: [
+            {
+                eyebrow: 'SIGNATURE',
+                titulo: 'Verify the notice came from Cord.',
+                copy: "Every delivery carries X-Cord-Signature-V1 with a timestamp and the HMAC-SHA256 of the raw body, signed with your endpoint's secret. You validate it in a few lines before processing the event, and the timestamp protects you from someone replaying an old delivery.",
+                bullets: [
+                    'X-Cord-Event-Id to deduplicate without reading the body',
+                    'X-Cord-Attempt tells you which delivery attempt it is',
+                    'During a rotation it signs with both the new and the previous secret',
+                ],
+                mock: 'code-verify',
+            },
+            {
+                eyebrow: 'CATALOG',
+                titulo: '41 events for the whole sales cycle.',
+                copy: 'Not just quotes. Get notices for invoices finalized, sent, paid or overdue, partial or failed payments, refunds, disputes, payouts, clients, products, tasks and promises to pay. Subscribe each endpoint only to what it needs.',
+                bullets: [
+                    'quote.* · invoice.* · payment.* · refund.* · payout.*',
+                    'client.* · product.* · task.* · promise.* · dispute.*',
+                    'The same types GET /api/v1/events returns',
+                ],
+                mock: 'event-catalog',
+            },
+            {
+                eyebrow: 'NO CODE',
+                titulo: 'Zapier, Make and n8n, without copying keys.',
+                copy: 'Zapier and Make connect to Cord with OAuth: you authorize the app once and it shows up in the Workbench as an authorized connection you can revoke anytime. n8n uses an API key. All three create their own webhook subscriptions, with a separate allowance of 100 that does not use up your team\'s endpoints.',
+                bullets: [
+                    'OAuth authorization for Zapier and Make',
+                    'Revoke an app without touching your keys',
+                    'HubSpot, Slack and Microsoft Teams connect directly from Settings',
+                ],
+                mock: 'oauth-apps',
+            },
+        ],
+        faqs: [
+            { q: 'What is a Cord webhook?', a: 'An automatic notice: when an event happens in your account, such as an approved quote or a paid invoice, Cord sends a JSON POST to the URL you registered, signed with HMAC-SHA256 so you can verify where it came from.' },
+            { q: 'What if my server does not respond?', a: 'Cord retries up to 11 times with growing waits over almost four days, with a 5-second timeout per attempt. After 3 consecutive failures you get a notice and after 5 the endpoint is disabled until you turn it back on.' },
+            { q: 'How do I avoid processing the same event twice?', a: 'Use X-Cord-Event-Id, which also travels as the id field in the body. It stays the same across every retry of an event, so you only need to store the ones you already handled.' },
+            { q: 'Does Cord have a native connector for SAP, Salesforce or Oracle?', a: 'No. Direct connections exist for HubSpot, Slack and Microsoft Teams, among others. For SAP, Salesforce or Oracle you point a webhook at your backend or at Zapier, Make or n8n, and use the REST API to write back into Cord.' },
+            { q: 'How many endpoints can I have?', a: '16 on Free, Starter and Professional, 32 on Scale and 100 on Developer. Subscriptions created by Zapier, Make or n8n have a separate allowance of 100 per organization.' },
+        ],
+        cta: { titulo: 'Receive your first event in minutes.', sub: 'Register an endpoint in the Workbench and hit Test to watch the delivery arrive.' },
     },
     {
         slug: 'elements',
         nav: 'Cord Elements',
-        eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTER',
-        titulo: 'Your quoter, inside their site.',
-        sub: 'Bring Cord\'s quoter to your clients\' portal with one line of code. Your brand, approval, counteroffer, and online payment — all within their ecosystem, without them ever leaving their site.',
-        metaTitle: 'Cord Elements — embeddable quoter for your site',
-        metaDescription: 'Embed the Cord quoter in your portal with one line of code: an iframe, the <cord-cotizador> Web Component, or the @flouviahq/elements package for React/Vue. Free signup, no backend required.',
-        plan: 'Free signup. On the Free plan, the public link carries a discreet "via Cord"; you can remove it and leave only your brand from Settings › Developers, where you also define the allowlist of domains authorized to embed.',
-        stats: [
-            { valor: '1', countup: 1, label: 'line of code to mount it on any site' },
-            { valor: '6', countup: 6, label: 'ways to use it today: HTML (embed.js), React, Vue, Astro, Framer, and Webflow' },
-            { valor: '5', countup: 5, label: 'live events: ready, approved, rejected, message, and pay' },
-        ],
+        eyebrow: 'CORD ELEMENTS · EMBEDDABLE QUOTE BUILDER',
+        titulo: "Your quote builder, inside your client's site.",
+        sub: "Cord Elements brings your quotes into your clients' portal with one line of code. They see your brand, review every line item, approve with a signature, negotiate or pay without leaving their site, and your page receives every step as a typed event.",
+        metaTitle: 'Cord Elements — embeddable quote builder for React, Vue and HTML',
+        metaDescription: 'Embed your quotes on any site with one line: embed.js, the <cord-cotizador> Web Component or @flouviahq/elements for React, Vue, Framer and Webflow. Signed approval, online payment and 8 typed events.',
+        plan: 'On every plan, including Free. From Starter you remove Cord branding in Settings › Brand appearance; the domains allowed to embed it are set in Settings › Embeddable quote builder.',
+        updated: UPDATED,
         blocks: [
             {
                 eyebrow: 'ONE LINE OF CODE',
+                mock: 'el-oneline',
                 titulo: 'Paste. Done. No backend.',
-                copy: 'A script and a <div>. The quoter appears as an <iframe> served by Cord, shows a skeleton while loading, and automatically adjusts its height to the content via postMessage. There\'s no server to maintain or data to sync: the quote\'s public token is all you need.',
+                copy: "A script and a <div>. The quote builder appears as an iframe served by Cord, measures its content and tells your page so the height adjusts on its own. There is no server to maintain and no data to sync: the quote's public token is all you need.",
                 bullets: [
-                    'Works on any stack: WordPress, plain HTML, whatever',
-                    'Auto-height — the embed measures its content and notifies your page',
-                    'Skeleton with shimmer while loading and fade-in when ready: no empty boxes',
+                    'WordPress, Webflow, Shopify or plain HTML: any site that accepts a script',
+                    'Automatic height: no scrollbars, no empty boxes',
+                    'The same quote builder as the public /q link, with no extra code',
                 ],
-                code: {
-                    label: 'On any HTML site',
-                    body: `<!-- One line + one div -->
-<script src="https://cordhq.app/embed.js" async></script>
-<div data-cord-token="abc123"></div>`,
-                },
             },
             {
-                eyebrow: 'NATIVE IN YOUR FRAMEWORK',
-                titulo: 'An npm package. Typed, themeable, headless if you want.',
-                copy: 'Install @flouviahq/elements 1.0 and use it like any other component. In React you import <CordCotizador> with typed callbacks; in Vue, Astro, Svelte, or HTML you use the <cord-cotizador> Web Component. TypeScript types are generated straight from the real build (never hand-written), so they never drift from the SDK. And if you\'d rather build your own interface, the useQuoteBuilder() hook gives you the quoter\'s state without a single line of our UI.',
+                eyebrow: 'EVENTS',
+                mock: 'el-events',
+                titulo: 'Your page hears about every step your client takes.',
+                copy: 'When the client opens, approves, rejects, writes or pays, the iframe tells your page with a typed event and its detail. With React or Vue they arrive as callbacks; with the Web Component, as DOM events. Use them to redirect, open your checkout or notify your CRM.',
                 bullets: [
-                    'import { CordCotizador } from \'@flouviahq/elements/react\'',
-                    'Web Component &lt;cord-cotizador token="…"&gt; for Vue, Astro, Svelte, and HTML — plus SDKs for Framer and Webflow',
-                    'Real Appearance API: theme the iframe (color, font, radii), or pass appearance.baseTheme:"none" to go fully headless',
+                    'onApproved carries signed_by and the signature hash',
+                    "onPay carries the payment URL; onRejected, the client's comment",
+                    "With an allowlist, events are sent only to your site's origin",
                 ],
-                code: {
-                    label: 'React / Next.js',
-                    body: `// npm install @flouviahq/elements
-import { CordCotizador } from '@flouviahq/elements/react';
-
-export function Cotizacion({ token }) {
-  return (
-    <CordCotizador
-      token={token}
-      appearance={{ theme: 'auto' }}
-      onApproved={(d) => console.log('Approved', d.folio)}
-      onPay={() => location.assign('/thanks')}
-    />
-  );
-}`,
-                },
             },
             {
-                eyebrow: 'YOUR BRAND · SECURE BY DESIGN',
-                titulo: 'The full quoter, not a toy widget.',
-                copy: 'Inside the embed is the exact same quoter from your account: your color, your logo, and your details, computed by the SAME engine the rest of Cord uses (never a total that drifts). The client approves, rejects, negotiates the price, or pays without leaving their portal, and you control access with separate keys: a publishable one (pk_, scoped to creating quotes and reading the catalog) for the browser, and a secret one (sk_) for your backend — plus the domain allowlist (CSP frame-ancestors) that shields against clickjacking.',
+                eyebrow: 'HEADLESS',
+                mock: 'el-headless',
+                titulo: 'Or build your own interface on top of our state.',
+                copy: "If you don't want our design, useQuoteBuilder() gives you the full state to put together a new quote from your own UI: line items, client, subtotal, taxes and total, computed with the same engine as the server. You bring the markup; Cord creates the quote and returns its link.",
                 bullets: [
-                    'pk_ publishable keys (narrow scope) and sk_ secret keys — never expose your full CRM in the browser',
-                    'Approval, counteroffer, chat, SHA-256 legal signature, and online payment, all embedded',
-                    'Domain allowlist per account: only you decide where it can live',
+                    'A pk_ publishable key in the browser, or your own proxy with an sk_',
+                    'Stable .cord-* classes and styles inside @layer cord: your CSS always wins',
+                    'baseTheme: "none" to inject no CSS at all',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Copy your snippet', copy: 'Add the embed.js script, install @flouviahq/elements, or paste the Web Component — depending on your stack. The only thing that changes is how you load the quoter.' },
-            { titulo: 'Appears with your brand', copy: 'Pass the quote\'s public token. The color, logo, and data come from your Cord account — zero extra configuration on the host site.' },
-            { titulo: 'React to the client', copy: 'Listen to cord:approved, cord:pay, and other events on your own page to trigger your analytics, redirect, or sync your CRM in real time.' },
+            { titulo: 'Copy your snippet', copy: 'embed.js for any site, or npm install @flouviahq/elements if you use React, Vue, Framer or Webflow.' },
+            { titulo: 'Pass the token', copy: "The quote's public token. Your brand and your details come from your Cord account." },
+            { titulo: 'Listen to events', copy: 'onApproved, onPay and the rest to redirect, collect or sync your CRM in real time.' },
         ],
         faqs: [
-            { q: 'Does Cord Elements require me to run my own backend?', a: 'No. It\'s an embedded iframe (or the @flouviahq/elements package for React/Vue/Web Component) that talks directly to Cord — you paste the snippet and need no extra server. If you do have a backend, the Server SDK (@flouviahq/elements/server) gives you the same data plus webhooks verified with an HMAC signature.' },
-            { q: 'Can I use it fully headless, with no Cord UI at all?', a: 'Yes. The useQuoteBuilder() hook exposes the quoter\'s full state (line items, totals, client, submission) without rendering our UI — you build your own interface with your own components and just consume the logic.' },
-            { q: 'Does it ship with TypeScript types?', a: 'Yes, generated straight from the build\'s source code (never hand-written) — when a type changes in the SDK, your editor reflects it immediately, with no risk of the package and its .d.ts files drifting apart.' },
-            { q: 'Can I remove the "via Cord" branding from the embedded quoter?', a: 'Yes, on a paid plan you can remove the "via Cord" notice and leave only your brand from Settings › Developers. The Free plan shows that discreet notice.' },
-            { q: 'What framework does Cord Elements work with?', a: 'The <cord-cotizador> Web Component works in any HTML, Astro, or Vue site; there\'s a native React wrapper (@flouviahq/elements/react), SDKs for Framer and Webflow, and a one-line loader (embed.js) for WordPress or framework-less sites.' },
+            { q: 'What is Cord Elements?', a: "It's Cord's SDK for showing your quotes inside another site. It includes a one-line loader (embed.js), the <cord-cotizador> Web Component, wrappers for React, Vue, Framer and Webflow, a headless hook to build quotes with your own UI and a Server SDK to verify webhooks." },
+            { q: 'Do I need my own backend?', a: 'Not to show a quote: the iframe talks directly to Cord and the public token is enough. To create quotes from the browser you use a narrowly scoped publishable key (pk_); if you would rather expose no key at all, your backend acts as a proxy with a secret key (sk_).' },
+            { q: "Can I use it without Cord's interface?", a: 'Yes. useQuoteBuilder() exposes the quote builder state (line items, client, totals and submission) without rendering anything of ours, and with baseTheme: "none" the SDK injects no CSS.' },
+            { q: 'Who can embed my quotes?', a: 'You decide. In Settings › Embeddable quote builder you list the allowed domains and Cord enforces them with the frame-ancestors header, so no other site can show them inside an iframe. With no list, the embed stays open.' },
+            { q: 'Can I remove Cord branding?', a: 'Yes, from the Starter plan, in Settings › Brand appearance. On the Free plan the quote shows a discreet Cord notice at the bottom.' },
+            { q: 'Can the client pay inside the embed?', a: 'Yes, when Cord Payments is active. The pay button fires the pay event with the payment URL, so your page decides whether to open it in the same tab or a new one.' },
         ],
-        cta: { titulo: 'Bring your quoter to where your clients are.', sub: 'Create your free account and embed your first quoter today — one line of code.' },
-        trust: {
-            eyebrow: 'DETAILS THAT MATTER',
-            titulo: 'The fine print, handled for you',
-            items: [
-                { icon: 'route', titulo: '5 events, named without ambiguity', copy: 'ready, approved, rejected, message, and pay — the same in the iframe, the Web Component, and the React hook.' },
-                { icon: 'doc', titulo: 'TypeScript types are generated, not hand-written', copy: "They come straight from the SDK's real build — if something changes, your editor reflects it instantly, no drifting .d.ts." },
-                { icon: 'lock', titulo: "The iframe's message only reaches your domain", copy: "Event postMessages target the exact origin from your allowlist — not just any window that happens to be listening." },
-            ],
-        },
+        cta: { titulo: 'Bring your quote builder to where your clients are.', sub: 'Create your free account and embed your first quote today.' },
     },
     {
         slug: 'fx',
-        nav: 'Multi-currency FX',
-        eyebrow: 'MULTI-CURRENCY FX API',
-        titulo: 'Quote in USD, charge in MXN.',
-        sub: 'Connect to our real-time exchange rate API (Banxico/FIX or interbank) to keep your price lists stable in dollars, but always quote and charge in exact local currency.',
-        metaTitle: 'Multi-currency & FX hedging API — Cord Developers',
-        metaDescription: 'Quote in USD or EUR with a 30-day rate lock (FX lock) and invoice in your local currency — CFDI 4.0 in pesos for businesses in Mexico. Banxico FIX rate (Mexico-specific) included on every plan; live interbank rate from the Professional plan up.',
-        plan: 'Free on all plans. Banxico FIX at no extra cost; live interbank rates on the Professional plan.',
-        stats: [
-            { valor: '3', countup: 3, label: 'FX sources (Banxico, FIX, real-time Interbank)' },
-            { valor: '0', countup: 0, suffix: '%', label: 'margin of error in currency fluctuations' },
-            { valor: '24/7', label: 'availability of the exchange API' },
-        ],
+        nav: 'Multi-currency',
+        eyebrow: 'MULTI-CURRENCY · EXCHANGE RATES',
+        titulo: "Sell in your client's currency. Keep your books in yours.",
+        sub: 'Cord keeps the currency you sell in apart from the currency you keep your books in. You quote and collect in dollars or euros, the exchange rate is frozen at quote time from a published, dated source, and the invoice declares that rate and the total in your ledger currency. If there is no real rate, Cord does not make one up.',
+        metaTitle: 'Multi-currency quotes and invoices with a locked exchange rate — Cord',
+        metaDescription: 'Quote in USD or EUR and keep your books in MXN: Cord locks the exchange rate for 30 days from a published source (ECB first) and the invoice declares the rate and the ledger total. Available over the API.',
+        plan: 'On every plan. The API accepts base_currency, fiscal_currency and fx_buffer_pct when creating a quote.',
+        heroMock: 'hero-fx',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'LIVE EXCHANGE RATES',
-                titulo: 'Protect your margin.',
-                copy: 'Don\'t lose money due to an outdated exchange rate. Our API allows you to freeze the exchange rate at the time of quoting, with a specific validity (e.g., 24 hours).',
+                eyebrow: 'TWO CURRENCIES, TWO JOBS',
+                titulo: 'The sales currency and the ledger currency never mix.',
+                copy: 'The sales currency is the one your client sees: prices are entered in it, the link shows it, you collect in it and the invoice is issued in it. The ledger currency is the one in your books. When they differ, the invoice declares the exchange rate and the converted total; amounts are never relabeled.',
                 bullets: [
-                    'Official exchange rates updated daily',
-                    'Validity per quote with FX freezing',
-                    'Native support in the Web Component',
+                    'base_currency: the currency you sell and collect in',
+                    'fiscal_currency: your accounting currency',
+                    'The invoice returns tipo_cambio and total_contable over the API',
                 ],
-                code: {
-                    label: 'FX Request',
-                    body: `// Get today's exchange rate\nconst fx = await cord.fx.getRate({ from: 'USD', to: 'MXN' });\nconsole.log('USD/MXN:', fx.rate);`,
-                }
+                mock: 'fx-invoice',
+            },
+            {
+                eyebrow: 'LOCKED RATE',
+                titulo: 'Your margin does not move mid-negotiation.',
+                copy: "When the quote is created, Cord takes the day's rate and locks it for 30 days. You can add a cushion with fx_buffer_pct to cover that client's volatility. That same rate is what the invoice uses later: there are never three different calculations for one sale.",
+                bullets: [
+                    'A cushion per quote, not one fixed for the whole account',
+                    'The same rate on the quote, the payment and the invoice',
+                    'A cached rate is only valid if it is under 24 hours old',
+                ],
+                mock: 'code-fx',
+            },
+            {
+                eyebrow: 'SOURCES',
+                titulo: 'If no source publishes the pair, Cord stops.',
+                copy: "Cord first checks the European Central Bank's daily reference. Since it publishes around 30 currencies, for pairs such as COP, CLP, PEN or ARS it moves on to two broad-coverage sources. If none has the pair, the quote is not created and the message says why. A made-up rate of 1.0 never reaches your invoice.",
+                bullets: [
+                    'European Central Bank as the first reference',
+                    'Two fallback sources for Latin American currencies',
+                    '"This source does not cover the pair" and "no response" are handled differently',
+                ],
+                mock: 'fx-sources',
             },
         ],
-        steps: [
-            { titulo: 'Define your base currency', copy: 'Your products can be in USD and quoted in MXN.' },
-            { titulo: 'Apply the FX', copy: 'The quoter queries the API and shows the exact MXN equivalent.' },
-            { titulo: 'Charge exact', copy: 'The client pays the exact MXN amount calculated at that moment.' },
-        ],
         faqs: [
-            { q: 'Does the exchange rate update in real time?', a: 'Yes. Cord queries an exchange-rate source (Banxico FIX or interbank, depending on your plan) at the moment you quote, and you can freeze that rate for up to 30 days (FX lock) to protect your margin.' },
-            { q: 'Do I invoice in dollars, or always in pesos?', a: 'Your client can see the price in USD or EUR, but the CFDI 4.0 is stamped in Mexican pesos with the SAT — Cord converts using the rate you locked in when you quoted.' },
-            { q: 'Does the live interbank rate cost extra?', a: 'The Banxico FIX rate is included on every plan; live interbank rates are available from the Professional plan up.' },
+            { q: 'Which source does Cord use for exchange rates?', a: "First the European Central Bank's daily reference, through Frankfurter. For currencies the ECB does not publish, such as COP, CLP, PEN or ARS, it checks two broad-coverage sources in order. If none has the pair, the operation stops with a clear message." },
+            { q: 'How long is the rate locked?', a: '30 days from when the quote is created. During that time the rate does not change even if the market moves.' },
+            { q: 'Can I quote in dollars and keep my books in pesos?', a: 'You can quote, collect and invoice in dollars while your accounting stays in pesos: the invoice declares the locked exchange rate and the total in your ledger currency. In Mexico, the CFDI is issued in the sale currency with its exchange rate.' },
+            { q: 'What happens if no exchange rate is available?', a: 'Cord does not create the quote and returns a clear error (503 on the API). It only uses a cached rate if it is under 24 hours old; it never substitutes 1.0 or an estimate.' },
         ],
-        cta: { titulo: 'Keep your profitability shielded.', sub: 'Integrate live exchange rates today.' },
-        trust: {
-            eyebrow: 'HOW IT WORKS IN PRACTICE',
-            titulo: 'Beyond "freeze the rate"',
-            items: [
-                { icon: 'gauge', titulo: 'The buffer is set per quote', copy: 'Adjust how much cushion you want over the spot rate based on the client or the deal\'s risk — not one fixed number for the whole account.' },
-                { icon: 'toggle', titulo: 'The client sees their currency; your books see yours', copy: 'The price on screen can be USD or EUR while your internal reports stay in pesos, with no manual conversion.' },
-                { icon: 'refresh', titulo: 'Only re-locks if you re-quote', copy: "Once frozen, the rate doesn't drift mid-negotiation — it only updates when you generate a new version." },
-            ],
-        },
+        cta: { titulo: 'Sell in any currency without losing your margin.', sub: 'Create your account and quote in dollars or euros with a locked rate.' },
     },
     {
         slug: 'fiscal',
-        nav: 'US/MX Tax',
-        eyebrow: 'TAX ARCHITECTURE',
-        titulo: 'Real CFDI 4.0 for Mexico. Built to grow to more countries.',
-        sub: "Cord's tax stamping runs in production with the SAT through a certified PAC. The architecture is multi-country by design — each new market is added as its own adapter, no core rewrite required.",
-        metaTitle: 'CFDI 4.0 and multi-country tax architecture — Cord Developers',
-        metaDescription: "Real CFDI 4.0 e-invoicing for Mexico via Facturapi, built on an adapter architecture ready to add more countries. Documentation for Cord's tax layer.",
-        plan: 'Developer Plan',
-        stats: [
-            { valor: '100', countup: 100, suffix: '%', label: 'real CFDI 4.0 stamping with the SAT (Mexico)' },
-            { valor: '1', countup: 1, label: 'certified PAC already in production (Facturapi)' },
-            { valor: 'MX', label: 'tax country in production today — built to add more' },
-        ],
+        nav: 'Tax invoicing',
+        eyebrow: 'TAX INVOICING',
+        titulo: 'Legal invoices in Mexico, commercial everywhere else, over the API.',
+        sub: "Cord Invoicing issues invoices from the app or over the API and adapts the document to your business's country: CFDI 4.0 stamped with Mexico's SAT, and a commercial invoice with each country's taxes everywhere else. Spain has the Verifactu registry built and in the process of activation with the AEAT.",
+        metaTitle: 'Invoicing API: CFDI 4.0 in Mexico and invoices by country — Cord',
+        metaDescription: 'Create, issue and collect invoices over the API: CFDI 4.0 stamped with the SAT in Mexico, per-line and per-country taxes, partial payments and credit notes. Verifactu built for Spain.',
+        plan: 'Tax issuing is available from the Starter plan where enabled. Free issues commercial documents.',
+        heroMock: 'hero-fiscal',
+        updated: UPDATED,
         blocks: [
             {
-                eyebrow: 'CFDI COMPLIANCE',
-                titulo: 'Real stamping, an architecture built to grow.',
-                copy: "Every approved quote can be invoiced as a real CFDI 4.0 with the SAT, using your own Digital Seal Certificate (CSD) and RFC — not a simulation. The engine is built as one adapter per country, so adding a new market doesn't touch the core.",
+                eyebrow: 'FULL CYCLE',
+                titulo: 'Create, issue, collect and correct from your code.',
+                copy: 'POST /api/v1/facturas creates a draft. Then, on that same invoice, you issue it, email it with the PDF attached, record a full or partial payment, void it or create a credit note. Each action fires its event, so your system can react by webhook.',
                 bullets: [
-                    'CFDI 4.0 stamped through a certified PAC (Facturapi), real SAT UUID',
-                    'Without a CSD connected, stamping runs in simulated mode so you can test the flow risk-free',
-                    'Tax regime, CFDI use, and postal code captured per customer to stamp to a named recipient',
+                    'Draft first: nothing is stamped until you issue',
+                    'Partial payments capped at the real balance',
+                    'invoice.finalized, invoice.paid and invoice.voided as webhooks',
                 ],
-                code: {
-                    label: 'Issued tax document',
-                    body: `// Real CFDI 4.0 recorded after invoicing\n{\n  "tipo": "cfdi",\n  "uuid_sat": "3f29a7c1-...-a1b2",\n  "rfc_emisor": "XAXX010101000",\n  "rfc_receptor": "XEXX010101000",\n  "total": 1500.00,\n  "pdf_url": "/api/cotizaciones/{id}/cfdi?type=pdf",\n  "xml_url": "/api/cotizaciones/{id}/cfdi?type=xml"\n}`,
-                }
-            },
-        ],
-        steps: [
-            { titulo: 'Connect your CSD', copy: 'Upload your Digital Seal Certificate and RFC in Settings › Tax — every Cord account runs its own organization with the PAC.' },
-            { titulo: 'Capture recipient tax data', copy: 'Tax regime, CFDI use, and postal code per customer, so you never re-enter anything when invoicing.' },
-            { titulo: 'Invoice with one click', copy: 'Marking an approved quote as invoiced generates the real CFDI 4.0 and hands you the PDF/XML.' },
-        ],
-        faqs: [
-            { q: 'Is the CFDI 4.0 for Mexico real or a test?', a: 'It\'s real: Cord stamps invoices with the SAT via a certified PAC (Facturapi) once you connect your CSD. Without a key configured, stamping runs in simulated mode so you can test the flow risk-free.' },
-            { q: 'Does Cord already issue complete tax invoices for the United States?', a: "Not yet. The architecture is ready for a US invoicing adapter (commercial invoice), but today the only tax provider in production is Mexico via CFDI 4.0. If you need real US invoicing today, that's not a case Cord covers yet — reach out if you'd like us to prioritize it." },
-            { q: 'Can I have one legal entity in Mexico and another in the US under the same account?', a: "Not yet. Each Cord account has a single tax country. To operate two legal entities in different countries you'll need two separate accounts — there's no native support for multiple entities under one organization." },
-        ],
-        cta: { titulo: 'Real invoicing in Mexico from day one.', sub: 'Connect your CSD and stamp production CFDI 4.0 — no simulations.' },
-        trust: {
-            eyebrow: "CASES NO ONE ASKS ABOUT UNTIL THEY HAPPEN",
-            titulo: 'The details that actually matter when invoicing',
-            items: [
-                { icon: 'gauge', titulo: 'VAT and withholdings, configurable per business', copy: "Every organization sets its own VAT rate and ISR/VAT withholdings in Settings — the engine applies them without anyone having to remember." },
-                { icon: 'doc', titulo: 'Every emission lands in your tax history', copy: 'Real or simulated, every invoice issued gets recorded — you never lose track of what was stamped and when.' },
-                { icon: 'unlock', titulo: 'Generic RFC, automatic fallback', copy: "If a client has no tax regime on file, Cord invoices to the public general audience instead of blocking the stamp." },
-            ],
-        },
-    },
-    {
-        slug: 'integraciones',
-        nav: 'Integrations & webhooks',
-        eyebrow: 'INTEGRATIONS · WEBHOOKS',
-        titulo: 'Connect Cord to any ERP or CRM. No waiting for a connector.',
-        sub: 'HubSpot and Slack connect directly from Settings. For everything else (SAP, Oracle, Salesforce…) Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
-        metaTitle: 'Webhooks & integrations (Zapier, Make, n8n) — Cord',
-        metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, with direct HubSpot and Slack.',
-        plan: 'On every plan · 16 endpoints from the Free plan (up to 100 on Developer) · direct HubSpot and Slack · free test keys for the API',
-        stats: [
-            { valor: '41', countup: 41, label: 'events: quotes, invoices, payments, disputes, payouts, clients, products, tasks and promises' },
-            { valor: '11', countup: 11, label: 'delivery attempts with backoff before an event is marked as failed' },
-            { valor: '3', countup: 3, label: 'ways to integrate: outbound webhooks, REST API and MCP' },
-        ],
-        blocks: [
-            {
-                eyebrow: 'OUTBOUND WEBHOOKS',
-                titulo: 'Your system reacts to every sales event.',
-                copy: 'Register a URL from the developer Workbench and pick the events you care about. When a quote is created, sent, approved, or paid, when an invoice is issued, or when a client, product, task, or payment promise changes, Cord POSTs the JSON payload. Each delivery is signed with HMAC-SHA256 and a timestamp so you can verify it came from Cord. If your server fails, Cord retries with backoff up to 11 times, and every attempt is logged so you can replay it.',
-                bullets: [
-                    'Header X-Cord-Signature-V1: t=&lt;unix&gt;,v1=&lt;hmac&gt;, with replay protection',
-                    'Payload with id, folio, status, currency, total, client and public link',
-                    'Delivery log with status, latency and a replay button',
-                ],
+                mock: 'code-invoice',
             },
             {
-                eyebrow: 'NO PROPRIETARY CONNECTORS',
-                titulo: 'Zapier, Make, n8n, or your backend.',
-                copy: 'For systems without a direct connection, you point the webhook at a no-code platform (Zapier, Make, n8n) and from there reach thousands of apps —including SAP, Oracle, Salesforce, or Notion— without us writing code for you. Want full control? Call the REST API directly. HubSpot and Slack are direct: clients and quotes reach HubSpot as Companies, Contacts, and Deals, and alerts for every event arrive in Slack on their own.',
+                eyebrow: 'INVOICES IN THE APP',
+                titulo: 'Your team sees what your integration sees.',
+                copy: 'What you create over the API shows up in Invoices with its commercial and tax status: open, overdue, paid or void, and whether issuing failed. Open, overdue and collected this month are calculated for you.',
                 bullets: [
-                    'Connect to 5,000+ apps via Zapier / Make / n8n with one webhook',
-                    'Zapier and Make can create and delete their own subscriptions through the API',
-                    'Or use the REST API: create quotes, clients and products, and change a quote status from your code',
-                    'Native Slack: automatic notification on every quote event',
+                    'Commercial status and tax status kept apart',
+                    'Balance and due date for each invoice',
+                    'CSV export and recurring invoices',
                 ],
+                mock: 'app-invoices',
+            },
+            {
+                eyebrow: 'BY COUNTRY',
+                titulo: 'The right document for each country.',
+                copy: "In Mexico, Cord stamps CFDI 4.0 with the SAT using your digital seal certificate through an authorized provider. Everywhere else it issues a commercial invoice with that country's per-line taxes, such as state sales tax in the United States or VAT and IRPF in Spain. For Spain, the Verifactu registry with a chained SHA-256 hash is built and verified against the AEAT's official examples; it goes live once registration with the AEAT is complete.",
+                bullets: [
+                    'Mexico: CFDI 4.0 with the SAT UUID, PDF and XML',
+                    'Per-line taxes and withholdings, not a flat rate',
+                    'Spain: Verifactu built, pending activation with the AEAT',
+                ],
+                mock: 'fiscal-countries',
             },
         ],
-        steps: [
-            { titulo: 'Register your endpoint', copy: 'From the developer Workbench or through the API. Pick the events and save the secret (shown once).' },
-            { titulo: 'Verify the signature', copy: 'Compute the HMAC-SHA256 of the timestamp and raw body with your secret and compare it to X-Cord-Signature-V1.' },
-            { titulo: 'Route to your system', copy: 'Process the JSON in your backend, or drop it into Zapier/Make/n8n to reach your ERP or CRM.' },
-        ],
         faqs: [
-            { q: 'Does Cord have a native connector for SAP, Salesforce, or Oracle?', a: 'Not for those systems: direct connections exist for HubSpot and Slack. For SAP, Salesforce, or Oracle, Cord emits signed webhooks (HMAC-SHA256) on every sales-cycle event that you point at Zapier, Make, n8n, or your own backend to connect with SAP, Salesforce, or any other system.' },
-            { q: 'How many webhook endpoints can I configure?', a: 'Your team can configure 16 endpoints on Free, Starter, and Pro, 32 on Scale, and 100 on Developer. Subscriptions created by Zapier, Make, or other integrations through the API have a separate allowance of 100 per organization on every plan, so each Zap doesn\'t use up one of your team\'s endpoints.' },
-            { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature-V1 header with a timestamp and an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint. You validate it before processing the event; the timestamp protects you from someone replaying an old delivery.' },
+            { q: 'Does Cord stamp real CFDI 4.0?', a: 'Yes. In Mexico, Cord stamps CFDI 4.0 with the SAT using your digital seal certificate (CSD) through an authorized provider (PAC), and returns the UUID, the PDF and the XML.' },
+            { q: 'Can I issue invoices over the API?', a: 'Yes. POST /api/v1/facturas creates a draft and POST /api/v1/facturas/{id} with action finalize issues it. The same route accepts send, payment, void and credit_note.' },
+            { q: 'Does Cord issue tax invoices in the United States?', a: 'Cord issues commercial invoices with state sales tax. The United States has no national e-invoicing system like the CFDI, so the commercial invoice is the usual document.' },
+            { q: 'Does Cord already register invoices with the AEAT through Verifactu?', a: 'Not yet. The Verifactu registry is built and verified against the AEAT\'s official examples, but going live depends on Cord\'s registration as the software producer with the AEAT. Until then, invoices in Spain are issued as commercial invoices.' },
+            { q: 'What happens if issuing fails?', a: 'The invoice keeps the tax status "error" and is not marked as issued. You see it in the app and over the API, and can fix the data and issue again.' },
         ],
-        cta: { titulo: 'Connect Cord to your stack today.', sub: 'Register a webhook or generate a test key and receive your first event in minutes.' },
-        trust: {
-            eyebrow: 'HOW IT ACTUALLY BEHAVES',
-            titulo: 'What happens when something fails',
-            items: [
-                { icon: 'key', titulo: 'The secret is shown exactly once', copy: 'Copy it when you create it — after that, only its fingerprint remains to sign with, no way to see it in full again.' },
-                { icon: 'refresh', titulo: 'Retries with backoff for almost 4 days', copy: 'If your endpoint fails, Cord retries up to 11 times with growing waits. After 5 consecutive failures it deactivates the endpoint and emails you, instead of hammering a server that is down.' },
-                { icon: 'gauge', titulo: '5-second timeout per attempt', copy: "If your endpoint doesn't respond in time, Cord cuts the connection and marks it a failure — it never hangs waiting." },
-            ],
-        },
+        cta: { titulo: 'Invoice from your system, with the right document.', sub: 'Create your account, set up your tax details and issue your first invoice over the API.' },
     },
 ];
 

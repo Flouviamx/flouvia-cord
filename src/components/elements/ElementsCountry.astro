@@ -1,0 +1,664 @@
+---
+// ElementsCountry — "Se adapta al país de tu negocio." para /elements.
+//
+// La misma cotización embebida, vista desde cuatro cuentas de país distinto
+// (reglas 21, 23, 24 y 28): divisa y formato del monto, impuesto POR LÍNEA con
+// su nombre local, retención donde aplica, identificación fiscal del perfil,
+// fecha en el formato del locale y los rieles de cobro que existen en ese país.
+//
+// Todo lo que aparece aquí sale de src/lib/countries.ts — verifícalo ahí antes
+// de editar un dato:
+//   · MX — IVA 16% (TAX_PRESETS.MX), RFC, Cord Payments (tarjeta + SPEI) y
+//          Mercado Pago (MERCADOPAGO_COUNTRIES), CFDI 4.0 solo aquí.
+//   · US — Sales tax TX 6.25% (US_STATE_TAX.TX), EIN, tarjeta.
+//   · ES — IVA 21% + Retención IRPF 15% (TAX_PRESETS.ES). El IRPF es del
+//          autónomo, por eso el emisor es una persona física con NIF y el
+//          cliente una S.L.
+//   · CO — IVA 19% + ReteFuente 2,5% (TAX_PRESETS.CO), NIT. Stripe Connect no
+//          abre cuentas en Colombia (CONNECT_COUNTRIES); el riel en línea es
+//          Mercado Pago, que es lo único que se ofrece.
+//
+// La tarjeta va en el idioma del NEGOCIO (US en inglés, MX/ES/CO en español),
+// no en el del visitante; lo que rodea a la tarjeta sí usa `isEn`.
+// El HTML por defecto es el estado final de México: con reduced-motion o sin
+// JS se ve completo y correcto.
+
+interface Props {
+    isEn?: boolean;
+}
+
+const { isEn = false } = Astro.props;
+const tx = (es: string, en: string) => (isEn ? en : es);
+const uid = 'ecx' + Math.random().toString(36).slice(2, 8);
+
+type Method = { kind: 'card' | 'bank' | 'wallet'; label: string; sub: string };
+type Country = {
+    id: string;
+    code: string;
+    tab: string;
+    lang: string;
+    org: string;
+    ini: string;
+    taxId: string;
+    taxVal: string;
+    folio: string;
+    client: string;
+    status: string;
+    issuedLabel: string;
+    issued: string;
+    validLabel: string;
+    valid: string;
+    th: [string, string, string];
+    items: { name: string; tax: string; unit: string; qty: string; amt: string }[];
+    lines: { l: string; v: string; neg?: boolean }[];
+    totalLabel: string;
+    total: string;
+    payLabel: string;
+    methods: Method[];
+    sel: number;
+    detail:
+        | { kind: 'card'; number: string; exp: string; cvc: string; numberPh: string; expPh: string }
+        | { kind: 'bank'; rows: [string, string][]; note: string }
+        | { kind: 'wallet'; note: string };
+    pay: string;
+    cfdi?: string;
+    profile: { currency: string; locale: string; tz: string };
+};
+
+const COUNTRIES: Country[] = [
+    {
+        id: 'mx', code: 'MX', tab: tx('México', 'Mexico'), lang: 'es-MX',
+        org: 'Materiales del Valle', ini: 'MV', taxId: 'RFC', taxVal: 'MVA190312KT4',
+        folio: 'COT-0151', client: 'Distribuidora El Zarco', status: 'Enviada',
+        issuedLabel: 'Emitida', issued: '19 oct 2026', validLabel: 'Vigente hasta', valid: '2 nov 2026',
+        th: ['Concepto', 'Cant.', 'Importe'],
+        items: [
+            { name: 'Cemento gris 50 kg', tax: 'IVA 16%', unit: '$182.00 c/u', qty: '340', amt: '$61,880.00' },
+            { name: 'Varilla corrugada 3/8', tax: 'IVA 16%', unit: '$198.50 c/u', qty: '120', amt: '$23,820.00' },
+        ],
+        lines: [{ l: 'Subtotal', v: '$85,700.00' }, { l: 'IVA 16%', v: '$13,712.00' }],
+        totalLabel: 'Total', total: 'MXN $99,412.00',
+        payLabel: 'Método de pago',
+        methods: [
+            { kind: 'card', label: 'Tarjeta', sub: 'Crédito o débito' },
+            { kind: 'bank', label: 'SPEI', sub: 'Transferencia' },
+            { kind: 'wallet', label: 'Mercado Pago', sub: 'Pago externo' },
+        ],
+        sel: 1,
+        detail: {
+            kind: 'bank',
+            rows: [['CLABE', '646 180 1572 0381 9264'], ['Referencia', 'COT-0151']],
+            note: 'CLABE única para este cliente. El pago se concilia solo.',
+        },
+        pay: 'Pagar MXN $99,412.00', cfdi: 'Lista para CFDI 4.0',
+        profile: { currency: 'MXN', locale: 'es-MX', tz: 'America/Mexico_City' },
+    },
+    {
+        id: 'us', code: 'US', tab: tx('Estados Unidos', 'United States'), lang: 'en-US',
+        org: 'Lone Star Supply Co.', ini: 'LS', taxId: 'EIN', taxVal: '74-3920158',
+        folio: 'Q-0211', client: 'Hill Country Builders', status: 'Sent',
+        issuedLabel: 'Issued', issued: 'Oct 19, 2026', validLabel: 'Valid until', valid: 'Nov 2, 2026',
+        th: ['Item', 'Qty', 'Amount'],
+        items: [
+            { name: 'Steel rebar #4, 20 ft', tax: 'TX 6.25%', unit: '$12.50 ea', qty: '200', amt: '$2,500.00' },
+            { name: 'Ready-mix concrete, yd³', tax: 'TX 6.25%', unit: '$112.50 ea', qty: '40', amt: '$4,500.00' },
+        ],
+        lines: [{ l: 'Subtotal', v: '$7,000.00' }, { l: 'Sales tax TX 6.25%', v: '$437.50' }],
+        totalLabel: 'Total', total: 'USD $7,437.50',
+        payLabel: 'Payment method',
+        methods: [{ kind: 'card', label: 'Card', sub: 'Credit or debit' }],
+        sel: 0,
+        detail: { kind: 'card', number: '4242 4242 4242 4242', exp: '08 / 29', cvc: '•••', numberPh: 'Card number', expPh: 'Expiration' },
+        pay: 'Pay USD $7,437.50',
+        profile: { currency: 'USD', locale: 'en-US', tz: 'America/Chicago' },
+    },
+    {
+        id: 'es', code: 'ES', tab: tx('España', 'Spain'), lang: 'es-ES',
+        org: 'Lucía Ferrer Estudio', ini: 'LF', taxId: 'NIF', taxVal: '12345678Z',
+        folio: 'COT-0087', client: 'Café Lumbre S.L.', status: 'Enviada',
+        issuedLabel: 'Emitida', issued: '19 oct 2026', validLabel: 'Válida hasta', valid: '2 nov 2026',
+        th: ['Concepto', 'Cant.', 'Importe'],
+        items: [
+            { name: 'Diseño de identidad', tax: 'IVA 21%', unit: '4.800,00 € ud.', qty: '1', amt: '4.800,00 €' },
+            { name: 'Sesión de fotografía', tax: 'IVA 21%', unit: '800,00 € ud.', qty: '2', amt: '1.600,00 €' },
+        ],
+        lines: [
+            { l: 'Base imponible', v: '6.400,00 €' },
+            { l: 'IVA 21%', v: '1.344,00 €' },
+            { l: 'Retención IRPF 15%', v: '−960,00 €', neg: true },
+        ],
+        totalLabel: 'Total', total: '6.784,00 €',
+        payLabel: 'Método de pago',
+        methods: [{ kind: 'card', label: 'Tarjeta', sub: 'Crédito o débito' }],
+        sel: 0,
+        detail: { kind: 'card', number: '4242 4242 4242 4242', exp: '08 / 29', cvc: '•••', numberPh: 'Número de tarjeta', expPh: 'Caducidad' },
+        pay: 'Pagar 6.784,00 €',
+        profile: { currency: 'EUR', locale: 'es-ES', tz: 'Europe/Madrid' },
+    },
+    {
+        id: 'co', code: 'CO', tab: 'Colombia', lang: 'es-CO',
+        org: 'Ferretería Andina S.A.S.', ini: 'FA', taxId: 'NIT', taxVal: '901.482.367-5',
+        folio: 'COT-0342', client: 'Constructora Altos del Río', status: 'Enviada',
+        issuedLabel: 'Emitida', issued: '19/10/2026', validLabel: 'Válida hasta', valid: '2/11/2026',
+        th: ['Concepto', 'Cant.', 'Importe'],
+        items: [
+            { name: 'Cemento gris 50 kg', tax: 'IVA 19%', unit: '$ 34.500,00 c/u', qty: '200', amt: '$ 6.900.000,00' },
+            { name: 'Bloque de concreto N.º 5', tax: 'IVA 19%', unit: '$ 2.800,00 c/u', qty: '1.500', amt: '$ 4.200.000,00' },
+        ],
+        lines: [
+            { l: 'Subtotal', v: '$ 11.100.000,00' },
+            { l: 'IVA 19%', v: '$ 2.109.000,00' },
+            { l: 'ReteFuente 2,5%', v: '−$ 277.500,00', neg: true },
+        ],
+        totalLabel: 'Total', total: 'COP $ 12.931.500,00',
+        payLabel: 'Método de pago',
+        methods: [{ kind: 'wallet', label: 'Mercado Pago', sub: 'Pago externo' }],
+        sel: 0,
+        detail: { kind: 'wallet', note: 'Continúas en Mercado Pago para completar el pago y vuelves a esta cotización con el comprobante.' },
+        pay: 'Pagar con Mercado Pago',
+        profile: { currency: 'COP', locale: 'es-CO', tz: 'America/Bogota' },
+    },
+];
+
+const ADAPTS = [
+    tx('Divisa y formato de cada monto', 'Currency and amount format'),
+    tx('Impuesto por línea con su nombre local', 'Per-line tax with its local name'),
+    tx('Retenciones donde aplican: IRPF, ReteFuente', 'Withholdings where they apply: IRPF, ReteFuente'),
+    tx('Identificación fiscal: RFC, EIN, NIF, NIT', 'Tax ID: RFC, EIN, NIF, NIT'),
+    tx('Fechas en la zona horaria de tu cuenta', "Dates in your account's timezone"),
+    tx('Rieles de cobro del país: tarjeta, SPEI, Mercado Pago', "The country's payment rails: card, SPEI, Mercado Pago"),
+    tx('Español o inglés, según tu cuenta', 'Spanish or English, per your account'),
+    tx('CFDI 4.0 al facturar en México', 'CFDI 4.0 when invoicing in Mexico'),
+];
+---
+
+<section class="ecx" data-ecx>
+    <div class="ecx-text">
+        <h2 class="ecx-h2 masked-title">{tx('Se adapta al país de tu negocio.', "It adapts to your business's country.")}</h2>
+        <p class="ecx-copy reveal">{tx('El mismo embed muestra la divisa, los impuestos, la identificación fiscal y los rieles de cobro que corresponden a tu cuenta, en cualquiera de los 12 países donde opera Cord. Tú no programas nada por país.', 'The same embed shows the currency, taxes, tax ID and payment rails that match your account, in any of the 12 countries where Cord operates. You write nothing per country.')}</p>
+        <ul class="ecx-list">
+            {ADAPTS.map((a) => (
+                <li class="reveal">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.6" /><path d="M6.4 10.3l2.5 2.5 4.8-5.2" /></svg>
+                    <span>{a}</span>
+                </li>
+            ))}
+        </ul>
+    </div>
+
+    <div class="ecx-demo reveal-mockup">
+        <div class="ecx-tabs" role="tablist" aria-label={tx('País de la cuenta', 'Account country')}>
+            <span class="ecx-ind" aria-hidden="true"><span class="ecx-prog"></span></span>
+            {COUNTRIES.map((c, i) => (
+                <button
+                    type="button"
+                    role="tab"
+                    id={`${uid}-tab-${c.id}`}
+                    aria-controls={`${uid}-panel-${c.id}`}
+                    aria-selected={i === 0 ? 'true' : 'false'}
+                    tabindex={i === 0 ? 0 : -1}
+                    aria-label={c.tab}
+                    class:list={['ecx-tab', { on: i === 0 }]}
+                >
+                    <span class="ecx-code" aria-hidden="true">{c.code}</span>
+                    <span class="ecx-tab-n">{c.tab}</span>
+                </button>
+            ))}
+        </div>
+
+        <div class="ecx-stage">
+            <div class="ecx-sheet">
+                {COUNTRIES.map((c, i) => (
+                    <div
+                        class:list={['ecx-face', { on: i === 0 }]}
+                        role="tabpanel"
+                        id={`${uid}-panel-${c.id}`}
+                        aria-labelledby={`${uid}-tab-${c.id}`}
+                        lang={c.lang}
+                        data-face
+                    >
+                        <div class="ecx-bar" data-r>
+                            <div class="ecx-bar-l">
+                                <b>{c.folio}</b>
+                                <span>{c.client}</span>
+                            </div>
+                            <div class="ecx-bar-r">
+                                <span class="ecx-pill"><i></i>{c.status}</span>
+                            </div>
+                        </div>
+
+                        <div class="ecx-body">
+                            <div class="ecx-org" data-r>
+                                <span class="ecx-logo">{c.ini}</span>
+                                <div class="ecx-org-id">
+                                    <b>{c.org}</b>
+                                    <small><em>{c.taxId}</em> {c.taxVal}</small>
+                                </div>
+                                <div class="ecx-date">
+                                    <small>{c.issuedLabel}</small>
+                                    <span class="ecx-roll"><span>{c.issued}</span></span>
+                                </div>
+                            </div>
+
+                            <div class="ecx-th" data-r><span>{c.th[0]}</span><span>{c.th[1]}</span><span>{c.th[2]}</span></div>
+                            {c.items.map((it) => (
+                                <div class="ecx-tr" data-r>
+                                    <div class="ecx-item">
+                                        <span class="ecx-item-n">{it.name}</span>
+                                        <span class="ecx-item-m"><span class="ecx-tag">{it.tax}</span><span class="ecx-item-q">× {it.qty}</span><span class="ecx-unit">{it.unit}</span></span>
+                                    </div>
+                                    <span class="ecx-num ecx-qty">{it.qty}</span>
+                                    <b class="ecx-num ecx-roll"><span>{it.amt}</span></b>
+                                </div>
+                            ))}
+
+                            <div class="ecx-sum">
+                                {c.lines.map((ln) => (
+                                    <div class:list={['ecx-sl', { neg: ln.neg }]} data-r>
+                                        <span>{ln.l}</span>
+                                        <b class="ecx-num ecx-roll"><span>{ln.v}</span></b>
+                                    </div>
+                                ))}
+                                <div class="ecx-sl ecx-total" data-r>
+                                    <span>{c.totalLabel}</span>
+                                    <b class="ecx-num ecx-roll"><span>{c.total}</span></b>
+                                </div>
+                            </div>
+
+                            <div class="ecx-paybox">
+                                <div class="ecx-paylabel" data-r>{c.payLabel}</div>
+                                <div class="ecx-methods" style={`--n:${c.methods.length}`} data-r>
+                                    {c.methods.map((m, k) => (
+                                        <span class:list={['ecx-m', { on: k === c.sel }]}>
+                                            <span class="ecx-m-ico" aria-hidden="true">
+                                                {m.kind === 'card' && (
+                                                    <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.6" class="f" /><path d="M2.5 9.6h19M6.5 15h3.5" /></svg>
+                                                )}
+                                                {m.kind === 'bank' && (
+                                                    <svg viewBox="0 0 24 24"><path d="M3.5 9.2L12 4.5l8.5 4.7z" class="f" /><path d="M3.5 9.2L12 4.5l8.5 4.7M5.5 10.5v6M10 10.5v6M14 10.5v6M18.5 10.5v6M3.5 19.5h17" /></svg>
+                                                )}
+                                                {m.kind === 'wallet' && (
+                                                    <svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 016.5 5H18v3" /><rect x="4" y="7.5" width="16.5" height="12" rx="2.4" class="f" /><path d="M20.5 11.5h-3.6a1.9 1.9 0 000 3.8h3.6" /></svg>
+                                                )}
+                                            </span>
+                                            <span class="ecx-m-t"><b>{m.label}</b><small>{m.sub}</small></span>
+                                            <span class="ecx-radio" aria-hidden="true"></span>
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {c.detail.kind === 'card' && (
+                                    <div class="ecx-fields" data-r>
+                                        <div class="ecx-field ecx-field-full">
+                                            <small>{c.detail.numberPh}</small>
+                                            <span class="ecx-num">{c.detail.number}</span>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" class="f" /><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" /></svg>
+                                        </div>
+                                        <div class="ecx-field"><small>{c.detail.expPh}</small><span class="ecx-num">{c.detail.exp}</span></div>
+                                        <div class="ecx-field"><small>CVC</small><span class="ecx-num">{c.detail.cvc}</span></div>
+                                    </div>
+                                )}
+                                {c.detail.kind === 'bank' && (
+                                    <div class="ecx-bank" data-r>
+                                        {c.detail.rows.map((r) => (
+                                            <div class="ecx-kv"><span>{r[0]}</span><b class="ecx-num">{r[1]}</b></div>
+                                        ))}
+                                        <p>{c.detail.note}</p>
+                                    </div>
+                                )}
+                                {c.detail.kind === 'wallet' && (
+                                    <div class="ecx-wallet" data-r>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 4.5h6v6" /><path d="M19.5 4.5L11 13" /><path d="M17.5 13.5v4a2 2 0 01-2 2h-9a2 2 0 01-2-2v-9a2 2 0 012-2h4" class="f" /></svg>
+                                        <p>{c.detail.note}</p>
+                                    </div>
+                                )}
+
+                                <span class="ecx-pay" data-r>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" class="f" /><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" /></svg>
+                                    <span class="ecx-roll"><span>{c.pay}</span></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="ecx-foot" data-r>
+                            <span>{c.validLabel} <b class="ecx-num">{c.valid}</b></span>
+                            {c.cfdi && (
+                                <span class="ecx-cfdi">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7.5l4.5 4.5v12.5h-12z" class="f" /><path d="M14 3.5V8h4.5M9.2 14.2l2 2 3.8-4" /></svg>
+                                    {c.cfdi}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div class="ecx-profile" aria-live="polite">
+                <span class="ecx-profile-k">{tx('Perfil de la cuenta', 'Account profile')}</span>
+                <span class="ecx-profile-v">
+                    {COUNTRIES.map((c, i) => (
+                        <span class:list={['ecx-pv', { on: i === 0 }]} data-pv>
+                            <span><small>{tx('Divisa', 'Currency')}</small>{c.profile.currency}</span>
+                            <span><small>Locale</small>{c.profile.locale}</span>
+                            <span><small>{tx('Zona', 'Timezone')}</small>{c.profile.tz}</span>
+                        </span>
+                    ))}
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .ecx { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 4.5rem; align-items: center; }
+    .ecx > * { min-width: 0; }
+
+    /* ── Texto ── */
+    .ecx-h2 { font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.035em; color: #050505; margin: 0 0 1.2rem; max-width: 520px; text-wrap: balance; }
+    .ecx-copy { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; max-width: 520px; }
+    .ecx-list { list-style: none; margin: 2.2rem 0 0; padding: 1.6rem 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem 1.6rem; border-top: 1px solid rgba(10,25,47,0.08); }
+    .ecx-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; line-height: 1.45; color: var(--color-text); }
+    .ecx-list svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: #0a192f; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .ecx-list svg circle { fill: rgba(10,25,47,0.12); stroke: rgba(10,25,47,0.35); }
+
+    /* ── Pestañas ── */
+    .ecx-demo { min-width: 0; }
+    .ecx-tabs { position: relative; display: flex; flex-wrap: nowrap; width: max-content; max-width: 100%; gap: 2px; padding: 4px; margin-bottom: 1.2rem; border-radius: 999px; background: rgba(10,25,47,0.045); overflow-x: auto; scrollbar-width: none; }
+    .ecx-tabs::-webkit-scrollbar { display: none; }
+    .ecx-tab { position: relative; z-index: 1; flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; padding: 7px 15px 7px 8px; white-space: nowrap; border-radius: 999px; background: transparent; font: 600 0.9rem var(--font-sans); color: #5b6575; transition: color 0.35s, background 0.3s; -webkit-tap-highlight-color: transparent; }
+    .ecx-tab:hover { color: #0a192f; background: rgba(255,255,255,0.7); }
+    .ecx-tab.on { background: #0a192f; color: #fff; }
+    .ecx-tab:focus-visible { outline: 2px solid #2f6df0; outline-offset: 2px; }
+    .ecx-code { display: inline-grid; place-items: center; min-width: 26px; height: 20px; padding: 0 5px; border-radius: 6px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; background: rgba(10,25,47,0.06); color: #3b4658; transition: background 0.35s, color 0.35s; }
+    .ecx-tab.on .ecx-code { background: rgba(255,255,255,0.14); color: #fff; }
+    .ecx-ind { position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 999px; background: #0a192f; box-shadow: 0 10px 22px -12px rgba(10,25,47,0.6); opacity: 0; overflow: hidden; pointer-events: none; }
+    .ecx-prog { position: absolute; left: 18px; right: 18px; bottom: 4px; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.38); transform: scaleX(0); transform-origin: left center; }
+    /* Con JS el indicador deslizante sustituye el fondo de la pestaña activa */
+    .ecx.is-js .ecx-ind { opacity: 1; }
+    .ecx.is-js .ecx-tab.on { background: transparent; }
+    .ecx.is-js .ecx-tab.on:hover { background: transparent; }
+
+    /* ── Escenario ── */
+    .ecx-stage { position: relative; perspective: 1600px; }
+    .ecx-stage::before { content: ''; position: absolute; inset: 8% -6% -4% 6%; z-index: 0; border-radius: 40px; background: radial-gradient(ellipse at 60% 45%, rgba(10,25,47,0.10) 0%, transparent 65%); filter: blur(24px); pointer-events: none; }
+    .ecx-sheet { position: relative; z-index: 1; display: grid; border-radius: 24px; background: #fff; border: 1px solid rgba(10,25,47,0.06); box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 2px 4px rgba(10,25,47,0.04), 0 30px 64px -18px rgba(10,25,47,0.18); overflow: hidden; transform-style: preserve-3d; will-change: transform; }
+    .ecx-face { grid-area: 1 / 1; display: flex; flex-direction: column; min-width: 0; visibility: hidden; opacity: 0; }
+    .ecx-face.on { visibility: visible; opacity: 1; }
+
+    .ecx-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 22px; background: #fcfdfe; border-bottom: 1px solid #eef0f3; }
+    .ecx-bar-l { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .ecx-bar-l b { font-size: 0.84rem; font-weight: 600; color: #0a192f; white-space: nowrap; }
+    .ecx-bar-l span { font-size: 0.8rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-bar-l span::before { content: '·'; margin-right: 8px; color: #c3c8d1; }
+    .ecx-bar-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .ecx-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border-radius: 999px; background: rgba(10,25,47,0.06); color: #0a192f; font-size: 0.72rem; font-weight: 600; }
+    .ecx-pill i { width: 6px; height: 6px; border-radius: 50%; background: #0a192f; }
+
+    .ecx-body { padding: 18px 22px 18px; display: flex; flex-direction: column; flex: 1; }
+    .ecx-org { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #eef0f3; }
+    .ecx-logo { width: 36px; height: 36px; border-radius: 10px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0; }
+    .ecx-org-id { min-width: 0; }
+    .ecx-org-id b { display: block; font-size: 0.92rem; font-weight: 600; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-org-id small { display: block; margin-top: 2px; font-size: 0.72rem; color: #8a93a2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ecx-org-id em { font-style: normal; font-weight: 600; color: #3b4658; }
+    .ecx-date { margin-left: auto; text-align: right; flex-shrink: 0; }
+    .ecx-date small { display: block; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-date .ecx-roll { font-size: 0.8rem; font-weight: 600; color: #3b4658; font-variant-numeric: tabular-nums; }
+
+    .ecx-th, .ecx-tr { display: grid; grid-template-columns: minmax(0, 1fr) 52px 128px; gap: 10px; align-items: center; text-align: right; }
+    .ecx-th { padding: 12px 0 6px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-th span:first-child { text-align: left; }
+    .ecx-tr { padding: 10px 0; border-top: 1px solid #f1f2f5; font-size: 0.84rem; color: #5b6575; }
+    .ecx-tr b { font-weight: 600; color: #0a192f; }
+    .ecx-item { text-align: left; min-width: 0; }
+    .ecx-item-n { display: block; font-weight: 500; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-item-m { display: flex; overflow: hidden; align-items: center; gap: 7px; margin-top: 4px; font-size: 0.7rem; color: #8a93a2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ecx-item-q { display: none; color: #3b4658; font-weight: 600; }
+    .ecx-tag { padding: 1px 7px; border-radius: 999px; background: rgba(10,25,47,0.06); color: #3b4658; font-size: 0.64rem; font-weight: 600; }
+    .ecx-num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+    .ecx-sum { display: grid; grid-template-columns: auto minmax(128px, auto); justify-content: end; column-gap: 24px; row-gap: 6px; padding-top: 12px; border-top: 1px solid #eef0f3; }
+    .ecx-sl { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: baseline; font-size: 0.82rem; color: #8a93a2; text-align: right; }
+    .ecx-sl > b, .ecx-tr > b { justify-self: end; }
+    .ecx-sl b { font-weight: 600; color: #3b4658; }
+    .ecx-sl.neg b { color: #8a5a12; }
+    .ecx-total { margin-top: 4px; padding-top: 8px; border-top: 1px solid #eef0f3; align-items: baseline; }
+    .ecx-total span { font-size: 0.86rem; font-weight: 600; color: #0a192f; }
+    .ecx-total b { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.03em; color: #050505; }
+
+    .ecx-paybox { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .ecx-paylabel { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-methods { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 8px; }
+    .ecx-m { position: relative; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px #e5e7eb; color: #5b6575; min-width: 0; }
+    .ecx-m.on { color: #0a192f; box-shadow: inset 0 0 0 1.5px #0a192f, 0 6px 14px -10px rgba(10,25,47,0.45); }
+    .ecx-m-ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: #f5f5f7; flex-shrink: 0; }
+    .ecx-m.on .ecx-m-ico { background: rgba(10,25,47,0.07); }
+    .ecx-m-ico svg { width: 17px; height: 17px; }
+    .ecx-m-t { min-width: 0; }
+    .ecx-m-t b { display: block; font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-m-t small { display: block; font-size: 0.66rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-radio { margin-left: auto; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cfd4dc; flex-shrink: 0; }
+    .ecx-m.on .ecx-radio { box-shadow: inset 0 0 0 4.5px #0a192f; }
+
+    .ecx svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .ecx svg .f { fill: currentColor; fill-opacity: 0.14; }
+
+    .ecx-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ecx-field { position: relative; padding: 8px 12px; border-radius: 10px; background: #f5f5f7; min-width: 0; }
+    .ecx-field-full { grid-column: 1 / -1; }
+    .ecx-field small { display: block; font-size: 0.64rem; color: #8a93a2; }
+    .ecx-field span { display: block; margin-top: 1px; font-size: 0.84rem; font-weight: 500; color: #0a192f; white-space: nowrap; }
+    .ecx-field svg { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; color: #8a93a2; }
+
+    .ecx-bank { border-radius: 10px; background: #f5f5f7; padding: 4px 12px 10px; }
+    .ecx-kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.78rem; color: #8a93a2; }
+    .ecx-kv b { font-weight: 600; color: #0a192f; white-space: nowrap; }
+    .ecx-bank p, .ecx-wallet p { margin: 8px 0 0; font-size: 0.72rem; line-height: 1.45; color: #5b6575; }
+    .ecx-wallet { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; background: #f5f5f7; padding: 11px 12px; }
+    .ecx-wallet svg { width: 17px; height: 17px; color: #3b4658; flex-shrink: 0; margin-top: 1px; }
+    .ecx-wallet p { margin: 0; }
+
+    .ecx-pay { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 0; border-radius: 12px; background: #0d1b33; color: #fff; font-size: 0.88rem; font-weight: 600; box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 10px 22px -12px rgba(10,25,47,0.6); }
+    .ecx-pay svg { width: 15px; height: 15px; opacity: 0.85; }
+
+    .ecx-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 22px; border-top: 1px solid #eef0f3; background: #fcfdfe; font-size: 0.74rem; color: #8a93a2; min-height: 46px; }
+    .ecx-foot b { font-weight: 600; color: #3b4658; }
+    .ecx-cfdi { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 7px; border-radius: 999px; background: rgba(16,185,129,0.12); color: #047857; font-size: 0.72rem; font-weight: 600; }
+    .ecx-cfdi svg { width: 14px; height: 14px; }
+
+    /* Rodillo para números y textos que cambian */
+    .ecx-roll { display: inline-flex; overflow: hidden; vertical-align: bottom; padding-bottom: 1px; }
+    .ecx-roll > span { display: block; white-space: nowrap; }
+
+    /* ── Perfil de la cuenta (debajo de la hoja) ── */
+    .ecx-profile { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 0 6px; font-size: 0.74rem; color: #8a93a2; min-width: 0; }
+    .ecx-profile-k { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; white-space: nowrap; }
+    .ecx-profile-v { display: grid; min-width: 0; }
+    .ecx-pv { grid-area: 1 / 1; display: flex; flex-wrap: wrap; gap: 4px 16px; visibility: hidden; opacity: 0; }
+    .ecx-pv.on { visibility: visible; opacity: 1; }
+    .ecx-pv > span { color: #3b4658; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ecx-pv small { font-size: inherit; font-weight: 400; color: #8a93a2; margin-right: 5px; }
+
+    @media (max-width: 1080px) {
+        .ecx { grid-template-columns: 1fr; gap: 2.8rem; }
+        .ecx-text { max-width: 640px; }
+        .ecx-demo { max-width: 640px; width: 100%; justify-self: center; }
+    }
+    @media (max-width: 560px) {
+        .ecx { padding: 3rem 5% 4.5rem; }
+        .ecx-list { grid-template-columns: 1fr; }
+        .ecx-tab { padding: 7px 12px 7px 7px; font-size: 0.84rem; }
+        .ecx-bar { padding: 12px 16px; }
+        .ecx-bar-l span { display: none; }
+        .ecx-body { padding: 16px 16px; }
+        .ecx-foot { padding: 11px 16px; }
+        .ecx-th, .ecx-tr { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+        .ecx-th span:nth-child(2), .ecx-qty { display: none; }
+        .ecx-item-q { display: inline; }
+        .ecx-unit { display: none; }
+        .ecx-tr { font-size: 0.8rem; }
+        .ecx-sum { grid-template-columns: auto minmax(108px, auto); column-gap: 14px; }
+        .ecx-sl { font-size: 0.78rem; }
+        .ecx-tab:not(.on) .ecx-tab-n { display: none; }
+        .ecx-tab:not(.on) { padding-right: 8px; }
+        .ecx-total b { font-size: 1rem; }
+        .ecx-m-t small { display: none; }
+        .ecx-m { padding: 9px 10px; gap: 7px; }
+        .ecx-profile { flex-direction: column; align-items: flex-start; gap: 6px; }
+        .ecx-date small { display: none; }
+    }
+    @media (max-width: 400px) {
+        .ecx-m-ico, .ecx-radio { display: none; }
+        .ecx-m { justify-content: center; text-align: center; }
+        .ecx-org-id small { white-space: normal; }
+    }
+</style>
+
+<script>
+    import { gsap } from 'gsap';
+
+    const DWELL = 4.2; // segundos por país en la rotación automática
+
+    document.querySelectorAll<HTMLElement>('[data-ecx]').forEach((root) => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const tablist = root.querySelector<HTMLElement>('[role="tablist"]');
+        const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+        const faces = Array.from(root.querySelectorAll<HTMLElement>('[data-face]'));
+        const pvs = Array.from(root.querySelectorAll<HTMLElement>('[data-pv]'));
+        const ind = root.querySelector<HTMLElement>('.ecx-ind');
+        const prog = root.querySelector<HTMLElement>('.ecx-prog');
+        const sheet = root.querySelector<HTMLElement>('.ecx-sheet');
+        if (!tablist || !tabs.length || faces.length !== tabs.length || !ind || !prog || !sheet) return;
+
+        let cur = 0;
+        let auto = !reduced;
+        let onScreen = false;
+        let timer: gsap.core.Tween | null = null;
+
+        root.classList.add('is-js');
+
+        const place = (k: number, animate: boolean) => {
+            const t = tabs[k];
+            const props = { x: t.offsetLeft, y: t.offsetTop, width: t.offsetWidth, height: t.offsetHeight };
+            if (animate && !reduced) gsap.to(ind, { ...props, duration: 0.55, ease: 'power3.inOut', overwrite: true });
+            else gsap.set(ind, props);
+        };
+        place(0, false);
+        if (document.fonts?.ready) document.fonts.ready.then(() => place(cur, false));
+        let rz = 0;
+        window.addEventListener('resize', () => {
+            cancelAnimationFrame(rz);
+            rz = requestAnimationFrame(() => place(cur, false));
+        });
+
+        const show = (k: number) => {
+            if (k === cur) return;
+            const from = faces[cur];
+            const to = faces[k];
+            const dir = k > cur ? 1 : -1;
+
+            tabs.forEach((t, j) => {
+                const on = j === k;
+                t.classList.toggle('on', on);
+                t.setAttribute('aria-selected', String(on));
+                t.tabIndex = on ? 0 : -1;
+            });
+            place(k, true);
+
+            if (reduced) {
+                faces.forEach((f, j) => f.classList.toggle('on', j === k));
+                pvs.forEach((p, j) => p.classList.toggle('on', j === k));
+                cur = k;
+                return;
+            }
+
+            gsap.killTweensOf([...faces, ...pvs, sheet]);
+            faces.forEach((f) => gsap.killTweensOf(f.querySelectorAll('[data-r], .ecx-roll > span')));
+            faces.forEach((f, j) => {
+                if (j !== cur && j !== k) { f.classList.remove('on'); gsap.set(f, { clearProps: 'opacity,visibility' }); }
+            });
+
+            // Sale: las filas suben y se desvanecen en cascada
+            gsap.to(from.querySelectorAll('[data-r]'), { opacity: 0, y: -8, duration: 0.22, stagger: 0.012, ease: 'power2.in' });
+            gsap.to(from, {
+                autoAlpha: 0, duration: 0.3, delay: 0.12,
+                onComplete: () => {
+                    from.classList.remove('on');
+                    gsap.set(from, { clearProps: 'opacity,visibility' });
+                    gsap.set(from.querySelectorAll('[data-r]'), { clearProps: 'opacity,transform' });
+                },
+            });
+
+            // Entra: filas en cascada y los montos ruedan desde abajo
+            to.classList.add('on');
+            gsap.fromTo(to, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, delay: 0.16 });
+            gsap.fromTo(to.querySelectorAll('[data-r]'), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.035, delay: 0.2, ease: 'power3.out' });
+            gsap.fromTo(to.querySelectorAll('.ecx-roll > span'), { yPercent: 105 }, { yPercent: 0, duration: 0.6, stagger: 0.03, delay: 0.3, ease: 'power3.out' });
+
+            // Inclinación sutil de la hoja, como si se girara hacia el siguiente país
+            gsap.timeline()
+                .to(sheet, { rotationY: -3.5 * dir, rotationX: 1.6, y: -4, transformPerspective: 1600, duration: 0.32, ease: 'power2.out' })
+                .to(sheet, { rotationY: 0, rotationX: 0, y: 0, duration: 0.8, ease: 'power3.out' });
+
+            // Perfil de la cuenta
+            const pFrom = pvs[cur];
+            const pTo = pvs[k];
+            if (pFrom && pTo) {
+                gsap.to(pFrom, { autoAlpha: 0, y: -6, duration: 0.25, onComplete: () => { pFrom.classList.remove('on'); gsap.set(pFrom, { clearProps: 'all' }); } });
+                pTo.classList.add('on');
+                gsap.fromTo(pTo, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.45, delay: 0.2, ease: 'power3.out' });
+            }
+
+            cur = k;
+        };
+
+        // ── Rotación automática con barra de progreso en la pestaña activa ──
+        const schedule = () => {
+            timer?.kill();
+            if (!auto) return;
+            timer = gsap.fromTo(prog, { scaleX: 0 }, {
+                scaleX: 1, duration: DWELL, ease: 'none', paused: !onScreen || document.hidden,
+                onComplete: () => { show((cur + 1) % tabs.length); schedule(); },
+            });
+        };
+        const stopAuto = () => {
+            auto = false;
+            timer?.kill();
+            timer = null;
+            gsap.to(prog, { scaleX: 0, opacity: 0, duration: 0.25 });
+        };
+        const sync = () => {
+            if (!timer) return;
+            if (onScreen && !document.hidden) timer.resume();
+            else timer.pause();
+        };
+
+        tabs.forEach((t, k) => {
+            t.addEventListener('click', () => { stopAuto(); show(k); });
+        });
+        tablist.addEventListener('keydown', (e) => {
+            const keys: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+            let k = -1;
+            if (e.key in keys) k = (cur + keys[e.key] + tabs.length) % tabs.length;
+            else if (e.key === 'Home') k = 0;
+            else if (e.key === 'End') k = tabs.length - 1;
+            if (k < 0) return;
+            e.preventDefault();
+            stopAuto();
+            show(k);
+            tabs[k].focus();
+        });
+
+        if (auto) {
+            const io = new IntersectionObserver((entries) => {
+                onScreen = entries.some((en) => en.isIntersecting);
+                sync();
+            }, { threshold: 0.25 });
+            io.observe(root);
+            document.addEventListener('visibilitychange', sync);
+            schedule();
+        } else {
+            prog.style.display = 'none';
+        }
+    });
+</script>

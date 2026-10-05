@@ -7,6 +7,43 @@
 
 ---
 
+**Desarrolladores: sin pasos ni rejilla de detalles; mockups 1:1 (5 oct 2026)** —
+• Se retiraron "Empieza en tres pasos" y la rejilla de detalles (`TrustGrid.astro`) de
+  `/desarrolladores/*`, con sus datos (`steps`, `trust`) y el JSON-LD `HowTo`, que sin la
+  sección visible describía contenido que la página ya no muestra. `steps` sobrevive solo en
+  Elements, donde alimenta los pasos de instalación.
+• `DevMock.astro` calca el Workbench y Ajustes › MCP reales con las claves de `src/i18n/app.ts`.
+
+---
+
+**Desarrolladores y Cord Elements: bento blanco y página del SDK completa (4 oct 2026)** —
+• **Bento unificado:** `/desarrolladores/[slug]` usaba tarjetas grises `#f5f5f7` con borde y
+  una tarjeta 0 oscura con `CordDynamicBg`; ahora es el mismo bento blanco de `/producto`
+  (radio 28, sombra difusa, elevación en hover). Se retiró la franja de cifras (`stats`)
+  por decisión de André, junto con su campo en `DevPage`.
+• **`/elements` rehecha:** el hero era un `<iframe>` vivo que se veía vacío; ahora es una
+  calca 1:1 de `/embed/demo` dentro del portal de un cliente, con una consola que recibe
+  `cord:approved`/`cord:signed` cuando el cursor aprueba. Suma instalación por stack (HTML,
+  React, Next.js, Vue, Astro, Framer, Webflow), un explorador de TODO lo que exporta
+  `@flouviahq/elements` por módulo, y una sección del Server SDK.
+• **Copy corregido contra `packages/elements`:** 8 eventos (no 5), `useQuoteBuilder()` arma
+  cotizaciones nuevas y no recibe `token`, `onApproved` trae `signed_by`/`hash` (no
+  `folio`), la marca se quita desde Starter en Ajustes › Marca y apariencia (no en
+  Developers) y React es `>=17`.
+• `DevBlockMockup.astro` se eliminó: sus únicos consumidores eran `/elements` y `TrustGrid`.
+• **Banda diagonal en los heroes de desarrolladores:** la misma geometría de 12° de
+  `/producto` (`DevHeroBand.astro`, compartida por `/desarrolladores/*` y `/elements`) con
+  una gama propia ámbar/brasa (`#7C2D12` → `#FACC15`) que ninguna otra banda usa.
+• En `/elements` los encabezados de sección van título a la izquierda y texto a la derecha,
+  sin eyebrow, y se retiró la sección "Lo fino, resuelto de fábrica" (con su `trust`).
+• **Sección oscura de plataforma (`DevPlatform.astro`)**, en el home y en `/elements` (sustituye
+  la lista "El cotizador completo"): plataforma abierta con CTAs a docs y npm; diagrama vivo
+  (tus sistemas, API, webhooks, Cord, MCP, integraciones y rieles de cobro, con pulsos SVG y
+  casillas que rotan); cinta de líneas en canvas con 600/min, 41 eventos y 19 tools MCP; y
+  tres rutas de integración (sin código, plataformas, código propio) con visual animado. Solo
+  usa integraciones `disponible: true` sin credenciales. El botón de copiar `npm install`
+  ahora anima el cambio a palomita con aviso "Copiado".
+
 **SEO técnico de los tres hosts, páginas de integraciones y Cord Workflows (21 sep 2026)** —
 Auditoría en vivo de los sitemaps de `cordhq.app`, `docs.` y `dev.` (843 URLs rastreadas).
 • **Canonical roto en 285 URLs:** las páginas prerenderizadas publicaban canonical,
