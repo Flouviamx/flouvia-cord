@@ -3,14 +3,17 @@
 // <iframe> en el sitio de un tercero). Sin navbar, sin watermark, fondo
 // TRANSPARENTE para que herede el del sitio anfitrión. Trae los tokens de diseño
 // e Inter (necesarios para la clase .editorial). Siempre noindex.
+import { currentLocale } from '../lib/context';
 interface Props {
     title: string;
 }
 const { title } = Astro.props;
+// El idioma del negocio, que fija la query del documento; los lectores de pantalla lo usan para pronunciar.
+const lang = currentLocale() === 'en' ? 'en' : 'es';
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
     <head>
         <meta charset="UTF-8" />
         <meta name="robots" content="noindex, nofollow" />

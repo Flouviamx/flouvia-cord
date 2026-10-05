@@ -46,7 +46,8 @@ All events have the `cord:` prefix to avoid naming collisions with other librari
 
 ### State
 - **`cord:updated`**: The quote changed while it was open (the seller edited lines, amounts or terms). The quote has already redrawn itself; use it to refresh whatever your page shows around it.
-- **`cord:status_changed`**: The status changed (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). The `detail` carries the new `status`.
+- **`cord:status_changed`**: The status changed (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). The `detail` carries the new `status` (and `saldo` on the invoice).
+- **`cord:paid`**: Only on `<cord-invoice>`: the invoice was settled. The `detail` carries `folio`, `moneda` and `saldo`.
 
 `cord:ready` also carries `status`, `moneda` and `total`, so your page can draw its own summary without another call.
 

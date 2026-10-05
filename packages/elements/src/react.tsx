@@ -38,6 +38,7 @@ import type {
     CordPayDetail,
     CordUpdatedDetail,
     CordStatusChangedDetail,
+    CordPaidDetail,
 } from './types.js';
 
 export {
@@ -72,6 +73,7 @@ export type {
     CordPayDetail,
     CordUpdatedDetail,
     CordStatusChangedDetail,
+    CordPaidDetail,
 } from './types.js';
 export type { CordElements, CordElementKey } from './elements.js';
 export type { UseQuoteBuilderOptions, UseQuoteBuilderResult, BuilderContextType } from './useQuoteBuilder.js';
@@ -584,6 +586,10 @@ export interface CordCotizadorProps {
     onPay?: (detail: CordPayDetail) => void;
     onUpdated?: (detail: CordUpdatedDetail) => void;
     onStatusChanged?: (detail: CordStatusChangedDetail) => void;
+    /** La factura quedó pagada. Solo en <CordInvoice>. */
+    onPaid?: (detail: CordPaidDetail) => void;
+    /** Qué documento monta; <CordInvoice> lo fija en 'invoice'. */
+    document?: 'quote' | 'invoice';
     /** Estado en vivo de la cotización (estado, total, aprobada, pagada). */
     onStateChange?: (state: QuoteViewState) => void;
     /** Catch-all tipado: habilita un `switch` exhaustivo sobre `event.type`. */
@@ -607,6 +613,7 @@ export function CordCotizador(props: CordCotizadorProps) {
         if (!ref.current || !token) return;
         const opts: CordElementOptions = {
             token,
+            document: props.document,
             baseUrl: explicitBase,
             minHeight: props.minHeight,
             appearance,
@@ -620,16 +627,22 @@ export function CordCotizador(props: CordCotizadorProps) {
             onPay: (d) => cbs.current.onPay?.(d),
             onUpdated: (d) => cbs.current.onUpdated?.(d),
             onStatusChanged: (d) => cbs.current.onStatusChanged?.(d),
+            onPaid: (d) => cbs.current.onPaid?.(d),
             onEvent: (event) => cbs.current.onEvent?.(event),
         };
         const controller = mountCotizador(ref.current, opts);
         const unsubscribe = controller.state.subscribe((s) => cbs.current.onStateChange?.(s));
         return () => { unsubscribe(); controller.destroy(); };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- appearanceKey serializa `appearance` a propósito
-    }, [token, explicitBase, props.minHeight, appearanceKey]);
+    }, [token, explicitBase, props.minHeight, appearanceKey, props.document]);
 
     if (!token) return <div role="alert">{t.errorToken}</div>;
     return <div ref={ref} className={props.className} style={props.style} />;
+}
+
+/** La factura de /i/{token} embebida: saldo, partidas y PDF; el pago se abre en una ventana de Cord. */
+export function CordInvoice(props: Omit<CordCotizadorProps, 'document'>) {
+    return <CordCotizador {...props} document="invoice" />;
 }
 
 export default CordCotizador;

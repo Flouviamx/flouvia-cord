@@ -10,29 +10,28 @@ description: "Descubre cómo usar los componentes web nativos de Cord en Vue, HT
 
 ## Web Component (Vanilla JS, PHP, Rails)
 
-Si no utilizas React ni Vue, o estás integrando Cord en un sitio renderizado en el servidor (como Laravel, Django, o WordPress), puedes utilizar el Web Component estándar (`<cord-cotizador>`).
+Si no utilizas React ni Vue, o estás integrando Cord en un sitio renderizado en el servidor (como Laravel, Django, o WordPress), puedes utilizar el Web Component estándar `<cord-quote>` (`<cord-cotizador>` sigue funcionando como alias).
 
 Este componente está compilado bajo los estándares de la plataforma web, lo que significa que el navegador lo entiende de forma nativa sin necesidad de un bundler.
 
 ```html
-{/* Importar el módulo ES */}
+<!-- Importar el módulo ES -->
 <script type="module" src="https://unpkg.com/@flouviahq/elements/dist/index.mjs"></script>
 
-{/* Renderizar el componente nativo */}
+<!-- Renderizar el componente nativo -->
 <div style="height: 800px;">
-  <cord-cotizador 
-    token="tok_A1B2C3D4E5" 
-    base-url="https://cordhq.app" 
+  <cord-quote
+    token="tok_A1B2C3D4E5"
     min-height="500">
-  </cord-cotizador>
+  </cord-quote>
 </div>
 
 <script>
   // Escuchar eventos estándar del DOM
-  const cotizador = document.querySelector('cord-cotizador');
-  
+  const cotizador = document.querySelector('cord-quote');
+
   cotizador.addEventListener('approved', (e) => {
-    console.log('¡Cotización aprobada!', e.detail.folio);
+    console.log('Aprobada por', e.detail.signed_by);
   });
 </script>
 ```
@@ -40,6 +39,24 @@ Este componente está compilado bajo los estándares de la plataforma web, lo qu
 <Callout type="info">
 **Nota de Eventos:** Al usar el Web Component nativo, los eventos llegan **sin** el prefijo `cord:`. Es decir, en lugar de escuchar `cord:approved`, escucharás simplemente `approved` como cualquier otro evento de la API del DOM.
 </Callout>
+
+## La factura: `<cord-invoice>`
+
+`<cord-invoice>` muestra una factura de Cord (la de `/i/{token}`) en tu sitio: saldo pendiente, estado, partidas, totales y la descarga del PDF. El token es el de la factura hospedada, el mismo que va en el correo que recibe tu cliente.
+
+```html
+<cord-invoice token="TOKEN_DE_LA_FACTURA"></cord-invoice>
+
+<script>
+  document.querySelector('cord-invoice').addEventListener('paid', (e) => {
+    console.log('Factura pagada', e.detail.folio);
+  });
+</script>
+```
+
+El botón de pago abre la factura hospedada en una ventana de Cord: los datos de pago nunca se capturan dentro del iframe. Mientras la factura sigue abierta, el embed consulta su saldo y emite `status_changed` cuando cambia y `paid` cuando queda saldada. Con `embed.js`, agrega `data-cord-document="invoice"` al `div`. Igual que la cotización, sin dominios permitidos en Ajustes › Elements los eventos llegan sin datos.
+
+`theme`, `variables` y `fonts` del [Appearance API](/docs/desarrolladores/herramientas/elements/apariencia) aplican a la factura; `rules` y `layout` son del cotizador.
 
 ## Vue y Nuxt
 

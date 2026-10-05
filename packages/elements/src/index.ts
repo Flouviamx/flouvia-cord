@@ -1,7 +1,7 @@
 // Entry principal de @flouviahq/elements (vanilla / Web Component).
 // Importarlo registra automáticamente <cord-cotizador>.
 export { mountCotizador } from './core.js';
-export { CordQuoteElement, CordCotizadorElement, defineCordElements } from './element.js';
+export { CordQuoteElement, CordCotizadorElement, CordInvoiceElement, defineCordElements } from './element.js';
 export { CordFiscalFormElement, defineFiscalElement } from './fiscal-element.js';
 export { CordAPI, CordError } from './api.js';
 export {
@@ -34,6 +34,7 @@ export type {
     CordPayDetail,
     CordUpdatedDetail,
     CordStatusChangedDetail,
+    CordPaidDetail,
     CordProduct,
     CordClient,
     QuoteStatus,

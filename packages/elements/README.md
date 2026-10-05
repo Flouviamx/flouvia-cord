@@ -356,6 +356,10 @@ Atributos: `token` (requerido), `base-url`, `min-height`, `appearance` (JSON; ta
 propiedad). Propiedad `state` con el estado en vivo. Los eventos llegan sin el prefijo
 `cord:`. `<cord-cotizador>` sigue funcionando como alias.
 
+`<cord-invoice token="…">` monta la factura de `/i/{token}` con los mismos atributos y emite
+además `paid`. El pago se abre en una ventana de Cord, nunca dentro del iframe. En React y Vue,
+`<CordInvoice>`; en `embed.js`, `data-cord-document="invoice"`.
+
 ## Loader de una línea (`embed.js`) — sitios sin bundler
 
 ```html

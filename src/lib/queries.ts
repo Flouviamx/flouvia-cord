@@ -1680,7 +1680,8 @@ export async function getFacturaByToken(token: string) {
                    o.stripe_charges_enabled as org_stripe_charges_enabled,
                    o.acepta_tarjeta as org_acepta_tarjeta,
                    o.acepta_transferencia as org_acepta_transferencia,
-                   o.mp_charges_enabled as org_mp_charges_enabled
+                   o.mp_charges_enabled as org_mp_charges_enabled,
+                   o.embed_domains as org_embed_domains
               from documentos_fiscales d
               join orgs o on o.id = d.org_id
               left join cotizaciones c on c.id = d.cotizacion_id
@@ -1778,6 +1779,7 @@ export async function getFacturaByToken(token: string) {
             logoUrl: (r.org_logo_url as string) || null,
             color: (r.org_color as string) || null,
             email: (r.org_email as string) || null,
+            embedDomains: (r.org_embed_domains as string) || null,
             telefono: (r.org_tel as string) || null,
             powered: r.org_portal_powered !== false,
         },

@@ -39,6 +39,9 @@ export class CordQuoteElement extends ElementBase {
         this.schedule();
     }
 
+    /** Qué documento monta este elemento. */
+    protected get documentKind(): 'quote' | 'invoice' { return 'quote'; }
+
     /** Estado en vivo: ready, status, total, approved, paid… */
     get state(): QuoteViewState { return this._state; }
 
@@ -103,6 +106,7 @@ export class CordQuoteElement extends ElementBase {
 
         this.controller = mountCotizador(this.container, {
             token,
+            document: this.documentKind,
             baseUrl: this.getAttribute('base-url') || undefined,
             minHeight: minAttr ? parseInt(minAttr, 10) : undefined,
             appearance: this.resolvedAppearance(),
@@ -118,11 +122,17 @@ export class CordQuoteElement extends ElementBase {
 /** Alias histórico: los embeds publicados con <cord-cotizador> siguen funcionando. */
 export class CordCotizadorElement extends CordQuoteElement {}
 
+/** <cord-invoice>: la factura de /i/{token}. Emite además 'paid'. */
+export class CordInvoiceElement extends CordQuoteElement {
+    protected override get documentKind(): 'invoice' { return 'invoice'; }
+}
+
 /** Registra los elementos (idempotente). Se llama solo al importar el paquete. */
 export function defineCordElements(tag?: string) {
     if (typeof customElements === 'undefined') return;
     if (!customElements.get('cord-quote')) customElements.define('cord-quote', CordQuoteElement);
     if (!customElements.get('cord-cotizador')) customElements.define('cord-cotizador', CordCotizadorElement);
+    if (!customElements.get('cord-invoice')) customElements.define('cord-invoice', CordInvoiceElement);
     if (tag && !customElements.get(tag)) customElements.define(tag, class extends CordQuoteElement {});
 }
 
@@ -130,5 +140,6 @@ declare global {
     interface HTMLElementTagNameMap {
         'cord-quote': CordQuoteElement;
         'cord-cotizador': CordCotizadorElement;
+        'cord-invoice': CordInvoiceElement;
     }
 }

@@ -16,8 +16,9 @@ export const CordCotizador = defineComponent({
         baseUrl: { type: String, required: false },
         minHeight: { type: Number, required: false },
         appearance: { type: Object as PropType<CordAppearance>, required: false },
+        document: { type: String as PropType<'quote' | 'invoice'>, required: false },
     },
-    emits: ['ready', 'viewed', 'approved', 'signed', 'rejected', 'message', 'item-comment', 'pay', 'updated', 'status-changed', 'state', 'event'],
+    emits: ['ready', 'viewed', 'approved', 'signed', 'rejected', 'message', 'item-comment', 'pay', 'updated', 'status-changed', 'paid', 'state', 'event'],
     setup(props, { emit, attrs }) {
         const rootEl = ref<HTMLDivElement | null>(null);
         let controller: CordController | null = null;
@@ -35,6 +36,7 @@ export const CordCotizador = defineComponent({
             teardown();
             const opts: CordElementOptions = {
                 token: props.token,
+                document: props.document,
                 baseUrl: props.baseUrl,
                 minHeight: props.minHeight,
                 appearance: props.appearance,
@@ -48,6 +50,7 @@ export const CordCotizador = defineComponent({
                 onPay: (d) => emit('pay', d),
                 onUpdated: (d) => emit('updated', d),
                 onStatusChanged: (d) => emit('status-changed', d),
+                onPaid: (d) => emit('paid', d),
                 onEvent: (event: CordEvent) => emit('event', event),
             };
             controller = mountCotizador(rootEl.value, opts);
@@ -56,9 +59,18 @@ export const CordCotizador = defineComponent({
 
         onMounted(mount);
         onUnmounted(teardown);
-        watch(() => [props.token, props.baseUrl, props.minHeight, JSON.stringify(props.appearance ?? null)], mount);
+        watch(() => [props.token, props.document, props.baseUrl, props.minHeight, JSON.stringify(props.appearance ?? null)], mount);
 
         return () => h('div', { ref: rootEl, ...attrs });
+    },
+});
+
+/** La factura de /i/{token} embebida. Mismos props y eventos, más 'paid'. */
+export const CordInvoice = defineComponent({
+    name: 'CordInvoice',
+    inheritAttrs: false,
+    setup(_, { attrs }) {
+        return () => h(CordCotizador, { ...attrs, document: 'invoice' } as any);
     },
 });
 

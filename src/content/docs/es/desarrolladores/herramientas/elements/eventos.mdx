@@ -46,7 +46,8 @@ Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres co
 
 ### Estado
 - **`cord:updated`**: La cotización cambió mientras estaba abierta (el vendedor editó partidas, importes o condiciones). El cotizador ya se redibujó solo; úsalo para refrescar lo que tu página muestre alrededor.
-- **`cord:status_changed`**: El estado cambió (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). El `detail` trae el nuevo `status`.
+- **`cord:status_changed`**: El estado cambió (`sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`...). El `detail` trae el nuevo `status` (y `saldo` en la factura).
+- **`cord:paid`**: Solo en `<cord-invoice>`: la factura quedó saldada. El `detail` trae `folio`, `moneda` y `saldo`.
 
 `cord:ready` también trae `status`, `moneda` y `total`, para que tu página dibuje su propio resumen sin otra llamada.
 

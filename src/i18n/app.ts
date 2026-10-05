@@ -3028,6 +3028,9 @@ export const appStrings = {
         "fact.p_monto_invalido": "Escribe una cantidad mayor a cero y menor o igual al saldo.",
         "fact.p_continuar": "Continuar",
         "fact.p_cancelar": "Cancelar",
+        "fact.e_saldo_pendiente": "Saldo pendiente",
+        "fact.e_pago_ventana": "El pago se abre en una ventana segura de Cord.",
+        "fact.e_ver_completa": "Ver factura completa",
         // Ficha de cliente — estado de cuenta
         "cdet.estado_cuenta": "Estado de cuenta",
         "cdet.ec_saldo": "Saldo total",
@@ -6468,6 +6471,9 @@ export const appStrings = {
         "fact.p_monto_invalido": "Enter an amount greater than zero and no more than the balance.",
         "fact.p_continuar": "Continue",
         "fact.p_cancelar": "Cancel",
+        "fact.e_saldo_pendiente": "Balance due",
+        "fact.e_pago_ventana": "Payment opens in a secure Cord window.",
+        "fact.e_ver_completa": "View full invoice",
         // Ficha de cliente — estado de cuenta
         "cdet.estado_cuenta": "Account statement",
         "cdet.ec_saldo": "Total balance",

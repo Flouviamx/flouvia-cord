@@ -14,8 +14,7 @@ import QuoteCard from '../../components/q/QuoteCard.astro';
 import { getCotizacionByToken } from '../../lib/queries';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { readVisitorId } from '../../lib/public-viewer';
-import { sanitizeAppearance, appearanceToCss, MAX_APPEARANCE_BYTES } from '../../../packages/elements/src/appearance';
-import { embedAppearanceCss } from '../../lib/embed-appearance';
+import { embedFramePolicy, embedAppearanceFromParam } from '../../lib/embed-frame';
 
 const { token } = Astro.params;
 const result = await getCotizacionByToken(token ?? '');
@@ -34,52 +33,13 @@ const { quote: q, org: ORG, conversacion } = result;
 // resuelve public-viewer.ts. Es suficiente para no contar al equipo como cliente.
 readVisitorId(Astro.cookies, true);
 
-// ── Appearance API ──
-// Todo valor que termina en CSS pasa por el validador único del paquete: claves
-// enumeradas, gramática por tipo y fuentes solo de proveedores conocidos.
-const appearanceParam = Astro.url.searchParams.get('appearance');
-let appearanceCSS = '';
-if (appearanceParam && appearanceParam.length <= MAX_APPEARANCE_BYTES) {
-    try {
-        const appearance = sanitizeAppearance(JSON.parse(appearanceParam));
-        appearanceCSS = appearanceToCss(appearance) + embedAppearanceCss(appearance);
-    } catch { /* appearance inválido: se ignora */ }
-}
+// Appearance API: todo valor que termina en CSS pasa por el validador único del paquete.
+const appearanceCSS = embedAppearanceFromParam(Astro.url.searchParams.get('appearance'));
 
-// ── CSP: ¿quién puede embeber esta cotización? ──
-// Lista separada por comas / saltos de línea en orgs.embed_domains. Cada entrada
-// es un host-source de CSP ("cliente.com", "https://app.cliente.com", "*.cliente.com").
-const dominios = (ORG.embedDomains || '')
-    .split(/[\s,]+/)
-    .map((d: string) => d.trim())
-    .filter(Boolean);
-const frameAncestors = dominios.length
-    ? `frame-ancestors 'self' ${dominios.join(' ')}`
-    : `frame-ancestors *`; // sin allowlist → abierto (modo demo / "Powered by Cord")
+// Quién puede enmarcar (orgs.embed_domains), a qué origen van los eventos y si
+// el embed es interactivo. Sin allowlist: solo lectura, aprobar/firmar/pagar en /q.
+const { frameAncestors, targetOrigin, soloLectura } = embedFramePolicy(ORG.embedDomains, Astro.url.searchParams.get('parentOrigin'));
 Astro.response.headers.set('Content-Security-Policy', frameAncestors);
-
-// ── targetOrigin del postMessage saliente ──
-// Antes SIEMPRE '*' (cualquier ventana en la cadena de frames podía leer los
-// eventos). Si hay allowlist Y el `parentOrigin` que mandó el SDK matchea,
-// usamos ESE origen exacto — mismo gate que ya protege frame-ancestors arriba.
-// Sin match (o sin allowlist configurada) se queda en '*' — el SDK viejo o un
-// <iframe> de terceros directo sin el parámetro siguen funcionando igual que
-// antes (sin regresión), solo se AFINA cuando podemos validar.
-const parentOriginParam = Astro.url.searchParams.get('parentOrigin') || '';
-let targetOrigin = '*';
-if (dominios.length > 0 && parentOriginParam) {
-    try {
-        const poHost = new URL(parentOriginParam).hostname;
-        const matched = dominios.some((d: string) => d === poHost || poHost.endsWith('.' + d.replace(/^\*\./, '')));
-        if (matched) targetOrigin = parentOriginParam;
-    } catch { /* parentOrigin inválido → se queda en '*' */ }
-}
-
-// Sin allowlist, cualquier sitio puede enmarcar esta página: aprobar, firmar o
-// pagar ahí sería clickjacking. Con allowlist, frame-ancestors ya restringe a
-// TODOS los ancestros, así que el modo interactivo depende de ella y no del
-// parentOrigin que manda el SDK (ese se puede falsificar).
-const soloLectura = dominios.length === 0;
 
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';

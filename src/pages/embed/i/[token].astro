@@ -1,0 +1,234 @@
+---
+// CORD Elements — la factura embebida (<cord-invoice>). Muestra el resumen
+// (saldo, estado, partidas, totales, PDF) y el pago se abre en la página
+// hospedada /i/[token] en una ventana propia: dentro de un iframe ajeno no se
+// captura ningún dato de pago. Misma política de enmarcado que la cotización.
+export const prerender = false;
+
+import EmbedLayout from '../../../layouts/EmbedLayout.astro';
+import { getFacturaByToken } from '../../../lib/queries';
+import { moneyFull } from '../../../lib/fmt';
+import { getCountryProfile } from '../../../lib/countries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import { publicInvoicePayability } from '../../../lib/fiscal/public-invoice-state';
+import { readVisitorId } from '../../../lib/public-viewer';
+import { embedFramePolicy, embedAppearanceFromParam } from '../../../lib/embed-frame';
+
+const { token } = Astro.params;
+const f = await getFacturaByToken(token ?? '');
+if (!f) return new Response('Factura no encontrada', { status: 404 });
+
+const L = currentLocale();
+readVisitorId(Astro.cookies, true);
+
+const appearanceCSS = embedAppearanceFromParam(Astro.url.searchParams.get('appearance'));
+const { frameAncestors, targetOrigin, soloLectura } = embedFramePolicy(f.org.embedDomains, Astro.url.searchParams.get('parentOrigin'));
+Astro.response.headers.set('Content-Security-Policy', frameAncestors);
+
+const { puedePagar, puedePagarMp } = publicInvoicePayability(f, !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY));
+const pagable = (puedePagar || puedePagarMp) && f.saldo > 0;
+const taxIdLabel = getCountryProfile(f.pais).taxIdLabel;
+const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
+const ESTADO: Record<string, { label: string; tone: string }> = {
+    open: { label: t(L, 'fact.p_estado_open'), tone: 'wait' },
+    paid: { label: t(L, 'fact.p_estado_paid'), tone: 'ok' },
+    void: { label: t(L, 'fact.p_estado_void'), tone: 'off' },
+    uncollectible: { label: t(L, 'fact.p_estado_uncollectible'), tone: 'off' },
+};
+const estado = ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
+const prueba = f.simulado || f.testMode || f.esPrueba;
+---
+
+<EmbedLayout title={`${titulo} ${f.numero ?? ''}`}>
+    <div class="embed-wrap" data-cord-appearance={appearanceCSS ? '1' : undefined}>
+        <article class="ci-card" data-status={f.estado} data-folio={f.numero ?? ''} data-currency={f.currency} data-total={String(f.total)} data-saldo={String(f.saldo)}>
+            {prueba && <p class="ci-test" role="status">{L === 'en' ? 'Test document: not valid as a tax receipt.' : 'Documento de prueba: no funciona como comprobante fiscal.'}</p>}
+            <header class="ci-head">
+                <div class="ci-brand">
+                    <strong>{f.org.nombre}</strong>
+                    {f.emisor?.taxId && <small>{taxIdLabel} {f.emisor.taxId}</small>}
+                </div>
+                <div class="ci-folio"><span>{titulo}</span><strong>{f.numero}</strong></div>
+            </header>
+
+            <section class="ci-hero">
+                <span class="ci-label">{f.esNotaCredito ? t(L, 'fact.p_total') : t(L, 'fact.e_saldo_pendiente')}</span>
+                <p class="ci-amount editorial">{moneyFull(f.esNotaCredito ? f.total : f.saldo)}</p>
+                <div class="ci-meta">
+                    <span class={`ci-chip ci-${estado.tone}`}>{estado.label}</span>
+                    {f.vencida && !f.esNotaCredito && <span class="ci-chip ci-late">{t(L, 'fact.p_vencida')}</span>}
+                    <span>{t(L, 'fact.p_emitida')} {f.emitida}</span>
+                    {f.venceLegible && !f.esNotaCredito && <span>{t(L, 'fact.p_vence_el')} {f.venceLegible}</span>}
+                </div>
+            </section>
+
+            <table class="ci-lines">
+                <thead><tr><th scope="col">{t(L, 'fact.p_concepto')}</th><th scope="col" class="ci-num">{t(L, 'fact.p_cant')}</th><th scope="col" class="ci-num">{t(L, 'fact.p_importe')}</th></tr></thead>
+                <tbody>
+                    {f.lineas.map((l) => (
+                        <tr><td>{l.descripcion}</td><td class="ci-num">{l.cantidad}</td><td class="ci-num editorial">{moneyFull(l.subtotal)}</td></tr>
+                    ))}
+                </tbody>
+            </table>
+
+            <dl class="ci-totals">
+                <div><dt>{t(L, 'fact.p_subtotal')}</dt><dd class="editorial">{moneyFull(f.subtotal)}</dd></div>
+                {f.impuestos > 0 && <div><dt>{t(L, 'fact.p_impuestos')}</dt><dd class="editorial">{moneyFull(f.impuestos)}</dd></div>}
+                <div class="ci-strong"><dt>{t(L, 'fact.p_total')}</dt><dd class="editorial">{moneyFull(f.total)}</dd></div>
+                {f.pagado > 0 && <div><dt>{t(L, 'fact.p_pagado')}</dt><dd class="editorial">−{moneyFull(f.pagado)}</dd></div>}
+                {!f.esNotaCredito && <div class="ci-strong"><dt>{t(L, 'fact.p_saldo')}</dt><dd class="editorial">{moneyFull(f.saldo)}</dd></div>}
+            </dl>
+
+            <footer class="ci-foot">
+                {pagable && (
+                    <Fragment>
+                        <button type="button" class="ci-pay" id="ciPay">{t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}</button>
+                        <p class="ci-hint">{t(L, 'fact.e_pago_ventana')}</p>
+                    </Fragment>
+                )}
+                <div class="ci-links">
+                    {f.estado !== 'void' && <a href={`/api/i/${token}/documents/pdf`} target="_blank" rel="noopener">{t(L, 'fact.p_pdf')}</a>}
+                    <a href={`/i/${token}`} target="_blank" rel="noopener" id="ciOpen">{t(L, 'fact.e_ver_completa')}</a>
+                </div>
+            </footer>
+        </article>
+    </div>
+    {appearanceCSS && <style set:html={appearanceCSS}></style>}
+</EmbedLayout>
+
+<script is:inline define:vars={{ targetOrigin, soloLectura, token }}>
+    window.__CORD_TARGET_ORIGIN__ = targetOrigin;
+    window.__CORD_SOLO_LECTURA__ = soloLectura;
+    window.__CORD_INVOICE_TOKEN__ = token;
+</script>
+<script>
+    const w = window as any;
+    const soloLectura = w.__CORD_SOLO_LECTURA__ === true;
+    const token = String(w.__CORD_INVOICE_TOKEN__ || '');
+    const card = document.querySelector('.ci-card') as HTMLElement;
+    const post = (type: string, payload: Record<string, unknown> = {}) => {
+        try {
+            const body = soloLectura && type !== 'cord:resize' ? {} : payload;
+            window.parent.postMessage({ source: 'cord', type, ...body }, w.__CORD_TARGET_ORIGIN__ || '*');
+        } catch { /* sin padre */ }
+    };
+
+    const reportHeight = () => post('cord:resize', { height: Math.ceil((document.querySelector('.embed-wrap') as HTMLElement).scrollHeight) });
+    if ('ResizeObserver' in window) new ResizeObserver(reportHeight).observe(document.body);
+    window.addEventListener('load', reportHeight);
+
+    let listo = false;
+    const ready = () => {
+        reportHeight();
+        if (listo) return;
+        listo = true;
+        post('cord:ready', { detail: {
+            status: card.dataset.status ?? null,
+            folio: card.dataset.folio || null,
+            moneda: card.dataset.currency ?? null,
+            total: Number(card.dataset.total),
+            saldo: Number(card.dataset.saldo),
+        } });
+        post('cord:viewed');
+    };
+    (document as any).fonts?.ready ? (document as any).fonts.ready.then(ready) : ready();
+
+    // Regla 19: la vista se registra desde el navegador, con la pestaña visible.
+    const ping = () => {
+        if (document.visibilityState !== 'visible') return;
+        fetch(`/api/i/${encodeURIComponent(token)}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ping' }), keepalive: true,
+        }).catch(() => {});
+    };
+    if (document.visibilityState === 'visible') ping();
+    else document.addEventListener('visibilitychange', ping, { once: true });
+
+    // El pago vive en la página hospedada, en su propia ventana.
+    const payUrl = new URL(`/i/${encodeURIComponent(token)}`, location.origin).toString();
+    document.getElementById('ciPay')?.addEventListener('click', () => {
+        const win = window.open(payUrl, 'cord-invoice-pay', 'popup,width=560,height=820');
+        if (!win) window.open(payUrl, '_blank', 'noopener');
+        post('cord:pay', { detail: { url: payUrl } });
+    });
+
+    // Saldo en vivo: el GET de la factura es de solo lectura y está acotado por token.
+    let estado = card.dataset.status || '';
+    let saldo = Number(card.dataset.saldo);
+    let busy = false;
+    const check = async () => {
+        if (busy || document.visibilityState !== 'visible') return;
+        busy = true;
+        try {
+            const res = await fetch(`/api/i/${encodeURIComponent(token)}`, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.estado === estado && Number(data.saldo) === saldo) return;
+            const prev = estado;
+            estado = String(data.estado);
+            saldo = Number(data.saldo);
+            post('cord:status_changed', { detail: { status: estado, saldo } });
+            if (estado === 'paid' && prev !== 'paid') post('cord:paid', { detail: { folio: card.dataset.folio || null, moneda: data.currency, saldo } });
+            location.reload();
+        } catch { /* sin red: se reintenta en la siguiente vuelta */ }
+        finally { busy = false; }
+    };
+    if (card.dataset.status === 'open') {
+        setInterval(check, 30_000);
+        window.addEventListener('focus', () => void check());
+        document.addEventListener('visibilitychange', () => void check());
+    }
+</script>
+
+<style>
+    .embed-wrap { padding: 4px; }
+    .ci-card {
+        background: var(--cord-color-background, #fff); color: var(--cord-color-text, #111);
+        border-radius: var(--cord-border-radius, 24px); padding: var(--cord-spacing-card, 2rem 2.2rem);
+        box-shadow: var(--cord-shadow-card, 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12));
+        display: flex; flex-direction: column; gap: 1.4rem; font-size: var(--cord-font-size, 0.875rem);
+    }
+    .ci-test { margin: 0; padding: 0.6rem 0.8rem; border-radius: 10px; background: rgba(245,158,11,0.16); color: var(--cord-color-text, #78350f); border: 1px solid rgba(245,158,11,0.35); font-size: 0.78rem; }
+    .ci-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+    .ci-brand { display: flex; flex-direction: column; gap: 2px; }
+    .ci-brand small, .ci-folio span, .ci-label, .ci-meta, .ci-hint { color: var(--cord-color-text-secondary, #6b7280); }
+    .ci-brand small { font-size: 0.75rem; }
+    .ci-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 0.75rem; }
+    .ci-folio strong { font-size: 0.9rem; color: var(--cord-color-text, #111); }
+    .ci-hero { display: flex; flex-direction: column; gap: 0.4rem; padding: 1.2rem; border-radius: 16px; background: var(--cord-color-surface, #fafafa); }
+    .ci-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+    .ci-amount { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); line-height: 1.1; color: var(--cord-color-text, #0a192f); }
+    .ci-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem; align-items: center; font-size: 0.78rem; }
+    .ci-chip { padding: 3px 9px; border-radius: 100px; font-weight: 700; font-size: 0.7rem; }
+    .ci-wait { background: rgba(10,25,47,0.07); color: var(--cord-color-text, #111); }
+    .ci-ok { background: rgba(16,185,129,0.12); color: #047857; }
+    .ci-off { background: rgba(10,25,47,0.06); color: #4b5563; }
+    .ci-late { background: rgba(220,38,38,0.14); color: var(--cord-color-text, #7f1d1d); box-shadow: inset 0 0 0 1px rgba(220,38,38,0.45); }
+    .ci-lines { width: 100%; border-collapse: collapse; }
+    .ci-lines th { font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-align: left; color: var(--cord-color-text-placeholder, #6b7280); padding: 0 0 0.5rem; border-bottom: 1px solid var(--cord-color-border, rgba(10,25,47,0.08)); }
+    .ci-lines td { padding: 0.7rem 0; border-bottom: 1px solid var(--cord-color-border, rgba(10,25,47,0.05)); vertical-align: top; }
+    .ci-num { text-align: right !important; white-space: nowrap; padding-left: 1rem !important; }
+    .ci-totals { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; align-self: flex-end; min-width: min(260px, 100%); }
+    .ci-totals div { display: flex; justify-content: space-between; gap: 2rem; color: var(--cord-color-text-secondary, #6b7280); }
+    .ci-totals dd { margin: 0; }
+    .ci-totals .ci-strong { color: var(--cord-color-text, #111); font-weight: 600; }
+    .ci-foot { display: flex; flex-direction: column; gap: 0.6rem; }
+    .ci-pay {
+        min-height: 48px; border: 0; cursor: pointer; font: inherit; font-weight: var(--cord-font-weight-bold, 600); font-size: 0.95rem;
+        background: var(--cord-color-primary, #0a192f); color: var(--cord-color-on-primary, #fff);
+        border-radius: var(--cord-border-radius-button, 999px); transition: transform 0.15s, opacity 0.15s;
+    }
+    .ci-pay:hover { opacity: 0.92; }
+    .ci-pay:active { transform: scale(0.98); }
+    .ci-pay:focus-visible, .ci-links a:focus-visible { outline: 2px solid var(--cord-color-focus, #0a192f); outline-offset: 3px; }
+    .ci-hint { margin: 0; font-size: 0.75rem; text-align: center; }
+    .ci-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.2rem; }
+    .ci-links a { color: var(--cord-color-text, #111); font-size: 0.82rem; font-weight: 600; text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center; }
+    @media (max-width: 520px) {
+        .embed-wrap { padding: 0; }
+        .ci-card { padding: 1.3rem; }
+        .ci-head { flex-direction: column; }
+        .ci-folio { align-items: flex-start; }
+    }
+</style>

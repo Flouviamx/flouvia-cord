@@ -72,6 +72,18 @@ function QuotePage({ token }: { token: string }) {
 }
 ```
 
+### `<CordInvoice>`
+
+The same for an invoice (`/i/{token}`). It takes the same props and adds `onPaid`:
+
+```tsx
+import { CordInvoice } from '@flouviahq/elements/react';
+
+<CordInvoice token={invoiceToken} onPaid={(d) => console.log('Paid', d.folio)} />
+```
+
+In Vue, `CordInvoice` from `@flouviahq/elements/vue` emits `paid`.
+
 ---
 
 ## `<CordBuilder>`: Quote Creator (Compound)

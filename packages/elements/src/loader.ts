@@ -7,7 +7,8 @@
 //   <div data-cord-token="abc123"></div>
 //
 // Atributos: data-cord-token (requerido), data-cord-base-url, data-cord-min-height,
-// data-cord-appearance (JSON), data-cord-debug (barra de depuración). Legacy, sin usar en integraciones nuevas:
+// data-cord-appearance (JSON), data-cord-debug (barra de depuración),
+// data-cord-document="invoice" (la factura en vez de la cotización). Legacy, sin usar en integraciones nuevas:
 // data-cord-cotizador + data-token / data-base / data-min-height.
 import { mountCotizador } from './core.js';
 import { enableDebug } from './debug.js';
@@ -39,6 +40,7 @@ export function mountElement(el: Element): CordController | null {
     const host = el as HTMLElement;
     const controller = mountCotizador(host, {
         token,
+        document: el.getAttribute('data-cord-document') === 'invoice' ? 'invoice' : 'quote',
         baseUrl: attr(el, 'data-cord-base-url', 'data-base'),
         minHeight,
         appearance,

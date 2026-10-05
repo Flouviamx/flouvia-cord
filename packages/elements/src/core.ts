@@ -17,7 +17,7 @@ const REDUCED =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Eventos que re-emitimos. El catch-all (onEvent) recibe todos. */
-const RELAYED = ['cord:ready', 'cord:viewed', 'cord:approved', 'cord:signed', 'cord:rejected', 'cord:message', 'cord:item_comment', 'cord:pay', 'cord:updated', 'cord:status_changed'] as const;
+const RELAYED = ['cord:ready', 'cord:viewed', 'cord:approved', 'cord:signed', 'cord:rejected', 'cord:message', 'cord:item_comment', 'cord:pay', 'cord:updated', 'cord:status_changed', 'cord:paid'] as const;
 
 export const EMBED_CSS = (() => {
     const css =
@@ -107,8 +107,9 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
     const query = params.toString();
 
     const iframe = document.createElement('iframe');
-    iframe.src = base + '/embed/' + encodeURIComponent(opts.token) + (query ? '?' + query : '');
-    iframe.title = 'Cotización';
+    const invoice = opts.document === 'invoice';
+    iframe.src = base + (invoice ? '/embed/i/' : '/embed/') + encodeURIComponent(opts.token) + (query ? '?' + query : '');
+    iframe.title = invoice ? 'Factura' : 'Cotización';
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     iframe.setAttribute('allow', 'payment; clipboard-write');
@@ -161,6 +162,7 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
             case 'cord:pay':          opts.onPay?.(evt.detail); break;
             case 'cord:updated':      opts.onUpdated?.(evt.detail); break;
             case 'cord:status_changed': opts.onStatusChanged?.(evt.detail); break;
+            case 'cord:paid':         opts.onPaid?.(evt.detail); break;
         }
     };
     window.addEventListener('message', onMessage);

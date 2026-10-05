@@ -4,6 +4,7 @@
     "CordCotizadorElement",
     "CordError",
     "CordFiscalFormElement",
+    "CordInvoiceElement",
     "CordQuoteElement",
     "calculateDocumentTotals",
     "calculateInvoiceTotals",
@@ -57,6 +58,7 @@
     "CordCotizador",
     "CordError",
     "CordFiscalForm",
+    "CordInvoice",
     "CordProvider",
     "configureCord",
     "default",
@@ -75,6 +77,7 @@
   ],
   "./vue": [
     "CordCotizador",
+    "CordInvoice",
     "default",
     "useCordFiscalForm",
     "useCordQuoteBuilder",

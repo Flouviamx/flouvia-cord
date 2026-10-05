@@ -53,6 +53,9 @@ export function reduceQuoteView(state: QuoteViewState, event: CordEvent): QuoteV
             next.rejected = true;
             next.status = 'rejected';
             break;
+        case 'cord:paid':
+            next.status = 'paid';
+            break;
     }
     next.approved = next.approved || next.status === 'approved' || PAID.has(next.status ?? '');
     next.rejected = next.rejected || next.status === 'rejected';

@@ -28,3 +28,16 @@ export function publicInvoiceContact(email: string | null, phone: string | null,
 export function publicPaymentIntent(value: string | null) {
     return value && /^pi_[a-zA-Z0-9]{1,200}$/.test(value) ? value : null;
 }
+
+/** Qué rieles puede usar el cliente para pagar esta factura. Lo comparten /i/[token] y su embed. */
+export function publicInvoicePayability(f: {
+    esNotaCredito: boolean; esPrueba: boolean; simulado: boolean; testMode: boolean;
+    pagoDisponible: boolean; aceptaTarjeta: boolean; mercadoPago: boolean;
+}, stripeConfigured: boolean) {
+    const cobrable = !f.esNotaCredito && !f.esPrueba && !f.simulado && !f.testMode;
+    // Mercado Pago no depende de Cord Payments ni de la llave de Stripe.
+    return {
+        puedePagar: cobrable && stripeConfigured && f.pagoDisponible && f.aceptaTarjeta,
+        puedePagarMp: cobrable && f.mercadoPago,
+    };
+}

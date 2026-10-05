@@ -32,6 +32,8 @@ export interface CordReadyDetail {
     folio?: string | null;
     moneda?: string | null;
     total?: number | null;
+    /** Solo en la factura (`document: 'invoice'`): saldo pendiente. */
+    saldo?: number | null;
 }
 export interface CordViewedDetail { token?: string }
 export interface CordApprovedDetail { signed_by: string; hash: string }
@@ -43,7 +45,9 @@ export interface CordItemCommentDetail { item_id: string; mensaje: string }
 /** El vendedor cambió la propuesta mientras el cliente la tenía abierta. */
 export interface CordUpdatedDetail { subtotal: number; total: number; moneda: string }
 /** Estado terminal alcanzado: paid, rejected, expired o invoiced. */
-export interface CordStatusChangedDetail { status: string }
+export interface CordStatusChangedDetail { status: string; saldo?: number }
+/** La factura embebida quedó pagada (con o sin abonos previos). */
+export interface CordPaidDetail { folio: string | null; moneda: string | null; saldo: number }
 
 export type CordEvent =
     | { type: 'cord:ready'; detail: CordReadyDetail }
@@ -55,11 +59,14 @@ export type CordEvent =
     | { type: 'cord:message'; detail: CordMessageDetail }
     | { type: 'cord:item_comment'; detail: CordItemCommentDetail }
     | { type: 'cord:updated'; detail: CordUpdatedDetail }
-    | { type: 'cord:status_changed'; detail: CordStatusChangedDetail };
+    | { type: 'cord:status_changed'; detail: CordStatusChangedDetail }
+    | { type: 'cord:paid'; detail: CordPaidDetail };
 
 export interface CordElementOptions {
-    /** Token público de la cotización (de /q/{token} o la API). REQUERIDO. */
+    /** Token público de la cotización (/q/{token}) o de la factura (/i/{token}). REQUERIDO. */
     token: string;
+    /** Qué documento monta. Default 'quote'; 'invoice' monta la factura de /i/{token}. */
+    document?: 'quote' | 'invoice';
     /** Origen de Cord. Default: https://cordhq.app (cambiar para self-host/staging). */
     baseUrl?: string;
     /** Alto inicial del skeleton en px mientras carga. Default 420. */
@@ -84,6 +91,8 @@ export interface CordElementOptions {
     onUpdated?: (detail: CordUpdatedDetail) => void;
     /** La cotización llegó a un estado terminal (pagada, rechazada, vencida, facturada). */
     onStatusChanged?: (detail: CordStatusChangedDetail) => void;
+    /** La factura quedó pagada. Solo con `document: 'invoice'`. */
+    onPaid?: (detail: CordPaidDetail) => void;
     /** Catch-all tipado: cualquier evento `cord:*` (incluye los anteriores). Habilita `switch` exhaustivo sobre `event.type`. */
     onEvent?: (event: CordEvent) => void;
     /** Configuración de branding para inyectar al iframe */
