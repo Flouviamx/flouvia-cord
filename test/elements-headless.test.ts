@@ -75,7 +75,7 @@ function fakeClient() {
     const createQuote = vi.fn(async () => ({ id: 'q1', folio: 'COT-0001' }));
     return {
         createQuote,
-        client: { mode: 'publishable' as const, config: async () => CONFIG, products: async () => [{ id: 'p1', nombre: 'Tornillo', precio: 100 }], createQuote },
+        client: { mode: 'publishable' as const, config: async () => CONFIG, products: async () => [{ id: 'p1', nombre: 'Tornillo', precio: 100 }], createQuote, aiDraft: async () => ({ count: 0 }) },
     };
 }
 
@@ -161,5 +161,48 @@ describe('reduceQuoteView', () => {
         expect(s).toMatchObject({ approved: true, signedBy: 'Ana', paid: false });
         s = reduceQuoteView(s, { type: 'cord:status_changed', detail: { status: 'paid' } });
         expect(s).toMatchObject({ paid: true, approved: true });
+    });
+});
+
+describe('IA en streaming', () => {
+    const sse = (chunks: string[]) => new Response(new ReadableStream({
+        start(c) { for (const ch of chunks) c.enqueue(new TextEncoder().encode(ch)); c.close(); },
+    }), { headers: { 'Content-Type': 'text/event-stream' } });
+
+    it('el cliente emite cada línea aunque un evento llegue partido entre fragmentos', async () => {
+        const item = (i: number) => `event: item\ndata: ${JSON.stringify({ index: i, id: null, nombre: `L${i}`, unidad: 'pieza', lista: 10, negociado: null, cantidad: 1 })}\n\n`;
+        const whole = item(0) + item(1) + 'event: done\ndata: {"count":2}\n\n';
+        const fetch = vi.fn(async () => sse([whole.slice(0, 37), whole.slice(37, 120), whole.slice(120)]));
+        const client = createCordClient({ publishableKey: 'pk_test_x', fetch: fetch as any });
+        const got: string[] = [];
+        const r = await client.aiDraft({ texto: 'algo' }, (it) => got.push(it.nombre));
+        expect(got).toEqual(['L0', 'L1']);
+        expect(r.count).toBe(2);
+        const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+        expect((init.headers as Record<string, string>)['Idempotency-Key']).toBeUndefined();
+        expect(init.body).toBeInstanceOf(FormData);
+    });
+
+    it('convierte el evento de error en CordError', async () => {
+        const fetch = vi.fn(async () => sse(['event: error\ndata: {"code":"no_items","error":"Nada"}\n\n']));
+        const client = createCordClient({ publishableKey: 'pk_test_x', fetch: fetch as any });
+        await expect(client.aiDraft({ texto: 'x' }, () => {})).rejects.toMatchObject({ code: 'no_items' });
+    });
+
+    it('el builder reemplaza la línea vacía y marca las sugeridas', async () => {
+        const { client } = fakeClient();
+        (client as any).aiDraft = async (_: unknown, onItem: (i: any) => void) => {
+            onItem({ index: 0, id: 'p1', nombre: 'Tornillo', unidad: 'pieza', lista: 100, negociado: 80, cantidad: 3 });
+            onItem({ index: 1, id: null, nombre: 'Flete', unidad: 'pieza', lista: 0, negociado: null, cantidad: 1 });
+            return { count: 2 };
+        };
+        const b = createQuoteBuilder({ client: client as any });
+        await flush();
+        await b.draftWithAi({ texto: 'pedido' });
+        const items = b.get().items;
+        expect(items).toHaveLength(2);
+        expect(items[0]).toMatchObject({ producto_id: 'p1', precio_unitario: 100, cantidad: 3, sugerida: { origen: 'ai', precio_mencionado: 80 } });
+        expect(b.get().ai).toMatchObject({ status: 'done', count: 2 });
+        expect(b.get().totals.subtotal).toBe(300);
     });
 });

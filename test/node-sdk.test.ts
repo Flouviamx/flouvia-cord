@@ -132,4 +132,19 @@ describe('createElementsProxy', () => {
         expect(sent.items[0]).not.toHaveProperty('costo_unitario');
         expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('abc12345-key');
     });
+
+    it('reenvía la IA como stream con la sk_ y sin exponerla', async () => {
+        const fetch = vi.fn(async () => new Response('event: done\ndata: {"count":0}\n\n', { headers: { 'Content-Type': 'text/event-stream', 'cord-request-id': 'req_ai' } }));
+        const proxy = createElementsProxy({ secretKey: 'sk_test_secreta', fetch: fetch as any });
+        const form = new FormData();
+        form.set('texto', 'pedido');
+        const res = await proxy(new Request(`${origin}/api/cord/elements/ai-draft`, { method: 'POST', body: form, headers: { origin, 'sec-fetch-site': 'same-origin' } }));
+        expect(res.headers.get('content-type')).toContain('text/event-stream');
+        expect(res.headers.get('cord-request-id')).toBe('req_ai');
+        expect(await res.text()).toContain('event: done');
+        const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+        expect(url).toBe('https://cordhq.app/api/v1/elements/ai-draft');
+        expect((init.headers as Record<string, string>).Authorization).toBe('Bearer sk_test_secreta');
+    });
 });
+

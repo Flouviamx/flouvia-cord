@@ -86,10 +86,12 @@ export interface CordBuilderProps extends UseQuoteBuilderOptions {
     style?: React.CSSProperties;
     /** Muestra la sección de datos fiscales del receptor. */
     fiscal?: boolean;
+    /** Muestra la zona para llenar las partidas con IA desde un pedido, foto o PDF. */
+    ai?: boolean;
     children?: ReactNode;
 }
 
-export function CordBuilder({ onQuoteCreated, className, style, catalog, clients, fiscal, children }: CordBuilderProps) {
+export function CordBuilder({ onQuoteCreated, className, style, catalog, clients, fiscal, ai, children }: CordBuilderProps) {
     const context = useCordContext();
     const state = useQuoteBuilder({ onQuoteCreated, catalog, clients });
     const dark = usePrefersDark();
@@ -108,6 +110,7 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
                 <form onSubmit={onSubmit} noValidate>
                     {children ? children : (
                         <>
+                            {ai && <CordBuilder.AiDrop />}
                             <CordBuilder.Header />
                             {fiscal && <CordBuilder.Fiscal />}
                             <CordBuilder.Config />
@@ -309,9 +312,9 @@ CordBuilder.Items = function CordBuilderItems({ className, style }: SlotProps) {
                     const showDropdown = openKey === item.key && !!item.descripcion && !item.producto_id;
                     const id = (f: string) => `cord-${item.key}-${f}`;
                     return (
-                        <div key={item.key} {...r('itemRow')}>
+                        <div key={item.key} {...r('itemRow')} data-ai={item.sugerida ? 'true' : undefined}>
                             <div {...r('itemDescriptionField')}>
-                                <label {...r('formFieldLabel')} htmlFor={id('desc')}>{t.description}</label>
+                                <label {...r('formFieldLabel')} htmlFor={id('desc')}>{t.description}{item.sugerida && <span {...r('aiBadge')}>{t.aiSuggested}</span>}</label>
                                 <input
                                     id={id('desc')}
                                     {...r('itemDescriptionInput')}
@@ -397,6 +400,66 @@ CordBuilder.Summary = function CordBuilderSummary({ className, style }: SlotProp
                     <div key={ret.nombre} {...r('summaryRetRow')}><span>{ret.nombre}</span><span>−{fmt(ret.monto)}</span></div>
                 ))}
                 <div {...r('summaryTotalRow')}><span>{t.total}</span><span>{fmt(totals.total)}</span></div>
+            </div>
+        </div>
+    );
+};
+
+const ACCEPT = 'image/jpeg,image/png,application/pdf';
+
+CordBuilder.AiDrop = function CordBuilderAiDrop({ className, style }: SlotProps) {
+    const { builder, ai, t } = useBuilderContext();
+    const { appearance } = useCordContext();
+    const el = appearance?.elements;
+    const [texto, setTexto] = useState('');
+    const [over, setOver] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
+    const ctrl = useRef<AbortController | null>(null);
+    useEffect(() => () => ctrl.current?.abort(), []);
+
+    const run = (archivo?: File) => {
+        if (!archivo && !texto.trim()) return;
+        ctrl.current?.abort();
+        ctrl.current = new AbortController();
+        void builder.draftWithAi({ texto: texto.trim() || undefined, archivo }, { signal: ctrl.current.signal });
+    };
+    const root = resolveElement('aiDrop', el, className, style);
+    const active = over ? resolveElement('aiDropActive', el) : null;
+    const busy = ai.status === 'streaming';
+
+    return (
+        <div
+            className={[root.className, active?.className].filter(Boolean).join(' ')}
+            style={root.style}
+            onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+            onDragLeave={() => setOver(false)}
+            onDrop={(e) => {
+                e.preventDefault();
+                setOver(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) run(file);
+            }}
+            aria-busy={busy}
+        >
+            <h3 {...resolveElement('sectionTitle', el)}>{t.aiTitle}</h3>
+            <p {...resolveElement('aiStatus', el)}>{t.aiHint}</p>
+            <textarea
+                {...resolveElement('formFieldTextarea', el)}
+                value={texto}
+                maxLength={4000}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder={t.aiPlaceholder}
+                aria-label={t.aiTitle}
+            />
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input ref={fileRef} type="file" accept={ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) run(f); e.target.value = ''; }} />
+                <button type="button" {...resolveElement('addItemButton', el)} onClick={() => fileRef.current?.click()} disabled={busy}>{t.aiChoose}</button>
+                <button type="button" {...resolveElement('submitButton', el)} onClick={() => run()} disabled={busy || !texto.trim()}>{t.aiRun}</button>
+            </div>
+            <div {...resolveElement('aiStatus', el)} role="status" aria-live="polite">
+                {busy && t.aiReading.replace('{n}', String(ai.count))}
+                {ai.status === 'done' && t.aiDone.replace('{n}', String(ai.count))}
+                {ai.status === 'error' && ai.error && `${ai.error.message}${ai.error.requestId ? ` (${ai.error.requestId})` : ''}`}
             </div>
         </div>
     );

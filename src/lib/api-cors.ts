@@ -6,6 +6,7 @@ const PUBLISHABLE_ALLOWLIST = new Set([
     'GET /api/v1/productos',
     'POST /api/v1/cotizaciones',
     'GET /api/v1/elements/config',
+    'POST /api/v1/elements/ai-draft',
 ]);
 
 export function publishableKeyAllows(method: string, pathname: string): boolean {

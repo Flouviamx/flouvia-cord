@@ -21,8 +21,29 @@ export interface CordClientOptions {
     fetch?: typeof fetch;
 }
 
+export interface AiDraftItem {
+    index: number;
+    /** Producto del catálogo; null si es una línea libre. */
+    id: string | null;
+    nombre: string;
+    unidad: string;
+    /** Precio de lista del catálogo (nunca el que inventa el modelo). */
+    lista: number;
+    /** Precio que mencionó el cliente, solo si es menor al de lista. */
+    negociado: number | null;
+    cantidad: number;
+}
+
+export interface AiDraftInput {
+    texto?: string;
+    /** Foto (JPG/PNG) o PDF de la orden de compra, máx 4 MB. */
+    archivo?: Blob;
+}
+
 export interface CordClient {
     readonly mode: 'publishable' | 'proxy';
+    /** Emite cada línea en cuanto la IA la termina de leer. */
+    aiDraft(input: AiDraftInput, onItem: (item: AiDraftItem) => void, opts?: { signal?: AbortSignal }): Promise<{ count: number }>;
     config(opts?: { force?: boolean }): Promise<CordElementsConfig>;
     products(): Promise<CordProduct[]>;
     createQuote(input: CreateQuoteInput, opts?: { idempotencyKey?: string }): Promise<CreateQuoteResponse>;
@@ -95,8 +116,53 @@ export function createCordClient(opts: CordClientOptions): CordClient {
         }
     }
 
+    async function aiDraft(input: AiDraftInput, onItem: (item: AiDraftItem) => void, { signal }: { signal?: AbortSignal } = {}) {
+        const form = new FormData();
+        if (input.texto) form.set('texto', input.texto.slice(0, 4000));
+        if (input.archivo) form.set('archivo', input.archivo);
+        const headers: Record<string, string> = { Accept: 'text/event-stream' };
+        if (publishableKey) headers.Authorization = `Bearer ${publishableKey}`;
+        let res: Response;
+        try {
+            res = await doFetch(`${base}/elements/ai-draft`, { method: 'POST', headers, body: form, signal, credentials: proxyUrl ? 'same-origin' : 'omit' });
+        } catch {
+            throw new CordError(0, { error: 'Error de red' }, 'network_error');
+        }
+        const requestId = res.headers.get('cord-request-id');
+        if (!res.ok || !res.body) {
+            const payload = await res.json().catch(() => ({ error: res.statusText }));
+            throw new CordError(res.status, payload, undefined, requestId);
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let count = 0;
+        for (;;) {
+            const { value, done } = await reader.read();
+            if (value) buffer += decoder.decode(value, { stream: true });
+            let sep: number;
+            while ((sep = buffer.indexOf('\n\n')) >= 0) {
+                const chunk = buffer.slice(0, sep);
+                buffer = buffer.slice(sep + 2);
+                let event = 'message';
+                let data = '';
+                for (const line of chunk.split('\n')) {
+                    if (line.startsWith('event:')) event = line.slice(6).trim();
+                    else if (line.startsWith('data:')) data += line.slice(5).trim();
+                }
+                let parsed: any = null;
+                try { parsed = data ? JSON.parse(data) : null; } catch { continue; }
+                if (event === 'item' && parsed) { count++; onItem(parsed as AiDraftItem); }
+                else if (event === 'error') throw new CordError(422, parsed ?? {}, undefined, requestId);
+                else if (event === 'done') return { count: Number(parsed?.count) || count };
+            }
+            if (done) return { count };
+        }
+    }
+
     return {
         mode: proxyUrl ? 'proxy' : 'publishable',
+        aiDraft,
         async config({ force = false } = {}) {
             const extra: Record<string, string> = {};
             if (cachedConfig?.etag && !force) extra['If-None-Match'] = cachedConfig.etag;

@@ -218,17 +218,7 @@ export async function armarLineasConIa(orgId: string, input: { text: string; fil
     // Cierra las conexiones MCP abiertas (evita fugas entre invocaciones).
     await mcpManager.disconnectAll();
 
-    const items: LineaIa[] = aiItems.map((it) => {
-        const cantidad = Math.max(1, Math.round(Number(it.cantidad) || 1));
-        const p = it.producto_id ? byId.get(String(it.producto_id)) : null;
-        if (p) {
-            const sug = Number(it.precio_sugerido) || 0;
-            const negociado = sug > 0 && sug < p.precio ? sug : null;
-            return { id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado, cantidad };
-        }
-        const precio = Number(it.precio_sugerido) > 0 ? Number(it.precio_sugerido) : 0;
-        return { id: null, nombre: String(it.descripcion || '').trim() || 'Concepto', unidad: 'pieza', lista: precio, negociado: null, cantidad };
-    }).filter((it) => it.nombre);
+    const items: LineaIa[] = aiItems.map((it) => lineaDesdeIa(it, byId)).filter((it) => it.nombre);
 
     if (!items.length) {
         await cancelUsage(orgId, usage.id);
@@ -238,4 +228,26 @@ export async function armarLineasConIa(orgId: string, input: { text: string; fil
     void flushUsageReservation(orgId, usage.id);
 
     return { ok: true, items };
+}
+
+type ProductoCatalogo = { id: string; nombre: string; unidad: string; precio: number };
+
+// La IA sugiere el producto; el precio y los datos salen SIEMPRE del catálogo.
+// Un precio que el cliente menciona solo cuenta como negociado si es menor al de lista.
+export function lineaDesdeIa(it: any, byId: Map<string, ProductoCatalogo>): LineaIa {
+    const cantidad = Math.max(1, Math.round(Number(it?.cantidad) || 1));
+    const p = it?.producto_id ? byId.get(String(it.producto_id)) : null;
+    if (p) {
+        const sug = Number(it.precio_sugerido) || 0;
+        const negociado = sug > 0 && sug < p.precio ? sug : null;
+        return { id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, negociado, cantidad };
+    }
+    const precio = Number(it?.precio_sugerido) > 0 ? Number(it.precio_sugerido) : 0;
+    return { id: null, nombre: String(it?.descripcion || '').trim().slice(0, 500) || 'Concepto', unidad: 'pieza', lista: precio, negociado: null, cantidad };
+}
+
+export { SYSTEM as AI_DRAFT_SYSTEM, TOOL as AI_DRAFT_TOOL, MODEL as AI_DRAFT_MODEL };
+
+export function aiDraftClient(): Anthropic {
+    return new Anthropic({ apiKey: API_KEY });
 }

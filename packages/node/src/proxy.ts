@@ -30,6 +30,7 @@ export interface ElementsProxyOptions {
 }
 
 const MAX_BODY = 1_000_000;
+const AI_MAX_BODY = 4 * 1024 * 1024 + 64 * 1024;
 const IDEMPOTENCY_RE = /^[A-Za-z0-9_-]{8,255}$/;
 
 const json = (status: number, body: unknown, extra: Record<string, string> = {}) =>
@@ -37,7 +38,7 @@ const json = (status: number, body: unknown, extra: Record<string, string> = {})
 
 function routeOf(pathname: string): string | null {
     const p = pathname.replace(/\/+$/, '');
-    for (const r of ['/elements/config', '/productos', '/cotizaciones', '/clientes']) {
+    for (const r of ['/elements/config', '/elements/ai-draft', '/productos', '/cotizaciones', '/clientes']) {
         if (p.endsWith(r)) return r;
     }
     return null;
@@ -68,12 +69,44 @@ function sanitizeQuote(body: any, seller: boolean): any {
 
 export function createElementsProxy(opts: ElementsProxyOptions): (request: Request) => Promise<Response> {
     const http = new HttpClient(opts.secretKey, { baseUrl: opts.baseUrl, fetch: opts.fetch, maxRetries: 0 });
+    const apiBase = `${(opts.baseUrl ?? 'https://cordhq.app').replace(/\/+$/, '')}/api/v1`;
+    const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
+
+    // La IA responde en streaming: se reenvía el multipart y se devuelve el
+    // stream tal cual, sin guardarlo. Tope de 4 MB por archivo, como Cord.
+    async function forwardAiDraft(request: Request): Promise<Response> {
+        if (Number(request.headers.get('content-length') || 0) > AI_MAX_BODY) {
+            return json(413, { error: 'El archivo es demasiado pesado (máx 4 MB).', code: 'payload_too_large' });
+        }
+        let form: FormData;
+        try { form = await request.formData(); } catch { return json(400, { error: 'No se pudo leer el formulario.', code: 'invalid_request' }); }
+        const out = new FormData();
+        const texto = form.get('texto');
+        const archivo = form.get('archivo');
+        if (typeof texto === 'string') out.set('texto', texto.slice(0, 4000));
+        if (archivo instanceof Blob) {
+            if (archivo.size > AI_MAX_BODY) return json(413, { error: 'El archivo es demasiado pesado (máx 4 MB).', code: 'payload_too_large' });
+            out.set('archivo', archivo);
+        }
+        const res = await doFetch(`${apiBase}/elements/ai-draft`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${opts.secretKey}`, Accept: 'text/event-stream' },
+            body: out,
+            signal: request.signal,
+        });
+        const headers: Record<string, string> = { 'Content-Type': res.headers.get('content-type') || 'application/json', 'Cache-Control': 'no-store, no-transform' };
+        const requestId = res.headers.get('cord-request-id');
+        if (requestId) headers['Cord-Request-Id'] = requestId;
+        const retryAfter = res.headers.get('retry-after');
+        if (retryAfter) headers['Retry-After'] = retryAfter;
+        return new Response(res.body, { status: res.status, headers });
+    }
 
     return async function handle(request: Request): Promise<Response> {
         const url = new URL(request.url);
         const route = routeOf(url.pathname);
         const method = request.method.toUpperCase();
-        const allowed = (route === '/cotizaciones' && method === 'POST')
+        const allowed = ((route === '/cotizaciones' || route === '/elements/ai-draft') && method === 'POST')
             || ((route === '/elements/config' || route === '/productos' || route === '/clientes') && method === 'GET');
         if (!route || !allowed) return json(404, { error: 'Ruta no disponible en el proxy de Cord Elements.', code: 'not_found' });
 
@@ -99,6 +132,8 @@ export function createElementsProxy(opts: ElementsProxyOptions): (request: Reque
                 const r = await http.request<unknown>('GET', route);
                 return json(200, { data: r.data }, r.requestId ? { 'Cord-Request-Id': r.requestId } : {});
             }
+
+            if (route === '/elements/ai-draft') return forwardAiDraft(request);
 
             const length = Number(request.headers.get('content-length') || 0);
             if (length > MAX_BODY) return json(413, { error: 'El cuerpo es demasiado grande.', code: 'payload_too_large' });

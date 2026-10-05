@@ -8,7 +8,7 @@ import type { CordElementsConfig, CordTerminos } from '../contract/elements-conf
 import type { CordProduct, CreateQuoteInput, CreateQuoteResponse } from '../types.js';
 import { CordError } from '../api.js';
 import { createStore, type ReadableStore } from './store.js';
-import { newIdempotencyKey, type CordClient } from './client.js';
+import { newIdempotencyKey, type CordClient, type AiDraftInput } from './client.js';
 
 export interface BuilderItem {
     key: string;
@@ -18,6 +18,8 @@ export interface BuilderItem {
     precio_unitario: number;
     /** Fracción 0–1, elegida de config.impuestos.opciones. */
     tax_rate: number;
+    /** Línea propuesta por la IA, para que tu UI la distinga hasta que se revise. */
+    sugerida?: { origen: 'ai'; precio_mencionado: number | null };
 }
 
 export interface BuilderCliente {
@@ -49,6 +51,7 @@ export interface QuoteBuilderState {
     issues: BuilderIssue[];
     result: CreateQuoteResponse | null;
     error: CordError | null;
+    ai: { status: 'idle' | 'streaming' | 'done' | 'error'; count: number; error: CordError | null };
 }
 
 export interface QuoteBuilder extends ReadableStore<QuoteBuilderState> {
@@ -69,6 +72,8 @@ export interface QuoteBuilder extends ReadableStore<QuoteBuilderState> {
     validate(): BuilderIssue[];
     submit(): Promise<CreateQuoteResponse | null>;
     reset(): void;
+    /** Llena las partidas con IA desde un pedido escrito, una foto o un PDF, línea por línea. */
+    draftWithAi(input: AiDraftInput, opts?: { signal?: AbortSignal }): Promise<number>;
 }
 
 export interface QuoteBuilderOptions {
@@ -83,7 +88,7 @@ export interface QuoteBuilderOptions {
 
 export type QuoteBuilderEvent =
     | 'builder.loaded' | 'builder.item_added' | 'builder.item_removed'
-    | 'builder.submitted' | 'builder.created' | 'builder.failed';
+    | 'builder.submitted' | 'builder.created' | 'builder.failed' | 'builder.ai_drafted';
 
 const MAX_ITEMS = 500;
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,63}$/;
@@ -199,6 +204,35 @@ export function createQuoteBuilder(opts: QuoteBuilderOptions): QuoteBuilder {
                 return null;
             }
         },
+        async draftWithAi(input, { signal } = {}) {
+            if (store.get().ai.status === 'streaming') return 0;
+            store.set((prev) => ({ ...prev, ai: { status: 'streaming', count: 0, error: null } }));
+            const isBlank = (it: { descripcion: string; precio_unitario: number }) => !it.descripcion.trim() && !it.precio_unitario;
+            try {
+                const { count } = await opts.client.aiDraft(input, (item) => {
+                    const s = store.get();
+                    const line = {
+                        key: nextKey(),
+                        producto_id: item.id,
+                        descripcion: item.nombre,
+                        cantidad: item.cantidad,
+                        precio_unitario: item.lista,
+                        tax_rate: s.config?.impuestos.tasa_default ?? 0,
+                        sugerida: { origen: 'ai' as const, precio_mencionado: item.negociado },
+                    };
+                    const base = s.items.length === 1 && isBlank(s.items[0]) ? [] : s.items;
+                    commit({ items: [...base, line].slice(0, MAX_ITEMS) });
+                    store.set((prev) => ({ ...prev, ai: { ...prev.ai, count: prev.ai.count + 1 } }));
+                }, { signal });
+                store.set((prev) => ({ ...prev, ai: { status: 'done', count, error: null } }));
+                emit('builder.ai_drafted', { count });
+                return count;
+            } catch (err) {
+                const error = asCordError(err);
+                store.set((prev) => ({ ...prev, ai: { ...prev.ai, status: 'error', error } }));
+                return 0;
+            }
+        },
         reset() {
             pendingKey = null;
             const s = store.get();
@@ -229,6 +263,7 @@ function initialState(config: CordElementsConfig | null): QuoteBuilderState {
         issues: [],
         result: null,
         error: null,
+        ai: { status: 'idle', count: 0, error: null },
     };
 }
 

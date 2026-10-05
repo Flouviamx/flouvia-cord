@@ -98,6 +98,15 @@ const BASE_CSS = `
   .cord-fieldError { color: var(--cord-color-danger, #dc2626); font-size: 12px; margin-top: 4px; }
   .cord-fieldWarning { color: var(--cord-color-text-secondary, #64748b); font-size: 12px; margin-top: 4px; }
   .cord-fiscalSection { margin-bottom: 24px; }
+  .cord-aiDrop { display: flex; flex-direction: column; gap: 10px; padding: 18px; margin-bottom: 24px; border-radius: var(--cord-border-radius, 16px); background: rgba(10, 25, 47, 0.03); border: 1px dashed var(--cord-color-border, rgba(10, 25, 47, 0.18)); transition: background-color 0.15s ease, border-color 0.15s ease; }
+  .cord-aiDropActive { background: rgba(10, 25, 47, 0.06); border-color: var(--cord-color-primary, #0A2240); }
+  .cord-aiStatus { font-size: 13px; color: var(--cord-color-text-secondary, #64748b); }
+  .cord-aiBadge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: rgba(10, 25, 47, 0.08); margin-left: 6px; vertical-align: middle; }
+  .cord-itemRow[data-ai="true"] { box-shadow: inset 3px 0 0 var(--cord-color-primary, #0A2240); }
+  @media (prefers-reduced-motion: no-preference) {
+    .cord-itemRow[data-ai="true"] { animation: cord-ai-in 0.35s ease both; }
+    @keyframes cord-ai-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
   @media (max-width: 880px) {
     .cord-itemQtyField, .cord-itemPriceField, .cord-itemTaxField { flex: 1 1 calc(50% - 12px); width: auto; }
     .cord-itemRemoveButton { min-width: 44px; min-height: 44px; }

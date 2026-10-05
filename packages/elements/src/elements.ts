@@ -41,7 +41,11 @@ export type CordElementKey =
     | 'summaryRetRow'
     | 'fieldError'
     | 'fiscalSection'
-    | 'fieldWarning';
+    | 'fieldWarning'
+    | 'aiDrop'
+    | 'aiDropActive'
+    | 'aiStatus'
+    | 'aiBadge';
 
 /**
  * Override de un elemento: un className extra (string), un objeto de estilos
