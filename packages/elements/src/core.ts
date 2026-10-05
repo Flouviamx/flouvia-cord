@@ -7,7 +7,7 @@ import { resolveOrigin } from './config.js';
 import { sanitizeAppearance, MAX_APPEARANCE_BYTES } from './appearance.js';
 import { createStore } from './headless/store.js';
 import { INITIAL_QUOTE_VIEW, reduceQuoteView } from './headless/quote-view.js';
-import { debugLog } from './debug.js';
+import { debugLog, debugText } from './debug.js';
 
 const STYLE_ID = 'cord-elements-style';
 
@@ -75,8 +75,8 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
     if (opts.appearance && isDev()) {
         const { rejected } = sanitizeAppearance(opts.appearance);
         if (rejected.length) {
-            console.warn(`[Cord] appearance: Cord descarta estos valores por no ser válidos: ${rejected.join(', ')}.`);
-            debugLog('warning', `appearance descartado: ${rejected.join(', ')}`);
+            console.warn(debugText().appearanceDroppedConsole(rejected.join(', ')));
+            debugLog('warning', debugText().appearanceDropped(rejected.join(', ')));
         }
     }
     const state = createStore(INITIAL_QUOTE_VIEW);
@@ -100,8 +100,8 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
     const params = new URLSearchParams();
     const appearanceJson = opts.appearance ? JSON.stringify(opts.appearance) : '';
     if (appearanceJson.length > MAX_APPEARANCE_BYTES) {
-        console.warn(`[Cord] appearance pesa ${appearanceJson.length} bytes; el límite es ${MAX_APPEARANCE_BYTES} y Cord lo ignora completo.`);
-        debugLog('error', 'appearance excede el límite de tamaño y se ignora');
+        console.warn(debugText().appearanceTooBigConsole(appearanceJson.length, MAX_APPEARANCE_BYTES));
+        debugLog('error', debugText().appearanceTooBig);
     } else if (appearanceJson) params.set('appearance', appearanceJson);
     if (typeof window !== 'undefined' && window.location?.origin) params.set('parentOrigin', window.location.origin);
     const query = params.toString();

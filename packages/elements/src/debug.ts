@@ -12,6 +12,45 @@ const entries: Entry[] = [];
 const listeners = new Set<() => void>();
 let enabled = false;
 
+export type DebugLocale = 'es' | 'en';
+
+const TEXT = {
+    es: {
+        title: 'Cord · modo prueba', label: 'Depuración de Cord', clear: 'Limpiar', hide: 'Ocultar', show: 'Mostrar',
+        empty: 'Sin actividad todavía.',
+        liveKey: '[Cord] debug está activo con una llave en vivo: la barra de depuración solo se muestra con pk_test_.',
+        testKeyHost: (host: string) => `Llave de prueba en ${host}: las cotizaciones van a la sandbox, no a tu cuenta real.`,
+        appearanceDropped: (keys: string) => `appearance descartado: ${keys}`,
+        appearanceDroppedConsole: (keys: string) => `[Cord] appearance: Cord descarta estos valores por no ser válidos: ${keys}.`,
+        appearanceTooBig: 'appearance excede el límite de tamaño y se ignora',
+        appearanceTooBigConsole: (size: number, max: number) => `[Cord] appearance pesa ${size} bytes; el límite es ${max} y Cord lo ignora completo.`,
+    },
+    en: {
+        title: 'Cord · test mode', label: 'Cord debugging', clear: 'Clear', hide: 'Hide', show: 'Show',
+        empty: 'No activity yet.',
+        liveKey: '[Cord] debug is on with a live key: the debug bar only shows with pk_test_.',
+        testKeyHost: (host: string) => `Test key on ${host}: quotes go to the sandbox, not your real account.`,
+        appearanceDropped: (keys: string) => `appearance dropped: ${keys}`,
+        appearanceDroppedConsole: (keys: string) => `[Cord] appearance: Cord drops these values because they are not valid: ${keys}.`,
+        appearanceTooBig: 'appearance exceeds the size limit and is ignored',
+        appearanceTooBigConsole: (size: number, max: number) => `[Cord] appearance is ${size} bytes; the limit is ${max} and Cord ignores all of it.`,
+    },
+};
+
+let localeOverride: DebugLocale | null = null;
+
+/** Idioma de la barra. Sin uno explícito (el locale del Provider) sigue el lang de tu página. */
+export function setDebugLocale(locale: DebugLocale): void {
+    localeOverride = locale;
+    for (const l of listeners) l();
+}
+
+export function debugText() {
+    if (localeOverride) return TEXT[localeOverride];
+    const lang = typeof document !== 'undefined' ? document.documentElement.lang : '';
+    return TEXT[/^en\b/i.test(lang) ? 'en' : 'es'];
+}
+
 export function isDebugEnabled(): boolean {
     return enabled;
 }
@@ -20,7 +59,7 @@ export function isDebugEnabled(): boolean {
 export function enableDebug(publishableKey?: string): void {
     if (typeof document === 'undefined') return;
     if (publishableKey?.startsWith('pk_live_')) {
-        console.warn('[Cord] debug está activo con una llave en vivo: la barra de depuración solo se muestra con pk_test_.');
+        console.warn(debugText().liveKey);
         return;
     }
     // Sin llave con qué decidir (Web Component, embed.js): solo en tu máquina o
@@ -71,15 +110,21 @@ function mountPanel() {
                 const panel = document.createElement('div');
                 panel.className = 'panel';
                 panel.setAttribute('role', 'log');
-                panel.setAttribute('aria-label', 'Cord debug');
+                panel.setAttribute('aria-label', debugText().label);
                 const head = document.createElement('div');
                 head.className = 'head';
                 const title = document.createElement('strong');
-                title.textContent = 'Cord · modo prueba';
                 const clear = document.createElement('button');
-                clear.textContent = 'Limpiar';
+                clear.type = 'button';
                 const toggle = document.createElement('button');
-                toggle.textContent = 'Ocultar';
+                toggle.type = 'button';
+                const labels = () => {
+                    const t = debugText();
+                    title.textContent = t.title;
+                    clear.textContent = t.clear;
+                    toggle.textContent = panel.classList.contains('closed') ? t.show : t.hide;
+                    panel.setAttribute('aria-label', t.label);
+                };
                 head.append(title, clear, toggle);
                 const list = document.createElement('div');
                 list.className = 'list';
@@ -87,11 +132,12 @@ function mountPanel() {
                 root.append(style, panel);
 
                 const render = () => {
+                    labels();
                     list.textContent = '';
                     if (!entries.length) {
                         const empty = document.createElement('div');
                         empty.className = 'empty';
-                        empty.textContent = 'Sin actividad todavía.';
+                        empty.textContent = debugText().empty;
                         list.append(empty);
                         return;
                     }
@@ -116,7 +162,7 @@ function mountPanel() {
                 clear.addEventListener('click', () => { entries.length = 0; render(); });
                 toggle.addEventListener('click', () => {
                     panel.classList.toggle('closed');
-                    toggle.textContent = panel.classList.contains('closed') ? 'Mostrar' : 'Ocultar';
+                    labels();
                 });
                 listeners.add(render);
                 render();

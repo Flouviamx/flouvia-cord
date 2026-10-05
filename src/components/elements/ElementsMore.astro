@@ -404,7 +404,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     </div>
                                 </div>
                                 <div class="dg-panel" role="presentation">
-                                    <div class="dg-ph"><strong>Cord · modo prueba</strong><span>Limpiar</span><span>Ocultar</span></div>
+                                    <div class="dg-ph"><strong>{tx('Cord · modo prueba', 'Cord · test mode')}</strong><span>{tx('Limpiar', 'Clear')}</span><span>{tx('Ocultar', 'Hide')}</span></div>
                                     <div class="dg-list">
                                         <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:12 · event</div><div class="dg-sum">cord:ready</div><pre>{`{
   "status": "sent",
@@ -412,10 +412,10 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
   "moneda": "MXN",
   "total": 196469.2
 }`}</pre></div>
-                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:11 · warning</div><div class="dg-sum">appearance descartado: variables.colorBrand, rules.Total.font-family</div></div>
+                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:11 · warning</div><div class="dg-sum">{tx('appearance descartado', 'appearance dropped')}: variables.colorBrand, rules.Total.font-family</div></div>
                                         <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:09 · request</div><div class="dg-sum">POST /cotizaciones → 201 · req_9xK2mP4t</div></div>
                                         <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:01 · request</div><div class="dg-sum">GET /elements/config → 304 · req_3Fq7nB1k</div></div>
-                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:01 · warning</div><div class="dg-sum">Llave de prueba en staging.materialesdelvalle.mx: las cotizaciones van a la sandbox, no a tu cuenta real.</div></div>
+                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:01 · warning</div><div class="dg-sum">{tx('Llave de prueba en staging.materialesdelvalle.mx: las cotizaciones van a la sandbox, no a tu cuenta real.', 'Test key on staging.materialesdelvalle.mx: quotes go to the sandbox, not your real account.')}</div></div>
                                     </div>
                                 </div>
                             </>

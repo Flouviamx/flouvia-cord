@@ -6,7 +6,7 @@ import { CordError } from './api.js';
 import { createCordClient, newIdempotencyKey, type CordClient } from './headless/client.js';
 import type { ReadableStore } from './headless/store.js';
 import { sanitizeAppearance, DARK_PALETTE } from './appearance.js';
-import { enableDebug, debugLog } from './debug.js';
+import { enableDebug, debugLog, debugText, setDebugLocale } from './debug.js';
 import type { CordProviderProps, CordAppearance, CordProduct, CordClient as CordClientRecord, CreateQuoteInput, CreateQuoteResponse } from './types.js';
 
 // ==== i18n ====
@@ -227,11 +227,12 @@ export function CordProvider(props: CordProviderProps) {
 
     useEffect(() => {
         if (!debug) return;
+        setDebugLocale(locale === 'en' ? 'en' : 'es');
         enableDebug(publishableKey);
         if (publishableKey?.startsWith('pk_test_') && typeof location !== 'undefined' && !/^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$/.test(location.hostname)) {
-            debugLog('warning', `Llave de prueba en ${location.hostname}: las cotizaciones van a la sandbox, no a tu cuenta real.`);
+            debugLog('warning', debugText().testKeyHost(location.hostname));
         }
-    }, [debug, publishableKey]);
+    }, [debug, publishableKey, locale]);
 
     const client = useMemo(() => {
         if (!publishableKey && !proxyUrl) return null;

@@ -2,7 +2,13 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
-## [2.0.0] — sin publicar
+## [2.0.1] — sin publicar
+
+### Changed
+
+- **Barra de depuración en inglés**: sigue el `locale` de `<CordProvider>` o, sin él, el `lang` de tu página. Los avisos de appearance en consola también.
+
+## [2.0.0] — 2026-10-05
 
 Elements pasa a ser headless de punta a punta: todo el estado vive en un núcleo
 sin framework (`@flouviahq/elements/headless`) y React, Vue, los Web Components y
