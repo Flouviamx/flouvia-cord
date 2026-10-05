@@ -1,0 +1,43 @@
+---
+title: "CLI de Cord"
+seoTitle: "CLI de Cord"
+description: "Reenvía los webhooks del modo prueba a tu localhost, dispara eventos y simula al SAT, al cliente y al tiempo desde la terminal."
+---
+
+<header class="content-header">
+  <h1 class="page-title">CLI de Cord</h1>
+  <p class="page-subtitle">Prueba tu integración completa sin salir de tu máquina.</p>
+</header>
+
+## Instalar
+
+```bash
+npm install -g @flouviahq/cli
+cord login
+```
+
+`cord login` pide una llave de **prueba** (`sk_test_`) y rechaza una en vivo: nada de lo que hagas con el CLI toca datos reales. La llave se guarda en `~/.config/cord/config.json` con permisos `0600`.
+
+## Recibir webhooks en tu localhost
+
+```bash
+cord listen --forward-to http://localhost:3000/api/webhooks/cord
+```
+
+Cord no puede hacer peticiones a tu máquina, así que el CLI abre una sesión en la sandbox. Los eventos pasan por el mismo motor de entrega que en producción (firma, versión de la API, historial) y el CLI los reenvía a tu servidor con los headers de firma reales. Al arrancar imprime el secreto de la sesión: ponlo en `CORD_WEBHOOK_SECRET` y verifica con `constructEvent` igual que en producción.
+
+- Solo reenvía a `localhost`; para otro host usa `--allow-remote`.
+- `--events quote.paid,invoice.paid` limita los eventos de la sesión.
+- La sesión vence en 24 horas y Ctrl+C la cierra.
+
+## Simular
+
+```bash
+cord trigger invoice.paid                 # evento con datos de ejemplo
+cord trigger quote.approved --objeto <id> # con los datos reales de una cotización de prueba
+cord simulate fiscal pac_caido            # la próxima emisión falla como si el PAC no respondiera
+cord simulate quote <id> vencer           # la cotización vence
+cord events tail --type quote.paid        # eventos conforme ocurren
+```
+
+Son los mismos [simuladores](/docs/desarrolladores/empezar/pruebas) de la API, desde la terminal.

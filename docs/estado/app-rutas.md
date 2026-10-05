@@ -545,6 +545,10 @@ APIs de cobros (ago 2026)
 /api/v1/test_helpers/fiscal | cotizaciones/[id] | webhooks → simuladores del modo prueba,
                    solo sk_test_; la tabla sandbox_simulaciones rechaza orgs reales por
                    trigger. La emisión sandbox de finalizeInvoice consume el resultado forzado.
+/api/v1/test_helpers/listen (+ /[id] GET/DELETE) → sesiones de `cord listen` (packages/cli):
+                   un webhook efímero (webhooks.cli_hasta) que el outbox no entrega por HTTP;
+                   el CLI recoge los eventos con los headers de firma reales. 24 h, máx 3 por
+                   llave, fuera de cuotas y listados; el sweeper borra las vencidas.
 /api/v1/cobranza     → GET cartera
 /api/v1/events       → GET historial de domain_events con cursor opaco (type, object_id)
 /api/v1/webhooks     → GET/POST suscripciones de ESTA llave (webhooks.created_by_key)

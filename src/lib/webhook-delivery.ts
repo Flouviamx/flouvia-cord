@@ -149,7 +149,7 @@ async function claimDue(batch: number): Promise<{ rows: ClaimedRow[]; leaseId: s
             with due as (
                 select e.id
                 from webhook_events e
-                join webhooks w on w.id = e.webhook_id and w.activo
+                join webhooks w on w.id = e.webhook_id and w.activo and w.cli_hasta is null
                 where e.estado in ('pending', 'delivering')
                   and e.next_retry_at <= now()
                   and (e.lease_until is null or e.lease_until < now())
@@ -185,7 +185,7 @@ async function claimByIdsOrg(orgId: string, ids: string[]): Promise<{ rows: Clai
             with due as (
                 select e.id
                 from webhook_events e
-                join webhooks w on w.id = e.webhook_id and w.activo
+                join webhooks w on w.id = e.webhook_id and w.activo and w.cli_hasta is null
                 where e.org_id = ${orgId}
                   and e.id = any(${ids})
                   and e.estado in ('pending', 'delivering')
@@ -556,6 +556,8 @@ export async function runSweep(): Promise<{ claimed: number; succeeded: number; 
     assertCronContext();
     const t0 = Date.now();
     let claimed = 0, succeeded = 0, failed = 0, pending = 0;
+    // Sesiones de `cord listen` vencidas: el FK en cascada se lleva sus eventos.
+    try { await withSystemTx(sql`delete from webhooks where cli_hasta is not null and cli_hasta < now()`); } catch { /* sin columna aún */ }
 
     while (Date.now() - t0 < SWEEP_BUDGET_MS) {
         const { rows, leaseId } = await claimDue(SWEEP_BATCH);
@@ -737,4 +739,47 @@ export async function rotateSecret(orgId: string, webhookId: string, overlapHour
         return null;
     }
     return { secret: newSecret };
+}
+
+// ── Sesiones de `cord listen` ────────────────────────────────────────────────
+
+export interface CliDelivery {
+    event_id: string;
+    evento: string;
+    body: string;
+    headers: Record<string, string>;
+}
+
+/**
+ * Entrega al CLI los eventos pendientes de su sesión, con los MISMOS headers de
+ * firma que recibiría un endpoint real. Se marcan entregados al recogerlos.
+ */
+export async function claimCliDeliveries(orgId: string, webhookId: string, limit = 50): Promise<CliDelivery[] | null> {
+    const hooks = await fetchHooks(orgId, [webhookId]);
+    const hook = hooks.get(webhookId);
+    if (!hook) return null;
+    const [[session]] = await withOrgTx(orgId, sql`
+        select id from webhooks where id = ${webhookId} and org_id = ${orgId} and cli_hasta > now()`);
+    if (!session) return null;
+    const [rows] = await withOrgTx(orgId, sql`
+        with due as (
+            select id from webhook_events
+             where org_id = ${orgId} and webhook_id = ${webhookId} and estado = 'pending'
+             order by created_at
+             limit ${Math.max(1, Math.min(100, limit))}
+             for update skip locked
+        )
+        update webhook_events e
+           set estado = 'succeeded', delivered_at = now(), intentos = e.intentos + 1, last_status = 200, updated_at = now()
+          from due
+         where e.id = due.id
+        returning e.id, e.event_id, e.evento, e.payload, e.intentos, e.created_at`);
+    return rows
+        .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)))
+        .map((r: any) => ({
+            event_id: r.event_id as string,
+            evento: r.evento as string,
+            body: r.payload as string,
+            headers: buildHeaders(hook, r.evento as string, r.payload as string, r.event_id as string, r.id as string, Number(r.intentos)),
+        }));
 }

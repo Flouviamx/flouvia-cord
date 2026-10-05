@@ -42,7 +42,7 @@ beforeAll(async () => {
         create table api_keys(id uuid primary key, org_id uuid, revoked_at timestamptz);
         create table oauth_grants(id uuid primary key default gen_random_uuid(), org_id uuid, api_key_id uuid, revoked_at timestamptz);
         create table webhooks(id uuid primary key default gen_random_uuid(), org_id uuid not null, url text not null, eventos jsonb not null default '[]',
-            secret text, secret_enc text, activo boolean not null default true, created_at timestamptz default now(), api_version text);
+            secret text, secret_enc text, activo boolean not null default true, created_at timestamptz default now(), api_version text, cli_hasta timestamptz);
         insert into orgs values ('${A}'), ('${B}');
         insert into api_keys values ('${KEY_1}', '${A}', null), ('${KEY_2}', '${A}', null);`);
     await m.db.exec(owner);

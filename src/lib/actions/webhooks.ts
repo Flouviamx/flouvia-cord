@@ -47,7 +47,7 @@ export async function createWebhookEndpoint(
                 insert into webhooks (org_id, url, eventos, secret, secret_enc, created_by_key, api_version)
                 select ${ctx.orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}, ${createdByKey}, ${LATEST_API_VERSION}
                  where (select count(*) from webhooks
-                         where org_id = ${ctx.orgId} and (created_by_key is not null) = ${deIntegracion}) < ${limite}
+                         where org_id = ${ctx.orgId} and (created_by_key is not null) = ${deIntegracion} and cli_hasta is null) < ${limite}
                 returning id`,
         );
         [row] = inserted;
@@ -74,7 +74,7 @@ export async function listApiWebhooks(ctx: ActionContext, keyId: string) {
     const [rows] = await withOrgTx(ctx.orgId, sql`
         select id, url, eventos, activo, created_at
           from webhooks
-         where org_id = ${ctx.orgId} and created_by_key = ${keyId}
+         where org_id = ${ctx.orgId} and created_by_key = ${keyId} and cli_hasta is null
          order by created_at desc`);
     return rows.map((w) => ({
         id: w.id as string,

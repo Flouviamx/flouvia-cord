@@ -230,12 +230,15 @@ async function deliverToSubscribers(orgId: string, evento: string, data: Record<
                 select id, eventos, created_by_key is not null as integracion,
                        row_number() over (partition by created_by_key is not null order by created_at asc, id asc)::int as position
                   from webhooks
-                 where org_id = ${orgId} and activo = true
+                 where org_id = ${orgId} and activo = true and cli_hasta is null
             )
             select ranked.id, ranked.eventos, w.api_version
               from ranked join webhooks w on w.id = ranked.id
              where (not integracion and position <= ${allowance})
-                or (integracion and position <= ${INTEGRATION_WEBHOOK_LIMIT})`);
+                or (integracion and position <= ${INTEGRATION_WEBHOOK_LIMIT})
+            union all
+            select id, eventos, api_version from webhooks
+             where org_id = ${orgId} and activo = true and cli_hasta > now()`);
     } catch { return; } // tabla aún no migrada → no-op
     const subs = hooks.filter((h) => {
         const evs = Array.isArray(h.eventos) ? h.eventos : [];

@@ -1,0 +1,23 @@
+{
+  "name": "@flouviahq/cli",
+  "version": "1.0.0",
+  "description": "CLI de Cord para desarrollo: reenvía webhooks del modo prueba a tu localhost, dispara eventos y simula al SAT, al cliente y al tiempo.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://docs.cordhq.app/desarrolladores/herramientas/cli",
+  "keywords": ["cord", "cli", "webhooks", "sandbox", "testing"],
+  "engines": { "node": ">=20" },
+  "bin": { "cord": "dist/cord.mjs" },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "*",
+    "typescript": "^5.6.0"
+  },
+  "publishConfig": { "access": "public" }
+}

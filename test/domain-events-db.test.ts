@@ -98,7 +98,7 @@ describe('entrega a webhooks', () => {
 
     beforeAll(async () => {
         await m.db.exec(`
-            create table webhooks(id uuid primary key default gen_random_uuid(), org_id uuid, eventos jsonb default '[]', activo boolean default true, created_by_key text, created_at timestamptz default now(), api_version text);
+            create table webhooks(id uuid primary key default gen_random_uuid(), org_id uuid, eventos jsonb default '[]', activo boolean default true, created_by_key text, created_at timestamptz default now(), api_version text, cli_hasta timestamptz);
             create table clientes(id uuid primary key, org_id uuid, empresa text);
             create table cotizaciones(id uuid primary key, org_id uuid, folio text, status text, total numeric, public_token text, base_currency text, cliente_id uuid);
             insert into webhooks(org_id, created_at) select '${A}', now() - (g || ' minutes')::interval from generate_series(1, 40) g;

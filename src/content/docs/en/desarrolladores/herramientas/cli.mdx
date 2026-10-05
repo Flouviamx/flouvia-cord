@@ -1,0 +1,43 @@
+---
+title: "Cord CLI"
+seoTitle: "Cord CLI"
+description: "Forward test-mode webhooks to your localhost, trigger events and simulate the SAT, the client and time from the terminal."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Cord CLI</h1>
+  <p class="page-subtitle">Test your whole integration without leaving your machine.</p>
+</header>
+
+## Install
+
+```bash
+npm install -g @flouviahq/cli
+cord login
+```
+
+`cord login` asks for a **test** key (`sk_test_`) and rejects a live one: nothing you do with the CLI touches real data. The key is stored in `~/.config/cord/config.json` with `0600` permissions.
+
+## Receive webhooks on your localhost
+
+```bash
+cord listen --forward-to http://localhost:3000/api/webhooks/cord
+```
+
+Cord can't make requests to your machine, so the CLI opens a session in the sandbox. Events go through the same delivery engine as production (signature, API version, history) and the CLI forwards them to your server with the real signature headers. On start it prints the session secret: put it in `CORD_WEBHOOK_SECRET` and verify with `constructEvent` just like in production.
+
+- It only forwards to `localhost`; use `--allow-remote` for another host.
+- `--events quote.paid,invoice.paid` limits the session's events.
+- The session expires in 24 hours and Ctrl+C closes it.
+
+## Simulate
+
+```bash
+cord trigger invoice.paid                 # event with sample data
+cord trigger quote.approved --objeto <id> # with the real data of a test quote
+cord simulate fiscal pac_caido            # the next issuance fails as if the PAC didn't respond
+cord simulate quote <id> vencer           # the quote expires
+cord events tail --type quote.paid        # events as they happen
+```
+
+These are the same API [simulators](/en/docs/desarrolladores/empezar/pruebas), from the terminal.

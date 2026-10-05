@@ -9,6 +9,7 @@ on:
     paths:
       - "packages/elements/**"
       - "packages/node/**"
+      - "packages/cli/**"
       - "public/embed.js"
       - ".github/workflows/elements.yml"
   push:
@@ -16,6 +17,7 @@ on:
     paths:
       - "packages/elements/**"
       - "packages/node/**"
+      - "packages/cli/**"
       - "public/embed.js"
       - ".github/workflows/elements.yml"
   workflow_dispatch:
@@ -87,3 +89,24 @@ jobs:
         run: npx --no-install attw --pack .
       - name: publint
         run: npx --no-install publint
+
+  cli:
+    name: "@flouviahq/cli: types and build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/cli
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: packages/cli/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Smoke test
+        run: node dist/cord.mjs --version && node dist/cord.mjs help

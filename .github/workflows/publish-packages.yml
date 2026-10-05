@@ -1,6 +1,6 @@
 name: Publish packages
 
-# Publica @flouviahq/elements y @flouviahq/node con provenance: npm muestra que
+# Publica @flouviahq/elements, @flouviahq/node y @flouviahq/cli con provenance: npm muestra que
 # el paquete salió de este repo y de este commit, no de una laptop. Manual y
 # solo desde main. Requiere el secreto NPM_TOKEN (granular, solo publish de
 # @flouviahq) o trusted publishing configurado en npmjs.com.
@@ -12,7 +12,7 @@ on:
         description: "Paquete a publicar"
         required: true
         type: choice
-        options: [elements, node, both]
+        options: [elements, node, cli, all]
 
 permissions:
   contents: read
@@ -30,29 +30,28 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        pkg: [elements, node]
+        pkg: [elements, node, cli]
     steps:
       - uses: actions/checkout@v4
-        if: inputs.package == matrix.pkg || inputs.package == 'both'
+        if: inputs.package == matrix.pkg || inputs.package == 'all'
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
-        if: inputs.package == matrix.pkg || inputs.package == 'both'
+        if: inputs.package == matrix.pkg || inputs.package == 'all'
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           cache: npm
           cache-dependency-path: packages/${{ matrix.pkg }}/package-lock.json
       - name: Install, verify and publish
-        if: inputs.package == matrix.pkg || inputs.package == 'both'
+        if: inputs.package == matrix.pkg || inputs.package == 'all'
         working-directory: packages/${{ matrix.pkg }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm ci
           npm run build
-          npx --no-install attw --pack .
-          npx --no-install publint
+          if [ "${{ matrix.pkg }}" != "cli" ]; then npx --no-install attw --pack . && npx --no-install publint; fi
           VERSION=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then

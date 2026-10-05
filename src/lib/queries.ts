@@ -256,7 +256,7 @@ export async function getWebhooks() {
     const orgId = await getActiveOrgId();
     let rows: any[] = [];
     try {
-        [rows] = await withOrgTx(orgId, sql`select * from webhooks where org_id = ${orgId} order by created_at desc`);
+        [rows] = await withOrgTx(orgId, sql`select * from webhooks where org_id = ${orgId} and cli_hasta is null order by created_at desc`);
     } catch { return []; }
     return rows.map((w) => ({
         id: w.id as string,
