@@ -43,7 +43,7 @@ beforeAll(async () => {
             uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
             descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb);
-        create table cotizaciones(id uuid primary key, org_id uuid not null);
+        create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
         create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, titulo text, due_date date, done boolean default false);
         create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, fecha_promesa date, monto numeric, nota text, estado text default 'pendiente');`);
 });
@@ -143,7 +143,7 @@ describe('eventos del camino normal', () => {
         await promises.setPromiseState(ctxA, id, 'pendiente');
         await promises.setPromiseState(ctxA, id, 'incumplida');
         expect(m.event.mock.calls.map((c) => c[1])).toEqual(['promise.created', 'promise.kept', 'promise.broken']);
-        expect(m.event.mock.calls[0][2]).toMatchObject({ object: 'promise', fecha_promesa: '2026-10-02', monto: 500 });
+        expect(m.event.mock.calls[0][2]).toMatchObject({ object: 'promise', fecha_promesa: '2026-10-02', monto: 500, moneda: 'MXN' });
     });
 });
 

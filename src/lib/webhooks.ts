@@ -203,6 +203,19 @@ export async function dispatchInvoiceEvent(orgId: string, documentoId: string, e
 
 async function emitToSubscribers(orgId: string, evento: string, data: Record<string, unknown>, actor?: string): Promise<void> {
     await recordDomainEvent(orgId, evento, data, actor);
+    await deliverToSubscribers(orgId, evento, data);
+}
+
+/**
+ * Entrega un evento de prueba a los endpoints de una org sandbox, con el mismo
+ * outbox, firma y reintentos que uno real, pero SIN registrarlo como evento de
+ * dominio: los workflows e integraciones no deben reaccionar a datos de ejemplo.
+ */
+export async function deliverTestEvent(orgId: string, evento: WebhookEvent, data: Record<string, unknown>): Promise<void> {
+    await deliverToSubscribers(orgId, evento, data);
+}
+
+async function deliverToSubscribers(orgId: string, evento: string, data: Record<string, unknown>): Promise<void> {
     let hooks: any[] = [];
     try {
         // En downgrade conservamos la configuración, pero solo los endpoints

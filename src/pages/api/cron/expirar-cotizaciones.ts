@@ -20,12 +20,11 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
-import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
+import { sql, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
-import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { siteOrigin } from '../../../lib/email';
-import { trackServer } from '../../../lib/posthog-server';
+import { registrarVencimiento, type QuoteExpiredRow } from '../../../lib/quote-expiry';
 
 
 export const GET: APIRoute = async ({ request }) => {
@@ -52,26 +51,7 @@ export const GET: APIRoute = async ({ request }) => {
         returning c.id, c.org_id, c.folio, c.total, c.base_currency, c.sent_at`);
 
     for (const r of rows) {
-        const orgId = r.org_id as string;
-        const id = r.id as string;
-        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${id}, 'expired', 'Cotización vencida — pasó su fecha de vigencia sin decisión del cliente')`);
-        await logAudit(orgId, { accion: 'cotizacion.vencida', entidad: 'cotizacion', entidad_id: id, detalle: r.folio as string });
-        // Secuencial (no after()): el volumen típico es bajo y el cron no
-        // tiene presión de latencia de respuesta al usuario — mismo patrón
-        // que recordatorios.ts/cobranza.ts (await por fila en un for).
-        await dispatchQuoteEvent(orgId, id, 'quote.expired');
-        // La query ya excluyó orgs sandbox y la demo, así que ambas banderas
-        // son false por construcción.
-        await trackServer('quote_expired', orgId, {
-            event_id: id,
-            quote_id: id,
-            total: Number(r.total ?? 0),
-            currency: (r.base_currency as string) || 'MXN',
-            days_since_sent: r.sent_at
-                ? Math.max(0, Math.round((Date.now() - new Date(r.sent_at as string).getTime()) / 86400000))
-                : undefined,
-        }, false, false);
+        await registrarVencimiento(r as unknown as QuoteExpiredRow, { isSandbox: false, isDemo: false });
     }
 
     // ── Aviso "por vencer" (evento quote_expiring de Ajustes › Notificaciones) ──

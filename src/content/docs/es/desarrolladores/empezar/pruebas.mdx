@@ -40,3 +40,36 @@ POST /api/test-mode/reset
 Este endpoint contiene protecciones de base de datos estrictas (`sandbox_of is not null`). Incluso si lo llamas por error en tu entorno en vivo, la base de datos abortará la transacción para proteger tus datos reales. Solo funciona dentro de entornos Sandbox.
 
 </Callout>
+## Simuladores (test helpers)
+
+Con una llave `sk_test_` puedes provocar lo que en producción hace un tercero: el SAT respondiendo, el tiempo pasando o el cliente abriendo el link. Cada simulador recorre el mismo código que producción, así que los webhooks, el historial y los correos salen igual que en vivo. Con una llave en vivo responden `test_mode_only`, y la base de datos rechaza cualquier simulación sobre una organización real.
+
+### Forzar el resultado del próximo timbrado
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/fiscal \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "siguiente_resultado": "pac_caido" }'
+```
+
+Resultados: `exito`, `pac_caido` (la factura queda en borrador y se puede reintentar), `receptor_invalido`, `certificado_vencido` y `timbre_duplicado`. Se consume en la siguiente emisión; sin uno pendiente, la emisión simulada tiene éxito.
+
+### Simular al cliente y al tiempo
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/cotizaciones/{id} \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "accion": "vista" }'
+```
+
+`vista` registra la apertura del cliente (`quote.viewed`) y `vencer` la vence (`quote.expired`). Aprobar, rechazar y marcar pagada ya están en `POST /api/v1/cotizaciones/{id}`.
+
+### Disparar un webhook
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/webhooks \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "evento": "invoice.paid", "objeto_id": "uuid-opcional" }'
+```
+
+Acepta cualquiera de los eventos del catálogo. Con `objeto_id` de una cotización o factura de prueba usa sus datos reales; sin él, datos de ejemplo con ids `test_…`. La entrega pasa por el outbox real: firma, reintentos e historial en Ajustes › Developers.

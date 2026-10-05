@@ -71,6 +71,8 @@ export function promiseEventData(p: DbRow) {
         cotizacion_id: p.cotizacion_id as string,
         fecha_promesa: day(p.fecha_promesa),
         monto: num(p.monto),
+        // Regla 21: el importe viaja con su divisa (la de la cotización).
+        moneda: str(p.moneda),
         estado: str(p.estado),
     };
 }

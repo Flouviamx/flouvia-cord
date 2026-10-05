@@ -144,7 +144,31 @@ export function createResources(http: HttpClient) {
         del: async (id: string, opts?: RequestOptions) => (await http.request<Obj>('DELETE', `/webhooks/${encodeURIComponent(id)}`, opts)).data,
     };
 
+    const testOnly = () => {
+        if (http.mode !== 'test') throw new Error('[Cord] testHelpers solo funciona con una llave de prueba (sk_test_).');
+    };
+    const testHelpers = {
+        fiscal: {
+            /** Fuerza el resultado de la próxima emisión fiscal de la sandbox. */
+            setNextOutcome: (siguiente_resultado: 'exito' | 'pac_caido' | 'receptor_invalido' | 'certificado_vencido' | 'timbre_duplicado') => {
+                testOnly();
+                return post<Obj>('/test_helpers/fiscal', { siguiente_resultado });
+            },
+        },
+        quotes: {
+            /** El cliente abre el link (quote.viewed). */
+            view: (id: string) => { testOnly(); return post<Obj>(`/test_helpers/cotizaciones/${encodeURIComponent(id)}`, { accion: 'vista' }); },
+            /** La cotización vence (quote.expired). */
+            expire: (id: string) => { testOnly(); return post<Obj>(`/test_helpers/cotizaciones/${encodeURIComponent(id)}`, { accion: 'vencer' }); },
+        },
+        webhooks: {
+            /** Dispara un evento a tus endpoints de prueba por el outbox real. */
+            trigger: (evento: string, objeto_id?: string) => { testOnly(); return post<Obj>('/test_helpers/webhooks', { evento, objeto_id }); },
+        },
+    };
+
     return {
+        testHelpers,
         me: () => get<{ org: { id: string; nombre: string; plan: string }; scope: string; mode: 'live' | 'test' }>('/me'),
         quotes,
         clients,

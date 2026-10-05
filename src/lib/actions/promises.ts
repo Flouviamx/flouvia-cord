@@ -23,9 +23,13 @@ export async function createPromise(ctx: ActionContext, input: Record<string, an
     if (!own.length) return done(404, { error: 'Cotización no encontrada', code: 'not_found' });
 
     const [[row]] = await withOrgTx(ctx.orgId, sql`
-        insert into promesas_pago (org_id, cotizacion_id, fecha_promesa, monto, nota)
-        values (${ctx.orgId}, ${cotizacionId}, ${fecha}, ${monto}, ${nota})
-        returning *`);
+        with ins as (
+            insert into promesas_pago (org_id, cotizacion_id, fecha_promesa, monto, nota)
+            values (${ctx.orgId}, ${cotizacionId}, ${fecha}, ${monto}, ${nota})
+            returning *
+        )
+        select ins.*, c.base_currency as moneda
+          from ins join cotizaciones c on c.id = ins.cotizacion_id and c.org_id = ins.org_id`);
     await auditAction(ctx, 'promesa.creada', 'cotizacion', cotizacionId, `Promesa de pago para ${fecha}`);
     invalidateMoneyCaches(ctx.orgId);
     after(dispatchEvent(ctx.orgId, 'promise.created', promiseEventData(row), ctx.actor));
@@ -36,9 +40,13 @@ export async function setPromiseState(ctx: ActionContext, id: string, estado: st
     if (!ESTADOS.has(estado)) return done(400, { error: 'Estado inválido', code: 'invalid_request' });
     if (!isUuid(id)) return NO_ENCONTRADA;
     const [changed, exists] = await withOrgTx(ctx.orgId,
-        sql`update promesas_pago set estado = ${estado}
-             where id = ${id} and org_id = ${ctx.orgId} and estado is distinct from ${estado}
-            returning *`,
+        sql`with upd as (
+                update promesas_pago set estado = ${estado}
+                 where id = ${id} and org_id = ${ctx.orgId} and estado is distinct from ${estado}
+                returning *
+            )
+            select upd.*, c.base_currency as moneda
+              from upd join cotizaciones c on c.id = upd.cotizacion_id and c.org_id = upd.org_id`,
         sql`select id from promesas_pago where id = ${id} and org_id = ${ctx.orgId}`);
     if (!exists.length) return NO_ENCONTRADA;
     invalidateMoneyCaches(ctx.orgId);

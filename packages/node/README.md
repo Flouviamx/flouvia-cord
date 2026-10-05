@@ -86,6 +86,20 @@ export const POST = proxy;
 
 El proxy se trata como un endpoint hostil: solo atiende `elements/config`, `productos`, `cotizaciones` y `clientes`, solo desde tu origen, y sanea la cotización igual que una llave publicable (no envía correos ni fija costos) salvo que `authorizeSellerFields` lo permita para esa petición.
 
+## Modo prueba
+
+Con una `sk_test_` puedes provocar lo que en producción hace un tercero. Cada simulador recorre el mismo código que producción.
+
+```ts
+const cord = new Cord(process.env.CORD_TEST_KEY!);
+await cord.testHelpers.fiscal.setNextOutcome('pac_caido'); // la próxima emisión falla como si el PAC no respondiera
+await cord.testHelpers.quotes.view(quoteId);               // el cliente abre el link
+await cord.testHelpers.quotes.expire(quoteId);             // la cotización vence
+await cord.testHelpers.webhooks.trigger('invoice.paid');   // dispara el evento a tus endpoints de prueba
+```
+
+Con una llave en vivo, `testHelpers` falla antes de salir a la red, y Cord rechaza cualquier simulación sobre una organización real.
+
 ## Datos fiscales
 
 ```ts

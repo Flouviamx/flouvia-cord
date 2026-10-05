@@ -537,6 +537,14 @@ APIs de cobros (ago 2026)
 /api/v1/facturas     → GET list + POST crear
 /api/v1/facturas/[id] → GET detalle · POST { action: finalize|send|void|payment|credit_note }
 /api/v1/tareas       → POST crear
+/api/v1/elements/config → GET configuración que dibuja Elements (divisas, impuestos por
+                   línea, retenciones, términos), con ETag. Acepta pk_. Falla cerrado.
+/api/v1/elements/ai-draft → POST multipart (texto/archivo) → text/event-stream con cada
+                   línea emparejada al catálogo. Acepta pk_. Sin herramientas MCP; límite
+                   estricto por IP, minuto y día; cupo de IA reservado y liberado si falla.
+/api/v1/test_helpers/fiscal | cotizaciones/[id] | webhooks → simuladores del modo prueba,
+                   solo sk_test_; la tabla sandbox_simulaciones rechaza orgs reales por
+                   trigger. La emisión sandbox de finalizeInvoice consume el resultado forzado.
 /api/v1/cobranza     → GET cartera
 /api/v1/events       → GET historial de domain_events con cursor opaco (type, object_id)
 /api/v1/webhooks     → GET/POST suscripciones de ESTA llave (webhooks.created_by_key)

@@ -40,3 +40,36 @@ POST /api/test-mode/reset
 This endpoint contains strict database protections (`sandbox_of is not null`). Even if you call it by mistake in your live environment, the database will abort the transaction to protect your real data. It only works within Sandbox environments.
 
 </Callout>
+## Simulators (test helpers)
+
+With an `sk_test_` key you can trigger what a third party does in production: the SAT responding, time passing, or the client opening the link. Each simulator runs the same code as production, so webhooks, history and emails come out exactly as they would live. With a live key they respond `test_mode_only`, and the database rejects any simulation on a real organization.
+
+### Force the next stamping result
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/fiscal \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "siguiente_resultado": "pac_caido" }'
+```
+
+Results: `exito`, `pac_caido` (the invoice stays as a draft and can be retried), `receptor_invalido`, `certificado_vencido` and `timbre_duplicado`. It is consumed by the next issuance; with none pending, the simulated issuance succeeds.
+
+### Simulate the client and time
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/cotizaciones/{id} \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "accion": "vista" }'
+```
+
+`vista` records the client opening the quote (`quote.viewed`) and `vencer` expires it (`quote.expired`). Approve, reject and mark as paid are already in `POST /api/v1/cotizaciones/{id}`.
+
+### Trigger a webhook
+
+```bash
+curl -X POST https://cordhq.app/api/v1/test_helpers/webhooks \
+  -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" \
+  -d '{ "evento": "invoice.paid", "objeto_id": "optional-uuid" }'
+```
+
+Accepts any event in the catalog. With the `objeto_id` of a test quote or invoice it uses its real data; without it, sample data with `test_…` ids. Delivery goes through the real outbox: signature, retries and history in Settings › Developers.

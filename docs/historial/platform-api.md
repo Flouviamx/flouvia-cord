@@ -6,6 +6,32 @@
 
 ---
 
+✅ **Elements 2.0 headless, @flouviahq/node, IA en streaming y simuladores (4 oct 2026)** —
+segunda entrega del plan. Decisiones que no eran obvias:
+   • **Headless de verdad.** Todo el estado vive en `@flouviahq/elements/headless` (sin
+     framework ni efectos al importar); React, Vue, los Web Components y `embed.js` lo consumen.
+     El Builder dibuja desde `GET /api/v1/elements/config`, así que las reglas 21/23/24 dejan
+     de depender de que el SDK adivine divisas, tasas o el nombre del impuesto.
+   • **Shadow DOM aísla estilos, no es frontera de seguridad.** Firmar y pagar siguen en el
+     iframe de Cord; `<cord-quote>` solo encapsula el CSS.
+   • **El stream de la cotización no se abre a otro origen.** Es una credencial portadora: el
+     estado en vivo llega por el iframe (ya suscrito dentro del origen de Cord) vía postMessage.
+   • **Una pk_ crea borradores.** No envía correos (sería relé de spam con el dominio de Cord) ni
+     fija costo, precio negociado, cliente_id o divisa fiscal; las divisas se acotan al set
+     ofrecido (regla 28).
+   • **Fiscal compartido.** RFC con dígito verificador del SAT (genéricos exentos), régimen y uso
+     de CFDI por tipo de persona; el mismo módulo valida en navegador y servidor. El check de
+     impuestos aceptaba un RFC inventado (`DEZ981123QX1`) porque solo miraba la forma.
+   • **IA pública sin herramientas.** El carril de la app le da al modelo las MCP del agente; un
+     documento subido por un visitante podía inducirlas. El carril de Elements va con salida
+     forzada, sin MCP, y marca el contenido como datos.
+   • **Simuladores sobre el código real.** El vencimiento del cron se extrajo a
+     `quote-expiry.ts` para que el simulador lo recorra igual; la tabla `sandbox_simulaciones`
+     solo admite orgs sandbox por trigger. **Migración pendiente:**
+     `db/migrations/2026-10-04-sandbox-simulaciones.sql`.
+   • El test de eventos de ejemplo destapó que `promise.*` mandaba `monto` sin divisa; ahora
+     trae `moneda` de la cotización.
+
 ✅ **Elements y API v1: seguridad de embed, llaves y contrato de webhooks (4 oct 2026)** —
 primera entrega del plan para llevar Elements a nivel Stripe. Lo que se encontró y por qué
 se resolvió así:

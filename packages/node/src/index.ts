@@ -21,6 +21,7 @@ export class Cord {
     readonly tasks: ReturnType<typeof createResources>['tasks'];
     readonly webhookEndpoints: ReturnType<typeof createResources>['webhookEndpoints'];
     readonly elements: ReturnType<typeof createResources>['elements'];
+    readonly testHelpers: ReturnType<typeof createResources>['testHelpers'];
     readonly webhooks = { constructEvent, signPayload };
 
     constructor(secretKey: string, opts: CordOptions = {}) {
@@ -37,6 +38,7 @@ export class Cord {
         this.tasks = r.tasks;
         this.webhookEndpoints = r.webhookEndpoints;
         this.elements = r.elements;
+        this.testHelpers = r.testHelpers;
     }
 }
 

@@ -615,18 +615,8 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
 
   let response: FiscalDocumentResponse;
   if (head.sandbox_of) {
-    response = {
-      success: true,
-      provider: 'cord-sandbox',
-      documentId,
-      fiscalId: regulatory && country === 'MX' ? `SIM-${documentId.slice(0, 8).toUpperCase()}` : undefined,
-      pdfUrl: `/api/fiscal/documents/${documentId}/pdf`,
-      rawProviderData: {
-        simulado: true,
-        modo_prueba: true,
-        regulatory_status: regulatory && country === 'MX' ? 'not_stamped' : 'commercial_only',
-      },
-    };
+    const { consumeFiscalOutcome, simulatedFiscalResponse } = await import('../sandbox-sim');
+    response = simulatedFiscalResponse(await consumeFiscalOutcome(orgId), documentId, { regulatory, country });
   } else {
     try {
       response = await FiscalFactory.getProvider(country, regulatory && country === 'ES' ? (head.credit_note_of ? 'verifactu_credit_note' : 'verifactu_invoice') : docType).issueDocument(request);

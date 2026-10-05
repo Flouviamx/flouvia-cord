@@ -51,6 +51,24 @@ describe('Cord (cliente de servidor)', () => {
     });
 });
 
+describe('testHelpers', () => {
+    it('falla antes de la red con una llave en vivo', () => {
+        const fetch = vi.fn();
+        const cord = new Cord('sk_live_x', { fetch: fetch as any });
+        expect(() => cord.testHelpers.fiscal.setNextOutcome('pac_caido')).toThrow(/sk_test_/);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('con llave de prueba llama al simulador', async () => {
+        const fetch = vi.fn(async () => json({ data: { object: 'test_helper' } }));
+        const cord = new Cord('sk_test_x', { fetch: fetch as any });
+        await cord.testHelpers.webhooks.trigger('invoice.paid');
+        const [url, init] = fetch.mock.calls[0] as unknown as [URL, RequestInit];
+        expect(String(url)).toBe('https://cordhq.app/api/v1/test_helpers/webhooks');
+        expect(JSON.parse(String(init.body))).toEqual({ evento: 'invoice.paid' });
+    });
+});
+
 describe('constructEvent', () => {
     const secret = 'whsec_test';
     const body = JSON.stringify({ id: 'evt_1', event: 'quote.approved', created_at: '2026-10-04T00:00:00Z', data: { id: 'q1' } });

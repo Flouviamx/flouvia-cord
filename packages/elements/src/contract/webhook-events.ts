@@ -158,7 +158,9 @@ export interface CordWebhookPromiseData {
     object: 'promise';
     cotizacion_id: string;
     fecha_promesa: string | null;
+    /** null = el saldo completo de la cotización. */
     monto: number | null;
+    moneda: string | null;
     estado: string | null;
 }
 
