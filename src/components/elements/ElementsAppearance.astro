@@ -1,0 +1,661 @@
+---
+// Personalizador en vivo de la Appearance API de Cord Elements (estilo
+// "appearance customizer" de Stripe Elements). Todo lo que se muestra es API
+// real de @flouviahq/elements — packages/elements/README.md, "Appearance API
+// completa" — y de cómo la aplica src/pages/embed/[token].astro:
+//   theme: 'light' | 'dark' | 'auto'   (dark = #e5e7eb sobre #111827)
+//   variables: colorPrimary, colorText, colorBackground, fontFamily, borderRadius
+//   fonts: [{ cssSrc }]   solo fonts.googleapis.com o fonts.bunny.net
+// Ojo: el embed rechaza `;` dentro de cssSrc (isSafe), así que las URLs de
+// fuentes del snippet no llevan rangos de peso `wght@400;600`.
+// La vista previa NO descarga Fraunces ni JetBrains Mono (la CSP de la landing
+// puede bloquearlas): usa Georgia / ui-monospace como respaldo local, y el
+// snippet enseña el cssSrc real que el iframe sí cargaría.
+interface Props {
+    isEn?: boolean;
+}
+const { isEn = false } = Astro.props;
+const tx = (es: string, en: string) => (isEn ? en : es);
+
+const THEMES = [
+    { id: 'light', label: tx('Claro', 'Light') },
+    { id: 'dark', label: tx('Oscuro', 'Dark') },
+    { id: 'auto', label: 'Auto' },
+] as const;
+
+const SWATCHES = [
+    { hex: '#0D1B33', name: 'Navy' },
+    { hex: '#2563EB', name: tx('Azul', 'Blue') },
+    { hex: '#0F766E', name: tx('Verde azulado', 'Teal') },
+    { hex: '#7C3AED', name: tx('Violeta', 'Violet') },
+    { hex: '#C2410C', name: tx('Naranja', 'Orange') },
+    { hex: '#BE123C', name: tx('Carmín', 'Crimson') },
+];
+
+const RADII = ['0px', '8px', '14px', '22px'];
+
+const FONTS = [
+    { id: 'inter', label: 'Inter', stack: "Inter, var(--font-sans), system-ui, sans-serif" },
+    { id: 'serif', label: 'Serif', stack: "Fraunces, Georgia, 'Times New Roman', serif" },
+    { id: 'mono', label: 'Mono', stack: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" },
+];
+
+const ITEMS = [
+    { n: tx('Cemento gris 50 kg', 'Gray cement 50 kg'), sku: 'CEM-050', q: '340', u: '$182.00', t: '$61,880.00' },
+    { n: tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m'), sku: 'VAR-038', q: '120', u: '$198.50', t: '$23,820.00' },
+    { n: tx('Block hueco 15×20×40', 'Hollow block 15×20×40'), sku: 'BLK-152', q: '2,400', u: '$14.20', t: '$34,080.00' },
+];
+// 61,880 + 23,820 + 34,080 = 119,780.00 · IVA 16 % = 19,164.80 · total 138,944.80
+
+const i18n = {
+    copy: tx('Copiar', 'Copy'),
+    copied: tx('Copiado', 'Copied'),
+    light: tx('claro', 'light'),
+    dark: tx('oscuro', 'dark'),
+    followsSystem: tx('Sigue al sistema', 'Follows the system'),
+    now: tx('ahora', 'now'),
+};
+---
+
+<section class="eap" id="apariencia" data-eap data-i18n={JSON.stringify(i18n)}>
+    <div class="eap-head">
+        <h2 class="eap-h2 masked-title">{tx('Hazlo tuyo sin escribir CSS.', 'Make it yours without writing CSS.')}</h2>
+        <p class="eap-lead reveal">{tx(
+            'La Appearance API recibe un tema, tus colores, las esquinas y tu tipografía. Cord los aplica dentro del iframe, así la cotización se ve como parte de tu sitio sin tocar una sola hoja de estilos.',
+            'The Appearance API takes a theme, your colors, corner radius and typeface. Cord applies them inside the iframe, so the quote looks native to your site without touching a single stylesheet.'
+        )}</p>
+    </div>
+
+    <div class="eap-card reveal-mockup">
+        <!-- ── Controles ── -->
+        <div class="eap-ctl" aria-label={tx('Opciones de apariencia', 'Appearance options')} role="group">
+            <div class="eap-g" role="group" aria-labelledby="eap-l-theme">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-theme">{tx('Tema', 'Theme')}</span>
+                    <code class="eap-g-k">theme</code>
+                </div>
+                <div class="eap-seg">
+                    {THEMES.map((t, i) => (
+                        <button type="button" class="eap-seg-b" data-k="theme" data-v={t.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+                            {t.id === 'light' && (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" fill-opacity="0.18" /><path d="M12 2.8v2M12 19.2v2M4.6 4.6 6 6M18 18l1.4 1.4M2.8 12h2M19.2 12h2M4.6 19.4 6 18M18 6l1.4-1.4" /></svg>
+                            )}
+                            {t.id === 'dark' && (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8Z" fill="currentColor" fill-opacity="0.18" /></svg>
+                            )}
+                            {t.id === 'auto' && (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="8.4" /><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" fill-opacity="0.22" stroke="none" /><path d="M12 3.6v16.8" /></svg>
+                            )}
+                            <span>{t.label}</span>
+                        </button>
+                    ))}
+                    <span class="eap-seg-pill" aria-hidden="true"></span>
+                </div>
+            </div>
+
+            <div class="eap-g" role="group" aria-labelledby="eap-l-color">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-color">{tx('Color principal', 'Primary color')}</span>
+                    <code class="eap-g-k">colorPrimary</code>
+                </div>
+                <div class="eap-sw">
+                    {SWATCHES.map((s, i) => (
+                        <button type="button" class="eap-sw-b" data-k="primary" data-v={s.hex} aria-pressed={i === 0 ? 'true' : 'false'} aria-label={`${s.name} ${s.hex}`} title={s.hex} style={`--sw:${s.hex}`}>
+                            <span class="eap-sw-dot">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 8.4 2.6 2.5L12 5.4" /></svg>
+                            </span>
+                        </button>
+                    ))}
+                    <span class="eap-sw-hex" data-hex>#0D1B33</span>
+                </div>
+            </div>
+
+            <div class="eap-g" role="group" aria-labelledby="eap-l-radius">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-radius">{tx('Esquinas', 'Corners')}</span>
+                    <code class="eap-g-k">borderRadius</code>
+                </div>
+                <div class="eap-opts">
+                    {RADII.map((r) => (
+                        <button type="button" class="eap-opt" data-k="radius" data-v={r} aria-pressed={r === '8px' ? 'true' : 'false'} aria-label={`borderRadius ${r}`}>
+                            <span class="eap-corner" style={`border-top-left-radius:${Math.min(parseInt(r, 10), 14)}px`} aria-hidden="true"></span>
+                            <span class="eap-opt-t">{r.replace('px', '')}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div class="eap-g" role="group" aria-labelledby="eap-l-font">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-font">{tx('Tipografía', 'Typeface')}</span>
+                    <code class="eap-g-k">fontFamily</code>
+                </div>
+                <div class="eap-opts eap-opts-3">
+                    {FONTS.map((f, i) => (
+                        <button type="button" class="eap-opt eap-opt-font" data-k="font" data-v={f.id} data-stack={f.stack} aria-pressed={i === 0 ? 'true' : 'false'}>
+                            <span class="eap-aa" style={`font-family:${f.stack}`} aria-hidden="true">Aa</span>
+                            <span class="eap-opt-t">{f.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <button type="button" class="eap-reset" data-reset>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7" /><path d="M4 4.5v4h4" /><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15" /></svg>
+                {tx('Restablecer valores', 'Reset to defaults')}
+            </button>
+        </div>
+
+        <!-- ── Vista previa ── -->
+        <div class="eap-stage" data-stage data-mode="light">
+            <div class="eap-stage-bar">
+                <span class="eap-live"><i></i>{tx('Vista previa en vivo', 'Live preview')}</span>
+                <span class="eap-auto" data-auto-note hidden></span>
+            </div>
+
+            <article class="eap-q" data-q data-mode="light" style={`--ap-primary:#0D1B33;--ap-radius:8px;--ap-font:${FONTS[0].stack}`} aria-label={tx('Cotización COT-0052 de ejemplo', 'Sample quote COT-0052')}>
+                <div class="eap-q-in" data-q-in>
+                    <header class="eap-q-head">
+                        <span class="eap-q-mono" aria-hidden="true">MV</span>
+                        <div class="eap-q-org">
+                            <strong>Materiales del Valle</strong>
+                            <span>COT-0052 · {tx('Para', 'For')} Distribuidora El Zarco</span>
+                        </div>
+                        <span class="eap-q-pill"><i></i>{tx('Vigente', 'Open')}</span>
+                    </header>
+
+                    <div class="eap-q-due">
+                        <span class="eap-q-due-l">{tx('Total a pagar', 'Total due')}</span>
+                        <span class="eap-q-due-v editorial">MXN $138,944.80</span>
+                        <span class="eap-q-due-s">{tx('Válida hasta el 18 oct 2026 · Raúl Mendoza', 'Valid until Oct 18, 2026 · Raúl Mendoza')}</span>
+                    </div>
+
+                    <div class="eap-q-tbl" role="table" aria-label={tx('Partidas', 'Line items')}>
+                        <div class="eap-q-tr eap-q-th" role="row">
+                            <span role="columnheader">{tx('Concepto', 'Item')}</span>
+                            <span role="columnheader">{tx('Cant.', 'Qty')}</span>
+                            <span role="columnheader">{tx('Importe', 'Amount')}</span>
+                        </div>
+                        {ITEMS.map((it) => (
+                            <div class="eap-q-tr" role="row">
+                                <span class="eap-q-name" role="cell">
+                                    <b>{it.n}</b>
+                                    <small>{it.sku} · {it.u} {tx('c/u', 'each')}</small>
+                                </span>
+                                <span class="editorial" role="cell">{it.q}</span>
+                                <span class="editorial" role="cell">{it.t}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <dl class="eap-q-sum">
+                        <div><dt>Subtotal</dt><dd class="editorial">$119,780.00</dd></div>
+                        <div><dt>IVA 16%</dt><dd class="editorial">$19,164.80</dd></div>
+                        <div class="eap-q-sum-t"><dt>Total</dt><dd class="editorial">MXN $138,944.80</dd></div>
+                    </dl>
+
+                    <div class="eap-q-act">
+                        <span class="eap-q-btn eap-q-btn-p">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 19 6v5.4c0 4.3-3 7.8-7 9.4-4-1.6-7-5.1-7-9.4V6l7-2.8Z" fill="currentColor" fill-opacity="0.2" /><path d="m8.8 12 2.2 2.2 4.2-4.4" /></svg>
+                            {tx('Aprobar cotización', 'Approve quote')}
+                        </span>
+                        <span class="eap-q-btn eap-q-btn-s">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V4a.5.5 0 0 1 .5-.5Z" fill="currentColor" fill-opacity="0.12" /><path d="M12 10v6.5M9.4 14l2.6 2.6 2.6-2.6" /></svg>
+                            {tx('Descargar PDF', 'Download PDF')}
+                        </span>
+                    </div>
+
+                    <p class="eap-q-foot">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" fill="currentColor" fill-opacity="0.15" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>
+                        {tx('Firma con validez legal · Pago seguro con Cord', 'Legally binding signature · Secure payment by Cord')}
+                    </p>
+                </div>
+            </article>
+        </div>
+
+        <!-- ── Código en vivo ── -->
+        <div class="eap-code">
+            <div class="eap-code-bar">
+                <span class="eap-code-file">
+                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://react.dev&size=128" alt="" width="14" height="14" loading="lazy" />
+                    Cotizacion.jsx
+                </span>
+                <button type="button" class="eap-copy" data-copy aria-live="polite">
+                    <span class="eap-copy-ico" aria-hidden="true">
+                        <svg class="cp-a" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.4" fill="currentColor" fill-opacity="0.15" /><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" /></svg>
+                        <svg class="cp-b" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                    </span>
+                    <span class="eap-copy-t" data-copy-t>{tx('Copiar', 'Copy')}</span>
+                </button>
+            </div>
+            <pre class="eap-pre" data-pre tabindex="0" aria-label={tx('Código de ejemplo en React', 'React sample code')}><code data-code><span class="eap-ln"><span class="eap-n">1</span><span class="eap-lc"><span class="t-tag">&lt;CordCotizador</span> <span class="t-attr">token</span><span class="t-p">=</span><span class="t-p">{'{'}</span>token<span class="t-p">{'}'}</span> <span class="t-tag">/&gt;</span></span></span></code></pre>
+        </div>
+    </div>
+</section>
+
+<script>
+    type Theme = 'light' | 'dark' | 'auto';
+    type FontId = 'inter' | 'serif' | 'mono';
+    interface State { theme: Theme; primary: string; radius: string; font: FontId }
+
+    const DEF: State = { theme: 'light', primary: '#0D1B33', radius: '8px', font: 'inter' };
+    // fontFamily y cssSrc tal como los acepta el embed: host en la allowlist
+    // (fonts.googleapis.com) y sin `;` (isSafe lo rechaza).
+    const FONT_API: Record<FontId, { family: string; css: string } | null> = {
+        inter: null,
+        serif: { family: 'Fraunces', css: 'https://fonts.googleapis.com/css2?family=Fraunces' },
+        mono: { family: 'JetBrains Mono', css: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono' },
+    };
+
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const TOK = /('[^']*')|(<\/?[A-Za-z][\w.]*|\/>)|([A-Za-z_$][\w$]*)(?==)|([A-Za-z_$][\w$]*)(?=:)|([{}\[\](),=:])/g;
+    const hl = (line: string) => {
+        let out = '';
+        let last = 0;
+        for (const m of line.matchAll(TOK)) {
+            out += esc(line.slice(last, m.index));
+            const cls = m[1] ? 't-str' : m[2] ? 't-tag' : m[3] ? 't-attr' : m[4] ? 't-key' : 't-p';
+            out += `<span class="${cls}">${esc(m[0])}</span>`;
+            last = (m.index ?? 0) + m[0].length;
+        }
+        return out + esc(line.slice(last));
+    };
+
+    function buildLines(s: State): string[] {
+        const vars: string[] = [];
+        if (s.primary !== DEF.primary) vars.push(`colorPrimary: '${s.primary}',`);
+        if (s.radius !== DEF.radius) vars.push(`borderRadius: '${s.radius}',`);
+        const font = FONT_API[s.font];
+        if (font) vars.push(`fontFamily: '${font.family}',`);
+        const themeDiff = s.theme !== DEF.theme;
+        if (!themeDiff && !vars.length) return ['<CordCotizador token={token} />'];
+        const out = ['<CordCotizador', '  token={token}', '  appearance={{'];
+        if (themeDiff) out.push(`    theme: '${s.theme}',`);
+        if (vars.length) {
+            out.push('    variables: {');
+            vars.forEach((v) => out.push('      ' + v));
+            out.push('    },');
+        }
+        if (font) out.push(`    fonts: [{ cssSrc: '${font.css}' }],`);
+        out.push('  }}', '/>');
+        return out;
+    }
+
+    function init(root: HTMLElement) {
+        const i18n = JSON.parse(root.dataset.i18n || '{}') as Record<string, string>;
+        const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+        const q = root.querySelector<HTMLElement>('[data-q]')!;
+        const qIn = root.querySelector<HTMLElement>('[data-q-in]')!;
+        const codeEl = root.querySelector<HTMLElement>('[data-code]')!;
+        const autoNote = root.querySelector<HTMLElement>('[data-auto-note]')!;
+        const hexEl = root.querySelector<HTMLElement>('[data-hex]')!;
+        const seg = root.querySelector<HTMLElement>('.eap-seg')!;
+        const segPill = root.querySelector<HTMLElement>('.eap-seg-pill')!;
+        const copyBtn = root.querySelector<HTMLButtonElement>('[data-copy]')!;
+        const copyT = root.querySelector<HTMLElement>('[data-copy-t]')!;
+        const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-k]'));
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const state: State = { ...DEF };
+        let prevLines = buildLines(state);
+
+        const placePill = () => {
+            const on = seg.querySelector<HTMLElement>('[aria-pressed="true"]');
+            if (!on) return;
+            segPill.style.width = `${on.offsetWidth}px`;
+            segPill.style.transform = `translateX(${on.offsetLeft}px)`;
+        };
+
+        const renderCode = (flash: boolean) => {
+            const lines = buildLines(state);
+            const before = new Set(prevLines);
+            codeEl.innerHTML = lines.map((ln, i) => {
+                const fresh = flash && !before.has(ln);
+                return `<span class="eap-ln${fresh ? ' is-new' : ''}"><span class="eap-n">${i + 1}</span><span class="eap-lc">${hl(ln) || ' '}</span></span>`;
+            }).join('');
+            prevLines = lines;
+        };
+
+        const apply = (changed?: keyof State) => {
+            const dark = state.theme === 'dark' || (state.theme === 'auto' && mq.matches);
+            const mode = dark ? 'dark' : 'light';
+            q.dataset.mode = mode;
+            stage.dataset.mode = mode;
+            q.style.setProperty('--ap-primary', state.primary);
+            q.style.setProperty('--ap-radius', state.radius);
+            const fontBtn = buttons.find((b) => b.dataset.k === 'font' && b.dataset.v === state.font);
+            q.style.setProperty('--ap-font', fontBtn?.dataset.stack || '');
+            hexEl.textContent = state.primary;
+
+            if (state.theme === 'auto') {
+                autoNote.hidden = false;
+                autoNote.textContent = `${i18n.followsSystem} · ${i18n.now} ${dark ? i18n.dark : i18n.light}`;
+            } else {
+                autoNote.hidden = true;
+            }
+
+            buttons.forEach((b) => {
+                const k = b.dataset.k as 'theme' | 'primary' | 'radius' | 'font';
+                b.setAttribute('aria-pressed', String(state[k] === b.dataset.v));
+            });
+            placePill();
+
+            if (changed === 'font' && !reduce && qIn.animate) {
+                qIn.animate(
+                    [{ opacity: 0.25, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0px)' }],
+                    { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+                );
+            }
+            renderCode(!!changed && !reduce);
+        };
+
+        buttons.forEach((b) => {
+            b.addEventListener('click', () => {
+                const k = b.dataset.k as keyof State;
+                const v = b.dataset.v!;
+                if (state[k] === v) return;
+                (state as unknown as Record<string, string>)[k] = v;
+                apply(k);
+            });
+        });
+
+        root.querySelector('[data-reset]')?.addEventListener('click', () => {
+            const fontChanged = state.font !== DEF.font;
+            Object.assign(state, DEF);
+            apply(fontChanged ? 'font' : 'theme');
+        });
+
+        mq.addEventListener?.('change', () => { if (state.theme === 'auto') apply(); });
+        window.addEventListener('resize', placePill, { passive: true });
+        if ('ResizeObserver' in window) new ResizeObserver(placePill).observe(seg);
+
+        let copyTimer = 0;
+        copyBtn.addEventListener('click', async () => {
+            const text = buildLines(state).join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch {
+                // Sin permiso de portapapeles: deja el código seleccionado
+                // para que ⌘C / Ctrl+C funcione, en vez de fingir que se copió.
+                const range = document.createRange();
+                range.selectNodeContents(codeEl);
+                const sel = window.getSelection();
+                sel?.removeAllRanges();
+                sel?.addRange(range);
+                return;
+            }
+            copyBtn.classList.remove('done');
+            void copyBtn.offsetWidth;
+            copyBtn.classList.add('done');
+            copyT.textContent = i18n.copied;
+            window.clearTimeout(copyTimer);
+            copyTimer = window.setTimeout(() => {
+                copyBtn.classList.remove('done');
+                copyT.textContent = i18n.copy;
+            }, 1800);
+        });
+
+        apply();
+        requestAnimationFrame(() => root.classList.add('is-ready'));
+    }
+
+    document.querySelectorAll<HTMLElement>('[data-eap]').forEach(init);
+</script>
+
+<style>
+    .eap { max-width: 1200px; margin: 0 auto; padding: 5rem 5% 2rem; }
+
+    /* Encabezado: título a la izquierda, texto a la derecha (igual que .eli-head) */
+    .eap-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 1.5rem 4rem; align-items: end; margin: 0 0 3rem; }
+    .eap-h2 { font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.035em; color: #050505; margin: 0; max-width: 620px; text-wrap: balance; }
+    .eap-lead { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted, #5b6575); margin: 0; max-width: 470px; justify-self: end; }
+
+    /* Panel */
+    .eap-card {
+        display: grid;
+        grid-template-columns: minmax(0, 430px) minmax(0, 1fr);
+        grid-template-areas: "ctl stage" "code stage";
+        grid-template-rows: auto 1fr;
+        gap: 1.1rem 1.4rem;
+        background: #fff;
+        border-radius: 28px;
+        padding: 1.4rem;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14), inset 0 1px 0 rgba(255,255,255,0.6);
+        min-width: 0;
+    }
+
+    /* ── Controles ── */
+    .eap-ctl { grid-area: ctl; display: flex; flex-direction: column; padding: 0.3rem 0.4rem 0; min-width: 0; }
+    .eap-g { padding: 0.95rem 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .eap-g:first-child { padding-top: 0.35rem; }
+    .eap-g-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 0.7rem; }
+    .eap-g-l { font-size: 0.82rem; font-weight: 650; color: #0a192f; letter-spacing: -0.01em; }
+    .eap-g-k { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; color: #8a93a3; background: #f5f5f7; padding: 2px 7px; border-radius: 6px; }
+
+    button { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+
+    /* Segmented */
+    .eap-seg { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; border-radius: 12px; background: #f5f5f7; isolation: isolate; }
+    .eap-seg-b {
+        position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; cursor: pointer;
+        font: 600 0.8rem var(--font-sans, Inter, sans-serif); color: #6b7383; transition: color 0.3s;
+    }
+    .eap-seg-b svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .eap-seg-b:hover { color: #0a192f; }
+    .eap-seg-b[aria-pressed="true"] { color: #0a192f; }
+    .eap-seg-pill {
+        position: absolute; z-index: 0; top: 3px; bottom: 3px; left: 0; width: 0; border-radius: 9px; background: #fff;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.08), 0 4px 12px -6px rgba(10,25,47,0.25);
+    }
+    .is-ready .eap-seg-pill { transition: transform 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)), width 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)); }
+
+    /* Swatches */
+    .eap-sw { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .eap-sw-b { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+    .eap-sw-dot {
+        display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sw);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 1px 2px rgba(10,25,47,0.18);
+        transition: transform 0.4s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)), box-shadow 0.3s;
+    }
+    .eap-sw-dot svg { width: 14px; height: 14px; opacity: 0; transform: scale(0.5); transition: opacity 0.2s, transform 0.4s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)); }
+    .eap-sw-b:hover .eap-sw-dot { transform: scale(1.08); }
+    .eap-sw-b[aria-pressed="true"] .eap-sw-dot { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sw), 0 4px 10px -4px var(--sw); }
+    .eap-sw-b[aria-pressed="true"] svg { opacity: 1; transform: none; }
+    .eap-sw-hex { margin-left: auto; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.72rem; color: #5b6575; font-variant-numeric: tabular-nums; }
+
+    /* Opciones (esquinas / tipografía) */
+    .eap-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .eap-opts-3 { grid-template-columns: repeat(3, 1fr); }
+    .eap-opt {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 10px;
+        border: 0; border-radius: 10px; background: #f5f5f7; cursor: pointer;
+        font: 600 0.78rem var(--font-sans, Inter, sans-serif); color: #5b6575;
+        transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+    }
+    .eap-opt:hover { background: #eceef2; color: #0a192f; }
+    .eap-opt[aria-pressed="true"] { background: #fff; color: #0a192f; box-shadow: inset 0 0 0 1.5px #0a192f, 0 4px 12px -8px rgba(10,25,47,0.4); }
+    .eap-opt-t { font-variant-numeric: tabular-nums; }
+    .eap-corner { width: 14px; height: 14px; border-top: 2px solid currentColor; border-left: 2px solid currentColor; opacity: 0.85; }
+    .eap-aa { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1; }
+
+    .eap-reset {
+        align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin-top: 0.85rem; min-height: 32px; padding: 0 2px;
+        border: 0; background: none; cursor: pointer; font: 600 0.78rem var(--font-sans, Inter, sans-serif); color: #6b7383; transition: color 0.2s;
+    }
+    .eap-reset svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)); }
+    .eap-reset:hover { color: #0a192f; }
+    .eap-reset:hover svg { transform: rotate(-60deg); }
+
+    /* ── Escenario de la vista previa ── */
+    .eap-stage {
+        grid-area: stage; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-width: 0; padding: 3.4rem 2rem 2.4rem; border-radius: 20px; overflow: hidden;
+        background: #f5f5f7; transition: background-color 0.6s ease;
+    }
+    .eap-stage::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse 60% 50% at 50% 55%, rgba(10,25,47,0.07), transparent 70%);
+    }
+    .eap-stage[data-mode="dark"] { background: #1a2130; }
+    .eap-stage[data-mode="dark"]::before { background: radial-gradient(ellipse 60% 50% at 50% 55%, rgba(0,0,0,0.35), transparent 70%); }
+    .eap-stage-bar { position: absolute; top: 14px; left: 18px; right: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.74rem; font-weight: 600; color: #6b7383; transition: color 0.6s; }
+    .eap-stage[data-mode="dark"] .eap-stage-bar { color: #9ca3af; }
+    .eap-live { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .eap-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+    .eap-auto { padding: 3px 9px; border-radius: 99px; background: rgba(10,25,47,0.06); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .eap-stage[data-mode="dark"] .eap-auto { background: rgba(255,255,255,0.08); }
+
+    /* ── Cotización (tokens --ap-*) ── */
+    .eap-q {
+        --ap-bg: #ffffff; --ap-text: #0a192f; --ap-muted: #6b7383; --ap-line: rgba(10,25,47,0.08); --ap-soft: #f5f5f7;
+        position: relative; width: 100%; max-width: 450px;
+        background: var(--ap-bg); color: var(--ap-text); font-family: var(--ap-font);
+        border-radius: calc(var(--ap-radius) * 1.5);
+        box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -22px rgba(10,25,47,0.3), inset 0 0 0 1px rgba(10,25,47,0.06);
+        transition: background-color 0.5s ease, color 0.5s ease, border-radius 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)), box-shadow 0.5s;
+    }
+    /* Mismos valores que DARK_DEFAULTS de /embed/[token]: #e5e7eb sobre #111827 */
+    .eap-q[data-mode="dark"] {
+        --ap-bg: #111827; --ap-text: #e5e7eb; --ap-muted: #9ca3af; --ap-line: rgba(255,255,255,0.08); --ap-soft: rgba(255,255,255,0.05);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 30px 60px -22px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.07);
+    }
+    .eap-q-in { padding: 1.35rem 1.4rem 1.1rem; }
+    .eap-q .editorial { font-family: var(--ap-font); font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.02em; }
+
+    .eap-q-head { display: flex; align-items: center; gap: 11px; }
+    .eap-q-mono {
+        display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px;
+        border-radius: calc(var(--ap-radius) * 0.75); background: var(--ap-primary); color: #fff;
+        font: 700 0.72rem var(--ap-font); letter-spacing: 0.02em;
+        transition: background-color 0.45s ease, border-radius 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1));
+    }
+    .eap-q-org { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .eap-q-org strong { font-size: 0.86rem; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eap-q-org span { font-size: 0.7rem; color: var(--ap-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s; }
+    .eap-q-pill {
+        display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 3px 9px;
+        border-radius: max(4px, calc(var(--ap-radius) * 4)); background: rgba(16,185,129,0.12); color: #047857;
+        font: 600 0.66rem var(--ap-font); transition: border-radius 0.5s;
+    }
+    .eap-q[data-mode="dark"] .eap-q-pill { background: rgba(16,185,129,0.16); color: #6ee7b7; }
+    .eap-q-pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    .eap-q-due { display: flex; flex-direction: column; gap: 2px; margin: 1.2rem 0 1rem; }
+    .eap-q-due-l { font-size: 0.7rem; font-weight: 600; color: var(--ap-muted); text-transform: uppercase; letter-spacing: 0.06em; transition: color 0.5s; }
+    .eap-q-due-v { font-size: clamp(1.45rem, 2.4vw, 1.75rem); line-height: 1.15; }
+    .eap-q-due-s { font-size: 0.7rem; color: var(--ap-muted); transition: color 0.5s; }
+
+    .eap-q-tbl { border-top: 1px solid var(--ap-line); }
+    .eap-q-tr { display: grid; grid-template-columns: minmax(0, 1fr) 52px 88px; gap: 10px; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--ap-line); font-size: 0.76rem; }
+    .eap-q-tr > span:nth-child(n+2) { text-align: right; }
+    .eap-q-th { padding: 0.5rem 0; font-size: 0.64rem; font-weight: 600; color: var(--ap-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .eap-q-name { display: flex; flex-direction: column; min-width: 0; }
+    .eap-q-name b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eap-q-name small { font-size: 0.66rem; color: var(--ap-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .eap-q-sum { margin: 0.7rem 0 1rem; display: flex; flex-direction: column; gap: 4px; }
+    .eap-q-sum div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.74rem; }
+    .eap-q-sum dt { color: var(--ap-muted); transition: color 0.5s; }
+    .eap-q-sum dd { margin: 0; }
+    .eap-q-sum .eap-q-sum-t { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--ap-line); font-size: 0.84rem; }
+    .eap-q-sum .eap-q-sum-t dt { color: var(--ap-text); font-weight: 650; }
+
+    .eap-q-act { display: grid; gap: 7px; }
+    .eap-q-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px;
+        border-radius: var(--ap-radius); font: 600 0.8rem var(--ap-font); letter-spacing: -0.005em;
+        transition: background-color 0.45s ease, color 0.45s, box-shadow 0.45s, border-radius 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1));
+    }
+    .eap-q-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .eap-q-btn-p { background: var(--ap-primary); color: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.15), 0 10px 22px -12px var(--ap-primary); }
+    .eap-q[data-mode="dark"] .eap-q-btn-p { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 10px 22px -12px rgba(0,0,0,0.7); }
+    .eap-q-btn-s { background: transparent; color: var(--ap-text); box-shadow: inset 0 0 0 1px var(--ap-line), inset 0 0 0 40px var(--ap-soft); }
+
+    .eap-q-foot { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0.85rem 0 0; font-size: 0.64rem; color: var(--ap-muted); transition: color 0.5s; }
+    .eap-q-foot svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    /* ── Código ── */
+    .eap-code { grid-area: code; display: flex; flex-direction: column; min-width: 0; background: #0b1526; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px -36px rgba(5,11,20,0.6), inset 0 0 0 1px rgba(255,255,255,0.05); }
+    .eap-code-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .eap-code-file { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.74rem; color: rgba(255,255,255,0.62); white-space: nowrap; overflow: hidden; }
+    .eap-code-file img { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+    .eap-copy {
+        position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 0 11px 0 9px;
+        border: 0; border-radius: 8px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75); cursor: pointer;
+        font: 600 0.74rem var(--font-sans, Inter, sans-serif); transition: background 0.25s, color 0.25s;
+    }
+    .eap-copy:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .eap-copy:focus-visible { outline-color: #93c5fd; }
+    .eap-copy-ico { position: relative; display: inline-grid; width: 14px; height: 14px; }
+    .eap-copy-ico svg { grid-area: 1 / 1; width: 14px; height: 14px; transition: transform 0.45s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)), opacity 0.2s; }
+    .eap-copy .cp-b { opacity: 0; transform: scale(0.4) rotate(-20deg); stroke-dasharray: 24; stroke-dashoffset: 24; }
+    .eap-copy::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+    .eap-copy.done { background: #059669; color: #fff; animation: eapPop 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)); }
+    .eap-copy.done .cp-a { opacity: 0; transform: scale(0.4) rotate(20deg); }
+    .eap-copy.done .cp-b { opacity: 1; transform: none; animation: eapDraw 0.42s 0.08s ease-out forwards; }
+    .eap-copy.done::before { animation: eapRing 0.75s ease-out; }
+    @keyframes eapPop { 0% { transform: scale(1); } 35% { transform: scale(0.9); } 70% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    @keyframes eapDraw { to { stroke-dashoffset: 0; } }
+    @keyframes eapRing { from { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); } to { box-shadow: 0 0 0 10px rgba(16,185,129,0); } }
+
+    .eap-pre {
+        margin: 0; padding: 0.8rem 0 0.9rem; flex: 1; min-height: calc(12 * 1.85 * 0.78rem + 1.7rem);
+        overflow-x: auto; overflow-y: hidden; scrollbar-width: none; color: #e6edf7;
+    }
+    .eap-pre::-webkit-scrollbar { display: none; }
+    .eap-pre:focus-visible { outline: 2px solid #93c5fd; outline-offset: -2px; }
+    .eap-pre code { display: block; min-width: max-content; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; line-height: 1.85; }
+    .eap-code :global(.eap-ln) { display: flex; padding: 0 1.1rem 0 0.6rem; white-space: pre; }
+    .eap-code :global(.eap-n) { flex: 0 0 auto; width: 1.6rem; margin-right: 0.9rem; text-align: right; color: rgba(255,255,255,0.22); user-select: none; }
+    .eap-code :global(.eap-ln.is-new) { animation: eapLine 1.3s ease-out; }
+    @keyframes eapLine { 0% { background: rgba(59,130,246,0.26); box-shadow: inset 2px 0 0 #3b82f6; } 100% { background: rgba(59,130,246,0); box-shadow: inset 2px 0 0 rgba(59,130,246,0); } }
+    .eap-code :global(.t-tag) { color: #93c5fd; }
+    .eap-code :global(.t-str) { color: #a5d6a7; }
+    .eap-code :global(.t-attr) { color: #fcd34d; }
+    .eap-code :global(.t-key) { color: #c4b5fd; }
+    .eap-code :global(.t-p) { color: rgba(230,237,247,0.55); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1000px) {
+        .eap-head { grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .eap-lead { justify-self: start; }
+        .eap-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "ctl" "code"; grid-template-rows: auto; padding: 1rem; border-radius: 24px; }
+        .eap-ctl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1.6rem; padding: 0.2rem 0.4rem 0; }
+        .eap-g:first-child { padding-top: 0.95rem; }
+        .eap-reset { grid-column: 1 / -1; margin-top: 0.6rem; }
+    }
+    @media (max-width: 880px) {
+        /* Táctil: 44 px mínimos en todo control */
+        .eap-seg-b, .eap-opt, .eap-reset { min-height: 44px; }
+        .eap-sw-b { width: 44px; height: 44px; }
+        .eap-copy { min-height: 40px; }
+    }
+    @media (max-width: 640px) {
+        .eap { padding: 3.5rem 5% 1.5rem; }
+        .eap-ctl { grid-template-columns: minmax(0, 1fr); }
+        .eap-stage { padding: 3rem 0.8rem 1.4rem; border-radius: 16px; }
+        .eap-q-in { padding: 1.1rem 1rem 0.95rem; }
+        .eap-q-tr { grid-template-columns: minmax(0, 1fr) 42px 80px; gap: 8px; }
+        .eap-q-name b, .eap-q-name small, .eap-q-org strong { white-space: normal; }
+        .eap-q-org span { white-space: normal; }
+        .eap-q-tr { align-items: start; }
+        .eap-q-tr > span:nth-child(n+2) { padding-top: 1px; }
+        .eap-sw { gap: 0; }
+        .eap-pre code { font-size: 0.72rem; }
+        .eap-pre { min-height: calc(12 * 1.85 * 0.72rem + 1.7rem); }
+    }
+    @media (max-width: 400px) {
+        .eap-seg-b span { font-size: 0.74rem; }
+        .eap-seg-b { gap: 5px; padding: 0 6px; }
+        .eap-sw-hex { display: none; }
+        .eap-stage-bar { left: 12px; right: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .eap *, .eap *::before { transition: none !important; animation: none !important; }
+    }
+</style>
