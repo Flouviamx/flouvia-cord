@@ -1,20 +1,23 @@
 {
   "name": "@flouviahq/elements",
-  "version": "1.1.0",
-  "description": "Embebe el cotizador B2B de Cord en cualquier sitio — Web Component + wrappers de React, Vue, Framer y Webflow. Tu marca, aprobación y pago en línea.",
+  "version": "2.0.0",
+  "description": "Cord Elements: cotizador embebible con Shadow DOM, Builder headless dirigido por el servidor y Fiscal Element. Web Components + React, Vue, Framer y Webflow.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://cordhq.app/elements",
   "keywords": [
     "cord",
     "cotizaciones",
-    "b2b",
     "quote",
     "embed",
     "web-component",
+    "shadow-dom",
+    "headless",
     "react",
-    "mexico",
-    "cfdi"
+    "vue",
+    "cfdi",
+    "rfc",
+    "fiscal"
   ],
   "exports": {
     ".": {
@@ -25,6 +28,16 @@
       "require": {
         "types": "./dist/types/index.d.cts",
         "default": "./dist/index.cjs"
+      }
+    },
+    "./headless": {
+      "import": {
+        "types": "./dist/types/headless/index.d.ts",
+        "default": "./dist/headless.mjs"
+      },
+      "require": {
+        "types": "./dist/types/headless/index.d.cts",
+        "default": "./dist/headless.cjs"
       }
     },
     "./react": {
@@ -97,13 +110,16 @@
     "server.js",
     "server.d.ts",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "headless.js",
+    "headless.d.ts"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check-exports": "node scripts/check-exports.mjs",
-    "prepublishOnly": "npm run build && npm run check-exports && npx attw --pack . && npx publint"
+    "prepublishOnly": "npm run build && npm run check-exports && npm run check-embed && npx attw --pack . && npx publint",
+    "check-embed": "node scripts/sync-embed.mjs --check"
   },
   "peerDependencies": {
     "framer": "*",
@@ -132,6 +148,7 @@
     "vue": "^3.5.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

@@ -8,11 +8,15 @@ on:
   pull_request:
     paths:
       - "packages/elements/**"
+      - "packages/node/**"
+      - "public/embed.js"
       - ".github/workflows/elements.yml"
   push:
     branches: [main]
     paths:
       - "packages/elements/**"
+      - "packages/node/**"
+      - "public/embed.js"
       - ".github/workflows/elements.yml"
   workflow_dispatch:
 
@@ -49,7 +53,36 @@ jobs:
         run: npm run build
       - name: Public exports match api-report.json
         run: npm run check-exports
+      - name: public/embed.js matches the build
+        run: npm run check-embed
       # Ambas herramientas están fijadas en devDependencies; npx usa esa versión.
+      - name: Are the Types Wrong?
+        run: npx --no-install attw --pack .
+      - name: publint
+        run: npx --no-install publint
+
+  node-sdk:
+    name: "@flouviahq/node: types, build and packaging"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/node
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: packages/node/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
       - name: Are the Types Wrong?
         run: npx --no-install attw --pack .
       - name: publint

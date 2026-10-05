@@ -12,6 +12,7 @@ const reportPath = path.join(dir, '..', 'api-report.json');
 
 const ENTRYPOINTS = {
     '.': '../dist/index.mjs',
+    './headless': '../dist/headless.mjs',
     './react': '../dist/react.mjs',
     './vue': '../dist/vue.mjs',
     './framer': '../dist/framer.mjs',

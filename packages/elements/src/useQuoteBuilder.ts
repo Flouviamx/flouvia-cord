@@ -1,168 +1,109 @@
-// Estado del cotizador extraído a un hook standalone — la coexistencia
-// headless/styled estilo Clerk (`useSignIn()` + `<SignIn/>`). `<CordBuilder>`
-// (react.tsx) es ahora un consumidor DELGADO de este hook; un consumidor que
-// necesite su propia UI (como el editor de líneas que André tuvo que
-// reescribir en El Zarco) puede llamar `useQuoteBuilder()` directo, sin
-// `<CordBuilder>` de por medio — solo necesita estar bajo un <CordProvider>.
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
-import { calculateTotals } from './engine.js';
-import { useCordContext, useCordTranslations, useCreateQuote, useCordCatalog, useCordClients, en } from './context.js';
-import type { CordProduct, CordClient, CreateQuoteInput, CreateQuoteResponse, Terminos } from './types.js';
-
-export interface QuoteBuilderItem {
-    descripcion: string;
-    cantidad: number;
-    precio_unitario: number;
-}
+// Hooks de React sobre el núcleo headless. `useQuoteBuilder` es el estado
+// completo del Builder sin UI (como `useSignIn()` frente a `<SignIn/>`);
+// `<CordBuilder>` es un consumidor delgado de este hook.
+import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
+import { createQuoteBuilder, type QuoteBuilder, type QuoteBuilderState, type QuoteBuilderEvent } from './headless/quote-builder.js';
+import { createFiscalForm, type FiscalForm, type FiscalFormState } from './headless/fiscal-form.js';
+import type { FiscalReceptorInput } from './fiscal/receptor.js';
+import { useCordContext, useCordTranslations, useStore, en } from './context.js';
+import type { CordProduct, CordClient, CreateQuoteResponse } from './types.js';
 
 export interface UseQuoteBuilderOptions {
     onQuoteCreated?: (quote: CreateQuoteResponse) => void;
-    /** Catálogo de productos. Si se pasa, NO se hace fetch (ver useCordCatalog). */
+    /** Catálogo propio; si se pasa, no se pide a Cord. */
     catalog?: CordProduct[];
-    /** Clientes conocidos. Si se pasa, NO se hace fetch (ver useCordClients). */
+    /** Clientes conocidos (modo proxy o tu propio CRM). */
     clients?: CordClient[];
-    /** % de IVA (0.16 = 16%). Default 0.16 — idealmente el mismo que tu org en Cord. */
-    ivaPct?: number;
 }
 
-export interface BuilderContextType {
-    cliente: string; setCliente: (v: string) => void;
-    clienteId: string | undefined; setClienteId: (v: string | undefined) => void;
-    email: string; setEmail: (v: string) => void;
-    notas: string; setNotas: (v: string) => void;
-    terminos: Terminos; setTerminos: (v: Terminos) => void;
-    vigenciaDias: number; setVigenciaDias: (v: number) => void;
-    moneda: string; setMoneda: (v: string) => void;
-    ivaIncluido: boolean; setIvaIncluido: (v: boolean) => void;
-
-    items: QuoteBuilderItem[]; setItems: (v: QuoteBuilderItem[]) => void;
-    products: CordProduct[];
+export interface UseQuoteBuilderResult extends QuoteBuilderState {
+    builder: QuoteBuilder;
     clients: CordClient[];
-    subtotal: number;
-    iva: number;
-    total: number;
-    isLoading: boolean;
     t: typeof en;
-    handleSubmit: (e: FormEvent) => void;
-    updateItem: (idx: number, updates: Partial<QuoteBuilderItem>) => void;
-    removeItem: (idx: number) => void;
-    submitError: string | null;
+    /** Nombre del impuesto del país (IVA, VAT, GST). */
+    taxLabel: string;
+    /** Formatea un importe en la divisa elegida y el locale del Provider. */
+    formatMoney: (amount: number) => string;
+    /** Mensaje traducido del primer problema de un campo, o null. */
+    issueFor: (field: string) => string | null;
 }
 
-/** Requiere estar bajo un <CordProvider> (usa useCordContext internamente). */
-export function useQuoteBuilder(opts: UseQuoteBuilderOptions = {}): BuilderContextType {
-    const { onQuoteCreated, catalog, clients: propClients } = opts;
-    const context = useCordContext();
-    // Precedencia: ivaPct de ESTA instancia > <CordProvider>. Sin ninguno de
-    // los dos, ANTES se caía a 0.16 (16%, la tasa mexicana) en silencio — un
-    // Builder embebido en Madrid o Austin calculaba con IVA mexicano sin que
-    // nadie lo pidiera. Configurarlo en el Provider (no por instancia) evita
-    // además que el total del Builder diverja del que calcula el servidor
-    // para tu org.
-    if (opts.ivaPct === undefined && context.ivaPct === undefined) {
-        throw new Error(
-            'useQuoteBuilder necesita ivaPct: pásalo como opción del hook o configúralo en <CordProvider ivaPct={...}>. ' +
-            'Sin una tasa explícita no se puede calcular un total — antes se asumía 0.16 (16%, México) en silencio.',
-        );
+export type BuilderContextType = UseQuoteBuilderResult;
+
+export function formatMoney(amount: number, currency: string, locale: 'es' | 'en'): string {
+    const intl = locale === 'en' ? 'en-US' : 'es-MX';
+    try {
+        return new Intl.NumberFormat(intl, { style: 'currency', currency: currency || 'MXN' }).format(Number(amount) || 0);
+    } catch {
+        return `${(Number(amount) || 0).toFixed(2)} ${currency}`;
     }
-    const ivaPct = opts.ivaPct ?? context.ivaPct!;
+}
+
+/** Requiere estar bajo un <CordProvider> con publishableKey o proxyUrl. */
+export function useQuoteBuilder(opts: UseQuoteBuilderOptions = {}): UseQuoteBuilderResult {
+    const context = useCordContext();
     const t = useCordTranslations();
-    const { createQuote, isLoading } = useCreateQuote();
-    // Estos dos hooks se llaman SIEMPRE (regla de hooks — nunca
-    // condicionalmente); `skip` apaga su fetch interno cuando el consumidor
-    // YA trajo `catalog`/`clients` como prop — antes esto disparaba 2 fetches
-    // desperdiciados (y en El Zarco, 2 404 reales) en cada mount.
-    const { products: fetchedProducts } = useCordCatalog({ skip: !!catalog });
-    const { clients: fetchedClients } = useCordClients({ skip: !!propClients });
-    const products = catalog || fetchedProducts || [];
-    const clients = propClients || fetchedClients || [];
+    const optsRef = useRef(opts);
+    optsRef.current = opts;
+    const analyticsRef = useRef(context.onAnalyticsEvent);
+    analyticsRef.current = context.onAnalyticsEvent;
 
-    const [cliente, setCliente] = useState('');
-    const [clienteId, setClienteId] = useState<string | undefined>();
-    const [email, setEmail] = useState('');
-    const [notas, setNotas] = useState('');
-    const [terminos, setTerminos] = useState<Terminos>('contado');
-    const [vigenciaDias, setVigenciaDias] = useState(15);
-    const [moneda, setMoneda] = useState('MXN');
-    const [ivaIncluido, setIvaIncluido] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
+    if (!context.client) {
+        throw new Error('useQuoteBuilder necesita <CordProvider publishableKey="pk_…"> o <CordProvider proxyUrl="/api/cord">.');
+    }
+    const client = context.client;
 
-    const [items, setItems] = useState<QuoteBuilderItem[]>([{ descripcion: '', cantidad: 1, precio_unitario: 0 }]);
+    const builder = useMemo(() => createQuoteBuilder({
+        client,
+        catalog: opts.catalog,
+        onCreated: (q) => optsRef.current.onQuoteCreated?.(q),
+        onEvent: (event: QuoteBuilderEvent, payload) => analyticsRef.current?.(event, payload),
+    // El catálogo inicial se toma al crear; para cambiarlo, remonta con otra key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [client]);
 
-    const { subtotal, iva, total } = useMemo(
-        () => calculateTotals(items, ivaPct, ivaIncluido),
-        [items, ivaPct, ivaIncluido],
-    );
-
-    useEffect(() => {
-        context.onAnalyticsEvent?.('QUOTE_BUILDER_MOUNTED', { items: items.length });
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
-    }, []);
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setSubmitError(null);
-        if (items.some((i) => !i.descripcion)) {
-            setSubmitError(t.errorDesc);
-            return;
-        }
-
-        context.onAnalyticsEvent?.('CHECKOUT_STARTED', { subtotal, itemsCount: items.length, moneda });
-
-        // Sin `clienteId` (no hizo match con el datalist) mandamos el bloque
-        // `cliente` — el servidor hace find-or-create (nunca actualiza uno
-        // existente, ver createCotizacion en src/lib/cotizaciones.ts). Con
-        // `clienteId` ya resuelto, no hay nada que crear.
-        const payload: CreateQuoteInput = {
-            cliente_id: clienteId,
-            cliente: !clienteId && cliente ? { empresa: cliente, email: email || undefined } : undefined,
-            notas,
-            terminos,
-            vigencia_dias: vigenciaDias,
-            base_currency: moneda,
-            iva_incluido: ivaIncluido,
-            items,
-        };
-
-        const res = await createQuote(payload);
-        if (res && onQuoteCreated) {
-            onQuoteCreated(res);
-        } else if (!res) {
-            context.onAnalyticsEvent?.('API_ERROR', { action: 'create_quote' });
-        }
-    };
-
-    const updateItem = (index: number, updates: Partial<QuoteBuilderItem>) => {
-        const newItems = [...items];
-        newItems[index] = { ...newItems[index], ...updates };
-        setItems(newItems);
-        context.onAnalyticsEvent?.('ITEM_UPDATED', { index, updates });
-    };
-
-    const removeItem = (index: number) => {
-        if (items.length === 1) return;
-        const newItems = [...items];
-        newItems.splice(index, 1);
-        setItems(newItems);
-        context.onAnalyticsEvent?.('ITEM_REMOVED', { index });
-    };
+    const state = useStore(builder);
+    const locale = context.locale || 'es';
+    const taxLabel = state.config?.impuestos.etiqueta ?? t.tax;
 
     return {
-        cliente, setCliente, clienteId, setClienteId, email, setEmail,
-        notas, setNotas, terminos, setTerminos, vigenciaDias, setVigenciaDias,
-        moneda, setMoneda, ivaIncluido, setIvaIncluido,
-        items, setItems, products, clients, subtotal, iva, total, isLoading, t,
-        handleSubmit, updateItem, removeItem, submitError,
+        ...state,
+        builder,
+        clients: opts.clients ?? [],
+        t,
+        taxLabel,
+        formatMoney: (amount) => formatMoney(amount, state.moneda, locale),
+        issueFor: (field) => {
+            const issue = state.issues.find((i) => i.field === field);
+            return issue ? (t.issue[issue.code] ?? issue.code) : null;
+        },
     };
+}
+
+/** Formulario fiscal headless conectado a React. */
+export function useFiscalForm(initial?: FiscalReceptorInput): FiscalFormState & { form: FiscalForm } {
+    const form = useMemo(() => createFiscalForm(initial),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [initial?.country]);
+    const state = useStore(form);
+    return { ...state, form };
 }
 
 // ==== Contexto para el patrón compound (<CordBuilder.Header/> etc.) ====
 
-export const BuilderContext = createContext<BuilderContextType | null>(null);
+export const BuilderContext = createContext<UseQuoteBuilderResult | null>(null);
 
-export function useBuilderContext(): BuilderContextType {
+export function useBuilderContext(): UseQuoteBuilderResult {
     const ctx = useContext(BuilderContext);
     if (!ctx) throw new Error('Builder components must be used within a <CordBuilder>');
     return ctx;
 }
+
+/** Sincroniza un FiscalForm con el builder: el receptor válido viaja con la cotización. */
+export function useLinkFiscalForm(builder: QuoteBuilder, form: FiscalForm) {
+    useEffect(() => form.subscribe((s) => {
+        builder.setFiscal(s.validation.value.tax_id ? { ...s.values } : null);
+    }), [builder, form]);
+}
+
+export type { QuoteBuilderState, QuoteBuilder };

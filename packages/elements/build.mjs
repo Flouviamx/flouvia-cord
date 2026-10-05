@@ -10,7 +10,7 @@
 // En este monorepo esbuild se resuelve desde el node_modules de la raíz; como
 // paquete independiente, `npm i` lo trae vía devDependencies.
 import * as esbuild from 'esbuild';
-import { readdirSync, copyFileSync } from 'node:fs';
+import { readdirSync, copyFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const common = {
@@ -26,6 +26,8 @@ const common = {
 const targets = [
     { entryPoints: ['src/index.ts'],  outfile: 'dist/index.mjs', format: 'esm' },
     { entryPoints: ['src/index.ts'],  outfile: 'dist/index.cjs', format: 'cjs' },
+    { entryPoints: ['src/headless/index.ts'], outfile: 'dist/headless.mjs', format: 'esm' },
+    { entryPoints: ['src/headless/index.ts'], outfile: 'dist/headless.cjs', format: 'cjs' },
     { entryPoints: ['src/react.tsx'], outfile: 'dist/react.mjs', format: 'esm', jsx: 'automatic' },
     { entryPoints: ['src/react.tsx'], outfile: 'dist/react.cjs', format: 'cjs', jsx: 'automatic' },
     { entryPoints: ['src/vue.ts'], outfile: 'dist/vue.mjs', format: 'esm' },
@@ -35,6 +37,7 @@ const targets = [
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.mjs', format: 'esm' },
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.cjs', format: 'cjs' },
     { entryPoints: ['src/webflow.ts'], outfile: 'dist/webflow.js', format: 'iife', globalName: 'CordWebflow' },
+    { entryPoints: ['src/embed-script.ts'], outfile: 'dist/embed.js', format: 'iife', sourcemap: false, legalComments: 'none' },
     { entryPoints: ['src/server.ts'], outfile: 'dist/server.mjs', format: 'esm', platform: 'node' },
     { entryPoints: ['src/server.ts'], outfile: 'dist/server.cjs', format: 'cjs', platform: 'node' },
 ];
@@ -45,12 +48,15 @@ for (const t of targets) {
 
 // Copia dist/types/*.d.ts → *.d.cts para satisfacer la resolución `require` de TS.
 const typesDir = 'dist/types';
-try {
-    for (const f of readdirSync(typesDir)) {
-        if (f.endsWith('.d.ts')) {
-            copyFileSync(join(typesDir, f), join(typesDir, f.replace(/\.d\.ts$/, '.d.cts')));
-        }
+function copyCts(dir) {
+    for (const f of readdirSync(dir)) {
+        const full = join(dir, f);
+        if (statSync(full).isDirectory()) copyCts(full);
+        else if (f.endsWith('.d.ts')) copyFileSync(full, full.replace(/\.d\.ts$/, '.d.cts'));
     }
+}
+try {
+    copyCts(typesDir);
     console.log('✓ .d.cts generados en dist/types/ (dual-package)');
 } catch (e) {
     console.warn('⚠ No se encontró dist/types/ — corre `tsc -p tsconfig.json` antes de build.mjs (usa `npm run build`).');

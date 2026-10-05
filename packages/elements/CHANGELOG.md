@@ -2,6 +2,38 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
+## [2.0.0] — sin publicar
+
+Elements pasa a ser headless de punta a punta: todo el estado vive en un núcleo
+sin framework (`@flouviahq/elements/headless`) y React, Vue, los Web Components y
+el loader de una línea son consumidores de ese mismo núcleo. El SDK de servidor
+se separa en `@flouviahq/node`.
+
+### Breaking changes — tabla de migración
+
+| Antes | Ahora | Qué hacer |
+|---|---|---|
+| `proxyUrl` era el endpoint de crear (`POST {proxyUrl}`) y `{proxyUrl}/clientes` | `proxyUrl` es una base con la forma de `/api/v1`: `GET {proxyUrl}/elements/config`, `GET {proxyUrl}/productos`, `POST {proxyUrl}/cotizaciones`, `GET {proxyUrl}/clientes` | Monta `createElementsProxy()` de `@flouviahq/node` en `/api/cord/[...path]`, o mueve tu handler de crear a `{proxyUrl}/cotizaciones`. |
+| `useQuoteBuilder()` devolvía `cliente`/`setCliente(string)`, `items` sin llave, `updateItem(idx, …)`, `ivaIncluido`, `subtotal`/`iva`/`total` | Devuelve el estado headless: `cliente` (objeto), `items` con `key`, `builder.updateItem(key, …)`, `precios_incluyen_impuesto`, `totals` (con `porTasa` y `retenciones`), `issues`, `status` | Lee `state.totals.total` en vez de `total`; llama `builder.setCliente({ empresa })`; usa `item.key` en vez del índice. |
+| `ivaPct` en `<CordProvider>` / `useQuoteBuilder` | Deprecado y sin efecto: cada línea elige su tasa del catálogo real de la organización | Quítalo. Si lo dejas, solo verás un aviso en desarrollo. |
+| Divisas fijas MXN/USD, `$` con formato es-MX, una sola tasa, etiqueta "IVA" | Divisas, tasas por línea, retenciones, términos y nombre del impuesto vienen de `GET /api/v1/elements/config`; montos con `Intl` en la divisa elegida | Nada. Si dependías del texto "IVA", ahora dice el nombre del país (VAT, GST, Sales tax). |
+| `<CordProvider appearance>` escribía en `:root` y ponía `data-cord-theme` en `<html>` | Las variables `--cord-*` se aplican solo en la raíz de cada componente | Si estilizabas `html[data-cord-theme]`, cambia a la clase `.cord-builderRoot`. |
+| `<cord-cotizador>` en el light DOM con estilos en `<head>` | `<cord-quote>` (y `<cord-cotizador>` como alias) en Shadow DOM; personaliza con `::part(frame)`, `::part(skeleton)` y `--cord-*` | Si apuntabas a `.cord-embed iframe` desde tu CSS, usa `cord-quote::part(frame)`. |
+| `./server` (`CordAPI`, `CordWebhooks`) | Deprecado; `@flouviahq/node` lo reemplaza con la API v1 completa y anti-replay obligatorio | `new Cord(sk)` y `await constructEvent(rawBody, headers, secret)`. |
+
+### Added
+
+- **`@flouviahq/elements/headless`**: `createCordClient` (idempotencia automática, reintentos con `Retry-After`, timeouts, caché de configuración con ETag), `createQuoteBuilder`, `createFiscalForm`, `reduceQuoteView`, `createStore`, el módulo fiscal y el validador de appearance. Sin efectos al importar.
+- **Fiscal Element**: `<cord-fiscal-form>` (asociado a formularios, aporta su valor y bloquea el envío con errores), `<CordFiscalForm>` en React, `useCordFiscalForm` en Vue y `<CordBuilder fiscal>`. RFC con dígito verificador del SAT, régimen y uso de CFDI filtrados por tipo de persona, 616/S01 para público en general, aviso del régimen societario en el nombre; NIF/NIE/CIF y EIN. El servidor valida con el mismo código.
+- **Estado en vivo**: `controller.state`, la propiedad `state` y el evento `statechange` de `<cord-quote>`, `onStateChange` en React y el evento `state` en Vue. Eventos nuevos `cord:updated` y `cord:status_changed`; `cord:ready` trae estado, folio, total y divisa (solo con dominios permitidos).
+- **Doble clic seguro**: el Builder y `useCreateQuote` usan una sola clave de idempotencia por intento de envío.
+- `public/embed.js` y `./webflow` salen del mismo `src/loader.ts`; CI verifica que el archivo publicado coincide con el build.
+
+### Security
+
+- El relay del iframe solo acepta los eventos conocidos y acota la altura.
+- Todo appearance pasa por el validador por gramática antes de llegar a CSS.
+
 ## [1.1.0] — sin publicar
 
 ### Security

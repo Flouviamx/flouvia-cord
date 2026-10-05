@@ -91,7 +91,17 @@ function extractSignatureHeaders(input: string | Headers | Record<string, string
 
 let warnedLegacyOnce = false;
 
+let warnedDeprecated = false;
+function warnDeprecated() {
+    if (warnedDeprecated) return;
+    warnedDeprecated = true;
+    console.warn('[Cord] @flouviahq/elements/server está deprecado: usa @flouviahq/node (API v1 completa, webhooks con anti-replay obligatorio y proxy seguro para Elements).');
+}
+
+/** @deprecated Usa `constructEvent` de `@flouviahq/node`. */
 export class CordWebhooks {
+    constructor() { warnDeprecated(); }
+
     /**
      * Valida y decodifica un webhook proveniente de Cord (Node: HMAC SHA-256 vía `node:crypto`).
      * Para runtimes edge/browser sin `node:crypto`, usa `constructEventAsync` (WebCrypto).
@@ -228,6 +238,7 @@ function timingSafeHexEqual(a: string, b: string): boolean {
     return diff === 0;
 }
 
+/** @deprecated Usa `new Cord(sk)` de `@flouviahq/node`. */
 export class CordAPI extends BaseCordAPI {
     public readonly webhooks: CordWebhooks;
 

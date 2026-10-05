@@ -1,5 +1,8 @@
 import type * as React from 'react';
 import type { CordElements } from './elements.js';
+import type { FiscalReceptorInput } from './fiscal/receptor.js';
+import type { ReadableStore } from './headless/store.js';
+import type { QuoteViewState } from './headless/quote-view.js';
 
 // Tipos públicos de @flouviahq/elements. Superficie mínima a propósito.
 
@@ -22,7 +25,13 @@ export interface CordEventDetail {
 // Payloads reales tal como los emite QuoteCard.astro. `approved` y `signed`
 // se disparan AMBOS por una sola acción del cliente (aprobar = firmar) — no
 // los cuentes como dos eventos de negocio distintos si agregas métricas.
-export interface CordReadyDetail { }
+export interface CordReadyDetail {
+    /** Presentes solo con dominios permitidos configurados (modo interactivo). */
+    status?: string | null;
+    folio?: string | null;
+    moneda?: string | null;
+    total?: number | null;
+}
 export interface CordViewedDetail { token?: string }
 export interface CordApprovedDetail { signed_by: string; hash: string }
 export interface CordSignedDetail { signed_by: string; hash: string }
@@ -30,6 +39,10 @@ export interface CordRejectedDetail { comentario: string }
 export interface CordPayDetail { url: string }
 export interface CordMessageDetail { action: string; mensaje: string; propuesta?: unknown }
 export interface CordItemCommentDetail { item_id: string; mensaje: string }
+/** El vendedor cambió la propuesta mientras el cliente la tenía abierta. */
+export interface CordUpdatedDetail { subtotal: number; total: number; moneda: string }
+/** Estado terminal alcanzado: paid, rejected, expired o invoiced. */
+export interface CordStatusChangedDetail { status: string }
 
 export type CordEvent =
     | { type: 'cord:ready'; detail: CordReadyDetail }
@@ -39,7 +52,9 @@ export type CordEvent =
     | { type: 'cord:rejected'; detail: CordRejectedDetail }
     | { type: 'cord:pay'; detail: CordPayDetail }
     | { type: 'cord:message'; detail: CordMessageDetail }
-    | { type: 'cord:item_comment'; detail: CordItemCommentDetail };
+    | { type: 'cord:item_comment'; detail: CordItemCommentDetail }
+    | { type: 'cord:updated'; detail: CordUpdatedDetail }
+    | { type: 'cord:status_changed'; detail: CordStatusChangedDetail };
 
 export interface CordElementOptions {
     /** Token público de la cotización (de /q/{token} o la API). REQUERIDO. */
@@ -62,8 +77,12 @@ export interface CordElementOptions {
     onMessage?: (detail: CordMessageDetail) => void;
     /** El cliente comentó una línea/partida específica. */
     onItemComment?: (detail: CordItemCommentDetail) => void;
-    /** El cliente inició el pago en línea. */
+    /** El cliente inició el pago en línea. Cord ya abre la página de pago; `url` es solo informativa. */
     onPay?: (detail: CordPayDetail) => void;
+    /** El vendedor cambió la propuesta (nuevo total). */
+    onUpdated?: (detail: CordUpdatedDetail) => void;
+    /** La cotización llegó a un estado terminal (pagada, rechazada, vencida, facturada). */
+    onStatusChanged?: (detail: CordStatusChangedDetail) => void;
     /** Catch-all tipado: cualquier evento `cord:*` (incluye los anteriores). Habilita `switch` exhaustivo sobre `event.type`. */
     onEvent?: (event: CordEvent) => void;
     /** Configuración de branding para inyectar al iframe */
@@ -76,6 +95,8 @@ export interface CordController {
     destroy(): void;
     /** El elemento contenedor. */
     readonly el: HTMLElement;
+    /** Estado en vivo de la cotización (estado, total, aprobada, pagada). */
+    readonly state: ReadableStore<QuoteViewState>;
 }
 
 // ==== API Types ====
@@ -88,6 +109,8 @@ export interface QuoteItemInput {
     cantidad: number;
     precio_unitario: number;
     producto_id?: string;
+    /** Fracción 0–1 de las opciones de GET /api/v1/elements/config. Ausente = tasa default. */
+    tax_rate?: number;
 }
 
 /** Datos para crear una nueva cotización vía API o SDK. */
@@ -111,6 +134,8 @@ export interface CreateQuoteInput {
         contacto?: string;
         telefono?: string;
         rfc?: string;
+        /** Datos fiscales del receptor; el servidor los valida con validateFiscalReceptor. */
+        fiscal?: FiscalReceptorInput;
     };
     /** Términos de pago (ej. 'contado', 'net30'). Sobrescribe los del cliente. */
     terminos?: Terminos;
@@ -243,13 +268,12 @@ interface CordProviderCommonProps {
     /** Idioma de la interfaz y formateos. Por defecto es 'es'. */
     locale?: 'en' | 'es';
     /**
-     * % de IVA de tu organización (0.16 = 16%), usado por `<CordBuilder>`/
-     * `useQuoteBuilder` para mostrar el total EN VIVO. Configúralo aquí (no
-     * por instancia) para que coincida con el `iva_pct` real de tu org en
-     * Cord — si difieren, el total que ve el usuario en el Builder no
-     * coincide con el de la cotización que el servidor termina guardando.
+     * @deprecated Ya no se usa: cada línea toma su tasa de la configuración de
+     * tu organización en Cord (GET /api/v1/elements/config).
      */
     ivaPct?: number;
+    /** Registra en la consola cada petición con su request id. */
+    debug?: boolean;
     /** Estilos inyectados a todos los componentes o iframes renderizados en el Provider. */
     appearance?: CordAppearance;
     /** Callback global para interceptar eventos de telemetría o acciones (ej. CHECKOUT_STARTED). */

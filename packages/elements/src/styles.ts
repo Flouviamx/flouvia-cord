@@ -90,6 +90,19 @@ const BASE_CSS = `
   .cord-submitButton { background-color: var(--cord-color-primary, #0A2240); color: #ffffff; padding: 12px 24px; border-radius: var(--cord-border-radius, 12px); border: none; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 15px; transition: opacity 0.15s ease, transform 0.1s ease; }
   .cord-submitButton:disabled { opacity: 0.7; cursor: not-allowed; }
   .cord-submitButton:active:not(:disabled) { transform: scale(0.98); }
+  .cord-submitButton:focus-visible, .cord-addItemButton:focus-visible, .cord-itemRemoveButton:focus-visible { outline: 2px solid var(--cord-color-primary, #0A2240); outline-offset: 2px; }
+
+  .cord-itemTaxField { width: 150px; flex: 0 0 150px; }
+  .cord-summaryTaxRow { display: flex; justify-content: space-between; margin-bottom: 8px; opacity: 0.8; }
+  .cord-summaryRetRow { display: flex; justify-content: space-between; margin-bottom: 8px; opacity: 0.8; color: var(--cord-color-text-secondary, #64748b); }
+  .cord-fieldError { color: var(--cord-color-danger, #dc2626); font-size: 12px; margin-top: 4px; }
+  .cord-fieldWarning { color: var(--cord-color-text-secondary, #64748b); font-size: 12px; margin-top: 4px; }
+  .cord-fiscalSection { margin-bottom: 24px; }
+  @media (max-width: 880px) {
+    .cord-itemQtyField, .cord-itemPriceField, .cord-itemTaxField { flex: 1 1 calc(50% - 12px); width: auto; }
+    .cord-itemRemoveButton { min-width: 44px; min-height: 44px; }
+    .cord-summaryInner { width: 100%; }
+  }
 }
 `;
 

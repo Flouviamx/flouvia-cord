@@ -4,6 +4,9 @@
 // su propio listener (scoped por contentWindow) y se limpia con destroy().
 import type { CordElementOptions, CordController, CordEvent } from './types.js';
 import { resolveOrigin } from './config.js';
+import { sanitizeAppearance } from './appearance.js';
+import { createStore } from './headless/store.js';
+import { INITIAL_QUOTE_VIEW, reduceQuoteView } from './headless/quote-view.js';
 
 const STYLE_ID = 'cord-elements-style';
 
@@ -13,10 +16,9 @@ const REDUCED =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Eventos que re-emitimos. El catch-all (onEvent) recibe todos. */
-const RELAYED = ['cord:ready', 'cord:viewed', 'cord:approved', 'cord:signed', 'cord:rejected', 'cord:message', 'cord:item_comment', 'cord:pay'] as const;
+const RELAYED = ['cord:ready', 'cord:viewed', 'cord:approved', 'cord:signed', 'cord:rejected', 'cord:message', 'cord:item_comment', 'cord:pay', 'cord:updated', 'cord:status_changed'] as const;
 
-function injectStyles() {
-    if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
+export const EMBED_CSS = (() => {
     const css =
         '.cord-embed{position:relative;width:100%;}' +
         '.cord-embed iframe{width:100%;border:0;display:block;background:transparent;' +
@@ -29,28 +31,62 @@ function injectStyles() {
         'transparent 20%,rgba(10,25,47,.05) 40%,rgba(10,25,47,.07) 50%,rgba(10,25,47,.05) 60%,transparent 80%);' +
         'background-size:200% 100%;' + (REDUCED ? '' : 'animation:cord-shimmer 1.4s infinite linear;') + '}' +
         '@keyframes cord-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}';
+    return css;
+})();
+
+// En el documento: un <style> compartido. En un Shadow DOM: los estilos viven
+// dentro de la raíz y no tocan la página anfitriona.
+function injectStyles(root: Document | ShadowRoot) {
+    if (typeof document === 'undefined') return;
+    if (root instanceof Document || !('host' in root)) {
+        if (document.getElementById(STYLE_ID)) return;
+        const st = document.createElement('style');
+        st.id = STYLE_ID;
+        st.textContent = EMBED_CSS;
+        (document.head || document.documentElement).appendChild(st);
+        return;
+    }
+    const shadow = root as ShadowRoot;
+    if (shadow.querySelector(`style[data-cord="${STYLE_ID}"]`)) return;
+    try {
+        if ('adoptedStyleSheets' in shadow && typeof CSSStyleSheet !== 'undefined') {
+            const sheet = new CSSStyleSheet();
+            sheet.replaceSync(EMBED_CSS);
+            shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
+            return;
+        }
+    } catch { /* cae al <style> */ }
     const st = document.createElement('style');
-    st.id = STYLE_ID;
-    st.textContent = css;
-    (document.head || document.documentElement).appendChild(st);
+    st.dataset.cord = STYLE_ID;
+    st.textContent = EMBED_CSS;
+    shadow.appendChild(st);
 }
+
+const MAX_HEIGHT = 20000;
+const isDev = () => typeof process === 'undefined' || process.env?.NODE_ENV !== 'production';
 
 /**
  * Monta el cotizador dentro de `target`. Devuelve un controller con destroy().
  */
-export function mountCotizador(target: HTMLElement, opts: CordElementOptions): CordController {
+export function mountCotizador(target: HTMLElement, opts: CordElementOptions, styleRoot?: Document | ShadowRoot): CordController {
     if (!target) throw new Error('[Cord] target inválido');
     if (!opts || !opts.token) throw new Error('[Cord] falta opts.token');
+    if (opts.appearance && isDev()) {
+        const { rejected } = sanitizeAppearance(opts.appearance);
+        if (rejected.length) console.warn(`[Cord] appearance: Cord descarta estos valores por no ser válidos: ${rejected.join(', ')}.`);
+    }
+    const state = createStore(INITIAL_QUOTE_VIEW);
 
     const base = resolveOrigin(opts.baseUrl);
     const origin = (() => { try { return new URL(base).origin; } catch { return base; } })();
     const minH = typeof opts.minHeight === 'number' && opts.minHeight > 0 ? opts.minHeight : 420;
 
-    injectStyles();
+    injectStyles(styleRoot ?? (typeof document !== 'undefined' ? document : (undefined as any)));
     target.classList.add('cord-embed');
 
     const skeleton = document.createElement('div');
     skeleton.className = 'cord-embed-skeleton';
+    skeleton.setAttribute('part', 'skeleton');
     skeleton.innerHTML = '<div class="cord-embed-shimmer"></div>';
     target.appendChild(skeleton);
 
@@ -68,6 +104,7 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     iframe.setAttribute('allow', 'payment; clipboard-write');
+    iframe.setAttribute('part', 'frame');
     iframe.style.height = minH + 'px';
     // El outer <iframe> refleja el theme (chrome del elemento — scrollbar/UA
     // widgets DESDE afuera); el contenido de adentro lo decide /embed/[token]
@@ -90,16 +127,19 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
         if (!data || data.source !== 'cord' || !data.type) return;
         if (iframe.contentWindow && ev.source !== iframe.contentWindow) return;
 
-        if (data.type === 'cord:resize' && data.height) {
-            iframe.style.height = data.height + 'px';
+        if (data.type === 'cord:resize') {
+            const h = Number(data.height);
+            if (Number.isFinite(h) && h > 0) iframe.style.height = Math.min(MAX_HEIGHT, Math.ceil(h)) + 'px';
             return;
         }
+        if (!(RELAYED as readonly string[]).includes(data.type)) return;
         if (data.type === 'cord:ready') reveal();
 
         // El payload viaja por postMessage sin garantía estática de forma —
         // se castea a CordEvent (la unión discriminada documentada) en el
         // único punto donde cruza la frontera no tipada.
-        const evt = { type: data.type, detail: data.detail || {} } as CordEvent;
+        const evt = { type: data.type, detail: data.detail && typeof data.detail === 'object' ? data.detail : {} } as CordEvent;
+        state.set((prev) => reduceQuoteView(prev, evt));
         if (opts.onEvent) opts.onEvent(evt);
         switch (evt.type) {
             case 'cord:ready':        opts.onReady?.(); break;
@@ -110,6 +150,8 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
             case 'cord:message':      opts.onMessage?.(evt.detail); break;
             case 'cord:item_comment': opts.onItemComment?.(evt.detail); break;
             case 'cord:pay':          opts.onPay?.(evt.detail); break;
+            case 'cord:updated':      opts.onUpdated?.(evt.detail); break;
+            case 'cord:status_changed': opts.onStatusChanged?.(evt.detail); break;
         }
     };
     window.addEventListener('message', onMessage);
@@ -120,6 +162,7 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions): C
 
     return {
         el: target,
+        state,
         destroy() {
             window.removeEventListener('message', onMessage);
             iframe.removeEventListener('load', onLoad);

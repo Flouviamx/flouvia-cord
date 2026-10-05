@@ -1,9 +1,7 @@
 'use client';
-// Todo este módulo es hooks + DOM del navegador — sin esta directiva, Next.js
-// App Router (Server Components por default) rompe con "You're importing a
-// component that needs useState/useEffect..." en cuanto alguien importa
-// CordProvider/CordBuilder/CordCotizador desde un Server Component.
-import React, { useRef, useEffect, useMemo, useContext, type ReactNode } from 'react';
+// Componentes de React. Todo el estado vive en el núcleo headless; estos
+// componentes solo lo dibujan. Next.js App Router necesita 'use client'.
+import React, { useRef, useEffect, useMemo, useContext, useState, type ReactNode } from 'react';
 import { mountCotizador } from './core.js';
 import { getCordConfig } from './config.js';
 import { injectBaseStyles } from './styles.js';
@@ -17,10 +15,16 @@ import {
     useCordCatalog,
     useCordClients,
     useCreateQuote,
+    useStore,
+    appearanceStyle,
+    usePrefersDark,
     dictionaries,
 } from './context.js';
-import { useQuoteBuilder, useBuilderContext, BuilderContext } from './useQuoteBuilder.js';
-import type { QuoteBuilderItem, UseQuoteBuilderOptions } from './useQuoteBuilder.js';
+import { useQuoteBuilder, useBuilderContext, BuilderContext, useFiscalForm, useLinkFiscalForm, formatMoney } from './useQuoteBuilder.js';
+import type { UseQuoteBuilderOptions, UseQuoteBuilderResult } from './useQuoteBuilder.js';
+import { fiscalText } from './fiscal/messages.js';
+import type { FiscalReceptor, FiscalReceptorInput, FiscalField } from './fiscal/receptor.js';
+import type { QuoteViewState } from './headless/quote-view.js';
 import type {
     CordAppearance,
     CordElementOptions,
@@ -32,10 +36,10 @@ import type {
     CordMessageDetail,
     CordItemCommentDetail,
     CordPayDetail,
-    Terminos,
+    CordUpdatedDetail,
+    CordStatusChangedDetail,
 } from './types.js';
 
-// Re-exports — mismo API pública que antes de extraer context.ts/useQuoteBuilder.ts.
 export {
     CordProvider,
     useCordContext,
@@ -46,6 +50,9 @@ export {
     useCreateQuote,
     useQuoteBuilder,
     useBuilderContext,
+    useFiscalForm,
+    useStore,
+    formatMoney,
 };
 export { configureCord, getCordConfig } from './config.js';
 export type { CordGlobalConfig } from './config.js';
@@ -63,36 +70,46 @@ export type {
     CordMessageDetail,
     CordItemCommentDetail,
     CordPayDetail,
+    CordUpdatedDetail,
+    CordStatusChangedDetail,
 } from './types.js';
 export type { CordElements, CordElementKey } from './elements.js';
-export type { BuilderContextType, UseQuoteBuilderOptions, QuoteBuilderItem } from './useQuoteBuilder.js';
+export type { UseQuoteBuilderOptions, UseQuoteBuilderResult, BuilderContextType } from './useQuoteBuilder.js';
+export type { QuoteViewState } from './headless/quote-view.js';
 
-// ==== Native Components (Compound Pattern) ====
+type SlotProps = { className?: string; style?: React.CSSProperties };
+
+// ==== Builder (compound) ====
 
 export interface CordBuilderProps extends UseQuoteBuilderOptions {
     className?: string;
     style?: React.CSSProperties;
-    children?: ReactNode; // Supports composable UI
+    /** Muestra la sección de datos fiscales del receptor. */
+    fiscal?: boolean;
+    children?: ReactNode;
 }
 
-export function CordBuilder({ onQuoteCreated, className, style, catalog, clients, children, ivaPct }: CordBuilderProps) {
+export function CordBuilder({ onQuoteCreated, className, style, catalog, clients, fiscal, children }: CordBuilderProps) {
     const context = useCordContext();
-    const state = useQuoteBuilder({ onQuoteCreated, catalog, clients, ivaPct });
+    const state = useQuoteBuilder({ onQuoteCreated, catalog, clients });
+    const dark = usePrefersDark();
 
     useEffect(() => {
-        if (context.appearance?.baseTheme === 'none') return; // headless real: sin CSS de Cord
+        if (context.appearance?.baseTheme === 'none') return;
         injectBaseStyles();
     }, [context.appearance?.baseTheme]);
 
-    const root = resolveElement('builderRoot', context.appearance?.elements, className, style);
+    const root = resolveElement('builderRoot', context.appearance?.elements, className, { ...appearanceStyle(context.appearance, dark), ...style });
+    const onSubmit = (e: React.FormEvent) => { e.preventDefault(); void state.builder.submit(); };
 
     return (
         <BuilderContext.Provider value={state}>
-            <div className={root.className} style={root.style}>
-                <form onSubmit={state.handleSubmit}>
+            <div className={root.className} style={root.style} aria-busy={state.status === 'loading' || state.status === 'submitting'}>
+                <form onSubmit={onSubmit} noValidate>
                     {children ? children : (
                         <>
                             <CordBuilder.Header />
+                            {fiscal && <CordBuilder.Fiscal />}
                             <CordBuilder.Config />
                             <CordBuilder.Items />
                             <CordBuilder.Notes />
@@ -106,26 +123,31 @@ export function CordBuilder({ onQuoteCreated, className, style, catalog, clients
     );
 }
 
-/** Fila de envío default (error + botón) — usada cuando <CordBuilder> no recibe children. */
 function SubmitRow() {
-    const { submitError } = useBuilderContext();
+    const { error, t, issues } = useBuilderContext();
     const { appearance } = useCordContext();
     const row = resolveElement('submitRow', appearance?.elements);
     const err = resolveElement('errorText', appearance?.elements);
+    const message = error ? error.message : issues.length ? t.issue[issues[0].code] ?? issues[0].code : null;
     return (
         <div className={row.className} style={row.style}>
-            {submitError && (
-                <div className={err.className} style={err.style}>
-                    {submitError}
-                </div>
-            )}
+            {message && <div className={err.className} style={err.style} role="alert">{message}{error?.requestId ? ` (${error.requestId})` : ''}</div>}
             <CordBuilder.SubmitButton />
         </div>
     );
 }
 
-CordBuilder.Header = function CordBuilderHeader({ className, style }: { className?: string; style?: React.CSSProperties }) {
-    const { cliente, setCliente, setClienteId, email, setEmail, clients, setTerminos, t } = useBuilderContext();
+function FieldIssue({ field }: { field: string }) {
+    const { issueFor } = useBuilderContext();
+    const { appearance } = useCordContext();
+    const msg = issueFor(field);
+    if (!msg) return null;
+    const el = resolveElement('fieldError', appearance?.elements);
+    return <div id={`cord-issue-${field}`} className={el.className} style={el.style}>{msg}</div>;
+}
+
+CordBuilder.Header = function CordBuilderHeader({ className, style }: SlotProps) {
+    const { cliente, builder, clients, t, issueFor } = useBuilderContext();
     const { appearance } = useCordContext();
     const el = appearance?.elements;
     const field = resolveElement('formField', el, className, style);
@@ -133,57 +155,78 @@ CordBuilder.Header = function CordBuilderHeader({ className, style }: { classNam
     const grid = resolveElement('formFieldGrid', el);
     const label = resolveElement('formFieldLabel', el);
     const input = resolveElement('formFieldInput', el);
+    const listId = 'cord-clientes-list';
 
     return (
         <div className={field.className} style={field.style}>
             <h3 className={title.className} style={title.style}>{t.clientData}</h3>
-            <datalist id="cord-clientes-list">
-                {clients.map((c, i) => (
-                    <option key={i} value={c.empresa} />
-                ))}
-            </datalist>
+            {clients.length > 0 && (
+                <datalist id={listId}>
+                    {clients.map((c) => <option key={c.id} value={c.empresa} />)}
+                </datalist>
+            )}
             <div className={grid.className} style={grid.style}>
                 <div>
-                    <label className={label.className} style={label.style}>{t.nameCompany}</label>
+                    <label className={label.className} style={label.style} htmlFor="cord-cliente-empresa">{t.nameCompany}</label>
                     <input
-                        required
-                        list="cord-clientes-list"
+                        id="cord-cliente-empresa"
+                        list={clients.length ? listId : undefined}
                         className={input.className}
                         style={input.style}
-                        value={cliente}
+                        value={cliente.empresa}
+                        maxLength={200}
+                        autoComplete="organization"
+                        aria-invalid={!!issueFor('cliente.empresa')}
+                        aria-describedby="cord-issue-cliente.empresa"
                         onChange={(e) => {
-                            const val = e.target.value;
-                            setCliente(val);
-                            const matched = clients.find((c) => c.empresa === val);
-                            if (matched) {
-                                setClienteId(matched.id);
-                                if (matched.email) setEmail(matched.email);
-                                if (matched.terminos) setTerminos(matched.terminos);
-                            } else {
-                                setClienteId(undefined);
-                            }
+                            const value = e.target.value;
+                            const match = clients.find((c) => c.empresa === value);
+                            builder.setCliente({ empresa: value, ...(match?.email ? { email: match.email } : {}) });
+                            if (match?.terminos) builder.setTerminos(match.terminos);
                         }}
                         placeholder={t.namePlaceholder}
                     />
+                    <FieldIssue field="cliente.empresa" />
                 </div>
                 <div>
-                    <label className={label.className} style={label.style}>{t.emailOptional}</label>
+                    <label className={label.className} style={label.style} htmlFor="cord-cliente-email">{t.emailOptional}</label>
                     <input
+                        id="cord-cliente-email"
                         type="email"
                         className={input.className}
                         style={input.style}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={cliente.email}
+                        maxLength={254}
+                        autoComplete="email"
+                        aria-invalid={!!issueFor('cliente.email')}
+                        aria-describedby="cord-issue-cliente.email"
+                        onChange={(e) => builder.setCliente({ email: e.target.value })}
                         placeholder={t.emailPlaceholder}
                     />
+                    <FieldIssue field="cliente.email" />
                 </div>
             </div>
         </div>
     );
 };
 
-CordBuilder.Config = function CordBuilderConfig({ className, style }: { className?: string; style?: React.CSSProperties }) {
-    const { terminos, setTerminos, vigenciaDias, setVigenciaDias, moneda, setMoneda, t } = useBuilderContext();
+CordBuilder.Fiscal = function CordBuilderFiscal({ className, style, country }: SlotProps & { country?: string }) {
+    const { builder, config, t } = useBuilderContext();
+    const { appearance, locale = 'es' } = useCordContext();
+    return (
+        <CordFiscalForm
+            country={country ?? config?.fiscal.pais ?? 'MX'}
+            title={t.fiscalData}
+            className={resolveElement('fiscalSection', appearance?.elements, className).className}
+            style={style}
+            locale={locale}
+            builder={builder}
+        />
+    );
+};
+
+CordBuilder.Config = function CordBuilderConfig({ className, style }: SlotProps) {
+    const { terminos, vigencia_dias, moneda, config, builder, t } = useBuilderContext();
     const { appearance } = useCordContext();
     const el = appearance?.elements;
     const field = resolveElement('formField', el, className, style);
@@ -192,161 +235,140 @@ CordBuilder.Config = function CordBuilderConfig({ className, style }: { classNam
     const label = resolveElement('formFieldLabel', el);
     const select = resolveElement('formFieldSelect', el);
     const input = resolveElement('formFieldInput', el);
+    const termLabel: Record<string, string> = { contado: t.cash, net30: t.net30, net60: t.net60 };
 
     return (
         <div className={field.className} style={field.style}>
             <h3 className={title.className} style={title.style}>{t.config}</h3>
             <div className={grid.className} style={grid.style}>
                 <div>
-                    <label className={label.className} style={label.style}>{t.currency}</label>
-                    <select className={select.className} style={select.style} value={moneda} onChange={(e) => setMoneda(e.target.value)}>
-                        <option value="MXN">MXN (Pesos)</option>
-                        <option value="USD">USD (Dólares)</option>
+                    <label className={label.className} style={label.style} htmlFor="cord-moneda">{t.currency}</label>
+                    <select id="cord-moneda" className={select.className} style={select.style} value={moneda} onChange={(e) => builder.setMoneda(e.target.value)} disabled={!config}>
+                        {(config?.monedas ?? [moneda]).filter(Boolean).map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <FieldIssue field="moneda" />
+                </div>
+                <div>
+                    <label className={label.className} style={label.style} htmlFor="cord-terminos">{t.terms}</label>
+                    <select id="cord-terminos" className={select.className} style={select.style} value={terminos} onChange={(e) => builder.setTerminos(e.target.value as typeof terminos)}>
+                        {(config?.terminos ?? ['contado']).map((term) => <option key={term} value={term}>{termLabel[term] ?? term}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className={label.className} style={label.style}>{t.terms}</label>
-                    <select className={select.className} style={select.style} value={terminos} onChange={(e) => setTerminos(e.target.value as Terminos)}>
-                        <option value="contado">{t.cash}</option>
-                        <option value="net30">Net 30</option>
-                        <option value="net60">Net 60</option>
-                    </select>
-                </div>
-                <div>
-                    <label className={label.className} style={label.style}>{t.validityDays}</label>
-                    <input required type="number" min="1" className={input.className} style={input.style} value={vigenciaDias} onChange={(e) => setVigenciaDias(Number(e.target.value))} />
+                    <label className={label.className} style={label.style} htmlFor="cord-vigencia">{t.validityDays}</label>
+                    <input id="cord-vigencia" type="number" inputMode="numeric" min={1} max={365} className={input.className} style={input.style} value={vigencia_dias} onChange={(e) => builder.setVigencia(Number(e.target.value))} />
+                    <FieldIssue field="vigencia_dias" />
                 </div>
             </div>
         </div>
     );
 };
 
-CordBuilder.Notes = function CordBuilderNotes({ className, style }: { className?: string; style?: React.CSSProperties }) {
-    const { notas, setNotas, t } = useBuilderContext();
+CordBuilder.Notes = function CordBuilderNotes({ className, style }: SlotProps) {
+    const { notas, builder, t } = useBuilderContext();
     const { appearance } = useCordContext();
     const el = appearance?.elements;
     const field = resolveElement('formField', el, className, style);
     const label = resolveElement('formFieldLabel', el);
     const textarea = resolveElement('formFieldTextarea', el);
-
     return (
         <div className={field.className} style={field.style}>
-            <label className={label.className} style={label.style}>{t.notes}</label>
-            <textarea className={textarea.className} style={textarea.style} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder={t.notesPlaceholder} />
+            <label className={label.className} style={label.style} htmlFor="cord-notas">{t.notes}</label>
+            <textarea id="cord-notas" maxLength={5000} className={textarea.className} style={textarea.style} value={notas} onChange={(e) => builder.setNotas(e.target.value)} placeholder={t.notesPlaceholder} />
         </div>
     );
 };
 
-CordBuilder.Items = function CordBuilderItems({ className, style }: { className?: string; style?: React.CSSProperties }) {
-    const { items, setItems, products, updateItem, removeItem, ivaIncluido, setIvaIncluido, t } = useBuilderContext();
-    const ctx = useCordContext();
-    const el = ctx.appearance?.elements;
-    const field = resolveElement('formField', el, className, style);
-    const title = resolveElement('sectionTitle', el);
-    const header = resolveElement('itemsHeader', el);
-    const headerActions = resolveElement('itemsHeaderActions', el);
-    const toggleLabel = resolveElement('ivaToggleLabel', el);
-    const toggleTrack = resolveElement('ivaToggleTrack', el);
-    const toggleThumb = resolveElement('ivaToggleThumb', el);
-    const addBtn = resolveElement('addItemButton', el);
-    const row = resolveElement('itemRow', el);
-    const descField = resolveElement('itemDescriptionField', el);
-    const label = resolveElement('formFieldLabel', el);
-    const descInput = resolveElement('itemDescriptionInput', el);
-    const dropdown = resolveElement('productDropdown', el);
-    const dropdownItem = resolveElement('productDropdownItem', el);
-    const dropdownEmpty = resolveElement('productDropdownEmpty', el);
-    const qtyField = resolveElement('itemQtyField', el);
-    const input = resolveElement('formFieldInput', el);
-    const priceField = resolveElement('itemPriceField', el);
-    const removeBtn = resolveElement('itemRemoveButton', el);
+CordBuilder.Items = function CordBuilderItems({ className, style }: SlotProps) {
+    const { items, builder, precios_incluyen_impuesto, config, t, taxLabel, formatMoney: fmt } = useBuilderContext();
+    const { appearance } = useCordContext();
+    const el = appearance?.elements;
+    const r = (key: Parameters<typeof resolveElement>[0], cn?: string, st?: React.CSSProperties) => resolveElement(key, el, cn, st);
+    const field = r('formField', className, style);
+    const [openKey, setOpenKey] = useState<string | null>(null);
+    const taxOptions = config?.impuestos.opciones ?? [];
 
     return (
         <div className={field.className} style={field.style}>
-            <div className={header.className} style={header.style}>
-                <h3 className={title.className} style={title.style}>{t.items}</h3>
-                <div className={headerActions.className} style={headerActions.style}>
-                    <label className={toggleLabel.className} style={toggleLabel.style}>
-                        <span className={toggleTrack.className} style={toggleTrack.style} data-checked={ivaIncluido}>
-                            <span className={toggleThumb.className} style={toggleThumb.style} />
+            <div {...r('itemsHeader')}>
+                <h3 {...r('sectionTitle')}>{t.items}</h3>
+                <div {...r('itemsHeaderActions')}>
+                    <label {...r('ivaToggleLabel')}>
+                        <span {...r('ivaToggleTrack')} data-checked={precios_incluyen_impuesto}>
+                            <span {...r('ivaToggleThumb')} />
                         </span>
-                        <input type="checkbox" checked={ivaIncluido} onChange={(e) => setIvaIncluido(e.target.checked)} style={{ display: 'none' }} />
-                        {t.pricesIncludeIva}
+                        <input type="checkbox" checked={precios_incluyen_impuesto} onChange={(e) => builder.setPreciosIncluyenImpuesto(e.target.checked)} style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
+                        {t.pricesInclude.replace('{tax}', taxLabel)}
                     </label>
-                    <button
-                        type="button"
-                        className={addBtn.className}
-                        style={addBtn.style}
-                        onClick={() => {
-                            setItems([...items, { descripcion: '', cantidad: 1, precio_unitario: 0 }]);
-                            ctx.onAnalyticsEvent?.('ITEM_ADDED', { itemsCount: items.length + 1 });
-                        }}
-                    >
-                        {t.addArticle}
-                    </button>
+                    <button type="button" {...r('addItemButton')} onClick={() => builder.addItem()}>{t.addArticle}</button>
                 </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {items.map((item: QuoteBuilderItem, idx: number) => {
-                    const matchQuery = item.descripcion.toLowerCase();
-                    const matches = products.filter((p) => (p.nombre_web || p.nombre || '').toLowerCase().includes(matchQuery));
-                    const exactMatch = products.find((p) => (p.nombre_web || p.nombre) === item.descripcion);
-                    const showDropdown = !!item.descripcion && !exactMatch;
+                {items.map((item, idx) => {
+                    const matches = openKey === item.key && item.descripcion ? builder.searchProducts(item.descripcion) : [];
+                    const showDropdown = openKey === item.key && !!item.descripcion && !item.producto_id;
+                    const id = (f: string) => `cord-${item.key}-${f}`;
                     return (
-                        <div key={idx} className={row.className} style={row.style}>
-                            <div className={descField.className} style={descField.style}>
-                                <label className={label.className} style={label.style}>{t.description}</label>
+                        <div key={item.key} {...r('itemRow')}>
+                            <div {...r('itemDescriptionField')}>
+                                <label {...r('formFieldLabel')} htmlFor={id('desc')}>{t.description}</label>
                                 <input
-                                    required
-                                    className={descInput.className}
-                                    style={descInput.style}
+                                    id={id('desc')}
+                                    {...r('itemDescriptionInput')}
                                     value={item.descripcion}
-                                    onChange={(e) => updateItem(idx, { descripcion: e.target.value })}
+                                    maxLength={500}
+                                    role="combobox"
+                                    aria-expanded={showDropdown}
+                                    aria-autocomplete="list"
+                                    aria-invalid={!!builder.get().issues.find((i) => i.field === `items.${idx}.descripcion`)}
+                                    onFocus={() => setOpenKey(item.key)}
+                                    onBlur={() => setTimeout(() => setOpenKey((k) => (k === item.key ? null : k)), 120)}
+                                    onChange={(e) => builder.updateItem(item.key, { descripcion: e.target.value, producto_id: null })}
                                     placeholder={t.searchProduct}
                                 />
                                 {showDropdown && (
-                                    <div className={dropdown.className} style={dropdown.style}>
-                                        {matches.slice(0, 15).map((p, i) => (
+                                    <div {...r('productDropdown')} role="listbox">
+                                        {matches.map((p) => (
                                             <div
-                                                key={i}
-                                                className={dropdownItem.className}
-                                                style={dropdownItem.style}
+                                                key={p.id}
+                                                role="option"
+                                                aria-selected={false}
+                                                {...r('productDropdownItem')}
                                                 onMouseDown={(e) => {
                                                     e.preventDefault();
-                                                    updateItem(idx, {
-                                                        descripcion: p.nombre_web || p.nombre,
-                                                        precio_unitario: p.precio_final || p.precio || 0,
-                                                    });
+                                                    builder.updateItem(item.key, { producto_id: p.id, descripcion: p.nombre_web || p.nombre, precio_unitario: Number(p.precio_final ?? p.precio ?? 0) });
+                                                    setOpenKey(null);
                                                 }}
                                             >
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                                    <svg style={{ opacity: 0.5, flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                    <span style={{ fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.nombre_web || p.nombre}</span>
-                                                </span>
-                                                <span style={{ opacity: 0.7, whiteSpace: 'nowrap', marginLeft: '12px' }}>
-                                                    ${Number(p.precio_final || p.precio || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                                                </span>
+                                                <span style={{ fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.nombre_web || p.nombre}</span>
+                                                <span style={{ opacity: 0.7, whiteSpace: 'nowrap', marginLeft: '12px' }}>{fmt(Number(p.precio_final ?? p.precio ?? 0))}</span>
                                             </div>
                                         ))}
-                                        {matches.length === 0 && (
-                                            <div className={dropdownEmpty.className} style={dropdownEmpty.style}>
-                                                <span style={{ opacity: 0.5 }}>+</span> {t.freeItemAdd}
-                                            </div>
-                                        )}
+                                        {matches.length === 0 && <div {...r('productDropdownEmpty')}>{t.freeItemAdd}</div>}
                                     </div>
                                 )}
+                                <FieldIssue field={`items.${idx}.descripcion`} />
                             </div>
-                            <div className={qtyField.className} style={qtyField.style}>
-                                <label className={label.className} style={label.style}>{t.qty}</label>
-                                <input required type="number" min="1" className={input.className} style={input.style} value={item.cantidad} onChange={(e) => updateItem(idx, { cantidad: Number(e.target.value) })} />
+                            <div {...r('itemQtyField')}>
+                                <label {...r('formFieldLabel')} htmlFor={id('qty')}>{t.qty}</label>
+                                <input id={id('qty')} type="number" inputMode="decimal" min={0} step="any" {...r('formFieldInput')} value={item.cantidad} onChange={(e) => builder.updateItem(item.key, { cantidad: Number(e.target.value) })} />
+                                <FieldIssue field={`items.${idx}.cantidad`} />
                             </div>
-                            <div className={priceField.className} style={priceField.style}>
-                                <label className={label.className} style={label.style}>{t.unitPrice}</label>
-                                <input required type="number" min="0" step="0.01" className={input.className} style={input.style} value={item.precio_unitario} onChange={(e) => updateItem(idx, { precio_unitario: Number(e.target.value) })} />
+                            <div {...r('itemPriceField')}>
+                                <label {...r('formFieldLabel')} htmlFor={id('price')}>{t.unitPrice}</label>
+                                <input id={id('price')} type="number" inputMode="decimal" min={0} step="0.01" {...r('formFieldInput')} value={item.precio_unitario} onChange={(e) => builder.updateItem(item.key, { precio_unitario: Number(e.target.value), producto_id: item.producto_id })} />
+                                <FieldIssue field={`items.${idx}.precio_unitario`} />
                             </div>
-                            <button type="button" disabled={items.length === 1} className={removeBtn.className} style={removeBtn.style} onClick={() => removeItem(idx)}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            <div {...r('itemTaxField')}>
+                                <label {...r('formFieldLabel')} htmlFor={id('tax')}>{taxLabel}</label>
+                                <select id={id('tax')} {...r('formFieldSelect')} value={String(item.tax_rate)} onChange={(e) => builder.updateItem(item.key, { tax_rate: Number(e.target.value) })} disabled={!config}>
+                                    {taxOptions.map((o) => <option key={`${o.id}-${o.rate}`} value={String(o.rate)}>{o.label}</option>)}
+                                </select>
+                                <FieldIssue field={`items.${idx}.tax_rate`} />
+                            </div>
+                            <button type="button" aria-label={t.remove} disabled={items.length === 1} {...r('itemRemoveButton')} onClick={() => builder.removeItem(item.key)}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                                 </svg>
                             </button>
                         </div>
@@ -357,46 +379,127 @@ CordBuilder.Items = function CordBuilderItems({ className, style }: { className?
     );
 };
 
-CordBuilder.Summary = function CordBuilderSummary({ className, style }: { className?: string; style?: React.CSSProperties }) {
-    const { subtotal, iva, total, moneda, t } = useBuilderContext();
+CordBuilder.Summary = function CordBuilderSummary({ className, style }: SlotProps) {
+    const { totals, t, taxLabel, formatMoney: fmt } = useBuilderContext();
     const { appearance } = useCordContext();
     const el = appearance?.elements;
-    const root = resolveElement('summaryRoot', el, className, style);
-    const inner = resolveElement('summaryInner', el);
-    const row = resolveElement('summaryRow', el);
-    const totalRow = resolveElement('summaryTotalRow', el);
-    const fmt = (n: number) => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2 })} ${moneda}`;
+    const r = (key: Parameters<typeof resolveElement>[0], cn?: string, st?: React.CSSProperties) => resolveElement(key, el, cn, st);
+    const pct = (rate: number) => `${Math.round(rate * 10000) / 100}%`;
 
     return (
-        <div className={root.className} style={root.style}>
-            <div className={inner.className} style={inner.style}>
-                <div className={row.className} style={row.style}>
-                    <span>{t.subtotal}:</span>
-                    <span>{fmt(subtotal)}</span>
-                </div>
-                <div className={row.className} style={row.style}>
-                    <span>{t.iva}:</span>
-                    <span>{fmt(iva)}</span>
-                </div>
-                <div className={totalRow.className} style={totalRow.style}>
-                    <span>{t.total}:</span>
-                    <span>{fmt(total)}</span>
-                </div>
+        <div {...r('summaryRoot', className, style)}>
+            <div {...r('summaryInner')} aria-live="polite">
+                <div {...r('summaryRow')}><span>{t.subtotal}</span><span>{fmt(totals.subtotal)}</span></div>
+                {totals.porTasa.filter((b) => b.tasa > 0).map((b) => (
+                    <div key={b.tasa} {...r('summaryTaxRow')}><span>{taxLabel} {pct(b.tasa)}</span><span>{fmt(b.impuesto)}</span></div>
+                ))}
+                {totals.retenciones.map((ret) => (
+                    <div key={ret.nombre} {...r('summaryRetRow')}><span>{ret.nombre}</span><span>−{fmt(ret.monto)}</span></div>
+                ))}
+                <div {...r('summaryTotalRow')}><span>{t.total}</span><span>{fmt(totals.total)}</span></div>
             </div>
         </div>
     );
 };
 
-CordBuilder.SubmitButton = function CordBuilderSubmitButton({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: ReactNode }) {
-    const { isLoading, t } = useBuilderContext();
+CordBuilder.SubmitButton = function CordBuilderSubmitButton({ className, style, children }: SlotProps & { children?: ReactNode }) {
+    const { status, t } = useBuilderContext();
     const { appearance } = useCordContext();
     const btn = resolveElement('submitButton', appearance?.elements, className, style);
+    const busy = status === 'submitting' || status === 'loading';
     return (
-        <button type="submit" disabled={isLoading} className={btn.className} style={btn.style}>
-            {children ? children : (isLoading ? t.creating : t.generateQuote)}
+        <button type="submit" disabled={busy} aria-disabled={busy} className={btn.className} style={btn.style}>
+            {children ? children : status === 'submitting' ? t.creating : status === 'loading' ? t.loading : t.generateQuote}
         </button>
     );
 };
+
+// ==== Fiscal Form ====
+
+export interface CordFiscalFormProps {
+    country?: string;
+    initial?: FiscalReceptorInput;
+    locale?: 'es' | 'en';
+    title?: string;
+    className?: string;
+    style?: React.CSSProperties;
+    /** Se llama con el receptor normalizado cada vez que queda válido. */
+    onValid?: (value: FiscalReceptor) => void;
+    /** Uso interno de <CordBuilder.Fiscal>: el receptor viaja con la cotización. */
+    builder?: UseQuoteBuilderResult['builder'];
+}
+
+const FISCAL_FIELD_INPUT: Partial<Record<FiscalField, keyof FiscalReceptorInput>> = {
+    tax_id: 'tax_id', legal_name: 'legal_name', regimen_fiscal: 'regimen_fiscal', uso_cfdi: 'uso_cfdi', cp_fiscal: 'cp_fiscal',
+};
+
+export function CordFiscalForm({ country = 'MX', initial, locale, title, className, style, onValid, builder }: CordFiscalFormProps) {
+    const ctx = useContext(CordContext);
+    const lang = locale ?? ctx?.locale ?? 'es';
+    const t = fiscalText(lang);
+    const fiscal = useFiscalForm({ ...initial, country });
+    const el = ctx?.appearance?.elements;
+    const r = (key: Parameters<typeof resolveElement>[0], cn?: string, st?: React.CSSProperties) => resolveElement(key, el, cn, st);
+    const noopBuilder = useMemo(() => ({ setFiscal: () => undefined }), []);
+    useLinkFiscalForm((builder ?? noopBuilder) as any, fiscal.form);
+    const lastValid = useRef<string>('');
+    useEffect(() => {
+        if (!fiscal.validation.ok || !onValid) return;
+        const key = JSON.stringify(fiscal.validation.value);
+        if (key === lastValid.current) return;
+        lastValid.current = key;
+        onValid(fiscal.validation.value);
+    }, [fiscal.validation, onValid]);
+
+    return (
+        <div {...r('formField', className, style)}>
+            {title && <h3 {...r('sectionTitle')}>{title}</h3>}
+            <div {...r('formFieldGrid')}>
+                {fiscal.fields.map((field) => {
+                    const key = FISCAL_FIELD_INPUT[field];
+                    if (!key) return null;
+                    const id = `cord-fiscal-${field}`;
+                    const error = fiscal.visibleErrors.find((e) => e.field === field);
+                    const warning = fiscal.validation.warnings.find((w) => w.field === field);
+                    const common = {
+                        id,
+                        name: field,
+                        value: fiscal.values[key],
+                        'aria-invalid': !!error,
+                        'aria-describedby': `${id}-msg`,
+                        onBlur: () => fiscal.form.touch(field),
+                    };
+                    const options = field === 'regimen_fiscal' ? fiscal.regimenes : field === 'uso_cfdi' ? fiscal.usosCfdi : null;
+                    return (
+                        <div key={field}>
+                            <label {...r('formFieldLabel')} htmlFor={id}>{t.label(field, fiscal.values.country)}</label>
+                            {options ? (
+                                <select {...common} {...r('formFieldSelect')} onChange={(e) => fiscal.form.set(key, e.target.value)}>
+                                    <option value="">{t.choose}</option>
+                                    {options.map((o) => <option key={o.codigo} value={o.codigo}>{o.nombre}</option>)}
+                                </select>
+                            ) : (
+                                <input
+                                    {...common}
+                                    {...r('formFieldInput')}
+                                    maxLength={field === 'legal_name' ? 300 : 20}
+                                    inputMode={field === 'cp_fiscal' ? 'numeric' : undefined}
+                                    autoComplete={field === 'cp_fiscal' ? 'postal-code' : field === 'legal_name' ? 'organization' : 'off'}
+                                    spellCheck={false}
+                                    onChange={(e) => fiscal.form.set(key, e.target.value)}
+                                />
+                            )}
+                            <div id={`${id}-msg`} aria-live="polite">
+                                {error && <div {...r('fieldError')}>{t.issue(error.code)}</div>}
+                                {!error && warning && <div {...r('fieldWarning')}>{t.issue(warning.code)}</div>}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 // ==== Iframe Viewer (CordCotizador) ====
 
@@ -416,20 +519,19 @@ export interface CordCotizadorProps {
     onMessage?: (detail: CordMessageDetail) => void;
     onItemComment?: (detail: CordItemCommentDetail) => void;
     onPay?: (detail: CordPayDetail) => void;
+    onUpdated?: (detail: CordUpdatedDetail) => void;
+    onStatusChanged?: (detail: CordStatusChangedDetail) => void;
+    /** Estado en vivo de la cotización (estado, total, aprobada, pagada). */
+    onStateChange?: (state: QuoteViewState) => void;
     /** Catch-all tipado: habilita un `switch` exhaustivo sobre `event.type`. */
     onEvent?: (event: CordEvent) => void;
 }
 
-// CordCotizador debe funcionar SIN <CordProvider> en el árbol (uso suelto,
-// ej. dentro de un panel admin que solo necesita el iframe). Por eso lee el
-// contexto con `useContext` crudo (nunca `useCordContext()`, que LANZA sin
-// Provider) y resuelve sus propias traducciones sin depender de él.
+// Funciona SIN <CordProvider>: lee el contexto con useContext crudo.
 export function CordCotizador(props: CordCotizadorProps) {
     const context = useContext(CordContext);
     const t = dictionaries[context?.locale || 'es'];
-
     const token = props.token || context?.token;
-    // Precedencia: prop de ESTA instancia > <CordProvider> > configureCord() > default.
     const explicitBase = props.baseUrl ?? context?.baseUrl;
     const appearance = props.appearance ?? context?.appearance ?? getCordConfig().appearance;
     const appearanceKey = useMemo(() => JSON.stringify(appearance ?? null), [appearance]);
@@ -440,14 +542,6 @@ export function CordCotizador(props: CordCotizadorProps) {
 
     useEffect(() => {
         if (!ref.current || !token) return;
-        const isDev = typeof process === 'undefined' || process.env?.NODE_ENV !== 'production';
-        if (isDev && !appearance) {
-            console.warn(
-                '[Cord] <CordCotizador> se montó sin `appearance` (ni por prop, ni por <CordProvider>, ni por ' +
-                'configureCord()) — el cotizador saldrá con la marca genérica de Cord. Pasa `appearance` a este ' +
-                'componente o envuelve tu app en `<CordProvider appearance={{...}}>`.'
-            );
-        }
         const opts: CordElementOptions = {
             token,
             baseUrl: explicitBase,
@@ -461,17 +555,17 @@ export function CordCotizador(props: CordCotizadorProps) {
             onMessage: (d) => cbs.current.onMessage?.(d),
             onItemComment: (d) => cbs.current.onItemComment?.(d),
             onPay: (d) => cbs.current.onPay?.(d),
+            onUpdated: (d) => cbs.current.onUpdated?.(d),
+            onStatusChanged: (d) => cbs.current.onStatusChanged?.(d),
             onEvent: (event) => cbs.current.onEvent?.(event),
         };
         const controller = mountCotizador(ref.current, opts);
-        return () => controller.destroy();
+        const unsubscribe = controller.state.subscribe((s) => cbs.current.onStateChange?.(s));
+        return () => { unsubscribe(); controller.destroy(); };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- appearanceKey serializa `appearance` a propósito
     }, [token, explicitBase, props.minHeight, appearanceKey]);
 
-    if (!token) {
-        return <div style={{ padding: '20px', color: 'red' }}>{t.errorToken}</div>;
-    }
-
+    if (!token) return <div role="alert">{t.errorToken}</div>;
     return <div ref={ref} className={props.className} style={props.style} />;
 }
 

@@ -1,8 +1,12 @@
 # @flouviahq/elements
 
-SDK oficial de [Cord](https://cordhq.app) para integrar cotizaciones interactivas B2B
-en cualquier aplicación: Web Component nativo, wrappers de React/Vue/Framer/Webflow, hooks
-headless, y un Server SDK para verificar webhooks.
+SDK de [Cord](https://cordhq.app) para el navegador: el cotizador embebible en Shadow DOM,
+un Builder headless que dibuja lo que tu organización tiene configurado en Cord (divisas,
+impuestos por línea, retenciones, términos) y un Fiscal Element que valida RFC, NIF/CIF y
+EIN igual que el servidor. Web Components + React, Vue, Framer y Webflow sobre un mismo
+núcleo sin framework (`@flouviahq/elements/headless`).
+
+Para tu servidor (API v1, webhooks, proxy) usa [`@flouviahq/node`](../node/README.md).
 
 ## Instalación
 
@@ -93,20 +97,31 @@ Y **nunca** puede:
   email/RFC/límite de crédito a quien vea ese código fuente. Pasa `clients` como prop en su lugar.
 - Nada de facturación, cobranza ni ajustes.
 
-Con dominios restringidos en Ajustes › Developers, la key además exige el header `Origin`/`Referer`
-y lo valida contra esa allowlist.
+Una `pk_live_` solo funciona con dominios permitidos configurados en Ajustes › Elements: la
+key exige el header `Origin`/`Referer` y lo valida contra esa lista (`origin_allowlist_required`
+si está vacía). Las `pk_test_` funcionan desde cualquier origen, incluido `localhost`. Una
+cotización creada con `pk_` queda como borrador para que la revises: no puede enviarse por
+correo ni fijar costos o precios negociados.
 
 ### Modo `proxy` — tu propio backend
 
 ```tsx
-<CordProvider proxyUrl="/api/cord/create">
+<CordProvider proxyUrl="/api/cord">
 ```
 
-Tu backend recibe el POST, llama a Cord con una `sk_...` (nunca expuesta al navegador), y
-devuelve la respuesta. Usa este modo si necesitas escribir en el CRM, leer clientes, o simplemente
-prefieres no exponer ninguna llave al cliente. `useCordClients()` SÍ intenta `${proxyUrl}/clientes`
-en este modo — si tu proxy es una sola ruta de acción (como `/api/cord/create`, sin una
-sub-ruta `/clientes`), pasa `clients` como prop en vez de depender del fetch automático.
+`proxyUrl` es una **base** con la misma forma que `/api/v1`: el SDK pide
+`{proxyUrl}/elements/config`, `{proxyUrl}/productos`, `POST {proxyUrl}/cotizaciones` y, si
+tu servidor lo autoriza, `{proxyUrl}/clientes`. No lo escribas a mano: monta
+`createElementsProxy()` de `@flouviahq/node`, que solo atiende esas rutas, solo desde tu
+origen, y sanea la cotización igual que una llave publicable.
+
+```ts
+// app/api/cord/[...path]/route.ts
+import { createElementsProxy } from '@flouviahq/node';
+const proxy = createElementsProxy({ secretKey: process.env.CORD_SECRET_KEY!, authorizeClients: (req) => isLoggedIn(req) });
+export const GET = proxy;
+export const POST = proxy;
+```
 
 ### Ninguno — solo visor
 
@@ -130,32 +145,71 @@ Precedencia en todo el SDK: **prop del componente > `<CordProvider>` > `configur
 
 ---
 
-## Headless UI — `useQuoteBuilder`
+## Headless: el núcleo sin framework
 
-El estado completo del builder como un hook standalone — la misma coexistencia headless/styled
-de Clerk (`useSignIn()` + `<SignIn/>`). Requiere `<CordProvider>` (no requiere `<CordBuilder>`).
+Todo el estado vive en `@flouviahq/elements/headless`, sin React, sin Vue y sin tocar el DOM
+al importarse. Los componentes de este paquete son consumidores de ese núcleo; tú también.
+
+```ts
+import { createCordClient, createQuoteBuilder } from '@flouviahq/elements/headless';
+
+const builder = createQuoteBuilder({ client: createCordClient({ publishableKey: 'pk_test_…' }) });
+builder.subscribe((s) => render(s));          // s.config, s.items, s.totals, s.issues, s.status
+builder.addProduct(builder.get().products[0], 2);
+builder.updateItem(key, { tax_rate: 0 });     // solo tasas de s.config.impuestos.opciones
+await builder.submit();                       // un doble clic nunca crea dos cotizaciones
+```
+
+- La configuración (divisas ofrecidas, impuestos por línea, retenciones, términos, nombre
+  del impuesto) llega de `GET /api/v1/elements/config` con ETag. Cambias algo en Ajustes y
+  tu sitio lo refleja sin republicar.
+- Los totales salen de `calculateDocumentTotals`, el mismo motor con el que Cord guarda.
+- `submit()` usa una sola `Idempotency-Key` por intento: reintentos y doble clic no duplican.
+
+### En React — `useQuoteBuilder`
 
 ```tsx
 import { useQuoteBuilder } from '@flouviahq/elements/react';
 
-function MiPropioBuilder() {
-  const {
-    items, updateItem, removeItem, subtotal, iva, total,
-    cliente, setCliente, notas, setNotas,
-    handleSubmit, isLoading, submitError,
-  } = useQuoteBuilder({
-    catalog: misProductos,   // opcional — si lo pasas, NO se hace fetch
-    clients: misClientes,    // opcional — si lo pasas, NO se hace fetch
-    ivaPct: 0.16,            // opcional — mejor configúralo en el Provider (ver abajo)
+function MiBuilder() {
+  const { items, totals, config, builder, formatMoney, issueFor, status } = useQuoteBuilder({
     onQuoteCreated: (q) => router.push(q.link_publico),
   });
-
-  return <form onSubmit={handleSubmit}>{/* tu propia UI, con tus propias clases */}</form>;
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); builder.submit(); }}>
+      {items.map((it) => (
+        <select key={it.key} value={String(it.tax_rate)} onChange={(e) => builder.updateItem(it.key, { tax_rate: Number(e.target.value) })}>
+          {config?.impuestos.opciones.map((o) => <option key={o.label} value={String(o.rate)}>{o.label}</option>)}
+        </select>
+      ))}
+      <strong>{formatMoney(totals.total)}</strong>
+    </form>
+  );
 }
 ```
 
-`ivaPct` — configúralo en el `<CordProvider ivaPct={0.16}>` (no por instancia): así el total
-que ve el usuario en el Builder coincide con el que termina calculando el servidor para tu org.
+En Vue: `useCordQuoteBuilder(clientOptions)` devuelve `{ state, builder }`.
+
+## Fiscal Element
+
+Captura los datos fiscales del cliente con la misma validación que aplica Cord al guardar:
+RFC con dígito verificador del SAT, régimen y uso de CFDI filtrados por persona física o
+moral, 616/S01 para público en general y aviso cuando el nombre trae "S.A. de C.V."; NIF,
+NIE o CIF en España; EIN en Estados Unidos.
+
+```html
+<form>
+  <cord-fiscal-form name="fiscal" country="MX" lang="es"></cord-fiscal-form>
+  <button>Guardar</button>
+</form>
+```
+
+Es un elemento asociado a formularios: aporta su valor (JSON del receptor normalizado) bajo
+`name` y bloquea el envío mientras haya errores, como un `<input required>`. Eventos
+`fiscalchange` y `fiscalvalid`; partes `::part(field|label|input|error|warning)`.
+
+En React: `<CordFiscalForm country="MX" onValid={(r) => …} />` o `<CordBuilder fiscal />`
+para que el receptor viaje con la cotización. Headless: `createFiscalForm()`.
 
 ## Componente `<CordBuilder>` — compound pattern con estilos
 
@@ -244,7 +298,10 @@ sobrio (`#e5e7eb`/`#111827`); tus propias `variables` siempre ganan sobre ese de
   onRejected={(d) => {}}                  // { comentario }
   onMessage={(d) => {}}                   // { action, mensaje, propuesta? }
   onItemComment={(d) => {}}               // { item_id, mensaje }
-  onPay={(d) => {}}                       // { url }
+  onPay={(d) => {}}                       // { url } absoluta; Cord ya abre el pago en su ventana
+  onUpdated={(d) => {}}                   // { subtotal, total, moneda } el vendedor cambió la propuesta
+  onStatusChanged={(d) => {}}             // { status } paid | rejected | expired | invoiced
+  onStateChange={(s) => {}}               // estado en vivo: ready, status, total, approved, paid
   onEvent={(event) => {                   // catch-all tipado — switch exhaustivo sobre event.type
     switch (event.type) {
       case 'cord:approved': /* event.detail: CordApprovedDetail */ break;
@@ -280,20 +337,24 @@ import { CordCotizador } from '@flouviahq/elements/vue';
 ## Web Component (HTML, PHP, Laravel, Rails, cualquier stack)
 
 ```html
-<script type="module" src="https://unpkg.com/@flouviahq/elements/dist/index.mjs"></script>
+<script type="module" src="https://unpkg.com/@flouviahq/elements@2/dist/index.mjs"></script>
 
-<div style="height: 800px;">
-  <cord-cotizador token="TU_TOKEN" base-url="https://cordhq.app" min-height="500"></cord-cotizador>
-</div>
+<cord-quote token="TU_TOKEN" appearance='{"theme":"auto","variables":{"colorPrimary":"#0a192f"}}'></cord-quote>
 
 <script>
-  const cotizador = document.querySelector('cord-cotizador');
-  cotizador.addEventListener('approved', (e) => console.log('Folio:', e.detail.folio));
+  const quote = document.querySelector('cord-quote');
+  quote.addEventListener('approved', (e) => console.log('Firmó', e.detail.signed_by));
+  quote.addEventListener('statechange', (e) => console.log(e.detail.status, e.detail.total));
 </script>
 ```
 
-Atributos: `token` (requerido), `base-url`, `min-height`. Los eventos llegan SIN el prefijo
-`cord:` (`cord:approved` → `approved`).
+Vive en Shadow DOM: tus estilos no lo rompen y los suyos no tocan tu página. Personaliza con
+`cord-quote::part(frame)`, `::part(skeleton)` y las variables `--cord-*`. La sombra aísla
+estilos; firmar y pagar siguen dentro del iframe de Cord, que es la frontera de seguridad.
+
+Atributos: `token` (requerido), `base-url`, `min-height`, `appearance` (JSON; también como
+propiedad). Propiedad `state` con el estado en vivo. Los eventos llegan sin el prefijo
+`cord:`. `<cord-cotizador>` sigue funcionando como alias.
 
 ## Loader de una línea (`embed.js`) — sitios sin bundler
 
@@ -302,10 +363,11 @@ Atributos: `token` (requerido), `base-url`, `min-height`. Los eventos llegan SIN
 <div data-cord-token="TU_TOKEN"></div>
 ```
 
-Atributos: `data-cord-token` (requerido), `data-cord-base-url`, `data-cord-min-height`. Mismo
-vocabulario que Webflow (`src/webflow.ts`, atributos `data-cord-token`/`data-cord-base-url`/
-`data-cord-min-height` en cualquier bloque). El par legacy `data-cord-cotizador` + `data-token`
-sigue funcionando (embeds ya publicados), pero usa el nuevo vocabulario en integraciones nuevas.
+Atributos: `data-cord-token` (requerido), `data-cord-base-url`, `data-cord-min-height`,
+`data-cord-appearance`. Monta también los bloques que se agregan después (SPAs, modales) y
+re-emite los eventos `cord:*` sobre el div. `public/embed.js` se genera desde el mismo
+código que `@flouviahq/elements/webflow`; el par legacy `data-cord-cotizador` + `data-token`
+sigue funcionando.
 
 ## Framer
 
@@ -316,53 +378,12 @@ Agrégalo como Code Component; `token` y `baseUrl` quedan expuestos en el panel 
 
 ---
 
-## Server SDK (`@flouviahq/elements/server`)
+## Servidor
 
-Para verificar webhooks salientes de Cord (`quote.sent`, `quote.viewed`, `quote.approved`,
-`quote.rejected`, `quote.paid`, `invoice.stamped`) y para llamar a la API desde tu backend.
-
-```ts
-import { CordAPI } from '@flouviahq/elements/server';
-
-const cord = new CordAPI(process.env.CORD_SECRET_KEY); // sk_live_.../sk_test_...
-
-// Next.js Route Handler — app/api/webhooks/cord/route.ts
-export async function POST(req: Request) {
-  const body = await req.text();
-  try {
-    const event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
-    // event: { event: 'quote.paid', created_at: '...', data: { id, folio, status, total, cliente, link_publico } }
-    if (event.event === 'quote.paid') { /* ... */ }
-    return new Response('ok');
-  } catch (err) {
-    return new Response('Firma inválida', { status: 400 });
-  }
-}
-```
-
-`constructEvent(payload, headers, secret, opts?)`:
-- `headers` acepta un `Headers` real (`req.headers` en Next.js), un `Record<string,string>`, o
-  (retrocompatible una versión) el valor crudo del header `X-Cord-Signature` como string.
-- Verifica PRIMERO `X-Cord-Signature-V1` (con timestamp — protección anti-replay real, respeta
-  `opts.tolerance`, default 300s). Si el endpoint solo tiene la legacy `X-Cord-Signature` (sin
-  timestamp), cae a esa — nunca lanza solo por faltar V1, a menos que pases
-  `{ requireTimestamp: true }`.
-- El payload real es `{ event, created_at, data }` — **no** `{ type, created }` (una versión
-  anterior de este SDK declaraba mal el tipo de retorno; si tu código leía `evt.type`, cámbialo
-  a `evt.event`).
-
-`constructEventAsync(...)` — misma firma, verifica con WebCrypto (`crypto.subtle`) en vez de
-`node:crypto`, para runtimes edge/workers. Nota: el módulo entero sigue importando `node:crypto`
-a nivel de archivo (lo usa `constructEvent`), así que en un runtime que no lo exponga en
-absoluto el `import` puede fallar antes de llegar a `constructEventAsync` — funciona en Node y
-en Cloudflare Workers con `nodejs_compat`.
-
-### API REST directa
-
-```ts
-const quote = await cord.quotes.create({ items: [{ descripcion: 'Consultoría', cantidad: 1, precio_unitario: 5000 }] });
-console.log(quote.folio, quote.token, quote.link_publico); // link_publico ya viene absoluto
-```
+`@flouviahq/elements/server` está deprecado y se conserva por compatibilidad. Usa
+[`@flouviahq/node`](../node/README.md): API v1 completa con idempotencia y autopaginación,
+`constructEvent` con WebCrypto que exige la firma V1 con timestamp, y el proxy para el modo
+`proxyUrl`.
 
 ---
 

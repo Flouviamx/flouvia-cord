@@ -35,7 +35,13 @@ export type CordElementKey =
     | 'summaryTotalRow'
     | 'submitRow'
     | 'submitButton'
-    | 'errorText';
+    | 'errorText'
+    | 'itemTaxField'
+    | 'summaryTaxRow'
+    | 'summaryRetRow'
+    | 'fieldError'
+    | 'fiscalSection'
+    | 'fieldWarning';
 
 /**
  * Override de un elemento: un className extra (string), un objeto de estilos
