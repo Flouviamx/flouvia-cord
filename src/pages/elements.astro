@@ -49,7 +49,7 @@ const lines = (code: string) => code.split('\n').map((t) => ({ raw: t, html: hl(
 const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
 
 // ── Snippets por stack. `hi` = línea que "conecta" Cord (se resalta). ──
-// Todos usan API real: CordCotizador (react/vue), <cord-cotizador> (Web
+// Todos usan API real: CordCotizador (react/vue), <cord-quote> (Web
 // Component, eventos sin prefijo cord:), FramerCordCotizador, embed.js.
 const CODES = [
     {
@@ -104,11 +104,11 @@ const onApproved = (d) => console.log(d.signed_by);
         code: `---
 const { token } = Astro.props;
 ---
-<cord-cotizador token={token} min-height="500"></cord-cotizador>
+<cord-quote token={token} min-height="500"></cord-quote>
 
 <script>
-  import '@flouviahq/elements'; // ${tx('registra', 'registers')} <cord-cotizador>
-  document.querySelector('cord-cotizador')
+  import '@flouviahq/elements'; // ${tx('registra', 'registers')} <cord-quote>
+  document.querySelector('cord-quote')
     ?.addEventListener('approved', (e) => console.log(e.detail));
 </script>`,
     },
@@ -145,63 +145,67 @@ const SDK: { id: string; path: string; label: string; lead: string; items: { n: 
         id: 'react', path: '@flouviahq/elements/react', label: 'React',
         lead: tx('Componentes y hooks para React 17 o superior y Next.js. Ya trae la directiva "use client".', 'Components and hooks for React 17 or later and Next.js. It already ships the "use client" directive.'),
         items: [
-            { n: '<CordCotizador>', k: 'component', d: tx('Muestra una cotización ya creada para que el cliente la vea, apruebe, negocie o pague. Callbacks tipados para los 8 eventos.', 'Shows an existing quote so the client can view, approve, negotiate or pay. Typed callbacks for all 8 events.') },
-            { n: '<CordBuilder>', k: 'component', d: tx('Formulario listo para armar una cotización nueva. Compuesto: Header, Config, Items, Notes, Summary y SubmitButton, en el orden que quieras.', 'A ready-made form to build a new quote. Compound: Header, Config, Items, Notes, Summary and SubmitButton, in any order.') },
-            { n: '<CordProvider>', k: 'component', d: tx('Configura una vez: publishableKey o proxyUrl (nunca los dos), locale es o en, ivaPct y appearance.', 'Configure once: publishableKey or proxyUrl (never both), locale es or en, ivaPct and appearance.') },
-            { n: 'useQuoteBuilder()', k: 'hook', d: tx('El estado completo del builder sin UI: partidas, cliente, moneda, vigencia, términos, subtotal, IVA, total y handleSubmit.', 'The full builder state with no UI: line items, client, currency, validity, terms, subtotal, tax, total and handleSubmit.') },
-            { n: 'useCreateQuote()', k: 'hook', d: tx('Crea una cotización por tu proxy o con tu pk_ y te devuelve folio, token y link público.', 'Creates a quote through your proxy or with your pk_ and returns its number, token and public link.') },
+            { n: '<CordCotizador>', k: 'component', d: tx('Muestra una cotización ya creada para que el cliente la vea, apruebe, negocie o pague. Callbacks tipados para cada evento y onStateChange con el estado en vivo.', 'Shows an existing quote so the client can view, approve, negotiate or pay. Typed callbacks for every event and onStateChange with the live state.') },
+            { n: '<CordInvoice>', k: 'component', d: tx('La factura de /i/{token}: saldo, estado, partidas y PDF. El pago se abre en una ventana de Cord y onPaid avisa cuando se salda.', 'The invoice at /i/{token}: balance, status, line items and PDF. Payment opens in a Cord window and onPaid tells you when it is settled.') },
+            { n: '<CordBuilder>', k: 'component', d: tx('Formulario listo para armar una cotización nueva, con las divisas, impuestos por línea y términos de tu cuenta. Compuesto: Header, Config, Items, Notes, Summary y SubmitButton.', 'A ready-made form to build a new quote, with your account\'s currencies, per-line taxes and terms. Compound: Header, Config, Items, Notes, Summary and SubmitButton.') },
+            { n: '<CordFiscalForm>', k: 'component', d: tx('Datos fiscales del receptor con el mismo validador que el servidor: RFC con dígito verificador, régimen y uso de CFDI por tipo de persona; NIF/CIF en España, EIN en EE.UU.', 'Recipient tax details with the same validator as the server: RFC with check digit, tax regime and CFDI use by person type; NIF/CIF in Spain, EIN in the US.') },
+            { n: '<CordProvider>', k: 'component', d: tx('Configura una vez: publishableKey o proxyUrl (nunca los dos), locale es o en, appearance y debug.', 'Configure once: publishableKey or proxyUrl (never both), locale es or en, appearance and debug.') },
+            { n: 'useQuoteBuilder()', k: 'hook', d: tx('El estado del builder sin UI: partidas con key, cliente, moneda, totales con desglose por tasa y retenciones, validación y builder.submit().', 'The builder state with no UI: keyed line items, client, currency, totals with per-rate breakdown and withholdings, validation and builder.submit().') },
+            { n: 'useCreateQuote()', k: 'hook', d: tx('Crea una cotización por tu proxy o con tu pk_ y te devuelve folio, token y link público. Un doble clic no la duplica.', 'Creates a quote through your proxy or with your pk_ and returns its number, token and public link. A double click never duplicates it.') },
             { n: 'useCordCatalog()', k: 'hook', d: tx('Tu catálogo de productos. El servidor oculta costo y margen a una llave pública.', 'Your product catalog. The server hides cost and margin from a publishable key.') },
             { n: 'useCordClients()', k: 'hook', d: tx('Tu directorio de clientes, sólo en modo proxy: con una pk_ responde clients_require_proxy sin tocar la red.', 'Your client directory, proxy mode only: with a pk_ it answers clients_require_proxy without touching the network.') },
-            { n: 'configureCord()', k: 'fn', d: tx('Origen alterno para staging o self-host. Precedencia: prop, Provider, configureCord, cordhq.app.', 'An alternate origin for staging or self-hosting. Precedence: prop, Provider, configureCord, cordhq.app.') },
         ],
     },
     {
-        id: 'wc', path: '@flouviahq/elements', label: 'Web Component',
-        lead: tx('Importarlo registra <cord-cotizador>. Funciona en Astro, Svelte, Laravel, Rails o cualquier HTML.', 'Importing it registers <cord-cotizador>. Works in Astro, Svelte, Laravel, Rails or any HTML.'),
+        id: 'wc', path: '@flouviahq/elements', label: 'Web Components',
+        lead: tx('Importarlo registra los elementos en Shadow DOM: tu CSS no los rompe y el suyo no toca tu página. Funciona en Astro, Svelte, Laravel, Rails o cualquier HTML.', 'Importing it registers the elements in Shadow DOM: your CSS can\'t break them and theirs never touches your page. Works in Astro, Svelte, Laravel, Rails or any HTML.'),
         items: [
-            { n: '<cord-cotizador>', k: 'component', d: tx('Atributos token (requerido), base-url y min-height. Los eventos llegan sin el prefijo: approved, pay, rejected.', 'Attributes token (required), base-url and min-height. Events arrive without the prefix: approved, pay, rejected.') },
-            { n: 'mountCotizador()', k: 'fn', d: tx('Monta el iframe en el elemento que le pases y devuelve un controlador con destroy() para desmontarlo limpio.', 'Mounts the iframe on any element you pass and returns a controller with destroy() to unmount cleanly.') },
-            { n: 'calculateTotals()', k: 'fn', d: tx('El mismo motor de totales que usa Cord en servidor: tu UI propia nunca muestra un total distinto.', 'The same totals engine Cord runs on the server: your own UI never shows a different total.') },
-            { n: 'calculateDocumentTotals()', k: 'fn', d: tx('Impuesto por línea, varias tasas y retenciones, igual que las facturas de Cord.', 'Per-line tax, multiple rates and withholdings, exactly like Cord invoices.') },
-            { n: 'roundMoney()', k: 'fn', d: tx('Redondeo de dinero sin errores de punto flotante.', 'Money rounding without floating-point drift.') },
-            { n: 'CordError', k: 'class', d: tx('Todo error es un CordError con status y uno de 12 códigos estables: invalid_key, unauthorized_origin, rate_limited…', 'Every error is a CordError with a status and one of 12 stable codes: invalid_key, unauthorized_origin, rate_limited…') },
+            { n: '<cord-quote>', k: 'component', d: tx('Atributos token, base-url, min-height, appearance y debug. Los eventos llegan sin el prefijo: approved, pay, rejected. <cord-cotizador> sigue como alias.', 'Attributes token, base-url, min-height, appearance and debug. Events arrive without the prefix: approved, pay, rejected. <cord-cotizador> still works as an alias.') },
+            { n: '<cord-invoice>', k: 'component', d: tx('La factura embebida con los mismos atributos. Emite además paid.', 'The embedded invoice with the same attributes. It also emits paid.') },
+            { n: '<cord-fiscal-form>', k: 'component', d: tx('Elemento de formulario nativo: dentro de tu <form> aporta los datos fiscales y bloquea el envío mientras haya errores.', 'A native form element: inside your <form> it contributes the tax details and blocks submission while there are errors.') },
+            { n: 'mountCotizador()', k: 'fn', d: tx('Monta el iframe en el elemento que le pases (document: "invoice" para una factura) y devuelve un controlador con destroy().', 'Mounts the iframe on any element you pass (document: "invoice" for an invoice) and returns a controller with destroy().') },
+            { n: 'calculateDocumentTotals()', k: 'fn', d: tx('El mismo motor de totales que Cord usa en servidor: impuesto por línea, varias tasas y retenciones. Tu UI nunca muestra un total distinto.', 'The same totals engine Cord runs on the server: per-line tax, multiple rates and withholdings. Your own UI never shows a different total.') },
+            { n: 'CordError', k: 'class', d: tx('Todo error trae status, un code estable, request_id y doc_url con la explicación.', 'Every error carries a status, a stable code, its request_id and a doc_url with the explanation.') },
+            { n: 'enableDebug()', k: 'fn', d: tx('Barra de depuración en tu sitio con eventos, peticiones y avisos. Solo aparece con llaves pk_test_.', 'A debug bar on your site with events, requests and warnings. It only shows with pk_test_ keys.') },
         ],
     },
     {
-        id: 'server', path: '@flouviahq/elements/server', label: 'Server SDK',
-        lead: tx('Para Node y Cloudflare Workers con nodejs_compat. Usa una sk_ que nunca sale de tu backend.', 'For Node and Cloudflare Workers with nodejs_compat. Uses an sk_ key that never leaves your backend.'),
+        id: 'headless', path: '@flouviahq/elements/headless', label: 'Headless',
+        lead: tx('El núcleo sin framework sobre el que están hechos React, Vue y los Web Components. Sin efectos al importar.', 'The framework-free core React, Vue and the Web Components are built on. No side effects on import.'),
         items: [
-            { n: 'new CordAPI(sk)', k: 'class', d: tx('Cliente de la API REST con tu secret key, en live o en test.', 'REST API client with your secret key, in live or test.') },
-            { n: 'cord.quotes', k: 'fn', d: tx('create() y list() con filtros de estado. link_publico ya viene absoluto.', 'create() and list() with status filters. link_publico comes back absolute.') },
-            { n: 'cord.clients · cord.products', k: 'fn', d: tx('create() y list() paginados para sincronizar tu CRM o tu catálogo.', 'Paginated create() and list() to sync your CRM or your catalog.') },
-            { n: 'webhooks.constructEvent()', k: 'fn', d: tx('Verifica X-Cord-Signature-V1 con timestamp (tolerancia de 300 s) y te devuelve el evento tipado.', 'Verifies X-Cord-Signature-V1 with its timestamp (300 s tolerance) and returns the typed event.') },
-            { n: 'webhooks.constructEventAsync()', k: 'fn', d: tx('La misma verificación con WebCrypto, para runtimes edge.', 'The same verification with WebCrypto, for edge runtimes.') },
-            { n: tx('Rotación de secreto', 'Secret rotation'), k: 'fn', d: tx('Acepta varias firmas v1= a la vez: rotas el secreto sin perder una sola entrega.', 'Accepts several v1= signatures at once: rotate the secret without losing a single delivery.') },
+            { n: 'createQuoteBuilder()', k: 'fn', d: tx('Estado y acciones del cotizador: addProduct, updateItem, setMoneda, validate y submit, con suscripción a cambios.', 'Quote builder state and actions: addProduct, updateItem, setMoneda, validate and submit, with change subscriptions.') },
+            { n: 'builder.draftWithAi()', k: 'fn', d: tx('Arma un borrador de partidas desde texto, en streaming. Llegan marcadas como sugeridas para que el cliente las revise.', 'Drafts line items from text, streamed. They arrive marked as suggested so the client reviews them.') },
+            { n: 'createCordClient()', k: 'fn', d: tx('Cliente HTTP con reintentos, Idempotency-Key automática y la configuración de tu cuenta en caché con ETag.', 'HTTP client with retries, automatic Idempotency-Key and your account configuration cached with ETag.') },
+            { n: 'createFiscalForm()', k: 'fn', d: tx('El formulario fiscal sin UI, con los catálogos del SAT y los validadores de RFC, NIF y EIN.', 'The tax form with no UI, with the SAT catalogs and the RFC, NIF and EIN validators.') },
         ],
     },
     {
         id: 'more', path: '/vue · /framer · /webflow', label: 'Vue, Framer, Webflow',
         lead: tx('Wrappers nativos para que cada plataforma lo sienta propio.', 'Native wrappers so each platform feels at home.'),
         items: [
-            { n: 'CordCotizador (Vue)', k: 'component', d: tx('Props token, baseUrl y minHeight; emite ready, viewed, approved, signed, rejected, message, item-comment, pay y event.', 'Props token, baseUrl and minHeight; emits ready, viewed, approved, signed, rejected, message, item-comment, pay and event.') },
+            { n: 'CordCotizador · CordInvoice (Vue)', k: 'component', d: tx('Props token, baseUrl, minHeight y appearance; emiten cada evento (approved, pay, updated, status-changed, paid…) y state con el estado en vivo.', 'Props token, baseUrl, minHeight and appearance; they emit every event (approved, pay, updated, status-changed, paid…) and state with the live state.') },
+            { n: 'useCordQuoteBuilder()', k: 'hook', d: tx('El builder headless como composable de Vue.', 'The headless builder as a Vue composable.') },
             { n: 'FramerCordCotizador', k: 'component', d: tx('Code Component con token y baseUrl editables desde el panel de propiedades de Framer.', 'A Code Component with token and baseUrl editable from the Framer properties panel.') },
-            { n: 'data-cord-token', k: 'attr', d: tx('Webflow: agrega el atributo a cualquier Div Block y el script lo monta solo.', 'Webflow: add the attribute to any Div Block and the script mounts it on its own.') },
-            { n: 'data-cord-min-height', k: 'attr', d: tx('Alto inicial del skeleton mientras carga, en píxeles. Por defecto 420.', 'Initial skeleton height while loading, in pixels. 420 by default.') },
-            { n: 'data-cord-base-url', k: 'attr', d: tx('Origen alterno para staging o self-host, igual que en npm.', 'Alternate origin for staging or self-hosting, same as on npm.') },
+            { n: 'data-cord-token', k: 'attr', d: tx('Webflow o HTML: agrega el atributo a cualquier Div Block y el script lo monta solo.', 'Webflow or HTML: add the attribute to any Div Block and the script mounts it on its own.') },
+            { n: 'data-cord-document', k: 'attr', d: tx('"invoice" para mostrar una factura en vez de una cotización.', '"invoice" to show an invoice instead of a quote.') },
+            { n: 'data-cord-appearance', k: 'attr', d: tx('El mismo objeto appearance en JSON: tema, variables, rules y layout.', 'The same appearance object as JSON: theme, variables, rules and layout.') },
         ],
     },
     {
-        id: 'events', path: tx('Eventos del iframe', 'Iframe events'), label: tx('8 eventos', '8 events'),
-        lead: tx('Los mismos en React, Vue, el Web Component y embed.js.', 'The same in React, Vue, the Web Component and embed.js.'),
+        id: 'events', path: tx('Eventos del iframe', 'Iframe events'), label: tx('11 eventos', '11 events'),
+        lead: tx('Los mismos en React, Vue, los Web Components y embed.js. Sin dominios autorizados llegan sin datos.', 'The same in React, Vue, the Web Components and embed.js. Without authorized domains they arrive without data.'),
         items: [
-            { n: 'cord:ready', k: 'event', d: tx('El cotizador terminó de cargar dentro del iframe.', 'The quote builder finished loading inside the iframe.') },
-            { n: 'cord:viewed', k: 'event', d: tx('El cliente abrió la cotización.', 'The client opened the quote.') },
+            { n: 'cord:ready', k: 'event', d: tx('Terminó de cargar: { status, folio, moneda, total }.', 'Finished loading: { status, folio, moneda, total }.') },
+            { n: 'cord:viewed', k: 'event', d: tx('El cliente abrió el documento.', 'The client opened the document.') },
             { n: 'cord:approved', k: 'event', d: tx('Aprobó y firmó: { signed_by, hash }.', 'Approved and signed: { signed_by, hash }.') },
             { n: 'cord:signed', k: 'event', d: tx('Se emite junto con approved, por la misma acción: no lo cuentes dos veces.', 'Fires together with approved, for the same action: do not count it twice.') },
             { n: 'cord:rejected', k: 'event', d: tx('La rechazó: { comentario }.', 'Rejected it: { comentario }.') },
             { n: 'cord:message', k: 'event', d: tx('Escribió o hizo una contraoferta: { action, mensaje, propuesta }.', 'Wrote or made a counteroffer: { action, mensaje, propuesta }.') },
             { n: 'cord:item_comment', k: 'event', d: tx('Comentó una partida: { item_id, mensaje }.', 'Commented on a line item: { item_id, mensaje }.') },
-            { n: 'cord:pay', k: 'event', d: tx('Pulsó pagar: { url } del cobro.', 'Hit pay: the payment { url }.') },
+            { n: 'cord:pay', k: 'event', d: tx('Pulsó pagar. Cord ya abrió el cobro en su ventana; { url } es solo un aviso.', 'Hit pay. Cord already opened the payment in its window; { url } is a notice only.') },
+            { n: 'cord:updated', k: 'event', d: tx('El vendedor cambió la cotización mientras estaba abierta: { subtotal, total, moneda }.', 'The seller changed the quote while it was open: { subtotal, total, moneda }.') },
+            { n: 'cord:status_changed', k: 'event', d: tx('Cambió el estado: { status }.', 'The status changed: { status }.') },
+            { n: 'cord:paid', k: 'event', d: tx('Solo factura: quedó saldada. { folio, moneda, saldo }.', 'Invoice only: it was settled. { folio, moneda, saldo }.') },
         ],
     },
 ];
@@ -213,16 +217,16 @@ const STACK = [
     { label: 'Webflow', domain: 'webflow.com' }, { label: 'WordPress', domain: 'wordpress.org' }, { label: 'Shopify', domain: 'shopify.com' },
 ];
 
-const HEADLESS_CODE = lines(`const { items, updateItem, total, handleSubmit } =
+const HEADLESS_CODE = lines(`const { items, totals, builder, formatMoney } =
   useQuoteBuilder({ catalog, onQuoteCreated });
 
 return (
-  <form onSubmit={handleSubmit}>
-    {items.map((it, i) => (
-      <MiFila item={it}
-        onChange={(v) => updateItem(i, v)} />
+  <form onSubmit={(e) => { e.preventDefault(); builder.submit(); }}>
+    {items.map((it) => (
+      <MiFila key={it.key} item={it}
+        onChange={(v) => builder.updateItem(it.key, v)} />
     ))}
-    <MiTotal value={total} />
+    <MiTotal value={formatMoney(totals.total)} />
   </form>
 );`);
 
@@ -407,7 +411,7 @@ const howToSchema = {
                                         <div class="elx2-r" data-r><time>10:44:19</time><em>cord:item_comment</em><span>{tx('{ item_id: 2, mensaje: "¿Tienen 1/2 pulgada?" }', '{ item_id: 2, mensaje: "Do you have 1/2 inch?" }')}</span></div>
                                         <div class="elx2-r" data-r><time>10:46:51</time><em>cord:message</em><span>{'{ action: "counter", propuesta: 132000 }'}</span></div>
                                         <div class="elx2-r is-ok" data-r><time>10:51:08</time><em>cord:approved</em><span>{'{ signed_by: "Laura Méndez", hash: "9f2c…41ab" }'}</span></div>
-                                        <div class="elx2-r is-pay" data-r><time>10:51:30</time><em>cord:pay</em><span>{'{ url: "https://cordhq.app/pay/…" }'}</span></div>
+                                        <div class="elx2-r is-pay" data-r><time>10:51:30</time><em>cord:pay</em><span>{'{ url: "https://cordhq.app/q/k7Qp…/pay" }'}</span></div>
                                     </div>
                                     <div class="elx2-code"><span class="c-kw">onApproved</span>={'{'}(d) <span class="c-op">=&gt;</span> <span class="c-fn">crm.marcarGanada</span>(d.signed_by){'}'}</div>
                                 </div>
@@ -446,7 +450,7 @@ const howToSchema = {
         <section class="els" id="sdk">
             <div class="eli-head">
                 <h2 class="el-h2 masked-title">{tx('Todo lo que trae @flouviahq/elements.', 'Everything inside @flouviahq/elements.')}</h2>
-                <p class="el-lead reveal">{tx('Seis módulos en npm, el loader embed.js y los mismos tipos en todos. Elige un módulo para ver cada pieza que exporta.', 'Six npm modules, the embed.js loader and the same types across all of them. Pick a module to see every piece it exports.')}</p>
+                <p class="el-lead reveal">{tx('Un núcleo headless, componentes para React y Vue, Web Components, el loader embed.js y los mismos tipos en todos. Elige un módulo para ver cada pieza que exporta.', 'A headless core, components for React and Vue, Web Components, the embed.js loader and the same types across all of them. Pick a module to see every piece it exports.')}</p>
             </div>
             <div class="els-card reveal-mockup" data-sdk>
                 <div class="els-nav" role="tablist" aria-label={tx('Módulos del SDK', 'SDK modules')}>
