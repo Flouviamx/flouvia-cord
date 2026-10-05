@@ -1,0 +1,94 @@
+---
+// Referencia de la API generada del contrato (src/lib/api-schema.ts): misma
+// fuente que public/openapi.json y que test/openapi-contract.test.ts.
+import { Code } from 'astro:components';
+import Tabs from './mdx/Tabs.astro';
+import TabItem from './mdx/TabItem.astro';
+import { groupedOperations, samples, fieldsOf, operationAnchor } from '../../lib/api-reference';
+import { LATEST_API_VERSION } from '../../lib/api-versions';
+
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const es = lang === 'es';
+const tx = (a: string, b: string) => (es ? a : b);
+const groups = groupedOperations();
+---
+
+<p>
+  {tx('Generada del mismo contrato que', 'Generated from the same contract as')} <a href="/openapi.json">openapi.json</a>
+  {tx('(OpenAPI 3.1). Versión', '(OpenAPI 3.1). Version')} <code>{LATEST_API_VERSION}</code>.
+  {tx('Toda respuesta viene en', 'Every response comes in')} <code>{'{ data }'}</code>; {tx('los errores, en', 'errors, in')} <code>{'{ error, code, request_id, doc_url }'}</code>.
+</p>
+
+{groups.map(([tag, ops]) => (
+  <section class="api-group">
+    <h2 id={tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>{tag}</h2>
+    {ops.map((op) => {
+      const body = fieldsOf(op.body);
+      const response = op.response === 'stream' ? [] : fieldsOf(op.response);
+      const query = Object.keys(op.query ?? {});
+      const code = samples(op);
+      return (
+        <article class="api-op" id={operationAnchor(op)}>
+          <h3>
+            <span class={`api-method api-${op.method.toLowerCase()}`}>{op.method}</span>
+            <code class="api-path">/api/v1{op.path}</code>
+          </h3>
+          <p class="api-summary">
+            {op.summary}
+            {op.publishable && <span class="api-tag">{tx('Acepta pk_', 'Accepts pk_')}</span>}
+            {op.testOnly && <span class="api-tag">{tx('Solo sk_test_', 'sk_test_ only')}</span>}
+            <span class="api-tag">scope: {op.scope}</span>
+            {op.page && <span class="api-tag">{op.page === 'offset' ? tx('Paginación por offset', 'Offset pagination') : tx('Paginación por cursor', 'Cursor pagination')}</span>}
+          </p>
+
+          {query.length > 0 && (
+            <p><strong>{tx('Parámetros', 'Query parameters')}:</strong> {query.map((q, i) => <><code>{q}</code>{i < query.length - 1 ? ', ' : ''}</>)}</p>
+          )}
+
+          {body.length > 0 && (
+            <table>
+              <thead><tr><th>{tx('Campo', 'Field')}</th><th>{tx('Tipo', 'Type')}</th><th>{tx('Descripción', 'Description')}</th></tr></thead>
+              <tbody>
+                {body.map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="api-req"> {tx('requerido', 'required')}</span>}</td><td><code>{f.type}</code></td><td>{f.description ?? ''}</td></tr>)}
+              </tbody>
+            </table>
+          )}
+
+          <Tabs>
+            <TabItem label="curl"><Code code={code.curl} lang="bash" /></TabItem>
+            {code.node && <TabItem label="Node"><Code code={code.node} lang="ts" /></TabItem>}
+            {code.python && <TabItem label="Python"><Code code={code.python} lang="python" /></TabItem>}
+            {code.php && <TabItem label="PHP"><Code code={code.php} lang="php" /></TabItem>}
+          </Tabs>
+
+          {response.length > 0 && (
+            <details>
+              <summary>{tx('Respuesta', 'Response')}: <code>data</code>{op.page ? '[]' : ''}</summary>
+              <table>
+                <tbody>
+                  {response.map((f) => <tr><td><code>{f.name}</code></td><td><code>{f.type}</code></td><td>{f.description ?? ''}</td></tr>)}
+                </tbody>
+              </table>
+            </details>
+          )}
+          {op.response === 'stream' && <p>{tx('Responde text/event-stream con eventos item, done y error.', 'Responds text/event-stream with item, done and error events.')}</p>}
+        </article>
+      );
+    })}
+  </section>
+))}
+
+<style>
+  .api-op { padding: 1.5rem 0; border-top: 1px solid rgba(10, 25, 47, 0.08); }
+  .api-op h3 { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .api-method { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 6px; background: #f5f5f7; color: #0a192f; }
+  .api-post { background: rgba(10, 25, 47, 0.08); }
+  .api-delete { background: rgba(192, 57, 43, 0.1); color: #8e2a1f; }
+  .api-patch { background: rgba(10, 25, 47, 0.05); }
+  .api-path { font-size: 0.95rem; word-break: break-all; }
+  .api-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .api-tag { font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: #f5f5f7; color: #4b5563; }
+  .api-req { font-size: 0.72rem; color: #6b7280; }
+  details summary { cursor: pointer; margin: 0.75rem 0; }
+</style>

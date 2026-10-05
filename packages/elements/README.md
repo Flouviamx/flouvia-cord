@@ -378,6 +378,18 @@ Agrégalo como Code Component; `token` y `baseUrl` quedan expuestos en el panel 
 
 ---
 
+## Depuración
+
+```tsx
+<CordProvider publishableKey="pk_test_…" debug>
+```
+
+Aparece una barra flotante con cada evento del iframe, cada petición con su `request_id` y
+los avisos de configuración (por ejemplo, un appearance descartado o una llave de prueba en
+un dominio público). Vive en un Shadow DOM y no se dibuja con una `pk_live_`. En
+`<cord-quote>` es el atributo `debug`; en `embed.js`, `data-cord-debug` (sin llave, solo en
+`localhost` o con `?cord_debug=1`).
+
 ## Servidor
 
 `@flouviahq/elements/server` está deprecado y se conserva por compatibilidad. Usa

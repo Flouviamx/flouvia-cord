@@ -29,6 +29,7 @@ se separa en `@flouviahq/node`.
 - **Doble clic seguro**: el Builder y `useCreateQuote` usan una sola clave de idempotencia por intento de envío.
 - `public/embed.js` y `./webflow` salen del mismo `src/loader.ts`; CI verifica que el archivo publicado coincide con el build.
 - Toda petición manda `Cord-Version: 2026-10-01` (`CORD_API_VERSION`): actualizar Cord no cambia la forma de las respuestas que lee el SDK.
+- **Barra de depuración** (`debug` en `<CordProvider>`, `configureCord`, el atributo `debug` de `<cord-quote>` o `data-cord-debug`): eventos del iframe, peticiones con su request id y avisos de configuración, en un Shadow DOM. Solo con llaves de prueba; sin llave, solo en `localhost` o con `?cord_debug=1`.
 
 ### Security
 

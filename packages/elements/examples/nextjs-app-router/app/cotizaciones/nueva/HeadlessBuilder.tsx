@@ -1,100 +1,55 @@
-// app/cotizaciones/nueva/HeadlessBuilder.tsx — la MISMA pantalla que
-// QuoteBuilderClient.tsx, pero con tu propia UI vía useQuoteBuilder(). Este
-// es el patrón que una integración real tuvo que reconstruir a mano en 286
-// líneas (buscador de productos, stepper de cantidad, toggle de IVA…) porque
-// CordBuilder.Items no se podía estilizar. Aquí es de primera clase: no hay
-// nada que "reconstruir", solo consumes el estado y pintas lo que quieras.
+// app/cotizaciones/nueva/HeadlessBuilder.tsx — la misma pantalla con tu propia
+// UI sobre useQuoteBuilder(): estado, totales del motor de Cord y validación.
 'use client';
 
 import { useQuoteBuilder } from '@flouviahq/elements/react';
 import { useRouter } from 'next/navigation';
-import type { CordProduct, CordClient } from '@flouviahq/elements/react';
+import type { CordProduct, CordClient } from '@flouviahq/elements';
 
 export function HeadlessBuilder({ catalog, clients }: { catalog: CordProduct[]; clients: CordClient[] }) {
   const router = useRouter();
-  const {
-    cliente, setCliente, email, setEmail,
-    items, updateItem, removeItem, setItems,
-    notas, setNotas,
-    subtotal, iva, total, moneda,
-    isLoading, submitError, handleSubmit,
-  } = useQuoteBuilder({
+  const { builder, cliente, items, totals, config, status, error, taxLabel, formatMoney, issueFor } = useQuoteBuilder({
     catalog,
     clients,
-    onQuoteCreated: (q) => router.push(q.link_publico),
+    onQuoteCreated: (q) => router.push(q.link_publico ?? '/cotizaciones'),
   });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium">Cliente</label>
+    <form onSubmit={(e) => { e.preventDefault(); void builder.submit(); }} className="space-y-6">
+      <label className="block text-sm font-medium">
+        Cliente
         <input
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-          placeholder="Empresa o nombre — si no existe, se crea al enviar"
+          className="mt-1 w-full rounded-lg bg-[#f5f5f7] px-3 py-2"
+          value={cliente.empresa}
+          onChange={(e) => builder.setCliente({ empresa: e.target.value })}
+          aria-invalid={!!issueFor('cliente.empresa')}
         />
-        <input
-          type="email"
-          className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="correo@cliente.com (opcional)"
-        />
-      </div>
+      </label>
 
       <ul className="space-y-3">
-        {items.map((item, idx) => (
-          <li key={idx} className="flex gap-2">
-            <input
-              className="flex-1 rounded-lg border border-gray-200 px-3 py-2"
-              value={item.descripcion}
-              onChange={(e) => updateItem(idx, { descripcion: e.target.value })}
-              placeholder="Descripción"
-            />
-            <input
-              type="number"
-              className="w-20 rounded-lg border border-gray-200 px-3 py-2"
-              value={item.cantidad}
-              onChange={(e) => updateItem(idx, { cantidad: Number(e.target.value) })}
-            />
-            <input
-              type="number"
-              className="w-28 rounded-lg border border-gray-200 px-3 py-2"
-              value={item.precio_unitario}
-              onChange={(e) => updateItem(idx, { precio_unitario: Number(e.target.value) })}
-            />
-            <button type="button" onClick={() => removeItem(idx)} disabled={items.length === 1}>
-              ✕
-            </button>
+        {items.map((item) => (
+          <li key={item.key} className="flex flex-wrap gap-2">
+            <input className="flex-1 rounded-lg bg-[#f5f5f7] px-3 py-2" value={item.descripcion} onChange={(e) => builder.updateItem(item.key, { descripcion: e.target.value })} placeholder="Descripción" />
+            <input type="number" className="w-20 rounded-lg bg-[#f5f5f7] px-3 py-2" value={item.cantidad} onChange={(e) => builder.updateItem(item.key, { cantidad: Number(e.target.value) })} />
+            <input type="number" className="w-28 rounded-lg bg-[#f5f5f7] px-3 py-2" value={item.precio_unitario} onChange={(e) => builder.updateItem(item.key, { precio_unitario: Number(e.target.value) })} />
+            <select className="rounded-lg bg-[#f5f5f7] px-3 py-2" value={String(item.tax_rate)} onChange={(e) => builder.updateItem(item.key, { tax_rate: Number(e.target.value) })}>
+              {config?.impuestos.opciones.map((o) => <option key={o.label} value={String(o.rate)}>{o.label}</option>)}
+            </select>
+            <button type="button" onClick={() => builder.removeItem(item.key)} disabled={items.length === 1} className="text-sm">Quitar</button>
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        onClick={() => setItems([...items, { descripcion: '', cantidad: 1, precio_unitario: 0 }])}
-        className="text-sm font-medium text-[#0A2240]"
-      >
-        + Agregar línea
-      </button>
-
-      <textarea
-        className="w-full rounded-lg border border-gray-200 px-3 py-2"
-        value={notas}
-        onChange={(e) => setNotas(e.target.value)}
-        placeholder="Notas / condiciones"
-      />
+      <button type="button" onClick={() => builder.addItem()} className="text-sm font-medium text-[#0A2240]">Agregar partida</button>
 
       <div className="text-right text-sm">
-        <p>Subtotal: {subtotal.toLocaleString('es-MX')} {moneda}</p>
-        <p>IVA: {iva.toLocaleString('es-MX')} {moneda}</p>
-        <p className="text-lg font-semibold">Total: {total.toLocaleString('es-MX')} {moneda}</p>
+        <p>Subtotal: {formatMoney(totals.subtotal)}</p>
+        {totals.porTasa.filter((t) => t.tasa > 0).map((t) => <p key={t.tasa}>{taxLabel} {t.tasa * 100}%: {formatMoney(t.impuesto)}</p>)}
+        <p className="text-lg font-semibold">Total: {formatMoney(totals.total)}</p>
       </div>
 
-      {submitError && <p className="text-sm text-red-600">{submitError}</p>}
-
-      <button type="submit" disabled={isLoading} className="w-full rounded-lg bg-[#0A2240] py-3 text-white">
-        {isLoading ? 'Creando…' : 'Crear cotización'}
+      {error && <p className="text-sm text-red-700">{error.message} ({error.requestId})</p>}
+      <button type="submit" disabled={status === 'submitting' || status === 'loading'} className="w-full rounded-full bg-[#0A2240] py-3 text-white">
+        {status === 'submitting' ? 'Creando…' : 'Crear cotización'}
       </button>
     </form>
   );

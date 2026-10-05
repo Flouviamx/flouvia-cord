@@ -1,30 +1,26 @@
-// app/api/webhooks/cord/route.ts — verifica webhooks salientes de Cord
-// (configúralos en Ajustes › Developers → Webhooks, apuntando aquí).
-import { CordAPI } from '@flouviahq/elements/server';
-
-const cord = new CordAPI(process.env.CORD_SECRET_KEY);
+// app/api/webhooks/cord/route.ts — verifica los webhooks de Cord con el cuerpo crudo.
+// En desarrollo: cord listen --forward-to http://localhost:3000/api/webhooks/cord
+import { constructEvent, CordWebhookSignatureError } from '@flouviahq/node';
 
 export async function POST(req: Request) {
-  const body = await req.text();
-
   let event;
   try {
-    // req.headers ya es un Headers real — constructEvent lo acepta directo.
-    event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
+    event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
   } catch (err) {
-    return new Response('Firma inválida', { status: 400 });
+    if (err instanceof CordWebhookSignatureError) return new Response('Firma inválida', { status: 400 });
+    throw err;
   }
 
   switch (event.event) {
     case 'quote.paid':
-      // event.data: { id, folio, status, total, cliente, link_publico }
-      console.log(`Cotización ${event.data.folio} pagada — $${event.data.total}`);
+      console.log(`Cotización ${event.data.folio} pagada: ${event.data.total} ${event.data.moneda}`);
       break;
-    case 'quote.approved':
-      console.log(`Cotización ${event.data.folio} aprobada`);
+    case 'invoice.paid':
+      console.log(`Factura ${event.data.numero} pagada; saldo ${event.data.saldo} ${event.data.moneda}`);
       break;
-    // quote.sent · quote.viewed · quote.rejected · invoice.stamped · ping
+    case 'payment.partial':
+      console.log(`Anticipo de ${event.data.monto}; faltan ${event.data.saldo_pendiente}`);
+      break;
   }
-
   return new Response('ok');
 }

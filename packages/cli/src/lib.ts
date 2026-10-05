@@ -71,6 +71,7 @@ export function parseEventList(value: string | true | undefined): string[] {
 export const HELP = `cord ${VERSION} — CLI de desarrollo de Cord
 
 Uso:
+  cord init                               Detecta tu framework y deja la integración lista
   cord login                              Guarda tu llave de prueba (sk_test_)
   cord logout                             Borra la llave guardada
   cord whoami                             Muestra la organización de la llave

@@ -7,6 +7,7 @@ import { resolveOrigin } from './config.js';
 import { sanitizeAppearance } from './appearance.js';
 import { createStore } from './headless/store.js';
 import { INITIAL_QUOTE_VIEW, reduceQuoteView } from './headless/quote-view.js';
+import { debugLog } from './debug.js';
 
 const STYLE_ID = 'cord-elements-style';
 
@@ -73,7 +74,10 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
     if (!opts || !opts.token) throw new Error('[Cord] falta opts.token');
     if (opts.appearance && isDev()) {
         const { rejected } = sanitizeAppearance(opts.appearance);
-        if (rejected.length) console.warn(`[Cord] appearance: Cord descarta estos valores por no ser válidos: ${rejected.join(', ')}.`);
+        if (rejected.length) {
+            console.warn(`[Cord] appearance: Cord descarta estos valores por no ser válidos: ${rejected.join(', ')}.`);
+            debugLog('warning', `appearance descartado: ${rejected.join(', ')}`);
+        }
     }
     const state = createStore(INITIAL_QUOTE_VIEW);
 
@@ -140,6 +144,7 @@ export function mountCotizador(target: HTMLElement, opts: CordElementOptions, st
         // único punto donde cruza la frontera no tipada.
         const evt = { type: data.type, detail: data.detail && typeof data.detail === 'object' ? data.detail : {} } as CordEvent;
         state.set((prev) => reduceQuoteView(prev, evt));
+        debugLog('event', evt.type, evt.detail);
         if (opts.onEvent) opts.onEvent(evt);
         switch (evt.type) {
             case 'cord:ready':        opts.onReady?.(); break;

@@ -7,9 +7,10 @@
 //   <div data-cord-token="abc123"></div>
 //
 // Atributos: data-cord-token (requerido), data-cord-base-url, data-cord-min-height,
-// data-cord-appearance (JSON). Legacy, sin usar en integraciones nuevas:
+// data-cord-appearance (JSON), data-cord-debug (barra de depuración). Legacy, sin usar en integraciones nuevas:
 // data-cord-cotizador + data-token / data-base / data-min-height.
 import { mountCotizador } from './core.js';
+import { enableDebug } from './debug.js';
 import type { CordAppearance, CordController } from './types.js';
 
 export const MOUNT_SELECTOR = '[data-cord-token], [data-cord-cotizador]';
@@ -34,6 +35,7 @@ export function mountElement(el: Element): CordController | null {
     if (rawAppearance) {
         try { appearance = JSON.parse(rawAppearance); } catch { console.warn('[Cord] data-cord-appearance no es JSON válido.'); }
     }
+    if (el.hasAttribute('data-cord-debug')) enableDebug();
     const host = el as HTMLElement;
     const controller = mountCotizador(host, {
         token,

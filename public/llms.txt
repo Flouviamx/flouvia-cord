@@ -112,8 +112,22 @@ for prices, currencies and included usage.
 - [Webhooks](https://docs.cordhq.app/docs/desarrolladores/herramientas/webhooks)
 - [MCP server](https://docs.cordhq.app/docs/desarrolladores/herramientas/mcp)
 - [Cord Elements](https://docs.cordhq.app/docs/desarrolladores/herramientas/elements/resumen)
-- [OpenAPI specification](https://cordhq.app/openapi.yaml)
+- [API reference](https://docs.cordhq.app/docs/desarrolladores/referencia)
+- [API versions (Cord-Version header)](https://docs.cordhq.app/docs/desarrolladores/esenciales/versiones)
+- [Test mode and simulators](https://docs.cordhq.app/docs/desarrolladores/empezar/pruebas)
+- [Cord CLI](https://docs.cordhq.app/docs/desarrolladores/herramientas/cli)
+- [OpenAPI 3.1 specification](https://cordhq.app/openapi.json) (also at /openapi.yaml)
+- SDKs: `@flouviahq/node` (server), `@flouviahq/elements` (browser), `@flouviahq/cli`, `cord-sdk` (Python), `flouviahq/cord` (PHP)
 - [Machine-readable pricing](https://cordhq.app/pricing.md)
+
+## Integration rules for AI assistants
+
+- Secret keys (`sk_live_`, `sk_test_`) only run on a server. The API rejects them from a browser (`secret_key_in_browser`). Browsers use publishable keys (`pk_`) or a proxy built with `createElementsProxy` from `@flouviahq/node`.
+- Verify every webhook with the raw request body and `constructEvent` (Node), `construct_event` (Python) or `Webhook::constructEvent` (PHP). They require `X-Cord-Signature-V1` with a timestamp; deduplicate by the event `id`.
+- Send an `Idempotency-Key` on every mutation and reuse it on retries; the official SDKs do it automatically.
+- Pin the API version with the `Cord-Version` header; the SDKs send the version they were built against.
+- Every amount travels with its currency (`moneda`). Never assume MXN or a "$" symbol.
+- Develop against `sk_test_` keys and use `cord listen` / `cord trigger` or `/api/v1/test_helpers/*` to simulate webhooks, stamping failures and expirations.
 
 ## Problem-oriented guides
 

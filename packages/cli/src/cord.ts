@@ -1,8 +1,9 @@
 // cord — CLI de desarrollo de Cord. Solo trabaja con llaves de prueba.
-import { mkdirSync, readFileSync, writeFileSync, rmSync, chmodSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync, chmodSync, existsSync, appendFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createInterface } from 'node:readline';
 import { HELP, VERSION, checkForwardUrl, checkTestKey, configPath, maskKey, parseArgs, parseEventList } from './lib.js';
+import { planInit, type ProjectFiles } from './init.js';
 
 const API_VERSION = '2026-10-01';
 const { command, flags } = parseArgs(process.argv.slice(2));
@@ -183,11 +184,62 @@ async function eventsTail() {
     }
 }
 
+function readJson(path: string): any {
+    try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return undefined; }
+}
+
+function readText(path: string): string | undefined {
+    try { return readFileSync(path, 'utf8'); } catch { return undefined; }
+}
+
+async function init() {
+    const cwd = process.cwd();
+    const project: ProjectFiles = {
+        packageJson: readJson(`${cwd}/package.json`),
+        composerJson: readJson(`${cwd}/composer.json`),
+        pythonDeps: [readText(`${cwd}/requirements.txt`), readText(`${cwd}/pyproject.toml`)].filter(Boolean).join('\n'),
+        hasAppDir: existsSync(`${cwd}/app`) || existsSync(`${cwd}/src/app`),
+        hasSrcDir: existsSync(`${cwd}/src/app`),
+        gitignore: readText(`${cwd}/.gitignore`),
+        lockfiles: ['pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', 'bun.lock', 'package-lock.json'].filter((f) => existsSync(`${cwd}/${f}`)),
+    };
+    const plan = planInit(project);
+    if (plan.framework === 'unknown') die('No reconocí el framework de este proyecto. Mira https://docs.cordhq.app/desarrolladores para instalar a mano.');
+    console.log(`Framework: ${bold(plan.framework)}\n`);
+    let step = 1;
+    if (plan.install) console.log(`${step++}. Instala el SDK:\n   ${bold(plan.install)}\n`);
+
+    for (const f of plan.files) {
+        const full = `${cwd}/${f.path}`;
+        if (existsSync(full)) { console.log(`   ${dim('ya existe, no lo toco:')} ${f.path}`); continue; }
+        mkdirSync(dirname(full), { recursive: true });
+        writeFileSync(full, f.content, { flag: 'wx' });
+        console.log(`   creado ${bold(f.path)}`);
+    }
+    if (plan.snippet) console.log(`\n${step++}. Agrega la ruta del webhook:\n\n${plan.snippet}\n`);
+
+    const key = String(flags['api-key'] || process.env.CORD_API_KEY || readConfig().apiKey || '');
+    const lines = ['CORD_SECRET_KEY=' + (checkTestKey(key).ok ? key : 'sk_test_...'), 'CORD_WEBHOOK_SECRET=whsec_... # lo imprime cord listen'];
+    if (plan.envFile) {
+        const envPath = `${cwd}/${plan.envFile}`;
+        const current = readText(envPath) ?? '';
+        const missing = lines.filter((l) => !current.includes(l.split('=')[0] + '='));
+        if (missing.length) appendFileSync(envPath, (current && !current.endsWith('\n') ? '\n' : '') + missing.join('\n') + '\n', { mode: 0o600 });
+        console.log(`\n${step++}. Variables en ${bold(plan.envFile)} ${dim('(ignorado por git)')}`);
+    } else {
+        console.log(`\n${step++}. Agrega a tu archivo de entorno ${dim('(asegúrate de que git lo ignore)')}:\n   ${lines.join('\n   ')}`);
+    }
+    if (plan.webhookPath) {
+        console.log(`\n${step++}. Prueba de punta a punta:\n   ${bold(`cord listen --forward-to http://localhost:3000${plan.webhookPath}`)}\n   ${bold('cord trigger quote.approved')}`);
+    }
+}
+
 async function main() {
     if (flags.version) return console.log(VERSION);
     const [cmd, sub] = command;
     if (!cmd || flags.help || cmd === 'help') return console.log(HELP);
     if (cmd === 'login') return login();
+    if (cmd === 'init') return init();
     if (cmd === 'logout') { rmSync(configPath(), { force: true }); return console.log('Llave borrada.'); }
     if (cmd === 'whoami') return whoami();
     if (cmd === 'listen') return listen();

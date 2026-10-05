@@ -15,6 +15,7 @@ export default function CotizacionPage({ params }: { params: { token: string } }
         onApproved={(d) => console.log('Aprobada, firmada por', d.signed_by)}
         onRejected={(d) => console.log('Rechazada:', d.comentario)}
         onPay={(d) => console.log('Pago abierto en', d.url)}
+        onStateChange={(s) => { if (s.paid) console.log('Pagada', s.total, s.moneda); }}
       />
     </main>
   );

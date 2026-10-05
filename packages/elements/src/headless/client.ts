@@ -6,6 +6,7 @@ import { CordError } from '../api.js';
 import { resolveApiBase } from '../config.js';
 import type { CordElementsConfig } from '../contract/elements-config.js';
 import { CORD_API_VERSION } from '../contract/api-version.js';
+import { debugLog } from '../debug.js';
 import type { CordProduct, CreateQuoteInput, CreateQuoteResponse } from '../types.js';
 
 export interface CordClientOptions {
@@ -102,6 +103,7 @@ export function createCordClient(opts: CordClientOptions): CordClient {
             if (timer) clearTimeout(timer);
             const requestId = res.headers.get('cord-request-id');
             if (opts.debug) console.info(`[Cord] ${method} ${path} → ${res.status}${requestId ? ` (${requestId})` : ''}`);
+            debugLog(res.ok || res.status === 304 ? 'request' : 'error', `${method} ${path} → ${res.status}${requestId ? ` · ${requestId}` : ''}`);
             if (res.status === 304) return { status: 304, data: null, etag: res.headers.get('etag') };
 
             if (!res.ok && RETRYABLE.has(res.status) && attempt < maxRetries) {

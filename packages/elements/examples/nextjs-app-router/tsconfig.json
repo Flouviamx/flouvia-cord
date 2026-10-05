@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    "typeRoots": ["../../node_modules/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "@flouviahq/elements": ["../../src/index.ts"],
+      "@flouviahq/elements/react": ["../../src/react.tsx"],
+      "@flouviahq/node": ["../../../node/src/index.ts"],
+      "@/lib/*": ["./shims/lib/*"],
+      "next/navigation": ["./shims/next-navigation.d.ts"],
+      "react": ["../../node_modules/@types/react"],
+      "react/jsx-runtime": ["../../node_modules/@types/react/jsx-runtime"]
+    }
+  },
+  "include": ["app", "shims"]
+}

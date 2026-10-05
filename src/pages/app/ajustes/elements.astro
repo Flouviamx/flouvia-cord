@@ -9,6 +9,7 @@ import { getOrg } from '../../../lib/queries';
 import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { getOnboarding, ONBOARDING_STEPS } from '../../../lib/elements-onboarding';
 
 const ORG = await getOrg();
 const L = currentLocale();
@@ -29,10 +30,32 @@ const snippet = `<!-- Cotizador Cord -->
 <script src="${base}/embed.js" async></script>
 <div data-cord-token="${sampleToken}"></div>`;
 const hasDomains = (ORG.embedDomains || '').trim().length > 0;
+const onboarding = await getOnboarding(orgId);
 ---
 
 <SettingsShell title="Cotizador embebible — Ajustes" tab="elements" perm="ajustes" save={true}
     intro={t(L, 'set.el.intro')}>
+
+    <SettingsSection icon="sliders" class="s-block full">
+        <div class="el-preview-head">
+            <h3>{t(L, 'set.el.onb_titulo')}</h3>
+            <span class:list={['el-install-badge', onboarding.completo ? 'ok' : 'open']} id="elOnbBadge" data-done={t(L, 'set.el.onb_completo')} data-pending={t(L, 'set.el.onb_pendiente')}>
+                {onboarding.completo ? t(L, 'set.el.onb_completo') : t(L, 'set.el.onb_pendiente')}
+            </span>
+        </div>
+        <p class="el-p">{onboarding.sandbox ? t(L, 'set.el.onb_desc_prueba') : t(L, 'set.el.onb_desc_vivo')}</p>
+        <ol class="el-onb" id="elOnb" data-completo={onboarding.completo ? '1' : undefined} aria-live="polite">
+            {ONBOARDING_STEPS.map((step) => (
+                <li data-step={step} data-done={onboarding.steps[step] ? '1' : undefined}>
+                    <svg class="el-onb-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12" />
+                        <polyline class="el-onb-check" points="8 12.5 11 15.5 16.5 9.5" />
+                    </svg>
+                    <span>{t(L, `set.el.onb.${step}` as any)}</span>
+                </li>
+            ))}
+        </ol>
+    </SettingsSection>
 
     <SettingsSection icon="sliders" class="s-block full">
         <div class="el-preview-head">
@@ -93,6 +116,8 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
             <li><code>cord:rejected</code> — {t(L, 'set.el.ev_rejected')}</li>
             <li><code>cord:message</code> — {t(L, 'set.el.ev_message')}</li>
             <li><code>cord:pay</code> — {t(L, 'set.el.ev_pay')}</li>
+            <li><code>cord:updated</code> — {t(L, 'set.el.ev_updated')}</li>
+            <li><code>cord:status_changed</code> — {t(L, 'set.el.ev_status_changed')}</li>
         </ul>
     </SettingsSection>
 </SettingsShell>
@@ -141,6 +166,14 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
     .el-events li { font-size: 0.83rem; color: var(--color-text); line-height: 1.5; }
     .el-events span { color: var(--color-text-muted); font-size: 0.76rem; }
 
+    .el-onb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+    .el-onb li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--color-text-muted); }
+    .el-onb li[data-done] { color: var(--color-text); }
+    .el-onb-icon { flex-shrink: 0; color: var(--color-text-muted); }
+    .el-onb li[data-done] .el-onb-icon { color: var(--color-ok); }
+    .el-onb-check { opacity: 0; transition: opacity 0.25s ease; }
+    .el-onb li[data-done] .el-onb-check { opacity: 1; }
+
     @media (max-width: 600px) {
         .el-preview-head { align-items: flex-start; }
         .el-frame-iframe { height: min(480px, 70dvh); }
@@ -168,4 +201,36 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initElements);
     else initElements();
+
+    // La checklist se marca sola: consulta mientras falten pasos y la pestaña esté visible.
+    function initOnboarding() {
+        const list = document.getElementById('elOnb');
+        const badge = document.getElementById('elOnbBadge');
+        if (!list || !badge || list.dataset.completo) return;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const tick = async () => {
+            timer = null;
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const res = await fetch('/api/elements/onboarding', { headers: { Accept: 'application/json' } });
+                if (res.ok) {
+                    const data = await res.json();
+                    for (const li of list.querySelectorAll<HTMLElement>('li[data-step]')) {
+                        if (data.steps?.[li.dataset.step || '']) li.dataset.done = '1';
+                    }
+                    if (data.completo) {
+                        list.dataset.completo = '1';
+                        badge.textContent = badge.dataset.done || '';
+                        badge.classList.replace('open', 'ok');
+                        return;
+                    }
+                }
+            } catch { /* reintenta en el siguiente ciclo */ }
+            timer = setTimeout(tick, 5000);
+        };
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !timer && !list.dataset.completo) tick(); });
+        timer = setTimeout(tick, 5000);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initOnboarding);
+    else initOnboarding();
 </script>

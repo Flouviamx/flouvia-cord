@@ -5,6 +5,7 @@ CLI de desarrollo de [Cord](https://cordhq.app). Trabaja solo con llaves de prue
 ```bash
 npm install -g @flouviahq/cli
 cord login
+cord init      # detecta tu framework y deja el webhook verificado y el proxy listos
 ```
 
 ## Webhooks en tu localhost

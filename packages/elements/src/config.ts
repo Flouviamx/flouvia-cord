@@ -5,6 +5,7 @@
 // Precedencia de resolución en TODO el SDK: props del componente > valor del
 // <CordProvider> (si existe) > configureCord() > default embebido.
 import type { CordAppearance } from './types.js';
+import { enableDebug } from './debug.js';
 
 export interface CordGlobalConfig {
     /** Origen de Cord. Default: https://cordhq.app (self-host/staging). */
@@ -13,6 +14,8 @@ export interface CordGlobalConfig {
     appearance?: CordAppearance;
     /** Llave publishable por default (ver CordProviderProps para el uso normal). */
     publishableKey?: string;
+    /** Muestra la barra de depuración (solo con llaves de prueba). */
+    debug?: boolean;
 }
 
 const DEFAULT_ORIGIN = 'https://cordhq.app';
@@ -22,6 +25,7 @@ let globalConfig: CordGlobalConfig = {};
 /** Fija defaults globales del SDK. Llamar una vez, antes de montar cualquier componente. */
 export function configureCord(config: CordGlobalConfig): void {
     globalConfig = { ...globalConfig, ...config };
+    if (config.debug) enableDebug(globalConfig.publishableKey);
 }
 
 /** Config actual (uso interno del SDK; no se garantiza estable entre versiones). */

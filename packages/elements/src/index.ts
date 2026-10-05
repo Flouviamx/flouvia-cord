@@ -9,6 +9,7 @@ export {
     calculateInvoiceTotals, calculateDocumentTotals,
 } from './engine.js';
 export { configureCord, getCordConfig } from './config.js';
+export { enableDebug, debugLog } from './debug.js';
 export type {
     EngineItem, EngineItemInput, EngineTotals,
     InvoiceItemInput, InvoiceItem, InvoiceTotals, TaxBreakdown,

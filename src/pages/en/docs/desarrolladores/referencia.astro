@@ -1,0 +1,15 @@
+---
+import DocsLayout from '../../../../layouts/DocsLayout.astro';
+import ApiReference from '../../../../components/docs/ApiReference.astro';
+import { groupedOperations } from '../../../../lib/api-reference';
+
+const headings = groupedOperations().map(([tag]) => ({ depth: 2, slug: tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'), text: tag }));
+const alternates = { es: '/docs/desarrolladores/referencia', en: '/en/docs/desarrolladores/referencia' };
+---
+
+<DocsLayout title="API Reference" lang="en" description="Every Cord API v1 operation with its fields and examples in curl, Node, Python and PHP, generated from the API contract." headings={headings} alternates={alternates}>
+  <header class="content-header">
+    <h1 class="page-title">API Reference</h1>
+  </header>
+  <ApiReference lang="en" />
+</DocsLayout>

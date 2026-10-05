@@ -11,6 +11,7 @@ import type { CordAppearance, CordController } from './types.js';
 import type { QuoteViewState } from './headless/quote-view.js';
 import { INITIAL_QUOTE_VIEW } from './headless/quote-view.js';
 import { getCordConfig } from './config.js';
+import { enableDebug } from './debug.js';
 
 // `extends HTMLElement` se evalúa al definir la clase: en Node no existe.
 const ElementBase: typeof HTMLElement =
@@ -28,7 +29,7 @@ export class CordQuoteElement extends ElementBase {
     private scheduled = false;
 
     static get observedAttributes() {
-        return ['token', 'base-url', 'min-height', 'appearance'];
+        return ['token', 'base-url', 'min-height', 'appearance', 'debug'];
     }
 
     /** Appearance como objeto (preferible al atributo JSON). */
@@ -95,6 +96,7 @@ export class CordQuoteElement extends ElementBase {
             if (!token) console.warn(`[Cord] <${this.localName}> requiere el atributo token`);
             return;
         }
+        if (this.hasAttribute('debug')) enableDebug();
         const minAttr = this.getAttribute('min-height');
         const emit = (name: string, detail: unknown) =>
             this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
