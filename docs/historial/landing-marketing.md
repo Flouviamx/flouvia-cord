@@ -7,6 +7,15 @@
 
 ---
 
+**Desarrolladores: sin pasos ni rejilla de detalles; mockups 1:1 (5 oct 2026)** —
+• Se retiraron "Empieza en tres pasos" y la rejilla de detalles (`TrustGrid.astro`) de
+  `/desarrolladores/*`, con sus datos (`steps`, `trust`) y el JSON-LD `HowTo`, que sin la
+  sección visible describía contenido que la página ya no muestra. `steps` sobrevive solo en
+  Elements, donde alimenta los pasos de instalación.
+• `DevMock.astro` calca el Workbench y Ajustes › MCP reales con las claves de `src/i18n/app.ts`.
+
+---
+
 **Desarrolladores y Cord Elements: bento blanco y página del SDK completa (4 oct 2026)** —
 • **Bento unificado:** `/desarrolladores/[slug]` usaba tarjetas grises `#f5f5f7` con borde y
   una tarjeta 0 oscura con `CordDynamicBg`; ahora es el mismo bento blanco de `/producto`

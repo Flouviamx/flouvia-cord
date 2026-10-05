@@ -9,7 +9,6 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import DevMock from '../../components/desarrolladores/DevMock.astro';
-import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import DevHeroBand from '../../components/desarrolladores/DevHeroBand.astro';
 import DevMore from '../../components/desarrolladores/DevMore.astro';
@@ -52,15 +51,8 @@ const breadcrumbSchema = {
         { '@type': 'ListItem', position: 3, name: page.nav, item: `${base}/desarrolladores/${page.slug}` },
     ],
 };
-// HowTo con los pasos reales y TechArticle con fecha de revisión: las páginas de
-// desarrolladores responden "cómo conecto X" y "qué es X" — los dos formatos que
-// más citan los buscadores con IA (skill ai-seo).
-const howToSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'HowTo',
-    name: isEn ? `How to get started with ${page.nav} in Cord` : `Cómo empezar con ${page.nav} en Cord`,
-    step: page.steps.map((st: { titulo: string; copy: string }, i: number) => ({ '@type': 'HowToStep', position: i + 1, name: st.titulo, text: st.copy })),
-};
+// TechArticle: las páginas de desarrolladores responden "qué es X", el formato
+// que más citan los buscadores con IA (skill ai-seo).
 const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
@@ -76,7 +68,6 @@ const articleSchema = {
 <Layout title={page.metaTitle ?? `${page.nav} — Cord`} description={page.metaDescription ?? page.sub}>
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(howToSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
     <Nav />
     <main>
@@ -134,16 +125,6 @@ const articleSchema = {
             ))}
         </section>
 
-        <section class="dv-steps" aria-labelledby="dv-steps-t">
-            <h2 id="dv-steps-t" class="dv-steps-t masked-title">{isEn ? 'Get started in three steps' : 'Empieza en tres pasos'}</h2>
-            <ol>
-                {page.steps.map((st, i) => (
-                    <li class="reveal"><span class="dv-step-n">{String(i + 1).padStart(2, '0')}</span><h3>{st.titulo}</h3><p>{st.copy}</p></li>
-                ))}
-            </ol>
-        </section>
-
-        {page.trust && <TrustGrid trust={page.trust} />}
 
         <FaqAccordion
             faqs={page.faqs}
@@ -293,15 +274,6 @@ const articleSchema = {
     :global(.dm-pending) { color: #64748b !important; background: rgba(10,25,47,0.05) !important; border-color: rgba(10,25,47,0.1) !important; }
 
 
-    /* ════════ PASOS ════════ */
-    .dv-steps { max-width: 1360px; margin: 0 auto; padding: 2rem 5% 6rem; }
-    .dv-steps-t { font-size: clamp(1.6rem, 2.6vw, 2.3rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0 0 2.2rem; }
-    .dv-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .dv-steps li { padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
-    .dv-step-n { font-family: ui-monospace, monospace; font-size: 0.75rem; font-weight: 700; color: #99a2af; }
-    .dv-steps h3 { margin: 0.8rem 0 0.5rem; font-size: 1.08rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
-    .dv-steps p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--color-text-muted); }
-
     /* ════════ BLOQUES — bento de tarjetas (mismo patrón que /producto) ════════ */
     .pp-bento {
         max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem;
@@ -340,7 +312,6 @@ const articleSchema = {
         .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
         .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
         .pp-bcard { min-height: 460px; }
-        .dv-steps ol { grid-template-columns: 1fr; }
     }
     @media (max-width: 860px) {
         .pp-hero { padding-top: 8.5rem; }

@@ -256,7 +256,7 @@ const sdkSchema = {
 const howToSchema = {
     '@context': 'https://schema.org', '@type': 'HowTo',
     name: tx('Cómo embeber una cotización de Cord en tu sitio', 'How to embed a Cord quote on your site'),
-    step: devPage.steps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titulo, text: s.copy })),
+    step: (devPage.steps ?? []).map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titulo, text: s.copy })),
 };
 ---
 
@@ -334,7 +334,7 @@ const howToSchema = {
                 </div>
                 <div class="eli-body">
                     <ol class="eli-steps">
-                        {devPage.steps.map((st, i) => (
+                        {(devPage.steps ?? []).map((st, i) => (
                             <li><span class="eli-n">{String(i + 1).padStart(2, '0')}</span><div><b>{st.titulo}</b><p>{st.copy}</p></div></li>
                         ))}
                     </ol>

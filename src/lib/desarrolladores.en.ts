@@ -52,11 +52,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'code-events',
             },
         ],
-        steps: [
-            { titulo: 'Create a test key', copy: "In the developer Workbench, API tab, with Test mode on. It's shown only once." },
-            { titulo: 'Make your first call', copy: 'GET https://cordhq.app/api/v1/me with an Authorization: Bearer header. It tells you which business the key belongs to.' },
-            { titulo: 'Go live', copy: 'Switch to Live, generate an sk_live_ key and point your integration at it. The code does not change.' },
-        ],
         faqs: [
             { q: 'What is the Cord API?', a: 'A REST API at https://cordhq.app/api/v1 that gives programmatic access to your quotes, invoices, clients, products, tasks, collections and events. It authenticates with a Bearer key and responds in JSON shaped as { data, meta } or { error, code }.' },
             { q: 'Do I need a paid plan to use the API?', a: 'No. The API is on every plan, including Free, with 2 keys and 100 calls a month. Starter includes 1,000 calls, Professional 5,000, Scale 10,000 and Developer 50,000. Test keys do not count against your quota.' },
@@ -65,15 +60,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'Is there an OpenAPI spec?', a: 'Yes, at https://cordhq.app/openapi.yaml, plus an AI-assistant summary at https://cordhq.app/llms.txt. Both are linked from the Workbench.' },
         ],
         cta: { titulo: 'Make your first call today.', sub: 'Create your account, generate a test key and call /api/v1/me in under a minute.' },
-        trust: {
-            eyebrow: 'API DETAILS',
-            titulo: 'What you notice when you integrate for real',
-            items: [
-                { icon: 'doc', titulo: 'Flat errors with stable codes', copy: 'Every error arrives as { error, code } with a code that does not change —invalid_request, rate_limited, api_quota_exceeded— so your error handling never parses messages.' },
-                { icon: 'gauge', titulo: 'A 429 tells you how long to wait', copy: 'When you hit the per-minute limit you get Retry-After. Running out of monthly quota uses a different code, so you never confuse the two.' },
-                { icon: 'key', titulo: 'Keys are never stored in plain text', copy: 'Only a hash exists in the database. If you lose a key you create another; nobody at Cord can recover it.' },
-            ],
-        },
     },
     {
         slug: 'workbench',
@@ -121,11 +107,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'wb-health',
             },
         ],
-        steps: [
-            { titulo: 'Open the panel', copy: 'From the "Developers" bar at the bottom of the app. It opens over the screen you are on.' },
-            { titulo: 'Pick the environment', copy: 'Test to integrate safely, Live for production. Keys and data for each are kept apart.' },
-            { titulo: 'Build and watch', copy: 'Generate your key, register a webhook and follow every request in Logs while you build.' },
-        ],
         faqs: [
             { q: "What is Cord's Workbench?", a: "It's Cord's developer panel. It opens inside the app and brings together API keys, webhooks, the request log, business events and integration health, with a separate test mode." },
             { q: 'What does Cord keep from each API request?', a: 'Method, route, response code, latency, IP, the key and the environment. It does not store request or response bodies, so your clients\' data is not kept outside where it belongs.' },
@@ -133,15 +114,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'Who can open the Workbench?', a: 'Any member of the organization with access to Settings. It is included on every plan.' },
         ],
         cta: { titulo: 'Integrate with your eyes open.', sub: 'Create your account, open the Workbench and follow your first request live.' },
-        trust: {
-            eyebrow: 'PANEL DETAILS',
-            titulo: 'Built for working, not for watching',
-            items: [
-                { icon: 'toggle', titulo: 'Times in UTC or your timezone', copy: "A switch in the panel menu flips every timestamp, handy when you compare against your server's logs." },
-                { icon: 'layers', titulo: 'Stays where you left it', copy: 'The panel resizes, maximizes and remembers the last tab you opened.' },
-                { icon: 'lock', titulo: 'The secret is shown only once', copy: 'When you create an endpoint or rotate its secret you copy it then; afterwards it stays masked.' },
-            ],
-        },
     },
     {
         slug: 'mcp',
@@ -189,11 +161,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'mcp-playground',
             },
         ],
-        steps: [
-            { titulo: 'Generate a key', copy: 'In the Workbench, API tab. Read-only if the AI will only look things up; write if it will also create drafts.' },
-            { titulo: 'Copy the config', copy: 'Settings › MCP has the block ready for Claude Desktop, Cursor or the direct URL. Replace the sample key with yours.' },
-            { titulo: 'Ask in plain language', copy: '"Which clients owe me more than 30 days?" The AI picks the tool and answers with your data.' },
-        ],
         faqs: [
             { q: "What is Cord's MCP server?", a: 'A Model Context Protocol server at https://cordhq.app/api/mcp that exposes 19 tools over your business data. Any MCP client, such as Claude Desktop or Cursor, can use them by authenticating with your Cord API key.' },
             { q: 'Can the AI change my data?', a: 'Only if you give it a key with write permission. With a read key, the 10 write tools answer that the action requires that permission and run nothing.' },
@@ -202,15 +169,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'Do I need a separate key for MCP?', a: 'No. It is the same API key as the REST API, in the same Authorization: Bearer header.' },
         ],
         cta: { titulo: 'Ask your business.', sub: 'Create your account, copy the config for Claude or Cursor and ask your first question.' },
-        trust: {
-            eyebrow: 'PROTOCOL DETAILS',
-            titulo: 'What we take care of so the AI gets it right',
-            items: [
-                { icon: 'doc', titulo: 'A business error does not break the conversation', copy: 'A missing client or a missing permission comes back as isError inside the result. The AI reads it, explains it and moves on, with no transport error.' },
-                { icon: 'shield', titulo: "Your client's text is data, not instructions", copy: 'Events your client writes on the public link arrive tagged with their origin, and the tools tell the model to report them, never to obey them.' },
-                { icon: 'lock', titulo: 'Every call lives inside your organization', copy: 'The key resolves to your organization and every query runs in its context; a tool cannot read another business\'s data.' },
-            ],
-        },
     },
     {
         slug: 'integraciones',
@@ -258,11 +216,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'oauth-apps',
             },
         ],
-        steps: [
-            { titulo: 'Register your endpoint', copy: 'In the Workbench, Webhooks tab: paste the URL, pick the events and copy the secret, shown only once.' },
-            { titulo: 'Verify the signature', copy: 'Compute the HMAC-SHA256 of "timestamp.body" with your secret and compare it to X-Cord-Signature-V1.' },
-            { titulo: 'Answer 2xx fast', copy: 'Reply within 5 seconds and process in the background. Deduplicate by X-Cord-Event-Id.' },
-        ],
         faqs: [
             { q: 'What is a Cord webhook?', a: 'An automatic notice: when an event happens in your account, such as an approved quote or a paid invoice, Cord sends a JSON POST to the URL you registered, signed with HMAC-SHA256 so you can verify where it came from.' },
             { q: 'What if my server does not respond?', a: 'Cord retries up to 11 times with growing waits over almost four days, with a 5-second timeout per attempt. After 3 consecutive failures you get a notice and after 5 the endpoint is disabled until you turn it back on.' },
@@ -271,15 +224,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'How many endpoints can I have?', a: '16 on Free, Starter and Professional, 32 on Scale and 100 on Developer. Subscriptions created by Zapier, Make or n8n have a separate allowance of 100 per organization.' },
         ],
         cta: { titulo: 'Receive your first event in minutes.', sub: 'Register an endpoint in the Workbench and hit Test to watch the delivery arrive.' },
-        trust: {
-            eyebrow: 'HOW IT BEHAVES',
-            titulo: 'What happens when something fails',
-            items: [
-                { icon: 'refresh', titulo: 'Durable delivery, not best effort', copy: 'The event is saved before any delivery attempt. If the process is interrupted the notice is not lost: it stays queued until delivered or out of attempts.' },
-                { icon: 'gauge', titulo: 'Retries with random jitter', copy: 'Waits carry a ±20% margin so many failing endpoints do not receive all their retries in the same second.' },
-                { icon: 'key', titulo: 'Rotation with no blind window', copy: 'When you rotate the secret, Cord signs with both the new and the previous one during the grace period, so your server can update without rejecting deliveries.' },
-            ],
-        },
     },
     {
         slug: 'elements',
@@ -387,11 +331,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'fx-sources',
             },
         ],
-        steps: [
-            { titulo: 'Set your ledger currency', copy: "In Settings, your business's currency. It's the one your reports and books use." },
-            { titulo: "Quote in the client's currency", copy: 'In the editor or over the API with base_currency. Optionally add a cushion with fx_buffer_pct.' },
-            { titulo: 'Invoice with the locked rate', copy: 'The invoice declares the exchange rate and the ledger total, ready for your accounting.' },
-        ],
         faqs: [
             { q: 'Which source does Cord use for exchange rates?', a: "First the European Central Bank's daily reference, through Frankfurter. For currencies the ECB does not publish, such as COP, CLP, PEN or ARS, it checks two broad-coverage sources in order. If none has the pair, the operation stops with a clear message." },
             { q: 'How long is the rate locked?', a: '30 days from when the quote is created. During that time the rate does not change even if the market moves.' },
@@ -399,15 +338,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'What happens if no exchange rate is available?', a: 'Cord does not create the quote and returns a clear error (503 on the API). It only uses a cached rate if it is under 24 hours old; it never substitutes 1.0 or an estimate.' },
         ],
         cta: { titulo: 'Sell in any currency without losing your margin.', sub: 'Create your account and quote in dollars or euros with a locked rate.' },
-        trust: {
-            eyebrow: 'DETAILS THAT MATTER',
-            titulo: 'Money, not loose numbers',
-            items: [
-                { icon: 'doc', titulo: 'Every amount travels with its currency', copy: 'No amount is shown with a default "$": the symbol comes from the sale currency on the link, the PDF and the email.' },
-                { icon: 'gauge', titulo: 'Correct minor units per currency', copy: 'The yen and the Chilean peso have no cents; the Kuwaiti dinar has three decimals. Payments use the right unit for each currency.' },
-                { icon: 'route', titulo: 'Conversion runs from sales to ledger', copy: 'It always multiplies in the same direction. The editor preview and the database give the same number.' },
-            ],
-        },
     },
     {
         slug: 'fiscal',
@@ -455,11 +385,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'fiscal-countries',
             },
         ],
-        steps: [
-            { titulo: 'Set up your tax details', copy: 'In Settings: your tax ID and, in Mexico, your tax regime, postal code and CSD.' },
-            { titulo: 'Create the draft', copy: 'POST /api/v1/facturas with cliente_id and line items, or from an approved quote in the app.' },
-            { titulo: 'Issue and collect', copy: 'POST /api/v1/facturas/{id} with action finalize. Record payments with action payment.' },
-        ],
         faqs: [
             { q: 'Does Cord stamp real CFDI 4.0?', a: 'Yes. In Mexico, Cord stamps CFDI 4.0 with the SAT using your digital seal certificate (CSD) through an authorized provider (PAC), and returns the UUID, the PDF and the XML.' },
             { q: 'Can I issue invoices over the API?', a: 'Yes. POST /api/v1/facturas creates a draft and POST /api/v1/facturas/{id} with action finalize issues it. The same route accepts send, payment, void and credit_note.' },
@@ -468,15 +393,6 @@ export const DEV_PAGES_EN: DevPage[] = [
             { q: 'What happens if issuing fails?', a: 'The invoice keeps the tax status "error" and is not marked as issued. You see it in the app and over the API, and can fix the data and issue again.' },
         ],
         cta: { titulo: 'Invoice from your system, with the right document.', sub: 'Create your account, set up your tax details and issue your first invoice over the API.' },
-        trust: {
-            eyebrow: 'NON-NEGOTIABLE',
-            titulo: 'A legal document is not a PDF with a number',
-            items: [
-                { icon: 'lock', titulo: 'A draft is never stamped', copy: 'Nothing reaches the SAT until you issue. Cancelling a CFDI requires the recipient\'s acceptance, so Cord never stamps ahead of time.' },
-                { icon: 'doc', titulo: 'The tax rate is stored with the line', copy: 'Changing your tax catalog later does not rewrite an invoice already issued.' },
-                { icon: 'refresh', titulo: 'Payments are never applied twice', copy: 'A retry from the payment processor does not duplicate a payment: each one is applied to the invoice only once.' },
-            ],
-        },
     },
 ];
 
