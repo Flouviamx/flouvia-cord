@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cord-sdk"
+version = "1.0.0"
+description = "SDK de Python para la API de Cord: cotizaciones, facturas, webhooks verificados y modo prueba. Sin dependencias."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["cord", "cotizaciones", "facturas", "webhooks", "api"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://docs.cordhq.app/desarrolladores"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cord"]

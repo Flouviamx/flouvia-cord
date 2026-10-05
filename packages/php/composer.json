@@ -1,0 +1,16 @@
+{
+    "name": "flouviahq/cord",
+    "description": "SDK de PHP para la API de Cord: cotizaciones, facturas, webhooks verificados y modo prueba. Sin dependencias.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["cord", "cotizaciones", "facturas", "webhooks", "api", "laravel"],
+    "homepage": "https://docs.cordhq.app/desarrolladores",
+    "require": {
+        "php": ">=8.1",
+        "ext-json": "*",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "psr-4": { "Flouvia\\Cord\\": "src/" }
+    }
+}

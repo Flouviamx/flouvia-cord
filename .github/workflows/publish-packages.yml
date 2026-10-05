@@ -12,7 +12,7 @@ on:
         description: "Paquete a publicar"
         required: true
         type: choice
-        options: [elements, node, cli, all]
+        options: [elements, node, cli, python, all]
 
 permissions:
   contents: read
@@ -59,3 +59,27 @@ jobs:
           else
             npm publish --provenance --access public
           fi
+
+  publish-python:
+    if: github.ref == 'refs/heads/main' && (inputs.package == 'python' || inputs.package == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: packages/python
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: PYTHONPATH=src python -m unittest discover -s tests
+      - run: python -m pip install --quiet build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python/dist

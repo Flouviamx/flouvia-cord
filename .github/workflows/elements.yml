@@ -10,6 +10,8 @@ on:
       - "packages/elements/**"
       - "packages/node/**"
       - "packages/cli/**"
+      - "packages/python/**"
+      - "packages/php/**"
       - "public/embed.js"
       - ".github/workflows/elements.yml"
   push:
@@ -18,6 +20,8 @@ on:
       - "packages/elements/**"
       - "packages/node/**"
       - "packages/cli/**"
+      - "packages/python/**"
+      - "packages/php/**"
       - "public/embed.js"
       - ".github/workflows/elements.yml"
   workflow_dispatch:
@@ -110,3 +114,51 @@ jobs:
       - run: npm run build
       - name: Smoke test
         run: node dist/cord.mjs --version && node dist/cord.mjs help
+
+  python-sdk:
+    name: "cord-sdk (Python ${{ matrix.python }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ["3.9", "3.13"]
+    defaults:
+      run:
+        working-directory: packages/python
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Tests
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+      - name: Build
+        run: python -m pip install --quiet build && python -m build
+
+  php-sdk:
+    name: "flouviahq/cord (PHP ${{ matrix.php }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        php: ["8.1", "8.4"]
+    defaults:
+      run:
+        working-directory: packages/php
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json
+          coverage: none
+      - name: Lint
+        run: for f in src/*.php tests/*.php; do php -l "$f"; done
+      - name: Tests
+        run: php tests/run.php
+      - name: composer validate
+        run: composer validate --strict --no-check-publish
