@@ -18,6 +18,7 @@ import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/s
 import { normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
+import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -66,6 +67,8 @@ export interface NewQuoteInput {
         contacto?: string | null;
         telefono?: string | null;
         rfc?: string | null;
+        /** Datos fiscales del receptor; se validan con el mismo módulo que el Fiscal Element. */
+        fiscal?: FiscalReceptorInput | null;
     } | null;
     terminos?: string;
     vigencia_dias?: number;
@@ -97,7 +100,44 @@ export interface CreateQuoteResult {
 
 export class QuoteError extends Error {
     status: number;
-    constructor(message: string, status = 400) { super(message); this.status = status; }
+    code?: string;
+    details?: unknown;
+    constructor(message: string, status = 400, code?: string, details?: unknown) {
+        super(message);
+        this.status = status;
+        this.code = code;
+        this.details = details;
+    }
+}
+
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,63}$/;
+
+// Un cliente nuevo puede llegar con una pk_ desde el navegador: el emisor no es
+// de confianza. Todo campo se acota y el bloque fiscal se valida completo.
+export function sanitizeNuevoCliente(input: NonNullable<NewQuoteInput['cliente']>) {
+    const text = (v: unknown, max: number) => {
+        const s = typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '';
+        if (s.length > max) throw new QuoteError(`Un dato del cliente excede ${max} caracteres.`, 400);
+        return s || null;
+    };
+    let empresa = text(input.empresa, 200);
+    const email = text(input.email, 254)?.toLowerCase() ?? null;
+    if (email && !EMAIL_RE.test(email)) throw new QuoteError('El correo del cliente no es válido.', 400);
+    let fiscal: FiscalReceptor | null = null;
+    if (input.fiscal) {
+        const r = validateFiscalReceptor({ ...input.fiscal, legal_name: input.fiscal.legal_name || empresa || '' });
+        if (!r.ok) throw new QuoteError('Los datos fiscales del cliente no son válidos.', 400, 'invalid_fiscal_data', r.errors);
+        fiscal = r.value;
+        empresa = fiscal.legal_name;
+    }
+    return {
+        empresa,
+        email,
+        contacto: text(input.contacto, 120),
+        telefono: text(input.telefono, 40),
+        rfc: fiscal?.tax_id ?? text(input.rfc, 20),
+        fiscal,
+    };
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -134,12 +174,13 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
         return String(input.cliente_id);
     }
 
-    const empresa = input.cliente?.empresa?.trim();
+    if (!input.cliente) return null;
+    const nuevo = sanitizeNuevoCliente(input.cliente);
+    const { empresa, email } = nuevo;
     if (!empresa) return null;
-    const email = input.cliente?.email?.trim() || null;
 
     const [existingRows] = email
-        ? await withOrgTx(orgId, sql`select id from clientes where org_id = ${orgId} and (lower(empresa) = lower(${empresa}) or email = ${email}) limit 1`)
+        ? await withOrgTx(orgId, sql`select id from clientes where org_id = ${orgId} and (lower(empresa) = lower(${empresa}) or lower(email) = ${email}) limit 1`)
         : await withOrgTx(orgId, sql`select id from clientes where org_id = ${orgId} and lower(empresa) = lower(${empresa}) limit 1`);
     const existing = existingRows[0];
     if (existing) return existing.id as string;
@@ -153,8 +194,10 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
 
     try {
         const [createdRows] = await withOrgTx(orgId, sql`
-            insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
-            values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
+            insert into clientes (org_id, empresa, email, contacto, telefono, rfc, regimen_fiscal, uso_cfdi, cp_fiscal, country_code, origen)
+            values (${orgId}, ${empresa}, ${email}, ${nuevo.contacto}, ${nuevo.telefono}, ${nuevo.rfc},
+                    ${nuevo.fiscal?.regimen_fiscal ?? null}, ${nuevo.fiscal?.uso_cfdi ?? null}, ${nuevo.fiscal?.cp_fiscal ?? null},
+                    ${nuevo.fiscal?.country ?? null}, 'embed')
             returning *`);
         after(dispatchEvent(orgId, 'client.created', clientEventData(createdRows[0])));
         return createdRows[0].id as string;

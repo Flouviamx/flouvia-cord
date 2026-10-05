@@ -42,7 +42,7 @@ vi.mock('../src/lib/context', () => ({ currentUserId: () => 'user-a' }));
 vi.mock('../src/lib/fmt-server', () => ({ intlLocale: () => 'es-MX' }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn() } }));
 
-const { assertClienteDeOrg, productosDeOrg, QuoteError } = await import('../src/lib/cotizaciones');
+const { assertClienteDeOrg, productosDeOrg, QuoteError, sanitizeNuevoCliente } = await import('../src/lib/cotizaciones');
 const { PATCH, DELETE } = await import('../src/pages/api/cotizaciones/[id]');
 
 const CLIENTE = '11111111-1111-4111-8111-111111111111';
@@ -140,5 +140,30 @@ describe('DELETE /api/cotizaciones/[id]', () => {
         m.rows.set(/delete from cotizaciones/, [{ id: 'cot-1' }]);
         expect((await del()).status).toBe(200);
         expect(m.dispatchFrom).toHaveBeenCalled();
+    });
+});
+
+describe('cliente nuevo desde Elements (pk_): el emisor no es de confianza', () => {
+    it('acota longitudes y valida el correo', () => {
+        expect(() => sanitizeNuevoCliente({ empresa: 'x'.repeat(201) })).toThrow(QuoteError);
+        expect(() => sanitizeNuevoCliente({ empresa: 'Acme', email: 'no-es-correo' })).toThrow(QuoteError);
+        expect(sanitizeNuevoCliente({ empresa: '  Acme   SA ', email: 'Compras@Acme.MX' })).toMatchObject({ empresa: 'Acme SA', email: 'compras@acme.mx', fiscal: null });
+    });
+
+    it('rechaza datos fiscales inválidos con el detalle por campo', () => {
+        try {
+            sanitizeNuevoCliente({ empresa: 'Acme', fiscal: { country: 'MX', tax_id: 'EKU9003173C8', regimen_fiscal: '601', uso_cfdi: 'G03', cp_fiscal: '86991' } });
+            throw new Error('debió fallar');
+        } catch (e: any) {
+            expect(e).toBeInstanceOf(QuoteError);
+            expect(e.code).toBe('invalid_fiscal_data');
+            expect(e.details).toContainEqual({ field: 'tax_id', code: 'invalid_tax_id' });
+        }
+    });
+
+    it('usa el nombre fiscal validado como nombre del cliente', () => {
+        const r = sanitizeNuevoCliente({ empresa: 'Kemper', fiscal: { country: 'MX', tax_id: 'eku9003173c9', legal_name: 'ESCUELA KEMPER URGATE', regimen_fiscal: '601', uso_cfdi: 'G03', cp_fiscal: '86991' } });
+        expect(r).toMatchObject({ empresa: 'ESCUELA KEMPER URGATE', rfc: 'EKU9003173C9' });
+        expect(r.fiscal).toMatchObject({ regimen_fiscal: '601', uso_cfdi: 'G03', cp_fiscal: '86991', country: 'MX' });
     });
 });

@@ -709,23 +709,25 @@ export async function getImpuestos(): Promise<ImpuestoRow[]> {
         rows = impuestoRows;
         paisCode = (orgRows?.[0]?.country_code as string) || 'MX';
     } catch { return []; }
-    return rows.map((i) => {
-        const tipo = (i.tipo as string) || 'iva';
-        const kind = normalizeKind(i.kind, tipo);
-        const tasa = num(i.tasa);
-        return {
-            id: i.id as string,
-            nombre: i.nombre as string,
-            kind,
-            tipo,
-            kindLabel: taxKindLabel(kind, locale, paisCode),
-            tasa,
-            rate: tasa / 100,
-            esDefault: !!i.es_default,
-            activo: !!i.activo,
-            retencionBase: i.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal',
-        };
-    });
+    return rows.map((i) => mapImpuestoRow(i, locale, paisCode));
+}
+
+export function mapImpuestoRow(i: any, locale: 'es' | 'en', paisCode: string): ImpuestoRow {
+    const tipo = (i.tipo as string) || 'iva';
+    const kind = normalizeKind(i.kind, tipo);
+    const tasa = num(i.tasa);
+    return {
+        id: i.id as string,
+        nombre: i.nombre as string,
+        kind,
+        tipo,
+        kindLabel: taxKindLabel(kind, locale, paisCode),
+        tasa,
+        rate: tasa / 100,
+        esDefault: !!i.es_default,
+        activo: !!i.activo,
+        retencionBase: i.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal',
+    };
 }
 
 

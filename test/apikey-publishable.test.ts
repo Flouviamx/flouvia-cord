@@ -13,6 +13,7 @@ describe('llave publicable (pk_): allowlist exacta de método + ruta', () => {
         ['GET', '/api/v1/productos'],
         ['POST', '/api/v1/cotizaciones'],
         ['post', '/api/v1/cotizaciones/'],
+        ['GET', '/api/v1/elements/config'],
     ])('permite %s %s (Cord Elements)', (method, path) => {
         expect(publishableKeyAllows(method, path)).toBe(true);
     });
@@ -31,6 +32,7 @@ describe('llave publicable (pk_): allowlist exacta de método + ruta', () => {
         ['POST', '/api/v1/facturas/cotizaciones'],
         ['POST', '/api/mcp'],
         ['GET', '/api/v1/events'],
+        ['POST', '/api/v1/elements/config'],
         ['POST', '/api/v1/webhooks'],
         ['DELETE', '/api/v1/webhooks/abc'],
         // Variantes que no son la ruta canónica fallan cerradas.

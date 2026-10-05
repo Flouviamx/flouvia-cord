@@ -225,7 +225,9 @@ for (const code of ['US', 'BR']) {
     assert.ok(validSpainTaxId('B12345674'), 'un CIF se reconoce por empezar en otra letra');
     assert.ok(!validSpainTaxId('nope'));
 
-    assert.ok(validRfc('DEZ981123QX1'), 'RFC mexicano de persona física con formato válido');
+    assert.ok(validRfc('EKU9003173C9'), 'RFC de persona moral con dígito verificador del SAT');
+    assert.ok(validRfc('GODE561231GR8'), 'RFC de persona física con dígito verificador del SAT');
+    assert.ok(!validRfc('EKU9003173C8'), 'un dígito verificador alterado debe rechazarse');
     assert.ok(!validRfc('123'), 'un RFC demasiado corto debe rechazarse');
 }
 

@@ -48,7 +48,10 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
             email: r.email,
         });
     } catch (e) {
-        if (e instanceof QuoteError) return fail(e.message, 'invalid_request', e.status);
+        if (e instanceof QuoteError) {
+            if (e.details) return new Response(JSON.stringify({ error: e.message, code: e.code, issues: e.details }), { status: e.status, headers: { 'Content-Type': 'application/json' } });
+            return fail(e.message, e.code ?? 'invalid_request', e.status);
+        }
         throw e;
     }
 });
