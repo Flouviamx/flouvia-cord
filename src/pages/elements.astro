@@ -17,6 +17,7 @@ import DevHeroBand from '../components/desarrolladores/DevHeroBand.astro';
 import DevMore from '../components/desarrolladores/DevMore.astro';
 import ElementsHeroVisual from '../components/elements/ElementsHeroVisual.astro';
 import ElementsAppearance from '../components/elements/ElementsAppearance.astro';
+import ElementsCountry from '../components/elements/ElementsCountry.astro';
 import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
@@ -224,49 +225,6 @@ return (
   </form>
 );`);
 
-
-// ── País: la misma cotización según el país de la cuenta (regla 21/23/24).
-// Tasas reales de los presets: IVA 16% MX, Sales tax TX 6.25% (US_STATE_TAX),
-// IVA 21% + retención IRPF 15% ES. Cada negocio ve su cotización en su idioma.
-const COUNTRIES = [
-    {
-        id: 'mx', tab: tx('México', 'Mexico'), lang: 'es',
-        org: 'Materiales del Valle', ini: 'MD', taxId: 'RFC', taxVal: 'MVA190312KT4', date: '19 oct 2026',
-        th: ['Concepto', 'Cant.', 'Importe'],
-        items: [['Cemento gris 50 kg', '340', '$61,880.00'], ['Varilla corrugada 3/8', '120', '$23,820.00']],
-        lines: [['Subtotal', '$85,700.00'], ['IVA 16%', '$13,712.00']],
-        total: ['Total', 'MXN $99,412.00'],
-        methods: ['Tarjeta', 'SPEI', 'Mercado Pago'], pay: 'Pagar MXN $99,412.00', cfdi: 'Lista para CFDI 4.0',
-    },
-    {
-        id: 'us', tab: tx('Estados Unidos', 'United States'), lang: 'en',
-        org: 'Lone Star Supply Co.', ini: 'LS', taxId: 'EIN', taxVal: '74-3920158', date: 'Oct 19, 2026',
-        th: ['Item', 'Qty', 'Amount'],
-        items: [['Steel rebar #4, 20 ft', '200', '$2,500.00'], ['Ready-mix concrete, yd³', '40', '$4,500.00']],
-        lines: [['Subtotal', '$7,000.00'], ['Sales tax TX 6.25%', '$437.50']],
-        total: ['Total', 'USD $7,437.50'],
-        methods: ['Card'], pay: 'Pay USD $7,437.50', cfdi: '',
-    },
-    {
-        id: 'es', tab: tx('España', 'Spain'), lang: 'es',
-        org: 'Estudio Norte S.L.', ini: 'EN', taxId: 'NIF', taxVal: 'B12345674', date: '19 oct 2026',
-        th: ['Concepto', 'Cant.', 'Importe'],
-        items: [['Diseño de identidad', '1', '4.800,00 €'], ['Sesión de fotografía', '2', '1.600,00 €']],
-        lines: [['Base imponible', '6.400,00 €'], ['IVA 21%', '1.344,00 €'], ['Retención IRPF 15%', '−960,00 €']],
-        total: ['Total', '6.784,00 €'],
-        methods: ['Tarjeta'], pay: 'Pagar 6.784,00 €', cfdi: '',
-    },
-];
-const ADAPTS = [
-    tx('Divisa y formato de cada monto', 'Currency and amount format'),
-    tx('Impuesto por línea con su nombre local', 'Per-line tax with its local name'),
-    tx('Retenciones donde aplican: ISR, IRPF', 'Withholdings where they apply: ISR, IRPF'),
-    tx('Identificación fiscal: RFC, EIN, NIF', 'Tax ID: RFC, EIN, NIF'),
-    tx('Fechas en la zona horaria de tu cuenta', "Dates in your account's timezone"),
-    tx('Rieles de cobro del país: tarjeta, SPEI, Mercado Pago', "The country's payment rails: card, SPEI, Mercado Pago"),
-    tx('Español o inglés, según tu cuenta', 'Spanish or English, per your account'),
-    tx('CFDI 4.0 al facturar en México', 'CFDI 4.0 when invoicing in Mexico'),
-];
 
 // ── Carrusel "Conoce más de Elements": piezas del SDK que el bento no cubre.
 const MORE = [
@@ -518,47 +476,7 @@ const howToSchema = {
 
         <ElementsAppearance isEn={isEn} />
 
-        <!-- ════════ PAÍS: la cotización se adapta (estilo "lógica integrada" de Stripe) ════════ -->
-        <section class="elc">
-            <div class="elc-text">
-                <h2 class="el-h2 masked-title">{tx('Se adapta al país de tu negocio.', "It adapts to your business's country.")}</h2>
-                <p class="el-copy reveal">{tx('El mismo embed muestra la divisa, los impuestos, la identificación fiscal y los rieles de cobro que corresponden a tu cuenta, en cualquiera de los 12 países donde opera Cord. Tú no programas nada por país.', 'The same embed shows the currency, taxes, tax ID and payment rails that match your account, in any of the 12 countries where Cord operates. You write nothing per country.')}</p>
-                <ul class="elc-list">
-                    {ADAPTS.map((a) => (
-                        <li class="reveal"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9"/><path d="M6.5 10.2l2.4 2.4 4.6-5"/></svg>{a}</li>
-                    ))}
-                </ul>
-            </div>
-            <div class="elc-demo reveal-mockup" data-elc>
-                <div class="elc-tabs" role="tablist" aria-label={tx('País de la cuenta', 'Account country')}>
-                    {COUNTRIES.map((c, i) => (
-                        <button type="button" role="tab" class:list={['elc-tab', { on: i === 0 }]} aria-selected={i === 0 ? 'true' : 'false'} data-c={c.id}>{c.tab}</button>
-                    ))}
-                </div>
-                <div class="elc-stage">
-                    {COUNTRIES.map((c, i) => (
-                        <div class:list={['elc-card', { on: i === 0 }]} data-card={c.id} lang={c.lang} aria-hidden={i === 0 ? 'false' : 'true'}>
-                            <div class="elc-head">
-                                <span class="elc-logo">{c.ini}</span>
-                                <div><b>{c.org}</b><small>{c.taxId} {c.taxVal}</small></div>
-                                <em>{c.date}</em>
-                            </div>
-                            <div class="elc-th"><span>{c.th[0]}</span><span>{c.th[1]}</span><span>{c.th[2]}</span></div>
-                            {c.items.map((it) => <div class="elc-tr"><span>{it[0]}</span><span>{it[1]}</span><b>{it[2]}</b></div>)}
-                            <div class="elc-sum">
-                                {c.lines.map((ln) => <><span>{ln[0]}</span><b>{ln[1]}</b></>)}
-                                <span class="elc-total">{c.total[0]}</span><b class="elc-total editorial">{c.total[1]}</b>
-                            </div>
-                            <div class="elc-methods">
-                                {c.methods.map((m, k) => <span class:list={['elc-m', { on: k === 0 }]}>{m}</span>)}
-                            </div>
-                            <span class="elc-pay">{c.pay}</span>
-                            {c.cfdi && <span class="elc-cfdi">{c.cfdi}</span>}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
+        <ElementsCountry isEn={isEn} />
 
         <!-- ════════ MÁS DE ELEMENTS (carrusel) ════════ -->
         <section class="elm" data-elm>
@@ -760,36 +678,6 @@ const howToSchema = {
 
     window.addEventListener('load', () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        // ── PAÍS: pestañas con cambio animado; rotan solas hasta que alguien elige ──
-        const elc = document.querySelector<HTMLElement>('[data-elc]');
-        if (elc) {
-            const tabs = Array.from(elc.querySelectorAll<HTMLButtonElement>('.elc-tab'));
-            const cards = Array.from(elc.querySelectorAll<HTMLElement>('.elc-card'));
-            let cur = 0, auto = !reduced;
-            const show = (k: number) => {
-                if (k === cur) return;
-                const from = cards[cur], to = cards[k];
-                tabs.forEach((t, j) => { t.classList.toggle('on', j === k); t.setAttribute('aria-selected', String(j === k)); });
-                cards.forEach((c, j) => c.setAttribute('aria-hidden', String(j !== k)));
-                if (reduced) { from.classList.remove('on'); to.classList.add('on'); cur = k; return; }
-                gsap.to(from, { opacity: 0, y: -10, rotateX: 6, duration: 0.3, ease: 'power2.in', transformPerspective: 1200, onComplete: () => from.classList.remove('on') });
-                to.classList.add('on');
-                gsap.fromTo(to, { opacity: 0, y: 14, rotateX: -6, transformPerspective: 1200 }, { opacity: 1, y: 0, rotateX: 0, duration: 0.55, delay: 0.15, ease: 'power3.out' });
-                gsap.from(to.querySelectorAll('.elc-tr, .elc-sum > *, .elc-m, .elc-pay'), { opacity: 0, x: 8, duration: 0.4, stagger: 0.03, delay: 0.25 });
-                cur = k;
-            };
-            tabs.forEach((t, k) => t.addEventListener('click', () => { auto = false; show(k); }));
-            const vis = watch(elc);
-            (async () => {
-                for (;;) {
-                    await sleep(4200);
-                    if (!auto) return;
-                    if (idle(vis)) continue;
-                    show((cur + 1) % cards.length);
-                }
-            })();
-        }
 
         // ── CARRUSEL "Conoce más" ──
         const elm = document.querySelector<HTMLElement>('[data-elm]');
@@ -1153,41 +1041,6 @@ const howToSchema = {
     .elx3-toast.on { opacity: 1; transform: none; }
 
 
-    /* ════════ PAÍS ════════ */
-    .elc { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 4rem; align-items: center; }
-    .elc-text .el-h2 { margin-bottom: 1.2rem; }
-    .elc-list { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.6rem; }
-    .elc-list li { display: flex; gap: 9px; align-items: flex-start; font-size: 0.9rem; line-height: 1.45; color: var(--color-text); }
-    .elc-list svg { flex-shrink: 0; width: 17px; height: 17px; margin-top: 1px; fill: rgba(16,185,129,0.12); stroke: #059669; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .elc-demo { min-width: 0; }
-    .elc-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
-    .elc-tab { border: 0; cursor: pointer; padding: 9px 18px; border-radius: 999px; background: transparent; font: 600 0.92rem var(--font-sans); color: #5b6575; transition: background 0.3s, color 0.3s, box-shadow 0.3s; }
-    .elc-tab:hover { color: #0a192f; background: rgba(10,25,47,0.05); }
-    .elc-tab.on { background: #0a192f; color: #fff; box-shadow: 0 10px 22px -12px rgba(10,25,47,0.6); }
-    .elc-tab:focus-visible { outline: 2px solid #2f6df0; outline-offset: 2px; }
-    .elc-stage { position: relative; display: grid; padding: 2.2rem; border-radius: 28px; background: #fff; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -16px rgba(10,25,47,0.14); }
-    .elc-card { grid-area: 1 / 1; visibility: hidden; opacity: 0; max-width: 460px; width: 100%; justify-self: center; padding: 1.4rem 1.5rem 1.5rem; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 16px 36px -20px rgba(10,25,47,0.35), inset 0 0 0 1px rgba(10,25,47,0.07); }
-    .elc-card.on { visibility: visible; opacity: 1; }
-    .elc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 6px; border-bottom: 1px solid #eef0f3; }
-    .elc-logo { width: 32px; height: 32px; border-radius: 9px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
-    .elc-head b { display: block; font-size: 0.9rem; font-weight: 600; color: #0a192f; }
-    .elc-head small { display: block; font-size: 0.7rem; color: #8a93a2; margin-top: 2px; }
-    .elc-head em { margin-left: auto; font-style: normal; font-size: 0.74rem; color: #5b6575; white-space: nowrap; }
-    .elc-th, .elc-tr { display: grid; grid-template-columns: 1fr 44px 110px; gap: 8px; text-align: right; align-items: center; }
-    .elc-th { padding: 8px 0 6px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
-    .elc-tr { padding: 8px 0; border-top: 1px solid #f1f2f5; font-size: 0.82rem; color: #8a93a2; }
-    .elc-th span:first-child, .elc-tr span:first-child { text-align: left; color: #0a192f; font-weight: 500; }
-    .elc-th span:first-child { color: #a3aab6; font-weight: 600; }
-    .elc-tr b { font-weight: 600; color: #0a192f; }
-    .elc-sum { display: grid; grid-template-columns: auto 130px; justify-content: end; gap: 4px 24px; padding-top: 10px; border-top: 1px solid #eef0f3; font-size: 0.8rem; color: #8a93a2; text-align: right; }
-    .elc-sum b { color: #3b4658; font-weight: 600; }
-    .elc-sum .elc-total { margin-top: 4px; padding-top: 6px; border-top: 1px solid #eef0f3; font-size: 0.95rem; font-weight: 700; color: #0a192f; }
-    .elc-methods { display: flex; gap: 8px; margin: 1.1rem 0 0.8rem; }
-    .elc-m { flex: 1; padding: 10px 12px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; color: #5b6575; box-shadow: inset 0 0 0 1px #e5e7eb; }
-    .elc-m.on { color: #0a192f; box-shadow: inset 0 0 0 1.5px #0a192f; }
-    .elc-pay { display: block; text-align: center; padding: 12px 0; border-radius: 10px; background: #0d1b33; color: #fff; font-size: 0.86rem; font-weight: 600; }
-    .elc-cfdi { display: block; margin-top: 10px; text-align: center; font-size: 0.72rem; color: #059669; font-weight: 600; }
-
     /* ════════ CARRUSEL ════════ */
     .elm { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 5rem; }
     .elm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 2.4rem; }
@@ -1300,13 +1153,7 @@ const howToSchema = {
         .elx, .pp-bcard-2 .elx, .pp-bcard-3 .elx { position: relative; inset: auto; padding: 0.4rem 1.2rem 1.8rem; }
         .pp-bcard-3 .elx-3 { flex-direction: column; align-items: stretch; }
     }
-    @media (max-width: 1000px) {
-        .elc { grid-template-columns: 1fr; gap: 2.5rem; }
-    }
     @media (max-width: 860px) {
-        .elc-list { grid-template-columns: 1fr; }
-        .elc-stage { padding: 1rem; border-radius: 22px; }
-        .elc-card { padding: 1.1rem; }
         .elm-head { align-items: flex-start; flex-direction: column; gap: 1rem; }
         .eli-head { grid-template-columns: 1fr; }
         .eli-head .el-lead { justify-self: start; }
