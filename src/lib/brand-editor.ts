@@ -27,7 +27,6 @@ export function initBrandEditor() {
     let comparingSaved=false;
     let surface='portal';
     const value = (selector: string, fallback = '') => root.querySelector<HTMLInputElement>(selector)?.value ?? fallback;
-    const checked = (selector: string, fallback: boolean) => root.querySelector<HTMLInputElement>(selector)?.checked ?? fallback;
     const notify = () => config.dispatchEvent(new Event('input', { bubbles: true }));
     const showError = (message = '') => { error.textContent = message; error.hidden = !message; };
     const update = () => {
@@ -126,7 +125,7 @@ export function initBrandEditor() {
             const data = await new Promise<string>((resolve,reject) => { const reader=new FileReader(); reader.onload=()=>resolve(String(reader.result)); reader.onerror=reject; reader.readAsDataURL(file); });
             const img = new Image(); img.src=data; await img.decode();
             if (revision !== uploadRevision) return;
-            if (input.dataset.logoFile==='dark') { profile={...profile,logoDark:data}; config.value=JSON.stringify(profile); }
+            if (input.dataset.logoFile==='dark') { profile={...profile,logoDark:data}; syncOptions(); }
             else root.querySelector<HTMLInputElement>('#brandLogo')!.value=data;
             showError(); notify();
         } catch { showError(en?'This image could not be read. Try another file.':'No se pudo leer esta imagen. Prueba con otro archivo.'); }
@@ -134,7 +133,7 @@ export function initBrandEditor() {
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-logo-remove]').forEach((button) => button.addEventListener('click', () => {
         ++uploadRevision;
-        if (button.dataset.logoRemove==='dark') { profile={...profile,logoDark:''}; config.value=JSON.stringify(profile); }
+        if (button.dataset.logoRemove==='dark') { profile={...profile,logoDark:''}; syncOptions(); }
         else root.querySelector<HTMLInputElement>('#brandLogo')!.value='';
         showError(); notify();
     }));

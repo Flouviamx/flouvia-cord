@@ -5,7 +5,7 @@ import PlanGate from '../../../components/app/PlanGate.astro';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { checkEntitlement } from '../../../lib/org-entitlements';
-import { currentLocale } from '../../../lib/context';
+import { currentLocale, currentFormatLocale, currentTimeZone } from '../../../lib/context';
 import { parseSettingsRevision, settingsFieldLabel } from '../../../lib/settings-history';
 const denied=await requirePerm('ajustes');if(denied)return denied;
 const orgId=await getActiveOrgId();const gate=await checkEntitlement(orgId,'audit_log');
@@ -13,7 +13,7 @@ const L=currentLocale(),en=L==='en';const say=(es:string,eng:string)=>en?eng:es;
 const [rows]=gate.ok?await withOrgTx(orgId,sql`
  select a.id,a.detalle,a.created_at,coalesce(nullif(m.nombre,''),m.email,a.actor) as actor
  from audit_log a left join org_members m on m.org_id=${orgId} and m.user_id::text=a.actor
- where a.org_id=${orgId} and a.accion in ('org.configuracion','org.actualizada')
+ where a.org_id=${orgId} and (a.accion='org.configuracion' or (a.accion='org.actualizada' and a.created_at < coalesce((select min(first.created_at) from audit_log first where first.org_id=${orgId} and first.accion='org.configuracion'), 'infinity'::timestamptz)))
  order by a.created_at desc,a.id desc limit 50`):[[]];
 const format=(v:unknown)=>v===null||v===''?say('Vacío','Empty'):typeof v==='boolean'?(v?say('Sí','Yes'):say('No','No')):typeof v==='object'?Object.entries(v as object).map(([k,x])=>`${k}: ${x}`).join(' · '):String(v);
 ---
@@ -23,7 +23,7 @@ const format=(v:unknown)=>v===null||v===''?say('Vacío','Empty'):typeof v==='boo
  <p class="s-hint">{say('Últimos 50 registros. La recuperación de valores está disponible para cambios guardados desde esta actualización. No restaura logos, cobros, permisos ni datos fiscales.','Latest 50 records. Value recovery is available for changes saved since this update. Logos, payments, permissions and tax details cannot be restored.')}</p>
  {!rows.length&&<p>{say('Todavía no hay cambios registrados.','No changes recorded yet.')}</p>}
  {rows.map(r=>{const revision=parseSettingsRevision(String(r.detalle));const changes=Object.entries(revision?.changes??{});return <article>
- <header><strong>{r.actor}</strong><time datetime={new Date(r.created_at).toISOString()}>{new Date(r.created_at).toLocaleString(en?'en-US':'es-MX')}</time></header>
+ <header><strong>{r.actor}</strong><time datetime={new Date(r.created_at).toISOString()}>{new Date(r.created_at).toLocaleString(currentFormatLocale()??L,{timeZone:currentTimeZone()})}</time></header>
  <p>{revision?revision.fields.map(f=>settingsFieldLabel(f,en)).join(' · '):r.detalle}</p>
  {!!changes.length&&<details><summary>{say('Ver cambios y recuperar','Review and restore')}</summary><div class="settings-history-values">{changes.map(([field,c])=><div><b>{settingsFieldLabel(field,en)}</b><span><small>{say('Antes','Before')}</small>{format(c.before)}</span><span><small>{say('Guardado','Saved')}</small>{format(c.after)}</span></div>)}</div><p class="s-hint">{say('Se recuperarán juntos estos valores anteriores. Esta acción quedará registrada y no cambiará otros ajustes.','These previous values will be restored together. The action is recorded and other settings remain unchanged.')}</p><button type="button" data-restore-revision={r.id}>{say('Restaurar valores anteriores','Restore previous values')}</button></details>}
  </article>})}
@@ -36,7 +36,7 @@ const format=(v:unknown)=>v===null||v===''?say('Vacío','Empty'):typeof v==='boo
   const en=document.documentElement.lang.startsWith('en');
   if(!confirm(en?'Restore the previous values shown here?':'¿Restaurar los valores anteriores que aparecen aquí?'))return;
   button.disabled=true;if(status)status.textContent=en?'Restoring…':'Restaurando…';
-  try{const res=await fetch('/api/org',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({restore_revision:button.dataset.restoreRevision})});const data=await res.json();if(!res.ok)throw new Error(data.error);location.reload();}
+  try{const res=await fetch('/api/org',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({restore_revision:button.dataset.restoreRevision})});const data=await res.json();if(!res.ok)throw new Error(data.error || (en?'Could not restore.':'No se pudo restaurar.'));location.reload();}
   catch(error){if(status)status.textContent=error instanceof Error?error.message:(en?'Could not restore.':'No se pudo restaurar.');button.disabled=false;}
  });
 </script>

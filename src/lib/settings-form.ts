@@ -31,7 +31,8 @@ export function initSettingsForm() {
             }
             sync();
         });
-        bar.append(label,undo); section.prepend(bar); notices.push({section,controls,bar,undo});
+        bar.append(label,undo);
+        if(section instanceof HTMLDetailsElement)section.querySelector('summary')?.after(bar);else section.prepend(bar); notices.push({section,controls,bar,undo});
     }
     const summary=document.createElement('p'); summary.className='settings-pending-summary'; summary.setAttribute('role','status'); summary.hidden=true;
     root.prepend(summary);
@@ -62,14 +63,15 @@ export function initSettingsForm() {
     },true);
     root.addEventListener('input',event=>{const f=event.target as Field;if(f.matches(selector)){f.removeAttribute('aria-invalid');f.closest('.s-field,.be-section')?.querySelector('[data-field-error]')?.remove();}});
     const reveal=()=>{
-        const hash=decodeURIComponent(location.hash.slice(1)); if(!hash)return;
+        let hash:string;try{hash=decodeURIComponent(location.hash.slice(1));}catch{return;}if(!hash)return;
         let target=document.getElementById(hash) ?? fields.find(f=>f.dataset.field===hash);
-        if(target instanceof HTMLInputElement && target.type==='hidden')target=target.closest<HTMLElement>('.s-field,.s-block,.be-section')??target.parentElement??undefined;
+        if(target?.hidden || target instanceof HTMLInputElement && target.type==='hidden')target=target.closest('.fs-root')?.querySelector<HTMLElement>('[role=combobox]')??target.closest<HTMLElement>('.s-field,.s-block,.be-section')??target.parentElement??undefined;
         if(!target)return;
         for(let p=target.parentElement;p;p=p.parentElement)if(p instanceof HTMLDetailsElement)p.open=true;
         target.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});
-        target.classList.add('settings-search-target');target.focus({preventScroll:true});
-        setTimeout(()=>target.classList.remove('settings-search-target'),3500);
+        const highlight=target.closest<HTMLElement>('.s-field')??target;
+        highlight.classList.add('settings-search-target');if(!target.matches('input,select,textarea,button,a[href]'))target.tabIndex=-1;target.focus({preventScroll:true});
+        setTimeout(()=>highlight.classList.remove('settings-search-target'),3500);
     };
     window.addEventListener('hashchange',reveal);reveal();sync();
 }

@@ -46,7 +46,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (body.restore_revision !== undefined) {
         const denied=await requirePerm('ajustes'); if(denied)return denied;
         const oid=await getActiveOrgId(); const gate=await requireEntitlement(oid,'audit_log');if(gate)return gate;
-        if(Object.keys(body).length!==1 || typeof body.restore_revision!=='string' || !/^[0-9a-f-]{36}$/i.test(body.restore_revision))return json({error:'Invalid revision'},400);
+        if(Object.keys(body).length!==1 || typeof body.restore_revision!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.restore_revision))return json({error:'Invalid revision'},400);
         const [[entry],[current]]=await withOrgTx(oid,
             sql`select detalle from audit_log where org_id=${oid} and id=${body.restore_revision}::uuid and accion='org.configuracion'`,
             sql`select * from orgs where id=${oid}`);
@@ -93,7 +93,13 @@ export const PATCH: APIRoute = async ({ request }) => {
         if (entitlementDenied) return entitlementDenied;
     }
     const [[actual]] = await withOrgTx(orgId, sql`select *, xmin::text as _revision from orgs where id = ${orgId}`);
-    if (restoreRecord && !restoreSettingsRevision(restoreRecord,actual)) return json({error:currentLocale()==='en'?'Settings changed. Refresh the history.':'Los ajustes cambiaron. Actualiza el historial.'},409);
+    if (!actual) return json({error:'Organization unavailable'},404);
+    if (restoreRecord) {
+        const latestPatch=restoreSettingsRevision(restoreRecord,actual);
+        if (!latestPatch) return json({error:currentLocale()==='en'?'Settings changed. Refresh the history.':'Los ajustes cambiaron. Actualiza el historial.'},409);
+        // Rebase the visual fields on the latest profile, preserving concurrent logo edits.
+        body=latestPatch;
+    }
     if (body.interes_moratorio_pct !== undefined) {
         const checkedInterest = validateLateInterestRate(
             body.country_code ?? actual.country_code,

@@ -155,7 +155,8 @@ const GRUPOS = [
             group.hidden=visible===0;
             if(group.id!=='idxDevSection'||document.documentElement.classList.contains('cord-dev'))count+=visible;
         });
-        const results=searchSettings(JSON.parse(document.getElementById('settingsSearchIndex')?.textContent||'[]'),search?.value||'');
+        const catalog=JSON.parse(document.getElementById('settingsSearchIndex')?.textContent||'[]').filter((result:{developer?:boolean})=>!result.developer||document.documentElement.classList.contains('cord-dev'));
+        const results=searchSettings(catalog,search?.value||'');
         const matches=document.getElementById('settingsMatches');
         if(matches){matches.replaceChildren();matches.hidden=!results.length;for(const result of results){const a=document.createElement('a');a.href=result.href;const title=document.createElement('b');title.textContent=result.label;const category=document.createElement('span');category.textContent=result.category;a.append(title,category);matches.append(a);}}
         const empty=document.getElementById('settingsEmpty');if(empty)empty.hidden=count>0||results.length>0;

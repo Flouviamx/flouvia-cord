@@ -13,6 +13,8 @@ Cord conserva su diseño interno. El editor compartido está en
   aviso, bienvenida y controles existentes de interacción y marca de Cord.
 - Vista previa de escritorio/móvil con el mismo `QuoteCard` y `BrandHeader` de
   `/q` y `/embed`, aislada en una ruta autenticada y sin operaciones de negocio.
+  El editor alterna portal, cotización, PDF y correo y compara el borrador con
+  el último estado guardado. El PDF conserva su formato de página.
 - Deshacer recupera el último estado guardado. Restaurar estilo restablece
   composición, tipografía, bordes, densidad y tamaño; conserva logos y textos.
 - Guardado explícito con el pie y feedback compartidos de Ajustes. Se valida antes
@@ -79,3 +81,31 @@ cubren escape, contraste, permisos de contenido/marca Cord, moneda del documento
 conversión de logos, adjuntos CID, fallback de Gmail a Resend simulado y PDF de
 varias páginas con ambas familias. Las pruebas de descarga mantienen las garantías
 existentes del token y del tenant. No se envían correos reales en estos tests.
+
+## Guardado e historial de ajustes
+
+`src/lib/settings-form.ts` comparte indicadores de cambios pendientes, deshacer
+por sección, aviso al salir y errores nativos por campo en los formularios
+manuales con controles declarados. El guardado genérico envía solo los campos
+modificados; las acciones independientes conservan sus endpoints. No guarda
+borradores en almacenamiento local ni anuncia éxito antes de la respuesta.
+
+El índice incluye un resumen de estados registrados y búsqueda directa por
+campo (`settings-search.ts`); los enlaces abren también secciones avanzadas
+y resaltan el control. Localización, texto legal y canales externos usan
+desplegables para reducir el ruido. Las opciones de desarrollador respetan
+el modo desarrollador en los resultados de búsqueda.
+
+`/app/ajustes/historial` requiere `ajustes` y el entitlement existente `audit_log`.
+Muestra los últimos 50 cambios de configuración, su actor y fecha en la zona
+del negocio. Cada PATCH de organización escribe una revisión en `audit_log`
+en la misma sentencia que la actualización, condicionada a `xmin`; un conflicto
+responde 409. Los registros anteriores conservan sus nombres de campos pero
+no tienen valores recuperables.
+
+`settings-history.ts` limita las instantáneas y restauraciones a colores,
+composición, tipografía y textos públicos. Nunca restaura datos fiscales,
+seguridad, bancos o logos. La restauración vuelve a validar permisos de plan y
+valores actuales; no sobrescribe ediciones posteriores y genera otra revisión.
+Las pruebas `settings-experience.test.ts` y `settings-org-route.test.ts` cubren
+el allowlist, búsqueda, permisos, tenant, conflictos y preservación de logos.

@@ -265,10 +265,16 @@ export default function FlagSelect({
           name={nativeName}
           data-field={nativeDataField}
           defaultValue={current}
+          disabled={disabled}
           hidden
           aria-hidden="true"
           tabIndex={-1}
-          onChange={() => { /* la fuente de verdad es el botón; este select solo espeja el valor para JS externo */ }}
+          onChange={(event) => {
+            const code = event.currentTarget.value;
+            if (!options.some(option => option.code === code)) return;
+            if (!isControlled) setInternalValue(code);
+            if (code !== current) onChange?.(code);
+          }}
         >
           {options.map((o) => (
             <option key={o.code} value={o.code}>{o.label}</option>

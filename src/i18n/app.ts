@@ -942,7 +942,6 @@ export const appStrings = {
         "set.sso.regla_atributo": "Atributo",
         "set.sso.regla_valor": "Valor",
         "set.sso.default_preset": "Rol por defecto (si ninguna regla coincide)",
-        "set.sso.guardar": "Guardar cambios",
         "set.sso.eliminar_conexion": "Eliminar conexión",
 
         // Ajustes › Equipo
@@ -4326,7 +4325,6 @@ export const appStrings = {
         "set.sso.regla_atributo": "Attribute",
         "set.sso.regla_valor": "Value",
         "set.sso.default_preset": "Default role (if no rule matches)",
-        "set.sso.guardar": "Save changes",
         "set.sso.eliminar_conexion": "Delete connection",
 
         // Settings › Team

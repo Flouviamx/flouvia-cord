@@ -1,5 +1,5 @@
 import { localizeCategories } from './settings';
-export interface SettingResult { label:string; category:string; href:string; keywords:string; }
+export interface SettingResult { label:string; category:string; href:string; keywords:string; developer?:boolean; }
 // Anchors are field names or DOM ids; the shared form opens advanced sections and reveals them.
 const fields = [
  ['general','nombre','Nombre del negocio','Business name','empresa company'],
@@ -34,7 +34,7 @@ const fields = [
 export const normalizeSetting = (s:string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export function settingsSearchIndex(locale:'es'|'en', country='MX'):SettingResult[]{
  const categories=localizeCategories(locale,country);
- const tabs=categories.flatMap(c=>c.tabs.map(t=>({label:t.label,category:c.label,href:t.href,keywords:t.keywords??''})));
+ const tabs=categories.flatMap(c=>c.tabs.map(t=>({label:t.label,category:c.label,href:t.href,keywords:t.keywords??'',developer:['mcp','agentes','elements'].includes(c.id)})));
  return [...fields.map(([tab,anchor,es,en,keywords])=>{const parent=categories.find(c=>c.tabs.some(t=>t.id===tab))!;return {label:locale==='en'?en:es,category:parent.label,href:`/app/ajustes/${tab}#${anchor}`,keywords};}),...tabs];
 }
 export function searchSettings(index:SettingResult[],query:string){

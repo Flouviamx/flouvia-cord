@@ -22,6 +22,13 @@ describe('settings history',()=>{
   expect(Object.keys(r.changes)).toEqual(['pdf_mensaje']);
   expect(restoreSettingsRevision(r,{pdf_mensaje:'hello'})).toEqual({pdf_mensaje:null});
  });
+ it('strips injected profile keys before restoring a visual revision',()=>{
+  const revision=createSettingsRevision({brand_profile:{font:'system'}},{brand_profile:{font:'editorial'}},['brand_profile']);
+  (revision.changes.brand_profile.before as any).logoDark='https://injected.example/logo.png';
+  const parsed=parseSettingsRevision(JSON.stringify(revision))!;
+  expect(parsed.changes.brand_profile.before).not.toHaveProperty('logoDark');
+  expect(restoreSettingsRevision(parsed,{brand_profile:{font:'editorial',logoDark:'https://current.example/logo.png'}})?.brand_profile).toMatchObject({logoDark:'https://current.example/logo.png'});
+ });
  it('rejects legacy text and strips non-restorable replay fields',()=>{
   expect(parseSettingsRevision('Campos: nombre')).toBeNull();
   const r=parseSettingsRevision(JSON.stringify({version:1,fields:['require_2fa'],changes:{require_2fa:{before:false,after:true}}}));

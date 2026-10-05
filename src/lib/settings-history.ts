@@ -1,4 +1,4 @@
-import { resolveBrandProfile } from './brand-profile';
+import { brandProfileSchema, resolveBrandProfile } from './brand-profile';
 /** Only appearance and public-facing copy can be replayed. Never bank, auth or tax settings. */
 export const RESTORABLE_SETTINGS = ['color_marca','color_secundario','pdf_template','pdf_mensaje','pdf_condiciones','pdf_mostrar_lista','portal_bienvenida','portal_banner','email_intro','email_firma','brand_profile'] as const;
 const profileKeys=['header','font','corners','density','logoSize'] as const;
@@ -14,7 +14,17 @@ export function createSettingsRevision(before:Record<string,unknown>,after:Recor
 }
 export function parseSettingsRevision(text:string):SettingsRevision|null {
  try {const r=JSON.parse(text);if(r.version!==1||!Array.isArray(r.fields)||!r.changes||typeof r.changes!=='object')return null;
- const changes:SettingsRevision['changes']={};for(const key of RESTORABLE_SETTINGS){const c=r.changes[key];if(c&&typeof c==='object'&&'before'in c&&'after'in c)changes[key]=c;}
+ const changes:SettingsRevision['changes']={};for(const key of RESTORABLE_SETTINGS){const c=r.changes[key];if(!c||typeof c!=='object'||!('before'in c)||!('after'in c))continue;
+ if(key==='brand_profile'){
+   const project=(value:unknown)=>{
+     if(!value||typeof value!=='object'||Array.isArray(value))return null;
+     const picked=Object.fromEntries(profileKeys.map(k=>[k,(value as Record<string,unknown>)[k]]));
+     const valid=brandProfileSchema.safeParse(picked);
+     return valid.success?revisionValue(key,valid.data):null;
+   };
+   const before=project(c.before),after=project(c.after);if(!before||!after)continue;
+   changes[key]={before,after};
+ }else if([c.before,c.after].every(v=>v===null||typeof v==='string'||typeof v==='boolean'))changes[key]={before:c.before,after:c.after};}
  return {version:1,fields:r.fields.filter((f:unknown)=>typeof f==='string'&&/^[a-z][a-z0-9_]{0,79}$/.test(f)),changes};}catch{return null;}
 }
 export function restoreSettingsRevision(revision:SettingsRevision,current:Record<string,unknown>):Record<string,unknown>|null {
@@ -22,7 +32,7 @@ export function restoreSettingsRevision(revision:SettingsRevision,current:Record
  for(const key of RESTORABLE_SETTINGS){const c=revision.changes[key];if(!c)continue;
  // Do not silently overwrite a newer edit. Revert recent changes first.
  if(JSON.stringify(revisionValue(key,current[key]))!==JSON.stringify(c.after))return null;
- patch[key]=key==='brand_profile'?{...resolveBrandProfile(current[key]),...(c.before as object)}:c.before;
+ patch[key]=key==='brand_profile'?{...resolveBrandProfile(current[key]),...(revisionValue(key,c.before) as object)}:c.before;
  }
  return Object.keys(patch).length?patch:null;
 }

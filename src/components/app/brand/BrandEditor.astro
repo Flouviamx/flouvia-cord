@@ -33,6 +33,7 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
                             <button type="button" class="be-remove" data-logo-remove={kind}>{say('Quitar','Remove')}</button>
                         </div>)}
                     </div>
+                    <input type="hidden" data-brand-option="logoDark" value={profile.logoDark}/>
                     <input type="hidden" id="brandLogo" data-field="logo_url" value={org.logoUrl}/>
                     <p class="be-help">PNG, JPG, SVG, WEBP · {say('Hasta 1 MB. Se conserva la proporción.','Up to 1 MB. Original proportions preserved.')}</p>
                     <label class="be-label" for="brandLogoSize">{say('Tamaño del logo','Logo size')}</label>

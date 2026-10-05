@@ -2327,3 +2327,19 @@ procediendo del snapshot fiscal. El PDF timbrado del proveedor queda intacto.
 Permisos y entitlements existentes se conservan; no hay nueva migración.
 
 Estado y archivos del contrato: [personalización de marca](../estado/personalizacion-marca.md).
+
+
+## 2026-10-04 — Seis mejoras compartidas de Ajustes
+
+- Guardado manual con cambios pendientes, deshacer por sección, aviso al salir
+  y errores por campo; sincronización del selector React con su control nativo.
+- Búsqueda por campo que abre y enfoca la opción, incluso dentro de avanzadas.
+- Resumen de identidad, fiscal, cobros e integraciones desde estados registrados.
+- Editor de marca con portal/cotización/PDF/correo y comparación guardado/borrador.
+- Localización, texto legal y canales externos agrupados en desplegables.
+- Historial bajo el acceso de auditoría existente. Revisión atómica junto al
+  PATCH y restauración limitada a apariencia/textos con control de concurrencia.
+  No se copian bancos, datos fiscales, seguridad ni logos en las instantáneas.
+- Integrados los cambios remotos de marketing antes del despliegue para
+  conservar el trabajo ya publicado. Eliminada la traducción huérfana del botón
+  SSO sustituido por el pie de guardado compartido.
