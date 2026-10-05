@@ -13,8 +13,8 @@ export function publishableKeyAllows(method: string, pathname: string): boolean 
     return PUBLISHABLE_ALLOWLIST.has(`${method.toUpperCase()} ${path}`);
 }
 
-const ALLOWED_HEADERS = 'Authorization, Content-Type, Idempotency-Key';
-const EXPOSED_HEADERS = 'Cord-Request-Id, Retry-After';
+const ALLOWED_HEADERS = 'Authorization, Content-Type, Idempotency-Key, If-None-Match';
+const EXPOSED_HEADERS = 'Cord-Request-Id, Retry-After, ETag';
 export const ERRORS_DOC_URL = 'https://docs.cordhq.app/desarrolladores/esenciales/errores';
 
 function browserOrigin(request: Request): string | null {

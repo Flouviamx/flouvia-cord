@@ -149,7 +149,14 @@ const puedePagar = pagoActivo && pagoDisponible && (
         reportHeight();
         if (listo) return;
         listo = true;
-        post('cord:ready');
+        const card = document.querySelector('.q-card') as HTMLElement | null;
+        const total = Number((document.querySelector('.q-total-amount') as HTMLElement | null)?.dataset.countup);
+        post('cord:ready', { detail: {
+            status: card?.dataset.status ?? null,
+            folio: card?.dataset.folio ?? null,
+            moneda: card?.dataset.currency ?? null,
+            total: Number.isFinite(total) ? total : null,
+        } });
         post('cord:viewed');
     };
     reportHeight();
@@ -160,7 +167,7 @@ const puedePagar = pagoActivo && pagoDisponible && (
     // 2) Relay: cada evento del QuoteCard → postMessage al padre.
     //    `cord:item_comment` faltaba aquí — QuoteCard SÍ lo emite (comentario
     //    por línea/partida), pero se perdía en silencio antes de llegar al SDK.
-    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay', 'cord:signed', 'cord:item_comment'] as const) {
+    for (const name of ['cord:approved', 'cord:rejected', 'cord:message', 'cord:pay', 'cord:signed', 'cord:item_comment', 'cord:updated', 'cord:status_changed'] as const) {
         window.addEventListener(name, (e) => {
             post(name, { detail: (e as CustomEvent).detail });
             // tras aprobar/rechazar la altura cambia (aparece el estado final)

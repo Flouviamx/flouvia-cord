@@ -9,10 +9,11 @@ import { listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxKindLabel } from './countries.ts';
 import { TaxCatalogUnavailableError } from './impuestos-db';
 import { FISCAL_COUNTRIES } from '../../packages/elements/src/fiscal/receptor';
+import type { CordElementsConfig, CordTerminos } from '../../packages/elements/src/contract/elements-config';
 
 export const TERMINOS = ['contado', 'net30', 'net60'] as const;
 
-export async function buildElementsConfig(orgId: string) {
+export async function buildElementsConfig(orgId: string): Promise<CordElementsConfig> {
     let org: any;
     let impuestoRows: any[];
     try {
@@ -34,7 +35,7 @@ export async function buildElementsConfig(orgId: string) {
     const moneda = normalizeCurrency(org.moneda);
     const impuestos = impuestoRows.map((r) => mapImpuestoRow(r, locale, pais));
     const orgTaxRate = Number(org.iva_pct) || 0;
-    const terminosDefault = (TERMINOS as readonly string[]).includes(org.terminos_default) ? org.terminos_default : 'contado';
+    const terminosDefault: CordTerminos = (TERMINOS as readonly string[]).includes(org.terminos_default) ? org.terminos_default : 'contado';
 
     return {
         object: 'elements_config' as const,
@@ -65,4 +66,3 @@ export async function buildElementsConfig(orgId: string) {
     };
 }
 
-export type ElementsConfig = Awaited<ReturnType<typeof buildElementsConfig>>;

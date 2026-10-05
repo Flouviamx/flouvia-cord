@@ -26,9 +26,11 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     if (body instanceof Response) return body;
 
     const orgId = await getActiveOrgId();
+    const input = auth.type === 'publishable' ? publishableQuoteInput(body) : body;
+    if (input instanceof Response) return input;
     try {
         const origin = new URL(request.url).origin;
-        const r = await createCotizacion(orgId, body, {
+        const r = await createCotizacion(orgId, input, {
             origin,
             ip: reqIp(request),
             actor: `api:${auth.keyId}`,
@@ -55,3 +57,26 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
         throw e;
     }
 });
+
+// Una pk_ vive en una página pública: lo que crea es un borrador que el vendedor
+// revisa. No envía correos (sería un relé de spam con el dominio de Cord) ni
+// fija costo o precio negociado; el precio de lista sí, porque es lo que se cotiza.
+export function publishableQuoteInput(body: any): any | Response {
+    if (!body || typeof body !== 'object') return body;
+    if (body.send) return fail('Enviar la cotización requiere una Secret Key desde tu servidor.', 'insufficient_scope', 403);
+    const items = Array.isArray(body.items)
+        ? body.items.map((it: any) => (it && typeof it === 'object'
+            ? { producto_id: it.producto_id, descripcion: it.descripcion, cantidad: it.cantidad, precio_unitario: it.precio_unitario, tax_rate: it.tax_rate }
+            : it))
+        : body.items;
+    return {
+        cliente: body.cliente,
+        terminos: body.terminos,
+        vigencia_dias: body.vigencia_dias,
+        notas: body.notas,
+        base_currency: body.base_currency,
+        iva_incluido: body.iva_incluido,
+        items,
+        send: false,
+    };
+}

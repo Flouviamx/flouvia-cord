@@ -15,7 +15,7 @@ import { after } from './after';
 import { trackServer } from './posthog-server';
 
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
-import { normalizeCurrency } from './currency';
+import { listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
@@ -270,6 +270,10 @@ export async function createCotizacion(
     // `fiscal` = en la que se factura y contabiliza (la del negocio por default).
     const baseCurrency = normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda));
     const fiscalCurrency = normalizeCurrency(input.fiscal_currency, baseCurrency);
+    const ofrecidas = listOfferedCurrencies(normalizeCurrency(org.moneda));
+    if (!ofrecidas.includes(baseCurrency) || !ofrecidas.includes(fiscalCurrency)) {
+        throw new QuoteError('Esa divisa no está disponible para cotizar.', 400, 'unsupported_currency');
+    }
 
     const [maxRows] = await withOrgTx(orgId, sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
