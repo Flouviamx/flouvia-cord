@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config';
 // en PGlite. test:payments añade contratos estáticos sin secretos de producción.
 // Auditorías LIVE de Neon/Stripe y migraciones son scripts separados y explícitos.
 export default defineConfig({
+    // Una sola copia de React: el SDK de Elements resolvería la suya y los hooks se romperían.
+    resolve: { dedupe: ['react', 'react-dom'] },
     test: {
         include: ['test/**/*.test.ts'],
         environment: 'node',

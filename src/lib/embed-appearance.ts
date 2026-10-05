@@ -21,17 +21,17 @@ ${ROOT} :is(.q-company, .q-folio-num, .qt-grand, .qt-grand .editorial, .q-msg.th
 ${ROOT} .qi-row { border-bottom-color: ${v('color-border', 'rgba(10,25,47,0.045)')}; }
 ${ROOT} :is(.qi-head, .qt-grand) { border-color: ${v('color-border', 'rgba(10,25,47,0.07)')}; }
 ${ROOT} :is(.q-rfc, .q-folio-eyebrow, .qt-row .editorial, .q-notes, .ql-ghost, .ql-check-text, .q-demo-ribbon, .q-demo-ribbon-text svg, .q-contact-label) { color: ${v('color-text-secondary', '#6b7280')}; }
-${ROOT} :is(.qt-row, .q-total-note) { color: ${v('color-text-placeholder', '#9ca3af')}; }
-${ROOT} :is(.qi-head, .q-chat-eyebrow, .ql-legal-note) { color: ${v('color-text-placeholder', '#d1d5db')}; }
+${ROOT} :is(.qt-row, .q-total-note) { color: ${v('color-text-placeholder', '#6b7280')}; }
+${ROOT} :is(.qi-head, .q-chat-eyebrow, .ql-legal-note) { color: ${v('color-text-placeholder', '#6b7280')}; }
 ${ROOT} :is(.q-notes, .q-total-split) { background: ${v('color-surface', '#fafafa')}; border-color: ${v('color-border', 'rgba(10,25,47,0.055)')}; }
 ${ROOT} .q-msg.theirs { background: ${v('color-surface', '#f3f4f6')}; }
 ${ROOT} .ql-ghost { border-color: ${v('color-border', 'rgba(10,25,47,0.1)')}; border-radius: ${v('border-radius-button', '12px')}; }
 ${ROOT} .ql-cta:not(.ql-danger) { color: ${v('color-on-primary', 'var(--brand-on-primary, #fff)')}; border-radius: ${v('border-radius-button', 'var(--brand-button-radius, 14px)')}; font-weight: ${v('font-weight-bold', '600')}; }
-${ROOT} .ql-cta.ql-danger { background: ${v('color-danger', '#ef4444')} !important; border-radius: ${v('border-radius-button', 'var(--brand-button-radius, 14px)')}; }
-${ROOT} :is(.ql-error) { color: ${v('color-danger', '#ef4444')}; }
+${ROOT} .ql-cta.ql-danger { background: ${v('color-danger', '#dc2626')} !important; border-radius: ${v('border-radius-button', 'var(--brand-button-radius, 14px)')}; }
+${ROOT} :is(.ql-error) { color: ${v('color-danger', '#dc2626')}; }
 ${ROOT} .ql-check-circle { stroke: ${v('color-success', '#10b981')}; }
 ${ROOT} .ql-input { background: ${v('color-input', '#fff')}; color: ${v('color-input-text', '#111')}; border-color: ${v('color-input-border', 'rgba(10,25,47,0.12)')}; border-radius: ${v('border-radius-input', '11px')}; }
-${ROOT} .ql-input::placeholder { color: ${v('color-text-placeholder', '#9ca3af')}; }
+${ROOT} .ql-input::placeholder { color: ${v('color-text-placeholder', '#6b7280')}; }
 ${ROOT} .ql-input:focus { border-color: ${v('color-focus', 'rgba(10,25,47,0.35)')}; }
 ${ROOT} .q-msg.mine { background: ${v('color-primary', '#0a192f')}; color: ${v('color-on-primary', '#fff')}; }
 ${ROOT} .qi-row { font-size: ${v('font-size', '0.875rem')}; }

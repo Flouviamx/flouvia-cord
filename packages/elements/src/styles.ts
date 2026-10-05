@@ -78,7 +78,7 @@ const BASE_CSS = `
   .cord-productDropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; margin-top: 4px; background: var(--cord-color-background, #ffffff); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.16); border: 1px solid var(--cord-color-border, rgba(0, 0, 0, 0.08)); max-height: 300px; overflow-y: auto; }
   .cord-productDropdownItem { padding: 12px 16px; color: var(--cord-color-text, #0A2240); font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--cord-color-border, rgba(0, 0, 0, 0.05)); display: flex; justify-content: space-between; align-items: center; transition: background-color 0.1s ease; }
   .cord-productDropdownItem:hover { background-color: rgba(10, 25, 47, 0.06); }
-  .cord-productDropdownEmpty { padding: 12px 16px; color: var(--cord-color-text-secondary, #94a3b8); font-size: 13px; font-style: italic; display: flex; align-items: center; gap: 8px; }
+  .cord-productDropdownEmpty { padding: 12px 16px; color: var(--cord-color-text-secondary, #64748b); font-size: 13px; font-style: italic; display: flex; align-items: center; gap: 8px; }
 
   .cord-summaryRoot { display: flex; justify-content: flex-end; margin-bottom: 24px; }
   .cord-summaryInner { width: 250px; font-size: 14px; }

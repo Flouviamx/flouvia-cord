@@ -72,7 +72,8 @@ describe('sanitizeAppearance', () => {
 describe('appearanceToCss', () => {
     it('emite el tema antes que las variables del usuario para que estas ganen', () => {
         const css = appearanceToCss(sanitizeAppearance({ theme: 'dark', variables: { colorText: '#fff' } }));
-        expect(css.indexOf('#e5e7eb')).toBeLessThan(css.indexOf('--cord-color-text: #fff'));
+        expect(css.indexOf('--cord-color-background: #111827')).toBeGreaterThan(-1);
+        expect(css.indexOf('--cord-color-text: #f3f4f6')).toBeLessThan(css.indexOf('--cord-color-text: #fff'));
         expect(css).toContain('color-scheme: dark');
         expect(css).not.toMatch(/<|url\((?!')/);
     });

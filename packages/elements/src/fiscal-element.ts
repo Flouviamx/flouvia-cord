@@ -43,7 +43,11 @@ export class CordFiscalFormElement extends ElementBase {
 
     constructor() {
         super();
-        if (typeof (this as any).attachInternals === 'function') this.internals = (this as any).attachInternals();
+        if (typeof (this as any).attachInternals === 'function') {
+            const internals: ElementInternals = (this as any).attachInternals();
+            // Navegadores con attachInternals pero sin la API de formularios (Safari < 16.4).
+            if (typeof internals.setFormValue === 'function' && typeof internals.setValidity === 'function') this.internals = internals;
+        }
     }
 
     /** Estado completo del formulario (valores, errores, opciones). */
