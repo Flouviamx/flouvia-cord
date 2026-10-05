@@ -30,17 +30,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'code-idempotency',
             },
             {
-                eyebrow: 'KEYS',
-                titulo: 'Keys with their own permission and environment.',
-                copy: 'Each key is read or write, and lives in test or live. Secret keys (sk_) belong on your server; publishable keys (pk_) can go in the browser with a narrow scope. Revoke one in a click and it stops working instantly. Only its hash is stored.',
-                bullets: [
-                    'sk_test_ runs against a test environment separate from your real data',
-                    'Last used and created dates in plain sight',
-                    'Per-key limit: 600 per minute for secret keys, 120 for publishable',
-                ],
-                mock: 'wb-keys',
-            },
-            {
                 eyebrow: 'RESOURCES',
                 titulo: 'What you see in the app, also over the API.',
                 copy: 'This is not a read-only API. Create a quote and send it, approve it or mark it paid. Create an invoice as a draft and issue it, email it, record a payment or a credit note. All with the same permissions, validation and totals the app uses.',
@@ -247,17 +236,6 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'code-verify',
             },
             {
-                eyebrow: 'ENDPOINTS',
-                titulo: 'Configure, test and pause from the Workbench.',
-                copy: "Register a URL and choose the events you care about. Test sends a delivery without waiting for something real to happen, and each endpoint's history shows what your server answered on every attempt. If your server goes down, Cord keeps retrying for almost four days.",
-                bullets: [
-                    'Test delivery in one click',
-                    'Secret rotation without cutting traffic',
-                    'After 5 consecutive failures the endpoint pauses and you get a notice',
-                ],
-                mock: 'wb-webhooks',
-            },
-            {
                 eyebrow: 'CATALOG',
                 titulo: '41 events for the whole sales cycle.',
                 copy: 'Not just quotes. Get notices for invoices finalized, sent, paid or overdue, partial or failed payments, refunds, disputes, payouts, clients, products, tasks and promises to pay. Subscribe each endpoint only to what it needs.',
@@ -316,6 +294,7 @@ export const DEV_PAGES_EN: DevPage[] = [
         blocks: [
             {
                 eyebrow: 'ONE LINE OF CODE',
+                mock: 'el-oneline',
                 titulo: 'Paste. Done. No backend.',
                 copy: "A script and a <div>. The quote builder appears as an iframe served by Cord, measures its content and tells your page so the height adjusts on its own. There is no server to maintain and no data to sync: the quote's public token is all you need.",
                 bullets: [
@@ -325,17 +304,8 @@ export const DEV_PAGES_EN: DevPage[] = [
                 ],
             },
             {
-                eyebrow: 'YOUR BRAND',
-                titulo: 'With your identity, or with their portal\'s.',
-                copy: 'Logo, color and business name come from your account. If the host portal has its own style, the Appearance API sets a light, dark or automatic theme, the primary color, radii and a typeface from Google Fonts or Bunny Fonts.',
-                bullets: [
-                    "theme: light, dark or auto, which follows the client's system",
-                    'variables: colorPrimary, colorText, colorBackground, borderRadius',
-                    'Values sanitized on the server: a theme cannot inject arbitrary CSS',
-                ],
-            },
-            {
                 eyebrow: 'EVENTS',
+                mock: 'el-events',
                 titulo: 'Your page hears about every step your client takes.',
                 copy: 'When the client opens, approves, rejects, writes or pays, the iframe tells your page with a typed event and its detail. With React or Vue they arrive as callbacks; with the Web Component, as DOM events. Use them to redirect, open your checkout or notify your CRM.',
                 bullets: [
@@ -346,6 +316,7 @@ export const DEV_PAGES_EN: DevPage[] = [
             },
             {
                 eyebrow: 'HEADLESS',
+                mock: 'el-headless',
                 titulo: 'Or build your own interface on top of our state.',
                 copy: "If you don't want our design, useQuoteBuilder() gives you the full state to put together a new quote from your own UI: line items, client, subtotal, taxes and total, computed with the same engine as the server. You bring the markup; Cord creates the quote and returns its link.",
                 bullets: [

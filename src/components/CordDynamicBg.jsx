@@ -168,7 +168,7 @@ function AuroraPlane({ colors }) {
   const mouseSmooth = useRef(new THREE.Vector2(0.5, 0.5))
 
   const uniforms = useMemo(() => ({
-    u_time:       { value: 0 },
+    u_time:       { value: 8.0 },
     u_resolution: { value: new THREE.Vector2(1290, 560) },
     u_mouse:      { value: new THREE.Vector2(0.5, 0.5) },
     u_colorBase:  { value: new THREE.Color(colors.base) },
@@ -214,7 +214,9 @@ function AuroraPlane({ colors }) {
   }, [gl])
 
   useFrame(({ clock, size }) => {
-    uniforms.u_time.value = clock.getElapsedTime()
+    // Arranca ya "en movimiento": desde t=0 los colores tardan unos segundos
+    // en repartirse y el fondo se veía lavado al entrar a la página.
+    uniforms.u_time.value = 8.0 + clock.getElapsedTime()
     uniforms.u_resolution.value.set(size.width, size.height)
     mouseSmooth.current.lerp(mouseTarget.current, 0.05)
     uniforms.u_mouse.value.copy(mouseSmooth.current)
@@ -286,7 +288,7 @@ export default function CordDynamicBg({
         pointerEvents: 'none',
         backgroundColor: backdrop ?? colors.base,
         opacity:       visible ? 1 : 0,
-        transition:    'opacity 1s ease',
+        transition:    'opacity 0.25s ease',
         ...(maskImage ? {
           WebkitMaskImage: `url(${maskImage})`,
           WebkitMaskPosition: maskPosition,

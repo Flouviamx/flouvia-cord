@@ -80,17 +80,6 @@ export const DEV_PAGES: DevPage[] = [
                 mock: 'code-idempotency',
             },
             {
-                eyebrow: 'LLAVES',
-                titulo: 'Llaves con permiso y entorno propios.',
-                copy: 'Cada llave es de lectura o de escritura, y vive en prueba o en producción. Las secretas (sk_) van en tu servidor; las públicas (pk_) pueden ir en el navegador con un alcance acotado. Las revocas en un clic y dejan de funcionar al instante. En la base solo se guarda su huella.',
-                bullets: [
-                    'sk_test_ opera sobre un entorno de prueba separado de tus datos reales',
-                    'Última vez usada y fecha de creación a la vista',
-                    'Límite por llave: 600 por minuto las secretas, 120 las públicas',
-                ],
-                mock: 'wb-keys',
-            },
-            {
                 eyebrow: 'RECURSOS',
                 titulo: 'Lo que ves en la app, también por API.',
                 copy: 'No es una API de solo lectura. Crea una cotización y envíala, apruébala o regístrala como pagada. Crea una factura como borrador y emítela, mándala, anótale un pago o una nota de crédito. Todo con los mismos permisos, validaciones y totales que usa la app.',
@@ -297,17 +286,6 @@ export const DEV_PAGES: DevPage[] = [
                 mock: 'code-verify',
             },
             {
-                eyebrow: 'ENDPOINTS',
-                titulo: 'Configura, prueba y pausa desde el Workbench.',
-                copy: 'Registra una URL y elige los eventos que te interesan. Con Probar mandas una entrega de prueba sin esperar a que pase algo real, y el historial de cada endpoint muestra lo que respondió tu servidor en cada intento. Si tu servidor se cae, Cord reintenta durante casi cuatro días.',
-                bullets: [
-                    'Entrega de prueba con un clic',
-                    'Rotación de secreto sin cortar el tráfico',
-                    'Tras 5 fallos seguidos el endpoint se pausa y recibes un aviso',
-                ],
-                mock: 'wb-webhooks',
-            },
-            {
                 eyebrow: 'CATÁLOGO',
                 titulo: '41 eventos para todo el ciclo de venta.',
                 copy: 'No solo cotizaciones. Recibe avisos de facturas finalizadas, enviadas, pagadas o vencidas, de pagos parciales o fallidos, reembolsos, contracargos, depósitos, clientes, productos, tareas y promesas de pago. Suscribe cada endpoint solo a lo que necesita.',
@@ -366,6 +344,7 @@ export const DEV_PAGES: DevPage[] = [
         blocks: [
             {
                 eyebrow: 'UNA LÍNEA DE CÓDIGO',
+                mock: 'el-oneline',
                 titulo: 'Pegar. Listo. Sin backend.',
                 copy: 'Un script y un <div>. El cotizador aparece como un iframe servido por Cord, mide su contenido y le avisa a tu página para ajustar la altura sola. No hay servidor que mantener ni datos que sincronizar: el token público de la cotización es todo lo que necesitas.',
                 bullets: [
@@ -375,17 +354,8 @@ export const DEV_PAGES: DevPage[] = [
                 ],
             },
             {
-                eyebrow: 'TU MARCA',
-                titulo: 'Con tu identidad, o con la de su portal.',
-                copy: 'El logo, el color y la razón social salen de tu cuenta. Si el portal anfitrión tiene su propio estilo, la Appearance API ajusta el tema claro, oscuro o automático, el color principal, los radios y la tipografía desde Google Fonts o Bunny Fonts.',
-                bullets: [
-                    'theme: light, dark o auto, que sigue al sistema del cliente',
-                    'variables: colorPrimary, colorText, colorBackground, borderRadius',
-                    'Valores saneados en servidor: el tema no puede inyectar CSS arbitrario',
-                ],
-            },
-            {
                 eyebrow: 'EVENTOS',
+                mock: 'el-events',
                 titulo: 'Tu página se entera de cada paso del cliente.',
                 copy: 'Cuando el cliente abre, aprueba, rechaza, escribe o paga, el iframe le avisa a tu página con un evento tipado y su detalle. Con React o Vue llegan como callbacks; con el Web Component, como eventos del DOM. Úsalos para redirigir, abrir tu checkout o avisarle a tu CRM.',
                 bullets: [
@@ -396,6 +366,7 @@ export const DEV_PAGES: DevPage[] = [
             },
             {
                 eyebrow: 'HEADLESS',
+                mock: 'el-headless',
                 titulo: 'O construye tu propia interfaz sobre nuestro estado.',
                 copy: 'Si no quieres nuestro diseño, useQuoteBuilder() te da el estado completo para armar una cotización nueva desde tu UI: partidas, cliente, subtotal, impuestos y total, calculados con el mismo motor que el servidor. Tú pones el markup; Cord crea la cotización y te devuelve su link.',
                 bullets: [

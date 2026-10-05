@@ -18,6 +18,7 @@ import DevMore from '../components/desarrolladores/DevMore.astro';
 import ElementsHeroVisual from '../components/elements/ElementsHeroVisual.astro';
 import ElementsAppearance from '../components/elements/ElementsAppearance.astro';
 import ElementsCountry from '../components/elements/ElementsCountry.astro';
+import ElementsMore from '../components/elements/ElementsMore.astro';
 import { getLangFromUrl, publicPath } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
@@ -226,35 +227,6 @@ return (
 );`);
 
 
-// ── Carrusel "Conoce más de Elements": piezas del SDK que el bento no cubre.
-const MORE = [
-    {
-        id: 'builder',
-        t: tx('Arma cotizaciones desde tu sitio', 'Build quotes from your site'),
-        d: tx('<CordBuilder> trae el formulario completo: cliente, partidas, términos, notas y resumen. Reordénalo con sus piezas compuestas y dale estilo con tus propias clases.', '<CordBuilder> ships the full form: client, line items, terms, notes and summary. Reorder it with its compound parts and style it with your own classes.'),
-    },
-    {
-        id: 'webhooks',
-        t: tx('Webhooks verificados en tu backend', 'Verified webhooks on your backend'),
-        d: tx('El Server SDK verifica la firma X-Cord-Signature-V1 con su timestamp antes de que proceses el evento, y acepta dos firmas a la vez para rotar el secreto sin perder entregas.', 'The Server SDK verifies the X-Cord-Signature-V1 signature and its timestamp before you process the event, and accepts two signatures at once so you rotate the secret without losing deliveries.'),
-    },
-    {
-        id: 'framer',
-        t: tx('Framer y Webflow, sin código', 'Framer and Webflow, no code'),
-        d: tx('En Framer es un Code Component con el token en el panel de propiedades. En Webflow basta el atributo data-cord-token en cualquier Div Block.', 'In Framer it is a Code Component with the token in the properties panel. In Webflow, the data-cord-token attribute on any Div Block is enough.'),
-    },
-    {
-        id: 'catalog',
-        t: tx('Tu catálogo, sin exponer márgenes', 'Your catalog, without exposing margins'),
-        d: tx('useCordCatalog() trae tus productos para tu propia interfaz. Con una llave pública, el servidor oculta el costo y el margen de cada uno.', 'useCordCatalog() loads your products for your own interface. With a publishable key, the server hides the cost and margin of each one.'),
-    },
-    {
-        id: 'errors',
-        t: tx('Errores que puedes programar', 'Errors you can program against'),
-        d: tx('Todo falla como CordError con status y uno de 12 códigos estables, así tu manejo de errores nunca depende de leer un mensaje.', 'Everything fails as a CordError with a status and one of 12 stable codes, so your error handling never depends on parsing a message.'),
-    },
-];
-
 // ── Datos estructurados ──
 const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
@@ -407,7 +379,7 @@ const howToSchema = {
                         </ul>
                     </div>
                     <div class="pp-bcard-visual" aria-hidden="true">
-                        {i === 0 && (
+                        {b.mock === 'el-oneline' && (
                             <div class="elx elx-0" data-elx="0">
                                 <div class="elx-win">
                                     <div class="elx-snip"><span class="c-tag">&lt;div</span> data-cord-token=<span class="c-str">"k7Qp…"</span><span class="c-tag">&gt;&lt;/div&gt;</span></div>
@@ -425,17 +397,7 @@ const howToSchema = {
                                 </div>
                             </div>
                         )}
-                        {i === 1 && (
-                            <div class="elx elx-1" data-elx="1">
-                                <div class="elx1-cards">
-                                    <div class="elx1-card t-light is-on"><span class="elx1-lbl">light</span><div class="elx1-h"><span class="elx1-logo">MD</span><b>Materiales del Valle</b></div><small>TOTAL</small><strong class="editorial">$138,944.80</strong><em>MXN</em><span class="elx1-btn">{tx('Aprobar', 'Approve')}</span></div>
-                                    <div class="elx1-card t-dark"><span class="elx1-lbl">dark</span><div class="elx1-h"><span class="elx1-logo">MD</span><b>Materiales del Valle</b></div><small>TOTAL</small><strong class="editorial">$138,944.80</strong><em>MXN</em><span class="elx1-btn">{tx('Aprobar', 'Approve')}</span></div>
-                                    <div class="elx1-card t-brand"><span class="elx1-lbl">colorPrimary</span><div class="elx1-h"><span class="elx1-logo">MD</span><b>Materiales del Valle</b></div><small>TOTAL</small><strong class="editorial">$138,944.80</strong><em>MXN</em><span class="elx1-btn">{tx('Aprobar', 'Approve')}</span></div>
-                                </div>
-                                <div class="elx1-code"><span class="c-kw">appearance</span>={'{{'} theme: <span class="c-str" id="elx1Theme">'light'</span>, variables: {'{'} colorPrimary: <span class="c-str">'#0F766E'</span>, borderRadius: <span class="c-str">'14px'</span> {'}'} {'}}'}</div>
-                            </div>
-                        )}
-                        {i === 2 && (
+                        {b.mock === 'el-events' && (
                             <div class="elx elx-2" data-elx="2">
                                 <div class="elx-win elx2-win">
                                     <div class="elx2-head"><span>{tx('Eventos', 'Events')}</span><span class="elx2-live"><i></i>{tx('escuchando', 'listening')}</span></div>
@@ -451,7 +413,7 @@ const howToSchema = {
                                 </div>
                             </div>
                         )}
-                        {i === 3 && (
+                        {b.mock === 'el-headless' && (
                             <div class="elx elx-3" data-elx="3">
                                 <div class="elx3-code">
                                     {HEADLESS_CODE.map((ln) => <div class="elx3-l" set:html={ln.html} />)}
@@ -478,79 +440,7 @@ const howToSchema = {
 
         <ElementsCountry isEn={isEn} />
 
-        <!-- ════════ MÁS DE ELEMENTS (carrusel) ════════ -->
-        <section class="elm" data-elm>
-            <div class="elm-head">
-                <h2 class="el-h2 masked-title">{tx('Conoce más de Elements.', 'More from Elements.')}</h2>
-                <div class="elm-nav">
-                    <button type="button" class="elm-arrow" data-dir="-1" aria-label={tx('Anterior', 'Previous')} disabled><svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 6 5 12 11 18"/></svg></button>
-                    <button type="button" class="elm-arrow" data-dir="1" aria-label={tx('Siguiente', 'Next')}><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></button>
-                </div>
-            </div>
-            <ul class="elm-track" data-elm-track>
-                {MORE.map((m) => (
-                    <li class="elm-item">
-                        <div class="elm-vis" aria-hidden="true">
-                            {m.id === 'builder' && (
-                                <div class="mk mk-builder">
-                                    <p class="mk-h">{tx('Nueva cotización', 'New quote')}</p>
-                                    <label>{tx('Cliente', 'Client')}<span class="mk-in">Grupo Constructor Norte<i></i></span></label>
-                                    <div class="mk-row"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><em>340</em><b>$61,880.00</b></div>
-                                    <div class="mk-row"><span>{tx('Varilla 3/8 x 12 m', 'Rebar 3/8 x 12 m')}</span><em>120</em><b>$23,820.00</b></div>
-                                    <div class="mk-add">+ {tx('Agregar partida', 'Add line item')}</div>
-                                    <div class="mk-tot"><span>Total · MXN</span><b class="editorial">$99,412.00</b></div>
-                                    <span class="mk-btn">{tx('Crear cotización', 'Create quote')}</span>
-                                </div>
-                            )}
-                            {m.id === 'webhooks' && (
-                                <div class="mk mk-term">
-                                    <p class="mk-tbar"><span>route.ts</span><span>POST /api/webhooks/cord</span></p>
-                                    <p><em class="mk-ok">200</em> quote.viewed <small>{tx('firma verificada', 'signature verified')}</small></p>
-                                    <p><em class="mk-ok">200</em> quote.approved <small>{tx('firma verificada', 'signature verified')}</small></p>
-                                    <p><em class="mk-ok">200</em> payment.partial <small>{tx('firma verificada', 'signature verified')}</small></p>
-                                    <p><em class="mk-ok">200</em> quote.paid <small>{tx('firma verificada', 'signature verified')}</small></p>
-                                    <p><em class="mk-bad">400</em> quote.paid <small>{tx('timestamp fuera de tolerancia', 'timestamp outside tolerance')}</small></p>
-                                    <p class="mk-code">cord.webhooks.<b>constructEvent</b>(body, headers, secret)</p>
-                                </div>
-                            )}
-                            {m.id === 'framer' && (
-                                <div class="mk mk-framer">
-                                    <div class="mk-canvas"><div class="mk-mini"><i>MD</i><b>$99,412.00</b><span>{tx('Aprobar', 'Approve')}</span></div></div>
-                                    <div class="mk-props">
-                                        <p class="mk-ph">FramerCordCotizador</p>
-                                        <label>Token<span>k7Qp9xLw…</span></label>
-                                        <label>Base URL<span>https://cordhq.app</span></label>
-                                        <p class="mk-ph2">Webflow</p>
-                                        <label>data-cord-token<span>k7Qp9xLw…</span></label>
-                                    </div>
-                                </div>
-                            )}
-                            {m.id === 'catalog' && (
-                                <div class="mk mk-cat">
-                                    <p class="mk-tbar"><span>useCordCatalog()</span><span>pk_live_…</span></p>
-                                    {[[tx('Cemento gris 50 kg', 'Gray cement 50 kg'), 'CEM-50', '$182.00'], [tx('Varilla corrugada 3/8', 'Rebar 3/8'), 'VAR-38', '$198.50'], [tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), 'BLK-15', '$14.20'], [tx('Malla electrosoldada 6x6', 'Welded wire mesh 6x6'), 'MAL-66', '$312.00']].map(([n, sku, pr]) => (
-                                        <div class="mk-prod"><span>{n}<small>{sku}</small></span><b>{pr}</b><em>{tx('costo oculto', 'cost hidden')}</em></div>
-                                    ))}
-                                </div>
-                            )}
-                            {m.id === 'errors' && (
-                                <div class="mk mk-err">
-                                    <p><span class="c-kw">catch</span> (err) {'{'}</p>
-                                    <p>  <span class="c-kw">if</span> (err <span class="c-kw">instanceof</span> <span class="c-fn">CordError</span>) {'{'}</p>
-                                    <p>    <span class="c-kw">switch</span> (err.code) {'{'}</p>
-                                    {['invalid_key', 'unauthorized_origin', 'rate_limited', 'clients_require_proxy'].map((c, k) => <p class:list={{ hl: k === 2 }}>      <span class="c-kw">case</span> <span class="c-str">'{c}'</span>:</p>)}
-                                    <p>    {'}'}</p>
-                                    <p>  {'}'}</p>
-                                    <p>{'}'}</p>
-                                </div>
-                            )}
-                        </div>
-                        <h3 class="elm-t">{m.t}</h3>
-                        <p class="elm-d">{m.d}</p>
-                    </li>
-                ))}
-            </ul>
-        </section>
+        <ElementsMore isEn={isEn} />
 
         <!-- ════════ EXPLORADOR DEL SDK ════════ -->
         <section class="els" id="sdk">
@@ -679,22 +569,6 @@ const howToSchema = {
     window.addEventListener('load', () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // ── CARRUSEL "Conoce más" ──
-        const elm = document.querySelector<HTMLElement>('[data-elm]');
-        const track = elm?.querySelector<HTMLElement>('[data-elm-track]');
-        if (elm && track) {
-            const [prev, next] = Array.from(elm.querySelectorAll<HTMLButtonElement>('.elm-arrow'));
-            const step = () => (track.querySelector<HTMLElement>('.elm-item')?.offsetWidth ?? 400) + 24;
-            const sync = () => {
-                prev.disabled = track.scrollLeft < 8;
-                next.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
-            };
-            prev.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
-            next.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
-            track.addEventListener('scroll', sync, { passive: true });
-            sync();
-        }
-
         // ── Entrada del bento ──
         if (!reduced) {
             document.querySelectorAll<HTMLElement>('.pp-bcard-visual .elx').forEach((v) => {
@@ -725,25 +599,6 @@ const howToSchema = {
                     }
                 })();
             }
-        }
-
-        // ── 1: el tema cambia entre light, dark y la marca del portal ──
-        const b1 = document.querySelector<HTMLElement>('[data-elx="1"]');
-        if (b1 && !reduced) {
-            const cards = Array.from(b1.querySelectorAll<HTMLElement>('.elx1-card'));
-            const theme = document.getElementById('elx1Theme');
-            const names = ["'light'", "'dark'", "'light'"];
-            const vis = watch(b1);
-            let k = 0;
-            (async () => {
-                for (;;) {
-                    await sleep(2000);
-                    if (idle(vis)) continue;
-                    k = (k + 1) % cards.length;
-                    cards.forEach((c, j) => c.classList.toggle('is-on', j === k));
-                    if (theme) theme.textContent = names[k];
-                }
-            })();
         }
 
         // ── 2: los eventos llegan uno por uno ──
@@ -986,27 +841,6 @@ const howToSchema = {
     .elx0-ruler .c-fn { color: #b45309; }
     .elx0-ruler b { color: #0a192f; }
 
-    /* 1 — temas */
-    .elx-1 { justify-content: center; gap: 1.2rem; padding-bottom: 1.6rem; }
-    .elx1-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; width: 100%; max-width: 620px; }
-    .elx1-card { position: relative; border-radius: 14px; padding: 26px 14px 14px; background: #fff; color: #0a192f; box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 16px 34px -20px rgba(10,25,47,0.35), inset 0 0 0 1px rgba(10,25,47,0.07); transition: transform 0.5s var(--ease-spring), box-shadow 0.5s; }
-    .elx1-card.is-on { transform: translateY(-8px); box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 26px 44px -20px rgba(10,25,47,0.45), 0 0 0 2px #2f6df0; }
-    .elx1-lbl { position: absolute; top: 8px; left: 10px; font-family: ui-monospace, monospace; font-size: 0.56rem; color: #8a93a2; }
-    .elx1-h { display: flex; align-items: center; gap: 6px; font-size: 0.6rem; margin-bottom: 14px; white-space: nowrap; overflow: hidden; }
-    .elx1-logo { flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.46rem; font-weight: 700; }
-    .elx1-card small { display: block; font-size: 0.46rem; letter-spacing: 0.2em; color: #a3aab6; font-weight: 600; }
-    .elx1-card strong { display: block; font-size: 0.98rem; letter-spacing: -0.04em; margin-top: 2px; }
-    .elx1-card em { font-style: normal; font-size: 0.54rem; color: #8a93a2; }
-    .elx1-btn { display: block; margin-top: 14px; text-align: center; padding: 6px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-size: 0.58rem; font-weight: 600; }
-    .t-dark { background: #111827; color: #e5e7eb; box-shadow: 0 16px 34px -20px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06); }
-    .t-dark .elx1-logo, .t-dark .elx1-btn { background: #e5e7eb; color: #111827; }
-    .t-dark .elx1-lbl, .t-dark em, .t-dark small { color: #8b95a7; }
-    .t-brand { border-radius: 20px; font-family: Georgia, 'Times New Roman', serif; }
-    .t-brand .elx1-logo, .t-brand .elx1-btn { background: #0f766e; }
-    .t-brand strong { color: #0f766e; }
-    .t-brand .elx1-lbl { font-family: ui-monospace, monospace; }
-    .elx1-code { max-width: 620px; width: 100%; padding: 10px 14px; border-radius: 10px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.66rem; line-height: 1.6; }
-
     /* 2 — eventos */
     .elx2-win { max-width: 640px; }
     .elx2-head { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid #eef0f3; font-size: 0.74rem; font-weight: 700; color: #0a192f; }
@@ -1024,7 +858,7 @@ const howToSchema = {
     .elx2-code { padding: 10px 16px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.66rem; }
 
     /* 3 — headless */
-    .pp-bcard-3 .elx-3 { flex-direction: row; align-items: center; gap: 1.2rem; }
+    .pp-bcard-2 .elx-3 { flex-direction: row; align-items: center; gap: 1.2rem; }
     .elx3-code { flex: 1.1; min-width: 0; padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, monospace; font-size: 0.64rem; line-height: 1.75; white-space: pre; overflow: hidden; box-shadow: 0 24px 50px -28px rgba(5,11,20,0.6); }
     .elx3-l { min-height: 1.75em; overflow: hidden; text-overflow: ellipsis; }
     .elx3-ui { position: relative; flex: 0.9; min-width: 0; padding: 18px; border-radius: 6px; background: #fffaf3; border: 1.5px solid #1f2937; font-family: Georgia, 'Times New Roman', serif; color: #1f2937; box-shadow: 6px 6px 0 #1f2937; }
@@ -1040,69 +874,6 @@ const howToSchema = {
     .elx3-toast svg { stroke: #059669; width: 11px; height: 11px; }
     .elx3-toast.on { opacity: 1; transform: none; }
 
-
-    /* ════════ CARRUSEL ════════ */
-    .elm { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 5rem; }
-    .elm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 2.4rem; }
-    .elm-head .el-h2 { margin: 0; }
-    .elm-nav { display: flex; gap: 0.6rem; flex-shrink: 0; }
-    .elm-arrow { width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; background: #fff; color: #0a192f; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 8px 18px -10px rgba(10,25,47,0.3); transition: transform 0.4s var(--ease-spring), opacity 0.3s; }
-    .elm-arrow svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .elm-arrow:hover:not(:disabled) { transform: translateY(-2px); }
-    .elm-arrow:disabled { opacity: 0.35; cursor: default; }
-    .elm-track { list-style: none; margin: 0 -5%; padding: 0.6rem 5% 1.4rem; display: grid; grid-auto-flow: column; grid-auto-columns: min(460px, 82vw); gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 5%; scrollbar-width: none; }
-    .elm-track::-webkit-scrollbar { display: none; }
-    .elm-item { scroll-snap-align: start; min-width: 0; }
-    .elm-vis { position: relative; height: 300px; border-radius: 24px; background: #fff; overflow: hidden; display: grid; place-items: center; padding: 1.6rem; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 22px 44px -18px rgba(10,25,47,0.16); transition: transform 0.5s var(--ease-spring), box-shadow 0.5s; }
-    .elm-item:hover .elm-vis { transform: translateY(-4px); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 32px 60px -20px rgba(10,25,47,0.22); }
-    .elm-t { margin: 1.4rem 0 0.5rem; padding-left: 12px; border-left: 2px solid #f59e0b; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; }
-    .elm-d { margin: 0; padding-left: 14px; font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); }
-
-    /* Mockups del carrusel */
-    .mk { width: 100%; max-width: 360px; font-size: 0.74rem; color: #0a192f; }
-    .mk-builder { padding: 16px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
-    .mk-h { margin: 0 0 10px; font-weight: 700; font-size: 0.86rem; }
-    .mk-builder label { display: block; font-size: 0.64rem; color: #8a93a2; font-weight: 600; margin-bottom: 10px; }
-    .mk-in { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding: 7px 10px; border-radius: 8px; background: #f5f5f7; color: #0a192f; font-size: 0.74rem; font-weight: 500; }
-    .mk-in i { width: 6px; height: 6px; border-right: 1.5px solid #8a93a2; border-bottom: 1.5px solid #8a93a2; transform: rotate(45deg) translateY(-2px); }
-    .mk-row { display: grid; grid-template-columns: 1fr 36px 80px; gap: 6px; padding: 7px 0; border-top: 1px solid #f1f2f5; text-align: right; }
-    .mk-row span { text-align: left; }
-    .mk-row em { font-style: normal; color: #8a93a2; }
-    .mk-add { padding: 7px 0; border-top: 1px dashed #d8dce3; color: #2f6df0; font-weight: 600; }
-    .mk-tot { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 10px; color: #8a93a2; }
-    .mk-tot b { font-size: 1.05rem; color: #0a192f; }
-    .mk-btn { display: block; text-align: center; padding: 8px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-weight: 600; }
-    .mk-term { padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.68rem; }
-    .mk-term p, .mk-cat p { margin: 0; }
-    .mk-term p { padding: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-tbar { display: flex; justify-content: space-between; padding-bottom: 8px !important; margin-bottom: 4px !important; border-bottom: 1px solid rgba(255,255,255,0.08); color: #6b7a90; }
-    .mk-term em { font-style: normal; font-weight: 700; margin-right: 8px; }
-    .mk-ok { color: #6ee7b7; }
-    .mk-bad { color: #fca5a5; }
-    .mk-term small { color: #6b7a90; margin-left: 6px; font-size: inherit; }
-    .mk-code { margin-top: 8px !important; padding-top: 10px !important; border-top: 1px solid rgba(255,255,255,0.08); color: #93c5fd; }
-    .mk-code b { color: #fcd34d; font-weight: 400; }
-    .mk-framer { display: grid; grid-template-columns: 1fr 1fr; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); max-width: 380px; }
-    .mk-canvas { display: grid; place-items: center; background: #ececf0; background-image: radial-gradient(rgba(10,25,47,0.12) 1px, transparent 1px); background-size: 12px 12px; padding: 18px; }
-    .mk-mini { width: 100%; padding: 12px; border-radius: 10px; background: #fff; box-shadow: 0 10px 22px -12px rgba(10,25,47,0.4), 0 0 0 1.5px #2f6df0; display: flex; flex-direction: column; gap: 8px; }
-    .mk-mini i { font-style: normal; width: 20px; height: 20px; border-radius: 6px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.5rem; font-weight: 700; }
-    .mk-mini b { font-size: 0.9rem; }
-    .mk-mini span { text-align: center; padding: 5px 0; border-radius: 99px; background: #0d1b33; color: #fff; font-size: 0.62rem; font-weight: 600; }
-    .mk-props { padding: 12px; background: #1e1e22; color: #d4d4d8; font-size: 0.64rem; }
-    .mk-ph, .mk-ph2 { margin: 0 0 10px; font-weight: 700; color: #fff; font-size: 0.68rem; }
-    .mk-ph2 { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
-    .mk-props label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; color: #a1a1aa; }
-    .mk-props label span { padding: 5px 7px; border-radius: 5px; background: #2b2b31; color: #f4f4f5; font-family: ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mk-cat { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
-    .mk-cat .mk-tbar { padding: 10px 14px !important; margin: 0 !important; background: #0b1526; font-family: ui-monospace, monospace; font-size: 0.66rem; }
-    .mk-prod { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 14px; border-top: 1px solid #f1f2f5; }
-    .mk-prod span { font-weight: 600; }
-    .mk-prod small { display: block; font-weight: 400; color: #8a93a2; font-size: 0.62rem; }
-    .mk-prod b { text-align: right; }
-    .mk-prod em { grid-column: 2; font-style: normal; text-align: right; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #059669; }
-    .mk-err { padding: 14px 16px; border-radius: 14px; background: #0b1526; color: #dbe4f0; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; }
-    .mk-err p { margin: 0; line-height: 1.85; white-space: pre; }
-    .mk-err p.hl { background: rgba(59,130,246,0.16); box-shadow: inset 2px 0 0 #3b82f6; margin: 0 -16px; padding: 0 16px; }
 
     /* ════════ EXPLORADOR DEL SDK ════════ */
     .els { max-width: 1240px; margin: 0 auto; padding: 4rem 5% 6rem; }
@@ -1151,10 +922,9 @@ const howToSchema = {
         .pp-bcard { min-height: 0; }
         .pp-bcard-visual { min-height: 0; }
         .elx, .pp-bcard-2 .elx, .pp-bcard-3 .elx { position: relative; inset: auto; padding: 0.4rem 1.2rem 1.8rem; }
-        .pp-bcard-3 .elx-3 { flex-direction: column; align-items: stretch; }
+        .pp-bcard-2 .elx-3 { flex-direction: column; align-items: stretch; }
     }
     @media (max-width: 860px) {
-        .elm-head { align-items: flex-start; flex-direction: column; gap: 1rem; }
         .eli-head { grid-template-columns: 1fr; }
         .eli-head .el-lead { justify-self: start; }
         .pp-hero { padding-top: 2.5rem; }
@@ -1162,7 +932,6 @@ const howToSchema = {
         .els-panels { padding: 1.4rem 1.3rem 1.6rem; }
         .eli-card { padding: 1rem; border-radius: 22px; }
         .eli-tab { min-height: 40px; }
-        .elx1-cards { gap: 0.5rem; }
         .elx2-r { grid-template-columns: 54px 1fr; }
         .elx2-r span { grid-column: 1 / -1; }
     }
