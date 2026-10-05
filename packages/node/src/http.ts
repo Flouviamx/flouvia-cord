@@ -64,12 +64,12 @@ export class HttpClient {
     readonly apiVersion: string;
 
     constructor(private readonly apiKey: string, opts: CordOptions = {}) {
-        if (!apiKey || typeof apiKey !== 'string') throw new Error('[Cord] Falta la API key (sk_live_… o sk_test_…).');
-        if (apiKey.startsWith('pk_')) throw new Error('[Cord] @flouviahq/node usa una secret key (sk_). La pk_ es para el navegador.');
+        if (!apiKey || typeof apiKey !== 'string') throw new Error('[Cord] Falta la API key (sk_live_…, sk_test_… o una restringida rk_…).');
+        if (apiKey.startsWith('pk_')) throw new Error('[Cord] @flouviahq/node usa una secret key (sk_ o rk_). La pk_ es para el navegador.');
         if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             throw new Error('[Cord] @flouviahq/node corre solo en tu servidor: una secret key en el navegador queda expuesta.');
         }
-        this.mode = apiKey.startsWith('sk_test_') ? 'test' : 'live';
+        this.mode = /^(sk|rk)_test_/.test(apiKey) ? 'test' : 'live';
         this.apiVersion = opts.apiVersion ?? CORD_API_VERSION;
         this.base = `${(opts.baseUrl ?? 'https://cordhq.app').replace(/\/+$/, '')}/api/v1`;
         this.timeoutMs = opts.timeoutMs ?? 30000;

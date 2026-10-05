@@ -50,11 +50,11 @@ class HttpClient:
         transport: Optional[Transport] = None,
     ) -> None:
         if not api_key or not isinstance(api_key, str):
-            raise ValueError("Falta la API key (sk_live_… o sk_test_…).")
+            raise ValueError("Falta la API key (sk_live_…, sk_test_… o una restringida rk_…).")
         if api_key.startswith("pk_"):
-            raise ValueError("El SDK de servidor usa una secret key (sk_). La pk_ es para el navegador.")
+            raise ValueError("El SDK de servidor usa una secret key (sk_ o rk_). La pk_ es para el navegador.")
         self._api_key = api_key
-        self.mode = "test" if api_key.startswith("sk_test_") else "live"
+        self.mode = "test" if api_key.startswith(("sk_test_", "rk_test_")) else "live"
         self.api_version = api_version
         self._base = base_url.rstrip("/") + "/api/v1"
         self._timeout = timeout

@@ -36,6 +36,7 @@ import {
     type PaidPlan,
 } from '../../lib/entitlements';
 import { planLabel } from '../../lib/permissions';
+import { RESOURCE_IDS, KEY_EXPIRY_DAYS } from '../../lib/api-key-policy';
 
 interface Props { locale: 'es' | 'en'; currentPlan: string }
 const { locale, currentPlan } = Astro.props;
@@ -86,6 +87,11 @@ const WBI18N = {
     keyRevocarConfirm: t(L, 'set.api.revocar_confirm'),
     keyNoPudoRevocar: t(L, 'set.api.no_pudo_revocar'),
     keyModalTitulo: t(L, 'set.api.modal_clave_titulo'),
+    keyEditarTitulo: t(L, 'set.api.editar_titulo'),
+    keyGuardar: t(L, 'set.api.guardar'),
+    keyGenerar: t(L, 'set.api.generar_clave'),
+    keyNoPudoGuardar: t(L, 'set.api.no_pudo_guardar'),
+    keyNoPudoRotar: t(L, 'set.api.no_pudo_rotar'),
     promptCopiado: t(L, 'set.api.prompt_copiado'),
     actualizar: t(L, 'set.api.actualizar'),
     actualizando: t(L, 'set.api.actualizando'),
@@ -364,12 +370,16 @@ const WBI18N = {
                 <label for="keyName">{t(L, 'set.api.modal_nombre')}</label>
                 <input class="s-input" id="keyName" placeholder={t(L, 'set.api.modal_nombre_ph')} />
             </div>
-            <div class="s-field">
+            <div class="s-field" id="keyTypeField">
                 <label>{t(L, 'set.api.tipo_clave')}</label>
                 <div class="scope-opts">
                     <label class="scope-opt">
                         <input type="radio" name="keyType" value="secret" checked />
                         <span class="scope-body"><b>{t(L, 'set.api.tipo_secreta_titulo')}</b><i>{t(L, 'set.api.tipo_secreta_desc')}</i></span>
+                    </label>
+                    <label class="scope-opt">
+                        <input type="radio" name="keyType" value="restricted" />
+                        <span class="scope-body"><b>{t(L, 'set.api.tipo_restringida_titulo')}</b><i>{t(L, 'set.api.tipo_restringida_desc')}</i></span>
                     </label>
                     <label class="scope-opt">
                         <input type="radio" name="keyType" value="publishable" />
@@ -390,11 +400,61 @@ const WBI18N = {
                     </label>
                 </div>
             </div>
+            <fieldset class="s-field key-perms" id="keyPermsField" hidden>
+                <legend>{t(L, 'set.api.permisos_recurso')}</legend>
+                {RESOURCE_IDS.map((id) => (
+                    <label class="key-perm-row">
+                        <span>{t(L, ('set.api.rec.' + id) as any)}</span>
+                        <select class="s-input" data-perm={id}>
+                            <option value="none">{t(L, 'set.api.nivel_none')}</option>
+                            <option value="read">{t(L, 'set.api.nivel_read')}</option>
+                            <option value="write">{t(L, 'set.api.nivel_write')}</option>
+                        </select>
+                    </label>
+                ))}
+            </fieldset>
+            <div class="s-field" id="keyIpsField">
+                <label for="keyIps">{t(L, 'set.api.ips_label')}</label>
+                <textarea class="s-input" id="keyIps" rows="2" spellcheck="false" autocomplete="off" placeholder={t(L, 'set.api.ips_ph')} aria-describedby="keyIpsHint"></textarea>
+                <span class="key-field-hint" id="keyIpsHint">{t(L, 'set.api.ips_hint')}</span>
+            </div>
+            <div class="s-field" id="keyExpiryField">
+                <label for="keyExpiry">{t(L, 'set.api.vence_label')}</label>
+                <select class="s-input" id="keyExpiry">
+                    <option value="">{t(L, 'set.api.vence_nunca')}</option>
+                    {KEY_EXPIRY_DAYS.map((n) => <option value={String(n)}>{t(L, 'set.api.vence_dias').replace('{n}', String(n))}</option>)}
+                </select>
+            </div>
         </div>
         <footer class="wb-modal-foot">
             <span class="wb-modal-err" id="keyErr" role="alert"></span>
             <button type="button" class="api-btn-ghost" data-wb-act="key-close">{t(L, 'set.api.cancelar')}</button>
             <button type="button" class="api-btn-solid" id="keyGo" data-wb-act="key-go">{t(L, 'set.api.generar_clave')}</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Rotar API key -->
+<div class="wb-modal compact" id="wbKeyRoll" hidden role="dialog" aria-modal="true" aria-labelledby="keyRollTitle">
+    <div class="wb-modal-backdrop" data-wb-act="key-close"></div>
+    <div class="wb-modal-shell">
+        <header class="wb-modal-top">
+            <button type="button" class="wb-modal-x" data-wb-act="key-close" aria-label={t(L, 'set.api.cancelar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <h2 class="wb-modal-title" id="keyRollTitle">{t(L, 'set.api.rotar_titulo')}</h2>
+        </header>
+        <div class="wb-modal-body">
+            <p class="wb-wiz-p">{t(L, 'set.api.rotar_intro')}</p>
+            <label class="wb-check"><input type="radio" name="keyRollGrace" value="0" /><span>{t(L, 'set.api.rotar_0')}</span></label>
+            <label class="wb-check"><input type="radio" name="keyRollGrace" value="1" /><span>{t(L, 'set.api.rotar_1h')}</span></label>
+            <label class="wb-check"><input type="radio" name="keyRollGrace" value="24" checked /><span>{t(L, 'set.api.rotar_24h')}</span></label>
+            <label class="wb-check"><input type="radio" name="keyRollGrace" value="168" /><span>{t(L, 'set.api.rotar_7d')}</span></label>
+        </div>
+        <footer class="wb-modal-foot">
+            <span class="wb-modal-err" id="keyRollErr" role="alert"></span>
+            <button type="button" class="api-btn-ghost" data-wb-act="key-close">{t(L, 'set.api.cancelar')}</button>
+            <button type="button" class="api-btn-solid" id="keyRollGo" data-wb-act="key-roll-go">{t(L, 'set.api.rotar_confirmar')}</button>
         </footer>
     </div>
 </div>
@@ -979,29 +1039,89 @@ const WBI18N = {
             syncSegUI();
         });
 
+        // null = crear; un id = editar esa llave (mismo modal, sin tipo ni vencimiento).
+        let keyEditing: string | null = null;
+        let keyRolling: string | null = null;
+        const permSelects = () => Array.from(document.querySelectorAll<HTMLSelectElement>('#keyPermsField select[data-perm]'));
+
+        function syncKeyFields(type: string, editing: boolean, restricted = false) {
+            const kind = editing ? (restricted ? 'restricted' : type) : type;
+            $('keyTypeField')!.hidden = editing;
+            $('keyScopeField')!.hidden = editing || kind !== 'secret';
+            $('keyPermsField')!.hidden = kind !== 'restricted';
+            $('keyIpsField')!.hidden = kind === 'publishable';
+            $('keyExpiryField')!.hidden = editing;
+        }
+
         async function keySubmit() {
             const nombre = $<HTMLInputElement>('keyName')!.value.trim() || 'Sin nombre';
             const scope = (document.querySelector('input[name="keyScope"]:checked') as HTMLInputElement)?.value || 'read';
             const type = (document.querySelector('input[name="keyType"]:checked') as HTMLInputElement)?.value || 'secret';
+            const permissions = Object.fromEntries(permSelects().map((sel) => [sel.dataset.perm!, sel.value]));
+            const allowed_ips = $<HTMLTextAreaElement>('keyIps')!.value;
+            const expires_in_days = $<HTMLSelectElement>('keyExpiry')!.value || null;
+            const restrictedEdit = !$('keyPermsField')!.hidden;
             const btn = $<HTMLButtonElement>('keyGo')!;
             btn.disabled = true; setErr('keyErr', '');
             try {
+                if (keyEditing) {
+                    const res = await fetch('/api/keys', {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: keyEditing, nombre,
+                            ...(restrictedEdit ? { permissions } : {}),
+                            ...($('keyIpsField')!.hidden ? {} : { allowed_ips }),
+                        }),
+                    });
+                    const d = await res.json();
+                    if (!res.ok) throw new Error(d.error || I18N.keyNoPudoGuardar);
+                    closeModal();
+                    refresh('api');
+                    return;
+                }
                 const res = await fetch('/api/keys', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, scope, mode: keyMode, type }),
+                    body: JSON.stringify({
+                        nombre, scope, mode: keyMode, type, expires_in_days,
+                        ...(type === 'restricted' ? { permissions } : {}),
+                        ...(type !== 'publishable' ? { allowed_ips } : {}),
+                    }),
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || I18N.keyNoPudoCrear);
                 closeModal();
-                $('secTitle')!.textContent = I18N.keyModalTitulo;
-                $('secValue')!.textContent = d.secret;
-                openModal($('wbSecret')!);
-                refresh('api');
-            } catch (err: any) { setErr('keyErr', err.message || I18N.keyNoPudoCrear); }
+                showSecret(d.secret);
+            } catch (err: any) { setErr('keyErr', err.message || (keyEditing ? I18N.keyNoPudoGuardar : I18N.keyNoPudoCrear)); }
             finally { btn.disabled = false; }
         }
+
+        function showSecret(secret: string) {
+            $('secTitle')!.textContent = I18N.keyModalTitulo;
+            $('secValue')!.textContent = secret;
+            openModal($('wbSecret')!);
+            refresh('api');
+        }
+
+        async function keyRoll() {
+            if (!keyRolling) return;
+            const grace = (document.querySelector('input[name="keyRollGrace"]:checked') as HTMLInputElement)?.value || '24';
+            const btn = $<HTMLButtonElement>('keyRollGo')!;
+            btn.disabled = true; setErr('keyRollErr', '');
+            try {
+                const res = await fetch('/api/keys', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'roll', id: keyRolling, grace_hours: Number(grace) }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || I18N.keyNoPudoRotar);
+                closeModal();
+                showSecret(d.secret);
+            } catch (err: any) { setErr('keyRollErr', err.message || I18N.keyNoPudoRotar); }
+            finally { btn.disabled = false; }
+        }
+
         document.querySelectorAll<HTMLInputElement>('input[name="keyType"]').forEach((r) =>
-            r.addEventListener('change', () => { $('keyScopeField')!.hidden = r.value === 'publishable' && r.checked; }));
+            r.addEventListener('change', () => { if (r.checked) syncKeyFields(r.value, false); }));
 
         // ── Log de entregas ─────────────────────────────────────────────────────
         async function loadDeliveries(id: string) {
@@ -1088,14 +1208,40 @@ const WBI18N = {
                     syncSegUI();
                     break;
                 case 'key-new':
+                    keyEditing = null;
                     $('keyTitle')!.textContent = keyMode === 'test' ? I18N.keyNuevaPrueba : I18N.keyNuevaVivo;
+                    $('keyGo')!.textContent = I18N.keyGenerar;
                     $<HTMLInputElement>('keyName')!.value = keyMode === 'test' ? I18N.keyNombrePruebas : I18N.keyNombreProduccion;
                     (document.querySelector('input[name="keyScope"][value="read"]') as HTMLInputElement).checked = true;
                     (document.querySelector('input[name="keyType"][value="secret"]') as HTMLInputElement).checked = true;
-                    $('keyScopeField')!.hidden = false;
+                    permSelects().forEach((sel) => { sel.value = 'none'; });
+                    $<HTMLTextAreaElement>('keyIps')!.value = '';
+                    $<HTMLSelectElement>('keyExpiry')!.value = '';
+                    syncKeyFields('secret', false);
                     setErr('keyErr', '');
                     openModal($('wbKey')!, '#keyName');
                     break;
+                case 'key-edit': {
+                    keyEditing = id;
+                    let perms: Record<string, string> = {};
+                    try { perms = JSON.parse(el.dataset.perms || '{}') || {}; } catch { perms = {}; }
+                    const restricted = el.dataset.restricted === '1';
+                    $('keyTitle')!.textContent = I18N.keyEditarTitulo;
+                    $('keyGo')!.textContent = I18N.keyGuardar;
+                    $<HTMLInputElement>('keyName')!.value = el.dataset.nombre || '';
+                    permSelects().forEach((sel) => { sel.value = perms[sel.dataset.perm!] || 'none'; });
+                    $<HTMLTextAreaElement>('keyIps')!.value = (el.dataset.ips || '').split(',').filter(Boolean).join(', ');
+                    syncKeyFields(el.dataset.type || 'secret', true, restricted);
+                    setErr('keyErr', '');
+                    openModal($('wbKey')!, '#keyName');
+                    break;
+                }
+                case 'key-roll':
+                    keyRolling = id;
+                    setErr('keyRollErr', '');
+                    openModal($('wbKeyRoll')!);
+                    break;
+                case 'key-roll-go': keyRoll(); break;
                 case 'key-go': keySubmit(); break;
                 case 'key-close': closeModal(); break;
                 case 'sec-close': closeModal(); break;

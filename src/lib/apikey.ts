@@ -12,7 +12,9 @@
 
 import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
-import { sql, resolveSandboxOrgId } from './db';
+import { sql, resolveSandboxOrgId, logAudit } from './db';
+import { trustedIp } from './ip';
+import { restrictedKeyAllows, ipAllowed, type KeyPermissions } from './api-key-policy';
 import { reqContext } from './context';
 import { flushUsageReservation, reserveUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
@@ -39,6 +41,8 @@ export interface ApiAuth {
     oauthClient?: string | null;
     /** Versión de la API fijada al crear la llave; null = la versión base. */
     apiVersion?: string | null;
+    /** Llave restringida (rk_): sus permisos por recurso ya se verificaron en authApiKey. */
+    restricted?: boolean;
 }
 
 function jsonError(error: string, code: string, status: number): Response {
@@ -95,7 +99,7 @@ export function isBrowserRequest(request: Request): boolean {
 export async function authApiKey(request: Request, need: ApiScope = 'read'): Promise<ApiAuth | Response> {
     // Corta floods de tokens basura por IP ANTES de tocar Neon (cada intento hacía
     // un lookup de api_keys). Límite generoso: un cliente legítimo no lo alcanza.
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon';
+    const ip = trustedIp(request);
     const ipRl = await rateLimit(`apiauth:${ip}`, 120, 60);
     if (!ipRl.ok) return tooMany(ipRl.retryAfter);
 
@@ -111,15 +115,17 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
         [row] = await sql`
             with ranked as (
                 select k.*,
-                       case when k.oauth_client_id is not null then 0
-                            else row_number() over (
-                                partition by k.org_id, (k.oauth_client_id is not null)
-                                order by k.created_at asc, k.id asc
-                            )::int end as active_rank
-                  from api_keys k
-                 where k.revoked_at is null
+                       case when not counted then 0
+                            else row_number() over (partition by k.org_id, counted order by k.created_at asc, k.id asc)::int
+                       end as active_rank
+                  from (select k.*, (k.oauth_client_id is null and k.replaced_by is null
+                                     and (k.expires_at is null or k.expires_at > now())) as counted
+                          from api_keys k
+                         where k.revoked_at is null
+                           and k.org_id = (select org_id from api_keys where hash = ${hash} limit 1)) k
             )
-            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at, k.expires_at, k.api_version,
+            select k.id, k.org_id, k.nombre, k.scope, k.mode, k.type, k.revoked_at, k.expires_at, k.api_version,
+                   k.permissions, k.allowed_ips, k.oauth_client_id, k.replaced_by,
                    cord_effective_plan(o.id) as effective_plan,
                    k.active_rank, o.sandbox_of, o.embed_domains, c.slug as oauth_slug
               from ranked k
@@ -135,7 +141,14 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
         return jsonError('API key inválida o revocada.', 'invalid_key', 401);
     }
     if (row.expires_at && new Date(row.expires_at as string).getTime() <= Date.now()) {
-        return jsonError('El token de acceso venció. Renuévalo con el refresh token.', 'token_expired', 401);
+        if (row.oauth_client_id) return jsonError('El token de acceso venció. Renuévalo con el refresh token.', 'token_expired', 401);
+        return jsonError(row.replaced_by
+            ? 'Esta llave se rotó y su periodo de gracia terminó. Usa la llave nueva.'
+            : 'Esta llave venció. Genera una nueva en Ajustes › Developers.', 'key_expired', 401);
+    }
+    if (row.allowed_ips?.length && !ipAllowed(row.allowed_ips as string[], ip)) {
+        void auditIpDenied(row, ip);
+        return jsonError(`Esta llave no acepta peticiones desde la IP ${ip}. Agrégala a sus IPs permitidas en Ajustes › Developers.`, 'ip_not_allowed', 403);
     }
     if (Number(row.active_rank) > apiKeyLimit(String(row.effective_plan || 'free'))) {
         return jsonError(
@@ -162,7 +175,19 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     // consumo de las llaves en vivo se mide/factura por uso (Stripe Billing).
 
     const scope: ApiScope = row.scope === 'write' ? 'write' : 'read';
-    if (need === 'write' && scope !== 'write') {
+    const restricted = !!row.permissions;
+    if (restricted) {
+        const pathname = new URL(request.url).pathname;
+        if (!pathname.startsWith('/api/v1/')) {
+            return jsonError('Las llaves restringidas solo funcionan con la API REST. Para MCP usa una Secret Key.', 'insufficient_permissions', 403);
+        }
+        const verdict = restrictedKeyAllows(row.permissions as Partial<KeyPermissions>, pathname, need);
+        if (!verdict.ok) {
+            return jsonError(verdict.resource
+                ? `Esta llave restringida no tiene permiso de ${need === 'write' ? 'escritura' : 'lectura'} en ${verdict.resource}.`
+                : 'Esta llave restringida no tiene permiso para esta ruta.', 'insufficient_permissions', 403);
+        }
+    } else if (need === 'write' && scope !== 'write') {
         return jsonError('Esta API key es de solo lectura.', 'insufficient_scope', 403);
     }
 
@@ -184,7 +209,18 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     // Marca de uso (best-effort: nunca debe romper la request).
     sql`update api_keys set last_used_at = now() where id = ${row.id}`.catch(() => {});
 
-    return { orgId, scope, mode, type, keyId: row.id as string, oauthClient: (row.oauth_slug as string | null) ?? null, apiVersion: (row.api_version as string | null) ?? null };
+    return { orgId, scope, mode, type, keyId: row.id as string, oauthClient: (row.oauth_slug as string | null) ?? null, apiVersion: (row.api_version as string | null) ?? null, restricted };
+}
+
+// Una llave usada desde una IP no permitida suele ser una llave filtrada: queda
+// en la bitácora, una vez por hora por llave e IP para que un abuso no la inunde.
+async function auditIpDenied(row: { id: string; org_id: string; nombre: string }, ip: string): Promise<void> {
+    const rl = await rateLimit(`apikey-ipdeny:${row.id}:${ip}`, 1, 3600);
+    if (!rl.ok) return;
+    await logAudit(row.org_id, {
+        accion: 'apikey.ip_rechazada', entidad: 'api_key', entidad_id: row.id, actor: 'system',
+        detalle: `La llave "${row.nombre}" se usó desde una IP no permitida`, ip,
+    });
 }
 
 /**
@@ -288,7 +324,7 @@ export async function logApiRequest(auth: ApiAuth, request: Request, status: num
     try {
         const url = new URL(request.url);
         const ruta = routeOverride || (url.pathname.replace(/^\/api/, '') || '/');
-        const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || null;
+        const ip = trustedIp(request);
         await sql`
             insert into api_requests (org_id, key_id, metodo, ruta, status, duracion_ms, mode, ip)
             values (${auth.orgId}, ${auth.keyId}, ${request.method}, ${ruta}, ${status}, ${ms}, ${auth.mode}, ${ip})`;

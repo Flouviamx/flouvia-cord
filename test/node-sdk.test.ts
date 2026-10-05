@@ -9,6 +9,8 @@ describe('Cord (cliente de servidor)', () => {
         expect(() => new Cord('pk_live_x')).toThrow(/secret key/);
         expect(() => new Cord('')).toThrow();
         expect(new Cord('sk_test_x').mode).toBe('test');
+        expect(new Cord('rk_test_x').mode).toBe('test');
+        expect(new Cord('rk_live_x').mode).toBe('live');
     });
 
     it('manda la misma Idempotency-Key en cada reintento de una mutación', async () => {

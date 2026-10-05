@@ -78,6 +78,9 @@ Every `/api/v1` response carries the `Cord-Request-Id` header (`req_…`). On an
 - <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: The `Authorization: Bearer` header is missing, or the key doesn't exist / was revoked.
 - <a id="token_expired"></a>`token_expired`: The credential of an authorized connection (Zapier, Make) expired. The app renews it on its own with its refresh token.
 - <a id="insufficient_scope"></a>`insufficient_scope`: Your key doesn't have the required scope (a read-only key tried to write, or a Publishable Key tried a route outside its allowed list).
+- <a id="insufficient_permissions"></a>`insufficient_permissions` (403): A restricted key (`rk_`) has no permission for that route's resource, or was used with MCP. The `error` field names the resource.
+- <a id="ip_not_allowed"></a>`ip_not_allowed` (403): The key has allowed IPs and the request came from another one. The `error` field includes the IP Cord saw.
+- <a id="key_expired"></a>`key_expired` (401): The key expired, or it was rolled and its grace period ended. Use the new key or create another.
 - <a id="not_found"></a>`not_found`: The requested resource doesn't exist in your organization.
 - <a id="subscription_required"></a>`subscription_required`: The capability requires a higher plan. The response includes `plan` (your current one) and `plan_required`.
 - <a id="plan_limit_reached"></a>`plan_limit_reached`: You hit a hard limit on your plan (clients, products, API keys). The response includes `resource`, `limit`, and `plan`.

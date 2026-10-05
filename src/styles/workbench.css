@@ -549,6 +549,7 @@ html.wb-modal-open { overflow: hidden; }
    salían sin estilo (label en línea, input diminuto). Mismos valores que el
    original; los colores navy salen solos por el scope de tokens de arriba. */
 .wb-dock .s-field, .wb-modal .s-field { display: flex; flex-direction: column; gap: 0.45rem; }
+.wb-dock .s-field[hidden], .wb-modal .s-field[hidden] { display: none; }
 .wb-dock .s-field label, .wb-modal .s-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.42); }
 .wb-dock .s-input, .wb-modal .s-input {
     width: 100%;
@@ -668,6 +669,20 @@ html.wb-modal-open { overflow: hidden; }
 .key-type.sec { color: #475569; background: #f1f5f9; }
 .wb-dock .key-type.pub { color: #a5b4fc; background: rgba(99,102,241,0.2); }
 .wb-dock .key-type.sec { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.09); }
+.key-type.res { color: #b45309; background: rgba(245,158,11,0.14); }
+.wb-dock .key-type.res { color: #fcd34d; background: rgba(245,158,11,0.16); }
+.key-expiry { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.5); white-space: nowrap; }
+.wb-dock .key-cell-name { flex-wrap: wrap; }
+.wb-dock .key-cell-act { gap: 0.4rem; }
+.key-act { font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s; }
+.key-act:hover { border-color: var(--wb-accent-solid); color: var(--color-text); }
+.key-act:focus-visible, .key-revoke:focus-visible { outline: 2px solid var(--wb-accent-solid); outline-offset: 2px; }
+.wb-modal .key-perms { border: 0; margin: 0; padding: 0; gap: 0.35rem; }
+.wb-modal .key-perms legend { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 0.45rem; padding: 0; }
+.wb-modal .s-field .key-perm-row { display: grid; grid-template-columns: 1fr 9.5rem; align-items: center; gap: 0.8rem; font-size: 0.84rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--color-text); }
+.wb-modal .key-perm-row .s-input { padding: 7px 10px; }
+.wb-modal .key-field-hint { font-size: 0.74rem; color: rgba(255,255,255,0.45); line-height: 1.4; }
+.wb-modal textarea.s-input { resize: vertical; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; }
 
 @media (max-width: 640px) {
     .wb-tab { padding: 0 0.6rem; font-size: 0.74rem; }
@@ -698,4 +713,6 @@ html.wb-modal-open { overflow: hidden; }
     .wb-modal-foot { display: grid; grid-template-columns: 1fr 1fr; }
     .wb-modal-err { grid-column: 1 / -1; margin-right: 0; }
     .wb-modal-foot > button { min-height: 46px; }
+    .key-act, .key-revoke { min-height: 44px; }
+    .wb-modal .s-field .key-perm-row { grid-template-columns: 1fr; gap: 0.3rem; }
 }

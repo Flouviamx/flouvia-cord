@@ -41,9 +41,9 @@ export type KeyCheck = { ok: true } | { ok: false; error: string };
 /** El CLI es una herramienta de desarrollo: solo acepta llaves de prueba. */
 export function checkTestKey(key: string): KeyCheck {
     const k = key.trim();
-    if (k.startsWith('sk_live_')) return { ok: false, error: 'Esa es una llave en vivo. El CLI solo usa llaves de prueba (sk_test_), así nada de lo que hagas toca datos reales.' };
+    if (/^(sk|rk)_live_/.test(k)) return { ok: false, error: 'Esa es una llave en vivo. El CLI solo usa llaves de prueba (sk_test_), así nada de lo que hagas toca datos reales.' };
     if (k.startsWith('pk_')) return { ok: false, error: 'Esa es una llave publicable. El CLI necesita una Secret Key de prueba (sk_test_).' };
-    if (!/^sk_test_[A-Za-z0-9]{16,}$/.test(k)) return { ok: false, error: 'La llave no tiene la forma sk_test_…' };
+    if (!/^(sk|rk)_test_[A-Za-z0-9]{16,}$/.test(k)) return { ok: false, error: 'La llave no tiene la forma sk_test_… (o rk_test_… si es restringida).' };
     return { ok: true };
 }
 

@@ -248,6 +248,11 @@ export async function getApiKeys() {
         creada: fmtDate(k.created_at),
         ultimoUso: k.last_used_at ? fmtRelative(k.last_used_at) : null,
         revocada: !!k.revoked_at,
+        vencida: !k.revoked_at && !!k.expires_at && new Date(k.expires_at).getTime() <= Date.now(),
+        vence: k.expires_at && !k.oauth_client_id ? fmtDate(k.expires_at) : null,
+        rotada: !!k.replaced_by,
+        permisos: (k.permissions as Record<string, string> | null) ?? null,
+        ips: (k.allowed_ips as string[] | null) ?? [],
     }));
 }
 

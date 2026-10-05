@@ -15,6 +15,8 @@ describe('cord CLI', () => {
         expect(checkTestKey('sk_live_abcdefghijklmnop1234').ok).toBe(false);
         expect(checkTestKey('pk_test_abcdefghijklmnop1234').ok).toBe(false);
         expect(checkTestKey('sk_test_x').ok).toBe(false);
+        expect(checkTestKey('rk_test_abcdefghijklmnop1234').ok).toBe(true);
+        expect(checkTestKey('rk_live_abcdefghijklmnop1234').ok).toBe(false);
     });
 
     it('reenvía solo a la máquina local salvo que se pida', () => {

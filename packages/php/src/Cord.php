@@ -35,12 +35,12 @@ final class Cord
     public function __construct(private readonly string $apiKey, private readonly array $options = [])
     {
         if ($apiKey === '') {
-            throw new \InvalidArgumentException('Falta la API key (sk_live_… o sk_test_…).');
+            throw new \InvalidArgumentException('Falta la API key (sk_live_…, sk_test_… o una restringida rk_…).');
         }
         if (str_starts_with($apiKey, 'pk_')) {
-            throw new \InvalidArgumentException('El SDK de servidor usa una secret key (sk_). La pk_ es para el navegador.');
+            throw new \InvalidArgumentException('El SDK de servidor usa una secret key (sk_ o rk_). La pk_ es para el navegador.');
         }
-        $this->mode = str_starts_with($apiKey, 'sk_test_') ? 'test' : 'live';
+        $this->mode = (str_starts_with($apiKey, 'sk_test_') || str_starts_with($apiKey, 'rk_test_')) ? 'test' : 'live';
         $this->base = rtrim($options['base_url'] ?? 'https://cordhq.app', '/') . '/api/v1';
         $this->transport = $options['transport'] ?? [self::class, 'curlTransport'];
 

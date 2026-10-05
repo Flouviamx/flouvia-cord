@@ -23,9 +23,9 @@ Failed responses return a flat JSON object with two fields:
 ### Common HTTP codes
 
 - **400 Bad Request:** a parameter is missing or the JSON is malformed (`code: "invalid_request"` or `"invalid_json"`).
-- **401 Unauthorized:** your API key is invalid, revoked, or you didn't send the `Authorization` header (`"invalid_key"`, `"missing_key"`).
+- **401 Unauthorized:** your API key is invalid, revoked, or you didn't send the `Authorization` header (`"invalid_key"`, `"missing_key"`), or the key expired (`"key_expired"`).
 - **402 Payment Required:** your subscription hit the number of API keys included in your plan (`"subscription_key_limit"`); revoke an older key or upgrade.
-- **403 Forbidden:** your key lacks the required scope (e.g. using a read-only key for a `POST`, code `"insufficient_scope"`), or a publishable key is used from an unauthorized origin/domain (`"unauthorized_origin"`, `"missing_origin"`).
+- **403 Forbidden:** your key lacks the required scope (e.g. using a read-only key for a `POST`, code `"insufficient_scope"`), a restricted key has no permission for that resource (`"insufficient_permissions"`), the key has allowed IPs and the request came from another one (`"ip_not_allowed"`), or a publishable key is used from an unauthorized origin/domain (`"unauthorized_origin"`, `"missing_origin"`).
 - **404 Not Found:** the resource doesn't exist or doesn't belong to your organization.
 - **409 Conflict:** the action doesn't fit the resource's current state — for example, voiding an invoice that already has payments applied responds `409` with `code: "credit_note_required"`: the correct document is a credit note instead.
 - **413/415:** the request body exceeds the size cap (`"payload_too_large"`) or isn't sent as `application/json` (`"unsupported_media_type"`).

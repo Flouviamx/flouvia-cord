@@ -20,6 +20,9 @@ export type CordErrorCode =
     | 'invalid_key'
     | 'token_expired'
     | 'insufficient_scope'
+    | 'insufficient_permissions'
+    | 'ip_not_allowed'
+    | 'key_expired'
     | 'secret_key_in_browser'
     | 'missing_origin'
     | 'unauthorized_origin'
@@ -89,9 +92,9 @@ export class CordAPI {
         if (!key) {
             throw new Error('Cord API Key is required. Pass it to the constructor or set CORD_API_KEY environment variable.');
         }
-        if (IS_BROWSER && key.startsWith('sk_')) {
+        if (IS_BROWSER && /^(sk|rk)_/.test(key)) {
             throw new Error(
-                '[Cord] CordAPI recibió una secret key (sk_) en el navegador. Ya quedó expuesta en el código de la página: revócala en Ajustes › Developers y usa CordAPI solo en tu servidor.',
+                '[Cord] CordAPI recibió una secret key (sk_ o rk_) en el navegador. Ya quedó expuesta en el código de la página: revócala en Ajustes › Developers y usa CordAPI solo en tu servidor.',
             );
         }
         this.apiKey = key;

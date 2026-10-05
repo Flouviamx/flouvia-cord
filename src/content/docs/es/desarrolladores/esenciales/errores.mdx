@@ -78,6 +78,9 @@ Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un
 - <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
 - <a id="token_expired"></a>`token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
 - <a id="insufficient_scope"></a>`insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).
+- <a id="insufficient_permissions"></a>`insufficient_permissions` (403): Una llave restringida (`rk_`) no tiene permiso para el recurso de esa ruta, o se usó con MCP. El campo `error` nombra el recurso.
+- <a id="ip_not_allowed"></a>`ip_not_allowed` (403): La llave tiene IPs permitidas y la petición llegó desde otra. El campo `error` incluye la IP que vio Cord.
+- <a id="key_expired"></a>`key_expired` (401): La llave venció, o se rotó y terminó su periodo de gracia. Usa la llave nueva o genera otra.
 - <a id="not_found"></a>`not_found`: El recurso solicitado no existe en tu organización.
 - <a id="subscription_required"></a>`subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.
 - <a id="plan_limit_reached"></a>`plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.

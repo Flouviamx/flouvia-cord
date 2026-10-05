@@ -23,6 +23,7 @@ class ClientTests(unittest.TestCase):
     def test_retries_mutation_with_same_idempotency_key(self):
         t = FakeTransport([(502, {"error": "x"}, {"retry-after": "0"}), (200, {"data": {"id": "q1", "folio": "COT-1"}}, {})])
         cord = Cord("sk_test_x", transport=t, max_retries=1)
+        self.assertEqual(Cord("rk_test_x", transport=t).mode, "test")
         quote = cord.quotes.create(items=[{"descripcion": "X", "cantidad": 1, "precio_unitario": 1}])
         self.assertEqual(quote["folio"], "COT-1")
         keys = [c[2]["Idempotency-Key"] for c in t.calls]

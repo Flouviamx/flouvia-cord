@@ -71,7 +71,7 @@ if (hasAccess) {
     if (tab === 'api') {
         [ORG, KEYS, ACTIVITY] = await Promise.all([getOrg(), getApiKeys(), getApiActivity()]);
         LIMITE_KEYS = apiKeyLimit(ORG.plan_raw);
-        ACTIVAS = KEYS.filter((k) => !k.revocada && !k.oauthApp).length;
+        ACTIVAS = KEYS.filter((k) => !k.revocada && !k.oauthApp && !k.vencida && !k.rotada).length;
         AT_LIMIT_KEYS = ACTIVAS >= LIMITE_KEYS;
     } else if (tab === 'webhooks') {
         [ORG, WEBHOOKS] = await Promise.all([getOrg(), getWebhooks()]);
@@ -330,7 +330,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                     <div class="key-empty">{t(L, 'set.api.vacio')}</div>
                 )}
                 {KEYS.map((k) => (
-                    <div class:list={['key-trow', { revoked: k.revocada }]} data-id={k.id}>
+                    <div class:list={['key-trow', { revoked: k.revocada || k.vencida }]} data-id={k.id}>
                         <span class="key-cell-name">
                             <span class="key-nm">{k.nombre}</span>
                             <span class="key-tags">
@@ -342,17 +342,31 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                                 {/* Estas clases reemplazan un `style=` inline: un atributo style
                                     gana a cualquier selector, así que el badge se quedaba en
                                     lila claro y era ilegible sobre el navy del dock. */}
-                                {!k.oauthApp && <span class={`key-type ${k.type === 'publishable' ? 'pub' : 'sec'}`}>{k.type === 'publishable' ? t(L, 'set.api.publica') : t(L, 'set.api.secreta')}</span>}
+                                {!k.oauthApp && (k.permisos
+                                    ? <span class="key-type res">{t(L, 'set.api.restringida')}</span>
+                                    : <span class={`key-type ${k.type === 'publishable' ? 'pub' : 'sec'}`}>{k.type === 'publishable' ? t(L, 'set.api.publica') : t(L, 'set.api.secreta')}</span>)}
+                                {k.ips.length > 0 && <span class="key-type sec" title={k.ips.join(', ')}>{tf('set.api.ips_tag', { n: String(k.ips.length) })}</span>}
                             </span>
+                            {!k.revocada && (k.rotada || k.vence) && (
+                                <span class="key-expiry">{k.vencida ? t(L, 'set.api.vencida') : k.rotada ? tf('set.api.rotada_hasta', { fecha: k.vence ?? '' }) : tf('set.api.vence_el', { fecha: k.vence ?? '' })}</span>
+                            )}
                         </span>
                         {k.oauthApp ? <span class="key-cell-muted">{t(L, 'set.api.oauth_conexion')}</span> : <code class="key-cell-token">{k.masked}</code>}
-                        <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? t(L, 'set.api.escritura') : t(L, 'set.api.lectura')}</span>
+                        {k.permisos
+                            ? <span class="key-scope write" title={Object.entries(k.permisos).filter(([, v]) => v !== 'none').map(([r, v]) => `${t(L, ('set.api.rec.' + r) as any)}: ${t(L, ('set.api.nivel_' + v) as any)}`).join(' · ')}>{tf('set.api.recursos', { n: String(Object.values(k.permisos).filter((v) => v !== 'none').length) })}</span>
+                            : <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? t(L, 'set.api.escritura') : t(L, 'set.api.lectura')}</span>}
                         <span class="key-cell-muted">{k.ultimoUso || t(L, 'set.api.sin_uso')}</span>
                         <span class="key-cell-muted">{k.creada}</span>
                         <span class="key-cell-act">
                             {k.revocada
                                 ? <span class="key-badge-revoked">{t(L, 'set.api.revocada')}</span>
-                                : <button type="button" class="key-revoke" data-wb-act="key-revoke" data-id={k.id}>{t(L, 'set.api.revocar')}</button>}
+                                : k.vencida
+                                ? <span class="key-badge-revoked">{t(L, 'set.api.vencida')}</span>
+                                : <>
+                                    {!k.oauthApp && !k.rotada && <button type="button" class="key-act" data-wb-act="key-edit" data-id={k.id} data-nombre={k.nombre} data-type={k.type} data-restricted={k.permisos ? '1' : '0'} data-perms={JSON.stringify(k.permisos ?? {})} data-ips={k.ips.join(',')}>{t(L, 'set.api.editar')}</button>}
+                                    {!k.oauthApp && !k.rotada && <button type="button" class="key-act" data-wb-act="key-roll" data-id={k.id}>{t(L, 'set.api.rotar')}</button>}
+                                    <button type="button" class="key-revoke" data-wb-act="key-revoke" data-id={k.id}>{t(L, 'set.api.revocar')}</button>
+                                </>}
                         </span>
                     </div>
                 ))}
