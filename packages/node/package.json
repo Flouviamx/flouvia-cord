@@ -1,0 +1,34 @@
+{
+  "name": "@flouviahq/node",
+  "version": "1.0.0",
+  "description": "SDK de servidor de Cord: API v1 completa, verificación de webhooks y proxy seguro para Cord Elements. Sin dependencias; corre en Node, Bun, Deno y edge.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://docs.cordhq.app/desarrolladores",
+  "keywords": ["cord", "cotizaciones", "facturas", "webhooks", "api", "sdk"],
+  "engines": { "node": ">=20" },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/types/node/src/index.d.ts", "default": "./dist/index.mjs" },
+      "require": { "types": "./dist/types/node/src/index.d.cts", "default": "./dist/index.cjs" }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/types/node/src/index.d.ts",
+  "files": ["dist", "README.md", "CHANGELOG.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build && npx attw --pack . && npx publint"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "esbuild": "*",
+    "publint": "^0.2.0",
+    "typescript": "^5.6.0"
+  },
+  "publishConfig": { "access": "public", "provenance": true }
+}
