@@ -14,8 +14,8 @@ export function publishableKeyAllows(method: string, pathname: string): boolean 
     return PUBLISHABLE_ALLOWLIST.has(`${method.toUpperCase()} ${path}`);
 }
 
-const ALLOWED_HEADERS = 'Authorization, Content-Type, Idempotency-Key, If-None-Match';
-const EXPOSED_HEADERS = 'Cord-Request-Id, Retry-After, ETag';
+const ALLOWED_HEADERS = 'Authorization, Content-Type, Idempotency-Key, If-None-Match, Cord-Version';
+const EXPOSED_HEADERS = 'Cord-Request-Id, Cord-Version, Retry-After, ETag';
 export const ERRORS_DOC_URL = 'https://docs.cordhq.app/desarrolladores/esenciales/errores';
 
 function browserOrigin(request: Request): string | null {
@@ -53,9 +53,10 @@ export function newRequestId(): string {
 // Toda respuesta v1 lleva su request id, y cada error lo repite en el cuerpo
 // junto al enlace de la documentación: es lo que el desarrollador pega al pedir
 // soporte, y lo que se busca en la bitácora.
-export async function decorateApiResponse(request: Request, response: Response, requestId: string): Promise<Response> {
+export async function decorateApiResponse(request: Request, response: Response, requestId: string, apiVersion?: string | null): Promise<Response> {
     const headers = new Headers(response.headers);
     headers.set('Cord-Request-Id', requestId);
+    if (apiVersion) headers.set('Cord-Version', apiVersion);
 
     const url = new URL(request.url);
     const origin = browserOrigin(request);

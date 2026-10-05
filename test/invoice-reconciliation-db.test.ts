@@ -62,7 +62,9 @@ beforeAll(async () => {
     create unique index pagos_mp on documento_pagos(documento_id,mp_payment_id) where mp_payment_id is not null;
   `);
   const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
-  await db.exec(schema.slice(schema.indexOf('-- Conciliación de facturas:')));
+  const start = schema.indexOf('-- Conciliación de facturas:');
+  const next = schema.indexOf('\n-- BEGIN ', start);
+  await db.exec(schema.slice(start, next === -1 ? undefined : next));
   m.tx.mockImplementation((orgId: string, ...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async (tx) => {
     await tx.query("select set_config('app.org_id', $1, true)", [orgId]);
     const results = [];

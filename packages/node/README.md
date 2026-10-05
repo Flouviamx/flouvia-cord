@@ -21,6 +21,10 @@ console.log(quote.folio, quote.link_publico);
 
 Una secret key vive solo en tu servidor. El SDK se niega a correr en un navegador.
 
+## Versión de la API
+
+El SDK manda `Cord-Version` con la versión con la que se construyó, así que actualizar Cord no cambia lo que lees. Para fijar otra: `new Cord(sk, { apiVersion: '2026-10-01' })`. Toda respuesta trae la versión usada en el header `Cord-Version`.
+
 ## Idempotencia y reintentos
 
 Cada mutación lleva una `Idempotency-Key`, la misma en todos sus reintentos: un corte de red nunca crea dos cotizaciones ni registra dos pagos. Para atar la operación a tu propio identificador:

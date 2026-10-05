@@ -7,6 +7,7 @@ import { validateWebhookUrl } from '../ssrf';
 import { encryptRequiredSecret } from '../crypto-secret';
 import { getEntitlementContext } from '../org-entitlements';
 import { type ActionContext, type ActionOutcome, auditAction, done, isUuid } from './outcome';
+import { LATEST_API_VERSION } from '../api-versions';
 
 export function cleanWebhookEvents(v: unknown): string[] {
     if (!Array.isArray(v)) return [];
@@ -43,8 +44,8 @@ export async function createWebhookEndpoint(
             ctx.orgId,
             sql`select pg_advisory_xact_lock(hashtextextended(${'webhooks:' + ctx.orgId}, 0))`,
             sql`
-                insert into webhooks (org_id, url, eventos, secret, secret_enc, created_by_key)
-                select ${ctx.orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}, ${createdByKey}
+                insert into webhooks (org_id, url, eventos, secret, secret_enc, created_by_key, api_version)
+                select ${ctx.orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}, ${createdByKey}, ${LATEST_API_VERSION}
                  where (select count(*) from webhooks
                          where org_id = ${ctx.orgId} and (created_by_key is not null) = ${deIntegracion}) < ${limite}
                 returning id`,

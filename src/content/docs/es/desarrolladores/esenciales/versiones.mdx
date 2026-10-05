@@ -1,0 +1,38 @@
+---
+title: "Versiones de la API"
+seoTitle: "Versiones de la API de Cord"
+description: "Cómo Cord fija la versión de la API por llave y por webhook, y cómo cambiarla por petición con Cord-Version."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Versiones de la API</h1>
+  <p class="page-subtitle">Tu integración no se rompe cuando Cord cambia: cada llave y cada webhook se quedan en la versión con la que nacieron.</p>
+</header>
+
+## Cómo funciona
+
+Cada versión se nombra con una fecha (`2026-10-01`). Una llave y un endpoint de webhook quedan **fijados** a la versión vigente cuando se crean. Cord produce cada respuesta en su forma más nueva y la convierte, cambio por cambio, a la versión de tu integración.
+
+Toda respuesta trae el header `Cord-Version` con la versión con la que se respondió.
+
+## Elegir la versión por petición
+
+```bash
+curl https://cordhq.app/api/v1/cotizaciones \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Cord-Version: 2026-10-01"
+```
+
+El header gana sobre la versión fijada de la llave. Una versión que no existe responde `400 invalid_api_version`: Cord nunca cae en silencio a otra.
+
+Los SDK oficiales (`@flouviahq/node` y `@flouviahq/elements`) mandan la versión con la que se construyeron.
+
+## Qué es un cambio que rompe compatibilidad
+
+Nunca llega sin versión nueva: quitar o renombrar un campo, cambiar su tipo o su significado, o cambiar un código de error. Sí llegan sin versión nueva los cambios aditivos: campos nuevos en una respuesta, eventos nuevos, endpoints nuevos y parámetros opcionales. Tu integración debe ignorar campos que no conoce.
+
+## Versiones
+
+| Versión | Cambios |
+|---|---|
+| `2026-10-01` | Versión base: la forma de la API cuando se fijó el versionado. |

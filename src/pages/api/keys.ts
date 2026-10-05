@@ -12,6 +12,7 @@ import { apiKeyLimit, planLabel } from '../../lib/permissions';
 import { trackServer } from '../../lib/posthog-server';
 import { getEntitlementContext } from '../../lib/org-entitlements';
 import { isUuid } from '../../lib/actions/outcome';
+import { LATEST_API_VERSION } from '../../lib/api-versions';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -56,8 +57,8 @@ export const POST: APIRoute = async ({ request }) => {
             orgId,
             sql`select pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}, 0))`,
             sql`
-                insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by)
-                select ${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)}
+                insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by, api_version)
+                select ${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)}, ${LATEST_API_VERSION}
                  where (select count(*) from api_keys where org_id = ${orgId} and revoked_at is null and oauth_client_id is null) < ${limite}
                 returning id`,
         );

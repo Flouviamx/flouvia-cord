@@ -14,6 +14,7 @@ import { after } from './after';
 import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 import { recordDomainEvent } from './domain-events';
+import { BASELINE_API_VERSION, downgradeWebhookData, resolveApiVersion } from './api-versions';
 import { INTEGRATION_WEBHOOK_LIMIT, webhookLimit } from './entitlements';
 import { WEBHOOK_EVENT_TYPES, type CordWebhookEventType } from '../../packages/elements/src/contract/webhook-events';
 
@@ -231,7 +232,8 @@ async function deliverToSubscribers(orgId: string, evento: string, data: Record<
                   from webhooks
                  where org_id = ${orgId} and activo = true
             )
-            select id, eventos from ranked
+            select ranked.id, ranked.eventos, w.api_version
+              from ranked join webhooks w on w.id = ranked.id
              where (not integracion and position <= ${allowance})
                 or (integracion and position <= ${INTEGRATION_WEBHOOK_LIMIT})`);
     } catch { return; } // tabla aún no migrada → no-op
@@ -247,17 +249,24 @@ async function deliverToSubscribers(orgId: string, evento: string, data: Record<
     // event_id se copia a la columna webhook_events.event_id de cada
     // suscriptor (enqueueForSubscribers) — nunca diverge.
     const eventId = newEventId();
-    const body = JSON.stringify({
-        id: eventId,
-        event: evento,
-        created_at: new Date().toISOString(),
-        data,
-    });
+    const createdAt = new Date().toISOString();
+
+    // Cada endpoint recibe el payload en la versión de la API que fijó al
+    // crearse. Mismo event_id para todos: es el mismo evento en distinta forma.
+    const porVersion = new Map<string, string[]>();
+    for (const h of subs) {
+        const v = resolveApiVersion(null, h.api_version as string | null).ok ? (h.api_version as string | null) ?? BASELINE_API_VERSION : BASELINE_API_VERSION;
+        porVersion.set(v, [...(porVersion.get(v) ?? []), h.id as string]);
+    }
 
     // Encolar es DURABLE (se espera aquí — si esta invocación muere justo
     // después, el evento ya quedó a salvo en webhook_events). La entrega
     // inline es solo la optimización de latencia: nunca se espera, para no
     // demorar la operación de negocio que disparó el evento.
-    const ids = await enqueueForSubscribers(orgId, subs.map((h) => h.id as string), evento, body, eventId);
+    const ids: string[] = [];
+    for (const [version, hookIds] of porVersion) {
+        const body = JSON.stringify({ id: eventId, event: evento, created_at: createdAt, data: downgradeWebhookData(evento, data, version) });
+        ids.push(...await enqueueForSubscribers(orgId, hookIds, evento, body, eventId));
+    }
     if (ids.length) after(flushNow(orgId, ids));
 }

@@ -20,6 +20,7 @@ import { apiKeyLimit } from './permissions';
 import { runIdempotent } from './api-idempotency';
 import { isFirstPartyClient } from './oauth-core';
 import { decorateApiResponse, newRequestId, publishableKeyAllows } from './api-cors';
+import { resolveApiVersion, needsDowngrade, downgradeResponse } from './api-versions';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -36,6 +37,8 @@ export interface ApiAuth {
     keyId: string;
     /** Slug del cliente OAuth cuando la llave es un token de una app conectada. */
     oauthClient?: string | null;
+    /** Versión de la API fijada al crear la llave; null = la versión base. */
+    apiVersion?: string | null;
 }
 
 function jsonError(error: string, code: string, status: number): Response {
@@ -116,7 +119,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
                   from api_keys k
                  where k.revoked_at is null
             )
-            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at, k.expires_at,
+            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at, k.expires_at, k.api_version,
                    cord_effective_plan(o.id) as effective_plan,
                    k.active_rank, o.sandbox_of, o.embed_domains, c.slug as oauth_slug
               from ranked k
@@ -181,7 +184,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     // Marca de uso (best-effort: nunca debe romper la request).
     sql`update api_keys set last_used_at = now() where id = ${row.id}`.catch(() => {});
 
-    return { orgId, scope, mode, type, keyId: row.id as string, oauthClient: (row.oauth_slug as string | null) ?? null };
+    return { orgId, scope, mode, type, keyId: row.id as string, oauthClient: (row.oauth_slug as string | null) ?? null, apiVersion: (row.api_version as string | null) ?? null };
 }
 
 /**
@@ -204,23 +207,38 @@ export function withApiAuth(
 ): APIRoute {
     return async (ctx) => {
         const requestId = newRequestId();
-        const res = await runApiRoute(ctx, need, handler);
-        return decorateApiResponse(ctx.request, res, requestId);
+        const { res, version } = await runApiRoute(ctx, need, handler);
+        const shaped = version ? await applyApiVersion(ctx.request, res, version) : res;
+        return decorateApiResponse(ctx.request, shaped, requestId, version);
     };
+}
+
+// Los handlers producen la forma más nueva; aquí se convierte a la versión pedida.
+async function applyApiVersion(request: Request, res: Response, version: string): Promise<Response> {
+    if (!needsDowngrade(version) || res.status >= 400) return res;
+    if (!(res.headers.get('content-type') || '').includes('application/json')) return res;
+    const route = new URL(request.url).pathname.replace(/^\/api\/v1/, '') || '/';
+    const body = downgradeResponse(route, await res.json(), version);
+    const headers = new Headers(res.headers);
+    headers.delete('content-length');
+    return new Response(JSON.stringify(body), { status: res.status, headers });
 }
 
 async function runApiRoute(
     ctx: Parameters<APIRoute>[0],
     need: ApiScope,
     handler: (ctx: Parameters<APIRoute>[0], auth: ApiAuth) => Response | Promise<Response>,
-): Promise<Response> {
+): Promise<{ res: Response; version: string | null }> {
     const auth = await authApiKey(ctx.request, need);
-    if (auth instanceof Response) return auth;
+    if (auth instanceof Response) return { res: auth, version: null };
     if (auth.type === 'secret' && !auth.oauthClient && isBrowserRequest(ctx.request)) {
-        return jsonError('Una Secret Key no se usa desde un navegador. Llámala desde tu servidor y revoca esta llave: ya quedó expuesta.', 'secret_key_in_browser', 403);
+        return { res: jsonError('Una Secret Key no se usa desde un navegador. Llámala desde tu servidor y revoca esta llave: ya quedó expuesta.', 'secret_key_in_browser', 403), version: null };
     }
+    const resolved = resolveApiVersion(ctx.request.headers.get('cord-version'), auth.apiVersion);
+    if (!resolved.ok) return { res: jsonError(resolved.error, 'invalid_api_version', 400), version: null };
+    const version = resolved.version;
     const limited = await checkApiKeyRateLimit(auth);
-    if (limited) return limited;
+    if (limited) return { res: limited, version };
     const t0 = Date.now();
     const res = await runIdempotent(auth, ctx.request, async () => {
         const meteringError = await meterApiUsage(auth);
@@ -230,7 +248,7 @@ async function runApiRoute(
     });
     // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
     void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
-    return res;
+    return { res, version };
 }
 
 // Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar

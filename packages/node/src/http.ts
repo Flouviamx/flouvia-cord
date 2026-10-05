@@ -1,3 +1,4 @@
+import { CORD_API_VERSION } from '../../elements/src/contract/api-version.js';
 // Transporte HTTP del SDK de servidor: autenticación, idempotencia automática,
 // reintentos con backoff y Retry-After, timeouts y errores tipados con request id.
 
@@ -27,6 +28,8 @@ export interface CordOptions {
     /** Reintentos ante red caída, 409 de idempotencia en curso, 429 o 5xx. Default 2. */
     maxRetries?: number;
     fetch?: typeof fetch;
+    /** Versión de la API (Cord-Version). Default: la versión con la que se construyó este SDK. */
+    apiVersion?: string;
     /** Agrega tu app al User-Agent, útil para soporte. */
     appInfo?: { name: string; version?: string };
 }
@@ -58,6 +61,7 @@ export class HttpClient {
     private readonly maxRetries: number;
     private readonly doFetch: typeof fetch;
     private readonly userAgent: string;
+    readonly apiVersion: string;
 
     constructor(private readonly apiKey: string, opts: CordOptions = {}) {
         if (!apiKey || typeof apiKey !== 'string') throw new Error('[Cord] Falta la API key (sk_live_… o sk_test_…).');
@@ -66,6 +70,7 @@ export class HttpClient {
             throw new Error('[Cord] @flouviahq/node corre solo en tu servidor: una secret key en el navegador queda expuesta.');
         }
         this.mode = apiKey.startsWith('sk_test_') ? 'test' : 'live';
+        this.apiVersion = opts.apiVersion ?? CORD_API_VERSION;
         this.base = `${(opts.baseUrl ?? 'https://cordhq.app').replace(/\/+$/, '')}/api/v1`;
         this.timeoutMs = opts.timeoutMs ?? 30000;
         this.maxRetries = Math.max(0, Math.min(5, opts.maxRetries ?? 2));
@@ -82,6 +87,7 @@ export class HttpClient {
             Authorization: `Bearer ${this.apiKey}`,
             Accept: 'application/json',
             'User-Agent': this.userAgent,
+            'Cord-Version': this.apiVersion,
         };
         if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
         // Toda mutación lleva clave: un reintento nunca duplica una cotización, una factura ni un pago.

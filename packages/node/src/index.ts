@@ -44,6 +44,7 @@ export class Cord {
 
 export default Cord;
 export { CordError, newIdempotencyKey } from './http.js';
+export { CORD_API_VERSION } from '../../elements/src/contract/api-version.js';
 export type { CordOptions, RequestOptions, ApiResponse } from './http.js';
 export type { CreateQuoteParams, CreatedQuote, QuoteItemInput, OffsetPage, CursorPage } from './resources.js';
 export { constructEvent, signPayload, CordWebhookSignatureError } from './webhooks.js';

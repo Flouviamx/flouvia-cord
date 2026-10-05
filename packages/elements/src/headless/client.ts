@@ -5,6 +5,7 @@
 import { CordError } from '../api.js';
 import { resolveApiBase } from '../config.js';
 import type { CordElementsConfig } from '../contract/elements-config.js';
+import { CORD_API_VERSION } from '../contract/api-version.js';
 import type { CordProduct, CreateQuoteInput, CreateQuoteResponse } from '../types.js';
 
 export interface CordClientOptions {
@@ -76,7 +77,7 @@ export function createCordClient(opts: CordClientOptions): CordClient {
     let cachedConfig: { etag: string | null; value: CordElementsConfig } | null = null;
 
     async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown, extra: Record<string, string> = {}): Promise<{ status: number; data: T | null; etag: string | null }> {
-        const headers: Record<string, string> = { Accept: 'application/json', ...extra };
+        const headers: Record<string, string> = { Accept: 'application/json', 'Cord-Version': CORD_API_VERSION, ...extra };
         if (publishableKey) headers.Authorization = `Bearer ${publishableKey}`;
         if (body !== undefined) headers['Content-Type'] = 'application/json';
 
@@ -120,7 +121,7 @@ export function createCordClient(opts: CordClientOptions): CordClient {
         const form = new FormData();
         if (input.texto) form.set('texto', input.texto.slice(0, 4000));
         if (input.archivo) form.set('archivo', input.archivo);
-        const headers: Record<string, string> = { Accept: 'text/event-stream' };
+        const headers: Record<string, string> = { Accept: 'text/event-stream', 'Cord-Version': CORD_API_VERSION };
         if (publishableKey) headers.Authorization = `Bearer ${publishableKey}`;
         let res: Response;
         try {

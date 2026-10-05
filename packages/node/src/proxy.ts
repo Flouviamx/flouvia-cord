@@ -90,7 +90,7 @@ export function createElementsProxy(opts: ElementsProxyOptions): (request: Reque
         }
         const res = await doFetch(`${apiBase}/elements/ai-draft`, {
             method: 'POST',
-            headers: { Authorization: `Bearer ${opts.secretKey}`, Accept: 'text/event-stream' },
+            headers: { Authorization: `Bearer ${opts.secretKey}`, Accept: 'text/event-stream', 'Cord-Version': http.apiVersion },
             body: out,
             signal: request.signal,
         });

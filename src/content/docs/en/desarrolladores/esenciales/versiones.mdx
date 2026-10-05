@@ -1,0 +1,38 @@
+---
+title: "API Versions"
+seoTitle: "Cord API Versions"
+description: "How Cord pins the API version per key and per webhook, and how to change it per request with Cord-Version."
+---
+
+<header class="content-header">
+  <h1 class="page-title">API Versions</h1>
+  <p class="page-subtitle">Your integration doesn't break when Cord changes: each key and each webhook stays on the version it was created with.</p>
+</header>
+
+## How it works
+
+Each version is named by a date (`2026-10-01`). A key and a webhook endpoint are **pinned** to the current version when they are created. Cord produces every response in its newest shape and converts it, change by change, to your integration's version.
+
+Every response carries the `Cord-Version` header with the version it was answered with.
+
+## Choosing the version per request
+
+```bash
+curl https://cordhq.app/api/v1/cotizaciones \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Cord-Version: 2026-10-01"
+```
+
+The header wins over the key's pinned version. A version that doesn't exist responds `400 invalid_api_version`: Cord never silently falls back to another one.
+
+The official SDKs (`@flouviahq/node` and `@flouviahq/elements`) send the version they were built against.
+
+## What counts as a breaking change
+
+It never ships without a new version: removing or renaming a field, changing its type or meaning, or changing an error code. Additive changes ship without a new version: new response fields, new events, new endpoints and optional parameters. Your integration must ignore fields it doesn't know.
+
+## Versions
+
+| Version | Changes |
+|---|---|
+| `2026-10-01` | Baseline: the shape of the API when versioning was pinned. |

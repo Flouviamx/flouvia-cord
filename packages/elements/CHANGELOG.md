@@ -28,6 +28,7 @@ se separa en `@flouviahq/node`.
 - **Estado en vivo**: `controller.state`, la propiedad `state` y el evento `statechange` de `<cord-quote>`, `onStateChange` en React y el evento `state` en Vue. Eventos nuevos `cord:updated` y `cord:status_changed`; `cord:ready` trae estado, folio, total y divisa (solo con dominios permitidos).
 - **Doble clic seguro**: el Builder y `useCreateQuote` usan una sola clave de idempotencia por intento de envío.
 - `public/embed.js` y `./webflow` salen del mismo `src/loader.ts`; CI verifica que el archivo publicado coincide con el build.
+- Toda petición manda `Cord-Version: 2026-10-01` (`CORD_API_VERSION`): actualizar Cord no cambia la forma de las respuestas que lee el SDK.
 
 ### Security
 
