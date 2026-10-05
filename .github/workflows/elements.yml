@@ -61,6 +61,8 @@ jobs:
         run: npm run check-exports
       - name: public/embed.js matches the build
         run: npm run check-embed
+      - name: Bundle size budget
+        run: npm run check-size
       - name: Examples compile against the real SDK
         run: npx tsc -p examples/nextjs-app-router/tsconfig.json
       # Ambas herramientas están fijadas en devDependencies; npx usa esa versión.

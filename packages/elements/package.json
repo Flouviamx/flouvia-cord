@@ -118,8 +118,9 @@
     "build": "tsc -p tsconfig.json && node build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check-exports": "node scripts/check-exports.mjs",
-    "prepublishOnly": "npm run build && npm run check-exports && npm run check-embed && npx attw --pack . && npx publint",
-    "check-embed": "node scripts/sync-embed.mjs --check"
+    "prepublishOnly": "npm run build && npm run check-exports && npm run check-size && npm run check-embed && npx attw --pack . && npx publint",
+    "check-embed": "node scripts/sync-embed.mjs --check",
+    "check-size": "node scripts/size-budget.mjs"
   },
   "peerDependencies": {
     "framer": "*",
