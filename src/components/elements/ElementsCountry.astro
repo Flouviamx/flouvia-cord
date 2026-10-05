@@ -62,13 +62,13 @@ type Country = {
         | { kind: 'wallet'; note: string };
     pay: string;
     cfdi?: string;
-    profile: { currency: string; locale: string; tz: string };
+    profile: { currency: string; tax: string; locale: string; tz: string };
 };
 
 const COUNTRIES: Country[] = [
     {
         id: 'mx', code: 'MX', tab: tx('México', 'Mexico'), lang: 'es-MX',
-        org: 'Materiales del Valle', ini: 'MV', taxId: 'RFC', taxVal: 'MVA190312KT4',
+        org: 'Materiales del Valle', ini: 'MV', taxId: 'RFC', taxVal: 'MVA190312KT1',
         folio: 'COT-0151', client: 'Distribuidora El Zarco', status: 'Enviada',
         issuedLabel: 'Emitida', issued: '19 oct 2026', validLabel: 'Vigente hasta', valid: '2 nov 2026',
         th: ['Concepto', 'Cant.', 'Importe'],
@@ -91,7 +91,7 @@ const COUNTRIES: Country[] = [
             note: 'CLABE única para este cliente. El pago se concilia solo.',
         },
         pay: 'Pagar MXN $99,412.00', cfdi: 'Lista para CFDI 4.0',
-        profile: { currency: 'MXN', locale: 'es-MX', tz: 'America/Mexico_City' },
+        profile: { currency: 'MXN', tax: 'IVA', locale: 'es-MX', tz: 'America/Mexico_City' },
     },
     {
         id: 'us', code: 'US', tab: tx('Estados Unidos', 'United States'), lang: 'en-US',
@@ -110,7 +110,7 @@ const COUNTRIES: Country[] = [
         sel: 0,
         detail: { kind: 'card', number: '4242 4242 4242 4242', exp: '08 / 29', cvc: '•••', numberPh: 'Card number', expPh: 'Expiration' },
         pay: 'Pay USD $7,437.50',
-        profile: { currency: 'USD', locale: 'en-US', tz: 'America/Chicago' },
+        profile: { currency: 'USD', tax: 'Sales tax TX', locale: 'en-US', tz: 'America/Chicago' },
     },
     {
         id: 'es', code: 'ES', tab: tx('España', 'Spain'), lang: 'es-ES',
@@ -133,11 +133,11 @@ const COUNTRIES: Country[] = [
         sel: 0,
         detail: { kind: 'card', number: '4242 4242 4242 4242', exp: '08 / 29', cvc: '•••', numberPh: 'Número de tarjeta', expPh: 'Caducidad' },
         pay: 'Pagar 6.784,00 €',
-        profile: { currency: 'EUR', locale: 'es-ES', tz: 'Europe/Madrid' },
+        profile: { currency: 'EUR', tax: 'IVA · IRPF', locale: 'es-ES', tz: 'Europe/Madrid' },
     },
     {
         id: 'co', code: 'CO', tab: 'Colombia', lang: 'es-CO',
-        org: 'Ferretería Andina S.A.S.', ini: 'FA', taxId: 'NIT', taxVal: '901.482.367-5',
+        org: 'Ferretería Andina S.A.S.', ini: 'FA', taxId: 'NIT', taxVal: '901.482.367-3',
         folio: 'COT-0342', client: 'Constructora Altos del Río', status: 'Enviada',
         issuedLabel: 'Emitida', issued: '19/10/2026', validLabel: 'Válida hasta', valid: '2/11/2026',
         th: ['Concepto', 'Cant.', 'Importe'],
@@ -156,7 +156,7 @@ const COUNTRIES: Country[] = [
         sel: 0,
         detail: { kind: 'wallet', note: 'Continúas en Mercado Pago para completar el pago y vuelves a esta cotización con el comprobante.' },
         pay: 'Pagar con Mercado Pago',
-        profile: { currency: 'COP', locale: 'es-CO', tz: 'America/Bogota' },
+        profile: { currency: 'COP', tax: 'IVA · ReteFuente', locale: 'es-CO', tz: 'America/Bogota' },
     },
 ];
 
@@ -339,6 +339,7 @@ const ADAPTS = [
                     {COUNTRIES.map((c, i) => (
                         <span class:list={['ecx-pv', { on: i === 0 }]} data-pv>
                             <span><small>{tx('Divisa', 'Currency')}</small>{c.profile.currency}</span>
+                            <span><small>{tx('Impuesto', 'Tax')}</small>{c.profile.tax}</span>
                             <span><small>Locale</small>{c.profile.locale}</span>
                             <span><small>{tx('Zona', 'Timezone')}</small>{c.profile.tz}</span>
                         </span>
@@ -388,7 +389,7 @@ const ADAPTS = [
     .ecx-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 22px; background: #fcfdfe; border-bottom: 1px solid #eef0f3; }
     .ecx-bar-l { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
     .ecx-bar-l b { font-size: 0.84rem; font-weight: 600; color: #0a192f; white-space: nowrap; }
-    .ecx-bar-l span { font-size: 0.8rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-bar-l span { font-size: 0.8rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ecx-bar-l span::before { content: '·'; margin-right: 8px; color: #c3c8d1; }
     .ecx-bar-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .ecx-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border-radius: 999px; background: rgba(10,25,47,0.06); color: #0a192f; font-size: 0.72rem; font-weight: 600; }
@@ -399,26 +400,26 @@ const ADAPTS = [
     .ecx-logo { width: 36px; height: 36px; border-radius: 10px; background: #0d1b33; color: #fff; display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; flex-shrink: 0; }
     .ecx-org-id { min-width: 0; }
     .ecx-org-id b { display: block; font-size: 0.92rem; font-weight: 600; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ecx-org-id small { display: block; margin-top: 2px; font-size: 0.72rem; color: #8a93a2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ecx-org-id small { display: block; margin-top: 2px; font-size: 0.72rem; color: #6b7280; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ecx-org-id em { font-style: normal; font-weight: 600; color: #3b4658; }
     .ecx-date { margin-left: auto; text-align: right; flex-shrink: 0; }
-    .ecx-date small { display: block; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-date small { display: block; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; }
     .ecx-date .ecx-roll { font-size: 0.8rem; font-weight: 600; color: #3b4658; font-variant-numeric: tabular-nums; }
 
     .ecx-th, .ecx-tr { display: grid; grid-template-columns: minmax(0, 1fr) 52px 128px; gap: 10px; align-items: center; text-align: right; }
-    .ecx-th { padding: 12px 0 6px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-th { padding: 12px 0 6px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
     .ecx-th span:first-child { text-align: left; }
     .ecx-tr { padding: 10px 0; border-top: 1px solid #f1f2f5; font-size: 0.84rem; color: #5b6575; }
     .ecx-tr b { font-weight: 600; color: #0a192f; }
     .ecx-item { text-align: left; min-width: 0; }
     .ecx-item-n { display: block; font-weight: 500; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ecx-item-m { display: flex; overflow: hidden; align-items: center; gap: 7px; margin-top: 4px; font-size: 0.7rem; color: #8a93a2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ecx-item-m { display: flex; overflow: hidden; align-items: center; gap: 7px; margin-top: 4px; font-size: 0.7rem; color: #6b7280; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ecx-item-q { display: none; color: #3b4658; font-weight: 600; }
     .ecx-tag { padding: 1px 7px; border-radius: 999px; background: rgba(10,25,47,0.06); color: #3b4658; font-size: 0.64rem; font-weight: 600; }
     .ecx-num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
     .ecx-sum { display: grid; grid-template-columns: auto minmax(128px, auto); justify-content: end; column-gap: 24px; row-gap: 6px; padding-top: 12px; border-top: 1px solid #eef0f3; }
-    .ecx-sl { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: baseline; font-size: 0.82rem; color: #8a93a2; text-align: right; }
+    .ecx-sl { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: baseline; font-size: 0.82rem; color: #6b7280; text-align: right; }
     .ecx-sl > b, .ecx-tr > b { justify-self: end; }
     .ecx-sl b { font-weight: 600; color: #3b4658; }
     .ecx-sl.neg b { color: #8a5a12; }
@@ -427,7 +428,7 @@ const ADAPTS = [
     .ecx-total b { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.03em; color: #050505; }
 
     .ecx-paybox { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
-    .ecx-paylabel { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; }
+    .ecx-paylabel { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
     .ecx-methods { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 8px; }
     .ecx-m { position: relative; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px #e5e7eb; color: #5b6575; min-width: 0; }
     .ecx-m.on { color: #0a192f; box-shadow: inset 0 0 0 1.5px #0a192f, 0 6px 14px -10px rgba(10,25,47,0.45); }
@@ -436,7 +437,7 @@ const ADAPTS = [
     .ecx-m-ico svg { width: 17px; height: 17px; }
     .ecx-m-t { min-width: 0; }
     .ecx-m-t b { display: block; font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ecx-m-t small { display: block; font-size: 0.66rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ecx-m-t small { display: block; font-size: 0.66rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ecx-radio { margin-left: auto; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cfd4dc; flex-shrink: 0; }
     .ecx-m.on .ecx-radio { box-shadow: inset 0 0 0 4.5px #0a192f; }
 
@@ -446,12 +447,12 @@ const ADAPTS = [
     .ecx-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .ecx-field { position: relative; padding: 8px 12px; border-radius: 10px; background: #f5f5f7; min-width: 0; }
     .ecx-field-full { grid-column: 1 / -1; }
-    .ecx-field small { display: block; font-size: 0.64rem; color: #8a93a2; }
+    .ecx-field small { display: block; font-size: 0.64rem; color: #6b7280; }
     .ecx-field span { display: block; margin-top: 1px; font-size: 0.84rem; font-weight: 500; color: #0a192f; white-space: nowrap; }
-    .ecx-field svg { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; color: #8a93a2; }
+    .ecx-field svg { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; color: #6b7280; }
 
     .ecx-bank { border-radius: 10px; background: #f5f5f7; padding: 4px 12px 10px; }
-    .ecx-kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.78rem; color: #8a93a2; }
+    .ecx-kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.78rem; color: #6b7280; }
     .ecx-kv b { font-weight: 600; color: #0a192f; white-space: nowrap; }
     .ecx-bank p, .ecx-wallet p { margin: 8px 0 0; font-size: 0.72rem; line-height: 1.45; color: #5b6575; }
     .ecx-wallet { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; background: #f5f5f7; padding: 11px 12px; }
@@ -461,7 +462,7 @@ const ADAPTS = [
     .ecx-pay { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 0; border-radius: 12px; background: #0d1b33; color: #fff; font-size: 0.88rem; font-weight: 600; box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 10px 22px -12px rgba(10,25,47,0.6); }
     .ecx-pay svg { width: 15px; height: 15px; opacity: 0.85; }
 
-    .ecx-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 22px; border-top: 1px solid #eef0f3; background: #fcfdfe; font-size: 0.74rem; color: #8a93a2; min-height: 46px; }
+    .ecx-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 22px; border-top: 1px solid #eef0f3; background: #fcfdfe; font-size: 0.74rem; color: #6b7280; min-height: 46px; }
     .ecx-foot b { font-weight: 600; color: #3b4658; }
     .ecx-cfdi { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 7px; border-radius: 999px; background: rgba(16,185,129,0.12); color: #047857; font-size: 0.72rem; font-weight: 600; }
     .ecx-cfdi svg { width: 14px; height: 14px; }
@@ -471,13 +472,13 @@ const ADAPTS = [
     .ecx-roll > span { display: block; white-space: nowrap; }
 
     /* ── Perfil de la cuenta (debajo de la hoja) ── */
-    .ecx-profile { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 0 6px; font-size: 0.74rem; color: #8a93a2; min-width: 0; }
-    .ecx-profile-k { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aab6; white-space: nowrap; }
+    .ecx-profile { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 0 6px; font-size: 0.74rem; color: #6b7280; min-width: 0; }
+    .ecx-profile-k { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; white-space: nowrap; }
     .ecx-profile-v { display: grid; min-width: 0; }
     .ecx-pv { grid-area: 1 / 1; display: flex; flex-wrap: wrap; gap: 4px 16px; visibility: hidden; opacity: 0; }
     .ecx-pv.on { visibility: visible; opacity: 1; }
     .ecx-pv > span { color: #3b4658; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .ecx-pv small { font-size: inherit; font-weight: 400; color: #8a93a2; margin-right: 5px; }
+    .ecx-pv small { font-size: inherit; font-weight: 400; color: #6b7280; margin-right: 5px; }
 
     @media (max-width: 1080px) {
         .ecx { grid-template-columns: 1fr; gap: 2.8rem; }

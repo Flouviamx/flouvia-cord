@@ -1,13 +1,12 @@
 ---
-// Personalizador en vivo de la Appearance API de Cord Elements (estilo
-// "appearance customizer" de Stripe Elements). Todo lo que se muestra es API
-// real de @flouviahq/elements — packages/elements/README.md, "Appearance API
-// completa" — y de cómo la aplica src/pages/embed/[token].astro:
-//   theme: 'light' | 'dark' | 'auto'   (dark = #e5e7eb sobre #111827)
-//   variables: colorPrimary, colorText, colorBackground, fontFamily, borderRadius
-//   fonts: [{ cssSrc }]   solo fonts.googleapis.com o fonts.bunny.net
-// Ojo: el embed rechaza `;` dentro de cssSrc (isSafe), así que las URLs de
-// fuentes del snippet no llevan rangos de peso `wght@400;600`.
+// Personalizador en vivo de la Appearance API v2 de Cord Elements (estilo
+// "appearance customizer" de Stripe Elements). Cada control es API real del
+// validador único packages/elements/src/appearance.ts:
+//   theme: 'light' | 'dark' | 'auto' | 'flat'  (dark = DARK_PALETTE, flat = FLAT_PRESET)
+//   variables: colorPrimary, borderRadius, fontFamily (de las 22 de VARIABLES)
+//   rules: { Button: {...} } con propiedades de RULE_PROPERTIES
+//   layout: { compact, hideChat, hideNotes }
+//   fonts: [{ cssSrc }] solo fonts.googleapis.com o fonts.bunny.net
 // La vista previa NO descarga Fraunces ni JetBrains Mono (la CSP de la landing
 // puede bloquearlas): usa Georgia / ui-monospace como respaldo local, y el
 // snippet enseña el cssSrc real que el iframe sí cargaría.
@@ -21,7 +20,20 @@ const THEMES = [
     { id: 'light', label: tx('Claro', 'Light') },
     { id: 'dark', label: tx('Oscuro', 'Dark') },
     { id: 'auto', label: 'Auto' },
+    { id: 'flat', label: tx('Plano', 'Flat') },
 ] as const;
+
+const BUTTONS = [
+    { id: 'std', label: tx('Estándar', 'Default') },
+    { id: 'pill', label: tx('Píldora', 'Pill') },
+    { id: 'upper', label: tx('Mayúsculas', 'Uppercase') },
+];
+
+const LAYOUT = [
+    { id: 'compact', label: tx('Compacto', 'Compact') },
+    { id: 'hideChat', label: tx('Sin chat', 'No chat') },
+    { id: 'hideNotes', label: tx('Sin notas', 'No notes') },
+];
 
 const SWATCHES = [
     { hex: '#0D1B33', name: 'Navy' },
@@ -47,6 +59,20 @@ const ITEMS = [
 ];
 // 61,880 + 23,820 + 34,080 = 119,780.00 · IVA 16 % = 19,164.80 · total 138,944.80
 
+// Mismo objeto que buildLines() del script con los valores por defecto (sin JS se ve igual).
+const DEFAULT_CODE = [
+    '<CordCotizador',
+    '  token={token}',
+    '  appearance={{',
+    "    theme: 'light',",
+    '    variables: {',
+    "      colorPrimary: '#0D1B33',",
+    "      borderRadius: '8px',",
+    '    },',
+    '  }}',
+    '/>',
+];
+
 const i18n = {
     copy: tx('Copiar', 'Copy'),
     copied: tx('Copiado', 'Copied'),
@@ -61,8 +87,8 @@ const i18n = {
     <div class="eap-head">
         <h2 class="eap-h2 masked-title">{tx('Hazlo tuyo sin escribir CSS.', 'Make it yours without writing CSS.')}</h2>
         <p class="eap-lead reveal">{tx(
-            'La Appearance API recibe un tema, tus colores, las esquinas y tu tipografía. Cord los aplica dentro del iframe, así la cotización se ve como parte de tu sitio sin tocar una sola hoja de estilos.',
-            'The Appearance API takes a theme, your colors, corner radius and typeface. Cord applies them inside the iframe, so the quote looks native to your site without touching a single stylesheet.'
+            'Un tema, 22 variables, reglas por componente y opciones de diseño. Cord valida cada valor en su servidor, sin url() ni !important, y lo aplica dentro del iframe: la cotización se ve como parte de tu sitio sin tocar una sola hoja de estilos.',
+            'One theme, 22 variables, per-component rules and layout options. Cord validates every value on its server, with no url() and no !important, and applies it inside the iframe: the quote looks native to your site without touching a single stylesheet.'
         )}</p>
     </div>
 
@@ -85,6 +111,9 @@ const i18n = {
                             )}
                             {t.id === 'auto' && (
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="8.4" /><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" fill-opacity="0.22" stroke="none" /><path d="M12 3.6v16.8" /></svg>
+                            )}
+                            {t.id === 'flat' && (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2.5" fill="currentColor" fill-opacity="0.16" /><path d="M4 9.5h16" /></svg>
                             )}
                             <span>{t.label}</span>
                         </button>
@@ -135,6 +164,36 @@ const i18n = {
                         <button type="button" class="eap-opt eap-opt-font" data-k="font" data-v={f.id} data-stack={f.stack} aria-pressed={i === 0 ? 'true' : 'false'}>
                             <span class="eap-aa" style={`font-family:${f.stack}`} aria-hidden="true">Aa</span>
                             <span class="eap-opt-t">{f.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div class="eap-g" role="group" aria-labelledby="eap-l-btn">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-btn">{tx('Botón', 'Button')}</span>
+                    <code class="eap-g-k">rules.Button</code>
+                </div>
+                <div class="eap-opts eap-opts-3">
+                    {BUTTONS.map((b, i) => (
+                        <button type="button" class="eap-opt" data-k="button" data-v={b.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+                            <span class:list={['eap-btnico', `eap-btnico-${b.id}`]} aria-hidden="true">{b.id === 'upper' ? 'AB' : ''}</span>
+                            <span class="eap-opt-t">{b.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div class="eap-g" role="group" aria-labelledby="eap-l-layout">
+                <div class="eap-g-top">
+                    <span class="eap-g-l" id="eap-l-layout">{tx('Diseño', 'Layout')}</span>
+                    <code class="eap-g-k">layout</code>
+                </div>
+                <div class="eap-opts eap-opts-3">
+                    {LAYOUT.map((o) => (
+                        <button type="button" class="eap-opt eap-tog" data-t={o.id} aria-pressed="false">
+                            <span class="eap-tog-box" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 8.4 2.6 2.5L12 5.4" /></svg></span>
+                            <span class="eap-opt-t">{o.label}</span>
                         </button>
                     ))}
                 </div>
@@ -194,6 +253,11 @@ const i18n = {
                         <div class="eap-q-sum-t"><dt>Total</dt><dd class="editorial">MXN $138,944.80</dd></div>
                     </dl>
 
+                    <div class="eap-q-notes">
+                        <span class="eap-q-notes-l">{tx('Notas', 'Notes')}</span>
+                        <p>{tx('Flete incluido a obra en Querétaro. Entrega de 3 a 5 días hábiles a partir del anticipo.', 'Freight to the Querétaro job site included. Delivery in 3 to 5 business days after the deposit.')}</p>
+                    </div>
+
                     <div class="eap-q-act">
                         <span class="eap-q-btn eap-q-btn-p">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 19 6v5.4c0 4.3-3 7.8-7 9.4-4-1.6-7-5.1-7-9.4V6l7-2.8Z" fill="currentColor" fill-opacity="0.2" /><path d="m8.8 12 2.2 2.2 4.2-4.4" /></svg>
@@ -209,6 +273,25 @@ const i18n = {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" fill="currentColor" fill-opacity="0.15" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>
                         {tx('Firma con validez legal · Pago seguro con Cord', 'Legally binding signature · Secure payment by Cord')}
                     </p>
+
+                    <div class="eap-q-chat">
+                        <div class="eap-q-chat-h">
+                            <span>{tx('Mensajes', 'Messages')}</span>
+                            <small>2</small>
+                        </div>
+                        <div class="eap-q-msg is-mine">
+                            <span class="eap-q-who">{tx('Tú', 'You')} · 10:42</span>
+                            <p>{tx('¿Pueden entregar el jueves en obra?', 'Can you deliver to the job site on Thursday?')}</p>
+                        </div>
+                        <div class="eap-q-msg">
+                            <span class="eap-q-who">Materiales del Valle · 10:44</span>
+                            <p>{tx('Sí, el jueves antes de las 10:00. El flete ya va incluido.', 'Yes, Thursday before 10:00. Freight is already included.')}</p>
+                        </div>
+                        <div class="eap-q-input">
+                            <span>{tx('Escribe un mensaje', 'Write a message')}</span>
+                            <i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12 19.5 5l-4.2 14-3.6-5.4z" fill="currentColor" fill-opacity="0.18" /><path d="m11.7 13.6 7.8-8.6" /></svg></i>
+                        </div>
+                    </div>
                 </div>
             </article>
         </div>
@@ -228,24 +311,31 @@ const i18n = {
                     <span class="eap-copy-t" data-copy-t>{tx('Copiar', 'Copy')}</span>
                 </button>
             </div>
-            <pre class="eap-pre" data-pre tabindex="0" aria-label={tx('Código de ejemplo en React', 'React sample code')}><code data-code><span class="eap-ln"><span class="eap-n">1</span><span class="eap-lc"><span class="t-tag">&lt;CordCotizador</span> <span class="t-attr">token</span><span class="t-p">=</span><span class="t-p">{'{'}</span>token<span class="t-p">{'}'}</span> <span class="t-tag">/&gt;</span></span></span></code></pre>
+            <pre class="eap-pre" data-pre tabindex="0" aria-label={tx('Código de ejemplo en React', 'React sample code')}><code data-code>{DEFAULT_CODE.map((ln, i) => <span class="eap-ln"><span class="eap-n">{i + 1}</span><span class="eap-lc">{ln}</span></span>)}</code></pre>
         </div>
     </div>
 </section>
 
 <script>
-    type Theme = 'light' | 'dark' | 'auto';
+    type Theme = 'light' | 'dark' | 'auto' | 'flat';
     type FontId = 'inter' | 'serif' | 'mono';
-    interface State { theme: Theme; primary: string; radius: string; font: FontId }
+    type ButtonId = 'std' | 'pill' | 'upper';
+    interface State {
+        theme: Theme; primary: string; radius: string; font: FontId; button: ButtonId;
+        compact: boolean; hideChat: boolean; hideNotes: boolean;
+    }
+    type Choice = 'theme' | 'primary' | 'radius' | 'font' | 'button';
+    type Toggle = 'compact' | 'hideChat' | 'hideNotes';
 
-    const DEF: State = { theme: 'light', primary: '#0D1B33', radius: '8px', font: 'inter' };
-    // fontFamily y cssSrc tal como los acepta el embed: host en la allowlist
-    // (fonts.googleapis.com) y sin `;` (isSafe lo rechaza).
+    const DEF: State = { theme: 'light', primary: '#0D1B33', radius: '8px', font: 'inter', button: 'std', compact: false, hideChat: false, hideNotes: false };
+    // fontFamily y cssSrc tal como los acepta el validador: host en la allowlist
+    // (fonts.googleapis.com o fonts.bunny.net), ruta /css o /css2, sin comillas.
     const FONT_API: Record<FontId, { family: string; css: string } | null> = {
         inter: null,
         serif: { family: 'Fraunces', css: 'https://fonts.googleapis.com/css2?family=Fraunces' },
         mono: { family: 'JetBrains Mono', css: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono' },
     };
+    const TOGGLES: Toggle[] = ['compact', 'hideChat', 'hideNotes'];
 
     const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const TOK = /('[^']*')|(<\/?[A-Za-z][\w.]*|\/>)|([A-Za-z_$][\w$]*)(?==)|([A-Za-z_$][\w$]*)(?=:)|([{}\[\](),=:])/g;
@@ -261,22 +351,19 @@ const i18n = {
         return out + esc(line.slice(last));
     };
 
+    // El objeto completo siempre a la vista (como el personalizador de Stripe):
+    // tema y variables base fijas; fuente, reglas y layout aparecen al usarlos.
     function buildLines(s: State): string[] {
-        const vars: string[] = [];
-        if (s.primary !== DEF.primary) vars.push(`colorPrimary: '${s.primary}',`);
-        if (s.radius !== DEF.radius) vars.push(`borderRadius: '${s.radius}',`);
         const font = FONT_API[s.font];
-        if (font) vars.push(`fontFamily: '${font.family}',`);
-        const themeDiff = s.theme !== DEF.theme;
-        if (!themeDiff && !vars.length) return ['<CordCotizador token={token} />'];
-        const out = ['<CordCotizador', '  token={token}', '  appearance={{'];
-        if (themeDiff) out.push(`    theme: '${s.theme}',`);
-        if (vars.length) {
-            out.push('    variables: {');
-            vars.forEach((v) => out.push('      ' + v));
-            out.push('    },');
-        }
+        const layout = TOGGLES.filter((k) => s[k]);
+        const out = ['<CordCotizador', '  token={token}', '  appearance={{', `    theme: '${s.theme}',`, '    variables: {',
+            `      colorPrimary: '${s.primary}',`, `      borderRadius: '${s.radius}',`];
+        if (font) out.push(`      fontFamily: '${font.family}',`);
+        out.push('    },');
         if (font) out.push(`    fonts: [{ cssSrc: '${font.css}' }],`);
+        if (s.button === 'pill') out.push('    rules: {', "      Button: { 'border-radius': '999px' },", '    },');
+        if (s.button === 'upper') out.push('    rules: {', '      Button: {', "        'text-transform': 'uppercase',", "        'letter-spacing': '0.06em',", '      },', '    },');
+        if (layout.length) out.push(`    layout: { ${layout.map((k) => `${k}: true`).join(', ')} },`);
         out.push('  }}', '/>');
         return out;
     }
@@ -294,6 +381,7 @@ const i18n = {
         const copyBtn = root.querySelector<HTMLButtonElement>('[data-copy]')!;
         const copyT = root.querySelector<HTMLElement>('[data-copy-t]')!;
         const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-k]'));
+        const toggles = Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-t]'));
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -322,6 +410,9 @@ const i18n = {
             const mode = dark ? 'dark' : 'light';
             q.dataset.mode = mode;
             stage.dataset.mode = mode;
+            q.toggleAttribute('data-flat', state.theme === 'flat');
+            q.dataset.button = state.button;
+            TOGGLES.forEach((k) => q.toggleAttribute(`data-${k.toLowerCase()}`, state[k]));
             q.style.setProperty('--ap-primary', state.primary);
             q.style.setProperty('--ap-radius', state.radius);
             const fontBtn = buttons.find((b) => b.dataset.k === 'font' && b.dataset.v === state.font);
@@ -336,12 +427,13 @@ const i18n = {
             }
 
             buttons.forEach((b) => {
-                const k = b.dataset.k as 'theme' | 'primary' | 'radius' | 'font';
+                const k = b.dataset.k as Choice;
                 b.setAttribute('aria-pressed', String(state[k] === b.dataset.v));
             });
+            toggles.forEach((b) => b.setAttribute('aria-pressed', String(state[b.dataset.t as Toggle])));
             placePill();
 
-            if (changed === 'font' && !reduce && qIn.animate) {
+            if ((changed === 'font' || TOGGLES.includes(changed as Toggle)) && !reduce && qIn.animate) {
                 qIn.animate(
                     [{ opacity: 0.25, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0px)' }],
                     { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
@@ -352,18 +444,25 @@ const i18n = {
 
         buttons.forEach((b) => {
             b.addEventListener('click', () => {
-                const k = b.dataset.k as keyof State;
+                const k = b.dataset.k as Choice;
                 const v = b.dataset.v!;
                 if (state[k] === v) return;
                 (state as unknown as Record<string, string>)[k] = v;
                 apply(k);
             });
         });
+        toggles.forEach((b) => {
+            b.addEventListener('click', () => {
+                const k = b.dataset.t as Toggle;
+                state[k] = !state[k];
+                apply(k);
+            });
+        });
 
         root.querySelector('[data-reset]')?.addEventListener('click', () => {
-            const fontChanged = state.font !== DEF.font;
+            const reflow = state.font !== DEF.font || TOGGLES.some((k) => state[k]);
             Object.assign(state, DEF);
-            apply(fontChanged ? 'font' : 'theme');
+            apply(reflow ? 'font' : 'theme');
         });
 
         mq.addEventListener?.('change', () => { if (state.theme === 'auto') apply(); });
@@ -437,7 +536,7 @@ const i18n = {
     button:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
 
     /* Segmented */
-    .eap-seg { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; border-radius: 12px; background: #f5f5f7; isolation: isolate; }
+    .eap-seg { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); padding: 3px; border-radius: 12px; background: #f5f5f7; isolation: isolate; }
     .eap-seg-b {
         position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
         min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; cursor: pointer;
@@ -481,6 +580,14 @@ const i18n = {
     .eap-corner { width: 14px; height: 14px; border-top: 2px solid currentColor; border-left: 2px solid currentColor; opacity: 0.85; }
     .eap-aa { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1; }
 
+    .eap-btnico { display: inline-grid; place-items: center; width: 24px; height: 13px; border-radius: 4px; background: currentColor; color: inherit; font-size: 6.5px; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
+    .eap-btnico-upper { color: #fff; background: #5b6575; }
+    .eap-opt[aria-pressed="true"] .eap-btnico-upper { background: #0a192f; }
+    .eap-btnico-pill { border-radius: 99px; }
+    .eap-tog-box { display: grid; place-items: center; width: 15px; height: 15px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.28); color: transparent; flex-shrink: 0; transition: background 0.2s, box-shadow 0.2s, color 0.2s; }
+    .eap-tog-box svg { width: 11px; height: 11px; }
+    .eap-tog[aria-pressed="true"] .eap-tog-box { background: #0a192f; box-shadow: none; color: #fff; }
+
     .eap-reset {
         align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin-top: 0.85rem; min-height: 32px; padding: 0 2px;
         border: 0; background: none; cursor: pointer; font: 600 0.78rem var(--font-sans, Inter, sans-serif); color: #6b7383; transition: color 0.2s;
@@ -510,19 +617,21 @@ const i18n = {
 
     /* ── Cotización (tokens --ap-*) ── */
     .eap-q {
-        --ap-bg: #ffffff; --ap-text: #0a192f; --ap-muted: #6b7383; --ap-line: rgba(10,25,47,0.08); --ap-soft: #f5f5f7;
+        --ap-bg: #ffffff; --ap-text: #0a192f; --ap-muted: #6b7280; --ap-line: rgba(10,25,47,0.08); --ap-soft: #f5f5f7;
         position: relative; width: 100%; max-width: 450px;
         background: var(--ap-bg); color: var(--ap-text); font-family: var(--ap-font);
         border-radius: calc(var(--ap-radius) * 1.5);
         box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -22px rgba(10,25,47,0.3), inset 0 0 0 1px rgba(10,25,47,0.06);
         transition: background-color 0.5s ease, color 0.5s ease, border-radius 0.5s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)), box-shadow 0.5s;
     }
-    /* Mismos valores que DARK_DEFAULTS de /embed/[token]: #e5e7eb sobre #111827 */
+    /* Mismos valores que DARK_PALETTE de packages/elements/src/appearance.ts */
     .eap-q[data-mode="dark"] {
-        --ap-bg: #111827; --ap-text: #e5e7eb; --ap-muted: #9ca3af; --ap-line: rgba(255,255,255,0.08); --ap-soft: rgba(255,255,255,0.05);
+        --ap-bg: #111827; --ap-text: #f3f4f6; --ap-muted: #d1d5db; --ap-line: rgba(255,255,255,0.12); --ap-soft: #1f2937;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 30px 60px -22px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.07);
     }
-    .eap-q-in { padding: 1.35rem 1.4rem 1.1rem; }
+    /* FLAT_PRESET: sin sombra de tarjeta y borde hairline */
+    .eap-q[data-flat] { box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); }
+    .eap-q-in { padding: 1.35rem 1.4rem 1.1rem; transition: padding 0.4s var(--ease-spring, cubic-bezier(0.22,1,0.36,1)); }
     .eap-q .editorial { font-family: var(--ap-font); font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.02em; }
 
     .eap-q-head { display: flex; align-items: center; gap: 11px; }
@@ -573,6 +682,34 @@ const i18n = {
     .eap-q-btn-p { background: var(--ap-primary); color: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.15), 0 10px 22px -12px var(--ap-primary); }
     .eap-q[data-mode="dark"] .eap-q-btn-p { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 10px 22px -12px rgba(0,0,0,0.7); }
     .eap-q-btn-s { background: transparent; color: var(--ap-text); box-shadow: inset 0 0 0 1px var(--ap-line), inset 0 0 0 40px var(--ap-soft); }
+
+    .eap-q[data-button="pill"] .eap-q-btn-p { border-radius: 999px; }
+    .eap-q[data-button="upper"] .eap-q-btn-p { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.74rem; }
+
+    .eap-q-notes { margin: 0 0 1rem; padding: 0.7rem 0.8rem; border-radius: var(--ap-radius); background: var(--ap-soft); transition: background-color 0.5s, border-radius 0.5s; }
+    .eap-q-notes-l { display: block; margin-bottom: 3px; font-size: 0.62rem; font-weight: 600; color: var(--ap-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .eap-q-notes p { margin: 0; font-size: 0.72rem; line-height: 1.5; }
+
+    .eap-q-chat { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--ap-line); display: flex; flex-direction: column; gap: 8px; }
+    .eap-q-chat-h { display: flex; align-items: center; gap: 7px; font-size: 0.74rem; font-weight: 650; }
+    .eap-q-chat-h small { padding: 0 6px; border-radius: 99px; background: var(--ap-soft); color: var(--ap-muted); font-size: 0.62rem; font-weight: 600; line-height: 1.5; }
+    .eap-q-msg { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; max-width: 82%; }
+    .eap-q-msg.is-mine { align-self: flex-end; align-items: flex-end; }
+    .eap-q-who { font-size: 0.6rem; color: var(--ap-muted); }
+    .eap-q-msg p { margin: 0; padding: 0.5rem 0.7rem; border-radius: calc(var(--ap-radius) * 1.4); background: var(--ap-soft); font-size: 0.72rem; line-height: 1.45; transition: background-color 0.45s, border-radius 0.5s; }
+    .eap-q-msg.is-mine p { background: var(--ap-primary); color: #fff; }
+    .eap-q-input { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; padding: 0 6px 0 12px; border-radius: var(--ap-radius); box-shadow: inset 0 0 0 1px var(--ap-line); font-size: 0.7rem; color: var(--ap-muted); }
+    .eap-q-input i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: calc(var(--ap-radius) * 0.75); background: var(--ap-primary); color: #fff; }
+    .eap-q-input svg { width: 13px; height: 13px; }
+
+    /* layout */
+    .eap-q[data-compact] .eap-q-in { padding: 1rem 1.05rem 0.85rem; }
+    .eap-q[data-compact] .eap-q-due { margin: 0.8rem 0 0.7rem; }
+    .eap-q[data-compact] .eap-q-tr { padding: 0.4rem 0; }
+    .eap-q[data-compact] .eap-q-sum { margin: 0.5rem 0 0.75rem; }
+    .eap-q[data-compact] .eap-q-btn { min-height: 34px; }
+    .eap-q[data-compact] .eap-q-notes { margin-bottom: 0.75rem; padding: 0.5rem 0.7rem; }
+    .eap-q[data-hidechat] .eap-q-chat, .eap-q[data-hidenotes] .eap-q-notes { display: none; }
 
     .eap-q-foot { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0.85rem 0 0; font-size: 0.64rem; color: var(--ap-muted); transition: color 0.5s; }
     .eap-q-foot svg { width: 12px; height: 12px; flex-shrink: 0; }
@@ -646,7 +783,12 @@ const i18n = {
         .eap-q-tr > span:nth-child(n+2) { padding-top: 1px; }
         .eap-sw { gap: 0; }
         .eap-pre code { font-size: 0.72rem; }
-        .eap-pre { min-height: calc(12 * 1.85 * 0.72rem + 1.7rem); }
+        .eap-pre { min-height: calc(11 * 1.85 * 0.72rem + 1.7rem); }
+    }
+    @media (max-width: 480px) {
+        .eap-btnico { display: none; }
+        .eap-opt { gap: 6px; padding: 0 6px; font-size: 0.74rem; white-space: nowrap; }
+        .eap-tog-box { width: 13px; height: 13px; }
     }
     @media (max-width: 400px) {
         .eap-seg-b span { font-size: 0.74rem; }

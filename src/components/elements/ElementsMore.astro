@@ -1,16 +1,17 @@
 ---
 // "Conoce más de Elements." — carrusel de tarjetas grandes (patrón del
 // carrusel homónimo de stripe.com/payments/elements). Cada tarjeta es una
-// calca de una pantalla real hecha CON el SDK, y cada nombre que aparece en
-// los mockups existe en packages/elements/src:
-//   CordBuilder / onQuoteCreated (react.tsx), CordAPI + webhooks.constructEvent
-//   y la firma X-Cord-Signature-V1 (server.ts), FramerCordCotizador con sus
-//   controles Token / Base URL y su placeholder (framer.tsx), data-cord-token
-//   (webflow.ts), useCordCatalog + GET /productos con costo/margen ocultos
-//   (context.ts), CordError y sus códigos (api.ts), <cord-cotizador> y el
-//   evento `approved` sin prefijo (element.ts / README).
-// El HTML es el ESTADO FINAL de cada micro-historia: con reduced-motion (o sin
-// JS) se ve completo y correcto. GSAP solo anima encima y pausa fuera de vista.
+// calca de una pantalla real hecha CON el SDK 2.0, y cada nombre que aparece
+// existe en packages/ (verifícalo ahí antes de editar):
+//   CordBuilder + AiDrop/aiSuggested (react.tsx, context.ts), <cord-invoice> y su
+//   evento paid (element.ts, src/pages/embed/i/[token].astro), <cord-fiscal-form>
+//   (fiscal-element.ts, fiscal/sat.ts, fiscal/messages.ts), Cord.webhooks.
+//   constructEvent (packages/node) y cord listen (packages/cli), la barra de
+//   depuración (debug.ts), FramerCordCotizador (framer.tsx), data-cord-token
+//   (loader.ts), useCordCatalog, CordError y sus códigos (api.ts), <cord-quote>
+//   y el evento approved con signed_by (types.ts).
+// El HTML es el ESTADO FINAL (o el estado completo) de cada micro-historia: con
+// reduced-motion o sin JS se ve correcto. GSAP solo anima encima y pausa fuera de vista.
 interface Props {
     /** Copy en inglés. Por defecto, español. */
     isEn?: boolean;
@@ -25,9 +26,9 @@ const money = (n: number) => '$' + n.toLocaleString('en-US', { minimumFractionDi
 
 // ── 1. CordBuilder: estado final (cemento en 360) ──
 const B_ROWS = [
-    { k: 'qty', n: tx('Cemento gris 50 kg', 'Gray cement 50 kg'), sku: 'CEM-50', p: 182, q: 360 },
-    { k: '', n: tx('Varilla corrugada 3/8"', 'Rebar 3/8"'), sku: 'VAR-38', p: 198.5, q: 120 },
-    { k: '', n: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), sku: 'BLK-15', p: 14.2, q: 600 },
+    { k: 'qty', n: tx('Cemento gris 50 kg', 'Gray cement 50 kg'), sku: 'CEM-50', p: 182, q: 360, ai: false },
+    { k: '', n: tx('Varilla corrugada 3/8"', 'Rebar 3/8"'), sku: 'VAR-38', p: 198.5, q: 120, ai: true },
+    { k: '', n: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), sku: 'BLK-15', p: 14.2, q: 600, ai: true },
 ];
 const bSub = B_ROWS.reduce((s, r) => s + r.p * r.q, 0);
 const bIva = Math.round(bSub * 0.16 * 100) / 100;
@@ -40,18 +41,18 @@ const HOOKS = [
     { t: '10:42:07', s: 200, e: 'quote.viewed', id: 'evt_9fK2mQ', ms: '38 ms' },
     { t: '10:44:51', s: 200, e: 'quote.approved', id: 'evt_9fK7xR', ms: '41 ms' },
     { t: '10:45:03', s: 200, e: 'payment.partial', id: 'evt_9fL1cW', ms: '44 ms' },
-    { t: '10:47:30', s: 400, e: 'quote.approved', id: tx('timestamp fuera de tolerancia', 'timestamp outside tolerance'), ms: '3 ms' },
+    { t: '10:47:30', s: 400, e: 'quote.approved', id: 'timestamp_out_of_tolerance', ms: '3 ms' },
     { t: '10:51:18', s: 200, e: 'quote.paid', id: 'evt_9fM4dT', ms: '36 ms' },
 ];
 const HOOK_CODE = [
-    `<i class="k">import</i> { CordAPI } <i class="k">from</i> <i class="s">'@flouviahq/elements/server'</i>;`,
+    `<i class="k">import</i> { Cord } <i class="k">from</i> <i class="s">'@flouviahq/node'</i>;`,
     ``,
-    `<i class="k">const</i> cord = <i class="k">new</i> <i class="f">CordAPI</i>(process.env.CORD_SECRET_KEY);`,
+    `<i class="k">const</i> cord = <i class="k">new</i> <i class="f">Cord</i>(process.env.CORD_SECRET_KEY!);`,
     `<i class="k">const</i> secret = process.env.CORD_WEBHOOK_SECRET!;`,
     ``,
     `<i class="k">export async function</i> <i class="f">POST</i>(req: Request) {`,
     `  <i class="k">const</i> body = <i class="k">await</i> req.<i class="f">text</i>();`,
-    `  <i class="k">const</i> event = cord.webhooks.<i class="f">constructEvent</i>(body, req.headers, secret);`,
+    `  <i class="k">const</i> event = <i class="k">await</i> cord.webhooks.<i class="f">constructEvent</i>(body, req.headers, secret);`,
     `  <i class="c">${tx('// firma V1 + timestamp: si no cuadra, lanza', '// V1 signature + timestamp: throws if it does not match')}</i>`,
 ];
 
@@ -67,10 +68,10 @@ const PRODUCTS = [
 
 // ── 5. CordError: el caso activo por defecto es rate_limited ──
 const ERR_CASES = [
-    { c: 'invalid_key', h: tx('avisarSoporte(err)', 'notifySupport(err)'), st: 401, m: tx('No pudimos conectar el cotizador.', "We couldn't connect the quote builder.") },
-    { c: 'unauthorized_origin', h: tx('avisarSoporte(err)', 'notifySupport(err)'), st: 403, m: tx('Este sitio todavía no está autorizado para cotizar.', 'This site is not authorized to quote yet.') },
-    { c: 'rate_limited', h: tx('reintentarEn(5)', 'retryIn(5)'), st: 429, m: tx('Demasiadas solicitudes. Reintentamos en 5 s.', 'Too many requests. Retrying in 5 s.') },
-    { c: 'clients_require_proxy', h: tx('usarProxy()', 'useProxy()'), st: 403, m: tx('Tus clientes se cargan desde tu servidor.', 'Your clients load from your server.') },
+    { c: 'origin_allowlist_required', h: tx('avisarSoporte(err)', 'notifySupport(err)'), st: 403, m: tx('Falta autorizar este dominio en Cord.', 'This domain is not allowed in Cord yet.'), r: 'req_4Hn8sQ2v' },
+    { c: 'unauthorized_origin', h: tx('avisarSoporte(err)', 'notifySupport(err)'), st: 403, m: tx('Este sitio todavía no está autorizado para cotizar.', 'This site is not authorized to quote yet.'), r: 'req_7Lp2xR9c' },
+    { c: 'rate_limited', h: tx('reintentarEn(5)', 'retryIn(5)'), st: 429, m: tx('Demasiadas solicitudes. Reintentamos en 5 s.', 'Too many requests. Retrying in 5 s.'), r: 'req_9xK2mP4t' },
+    { c: 'clients_require_proxy', h: tx('usarProxy()', 'useProxy()'), st: 403, m: tx('Tus clientes se cargan desde tu servidor.', 'Your clients load from your server.'), r: 'req_2Wd6tY8b' },
 ];
 const ERR_ON = 2;
 
@@ -79,17 +80,32 @@ const CARDS = [
     {
         id: 'builder',
         t: tx('Cotizaciones desde tu propio sitio', 'Quotes from your own site'),
-        d: tx('<CordBuilder> trae el formulario completo —cliente, partidas, totales— dentro de tu portal. Al crear, onQuoteCreated te entrega el folio y el link público.', '<CordBuilder> ships the full form —client, line items, totals— inside your portal. On create, onQuoteCreated hands you the folio and the public link.'),
+        d: tx('<CordBuilder> trae el formulario completo dentro de tu portal. Las divisas y el impuesto de cada línea salen de tu cuenta, y la IA llena las partidas desde un pedido escrito o una foto. onQuoteCreated te entrega el folio y el link.', '<CordBuilder> ships the full form inside your portal. Currencies and the tax of each line come from your account, and AI fills the line items from a written order or a photo. onQuoteCreated hands you the folio and the link.'),
+    },
+    {
+        id: 'invoice',
+        t: tx('La factura, también embebida', 'The invoice, embedded too'),
+        d: tx('<cord-invoice> muestra el saldo, el estado, las partidas y el PDF. El pago se abre en una ventana de Cord, nunca dentro del iframe, y tu página recibe paid cuando el saldo llega a cero.', '<cord-invoice> shows the balance, status, line items and PDF. Payment opens in a Cord window, never inside the iframe, and your page receives paid when the balance reaches zero.'),
+    },
+    {
+        id: 'fiscal',
+        t: tx('Datos fiscales que sí se pueden timbrar', 'Tax details that will actually stamp'),
+        d: tx('<cord-fiscal-form> valida el RFC con su dígito verificador y filtra régimen y uso de CFDI según el tipo de persona. Es un campo nativo de tu <form>: bloquea el envío mientras haya errores. También NIF, NIE o CIF en España y EIN en Estados Unidos.', '<cord-fiscal-form> checks the RFC against its SAT check digit and filters tax regime and CFDI use by taxpayer type. It is a native field of your <form>: it blocks submission while there are errors. Also NIF, NIE or CIF in Spain and EIN in the United States.'),
     },
     {
         id: 'webhooks',
         t: tx('Webhooks verificados en tu backend', 'Verified webhooks on your backend'),
-        d: tx('constructEvent valida la firma X-Cord-Signature-V1 y su timestamp antes de que proceses nada. Un reenvío viejo se rechaza; dos firmas a la vez te dejan rotar el secreto sin perder entregas.', 'constructEvent checks the X-Cord-Signature-V1 signature and its timestamp before you process anything. A stale replay is refused; two signatures at once let you rotate the secret without losing deliveries.'),
+        d: tx('@flouviahq/node valida la firma X-Cord-Signature-V1 y su timestamp antes de que proceses nada, así que un reenvío viejo se rechaza. En local, cord listen reenvía cada evento a tu servidor y cord trigger los dispara a pedido.', '@flouviahq/node checks the X-Cord-Signature-V1 signature and its timestamp before you process anything, so a stale replay is refused. Locally, cord listen forwards every event to your server and cord trigger fires them on demand.'),
     },
     {
         id: 'framer',
         t: tx('Framer y Webflow, sin código', 'Framer and Webflow, no code'),
         d: tx('En Framer es un Code Component: pegas el token en el panel de propiedades. En Webflow basta el atributo data-cord-token en cualquier Div Block.', 'In Framer it is a Code Component: paste the token in the properties panel. In Webflow, the data-cord-token attribute on any Div Block is enough.'),
+    },
+    {
+        id: 'debug',
+        t: tx('Depura sin abrir la consola', 'Debug without opening the console'),
+        d: tx('Con debug y una llave pk_test_, una barra en tu página muestra cada evento del iframe, cada petición con su request id y los avisos de configuración. Con una llave en vivo no se dibuja.', 'With debug and a pk_test_ key, a bar on your page shows every iframe event, every request with its request id and configuration warnings. With a live key it never renders.'),
     },
     {
         id: 'catalog',
@@ -99,19 +115,39 @@ const CARDS = [
     {
         id: 'errors',
         t: tx('Errores que puedes programar', 'Errors you can program against'),
-        d: tx('Todo falla como CordError con status y un código estable. Tu interfaz responde con un mensaje propio, sin depender de leer el texto del error.', 'Everything fails as a CordError with a status and a stable code. Your interface answers with its own message, never by parsing error text.'),
+        d: tx('Todo falla como CordError con status, un código estable y el request id para soporte. Tu interfaz responde con un mensaje propio, sin depender de leer el texto del error.', 'Everything fails as a CordError with a status, a stable code and the request id for support. Your interface answers with its own message, never by parsing error text.'),
     },
     {
         id: 'phone',
         t: tx('Cualquier stack, cualquier pantalla', 'Any stack, any screen'),
-        d: tx('<cord-cotizador> es un Web Component nativo: HTML, PHP, Laravel o Rails. En el teléfono de tu cliente aprueba y firma, y tu página recibe el evento approved.', '<cord-cotizador> is a native Web Component: HTML, PHP, Laravel or Rails. On your client\'s phone it approves and signs, and your page receives the approved event.'),
+        d: tx('<cord-quote> es un Web Component en Shadow DOM: HTML, PHP, Laravel o Rails, y tus estilos no lo rompen. En el teléfono de tu cliente aprueba y firma, y tu página recibe approved con quién firmó.', '<cord-quote> is a Web Component in Shadow DOM: HTML, PHP, Laravel or Rails, and your styles cannot break it. On your client\'s phone it approves and signs, and your page receives approved with who signed.'),
     },
+];
+
+// ── Factura embebida: mismos rótulos que src/pages/embed/i/[token].astro ──
+const INV_LINES = [
+    { n: tx('Cemento gris 50 kg', 'Gray cement 50 kg'), q: '480', t: 87360 },
+    { n: tx('Varilla corrugada 3/8"', 'Rebar 3/8"'), q: '220', t: 43670 },
+    { n: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), q: '2,400', t: 34080 },
+];
+const invSub = INV_LINES.reduce((a, l) => a + l.t, 0);
+const invTax = Math.round(invSub * 0.16 * 100) / 100;
+const invTot = invSub + invTax;
+const invPaid = Math.round(invTot * 50) / 100;
+const invDue = Math.round((invTot - invPaid) * 100) / 100;
+
+// ── Formulario fiscal: regímenes de persona moral (regimenesPara('moral')) ──
+const REG_MORAL = [
+    { c: '601', n: 'General de Ley Personas Morales' },
+    { c: '603', n: 'Personas Morales con Fines no Lucrativos' },
+    { c: '620', n: 'Sociedades Cooperativas de Producción' },
+    { c: '626', n: 'Régimen Simplificado de Confianza (RESICO)' },
 ];
 
 const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
 ---
 
-<section class="emo" data-emo data-rest={bRest} data-sent={tx('Enviada', 'Sent')} id={id} aria-labelledby={`${uid}-title`}>
+<section class="emo" data-emo data-rest={bRest} data-sent={tx('Enviada', 'Sent')} data-choose={tx('Elige…', 'Choose…')} id={id} aria-labelledby={`${uid}-title`}>
     <div class="emo-head">
         <h2 class="emo-h2 masked-title" id={`${uid}-title`}>{tx('Conoce más de Elements.', 'More from Elements.')}</h2>
         <div class="emo-nav">
@@ -142,7 +178,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     <div class="bd-body">
                                         <div class="bd-head">
                                             <h4>{tx('Nueva cotización', 'New quote')}</h4>
-                                            <span class="bd-cur">MXN</span>
+                                            <span class="bd-cur">MXN<svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg></span>
                                         </div>
                                         <div class="bd-field">
                                             <span class="bd-lbl">{tx('Cliente', 'Client')}</span>
@@ -152,10 +188,14 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                                 <svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg>
                                             </div>
                                         </div>
+                                        <div class="bd-ai">
+                                            <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 3.5V6M14.5 3.5V6M9.5 18v2.5M14.5 18v2.5M3.5 9.5H6M3.5 14.5H6M18 9.5h2.5M18 14.5h2.5"/></svg>
+                                            <span>{tx('2 partidas agregadas. Revísalas antes de crear la cotización.', '2 lines added. Review them before creating the quote.')}</span>
+                                        </div>
                                         <div class="bd-th"><span>{tx('Partidas', 'Line items')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Importe', 'Amount')}</span></div>
                                         {B_ROWS.map((r) => (
                                             <div class="bd-row">
-                                                <span class="bd-pn">{r.n}<small>{r.sku} · {money(r.p)}</small></span>
+                                                <span class="bd-pn"><span class="bd-pnn">{r.n}</span><small>{r.ai && <em class="bd-sug">{tx('Sugerida', 'Suggested')}</em>}{r.sku} · {money(r.p)} · IVA 16%</small></span>
                                                 <span class="bd-step">
                                                     <i>−</i>
                                                     <b class="emo-num" data-k={r.k === 'qty' ? 'qty' : undefined}>{r.q.toLocaleString('en-US')}</b>
@@ -166,12 +206,12 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                         ))}
                                         <div class="bd-sum">
                                             <p><span>Subtotal</span><b class="emo-num" data-k="sub">{money(bSub)}</b></p>
-                                            <p><span>{tx('IVA 16%', 'VAT 16%')}</span><b class="emo-num" data-k="iva">{money(bIva)}</b></p>
+                                            <p><span>IVA 16%</span><b class="emo-num" data-k="iva">{money(bIva)}</b></p>
                                             <p class="bd-tot"><span>Total <em>MXN</em></span><b class="emo-num" data-k="tot">{money(bTot)}</b></p>
                                         </div>
                                         <div class="bd-act">
-                                            <span class="bd-ghost">{tx('Guardar borrador', 'Save draft')}</span>
-                                            <span class="bd-btn" data-k="btn">{tx('Generar cotización', 'Generate quote')}</span>
+                                            <span class="bd-ghost">{tx('Agregar partida', 'Add item')}</span>
+                                            <span class="bd-btn" data-k="btn">{tx('Crear cotización', 'Create quote')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -179,6 +219,99 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     <span class="bd-ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg></span>
                                     <span class="bd-tt"><b>{tx('COT-0053 creada · link listo', 'COT-0053 created · link ready')}</b><small>cordhq.app/q/r8Vn3kTz</small></span>
                                     <span class="bd-copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>{tx('Copiar', 'Copy')}</span>
+                                </div>
+                            </>
+                        )}
+
+                        {c.id === 'invoice' && (
+                            <>
+                                <div class="iv-win">
+                                    <div class="bd-nav">
+                                        <span class="bd-logo">MV</span>
+                                        <b>Materiales del Valle</b>
+                                        <span class="bd-links"><span>{tx('Pedidos', 'Orders')}</span><span class="on">{tx('Facturas', 'Invoices')}</span></span>
+                                        <span class="bd-av iv-av">RM</span>
+                                    </div>
+                                    <div class="iv-body" data-k="inv">
+                                        <div class="iv-head">
+                                            <span class="iv-brand"><b>Materiales del Valle</b><small>RFC MVA190312KT1</small></span>
+                                            <span class="iv-folio"><small>{tx('Factura', 'Invoice')}</small><b>FAC-0412</b></span>
+                                        </div>
+                                        <div class="iv-hero">
+                                            <span class="iv-lbl">{tx('Saldo pendiente', 'Balance due')}</span>
+                                            <b class="iv-amt emo-num" data-k="due">{money(invDue)}</b>
+                                            <span class="iv-meta">
+                                                <em class="iv-chip" data-k="chip" data-paid={tx('Pagada', 'Paid')}>{tx('Pendiente de pago', 'Payment due')}</em>
+                                                <span>{tx('Emitida 2 oct 2026', 'Issued Oct 2, 2026')}</span>
+                                                <span>{tx('Vence el 1 nov 2026', 'Due Nov 1, 2026')}</span>
+                                            </span>
+                                        </div>
+                                        <div class="iv-th"><span>{tx('Concepto', 'Item')}</span><span>{tx('Cant.', 'Qty')}</span><span>{tx('Importe', 'Amount')}</span></div>
+                                        {INV_LINES.map((l) => (
+                                            <div class="iv-tr"><span>{l.n}</span><span class="emo-num">{l.q}</span><b class="emo-num">{money(l.t)}</b></div>
+                                        ))}
+                                        <dl class="iv-tot">
+                                            <div><dt>Subtotal</dt><dd class="emo-num">{money(invSub)}</dd></div>
+                                            <div><dt>{tx('Impuestos', 'Taxes')}</dt><dd class="emo-num">{money(invTax)}</dd></div>
+                                            <div class="st"><dt>Total</dt><dd class="emo-num">{money(invTot)}</dd></div>
+                                            <div><dt>{tx('Pagado', 'Paid')}</dt><dd class="emo-num" data-k="paid" data-full={'−' + money(invTot)}>−{money(invPaid)}</dd></div>
+                                            <div class="st"><dt>{tx('Saldo', 'Balance')}</dt><dd class="emo-num" data-k="bal">{money(invDue)}</dd></div>
+                                        </dl>
+                                        <div class="iv-pay" data-k="pay">
+                                            <span class="iv-btn">
+                                                {tx('Pagar', 'Pay')} {money(invDue)}
+                                                <svg viewBox="0 0 24 24"><path d="M14 4.5h5.5V10" /><path d="M19.5 4.5 11 13" /><path d="M17.5 13.5v4a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h4" /></svg>
+                                            </span>
+                                            <small>{tx('El pago se abre en una ventana segura de Cord.', 'Payment opens in a secure Cord window.')}</small>
+                                        </div>
+                                        <div class="iv-links"><span>{tx('Descargar PDF', 'Download PDF')}</span><span>{tx('Ver factura completa', 'View full invoice')}</span></div>
+                                    </div>
+                                </div>
+                                <div class="bd-toast iv-toast" data-k="toast">
+                                    <span class="bd-ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg></span>
+                                    <span class="bd-tt"><b><i class="iv-evn">paid</i> FAC-0412 · {tx('saldo', 'balance')} $0.00</b><small>invoice.addEventListener('paid', …)</small></span>
+                                </div>
+                            </>
+                        )}
+
+                        {c.id === 'fiscal' && (
+                            <>
+                                <div class="fx-win">
+                                    <div class="bd-nav">
+                                        <span class="bd-logo">MV</span>
+                                        <b>Materiales del Valle</b>
+                                        <span class="fx-steps"><span>{tx('Carrito', 'Cart')}</span><i></i><span class="on">{tx('Facturación', 'Billing')}</span><i></i><span>{tx('Pago', 'Payment')}</span></span>
+                                    </div>
+                                    <div class="fx-body">
+                                        <div class="fx-head"><h4>{tx('Datos de facturación', 'Billing details')}</h4><code>&lt;cord-fiscal-form&gt;</code></div>
+                                        <div class="fx-f">
+                                            <span class="fx-l">{tx('RFC', 'RFC (Mexican tax ID)')}</span>
+                                            <span class="fx-in fx-mono"><span data-k="rfc">DEZ170315KT7</span><i class="fx-caret" data-k="caret"></i></span>
+                                        </div>
+                                        <div class="fx-f">
+                                            <span class="fx-l">{tx('Nombre o razón social', 'Legal name')}</span>
+                                            <span class="fx-in">DISTRIBUIDORA EL ZARCO S.A. DE C.V.</span>
+                                            <span class="fx-warn">{tx('Escríbelo como en la Constancia de Situación Fiscal, sin "S.A. de C.V." ni similares.', 'Write it as on the tax certificate, without "S.A. de C.V." or similar.')}</span>
+                                        </div>
+                                        <div class="fx-f fx-f-sel">
+                                            <span class="fx-l">{tx('Régimen fiscal', 'Tax regime')}</span>
+                                            <span class="fx-in fx-sel fx-focus" data-k="reg"><span data-k="regv">601 — General de Ley Personas Morales</span><svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg></span>
+                                            <div class="fx-menu" data-k="menu">
+                                                {REG_MORAL.map((r, i) => (
+                                                    <span class:list={['fx-opt', { on: i === 0 }]}><b>{r.c}</b> — {r.n}{i === 0 && <svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9"/></svg>}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div class="fx-f">
+                                            <span class="fx-l">{tx('Uso del CFDI', 'CFDI use')}</span>
+                                            <span class="fx-in fx-sel">G01 — Adquisición de mercancías<svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg></span>
+                                        </div>
+                                        <div class="fx-f">
+                                            <span class="fx-l">{tx('Código postal fiscal', 'Tax postal code')}</span>
+                                            <span class="fx-in fx-mono">76120</span>
+                                        </div>
+                                        <span class="fx-btn" data-k="btn">{tx('Continuar al pago', 'Continue to payment')}</span>
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -193,8 +326,8 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                 </div>
                                 <div class="wh-log">
                                     <div class="wh-lbar">
-                                        <span>{tx('Entregas', 'Deliveries')} <em>POST /api/webhooks/cord</em></span>
-                                        <span class="wh-live"><i></i>{tx('En vivo', 'Live')}</span>
+                                        <span class="wh-cmd"><b>$</b> cord listen <em>--forward-to localhost:3000/api/webhooks/cord</em></span>
+                                        <span class="wh-live"><i></i>{tx('Escuchando', 'Listening')}</span>
                                     </div>
                                     {HOOKS.map((h) => (
                                         <div class:list={['wh-row', { bad: h.s !== 200 }]} data-k="row">
@@ -255,6 +388,39 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                             </>
                         )}
 
+                        {c.id === 'debug' && (
+                            <>
+                                <div class="dg-host">
+                                    <div class="dg-url"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>staging.materialesdelvalle.mx/cotizar<em>pk_test_</em></div>
+                                    <div class="dg-page">
+                                        <p class="dg-h">{tx('Solicita tu cotización', 'Request your quote')}</p>
+                                        <div class="dg-q">
+                                            <div class="dg-qh"><span class="bd-logo">MV</span><b>COT-0148</b><em>{tx('Enviada', 'Sent')}</em></div>
+                                            <p><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><b class="emo-num">$87,360.00</b></p>
+                                            <p><span>{tx('Varilla corrugada 3/8"', 'Rebar 3/8"')}</span><b class="emo-num">$43,670.00</b></p>
+                                            <p><span>{tx('Block hueco 15x20x40', 'Hollow block 15x20x40')}</span><b class="emo-num">$34,080.00</b></p>
+                                            <i class="dg-sk"></i><i class="dg-sk s2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dg-panel" role="presentation">
+                                    <div class="dg-ph"><strong>Cord · modo prueba</strong><span>Limpiar</span><span>Ocultar</span></div>
+                                    <div class="dg-list">
+                                        <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:12 · event</div><div class="dg-sum">cord:ready</div><pre>{`{
+  "status": "sent",
+  "folio": "COT-0148",
+  "moneda": "MXN",
+  "total": 196469.2
+}`}</pre></div>
+                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:11 · warning</div><div class="dg-sum">appearance descartado: variables.colorBrand, rules.Total.font-family</div></div>
+                                        <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:09 · request</div><div class="dg-sum">POST /cotizaciones → 201 · req_9xK2mP4t</div></div>
+                                        <div class="dg-row" data-k="drow"><div class="dg-meta">10:42:01 · request</div><div class="dg-sum">GET /elements/config → 304 · req_3Fq7nB1k</div></div>
+                                        <div class="dg-row k-warning" data-k="drow"><div class="dg-meta">10:42:01 · warning</div><div class="dg-sum">Llave de prueba en staging.materialesdelvalle.mx: las cotizaciones van a la sandbox, no a tu cuenta real.</div></div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         {c.id === 'catalog' && (
                             <>
                                 <div class="ct-shop">
@@ -301,16 +467,16 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     <div class="wh-bar dark"><span>lib/cotizar.ts</span><em>TypeScript</em></div>
                                     <ol>
                                         <li><span><i class="k">try</i> {'{'}</span></li>
-                                        <li><span>  <i class="k">await</i> cord.quotes.<i class="f">create</i>(input);</span></li>
+                                        <li><span>  <i class="k">await</i> client.<i class="f">createQuote</i>(input);</span></li>
                                         <li><span>{'}'} <i class="k">catch</i> (err) {'{'}</span></li>
                                         <li><span>  <i class="k">if</i> (!(err <i class="k">instanceof</i> <i class="f">CordError</i>)) <i class="k">throw</i> err;</span></li>
                                         <li><span>  <i class="k">switch</i> (err.code) {'{'}</span></li>
                                         {ERR_CASES.map((e, i) => (
-                                            <li class:list={['er-case', { on: i === ERR_ON }]} data-k="case" data-msg={e.m} data-meta={`CordError · ${e.st} · ${e.c}`}>
+                                            <li class:list={['er-case', { on: i === ERR_ON }]} data-k="case" data-msg={e.m} data-meta={`${e.st} · ${e.c} · ${e.r}`}>
                                                 <span>    <i class="k">case</i> <i class="s">'{e.c}'</i>: <i class="k">return</i> <i class="f">{e.h}</i>;</span>
                                             </li>
                                         ))}
-                                        <li><span>    <i class="k">default</i>: <i class="k">return</i> <i class="f">{tx('mostrar', 'show')}</i>(err.status);</span></li>
+                                        <li><span>    <i class="k">default</i>: <i class="k">return</i> <i class="f">{tx('reportar', 'report')}</i>(err.requestId);</span></li>
                                         <li><span>  {'}'}</span></li>
                                         <li><span>{'}'}</span></li>
                                     </ol>
@@ -318,7 +484,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                 <div class="er-ui">
                                     <div class="er-toast" data-k="toast">
                                         <span class="er-ic"><svg viewBox="0 0 24 24"><path d="M12 3.5L21.5 20h-19z"/><path d="M12 10v4.5M12 17.3v.2"/></svg></span>
-                                        <span class="er-tt"><b data-k="tt">{ERR_CASES[ERR_ON].m}</b><small data-k="tm">{`CordError · ${ERR_CASES[ERR_ON].st} · ${ERR_CASES[ERR_ON].c}`}</small></span>
+                                        <span class="er-tt"><b data-k="tt">{ERR_CASES[ERR_ON].m}</b><small data-k="tm">{`${ERR_CASES[ERR_ON].st} · ${ERR_CASES[ERR_ON].c} · ${ERR_CASES[ERR_ON].r}`}</small></span>
                                     </div>
                                     <div class="er-form">
                                         <p class="er-fh">{tx('Solicitar cotización', 'Request a quote')}</p>
@@ -334,13 +500,13 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                             <>
                                 <div class="ph-snip">
                                     <div class="ph-stack"><span>HTML</span><span>PHP</span><span>Laravel</span><span>Rails</span></div>
-                                    <p><i class="t">&lt;cord-cotizador</i></p>
+                                    <p><i class="t">&lt;cord-quote</i></p>
                                     <p>  <i class="a">token</i>=<i class="s">"k7Qp9xLw2mRt"</i><i class="t">&gt;</i></p>
-                                    <p><i class="t">&lt;/cord-cotizador&gt;</i></p>
+                                    <p><i class="t">&lt;/cord-quote&gt;</i></p>
                                     <p class="ph-gap">el.<i class="f">addEventListener</i>(</p>
-                                    <p>  <i class="s">'approved'</i>, (e) =&gt;</p>
-                                    <p>  <i class="f">{tx('confirmar', 'confirm')}</i>(e.detail.folio));</p>
-                                    <p class="ph-ev" data-k="ev"><span>approved</span> folio: <i class="s">'COT-0148'</i></p>
+                                    <p>  <i class="s">'approved'</i>, ({'{'} detail {'}'}) =&gt;</p>
+                                    <p>  <i class="f">{tx('confirmar', 'confirm')}</i>(detail.signed_by));</p>
+                                    <p class="ph-ev" data-k="ev"><span>approved</span><i class="s">'Raúl Mendoza'</i></p>
                                 </div>
                                 <div class="ph-phone">
                                     <div class="ph-screen">
@@ -353,7 +519,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                             <p><span>{tx('Varilla corrugada 3/8"', 'Rebar 3/8"')}<em>220 × $198.50</em></span><b class="emo-num">$43,670.00</b></p>
                                             <p><span>{tx('Block hueco 15x20x40', 'Hollow block 15x20x40')}<em>2,400 × $14.20</em></span><b class="emo-num">$34,080.00</b></p>
                                             <span class="ph-more">{tx('+ 3 partidas más', '+ 3 more line items')}</span>
-                                            <div class="ph-tot"><span>Total <em>{tx('IVA incluido', 'VAT included')}</em></span><b class="emo-num">$196,469.20 <small>MXN</small></b></div>
+                                            <div class="ph-tot"><span>Total <em>{tx('IVA incluido', 'IVA included')}</em></span><b class="emo-num">$196,469.20 <small>MXN</small></b></div>
                                             <div class="ph-btn done" data-k="appr">
                                                 <span class="ph-idle">{tx('Aprobar y firmar', 'Approve and sign')}</span>
                                                 <span class="ph-done"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg>{tx('Firmada por Raúl Mendoza', 'Signed by Raúl Mendoza')}</span>
@@ -550,7 +716,64 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
         return tl;
     };
 
-    const STORIES: Partial<Record<string, (v: Element, root: HTMLElement) => gsap.core.Timeline | null>> = { builder, webhooks, framer, catalog, errors, phone };
+    const invoice = (v: Element) => {
+        const due = q(v, 'due'), bal = q(v, 'bal'), paid = q(v, 'paid'), chip = q(v, 'chip'), pay = q(v, 'pay'), toast = q(v, 'toast');
+        if (!due || !bal || !paid || !chip || !pay || !toast) return null;
+        const start = Number((due.textContent ?? '').replace(/[^0-9.]/g, '')) || 0;
+        const paid0 = paid.textContent ?? '', paidFull = paid.dataset.full ?? '';
+        const open = chip.textContent ?? '', done = chip.dataset.paid ?? '';
+        const btn = pay.querySelector<HTMLElement>('.iv-btn');
+        const st = { n: start };
+        const render = () => { const t = money(st.n); due.textContent = t; bal.textContent = t; };
+        const reset = () => {
+            st.n = start; render(); paid.textContent = paid0;
+            chip.textContent = open; chip.classList.remove('ok'); pay.classList.remove('done');
+        };
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.4, paused: true });
+        tl.set(toast, { autoAlpha: 0, y: 16 }, 0)
+            .call(reset, undefined, 0)
+            .to(btn, { scale: 0.95, duration: 0.13, yoyo: true, repeat: 1 }, 1.4)
+            .to(st, { n: 0, duration: 1, ease: 'power2.inOut', onUpdate: render }, 2.2)
+            .call(() => { paid.textContent = paidFull; chip.textContent = done; chip.classList.add('ok'); pay.classList.add('done'); }, undefined, 3.2)
+            .to(toast, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 3.4)
+            .to(toast, { autoAlpha: 0, y: 10, duration: 0.4, ease: 'power2.in' }, 7.6);
+        return tl;
+    };
+
+    const fiscal = (v: Element, root: HTMLElement) => {
+        const rfc = q(v, 'rfc'), caret = q(v, 'caret'), menu = q(v, 'menu'), reg = q(v, 'reg'), regv = q(v, 'regv'), btn = q(v, 'btn');
+        if (!rfc || !menu || !reg || !regv || !btn) return null;
+        const full = rfc.textContent ?? '';
+        const regFull = regv.textContent ?? '';
+        const choose = root.dataset.choose ?? '';
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.4, paused: true });
+        tl.call(() => { rfc.textContent = ''; regv.textContent = choose; btn.classList.add('off'); reg.classList.remove('fx-focus'); }, undefined, 0)
+            .set(caret, { autoAlpha: 1 }, 0)
+            .set(menu, { autoAlpha: 0, y: -4 }, 0);
+        for (let i = 1; i <= full.length; i++) tl.call(() => { rfc.textContent = full.slice(0, i); }, undefined, 0.8 + i * 0.09);
+        const typed = 0.8 + full.length * 0.09 + 0.3;
+        tl.set(caret, { autoAlpha: 0 }, typed)
+            .call(() => reg.classList.add('fx-focus'), undefined, typed + 0.4)
+            .to(menu, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power3.out' }, typed + 0.5)
+            .call(() => { regv.textContent = regFull; }, undefined, typed + 1.6)
+            .call(() => btn.classList.remove('off'), undefined, typed + 1.9)
+            .to({}, { duration: 3.8 });
+        return tl;
+    };
+
+    const debug = (v: Element) => {
+        const rows = qa(v, 'drow');
+        if (!rows.length) return null;
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.3, paused: true });
+        tl.set(rows, { autoAlpha: 0, height: 0, paddingTop: 0, paddingBottom: 0 }, 0);
+        rows.slice().reverse().forEach((r, i) => {
+            tl.to(r, { autoAlpha: 1, height: 'auto', paddingTop: 5, paddingBottom: 5, duration: 0.45, ease: 'power3.out' }, 0.5 + i * 0.85);
+        });
+        tl.to({}, { duration: 3.6 });
+        return tl;
+    };
+
+    const STORIES: Partial<Record<string, (v: Element, root: HTMLElement) => gsap.core.Timeline | null>> = { builder, invoice, fiscal, webhooks, framer, debug, catalog, errors, phone };
 
     const init = () => {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -643,7 +866,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
     .emo-d { margin: 0; padding-left: 14px; font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted, #5b6575); max-width: 42ch; }
 
     /* Ventana sólida que sangra por derecha/abajo (bleed). */
-    .bd-win, .wh-code, .fr-app, .ct-shop, .er-code {
+    .bd-win, .wh-code, .fr-app, .ct-shop, .er-code, .iv-win, .fx-win, .dg-host {
         position: absolute; background: #fff; border-radius: 14px; overflow: hidden;
         box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 18px 44px -18px rgba(10,25,47,0.26), 0 0 0 1px rgba(10,25,47,0.06);
     }
@@ -659,7 +882,12 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
     .bd-body { padding: 14px 18px; }
     .bd-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .bd-head h4 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
-    .bd-cur { padding: 3px 8px; border-radius: 99px; background: rgba(10,25,47,0.06); font-size: 10px; font-weight: 600; }
+    .bd-cur { display: inline-flex; align-items: center; gap: 3px; padding: 3px 5px 3px 9px; border-radius: 8px; background: #f5f5f7; font-size: 10px; font-weight: 600; }
+    .bd-cur svg { width: 12px; height: 12px; fill: none; color: #6b7280; }
+    .bd-ai { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 6px 9px; border-radius: 8px; background: rgba(10,25,47,0.04); color: #3b4658; font-size: 10px; line-height: 1.35; }
+    .bd-ai svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink); }
+    .bd-pnn { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bd-sug { font-style: normal; margin-right: 5px; padding: 0 5px; line-height: 1.5; border-radius: 99px; background: rgba(10,25,47,0.07); color: #3b4658; font-size: 8.5px; font-weight: 600; letter-spacing: 0.01em; }
     .bd-lbl { display: block; font-size: 10px; color: var(--mute); font-weight: 600; margin-bottom: 5px; }
     .bd-sel { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 9px; background: #f5f5f7; }
     .bd-sel span { display: flex; flex-direction: column; line-height: 1.25; }
@@ -668,12 +896,13 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
     .bd-sel svg { margin-left: auto; width: 15px; height: 15px; fill: none; color: var(--mute); }
     .bd-ini { width: 24px; height: 24px; border-radius: 50%; background: #334155; color: #fff; display: grid; place-items: center; font-size: 8.5px; font-weight: 600; }
     .bd-th, .bd-row { display: grid; grid-template-columns: 1fr 94px 92px; gap: 8px; align-items: center; }
-    .bd-th { margin-top: 14px; padding-bottom: 6px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); }
+    .bd-th { margin-top: 10px; padding-bottom: 6px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); }
     .bd-th span:nth-child(2) { text-align: center; }
     .bd-th span:last-child, .bd-row > b { text-align: right; }
     .bd-row { padding: 5px 0; border-top: 1px solid var(--hair); }
     .bd-pn { font-size: 11.5px; font-weight: 550; display: flex; flex-direction: column; }
-    .bd-pn small { color: var(--mute); font-size: 9.5px; font-weight: 400; }
+    .bd-pn { min-width: 0; }
+    .bd-pn small { color: #6b7280; font-size: 9.5px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bd-row > b { font-size: 11.5px; }
     .bd-step { display: inline-grid; grid-template-columns: 22px 1fr 22px; align-items: center; height: 26px; border-radius: 8px; background: #f5f5f7; text-align: center; }
     .bd-step i { display: grid; place-items: center; height: 22px; margin: 0 2px; border-radius: 6px; color: #5b6575; font-weight: 600; font-size: 12px; background: rgba(10,25,47,0.05); }
@@ -720,6 +949,9 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
         box-shadow: 0 2px 4px rgba(10,25,47,0.2), 0 26px 50px -18px rgba(10,25,47,0.55);
     }
     .wh-lbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.07); font-family: var(--font-sans, 'Inter', sans-serif); font-size: 11px; font-weight: 600; color: #fff; }
+    .wh-cmd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-weight: 500; font-size: 10px; }
+    .wh-cmd b { color: #6ee7b7; margin-right: 2px; }
+    .wh-live { flex-shrink: 0; margin-left: 10px; }
     .wh-lbar em { font-style: normal; font-family: var(--mono); font-weight: 400; font-size: 9.5px; color: #6b7a90; margin-left: 6px; }
     .wh-live { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; color: #a7f3d0; }
     .wh-live i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,0.16); }
@@ -857,7 +1089,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
     /* ── 6. Teléfono / Web Component ── */
     .ph-snip {
         position: absolute; left: 22px; top: 26px; width: 214px; padding: 12px 14px 14px; border-radius: 14px;
-        background: #fff; font-family: var(--mono); font-size: 10px; line-height: 1.75;
+        background: #fff; font-family: var(--mono); font-size: 9.6px; line-height: 1.75; letter-spacing: -0.01em;
         box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 18px 40px -18px rgba(10,25,47,0.26), 0 0 0 1px rgba(10,25,47,0.06);
     }
     .ph-snip p { margin: 0; white-space: pre; }
@@ -898,6 +1130,100 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
     .ph-btn.done { background: #047857; }
     .ph-btn.done .ph-idle { opacity: 0; transform: translateY(-6px); }
     .ph-btn.done .ph-done { opacity: 1; transform: none; }
+
+    /* ── Factura embebida ── */
+    .iv-win { left: 24px; right: -12px; top: 24px; bottom: -30px; }
+    .iv-av { background: #7c5a3a; }
+    .iv-body { padding: 13px 18px; }
+    .iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--hair); }
+    .iv-brand, .iv-folio { display: flex; flex-direction: column; line-height: 1.3; }
+    .iv-brand b { font-size: 12px; font-weight: 650; }
+    .iv-brand small, .iv-folio small { font-size: 9.5px; color: #6b7280; }
+    .iv-folio { text-align: right; }
+    .iv-folio b { font-size: 12px; font-weight: 650; }
+    .iv-hero { display: flex; flex-direction: column; gap: 2px; padding: 10px 0 10px; }
+    .iv-lbl { font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
+    .iv-amt { font-size: 24px; letter-spacing: -0.03em; line-height: 1.15; }
+    .iv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 9px; margin-top: 3px; font-size: 9.5px; color: #6b7280; }
+    .iv-chip { font-style: normal; padding: 2px 8px; border-radius: 99px; background: rgba(180,83,9,0.1); color: #92400e; font-weight: 600; }
+    .iv-chip.ok { background: rgba(16,185,129,0.12); color: #047857; }
+    .iv-th, .iv-tr { display: grid; grid-template-columns: minmax(0, 1fr) 44px 86px; gap: 8px; align-items: center; }
+    .iv-th { padding: 5px 0; border-top: 1px solid var(--hair); font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; }
+    .iv-th span:not(:first-child), .iv-tr > :not(:first-child) { text-align: right; }
+    .iv-tr { padding: 6px 0; border-top: 1px solid var(--hair); font-size: 11px; }
+    .iv-tr span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 550; }
+    .iv-tr > span:nth-child(2) { color: #5b6575; }
+    .iv-tot { margin: 0; padding: 6px 0 4px; border-top: 1px solid var(--hair); }
+    .iv-tot div { display: flex; justify-content: space-between; padding: 1.5px 0; font-size: 10.5px; color: #5b6575; }
+    .iv-tot dd { margin: 0; color: var(--ink); }
+    .iv-tot .st { font-weight: 650; color: var(--ink); }
+    .iv-tot .st:last-child { margin-top: 3px; padding-top: 5px; border-top: 1px dashed rgba(10,25,47,0.12); font-size: 12px; }
+    .iv-pay { display: grid; gap: 5px; margin-top: 8px; text-align: center; }
+    .iv-btn { display: flex; align-items: center; justify-content: center; gap: 7px; height: 32px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); }
+    .iv-btn svg { width: 13px; height: 13px; fill: none; opacity: 0.85; }
+    .iv-pay small { font-size: 9.5px; color: #6b7280; }
+    .iv-btn, .iv-pay small { transition: opacity 0.35s; }
+    .iv-pay.done .iv-btn, .iv-pay.done small { opacity: 0; }
+    .iv-links { display: flex; justify-content: center; gap: 16px; margin-top: 8px; font-size: 10px; font-weight: 600; color: #1d4ed8; }
+    .iv-toast { top: 66px; visibility: hidden; opacity: 0; }
+    .iv-evn { font-style: normal; font-family: var(--mono); font-weight: 600; color: #6ee7b7; margin-right: 3px; }
+
+    /* ── Formulario fiscal ── */
+    .fx-win { left: 24px; right: -12px; top: 24px; bottom: -30px; }
+    .fx-steps { display: flex; align-items: center; gap: 7px; margin-left: auto; color: #6b7280; font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+    .fx-steps .on { color: var(--ink); font-weight: 600; }
+    .fx-steps i { width: 10px; height: 1px; background: rgba(10,25,47,0.18); }
+    .fx-body { padding: 13px 18px; display: flex; flex-direction: column; gap: 9px; }
+    .fx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .fx-head h4 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+    .fx-head code { font-family: var(--mono); font-size: 9.5px; color: #1d4ed8; }
+    .fx-f { position: relative; display: flex; flex-direction: column; gap: 4px; }
+    .fx-l { font-size: 10.5px; font-weight: 600; }
+    .fx-in { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 30px; padding: 0 10px; border-radius: 9px; background: #f5f5f7; font-size: 11px; white-space: nowrap; overflow: hidden; }
+    .fx-mono { justify-content: flex-start; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em; }
+    .fx-sel svg { width: 13px; height: 13px; flex-shrink: 0; fill: none; color: #6b7280; }
+    .fx-sel > span { overflow: hidden; text-overflow: ellipsis; }
+    .fx-focus { box-shadow: 0 0 0 2px var(--ink); background: #fff; }
+    .fx-caret { width: 1px; height: 13px; margin-left: 1px; background: var(--ink); opacity: 0; visibility: hidden; animation: emoBlink 1s steps(1) infinite; }
+    .fx-warn { font-size: 9.5px; line-height: 1.4; color: #6b7280; }
+    .fx-menu {
+        position: absolute; z-index: 3; left: 0; right: 0; top: calc(100% + 5px); padding: 4px; border-radius: 10px; background: #fff;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.08), 0 22px 44px -14px rgba(10,25,47,0.42), 0 0 0 1px rgba(10,25,47,0.07);
+    }
+    .fx-opt { display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 7px; font-size: 10.5px; color: #3b4658; white-space: nowrap; overflow: hidden; }
+    .fx-opt b { font-weight: 650; color: var(--ink); }
+    .fx-opt.on { background: rgba(10,25,47,0.05); color: var(--ink); }
+    .fx-opt svg { width: 13px; height: 13px; margin-left: auto; flex-shrink: 0; fill: none; color: var(--ink); stroke-width: 2.2; }
+    .fx-btn { align-self: flex-end; margin-top: 2px; padding: 8px 16px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6); transition: background 0.3s, color 0.3s; }
+    .fx-btn.off { background: rgba(10,25,47,0.12); color: #5b6575; box-shadow: none; }
+
+    /* ── Barra de depuración (calca de packages/elements/src/debug.ts) ── */
+    .dg-host { left: 22px; right: -14px; top: 24px; bottom: -30px; }
+    .dg-url { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--hair); background: #fcfdfe; font-family: var(--mono); font-size: 10px; color: #5b6575; white-space: nowrap; }
+    .dg-url svg { width: 12px; height: 12px; color: #047857; flex-shrink: 0; }
+    .dg-url em { margin-left: auto; font-style: normal; padding: 2px 7px; border-radius: 99px; background: rgba(180,83,9,0.1); color: #92400e; font-family: var(--font-sans, 'Inter', sans-serif); font-weight: 600; font-size: 9px; }
+    .dg-page { padding: 14px 16px; }
+    .dg-h { margin: 0 0 10px; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+    .dg-q { padding: 12px 13px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--hair); }
+    .dg-qh { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .dg-qh b { font-size: 12px; }
+    .dg-qh em { margin-left: auto; font-style: normal; font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: rgba(47,109,240,0.1); color: #1d4ed8; }
+    .dg-q p { margin: 0; display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--hair); font-size: 10.5px; }
+    .dg-sk { display: block; height: 7px; width: 70%; margin-top: 10px; border-radius: 4px; background: #eef0f3; }
+    .dg-sk.s2 { width: 44%; margin-top: 7px; }
+    .dg-panel {
+        position: absolute; right: 16px; bottom: 16px; width: 288px; max-height: 300px; display: flex; flex-direction: column; overflow: hidden;
+        border-radius: 16px; background: #fff; font-family: var(--mono); font-size: 10px; line-height: 1.4; color: var(--ink);
+        box-shadow: 0 12px 40px rgba(10,25,47,0.18), 0 2px 8px rgba(10,25,47,0.08);
+    }
+    .dg-ph { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--ink); color: #fff; }
+    .dg-ph strong { flex: 1; font-weight: 600; }
+    .dg-ph span { padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.12); font-size: 9.5px; }
+    .dg-list { overflow: hidden; padding: 3px 0; }
+    .dg-row { padding: 5px 10px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .dg-meta { color: #6b7280; font-size: 9px; }
+    .dg-row.k-warning .dg-sum { color: #8e2a1f; }
+    .dg-row pre { margin: 3px 0 0; font: inherit; font-size: 9px; color: #374151; white-space: pre; }
 
     @media (max-width: 860px) {
         .emo { padding: 3.2rem 0 3.8rem; }

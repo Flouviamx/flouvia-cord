@@ -1,15 +1,14 @@
 ---
 // Hero de /elements: el portal de compras del cliente dibujado como wireframe
 // (hairlines, sin ventana de sistema operativo) y, encima, la cotización de
-// Cord embebida que recorre cuatro Apariencias reales. Cada tema cambia
-// propiedades de verdad —fondo, tipografía, radios, bordes, forma del botón,
-// mayúsculas de las etiquetas— no sólo el color. El chip de código muestra el
-// objeto `appearance` exacto del tema activo: los nombres salen de
-// CordAppearance en packages/elements/src/types.ts (theme light|dark|auto,
-// variables colorPrimary/colorText/colorBackground/fontFamily/borderRadius,
-// fonts[].cssSrc). Si cambia ese tipo, cambia este chip.
+// Cord embebida con <cord-quote> que recorre cuatro Apariencias reales. Cada
+// tema cambia propiedades de verdad —fondo, tipografía, radios, forma del
+// botón, mayúsculas— y el chip de código muestra el objeto `appearance` que lo
+// produce. Claves válidas: packages/elements/src/appearance.ts (temas
+// light|dark|night|auto|flat, VARIABLES, APPEARANCE_SELECTORS, RULE_PROPERTIES).
 //
 // Datos: los mismos de la calca de /embed/demo (COT-0052, $138,944.80 MXN).
+// El impuesto se llama como en el país del negocio (IVA en México) también en inglés.
 interface Props {
     isEn?: boolean;
 }
@@ -31,26 +30,30 @@ const CODE: Record<string, string[]> = {
         '  variables: {',
         "    colorPrimary: '#0D1B33',",
         "    borderRadius: '16px',",
+        "    borderRadiusButton: '999px',",
         '  },',
         '}}',
     ],
     dark: [
         'appearance={{',
-        "  theme: 'dark',",
+        "  theme: 'night',",
         '  variables: {',
         "    colorBackground: '#0F172A',",
         "    colorText: '#E5E9F0',",
+        "    borderRadiusButton: '10px',",
         '  },',
         '}}',
     ],
     mono: [
         'appearance={{',
-        "  theme: 'dark',",
+        "  theme: 'night',",
         '  variables: {',
         "    fontFamily: 'JetBrains Mono',",
-        "    colorBackground: '#0B1F2A',",
         "    colorPrimary: '#22D3EE',",
         "    borderRadius: '2px',",
+        '  },',
+        '  rules: {',
+        "    Button: { 'text-transform': 'uppercase' },",
         '  },',
         '}}',
     ],
@@ -60,7 +63,8 @@ const CODE: Record<string, string[]> = {
         '  variables: {',
         "    colorPrimary: '#0F766E',",
         "    colorBackground: '#F0FAF6',",
-        "    borderRadius: '18px',",
+        "    borderRadius: '22px',",
+        "    borderRadiusButton: '14px',",
         '  },',
         "  fonts: [{ cssSrc: 'https://fonts.bunny.net/css?family=fraunces:600' }],",
         '}}',
@@ -70,11 +74,11 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const hl = (line: string) =>
     esc(line)
         .replace(/('[^']*')/g, '<span class="ehv-s">$1</span>')
-        .replace(/^(\s*)(appearance|theme|variables|fonts|cssSrc|colorPrimary|colorText|colorBackground|fontFamily|borderRadius)\b/g, '$1<span class="ehv-k">$2</span>')
+        .replace(/^(\s*)([A-Za-z]+)(?=[:=])/g, '$1<span class="ehv-k">$2</span>')
         .replace(/\{ (cssSrc)/g, '{ <span class="ehv-k">$1</span>');
 
 const ITEMS = [
-    { d: tx('Cemento gris 50 kg', 'Grey cement 50 kg'), q: '340', p: '$182.00', t: '$61,880.00' },
+    { d: tx('Cemento gris 50 kg', 'Gray cement 50 kg'), q: '340', p: '$182.00', t: '$61,880.00' },
     { d: tx('Varilla corrugada 3/8 x 12 m', 'Rebar 3/8 x 12 m'), q: '120', p: '$198.50', t: '$23,820.00' },
     { d: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), q: '2,400', p: '$14.20', t: '$34,080.00' },
 ];
@@ -106,7 +110,7 @@ const ITEMS = [
                 <span class="ehv-w-f"><i></i></span>
             </div>
         </div>
-        <p class="ehv-w-sum">{tx('Resumen', 'Summary')}<code>&lt;cord-cotizador&gt;</code></p>
+        <p class="ehv-w-sum">{tx('Resumen', 'Summary')}<code>&lt;cord-quote&gt;</code></p>
     </div>
 
     <div class="ehv-col">
@@ -124,7 +128,7 @@ const ITEMS = [
                 <div class="ehv-due ehv-sec">
                     <small class="ehv-lbl">{tx('Total a pagar', 'Total due')}</small>
                     <strong class="ehv-num">$138,944.80<em>MXN</em></strong>
-                    <span>{tx('IVA incluido · Válida hasta el 19 oct 2026', 'Tax included · Valid until Oct 19, 2026')}</span>
+                    <span>{tx('IVA incluido · Válida hasta el 19 oct 2026', 'IVA included · Valid until Oct 19, 2026')}</span>
                 </div>
 
                 <div class="ehv-items ehv-sec">
@@ -138,7 +142,7 @@ const ITEMS = [
                     ))}
                     <dl class="ehv-tot">
                         <dt>Subtotal</dt><dd class="ehv-num">$119,780.00</dd>
-                        <dt>{tx('IVA', 'VAT')} 16%</dt><dd class="ehv-num">$19,164.80</dd>
+                        <dt>IVA 16%</dt><dd class="ehv-num">$19,164.80</dd>
                         <dt class="ehv-tot-t">Total</dt><dd class="ehv-tot-t ehv-num">$138,944.80 MXN</dd>
                     </dl>
                 </div>
@@ -337,7 +341,7 @@ const ITEMS = [
 
     /* ── Chip de código ── */
     .ehv-chip {
-        position: absolute; z-index: 2; left: 3.5%; bottom: 128px; width: min(318px, calc(100% - 372px - 8%));
+        position: absolute; z-index: 2; left: 3.5%; bottom: 128px; width: min(344px, calc(100% - 372px - 6%));
         min-width: 268px; background: #0b1526; border-radius: 12px; overflow: hidden;
         box-shadow: 0 1px 2px rgba(5, 11, 20, 0.2), 0 24px 48px -20px rgba(5, 11, 20, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
     }
@@ -357,7 +361,7 @@ const ITEMS = [
     /* ══════════ La tarjeta y sus cuatro Apariencias ══════════ */
     .ehv-card {
         /* default: Cord light */
-        --bg: #ffffff; --fg: #0a192f; --mut: #8a93a2; --soft: #5b6575; --line: #eef0f3;
+        --bg: #ffffff; --fg: #0a192f; --mut: #6b7280; --soft: #5b6575; --line: #eef0f3;
         --well: #fafafb; --wellb: #eef0f3; --pri: #0d1b33; --onpri: #ffffff;
         --r: 16px; --r2: 10px; --rb: 999px; --font: var(--font-sans, Inter, system-ui, sans-serif); --num: var(--font);
         --numw: 700; --track: -0.04em; --tile: #ffffff; --tileb: #e5e7eb; --tilesel: #0d1b33; --tileselbg: rgba(13, 27, 51, 0.025);
@@ -390,9 +394,9 @@ const ITEMS = [
         --shadow: 0 1px 2px rgba(2, 12, 18, 0.35), 0 44px 90px -30px rgba(2, 18, 26, 0.6);
     }
     .ehv-card[data-theme='brand'] {
-        --bg: #f0faf6; --fg: #12302b; --mut: #6b8a83; --soft: #3f5f58; --line: rgba(15, 118, 110, 0.12);
+        --bg: #f0faf6; --fg: #12302b; --mut: #52706a; --soft: #3f5f58; --line: rgba(15, 118, 110, 0.12);
         --well: #ffffff; --wellb: rgba(15, 118, 110, 0.1); --pri: #0f766e; --onpri: #ffffff;
-        --r: 22px; --r2: 14px; --rb: 14px; --num: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+        --r: 22px; --r2: 14px; --rb: 14px; --num: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif; --font: var(--num);
         --numw: 600; --track: -0.01em; --tile: #ffffff; --tileb: rgba(15, 118, 110, 0.14); --tilesel: #0f766e;
         --tileselbg: #ffffff; --ring: 0 0 0 4px rgba(15, 118, 110, 0.1); --lblt: none; --lbls: 0.01em; --lblsz: 0.64rem;
         --logobg: #0f766e; --logofg: #ffffff; --edge: rgba(15, 118, 110, 0.12);
