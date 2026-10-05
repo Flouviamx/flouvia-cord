@@ -268,7 +268,7 @@ export function useCordCatalog(opts: UseCordFetchOptions = {}) {
             } catch (err: any) {
                 throw new CordError(0, { error: err?.message || 'Error de red' }, 'network_error');
             }
-            if (!res.ok) throw new CordError(res.status, await parseErrorBody(res));
+            if (!res.ok) throw new CordError(res.status, await parseErrorBody(res), undefined, res.headers.get('cord-request-id'));
             const body = await res.json();
             setProducts(unwrapEnvelope<CordProduct[]>(body));
         } catch (err: any) {
@@ -324,7 +324,7 @@ export function useCordClients(opts: UseCordFetchOptions = {}) {
             } catch (err: any) {
                 throw new CordError(0, { error: err?.message || 'Error de red' }, 'network_error');
             }
-            if (!res.ok) throw new CordError(res.status, await parseErrorBody(res));
+            if (!res.ok) throw new CordError(res.status, await parseErrorBody(res), undefined, res.headers.get('cord-request-id'));
             const body = await res.json();
             setClients(unwrapEnvelope<CordClient[]>(body));
         } catch (err: any) {
@@ -368,7 +368,7 @@ export function useCreateQuote() {
                 throw new CordError(0, { error: err?.message || 'Error de red' }, 'network_error');
             }
             const body = await res.json();
-            if (!res.ok) throw new CordError(res.status, body);
+            if (!res.ok) throw new CordError(res.status, body, undefined, res.headers.get('cord-request-id'));
             // El servidor envuelve en `{ data }` (ver /api/v1/cotizaciones.ts) —
             // sin este unwrap, `result.folio`/`result.token` siempre venían undefined.
             return unwrapEnvelope<CreateQuoteResponse>(body);

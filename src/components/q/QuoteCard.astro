@@ -30,9 +30,10 @@ interface Props {
     yaRechazada: boolean;
     puedePagar: boolean;
     standalone?: boolean;   // true en /q (permite barra fija); false en /embed (iframe)
+    soloLectura?: boolean;  // embed sin allowlist: sin acciones, que se hacen en /q
 }
 
-const { quote: q, org: ORG, conversacion, yaAprobada, yaRechazada, puedePagar, standalone = false } = Astro.props;
+const { quote: q, org: ORG, conversacion, yaAprobada, yaRechazada, puedePagar, standalone = false, soloLectura = false } = Astro.props;
 const color = `var(--cord-color-primary, ${ORG.colorMarca || '#0a192f'})`;
 const mostrarChat = ORG.portalMostrarChat !== false;
 const banner = (ORG.portalBanner ?? '').trim();
@@ -154,7 +155,7 @@ const demoRuntimeJson = esDemo
     : '';
 ---
 
-<div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined}>
+<div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined}>
     <script type="application/json" id="qRetenciones" is:inline set:html={JSON.stringify((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
@@ -321,7 +322,14 @@ const demoRuntimeJson = esDemo
     <!-- ──────────────────────────────────────────
          ÁREA DE ACCIÓN — flujo de aprobación en pasos
     ────────────────────────────────────────── -->
-    <div class="q-actions-area" data-sec="pago">
+    {soloLectura && (viva || puedePagar) && (
+        <div class="q-readonly">
+            <div class="q-readonly-title">{t(L, 'q.embed_lectura_titulo')}</div>
+            <p class="q-readonly-text">{tf('q.embed_lectura_texto', { org: ORG.nombre })}</p>
+            <a class="q-readonly-cta" href={`/q/${encodeURIComponent(q.token)}`} target="_blank" rel="noopener noreferrer" style={`background:${color}`}>{t(L, 'q.embed_lectura_cta')}</a>
+        </div>
+    )}
+    <div class="q-actions-area" data-sec="pago" inert={soloLectura || undefined}>
 
         <!-- Paso: review (default si cotización viva) -->
         <div class="ql-step" id="stepReview">
@@ -633,7 +641,7 @@ const demoRuntimeJson = esDemo
 
     <!-- Conversación + chat directo -->
     {mostrarChat && (
-        <div class="q-chat" data-sec="conversacion">
+        <div class="q-chat" data-sec="conversacion" inert={soloLectura || undefined}>
             <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
                 <div class="q-chat-eyebrow">{t(L, 'q.conversacion')}</div>
                 {conversacion.map((m) => (
@@ -1091,17 +1099,27 @@ const demoRuntimeJson = esDemo
     document.getElementById('qPdfApproved')?.addEventListener('click', () => window.print());
 
     // ── Pago en línea ──
+    // La página de pago no se deja enmarcar: dentro de un embed se abre en una
+    // ventana propia de Cord, y el anfitrión recibe la URL absoluta.
+    const ENMARCADO = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    const abrePago = (btn: HTMLButtonElement) => {
+        const url = new URL(`/q/${encodeURIComponent(token)}/pay`, window.location.origin).href;
+        const etiqueta = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
+        emit('cord:pay', { url });
+        if (!ENMARCADO) { window.location.href = url; return; }
+        window.open(url, '_blank', 'noopener,noreferrer');
+        btn.disabled = false;
+        btn.textContent = etiqueta;
+    };
     document.getElementById('qPayBtn')?.addEventListener('click', async (e) => {
         // Demo: /q/demo/pay no existe. Se muestra dentro del flujo cómo pagaría
         // el cliente, sin pedir datos de tarjeta.
         if (DEMO) { demoAbrePago(); return; }
         const btn = e.currentTarget as HTMLButtonElement;
-        btn.disabled = true;
-        btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
         try {
-            const url = `/q/${token}/pay`;
-            emit('cord:pay', { url });
-            window.location.href = url;
+            abrePago(btn);
         } catch (err: any) {
             alert((err as Error).message);
             btn.disabled = false;
@@ -1112,12 +1130,7 @@ const demoRuntimeJson = esDemo
     // ── Autorizar iguala recurrente (misma página de pago, modo suscripción) ──
     document.getElementById('qSubBtn')?.addEventListener('click', (e) => {
         if (DEMO) { demoAbrePago(); return; }
-        const btn = e.currentTarget as HTMLButtonElement;
-        btn.disabled = true;
-        btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
-        const url = `/q/${token}/pay`;
-        emit('cord:pay', { url });
-        window.location.href = url;
+        abrePago(e.currentTarget as HTMLButtonElement);
     });
 
     // ── Conversación / negociación ──
@@ -1903,6 +1916,18 @@ const demoRuntimeJson = esDemo
 
 /* ── Área de acción ──────────────────────────── */
 .q-actions-area { display: flex; flex-direction: column; }
+.q-card[data-solo-lectura] .q-actions-area,
+.q-card[data-solo-lectura] .q-chat,
+.q-card[data-solo-lectura] .qi-chat-btn,
+.q-card[data-solo-lectura] .qi-thread,
+.q-card[data-solo-lectura] .qi-pick { display: none !important; }
+.q-readonly { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 1.25rem; border-radius: 16px; background: #f5f5f7; }
+.q-readonly-title { font-weight: 600; color: #050505; letter-spacing: -0.02em; }
+.q-readonly-text { margin: 0; color: #6b7280; font-size: 0.9rem; }
+.q-readonly-cta { display: inline-flex; align-items: center; padding: 0.7rem 1.4rem; border-radius: 999px; color: #fff; font-weight: 600; text-decoration: none; transition: transform 0.15s ease; }
+.q-readonly-cta:hover { transform: scale(1.02); }
+.q-readonly-cta:active { transform: scale(0.98); }
+.q-readonly-cta:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
 .ql-step { display: flex; flex-direction: column; gap: 0.9rem; }
 .ql-hidden { display: none !important; }
 .ql-entering {

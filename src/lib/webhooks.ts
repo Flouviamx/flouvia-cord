@@ -15,56 +15,58 @@ import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 import { recordDomainEvent } from './domain-events';
 import { INTEGRATION_WEBHOOK_LIMIT, webhookLimit } from './entitlements';
+import { WEBHOOK_EVENT_TYPES, type CordWebhookEventType } from '../../packages/elements/src/contract/webhook-events';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
-export const WEBHOOK_EVENTS = [
-    { id: 'quote.sent', label: 'Cotización enviada' },
-    { id: 'quote.viewed', label: 'Cotización vista' },
-    { id: 'quote.approved', label: 'Cotización aprobada' },
-    { id: 'quote.rejected', label: 'Cotización rechazada' },
-    { id: 'quote.updated', label: 'Cotización modificada y reenviada' },
-    { id: 'quote.expired', label: 'Cotización vencida' },
-    { id: 'quote.deleted', label: 'Borrador eliminado' },
-    { id: 'quote.paid', label: 'Pago recibido' },
-    { id: 'payment.partial', label: 'Pago parcial recibido' },
-    { id: 'payment.failed', label: 'Cobro recurrente fallido' },
-    { id: 'invoice.issued', label: 'Factura comercial emitida' },
-    { id: 'invoice.stamped', label: 'CFDI timbrado' },
-    // Ciclo de vida de la factura como objeto propio (ago 2026). Los dos de
-    // arriba se conservan por compatibilidad y siguen llevando payload de
-    // cotización; estos llevan payload de FACTURA (ver dispatchInvoiceEvent).
-    { id: 'invoice.finalized', label: 'Factura emitida' },
-    { id: 'invoice.sent', label: 'Factura enviada al cliente' },
-    { id: 'invoice.paid', label: 'Factura pagada' },
-    { id: 'invoice.payment_failed', label: 'Pago de factura fallido' },
-    { id: 'invoice.voided', label: 'Factura anulada' },
-    { id: 'invoice.marked_uncollectible', label: 'Factura marcada incobrable' },
-    { id: 'invoice.overdue', label: 'Factura vencida' },
-    { id: 'quote.created', label: 'Cotización creada' },
-    { id: 'quote.approval_requested', label: 'Aprobación interna solicitada' },
-    { id: 'quote.approval_decided', label: 'Aprobación interna decidida' },
-    { id: 'quote.comment_added', label: 'Mensaje en la cotización' },
-    { id: 'client.created', label: 'Cliente creado' },
-    { id: 'client.updated', label: 'Cliente actualizado' },
-    { id: 'client.deleted', label: 'Cliente eliminado' },
-    { id: 'product.created', label: 'Producto creado' },
-    { id: 'product.updated', label: 'Producto actualizado' },
-    { id: 'product.deleted', label: 'Producto eliminado' },
-    { id: 'task.created', label: 'Tarea creada' },
-    { id: 'task.completed', label: 'Tarea completada' },
-    { id: 'promise.created', label: 'Promesa de pago registrada' },
-    { id: 'promise.kept', label: 'Promesa de pago cumplida' },
-    { id: 'promise.broken', label: 'Promesa de pago incumplida' },
-    { id: 'dispute.created', label: 'Contracargo abierto' },
-    { id: 'dispute.closed', label: 'Contracargo cerrado' },
-    { id: 'refund.succeeded', label: 'Reembolso completado' },
-    { id: 'refund.failed', label: 'Reembolso fallido' },
-    { id: 'payout.paid', label: 'Depósito pagado' },
-    { id: 'payout.failed', label: 'Depósito fallido' },
-    { id: 'account.updated', label: 'Cuenta de cobros actualizada' },
-] as const;
+// La lista y la forma de cada evento viven en el contrato del paquete; aquí solo
+// las etiquetas. Un evento sin etiqueta, o una etiqueta sin evento, no compila.
+const WEBHOOK_EVENT_LABELS: Record<CordWebhookEventType, string> = {
+    'quote.sent': 'Cotización enviada',
+    'quote.viewed': 'Cotización vista',
+    'quote.approved': 'Cotización aprobada',
+    'quote.rejected': 'Cotización rechazada',
+    'quote.updated': 'Cotización modificada y reenviada',
+    'quote.expired': 'Cotización vencida',
+    'quote.deleted': 'Borrador eliminado',
+    'quote.paid': 'Pago recibido',
+    'payment.partial': 'Pago parcial recibido',
+    'payment.failed': 'Cobro recurrente fallido',
+    'invoice.issued': 'Factura comercial emitida',
+    'invoice.stamped': 'CFDI timbrado',
+    'invoice.finalized': 'Factura emitida',
+    'invoice.sent': 'Factura enviada al cliente',
+    'invoice.paid': 'Factura pagada',
+    'invoice.payment_failed': 'Pago de factura fallido',
+    'invoice.voided': 'Factura anulada',
+    'invoice.marked_uncollectible': 'Factura marcada incobrable',
+    'invoice.overdue': 'Factura vencida',
+    'quote.created': 'Cotización creada',
+    'quote.approval_requested': 'Aprobación interna solicitada',
+    'quote.approval_decided': 'Aprobación interna decidida',
+    'quote.comment_added': 'Mensaje en la cotización',
+    'client.created': 'Cliente creado',
+    'client.updated': 'Cliente actualizado',
+    'client.deleted': 'Cliente eliminado',
+    'product.created': 'Producto creado',
+    'product.updated': 'Producto actualizado',
+    'product.deleted': 'Producto eliminado',
+    'task.created': 'Tarea creada',
+    'task.completed': 'Tarea completada',
+    'promise.created': 'Promesa de pago registrada',
+    'promise.kept': 'Promesa de pago cumplida',
+    'promise.broken': 'Promesa de pago incumplida',
+    'dispute.created': 'Contracargo abierto',
+    'dispute.closed': 'Contracargo cerrado',
+    'refund.succeeded': 'Reembolso completado',
+    'refund.failed': 'Reembolso fallido',
+    'payout.paid': 'Depósito pagado',
+    'payout.failed': 'Depósito fallido',
+    'account.updated': 'Cuenta de cobros actualizada',
+};
 
-export type WebhookEvent = typeof WEBHOOK_EVENTS[number]['id'];
+export const WEBHOOK_EVENTS = WEBHOOK_EVENT_TYPES.map((id) => ({ id, label: WEBHOOK_EVENT_LABELS[id] }));
+
+export type WebhookEvent = CordWebhookEventType;
 export const WEBHOOK_EVENT_IDS = WEBHOOK_EVENTS.map((e) => e.id) as string[];
 
 // Re-exportados para no cambiar los imports existentes (api/webhooks.ts, etc.)

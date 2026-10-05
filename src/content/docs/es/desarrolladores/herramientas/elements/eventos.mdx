@@ -39,7 +39,7 @@ Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres co
 ### Interacción comercial
 - **`cord:approved`**: Emitido en el instante en que el usuario aprueba los términos de la propuesta comercial. Devuelve en el `detail` datos útiles como el hash de validación y quién firmó (`signed_by`).
 - **`cord:signed`**: Se dispara en el MISMO instante que `cord:approved`, con el mismo `detail` (`signed_by`, `hash`) — en Cord, aprobar y firmar son una sola acción del cliente, no dos pasos separados en el tiempo. Escucha el que te resulte más claro semánticamente; no esperes a que "llegue después" del otro.
-- **`cord:pay`**: Emitido cuando el usuario hace clic en el botón para iniciar su flujo de pago en línea (tarjeta o SPEI, según lo que el negocio tenga habilitado). El `detail` trae la `url` a la que el cliente será redirigido.
+- **`cord:pay`**: Emitido cuando el usuario hace clic en el botón para iniciar su flujo de pago en línea (tarjeta o SPEI, según lo que el negocio tenga habilitado). El `detail` trae la `url` absoluta de la página de pago. Cord ya la abre en una ventana propia (el pago nunca corre dentro del iframe): no navegues tu página a esa URL, úsala solo para tu analítica.
 - **`cord:rejected`**: Disparado si el cliente marca explícitamente la propuesta como declinada. El `detail` incluye el `comentario` que haya dejado.
 - **`cord:message`**: Se activa cada que el cliente deja un comentario general o una contraoferta en el chat de la cotización.
 - **`cord:item_comment`**: Se dispara cuando el usuario deja un comentario específico sobre una partida (línea de producto) de la cotización, con el `item_id` correspondiente en el `detail`.

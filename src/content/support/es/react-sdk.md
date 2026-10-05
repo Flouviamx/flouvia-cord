@@ -40,7 +40,7 @@ function MiPortal({ token }) {
     <CordCotizador
       token={token}
       onApproved={(e) => console.log('Aprobada, firmada por', e.signed_by)}
-      onPay={(e) => window.location.assign(e.url)}
+      onPay={(e) => console.log('Pago abierto en', e.url)}
       onRejected={(e) => console.log('Rechazada:', e.comentario)}
     />
   );

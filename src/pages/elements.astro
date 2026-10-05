@@ -68,7 +68,7 @@ export function Cotizacion({ token }) {
       token={token}
       appearance={{ theme: 'auto' }}
       onApproved={(d) => console.log('${tx('Firmada por', 'Signed by')}', d.signed_by)}
-      onPay={(d) => window.location.assign(d.url)}
+      onPay={(d) => console.log('${tx('Pago abierto en', 'Payment opened at')}', d.url)}
     />
   );
 }`,

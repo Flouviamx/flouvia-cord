@@ -40,7 +40,7 @@ function MyPortal({ token }) {
     <CordCotizador
       token={token}
       onApproved={(e) => console.log('Approved, signed by', e.signed_by)}
-      onPay={(e) => window.location.assign(e.url)}
+      onPay={(e) => console.log('Payment opened at', e.url)}
       onRejected={(e) => console.log('Rejected:', e.comentario)}
     />
   );

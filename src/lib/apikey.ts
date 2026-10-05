@@ -19,6 +19,7 @@ import { rateLimit, tooMany } from './ratelimit';
 import { apiKeyLimit } from './permissions';
 import { runIdempotent } from './api-idempotency';
 import { isFirstPartyClient } from './oauth-core';
+import { decorateApiResponse, newRequestId, publishableKeyAllows } from './api-cors';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -51,14 +52,34 @@ function bearerToken(request: Request): string | null {
     return m ? m[1].trim() : null;
 }
 
-const PUBLISHABLE_ALLOWLIST = new Set([
-    'GET /api/v1/productos',
-    'POST /api/v1/cotizaciones',
-]);
+export { publishableKeyAllows };
 
-export function publishableKeyAllows(method: string, pathname: string): boolean {
-    const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-    return PUBLISHABLE_ALLOWLIST.has(`${method.toUpperCase()} ${path}`);
+export interface OriginDenied { error: string; code: string }
+
+// Una pk_ vive en el código fuente de una página: el Origin es lo único que la
+// ata al negocio. En vivo, sin allowlist no hay a qué atarla y se rechaza; en
+// prueba solo toca la sandbox y se acepta desde cualquier origen.
+export function publishableOriginCheck(mode: ApiMode, embedDomains: string | null | undefined, origin: string | null): OriginDenied | null {
+    if (!origin) return { error: 'Origin no detectado. Las Publishable Keys requieren enviar el header Origin o Referer.', code: 'missing_origin' };
+    const dominios = (embedDomains || '').split(/[\s,]+/).map((d) => d.trim()).filter(Boolean);
+    if (dominios.length === 0) {
+        if (mode === 'test') return null;
+        return { error: 'Configura los dominios permitidos de Cord Elements antes de usar una Publishable Key en vivo.', code: 'origin_allowlist_required' };
+    }
+    try {
+        const originHost = new URL(origin).hostname;
+        const matched = dominios.some((d) => d === originHost || originHost.endsWith('.' + d.replace(/^\*\./, '')));
+        return matched ? null : { error: 'Origin no autorizado para usar esta Publishable Key.', code: 'unauthorized_origin' };
+    } catch {
+        return { error: 'Origin inválido.', code: 'invalid_origin' };
+    }
+}
+
+// Un navegador siempre manda Sec-Fetch-Site en un fetch; un servidor no. Una
+// secret key que llega desde un navegador ya está expuesta en el cliente.
+export function isBrowserRequest(request: Request): boolean {
+    const site = request.headers.get('sec-fetch-site');
+    return !!site && site !== 'none';
 }
 
 /**
@@ -129,24 +150,9 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
             return jsonError('Publishable Key no tiene permisos para esta acción. Usa una Secret Key desde tu backend.', 'insufficient_scope', 403);
         }
 
-        // Validación de Origin para prevenir robo de pk_
         const origin = request.headers.get('origin') || request.headers.get('referer');
-        if (!origin) {
-            return jsonError('Origin no detectado. Las Publishable Keys requieren enviar el header Origin o Referer.', 'missing_origin', 403);
-        }
-
-        const dominios = (row.embed_domains || '').split(/[\s,]+/).map((d: string) => d.trim()).filter(Boolean);
-        if (dominios.length > 0) {
-            try {
-                const originHost = new URL(origin).hostname;
-                const matched = dominios.some((d: string) => d === originHost || originHost.endsWith('.' + d.replace(/^\*\./, '')));
-                if (!matched) {
-                    return jsonError('Origin no autorizado para usar esta Publishable Key.', 'unauthorized_origin', 403);
-                }
-            } catch {
-                return jsonError('Origin inválido.', 'invalid_origin', 403);
-            }
-        }
+        const denied = publishableOriginCheck(mode, row.embed_domains, origin);
+        if (denied) return jsonError(denied.error, denied.code, 403);
     }
 
     // La API está disponible en TODOS los planes (incluido free, limitado). El
@@ -197,21 +203,34 @@ export function withApiAuth(
     handler: (ctx: Parameters<APIRoute>[0], auth: ApiAuth) => Response | Promise<Response>,
 ): APIRoute {
     return async (ctx) => {
-        const auth = await authApiKey(ctx.request, need);
-        if (auth instanceof Response) return auth;
-        const limited = await checkApiKeyRateLimit(auth);
-        if (limited) return limited;
-        const t0 = Date.now();
-        const res = await runIdempotent(auth, ctx.request, async () => {
-            const meteringError = await meterApiUsage(auth);
-            if (meteringError) return meteringError;
-            // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
-            return reqContext.run({ userId: null, orgId: auth.orgId, actor: `api:${auth.keyId}` }, () => handler(ctx, auth));
-        });
-        // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
-        void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
-        return res;
+        const requestId = newRequestId();
+        const res = await runApiRoute(ctx, need, handler);
+        return decorateApiResponse(ctx.request, res, requestId);
     };
+}
+
+async function runApiRoute(
+    ctx: Parameters<APIRoute>[0],
+    need: ApiScope,
+    handler: (ctx: Parameters<APIRoute>[0], auth: ApiAuth) => Response | Promise<Response>,
+): Promise<Response> {
+    const auth = await authApiKey(ctx.request, need);
+    if (auth instanceof Response) return auth;
+    if (auth.type === 'secret' && !auth.oauthClient && isBrowserRequest(ctx.request)) {
+        return jsonError('Una Secret Key no se usa desde un navegador. Llámala desde tu servidor y revoca esta llave: ya quedó expuesta.', 'secret_key_in_browser', 403);
+    }
+    const limited = await checkApiKeyRateLimit(auth);
+    if (limited) return limited;
+    const t0 = Date.now();
+    const res = await runIdempotent(auth, ctx.request, async () => {
+        const meteringError = await meterApiUsage(auth);
+        if (meteringError) return meteringError;
+        // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
+        return reqContext.run({ userId: null, orgId: auth.orgId, actor: `api:${auth.keyId}` }, () => handler(ctx, auth));
+    });
+    // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
+    void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
+    return res;
 }
 
 // Rate limit por LLAVE: las pk_ (frontend) son más restringidas para evitar

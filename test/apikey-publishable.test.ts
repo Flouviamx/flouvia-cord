@@ -6,7 +6,7 @@ vi.mock('../src/lib/billing', () => ({ flushUsageReservation: vi.fn(), reserveUs
 vi.mock('../src/lib/ratelimit', () => ({ rateLimit: vi.fn(), tooMany: vi.fn() }));
 vi.mock('../src/lib/permissions', () => ({ apiKeyLimit: () => 2 }));
 
-const { publishableKeyAllows } = await import('../src/lib/apikey');
+const { publishableKeyAllows, publishableOriginCheck, isBrowserRequest } = await import('../src/lib/apikey');
 
 describe('llave publicable (pk_): allowlist exacta de método + ruta', () => {
     it.each([
@@ -39,5 +39,44 @@ describe('llave publicable (pk_): allowlist exacta de método + ruta', () => {
         ['POST', '/api/v1/%63otizaciones'],
     ])('rechaza %s %s', (method, path) => {
         expect(publishableKeyAllows(method, path)).toBe(false);
+    });
+});
+
+describe('llave publicable (pk_): origen', () => {
+    it('en vivo exige allowlist configurada', () => {
+        expect(publishableOriginCheck('live', '', 'https://tienda.com')?.code).toBe('origin_allowlist_required');
+        expect(publishableOriginCheck('live', null, 'https://tienda.com')?.code).toBe('origin_allowlist_required');
+    });
+
+    it('en prueba acepta cualquier origen sin allowlist', () => {
+        expect(publishableOriginCheck('test', '', 'http://localhost:3000')).toBeNull();
+    });
+
+    it('siempre exige Origin o Referer', () => {
+        expect(publishableOriginCheck('test', '', null)?.code).toBe('missing_origin');
+    });
+
+    it('acepta el dominio exacto y sus subdominios, y nada más', () => {
+        const allow = 'tienda.com, *.socio.mx';
+        expect(publishableOriginCheck('live', allow, 'https://tienda.com')).toBeNull();
+        expect(publishableOriginCheck('live', allow, 'https://www.tienda.com')).toBeNull();
+        expect(publishableOriginCheck('live', allow, 'https://app.socio.mx')).toBeNull();
+        expect(publishableOriginCheck('live', allow, 'https://tienda.com.evil.io')?.code).toBe('unauthorized_origin');
+        expect(publishableOriginCheck('live', allow, 'https://eviltienda.com')?.code).toBe('unauthorized_origin');
+        expect(publishableOriginCheck('live', allow, 'no-es-url')?.code).toBe('invalid_origin');
+    });
+});
+
+describe('secret key desde un navegador', () => {
+    const req = (headers: Record<string, string>) => new Request('https://cordhq.app/api/v1/clientes', { headers });
+
+    it('detecta un fetch de navegador por Sec-Fetch-Site', () => {
+        expect(isBrowserRequest(req({ 'sec-fetch-site': 'cross-site' }))).toBe(true);
+        expect(isBrowserRequest(req({ 'sec-fetch-site': 'same-origin' }))).toBe(true);
+    });
+
+    it('deja pasar servidores y navegación directa', () => {
+        expect(isBrowserRequest(req({}))).toBe(false);
+        expect(isBrowserRequest(req({ 'sec-fetch-site': 'none' }))).toBe(false);
     });
 });

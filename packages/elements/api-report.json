@@ -42,6 +42,9 @@
   "./server": [
     "CordAPI",
     "CordError",
-    "CordWebhooks"
+    "CordWebhooks",
+    "WEBHOOK_EVENT_OBJECTS",
+    "WEBHOOK_EVENT_TYPES",
+    "isWebhookEventType"
   ]
 }

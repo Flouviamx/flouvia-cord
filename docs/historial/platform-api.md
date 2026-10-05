@@ -6,6 +6,41 @@
 
 ---
 
+✅ **Elements y API v1: seguridad de embed, llaves y contrato de webhooks (4 oct 2026)** —
+primera entrega del plan para llevar Elements a nivel Stripe. Lo que se encontró y por qué
+se resolvió así:
+   • **Clickjacking real sin allowlist.** Con `orgs.embed_domains` vacío, `/embed/[token]`
+     respondía `frame-ancestors *` con los botones de aprobar, firmar y pagar vivos, y
+     `postMessage('*')` con `signed_by` y la URL de pago. Ahora, sin dominios el embed es de
+     solo lectura (acciones `inert` y ocultas, botón a `/q/[token]` en pestaña nueva, eventos
+     sin `detail`). El modo interactivo depende de la allowlist y NO del `parentOrigin` del
+     SDK: ese parámetro se puede falsificar, `frame-ancestors` no.
+   • **El pago dentro del iframe estaba roto.** El botón navegaba el iframe a
+     `/q/[token]/pay`, que lleva `frame-ancestors 'self'`: el navegador lo bloqueaba. Y el
+     `url` de `cord:pay` era relativo, así que el ejemplo `window.location.assign(d.url)` del
+     README lo resolvía contra el dominio del anfitrión. Enmarcado, el pago abre ventana
+     propia y el evento trae URL absoluta.
+   • **Embed con CSP completa.** Solo llevaba `frame-ancestors`; el middleware ahora pone
+     la política base (con `base-uri 'none'`), `no-store`, `noindex` y `no-referrer`.
+   • **Appearance por gramática** (`packages/elements/src/appearance.ts`), compartido por el
+     embed y el SDK: el filtro anterior dejaba pasar `url(...)` y cualquier clave.
+   • **Llaves.** `pk_live_` exige allowlist (`origin_allowlist_required`): sin ella el Origin
+     no ata la llave a nada. Una `sk_` desde un navegador se rechaza por `Sec-Fetch-Site`
+     solo en `withApiAuth`; `/api/mcp` queda fuera porque habilita CORS a propósito.
+     **Antes de desplegar:** contar las `pk_live_` de organizaciones sin dominios y avisarles.
+   • **CORS y trazabilidad.** `/api/v1` no respondía preflight, así que el modo publishable
+     no funcionaba cross-origin. Ahora hay CORS solo en las dos rutas de `pk_`, sin
+     credenciales, y toda respuesta lleva `Cord-Request-Id` (los errores, `request_id` y
+     `doc_url` con ancla al código en la doc de errores).
+   • **Contrato de webhooks.** La lista vivía copiada en el SDK y declaraba 12 de 41 eventos.
+     Ahora `packages/elements/src/contract/webhook-events.ts` es la fuente: `webhooks.ts`
+     deriva su catálogo de ahí (etiqueta faltante = no compila) y
+     `test/webhook-contract.test.ts` lo cruza con `DOMAIN_EVENTS` y con la doc en ambos
+     idiomas. El `ping` de prueba ahora trae `moneda` y `cliente_id`, como cualquier
+     cotización.
+   • SDK 1.1.0 (sigue sin publicar) suma todo lo anterior; el CHANGELOG decía que 1.0.0 no
+     se había publicado y sí salió el 16 jul 2026.
+
 ✅ **Shopify, fase 1: la tienda entra a Cord (22 sep 2026)** — catálogo y clientes
 hacia Cord, en una sola dirección, para cotizar mayoreo con datos reales. Decisiones
 que no eran obvias:

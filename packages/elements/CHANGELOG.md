@@ -4,11 +4,52 @@ Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
 ## [1.1.0] — sin publicar
 
+### Security
+
+- **Embed sin dominios permitidos = solo lectura.** Si tu organización no configuró
+  dominios en Ajustes › Elements, cualquier sitio podía enmarcar la cotización con los
+  botones de aprobar, firmar y pagar (clickjacking). Ahora el embed muestra la propuesta
+  y un botón que abre `/q/{token}` en una pestaña nueva, en el dominio de Cord. Con
+  dominios configurados, todo sigue igual. En solo lectura los eventos llegan sin `detail`.
+- **El pago nunca corre dentro del iframe.** Antes el botón navegaba el propio iframe a
+  `/q/{token}/pay`, que el navegador bloquea al enmarcarse. Ahora abre una ventana de
+  Cord y `cord:pay` trae la URL **absoluta** (antes era relativa: `window.location.assign`
+  en tu sitio la resolvía contra tu dominio).
+- **Appearance validado por gramática.** Claves enumeradas (`colorPrimary`,
+  `colorBackground`, `colorText`, `colorTextSecondary`, `colorBorder`, `colorDanger`,
+  `fontFamily`, `fontSize`, `borderRadius`), colores y longitudes por tipo, sin `url(`.
+  Lo que no encaja se descarta.
+- **Publishable keys en vivo exigen dominios permitidos** (`origin_allowlist_required`).
+  Las `pk_test_` siguen funcionando desde cualquier origen.
+- **Secret keys desde un navegador se rechazan**: el servidor responde
+  `secret_key_in_browser` y `CordAPI` lanza si recibe una `sk_` en un navegador.
+
+### Added
+
+- **Los 41 eventos de webhook tipados**, con el `data` exacto de cada uno (factura,
+  cliente, producto, tarea, promesa, contracargo, reembolso, depósito y cuenta). Antes
+  el SDK declaraba 12. Los tipos salen del mismo contrato con el que la app emite
+  (`src/contract/webhook-events.ts`), así que ya no pueden divergir. Nuevos exports en
+  `./server`: `WEBHOOK_EVENT_TYPES`, `WEBHOOK_EVENT_OBJECTS`, `isWebhookEventType`.
+- `CordWebhookQuoteData` agrega `moneda` y `cliente_id`, que el servidor ya mandaba.
+- `CordError#requestId` y `CordError#docUrl`. Toda respuesta de `/api/v1` trae
+  `Cord-Request-Id`; los errores lo repiten en el cuerpo junto a `doc_url`.
+- `CordErrorCode` cubre todos los códigos reales del servidor (idempotencia, cuota,
+  origen, sesión vencida, entre otros).
+- CORS real en `/api/v1/productos` (GET) y `/api/v1/cotizaciones` (POST) para el modo
+  publishable: antes no había preflight y el navegador bloqueaba la llamada cross-origin.
+
+### Fixed
+
+- `cord:ready` y `cord:viewed` se emitían dos veces por carga.
+
+### Entrega de webhooks
+
 Identidad de evento para los webhooks salientes — parte de llevar el motor de entrega
 (`src/lib/webhook-delivery.ts`, no publicado, es código de la app) a un outbox durable con
 reintentos con backoff exponencial. 100% aditivo, sin breaking changes.
 
-### Added
+#### Added
 
 - **`CordWebhookEvent.id`** (`evt_…`) — cada entrega trae ahora un identificador estable,
   igual en el body y en el header `X-Cord-Event-Id`. Es el MISMO valor en reintentos
@@ -45,7 +86,7 @@ reintentos con backoff exponencial. 100% aditivo, sin breaking changes.
   reproduces en tu servidor cuadra con el del link. `calculateTotals` (tasa única) se
   conserva sin cambios.
 
-### Notes
+#### Notes
 
 - Ningún header ni campo existente cambió de forma — `X-Cord-Signature`/`X-Cord-Signature-V1`
   siguen firmando exactamente el mismo body crudo; `constructEvent`/`constructEventAsync` no
@@ -55,7 +96,7 @@ reintentos con backoff exponencial. 100% aditivo, sin breaking changes.
   mismo evento más veces de las que veía antes. Deduplicar por `id` es la forma correcta de
   manejarlo (nunca fue seguro asumir entrega exactly-once).
 
-## [1.0.0] — sin publicar
+## [1.0.0] — 2026-07-16
 
 Reescritura mayor para llevar el SDK al nivel de Stripe Elements / Clerk Elements.
 Motivada por una auditoría real (integración en un cliente externo, "El Zarco") que

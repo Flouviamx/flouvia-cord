@@ -39,7 +39,7 @@ All events have the `cord:` prefix to avoid naming collisions with other librari
 ### Commercial interaction
 - **`cord:approved`**: Emitted the instant the user approves the terms of the commercial proposal. Returns useful data in the `detail` such as the validation hash and who signed (`signed_by`).
 - **`cord:signed`**: Fired at the SAME instant as `cord:approved`, with the same `detail` (`signed_by`, `hash`) — in Cord, approving and signing are a single client action, not two separate steps in time. Listen to whichever is more semantically clear for your code; don't expect one to arrive "after" the other.
-- **`cord:pay`**: Emitted when the user clicks the button to start their online payment flow (card or SPEI, depending on what the business has enabled). The `detail` carries the `url` the client will be redirected to.
+- **`cord:pay`**: Emitted when the user clicks the button to start their online payment flow (card or SPEI, depending on what the business has enabled). The `detail` carries the absolute `url` of the payment page. Cord already opens it in its own window (payment never runs inside the iframe): don't navigate your page to that URL, use it only for your analytics.
 - **`cord:rejected`**: Fired if the client explicitly marks the proposal as declined. The `detail` includes the `comentario` they left, if any.
 - **`cord:message`**: Triggered whenever the client leaves a general comment or counter-offer in the quote chat.
 - **`cord:item_comment`**: Fired when the user leaves a specific comment on an item (product line) of the quote, with the corresponding `item_id` in the `detail`.

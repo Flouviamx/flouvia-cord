@@ -1,6 +1,6 @@
 ---
 title: "Elements CSP Security"
-description: "Configure the allowed domains list to prevent Clickjacking in Cord Elements."
+description: "Allowed domains, read-only mode and key rules that protect Cord Elements from clickjacking."
 ---
 
 <header class="content-header">
@@ -31,16 +31,21 @@ The domain system allows strict origins or the use of wildcards:
 - `*.your-company.com` (Authorizes the root and any subdomain, like `app.your-company.com`).
 - `https://portal.your-company.com` (Highly specific).
 
-<Callout type="warning">
-**Warning:** If the domains list is **completely empty**, Cord will operate in an "Open Mode", meaning the iframe can be embedded anywhere. We recommend this mode only during the local testing stage (localhost) and requiring domains before going to production.
-</Callout>
+## No domains: read-only
 
-## Origin Validation in Events
+If the domain list is empty, any site can embed the quote, but **only to display it**. Approving, signing and paying are not offered inside the iframe: instead, a button opens the proposal in a new tab on Cord's domain, where no third-party site can overlay anything. Events are sent without `detail` (no signer name, no payment URL).
 
-Security doesn't stop at preventing who can see the iframe. When Cord Elements fires events outward (like `cord:approved`), the communication could be intercepted by another malicious tab.
+With at least one domain registered, `frame-ancestors` restricts every ancestor of the iframe and the quote is interactive.
 
-The SDK automatically attaches the `parentOrigin` parameter (your page's `window.location.origin`) to the iframe's URL. Cord cross-references it against your domain Allowlist: if you have at least one domain registered **and** that `parentOrigin` matches one of them, the `window.postMessage` channel routes the communication **only to that specific origin**.
+## Events only reach your origin
 
-<Callout type="warning">
-**Important:** if there's NO match (or you haven't configured an Allowlist yet), Cord does **not** drop the event — it dispatches it with `postMessage`'s `*` target, the SDK's historical behavior, so older integrations or a third-party `<iframe>` embedded without `embed.js` don't break. This means that, without an Allowlist configured, any window in the frame chain can read the events. Hardening to a specific origin is an improvement that only kicks in once you register your domains — it isn't an automatic rejection of the unauthorized. Configure your Allowlist in production; don't rely on an unlisted origin "failing silently," because that isn't how it behaves today.
-</Callout>
+The SDK appends the `parentOrigin` parameter (your page's `window.location.origin`) to the iframe URL. If it matches your list, `window.postMessage` targets events **only at that origin**. Without a match, the iframe is still protected by `frame-ancestors`: only a page on your domains can be in the frame chain.
+
+## Payment never runs inside the iframe
+
+The payment page can never be framed. When paying from an embed, Cord opens it in its own window and the `cord:pay` event carries its absolute URL. Card data never passes through a document that your site, or anyone else's, could cover.
+
+## Keys
+
+- **Publishable Key (`pk_live_`)**: only works once allowed domains are configured. Without them, the API responds `origin_allowlist_required`. `pk_test_` keys work from any origin, including `localhost`.
+- **Secret Key (`sk_`)**: never in a browser. If one arrives from a browser, the API responds `secret_key_in_browser` and you should revoke it: it is already exposed in the page source. The SDK also refuses to build `CordAPI` with an `sk_` in a browser.

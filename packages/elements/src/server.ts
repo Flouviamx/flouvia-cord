@@ -1,81 +1,36 @@
 import { CordAPI as BaseCordAPI, CordError } from './api.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-// ⚠️ Debe mantenerse en sync con `WEBHOOK_EVENTS` de src/lib/webhooks.ts (el
-// código de la APP, que no se publica a npm — no hay forma de derivarlo
-// automáticamente a través del límite del paquete). 'ping' es el evento de
-// prueba que dispara sendTestEvent()/"Enviar prueba" en Ajustes › Developers.
-export type CordWebhookEventType =
-    | 'quote.sent'
-    | 'quote.viewed'
-    | 'quote.approved'
-    | 'quote.rejected'
-    | 'quote.updated'
-    | 'quote.expired'
-    | 'quote.deleted'
-    | 'quote.paid'
-    | 'payment.partial'
-    | 'payment.failed'
-    | 'invoice.stamped'
-    | 'invoice.issued'
-    | 'ping';
+import type { CordWebhookEvent, CordWebhookEventType as ContractEventType } from './contract/webhook-events.js';
 
-/** Forma real de `data` en cada entrega (ver dispatchQuoteEvent en src/lib/webhooks.ts). */
-export interface CordWebhookQuoteData {
-    id: string;
-    folio: string;
-    status: string;
-    total: number;
-    cliente: string | null;
-    link_publico: string;
-    /** Solo presente en el evento `ping` de prueba. */
-    mensaje?: string;
-}
-
-/**
- * `data` de `payment.partial` — un anticipo/saldo/cuota se cobró SIN cubrir
- * el total (si lo cubriera, el evento sería `quote.paid` en su lugar).
- * Extiende el resumen normal de cotización con los campos del cobro.
- */
-export interface CordWebhookPaymentPartialData extends CordWebhookQuoteData {
-    /** 'anticipo' | 'saldo' | 'cuota'. */
-    tipo: string;
-    /** Monto de ESTE cobro (no el total de la cotización). */
-    monto: number;
-    /** Solo > 0 cuando `tipo === 'cuota'`. */
-    numero_cuota: number;
-    /** Lo que sigue faltando por cobrar después de este pago. */
-    saldo_pendiente: number;
-    payment_method: string | null;
-}
-
-/**
- * Payload real que Cord entrega — `{ id, event, created_at, data }`, NUNCA
- * `{ type, created }`. Unión discriminada por `event`: todos los eventos
- * comparten `CordWebhookQuoteData` salvo `payment.partial`, cuyo `data` trae
- * campos adicionales del cobro — revisa `event` antes de leer `data` para que
- * TypeScript te dé el tipo correcto.
- */
-export type CordWebhookEvent =
-    | {
-        /**
-         * Identidad del evento (`evt_…`), estable a través de reintentos y de
-         * un replay manual desde Ajustes › Developers — el MISMO id que el
-         * header `X-Cord-Event-Id`/`Idempotency-Key`. Úsalo para deduplicar
-         * del lado del receptor (un reintento reenvía bytes idénticos,
-         * incluido este campo).
-         */
-        id: string;
-        event: Exclude<CordWebhookEventType, 'payment.partial'>;
-        created_at: string;
-        data: CordWebhookQuoteData;
-    }
-    | {
-        id: string;
-        event: 'payment.partial';
-        created_at: string;
-        data: CordWebhookPaymentPartialData;
-    };
+// Los tipos salen del contrato que también usa la app para emitir (ver
+// src/contract/webhook-events.ts): ya no hay una lista copiada a mano.
+export type CordWebhookEventType = ContractEventType | 'ping';
+export { WEBHOOK_EVENT_TYPES, WEBHOOK_EVENT_OBJECTS, isWebhookEventType } from './contract/webhook-events.js';
+export type {
+    CordWebhookEvent,
+    CordWebhookData,
+    CordWebhookObject,
+    CordWebhookPingEvent,
+    CordWebhookQuoteData,
+    CordWebhookPaymentPartialData,
+    CordWebhookApprovalRequestedData,
+    CordWebhookApprovalDecidedData,
+    CordWebhookCommentData,
+    CordWebhookInvoiceData,
+    CordWebhookClientData,
+    CordWebhookClientUpdatedData,
+    CordWebhookClientDeletedData,
+    CordWebhookProductData,
+    CordWebhookProductUpdatedData,
+    CordWebhookProductDeletedData,
+    CordWebhookTaskData,
+    CordWebhookPromiseData,
+    CordWebhookDisputeData,
+    CordWebhookRefundData,
+    CordWebhookPayoutData,
+    CordWebhookAccountData,
+} from './contract/webhook-events.js';
 
 export interface ConstructEventOptions {
     /** Segundos de tolerancia para la firma V1 (con timestamp). Default 300. */

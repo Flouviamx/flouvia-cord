@@ -9,19 +9,42 @@ import type {
 } from './types.js';
 import { resolveApiBase } from './config.js';
 
-// Códigos reales que devuelve el servidor (ver src/lib/apiv1.ts `fail()` y
-// src/lib/apikey.ts) — enumerarlos permite manejar errores por código en vez
-// de parsear el mensaje en español.
+// Códigos reales que devuelve el servidor (src/lib/apiv1.ts, src/lib/apikey.ts,
+// src/lib/api-idempotency.ts). Manejar errores por código, nunca por el mensaje.
 export type CordErrorCode =
     | 'invalid_json'
     | 'invalid_request'
+    | 'unsupported_media_type'
+    | 'payload_too_large'
     | 'missing_key'
     | 'invalid_key'
+    | 'token_expired'
     | 'insufficient_scope'
+    | 'secret_key_in_browser'
     | 'missing_origin'
     | 'unauthorized_origin'
     | 'invalid_origin'
+    | 'origin_allowlist_required'
+    | 'subscription_key_limit'
+    | 'subscription_verification_unavailable'
+    | 'api_quota_exceeded'
+    | 'payment_required'
     | 'rate_limited'
+    | 'invalid_idempotency_key'
+    | 'idempotency_key_reused'
+    | 'idempotency_in_progress'
+    | 'idempotency_unavailable'
+    | 'not_found'
+    | 'missing_id'
+    | 'invalid_cliente_id'
+    | 'invalid_state'
+    | 'missing_text'
+    | 'text_too_long'
+    | 'fx_unavailable'
+    | 'tax_catalog_unavailable'
+    | 'send_failed'
+    | 'provider_error'
+    | 'unavailable'
     | 'server_error'
     | 'network_error'
     | 'clients_require_proxy'
@@ -31,16 +54,24 @@ export class CordError extends Error {
     readonly status: number;
     readonly code: CordErrorCode;
     readonly payload: any;
+    /** `req_…` del header `Cord-Request-Id`. Inclúyelo al pedir soporte. */
+    readonly requestId: string | null;
+    /** Página de la documentación que explica este código. */
+    readonly docUrl: string | null;
 
-    constructor(status: number, payload: any, code?: CordErrorCode) {
+    constructor(status: number, payload: any, code?: CordErrorCode, requestId?: string | null) {
         const resolvedCode: CordErrorCode = code ?? (typeof payload?.code === 'string' ? payload.code : 'unknown');
         super(payload?.error || `Cord API error (${status})`);
         this.name = 'CordError';
         this.status = status;
         this.code = resolvedCode;
         this.payload = payload;
+        this.requestId = requestId ?? (typeof payload?.request_id === 'string' ? payload.request_id : null);
+        this.docUrl = typeof payload?.doc_url === 'string' ? payload.doc_url : null;
     }
 }
+
+const IS_BROWSER = typeof window !== 'undefined' && typeof document !== 'undefined';
 
 /** El servidor envuelve TODA respuesta en `{ data }` (ver src/lib/apiv1.ts `ok()`).
  * Desenvuelve defensivamente: si no hay `.data`, devuelve el body tal cual
@@ -57,6 +88,11 @@ export class CordAPI {
         const key = apiKey || (typeof process !== 'undefined' ? process.env.CORD_API_KEY : undefined);
         if (!key) {
             throw new Error('Cord API Key is required. Pass it to the constructor or set CORD_API_KEY environment variable.');
+        }
+        if (IS_BROWSER && key.startsWith('sk_')) {
+            throw new Error(
+                '[Cord] CordAPI recibió una secret key (sk_) en el navegador. Ya quedó expuesta en el código de la página: revócala en Ajustes › Developers y usa CordAPI solo en tu servidor.',
+            );
         }
         this.apiKey = key;
         this.baseUrl = resolveApiBase(baseUrl);
@@ -91,7 +127,7 @@ export class CordAPI {
             } catch (e) {
                 payload = { error: response.statusText };
             }
-            throw new CordError(response.status, payload);
+            throw new CordError(response.status, payload, undefined, response.headers.get('cord-request-id'));
         }
 
         const body = await response.json();

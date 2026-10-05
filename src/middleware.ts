@@ -284,6 +284,7 @@ import { checkMemberSeatAccess } from './lib/org-entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 import { log } from './lib/log';
 import { isTwoFactorRecoveryApi } from './lib/two-factor-gate';
+import { apiPreflight } from './lib/api-cors';
 
 const mainHandler = async (context: any, next: any) => {
     const path = context.url.pathname;
@@ -363,6 +364,8 @@ const mainHandler = async (context: any, next: any) => {
     const isApi = path.startsWith("/api/");
     const isPublicApi =
         PUBLIC_API_EXACT.includes(path) || PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
+    const preflight = apiPreflight(context.request);
+    if (preflight) return preflight;
     const isOpsPage = path === "/ops" || path.startsWith("/ops/");
     const isOpsApi = path === "/api/ops" || path.startsWith("/api/ops/");
     const isOpsLoginPage = path === "/ops/login";
@@ -744,6 +747,27 @@ const securityHeaders = async (context: any, next: any) => {
             "object-src 'none';"
         );
         secureRes.headers.set("X-Frame-Options", "SAMEORIGIN");
+    } else {
+        // La página fija frame-ancestors con la allowlist de la org; el resto de
+        // la política la pone aquí. Sin frame-ancestors de la página, nadie enmarca.
+        const ancestors = (response.headers.get("Content-Security-Policy") ?? "")
+            .split(";").map((d) => d.trim()).find((d) => d.startsWith("frame-ancestors ")) ?? "frame-ancestors 'none'";
+        secureRes.headers.set(
+            "Content-Security-Policy",
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com; " +
+            "connect-src 'self' https://api.stripe.com; " +
+            "img-src 'self' data: https:; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; " +
+            "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; " +
+            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
+            `${ancestors}; ` +
+            "base-uri 'none'; " +
+            "form-action 'self'; " +
+            "object-src 'none';"
+        );
+        secureRes.headers.set("Cache-Control", "private, no-store, max-age=0");
+        secureRes.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
 
     secureRes.headers.set("X-Content-Type-Options", "nosniff");
@@ -757,7 +781,7 @@ const securityHeaders = async (context: any, next: any) => {
 
     secureRes.headers.set(
         "Referrer-Policy",
-        path.startsWith("/reset-password") || isCapturaIdentidad || isPublicInvoice ? "no-referrer" : "strict-origin-when-cross-origin",
+        path.startsWith("/reset-password") || isCapturaIdentidad || isPublicInvoice || isEmbed ? "no-referrer" : "strict-origin-when-cross-origin",
     );
     // `camera=()` es una allowlist VACÍA: deshabilita getUserMedia incluso para el
     // documento de nivel superior, no sólo para iframes. Se aplicaba a TODA ruta

@@ -3,7 +3,8 @@
 // Reutiliza el MISMO QuoteCard que /q/[token]; la diferencia es el chrome mínimo
 // (EmbedLayout, fondo transparente) y dos piezas propias del embed:
 //   1) SEGURIDAD: header CSP `frame-ancestors` con la allowlist de la org
-//      (orgs.embed_domains) → anti-clickjacking. Vacío = framing abierto (demo).
+//      (orgs.embed_domains) → anti-clickjacking. Vacío = framing abierto, pero
+//      en solo lectura: aprobar, firmar y pagar se hacen en /q/[token].
 //   2) PUENTE con la página anfitriona: ResizeObserver → postMessage('cord:resize')
 //      para auto-altura, y relay de los CustomEvents del QuoteCard al window padre.
 export const prerender = false;
@@ -13,6 +14,7 @@ import QuoteCard from '../../components/q/QuoteCard.astro';
 import { getCotizacionByToken } from '../../lib/queries';
 import { canCollectOnline } from '../../lib/payment-rail';
 import { readVisitorId } from '../../lib/public-viewer';
+import { sanitizeAppearance, appearanceToCss, MAX_APPEARANCE_BYTES } from '../../../packages/elements/src/appearance';
 
 const { token } = Astro.params;
 const result = await getCotizacionByToken(token ?? '');
@@ -32,78 +34,14 @@ const { quote: q, org: ORG, conversacion } = result;
 readVisitorId(Astro.cookies, true);
 
 // ── Appearance API ──
+// Todo valor que termina en CSS pasa por el validador único del paquete: claves
+// enumeradas, gramática por tipo y fuentes solo de proveedores conocidos.
 const appearanceParam = Astro.url.searchParams.get('appearance');
 let appearanceCSS = '';
-if (appearanceParam) {
+if (appearanceParam && appearanceParam.length <= MAX_APPEARANCE_BYTES) {
     try {
-        const parsed = JSON.parse(appearanceParam);
-        // Sanitización estricta para evitar XSS reflejado:
-        // Se rechazan caracteres como < > { } ; y eval/expression.
-        const isSafe = (str: string) => typeof str === 'string' && !/[<>{};]|expression|javascript|vbscript/i.test(str);
-        
-        let vars = '';
-        let fontImports = '';
-
-        // Theme: paleta oscura por default para los tokens --cord-* que el
-        // resto de este documento consume (QuoteCard hereda de :root). Las
-        // `variables` del usuario SIEMPRE se emiten DESPUÉS en el mismo
-        // selector `:root` → en CSS, entre reglas de igual especificidad,
-        // gana la última declarada — así el usuario gana sin necesitar JS
-        // ni selectores con más peso.
-        const DARK_DEFAULTS = '--cord-color-text: #e5e7eb;\n--cord-color-background: #111827;\n';
-        const theme = parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'auto'
-            ? parsed.theme : undefined;
-        let themeCSS = '';
-        let colorScheme = 'light';
-        if (theme === 'dark') {
-            themeCSS = `:root {\n${DARK_DEFAULTS}}\n`;
-            colorScheme = 'dark';
-        } else if (theme === 'auto') {
-            // No hay info del cliente en el render server-side: la decisión
-            // real la toma el navegador vía @media. Puesto ANTES del bloque
-            // de variables del usuario por la misma razón de orden-de-cascada.
-            themeCSS = `@media (prefers-color-scheme: dark) {\n:root {\n${DARK_DEFAULTS}}\n}\n`;
-            colorScheme = 'light dark';
-        }
-
-        if (parsed.variables && typeof parsed.variables === 'object') {
-            for (const [key, val] of Object.entries(parsed.variables)) {
-                if (key !== 'fontFamily' && isSafe(val as string)) {
-                    // Validar nombre de propiedad: solo letras y números
-                    const safeKey = key.replace(/[^a-zA-Z0-9]/g, '');
-                    const cssVar = `--cord-${safeKey.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`;
-                    vars += `${cssVar}: ${val};\n`;
-                }
-            }
-        }
-
-        if (parsed.fonts && Array.isArray(parsed.fonts)) {
-            // Allowlist de hosts de fuentes: sin esto, un @import podría cargar una
-            // hoja de estilos externa arbitraria (redressing/UI-injection). Solo
-            // proveedores de fuentes conocidos y de solo-fuentes.
-            const FONT_HOSTS = ['https://fonts.googleapis.com/', 'https://fonts.bunny.net/'];
-            parsed.fonts.forEach((f: any) => {
-                if (f.cssSrc && isSafe(f.cssSrc) && FONT_HOSTS.some((h) => f.cssSrc.startsWith(h))) {
-                    fontImports += `@import url('${f.cssSrc}');\n`;
-                }
-            });
-            const fontFamily = parsed.variables?.fontFamily || parsed.fonts[0]?.cssSrc?.split('family=')[1]?.split('&')[0];
-            if (fontFamily && isSafe(fontFamily)) {
-                vars += `--cord-font-family: ${fontFamily.replace(/\+/g, ' ')};\n`;
-            }
-        }
-
-        if (colorScheme !== 'light') {
-            vars += `color-scheme: ${colorScheme};\n`;
-        }
-
-        // Se eliminó el soporte de `rules` (selectores CSS arbitrarios) por seguridad.
-        appearanceCSS += themeCSS;
-        if (vars) {
-            appearanceCSS += `:root {\n${vars}}\n`;
-        }
-        appearanceCSS = fontImports + appearanceCSS;
-    } catch (e) {}
+        appearanceCSS = appearanceToCss(sanitizeAppearance(JSON.parse(appearanceParam)));
+    } catch { /* appearance inválido: se ignora */ }
 }
 
 // ── CSP: ¿quién puede embeber esta cotización? ──
@@ -135,6 +73,12 @@ if (dominios.length > 0 && parentOriginParam) {
     } catch { /* parentOrigin inválido → se queda en '*' */ }
 }
 
+// Sin allowlist, cualquier sitio puede enmarcar esta página: aprobar, firmar o
+// pagar ahí sería clickjacking. Con allowlist, frame-ancestors ya restringe a
+// TODOS los ancestros, así que el modo interactivo depende de ella y no del
+// parentOrigin que manda el SDK (ese se puede falsificar).
+const soloLectura = dominios.length === 0;
+
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
 const yaRechazada = q.status === 'rejected';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
@@ -161,23 +105,27 @@ const puedePagar = pagoActivo && pagoDisponible && (
             yaAprobada={yaAprobada}
             yaRechazada={yaRechazada}
             puedePagar={puedePagar}
+            soloLectura={soloLectura}
         />
     </div>
     {appearanceCSS && <style set:html={appearanceCSS}></style>}
 </EmbedLayout>
 
-<script is:inline define:vars={{ targetOrigin }}>
+<script is:inline define:vars={{ targetOrigin, soloLectura }}>
     // JS puro (sin sintaxis TS) — este bloque es is:inline vía define:vars,
     // así que se manda VERBATIM al navegador. `targetOrigin` viaja
     // JSON-serializado por Astro (seguro contra inyección).
     window.__CORD_TARGET_ORIGIN__ = targetOrigin;
+    window.__CORD_SOLO_LECTURA__ = soloLectura;
 </script>
 <script>
     // ── Puente iframe ↔ sitio anfitrión ──
+    const soloLectura = (window as any).__CORD_SOLO_LECTURA__ === true;
     const post = (type: string, payload: Record<string, unknown> = {}) => {
         try {
             const to = (window as any).__CORD_TARGET_ORIGIN__ || '*';
-            window.parent.postMessage({ source: 'cord', type, ...payload }, to);
+            const body = soloLectura && type !== 'cord:resize' ? {} : payload;
+            window.parent.postMessage({ source: 'cord', type, ...body }, to);
         } catch {}
     };
 
@@ -196,7 +144,14 @@ const puedePagar = pagoActivo && pagoDisponible && (
     window.addEventListener('load', reportHeight);
 
     // 'ready' = contenido ya estilado (fuentes cargadas) → el padre revela el iframe.
-    const ready = () => { reportHeight(); post('cord:ready'); post('cord:viewed'); };
+    let listo = false;
+    const ready = () => {
+        reportHeight();
+        if (listo) return;
+        listo = true;
+        post('cord:ready');
+        post('cord:viewed');
+    };
     reportHeight();
     const fonts = (document as any).fonts?.ready;
     if (fonts) fonts.then(ready); else ready();

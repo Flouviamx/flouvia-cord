@@ -60,8 +60,13 @@ Implementación local apagada por defecto, pendiente de DNS/TLS real.
 /embed/[token]   → cotizador embebible (CORD Elements) para <iframe> de terceros.
                    Reutiliza components/q/QuoteCard.astro (mismo corazón que /q) con
                    EmbedLayout (sin chrome). Setea CSP frame-ancestors desde
-                   orgs.embed_domains; postMessage resize + relay de eventos. Loader:
-                   public/embed.js. export const prerender = false.
+                   orgs.embed_domains; el middleware completa la CSP y fija no-store,
+                   noindex y no-referrer (el token es credencial portadora). Sin
+                   dominios: solo lectura (acciones inertes, botón a /q/[token] en
+                   pestaña nueva, postMessage sin detail). El pago nunca corre en el
+                   iframe: se abre en ventana propia. Appearance pasa por
+                   packages/elements/src/appearance.ts. Loader: public/embed.js.
+                   export const prerender = false.
 
 # Dev Blog (Subdominio dev.cordhq.app)
 /dev-blog/*      → El ecosistema técnico para desarrolladores. El rewrite de host lo
@@ -525,13 +530,23 @@ APIs de cobros (ago 2026)
 /api/v1/cotizaciones → GET list (status/limit/offset, paginado en SQL) + POST crear
 /api/v1/cotizaciones/[id] → GET detalle · POST { action: send|resend|approve|reject|mark_paid }
                    · DELETE borrador. Misma capa de acciones que la app (src/lib/actions).
+/api/v1/cotizaciones/ia → POST crear cotización a partir de texto libre
 /api/v1/clientes     → GET list (paginado en SQL) + POST crear
+/api/v1/clientes/[id] → GET detalle + PATCH actualizar
 /api/v1/productos    → GET list (paginado en SQL) + POST crear
+/api/v1/facturas     → GET list + POST crear
+/api/v1/facturas/[id] → GET detalle · POST { action: finalize|send|void|payment|credit_note }
+/api/v1/tareas       → POST crear
 /api/v1/cobranza     → GET cartera
 /api/v1/events       → GET historial de domain_events con cursor opaco (type, object_id)
 /api/v1/webhooks     → GET/POST suscripciones de ESTA llave (webhooks.created_by_key)
 /api/v1/webhooks/[id] → DELETE solo si la creó esta llave. Revocar la llave las desactiva.
                    Toda mutación de /api/v1 acepta Idempotency-Key (api_idempotency, 24 h).
+                   Toda respuesta lleva Cord-Request-Id; los errores agregan request_id
+                   y doc_url (src/lib/api-cors.ts). CORS solo en las dos rutas de pk_
+                   (GET productos, POST cotizaciones), preflight en el middleware y sin
+                   credenciales. pk_live exige orgs.embed_domains; una sk_ que llega
+                   desde un navegador (Sec-Fetch-Site) se rechaza con 403.
 /api/mcp             → MCP JSON-RPC 2.0 (transporte moderno, sin sesión):
                    initialize/ping/tools/list/tools/call. Motor compartido en
                    src/lib/mcp/rpc.ts (jul 2026 — antes vivía inline aquí).

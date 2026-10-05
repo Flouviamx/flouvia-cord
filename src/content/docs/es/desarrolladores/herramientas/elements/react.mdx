@@ -66,7 +66,7 @@ function QuotePage({ token }: { token: string }) {
     <CordCotizador
       token={token}
       onApproved={(detail) => console.log('Aprobada por', detail.signed_by)}
-      onPay={(detail) => window.location.assign(detail.url)}
+      onPay={(detail) => console.log('Pago abierto en', detail.url)}
     />
   );
 }

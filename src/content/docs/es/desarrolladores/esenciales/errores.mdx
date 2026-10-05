@@ -59,23 +59,38 @@ Cuando ocurre un error `4xx` o `5xx`, Cord siempre responde con un objeto JSON *
 No confíes en la forma anidada `error.code` / `error.message` para parsear la respuesta: `error` es siempre el string del mensaje y `code` es un campo hermano al mismo nivel, no una propiedad de `error`.
 </Callout>
 
+
+Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un error, el cuerpo lo repite como `request_id` y agrega `doc_url`, el enlace a la explicación de ese código en esta página. Incluye el `request_id` cuando escribas a soporte: con él encontramos tu petición exacta.
+
+```json
+{
+  "error": "API key inválida o revocada.",
+  "code": "invalid_key",
+  "request_id": "req_3f9c2a1b7d4e6f8a0b1c2d3e",
+  "doc_url": "https://docs.cordhq.app/desarrolladores/esenciales/errores#invalid_key"
+}
+```
+
 ### Códigos de Error Comunes (`code`)
 
-- `invalid_json`: El cuerpo de tu petición `POST` no es JSON válido, o no se envió `Content-Type: application/json`.
-- `invalid_request`: Fallan las validaciones de negocio (falta un campo, un descuento fuera de rango, una cotización sin cliente válido). El campo `error` explica la razón exacta.
-- `missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
-- `token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
-- `insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).
-- `not_found`: El recurso solicitado no existe en tu organización.
-- `subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.
-- `plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.
-- `integration_limit_reached` (403): tus integraciones ya crearon las 100 suscripciones de webhook permitidas por organización. Borra las que ya no uses.
-- `rate_limited` / `api_quota_exceeded`: Límite de peticiones por minuto o de cuota mensual de la API. Reintenta respetando `Retry-After`.
-- `fx_unavailable` / `tax_catalog_unavailable`: Un dato de terceros (tipo de cambio o catálogo de impuestos) no se pudo obtener con certeza. La operación no se completó — no asumas que sí ocurrió.
+- <a id="invalid_json"></a>`invalid_json`: El cuerpo de tu petición `POST` no es JSON válido, o no se envió `Content-Type: application/json`.
+- <a id="invalid_request"></a>`invalid_request`: Fallan las validaciones de negocio (falta un campo, un descuento fuera de rango, una cotización sin cliente válido). El campo `error` explica la razón exacta.
+- <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
+- <a id="token_expired"></a>`token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
+- <a id="insufficient_scope"></a>`insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).
+- <a id="not_found"></a>`not_found`: El recurso solicitado no existe en tu organización.
+- <a id="subscription_required"></a>`subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.
+- <a id="plan_limit_reached"></a>`plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.
+- <a id="integration_limit_reached"></a>`integration_limit_reached` (403): tus integraciones ya crearon las 100 suscripciones de webhook permitidas por organización. Borra las que ya no uses.
+- <a id="rate_limited"></a><a id="api_quota_exceeded"></a>`rate_limited` / `api_quota_exceeded`: Límite de peticiones por minuto o de cuota mensual de la API. Reintenta respetando `Retry-After`.
+- <a id="fx_unavailable"></a><a id="tax_catalog_unavailable"></a>`fx_unavailable` / `tax_catalog_unavailable`: Un dato de terceros (tipo de cambio o catálogo de impuestos) no se pudo obtener con certeza. La operación no se completó — no asumas que sí ocurrió.
 
-- `invalid_state`: El recurso no está en un estado que permita la operación, o cambió mientras la procesábamos. No se aplicó nada.
-- `invalid_url`: La URL de un webhook no es `https://` o apunta a un host interno.
-- `invalid_idempotency_key` / `idempotency_key_reused` / `idempotency_in_progress` / `idempotency_unavailable`: Ver la sección siguiente.
+- <a id="invalid_state"></a>`invalid_state`: El recurso no está en un estado que permita la operación, o cambió mientras la procesábamos. No se aplicó nada.
+- <a id="invalid_url"></a>`invalid_url`: La URL de un webhook no es `https://` o apunta a un host interno.
+- <a id="invalid_idempotency_key"></a><a id="idempotency_key_reused"></a><a id="idempotency_in_progress"></a><a id="idempotency_unavailable"></a>`invalid_idempotency_key` / `idempotency_key_reused` / `idempotency_in_progress` / `idempotency_unavailable`: Ver la sección siguiente.
+- <a id="secret_key_in_browser"></a>`secret_key_in_browser` (403): Una Secret Key llegó desde un navegador. Ya quedó expuesta en el código de la página: revócala en Ajustes › Developers y llama a la API solo desde tu servidor.
+- <a id="missing_origin"></a><a id="unauthorized_origin"></a><a id="invalid_origin"></a>`missing_origin` / `unauthorized_origin` / `invalid_origin` (403): Una Publishable Key llegó sin `Origin`, o desde un dominio que no está en los dominios permitidos de Cord Elements.
+- <a id="origin_allowlist_required"></a>`origin_allowlist_required` (403): Una Publishable Key en vivo solo funciona con dominios permitidos configurados en Ajustes › Elements. Las llaves `pk_test_` funcionan desde cualquier origen.
 
 ## Reintentos seguros con `Idempotency-Key`
 
