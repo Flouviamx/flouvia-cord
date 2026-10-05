@@ -301,9 +301,8 @@ const howToSchema = {
                     <div class="el-cmd reveal" data-install-cmd>
                         <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
                         <button class="el-cmd-copy" type="button" aria-label={tx('Copiar comando', 'Copy command')}>
-                            <svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            <svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-                            <span class="cp-tip" aria-hidden="true">{tx('Copiado', 'Copied')}</span>
+                            <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                            <span class="cp-label" data-cmd-label aria-live="polite">{tx('Copiar', 'Copy')}</span>
                         </button>
                     </div>
                     <p class="pp-plan reveal">{devPage.plan}</p>
@@ -550,14 +549,19 @@ const howToSchema = {
         const box = document.querySelector<HTMLElement>('[data-install-cmd]');
         const btn = box?.querySelector<HTMLButtonElement>('.el-cmd-copy');
         let timer = 0;
+        const label = btn?.querySelector<HTMLElement>('[data-cmd-label]');
         btn?.addEventListener('click', async () => {
             try { await navigator.clipboard.writeText('npm install @flouviahq/elements'); } catch { return; }
             // Reinicia la animación aunque se pulse dos veces seguidas.
-            box!.classList.remove('done'); btn.classList.remove('done');
+            btn.classList.remove('done');
             void btn.offsetWidth;
-            box!.classList.add('done'); btn.classList.add('done');
+            btn.classList.add('done');
+            if (label) label.textContent = isEnDoc() ? 'Copied' : 'Copiado';
             clearTimeout(timer);
-            timer = window.setTimeout(() => { box!.classList.remove('done'); btn.classList.remove('done'); }, 2200);
+            timer = window.setTimeout(() => {
+                btn.classList.remove('done');
+                if (label) label.textContent = isEnDoc() ? 'Copy' : 'Copiar';
+            }, 2000);
         });
     }
     function init() { initTabs(); initSdk(); initCmd(); }
@@ -710,30 +714,20 @@ const howToSchema = {
     .el-cmd code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.84rem; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .el-cmd-prompt { color: #99a2af; margin-right: 9px; user-select: none; }
     .el-cmd-copy {
-        flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px;
-        background: #f5f5f7; color: #5b6575; border: 0; cursor: pointer; transition: background 0.2s, color 0.2s;
+        flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 9px;
+        font: 600 0.74rem var(--font-sans); background: #f5f5f7; color: #5b6575; border: 0; cursor: pointer;
+        transition: background 0.25s, color 0.25s;
     }
-    .el-cmd { position: relative; transition: box-shadow 0.4s; }
-    .el-cmd code { transition: color 0.4s; }
-    .el-cmd.done { box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 10px 28px -14px rgba(5,150,105,0.45), inset 0 0 0 1.5px rgba(16,185,129,0.55); }
-    .el-cmd.done::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(100deg, transparent 20%, rgba(16,185,129,0.16) 50%, transparent 80%); background-size: 220% 100%; animation: cpSweep 0.9s ease-out both; }
-    @keyframes cpSweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
-    .el-cmd-copy { position: relative; overflow: visible; }
-    .el-cmd-copy svg { width: 15px; height: 15px; }
-    .el-cmd-copy .cp-ico, .el-cmd-copy .cp-ok { position: absolute; transition: transform 0.45s var(--ease-spring), opacity 0.25s; }
-    .el-cmd-copy .cp-ok { opacity: 0; transform: scale(0.4) rotate(-20deg); stroke-dasharray: 24; stroke-dashoffset: 24; }
     .el-cmd-copy:hover { background: #eceef2; color: #0a192f; }
-    .el-cmd-copy.done { background: #059669; color: #fff; animation: cpPop 0.5s var(--ease-spring); }
-    .el-cmd-copy.done .cp-ico { opacity: 0; transform: scale(0.4) rotate(20deg); }
-    .el-cmd-copy.done .cp-ok { opacity: 1; transform: none; animation: cpDraw 0.42s 0.08s ease-out forwards; }
-    .el-cmd-copy::before { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0 rgba(16,185,129,0.55); pointer-events: none; }
-    .el-cmd-copy.done::before { animation: cpRing 0.75s ease-out; }
-    .cp-tip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 6px) scale(0.9); padding: 5px 10px; border-radius: 8px; background: #0a192f; color: #fff; font: 600 0.72rem var(--font-sans); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.4s var(--ease-spring); }
-    .cp-tip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: #0a192f; }
-    .el-cmd-copy.done .cp-tip { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    @keyframes cpPop { 0% { transform: scale(1); } 35% { transform: scale(0.86); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .el-cmd-copy:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .el-cmd-copy .cp-swap { position: relative; width: 14px; height: 14px; display: inline-grid; }
+    .el-cmd-copy .cp-swap svg { grid-area: 1 / 1; width: 14px; height: 14px; transition: transform 0.4s var(--ease-spring), opacity 0.2s; }
+    .el-cmd-copy .cp-ok { opacity: 0; transform: scale(0.4); stroke-dasharray: 24; stroke-dashoffset: 24; }
+    .el-cmd-copy.done { background: rgba(16,185,129,0.14); color: #047857; animation: cpPop 0.45s var(--ease-spring); }
+    .el-cmd-copy.done .cp-ico { opacity: 0; transform: scale(0.4); }
+    .el-cmd-copy.done .cp-ok { opacity: 1; transform: none; animation: cpDraw 0.4s 0.06s ease-out forwards; }
+    @keyframes cpPop { 0% { transform: scale(1); } 35% { transform: scale(0.9); } 70% { transform: scale(1.06); } 100% { transform: scale(1); } }
     @keyframes cpDraw { to { stroke-dashoffset: 0; } }
-    @keyframes cpRing { from { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); } to { box-shadow: 0 0 0 12px rgba(16,185,129,0); } }
     .el-copybtn .cp-swap { position: relative; width: 13px; height: 13px; display: inline-grid; }
     .el-copybtn .cp-swap svg { grid-area: 1 / 1; transition: transform 0.4s var(--ease-spring), opacity 0.2s; }
     .el-copybtn .cp-ok { opacity: 0; transform: scale(0.4); stroke-dasharray: 24; stroke-dashoffset: 24; }
@@ -741,7 +735,7 @@ const howToSchema = {
     .el-copybtn.done .cp-ok { opacity: 1; transform: none; animation: cpDraw 0.4s 0.06s ease-out forwards; }
     .el-copybtn.done { background: rgba(16,185,129,0.16); animation: cpPop 0.45s var(--ease-spring); }
     @media (prefers-reduced-motion: reduce) {
-        .el-cmd.done::after, .el-cmd-copy.done, .el-cmd-copy.done::before, .el-copybtn.done { animation: none; }
+        .el-cmd-copy.done, .el-copybtn.done { animation: none; }
         .el-cmd-copy.done .cp-ok, .el-copybtn.done .cp-ok { animation: none; stroke-dashoffset: 0; }
     }
 

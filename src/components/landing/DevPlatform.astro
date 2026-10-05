@@ -299,6 +299,13 @@ const ROUTES = [
     //      degradado por cuadro (es igual para todos los hilos en cada x).
     //   3. Bordes: los hilos de las orillas, más brillantes, como el filo de
     //      una cinta de seda al doblarse.
+    // En móvil el diagrama se recorre de lado: arranca centrado en Cord, no recortado a la izquierda.
+    function initDiaScroll() {
+        const box = document.querySelector<HTMLElement>('.dps-scroll');
+        if (!box || box.scrollWidth <= box.clientWidth) return;
+        box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2;
+    }
+
     function initWave() {
         const cv = document.querySelector<HTMLCanvasElement>('[data-dps-wave]');
         if (!cv) return;
@@ -311,14 +318,19 @@ const ROUTES = [
         const canBlur = ctx.filter === 'blur(2px)';
         ctx.filter = 'none';
         let w = 0, h = 0, visible = false, raf = 0;
-        const N = 120;
+        // La cinta mide lo mismo en hilos por píxel en cualquier alto: con 120 hilos
+        // fijos, en un celular quedaban a menos de 1 px y se volvían una mancha.
+        let N = 120, thread = 1, glow = 22;
         const PAL: [number, number, number, number][] = [
             [0, 245, 158, 11], [0.28, 251, 146, 60], [0.48, 236, 107, 166], [0.66, 139, 124, 246], [0.84, 47, 109, 240], [1, 56, 189, 248],
         ];
 
         const resize = () => {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
             w = cv.clientWidth; h = cv.clientHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, w < 760 ? 3 : 2);
+            N = Math.round(Math.min(120, Math.max(56, h * 0.29)));
+            thread = h < 360 ? 0.7 : 1;
+            glow = Math.round(Math.min(22, Math.max(12, h * 0.052)));
             cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             off.width = Math.max(1, Math.round(w / 4)); off.height = Math.max(1, Math.round(h / 4));
@@ -383,7 +395,7 @@ const ROUTES = [
                 for (let i = 0; i < 9; i++) strand(octx, i / 8 - 0.5, t, 60);
                 ctx.save();
                 ctx.globalCompositeOperation = 'lighter';
-                ctx.filter = 'blur(22px)';
+                ctx.filter = `blur(${glow}px)`;
                 ctx.globalAlpha = 0.5;
                 ctx.drawImage(off, 0, 0, w, h);
                 ctx.restore();
@@ -392,7 +404,7 @@ const ROUTES = [
             // 2 · Hilos
             ctx.globalCompositeOperation = 'lighter';
             ctx.strokeStyle = gradient(ctx, t, 0.5);
-            ctx.lineWidth = 1;
+            ctx.lineWidth = thread;
             for (let i = 0; i < N; i++) {
                 const v = i / (N - 1) - 0.5;
                 ctx.globalAlpha = 0.6 + 0.4 * (1 - Math.abs(v) * 2) ** 1.5;
@@ -401,7 +413,7 @@ const ROUTES = [
 
             // 3 · Bordes
             ctx.strokeStyle = gradient(ctx, t, 0.75);
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = thread * 1.2;
             ctx.globalAlpha = 0.8;
             strand(ctx, -0.495, t, steps);
             strand(ctx, 0.495, t, steps);
@@ -476,7 +488,7 @@ const ROUTES = [
         })();
     }
 
-    function init() { initDiagram(); initWave(); initChat(); initCode(); }
+    function init() { initDiagram(); initDiaScroll(); initWave(); initChat(); initCode(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 </script>
@@ -520,7 +532,8 @@ const ROUTES = [
     /* ── Diagrama ── */
     .dps-scroll { margin-top: 3rem; }
     .dps-dia {
-        position: relative; width: 100%; max-width: 860px; margin: 0 auto; aspect-ratio: 1000 / 560; container-type: inline-size;
+        /* Crece con la pantalla, pero título y diagrama siempre caben juntos en una vista (1000/560 = 1.7857). */
+        position: relative; width: 100%; max-width: max(860px, min(1040px, calc((100svh - 280px) * 1.7857))); margin: 0 auto; aspect-ratio: 1000 / 560; container-type: inline-size;
         background-image: radial-gradient(rgba(148,163,184,0.16) 1px, transparent 1px);
         background-size: 14px 14px;
         -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 50%, #000 55%, transparent 100%);
@@ -653,9 +666,13 @@ const ROUTES = [
         .dps-head { grid-template-columns: 1fr; }
         .dps-sub, .dps-aside { justify-self: start; }
         /* El diagrama conserva un ancho legible y se recorre de lado. */
-        .dps-scroll { overflow-x: auto; margin: 2.5rem -16px 0; padding: 0 16px; scrollbar-width: none; }
+        .dps-scroll {
+            overflow-x: auto; margin: 2.5rem -16px 0; padding: 0 16px; scrollbar-width: none; overscroll-behavior-inline: contain;
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+        }
         .dps-scroll::-webkit-scrollbar { display: none; }
-        .dps-dia { width: 760px; }
+        .dps-dia { width: 760px; max-width: none; }
         .dps-stats { grid-template-columns: 1fr; gap: 1.8rem; margin-top: -2rem; }
         .dps-routes { grid-template-columns: 1fr; }
     }
