@@ -6,6 +6,18 @@
 
 ---
 
+✅ **Asistente del CLI (6 oct 2026)** — `npx @flouviahq/cli` sin comando abre un asistente con
+menús y progreso (`@clack/prompts`, empaquetado por esbuild: el paquete publicado sigue sin
+dependencias). Decisiones:
+   • **Una sola autorización para todo.** `/app/cli/autorizar?proyecto=1` ofrece crear además una
+     `sk_test_` para el proyecto; se cifra junto a la del CLI y se entrega una vez. Si el plan no
+     tiene lugar, el CLI igual queda conectado y la página lo dice. Elements usa el proxy que crea
+     `init`, así que no hace falta una `pk_`.
+   • **Una terminal, una llave.** Reconectar el mismo equipo revoca su `CLI · <host>` anterior:
+     las llaves de prueba cuentan contra el límite del plan (Gratis = 2).
+   • El asistente escribe `CORD_SECRET_KEY` y `CORD_WEBHOOK_SECRET` solo en un archivo de entorno
+     que git ignora (`mergeEnv` no toca las demás líneas) y nunca sobrescribe archivos.
+
 ✅ **MCP auditado: 26 herramientas y contrato del spec (6 oct 2026)** — lo que se encontró y por qué:
    • **Escalada en el transporte SSE.** `/api/mcp/message` comparaba solo la organización de
      la sesión y ejecutaba con el scope GUARDADO en ella: una llave de solo lectura de la misma

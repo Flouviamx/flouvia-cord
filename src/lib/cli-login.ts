@@ -5,7 +5,7 @@
 // sola vez. Las consultas pasan por funciones security definer (db/schema.sql).
 import { createHash, randomBytes, randomInt } from 'node:crypto';
 import type { APIRoute } from 'astro';
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { encryptRequiredSecret, decryptSecret } from './crypto-secret';
 import { POST as createKey, DELETE as revokeKey } from '../pages/api/keys';
 
@@ -64,36 +64,59 @@ async function callKeys(handler: APIRoute, original: Request, method: string, bo
 }
 
 /**
- * Aprueba o rechaza desde la sesión. La llave se crea con el mismo manejador que
- * Ajustes (permiso, límite del plan, bitácora); si el código ya no estaba
- * pendiente, la llave recién creada se revoca para no dejarla huérfana.
+ * Aprueba o rechaza desde la sesión. Las llaves se crean con el mismo manejador
+ * que Ajustes (permiso, límite del plan, bitácora); si el código ya no estaba
+ * pendiente, se revocan para no dejarlas huérfanas. Con `proyecto`, la persona
+ * pidió además una Secret Key de prueba para su proyecto: si el plan ya no tiene
+ * lugar, el CLI igual queda conectado y la terminal lo dice.
  */
-export async function decideLogin(userCode: string, aprobar: boolean, ctx: { orgId: string; userId: string; host: string; request: Request }):
-    Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+export async function decideLogin(userCode: string, aprobar: boolean, ctx: { orgId: string; userId: string; host: string; request: Request; proyecto?: boolean }):
+    Promise<{ ok: true; aviso?: string } | { ok: false; status: number; error: string }> {
     if (!aprobar) {
         const [r] = await sql`select cord_cli_login_decide(${userCode}, false, null, ${ctx.userId}, null, null) as ok`;
         return r?.ok ? { ok: true } : { ok: false, status: 409, error: 'Ese código ya no está pendiente.' };
     }
+    // Una terminal, una llave: reconectar el mismo equipo revoca la anterior y libera su lugar en el plan.
+    const nombre = `CLI · ${ctx.host}`.slice(0, 60);
+    const [anteriores] = await withOrgTx(ctx.orgId, sql`
+        select id from api_keys where org_id = ${ctx.orgId} and nombre = ${nombre} and revoked_at is null`);
+    for (const k of anteriores as any[]) await callKeys(revokeKey, ctx.request, 'DELETE', { id: k.id });
+
     const key = await callKeys(createKey, ctx.request, 'POST', {
-        nombre: `CLI · ${ctx.host}`.slice(0, 60), type: 'restricted', mode: 'test',
+        nombre, type: 'restricted', mode: 'test',
         permissions: CLI_KEY_PERMISSIONS, expires_in_days: CLI_KEY_DAYS,
     });
     if (!key.ok || !key.data?.secret) return { ok: false, status: 400, error: String(key.data?.error || 'No se pudo crear la llave del CLI.') };
-    const [r] = await sql`select cord_cli_login_decide(${userCode}, true, ${ctx.orgId}, ${ctx.userId}, ${key.data.id}, ${encryptRequiredSecret(String(key.data.secret))}) as ok`;
+    const creadas = [key.data.id];
+
+    let proyecto: string | null = null;
+    let aviso: string | undefined;
+    if (ctx.proyecto) {
+        const pk = await callKeys(createKey, ctx.request, 'POST', { nombre: `Proyecto · ${ctx.host}`.slice(0, 60), type: 'secret', mode: 'test', scope: 'write' });
+        if (pk.ok && pk.data?.secret) { proyecto = String(pk.data.secret); creadas.push(pk.data.id); }
+        else aviso = String(pk.data?.error || 'No se pudo crear la llave del proyecto.');
+    }
+    const payload = proyecto ? JSON.stringify({ cli: String(key.data.secret), proyecto }) : String(key.data.secret);
+    const [r] = await sql`select cord_cli_login_decide(${userCode}, true, ${ctx.orgId}, ${ctx.userId}, ${key.data.id}, ${encryptRequiredSecret(payload)}) as ok`;
     if (!r?.ok) {
-        await callKeys(revokeKey, ctx.request, 'DELETE', { id: key.data.id });
+        for (const id of creadas) await callKeys(revokeKey, ctx.request, 'DELETE', { id });
         return { ok: false, status: 409, error: 'El código venció o ya se usó. Vuelve a correr cord login.' };
     }
-    return { ok: true };
+    return aviso ? { ok: true, aviso } : { ok: true };
 }
 
-export async function claimLogin(deviceCode: string): Promise<{ estado: string; apiKey?: string }> {
+export async function claimLogin(deviceCode: string): Promise<{ estado: string; apiKey?: string; projectKey?: string }> {
     if (!/^[a-f0-9]{64}$/.test(deviceCode)) return { estado: 'invalido' };
     const [row] = await sql`select estado, secret_enc from cord_cli_login_claim(${sha256(deviceCode)})`;
     if (!row) return { estado: 'invalido' };
     if (row.estado === 'aprobado') {
-        const apiKey = decryptSecret(row.secret_enc as string);
-        return apiKey ? { estado: 'aprobado', apiKey } : { estado: 'invalido' };
+        const plain = decryptSecret(row.secret_enc as string);
+        if (!plain) return { estado: 'invalido' };
+        if (plain.startsWith('{')) {
+            const v = JSON.parse(plain) as { cli: string; proyecto?: string };
+            return { estado: 'aprobado', apiKey: v.cli, ...(v.proyecto ? { projectKey: v.proyecto } : {}) };
+        }
+        return { estado: 'aprobado', apiKey: plain };
     }
     return { estado: String(row.estado) };
 }

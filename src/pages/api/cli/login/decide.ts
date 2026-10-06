@@ -18,9 +18,9 @@ export const POST: APIRoute = async ({ request }) => {
     const login = await findLogin(codigo);
     if (!login || login.estado !== 'pendiente' || !login.vigente) return json({ error: 'El código venció o ya se usó. Vuelve a correr cord login.' }, 409);
     const r = await decideLogin(codigo, body?.aprobar === true, {
-        orgId: await getActiveOrgId(), userId: currentUserId()!, host: login.host, request,
+        orgId: await getActiveOrgId(), userId: currentUserId()!, host: login.host, request, proyecto: body?.proyecto === true,
     });
-    return r.ok ? json({ ok: true }) : json({ error: r.error }, r.status);
+    return r.ok ? json({ ok: true, ...(r.aviso ? { aviso: r.aviso } : {}) }) : json({ error: r.error }, r.status);
 };
 
 function json(data: unknown, status = 200) {

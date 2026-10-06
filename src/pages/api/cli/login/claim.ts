@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request }) => {
     const rl = await rateLimit(`cli-claim:${createHash('sha256').update(deviceCode).digest('hex').slice(0, 16)}`, 90, 600);
     if (!rl.ok) return tooMany(rl.retryAfter);
     const r = await claimLogin(deviceCode);
-    if (r.estado === 'aprobado') return json({ estado: 'aprobado', api_key: r.apiKey });
+    if (r.estado === 'aprobado') return json({ estado: 'aprobado', api_key: r.apiKey, ...(r.projectKey ? { project_key: r.projectKey } : {}) });
     if (r.estado === 'invalido') return json({ estado: 'invalido', error: 'Ese código no existe. Vuelve a correr cord login.' }, 404);
     return json({ estado: r.estado });
 };

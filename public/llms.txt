@@ -116,7 +116,7 @@ for prices, currencies and included usage.
 - [API versions (Cord-Version header)](https://docs.cordhq.app/docs/desarrolladores/esenciales/versiones)
 - [Security controls, retention and vulnerability reporting](https://docs.cordhq.app/docs/desarrolladores/esenciales/seguridad); contact in https://cordhq.app/.well-known/security.txt
 - [Test mode and simulators](https://docs.cordhq.app/docs/desarrolladores/empezar/pruebas)
-- [Cord CLI](https://docs.cordhq.app/docs/desarrolladores/herramientas/cli): `cord login` (browser device flow, restricted test key), `cord setup` (AI-proposed account setup that a human approves), `cord init`, `cord listen`
+- [Cord CLI](https://docs.cordhq.app/docs/desarrolladores/herramientas/cli): `npx @flouviahq/cli` (interactive wizard), `cord login` (browser device flow, restricted test key), `cord setup` (AI-proposed account setup that a human approves), `cord init`, `cord listen`
 - [OpenAPI 3.1 specification](https://cordhq.app/openapi.json) (also at /openapi.yaml)
 - SDKs: `@flouviahq/node` (server), `@flouviahq/elements` (browser), `@flouviahq/cli`, `cord-sdk` (Python), `flouviahq/cord` (PHP)
 - [Machine-readable pricing](https://cordhq.app/pricing.md)

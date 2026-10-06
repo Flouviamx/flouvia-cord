@@ -14,13 +14,14 @@ const L = currentLocale();
 const codigo = normalizeUserCode(Astro.url.searchParams.get('codigo'));
 const login = codigo ? await findLogin(codigo) : null;
 const valido = !!login && login.estado === 'pendiente' && login.vigente;
+const proyecto = Astro.url.searchParams.get('proyecto') === '1';
 const org = valido ? await getOrg() : null;
 Astro.response.headers.set('Cache-Control', 'no-store');
 import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${t(L, 'cli.auth.title')} | Cord`} page="ajustes" heading={t(L, 'cli.auth.title')}>
-    <div class="ca" data-cli-auth data-codigo={codigo ?? ''} data-err={t(L, 'cli.auth.err')}>
+    <div class="ca" data-cli-auth data-codigo={codigo ?? ''} data-err={t(L, 'cli.auth.err')} data-project-warn={t(L, 'cli.auth.project_warn')}>
         {valido ? (
             <section class="ca-card" data-ca-step="ask">
                 <svg class="ca-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('terminal')}></svg>
@@ -32,6 +33,12 @@ import { iconInner } from '../../../lib/icons';
                     <div><dt>{t(L, 'cli.auth.org')}</dt><dd>{org?.nombre}</dd></div>
                     <div><dt>{t(L, 'cli.auth.access')}</dt><dd>{t(L, 'cli.auth.access_desc')}</dd></div>
                 </dl>
+                {proyecto && (
+                    <label class="ca-project">
+                        <input type="checkbox" data-ca-project checked />
+                        <span><b>{t(L, 'cli.auth.project')}</b><small>{t(L, 'cli.auth.project_desc')}</small></span>
+                    </label>
+                )}
                 <p class="ca-error" data-ca-error role="alert" hidden></p>
                 <div class="ca-actions">
                     <button type="button" class="ca-ghost" data-ca-decide="no">{t(L, 'cli.auth.cancel')}</button>
@@ -45,6 +52,7 @@ import { iconInner } from '../../../lib/icons';
             <svg class="ca-icon ca-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
             <h1>{t(L, 'cli.auth.done_title')}</h1>
             <p class="ca-sub">{t(L, 'cli.auth.done_sub')}</p>
+            <p class="ca-error" data-ca-aviso role="status" hidden></p>
         </section>
         <section class="ca-card" data-ca-step="rejected" hidden>
             <h1>{t(L, 'cli.auth.title')}</h1>
@@ -66,6 +74,10 @@ import { iconInner } from '../../../lib/icons';
     .ca-facts div { display: grid; grid-template-columns: 92px 1fr; gap: 1rem; font-size: 0.9rem; }
     .ca-facts dt { color: #6b7280; font-weight: 600; }
     .ca-facts dd { margin: 0; color: #111; line-height: 1.5; overflow-wrap: anywhere; }
+    .ca-project { display: flex; gap: 12px; align-items: flex-start; margin-top: 1.4rem; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; cursor: pointer; }
+    .ca-project input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: #0a192f; flex-shrink: 0; }
+    .ca-project span { display: flex; flex-direction: column; gap: 3px; font-size: 0.9rem; color: #111; }
+    .ca-project small { color: #6b7280; font-size: 0.82rem; line-height: 1.5; }
     .ca-error { margin: 1.2rem 0 0; padding: 10px 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 0.86rem; }
     .ca-actions { display: flex; justify-content: flex-end; gap: 0.7rem; margin-top: 2rem; }
     .ca-primary, .ca-ghost { min-height: 46px; padding: 0 24px; border-radius: 999px; font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, background 0.2s; }
@@ -94,11 +106,13 @@ import { iconInner } from '../../../lib/icons';
             try {
                 const res = await fetch('/api/cli/login/decide', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codigo: root.dataset.codigo, aprobar }),
+                    body: JSON.stringify({ codigo: root.dataset.codigo, aprobar, proyecto: root.querySelector<HTMLInputElement>('[data-ca-project]')?.checked === true }),
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error || root.dataset.err);
                 show(aprobar ? 'done' : 'rejected');
+                const aviso = root.querySelector<HTMLElement>('[data-ca-aviso]');
+                if (aviso && data.aviso) { aviso.textContent = `${root.dataset.projectWarn} ${data.aviso}`; aviso.hidden = false; }
             } catch (err: any) {
                 if (error) { error.textContent = err?.message || root.dataset.err || ''; error.hidden = false; }
                 root.querySelectorAll<HTMLButtonElement>('[data-ca-decide]').forEach((b) => { b.disabled = false; });

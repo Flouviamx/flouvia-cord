@@ -2,7 +2,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 export interface ParsedArgs {
     command: string[];
@@ -94,9 +94,48 @@ export function describeCounts(c: Partial<SetupCounts>): string[] {
 
 export const MAX_SETUP_FILE = 3 * 1024 * 1024;
 
+/** Agrega o actualiza variables en un archivo .env sin tocar las demás líneas. */
+export function mergeEnv(content: string, vars: Record<string, string>): { content: string; added: string[]; updated: string[] } {
+    const lines = content ? content.replace(/\n$/, '').split('\n') : [];
+    const added: string[] = [];
+    const updated: string[] = [];
+    for (const [key, value] of Object.entries(vars)) {
+        const i = lines.findIndex((l) => l.replace(/^export\s+/, '').startsWith(`${key}=`));
+        if (i >= 0) {
+            if (lines[i] !== `${key}=${value}`) { lines[i] = `${key}=${value}`; updated.push(key); }
+        } else {
+            lines.push(`${key}=${value}`);
+            added.push(key);
+        }
+    }
+    return { content: lines.length ? lines.join('\n') + '\n' : '', added, updated };
+}
+
+export function readEnvValue(content: string, key: string): string | null {
+    const line = content.split('\n').find((l) => l.replace(/^export\s+/, '').startsWith(`${key}=`));
+    if (!line) return null;
+    return line.slice(line.indexOf('=') + 1).trim().replace(/^['"]|['"]$/g, '') || null;
+}
+
+const FRAMEWORK_LABELS: Record<string, string> = {
+    'next-app': 'Next.js (App Router)', 'next-pages': 'Next.js (Pages Router)', astro: 'Astro', express: 'Express',
+    laravel: 'Laravel', django: 'Django', flask: 'Flask', fastapi: 'FastAPI', unknown: 'No reconocido',
+};
+
+export function frameworkLabel(f: string): string { return FRAMEWORK_LABELS[f] ?? f; }
+
+export function defaultPort(f: string): number {
+    if (f === 'astro') return 4321;
+    if (f === 'laravel' || f === 'django') return 8000;
+    if (f === 'flask') return 5000;
+    if (f === 'fastapi') return 8000;
+    return 3000;
+}
+
 export const HELP = `cord ${VERSION} — CLI de desarrollo de Cord
 
 Uso:
+  cord                                    Asistente: conecta, configura e integra paso a paso
   cord init                               Detecta tu framework y deja la integración lista
   cord login                              Inicia sesión desde el navegador (o --api-key para pegar una llave)
   cord setup                              Propone la configuración de tu cuenta con IA; tú la apruebas
@@ -108,6 +147,7 @@ Uso:
   cord listen --forward-to <url>          Reenvía los webhooks de prueba a tu servidor local
         [--events quote.paid,invoice.paid] Solo esos eventos
         [--allow-remote]                  Permite reenviar a un host que no es localhost
+        [--env-file .env.local]           Guarda ahí el secreto de la sesión
   cord trigger <evento> [--objeto <id>]   Dispara un webhook de prueba
   cord simulate fiscal <resultado>        exito | pac_caido | receptor_invalido | certificado_vencido | timbre_duplicado
   cord simulate quote <id> <vista|vencer> El cliente abre el link o la cotización vence

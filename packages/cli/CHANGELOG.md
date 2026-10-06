@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- `npx @flouviahq/cli` sin comando abre el asistente: conecta la terminal, configura la cuenta con IA, integra el proyecto (instala el SDK con tu gestor de paquetes, crea las rutas y escribe el `.env`) y deja los webhooks escuchando, con menús, indicadores de progreso y un resumen final.
+- Al autorizar desde el asistente, Cord puede crear también una Secret Key de prueba para el proyecto y el asistente la guarda en tu archivo de entorno ignorado por git.
+- `cord listen` guarda el secreto de la sesión con `--env-file .env.local`.
+- Reconectar el mismo equipo revoca su llave anterior del CLI.
+- Todos los comandos con la nueva interfaz; sigue sin dependencias en tiempo de ejecución.
+
 ## 1.1.0
 
 - `cord login` inicia sesión desde el navegador con un código de confirmación: la terminal recibe una llave restringida de prueba (90 días) sin copiar nada. `--no-browser` imprime la dirección; `--api-key` sigue aceptando una llave pegada.

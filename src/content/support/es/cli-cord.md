@@ -6,6 +6,14 @@ category: "Desarrolladores"
 
 El CLI de Cord (`@flouviahq/cli`) es la herramienta de terminal para integrar Cord en tu proyecto. Solo trabaja en **modo prueba**: nada de lo que hagas con él toca datos reales.
 
+### La forma más rápida: el asistente
+
+```bash
+npx @flouviahq/cli
+```
+
+Te guía paso a paso con menús: conecta tu terminal, configura tu cuenta con IA, integra tu proyecto (instala el SDK, crea las rutas y guarda las llaves en tu `.env.local`) y deja los webhooks escuchando. Al final te muestra un resumen de lo que quedó listo.
+
 ### Instalar e iniciar sesión
 
 ```bash

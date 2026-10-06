@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, checkForwardUrl, checkTestKey, maskKey, parseEventList, configPath, sameOrigin, describeCounts } from '../packages/cli/src/lib';
+import { parseArgs, checkForwardUrl, checkTestKey, maskKey, parseEventList, configPath, sameOrigin, describeCounts, mergeEnv, readEnvValue, defaultPort } from '../packages/cli/src/lib';
 
 describe('cord CLI', () => {
     it('parsea comandos y banderas', () => {
@@ -42,6 +42,21 @@ describe('cord CLI', () => {
     it('resume la propuesta en lenguaje humano', () => {
         expect(describeCounts({ perfil: 4, impuestos: 1, productos: 0, plantillas: 2 })).toEqual(['4 datos del perfil', '1 impuesto', '2 plantillas']);
         expect(describeCounts({})).toEqual([]);
+    });
+
+    it('escribe el .env sin tocar las demás variables', () => {
+        const r = mergeEnv('# app\nDATABASE_URL=x\nCORD_WEBHOOK_SECRET=viejo\n', { CORD_SECRET_KEY: 'sk_test_1', CORD_WEBHOOK_SECRET: 'nuevo' });
+        expect(r.content).toBe('# app\nDATABASE_URL=x\nCORD_WEBHOOK_SECRET=nuevo\nCORD_SECRET_KEY=sk_test_1\n');
+        expect(r).toMatchObject({ added: ['CORD_SECRET_KEY'], updated: ['CORD_WEBHOOK_SECRET'] });
+        expect(mergeEnv('A=1\n', { A: '1' })).toMatchObject({ added: [], updated: [] });
+        expect(mergeEnv('', { A: '1' }).content).toBe('A=1\n');
+        expect(readEnvValue('export CORD_SECRET_KEY="sk_test_2"\n', 'CORD_SECRET_KEY')).toBe('sk_test_2');
+        expect(readEnvValue('X=1', 'CORD_SECRET_KEY')).toBeNull();
+    });
+
+    it('propone el puerto típico de cada framework', () => {
+        expect(defaultPort('next-app')).toBe(3000);
+        expect(defaultPort('astro')).toBe(4321);
     });
 
     it('respeta XDG_CONFIG_HOME', () => {

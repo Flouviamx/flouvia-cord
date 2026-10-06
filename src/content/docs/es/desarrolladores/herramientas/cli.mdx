@@ -9,6 +9,22 @@ description: "Inicia sesión desde el navegador, configura tu cuenta con IA, int
   <p class="page-subtitle">Prueba tu integración completa sin salir de tu máquina.</p>
 </header>
 
+## El asistente
+
+```bash
+npx @flouviahq/cli
+```
+
+Sin comando, el CLI abre el asistente y te lleva paso a paso:
+
+1. **Conecta tu terminal.** Abre tu navegador con un código; lo confirmas y listo. Si el asistente va a integrar tu proyecto, en la misma pantalla puedes crear también una Secret Key de prueba para él.
+2. **Elige qué hacer** con las flechas y la barra espaciadora: configurar tu cuenta con IA, integrar Cord en el proyecto y probar webhooks en tu localhost.
+3. **Configura tu cuenta con IA.** Te pregunta tu sitio, a qué te dedicas y tu lista de precios, te muestra la propuesta y espera a que la apruebes en el navegador (Enter para seguir sin esperar).
+4. **Integra tu proyecto.** Te dice exactamente qué va a hacer y, si aceptas, instala el SDK con tu gestor de paquetes, crea las rutas y guarda la llave en tu archivo de entorno ignorado por git. Nunca sobrescribe un archivo existente.
+5. **Escucha webhooks.** Abre una sesión, guarda su secreto en tu `.env.local` y reenvía cada evento a tu servidor local.
+
+Al final te deja un resumen con lo que quedó listo y el siguiente paso. Cada paso también existe como comando suelto.
+
 ## Instalar e iniciar sesión
 
 ```bash

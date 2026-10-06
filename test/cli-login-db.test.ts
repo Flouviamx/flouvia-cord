@@ -111,6 +111,21 @@ describe('cord login por navegador', () => {
         expect(await allowed('/api/v1/clientes', 'write')).toBe(false);
     });
 
+    it('con proyecto entrega también una sk_test_ y reconectar el mismo equipo revoca la llave anterior', async () => {
+        const a = await startLogin('mac-de-ana');
+        expect(await decideLogin(a.userCode, true, { ...ctx('mac-de-ana'), proyecto: true })).toEqual({ ok: true });
+        const first = await claimLogin(a.deviceCode);
+        expect(first.apiKey).toMatch(/^rk_test_/);
+        expect(first.projectKey).toMatch(/^sk_test_[0-9a-f]{48}$/);
+
+        const b = await startLogin('mac-de-ana');
+        await decideLogin(b.userCode, true, ctx('mac-de-ana'));
+        const rows = (await m.db.query("select nombre, revoked_at from api_keys order by created_at")).rows;
+        const cli = rows.filter((r: any) => r.nombre === 'CLI · mac-de-ana');
+        expect(cli.filter((r: any) => r.revoked_at === null)).toHaveLength(1);
+        expect(rows.find((r: any) => r.nombre === 'Proyecto · mac-de-ana').revoked_at).toBeNull();
+    });
+
     it('rechazado o vencido: no se crea ninguna llave', async () => {
         const a = await startLogin('x');
         expect(await decideLogin(a.userCode, false, ctx('x'))).toEqual({ ok: true });

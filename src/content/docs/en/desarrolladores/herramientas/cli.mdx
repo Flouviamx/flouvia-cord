@@ -9,6 +9,22 @@ description: "Sign in from the browser, set up your account with AI, integrate y
   <p class="page-subtitle">Test your whole integration without leaving your machine.</p>
 </header>
 
+## The wizard
+
+```bash
+npx @flouviahq/cli
+```
+
+With no command, the CLI opens the wizard and walks you through it:
+
+1. **Connect your terminal.** It opens your browser with a code; you confirm it and you're in. If the wizard is going to integrate your project, on the same screen you can also create a test Secret Key for it.
+2. **Choose what to do** with the arrow keys and the space bar: set up your account with AI, integrate Cord into the project and test webhooks on your localhost.
+3. **Set up your account with AI.** It asks for your website, what you do and your price list, shows you the proposal and waits for you to approve it in the browser (Enter to continue without waiting).
+4. **Integrate your project.** It tells you exactly what it will do and, if you accept, installs the SDK with your package manager, creates the routes and saves the key to your git-ignored environment file. It never overwrites an existing file.
+5. **Listen for webhooks.** It opens a session, saves its secret to your `.env.local` and forwards every event to your local server.
+
+At the end it leaves you a summary of what's ready and the next step. Every step also exists as its own command.
+
 ## Install and sign in
 
 ```bash

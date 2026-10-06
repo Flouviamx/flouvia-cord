@@ -3,6 +3,12 @@
 CLI de desarrollo de [Cord](https://cordhq.app). Trabaja solo con llaves de prueba: nada de lo que hagas toca datos reales.
 
 ```bash
+npx @flouviahq/cli   # el asistente: conecta, configura e integra paso a paso
+```
+
+O comando por comando:
+
+```bash
 npm install -g @flouviahq/cli
 cord login     # abre tu navegador, confirmas el código y la terminal queda conectada
 cord setup     # Cord propone la configuración de tu cuenta; tú la apruebas en el navegador

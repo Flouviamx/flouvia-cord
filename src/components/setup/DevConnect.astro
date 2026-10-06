@@ -7,7 +7,7 @@ import { currentLocale } from '../../lib/context';
 const L = currentLocale();
 const docsHref = `https://docs.cordhq.app${L === 'en' ? '/en' : ''}/docs/desarrolladores/herramientas/cli`;
 const steps = [
-    { key: 'login', title: t(L, 'setup.dev.s1'), hint: t(L, 'setup.dev.s1_hint'), cmd: 'npx @flouviahq/cli login' },
+    { key: 'login', title: t(L, 'setup.dev.s1'), hint: t(L, 'setup.dev.s1_hint'), cmd: 'npx @flouviahq/cli' },
     { key: 'api', title: t(L, 'setup.dev.s2'), hint: t(L, 'setup.dev.s2_hint'), cmd: 'npx @flouviahq/cli init' },
     { key: 'listen', title: t(L, 'setup.dev.s3'), hint: t(L, 'setup.dev.s3_hint'), cmd: 'npx @flouviahq/cli listen --forward-to http://localhost:3000/api/webhooks/cord' },
 ];
