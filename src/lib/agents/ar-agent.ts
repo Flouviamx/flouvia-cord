@@ -4,12 +4,13 @@ import { splitCuotas, isoDay } from '../cobros';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../billing';
 import { trackExternalUsage } from '../external-usage';
 import { log } from '../log';
+import { aiModel } from '../ai-model';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
 });
 
-const MODEL = () => process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
+const MODEL = aiModel;
 
 export type Tono = 'cercano' | 'profesional' | 'firme';
 

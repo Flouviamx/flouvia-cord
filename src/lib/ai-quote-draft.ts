@@ -11,9 +11,10 @@ import { rateLimit } from './ratelimit';
 import { McpClientManager } from './mcp/client-manager';
 import { getDefaultAgentId } from './agents/governance';
 import { log } from './log';
+import { aiModel } from './ai-model';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
-const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
+const MODEL = aiModel();
 
 export const IA_DISPONIBLE = Boolean(API_KEY);
 
