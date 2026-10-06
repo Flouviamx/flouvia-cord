@@ -763,6 +763,55 @@ A milestone that can be charged before it's met is a money problem, not an inter
         status: 'next',
         api: true
     },
+    {
+        id: '21',
+        slug: 'configuracion-con-ia',
+        title: {
+            es: 'Configuración con IA',
+            en: 'AI-assisted setup'
+        },
+        shortDesc: {
+            es: 'Dale a Cord tu sitio, a qué te dedicas y tu lista de precios: propone perfil, marca, impuestos, catálogo y plantillas, y tú lo apruebas. Desde el onboarding, la terminal o un agente de IA.',
+            en: 'Give Cord your website, what you do and your price list: it proposes profile, branding, taxes, catalog and templates, and you approve it. From onboarding, the terminal or an AI agent.'
+        },
+        content: {
+            es: `## Tu cuenta lista en minutos, sin capturar campo por campo
+Al crear tu cuenta, Cord te pide tres cosas opcionales: tu sitio web, una descripción de tu negocio y tu lista de precios en Excel, CSV, PDF o foto. Con eso arma una propuesta completa de configuración.
+
+### Qué propone
+- **Perfil y marca:** nombre, contacto, logo y color de tu sitio, y la plantilla del PDF.
+- **Impuestos:** solo los que tu negocio maneja y tu catálogo todavía no tiene, como una retención. Llegan desmarcados: tú decides.
+- **Catálogo:** los productos de tu lista de precios con SKU, unidad y precio, en tu divisa.
+- **Cotizaciones y mensajes:** términos de pago, vigencia, condiciones y plantillas para enviar por correo o WhatsApp.
+
+### Una sola propuesta, tres caminos
+- **Onboarding y Ajustes:** el asistente aparece al terminar el alta y en Ajustes › General › Configurar con IA.
+- **Terminal:** \`cord setup\` del CLI lee tu sitio y tu archivo, y abre la revisión en el navegador.
+- **Agentes de IA:** por el servidor MCP, la herramienta \`proponer_configuracion\` hace lo mismo y te comparte el link.
+
+### Nada se aplica sin ti
+La IA solo redacta. Cada dato se valida con las mismas reglas que Ajustes (un RFC que no pasa la validación se descarta y te decimos por qué), y lo que llega de tu sitio se trata como contenido, nunca como instrucciones. Una persona con permiso de Ajustes revisa, edita y aprueba.`,
+            en: `## Your account ready in minutes, without filling in field by field
+When you create your account, Cord asks for three optional things: your website, a description of your business and your price list as Excel, CSV, PDF or a photo. From that it builds a complete setup proposal.
+
+### What it proposes
+- **Profile and branding:** name, contact, logo and color from your website, and the PDF template.
+- **Taxes:** only the ones your business uses that your catalog doesn't have yet, such as a withholding. They arrive unchecked: you decide.
+- **Catalog:** the products from your price list with SKU, unit and price, in your currency.
+- **Quotes and messages:** payment terms, validity, conditions and templates to send by email or WhatsApp.
+
+### One proposal, three ways in
+- **Onboarding and Settings:** the assistant appears when you finish signing up and in Settings › General › Set up with AI.
+- **Terminal:** the CLI's \`cord setup\` reads your website and file and opens the review in the browser.
+- **AI agents:** through the MCP server, the \`proponer_configuracion\` tool does the same and shares the link with you.
+
+### Nothing is applied without you
+The AI only drafts. Every field is validated with the same rules as Settings (a tax ID that fails validation is dropped and we tell you why), and what comes from your website is treated as content, never as instructions. A person with Settings permission reviews, edits and approves.`
+        },
+        area: 'cotizaciones',
+        status: 'live',
+        api: true
+    },
 {
     "id": "20",
     "slug": "confiabilidad-operativa",
@@ -846,6 +895,16 @@ const roadmapEnhancements = {
         scope: { es: 'El registro de vistas y la actividad viven junto a la cotización. Las notificaciones se configuran por canal y evento.', en: 'View history and activity live next to the quote. Notifications are configured by channel and event.' },
         boundaries: { es: 'Cord informa actividad observada en el link, no intención de compra. Una apertura no se presenta como aprobación ni como probabilidad de cierre.', en: 'Cord reports observed activity on the link, not purchase intent. An opening is never presented as approval or a close probability.' },
         related: ['link-publico', 'notificaciones', 'ciclo-de-vida-contrato']
+    },
+    'configuracion-con-ia': {
+        family: 'platform', market: { es: '12 mercados soportados', en: '12 supported markets' },
+        workflow: {
+            es: ['Comparte tu sitio, una descripción o tu lista de precios.', 'Cord propone perfil, marca, impuestos, catálogo y plantillas, validados con las reglas de tu país.', 'Revisas, editas y apruebas; Cord lo aplica con los mismos controles que Ajustes.'],
+            en: ['Share your website, a description or your price list.', 'Cord proposes profile, branding, taxes, catalog and templates, validated with your country rules.', 'You review, edit and approve; Cord applies it with the same controls as Settings.']
+        },
+        scope: { es: 'Configuración inicial desde el onboarding, Ajustes, el CLI (cord setup), la API (POST /api/v1/setup/plans) y el servidor MCP, con una sola revisión para todos.', en: 'Initial setup from onboarding, Settings, the CLI (cord setup), the API (POST /api/v1/setup/plans) and the MCP server, with one review for all of them.' },
+        boundaries: { es: 'Propone; no aplica nada sin aprobación de una persona. No sube tu certificado fiscal ni activa cobros en línea: esos pasos siguen siendo tuyos.', en: 'It proposes; nothing is applied without a person approving it. It does not upload your tax certificate or enable online payments: those steps remain yours.' },
+        related: ['cord-elements', 'integraciones-y-flujos', 'editor-cotizaciones']
     },
     'cord-elements': {
         family: 'platform', market: { es: 'Web, React y Vue', en: 'Web, React, and Vue' },

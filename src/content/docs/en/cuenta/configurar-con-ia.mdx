@@ -1,0 +1,50 @@
+---
+title: "Set up your account with AI"
+seoTitle: "Set up your Cord account with AI"
+description: "Cord reads your website, a description of your business and your price list, and proposes your setup for you to approve."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Set up your account with AI</h1>
+  <p class="page-subtitle">Your profile, branding, taxes, catalog and templates in a single review.</p>
+</header>
+
+## How it works
+
+When you finish signing up, Cord asks for three things, all optional:
+
+- **Your website.** It provides your name, contact details, logo and brand color.
+- **What your business does.** How you charge, on what terms and which taxes you handle, in your own words. For example: "we sell building materials on 30-day credit and withhold 4% on freight".
+- **Your price list** as Excel, CSV, PDF or a photo, up to 3 MB. Cord builds your catalog from it with SKU, unit and price.
+
+From that it builds a proposal and shows it to you for review. You can change any field, drop the logo, uncheck products or taxes, and then apply it. If you'd rather do it later, skip it: the assistant also lives in **Settings › General › Set up with AI**.
+
+## What it proposes
+
+| Section | What it includes |
+|---|---|
+| Branding | Logo from your website, brand color and PDF template. |
+| Business | Name, legal name, tax ID, email, phone and address. |
+| Quotes | Payment terms, validity, number prefix, tax-inclusive pricing, PDF conditions and message. |
+| Taxes | Only the ones your business uses that your catalog doesn't have yet. They arrive **unchecked**. |
+| Catalog | The products from your price list, in your currency. |
+| Messages | Templates to send quotes and reminders by email or WhatsApp. |
+
+## What it doesn't do
+
+- **It applies nothing without you.** The AI only drafts. Every field is validated with the same rules as Settings: an RFC with a wrong check digit, an invalid email or an absurd rate is dropped, and the review tells you why.
+- **It doesn't make up tax data.** If it can't validate your tax ID for your country, it doesn't propose it.
+- **It doesn't upload your certificate or enable payments.** The CSD (Mexico), the Verifactu certificate (Spain) and Cord Payments remain your steps.
+- **It doesn't obey your website.** What it reads from your page or your file is treated as content, never as instructions.
+
+You can generate up to six proposals a day per company, and each one expires after 7 days if you don't apply it.
+
+## From the terminal or an agent
+
+The same proposal can be requested from outside the app, and it always ends in the same review:
+
+- **CLI:** `cord setup --sitio yourcompany.com --archivo prices.xlsx` opens the review in your browser and shows the result in the terminal. See [Cord CLI](/docs/desarrolladores/herramientas/cli).
+- **AI agents:** with the [MCP server](/docs/desarrolladores/herramientas/mcp), the `proponer_configuracion` tool shares the review link with you.
+- **API:** `POST /api/v1/setup/plans` returns `review_url`. See the [API reference](/docs/desarrolladores/referencia).
+
+If you open the link while in the test environment, Cord asks you to leave it: the proposal sets up your real account.

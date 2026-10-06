@@ -8,6 +8,8 @@ order: 1
 Bienvenido a Cord. Esta guía te deja operando —cotizando, cobrando y facturando— en menos de 20 minutos. Si es tu primera vez, sigue esta ruta lineal.
 
 ## Paso 1: Configura tu empresa
+**Atajo:** al terminar el alta, Cord te ofrece configurar tu cuenta con IA. Le das tu sitio web, a qué se dedica tu negocio y tu lista de precios, y propone perfil, marca, impuestos, catálogo y plantillas para que los revises y apruebes. Si lo saltaste, está en **Ajustes > General > Configurar con IA**. Ver [Configura tu cuenta con IA](/soporte/configurar-con-ia).
+
 El núcleo de Cord es tu perfil fiscal y de marca. Lo que se te pide aquí depende del país de tu cuenta — Cord opera de punta a punta en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú, y el vocabulario fiscal cambia con cada uno.
 
 1. Ve a **Ajustes > General** y captura tu razón social, contacto y datos básicos (moneda, idioma y zona horaria se detectan de tu país, y puedes ajustarlos ahí).
@@ -39,6 +41,8 @@ Si vas a usar Cord programáticamente:
 ```bash
 curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
 ```
+
+- O usa el [CLI de Cord](/soporte/cli-cord): `npx @flouviahq/cli login` conecta tu terminal desde el navegador y `npx @flouviahq/cli init` deja tu proyecto integrado.
 
 ## Paso 6: Automatiza y conecta tus apps
 - En **Workflows** crea tu primer workflow desde una de las ideas: por ejemplo, avisar al equipo cuando un cliente aprueba. Es uno de los pasos de la lista **Configura Cord**.

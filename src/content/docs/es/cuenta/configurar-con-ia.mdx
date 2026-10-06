@@ -1,0 +1,50 @@
+---
+title: "Configura tu cuenta con IA"
+seoTitle: "Configura tu cuenta de Cord con IA"
+description: "Cord lee tu sitio, una descripción de tu negocio y tu lista de precios, y propone tu configuración para que la apruebes."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Configura tu cuenta con IA</h1>
+  <p class="page-subtitle">Tu perfil, marca, impuestos, catálogo y plantillas en una sola revisión.</p>
+</header>
+
+## Cómo funciona
+
+Al terminar el alta, Cord te pide tres cosas, todas opcionales:
+
+- **Tu sitio web.** De ahí salen el nombre, el contacto, el logo y el color de tu marca.
+- **A qué se dedica tu negocio.** Cómo cobras, a qué plazo y qué impuestos manejas, en tus palabras. Por ejemplo: "vendemos material de construcción a crédito a 30 días y retenemos 4 % en fletes".
+- **Tu lista de precios** en Excel, CSV, PDF o foto, hasta 3 MB. Cord toma de ahí el catálogo con SKU, unidad y precio.
+
+Con eso arma una propuesta y te la muestra para que la revises. Puedes cambiar cualquier campo, quitar el logo, desmarcar productos o impuestos, y luego aplicarla. Si prefieres hacerlo después, sáltalo: el asistente vive también en **Ajustes › General › Configurar con IA**.
+
+## Qué propone
+
+| Sección | Qué incluye |
+|---|---|
+| Marca | Logo de tu sitio, color de marca y plantilla del PDF. |
+| Negocio | Nombre, razón social, identificador fiscal, correo, teléfono y dirección. |
+| Cotizaciones | Términos de pago, vigencia, prefijo del folio, impuesto incluido en el precio, condiciones y mensaje del PDF. |
+| Impuestos | Solo los que tu negocio usa y tu catálogo todavía no tiene. Llegan **desmarcados**. |
+| Catálogo | Los productos de tu lista de precios, en tu divisa. |
+| Mensajes | Plantillas para enviar cotizaciones y recordatorios por correo o WhatsApp. |
+
+## Qué no hace
+
+- **No aplica nada sin ti.** La IA solo redacta. Cada campo se valida con las mismas reglas que Ajustes: un RFC con dígito verificador incorrecto, un correo inválido o una tasa absurda se descartan, y la revisión te dice por qué.
+- **No inventa datos fiscales.** Si no puede validar tu identificador fiscal para tu país, no lo propone.
+- **No sube tu certificado ni activa cobros.** El CSD (México), el certificado de Verifactu (España) y Cord Payments siguen siendo pasos tuyos.
+- **No obedece a tu sitio.** Lo que lee de tu página o de tu archivo se trata como contenido, nunca como instrucciones.
+
+Puedes generar hasta seis propuestas al día por empresa, y cada una vence en 7 días si no la aplicas.
+
+## Desde la terminal o un agente
+
+La misma propuesta se puede pedir desde fuera de la app, y siempre termina en la misma revisión:
+
+- **CLI:** `cord setup --sitio tuempresa.com --archivo precios.xlsx` abre la revisión en tu navegador y te muestra el resultado en la terminal. Ver [CLI de Cord](/docs/desarrolladores/herramientas/cli).
+- **Agentes de IA:** con el [servidor MCP](/docs/desarrolladores/herramientas/mcp), la herramienta `proponer_configuracion` te comparte el link de revisión.
+- **API:** `POST /api/v1/setup/plans` devuelve `review_url`. Ver la [referencia de la API](/docs/desarrolladores/referencia).
+
+Si abres el link estando en el entorno de prueba, Cord te pide salir de él: la propuesta configura tu cuenta real.
