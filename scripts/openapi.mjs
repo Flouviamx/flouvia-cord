@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 import {
-    OPERATIONS, ApiError, WEBHOOK_DATA_BY_OBJECT, webhookEnvelope, webhookEvents,
+    OPERATIONS, ApiError, WEBHOOK_DATA_BY_OBJECT, webhookEnvelope, webhookEvents, FIELD_DOCS,
 } from '../src/lib/api-schema.ts';
 import { API_VERSIONS, LATEST_API_VERSION } from '../src/lib/api-versions.ts';
 
@@ -113,6 +113,34 @@ const spec = {
     paths,
     webhooks,
 };
+
+const undocumented = new Set();
+function document(node, where) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) return node.forEach((n) => document(n, where));
+    if (node.properties) {
+        for (const [name, prop] of Object.entries(node.properties)) {
+            if (prop.$ref || prop.description) continue;
+            if (FIELD_DOCS[name]) prop.description = FIELD_DOCS[name];
+            else undocumented.add(`${where} → ${name}`);
+        }
+    }
+    if (Array.isArray(node.parameters)) {
+        for (const p of node.parameters) {
+            if (p.description) continue;
+            if (FIELD_DOCS[p.name]) p.description = FIELD_DOCS[p.name];
+            else undocumented.add(`${where} → ${p.in}:${p.name}`);
+        }
+    }
+    for (const value of Object.values(node)) document(value, where);
+}
+for (const [path, ops] of Object.entries(spec.paths)) document(ops, path);
+for (const [event, hook] of Object.entries(spec.webhooks)) document(hook, event);
+document(spec.components.schemas, 'components');
+if (undocumented.size) {
+    console.error(`Campos sin descripción (agrégalos a FIELD_DOCS en src/lib/api-schema.ts):\n  ${[...undocumented].join('\n  ')}`);
+    process.exit(1);
+}
 
 const json = JSON.stringify(spec, null, 2) + '\n';
 if (process.argv.includes('--check')) {

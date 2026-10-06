@@ -6,6 +6,27 @@
 
 ---
 
+✅ **MCP auditado: 26 herramientas y contrato del spec (6 oct 2026)** — lo que se encontró y por qué:
+   • **Escalada en el transporte SSE.** `/api/mcp/message` comparaba solo la organización de
+     la sesión y ejecutaba con el scope GUARDADO en ella: una llave de solo lectura de la misma
+     org, con el sessionId, corría herramientas de escritura. Ahora exige la misma llave y usa
+     el scope y modo de la llave que llama.
+   • **outputSchema sin structuredContent.** Las 19 tools declaraban `outputSchema`, que en el
+     protocolo 2025-06-18 obliga a devolver `structuredContent`, y además con
+     `additionalProperties: false` y `next_cursor` tipado sin null: un cliente que valida habría
+     rechazado respuestas correctas. Hoy toda tool responde `structuredContent` contra un schema
+     abierto y el texto va compacto (sin indentación que gasta tokens).
+   • **Importes sin divisa** en cotizaciones, productos y clientes (regla 21): viajan con `moneda`.
+   • **Error de plan como error interno.** `cartera_vencida` lanzaba un `Error` común que salía
+     como -32603 y además nombraba el plan equivocado; los gates leen `requiredPlan`.
+   • **Nuevas:** `contexto_cuenta`, `proponer_configuracion`/`estado_configuracion` (la misma
+     propuesta del onboarding y `cord setup`, nunca se aplica sin una persona),
+     `validar_datos_fiscales`, `validar_apariencia`, `simular_evento` (solo prueba) y
+     `buscar_documentacion` (índice de docs por HTTP; `astro:content` no existe fuera del build).
+   • `/api/docs-search.json` devolvía el stack trace en un 500; ya no.
+   • **OpenAPI semántico:** `FIELD_DOCS` en `api-schema.ts` describe cada nombre de campo y
+     `security:api-spec` falla si una propiedad o parámetro queda sin descripción.
+
 ✅ **Configuración asistida: una propuesta, tres puertas (6 oct 2026)** — el onboarding, el
 CLI y los agentes configuran la cuenta con el mismo motor. Decisiones que no eran obvias:
    • **La IA solo redacta.** `src/lib/setup/plan.ts` revalida cada campo con las reglas de

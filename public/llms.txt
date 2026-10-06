@@ -130,7 +130,7 @@ for prices, currencies and included usage.
 - Pin the API version with the `Cord-Version` header; the SDKs send the version they were built against.
 - Every amount travels with its currency (`moneda`). Never assume MXN or a "$" symbol.
 - Develop against `sk_test_` keys and use `cord listen` / `cord trigger` or `/api/v1/test_helpers/*` to simulate webhooks, stamping failures and expirations.
-- To set up a Cord account (profile, branding, taxes, catalog, templates), propose a plan with `POST /api/v1/setup/plans` or `cord setup`, then send the person the `review_url`. Agents never apply account settings directly: a human approves the plan in Cord.
+- To set up a Cord account (profile, branding, taxes, catalog, templates), propose a plan with `POST /api/v1/setup/plans`, `cord setup` or the MCP tool `proponer_configuracion`, then send the person the `review_url`. Agents never apply account settings directly: a human approves the plan in Cord.
 
 ## Problem-oriented guides
 

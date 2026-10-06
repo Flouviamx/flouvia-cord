@@ -29,8 +29,8 @@ export const GET: APIRoute = async () => {
         'Cache-Control': 'public, max-age=3600, s-maxage=86400'
       }
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+  } catch {
+    return new Response(JSON.stringify({ error: 'No se pudo armar el índice de la documentación.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

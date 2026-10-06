@@ -3,8 +3,8 @@
 // compartido (session-store.ts, Redis o memoria) — YA NO alcanza con conocer
 // el sessionId (viaja en la URL, visible en logs de proxy intermedios):
 // además se exige la MISMA API key (Authorization: Bearer) que abrió la
-// sesión, y se valida que resuelva al MISMO org_id — una llave robada de
-// otra org con un sessionId adivinado/filtrado no puede ejecutar nada.
+// sesión: misma llave y mismo org_id. Otra llave de la misma org (por ejemplo
+// una de solo lectura) no puede heredar el scope de escritura de la sesión.
 //
 // El resultado de cada tool se procesa aquí (mismo `handle()` que el
 // transporte HTTP moderno) pero se ENTREGA por el buzón de salida
@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         void logApiRequest(auth, request, res.status, Date.now() - t0, '/mcp/sse-message:session-not-found');
         return res;
     }
-    if (session.orgId !== auth.orgId) {
+    if (session.orgId !== auth.orgId || session.keyId !== auth.keyId) {
         const res = rpcErrRes(null, -32001, 'Esta API key no corresponde a la sesión.', 403);
         void logApiRequest(auth, request, res.status, Date.now() - t0, '/mcp/sse-message:org-mismatch');
         return res;
@@ -86,9 +86,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     return reqContext.run({ userId: null, orgId: session.orgId, actor: `mcp:${session.keyId}` }, async () => {
         try {
             const result = await handle(msg, {
-                scope: session.scope,
-                keyId: session.keyId,
-                orgId: session.orgId,
+                scope: auth.scope,
+                keyId: auth.keyId,
+                orgId: auth.orgId,
+                mode: auth.mode,
                 sessionId,
             }, request);
             await pushOutbox(sessionId, { jsonrpc: '2.0', id: msg.id, result });

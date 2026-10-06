@@ -77,6 +77,13 @@ key must belong to the same organization that opened the session.
 | `crear_tarea` | Creates a follow-up task, optionally linked to a quote and with a due date. | **write** |
 | `registrar_promesa_pago` | Records the date a client promised to pay a quote. It doesn't charge anything. | **write** |
 | `listar_eventos` | Business history (quotes, invoices, clients, tasks, promises), filterable by type or object. Paginated. | read |
+| `contexto_cuenta` | Business, country, currency, language, time zone, plan and whether the key is test or live. Call it first. | read |
+| `proponer_configuracion` | Proposes profile, branding, taxes, catalog and templates from the website, a description or the price list (base64, up to 3 MB). Applies nothing: returns `review_url` for a person to approve. | **write** |
+| `estado_configuracion` | Status of a proposal (`propuesto`, `aplicado`, `descartado`, `fallido`) and the result per section. | read |
+| `validar_datos_fiscales` | Validates RFC, tax regime, CFDI use and postal code (Mexico), NIF/NIE/CIF (Spain) or EIN (US) with the same rules used when issuing. | read |
+| `validar_apariencia` | Validates an Elements `appearance` object and reports which keys Cord would drop. | read |
+| `simular_evento` | Fires a test webhook through the real delivery engine. Test keys only. | **write** |
+| `buscar_documentacion` | Searches these docs and returns the most relevant pages with an excerpt and URL. | read |
 
 Every tool declares standard MCP annotations (`readOnlyHint`, `idempotentHint`,
 `destructiveHint`) in `tools/list` — an MCP client can use these to decide which calls to
@@ -85,6 +92,13 @@ auto-approve without asking the user every time. Read tools are `readOnlyHint: t
 are `destructiveHint: true` because they change a quote's status or write to the client: a
 well-configured MCP client asks for confirmation before running them. No tool issues or stamps
 invoices: that is still an action a person triggers from the app or the API.
+
+No tool changes account settings directly: `proponer_configuracion` leaves a proposal that a
+person with Settings permission reviews and approves in Cord, just like the one from onboarding
+or `cord setup`.
+
+Every tool declares an `outputSchema` and returns `structuredContent` (the validatable JSON)
+alongside the text. Amounts travel with their currency in `moneda`: never assume pesos.
 
 ## Pagination
 

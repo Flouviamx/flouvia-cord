@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro';
 import { getActiveOrgId, reqIp } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { MCP_TOOLS, McpToolError } from '../../../lib/mcp';
+import { isTestModeRequest } from '../../../lib/context';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
@@ -28,7 +29,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
         const result = await tool.handler(body.args ?? {}, {
-            ip: reqIp(request), keyId: 'playground', orgId: await getActiveOrgId(), origin: new URL(request.url).origin,
+            ip: reqIp(request), keyId: 'playground', orgId: await getActiveOrgId(), scope: 'read', mode: isTestModeRequest() ? 'test' : 'live', origin: new URL(request.url).origin,
         });
         return json({ ok: true, tool: name, result });
     } catch (err: any) {
