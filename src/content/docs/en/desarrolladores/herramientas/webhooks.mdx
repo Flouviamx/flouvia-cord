@@ -61,20 +61,22 @@ Every delivery is a `POST` with `Content-Type: application/json` and this body:
 
 ## Signing and security
 
-Cord signs every delivery with two headers. Use the SDK (`@flouviahq/elements/server`, see the
-[Server SDK guide](/en/docs/desarrolladores/herramientas/elements/server)) so you don't have to
-implement verification by hand:
+Cord signs every delivery with two headers. Use `constructEvent` from `@flouviahq/node` (see the
+[server SDK guide](/en/docs/desarrolladores/herramientas/elements/server)) so you don't have to
+implement verification by hand. It requires `X-Cord-Signature-V1` with a timestamp, compares in
+constant time and rejects a delivery older than 5 minutes:
 
 ```ts
-import { CordAPI } from '@flouviahq/elements/server';
-const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+import { constructEvent } from '@flouviahq/node';
 
-const event = cord.webhooks.constructEvent(
+const event = await constructEvent(
   await req.text(),
   req.headers,
   process.env.CORD_WEBHOOK_SECRET!,
 );
 ```
+
+In Python it's `construct_event` from `cord-sdk` and in PHP `Webhook::constructEvent` from `flouviahq/cord`, with the same contract.
 
 If you'd rather verify by hand:
 

@@ -73,7 +73,7 @@ export const DEV_PAGES_EN: DevPage[] = [
                     titulo: 'Test your webhooks without deploying.',
                     copy: 'cord listen sends your test environment webhooks to your machine, signed exactly as in production. cord trigger fires any event and cord simulate triggers what a third party does in production, like a tax provider outage or an expiring quote.',
                     bullets: [
-                        'npx @flouviahq/cli init sets up the webhook route and the variables',
+                        'npx @flouviahq/cli opens the wizard: sign in from the browser, no keys to copy, and your project ends up integrated',
                         'It only accepts test keys: nothing touches your real data',
                         'cord events tail shows events as they happen',
                     ],

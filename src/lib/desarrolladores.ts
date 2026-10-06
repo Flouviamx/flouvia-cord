@@ -109,7 +109,7 @@ export const DEV_PAGES: DevPage[] = [
                     titulo: 'Prueba tus webhooks sin desplegar.',
                     copy: 'cord listen manda a tu máquina los webhooks de tu entorno de prueba, firmados igual que en producción. cord trigger dispara cualquier evento y cord simulate provoca lo que en producción hace un tercero, como un PAC caído o una cotización que vence.',
                     bullets: [
-                        'npx @flouviahq/cli init deja la ruta del webhook y las variables listas',
+                        'npx @flouviahq/cli abre el asistente: entras desde el navegador, sin copiar llaves, y deja tu proyecto integrado',
                         'Solo acepta llaves de prueba: nada toca tus datos reales',
                         'cord events tail muestra los eventos conforme ocurren',
                     ],

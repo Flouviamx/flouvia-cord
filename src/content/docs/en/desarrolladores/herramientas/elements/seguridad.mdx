@@ -48,4 +48,4 @@ The payment page can never be framed. When paying from an embed, Cord opens it i
 ## Keys
 
 - **Publishable Key (`pk_live_`)**: only works once allowed domains are configured. Without them, the API responds `origin_allowlist_required`. `pk_test_` keys work from any origin, including `localhost`.
-- **Secret Key (`sk_`)**: never in a browser. If one arrives from a browser, the API responds `secret_key_in_browser` and you should revoke it: it is already exposed in the page source. The SDK also refuses to build `CordAPI` with an `sk_` in a browser.
+- **Secret Key (`sk_`)**: never in a browser. If one arrives from a browser, the API responds `secret_key_in_browser` and you should revoke it: it is already exposed in the page source. `@flouviahq/node` also refuses to run in a browser.

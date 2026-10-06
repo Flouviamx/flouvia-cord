@@ -41,7 +41,7 @@ The body is JSON: `{ "id": "evt_...", "event": "quote.paid", "created_at": "..."
 
 ### Signature verification
 
-Always validate the signature to ensure the event comes from Cord. Every delivery includes `X-Cord-Signature-V1` (with a timestamp, replay protection) and, for backward compatibility, the legacy `X-Cord-Signature` (no timestamp). The event name travels in `X-Cord-Event` and its stable id in `X-Cord-Event-Id`/`Idempotency-Key`. On Node, the `@flouviahq/elements/server` package validates both forms for you (`CordWebhooks.constructEvent`); if you'd rather verify it by hand in any language, [see the verification code](/en/support/firmas-webhooks).
+Always validate the signature to ensure the event comes from Cord. Every delivery includes `X-Cord-Signature-V1` (with a timestamp, replay protection) and, for backward compatibility, the legacy `X-Cord-Signature` (no timestamp). The event name travels in `X-Cord-Event` and its stable id in `X-Cord-Event-Id`/`Idempotency-Key`. On Node, `constructEvent` from `@flouviahq/node` validates it for you (in Python, `construct_event` from `cord-sdk`; in PHP, `Webhook::constructEvent` from `flouviahq/cord`); if you'd rather verify it by hand in any language, [see the verification code](/en/support/firmas-webhooks).
 
 ### Retries and inspection
 

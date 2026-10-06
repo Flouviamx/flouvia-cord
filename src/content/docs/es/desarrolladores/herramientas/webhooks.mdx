@@ -61,20 +61,22 @@ Cada entrega es un `POST` con `Content-Type: application/json` y este cuerpo:
 
 ## Firmas y seguridad
 
-Cord firma cada entrega con dos headers. Usa el SDK (`@flouviahq/elements/server`, ver la
-[guía del Server SDK](/docs/desarrolladores/herramientas/elements/server)) para no tener que
-implementar la verificación a mano:
+Cord firma cada entrega con dos headers. Usa `constructEvent` de `@flouviahq/node` (ver la
+[guía del SDK de servidor](/docs/desarrolladores/herramientas/elements/server)) para no tener que
+implementar la verificación a mano. Exige `X-Cord-Signature-V1` con timestamp, compara en
+tiempo constante y rechaza una entrega de hace más de 5 minutos:
 
 ```ts
-import { CordAPI } from '@flouviahq/elements/server';
-const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+import { constructEvent } from '@flouviahq/node';
 
-const event = cord.webhooks.constructEvent(
+const event = await constructEvent(
   await req.text(),
   req.headers,
   process.env.CORD_WEBHOOK_SECRET!,
 );
 ```
+
+En Python es `construct_event` de `cord-sdk` y en PHP `Webhook::constructEvent` de `flouviahq/cord`, con el mismo contrato.
 
 Si prefieres verificar a mano:
 

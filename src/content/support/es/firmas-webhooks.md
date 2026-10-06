@@ -17,25 +17,25 @@ Además de la firma, cada entrega trae `X-Cord-Event` (nombre del evento), `X-Co
 
 ### Con el SDK oficial (recomendado)
 
-`@flouviahq/elements/server` trae el verificador ya escrito: intenta primero `X-Cord-Signature-V1` (con tolerancia configurable, default 300 s) y cae a la legacy `X-Cord-Signature` si el endpoint todavía no la recibe.
+`@flouviahq/node` trae el verificador ya escrito: exige `X-Cord-Signature-V1`, compara en tiempo constante y rechaza una entrega con más de 300 segundos de antigüedad (configurable con `tolerance`). La firma legacy solo se acepta si la pides con `allowLegacySignature: true`.
 
 ```typescript
-import { CordAPI } from '@flouviahq/elements/server';
-
-const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+import { constructEvent, CordWebhookSignatureError } from '@flouviahq/node';
 
 // Ejemplo con un Route Handler de Next.js — req.text() ya es el cuerpo crudo
 export async function POST(req: Request) {
-  const body = await req.text();
   try {
-    const event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
-    // event.event, event.data — ver /soporte/api-facturas y /soporte/migracion-stripe para el catálogo de eventos
+    const event = await constructEvent(await req.text(), req.headers, process.env.CORD_WEBHOOK_SECRET!);
+    // event.event, event.data — el catálogo de eventos está en la guía de webhooks
     return new Response('ok');
-  } catch {
-    return new Response('Firma inválida', { status: 400 });
+  } catch (err) {
+    if (err instanceof CordWebhookSignatureError) return new Response('Firma inválida', { status: 400 });
+    throw err;
   }
 }
 ```
+
+`npx @flouviahq/cli init` crea esta ruta por ti, y `npx @flouviahq/cli listen` te deja probarla en tu máquina con firmas reales.
 
 ### Verificación manual en Node.js (Express)
 

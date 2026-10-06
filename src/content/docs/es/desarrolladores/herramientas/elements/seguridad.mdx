@@ -48,4 +48,4 @@ La página de pago no se deja enmarcar en ningún caso. Al pagar desde un embed,
 ## Llaves
 
 - **Publishable Key (`pk_live_`)**: solo funciona con dominios permitidos configurados. Sin ellos, la API responde `origin_allowlist_required`. Las `pk_test_` funcionan desde cualquier origen, incluido `localhost`.
-- **Secret Key (`sk_`)**: jamás en un navegador. Si una llega desde uno, la API responde `secret_key_in_browser` y debes revocarla: ya quedó expuesta en el código de la página. El SDK también se niega a construir `CordAPI` con una `sk_` en el navegador.
+- **Secret Key (`sk_`)**: jamás en un navegador. Si una llega desde uno, la API responde `secret_key_in_browser` y debes revocarla: ya quedó expuesta en el código de la página. `@flouviahq/node` también se niega a correr en un navegador.
