@@ -102,28 +102,39 @@ const articleSchema = {
         </section>
 
         <!-- ── BLOQUES (bento de tarjetas — mismo patrón que /producto) ── -->
-        <section class="pp-bento">
-            {page.blocks.map((b, i) => (
-                <article class={`pp-bcard pp-bcard-${i}`}>
-                    <div class="pp-bcard-text">
-                        <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
-                        <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
-                        <p class="pp-bcard-copy reveal">{b.copy}</p>
-                        <ul class="pp-bcard-bullets">
-                            {b.bullets.map((bl) => (
-                                <li class="reveal">
-                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
-                                    <span set:html={bl} />
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div class="pp-bcard-visual">
-                        {b.mock && <DevMock id={b.mock} isEn={isEn} />}
-                    </div>
-                </article>
-            ))}
-        </section>
+        {[{ blocks: page.blocks, kit: false }, ...(page.toolkit ? [{ blocks: page.toolkit.blocks, kit: true }] : [])].map((group) => (
+            <Fragment>
+                {group.kit && page.toolkit && (
+                    <header class="pp-kit-head">
+                        <p class="pp-kit-eyebrow">{page.toolkit.eyebrow}</p>
+                        <h2 class="pp-kit-title masked-title" set:html={page.toolkit.titulo} />
+                        <p class="pp-kit-sub reveal">{page.toolkit.sub}</p>
+                    </header>
+                )}
+                <section class:list={['pp-bento', { 'pp-bento-kit': group.kit }]}>
+                    {group.blocks.map((b, i) => (
+                        <article class={`pp-bcard pp-bcard-${i}`}>
+                            <div class="pp-bcard-text">
+                                <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
+                                <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
+                                <p class="pp-bcard-copy reveal">{b.copy}</p>
+                                <ul class="pp-bcard-bullets">
+                                    {b.bullets.map((bl) => (
+                                        <li class="reveal">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
+                                            <span set:html={bl} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div class="pp-bcard-visual">
+                                {b.mock && <DevMock id={b.mock} isEn={isEn} />}
+                            </div>
+                        </article>
+                    ))}
+                </section>
+            </Fragment>
+        ))}
 
 
         <FaqAccordion
@@ -156,7 +167,9 @@ const articleSchema = {
             gsap.set(win, { y: 26, opacity: 0 });
             ScrollTrigger.create({ trigger: win, start: 'top 90%', once: true, onEnter: () => {
                 gsap.to(win, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'transform' });
-                const rows = win.querySelectorAll('.dm-logrow, .dm-keyrow, .dm-eprow, .dm-whrow, .dm-tool, .dm-invrow, .dm-step, .dm-ctry, .dm-evs code, .dm-kv');
+                const rows = win.querySelectorAll('.dm-logrow, .dm-keyrow, .dm-eprow, .dm-whrow, .dm-tool, .dm-invrow, .dm-step, .dm-ctry, .dm-evs code, .dm-kv, .dm-ed-ln, .dm-tl');
+                const pop = win.querySelector('.dm-ed-pop');
+                if (pop) gsap.from(pop, { opacity: 0, y: 4, duration: 0.4, delay: 1.1, ease: 'power2.out' });
                 gsap.from(rows, { opacity: 0, y: 6, duration: 0.45, stagger: 0.025, delay: 0.2, ease: 'power2.out' });
             } });
         });
@@ -279,7 +292,9 @@ const articleSchema = {
         max-width: 1360px; margin: 0 auto; padding: 6rem 5% 5rem;
         display: grid; grid-template-columns: 5fr 7fr; gap: 1.2rem;
     }
-    .pp-bcard-2, .pp-bcard-3 { grid-column: 1 / -1; }
+    /* Desde el tercer bloque, tarjetas horizontales a todo el ancho que alternan
+       lado (zigzag): 3 bloques = par + una; 4 y 5 siguen el mismo ritmo. */
+    .pp-bcard:nth-child(n+3) { grid-column: 1 / -1; }
     .pp-bcard {
         background: #fff; border-radius: 28px; overflow: hidden;
         display: flex; flex-direction: column; min-height: 540px;
@@ -290,10 +305,34 @@ const articleSchema = {
         transform: translateY(-6px);
         box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 38px 72px -18px rgba(10,25,47,0.2), inset 0 1px 0 rgba(255,255,255,0.6);
     }
-    .pp-bcard-2, .pp-bcard-3 { flex-direction: row; min-height: 480px; }
+    .pp-bcard:nth-child(n+3) { flex-direction: row; min-height: 480px; }
     .pp-bcard-text { padding: 3rem 2.8rem 2rem; flex-shrink: 0; position: relative; z-index: 2; }
-    .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
+    .pp-bcard:nth-child(n+3) .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
+    @media (min-width: 1001px) {
+        .pp-bcard:nth-child(n+4):nth-child(even) { flex-direction: row-reverse; }
+        .pp-bcard:nth-child(n+4):nth-child(even) .pp-bcard-text { padding: 3.8rem 4rem 3.8rem 2.6rem; }
+    }
     .pp-bcard-visual { flex: 1; position: relative; overflow: hidden; min-height: 340px; background: #fff; }
+
+    /* Segundo bento (herramientas): encabezado propio y tarjetas a todo el ancho que alternan lado. */
+    .pp-kit-head { max-width: 1360px; margin: 0 auto; padding: 3rem 5% 0; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 0.8rem 4rem; align-items: end; }
+    .pp-kit-eyebrow { grid-column: 1 / -1; font-size: 0.62rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #8a919c; margin: 0; }
+    .pp-kit-title { margin: 0; font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.04em; color: #050505; max-width: 620px; }
+    .pp-kit-sub { margin: 0; font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); max-width: 500px; justify-self: end; }
+    .pp-bento-kit { padding-top: 2.6rem; }
+    .pp-bento-kit .pp-bcard { grid-column: 1 / -1; flex-direction: row; min-height: 480px; }
+    .pp-bento-kit .pp-bcard .pp-bcard-text { flex: 0 0 40%; padding: 3.8rem 2.6rem 3.8rem 4rem; display: flex; flex-direction: column; justify-content: center; }
+    .pp-bento-kit .pp-bcard-visual .dm-wrap { padding: 1.6rem; align-items: center; align-items: safe center; }
+    @media (min-width: 1001px) {
+        .pp-bento-kit .pp-bcard:nth-child(even) { flex-direction: row-reverse; }
+        .pp-bento-kit .pp-bcard:nth-child(even) .pp-bcard-text { padding: 3.8rem 4rem 3.8rem 2.6rem; }
+    }
+    @media (max-width: 1000px) {
+        .pp-kit-head { grid-template-columns: 1fr; }
+        .pp-kit-sub { justify-self: start; }
+        .pp-bento-kit .pp-bcard { flex-direction: column; min-height: 500px; }
+        .pp-bento-kit .pp-bcard .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
+    }
     .pp-bcard-eyebrow { font-size: 0.6rem; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; color: #b0b0b8; margin: 0 0 0.9rem; }
     .pp-bcard-h2 { font-size: clamp(1.35rem, 2.1vw, 1.85rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.035em; color: #050505; margin: 0 0 0.9rem; }
     .pp-bcard-copy { font-size: 0.875rem; line-height: 1.68; color: var(--color-text-muted); margin: 0 0 1.4rem; }
@@ -309,8 +348,8 @@ const articleSchema = {
         .pp-hero-visual { margin-left: -6%; margin-right: -6%; justify-content: flex-start; }
         .pp-mockup-wrap { max-width: 100%; }
         .pp-bento { grid-template-columns: 1fr; gap: 1.25rem; padding: 4rem 5% 3rem; }
-        .pp-bcard-2, .pp-bcard-3 { flex-direction: column; min-height: 500px; }
-        .pp-bcard-2 .pp-bcard-text, .pp-bcard-3 .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
+        .pp-bcard:nth-child(n+3) { flex-direction: column; min-height: 500px; }
+        .pp-bcard:nth-child(n+3) .pp-bcard-text { flex: none; padding: 2.8rem 2.4rem 1.6rem; }
         .pp-bcard { min-height: 460px; }
     }
     @media (max-width: 860px) {
@@ -338,15 +377,16 @@ const articleSchema = {
     .pp-bcard-visual .dm-win { max-width: 600px; }
     .pp-hero-visual .dm-win { max-width: 760px; }
 
-    /* Tarjetas HORIZONTALES (texto izq + mockup der, pp-bcard-2/3): centrar la
-       ventana en TODO el espacio visual disponible (no solo horizontal, sino
-       también vertical) — antes quedaba pegada arriba con un hueco grande
-       abajo y se veía desalineada. */
-    .pp-bcard-2 .pp-bcard-visual .dm-wrap,
-    .pp-bcard-3 .pp-bcard-visual .dm-wrap {
+    /* Tarjetas HORIZONTALES (desde el tercer bloque): la ventana se centra en
+       todo el espacio visual; si es más alta que la tarjeta, `safe` la ancla
+       arriba y sangra por abajo en vez de cortarse por los dos bordes. */
+    .pp-bcard:nth-child(n+3) .pp-bcard-visual .dm-wrap {
         padding: 1.6rem;
         align-items: center;
+        align-items: safe center;
     }
+    .pp-bcard-visual .dm-win.dm-ed,
+    .pp-bcard-visual .dm-win.dm-tm { max-width: 680px; }
 
     @media (max-width: 960px) {
         .pp-bcard-visual .dm-wrap { position: relative; inset: auto; padding: 1.4rem 1.4rem 0; }

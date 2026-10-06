@@ -52,11 +52,43 @@ export const DEV_PAGES_EN: DevPage[] = [
                 mock: 'code-events',
             },
         ],
+        toolkit: {
+            eyebrow: 'TOOLS',
+            titulo: 'Your backend and your terminal, ready for Cord.',
+            sub: 'Two official npm packages so integrating isn\'t writing requests by hand: a typed SDK for your server and a CLI to test webhooks on your machine before you deploy.',
+            blocks: [
+                {
+                    eyebrow: 'SERVER SDK',
+                    titulo: 'The API, already typed for your backend.',
+                    copy: '@flouviahq/node wraps the whole API: create quotes and invoices, walk full lists and verify webhooks with their signature and age. It sends the same Idempotency-Key on every retry and pins the API version, so a Cord update never changes what you read.',
+                    bullets: [
+                        'npm install @flouviahq/node, no dependencies',
+                        'Runs on Node, Bun, Deno, Cloudflare Workers and Vercel',
+                        'Errors with a code, a request_id and a link to their explanation',
+                    ],
+                    mock: 'code-sdk',
+                },
+                {
+                    eyebrow: 'CLI',
+                    titulo: 'Test your webhooks without deploying.',
+                    copy: 'cord listen sends your test environment webhooks to your machine, signed exactly as in production. cord trigger fires any event and cord simulate triggers what a third party does in production, like a tax provider outage or an expiring quote.',
+                    bullets: [
+                        'npx @flouviahq/cli init sets up the webhook route and the variables',
+                        'It only accepts test keys: nothing touches your real data',
+                        'cord events tail shows events as they happen',
+                    ],
+                    mock: 'code-cli',
+                },
+            ],
+        },
         faqs: [
             { q: 'What is the Cord API?', a: 'A REST API at https://cordhq.app/api/v1 that gives programmatic access to your quotes, invoices, clients, products, tasks, collections and events. It authenticates with a Bearer key and responds in JSON shaped as { data, meta } or { error, code }.' },
             { q: 'Do I need a paid plan to use the API?', a: 'No. The API is on every plan, including Free, with 2 keys and 100 calls a month. Starter includes 1,000 calls, Professional 5,000, Scale 10,000 and Developer 50,000. Test keys do not count against your quota.' },
             { q: 'How do I test without touching real data?', a: 'Use an sk_test_ key. It runs against a test environment separate from your account, so you can create and delete quotes without affecting your clients or your reports.' },
             { q: 'How do I avoid duplicate records when I retry?', a: 'Send the Idempotency-Key header. If you repeat the request with the same key and body, Cord returns the original response without running it again.' },
+            { q: 'Is there an official SDK for my backend?', a: 'Yes: @flouviahq/node for Node, Bun, Deno, Cloudflare Workers and Vercel, and @flouviahq/cli to test webhooks on your machine. Both are on npm.' },
+            { q: 'Can a Cord update break my integration?', a: 'No. Every key and every webhook keeps the API version it was created with, and you can pin another per request with the Cord-Version header. Cord shapes the response to that version.' },
+            { q: 'Can I give an integration access to only part of my data?', a: 'Yes. A restricted key (rk_) has read or write permission per resource, and any secret key can be limited to certain IPs, expire and be rolled with a grace period.' },
             { q: 'Is there an OpenAPI spec?', a: 'Yes, at https://cordhq.app/openapi.yaml, plus an AI-assistant summary at https://cordhq.app/llms.txt. Both are linked from the Workbench.' },
         ],
         cta: { titulo: 'Make your first call today.', sub: 'Create your account, generate a test key and call /api/v1/me in under a minute.' },

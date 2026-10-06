@@ -226,6 +226,62 @@ const WH_BODY = pretty({
 });
 // Petición compacta (como la manda un cliente MCP), en dos líneas para que quepa.
 const RPC_REQ = '{ "jsonrpc": "2.0", "id": 7, "method": "tools/call",\n  "params": { "name": "listar_facturas", "arguments": { "estado": "overdue" } } }';
+
+// ═══════════════════════ SDK (packages/node) ═══════════════════════
+const kw = (s: string) => `<span class="c-kw">${s}</span>`;
+const st = (s: string) => `<span class="c-str">${esc(s)}</span>`;
+const nm = (s: string) => `<span class="c-num">${s}</span>`;
+const fn = (s: string) => `<span class="c-key">${s}</span>`;
+const ty = (s: string) => `<span class="c-ty">${s}</span>`;
+const cm = (s: string) => `<span class="c-mut">// ${esc(s)}</span>`;
+const fac = T('factura', 'invoice');
+const SDK_HOVER = 19;
+const SDK_LINES = [
+    `${kw('import')} { ${ty('Cord')}, ${fn('constructEvent')} } ${kw('from')} ${st("'@flouviahq/node'")};`,
+    `${kw('const')} cord = ${kw('new')} ${ty('Cord')}(process.env.CORD_SECRET_KEY!, { apiVersion: ${st("'2026-10-01'")} });`,
+    '',
+    cm(T('Si la red falla, el reintento reusa la misma Idempotency-Key', 'If the network drops, the retry reuses the same Idempotency-Key')),
+    `${kw('const')} quote = ${kw('await')} cord.quotes.${fn('create')}({`,
+    `  cliente: { empresa: ${st("'Distribuidora El Zarco'")} },`,
+    `  items: [{ descripcion: ${st("'Cemento gris 50 kg'")}, cantidad: ${nm('340')}, precio_unitario: ${nm('182')} }],`,
+    `});`,
+    '',
+    cm(T('Recorre todas las páginas; el SDK lleva el cursor', 'Walks every page; the SDK keeps the cursor')),
+    `${kw('for await')} (${kw('const')} ${fac} ${kw('of')} cord.invoices.${fn('listAll')}({ estado: ${st("'open'")} })) {`,
+    `  ${kw('await')} erp.${fn(T('actualizarSaldo', 'updateBalance'))}(${fac}.numero, ${fac}.saldo);`,
+    `}`,
+    '',
+    cm(T('Verifica X-Cord-Signature-V1 y rechaza firmas de más de 5 minutos', 'Checks X-Cord-Signature-V1 and rejects signatures older than 5 minutes')),
+    `${kw('export async function')} ${fn('POST')}(req: ${ty('Request')}) {`,
+    `  ${kw('const')} event = ${kw('await')} ${fn('constructEvent')}(${kw('await')} req.${fn('text')}(), req.headers,`,
+    `    process.env.CORD_WEBHOOK_SECRET!);`,
+    `  ${kw('if')} (event.event === ${st("'invoice.paid'")}) {`,
+    `    ${kw('await')} erp.${fn(T('conciliar', 'reconcile'))}(event.data.numero, event.data.<span class="dm-ed-tok">saldo</span>);`,
+    `  }`,
+    `  ${kw('return')} ${kw('new')} ${ty('Response')}(${kw('null')}, { status: ${nm('200')} });`,
+    `}`,
+];
+
+// ═══════════════════════ CLI (packages/cli/src/cord.ts) ═══════════════════════
+// Una fila por entrega de `cord listen`: hora, evento (padEnd 28), event_id, → status, ms.
+const FWD = 'http://localhost:3000/api/webhooks/cord';
+const LISTEN: [string, string, string, number, number][] = [
+    ['16:41:52', 'quote.viewed', 'evt_2a91f0c7d34b4e8fa15c6b0d9e7f3a21', 200, 38],
+    ['16:42:07', 'quote.approved', 'evt_8d4c2b1e07a94f63b5e1c9a0f2d7b4e8', 200, 41],
+    ['16:42:58', 'payment.partial', 'evt_c35e9a7104bd4c2e8f6a1b0d3e9c5f72', 200, 52],
+    ['16:43:21', 'invoice.finalized', 'evt_4be07a2d4e61b3f8a05c7d92e1aa9c1f', 500, 17],
+    ['16:44:05', 'quote.expired', 'evt_f0a6d3b9c18e4a57b2d40e6c9a1f8b35', 200, 33],
+    ['16:44:12', 'invoice.paid', 'evt_9c1f4be07a2d4e61b3f8a05c7d92e1aa', 200, 36],
+];
+const QUOTE_SIM = '7e3b0c91-4d2a-4f6e-b8a5-2c9d1f0e6a47';
+// Los textos que imprime el CLI existen solo en español: en inglés se muestran
+// únicamente comandos y líneas neutras (horas, eventos, ids, códigos).
+const CLI_CMDS: { cmd: string; out?: string }[] = [
+    { cmd: 'cord trigger quote.approved', out: 'Disparado <b>quote.approved</b> <i>(datos ejemplo)</i>' },
+    { cmd: 'cord simulate fiscal pac_caido', out: 'La próxima emisión fiscal de la sandbox resultará en <b>pac_caido</b>.' },
+    { cmd: `cord simulate quote ${QUOTE_SIM} vencer`, out: `Cotización ${QUOTE_SIM}: <b>vencida</b>.` },
+    { cmd: 'cord events tail --type invoice.paid', out: '<i>Mostrando eventos nuevos. Ctrl+C para salir.</i>' },
+];
 ---
 
 <div class:list={['dm-wrap', `dm-${id}`]}>
@@ -597,6 +653,67 @@ POST /api/v1/cotizaciones
 
 <span class="c-mut"># {T('la primera petición sigue en proceso', 'the first request is still running')}</span>
 <span class="c-bad">← 409</span>  {`{`} <span class="c-key">"code"</span>: <span class="c-str">"idempotency_in_progress"</span> {`}`}</code></pre>
+    </div>
+</div>
+)}
+
+{id === 'code-sdk' && (
+<div class="dm-win dm-code dm-ed">
+    <div class="dm-code-bar">
+        <span class="dm-ed-file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.14"/><polyline points="14 3 14 8 19 8"/><path d="M9.5 13.5l-2 2 2 2M14.5 13.5l2 2-2 2"/></svg>
+            <code><i>src /</i> server.ts</code>
+        </span>
+        <span class="dm-pill dm-pill-n">@flouviahq/node</span>
+    </div>
+    <ol class="dm-ed-code">
+        {SDK_LINES.map((l, i) => (
+            <li class:list={['dm-ed-ln', i === SDK_HOVER && 'hl']}>
+                <span set:html={l || ' '} />
+                {i === SDK_HOVER && (
+                    <span class="dm-ed-pop" aria-hidden="true"><code><span class="c-kw">(property)</span> <span class="c-ty">CordWebhookInvoiceData</span>.saldo: <span class="c-ty">number</span></code></span>
+                )}
+            </li>
+        ))}
+    </ol>
+</div>
+)}
+
+{id === 'code-cli' && (
+<div class="dm-win dm-tm">
+    <div class="dm-tm-bar">
+        <span class="dm-tm-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.14"/><polyline points="7.5 10 10 12.5 7.5 15"/><line x1="12.5" y1="15" x2="16.5" y2="15"/></svg>
+            <b>erp-materiales</b><i>— zsh</i>
+        </span>
+        <span class="dm-tm-key">sk_test_…9c2a</span>
+    </div>
+    <div class="dm-tm-pane on">
+        <p class="dm-tl dm-tm-cmd"><u>$</u> cord listen --forward-to {FWD}</p>
+        {!isEn && (
+            <Fragment>
+                <p class="dm-tl"><b>Escuchando</b> webhooks de prueba (todos los eventos) → {FWD}</p>
+                <p class="dm-tl">Secreto de esta sesión: <b>whsec_5c2e8f0a9d41b7c3e6f2a8d0b4c19e7f3a5d2b8c6e0f4a17</b></p>
+                <p class="dm-tl"><i>Ponlo en CORD_WEBHOOK_SECRET de tu servidor local. Vence en 24 h. Ctrl+C para salir.</i></p>
+            </Fragment>
+        )}
+        <p class="dm-tl dm-tm-gap"></p>
+        {LISTEN.map(([hms, ev, evt, status, ms]) => (
+            <p class="dm-tl dm-tm-row">
+                <span class="t">{hms}</span><b class="e">{ev}</b><i class="id">{evt}</i><span class="r">→ <span class:list={[status >= 300 && 'bad']}>{status}</span> <i>{ms} ms</i></span>
+            </p>
+        ))}
+        <p class="dm-tl"><span class="dm-tm-caret"></span></p>
+    </div>
+    <div class="dm-tm-pane">
+        {CLI_CMDS.map((c) => (
+            <Fragment>
+                <p class="dm-tl dm-tm-cmd"><u>$</u> {c.cmd}</p>
+                {!isEn && c.out && <p class="dm-tl" set:html={c.out} />}
+            </Fragment>
+        ))}
+        <p class="dm-tl dm-tm-row dm-tm-tail"><span class="t">16:44:12</span><b class="e">invoice.paid</b><i class="id">{UUID_FAC}</i></p>
+        <p class="dm-tl"><span class="dm-tm-caret off"></span></p>
     </div>
 </div>
 )}
@@ -1150,16 +1267,16 @@ POST /api/v1/facturas/f3a8…  {`{`} <span class="c-key">"action"</span>: <span 
     .dm-code-body pre code { font-size: 0.7rem; line-height: 1.75; color: #334155; }
     .dm-sep { height: 1px; background: rgba(10,25,47,0.08); margin: 0.85rem 0; }
     .dm-code-foot { display: flex; justify-content: space-between; margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid rgba(10,25,47,0.07); font-family: ui-monospace, monospace; font-size: 0.6rem; color: #94a3b8; }
-    .c-key { color: #1d4ed8; } .c-str { color: #0e7490; } .c-num { color: #b45309; } .c-mut { color: #94a3b8; }
-    .c-ok { color: #059669; font-weight: 700; } .c-bad { color: #dc2626; font-weight: 700; } .c-kw { color: #7c3aed; } .c-fn { color: #0f172a; font-weight: 700; }
+    .dm-win :global(.c-key) { color: #1d4ed8; } .dm-win :global(.c-str) { color: #0e7490; } .dm-win :global(.c-num) { color: #b45309; } .dm-win :global(.c-mut) { color: #94a3b8; }
+    .dm-win :global(.c-ok) { color: #059669; font-weight: 700; } .dm-win :global(.c-bad) { color: #dc2626; font-weight: 700; } .dm-win :global(.c-kw) { color: #7c3aed; } .dm-win :global(.c-fn) { color: #0f172a; font-weight: 700; }
     .dm-hl { background: rgba(245,158,11,0.16); border-radius: 4px; padding: 0 3px; }
     .dm-dark { background: #0a1524; color: #e8eef8; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 30px 60px -24px rgba(0,0,0,0.6); }
     .dm-dark .dm-code-bar { background: #0d1c30; border-color: rgba(255,255,255,0.08); }
     .dm-dark .dm-code-bar code { color: #e8eef8; }
     .dm-dark .dm-code-body { background: #0a1524; }
     .dm-dark pre code { color: #c9d4e4; }
-    .dm-dark .c-key { color: #8fb3f5; } .dm-dark .c-str { color: #7dd3c0; } .dm-dark .c-num { color: #f5b041; } .dm-dark .c-mut { color: #64748b; }
-    .dm-dark .c-ok { color: #34d399; } .dm-dark .c-bad { color: #f87171; } .dm-dark .c-kw { color: #c4b5fd; } .dm-dark .c-fn { color: #fff; }
+    .dm-dark :global(.c-key) { color: #8fb3f5; } .dm-dark :global(.c-str) { color: #7dd3c0; } .dm-dark :global(.c-num) { color: #f5b041; } .dm-dark :global(.c-mut) { color: #64748b; }
+    .dm-dark :global(.c-ok) { color: #34d399; } .dm-dark :global(.c-bad) { color: #f87171; } .dm-dark :global(.c-kw) { color: #c4b5fd; } .dm-dark :global(.c-fn) { color: #fff; }
     .dm-dark .dm-pill { color: #a5b4fc; background: rgba(129,140,248,0.14); border-color: rgba(129,140,248,0.28); }
     .dm-fxcalc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
     .dm-fxcalc div { padding: 0.55rem 0.6rem; border-radius: 9px; background: #fff; border: 1px solid rgba(10,25,47,0.07); }
@@ -1217,6 +1334,66 @@ POST /api/v1/facturas/f3a8…  {`{`} <span class="c-key">"action"</span>: <span 
 
     .dm-code-sm .dm-code-body pre code { font-size: 0.64rem; line-height: 1.6; }
     .dm-code-lbl { display: block; margin-bottom: 0.45rem; font-family: ui-monospace, monospace; font-size: 0.6rem; font-weight: 700; color: #94a3b8; }
+
+    /* ── Editor (SDK de servidor): gutter real, ajuste de línea y hover de tipos ── */
+    .dm-ed { max-width: 680px; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 2px 6px rgba(10,25,47,0.04), 0 18px 40px -20px rgba(10,25,47,0.18); }
+    .dm-ed-file { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: #2563eb; }
+    .dm-ed-file svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .dm-ed-file code i { font-weight: 500; color: #94a3b8; }
+    .dm-pill-n { color: #334155; background: rgba(10,25,47,0.05); border-color: rgba(10,25,47,0.1); }
+    .dm-ed-code { margin: 0; padding: 0.85rem 0 0.95rem; list-style: none; counter-reset: ln; background: #fbfcfe; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.62rem; line-height: 1.6; color: #334155; }
+    .dm-ed-ln { position: relative; display: flex; counter-increment: ln; padding-right: 1.1rem; }
+    .dm-ed-ln::before { content: counter(ln); flex: 0 0 2.6rem; padding-right: 1rem; text-align: right; color: #c3c9d3; font-variant-numeric: tabular-nums; }
+    .dm-ed-ln > span:first-child { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .dm-ed-ln.hl { background: rgba(37,99,235,0.05); box-shadow: inset 2px 0 0 rgba(37,99,235,0.55); }
+    .dm-ed-ln.hl::before { color: #64748b; }
+    .dm-ed-code :global(.dm-ed-tok) { background: rgba(37,99,235,0.1); border-radius: 3px; box-shadow: 0 0 0 1px rgba(37,99,235,0.18); }
+    .dm-ed-pop { position: absolute; right: 1.1rem; bottom: calc(100% + 3px); z-index: 2; max-width: calc(100% - 3.6rem); padding: 6px 10px; border-radius: 7px; background: #fff; border: 1px solid rgba(10,25,47,0.12); box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 10px 28px -10px rgba(10,25,47,0.22); white-space: pre-wrap; }
+    .dm-ed-pop code { font-size: 0.6rem; line-height: 1.45; color: #0f172a; }
+    .dm-win :global(.c-ty) { color: #0f766e; }
+
+    /* ── Terminal de @flouviahq/cli: dos paneles (listen arriba, comandos abajo) ── */
+    .dm-tm { max-width: 680px; background: #0a1524; color: #c9d4e4; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(5,12,24,0.18), 0 20px 40px -20px rgba(5,12,24,0.55); }
+    .dm-tm-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 16px; background: #0d1c30; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .dm-tm-title { display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-size: 0.7rem; white-space: nowrap; }
+    .dm-tm-title svg { width: 15px; height: 15px; flex-shrink: 0; color: #93a3bb; }
+    .dm-tm-title b { font-weight: 600; color: #e8eef8; }
+    .dm-tm-title i { color: #64748b; overflow: hidden; text-overflow: ellipsis; }
+    .dm-tm-key { flex-shrink: 0; font-family: ui-monospace, monospace; font-size: 0.58rem; font-weight: 600; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.24); border-radius: 99px; padding: 3px 9px; }
+    .dm-tm-pane { padding: 0.8rem 1rem 0.85rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.62rem; line-height: 1.62; opacity: 0.72; }
+    .dm-tm-pane.on { opacity: 1; }
+    .dm-tm-pane + .dm-tm-pane { border-top: 1px solid rgba(255,255,255,0.09); }
+    .dm-tl { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .dm-tl b, .dm-tl :global(b) { font-weight: 700; color: #fff; }
+    .dm-tl i, .dm-tl :global(i) { font-style: normal; color: #64748b; }
+    .dm-tm-cmd { color: #e8eef8; }
+    .dm-tm-cmd u { text-decoration: none; color: #7dd3c0; }
+    .dm-tm-gap { height: 0.6em; }
+    .dm-tm-row { display: grid; grid-template-columns: max-content 28ch minmax(0, max-content) max-content; column-gap: 0; white-space: pre; }
+    .dm-tm-row .t { margin-right: 2ch; }
+    .dm-tm-row .e { margin-right: 1ch; }
+    .dm-tm-row .id { overflow: hidden; margin-right: 2ch; }
+    .dm-tm-row .bad { color: #f87171; }
+    .dm-tm-tail { grid-template-columns: max-content 28ch minmax(0, max-content); }
+    .dm-tm-tail .id { margin-right: 0; }
+    .dm-tm-caret { display: inline-block; width: 0.62em; height: 1.15em; vertical-align: -0.2em; background: #c9d4e4; animation: dm-blink 1.1s steps(1) infinite; }
+    .dm-tm-caret.off { background: transparent; box-shadow: inset 0 0 0 1px #64748b; animation: none; }
+    @keyframes dm-blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .dm-tm-caret { animation: none; } }
+    /* Panel angosto: el evento pierde su relleno y el event_id se corta con
+       desvanecido; hora, evento y respuesta siguen completos. */
+    @container (max-width: 600px) {
+        .dm-tm-row, .dm-tm-tail { grid-template-columns: max-content max-content minmax(0, 1fr) max-content; }
+        .dm-tm-tail { grid-template-columns: max-content max-content minmax(0, 1fr); }
+        .dm-tm-row .e { margin-right: 1.5ch; }
+        .dm-tm-row .id { -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); margin-right: 1ch; }
+    }
+    @container (max-width: 420px) {
+        .dm-tm-pane, .dm-ed-code { font-size: 0.58rem; }
+        .dm-tm-pane { padding: 0.7rem 0.8rem; }
+        .dm-ed-ln::before { flex-basis: 2rem; padding-right: 0.7rem; }
+        .dm-tm-title i { display: none; }
+    }
 
     /* ════════ Ajustes › MCP (SettingsShell + mcp.astro, tema claro) ════════ */
     .dm-set {

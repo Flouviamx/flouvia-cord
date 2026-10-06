@@ -32,6 +32,8 @@ export interface DevPage {
     heroMock?: string;       // id del mockup del hero en DevMock.astro
     updated?: string;        // fecha visible de la última revisión del contenido (AAAA-MM-DD)
     blocks: DevBlock[];
+    /** Segundo bento con su propio encabezado (herramientas que acompañan a la página). */
+    toolkit?: { eyebrow: string; titulo: string; sub: string; blocks: DevBlock[] };
     steps?: DevStep[];      // solo Elements: los pasos de instalación
     faqs: DevFaq[];
     cta: { titulo: string; sub: string };
@@ -86,11 +88,43 @@ export const DEV_PAGES: DevPage[] = [
                 mock: 'code-events',
             },
         ],
+        toolkit: {
+            eyebrow: 'HERRAMIENTAS',
+            titulo: 'Tu backend y tu terminal, listos para Cord.',
+            sub: 'Dos paquetes oficiales en npm para que integrar no sea escribir peticiones a mano: un SDK tipado para tu servidor y un CLI para probar webhooks en tu máquina antes de desplegar.',
+            blocks: [
+                {
+                    eyebrow: 'SDK DE SERVIDOR',
+                    titulo: 'La API, ya tipada para tu backend.',
+                    copy: '@flouviahq/node envuelve toda la API: crea cotizaciones y facturas, recorre listas completas y verifica webhooks con su firma y su antigüedad. Manda la misma Idempotency-Key en cada reintento y fija la versión de la API, así una actualización de Cord nunca cambia lo que lees.',
+                    bullets: [
+                        'npm install @flouviahq/node, sin dependencias',
+                        'Corre en Node, Bun, Deno, Cloudflare Workers y Vercel',
+                        'Errores con code, request_id y la liga a su explicación',
+                    ],
+                    mock: 'code-sdk',
+                },
+                {
+                    eyebrow: 'CLI',
+                    titulo: 'Prueba tus webhooks sin desplegar.',
+                    copy: 'cord listen manda a tu máquina los webhooks de tu entorno de prueba, firmados igual que en producción. cord trigger dispara cualquier evento y cord simulate provoca lo que en producción hace un tercero, como un PAC caído o una cotización que vence.',
+                    bullets: [
+                        'npx @flouviahq/cli init deja la ruta del webhook y las variables listas',
+                        'Solo acepta llaves de prueba: nada toca tus datos reales',
+                        'cord events tail muestra los eventos conforme ocurren',
+                    ],
+                    mock: 'code-cli',
+                },
+            ],
+        },
         faqs: [
             { q: '¿Qué es la API de Cord?', a: 'Es una API REST bajo https://cordhq.app/api/v1 que da acceso programático a cotizaciones, facturas, clientes, productos, tareas, cobranza y eventos de tu negocio. Se autentica con una llave Bearer y responde en JSON con la forma { data, meta } o { error, code }.' },
             { q: '¿Necesito un plan de pago para usar la API?', a: 'No. La API está en todos los planes, incluido Gratis, con 2 llaves y 100 llamadas al mes. Starter incluye 1,000 llamadas, Profesional 5,000, Scale 10,000 y Developer 50,000. Las llaves de prueba no consumen cuota.' },
             { q: '¿Cómo pruebo sin tocar mis datos reales?', a: 'Con una llave sk_test_. Opera sobre un entorno de prueba separado de tu cuenta, así que puedes crear y borrar cotizaciones sin afectar a tus clientes ni a tus reportes.' },
             { q: '¿Cómo evito crear registros duplicados si reintento?', a: 'Manda el header Idempotency-Key en la petición. Si la repites con la misma llave y el mismo cuerpo, Cord devuelve la respuesta original sin ejecutarla otra vez.' },
+            { q: '¿Hay SDK oficial para mi backend?', a: 'Sí: @flouviahq/node para Node, Bun, Deno, Cloudflare Workers y Vercel, y @flouviahq/cli para probar webhooks en tu máquina. Los dos están en npm.' },
+            { q: '¿Una actualización de Cord puede romper mi integración?', a: 'No. Cada llave y cada webhook guardan la versión de la API con la que se crearon, y puedes fijar otra por petición con el header Cord-Version. Cord adapta la respuesta a esa versión.' },
+            { q: '¿Puedo darle a una integración acceso solo a una parte?', a: 'Sí. Una llave restringida (rk_) tiene permiso de lectura o escritura por recurso, y cualquier llave secreta puede limitarse a ciertas IPs, vencer y rotarse con un periodo de gracia.' },
             { q: '¿Hay especificación OpenAPI?', a: 'Sí, en https://cordhq.app/openapi.yaml, y un resumen para asistentes de IA en https://cordhq.app/llms.txt. Los dos se enlazan desde el Workbench.' },
         ],
         cta: { titulo: 'Haz tu primera llamada hoy.', sub: 'Crea tu cuenta, genera una llave de prueba y llama a /api/v1/me en menos de un minuto.' },
