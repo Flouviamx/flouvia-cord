@@ -1,0 +1,24 @@
+---
+// Configuración asistida desde la app: misma propuesta y misma revisión que el
+// onboarding, para una cuenta que ya existe.
+export const prerender = false;
+import AppLayout from '../../../layouts/AppLayout.astro';
+import SetupWizard from '../../../components/setup/SetupWizard.astro';
+import { requirePerm } from '../../../lib/queries';
+import { t } from '../../../i18n/app';
+import { currentLocale } from '../../../lib/context';
+
+if (await requirePerm('ajustes')) return Astro.redirect('/app');
+const L = currentLocale();
+---
+
+<AppLayout title={`${t(L, 'setup.title')} | Cord`} page="ajustes" heading={t(L, 'setup.title')}>
+    <div class="setup-page">
+        <SetupWizard origen="app" doneHref="/app/ajustes" />
+    </div>
+</AppLayout>
+
+<style>
+    .setup-page { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    @media (max-width: 600px) { .setup-page { padding: 1.5rem 16px 3rem; } }
+</style>

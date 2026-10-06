@@ -6,11 +6,15 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx, logAudit, reqIp } from '../../../lib/db';
+import { requirePerm } from '../../../lib/queries';
+import { parsedResourceLimit, resourceLimitError } from '../../../lib/org-entitlements';
 
 const MAX_ROWS = 2000;
 
 export const POST: APIRoute = async ({ request }) => {
+    // Mismo permiso que crear o editar un producto: el import reescribe precios de todo el catálogo.
+    const denied = await requirePerm('productos'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
@@ -39,24 +43,35 @@ export const POST: APIRoute = async ({ request }) => {
     const bySku = new Map(existing.map((e: any) => [e.sku as string, e.id as string]));
 
     let created = 0, updated = 0;
-    for (const r of rows) {
-        const hit = upsert && r.sku ? bySku.get(r.sku) : undefined;
-        if (hit) {
-            await withOrgTx(orgId, sql`update productos set nombre = ${r.nombre}, unidad = ${r.unidad},
-                      precio_lista = ${r.precio}, activo = ${r.activo}
-                      where id = ${hit} and org_id = ${orgId}`);
-            updated++;
-        } else {
-            const [insRows] = await withOrgTx(orgId, sql`insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
-                      values (${orgId}, ${r.sku}, ${r.nombre}, ${r.unidad}, ${r.precio}, ${r.activo})
-                      returning id, sku`);
-            const ins = insRows[0];
-            // si en el mismo lote viene otro renglón con el mismo SKU, que también haga update
-            if (upsert && ins.sku) bySku.set(ins.sku as string, ins.id as string);
-            created++;
+    try {
+        for (const r of rows) {
+            const hit = upsert && r.sku ? bySku.get(r.sku) : undefined;
+            if (hit) {
+                await withOrgTx(orgId, sql`update productos set nombre = ${r.nombre}, unidad = ${r.unidad},
+                          precio_lista = ${r.precio}, activo = ${r.activo}
+                          where id = ${hit} and org_id = ${orgId}`);
+                updated++;
+            } else {
+                const [insRows] = await withOrgTx(orgId, sql`insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
+                          values (${orgId}, ${r.sku}, ${r.nombre}, ${r.unidad}, ${r.precio}, ${r.activo})
+                          returning id, sku`);
+                const ins = insRows[0];
+                // si en el mismo lote viene otro renglón con el mismo SKU, que también haga update
+                if (upsert && ins.sku) bySku.set(ins.sku as string, ins.id as string);
+                created++;
+            }
         }
+    } catch (e) {
+        // El trigger del límite del plan corta a la mitad: lo ya importado se queda y se dice cuánto fue.
+        const limit = parsedResourceLimit(e);
+        if (!limit) throw e;
+        await logAudit(orgId, { accion: 'productos.importados', entidad: 'producto', detalle: `Import parcial: ${created} nuevos, ${updated} actualizados (límite del plan)`, ip: reqIp(request) });
+        const res = resourceLimitError(e)!;
+        const payload = await res.json();
+        return json({ ...payload, created, updated, total: rows.length }, 402);
     }
 
+    await logAudit(orgId, { accion: 'productos.importados', entidad: 'producto', detalle: `Import: ${created} nuevos, ${updated} actualizados`, ip: reqIp(request) });
     return json({ created, updated, total: rows.length });
 };
 

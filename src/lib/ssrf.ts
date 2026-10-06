@@ -206,6 +206,11 @@ async function readCapped(res: ReadableResponse, maxBytes: number): Promise<stri
     if (!res.body) {
         try { return await res.text(); } catch { return ''; }
     }
+    return new TextDecoder().decode(await readCappedBytes(res, maxBytes));
+}
+
+async function readCappedBytes(res: ReadableResponse, maxBytes: number): Promise<Uint8Array> {
+    if (!res.body) return new Uint8Array();
     const reader = res.body.getReader();
     const chunks: Uint8Array[] = [];
     let total = 0;
@@ -230,5 +235,61 @@ async function readCapped(res: ReadableResponse, maxBytes: number): Promise<stri
         out.set(slice, offset);
         offset += slice.length;
     }
-    return new TextDecoder().decode(out);
+    return out;
+}
+
+export interface PublicFetchResult {
+    ok: boolean;
+    status: number;
+    /** URL final, después de las redirecciones seguidas. */
+    url: string;
+    contentType: string;
+    bytes: Uint8Array;
+    error: string | null;
+}
+
+/**
+ * GET a una URL pública que escribió un usuario (su sitio web, su logo). Igual
+ * de cerrado que safeFetch, pero sigue hasta `maxRedirects` saltos: cada destino
+ * se revalida con assertSafeWebhookTarget y se conecta por guardedAgent, así que
+ * un 302 hacia una IP interna se bloquea igual que una URL interna directa. El
+ * timeout cubre toda la cadena.
+ */
+export async function safeFetchPublic(
+    url: string,
+    opts: { timeoutMs: number; maxBodyBytes: number; maxRedirects?: number; accept?: string },
+): Promise<PublicFetchResult> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs);
+    let current = url;
+    try {
+        for (let hop = 0; hop <= (opts.maxRedirects ?? 3); hop++) {
+            await assertSafeWebhookTarget(current);
+            const res: any = await undiciFetch(current, {
+                method: 'GET', redirect: 'manual', signal: ctrl.signal, dispatcher: guardedAgent,
+                headers: { accept: opts.accept ?? '*/*', 'user-agent': 'CordSetup/1.0 (+https://cordhq.app)' },
+            } as any);
+            if (res.status >= 300 && res.status < 400) {
+                const loc = res.headers.get('location');
+                try { await res.body?.cancel(); } catch {}
+                if (!loc) return { ok: false, status: res.status, url: current, contentType: '', bytes: new Uint8Array(), error: 'Redirección sin destino' };
+                current = new URL(loc, current).href;
+                continue;
+            }
+            const bytes = await readCappedBytes(res, opts.maxBodyBytes);
+            return {
+                ok: res.ok, status: res.status, url: current,
+                contentType: String(res.headers.get('content-type') || '').toLowerCase(),
+                bytes, error: res.ok ? null : `HTTP ${res.status}`,
+            };
+        }
+        return { ok: false, status: 0, url: current, contentType: '', bytes: new Uint8Array(), error: 'Demasiadas redirecciones' };
+    } catch (e: any) {
+        return {
+            ok: false, status: 0, url: current, contentType: '', bytes: new Uint8Array(),
+            error: e?.name === 'AbortError' ? 'timeout' : (e?.message || 'error de red'),
+        };
+    } finally {
+        clearTimeout(timer);
+    }
 }

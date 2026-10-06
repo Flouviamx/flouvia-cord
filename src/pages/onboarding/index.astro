@@ -26,6 +26,7 @@ import '../../styles/auth.css';
 import { currentLocale } from '../../lib/context';
 import { listCountries } from '../../lib/countries';
 import FlagSelect from '../../components/ui/FlagSelect';
+import SetupWizard from '../../components/setup/SetupWizard.astro';
 
 const L = currentLocale();
 const isEn = L === 'en';
@@ -96,8 +97,6 @@ const T = isEn
         back: '← Back',
         cont: 'Continue',
         finish: 'Finish',
-        successTitle: 'You\'re all set',
-        successSub: 'Taking you to your dashboard…',
         errGeneric: 'Something went wrong. Please try again.',
     }
     : {
@@ -158,8 +157,6 @@ const T = isEn
         back: '← Atrás',
         cont: 'Continuar',
         finish: 'Terminar',
-        successTitle: 'Listo, tu espacio está configurado',
-        successSub: 'Te llevamos a tu panel…',
         errGeneric: 'Algo salió mal. Intenta de nuevo.',
     };
 ---
@@ -293,20 +290,10 @@ const T = isEn
                         </div>
                     </div>
 
-                    <!-- ── Éxito ── -->
-                    <div class="ob-slide ob-success-slide" data-step="success" style="display:none">
-                        <div class="ob-success-icon" aria-hidden="true">
-                            <svg class="ob-check-svg" viewBox="0 0 64 64" fill="none">
-                                <circle class="ob-check-circle" cx="32" cy="32" r="28" stroke="#0a192f" stroke-width="2" stroke-linecap="round"/>
-                                <polyline class="ob-check-mark" points="20 32 28 40 44 24" stroke="#0a192f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h1 class="ob-title">{T.successTitle}</h1>
-                        <p class="ob-sub">{T.successSub}</p>
-                    </div>
-
                 </div>
             </form>
+
+            <SetupWizard origen="onboarding" doneHref="/app" hidden />
         </div>
     </div>
 </Layout>
@@ -516,11 +503,6 @@ const T = isEn
         margin-top: 1.5rem;
     }
 
-    .ob-success-slide { display: flex; flex-direction: column; align-items: flex-start; padding-top: 1rem; }
-    .ob-success-icon { width: 64px; height: 64px; margin-bottom: 2rem; }
-    .ob-check-svg { width: 64px; height: 64px; }
-    .ob-check-circle { stroke-dasharray: 176; stroke-dashoffset: 176; }
-    .ob-check-mark { stroke-dasharray: 40; stroke-dashoffset: 40; }
 
     @media (max-width: 600px) {
         .ob-shell { min-height: 100dvh; padding: max(3.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
@@ -536,8 +518,7 @@ const T = isEn
         .ob-btn-back, .ob-btn-next, .ob-btn-submit { min-height: 48px; justify-content: center; }
         .ob-btn-back { width: 100%; padding-inline: 12px; }
         .ob-btn-next, .ob-btn-submit { width: 100%; padding-inline: 16px; }
-        .ob-success-slide { padding-top: 0; }
-    }
+        }
 
     @media (prefers-reduced-motion: reduce) {
         .ob-slide { animation: none; }
@@ -705,34 +686,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // `onboarding_completed` lo emite el servidor (POST /api/onboarding/
             // complete) con la firmografía completa; aquí no se duplica.
-
-            const successSlide = slides[slides.length - 1];
+            // Con la cuenta ya creada sigue la configuración asistida, que puede saltarse.
+            const wizard = document.querySelector<HTMLElement>('[data-setup]');
             const fromEl = slides[current];
-
-            if (!reduced) {
-                gsap.to(fromEl, {
-                    y: -20, opacity: 0, duration: 0.3, ease: 'power2.in',
-                    onComplete: () => {
-                        fromEl.style.display = 'none';
-                        successSlide.style.display = 'flex';
-                        gsap.from(successSlide, { y: 24, opacity: 0, duration: 0.5, ease: 'power3.out' });
-                        const circle = successSlide.querySelector<SVGCircleElement>('.ob-check-circle');
-                        const mark = successSlide.querySelector<SVGPolylineElement>('.ob-check-mark');
-                        if (circle) gsap.to(circle, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.out', delay: 0.15 });
-                        if (mark) gsap.to(mark, { strokeDashoffset: 0, duration: 0.45, ease: 'power2.out', delay: 0.7 });
-                    },
-                });
-            } else {
-                fromEl.style.display = 'none';
-                successSlide.style.display = 'flex';
-                const circle = successSlide.querySelector<SVGCircleElement>('.ob-check-circle');
-                const mark = successSlide.querySelector<SVGPolylineElement>('.ob-check-mark');
-                if (circle) circle.style.strokeDashoffset = '0';
-                if (mark) mark.style.strokeDashoffset = '0';
-            }
-
+            const showWizard = () => {
+                form.hidden = true;
+                document.getElementById('obStepCtr')?.setAttribute('hidden', '');
+                if (!wizard) { window.location.href = '/app'; return; }
+                wizard.hidden = false;
+                document.dispatchEvent(new Event('cord:setup-show'));
+                if (!reduced) gsap.from(wizard, { y: 24, opacity: 0, duration: 0.5, ease: 'power3.out' });
+                wizard.querySelector<HTMLInputElement>('input')?.focus();
+            };
             updateProgress(4);
-            setTimeout(() => { window.location.href = '/app'; }, 1400);
+            if (!reduced) gsap.to(fromEl, { y: -20, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: showWizard });
+            else showWizard();
         });
 
         form.addEventListener('keydown', (e: KeyboardEvent) => {

@@ -1,0 +1,483 @@
+---
+// Configuración asistida: fuentes → propuesta → revisión → aplicado. Lo usan el
+// onboarding y /app/setup (los links que abren el CLI y los agentes por MCP),
+// así que hay una sola revisión para las tres puertas. La revisión se dibuja con
+// textContent: la propuesta trae texto que salió del sitio del cliente.
+import { t } from '../../i18n/app';
+import { currentLocale } from '../../lib/context';
+
+interface Props {
+    origen: 'onboarding' | 'app';
+    /** Abre directo en la revisión de un plan ya generado (CLI, MCP o una pestaña recargada). */
+    planId?: string;
+    doneHref: string;
+    /** En el onboarding arranca oculto hasta que termina la firmografía. */
+    hidden?: boolean;
+}
+const { origen, planId = '', doneHref, hidden = false } = Astro.props;
+const L = currentLocale();
+
+const I = {
+    f: {
+        nombre: t(L, 'setup.f.nombre'),
+        razon_social: t(L, 'setup.f.razon_social'),
+        rfc: t(L, 'setup.f.rfc'),
+        email_contacto: t(L, 'setup.f.email_contacto'),
+        telefono: t(L, 'setup.f.telefono'),
+        direccion: t(L, 'setup.f.direccion'),
+        color_marca: t(L, 'setup.f.color_marca'),
+        pdf_template: t(L, 'setup.f.pdf_template'),
+        terminos_default: t(L, 'setup.f.terminos_default'),
+        vigencia_default_dias: t(L, 'setup.f.vigencia_default_dias'),
+        quote_prefix: t(L, 'setup.f.quote_prefix'),
+        iva_incluido_defecto: t(L, 'setup.f.iva_incluido_defecto'),
+        pdf_condiciones: t(L, 'setup.f.pdf_condiciones'),
+        pdf_mensaje: t(L, 'setup.f.pdf_mensaje'),
+    },
+    tpl: {
+        clasico: t(L, 'setup.tpl.clasico'),
+        minimal: t(L, 'setup.tpl.minimal'),
+        detallado: t(L, 'setup.tpl.detallado'),
+    },
+    term: {
+        contado: t(L, 'setup.term.contado'),
+        net30: t(L, 'setup.term.net30'),
+        net60: t(L, 'setup.term.net60'),
+    },
+    kind: {
+        consumo: t(L, 'setup.kind.consumo'),
+        retencion: t(L, 'setup.kind.retencion'),
+        exento: t(L, 'setup.kind.exento'),
+    },
+    res: {
+        perfil: t(L, 'setup.res.perfil'),
+        impuestos: t(L, 'setup.res.impuestos'),
+        productos: t(L, 'setup.res.productos'),
+        plantillas: t(L, 'setup.res.plantillas'),
+    },
+    secBrand: t(L, 'setup.sec_brand'), secBusiness: t(L, 'setup.sec_business'), secQuotes: t(L, 'setup.sec_quotes'),
+    secTaxes: t(L, 'setup.sec_taxes'), secProducts: t(L, 'setup.sec_products'), secTemplates: t(L, 'setup.sec_templates'),
+    secNotes: t(L, 'setup.sec_notes'), secDiscarded: t(L, 'setup.sec_discarded'),
+    logoUse: t(L, 'setup.logo_use'), taxesNotice: t(L, 'setup.taxes_notice'),
+    productsImport: t(L, 'setup.products_import'), productsMore: t(L, 'setup.products_more'), templatesUse: t(L, 'setup.templates_use'),
+    needInput: t(L, 'setup.need_input'), empty: t(L, 'setup.empty'), errGeneric: t(L, 'setup.err_generic'),
+    applying: t(L, 'setup.applying'), apply: t(L, 'setup.apply'),
+    stateApplied: t(L, 'setup.state_applied'), stateClosed: t(L, 'setup.state_closed'),
+};
+---
+
+<div class="sw" data-setup data-origen={origen} data-plan-id={planId} data-done={doneHref} data-i18n={JSON.stringify(I)} hidden={hidden}>
+    <section class="sw-step" data-sw-step="input" hidden={!!planId}>
+        <p class="sw-eyebrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" fill-opacity="0.13"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>
+            Cord AI
+        </p>
+        <h1 class="sw-title">{t(L, 'setup.title')}</h1>
+        <p class="sw-sub">{t(L, 'setup.sub')}</p>
+
+        <form class="sw-form" data-sw-form novalidate>
+            <div class="sw-field">
+                <label class="sw-label" for="swSitio">{t(L, 'setup.site_label')}</label>
+                <input class="sw-input" id="swSitio" name="sitio" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder={t(L, 'setup.site_ph')} maxlength="300" />
+            </div>
+            <div class="sw-field">
+                <label class="sw-label" for="swDesc">{t(L, 'setup.desc_label')}</label>
+                <textarea class="sw-input sw-textarea" id="swDesc" name="descripcion" rows="3" maxlength="4000" placeholder={t(L, 'setup.desc_ph')}></textarea>
+            </div>
+            <div class="sw-field">
+                <span class="sw-label" id="swFileLbl">{t(L, 'setup.file_label')}</span>
+                <label class="sw-drop" data-sw-drop>
+                    <input type="file" name="archivo" data-sw-file accept=".xlsx,.csv,.pdf,.png,.jpg,.jpeg,text/csv,application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-labelledby="swFileLbl" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.13"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+                    <span class="sw-drop-text"><b data-sw-file-name>{t(L, 'setup.file_btn')}</b><small>{t(L, 'setup.file_hint')}</small></span>
+                </label>
+            </div>
+            <p class="sw-error" data-sw-error role="alert" hidden></p>
+            <div class="sw-actions">
+                <a class="sw-link" href={doneHref} data-sw-skip>{t(L, 'setup.skip')}</a>
+                <button type="submit" class="sw-btn">
+                    {t(L, 'setup.generate')}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <section class="sw-step" data-sw-step="loading" hidden aria-live="polite">
+        <h1 class="sw-title">{t(L, 'setup.loading_title')}</h1>
+        <ol class="sw-progress">
+            <li data-sw-stage="site">{t(L, 'setup.step_site')}</li>
+            <li data-sw-stage="file">{t(L, 'setup.step_file')}</li>
+            <li data-sw-stage="ai">{t(L, 'setup.step_ai')}</li>
+            <li data-sw-stage="check">{t(L, 'setup.step_check')}</li>
+        </ol>
+    </section>
+
+    <section class="sw-step" data-sw-step="review" hidden={!planId}>
+        <h1 class="sw-title">{t(L, 'setup.review_title')}</h1>
+        <p class="sw-sub">{t(L, 'setup.review_sub')}</p>
+        <p class="sw-summary" data-sw-summary hidden></p>
+        <div class="sw-review" data-sw-review></div>
+        <p class="sw-error" data-sw-review-error role="alert" hidden></p>
+        <div class="sw-actions sw-actions-sticky">
+            <button type="button" class="sw-link" data-sw-discard>{t(L, 'setup.discard')}</button>
+            <button type="button" class="sw-btn" data-sw-apply>{t(L, 'setup.apply')}</button>
+        </div>
+    </section>
+
+    <section class="sw-step" data-sw-step="done" hidden>
+        <div class="sw-done-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" stroke="#047857" stroke-width="2" fill="#047857" fill-opacity="0.08"/><polyline points="20 32 28 40 44 24" stroke="#047857" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h1 class="sw-title">{t(L, 'setup.done_title')}</h1>
+        <p class="sw-sub">{t(L, 'setup.done_sub')}</p>
+        <ul class="sw-results" data-sw-results></ul>
+        <slot name="after-done" />
+        <div class="sw-actions">
+            <span></span>
+            <a class="sw-btn" href={doneHref}>{t(L, 'setup.continue')}</a>
+        </div>
+    </section>
+</div>
+
+<style is:global>
+    [data-setup] { --sw-ink: #050505; --sw-muted: #6b7280; --sw-line: rgba(10,25,47,0.08); --sw-navy: #0a192f; --sw-soft: #f5f5f7; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; color: var(--sw-ink); }
+    [data-setup][hidden], [data-setup] [hidden] { display: none !important; }
+    [data-setup] .sw-eyebrow { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 1.1rem; padding: 5px 11px 5px 9px; border-radius: 999px; background: rgba(10,25,47,0.05); color: var(--sw-navy); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; }
+    [data-setup] .sw-eyebrow svg { width: 16px; height: 16px; }
+    [data-setup] .sw-title { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1.1; margin: 0 0 0.75rem; color: var(--sw-ink); }
+    [data-setup] .sw-sub { font-size: 1rem; line-height: 1.55; color: var(--sw-muted); margin: 0 0 2.2rem; max-width: 560px; }
+    [data-setup] .sw-form { display: flex; flex-direction: column; gap: 1.5rem; }
+    [data-setup] .sw-field { display: flex; flex-direction: column; gap: 0.6rem; }
+    [data-setup] .sw-label { font-size: 0.85rem; font-weight: 600; color: #3d3d3d; }
+    [data-setup] .sw-input { width: 100%; box-sizing: border-box; padding: 13px 16px; background: var(--sw-soft); border: none; border-radius: 12px; font: inherit; font-size: 0.97rem; color: var(--sw-ink); outline: none; transition: background 0.2s, box-shadow 0.2s; }
+    [data-setup] .sw-input::placeholder { color: #8e8e93; }
+    [data-setup] .sw-input:hover { background: #ececf0; }
+    [data-setup] .sw-input:focus { background: #fff; box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13), 0 1px 4px rgba(0,0,0,0.05); }
+    [data-setup] .sw-textarea { resize: vertical; min-height: 92px; line-height: 1.5; }
+    [data-setup] .sw-drop { position: relative; display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; background: var(--sw-soft); cursor: pointer; transition: background 0.2s, box-shadow 0.2s; }
+    [data-setup] .sw-drop:hover, [data-setup] .sw-drop.is-over { background: #ececf0; }
+    [data-setup] .sw-drop:focus-within { box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13); }
+    [data-setup] .sw-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    [data-setup] .sw-drop svg { width: 26px; height: 26px; color: var(--sw-navy); flex-shrink: 0; }
+    [data-setup] .sw-drop-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    [data-setup] .sw-drop-text b { font-size: 0.92rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    [data-setup] .sw-drop-text small { font-size: 0.8rem; color: var(--sw-muted); }
+    [data-setup] .sw-error { margin: 0; padding: 10px 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 0.86rem; }
+    [data-setup] .sw-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 2.4rem; padding-top: 1.6rem; border-top: 1px solid var(--sw-line); }
+    [data-setup] .sw-actions-sticky { position: sticky; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.85), #fff 40%); padding-bottom: 1.2rem; z-index: 2; }
+    [data-setup] .sw-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 26px; border: 0; border-radius: 999px; background: var(--sw-navy); color: #fff; font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s; box-shadow: 0 8px 22px -10px rgba(10,25,47,0.55); }
+    [data-setup] .sw-btn svg { width: 15px; height: 15px; }
+    [data-setup] .sw-btn:hover { transform: translateY(-1px); }
+    [data-setup] .sw-btn:active { transform: scale(0.97); }
+    [data-setup] .sw-btn:disabled { opacity: 0.55; cursor: progress; transform: none; }
+    [data-setup] .sw-btn:focus-visible, [data-setup] .sw-link:focus-visible { outline: 2px solid var(--sw-navy); outline-offset: 3px; }
+    [data-setup] .sw-link { background: none; border: 0; padding: 10px 4px; font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--sw-muted); cursor: pointer; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+    [data-setup] .sw-link:hover { color: var(--sw-ink); }
+    [data-setup] .sw-progress { list-style: none; padding: 0; margin: 1.6rem 0 0; display: flex; flex-direction: column; gap: 1rem; }
+    [data-setup] .sw-progress li { display: flex; align-items: center; gap: 12px; font-size: 0.98rem; color: #9aa1ab; transition: color 0.3s; }
+    [data-setup] .sw-progress li::before { content: ''; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d9dce1; box-sizing: border-box; flex-shrink: 0; transition: border-color 0.3s, background 0.3s; }
+    [data-setup] .sw-progress li.is-active { color: var(--sw-ink); font-weight: 600; }
+    [data-setup] .sw-progress li.is-active::before { border-color: var(--sw-navy); border-right-color: transparent; animation: swSpin 0.8s linear infinite; }
+    [data-setup] .sw-progress li.is-done { color: var(--sw-ink); }
+    [data-setup] .sw-progress li.is-done::before { border-color: #047857; background: #047857 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='5 12.5 10 17 19 7.5'/%3E%3C/svg%3E") center / 11px no-repeat; }
+    [data-setup] .sw-progress li.is-skipped { display: none; }
+    @keyframes swSpin { to { transform: rotate(360deg); } }
+    [data-setup] .sw-summary { margin: -1rem 0 1.8rem; padding: 14px 16px; border-radius: 14px; background: rgba(10,25,47,0.04); font-size: 0.93rem; line-height: 1.55; color: #1f2937; }
+    [data-setup] .sw-review { display: flex; flex-direction: column; gap: 1.1rem; }
+    [data-setup] .sw-sec { border: 1px solid var(--sw-line); border-radius: 18px; padding: 1.3rem 1.4rem; background: #fff; }
+    [data-setup] .sw-sec h2 { margin: 0 0 1rem; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; }
+    [data-setup] .sw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
+    [data-setup] .sw-grid .sw-full { grid-column: 1 / -1; }
+    [data-setup] .sw-mini { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+    [data-setup] .sw-mini > span { font-size: 0.78rem; font-weight: 600; color: var(--sw-muted); }
+    [data-setup] .sw-mini .sw-input { padding: 10px 13px; font-size: 0.92rem; }
+    [data-setup] .sw-color { display: flex; align-items: center; gap: 10px; }
+    [data-setup] .sw-color input[type="color"] { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; }
+    [data-setup] .sw-logo { display: flex; align-items: center; gap: 14px; }
+    [data-setup] .sw-logo img { width: 56px; height: 56px; object-fit: contain; border-radius: 12px; background: var(--sw-soft); padding: 6px; box-sizing: border-box; }
+    [data-setup] .sw-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.9rem; line-height: 1.45; min-height: 44px; padding: 4px 0; }
+    [data-setup] .sw-check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--sw-navy); flex-shrink: 0; }
+    [data-setup] .sw-check small { display: block; color: var(--sw-muted); font-size: 0.8rem; }
+    [data-setup] .sw-notice { margin: 0 0 0.8rem; padding: 10px 13px; border-radius: 10px; background: #fffbeb; color: #78350f; font-size: 0.84rem; line-height: 1.45; }
+    [data-setup] .sw-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-top: 0.6rem; }
+    [data-setup] .sw-table td { padding: 8px 0; border-bottom: 1px solid var(--sw-line); vertical-align: top; }
+    [data-setup] .sw-table td:last-child { text-align: right; white-space: nowrap; padding-left: 1rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+    [data-setup] .sw-table small { color: var(--sw-muted); }
+    [data-setup] .sw-more { margin: 0.6rem 0 0; font-size: 0.82rem; color: var(--sw-muted); }
+    [data-setup] .sw-quote { margin: 0.2rem 0 0; padding: 10px 12px; border-radius: 10px; background: var(--sw-soft); font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; color: #1f2937; }
+    [data-setup] .sw-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.88rem; line-height: 1.5; color: #1f2937; }
+    [data-setup] details.sw-sec summary { cursor: pointer; font-weight: 700; font-size: 0.95rem; list-style: none; min-height: 28px; display: flex; align-items: center; }
+    [data-setup] details.sw-sec summary::-webkit-details-marker { display: none; }
+    [data-setup] details.sw-sec[open] summary { margin-bottom: 0.8rem; }
+    [data-setup] .sw-results { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    [data-setup] .sw-results li { display: flex; justify-content: space-between; gap: 1rem; padding: 12px 14px; border-radius: 12px; background: var(--sw-soft); font-size: 0.92rem; }
+    [data-setup] .sw-results li b { font-weight: 600; }
+    [data-setup] .sw-results li span { color: var(--sw-muted); text-align: right; }
+    [data-setup] .sw-results li.is-error span { color: #b91c1c; }
+    [data-setup] .sw-done-icon { width: 60px; height: 60px; margin-bottom: 1.6rem; }
+    @media (max-width: 600px) {
+        [data-setup] .sw-grid { grid-template-columns: 1fr; }
+        [data-setup] .sw-actions { flex-direction: column-reverse; align-items: stretch; }
+        [data-setup] .sw-btn { justify-content: center; }
+        [data-setup] .sw-link { justify-content: center; }
+        [data-setup] .sw-sec { padding: 1.1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        [data-setup] .sw-progress li.is-active::before { animation: none; }
+        [data-setup] .sw-btn { transition: none; }
+    }
+</style>
+
+<script>
+    type Proposal = {
+        resumen: string; avisos?: string[]; moneda?: string; formato?: string;
+        perfil: Record<string, string>;
+        marca: { color_marca?: string; logo_url?: string; pdf_template?: string };
+        cotizaciones: Record<string, string | number | boolean>;
+        impuestos: Array<{ nombre: string; kind: string; tasa: number; motivo: string }>;
+        productos: Array<{ sku: string | null; nombre: string; unidad: string; precio: number }>;
+        plantillas: Array<{ nombre: string; canal: string; cuerpo: string }>;
+        notas: string[];
+    };
+
+    function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string | boolean> = {}, ...children: Array<Node | string | null | false>): HTMLElementTagNameMap[K] {
+        const node = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs)) {
+            if (v === false) continue;
+            if (k === 'class') node.className = String(v);
+            else if (k === 'text') node.textContent = String(v);
+            else node.setAttribute(k, v === true ? '' : String(v));
+        }
+        for (const c of children) if (c) node.append(c);
+        return node;
+    }
+
+    function init(root: HTMLElement) {
+        if (root.dataset.ready) return;
+        root.dataset.ready = '1';
+        const I = JSON.parse(root.dataset.i18n || '{}');
+        const show = (step: string) => root.querySelectorAll<HTMLElement>('[data-sw-step]').forEach((s) => { s.hidden = s.dataset.swStep !== step; });
+        const errorBox = root.querySelector<HTMLElement>('[data-sw-error]')!;
+        const reviewError = root.querySelector<HTMLElement>('[data-sw-review-error]')!;
+        const fileInput = root.querySelector<HTMLInputElement>('[data-sw-file]')!;
+        const fileName = root.querySelector<HTMLElement>('[data-sw-file-name]')!;
+        const fileLabel = fileName.textContent || '';
+        const drop = root.querySelector<HTMLElement>('[data-sw-drop]')!;
+        let planId = root.dataset.planId || '';
+        let proposal: Proposal | null = null;
+
+        fileInput.addEventListener('change', () => { fileName.textContent = fileInput.files?.[0]?.name || fileLabel; });
+        ['dragenter', 'dragover'].forEach((e) => drop.addEventListener(e, () => drop.classList.add('is-over')));
+        ['dragleave', 'drop'].forEach((e) => drop.addEventListener(e, () => drop.classList.remove('is-over')));
+
+        const fail = (box: HTMLElement, msg: string) => { box.textContent = msg; box.hidden = false; };
+
+        root.querySelector<HTMLFormElement>('[data-sw-form]')!.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBox.hidden = true;
+            const form = e.currentTarget as HTMLFormElement;
+            const fd = new FormData(form);
+            const sitio = String(fd.get('sitio') || '').trim();
+            const descripcion = String(fd.get('descripcion') || '').trim();
+            const archivo = fileInput.files?.[0];
+            if (!sitio && !descripcion && !archivo) return fail(errorBox, I.needInput);
+            fd.set('origen', root.dataset.origen || 'app');
+            if (!archivo) fd.delete('archivo');
+
+            show('loading');
+            const stages = [...root.querySelectorAll<HTMLElement>('[data-sw-stage]')];
+            stages.forEach((s) => s.classList.remove('is-active', 'is-done', 'is-skipped'));
+            if (!sitio) stages.find((s) => s.dataset.swStage === 'site')?.classList.add('is-skipped');
+            if (!archivo) stages.find((s) => s.dataset.swStage === 'file')?.classList.add('is-skipped');
+            const visible = stages.filter((s) => !s.classList.contains('is-skipped'));
+            let i = 0;
+            visible[0]?.classList.add('is-active');
+            const tick = window.setInterval(() => {
+                if (i >= visible.length - 1) return;
+                visible[i].classList.replace('is-active', 'is-done');
+                visible[++i].classList.add('is-active');
+            }, 2600);
+
+            try {
+                const res = await fetch('/api/setup/plans', { method: 'POST', body: fd, signal: AbortSignal.timeout(150_000) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || I.errGeneric);
+                planId = data.id;
+                visible.forEach((s) => s.classList.replace('is-active', 'is-done') || s.classList.add('is-done'));
+                await new Promise((r) => setTimeout(r, 450));
+                openReview(data.propuesta, data.descartado || []);
+            } catch (err: any) {
+                show('input');
+                fail(errorBox, err?.name === 'TimeoutError' ? I.errGeneric : (err?.message || I.errGeneric));
+            } finally {
+                window.clearInterval(tick);
+            }
+        });
+
+        function field(key: string, value: string | number, opts: { type?: string; full?: boolean; area?: boolean } = {}) {
+            const input = opts.area
+                ? el('textarea', { class: 'sw-input', rows: '3', 'data-k': key })
+                : el('input', { class: 'sw-input', type: opts.type || 'text', 'data-k': key });
+            (input as HTMLInputElement).value = String(value ?? '');
+            return el('label', { class: `sw-mini${opts.full ? ' sw-full' : ''}` }, el('span', { text: I.f[key] || key }), input);
+        }
+        function select(key: string, value: string, options: Record<string, string>) {
+            const s = el('select', { class: 'sw-input', 'data-k': key });
+            for (const [v, label] of Object.entries(options)) s.append(el('option', { value: v, text: label, selected: v === value }));
+            return el('label', { class: 'sw-mini' }, el('span', { text: I.f[key] }), s);
+        }
+
+        function openReview(p: Proposal, descartado: Array<{ campo: string; motivo: string }>) {
+            proposal = p;
+            const box = root.querySelector<HTMLElement>('[data-sw-review]')!;
+            box.textContent = '';
+            const summary = root.querySelector<HTMLElement>('[data-sw-summary]')!;
+            summary.textContent = p.resumen || '';
+            summary.hidden = !p.resumen;
+            for (const aviso of p.avisos || []) box.append(el('p', { class: 'sw-notice', text: aviso }));
+
+            const brand = el('div', { class: 'sw-grid' });
+            if (p.marca.color_marca) {
+                const picker = el('input', { type: 'color', 'data-k': 'color_marca', 'aria-label': I.f.color_marca }) as HTMLInputElement;
+                picker.value = p.marca.color_marca;
+                const hex = el('span', { text: p.marca.color_marca.toUpperCase() });
+                picker.addEventListener('input', () => { hex.textContent = picker.value.toUpperCase(); });
+                brand.append(el('div', { class: 'sw-mini' }, el('span', { text: I.f.color_marca }), el('div', { class: 'sw-color' }, picker, hex)));
+            }
+            if (p.marca.logo_url) {
+                const cb = el('input', { type: 'checkbox', 'data-k': 'logo_url', checked: true });
+                brand.append(el('div', { class: 'sw-logo' }, el('img', { src: p.marca.logo_url, alt: '' }), el('label', { class: 'sw-check' }, cb, el('span', { text: I.logoUse }))));
+            }
+            if (p.marca.pdf_template) brand.append(select('pdf_template', p.marca.pdf_template, I.tpl));
+            if (brand.childElementCount) box.append(el('section', { class: 'sw-sec' }, el('h2', { text: I.secBrand }), brand));
+
+            const biz = el('div', { class: 'sw-grid' });
+            for (const k of ['nombre', 'razon_social', 'rfc', 'email_contacto', 'telefono', 'direccion']) {
+                if (p.perfil[k]) biz.append(field(k, p.perfil[k], { full: k === 'direccion', type: k === 'email_contacto' ? 'email' : 'text' }));
+            }
+            if (biz.childElementCount) box.append(el('section', { class: 'sw-sec' }, el('h2', { text: I.secBusiness }), biz));
+
+            const q = el('div', { class: 'sw-grid' });
+            const c = p.cotizaciones;
+            if (c.terminos_default) q.append(select('terminos_default', String(c.terminos_default), I.term));
+            if (c.vigencia_default_dias) q.append(field('vigencia_default_dias', c.vigencia_default_dias as number, { type: 'number' }));
+            if (c.quote_prefix) q.append(field('quote_prefix', String(c.quote_prefix)));
+            if (c.iva_incluido_defecto !== undefined) {
+                q.append(el('label', { class: 'sw-check sw-full' }, el('input', { type: 'checkbox', 'data-k': 'iva_incluido_defecto', checked: !!c.iva_incluido_defecto }), el('span', { text: I.f.iva_incluido_defecto })));
+            }
+            if (c.pdf_condiciones) q.append(field('pdf_condiciones', String(c.pdf_condiciones), { full: true, area: true }));
+            if (c.pdf_mensaje) q.append(field('pdf_mensaje', String(c.pdf_mensaje), { full: true, area: true }));
+            if (q.childElementCount) box.append(el('section', { class: 'sw-sec' }, el('h2', { text: I.secQuotes }), q));
+
+            if (p.impuestos.length) {
+                const sec = el('section', { class: 'sw-sec' }, el('h2', { text: I.secTaxes }), el('p', { class: 'sw-notice', text: I.taxesNotice }));
+                p.impuestos.forEach((t, i) => sec.append(el('label', { class: 'sw-check' },
+                    el('input', { type: 'checkbox', 'data-tax': String(i) }),
+                    el('span', {}, `${t.nombre} · ${I.kind[t.kind] || t.kind} ${t.tasa}%`, t.motivo ? el('small', { text: t.motivo }) : null))));
+                box.append(sec);
+            }
+
+            if (p.productos.length) {
+                // Un importe va con su divisa y en el formato del país de la cuenta (regla 21).
+                const money = (n: number) => {
+                    try { return new Intl.NumberFormat(p.formato || 'es-MX', { style: 'currency', currency: p.moneda || 'MXN', currencyDisplay: 'narrowSymbol' }).format(n) + ' ' + (p.moneda || 'MXN'); }
+                    catch { return n.toFixed(2) + ' ' + (p.moneda || ''); }
+                };
+                const table = el('table', { class: 'sw-table' });
+                for (const pr of p.productos.slice(0, 8)) {
+                    table.append(el('tr', {}, el('td', {}, pr.nombre, el('small', { text: ' · ' + pr.unidad + (pr.sku ? ' · ' + pr.sku : '') })), el('td', { text: money(pr.precio) })));
+                }
+                const sec = el('section', { class: 'sw-sec' }, el('h2', { text: I.secProducts }),
+                    el('label', { class: 'sw-check' }, el('input', { type: 'checkbox', 'data-products': '1', checked: true }), el('span', { text: I.productsImport.replace('{n}', String(p.productos.length)) })),
+                    table);
+                if (p.productos.length > 8) sec.append(el('p', { class: 'sw-more', text: I.productsMore.replace('{n}', String(p.productos.length - 8)) }));
+                box.append(sec);
+            }
+
+            if (p.plantillas.length) {
+                const sec = el('section', { class: 'sw-sec' }, el('h2', { text: I.secTemplates }));
+                p.plantillas.forEach((pl, i) => sec.append(el('label', { class: 'sw-check' },
+                    el('input', { type: 'checkbox', 'data-tpl': String(i), checked: true }),
+                    el('span', {}, `${pl.nombre} · ${pl.canal}`, el('p', { class: 'sw-quote', text: pl.cuerpo })))));
+                box.append(sec);
+            }
+
+            if (p.notas.length) box.append(el('section', { class: 'sw-sec' }, el('h2', { text: I.secNotes }), el('ul', { class: 'sw-list' }, ...p.notas.map((n) => el('li', { text: n })))));
+            if (descartado.length) {
+                box.append(el('details', { class: 'sw-sec' }, el('summary', { text: `${I.secDiscarded} (${descartado.length})` }),
+                    el('ul', { class: 'sw-list' }, ...descartado.map((d) => el('li', { text: d.motivo })))));
+            }
+            if (!box.querySelector('.sw-sec')) box.append(el('p', { class: 'sw-notice', text: I.empty }));
+            reviewError.hidden = true;
+            show('review');
+            root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function collect(): Proposal {
+            const p = proposal!;
+            const val = (k: string) => root.querySelector<HTMLInputElement>(`[data-sw-review] [data-k="${k}"]`);
+            const out: Proposal = { resumen: p.resumen, perfil: {}, marca: {}, cotizaciones: {}, impuestos: [], productos: [], plantillas: [], notas: p.notas };
+            for (const k of ['nombre', 'razon_social', 'rfc', 'email_contacto', 'telefono', 'direccion']) { const v = val(k)?.value.trim(); if (v) out.perfil[k] = v; }
+            const color = val('color_marca')?.value; if (color) out.marca.color_marca = color;
+            if (val('logo_url')?.checked && p.marca.logo_url) out.marca.logo_url = p.marca.logo_url;
+            const tpl = val('pdf_template')?.value; if (tpl) out.marca.pdf_template = tpl;
+            for (const k of ['terminos_default', 'quote_prefix', 'pdf_condiciones', 'pdf_mensaje']) { const v = val(k)?.value.trim(); if (v) out.cotizaciones[k] = v; }
+            const vig = val('vigencia_default_dias')?.value; if (vig) out.cotizaciones.vigencia_default_dias = Number(vig);
+            const iva = val('iva_incluido_defecto'); if (iva) out.cotizaciones.iva_incluido_defecto = iva.checked;
+            root.querySelectorAll<HTMLInputElement>('[data-tax]').forEach((cb) => { if (cb.checked) out.impuestos.push(p.impuestos[Number(cb.dataset.tax)]); });
+            if (root.querySelector<HTMLInputElement>('[data-products]')?.checked) out.productos = p.productos;
+            root.querySelectorAll<HTMLInputElement>('[data-tpl]').forEach((cb) => { if (cb.checked) out.plantillas.push(p.plantillas[Number(cb.dataset.tpl)]); });
+            return out;
+        }
+
+        const applyBtn = root.querySelector<HTMLButtonElement>('[data-sw-apply]')!;
+        applyBtn.addEventListener('click', async () => {
+            if (!proposal || !planId) return;
+            applyBtn.disabled = true;
+            applyBtn.textContent = I.applying;
+            reviewError.hidden = true;
+            try {
+                const res = await fetch(`/api/setup/plans/${encodeURIComponent(planId)}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'apply', propuesta: collect() }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || I.errGeneric);
+                const list = root.querySelector<HTMLElement>('[data-sw-results]')!;
+                list.textContent = '';
+                for (const r of data.resultado || []) {
+                    list.append(el('li', { class: r.ok ? 'is-ok' : 'is-error' }, el('b', { text: I.res[r.seccion] || r.seccion }), el('span', { text: r.detalle })));
+                }
+                show('done');
+                root.dispatchEvent(new CustomEvent('cord:setup-applied', { bubbles: true, detail: { planId } }));
+            } catch (err: any) {
+                fail(reviewError, err?.message || I.errGeneric);
+            } finally {
+                applyBtn.disabled = false;
+                applyBtn.textContent = I.apply;
+            }
+        });
+
+        root.querySelector<HTMLButtonElement>('[data-sw-discard]')!.addEventListener('click', async () => {
+            if (planId) await fetch(`/api/setup/plans/${encodeURIComponent(planId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'discard' }) }).catch(() => {});
+            window.location.href = root.dataset.done || '/app';
+        });
+
+        if (planId) {
+            fetch(`/api/setup/plans/${encodeURIComponent(planId)}`).then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
+                if (!ok) return fail(reviewError, d.error || I.errGeneric);
+                if (d.estado !== 'propuesto') {
+                    root.querySelector<HTMLElement>('[data-sw-review]')!.textContent = '';
+                    applyBtn.hidden = true;
+                    return fail(reviewError, d.estado === 'aplicado' ? I.stateApplied : I.stateClosed);
+                }
+                openReview(d.propuesta, d.descartado || []);
+            }).catch(() => fail(reviewError, I.errGeneric));
+        }
+    }
+
+    const boot = () => document.querySelectorAll<HTMLElement>('[data-setup]').forEach(init);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+    document.addEventListener('cord:setup-show', boot);
+</script>

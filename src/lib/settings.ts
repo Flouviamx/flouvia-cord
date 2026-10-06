@@ -30,6 +30,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
         tabs: [
             { id: 'general', label: 'General', labelEn: 'General', href: '/app/ajustes/general', keywords: 'moneda currency divisa idioma language zona horaria timezone localizacion nombre negocio contacto' },
+            { id: 'setup', label: 'Configurar con IA', labelEn: 'Set up with AI', href: '/app/setup', keywords: 'ia ai asistente assistant wizard configurar setup importar import catalogo catalog sitio web website lista de precios price list' },
         ],
     },
     {
