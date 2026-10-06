@@ -57,6 +57,7 @@ const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: PAIS, o
 const DEFAULT_TAX_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
 const RETENCIONES = retencionesFrom(IMPUESTOS);
 const MULTI_TAX = TAX_OPTIONS.length > 1;
+import { iconInner } from '../../../../lib/icons';
 ---
 
 <AppLayout title={`Editar ${q.folio}`} page="cotizaciones" heading={q.status === 'draft' ? tf('edv.editar_borrador_heading', { folio: q.folio }) : tf('edv.nueva_version_heading', { folio: q.folio })} crumbs={[{ label: t(L, 'edv.crumb_cotizaciones'), href: '/app/cotizaciones' }, { label: q.folio, href: `/app/cotizaciones/${id}` }]}>
@@ -126,14 +127,14 @@ const MULTI_TAX = TAX_OPTIONS.length > 1;
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
                         <button class="btn-send" id="btnSend">
                             <span>{t(L, 'edv.enviar_cliente')}</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" set:html={iconInner('arrow-right')}></svg>
                         </button>
                         <button class="btn-draft" id="btnUpdateDraft" style="text-align: center; width: 100%;">{t(L, 'edv.guardar_borrador')}</button>
                     </div>
                 ) : (
                     <button class="btn-send" id="btnSend">
                         <span>{tf('edv.generar_reenviar', { n: String(q.version + 1) })}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" set:html={iconInner('arrow-right')}></svg>
                     </button>
                 )}
 
@@ -160,6 +161,7 @@ const MULTI_TAX = TAX_OPTIONS.length > 1;
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
 })} />
 <script>
+    import { iconSvg } from '../../../../lib/icons';
     // Módulo bundleado, no `is:inline` + `define:vars` — mismo motivo que
     // cotizaciones/nueva.astro: `is:inline` no puede importar, así que este
     // editor de versiones tenía su PROPIA copia de la aritmética (tasa plana,
@@ -294,7 +296,7 @@ const MULTI_TAX = TAX_OPTIONS.length > 1;
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ' + iconSvg('x', '', 1.5, 14) + '
                 </button>
             `;
             $lines.appendChild(row);

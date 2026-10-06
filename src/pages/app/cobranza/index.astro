@@ -78,6 +78,7 @@ const CBZ_T = {
     fVacio: t(L, 'cob.f_vacio'), todoCobrado: t(L, 'cob.todo_cobrado'),
     prioridadVacio: t(L, 'cob.prioridad_vacio'), promesasVacio: t(L, 'cob.promesas_vacio'),
 };
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={t(L, 'cob.title')} page="cobranza" heading={t(L, 'cob.heading')}>
@@ -89,7 +90,7 @@ const CBZ_T = {
     <Fragment slot="topbar-actions">
         <div class="cbz-top-actions">
             <span class="snapshot-chip">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>
                 {tpl(t(L, 'cob.hoy'), { fecha: dateFull(todayISO, L) })}
             </span>
             {hasAccess && hay && <WidgetCustomizeButtons editId="cbzEditBtn" resetId="cbzResetBtn" doneId="cbzDoneBtn" />}
@@ -183,7 +184,7 @@ const CBZ_T = {
                                 <span class="cbz-mini-right">
                                     <b class="editorial">{money(it.total, 0)}</b>
                                     <button class="cob-whats" type="button" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
-                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                     </button>
                                 </span>
                             </div>
@@ -207,7 +208,7 @@ const CBZ_T = {
                                 <span class="cbz-mini-right">
                                     <b class="editorial">{money(it.promesa!.monto ?? it.total, 0)}</b>
                                     <button class="cbz-prom-done" type="button" data-prom-done={it.promesa!.id} title={t(L, 'cob.promesa_cumplir')} aria-label={t(L, 'cob.promesa_cumplir')}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                     </button>
                                 </span>
                             </div>
@@ -299,7 +300,7 @@ const CBZ_T = {
                                         : <span class="est est-due">{it.diasParaVencer === 0 ? t(L, 'cob.vence_hoy') : tpl(t(L, 'cob.vence_en'), { n: String(it.diasParaVencer) })}</span>}
                                     {it.promesa && (
                                         <span class="est est-prom" title={it.promesa.nota || t(L, 'cob.promesa_pago')}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                             {tpl(t(L, 'cob.promete'), { fecha: it.promesa.fecha })}
                                         </span>
                                     )}
@@ -310,10 +311,10 @@ const CBZ_T = {
                                 </span>
                                 <span class="t-actions t-right">
                                     <button class:list={['cob-prom', { 'has-prom': it.promesa }]} type="button" title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>
                                     </button>
                                     <button class="cob-whats" type="button" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
-                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                     </button>
                                     <button class="cob-paid" type="button">{t(L, 'cob.cobrada')}</button>
                                 </span>

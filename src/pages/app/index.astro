@@ -100,6 +100,7 @@ const isDemo = dash.totalQuotes === 1 && String(COTIZACIONES[0]?.notas || '').in
 const demoToken = isDemo ? COTIZACIONES[0].token : null;
 const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
+import { iconInner } from '../../lib/icons';
 ---
 
 <AppLayout title="Dashboard — Cord" page="dashboard" heading={t(L, 'dash.heading')}>
@@ -109,7 +110,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     {mostrarNudgeCobros && (
         <div class="dash-card cobros-nudge" id="cobrosNudge" style="display:none">
             <div class="cn-ico">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M2 10h20"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
             </div>
             <div class="cn-text">
                 <strong>{t(L, 'dash.nudge_titulo')}</strong>
@@ -117,7 +118,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
             <a class="cn-cta" href="/app/ajustes/cobros">{t(L, 'dash.nudge_cta')}</a>
             <button type="button" class="cn-close" id="cobrosNudgeClose" aria-label={t(L, 'dash.nudge_descartar')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
         </div>
         <script is:inline>
@@ -147,7 +148,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
                 <div class="hero-rev-row">
                     <span class="editorial hero-rev-num" id="heroNum" data-countup={heroTotal.toFixed(2)}>{money(heroTotal)}</span>
                     <span class="hero-rev-delta" id="heroDelta" hidden>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
                         <span id="heroDeltaVal">0%</span>
                         <span class="hero-rev-delta-sub">{t(L, 'dash.hero_vs_periodo')}</span>
                     </span>

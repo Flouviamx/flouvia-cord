@@ -109,6 +109,7 @@ const totalReq = (OV?.totalOk ?? 0) + (OV?.totalErr ?? 0);
 const errTot = (OV?.errores.c4xx ?? 0) + (OV?.errores.c5xx ?? 0);
 const nfmt = (n: number) => new Intl.NumberFormat(L === 'en' ? 'en-US' : 'es-MX').format(n);
 const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.atrasados ?? 0) === 0;
+import { iconInner } from '../../../lib/icons';
 ---
 
 <div class="wb-frag">
@@ -236,19 +237,13 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
             <div class:list={['wb-health', { ok: saludOk }]}>
                 {saludOk ? (
                     <>
-                        <svg class="wb-health-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12" />
-                            <polyline points="8.5 12.2 11 14.7 15.7 9.6" />
-                        </svg>
+                        <svg class="wb-health-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                         <b>{t(L, 'wb.salud.ok')}</b>
                         <i>{t(L, 'wb.salud.ok_sub')}</i>
                     </>
                 ) : (
                     <>
-                        <svg class="wb-health-ico bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity="0.12" />
-                            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
+                        <svg class="wb-health-ico bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                         <b>{t(L, 'wb.salud.alertas')}</b>
                         <i>{t(L, 'wb.salud.alertas_sub')}</i>
                     </>
@@ -399,7 +394,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxx"</code></pre>
             </div>
             <button type="button" class="api-btn-ghost wb-btn-wide" data-wb-act="ai-prompt">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
                 {t(L, 'set.api.generar_prompt')}
             </button>
         </div>
@@ -410,7 +405,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
     <div class="wb-md">
         <div class="wb-md-filters">
             <span class="wb-search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                 <input type="search" id="logQ" value={BUSCA} placeholder={t(L, 'wb.logs.buscar')} data-wb-act="log-search" />
             </span>
             <span class="wb-chips" role="group" aria-label={t(L, 'wb.logs.metodo')}>
@@ -484,9 +479,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
 
         {EVENTOS.length === 0 ? (
             <div class="wb-empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" /><polyline points="12 7.5 12 12 15 13.8" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>
                 <b>{t(L, 'wb.ev.vacio_t')}</b>
                 <i>{t(L, 'wb.ev.vacio_d')}</i>
                 <button type="button" class="api-btn-solid" data-wb-act="wh-new">{t(L, 'set.wh.agregar_endpoint')}</button>
@@ -530,17 +523,12 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
         <div class:list={['wb-health wb-health-wide', { ok: saludOk }]}>
             {saludOk ? (
                 <>
-                    <svg class="wb-health-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12" /><polyline points="8.5 12.2 11 14.7 15.7 9.6" />
-                    </svg>
+                    <svg class="wb-health-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                     <b>{t(L, 'wb.salud.ok')}</b><i>{t(L, 'wb.salud.ok_sub')}</i>
                 </>
             ) : (
                 <>
-                    <svg class="wb-health-ico bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity="0.12" />
-                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
+                    <svg class="wb-health-ico bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                     <b>{t(L, 'wb.salud.alertas')}</b><i>{t(L, 'wb.salud.alertas_sub')}</i>
                 </>
             )}
@@ -642,7 +630,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                     <div class:list={['wh-item', { off: !w.activo, disabled: !!w.deshabilitadoMotivo }]} data-id={w.id}>
                         {w.deshabilitadoMotivo && (
                             <div class="wh-health-banner">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                                 <span class="wh-health-msg">{t(L, 'set.wh.deshabilitado_pre')} {w.deshabilitadoMotivo}{w.deshabilitadoEn ? ` — ${w.deshabilitadoEn}` : ''}</span>
                                 <span class="wh-health-actions">
                                     <button type="button" data-wb-act="wh-reenable" data-id={w.id}>{t(L, 'set.wh.reactivar')}</button>
@@ -652,7 +640,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                         )}
                         <div class="wh-row">
                             <button type="button" class="wh-expand" data-wb-act="wh-expand" data-id={w.id} title={t(L, 'set.wh.ver_entregas')} aria-expanded="false">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                             </button>
                             <span class="wh-info">
                                 <span class="wh-url">{w.url}</span>

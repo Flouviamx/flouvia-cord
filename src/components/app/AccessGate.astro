@@ -26,21 +26,15 @@ interface Props {
     class?: string;
 }
 const { reason = 'perm', title, desc, ctaHref, ctaLabel, class: className } = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class:list={['access-gate', className]} data-gate={reason} role="status">
     <div class="access-gate-icon">
         {reason === 'plan' ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/>
-                <path d="m9.2 11.8 1.9 1.9 3.7-3.7"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
         ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3.5" y="10.5" width="17" height="11" rx="3" fill="currentColor" fill-opacity="0.12"/>
-                <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/>
-                <circle cx="12" cy="16" r="1.15" fill="currentColor" stroke="none"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
         )}
     </div>
     <h2 class="access-gate-title">{title}</h2>

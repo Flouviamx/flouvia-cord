@@ -10,6 +10,7 @@ interface Props {
 }
 const { showDelete = true } = Astro.props;
 const L = currentLocale();
+import { iconInner } from '../../lib/icons';
 ---
 
 <dialog class="modal" id="prodModal"
@@ -69,7 +70,7 @@ const L = currentLocale();
                 <span class="m-hint">{t(L, 'pmod.vol_hint')}</span>
                 <div class="vol-list" id="pmVolList"></div>
                 <button type="button" class="vol-add" id="pmVolAdd">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" set:html={iconInner('plus')}></svg>
                     {t(L, 'pmod.vol_agregar')}
                 </button>
             </div>
@@ -96,6 +97,7 @@ const L = currentLocale();
 </dialog>
 
 <script>
+    import { iconSvg } from '../../lib/icons';
     import { createMoney } from '../../lib/money-client';
     // CRUD de productos contra /api/productos, disparado por 'prodmodal:open' y
     // notificando 'prodmodal:saved'/'prodmodal:deleted'.
@@ -155,7 +157,7 @@ const L = currentLocale();
                     <span class="vol-arrow">→</span>
                     <div class="vol-cell"><span class="vc-pre">$</span><input type="number" min="0" step="0.01" data-vk="precio" value="${tr.precio ?? ''}" placeholder="90.00" /></div>
                     <button type="button" class="vol-del" data-vdel="${i}" aria-label="${I.volQuitar || 'Quitar nivel'}">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        ${iconSvg('x', '', 1.5, 13)}
                     </button>
                 </div>`).join('');
         };

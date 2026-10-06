@@ -20,13 +20,14 @@ const orgId = await getActiveOrgId();
 const WORKFLOWS = canAjustes ? await listWorkflows(orgId) : [];
 const allowance = canAjustes ? await getResourceAllowance(orgId, 'active_workflows').catch(() => null) : null;
 const HEALTH = canAjustes ? await workflowHealth(orgId).catch(() => null) : null;
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${t(L, 'wf.heading')} — Cord`} page="workflows" heading={t(L, 'wf.heading')}>
     {canAjustes && (
         <div slot="topbar-actions" class="topbar-btns">
             <button type="button" class="btn-new" data-wf-create>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('plus')}></svg>
                 {t(L, 'wf.nuevo')}
             </button>
         </div>

@@ -91,6 +91,7 @@ const faqSchema = {
         acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
 };
+import { iconInner } from '../lib/icons';
 ---
 
 <Layout title={title} description={description}>
@@ -195,9 +196,7 @@ const faqSchema = {
                                         {p.feats.map((f) => (
                                             <li>
                                                 <div class="pf-check">
-                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                    </svg>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                                 </div>
                                                 <span>{f}</span>
                                             </li>
@@ -301,7 +300,7 @@ const faqSchema = {
                         <p class="pr-roi-foot" id="roi-foot">{isEn ? 'A single extra quote per month pays for the plan ~60 times.' : 'Una sola cotización extra al mes paga el plan ~59 veces.'}</p>
                         <a href="/sign-up" class="pr-roi-cta">
                             {isEn ? 'Start with Professional' : 'Empezar con Profesional'}
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                         </a>
                     </div>
                 </div>
@@ -346,7 +345,7 @@ const faqSchema = {
                                                         {overagePriceLabel(PLANES[idx].id, r.overageDim, STATIC_CURRENCY, lang)}
                                                     </span>
                                                 ) : v === true ? (
-                                                    <span class="pr-yes" aria-label={isEn ? "Included" : "Incluido"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                                    <span class="pr-yes" aria-label={isEn ? "Included" : "Incluido"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg></span>
                                                 ) : v === false ? (
                                                     <span class="pr-no" aria-label={isEn ? "Not included" : "No incluido"}>—</span>
                                                 ) : (

@@ -17,10 +17,11 @@ try {
   total = Number(users[0]?.total_count || 0);
   if (page > 1 && users.length === 0) return Astro.redirect(`/ops/users${query ? `?q=${encodeURIComponent(query)}` : ''}`);
 } catch (cause) { error = true; console.error('[ops/users]', cause); }
+import { iconInner } from '../../../lib/icons';
 ---
 <OpsLayout title="Usuarios | Cord Ops">
   <OpsShell active="users" title="Usuarios" subtitle="Identidades, acceso y ciclo de vida de cada cuenta.">
-    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar usuario" /></form>
+    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Buscar usuario" /></form>
     <section class="ops-card ops-metrics cols-3">
       <div class="ops-metric"><span>Cuentas</span><strong>{opsNumber(total)}</strong><small>{query ? 'Coinciden con la búsqueda' : 'Registradas en Cord'}</small></div>
       <div class="ops-metric"><span>En esta página</span><strong>{opsNumber(users.filter((u) => u.passkeys > 0 || u.totp_enabled).length)} con MFA</strong><small>{opsNumber(users.filter((u) => !u.email_verified_at).length)} sin verificar el correo</small></div>

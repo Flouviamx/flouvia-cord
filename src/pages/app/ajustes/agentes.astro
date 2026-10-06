@@ -51,6 +51,7 @@ const enAprobacion = cfg?.modo === 'aprobacion';
 
 const conectados = servers.filter((s: any) => s.activo).length;
 const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
+import { iconInner } from '../../../lib/icons';
 ---
 
 <SettingsShell title="Inteligencia artificial — Ajustes" tab="agentes" perm="ajustes">
@@ -124,11 +125,7 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
             {servers.length === 0 ? (
                 <div class="ag-empty">
                     <div class="ag-empty-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="2.5" y="4" width="19" height="7" rx="2.5" fill="currentColor" fill-opacity="0.12"/>
-                            <rect x="2.5" y="14" width="19" height="6" rx="2.5"/>
-                            <path d="M6.5 7.5h.01M6.5 17h.01"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('server')}></svg>
                     </div>
                     <p class="ag-empty-title">{t(L, 'set.ag.conex_vacio_titulo')}</p>
                     <p class="ag-empty-desc">{t(L, 'set.ag.conex_vacio_desc')}</p>
@@ -171,7 +168,7 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
                                         </span>
                                     </label>
                                     <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')} aria-label={t(L, 'set.ag.eliminar_titulo')}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" set:html={iconInner('x')}></svg>
                                     </button>
                                 </span>
                             </div>

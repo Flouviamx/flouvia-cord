@@ -54,6 +54,7 @@ const breadcrumbSchema = {
 const heroTitle = solucion.tituloAcento
     ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
     : solucion.titulo;
+import { iconInner } from '../../lib/icons';
 ---
 
 <Layout
@@ -79,7 +80,7 @@ const heroTitle = solucion.tituloAcento
                     <div class="stripe-actions">
                         <a href="/sign-up" class="btn-luxe">
                             <span>{isEn ? 'Create your company account' : 'Crear la cuenta de tu empresa'}</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                             <div class="btn-shimmer"></div>
                         </a>
                         <a href="/contacto/ventas" class="btn-ghost">
@@ -110,10 +111,7 @@ const heroTitle = solucion.tituloAcento
                                     <p class="stripe-pillar-desc">{p.desc}</p>
                                     <a href={p.href || '/producto/editor'} class="stripe-pillar-link">
                                         {p.link}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <polyline points="19 12 12 19 5 12"></polyline>
-                                        </svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-down')}></svg>
                                     </a>
                                 </div>
                             </div>
@@ -168,9 +166,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Net 30 credit, price lists and collections, explained for sales teams' : 'Crédito a 30 días, listas de precios y cobranza, explicados para equipos comerciales'}</h4>
                                 <a href={`${isEn ? "/en" : ""}/blog/credito-b2b-net30`} class="stripe-pillar-link">
                                     {isEn ? 'Read the blog' : 'Leer el blog'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -184,9 +180,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Guides for SSO, two-step verification and security reviews' : 'Guías de SSO, verificación en dos pasos y revisiones de seguridad'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
                                     {isEn ? 'See security guides' : 'Ver guías de seguridad'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -266,9 +260,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'API reference, signed webhooks and idempotency for your integration team' : 'Referencia de la API, webhooks firmados e idempotencia para tu equipo de integración'}</h4>
                                 <a href="/desarrolladores/api" class="stripe-pillar-link">
                                     {isEn ? 'Open the reference' : 'Abrir la referencia'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -282,9 +274,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Invite your team, assign roles and run several companies' : 'Invita a tu equipo, asigna roles y opera varias empresas'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
                                     {isEn ? 'See team guides' : 'Ver guías de equipo'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>

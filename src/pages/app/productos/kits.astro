@@ -39,6 +39,7 @@ const KIT_T = {
     noPudoCrear: t(L, 'kit.no_pudo_crear'),
     noPudoGuardarRenglon: t(L, 'kit.no_pudo_guardar_renglon'),
 };
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={t(L, 'kit.title')} page="productos" heading={t(L, 'prod.catalogo')}>
@@ -59,7 +60,7 @@ const KIT_T = {
         <div class="ki-list" id="kiList">
             {KITS.length === 0 && (
                 <div class="ki-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('products')}></svg>
                     <p><b>{t(L, 'kit.vacio_titulo')}</b> {t(L, 'kit.vacio_desc')}</p>
                     {canEdit && <button class="btn-new" id="kitNewEmpty">{t(L, 'kit.nuevo_kit')}</button>}
                 </div>
@@ -108,7 +109,7 @@ const KIT_T = {
 
                         <div class="ki-add-row">
                             <div class="prod-search">
-                                <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                                <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                                 <input type="text" class="prod-input" id="kitProdInput" placeholder={t(L, 'kit.buscar_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
                                 <div class="prod-drop" id="kitProdDrop" hidden role="listbox"></div>
                             </div>

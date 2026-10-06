@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useEffect } from 'react';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
@@ -262,9 +263,7 @@ export default function CustomSignUp() {
                 <>¿Ya tienes cuenta? <b>Inicia sesión</b></>
               )}
             </span>
-            <svg className="auth-suggest-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <svg className="auth-suggest-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('arrow-right') }} />
           </a>
         )}
 

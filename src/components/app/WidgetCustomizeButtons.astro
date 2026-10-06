@@ -22,10 +22,11 @@ interface Props {
 
 const { editId, resetId, doneId } = Astro.props;
 const L = currentLocale();
+import { iconInner } from '../../lib/icons';
 ---
 
 <button type="button" class="widget-edit-btn" id={editId}>
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18M3 9v10a2 2 0 0 0 2 2h4m10-12v10a2 2 0 0 1-2 2H9"/></svg>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
     {t(L, 'widgets.personalizar')}
 </button>
 <button type="button" class="widget-edit-btn" id={`${editId}Library`} aria-expanded="false" hidden>{t(L, 'widgets.biblioteca')}</button>

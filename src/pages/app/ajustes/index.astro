@@ -36,6 +36,7 @@ const GRUPOS = [
     { label: t(L, 'idx.sec_producto'), cats: [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMap.integraciones] },
     { label: t(L, 'idx.sec_dev'), cats: [catMap.mcp, catMap.agentes, catMap.elements], id: 'idxDevSection' },
 ];
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={t(L, 'ajustes.titulo_index')} page="ajustes" heading="Ajustes">
@@ -67,7 +68,7 @@ const GRUPOS = [
 
         <SettingsOverview org={ORG} member={ME} />
         <div class="idx-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
             <label class="sr-only" for="settingsSearch">{L==='en'?'Search settings':'Buscar en ajustes'}</label>
             <input type="search" id="settingsSearch" autocomplete="off" placeholder={L==='en'?'Search settings, taxes, team…':'Buscar ajustes, impuestos, equipo…'}/>
             <kbd aria-hidden="true">/</kbd>
@@ -98,7 +99,7 @@ const GRUPOS = [
                                     </span>
                                 )}
                             </span>
-                            <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                         </div>
                     ))}
                 </div>

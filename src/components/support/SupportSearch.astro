@@ -1,10 +1,11 @@
 ---
 // src/components/support/SupportSearch.astro
 const { isEn = false } = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 <div class="sup-search-wrapper" id="supSearchWrapper">
     <div class="sup-search-input-box">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+        <svg width="20" height="20" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
         <input type="text" id="supSearchInput" placeholder={isEn ? "Search guides, questions or tutorials... (Cmd+K)" : "Buscar guías, preguntas o tutoriales... (Cmd+K)"} autocomplete="off" />
         <kbd class="shortcut-badge">⌘K</kbd>
     </div>

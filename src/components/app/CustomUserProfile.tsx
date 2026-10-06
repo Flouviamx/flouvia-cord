@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useEffect, useRef } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import './CustomUserProfile.css';
@@ -461,7 +462,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                 </div>
               )}
               <div className="avatar-overlay">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('camera') }} />
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
             </div>
@@ -606,7 +607,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                 {passkeys.map((p) => (
                   <li key={p.id} className="cup-list-item">
                     <div className="cup-account-info">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><circle cx="12" cy="11" r="3" /></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('shield') }} />
                       {p.name || deviceLabel(p.deviceType)} · agregada el {fmtDate(p.createdAt, locale)}
                     </div>
                     <button className="cup-btn-danger-text" onClick={() => deletePasskey(p.id)}>{S.eliminar}</button>
@@ -728,15 +729,9 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                       aria-pressed={deleteShowPass}
                     >
                       {deleteShowPass ? (
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M2 12s3.5-7 10-7c2.02 0 3.68.57 5.02 1.35M22 12s-1.06 2.14-3.02 3.85M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('eye-off') }} />
                       ) : (
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.12" />
-                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.18" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('eye') }} />
                       )}
                     </button>
                   </div>

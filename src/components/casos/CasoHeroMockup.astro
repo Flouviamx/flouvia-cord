@@ -98,6 +98,7 @@ const SF_EVENTS = [
     { c: '#cbd5e1', t: 'Borrador creado', w: '26 sep, 11:50' },
 ];
 
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="chm" data-variant={variant} aria-hidden="true">
@@ -105,7 +106,7 @@ const SF_EVENTS = [
     {variant === 'agencias' && (
         <Fragment>
             <div class="chm-win chm-win-q" style="--brand:#9f1239">
-                <div class="chm-url"><span class="chm-url-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>cordhq.app/q/131e21356318f9040d6bd1d59277fb84</span></div>
+                <div class="chm-url"><span class="chm-url-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/q/131e21356318f9040d6bd1d59277fb84</span></div>
                 <div class="chm-shot chm-qc">
                     <div class="chm-qcard">
                         <div class="chm-qh">
@@ -154,8 +155,8 @@ const SF_EVENTS = [
                 </div>
                 <div class="chm-pay">
                     <span class="chm-pay-amt"><small>A PAGAR AHORA · ANTICIPO</small><b class="editorial">{money(AG.anticipo)} <i>MXN</i></b></span>
-                    <span class="chm-pay-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pagar de forma segura</span>
-                    <span class="chm-pay-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Tarjeta o transferencia SPEI · Cord Payments<span class="chm-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span></span>
+                    <span class="chm-pay-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>Pagar de forma segura</span>
+                    <span class="chm-pay-sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>Tarjeta o transferencia SPEI · Cord Payments<span class="chm-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span></span>
                 </div>
             </div>
         </Fragment>
@@ -167,16 +168,16 @@ const SF_EVENTS = [
                 <!-- Topbar de AppLayout: búsqueda ⌘K, Crear y accesos. -->
                 <div class="chm-tb">
                     <span class="chm-tb-search">
-                        <svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20.5" y1="20.5" x2="16.2" y2="16.2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                         Buscar…
                         <kbd>⌘K</kbd>
                     </span>
                     <span class="chm-tb-r">
                         <span class="chm-tb-create">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={iconInner('plus')}></svg>
                             Crear
                         </span>
-                        <span class="chm-tb-ic"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none"/></svg></span>
+                        <span class="chm-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg></span>
                         <span class="chm-tb-av">{variant === 'saas' ? 'LC' : variant === 'comercializadoras' ? 'MV' : 'JR'}</span>
                     </span>
                 </div>
@@ -235,7 +236,7 @@ const SF_EVENTS = [
                             </div>
                         ))}
                         <div class="chm-add">
-                            <span class="chm-add-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Busca un producto de tu catálogo… (nombre o SKU)</span>
+                            <span class="chm-add-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>Busca un producto de tu catálogo… (nombre o SKU)</span>
                             <span class="chm-add-b">+ Línea libre</span>
                         </div>
                     </div>
@@ -293,7 +294,7 @@ const SF_EVENTS = [
             </div>
             <div class="chm-audit">
                 <div class="chm-audit-h">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                     Documento verificado
                 </div>
                 <div class="chm-audit-r"><b>Firmante:</b> Andrea Salinas (IP: 187.190.44.12)</div>
@@ -314,7 +315,7 @@ const SF_EVENTS = [
             <div class="chm-sum-div"></div>
             <div class="chm-sum-l tot"><span>Total</span><b class="editorial">{money(ED.total)}<i class="chm-cur">MXN</i></b></div>
             <div class="chm-sum-f"><small>Vigencia</small><span class="chm-select sm">30 días</span></div>
-            <span class="chm-send">Crear y enviar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+            <span class="chm-send">Crear y enviar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg></span>
         </div>
     )}
 

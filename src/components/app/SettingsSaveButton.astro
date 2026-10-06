@@ -10,12 +10,13 @@ interface Props {
 }
 const L = currentLocale();
 const {id, type = 'button', label = t(L,'settings.guardar_cambios'), disabled = false, ...attrs} = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 <button {...attrs} id={id} type={type} disabled={disabled} class="s-save" data-save-button
     data-i18n-saved={t(L,'settings.cambios_guardados')} data-i18n-err={t(L,'settings.no_se_pudo_guardar')} aria-busy="false">
     <span class="s-save-label">{label}</span>
     <span class="s-save-progress"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" opacity=".2"/><path d="M10 3a7 7 0 0 1 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{L === 'en' ? 'Saving…' : 'Guardando…'}</span>
-    <span class="s-save-success"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.4" opacity=".35"/><path d="m7 12 3.5 3.5L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{L === 'en' ? 'Saved' : 'Guardado'}</span>
+    <span class="s-save-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>{L === 'en' ? 'Saved' : 'Guardado'}</span>
 </button>
 <script>
     import { setSaveState } from '../../lib/settings-save-feedback';

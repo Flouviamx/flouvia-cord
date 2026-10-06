@@ -4,6 +4,7 @@ const { isEn } = Astro.props;
 
 const subscribeId = isEn ? 'subscribe' : 'suscripcion';
 const salesHref = isEn ? '/en/contacto/ventas' : '/contacto/ventas';
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="article-footer-cta" id={subscribeId}>
@@ -17,8 +18,8 @@ const salesHref = isEn ? '/en/contacto/ventas' : '/contacto/ventas';
                 <input class="form-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
                 <button type="submit" class="btn-primary" id="blog-subscribe-btn">
                     <span class="btn-label">{isEn ? 'Subscribe' : 'Suscribirme'}</span>
-                    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                    <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.7s" repeatCount="indefinite" /></circle></svg>
+                    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
+                    <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('spinner')}></svg>
                 </button>
             </form>
             <div id="subscribe-feedback" class="subscribe-feedback" role="status" aria-live="polite"></div>
@@ -35,19 +36,16 @@ const salesHref = isEn ? '/en/contacto/ventas' : '/contacto/ventas';
             </div>
             <h4>{isEn ? 'Like what you read?' : '¿Te gusta lo que lees?'}</h4>
             <p>{isEn ? 'Cord builds financial infrastructure to accelerate commercial closing. Follow us for more analysis and case studies.' : 'Cord construye infraestructura financiera para acelerar el cierre comercial. Síguenos para más análisis y casos de estudio.'}</p>
-            <a href="https://www.linkedin.com/company/cordapp/" target="_blank" rel="noopener noreferrer" class="bento-link">{isEn ? 'Follow on LinkedIn' : 'Seguir en LinkedIn'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
+            <a href="https://www.linkedin.com/company/cordapp/" target="_blank" rel="noopener noreferrer" class="bento-link">{isEn ? 'Follow on LinkedIn' : 'Seguir en LinkedIn'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
         </div>
 
         <div class="bento-card">
             <div class="bento-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.14"></path>
-                    <path d="M7 8.5h10M7 12h6" stroke-opacity="0.55"></path>
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
             </div>
             <h4>{isEn ? 'Questions or comments?' : '¿Dudas o comentarios?'}</h4>
             <p>{isEn ? "We'd love to hear your thoughts on this article or your sales flow." : 'Nos encantaría escuchar tu opinión sobre este artículo o tu flujo de ventas.'}</p>
-            <a href={salesHref} class="bento-link">{isEn ? 'Contact us' : 'Contáctanos'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
+            <a href={salesHref} class="bento-link">{isEn ? 'Contact us' : 'Contáctanos'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
         </div>
     </div>
 </section>

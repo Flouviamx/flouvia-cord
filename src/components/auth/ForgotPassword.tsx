@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useEffect } from 'react';
 
 const ERROR_ES: Record<string, string> = {
@@ -57,10 +58,7 @@ export default function ForgotPassword() {
   if (success) {
     return (
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" strokeWidth="2" style={{ margin: '0 auto 1.5rem auto' }}>
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
+        <svg width="48" height="48" style={{ margin: '0 auto 1.5rem auto' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check-circle') }} />
         <h1 className="auth-title">Revisa tu correo</h1>
         <p className="auth-subtitle" style={{ marginTop: '0.5rem' }}>
           Te hemos enviado un enlace para restablecer tu contraseña a <strong>{email}</strong>.

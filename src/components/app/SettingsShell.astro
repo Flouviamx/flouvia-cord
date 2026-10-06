@@ -34,6 +34,7 @@ const activeTab = category.tabs.find((tb) => tb.id === tab);
 
 const ME = perm ? await getMyMembership() : null;
 const hasAccess = !perm || memberCan(ME!, perm);
+import { iconInner } from '../../lib/icons';
 ---
 
 <AppLayout title={title} page="ajustes" heading="Ajustes">
@@ -46,7 +47,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
             <h2> ya la nombra y repetirla sería ruido. */}
         <nav class="set2-crumb-row" aria-label={t(L, 'settings.configuracion')}>
             <a href="/app/ajustes" class="set2-crumb">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
                 {t(L, 'settings.configuracion')}
             </a>
             {!single && activeTab && (

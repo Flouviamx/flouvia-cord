@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useEffect, useRef } from 'react';
 
 type Mode = 'checking' | 'sent' | 'success' | 'error';
@@ -75,10 +76,7 @@ export default function VerifyEmail() {
   if (mode === 'success') {
     return (
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" style={{ margin: '0 auto 1.5rem auto' }}>
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
+        <svg width="48" height="48" style={{ margin: '0 auto 1.5rem auto' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check-circle') }} />
         <h1 className="auth-title">¡Correo verificado!</h1>
         <p className="auth-subtitle" style={{ marginTop: '0.5rem' }}>
           Entrando a tu cuenta…

@@ -15,6 +15,7 @@ const isEs = ORG.countryCode === 'ES';
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
+import { iconInner } from '../../../lib/icons';
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
@@ -25,7 +26,7 @@ const FM = ORG.fiscalMetadata || {};
             : `Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`)} save>
     {!isMx && (
         <div class="fiscal-capability">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert-circle')}></svg>
             <div>
                 <strong>{L === 'en' ? 'Commercial invoices are active for your country.' : 'Las facturas comerciales ya están activas para tu país.'}</strong>
                 <p>{L === 'en'

@@ -24,6 +24,7 @@ const canEdit = memberCan(ME, 'productos');
 const m = p.metricas;
 const fmtDate = (iso: string | null) => iso ? new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) : '—';
 const metaBits = [p.sku, p.unidad].filter(Boolean);
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${p.nombre} — Cord`} page="productos" heading={p.nombre} crumbs={[{ label: tf('pdet.volver').replace('← ', ''), href: '/app/productos' }]}>
@@ -43,7 +44,7 @@ const metaBits = [p.sku, p.unidad].filter(Boolean);
             <section class="d-head">
                 <div class="dh-client">
                     <div class:list={['dh-avatar-p', { off: !p.activo }]}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.14"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('products')}></svg>
                     </div>
                     <div class="dh-info">
                         <div class="dh-badges">
@@ -133,7 +134,7 @@ const metaBits = [p.sku, p.unidad].filter(Boolean);
                                     <span class="status-pill" style={`color:${meta.color};background:${meta.bg}`}>{meta.label}</span>
                                     <span class="editorial dp-qtotal">{money(q.importe)}</span>
                                     <span class="dp-qdate">{fmtDate(q.creada)}</span>
-                                    <svg class="dp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                    <svg class="dp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             );
                         })}

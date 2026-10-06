@@ -28,6 +28,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cdet.nivel_estanda
 const m = c.metricas;
 const waHref = c.telefono ? `https://wa.me/${c.telefono.replace(/\D/g, '')}` : null;
 const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${c.empresa} — Cord`} page="clientes" heading={c.empresa} crumbs={[{ label: tf('cdet.volver').replace('← ', ''), href: '/app/clientes' }]}>
@@ -144,7 +145,7 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
                                 </span>
                                 <span class="editorial dc-qtotal">{money(d.saldo)}</span>
                                 <span class="dc-qdate">{d.vence ? `${t(L, 'cdet.ec_vence')} ${d.vence}` : '—'}</span>
-                                <svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                <svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                             </a>
                         ))}
                     </div>
@@ -165,7 +166,7 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
                                     <span class="status-pill" style={`color:${meta.color};background:${meta.bg}`}>{meta.label}</span>
                                     <span class="editorial dc-qtotal">{money(q.total)}</span>
                                     <span class="dc-qdate">{new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(q.creada))}</span>
-                                    <svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                    <svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             );
                         })}

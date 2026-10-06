@@ -51,6 +51,7 @@ const RECORDATORIOS = [
     { tipo: 'reminder', h: en ? 'Reminder sent' : 'Recordatorio enviado', d: en ? 'Due-date notice (7 days before)' : 'Aviso de vencimiento (7 días antes)', w: en ? 'Sep 2, 09:00' : '2 sept, 09:00' },
     { tipo: 'issued', h: en ? 'Issued' : 'Emitida', d: en ? 'Issued by recurrence' : 'Emitida por recurrencia', w: en ? 'Sep 1, 06:00' : '1 sept, 06:00' },
 ];
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="cis" id="cord-invoicing">
@@ -63,7 +64,7 @@ const RECORDATORIOS = [
                     <p class="cis-sub reveal">{t("inv.sub")}</p>
                     <a href={l("/producto/facturacion")} class="cis-cta reveal">
                         {t("inv.cta")}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                     </a>
                 </div>
             </div>
@@ -111,7 +112,7 @@ const RECORDATORIOS = [
                                 <small>{en ? 'Email includes the PDF and payment link.' : 'El correo incluye el PDF y la liga de pago.'}</small>
                             </div>
                             <span class="cis-sum-send">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
                                 {en ? 'Issue and send' : 'Emitir y enviar'}
                             </span>
                             <span class="cis-sum-note">{en
@@ -149,15 +150,15 @@ const RECORDATORIOS = [
                             </div>
                             <div class="cis-fd-util">
                                 <span class="cis-fd-u">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="currentColor" fill-opacity="0.12"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('external')}></svg>
                                     <span>{en ? 'Open link' : 'Abrir link'}</span>
                                 </span>
                                 <span class="cis-fd-u">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg>
                                     <span>{en ? 'Copy' : 'Copiar'}</span>
                                 </span>
                                 <span class="cis-fd-u">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="currentColor" fill-opacity="0.12"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
                                     <span>{en ? 'Download PDF' : 'Descargar PDF'}</span>
                                 </span>
                                 <span class="cis-fd-u cis-fd-u-wa">

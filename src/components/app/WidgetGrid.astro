@@ -107,6 +107,7 @@ const {
 </script>
 
 <script>
+    import { iconSvg } from '../../lib/icons';
     import { optionalWidgetHidden } from '../../lib/widget-defaults';
     type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'>; rev?: number; at?: number };
 
@@ -239,7 +240,7 @@ const {
             {
                 const search = document.createElement('label');
                 search.className = 'wx-lib-search';
-                search.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+                search.innerHTML = '' + iconSvg('search') + '';
                 const input = document.createElement('input');
                 input.type = 'search'; input.autocomplete = 'off';
                 input.placeholder = host.dataset.librarySearchPh || '';

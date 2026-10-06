@@ -10,6 +10,7 @@ const platformEmailEnabled = Boolean(import.meta.env.RESEND_API_KEY || process.e
 const custom = planIncludes((await getEntitlementContext(org.id)).effectivePlan,'custom_email');
 const en = currentLocale() === 'en';
 const say = (es:string, english:string) => en ? english : es;
+import { iconInner } from '../../../lib/icons';
 ---
 <SettingsShell title={say('Correo — Ajustes','Email — Settings')} tab="correo" perm="ajustes" save={custom}>
 <div class="brand-editor" id="emailEditor">
@@ -20,7 +21,7 @@ const say = (es:string, english:string) => en ? english : es;
             {!platformEmailEnabled && <p class="be-help" role="status">{say('El envío desde Cord no está habilitado en este entorno. Puedes seguir editando la vista previa; si conectaste Gmail, los envíos compatibles usan esa cuenta.','Sending from Cord is not enabled in this environment. You can still edit the preview; if Gmail is connected, supported messages use that account.')}</p>}
             {!custom && <p class="be-help">{say('Tu identidad ya se aplica a los correos. Para personalizar remitente, introducción y firma,','Your identity already applies to emails. To customize sender, introduction and signature,')} <a href="/app/ajustes/plan">{say('consulta tu plan.','review your plan.')}</a></p>}
             <section class="be-section">
-                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3z M3 5l9 8 9-8"/></svg>{say('Remitente','Sender')}</h3>
+                <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('mail')}></svg>{say('Remitente','Sender')}</h3>
                 <label class="be-label" for="emailName">{say('Nombre visible','Display name')}</label>
                 <input class="s-input" id="emailName" data-field={custom?'email_from_name':undefined} value={org.emailFromName} placeholder={org.nombre} disabled={!custom} maxlength="80"/>
                 <label class="be-label" for="emailReply">{say('Dirección de respuesta','Reply-to address')}</label>
@@ -28,7 +29,7 @@ const say = (es:string, english:string) => en ? english : es;
                 <p class="be-help">{say('Las respuestas llegan a esta dirección. Esto no cambia el dominio de envío.','Replies go to this address. This does not change the sending domain.')}</p>
             </section>
             <section class="be-section">
-                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4z M8 8h8 M8 12h5"/></svg>{say('Mensaje y firma','Message and signature')}</h3>
+                <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>{say('Mensaje y firma','Message and signature')}</h3>
                 <label class="be-label" for="emailIntro">{say('Introducción','Introduction')}</label>
                 <textarea class="s-input" id="emailIntro" data-field={custom?'email_intro':undefined} disabled={!custom} maxlength="500" rows="4">{org.emailIntro}</textarea>
                 <label class="be-label" for="emailSignature">{say('Firma','Signature')}</label>

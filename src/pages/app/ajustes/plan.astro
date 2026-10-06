@@ -46,6 +46,7 @@ const STATUS_LABEL: Record<string, string> = {
     past_due: t(L, 'set.plan.status.past_due'), canceled: t(L, 'set.plan.status.canceled'),
 };
 const planActual = PLANES.find((p) => p.id === planRaw);
+import { iconInner } from '../../../lib/icons';
 ---
 
 <SettingsShell title={t(L, 'ajustes.titulo_plan')} tab="plan" perm="ajustes"
@@ -53,7 +54,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 
     {isTestEnv && (
         <div class="plan-test-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bolt')}></svg>
             <span>{t(L, 'set.plan.test_note')}</span>
         </div>
     )}
@@ -125,9 +126,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                             <ul class="pcard-feats">
                                 {p.feats.map((f) => (
                                     <li>
-                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                         <span>{f}</span>
                                     </li>
                                 ))}

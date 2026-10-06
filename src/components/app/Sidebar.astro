@@ -7,6 +7,7 @@ import { getSidebarBadges, getOrg, getUserProfile } from '../../lib/queries';
 import CustomOrgSwitcher from './CustomOrgSwitcher';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { iconInner } from '../../lib/icons';
 
 // Contadores en vivo de la sidebar (estilo Linear): seguimiento + cartera vencida.
 const badges = await getSidebarBadges();
@@ -30,27 +31,27 @@ const NAV_GROUPS = [
     {
         label: null,
         items: [
-            { id: 'dashboard',    href: '/app',              label: t(L, 'sidebar.item.inicio'),       icon: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>' },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: t(L, 'sidebar.item.cotizaciones'), icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>', badge: badges.seguimiento, tone: 'neutral' },
-            { id: 'clientes',  href: '/app/clientes',  label: t(L, 'sidebar.item.clientes'),  icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>' },
-            { id: 'productos', href: '/app/productos', label: t(L, 'sidebar.item.productos'), icon: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>' },
+            { id: 'dashboard',    href: '/app',              label: t(L, 'sidebar.item.inicio'),       icon: iconInner('overview') },
+            { id: 'cotizaciones', href: '/app/cotizaciones', label: t(L, 'sidebar.item.cotizaciones'), icon: iconInner('quote'), badge: badges.seguimiento, tone: 'neutral' },
+            { id: 'clientes',  href: '/app/clientes',  label: t(L, 'sidebar.item.clientes'),  icon: iconInner('clients') },
+            { id: 'productos', href: '/app/productos', label: t(L, 'sidebar.item.productos'), icon: iconInner('products') },
         ],
     },
     {
         label: t(L, 'sidebar.grupo.dinero'),
         items: [
-            { id: 'facturas', href: '/app/facturas',           label: t(L, 'sidebar.item.facturas'),       icon: '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7" stroke-opacity="0.5"/><path d="M9 13h6" stroke-opacity="0.55"/><path d="M9 17h4" stroke-opacity="0.55"/>' },
-            { id: 'cobros',   href: '/app/cobros',             label: t(L, 'sidebar.item.cobros'),         icon: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
-            { id: 'cobranza', href: '/app/cobranza',           label: t(L, 'sidebar.item.cobranza'),       icon: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>', badge: badges.vencidas, tone: 'danger' },
-            { id: 'ai-ar',    href: '/app/cobranza/agente', label: t(L, 'sidebar.item.cobranza_ia'), icon: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/>' },
+            { id: 'facturas', href: '/app/facturas',           label: t(L, 'sidebar.item.facturas'),       icon: iconInner('invoice') },
+            { id: 'cobros',   href: '/app/cobros',             label: t(L, 'sidebar.item.cobros'),         icon: iconInner('coin') },
+            { id: 'cobranza', href: '/app/cobranza',           label: t(L, 'sidebar.item.cobranza'),       icon: iconInner('tray'), badge: badges.vencidas, tone: 'danger' },
+            { id: 'ai-ar',    href: '/app/cobranza/agente', label: t(L, 'sidebar.item.cobranza_ia'), icon: iconInner('cpu') },
         ],
     },
     {
         label: t(L, 'sidebar.grupo.inteligencia'),
         items: [
-            { id: 'informes', href: '/app/informes', label: t(L, 'sidebar.item.analitica'), icon: '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 16l3-3 2.5 2.5L17 10"/><path d="M15 10h2v2" stroke-opacity="0.55"/><path d="M7 7h5" stroke-opacity="0.45"/>' },
-            { id: 'desempeno', href: '/app/desempeno', label: t(L, 'sidebar.item.equipo'),    icon: '<circle cx="9" cy="8" r="3.4" fill="currentColor" fill-opacity="0.15"/><path d="M2.8 20.2a6.2 6.2 0 0 1 12.4 0" stroke-opacity="0.8"/><circle cx="17.2" cy="9.4" r="2.4" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.75"/><path d="M16 14.1a5 5 0 0 1 5.2 4.8" stroke-opacity="0.55"/>' },
-            { id: 'workflows', href: '/app/workflows', label: t(L, 'sidebar.item.workflows'), icon: '<rect x="8.25" y="2.5" width="7.5" height="6" rx="2.2" fill="currentColor" fill-opacity="0.15"/><path d="M12 8.5v3.2M5.4 15.5v-1.6a2.2 2.2 0 0 1 2.2-2.2h8.8a2.2 2.2 0 0 1 2.2 2.2v1.6" stroke-opacity="0.7"/><rect x="2.5" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/><rect x="15.7" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/>' },
+            { id: 'informes', href: '/app/informes', label: t(L, 'sidebar.item.analitica'), icon: iconInner('chart') },
+            { id: 'desempeno', href: '/app/desempeno', label: t(L, 'sidebar.item.equipo'),    icon: iconInner('pulse') },
+            { id: 'workflows', href: '/app/workflows', label: t(L, 'sidebar.item.workflows'), icon: iconInner('workflow') },
         ],
     },
 ];
@@ -69,11 +70,11 @@ const NAV_GROUPS = [
     <div class="sb-mobile-actions">
 
         <button class="sb-action-row" id="sbHelp" type="button" data-id="ayuda">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('help')}></svg>
             <span>{t(L, 'sidebar.ayuda')}</span>
         </button>
         <a href="/app/ajustes" class="sb-action-row" data-id="config">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
             <span>{t(L, 'sidebar.configuracion')}</span>
         </a>
     </div>
@@ -86,7 +87,7 @@ const NAV_GROUPS = [
                 {group.label && (
                     <button type="button" class="sb-group-label" aria-expanded="true">
                         <span>{group.label}</span>
-                        <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                     </button>
                 )}
                 <div class="sb-group-content">
@@ -118,10 +119,7 @@ const NAV_GROUPS = [
         <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
         <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
         <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label={t(L, 'sidebar.alternar_menu')}>
-            <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="5" width="16" height="14" rx="2.5"></rect>
-                <rect class="sb-toggle-fill" x="4" y="5" width="7" height="14" rx="2.5" fill="currentColor" stroke="none"></rect>
-            </svg>
+            <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
         </button>
     </div>
 </aside>
@@ -565,6 +563,7 @@ const NAV_GROUPS = [
 </style>
 
 <script>
+    import { iconInner, iconSvg } from '../../lib/icons';
     import { LEGACY_ROUTES } from '../../lib/informes';
     import { gsap } from 'gsap';
 
@@ -664,7 +663,7 @@ const NAV_GROUPS = [
     // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
     function initPins() {
         const PIN_KEY = 'cord.pins.v1';
-        const PIN_ICON = '<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.68V6a3 3 0 1 0-6 0v4.68a2 2 0 0 1-1.11 1.86l-1.78.89A2 2 0 0 0 5 15.24Z"/>';
+        const PIN_ICON = iconInner('pin');
         const mount = document.getElementById('sbPins');
         const pinBtn = document.getElementById('phPin');
         const eA = (s: string) => String(s).replace(/"/g, '&quot;');
@@ -693,7 +692,7 @@ const NAV_GROUPS = [
             let html = `<span class="sb-group-label">${eH(pinsLabel)}</span>`;
             pins.forEach((p, idx) => {
                 const active = hrefKey(p.href) === currentHref() ? ' active' : '';
-                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}">" + iconSvg('x', '', 2.2) + "</button></div>`;
             });
             mount.innerHTML = html;
             

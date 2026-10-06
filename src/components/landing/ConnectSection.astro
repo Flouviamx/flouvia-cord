@@ -6,6 +6,7 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const l = (p: string) => publicPath(p, lang);
 const en = lang === 'en';
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="cnx" id="integraciones">
@@ -18,21 +19,21 @@ const en = lang === 'en';
                 <div class="cnx-ctas reveal">
                     <a href={l("/producto/workflows")} class="cnx-cta cnx-cta-primary">
                         {t("cnx.cta.wf")}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                     </a>
                     <a href={l("/integraciones")} class="cnx-cta">
                         {t("cnx.cta.all")}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                     </a>
                 </div>
             </div>
         </div>
         <div class="cnx-nav reveal">
             <button type="button" class="cnx-arrow" data-cnx-dir="-1" aria-label={en ? 'Previous integrations' : 'Integraciones anteriores'} disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 6 5 12 11 18"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
             </button>
             <button type="button" class="cnx-arrow" data-cnx-dir="1" aria-label={en ? 'Next integrations' : 'Siguientes integraciones'}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
             </button>
         </div>
     </div>

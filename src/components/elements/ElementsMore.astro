@@ -145,6 +145,7 @@ const REG_MORAL = [
 ];
 
 const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="emo" data-emo data-rest={bRest} data-sent={tx('Enviada', 'Sent')} data-choose={tx('Elige…', 'Choose…')} id={id} aria-labelledby={`${uid}-title`}>
@@ -152,10 +153,10 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
         <h2 class="emo-h2 masked-title" id={`${uid}-title`}>{tx('Conoce más de Elements.', 'More from Elements.')}</h2>
         <div class="emo-nav">
             <button type="button" class="emo-arrow" data-emo-dir="-1" aria-label={tx('Anterior', 'Previous')} aria-controls={`${uid}-track`} disabled>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 6 5 12 11 18"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
             </button>
             <button type="button" class="emo-arrow" data-emo-dir="1" aria-label={tx('Siguiente', 'Next')} aria-controls={`${uid}-track`}>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
             </button>
         </div>
     </div>
@@ -185,11 +186,11 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                             <div class="bd-sel">
                                                 <i class="bd-ini">DZ</i>
                                                 <span><b>Distribuidora El Zarco</b><small>Raúl Mendoza</small></span>
-                                                <svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                                             </div>
                                         </div>
                                         <div class="bd-ai">
-                                            <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 3.5V6M14.5 3.5V6M9.5 18v2.5M14.5 18v2.5M3.5 9.5H6M3.5 14.5H6M18 9.5h2.5M18 14.5h2.5"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
                                             <span>{tx('2 partidas agregadas. Revísalas antes de crear la cotización.', '2 lines added. Review them before creating the quote.')}</span>
                                         </div>
                                         <div class="bd-th"><span>{tx('Partidas', 'Line items')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Importe', 'Amount')}</span></div>
@@ -216,9 +217,9 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     </div>
                                 </div>
                                 <div class="bd-toast" data-k="toast">
-                                    <span class="bd-ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg></span>
+                                    <span class="bd-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg></span>
                                     <span class="bd-tt"><b>{tx('COT-0053 creada · link listo', 'COT-0053 created · link ready')}</b><small>cordhq.app/q/r8Vn3kTz</small></span>
-                                    <span class="bd-copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>{tx('Copiar', 'Copy')}</span>
+                                    <span class="bd-copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg>{tx('Copiar', 'Copy')}</span>
                                 </div>
                             </>
                         )}
@@ -260,7 +261,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                         <div class="iv-pay" data-k="pay">
                                             <span class="iv-btn">
                                                 {tx('Pagar', 'Pay')} {money(invDue)}
-                                                <svg viewBox="0 0 24 24"><path d="M14 4.5h5.5V10" /><path d="M19.5 4.5 11 13" /><path d="M17.5 13.5v4a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h4" /></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('external')}></svg>
                                             </span>
                                             <small>{tx('El pago se abre en una ventana segura de Cord.', 'Payment opens in a secure Cord window.')}</small>
                                         </div>
@@ -268,7 +269,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                     </div>
                                 </div>
                                 <div class="bd-toast iv-toast" data-k="toast">
-                                    <span class="bd-ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg></span>
+                                    <span class="bd-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg></span>
                                     <span class="bd-tt"><b><i class="iv-evn">paid</i> FAC-0412 · {tx('saldo', 'balance')} $0.00</b><small>invoice.addEventListener('paid', …)</small></span>
                                 </div>
                             </>
@@ -295,10 +296,10 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                         </div>
                                         <div class="fx-f fx-f-sel">
                                             <span class="fx-l">{tx('Régimen fiscal', 'Tax regime')}</span>
-                                            <span class="fx-in fx-sel fx-focus" data-k="reg"><span data-k="regv">601 — General de Ley Personas Morales</span><svg viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/></svg></span>
+                                            <span class="fx-in fx-sel fx-focus" data-k="reg"><span data-k="regv">601 — General de Ley Personas Morales</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
                                             <div class="fx-menu" data-k="menu">
                                                 {REG_MORAL.map((r, i) => (
-                                                    <span class:list={['fx-opt', { on: i === 0 }]}><b>{r.c}</b> — {r.n}{i === 0 && <svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9"/></svg>}</span>
+                                                    <span class:list={['fx-opt', { on: i === 0 }]}><b>{r.c}</b> — {r.n}{i === 0 && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -391,7 +392,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                         {c.id === 'debug' && (
                             <>
                                 <div class="dg-host">
-                                    <div class="dg-url"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>staging.materialesdelvalle.mx/cotizar<em>pk_test_</em></div>
+                                    <div class="dg-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>staging.materialesdelvalle.mx/cotizar<em>pk_test_</em></div>
                                     <div class="dg-page">
                                         <p class="dg-h">{tx('Solicita tu cotización', 'Request your quote')}</p>
                                         <div class="dg-q">
@@ -428,7 +429,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                         <span class="bd-logo">MV</span>
                                         <b>Materiales del Valle</b>
                                         <span class="ct-links"><span class="on">{tx('Obra negra', 'Structural')}</span><span>{tx('Acabados', 'Finishes')}</span></span>
-                                        <span class="ct-cart"><svg viewBox="0 0 24 24"><path d="M4 5h2l2 10h10l2-7H7.2" /><circle cx="9.5" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg>{tx('Cotizar', 'Quote')} <em>3</em></span>
+                                        <span class="ct-cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cart')}></svg>{tx('Cotizar', 'Quote')} <em>3</em></span>
                                     </div>
                                     <div class="ct-title"><h4>{tx('Obra negra', 'Structural')}</h4><span>{tx('24 productos · precios en MXN', '24 products · prices in MXN')}</span></div>
                                     <div class="ct-grid">
@@ -456,7 +457,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
   "sku": "CEM-50",
   "precio": 182,
   "unidad": "${tx('bulto', 'bag')}" }`}</pre>
-                                    <p class="ct-badge" data-k="badge"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>{tx('costo y margen ocultos con pk_', 'cost and margin hidden with pk_')}</p>
+                                    <p class="ct-badge" data-k="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>{tx('costo y margen ocultos con pk_', 'cost and margin hidden with pk_')}</p>
                                 </div>
                             </>
                         )}
@@ -483,7 +484,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                 </div>
                                 <div class="er-ui">
                                     <div class="er-toast" data-k="toast">
-                                        <span class="er-ic"><svg viewBox="0 0 24 24"><path d="M12 3.5L21.5 20h-19z"/><path d="M12 10v4.5M12 17.3v.2"/></svg></span>
+                                        <span class="er-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg></span>
                                         <span class="er-tt"><b data-k="tt">{ERR_CASES[ERR_ON].m}</b><small data-k="tm">{`${ERR_CASES[ERR_ON].st} · ${ERR_CASES[ERR_ON].c} · ${ERR_CASES[ERR_ON].r}`}</small></span>
                                     </div>
                                     <div class="er-form">
@@ -522,7 +523,7 @@ const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=
                                             <div class="ph-tot"><span>Total <em>{tx('IVA incluido', 'IVA included')}</em></span><b class="emo-num">$196,469.20 <small>MXN</small></b></div>
                                             <div class="ph-btn done" data-k="appr">
                                                 <span class="ph-idle">{tx('Aprobar y firmar', 'Approve and sign')}</span>
-                                                <span class="ph-done"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.2 9.5"/></svg>{tx('Firmada por Raúl Mendoza', 'Signed by Raúl Mendoza')}</span>
+                                                <span class="ph-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>{tx('Firmada por Raúl Mendoza', 'Signed by Raúl Mendoza')}</span>
                                             </div>
                                         </div>
                                     </div>

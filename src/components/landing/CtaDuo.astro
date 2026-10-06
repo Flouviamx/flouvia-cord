@@ -13,6 +13,7 @@ const CTA_PALS = [
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const l = (p: string) => publicPath(p, lang);
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="cta-duo">
@@ -23,7 +24,7 @@ const l = (p: string) => publicPath(p, lang);
                     <p class="cta-card-p">{t('duo.1.p')}</p>
                     <span class="cta-card-link">
                         {t('duo.1.link')}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                     </span>
                 </div>
                 <div class="cta-card-visual">
@@ -37,7 +38,7 @@ const l = (p: string) => publicPath(p, lang);
                     <p class="cta-card-p">{t('duo.2.p')}</p>
                     <span class="cta-card-link">
                         {t('duo.2.link')}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                     </span>
                 </div>
                 <div class="cta-card-visual">

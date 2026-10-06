@@ -170,6 +170,7 @@ const ADAPTS = [
     tx('Español o inglés, según tu cuenta', 'Spanish or English, per your account'),
     tx('CFDI 4.0 al facturar en México', 'CFDI 4.0 when invoicing in Mexico'),
 ];
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="ecx" data-ecx>
@@ -179,7 +180,7 @@ const ADAPTS = [
         <ul class="ecx-list">
             {ADAPTS.map((a) => (
                 <li class="reveal">
-                    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.6" /><path d="M6.4 10.3l2.5 2.5 4.8-5.2" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                     <span>{a}</span>
                 </li>
             ))}
@@ -272,13 +273,13 @@ const ADAPTS = [
                                         <span class:list={['ecx-m', { on: k === c.sel }]}>
                                             <span class="ecx-m-ico" aria-hidden="true">
                                                 {m.kind === 'card' && (
-                                                    <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.6" class="f" /><path d="M2.5 9.6h19M6.5 15h3.5" /></svg>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                                                 )}
                                                 {m.kind === 'bank' && (
-                                                    <svg viewBox="0 0 24 24"><path d="M3.5 9.2L12 4.5l8.5 4.7z" class="f" /><path d="M3.5 9.2L12 4.5l8.5 4.7M5.5 10.5v6M10 10.5v6M14 10.5v6M18.5 10.5v6M3.5 19.5h17" /></svg>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bank')}></svg>
                                                 )}
                                                 {m.kind === 'wallet' && (
-                                                    <svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 016.5 5H18v3" /><rect x="4" y="7.5" width="16.5" height="12" rx="2.4" class="f" /><path d="M20.5 11.5h-3.6a1.9 1.9 0 000 3.8h3.6" /></svg>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('wallet')}></svg>
                                                 )}
                                             </span>
                                             <span class="ecx-m-t"><b>{m.label}</b><small>{m.sub}</small></span>
@@ -292,7 +293,7 @@ const ADAPTS = [
                                         <div class="ecx-field ecx-field-full">
                                             <small>{c.detail.numberPh}</small>
                                             <span class="ecx-num">{c.detail.number}</span>
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" class="f" /><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" /></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                         </div>
                                         <div class="ecx-field"><small>{c.detail.expPh}</small><span class="ecx-num">{c.detail.exp}</span></div>
                                         <div class="ecx-field"><small>CVC</small><span class="ecx-num">{c.detail.cvc}</span></div>
@@ -308,13 +309,13 @@ const ADAPTS = [
                                 )}
                                 {c.detail.kind === 'wallet' && (
                                     <div class="ecx-wallet" data-r>
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 4.5h6v6" /><path d="M19.5 4.5L11 13" /><path d="M17.5 13.5v4a2 2 0 01-2 2h-9a2 2 0 01-2-2v-9a2 2 0 012-2h4" class="f" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('external')}></svg>
                                         <p>{c.detail.note}</p>
                                     </div>
                                 )}
 
                                 <span class="ecx-pay" data-r>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2" class="f" /><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                     <span class="ecx-roll"><span>{c.pay}</span></span>
                                 </span>
                             </div>
@@ -324,7 +325,7 @@ const ADAPTS = [
                             <span>{c.validLabel} <b class="ecx-num">{c.valid}</b></span>
                             {c.cfdi && (
                                 <span class="ecx-cfdi">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7.5l4.5 4.5v12.5h-12z" class="f" /><path d="M14 3.5V8h4.5M9.2 14.2l2 2 3.8-4" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('file-check')}></svg>
                                     {c.cfdi}
                                 </span>
                             )}

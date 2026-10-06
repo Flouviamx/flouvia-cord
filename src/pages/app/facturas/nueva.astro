@@ -184,6 +184,7 @@ const BOOT = {
         conceptos: L === 'en' ? 'concepts' : 'conceptos',
     },
 };
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout
@@ -231,15 +232,15 @@ const BOOT = {
                             placeholder={L === 'en' ? '40 industrial valves, 25 flanged couplings…' : '40 válvulas industriales, 25 acoples bridados…'}></textarea>
                         <button type="button" class="ai-attach-btn" id="aiAttachBtn"
                             aria-label={L === 'en' ? 'Attach file' : 'Adjuntar archivo'}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('paperclip')}></svg>
                         </button>
                         <input type="file" id="aiFile" hidden accept="application/pdf,image/jpeg,image/png,image/webp" />
                     </div>
                     <div class="ai-file-chip" id="aiFileChip" hidden>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                         <span id="aiFileName"></span>
                         <button type="button" id="aiFileClear" aria-label={L === 'en' ? 'Remove' : 'Quitar'}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
                         </button>
                     </div>
                     <div class="ai-actions">
@@ -309,14 +310,14 @@ const BOOT = {
                     <div id="lines"></div>
 
                     <div class="lines-empty" id="linesEmpty">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                         <b>{L === 'en' ? 'No concepts yet' : 'Todavía no hay conceptos'}</b>
                         <span>{L === 'en' ? 'Search your catalog below or add a free line.' : 'Busca en tu catálogo abajo o agrega una línea libre.'}</span>
                     </div>
 
                     <div class="add-actions">
                         <div class="prod-search">
-                            <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                             <input type="text" id="prodInput" class="prod-input" autocomplete="off"
                                 role="combobox" aria-expanded="false" aria-controls="prodDrop" aria-autocomplete="list"
                                 placeholder={L === 'en' ? 'Search your catalog…' : 'Busca en tu catálogo…'} />
@@ -440,7 +441,7 @@ const BOOT = {
                         <input type="hidden" id="fxBuffer" value="2" />
                         <p class="fx-client-sees" id="fxPreview"></p>
                         <div class="fx-lock-row">
-                            <svg class="fx-lock-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                            <svg class="fx-lock-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                             <span>{L === 'en' ? 'The rate is stated on the invoice.' : 'La tasa queda declarada en la factura.'}</span>
                         </div>
                     </div>
@@ -452,7 +453,7 @@ const BOOT = {
                     </div>
 
                     <button type="button" class="btn-send" id="btnIssue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
                         <span>{L === 'en' ? 'Issue and send' : 'Emitir y enviar'}</span>
                     </button>
                     <div class="issue-secondary-actions">
@@ -507,6 +508,7 @@ const BOOT = {
 </AppLayout>
 
 <script>
+    import { iconSvg } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
 
@@ -596,7 +598,7 @@ const BOOT = {
                     ${taxSelect(l, i)}
                     <span class="lr-importe">${fmt(precioFinal(l) * l.cantidad)}</span>
                     <button type="button" class="lr-del" data-i="${i}" aria-label="Quitar">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        ${iconSvg('x', '', 1.5, 15)}
                     </button>
                 </div>`;
             }).join('');

@@ -66,6 +66,7 @@ const qr = (() => {
   return `<svg viewBox="0 0 ${N} ${N}" shape-rendering="crispEdges" fill="currentColor">${o}</svg>`;
 })();
 const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+import { iconInner } from '../../lib/icons';
 ---
 <div class={wrapClass} data-loc={CALCA ? LOC : undefined}>
   <div class="bm-mesh" aria-hidden="true"></div>
@@ -80,7 +81,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-w-draft">{tx('Borrador', 'Draft')}</span>
         </div>
         <div class="bm-ed-client">
-          <span class="bm-field bm-ed-select"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <span class="bm-field bm-ed-select"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span>
           <span class="bm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span>
         </div>
         <div class="bm-ed-lines">
@@ -119,7 +120,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           </div>
         </div>
         <div class="bm-ed-add">
-          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
+          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
           <span class="bm-ed-free">{tx('+ Línea libre', '+ Free line')}</span>
         </div>
       </div>
@@ -132,8 +133,8 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         <div class="bm-w-bar">
           <span class="bm-tabs"><span class="on">{tx('Catálogo', 'Catalog')}</span><span>Kits</span></span>
           <span class="bm-cat-act">
-            <span class="bm-cat-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="bm-cat-q" data-q></span><span class="bm-caret"></span><span class="bm-cat-ph" data-ph>{tx('Buscar productos…', 'Search products…')}</span></span>
-            <span class="bm-btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>{tx('Importar CSV', 'Import CSV')}</span>
+            <span class="bm-cat-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span class="bm-cat-q" data-q></span><span class="bm-caret"></span><span class="bm-cat-ph" data-ph>{tx('Buscar productos…', 'Search products…')}</span></span>
+            <span class="bm-btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('upload')}></svg>{tx('Importar CSV', 'Import CSV')}</span>
             <span class="bm-btn-navy">{tx('+ Nuevo producto', '+ New product')}</span>
           </span>
         </div>
@@ -183,7 +184,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-ed-row"><span class="bm-ed-name">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="bm-in bm-ed-q">180</span><span class="bm-ed-list">{mx(312)}</span><span class="bm-in bm-ed-nego">312.00</span><span class="editorial bm-ed-amt">{mx(56160)}</span></div>
         </div>
         <div class="bm-ed-add">
-          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span>{tx('Busca un producto de tu catálogo…', 'Search a product in your catalog…')}</span></span>
+          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span>{tx('Busca un producto de tu catálogo…', 'Search a product in your catalog…')}</span></span>
           <span class="bm-ed-free">{tx('+ Línea libre', '+ Free line')}</span>
         </div>
         <div class="bm-ed-notes"><span class="h">{tx('Notas para el cliente', 'Notes for the client')} <em>{tx('(opcional)', '(optional)')}</em></span><span class="bm-field">{tx('Precio especial por volumen — entrega en obra incluida.', 'Special bulk price — on-site delivery included.')}</span></div>
@@ -197,9 +198,9 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         <div class="bm-sum-l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(27099.2)}</span></div>
         <div class="bm-sum-div"></div>
         <div class="bm-sum-l total"><span>Total</span><span class="editorial" data-tot>{mx(196469.2)}</span></div>
-        <div class="bm-sum-f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="bm-field">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
-        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
-        <span class="bm-sum-send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <div class="bm-sum-f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="bm-field">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></div>
+        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></div>
+        <span class="bm-sum-send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
       </div>
     </div>
   )}
@@ -226,11 +227,11 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
                 </div>
                 <div class="bm-qc-rule"></div>
                 <div class="bm-qc-sign" data-form>
-                  <div class="bm-qc-sh"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span><span>{tx('Firma digital', 'Digital signature')}</span></div>
+                  <div class="bm-qc-sh"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg></span><span>{tx('Firma digital', 'Digital signature')}</span></div>
                   <div class="bm-qc-pill">{tx('Aprobando', 'Approving')} <strong>COT-0148</strong> {tx('por', 'for')} <strong class="acc">{mx(196469.2)} MXN</strong></div>
                   <div class="bm-qc-f"><span class="lb">{tx('Nombre completo del firmante', "Signer's full name")}</span><span class="in"><span data-name>Raúl Mendoza</span><span class="bm-caret"></span><span class="ph" data-nph>{tx('Ej. María García López', 'E.g. Jane Smith')}</span></span></div>
                   <div class="bm-qc-ck"><span class="bx" data-check set:html={chk}></span><span>{tx('He revisado esta cotización y acepto los términos y condiciones indicados', 'I have reviewed this quote and accept the stated terms and conditions')}</span></div>
-                  <span class="bm-qc-cta" data-cta>{tx('Confirmar y firmar', 'Confirm and sign')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                  <span class="bm-qc-cta" data-cta>{tx('Confirmar y firmar', 'Confirm and sign')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
                 </div>
                 <div class="bm-qc-done" data-done aria-hidden="true">
                   <span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -249,7 +250,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="lp1">
       <div class="bm-app bm-w">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Portal del cliente', 'Client portal')}</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Portal del cliente', 'Client portal')}</strong></span>
         </div>
         <div class="bm-set-tabs"><span>Branding</span><span class="on">{tx('Portal del cliente', 'Client portal')}</span><span>{tx('Dominio propio', 'Custom domain')}</span></div>
         <div class="bm-pt">
@@ -477,8 +478,8 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-app-title">Ajustes · Sello Digital (CSD)</span>
           <span class="bm-app-badge bm-badge-green">Conectado</span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/></svg></span><div class="bm-uid-tx"><b>certificado.cer</b><span>válido hasta 2028</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><div class="bm-uid-tx"><b>llave.key</b><span>cifrada y aislada</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg></span><div class="bm-uid-tx"><b>certificado.cer</b><span>válido hasta 2028</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg></span><div class="bm-uid-tx"><b>llave.key</b><span>cifrada y aislada</span></div></div><span class="bm-tg bm-tg-green">OK</span></div>
         <div class="bm-kv"><span>PAC autorizado (SAT)</span><span class="bm-tg bm-tg-green">Timbrando</span></div>
         <div class="bm-kv"><span>País</span><span class="bm-tg bm-tg-blue">México</span></div>
         <div class="bm-app-foot"><span>Se conecta una vez y listo</span><b>RFC MVA240611AB3</b></div>
@@ -494,9 +495,9 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-app-badge bm-badge-green">Facturada</span>
         </div>
         <div class="bm-steps">
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Cotización aprobada</b><span>$196,469.20 · 12:36</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Pago recibido</b><span>Stripe · 12:41</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>CFDI timbrado</b><span>UUID a1b2c3d4… · 12:42</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span><div class="bm-step-tx"><b>Cotización aprobada</b><span>$196,469.20 · 12:36</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span><div class="bm-step-tx"><b>Pago recibido</b><span>Stripe · 12:41</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span><div class="bm-step-tx"><b>CFDI timbrado</b><span>UUID a1b2c3d4… · 12:42</span></div></div>
         </div>
         <div style="display:flex;gap:8px;padding:2px 12px 14px;">
           <div class="bm-btn2 bm-btn2-ghost" style="flex:1;margin:0;">Ver PDF</div>
@@ -510,7 +511,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
   {slug === 'clientes-credito' && index === 0 && (
     <div class="bm-stage" data-bmx="cc0">
       <div class="bm-app bm-w bm-cm">
-        <div class="bm-cm-head"><strong>{tx('Editar cliente', 'Edit client')}</strong><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div>
+        <div class="bm-cm-head"><strong>{tx('Editar cliente', 'Edit client')}</strong><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></span></div>
         <div class="bm-cm-body">
           <span class="bm-cm-f"><span class="lb">{tx('Empresa *', 'Company *')}</span><span class="bm-field"><span>Obras Levante S.L.</span></span></span>
           <span class="bm-cm-2">
@@ -609,7 +610,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
                   <span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                   <span class="tt">{tx('Cotización aprobada', 'Quote approved')}</span>
                   <div class="bm-cc2-note">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar-check')}></svg>
                     <span><strong>{tx('Pedido confirmado con crédito Net 30', 'Order confirmed with Net 30 credit')}</strong><span>{tx(`El pago de MXN ${nf(268900)} vence el 24 oct 2026. Cuando llegue la fecha podrás pagar en línea desde este mismo link.`, `The payment of MXN ${nf(268900)} is due on Oct 24, 2026. Once the date arrives you'll be able to pay online from this same link.`)}</span></span>
                   </div>
                 </div>
@@ -661,7 +662,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
             <span class="who"><strong>Constructora GAMA</strong><span><u>COT-0133</u> · {tx('vencida hace 64 días', '64 days overdue')}</span></span>
             <span class="editorial amt">MXN {nf(412300)}</span>
           </div>
-          <div class="bm-ar-plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>{tx(`Propone 3 cuotas de MXN ${nf(137433.33)}`, `Proposes 3 instalments of MXN ${nf(137433.33)}`)}</span></div>
+          <div class="bm-ar-plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg><span>{tx(`Propone 3 cuotas de MXN ${nf(137433.33)}`, `Proposes 3 instalments of MXN ${nf(137433.33)}`)}</span></div>
           <div class="bm-ar-text">{tx(`Hola, Ing. Robles: le escribo de Materiales del Valle por la cotización COT-0133. El saldo de MXN ${nf(412300)} venció hace 64 días. Si le facilita las cosas, podemos dividirlo en 3 pagos mensuales de MXN ${nf(137433.33)}, el primero el 24 de octubre, y cada uno se paga desde el mismo enlace.`, `Hello Mr. Robles, I'm writing from Materiales del Valle about quote COT-0133. The MXN ${nf(412300)} balance is 64 days past due. If it helps, we can split it into 3 monthly payments of MXN ${nf(137433.33)}, the first on October 24, each payable from the same link.`)}</div>
           <div class="bm-ar-acts"><span class="pri" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span>{tx('Regenerar', 'Regenerate')}</span><span class="gh">{tx('Descartar', 'Discard')}</span><span class="gh">{tx('No escribirle', "Don't email them")}</span></div>
         </div>
@@ -778,7 +779,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-sum-l"><span>Subtotal</span><span class="editorial">US${nf(10000)}</span></div>
           <div class="bm-sum-div"></div>
           <div class="bm-sum-l total"><span>Total</span><span class="editorial">US${nf(10000)}</span></div>
-          <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+          <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></div>
           <div class="bm-fx">
             <p class="bm-fx-ex">{tx('Capturas y cobras en ', 'You quote and charge in ')}<b>USD</b>{tx(', pero tu contabilidad va en pesos mexicanos.', ', but your books are in Mexican pesos.')}</p>
             <div class="bm-fx-st">
@@ -787,7 +788,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
               <span class="s on" data-rate><span class="l">{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</span><span class="editorial v">$18.77</span></span>
             </div>
             <p class="bm-fx-sees">{tx('Tu cliente paga ', 'Your client pays ')}<b>US${nf(10000)}</b>{tx(' · en tus libros ≈ ', ' · in your books ≈ ')}<b>${nf(187680)} MXN</b></p>
-            <span class="bm-fx-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Tasa congelada', 'Rate locked')}</span>
+            <span class="bm-fx-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>{tx('Tasa congelada', 'Rate locked')}</span>
           </div>
         </div>
         <div class="bm-fl bm-fx1-inv">
@@ -814,7 +815,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
           <span class="bm-w-draft">{tx('Borrador', 'Draft')}</span>
         </div>
-        <div class="bm-ed-client"><span class="bm-field bm-ed-select"><span>Acme Building Supply — Mark Davis</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <div class="bm-ed-client"><span class="bm-field bm-ed-select"><span>Acme Building Supply — Mark Davis</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></div>
         <div class="bm-ed-lines bm-ed-lines-b bm-fx2-lines">
           <div class="bm-ed-head"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Precio', 'Price')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
           {[
@@ -831,7 +832,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         <div class="bm-sum-h">{tx('Revisa y envía', 'Review and send')}</div>
         <div class="bm-sum-count">4 {tx('líneas', 'lines')} · 1,420 {tx('piezas', 'pieces')}</div>
         <div class="bm-sum-l total"><span>Total</span><span class="editorial">US${nf(10000)}</span></div>
-        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field"><span>USD — {tx('dólar estadounidense', 'US dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></div>
         <div class="bm-fx">
           <p class="bm-fx-ex">{tx('Capturas y cobras en ', 'You quote and charge in ')}<b>USD</b>{tx(', pero tu contabilidad va en pesos colombianos.', ', but your books are in Colombian pesos.')}</p>
           <div class="bm-fx-st">
@@ -841,7 +842,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           </div>
           <p class="bm-fx-err" data-err>{tx('No pudimos obtener el tipo de cambio USD → COP. Intenta de nuevo en un momento o cotiza en la moneda de tu negocio.', "We couldn't get the USD → COP exchange rate. Try again in a moment or quote in your business's currency.")}</p>
         </div>
-        <span class="bm-sum-send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <span class="bm-sum-send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
       </div>
     </div>
   )}
@@ -864,7 +865,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-py-seg"><span class="on" data-seg="card">{tx('Tarjeta', 'Card')}</span><span data-seg="spei">{tx('Transferencia SPEI', 'SPEI transfer')}</span></div>
           <div class="bm-py-body" data-body>
             <div class="bm-py-card" data-panel="card">
-              <span class="bm-py-f"><span class="lb">{tx('Datos de la tarjeta', 'Card details')}<span class="bm-py-brands"><span>VISA</span><span>MC</span><span>AMEX</span></span></span><span class="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><line x1="2.5" y1="10" x2="21.5" y2="10"/></svg><span class="ph" data-num>1234 1234 1234 1234</span><span class="ph sm">{tx('MM / AA', 'MM / YY')}</span><span class="ph sm">CVC</span></span></span>
+              <span class="bm-py-f"><span class="lb">{tx('Datos de la tarjeta', 'Card details')}<span class="bm-py-brands"><span>VISA</span><span>MC</span><span>AMEX</span></span></span><span class="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg><span class="ph" data-num>1234 1234 1234 1234</span><span class="ph sm">{tx('MM / AA', 'MM / YY')}</span><span class="ph sm">CVC</span></span></span>
               <span class="bm-py-cta">{tx(`Pagar ${mxs}${nf(58940.76)} MXN`, `Pay ${mxs}${nf(58940.76)} MXN`)}</span>
             </div>
             <div class="bm-py-spei" data-panel="spei" hidden>
@@ -877,9 +878,9 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
             </div>
           </div>
           <div class="bm-py-or"><span>{tx('o', 'or')}</span></div>
-          <span class="bm-py-mp"><img src={mpLogo} alt="" width="18" height="18" loading="lazy" />{tx('Pagar con Mercado Pago', 'Pay with Mercado Pago')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4"/></svg></span>
+          <span class="bm-py-mp"><img src={mpLogo} alt="" width="18" height="18" loading="lazy" />{tx('Pagar con Mercado Pago', 'Pay with Mercado Pago')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up-right')}></svg></span>
         </div>
-        <p class="bm-py-foot"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</p>
+        <p class="bm-py-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</p>
       </div>
     </div>
   )}
@@ -922,11 +923,11 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <div class="bm-ql-auth" data-auth hidden>
             <strong>{tx('Autoriza tu iguala mensual', 'Authorize your monthly plan')}</strong>
             <span>{tx(`Se cobrará ${mxs}${nf(38000)} MXN a tu tarjeta hoy y ese mismo monto automáticamente cada mes, hasta que se cancele. Puedes cancelar cuando quieras.`, `${mxs}${nf(38000)} MXN will be charged to your card today and that same amount automatically every month, until cancelled. You can cancel anytime.`)}</span>
-            <span class="bm-ql-cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Autorizar cobro mensual', 'Authorize monthly charge')}</span>
+            <span class="bm-ql-cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>{tx('Autorizar cobro mensual', 'Authorize monthly charge')}</span>
             <span class="bm-ql-sec">{tx('Suscripción con tarjeta · protegida por Cord Payments', 'Card subscription · protected by Cord Payments')}</span>
           </div>
           <div class="bm-ql-active" data-active>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.12"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
             <span><strong>{tx('Iguala activa', 'Active recurring plan')}</strong><span>{tx(`Se te cobra ${mxs}${nf(38000)} MXN cada mes automáticamente con tu tarjeta — próximo cargo el 24 oct 2026. Para cancelar, contacta a Materiales del Valle.`, `You're charged ${mxs}${nf(38000)} MXN every month automatically on your card — next charge on Oct 24, 2026. To cancel, contact Materiales del Valle.`)}</span></span>
           </div>
         </div>
@@ -938,7 +939,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="pg2">
       <div class="bm-app bm-w bm-pg2-set">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Cobros', 'Payments')}</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Cobros', 'Payments')}</strong></span>
         </div>
         <div class="bm-pg2-body">
           <span class="bm-pg2-h">{tx('Estado de tu cuenta', 'Your account status')}</span>
@@ -947,15 +948,15 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
             <span class="tx"><strong>{tx('¡Todo listo, ya puedes cobrar!', 'All set, you can accept payments now!')}</strong><span>{tx('Tu cuenta está verificada y activa. El dinero de tus cobros se enviará automáticamente a tu banco.', 'Your account is verified and active. Your payment money will be sent to your bank automatically.')}</span></span>
           </div>
           <div class="bm-pg2-bank">
-            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fill-opacity="0.12"/><path d="M9 21v-6h6v6"/></svg></span>
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('home')}></svg></span>
             <span class="tx"><strong>{tx('Cuenta bancaria', 'Bank account')}</strong><span>{tx('Cuenta CLABE terminación •••• 4821. Aquí llegan tus depósitos.', 'CLABE account ending in •••• 4821. Your payouts arrive here.')}</span></span>
           </div>
           <div class="bm-pg2-sched">
             <strong>{tx('Frecuencia de depósito', 'Payout frequency')}</strong>
             <p>{tx('Cada cuánto sale tu dinero hacia tu cuenta bancaria. Los depósitos diarios pagan más veces la comisión fija de transferencia; los mensuales juntan el dinero pero lo dejan más lejos.', 'How often your money leaves for your bank account. Daily payouts pay the fixed transfer fee more often; monthly ones pool the money but keep it further away.')}</p>
             <div class="bm-pg2-row">
-              <span class="f"><span class="lb">{tx('Frecuencia', 'Frequency')}</span><span class="bm-field"><span>{tx('Semanal', 'Weekly')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
-              <span class="f"><span class="lb">{tx('Día de la semana', 'Day of the week')}</span><span class="bm-field"><span>{tx('Viernes', 'Friday')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+              <span class="f"><span class="lb">{tx('Frecuencia', 'Frequency')}</span><span class="bm-field"><span>{tx('Semanal', 'Weekly')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></span>
+              <span class="f"><span class="lb">{tx('Día de la semana', 'Day of the week')}</span><span class="bm-field"><span>{tx('Viernes', 'Friday')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></span>
             </div>
             <span class="bm-pg2-save">{tx('Guardar frecuencia', 'Save frequency')}</span>
           </div>
@@ -1147,7 +1148,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         <strong class="h">{tx('Revisa y emite', 'Review and issue')}</strong>
         <span class="l t"><span>Total</span><b class="editorial">{mxs}{nf(48720)} <small>MXN</small></b></span>
         <span class="dl"><span class="k">{tx('Entrega', 'Delivery')}</span><strong>compras@grupoferrex.mx</strong><small>{tx('El correo incluye el PDF y la liga de pago.', 'Email includes the PDF and payment link.')}</small></span>
-        <span class="go" data-go><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z" fill="currentColor" fill-opacity="0.18"/></svg>{tx('Emitir y enviar', 'Issue and send')}</span>
+        <span class="go" data-go><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>{tx('Emitir y enviar', 'Issue and send')}</span>
         <span class="sec"><span>{tx('Emitir sin enviar', 'Issue without sending')}</span><em>{tx('Guardar y salir', 'Save and exit')}</em></span>
         <p class="note">{tx('El folio se asigna al emitir. Después, las correcciones requieren anulación o nota de crédito.', 'The number is assigned when you issue. Later corrections require a void or credit note.')}</p>
       </div>
@@ -1158,7 +1159,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="fa1">
       <div class="bm-w bm-fa1">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Facturas', 'Invoices')}</span><span class="bm-w-sep">/</span><strong>A-001046</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Facturas', 'Invoices')}</span><span class="bm-w-sep">/</span><strong>A-001046</strong></span>
           <span class="bm-st bm-st-paid" data-pill data-a={tx('Abierta', 'Open')} data-b={tx('Pagada', 'Paid')}>{tx('Pagada', 'Paid')}</span>
         </div>
         <div class="bm-fa1-steps" data-steps>
@@ -1379,7 +1380,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="ap0">
       <div class="bm-app bm-w">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Aprobaciones', 'Approvals')}</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Aprobaciones', 'Approvals')}</strong></span>
         </div>
         <div class="bm-set-tabs"><span>{tx('Folio e IVA', 'Numbering & tax')}</span><span>{tx('Impuestos', 'Taxes')}</span><span>{tx('Documento PDF', 'PDF document')}</span><span class="on">{tx('Aprobaciones', 'Approvals')}</span><span>{tx('Plantillas', 'Templates')}</span></div>
         <p class="bm-set-intro">{tx('Protege tus márgenes con topes que disparan aprobación de gerencia.', 'Protect your margins with thresholds that trigger management approval.')}</p>
@@ -1419,7 +1420,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
         <div class="bm-ab-wrap" data-banner>
           <div class="bm-ab">
             <span class="bm-ab-info">
-              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
+              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
               <span class="m">{tx('descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span>
             </span>
             <span class="bm-ab-act"><span class="ok" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span class="no">{tx('Rechazar', 'Reject')}</span></span>
@@ -1451,7 +1452,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="ap2">
       <div class="bm-app bm-w bm-x-main">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></span>
         </div>
         <div class="bm-set-tabs"><span>{tx('Datos y privacidad', 'Data & privacy')}</span><span class="on">{tx('Auditoría', 'Audit log')}</span></div>
         <p class="bm-set-intro">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
@@ -1521,8 +1522,8 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           </div>
           <span class="it"><span class="av alt">I</span><span class="tx"><strong>Inmobiliaria Valle Alto</strong><small>{tx('Dueño', 'Owner')}</small></span></span>
           <span class="sep"></span>
-          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>{tx('Crear espacio de trabajo', 'Create workspace')}</span>
-          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.14"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>{tx('Configuración del equipo', 'Team settings')}</span>
+          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('plus')}></svg></span>{tx('Crear espacio de trabajo', 'Create workspace')}</span>
+          <span class="ac"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clients')}></svg></span>{tx('Configuración del equipo', 'Team settings')}</span>
           <span class="sep"></span>
           <span class="me"><span class="av u">R</span><span class="tx"><strong>Ricardo Valle</strong><small>ricardo@materialesdelvalle.mx</small></span></span>
         </div>
@@ -1541,7 +1542,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           </div>
           <div class="pv">
             <span class="lb">{tx('Así quedará', "Here's how it will look")}</span>
-            <span class="nd root"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor" fill-opacity="0.12"/></svg><span>Materiales del Valle</span></span>
+            <span class="nd root"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('home')}></svg><span>Materiales del Valle</span></span>
             <div class="ch">
               <span class="nd hl"><img src="/flags/us.svg" alt="" width="16" height="16" /><span data-pvname>Materiales del Valle USA</span><b>{tx('Nueva', 'New')}</b></span>
               <span class="nd dim"><span>Acabados del Valle</span></span>
@@ -1557,7 +1558,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
     <div class="bm-stage" data-bmx="eq2">
       <div class="bm-w bm-eq2-main">
         <div class="bm-w-bar">
-          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>SSO</span><span class="bm-w-sep">/</span><strong>{tx('Okta producción', 'Okta production')}</strong></span>
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>SSO</span><span class="bm-w-sep">/</span><strong>{tx('Okta producción', 'Okta production')}</strong></span>
           <span class="bm-st bm-st-paid">{tx('Activa', 'Active')}</span>
         </div>
         <div class="bm-eq2-sec">
@@ -1588,7 +1589,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
       </div>
       <div class="bm-fl bm-eq2-req">
         <span class="bm-eq2-ch"><strong>{tx('Conexiones', 'Connections')}</strong></span>
-        <span class="bm-eq2-conn"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/></svg></span><span class="tx"><strong>{tx('Okta producción', 'Okta production')}</strong><small>http://www.okta.com/exk8f2v1qLmZ7c4Nw697</small></span><span class="bm-st bm-st-paid">{tx('Activa', 'Active')}</span></span>
+        <span class="bm-eq2-conn"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg></span><span class="tx"><strong>{tx('Okta producción', 'Okta production')}</strong><small>http://www.okta.com/exk8f2v1qLmZ7c4Nw697</small></span><span class="bm-st bm-st-paid">{tx('Activa', 'Active')}</span></span>
         <span class="bm-eq2-ch"><strong>{tx('Exigir SSO', 'Require SSO')}</strong></span>
         <span class="bm-eq2-tg"><i class="bm-tog on" data-req></i><span>{tx('Exigir a tu equipo iniciar sesión por SSO', 'Require your team to sign in via SSO')}</span></span>
         <p class="bm-eq2-hint">{tx('Bloquea contraseña, Google, Apple y llaves de acceso para todos menos el dueño de la cuenta, que siempre conserva su contraseña como respaldo.', 'Blocks password, Google, Apple, and passkeys for everyone except the account owner, who always keeps their password as a fallback.')}</p>
@@ -1620,9 +1621,9 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-app-badge bm-badge-green">Inmutable</span>
         </div>
         <div class="bm-steps">
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>v1 · Original</b><span>Enviada por ti · $196,469.20</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><div class="bm-step-tx"><b>v2 · Contraoferta</b><span>Por el cliente · $190,000 <em>−3.2%</em></span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>v3 · Aprobada</b><span>Fijada hoy · $192,400</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span><div class="bm-step-tx"><b>v1 · Original</b><span>Enviada por ti · $196,469.20</span></div></div>
+          <div class="bm-step"><span class="bm-step-ico warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg></span><div class="bm-step-tx"><b>v2 · Contraoferta</b><span>Por el cliente · $190,000 <em>−3.2%</em></span></div></div>
+          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span><div class="bm-step-tx"><b>v3 · Aprobada</b><span>Fijada hoy · $192,400</span></div></div>
         </div>
         <div class="bm-app-foot"><span>Compara o restaura con un clic</span><b>3 versiones</b></div>
       </div>
@@ -1637,7 +1638,7 @@ const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
           <span class="bm-app-badge bm-badge-green">Sellada</span>
         </div>
         <div style="padding:18px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-          <span class="bm-avat a2" style="width:44px;height:44px;border-radius:12px;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <span class="bm-avat a2" style="width:44px;height:44px;border-radius:12px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg></span>
           <b style="font-size:0.95rem;color:#0f172a;">Acuerdo cerrado y firmado</b>
           <span style="font-size:0.7rem;color:#94a3b8;">Firma con validez legal · IP y fecha registradas</span>
         </div>

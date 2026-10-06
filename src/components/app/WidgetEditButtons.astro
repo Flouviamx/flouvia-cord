@@ -4,19 +4,20 @@ import { t } from '../../i18n/app';
 const L = currentLocale();
 interface Props { drag: string; up: string; down: string; resize: string; remove: string; }
 const { drag, up, down, resize, remove } = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 <template data-widget-edit-template>
     <div class="widget-editbar">
         <span class="we-btn we-drag" aria-hidden="true" title={drag}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grip')}></svg>
         </span>
-        <button type="button" class="we-btn we-up" aria-label={up}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
-        <button type="button" class="we-btn we-down" aria-label={down}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button type="button" class="we-btn we-up" aria-label={up}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-up')}></svg></button>
+        <button type="button" class="we-btn we-down" aria-label={down}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></button>
         <div class="we-sizes" role="group" aria-label={resize}>
             <button type="button" class="we-size" data-size="sm" aria-pressed="false">{t(L, 'widgets.compacto')}</button>
             <button type="button" class="we-size" data-size="lg" aria-pressed="false">{t(L, 'widgets.ampliado')}</button>
         </div>
-        <button type="button" class="we-btn we-remove" aria-label={remove}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <button type="button" class="we-btn we-remove" aria-label={remove}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg></button>
     </div>
 </template>
 

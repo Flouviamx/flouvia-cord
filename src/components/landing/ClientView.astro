@@ -46,6 +46,7 @@ const SIGNER = 'Raúl Mendoza';
 // sha256 hex, mismo formato que devuelve /api/q/[token] al firmar.
 const HASH = '4499a2a7140800335c3b00159512dcc17c8272481b5fea68ed7bbbe906228344';
 const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128';
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="cv">
@@ -59,7 +60,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
             <ul class="cv-list">
                 {[t("cv.l1"), t("cv.l2"), t("cv.l3"), t("cv.l4")].map((li) => (
                     <li class="reveal">
-                        <svg class="cv-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.14"/><polyline points="7.5 12.5 10.5 15.5 16.5 9"/></svg>
+                        <svg class="cv-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                         {li}
                     </li>
                 ))}
@@ -131,7 +132,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                                     <span class="cvq-pick"></span>
                                                     <span class="cvq-name-tx">{it.d}</span>
                                                     <span class="cvq-chat">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                                     </span>
                                                 </span>
                                                 <span class="cvq-qty" data-label={Q('q.th_cant')}><span>{it.q} {UNIT}</span></span>
@@ -149,7 +150,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                     <div class="cvq-trust">
                                         <span class="cvq-live"><i></i>{Q('q.conectado_vivo')}</span>
                                         <span class="cvq-secure">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                             {Q('q.cifrado_firma')}
                                         </span>
                                     </div>
@@ -158,12 +159,12 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                     <div class="cvq-actions" id="cvActions">
                                         <div class="cvq-step cvq-off" id="cvStepReview">
                                             <span class="cvq-cta" id="cvApprove">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg>
                                                 {Q('q.aprobar_cotizacion')}
                                             </span>
                                             <div class="cvq-sec-row">
                                                 <span class="cvq-ghost">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                                     {Q('q.descargar_pdf')}
                                                 </span>
                                                 <span class="cvq-ghost cvq-reject">{Q('q.rechazar')}</span>
@@ -173,7 +174,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                         <div class="cvq-step cvq-off" id="cvStepSign">
                                             <div class="cvq-step-h">
                                                 <span class="cvq-back">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
                                                 </span>
                                                 <span class="cvq-step-t">{Q('q.firma_digital')}</span>
                                             </div>
@@ -196,10 +197,10 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                             </div>
                                             <span class="cvq-cta" id="cvConfirm">
                                                 <span id="cvConfirmLabel" data-label={Q('q.confirmar_firmar')} data-busy={en ? 'Signing…' : 'Firmando…'}>{Q('q.confirmar_firmar')}</span>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                                             </span>
                                             <div class="cvq-legal">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                                                 <span>{Q('q.legal_firma')}</span>
                                             </div>
                                         </div>
@@ -214,20 +215,20 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                                 <span class="cvq-ok-s">{tf('q.recibio_confirmacion', { org: ORG })}</span>
                                                 <div class="cvq-ok-acts">
                                                     <div class="cvq-credit">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar-check')}></svg>
                                                         <span class="cvq-credit-tx">
                                                             <strong>{tf('q.pedido_confirmado_credito', { terminos: 'Net 30' })}</strong>
                                                             <span>{tf('q.pago_vence', { total: `${TOTAL} MXN`, fecha: VENCE })}{Q('q.pago_vence_online')}</span>
                                                         </span>
                                                     </div>
                                                     <span class="cvq-ghost cvq-receipt">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                                         {Q('q.descargar_comprobante')}
                                                     </span>
                                                 </div>
                                                 <div class="cvq-stamp">
                                                     <div class="cvq-stamp-h">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                                                         <span>{Q('q.documento_verificado')}</span>
                                                     </div>
                                                     <div class="cvq-stamp-r"><strong>{Q('q.firmante')}</strong> {SIGNER}</div>
@@ -243,7 +244,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                         <div class="cvq-contact-links">
                                             <span class="cvq-contact-a"><img src={WA_ICON} alt="" width="32" height="32" loading="lazy" />{Q('q.whatsapp')}</span>
                                             <span class="cvq-contact-a">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="m22 7-10 6L2 7"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('mail')}></svg>
                                                 {Q('q.correo')}
                                             </span>
                                         </div>
@@ -251,7 +252,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
 
                                     <div class="cvq-badge">
                                         <span class="cvq-badge-trust">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                                             {Q('q.firma_validez_legal')}
                                         </span>
                                         <span class="cvq-badge-cta">{Q('q.verificado_por')} <img src="/imgs/logo-cord-navy.png" alt="Cord" /> {Q('q.crea_las_tuyas')}</span>
@@ -268,7 +269,7 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                                         <span class="editorial cvq-sticky-v" id="cvStickyTotal">{TOTAL}</span>
                                     </span>
                                     <span class="cvq-sticky-cta">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg>
                                         {Q('q.aprobar')}
                                     </span>
                                 </div>
@@ -286,14 +287,14 @@ const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fal
                             <div class="cvp-island"></div>
                             <div class="cvp-safari">
                                 <span class="cvp-sf-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
                                 </span>
                                 <span class="cvp-sf-url">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" fill-opacity="0.16"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                     cordhq.app
                                 </span>
                                 <span class="cvp-sf-btn">
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('more')}></svg>
                                 </span>
                             </div>
                             <div class="cvp-home"></div>

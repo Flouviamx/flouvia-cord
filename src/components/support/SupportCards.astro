@@ -2,6 +2,7 @@
 // /src/components/support/SupportCards.astro
 import { getCollection } from 'astro:content';
 import FaqAccordion from '../landing/FaqAccordion.astro';
+import { iconInner, type IconName } from '../../lib/icons';
 import { SUPPORT_FAQ_ES, SUPPORT_FAQ_EN } from '../../lib/support-faq';
 
 const { isEn = false } = Astro.props;
@@ -15,33 +16,33 @@ const categoryMap = [
     {
         name: isEn ? 'Payments & Deposits' : 'Pagos y Depósitos',
         slug: 'pagos',
-        icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>'
+        icon: 'card' as IconName
     },
     {
         name: isEn ? 'Quotes' : 'Cotizaciones',
         slug: 'cotizaciones',
-        icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'
+        icon: 'quote' as IconName
     },
 
     {
         name: isEn ? 'Invoicing' : 'Facturación',
         slug: 'facturacion',
-        icon: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>'
+        icon: 'invoice' as IconName
     },
     {
         name: isEn ? 'Account & Team' : 'Cuenta y Equipo',
         slug: 'cuenta',
-        icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>'
+        icon: 'clients' as IconName
     },
     {
         name: isEn ? 'Developers' : 'Desarrolladores',
         slug: 'desarrolladores',
-        icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'
+        icon: 'code' as IconName
     },
     {
         name: isEn ? 'Security & Privacy' : 'Seguridad y Privacidad',
         slug: 'seguridad',
-        icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>'
+        icon: 'lock' as IconName
     }
 ];
 
@@ -68,28 +69,28 @@ const faqs = isEn ? SUPPORT_FAQ_EN : SUPPORT_FAQ_ES;
                     <h3>{isEn ? 'Cord 101: Getting Started' : 'Cord 101: Primeros Pasos'}</h3>
                     <p>{isEn ? 'Set up your corporate account, upload your SAT certificates, and issue your first charge.' : 'Configura tu cuenta empresarial, sube tus certificados del SAT y emite tu primer cobro.'}</p>
                 </div>
-                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
             </a>
             <a href={isEn ? "/en/support/glosario-terminos" : "/soporte/glosario-terminos"} class="ql-row">
                 <div class="ql-row-info">
                     <h3>{isEn ? 'Glossary' : 'Glosario'}</h3>
                     <p>{isEn ? 'The translator between engineers and accountants. Understand CFDI PPD vs PUE.' : 'El traductor entre ingenieros y contadores. Entiende qué es un CFDI PPD vs PUE.'}</p>
                 </div>
-                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
             </a>
             <a href={isEn ? "/en/support/migracion-stripe" : "/soporte/migracion-stripe"} class="ql-row">
                 <div class="ql-row-info">
                     <h3>{isEn ? 'Migrate from Stripe' : 'Migrar desde Stripe'}</h3>
                     <p>{isEn ? 'Guide to export your clients and import your card vault (PCI-DSS).' : 'Guía para exportar tus clientes e importar tu bóveda de tarjetas.'}</p>
                 </div>
-                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
             </a>
             <a href={isEn ? "/en/support/category/desarrolladores" : "/soporte/categoria/desarrolladores"} class="ql-row">
                 <div class="ql-row-info">
                     <h3>{isEn ? 'Dev Portal' : 'Portal Devs'}</h3>
                     <p>{isEn ? 'Technical docs for the REST API, Webhooks, and UI components.' : 'Documentación técnica de API REST, Webhooks y componentes.'}</p>
                 </div>
-                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                <svg class="ql-row-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
             </a>
         </div>
 
@@ -99,7 +100,7 @@ const faqs = isEn ? SUPPORT_FAQ_EN : SUPPORT_FAQ_ES;
             {categoriesWithArticles.map(cat => (
                 <div class="editorial-block">
                     <div class="eb-header">
-                        <svg class="eb-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={cat.icon} />
+                        <svg class="eb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(cat.icon)} />
                         <h3>{cat.name}</h3>
                     </div>
                     <ul class="eb-links">

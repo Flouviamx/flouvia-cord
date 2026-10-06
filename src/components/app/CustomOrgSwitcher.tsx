@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { $isTestMode, toggleTestMode } from '../../store/testMode';
@@ -21,6 +22,9 @@ const SW_STRINGS = {
     workspacePersonal: 'Workspace personal',
     errorCrear: 'No se pudo crear la cuenta.',
     usuario: 'Usuario',
+    subcuenta: 'Subcuenta',
+    subcuentaDe: (n: string) => `Subcuenta de ${n}`,
+    subcuentas: (n: number) => (n === 1 ? '1 subcuenta' : `${n} subcuentas`),
     roles: { owner: 'Dueño', admin: 'Admin', vendedor: 'Vendedor', lectura: 'Lectura', miembro: 'Miembro' } as Record<string, string>,
   },
   en: {
@@ -35,9 +39,25 @@ const SW_STRINGS = {
     workspacePersonal: 'Personal workspace',
     errorCrear: "We couldn't create the account.",
     usuario: 'User',
+    subcuenta: 'Subaccount',
+    subcuentaDe: (n: string) => `Subaccount of ${n}`,
+    subcuentas: (n: number) => (n === 1 ? '1 subaccount' : `${n} subaccounts`),
     roles: { owner: 'Owner', admin: 'Admin', vendedor: 'Sales', lectura: 'Read only', miembro: 'Member' } as Record<string, string>,
   },
 } as const;
+
+function OrgAvatar({ name, logoUrl, className = 'org-avatar' }: { name: string; logoUrl?: string | null; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className={className} style={{ overflow: 'hidden' }}>
+      {logoUrl && !failed ? (
+        <img src={logoUrl} alt={name} loading="lazy" onError={() => setFailed(true)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      ) : (
+        name.charAt(0).toUpperCase()
+      )}
+    </div>
+  );
+}
 
 export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, locale = 'es' }: { orgLogoUrl?: string, user?: any, activeOrg?: any, locale?: 'es' | 'en' }) {
   const S = SW_STRINGS[locale] ?? SW_STRINGS.es;
@@ -80,7 +100,6 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
 
   // Initial del Workspace activo
   const activeName = organization?.nombre || S.workspacePersonal;
-  const initial = activeName.charAt(0).toUpperCase();
   const memberships = safeUser.organizationMemberships ?? [];
 
   const handleSwitch = async (organizationId: string) => {
@@ -163,6 +182,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
   // trae) — se resuelve buscándola dentro de las membresías, que sí lo tienen.
   const activeMembership = memberships.find((m: any) => m.organization.id === organization?.id);
   const activeParentId = activeMembership?.organization.parentOrgId as string | null | undefined;
+  const activeParent = activeParentId ? memberships.find((m: any) => m.organization.id === activeParentId) : undefined;
 
   const handleOpenMainCreateModal = () => {
     if (organization) {
@@ -199,20 +219,12 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        <div className="org-avatar" style={{ overflow: 'hidden' }}>
-          {orgLogoUrl ? (
-            <img src={orgLogoUrl} alt={activeName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          ) : (
-            initial
-          )}
-        </div>
+        <OrgAvatar name={activeName} logoUrl={orgLogoUrl || activeMembership?.organization.logoUrl} />
         <div className="org-text">
-          <span className={`org-eyebrow ${isTestMode ? 'is-test' : ''}`}>{isTestMode ? S.entornoPrueba : S.espacioTrabajo}</span>
+          <span className={`org-eyebrow ${isTestMode ? 'is-test' : ''}`}>{isTestMode ? S.entornoPrueba : activeParent ? S.subcuentaDe(activeParent.organization.nombre) : S.espacioTrabajo}</span>
           <span className="org-name" title={activeName}>{activeName}</span>
         </div>
-        <svg className="chevron-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <svg className="chevron-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('chevron-down') }} />
       </button>
 
       {isOpen && (
@@ -226,8 +238,8 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
             )}
             {rootMemberships.map((mem: any) => {
               const selected = organization?.id === mem.organization.id;
-              const hasChildren = membershipsByParent[mem.organization.id] && membershipsByParent[mem.organization.id].length > 0;
-              const isCurrentParent = organization?.id === mem.organization.id || activeParentId === mem.organization.id;
+              const children: any[] = membershipsByParent[mem.organization.id] ?? [];
+              const orphan = !!mem.organization.parentOrgId;
 
               return (
                 <React.Fragment key={mem.organization.id}>
@@ -237,56 +249,45 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
                     role="menuitemradio"
                     aria-checked={selected}
                   >
-                    <div className="org-avatar small" style={{ overflow: 'hidden' }}>
-                      {orgLogoUrl && selected ? (
-                        <img src={orgLogoUrl} alt={mem.organization.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                      ) : (
-                        mem.organization.nombre.charAt(0).toUpperCase()
-                      )}
-                    </div>
+                    <OrgAvatar className="org-avatar small" name={mem.organization.nombre} logoUrl={mem.organization.logoUrl} />
                     <div className="org-details">
                       <span className="org-item-name" title={mem.organization.nombre}>{mem.organization.nombre}</span>
-                      <span className="org-item-role">{roleLabel(mem.rol)}</span>
+                      <span className="org-item-role">
+                        {orphan ? `${S.subcuenta} · ` : ''}{roleLabel(mem.rol)}{children.length > 0 ? ` · ${S.subcuentas(children.length)}` : ''}
+                      </span>
                     </div>
                     {selected && (
                       <span className="orgd-check" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check') }} />
                       </span>
                     )}
                   </button>
-                  
-                  {/* Render children sub-accounts */}
-                  {(hasChildren || isCurrentParent) && (
-                    <div className="org-children-container" style={{ paddingLeft: '8px', borderLeft: '1px solid var(--sb-divider)', marginLeft: '16px', marginTop: '2px', marginBottom: '4px' }}>
-                      {membershipsByParent[mem.organization.id]?.map((childMem: any) => {
+
+                  {children.length > 0 && (
+                    <div className="org-children" role="group" aria-label={S.subcuentas(children.length)}>
+                      {children.map((childMem: any) => {
                         const childSelected = organization?.id === childMem.organization.id;
                         return (
                           <button
                             key={childMem.organization.id}
-                            className={`org-list-item ${childSelected ? 'selected' : ''}`}
+                            className={`org-list-item org-child-item ${childSelected ? 'selected' : ''}`}
                             onClick={() => handleSwitch(childMem.organization.id)}
                             role="menuitemradio"
                             aria-checked={childSelected}
                           >
-                            <div className="org-avatar small" style={{ overflow: 'hidden', width: '20px', height: '20px', fontSize: '0.6rem', borderRadius: '4px' }}>
-                              {childMem.organization.nombre.charAt(0).toUpperCase()}
-                            </div>
+                            <OrgAvatar className="org-avatar small org-child-avatar" name={childMem.organization.nombre} logoUrl={childMem.organization.logoUrl} />
                             <div className="org-details">
-                              <span className="org-item-name" title={childMem.organization.nombre} style={{ fontSize: '0.75rem' }}>{childMem.organization.nombre}</span>
+                              <span className="org-item-name" title={childMem.organization.nombre}>{childMem.organization.nombre}</span>
+                              <span className="org-item-role">{S.subcuenta} · {roleLabel(childMem.rol)}</span>
                             </div>
                             {childSelected && (
                               <span className="orgd-check" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check') }} />
                               </span>
                             )}
                           </button>
                         );
                       })}
-                      
                     </div>
                   )}
                 </React.Fragment>
@@ -297,36 +298,22 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
           <div className="orgd-group">
             <button className="dropdown-action-btn" onClick={handleOpenMainCreateModal}>
               <span className="orgd-icon orgd-icon-neutral" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.1" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('plus') }} />
               </span>
               <span className="orgd-label">{S.crearEspacio}</span>
             </button>
 
             <a href="/app/ajustes/equipo" className="dropdown-action-btn">
               <span className="orgd-icon orgd-icon-neutral" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('clients') }} />
               </span>
               <span className="orgd-label">{S.configEquipo}</span>
-              <svg className="orgd-chevron" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+              <svg className="orgd-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('chevron-right') }} />
             </a>
 
             <button className={`dropdown-action-btn dev-mode-toggle ${isTestMode ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); toggleTestMode(!isTestMode); }}>
               <span className="orgd-icon orgd-icon-amber" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"></path>
-                  <path d="M6.5 15h11"></path>
-                  <path d="M8.5 2h7"></path>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('flask') }} />
               </span>
               <span className="orgd-label flex-1">{S.entornoPrueba}</span>
               <div className={`toggle-switch ${isTestMode ? 'on' : ''}`}>
@@ -345,11 +332,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
             </div>
             <button className="dropdown-action-btn text-red" onClick={handleLogout}>
               <span className="orgd-icon orgd-icon-red" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('logout') }} />
               </span>
               <span className="orgd-label">{S.cerrarSesion}</span>
             </button>
@@ -590,6 +573,31 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
         }
         html[data-theme="dark"] .org-list-item.selected { background: rgba(255,255,255,0.04); }
         
+        .org-children {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+          margin: 0 2px 4px 22px;
+          padding-left: 10px;
+        }
+        .org-child-item { margin: 0; padding: 0.3rem 0.5rem; }
+        .org-child-item::before {
+          content: '';
+          position: absolute;
+          left: -10px; top: 50%;
+          width: 10px; height: 0;
+          border-top: 1px solid var(--sb-divider);
+        }
+        .org-child-item::after {
+          content: '';
+          position: absolute;
+          left: -10px; top: -1px; bottom: -1px;
+          border-left: 1px solid var(--sb-divider);
+        }
+        .org-children .org-child-item:last-child::after { bottom: 50%; }
+        .org-child-avatar { width: 22px; height: 22px; font-size: 0.65rem; border-radius: 6px; }
+
         /* Remove the heavy border on selected small avatar */
         .org-list-item.selected .org-avatar.small {
           box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);

@@ -18,6 +18,7 @@ const idx = Math.max(0, todas.findIndex((p) => p.slug === current));
 const otros = [1, 2, 3].map((k) => todas[(idx + k) % todas.length]);
 const href = (slug: string) => l(slug === 'elements' ? '/elements' : `/desarrolladores/${slug}`);
 const docsUrl = isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.app';
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="pp-more">
@@ -32,20 +33,20 @@ const docsUrl = isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.
                     <span>{f.sub.split('. ')[0].replace(/\.$/, '')}.</span>
                 </div>
                 <i class="pp-more-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                 </i>
             </a>
         ))}
         <a href={docsUrl} class="pp-more-row pp-docs-row reveal">
             <span class="pp-docs-ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" fill="currentColor" fill-opacity="0.12"/><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z"/><path d="M8 8.5h7M8 12h7" stroke-opacity="0.5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
             </span>
             <div class="pp-more-info">
                 <b>{isEn ? 'Documentation' : 'Documentación'}</b>
                 <span>{isEn ? 'Guides, API reference and examples for every endpoint.' : 'Guías, referencia de la API y ejemplos de cada endpoint.'}</span>
             </div>
             <i class="pp-more-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
             </i>
         </a>
     </div>

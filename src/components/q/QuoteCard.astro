@@ -153,6 +153,7 @@ const demoRuntimeJson = esDemo
         simularSpei: t(L, 'q.demo_pay_simular_spei'),
     }).replace(/</g, '\\u003c')
     : '';
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
@@ -160,19 +161,19 @@ const demoRuntimeJson = esDemo
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bolt')}></svg>
             {t(L, 'q.test_ribbon')}
         </div>
     )}
     {esDemo && (
         <div class="q-demo-ribbon" role="note">
             <span class="q-demo-ribbon-text">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.6" r="0.4" fill="currentColor"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('info')}></svg>
                 <span>{t(L, 'q.demo_ribbon')}</span>
             </span>
             <a href={demoSignup} class="q-demo-ribbon-cta">
                 {t(L, 'q.demo_cta')}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
             </a>
         </div>
     )}
@@ -258,7 +259,7 @@ const demoRuntimeJson = esDemo
                         {esDemo && viva && <span class="qi-excluida-tag" data-demo-excluida hidden>{t(L, 'q.no_incluida')}</span>}
                         {mostrarChat && !yaAprobada && !yaRechazada && (
                             <button class="qi-chat-btn" data-item-id={it.id} aria-label={t(L, 'q.comentar_linea')}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                 {it.comentarios?.length > 0 ? it.comentarios.length : ''}
                             </button>
                         )}
@@ -313,7 +314,7 @@ const demoRuntimeJson = esDemo
         <div class="q-trust">
             <span class="q-trust-live" id="qLive"><span class="q-live-dot"></span> <span id="qLiveText">{t(L, 'q.conectado_vivo')}</span></span>
             <span class="q-trust-secure">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                 {t(L, 'q.cifrado_firma')}
             </span>
         </div>
@@ -337,12 +338,12 @@ const demoRuntimeJson = esDemo
                 {t(L, 'q.partial_aprobaras')} <b id="qPartialCount"></b> · {t(L, 'q.partial_total')} <b class="editorial" id="qPartialTotal"></b>
             </div>
             <button class="ql-cta" id="qApproveBtn" style={`background:${color}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                 {t(L, 'q.aprobar_cotizacion')}
             </button>
             <div class="ql-secondary-row">
                 <button class="ql-ghost" id="qPdfBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                     {t(L, 'q.descargar_pdf')}
                 </button>
                 <button class="ql-ghost ql-reject-link" id="qRejectOpenBtn">{t(L, 'q.rechazar')}</button>
@@ -353,7 +354,7 @@ const demoRuntimeJson = esDemo
         <div class="ql-step ql-hidden" id="stepSign">
             <div class="ql-step-header">
                 <button class="ql-back" id="qSignBack" aria-label={t(L, 'q.volver')}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-left')}></svg>
                 </button>
                 <span class="ql-step-title">{t(L, 'q.firma_digital')}</span>
             </div>
@@ -374,11 +375,11 @@ const demoRuntimeJson = esDemo
             </label>
             <button class="ql-cta" id="qConfirmSign" style={`background:${color}`} disabled>
                 {t(L, 'q.confirmar_firmar')}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
             </button>
             <p class="ql-error" id="qSignError"></p>
             <div class="ql-legal-box">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                 <span>{t(L, 'q.legal_firma')}</span>
             </div>
         </div>
@@ -387,7 +388,7 @@ const demoRuntimeJson = esDemo
         <div class="ql-step ql-hidden" id="stepReject">
             <div class="ql-step-header">
                 <button class="ql-back" id="qRejectBack" aria-label={t(L, 'q.volver')}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-left')}></svg>
                 </button>
                 <span class="ql-step-title">{t(L, 'q.rechazar_cotizacion')}</span>
             </div>
@@ -415,7 +416,7 @@ const demoRuntimeJson = esDemo
                 <div class="ql-done-actions">
                     {esperaCobro && (
                         <div class="ql-credit-note">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar-check')}></svg>
                             <div class="ql-credit-text">
                                 <strong>{t(L, 'q.sin_pagos_pendientes')}</strong>
                                 <span>
@@ -427,7 +428,7 @@ const demoRuntimeJson = esDemo
                     )}
                     {esCreditoPendiente && (
                         <div class="ql-credit-note">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar-check')}></svg>
                             <div class="ql-credit-text">
                                 <strong>{tf('q.pedido_confirmado_credito', { terminos: q.terminos })}</strong>
                                 <span>
@@ -453,7 +454,7 @@ const demoRuntimeJson = esDemo
                     )}
                     {esRecurrente && susActiva && (
                         <div class="ql-credit-note ql-sub-active">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.1"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                             <div class="ql-credit-text">
                                 <strong>{t(L, 'q.iguala_activa')}</strong>
                                 <span>
@@ -469,11 +470,11 @@ const demoRuntimeJson = esDemo
                                 <span set:html={tf('q.autoriza_iguala_desc', { monto: `<b>${montoMensual}</b>` })} />
                             </div>
                             <button class="ql-cta" id="qSubBtn" style={`background:${color}`}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                 {t(L, 'q.autorizar_cobro_mensual')}
                             </button>
                             <div class="ql-pay-secure">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                 {t(L, 'q.suscripcion_stripe')}
                                 <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
                             </div>
@@ -504,11 +505,11 @@ const demoRuntimeJson = esDemo
                                         <span class="editorial ql-pay-total" style={`color:${color}`}>{montoAPagar} <small>{ORG.moneda || 'MXN'}</small></span>
                                     </div>
                                     <button class="ql-cta" id="qPayBtn" style={`background:${color}`}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                         {ORG.aceptaTarjeta ? t(L, 'q.pagar_seguro') : t(L, 'q.pagar_spei')}
                                     </button>
                                     <div class="ql-pay-secure">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                         {ORG.aceptaTarjeta && ORG.cobroSpeiAuto ? t(L, 'q.tarjeta_o_spei') : ORG.cobroSpeiAuto ? t(L, 'q.solo_spei') : t(L, 'q.pago_protegido')}
                                         {ORG.aceptaTarjeta && <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>}
                                     </div>
@@ -534,11 +535,11 @@ const demoRuntimeJson = esDemo
                             <div class="qd-pay-body" id="qDemoPayBody">
                                 <div class="qd-tabs" role="tablist">
                                     <button type="button" class="qd-tab" role="tab" aria-selected="true" data-demo-method="card">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                                         {t(L, 'q.demo_pay_tarjeta')}
                                     </button>
                                     <button type="button" class="qd-tab" role="tab" aria-selected="false" data-demo-method="spei">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5z" fill="currentColor" fill-opacity="0.14"/><line x1="5.5" y1="11.5" x2="5.5" y2="17"/><line x1="10" y1="11.5" x2="10" y2="17"/><line x1="14" y1="11.5" x2="14" y2="17"/><line x1="18.5" y1="11.5" x2="18.5" y2="17"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bank')}></svg>
                                         {t(L, 'q.demo_pay_spei')}
                                     </button>
                                 </div>
@@ -558,7 +559,7 @@ const demoRuntimeJson = esDemo
                                         </div>
                                     </div>
                                     <p class="qd-note">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5" fill="currentColor" fill-opacity="0.14"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                         {t(L, 'q.demo_pay_nota_tarjeta')}
                                     </p>
                                 </div>
@@ -570,12 +571,12 @@ const demoRuntimeJson = esDemo
                                         <div class="qd-kv-row"><span>{t(L, 'q.demo_pay_conciliacion')}</span><strong>{t(L, 'q.demo_pay_conciliacion_val')}</strong></div>
                                     </div>
                                     <p class="qd-note">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                                         {t(L, 'q.demo_pay_nota_spei')}
                                     </p>
                                 </div>
                                 <button type="button" class="ql-cta" id="qDemoPaySim" style={`background:${color}`}>
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                     <span id="qDemoPaySimText">{t(L, 'q.demo_pay_simular_tarjeta')}</span>
                                 </button>
                             </div>
@@ -590,21 +591,21 @@ const demoRuntimeJson = esDemo
                             <div class="qd-pay-foot">
                                 <a href={demoPagos} class="qd-link">
                                     {t(L, 'q.demo_pay_como')}
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                                 </a>
                                 <a href={demoSignup} class="qd-cta" style={`background:${color}`}>{t(L, 'q.demo_pay_cta')}</a>
                             </div>
                         </div>
                     )}
                     <button class="ql-ghost" id="qPdfApproved" style="margin-top: 1rem;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                         {t(L, 'q.descargar_comprobante')}
                     </button>
                 </div>
                 {q.firma ? (
                     <div class="ql-audit-stamp">
                         <div class="ql-audit-header">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                             <span>{t(L, 'q.documento_verificado')}</span>
                         </div>
                         <div class="ql-audit-row"><strong>{t(L, 'q.firmante')}</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
@@ -665,13 +666,13 @@ const demoRuntimeJson = esDemo
                             placeholder={t(L, 'q.escribe_mensaje')}
                         ></textarea>
                         <button class="q-compose-send" id="qSendMsg" aria-label={t(L, 'q.enviar')} style={`background:${color}`}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
                         </button>
                     </div>
                     <div class="q-compose-extras">
                         <input class="q-compose-price" type="number" id="qProp" min="0" step="100" placeholder={t(L, 'q.propuesta_placeholder')} />
                         <button class="q-counter-pill" id="qSendCounter" style={`color:${color}; border-color:${color}`}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('trending-up')}></svg>
                             {t(L, 'q.contraoferta')}
                         </button>
                     </div>
@@ -688,19 +689,19 @@ const demoRuntimeJson = esDemo
             <div class="q-contact-links">
                 {vWa && (
                     <a class="q-contact-link" href={`https://wa.me/${waDigits}`} target="_blank" rel="noopener">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                         {t(L, 'q.whatsapp')}
                     </a>
                 )}
                 {vEmail && (
                     <a class="q-contact-link" href={`mailto:${vEmail}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('mail')}></svg>
                         {t(L, 'q.correo')}
                     </a>
                 )}
                 {vTel && (
                     <a class="q-contact-link" href={`tel:${vTel}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('phone')}></svg>
                         {t(L, 'q.llamar')}
                     </a>
                 )}
@@ -711,7 +712,7 @@ const demoRuntimeJson = esDemo
     {ORG.portalPowered !== false && (
         <div class="q-cord-badge">
             <span class="q-cord-badge-trust">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                 {t(L, 'q.firma_validez_legal')}
             </span>
             <a href="https://cordhq.app" class="q-cord-badge-cta" target="_blank" rel="noopener">
@@ -729,7 +730,7 @@ const demoRuntimeJson = esDemo
                 <span class="editorial q-sticky-total" style={`color:${color}`}>{total}</span>
             </div>
             <button class="q-sticky-cta" id="qStickyApprove" style={`background:${color}`}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                 {t(L, 'q.aprobar')}
             </button>
         </div>
@@ -743,6 +744,7 @@ const demoRuntimeJson = esDemo
 </script>
 
 <script>
+    import { iconSvg } from '../../lib/icons';
     import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
 
     const card = document.querySelector('.q-card') as HTMLElement | null;
@@ -1033,7 +1035,7 @@ const demoRuntimeJson = esDemo
                 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 stamp.outerHTML = `<div class="ql-audit-stamp">
                     <div class="ql-audit-header">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                        ${iconSvg('shield', '', 1.5, 13)}
                         <span>${I18NQ.documentoVerificado || 'Documento verificado'}</span>
                     </div>
                     <div class="ql-audit-row"><strong>${I18NQ.firmante || 'Firmante:'}</strong> ${esc(signedBy)}</div>

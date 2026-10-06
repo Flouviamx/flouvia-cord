@@ -91,6 +91,7 @@ const ROUTES = [
         href: l('/desarrolladores/api'), cta: tx('Primeros pasos', 'Get started'),
     },
 ];
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="dps" aria-labelledby="dps-t1">
@@ -102,7 +103,7 @@ const ROUTES = [
                 <div class="dps-aside">
                     <p class="dps-sub reveal">{tx('API REST, SDK, webhooks y MCP sobre los mismos datos que tu equipo usa en la app, con llaves de prueba aisladas de tu cuenta real.', 'REST API, SDK, webhooks and MCP on the same data your team uses in the app, with test keys isolated from your live account.')}</p>
                     <div class="dps-ctas reveal">
-                        <a class="dps-btn dps-btn-primary" href={docsUrl}><span>{tx('Ver la documentación', 'Read the docs')}</span><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+                        <a class="dps-btn dps-btn-primary" href={docsUrl}><span>{tx('Ver la documentación', 'Read the docs')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                         <a class="dps-btn" href="https://www.npmjs.com/package/@flouviahq/elements" target="_blank" rel="noopener"><span>{tx('Ver el SDK en npm', 'See the SDK on npm')}</span></a>
                     </div>
                 </div>
@@ -196,7 +197,7 @@ const ROUTES = [
                     </div>
                     <h3 class="dps-route-h">{ROUTES[0].t}</h3>
                     <p class="dps-route-t">{ROUTES[0].d}</p>
-                    <a class="dps-route-cta" href={ROUTES[0].href}>{ROUTES[0].cta}<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+                    <a class="dps-route-cta" href={ROUTES[0].href}>{ROUTES[0].cta}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                 </article>
 
                 <!-- Plataformas: filas de logos que se deslizan -->
@@ -210,7 +211,7 @@ const ROUTES = [
                     </div>
                     <h3 class="dps-route-h">{ROUTES[1].t}</h3>
                     <p class="dps-route-t">{ROUTES[1].d}</p>
-                    <a class="dps-route-cta" href={ROUTES[1].href}>{ROUTES[1].cta}<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+                    <a class="dps-route-cta" href={ROUTES[1].href}>{ROUTES[1].cta}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                 </article>
 
                 <!-- Código propio: editor con autocompletado y terminal -->
@@ -235,7 +236,7 @@ const ROUTES = [
                     </div>
                     <h3 class="dps-route-h">{ROUTES[2].t}</h3>
                     <p class="dps-route-t">{ROUTES[2].d}</p>
-                    <a class="dps-route-cta" href={ROUTES[2].href}>{ROUTES[2].cta}<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+                    <a class="dps-route-cta" href={ROUTES[2].href}>{ROUTES[2].cta}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                 </article>
             </div>
         </div>

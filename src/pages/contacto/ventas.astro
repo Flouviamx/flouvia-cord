@@ -93,6 +93,7 @@ const challengeVals = ['portal','cfdi','cobranza','aprobaciones','integraciones'
 
 const timelineLbls  = isEn ? ['ASAP','1 – 3 months','Just exploring'] : ['Lo antes posible','1 – 3 meses','Solo explorando'];
 const timelineVals  = ['urgente','1_3meses','explorando'];
+import { iconInner } from '../../lib/icons';
 ---
 
 <Layout title={title} description={description}>
@@ -118,9 +119,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
           {[t.feat1, t.feat2, t.feat3].map(f => (
             <li class="vs-feat">
               <span class="vs-feat-icon">
-                <svg viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="1 5 4 8 11 1"/>
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
               </span>
               <span>{f}</span>
             </li>
@@ -189,7 +188,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
             <div class="vs-actions vs-actions-end">
               <button type="button" class="vs-btn-next" data-next="1">
                 {t.cont}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
               </button>
             </div>
           </div>
@@ -235,7 +234,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
               <button type="button" class="vs-btn-back" data-prev="0">{t.back}</button>
               <button type="button" class="vs-btn-next" data-next="2">
                 {t.cont}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
               </button>
             </div>
           </div>
@@ -277,7 +276,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
               <button type="button" class="vs-btn-back" data-prev="1">{t.back}</button>
               <button type="button" class="vs-btn-next" data-next="3">
                 {t.cont}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
               </button>
             </div>
           </div>
@@ -315,9 +314,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
               <button type="button" class="vs-btn-back" data-prev="2">{t.back}</button>
               <button type="submit" class="vs-btn-submit" id="vsSubmitBtn">
                 {t.subm}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
               </button>
             </div>
           </div>

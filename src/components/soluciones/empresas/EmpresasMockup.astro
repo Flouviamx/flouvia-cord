@@ -94,6 +94,7 @@ const AUDIT = [
     { a: 'apikey.creada', d: T('Producción', 'Production'), m: T('hace 5 días', '5 days ago'), ip: '189.203.44.10' },
 ];
 const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
+import { iconInner } from '../../../lib/icons';
 ---
 
 <div class:list={['emk-stage', `emk-v-${variant}`, `emk-s-${scene}`]} data-emk aria-hidden="true">
@@ -199,8 +200,8 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
                 {PERMS.map((p) => (
                     <li class:list={{ off: !p.on }}>
                         {p.on
-                            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14" stroke="none"/><polyline points="8 12.5 11 15.5 16.5 9.5"/></svg>
-                            : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg>}
+                            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
+                            : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('minus-circle')}></svg>}
                         {p.l}
                     </li>
                 ))}
@@ -219,7 +220,7 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
                 <div class="emk-approval" data-emk-r>
                     <div class="emk-ap-info">
                         <span class="emk-ap-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>
                             {T('Pendiente de aprobación', 'Pending approval')}
                         </span>
                         <span class="emk-ap-why">{T(
@@ -270,7 +271,7 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
             </div>
             <div class="emk-body emk-body-flush">
                 <div class="emk-hook" data-emk-r>
-                    <span class="emk-hook-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    <span class="emk-hook-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span>
                     <span class="emk-hook-info">
                         <b class="emk-mono">https://api.centauro.mx/cord/webhooks</b>
                         <small><code>whsec_8c1f2a••••••••••••••</code> <i>{T('· 6 eventos', '· 6 events')}</i> <i class="err">{T('· última hace 2 min (503)', '· last 2 min ago (503)')}</i></small>
@@ -432,7 +433,7 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
                     <div class="grand"><span>Total</span><b class="editorial">{cur(INV_TOTAL, 'USD')}</b></div>
                 </div>
                 <p class="emk-fx" data-emk-r>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><path d="M8 10h8l-2.5-2.5M16 14H8l2.5 2.5"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('swap')}></svg>
                     <span><span>{T('Tipo de cambio declarado', 'Stated exchange rate')}: <b class="editorial">1 USD = {FX} MXN</b></span><span>{T('Total contable', 'Ledger total')} <b class="editorial">{new Intl.NumberFormat(loc, { minimumFractionDigits: 2 }).format(INV_TOTAL * FX)} MXN</b></span></span>
                 </p>
             </div>
@@ -441,7 +442,7 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
             <div class="emk-org-btn">
                 <span class="emk-org-av">D</span>
                 <span><small>{T('Espacio de trabajo', 'Workspace')}</small><b>Distribuidora Centauro</b></span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 10 12 15 17 10"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg>
             </div>
             <div class="emk-org-menu">
                 <span class="emk-org-lbl">{T('Espacios de trabajo', 'Workspaces')}</span>
@@ -453,11 +454,11 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
                     <div class:list={['emk-org-item', { on: o.on }]}>
                         <span class="emk-org-av sm">{o.a}</span>
                         <span><b>{o.n}</b><small>{o.r}</small></span>
-                        {o.on && <svg class="emk-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17 19 7.5"/></svg>}
+                        {o.on && <svg class="emk-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}
                     </div>
                 ))}
                 <div class="emk-org-act">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                     {T('Crear espacio de trabajo', 'Create workspace')}
                 </div>
             </div>
@@ -489,7 +490,7 @@ const HASH = '9f3c7a1e5b20d84c6f19e0a2b7d35c418e6f0b92d47a1c35e8b06f2d9a41e21a';
             </div>
             <div class="emk-stamp">
                 <div class="emk-st-head">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                     {T('Documento verificado', 'Document verified')}
                 </div>
                 <div class="emk-st-row"><strong>{T('Firmante:', 'Signer:')}</strong> Ing. Rosa Treviño (IP: 201.141.72.18)</div>

@@ -58,6 +58,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 const heroTitle = solucion.tituloAcento
     ? solucion.titulo.replace(solucion.tituloAcento, `<span class="stripe-title-accent">${solucion.tituloAcento}</span>`)
     : solucion.titulo;
+import { iconInner } from '../../lib/icons';
 ---
 
 <Layout
@@ -83,7 +84,7 @@ const heroTitle = solucion.tituloAcento
                     <div class="stripe-actions">
                         <a href="/sign-up" class="btn-luxe">
                             <span>{isEn ? 'Start for free' : 'Crear cuenta gratis'}</span>
-                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                             <div class="btn-shimmer"></div>
                         </a>
                         <a href="/contacto/ventas" class="btn-ghost">
@@ -109,10 +110,10 @@ const heroTitle = solucion.tituloAcento
                         </div>
                         <div class="startup-carousel-controls">
                             <button id="startup-prev" class="carousel-btn" aria-label="Previous">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-left')}></svg>
                             </button>
                             <button id="startup-next" class="carousel-btn" aria-label="Next">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </button>
                         </div>
                     </div>
@@ -126,7 +127,7 @@ const heroTitle = solucion.tituloAcento
                                     <p class="uc-desc">{uc.desc}</p>
                                     <a href={uc.link} class="uc-link">
                                         <span>{isEn ? 'See the flow' : 'Ver el flujo'}</span>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                                     </a>
                                 </div>
                                 <div class="uc-logos">
@@ -154,10 +155,10 @@ const heroTitle = solucion.tituloAcento
                         </div>
                         <div class="integration-carousel-controls">
                             <button id="integration-prev" class="carousel-btn" aria-label="Previous">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-left')}></svg>
                             </button>
                             <button id="integration-next" class="carousel-btn" aria-label="Next">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </button>
                         </div>
                     </div>
@@ -189,7 +190,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">{isEn ? 'Quote editor' : 'Editor de cotizaciones'}</h3>
                                 <p class="int-card-desc">{isEn ? 'Build the proposal from your catalog, or paste your client\'s request and let AI suggest the lines. Prices always come from your catalog.' : 'Arma la propuesta desde tu catálogo o pega el pedido de tu cliente y deja que la IA proponga las líneas. El precio siempre sale de tu catálogo.'}</p>
-                                <a href="/producto/editor" class="int-link">{isEn ? 'See the editor' : 'Ver el editor'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href="/producto/editor" class="int-link">{isEn ? 'See the editor' : 'Ver el editor'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="editor" isEn={isEn} />
@@ -199,7 +200,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">{isEn ? 'A link with a pay button' : 'Link con botón de pago'}</h3>
                                 <p class="int-card-desc">{isEn ? 'Every quote and invoice has its own link: your client opens it from WhatsApp or email, approves and pays by card without creating an account.' : 'Cada cotización y cada factura tienen su link: tu cliente lo abre desde WhatsApp o el correo, aprueba y paga con tarjeta sin crear cuenta.'}</p>
-                                <a href="/producto/link-publico" class="int-link">{isEn ? 'See the public link' : 'Ver el link público'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href="/producto/link-publico" class="int-link">{isEn ? 'See the public link' : 'Ver el link público'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="paylink" isEn={isEn} />
@@ -211,7 +212,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Zapier, Make & n8n</h3>
                                 <p class="int-card-desc">{isEn ? 'Use the Cord apps for Zapier and Make or the n8n node: when a quote is approved or paid, the rest happens on its own.' : 'Usa las apps de Cord para Zapier y Make o el nodo de n8n: cuando una cotización se aprueba o se paga, lo demás pasa solo.'}</p>
-                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'See how to connect' : 'Ver cómo conectarlo'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'See how to connect' : 'Ver cómo conectarlo'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="zapier" isEn={isEn} />
@@ -221,7 +222,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Webhooks</h3>
                                 <p class="int-card-desc">{isEn ? 'Get every quote, invoice, payment and client event in your backend, HMAC-signed and retried automatically if your server is down.' : 'Recibe en tu backend cada evento de cotización, factura, pago y cliente, firmado con HMAC y con reintentos automáticos si tu servidor no responde.'}</p>
-                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Set up webhooks' : 'Configurar webhooks'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Set up webhooks' : 'Configurar webhooks'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="webhooks" isEn={isEn} />
@@ -233,7 +234,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">{isEn ? 'REST API' : 'API REST'}</h3>
                                 <p class="int-card-desc">{isEn ? 'Create clients and quotes, send them and read invoices from your code. sk_test_ keys work against a separate test environment.' : 'Crea clientes y cotizaciones, envíalas y consulta facturas desde tu código. Las llaves sk_test_ trabajan sobre un entorno de prueba separado.'}</p>
-                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Read the docs' : 'Leer la documentación'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href="/desarrolladores/api" class="int-link">{isEn ? 'Read the docs' : 'Leer la documentación'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="api" isEn={isEn} />
@@ -243,7 +244,7 @@ const heroTitle = solucion.tituloAcento
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Cord Elements</h3>
                                 <p class="int-card-desc">{isEn ? 'Put the Cord quote builder inside your site or app as a Web Component, in React or in Vue.' : 'Pon el cotizador de Cord dentro de tu sitio o tu app como Web Component, en React o en Vue.'}</p>
-                                <a href={isEn ? "/en/elements" : "/elements"} class="int-link">{isEn ? "See Elements" : "Ver Elements"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href={isEn ? "/en/elements" : "/elements"} class="int-link">{isEn ? "See Elements" : "Ver Elements"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <StpMockup scene="elements" isEn={isEn} />
@@ -270,10 +271,7 @@ const heroTitle = solucion.tituloAcento
                                     <p class="stripe-pillar-desc">{p.desc}</p>
                                     <a href={p.href || '/producto/editor'} class="stripe-pillar-link">
                                         {p.link}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <polyline points="19 12 12 19 5 12"></polyline>
-                                        </svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-down')}></svg>
                                     </a>
                                 </div>
                             </div>
@@ -330,9 +328,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'How to quote faster, why PDFs cost you deals and how to use Cord with your AI' : 'Cómo cotizar más rápido, por qué el PDF te cuesta cierres y cómo usar Cord con tu IA'}</h4>
                                 <a href={`${isEn ? "/en" : ""}/blog/error-pdf-ventas-b2b`} class="stripe-pillar-link">
                                     {isEn ? 'Browse articles' : 'Ver artículos'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -346,9 +342,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Your catalog, your first quote and your first payment, step by step' : 'Tu catálogo, tu primera cotización y tu primer cobro, paso a paso'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
                                     {isEn ? 'Start the guide' : 'Empezar la guía'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -428,9 +422,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Create your first quote by API with test keys before going live' : 'Crea tu primera cotización por API con llaves de prueba antes de salir a producción'}</h4>
                                 <a href="/desarrolladores/api" class="stripe-pillar-link">
                                     {isEn ? 'See the API' : 'Ver la API'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -444,9 +436,7 @@ const heroTitle = solucion.tituloAcento
                                 <h4 class="stripe-resource-title">{isEn ? 'Test cards and a sandbox to try payments without real money' : 'Tarjetas de prueba y un entorno para probar cobros sin dinero real'}</h4>
                                 <a href="/soporte" class="stripe-pillar-link">
                                     {isEn ? 'See testing guides' : 'Ver guías de prueba'}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                                 </a>
                             </div>
                         </div>
@@ -460,7 +450,7 @@ const heroTitle = solucion.tituloAcento
                 <div class="cord-apps-header">
                     <h2 class="cord-apps-title">{isEn ? 'The apps in your stack, connected from day one' : 'Las apps de tu stack, conectadas desde el primer día'}</h2>
                     <p class="cord-apps-desc">{isEn ? 'HubSpot, Slack, Google Sheets, Shopify, Xero, Zapier, Make and n8n connect from Settings, and the REST API covers everything else.' : 'HubSpot, Slack, Google Sheets, Shopify, Xero, Zapier, Make y n8n se conectan desde Ajustes, y la API REST cubre todo lo demás.'}</p>
-                    <a href="/desarrolladores/api" class="cord-apps-link">{isEn ? 'Explore the REST API' : 'Explorar la API REST'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                    <a href="/desarrolladores/api" class="cord-apps-link">{isEn ? 'Explore the REST API' : 'Explorar la API REST'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a>
                 </div>
             </div>
             

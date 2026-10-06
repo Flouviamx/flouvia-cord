@@ -39,6 +39,7 @@ const METODO = {
     tarjeta: { color: '#6366f1', label: en ? 'Credit/debit card' : 'Tarjeta de crédito/débito' },
     spei: { color: '#10b981', label: en ? 'SPEI transfer' : 'Transferencia SPEI' },
 } as const;
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="cps" id="cord-payments">
@@ -51,7 +52,7 @@ const METODO = {
                     <p class="cps-sub reveal">{t("pay.sub")}</p>
                     <a href={l("/producto/pagos")} class="cps-cta reveal">
                         {t("pay.cta")}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                     </a>
                 </div>
             </div>
@@ -75,12 +76,12 @@ const METODO = {
                                 : 'Necesitamos una foto clara de una identificación oficial vigente. Si hace falta, después te pediremos un comprobante de domicilio.'}</p>
                             <div class="cps-co-tabs">
                                 <span class="cps-co-tab is-on">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('smartphone')}></svg>
                                     {en ? 'With your phone' : 'Con tu teléfono'}
                                     <em class="cps-co-tag">{en ? 'Recommended' : 'Recomendado'}</em>
                                 </span>
                                 <span class="cps-co-tab">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5" fill="currentColor" fill-opacity="0.12"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('upload')}></svg>
                                     {en ? 'Upload file' : 'Subir archivo'}
                                 </span>
                             </div>
@@ -115,7 +116,7 @@ const METODO = {
                             <div class="cps-phone-island"></div>
                             <div class="cps-phone-screen">
                                 <span class="cps-pp-back">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-left')}></svg>
                                     {en ? 'Back to the quote' : 'Volver a la cotización'}
                                 </span>
                                 <div class="cps-pp-card">
@@ -140,7 +141,7 @@ const METODO = {
                                         <span class="cps-pp-lab">{en ? 'Card number' : 'Número de tarjeta'}</span>
                                         <span class="cps-pp-in">
                                             <span>4152 3139 0482 7716</span>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.12"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                                         </span>
                                     </div>
                                     <div class="cps-pp-row">
@@ -154,12 +155,12 @@ const METODO = {
                                         </div>
                                     </div>
                                     <span class="cps-pp-pay">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                         {en ? 'Pay' : 'Pagar'} {CUR}196,469.20
                                     </span>
                                 </div>
                                 <p class="cps-pp-foot">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>
                                     <span>{en
                                         ? 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.'
                                         : 'Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.'}</span>
@@ -192,7 +193,7 @@ const METODO = {
                         </div>
                         <div class="cps-nt">
                             <span class="cps-nt-ico">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.14"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                             </span>
                             <span class="cps-nt-body">
                                 <span class="cps-nt-t">{en ? 'Payment received' : 'Pago recibido'}</span>

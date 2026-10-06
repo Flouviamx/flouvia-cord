@@ -19,6 +19,7 @@ const {
         ? "Create a quote with your brand, share the link and follow the conversation through to payment. Start with 5 free sends every month."
         : "Crea una cotización con tu marca, comparte el link y sigue la conversación hasta el pago. Empieza con 5 envíos gratis cada mes.",
 } = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="final-cta">
@@ -30,7 +31,7 @@ const {
                 <div class="fc-actions">
                     <a href={l("/registro")} class="fc-btn">
                         <span>{t("footer.cta.btn")}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                     </a>
                     <a href={l("/contacto/ventas")} class="fc-btn fc-btn-secondary">
                         <span>{isEn ? "Contact Sales" : "Ventas"}</span>
@@ -41,7 +42,7 @@ const {
             <div class="fc-features">
                 <div class="fc-feature">
                     <div class="fc-feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('tag')}></svg>
                     </div>
                     <h3 class="fc-feature-title">{isEn ? "See what you'll pay" : "Ve lo que pagarás"}</h3>
                     <p class="fc-feature-text">{isEn ? "Integrated per-transaction pricing with no hidden fees." : "Precios transparentes desde el primer día sin comisiones ocultas."}</p>
@@ -50,7 +51,7 @@ const {
                 
                 <div class="fc-feature">
                     <div class="fc-feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('code')}></svg>
                     </div>
                     <h3 class="fc-feature-title">{isEn ? "Start building" : "Empieza a construir"}</h3>
                     <p class="fc-feature-text">{isEn ? "Start operating and sending quotes in just 10 minutes." : "Empieza a operar y enviar cotizaciones en tan solo 10 minutos."}</p>

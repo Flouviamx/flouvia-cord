@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useEffect, useId, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { flagSrc } from '../../lib/flags';
@@ -253,9 +254,7 @@ export default function FlagSelect({
         <span className="fs-label">
           {options.find((o) => o.code === current)?.label || ''}
         </span>
-        <svg className="fs-caret" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <svg className="fs-caret" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('chevron-down') }} />
       </button>
 
       {nativeId && (
@@ -291,9 +290,7 @@ export default function FlagSelect({
           {/* Barra de búsqueda — solo se muestra si hay suficientes opciones */}
           {options.length > 8 && (
             <div className="fs-search-wrap">
-              <svg className="fs-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <svg className="fs-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('search') }} />
               <input
                 ref={searchRef}
                 type="text"
@@ -315,7 +312,7 @@ export default function FlagSelect({
                   aria-label="Limpiar búsqueda"
                   tabIndex={-1}
                 >
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('x') }} />
                 </button>
               )}
             </div>
@@ -349,9 +346,7 @@ export default function FlagSelect({
                   {opt.hint ? <span className="fs-opt-hint">{opt.hint}</span> : null}
                 </span>
                 {opt.code === current && (
-                  <svg className="fs-opt-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <svg className="fs-opt-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check') }} />
                 )}
               </div>
             ))}

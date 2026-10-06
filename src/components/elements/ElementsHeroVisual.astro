@@ -82,6 +82,7 @@ const ITEMS = [
     { d: tx('Varilla corrugada 3/8 x 12 m', 'Rebar 3/8 x 12 m'), q: '120', p: '$198.50', t: '$23,820.00' },
     { d: tx('Block hueco 15x20x40', 'Hollow block 15x20x40'), q: '2,400', p: '$14.20', t: '$34,080.00' },
 ];
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="ehv" data-ehv>
@@ -135,7 +136,7 @@ const ITEMS = [
                     <div class="ehv-ith"><small class="ehv-lbl">{tx('Concepto', 'Item')}</small><small class="ehv-lbl">{tx('Importe', 'Amount')} · MXN</small></div>
                     {ITEMS.map((it) => (
                         <div class="ehv-it">
-                            <i class="ehv-chk"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" /></svg></i>
+                            <i class="ehv-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg></i>
                             <span class="ehv-it-d"><b>{it.d}</b><small class="ehv-num">{it.q} × {it.p}</small></span>
                             <b class="ehv-num">{it.t}</b>
                         </div>
@@ -151,17 +152,17 @@ const ITEMS = [
                     <small class="ehv-lbl">{tx('Método de pago', 'Payment method')}</small>
                     <div class="ehv-tiles">
                         <span class="ehv-tile on">
-                            <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5" class="f" /><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 9.5h19M6 15h4" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                             <b>{tx('Tarjeta', 'Card')}</b>
                             <i class="ehv-radio"></i>
                         </span>
                         <span class="ehv-tile">
-                            <svg viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5z" class="f" /><path d="M3 9.5L12 4l9 5.5M4.5 20h15M6 10.5v6.5M10 10.5v6.5M14 10.5v6.5M18 10.5v6.5" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bank')}></svg>
                             <b>SPEI</b>
                             <i class="ehv-radio"></i>
                         </span>
                         <span class="ehv-tile">
-                            <svg viewBox="0 0 24 24"><path d="M3.5 8.5A2.5 2.5 0 016 6h12a2.5 2.5 0 012.5 2.5V17A2.5 2.5 0 0118 19.5H6A2.5 2.5 0 013.5 17z" class="f" /><path d="M3.5 8.5A2.5 2.5 0 016 6h12a2.5 2.5 0 012.5 2.5V17A2.5 2.5 0 0118 19.5H6A2.5 2.5 0 013.5 17zM16 12.75h4.5M6 6l9-2.5 1.2 2.5" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('wallet')}></svg>
                             <b>Mercado Pago</b>
                             <i class="ehv-radio"></i>
                         </span>
@@ -170,11 +171,11 @@ const ITEMS = [
 
                 <div class="ehv-btn ehv-sec">
                     <span>{tx('Aprobar y pagar', 'Approve and pay')}</span>
-                    <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                 </div>
 
                 <div class="ehv-foot ehv-sec">
-                    <span><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.9-7 9.5-4-1.6-7-5.2-7-9.5V6z" class="f" /><path d="M12 3l7 3v5.5c0 4.3-3 7.9-7 9.5-4-1.6-7-5.2-7-9.5V6zM9 12l2.2 2.2L15.5 10" /></svg>{tx('Firma con validez legal', 'Legally binding signature')}</span>
+                    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>{tx('Firma con validez legal', 'Legally binding signature')}</span>
                     <span>{tx('Con tecnología de', 'Powered by')} <b>Cord</b></span>
                 </div>
             </div>

@@ -15,6 +15,7 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
     return s;
 };
+import { iconInner } from '../../../lib/icons';
 ---
 
 <SettingsShell title="Datos y privacidad — Ajustes" tab="datos" perm="ajustes"
@@ -84,10 +85,7 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
                     <div class="dz-pw-wrap">
                         <input class="s-input" id="dzPass" type="password" autocomplete="current-password" />
                         <button type="button" class="dz-pw-toggle" id="dzPwToggle" aria-label={t(L, 'set.datos.dlg_mostrar_pw')} aria-pressed="false">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.12" />
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.18" />
-                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('eye')}></svg>
                         </button>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 ---
+import { iconInner } from '../../../lib/icons';
 import { currentLocale } from '../../../lib/context';
 import { DEFAULT_BRAND } from '../../../lib/brand-profile';
 import { getEntitlementContext } from '../../../lib/org-entitlements';
@@ -10,7 +11,6 @@ const L = currentLocale();
 const say = (es:string,en:string) => L === 'en' ? en : es;
 const profile = org.brandProfile ?? DEFAULT_BRAND;
 const canRemove = planIncludes((await getEntitlementContext(org.id)).effectivePlan,'remove_branding');
-const paths = { image:'M4 4h16v16H4z M4 16l5-5 4 4 3-3 4 4 M8 8h.01', palette:'M12 3a9 9 0 1 0 0 18c3 0 1-4 4-4h2c5-3 3-14-6-14z M7 10h.01 M10 6h.01 M16 7h.01', text:'M4 5h16 M12 5v15 M8 20h8', layout:'M3 4h18v16H3z M3 10h18 M9 10v10', message:'M4 4h16v13H9l-5 4z M8 8h8 M8 12h5', sliders:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6' };
 const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185b48','#a7c4ae'], ['Arcilla','Clay','#8b4637','#d9b7a7'], ['Índigo','Indigo','#443b87','#bab4da'], ['Océano','Ocean','#146179','#a6d3df'], ['Grafito','Graphite','#343434','#b8b8b4'] ];
 ---
 <div class="brand-editor" id="brandEditor" data-mode={mode} data-locale={L} data-primary={org.colorMarca} data-secondary={org.colorSecundario} data-logo={org.logoUrl} data-banner={org.portalBanner} data-welcome={org.portalBienvenida} data-chat={String(org.portalMostrarChat)} data-powered={String(canRemove ? org.portalPowered : true)}>
@@ -23,7 +23,7 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
         <div class="be-controls">
             {mode === 'identity' ? <>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.image}/></svg>{say('Logotipo','Logo')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('image')}></svg>{say('Logotipo','Logo')}</h3>
                     <p class="be-description">{say('Una identidad compartida con tus documentos y enlaces. La variante de contraste se usa en encabezados de color de documentos, portal y correos.','A shared identity for documents and links. The alternate logo is used on colored document, portal and email headers.')}</p>
                     <div class="be-logos">
                         {[['primary',say('Principal','Primary'),org.logoUrl],['dark',say('Sobre color','On color'),profile.logoDark]].map(([kind,label,url]) => <div class:list={['be-logo-tile',{'on-color':kind === 'dark'}]}>
@@ -40,14 +40,14 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
                     <select class="s-input" id="brandLogoSize" data-brand-option="logoSize">{[['small','Pequeño','Small'],['medium','Mediano','Medium'],['large','Grande','Large']].map(([v,es,en])=><option value={v} selected={profile.logoSize===v}>{say(es,en)}</option>)}</select>
                 </section>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.palette}/></svg>{say('Paleta de marca','Brand palette')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('palette')}></svg>{say('Paleta de marca','Brand palette')}</h3>
                     <p class="be-description">{say('Empieza con una combinación o usa tus colores exactos.','Start with a palette or use your exact colors.')}</p>
                     <div class="be-palettes">{palettes.map(([es,en,a,b])=><button type="button" data-palette={`${a},${b}`} aria-label={say(es,en)} aria-pressed="false"><span style={`background:${a}`}></span><span style={`background:${b}`}></span><b>{say(es,en)}</b></button>)}</div>
                     <div class="be-color-fields">{[['brandPrimary','color_marca',org.colorMarca,say('Principal','Primary')],['brandSecondary','color_secundario',org.colorSecundario,say('Secundario','Secondary')]].map(([id,field,value,label])=><div><label class="be-label" for={id}>{label}</label><div class="be-color"><input type="color" data-color-for={id} value={value || org.colorMarca} aria-label={label}/><input id={id} class="s-input" data-field={field} value={value} maxlength="7" placeholder={org.colorMarca} pattern={field==='color_marca'?'#[0-9a-fA-F]{6}':'(#[0-9a-fA-F]{6})?'} required={field==='color_marca'}/></div></div>)}</div>
                     <p class="be-help">{say('El texto del botón se adapta al color para mantener su legibilidad.','Button text adapts to your color to stay readable.')}</p>
                 </section>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.text}/></svg>{say('Tipografía','Typography')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('type')}></svg>{say('Tipografía','Typography')}</h3>
                     <div class="be-options">{[['system','Sistema','System','-apple-system,sans-serif'],['humanist','Humanista','Humanist','Verdana,sans-serif'],['editorial','Editorial','Editorial','Georgia,serif']].map(([value,es,en,font])=><label class="be-option"><input type="radio" name="brandFont" data-brand-option="font" value={value} checked={profile.font===value}/><span class="be-type" style={`font-family:${font}`}>Aa</span><b>{say(es,en)}</b></label>)}</div>
                     <p class="be-help">{say('Se aplica al portal, cotizaciones y correos. Las facturas comerciales usan una fuente equivalente para impresión.','Applies to the portal, quotes and emails. Commercial invoices use an equivalent print font.')}</p>
                 </section>
@@ -57,19 +57,19 @@ const palettes = [ ['Tinta','Ink','#0a192f','#64748b'], ['Bosque','Forest','#185
             </> : <>
                 <div class="be-inherited"><span class="be-swatch" style={`background:${org.colorMarca}`}></span><div><b>{say('Identidad compartida','Shared identity')}</b><p>{say('Usa el logo, la paleta y la tipografía de tu marca.','Uses your brand’s logo, palette and typography.')}</p></div><a href="/app/ajustes/branding">{say('Editar','Edit')} →</a></div>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.layout}/></svg>{say('Composición','Layout')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('template')}></svg>{say('Composición','Layout')}</h3>
                     <p class="be-help">{say('Este estilo también se comparte con los correos y las facturas comerciales. Las cotizaciones tienen su propia composición en Documento PDF.','This style is also shared with emails and commercial invoices. Quotes have their own layout in PDF document settings.')}</p>
                     <div class="be-options">{[['classic','Esencial','Essential'],['soft','Suave','Soft'],['contrast','Contraste','Contrast']].map(([value,es,en])=><label class="be-option"><input type="radio" name="brandHeader" data-brand-option="header" value={value} checked={profile.header===value}/><span class={`be-layout-sample ${value}`}><i></i><i></i><i></i></span><b>{say(es,en)}</b></label>)}</div>
                     <div class="be-selects"><div><label class="be-label" for="brandCorners">{say('Bordes','Corners')}</label><select class="s-input" id="brandCorners" data-brand-option="corners">{[['precise','Definidos','Precise'],['soft','Suaves','Soft'],['round','Redondeados','Rounded']].map(([v,es,en])=><option value={v} selected={profile.corners===v}>{say(es,en)}</option>)}</select></div><div><label class="be-label" for="brandDensity">{say('Espaciado','Spacing')}</label><select class="s-input" id="brandDensity" data-brand-option="density"><option value="comfortable" selected={profile.density==='comfortable'}>{say('Amplio','Comfortable')}</option><option value="compact" selected={profile.density==='compact'}>{say('Compacto','Compact')}</option></select></div></div>
                 </section>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.message}/></svg>{say('Mensajes','Messages')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>{say('Mensajes','Messages')}</h3>
                     <label class="be-label" for="brandBanner">{say('Aviso superior','Top announcement')}</label><input class="s-input" id="brandBanner" data-field="portal_banner" value={org.portalBanner} maxlength="200" placeholder={say('Un detalle que tu cliente debe conocer','A detail your client should know')}/>
                     <p class="be-help">{say('Déjalo vacío para ocultarlo.','Leave empty to hide.')}</p>
                     <label class="be-label" for="brandWelcome">{say('Bienvenida','Welcome message')}</label><textarea class="s-input" id="brandWelcome" data-field="portal_bienvenida" rows="3" maxlength="280" placeholder={say('Gracias por considerarnos. Estamos para ayudarte.','Thank you for considering us. We’re here to help.')}>{org.portalBienvenida}</textarea>
                 </section>
                 <section class="be-section">
-                    <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths.sliders}/></svg>{say('Interacción','Interaction')}</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sliders')}></svg>{say('Interacción','Interaction')}</h3>
                     <label class="s-toggle"><input type="checkbox" id="brandChat" data-field="portal_mostrar_chat" checked={org.portalMostrarChat}/><span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span><span class="s-toggle-text">{say('Comentarios y contrapropuestas','Comments and counteroffers')}</span></label>
                     <p class="be-help">{say('Permite conversar sobre la propuesta desde el enlace.','Let clients discuss the proposal from its link.')}</p>
                     <label class="s-toggle"><input type="checkbox" id="brandPowered" data-field={canRemove?'portal_powered':undefined} checked={!canRemove || org.portalPowered} disabled={!canRemove}/><span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span><span class="s-toggle-text">{say('Mostrar la marca de Cord','Show Cord branding')}</span></label>

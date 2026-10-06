@@ -6,6 +6,7 @@ import CordDynamicBg from '../CordDynamicBg.jsx'
 // (navy casi negro + teal profundo + cobalto).
 const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 const { isEn = false } = Astro.props;
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="support-hero">
@@ -20,10 +21,7 @@ const { isEn = false } = Astro.props;
         <h1 class="sh-h1 masked-title">{isEn ? 'How can we help you?' : '¿Cómo podemos ayudarte?'}</h1>
 
         <div class="search-container reveal">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('search')}></svg>
             <input
                 type="text"
                 id="support-search-input"

@@ -57,6 +57,7 @@ const breadcrumbSchema = {
 
 
 
+import { iconInner } from '../../lib/icons';
 ---
 
 
@@ -80,7 +81,7 @@ const breadcrumbSchema = {
                 <div class="startup-actions">
                     <a href="/sign-up" class="btn-luxe">
                         <span>Empezar ahora</span>
-                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                         <div class="btn-shimmer"></div>
                     </a>
                     <a href="/contacto/ventas" class="btn-ghost"><span>Contactar a ventas</span></a>
@@ -172,7 +173,7 @@ const breadcrumbSchema = {
                                 <div class="ucm-card">
                                     <div class="ucm-sec ucm-sec-row"><span>Cuentas por cobrar</span><span class="ucm-chips"><span class="on">Todas</span><span>Vencidas</span><span>Con promesa</span><span>Sin gestión</span></span></div>
                                     <div class="ucm-th ucm-cz"><span>Cliente</span><span>Folio</span><span>Vence</span><span>Estado</span><span class="ucm-r">Saldo</span></div>
-                                    <div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">GN</i><span>Grupo Norteño</span></span><span class="ucm-folio">COT-0131</span><span class="ucm-date">12 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 18 d</span></span><span class="editorial ucm-r ucm-amt">$96,420<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">FM</i><span>Ferre Mayoreo Bajío</span></span><span class="ucm-folio">COT-0138</span><span class="ucm-date">22 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 8 d</span></span><span class="editorial ucm-r ucm-amt">$52,180<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">DE</i><span>Distribuidora El Zarco</span></span><span class="ucm-folio">COT-0142</span><span class="ucm-date">26 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 4 d</span><span class="ucm-e prom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Promete 3 oct</span></span><span class="editorial ucm-r ucm-amt">$35,700<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">AC</i><span>Abastos del Centro</span></span><span class="ucm-folio">COT-0145</span><span class="ucm-date">3 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 3 d</span></span><span class="editorial ucm-r ucm-amt">$61,240<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">MC</i><span>Materiales Cárdenas</span></span><span class="ucm-folio">COT-0147</span><span class="ucm-date">6 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 6 d</span></span><span class="editorial ucm-r ucm-amt">$35,340<i class="ucm-cur">MXN</i></span></div>
+                                    <div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">GN</i><span>Grupo Norteño</span></span><span class="ucm-folio">COT-0131</span><span class="ucm-date">12 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 18 d</span></span><span class="editorial ucm-r ucm-amt">$96,420<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">FM</i><span>Ferre Mayoreo Bajío</span></span><span class="ucm-folio">COT-0138</span><span class="ucm-date">22 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 8 d</span></span><span class="editorial ucm-r ucm-amt">$52,180<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">DE</i><span>Distribuidora El Zarco</span></span><span class="ucm-folio">COT-0142</span><span class="ucm-date">26 sep 2026</span><span class="ucm-est"><span class="ucm-e over">Vencida 4 d</span><span class="ucm-e prom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>Promete 3 oct</span></span><span class="editorial ucm-r ucm-amt">$35,700<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">AC</i><span>Abastos del Centro</span></span><span class="ucm-folio">COT-0145</span><span class="ucm-date">3 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 3 d</span></span><span class="editorial ucm-r ucm-amt">$61,240<i class="ucm-cur">MXN</i></span></div><div class="ucm-tr ucm-cz"><span class="ucm-cli"><i class="ucm-av">MC</i><span>Materiales Cárdenas</span></span><span class="ucm-folio">COT-0147</span><span class="ucm-date">6 oct 2026</span><span class="ucm-est"><span class="ucm-e due">Vence en 6 d</span></span><span class="editorial ucm-r ucm-amt">$35,340<i class="ucm-cur">MXN</i></span></div>
                                 </div>
                             </div>
                         </div>
@@ -185,28 +186,28 @@ const breadcrumbSchema = {
                     <div class="uc-mf-grid">
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="14 2 18 6 7 17 3 17 3 13 14 2" fill="currentColor" fill-opacity="0.12"></polygon><polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon><line x1="3" y1="22" x2="21" y2="22"></line></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('edit')}></svg>
                             </div>
                             <h4>Descuentos por volumen</h4>
                             <p><a href="/sign-up" class="uc-link-inline">Aplica matrices de precios</a> automáticamente dependiendo de las cantidades solicitadas en el cotizador.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" fill="currentColor" fill-opacity="0.12"></rect><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
                             </div>
                             <h4>Webhooks para tu ERP</h4>
                             <p>Cord emite <code>quote.approved</code> y <code>quote.paid</code> para que tu ERP o sistema de inventario reaccione vía Zapier, Make o tu propio backend al cerrar un pedido.</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="7" r="4" fill="currentColor" fill-opacity="0.12"></circle><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2" fill="currentColor" fill-opacity="0.12"></path><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-check')}></svg>
                             </div>
                             <h4>Roles de aprobación</h4>
                             <p>Establece <a href="/producto/aprobaciones" class="uc-link-inline">flujos de validación</a> internos si un asesor otorga un descuento mayor al permitido (plan Scale).</p>
                         </div>
                         <div class="uc-mf-item">
                             <div class="uc-mf-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.12"></path><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                             </div>
                             <h4>WhatsApp con Workflows</h4>
                             <p>Con <a href="/producto/workflows" class="uc-link-inline">Cord Workflows</a> le escribes al cliente por WhatsApp, con tu plantilla aprobada por Meta, cuando cambia el estado de una cotización o factura.</p>

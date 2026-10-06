@@ -190,7 +190,8 @@ export async function getUserProfile() {
     // que ningún código de este repo emite más.
     const [memberships] = await withUserTx(userId, sql`
         select
-            o.id, o.nombre, o.logo_url, o.parent_org_id,
+            o.id, o.nombre, o.parent_org_id,
+            case when coalesce(o.logo_url, '') = '' then null else left(md5(o.logo_url), 10) end as logo_v,
             coalesce(m.rol, case when o.owner_id = ${userId} then 'owner' else 'miembro' end) as rol
         from orgs o
         left join org_members m on m.org_id = o.id and m.user_id = ${userId} and m.estado = 'activo'
@@ -222,7 +223,7 @@ export async function getUserProfile() {
             organization: {
                 id: m.id as string,
                 nombre: m.nombre as string,
-                logoUrl: m.logo_url as string | null,
+                logoUrl: m.logo_v ? `/api/orgs/${m.id}/logo?v=${m.logo_v}` : null,
                 parentOrgId: (m.parent_org_id as string | null) ?? null,
             },
             rol: m.rol as string,

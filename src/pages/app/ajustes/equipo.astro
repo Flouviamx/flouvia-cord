@@ -82,6 +82,7 @@ const EQ_T = {
     actNunca: t(L, 'set.eq.act_nunca'),
     actCotizaciones: t(L, 'set.eq.act_cotizaciones'),
 };
+import { iconInner } from '../../../lib/icons';
 ---
 
 <SettingsShell title="Equipo y permisos — Ajustes" tab="equipo" intro={t(L, 'set.eq.intro')}>
@@ -207,7 +208,7 @@ const EQ_T = {
                                 <>
                                     {m.estado === 'invitado' && (
                                         <button type="button" class="eq-icon" data-eq-act="reenviar" title={t(L, 'set.eq.reenviar_invitacion')} aria-label={t(L, 'set.eq.reenviar_invitacion')}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('undo')}></svg>
                                         </button>
                                     )}
                                     {m.estado === 'revocado' ? (
@@ -216,7 +217,7 @@ const EQ_T = {
                                         <>
                                             <button type="button" class="eq-act-link" data-eq-act="editar">{t(L, 'set.eq.editar_funciones')}</button>
                                             <button type="button" class="eq-icon eq-icon-danger" data-eq-act="revocar" title={t(L, 'set.eq.revocar_acceso')} aria-label={t(L, 'set.eq.revocar_acceso')}>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
                                             </button>
                                         </>
                                     )}

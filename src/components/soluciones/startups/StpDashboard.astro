@@ -38,6 +38,7 @@ const feed = [
 ];
 const bars = [38, 46, 41, 58, 64, 88];
 const months = isEn ? ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'] : ['abr', 'may', 'jun', 'jul', 'ago', 'sep'];
+import { iconInner } from '../../../lib/icons';
 ---
 
 <div class="sd stp-root" aria-hidden="true">
@@ -45,7 +46,7 @@ const months = isEn ? ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'] : ['abr', 'may'
         <div class="sd-org">
             <span class="sd-org-av">N</span>
             <span class="sd-2l"><b>Nodo Labs</b><small>{t('Plan Starter', 'Starter plan')}</small></span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg>
         </div>
         {nav.map((grp) => (
             <div class="sd-grp">

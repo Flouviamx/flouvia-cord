@@ -16,17 +16,18 @@ const iconPaths: Record<string, string> = {
     clients: '<circle cx="9" cy="8" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M3 20v-2a5 5 0 0110 0v2"/><path d="M15 5a3 3 0 010 6M17 15a5 5 0 014 4" opacity=".55"/>',
     products: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="currentColor" fill-opacity="0.12"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/><path d="M8 5l8 4.5" opacity=".55"/>',
 };
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="report-picker" data-report-picker>
     <button class="report-picker-trigger" type="button" data-report-trigger aria-haspopup="dialog" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[active.icon]}></svg>
         <span>{label(active)}</span>
-        <svg class="report-picker-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+        <svg class="report-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
     </button>
     <div class="report-picker-panel" data-report-panel hidden role="dialog" aria-label={locale === 'en' ? 'Choose report' : 'Elegir informe'}>
         <label class="report-picker-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
             <input type="search" data-report-search autocomplete="off" placeholder={locale === 'en' ? 'Search reports' : 'Buscar informes'} />
         </label>
         <div class="report-picker-list" data-report-list>
@@ -40,7 +41,7 @@ const iconPaths: Record<string, string> = {
                                 <strong>{label(report)}</strong>
                                 <small>{report.scope === 'snapshot' ? (locale === 'en' ? 'As of today' : 'Al día de hoy') : (locale === 'en' ? 'Date range' : 'Por rango de fechas')}</small>
                             </span>
-                            {report.id === current && <svg class="report-picker-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4L19 6"/></svg>}
+                            {report.id === current && <svg class="report-picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>}
                         </a>
                     ))}
                 </section>

@@ -296,6 +296,7 @@ const THUMBS: Record<Sku, string> = {
     fle: icon(`<path d="M3.2 7.2A1.2 1.2 0 0 1 4.4 6h8.9a1.2 1.2 0 0 1 1.2 1.2v8.6H3.2z" ${G}/><path d="M14.5 9.6h3.4l2.9 3.3v2.9h-6.3z" ${G}/><circle cx="7.3" cy="17" r="1.9" fill="currentColor" fill-opacity="0.25"/><circle cx="17.2" cy="17" r="1.9" fill="currentColor" fill-opacity="0.25"/>`),
 };
 const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`;
+import { iconInner } from '../../lib/icons';
 ---
 
 <section class="qbd" data-quote-demo data-lang={L} aria-labelledby="qbd-title" style={`--qbd-chevron:${CHEVRON};--qbd-brand:${COLOR}`}>
@@ -307,7 +308,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
         <p class="qbd-sub reveal">{C.sub}</p>
         <a href="/sign-up" class="qbd-cta reveal">
             <span>{C.cta}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
         </a>
     </div>
 
@@ -316,11 +317,11 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
         <div class="qbd-panel" role="group" aria-labelledby="qbd-panel-title">
             <div class="qbd-panel-head">
                 <span class="qbd-panel-ico" aria-hidden="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2.8 5.2 13.3h6.2l-1.2 7.9 8.3-10.7h-6.2z" fill="currentColor" fill-opacity="0.22"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bolt')}></svg>
                 </span>
                 <span class="qbd-panel-title" id="qbd-panel-title">{C.panel}</span>
                 <button type="button" class="qbd-reset" data-qbd-reset aria-label={C.reset} title={C.reset}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.4v4.3h4.3"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('undo')}></svg>
                 </button>
             </div>
 
@@ -342,7 +343,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                         </div>
                     </fieldset>
                     <p class="qbd-note" data-qbd-desc>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.2V4.8c0-.7.6-1.3 1.3-1.3h7.4l8.3 8.3a1.3 1.3 0 0 1 0 1.8l-7.3 7.3a1.3 1.3 0 0 1-1.8 0z" fill="currentColor" fill-opacity="0.15"/><circle cx="8.3" cy="8.3" r="1.3"/></svg>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('tag')}></svg>
                         <span data-qbd-desc-text>{M.client.desc > 0 ? fill(S.descOn, { d: String(M.client.desc) }) : S.descOff}</span>
                     </p>
                 </div>
@@ -367,15 +368,15 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                     </span>
                                     <span class="qbd-step">
                                         <button type="button" data-qbd-dec aria-label={`${C.less} ${p.step} · ${p.name}`}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('minus')}></svg>
                                         </button>
                                         <input type="text" inputmode="numeric" autocomplete="off" value={(dl?.qty ?? p.qty).toLocaleString(INTL)} aria-label={`${C.qty} · ${p.name}`} data-qbd-qty />
                                         <button type="button" data-qbd-inc aria-label={`${C.more} ${p.step} · ${p.name}`}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                                         </button>
                                     </span>
                                     <button type="button" class="qbd-remove" data-qbd-remove aria-label={`${C.remove} ${p.name}`}>
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
                                     </button>
                                 </li>
                             );
@@ -383,7 +384,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                     </ul>
                     <div class="qbd-add-wrap">
                         <button type="button" class="qbd-add" data-qbd-add aria-haspopup="listbox" aria-expanded="false" aria-controls="qbd-catalog">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                             <span data-qbd-add-text>{S.add}</span>
                         </button>
                         <ul class="qbd-catalog" id="qbd-catalog" role="listbox" tabindex="-1" aria-label={C.catalog} hidden data-qbd-catalog>
@@ -395,7 +396,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                         <span class="qbd-opt-meta">{p.code} · <span data-f="opt-price">{moneyFmt(p.price[DEF.currency], DEF.currency)}</span> / {p.unit}</span>
                                     </span>
                                     <span class="qbd-opt-tag">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                         <span class="qbd-opt-tag-text">{C.added}</span>
                                     </span>
                                 </li>
@@ -469,7 +470,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
             <div class="qbd-browser">
                 <div class="qbd-chrome" aria-hidden="true">
                     <span class="qbd-url">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" fill-opacity="0.16"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                         <span class="qbd-url-text"><b>cordhq.app</b>/q/{TOKEN}</span>
                     </span>
                 </div>
@@ -536,7 +537,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                                     <span class="qbd-qi-pick qbd-rv" aria-hidden="true"><span class="qbd-qi-pick-box"></span></span>
                                                     <span>{p.name}</span>
                                                     <span class="qbd-qi-chat-btn qbd-rv" data-chat aria-hidden="true" hidden={!DEF.chat}>
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                                     </span>
                                                 </span>
                                                 <span class="qbd-qi-center qbd-qi-qty" data-label={tq('q.th_cant')} data-f="qty">{r?.qtyText ?? ''}</span>
@@ -564,7 +565,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                             <div class="qbd-q-trust qbd-rv">
                                 <span class="qbd-q-trust-live"><span class="qbd-q-live-dot"></span> <span>{tq('q.conectado_vivo')}</span></span>
                                 <span class="qbd-q-trust-secure">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                     {tq('q.cifrado_firma')}
                                 </span>
                             </div>
@@ -572,12 +573,12 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                             <div class="qbd-q-actions-area">
                                 <div class="qbd-ql-step qbd-rv">
                                     <button type="button" class="qbd-ql-cta" style={`background:${COLOR}`} data-qbd-approve data-qbd-cta>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                         {tq('q.aprobar_cotizacion')}
                                     </button>
                                     <div class="qbd-ql-secondary-row" aria-hidden="true">
                                         <span class="qbd-ql-ghost">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                             {tq('q.descargar_pdf')}
                                         </span>
                                         <span class="qbd-ql-ghost qbd-ql-reject-link">{tq('q.rechazar')}</span>
@@ -596,7 +597,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                         <span class="qbd-ql-done-sub">{fill(S.recibio, { org: ORG.nombre })}</span>
                                         <div class="qbd-ql-done-actions" data-fx="done">
                                             <div class="qbd-ql-credit-note" data-blk="credit" hidden={!M.credit}>
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar-check')}></svg>
                                                 <div class="qbd-ql-credit-text">
                                                     <strong data-f="credit-title">{M.credit?.title ?? ''}</strong>
                                                     <span data-f="credit-text">{M.credit?.text ?? ''}</span>
@@ -621,11 +622,11 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                                     <span><span data-f="ig-pre">{M.iguala?.pre ?? ''}</span><b data-f="ig-monto">{M.iguala?.monto ?? ''}</b><span data-f="ig-post">{M.iguala?.post ?? ''}</span></span>
                                                 </div>
                                                 <span class="qbd-ql-cta" style={`background:${COLOR}`} aria-hidden="true">
-                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                                     {tq('q.autorizar_cobro_mensual')}
                                                 </span>
                                                 <div class="qbd-ql-pay-secure">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                                     {tq('q.suscripcion_stripe')}
                                                     <span class="qbd-ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
                                                 </div>
@@ -637,24 +638,24 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                                         <span class="editorial qbd-ql-pay-total" style={`color:${COLOR}`}><span data-f="pay-total">{M.pay?.amount ?? ''}</span> <small data-f="cur">{M.cur}</small></span>
                                                     </div>
                                                     <span class="qbd-ql-cta" style={`background:${COLOR}`} aria-hidden="true">
-                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                                         {tq('q.pagar_seguro')}
                                                     </span>
                                                     <div class="qbd-ql-pay-secure">
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
                                                         <span data-f="pay-secure">{M.pay?.secure ?? ''}</span>
                                                         <span class="qbd-ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <span class="qbd-ql-ghost qbd-ql-ghost-receipt" aria-hidden="true">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                                 {tq('q.descargar_comprobante')}
                                             </span>
                                         </div>
                                         <div class="qbd-ql-audit-stamp">
                                             <div class="qbd-ql-audit-header">
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                                                 <span>{tq('q.documento_verificado')}</span>
                                             </div>
                                             <div class="qbd-ql-audit-row"><strong>{tq('q.firmante')}</strong> <span data-f="signer">{M.client.contacto}</span></div>
@@ -670,13 +671,13 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                     <div class="qbd-q-compose-row">
                                         <span class="qbd-q-compose-ta">{tq('q.escribe_mensaje')}</span>
                                         <span class="qbd-q-compose-send" style={`background:${COLOR}`}>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
                                         </span>
                                     </div>
                                     <div class="qbd-q-compose-extras">
                                         <span class="qbd-q-compose-price" data-f="prop-ph">{M.propPh}</span>
                                         <span class="qbd-q-counter-pill" style={`color:${COLOR}; border-color:${COLOR}`}>
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('trending-up')}></svg>
                                             {tq('q.contraoferta')}
                                         </span>
                                     </div>
@@ -687,11 +688,11 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                                 <span class="qbd-q-contact-label">{fill(tq('q.dudas_contacta'), { org: ORG.nombre })}</span>
                                 <div class="qbd-q-contact-links" aria-hidden="true">
                                     <span class="qbd-q-contact-link">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                         {tq('q.whatsapp')}
                                     </span>
                                     <span class="qbd-q-contact-link">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('mail')}></svg>
                                         {tq('q.correo')}
                                     </span>
                                 </div>
@@ -699,7 +700,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
 
                             <div class="qbd-q-cord-badge">
                                 <span class="qbd-q-cord-badge-trust">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
                                     {tq('q.firma_validez_legal')}
                                 </span>
                                 <span class="qbd-q-cord-badge-cta">
@@ -718,7 +719,7 @@ const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
                             <span class="editorial qbd-q-sticky-total" style={`color:${COLOR}`} data-f="sticky-total">{M.totalText}</span>
                         </div>
                         <button type="button" class="qbd-q-sticky-cta" style={`background:${COLOR}`} tabindex="-1" data-qbd-approve>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                             {tq('q.aprobar')}
                         </button>
                     </div>

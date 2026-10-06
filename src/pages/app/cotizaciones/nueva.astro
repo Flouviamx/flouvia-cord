@@ -89,6 +89,7 @@ const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias, ...(DRAFT_VI
 const DEFAULT_ANTICIPO = Number((draftQuote as any)?.anticipoPct ?? ORG.anticipoDefaultPct) || 0;
 const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={draftQuote ? t(L, "ed.title_editar") : t(L, "ed.title_nueva")} page="cotizaciones" heading={draftQuote ? t(L, "ed.title_editar") : t(L, "ed.title_nueva")} crumbs={[{ label: t(L, 'ed.crumb_cotizaciones'), href: '/app/cotizaciones' }]}>
@@ -105,14 +106,14 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     <textarea id="aiText" class="ed-textarea ai-textarea" rows="3" placeholder={t(L, 'ed.ai_textarea_ph')}></textarea>
                     <input type="file" id="aiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
                     <button type="button" class="ai-attach-btn" id="aiAttachBtn" aria-label={t(L, 'ed.ai_adjuntar_aria')} title={t(L, 'ed.ai_adjuntar_title')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('paperclip')}></svg>
                     </button>
                 </div>
                 <div class="ai-file-chip" id="aiFileChip" hidden>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                     <span id="aiFileName"></span>
                     <button type="button" id="aiFileRemove" aria-label={t(L, 'ed.ai_quitar_archivo')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg>
                     </button>
                 </div>
                 <div class="ai-actions">
@@ -165,13 +166,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <div id="lines" class:list={{ "has-tax": MULTI_TAX }}></div>
 
                 <div class="lines-empty" id="linesEmpty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 7v14h18V7"/><path d="M9 12h6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('archive')}></svg>
                     <p><b>{t(L, 'ed.lines_empty_titulo')}</b> {t(L, 'ed.lines_empty_desc')}</p>
                 </div>
 
                 <div class="add-actions">
                     <div class="prod-search">
-                        <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                        <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                         <input type="text" class="prod-input" id="prodInput" placeholder={t(L, 'ed.buscar_producto_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="prodDrop" />
                         <div class="prod-drop" id="prodDrop" hidden role="listbox"></div>
                     </div>
@@ -290,12 +291,12 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     <input type="hidden" id="fxBuffer" value="2" />
 
                     <p class="fx-client-sees" id="fxPreview"></p>
-                    <div class="fx-lock-row"><svg class="fx-lock-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> {t(L, 'ed.fx_lock_row')}</div>
+                    <div class="fx-lock-row"><svg class="fx-lock-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg> {t(L, 'ed.fx_lock_row')}</div>
                 </div>
 
                 <button class="btn-send" id="btnSend">
                     <span>{draftQuote ? t(L, 'ed.btn_enviar_editar') : t(L, 'ed.btn_enviar_nueva')}</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-right')}></svg>
                 </button>
                 <button class="btn-draft" id="btnDraft">{draftQuote ? t(L, 'ed.btn_borrador_editar') : t(L, 'ed.btn_borrador_nueva')}</button>
                 <p class="sum-note">{draftQuote ? t(L, 'ed.nota_editar') : t(L, 'ed.nota_nueva')}</p>
@@ -321,6 +322,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
 })} />
 <script>
+    import { iconSvg } from '../../../lib/icons';
     // Módulo bundleado, no `is:inline` + `define:vars`.
     //
     // El motivo es aritmético, no estético: `is:inline` no puede importar, así
@@ -637,7 +639,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    ' + iconSvg('x', '', 1.5, 14) + '
                 </button>
             `;
             $lines.appendChild(row);

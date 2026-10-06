@@ -143,6 +143,7 @@ const WBI18N = {
     evSt_canceled: t(L, 'wb.ev.st_canceled'),
     prompt: DEV_INTEGRATION_PROMPT,
 };
+import { iconInner } from '../../lib/icons';
 ---
 
 <!-- El PANEL va primero y la BARRA al final: `.wb-dock` es fixed bottom:0, así que
@@ -164,7 +165,7 @@ const WBI18N = {
                     que el posicionamiento no dependa de nada del contenido inyectado. */}
                 <span class="wb-menu-wrap">
                     <button type="button" class="wb-ico-btn" id="wbOpts" aria-haspopup="true" aria-expanded="false" aria-label={t(L, 'wb.opts.titulo')} title={t(L, 'wb.opts.titulo')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.1" fill="currentColor"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/><circle cx="19" cy="12" r="1.1" fill="currentColor"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('more')}></svg>
                     </button>
                     <div class="wb-menu" id="wbOptsMenu" role="menu" hidden>
                         <h4 class="wb-menu-t">{t(L, 'wb.opts.titulo')}</h4>
@@ -199,12 +200,12 @@ const WBI18N = {
                 <button type="button" class="wb-ico-btn" id="wbMax" aria-pressed="false" aria-label={t(L, 'wb.maximizar')} title={t(L, 'wb.maximizar')}>
                     {/* Cuatro esquinas (patrón de reproductor de video): a 14px se
                         lee bastante mejor que un par de flechas diagonales. */}
-                    <svg class="wb-ico-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 4 4 4 4 9"/><polyline points="15 4 20 4 20 9"/><polyline points="9 20 4 20 4 15"/><polyline points="15 20 20 20 20 15"/></svg>
-                    <svg class="wb-ico-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 9 9 9 9 4"/><polyline points="20 9 15 9 15 4"/><polyline points="4 15 9 15 9 20"/><polyline points="20 15 15 15 15 20"/></svg>
+                    <svg class="wb-ico-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('expand')}></svg>
+                    <svg class="wb-ico-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shrink')}></svg>
                 </button>
 
                 <button type="button" class="wb-ico-btn" id="wbClose" aria-label={t(L, 'wb.cerrar')} title={t(L, 'wb.cerrar')}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
                 </button>
             </span>
         </div>
@@ -215,16 +216,11 @@ const WBI18N = {
 
     <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel">
         <span class="wb-bar-left">
-            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12" />
-                <polyline points="8 10 10.5 12.5 8 15" /><line x1="13" y1="15" x2="16.5" y2="15" />
-            </svg>
+            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('terminal')}></svg>
             <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
         </span>
         <span class="wb-bar-dot" id="wbBarDot" hidden aria-hidden="true"></span>
-        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="18 15 12 9 6 15" />
-        </svg>
+        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-up')}></svg>
     </button>
 </div>
 
@@ -264,7 +260,7 @@ const WBI18N = {
     <div class="wb-modal-shell">
         <header class="wb-modal-top">
             <button type="button" class="wb-modal-x" data-wb-act="wiz-close" aria-label={t(L, 'set.wh.cancelar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
             <h2 class="wb-modal-title" id="wizTitle">{t(L, 'set.wh.modal_agregar_titulo')}</h2>
         </header>
@@ -336,7 +332,7 @@ const WBI18N = {
     <div class="wb-modal-shell">
         <header class="wb-modal-top">
             <button type="button" class="wb-modal-x" data-wb-act="rot-close" aria-label={t(L, 'set.wh.cancelar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
             <h2 class="wb-modal-title" id="rotTitle">{t(L, 'set.wh.rotar_titulo')}</h2>
         </header>
@@ -361,7 +357,7 @@ const WBI18N = {
     <div class="wb-modal-shell">
         <header class="wb-modal-top">
             <button type="button" class="wb-modal-x" data-wb-act="key-close" aria-label={t(L, 'set.api.cancelar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
             <h2 class="wb-modal-title" id="keyTitle">{t(L, 'set.api.modal_nueva_titulo')}</h2>
         </header>
@@ -440,7 +436,7 @@ const WBI18N = {
     <div class="wb-modal-shell">
         <header class="wb-modal-top">
             <button type="button" class="wb-modal-x" data-wb-act="key-close" aria-label={t(L, 'set.api.cancelar')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
             <h2 class="wb-modal-title" id="keyRollTitle">{t(L, 'set.api.rotar_titulo')}</h2>
         </header>
@@ -465,7 +461,7 @@ const WBI18N = {
     <div class="wb-modal-shell">
         <header class="wb-modal-top">
             <button type="button" class="wb-modal-x" data-wb-act="sec-close" aria-label={t(L, 'set.api.listo_guardada')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg>
             </button>
             <h2 class="wb-modal-title" id="secTitle">{t(L, 'set.api.modal_clave_titulo')}</h2>
         </header>

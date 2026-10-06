@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState } from 'react';
 
 // Campo de contraseña con botón de mostrar/ocultar — compartido por
@@ -54,15 +55,9 @@ export default function PasswordField({
         aria-pressed={show}
       >
         {show ? (
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M2 12s3.5-7 10-7c2.02 0 3.68.57 5.02 1.35M22 12s-1.06 2.14-3.02 3.85M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('eye-off') }} />
         ) : (
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.12" />
-            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.18" />
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('eye') }} />
         )}
       </button>
     </div>

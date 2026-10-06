@@ -186,6 +186,7 @@ if (esRecurrente) {
         ? [q.acepta_tarjeta ? (L === 'en' ? 'Card' : 'Tarjeta') : null, q.cobro_spei_auto ? (L === 'en' ? 'SPEI transfer' : 'Transferencia SPEI') : null].filter(Boolean).join(' · ')
         : (L === 'en' ? 'Card and Mercado Pago' : 'Tarjeta y Mercado Pago');
 }
+import { iconInner } from '../../../lib/icons';
 ---
 
 <Layout title={`${L === 'en' ? 'Pay' : 'Pagar'} ${q.folio} | ${q.nombre}`} noindex={true}>
@@ -193,7 +194,7 @@ if (esRecurrente) {
         <div class="payp-col">
             <header class="payp-head">
                 <a href={`/q/${token}`} class="payp-back">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('arrow-left')}></svg>
                     {L === 'en' ? 'Back to the quote' : 'Volver a la cotización'}
                 </a>
             </header>
@@ -245,7 +246,7 @@ if (esRecurrente) {
                                     data-i18n-loading={t(L, 'pay.mp_redirigiendo')} data-i18n-error={t(L, 'pay.mp_error')}>
                                     <svg class="payp-mp-logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={MP_MARK} /></svg>
                                     <span data-mp-label>{t(L, 'pay.mp_pagar')}</span>
-                                    <svg class="payp-mp-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4"/></svg>
+                                    <svg class="payp-mp-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up-right')}></svg>
                                 </button>
                                 <p class="payp-mp-err" data-mp-err role="alert" hidden></p>
                             </div>
@@ -255,7 +256,7 @@ if (esRecurrente) {
             </section>
 
             <footer class="payp-foot">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>
                 {TIENE_CORD || esRecurrente
                     ? (L === 'en' ? `Encrypted and processed by Cord Payments. ${q.nombre} never sees your card details.` : `Pago cifrado y procesado por Cord Payments. ${q.nombre} nunca ve los datos de tu tarjeta.`)
                     : (L === 'en' ? `Encrypted and processed by Mercado Pago. ${q.nombre} never sees your card details.` : `Pago cifrado y procesado por Mercado Pago. ${q.nombre} nunca ve los datos de tu tarjeta.`)}

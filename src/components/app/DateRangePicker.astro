@@ -33,6 +33,7 @@ const labels: Record<RangoKey, string> = {
     custom: t(L, 'dash.rango_personalizado'),
 };
 const separatorsAfter = new Set<RangoKey>(['ayer', '90', 'ytd']);
+import { iconInner } from '../../lib/icons';
 ---
 
 <div
@@ -49,9 +50,9 @@ const separatorsAfter = new Set<RangoKey>(['ayer', '90', 'ytd']);
     data-labels={JSON.stringify(labels)}
 >
     <button type="button" class="dp-trigger" data-dp-trigger aria-haspopup="dialog" aria-expanded="false">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>
         <span data-dp-label>{labels[initialKey]}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg>
     </button>
     <div class="dp-panel" data-dp-panel hidden role="dialog" aria-label={t(L, 'dash.rango_label')}>
         <div class="dp-presets">
@@ -65,13 +66,13 @@ const separatorsAfter = new Set<RangoKey>(['ayer', '90', 'ytd']);
         <div class="dp-main">
             <div class="dp-inputs">
                 <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_desde')}</span><input type="text" data-dp-desde readonly /></label>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dp-input-arrow"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="dp-input-arrow" set:html={iconInner('arrow-right')}></svg>
                 <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_hasta')}</span><input type="text" data-dp-hasta readonly /></label>
             </div>
             <div class="dp-cals">
                 <div class="dp-cal dp-cal-left">
                     <div class="dp-cal-head">
-                        <button type="button" class="dp-cal-nav" data-dp-prev aria-label={L === 'en' ? 'Previous month' : 'Mes anterior'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <button type="button" class="dp-cal-nav" data-dp-prev aria-label={L === 'en' ? 'Previous month' : 'Mes anterior'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg></button>
                         <span class="dp-cal-title"></span><span class="dp-cal-nav-spacer"></span>
                     </div>
                     <div class="dp-cal-grid"></div>
@@ -79,7 +80,7 @@ const separatorsAfter = new Set<RangoKey>(['ayer', '90', 'ytd']);
                 <div class="dp-cal dp-cal-right">
                     <div class="dp-cal-head">
                         <span class="dp-cal-nav-spacer"></span><span class="dp-cal-title"></span>
-                        <button type="button" class="dp-cal-nav" data-dp-next aria-label={L === 'en' ? 'Next month' : 'Mes siguiente'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                        <button type="button" class="dp-cal-nav" data-dp-next aria-label={L === 'en' ? 'Next month' : 'Mes siguiente'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></button>
                     </div>
                     <div class="dp-cal-grid"></div>
                 </div>

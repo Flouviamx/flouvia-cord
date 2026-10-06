@@ -52,6 +52,7 @@ const options = catalogue
     .slice(0, 2);
 const titleId = `${id}Title`;
 const descId = `${id}Desc`;
+import { iconInner } from '../../lib/icons';
 ---
 
 <dialog
@@ -67,9 +68,7 @@ const descId = `${id}Desc`;
     <div class="m-head">
         <h2 id={titleId}>{title}</h2>
         <button type="button" class="m-close" data-ppm-close aria-label={es ? 'Cerrar' : 'Close'}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
-                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
         </button>
     </div>
     <div class="m-body">
@@ -109,9 +108,7 @@ const descId = `${id}Desc`;
                         <ul class="ppm-feats">
                             {p.feats.slice(0, 4).map((f) => (
                                 <li>
-                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                     <span>{f}</span>
                                 </li>
                             ))}

@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useEffect, useState } from 'react';
 import LiveCapture from './LiveCapture';
 
@@ -28,13 +29,7 @@ const COPY: Record<CaptureSide, { title: string; body: string; cta: string; icon
         body: 'INE o pasaporte vigente. Busca buena luz y que se lean todos los datos.',
         cta: 'Tomar foto del frente',
         icon: (
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fillOpacity="0.12" />
-                <circle cx="8.5" cy="11" r="2.25" />
-                <path d="M4.5 16c.6-1.8 2-2.8 4-2.8s3.4 1 4 2.8" />
-                <line x1="14.5" y1="9.5" x2="19" y2="9.5" />
-                <line x1="14.5" y1="12.5" x2="19" y2="12.5" />
-            </svg>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('id') }} />
         ),
     },
     back: {
@@ -42,12 +37,7 @@ const COPY: Record<CaptureSide, { title: string; body: string; cta: string; icon
         body: 'Solo si es INE. Si es pasaporte, omite este paso.',
         cta: 'Tomar foto del reverso',
         icon: (
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fillOpacity="0.12" />
-                <line x1="5" y1="9" x2="19" y2="9" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <line x1="5" y1="15" x2="13" y2="15" />
-            </svg>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('id') }} />
         ),
     },
     address: {
@@ -55,12 +45,7 @@ const COPY: Record<CaptureSide, { title: string; body: string; cta: string; icon
         body: 'Sólo si te lo pedimos: un recibo de servicios o estado de cuenta reciente, a tu nombre. Puedes omitirlo.',
         cta: 'Tomar foto del comprobante',
         icon: (
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 3h11l5 5v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="currentColor" fillOpacity="0.12" />
-                <path d="M15 3v5h5" />
-                <line x1="7" y1="13" x2="16" y2="13" />
-                <line x1="7" y1="17" x2="13" y2="17" />
-            </svg>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('document') }} />
         ),
     },
 };
@@ -237,9 +222,7 @@ export default function IdentityCaptureMobile({ token, orgNombre, orgLogo, orgCo
                 <OrgBadge org={org} />
                 <div className="idcap-card idcap-center">
                     <div className="idcap-check">
-                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('check') }} />
                     </div>
                     <h1>{S.listo}</h1>
                     <p>{S.listoDesc}</p>

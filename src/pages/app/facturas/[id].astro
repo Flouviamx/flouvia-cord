@@ -106,6 +106,7 @@ const METODOS = [
     { v: 'cheque', l: t(L, 'fact.d_m_cheque') },
     { v: 'otro', l: t(L, 'fact.d_m_otro') },
 ];
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout
@@ -157,7 +158,7 @@ const METODOS = [
                 {f.simulado && (
                     <div class="fd-sim-note" role="status">
                         <span class="fd-sim-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4.5"/><path d="M12 17h.01"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                         </span>
                         <span>
                             <strong>{L === 'en' ? 'Not fiscally issued' : 'Sin timbre fiscal'}</strong>
@@ -306,15 +307,15 @@ const METODOS = [
                             {linkPublico && (
                                 <div class="fd-util-grid">
                                     <a href={'/i/' + encodeURIComponent(f.publicToken!)} class="fd-util" target="_blank" rel="noopener noreferrer" title={L === 'en' ? 'Preview client link' : 'Vista previa del cliente'}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('external')}></svg>
                                         <span>{L === 'en' ? 'Open link' : 'Abrir link'}</span>
                                     </a>
                                     <button type="button" class="fd-util" id="fdCopy" title={L === 'en' ? 'Copy client link' : 'Copiar link del cliente'}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg>
                                         <span class="fd-util-label">{t(L, 'fact.d_copiar')}</span>
                                     </button>
                                     <a href={`/api/fiscal/documents/${f.id}/pdf`} class="fd-util" target="_blank" rel="noopener" title={t(L, 'fact.d_pdf')}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
                                         <span>{t(L, 'fact.d_pdf')}</span>
                                     </a>
                                     {waLink && (
@@ -335,7 +336,7 @@ const METODOS = [
                             <details class="fd-more">
                                 <summary>
                                     <span>{L === 'en' ? 'More actions' : 'Más acciones'}</span>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                                 </summary>
                                 <div class="fd-more-menu">
                                     {f.estado === 'open' && !f.notaCreditoDe && (

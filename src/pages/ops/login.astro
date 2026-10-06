@@ -4,6 +4,7 @@ import OpsLayout from '../../layouts/OpsLayout.astro';
 if (Astro.locals.opsOperator) {
   return Astro.redirect('/ops');
 }
+import { iconInner } from '../../lib/icons';
 ---
 
 <OpsLayout title="Acceso interno | Cord Ops">
@@ -72,12 +73,7 @@ if (Astro.locals.opsOperator) {
         <div class="ops-divider"><span>o</span></div>
 
         <button id="passkey-submit" class="ops-secondary" type="button">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
-            <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.5"
-                    fill="currentColor" fill-opacity="0.12" />
-            <path d="M6 19.2c0-2.9 2.7-5 6-5s6 2.1 6 5" stroke="currentColor"
-                  stroke-width="1.5" stroke-linecap="round" />
-          </svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user')}></svg>
           Usar Touch ID
         </button>
       </form>

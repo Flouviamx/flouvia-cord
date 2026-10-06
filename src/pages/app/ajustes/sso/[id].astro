@@ -25,11 +25,12 @@ if (!conn) return Astro.redirect('/app/ajustes/sso');
 
 const domains = await listDomains(orgId, id);
 const rolePresets = ['admin', 'vendedor', 'lectura'];
+import { iconInner } from '../../../../lib/icons';
 ---
 
 <SettingsShell title="SSO — Ajustes" tab="sso" perm="equipo">
     <a href="/app/ajustes/sso" class="sso-back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
         {t(L, 'set.sso.volver')}
     </a>
 
@@ -125,7 +126,7 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                                 <button type="button" class="sso-btn-ghost sso-domain-verify-btn" data-domain-verify={d.id}>{t(L, 'set.sso.dominio_verificar')}</button>
                             )}
                             {canEdit && <button type="button" class="sso-domain-del" data-domain-del={d.id} aria-label={t(L, 'set.sso.dominio_eliminar')}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg>
                             </button>}
                         </span>
                     </div>
@@ -177,7 +178,7 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
                         {rolePresets.map((p) => <option value={p} selected={p === r.preset}>{p}</option>)}
                     </select>
                     {canEdit && <button type="button" class="sso-domain-del" data-role-del aria-label="Eliminar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg>
                     </button>}
                 </div>
             ))}

@@ -74,6 +74,7 @@ const DATA = {
     },
     str: STR,
 };
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="wfe" data-wf-editor>
@@ -81,7 +82,7 @@ const DATA = {
 
     <header class="wfe-bar">
         <a class="wfe-close" href="/app/workflows" aria-label={STR.volver}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg>
         </a>
         <input class="wfe-name" data-name value={wf?.nombre} maxlength="120" aria-label={STR.nombreAria} />
         <span class="wfe-badge" data-badge></span>
@@ -92,7 +93,7 @@ const DATA = {
             <button type="button" class="wfe-btn wfe-btn-primary" data-publish>{STR.publicar}</button>
             <div class="wfe-more">
                 <button type="button" class="wfe-icon-btn" data-more aria-haspopup="menu" aria-expanded="false" aria-label={STR.mas}>
-                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('more')}></svg>
                 </button>
                 <div class="wfe-menu" role="menu" data-more-menu hidden>
                     <button type="button" role="menuitem" data-toggle-pause></button>
@@ -115,15 +116,15 @@ const DATA = {
         </div>
         <div class="wfe-help" data-help hidden>
             <button type="button" class="wfe-help-x" data-help-hide aria-label={STR.ocultarAyuda}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg>
             </button>
             <span>{STR.ayudaEmpezar}</span>
             <button type="button" class="wfe-help-link" data-help-open>{STR.verEjemplos}</button>
         </div>
         <div class="wfe-zoom" aria-label="zoom">
-            <button type="button" data-zoom="in" aria-label={STR.acercar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-            <button type="button" data-zoom="out" aria-label={STR.alejar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-            <button type="button" data-zoom="fit" aria-label={STR.ajustar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg></button>
+            <button type="button" data-zoom="in" aria-label={STR.acercar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('plus')}></svg></button>
+            <button type="button" data-zoom="out" aria-label={STR.alejar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('minus')}></svg></button>
+            <button type="button" data-zoom="fit" aria-label={STR.ajustar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('expand')}></svg></button>
         </div>
         <aside class="wfe-panel" data-panel hidden role="dialog" aria-modal="false"></aside>
     </section>

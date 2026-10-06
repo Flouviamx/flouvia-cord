@@ -85,6 +85,7 @@ const dotColor = (tipo: string) =>
     : tipo === 'sent' ? '#3b82f6'
     : tipo === 'rejected' ? '#ef4444'
     : '#cbd5e1';
+import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${q.folio} — Cord`} page="cotizaciones" heading={q.folio} crumbs={[{ label: t(L, 'id.volver').replace('← ', ''), href: '/app/cotizaciones' }]}>
@@ -96,7 +97,7 @@ const dotColor = (tipo: string) =>
         <div class="approval-banner">
             <div class="ap-info">
                 <span class="ap-title">
-                    <svg class="ap-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                    <svg class="ap-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>
                     {t(L, 'id.pendiente_aprobacion')}
                 </span>
                 <span class="ap-motivo">{q.aprobMotivo}</span>
@@ -162,7 +163,7 @@ const dotColor = (tipo: string) =>
                                 {it.descripcion}<small>{it.unidad}</small>
                                 {it.aprobado === false && <span class="di-excluida-tag">{t(L, 'id.no_incluida')}</span>}
                                 <button class="di-chat-toggle" data-item-toggle={it.id} aria-label={t(L, 'id.comentarios_linea')}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                     {it.comentarios && it.comentarios.length > 0 ? it.comentarios.length : ''}
                                 </button>
                             </span>
@@ -192,7 +193,7 @@ const dotColor = (tipo: string) =>
                                 <div class="di-thread-reply">
                                     <input type="text" class="di-thread-input" placeholder={t(L, 'id.responder_linea_ph')} />
                                     <button class="di-thread-send" data-item-reply={it.id} aria-label={t(L, 'id.enviar')}>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('send')}></svg>
                                     </button>
                                 </div>
                             )}
@@ -201,7 +202,7 @@ const dotColor = (tipo: string) =>
                 ))}
                 {q.items.some((it) => it.aprobado === false) && (
                     <div class="di-partial-note">
-                        <svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                         {t(L, 'id.aprobacion_parcial')}
                         (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> {PARTIAL_TAX_COPY}
                     </div>
@@ -253,8 +254,8 @@ const dotColor = (tipo: string) =>
                             <div class="df-row" data-status={d.status}>
                                 <span class="df-icon" data-ok={d.status === 'issued' ? '1' : ''}>
                                     {d.status === 'issued'
-                                        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M9 14.5l2 2 4-4.5"/></svg>
-                                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                                        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('file-check')}></svg>
+                                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>}
                                 </span>
                                 <div class="df-body">
                                     <div class="df-top">
@@ -332,7 +333,7 @@ const dotColor = (tipo: string) =>
                 {q.esRecurrente && (
                     <div class="act-sub">
                         <div class="act-sub-head">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('refresh')}></svg>
                             <span>{t(L, 'id.iguala_mensual')} · {money(quoteTotal(q))}</span>
                         </div>
                         {sus ? (
@@ -364,15 +365,15 @@ const dotColor = (tipo: string) =>
                 {q.status !== 'draft' && (
                     <div class="act-grid">
                         <a href={'/q/' + encodeURIComponent(q.token)} class="act-util" target="_blank" title={t(L, 'id.abrir_link_title')}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('external')}></svg>
                             <span class="act-util-lbl">{t(L, 'id.abrir_link')}</span>
                         </a>
                         <button class="act-util" id="btnCopy" title={t(L, 'id.copiar_link_title')}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg>
                             <span class="act-util-lbl">{t(L, 'id.copiar_link')}</span>
                         </button>
                         <a href={`/app/cotizaciones/${q.id}/imprimir`} target="_blank" class="act-util" title={t(L, 'id.pdf_title')}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('download')}></svg>
                             <span class="act-util-lbl">{t(L, 'id.pdf')}</span>
                         </a>
                         <button class="act-util act-util-wa" id="btnWhats" title={t(L, 'id.wa_title')}>
@@ -384,7 +385,7 @@ const dotColor = (tipo: string) =>
                 {q.status === 'draft' && (
                     <div class="act-grid">
                         <a href={'/q/' + encodeURIComponent(q.token)} class="act-util" target="_blank" title={t(L, 'id.vista_previa_title')}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('eye')}></svg>
                             <span class="act-util-lbl">{t(L, 'id.vista_previa')}</span>
                         </a>
                     </div>
@@ -463,7 +464,7 @@ const dotColor = (tipo: string) =>
                     <div class="dc-compose">
                         <textarea id="replyMsg" rows="1" placeholder={t(L, 'id.responder_ph')}></textarea>
                         <button class="dc-send" id="btnReply" aria-label={t(L, 'id.enviar')}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('send')}></svg>
                         </button>
                     </div>
                 )}

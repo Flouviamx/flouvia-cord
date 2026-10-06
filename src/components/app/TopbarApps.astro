@@ -34,6 +34,7 @@ const ACCION: Record<IntegrationState, string> = {
     info: t(L, 'topbar.apps.abrir'),
     soon: t(L, 'topbar.apps.pronto'),
 };
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="tb-apps-wrap">
@@ -49,10 +50,7 @@ const ACCION: Record<IntegrationState, string> = {
                 ))}
             </span>
         )}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/>
-            <rect x="14" y="14" width="7" height="7" rx="2"/><path d="M17.5 3v7M21 6.5h-7"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg>
     </button>
 
     <div class="tb-apps-panel" id="tbAppsPanel" role="menu" hidden>
@@ -70,10 +68,7 @@ const ACCION: Record<IntegrationState, string> = {
             ))}
         </div>
         <a class="tb-apps-foot" href="/app/ajustes/integraciones" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/>
-                <rect x="14" y="14" width="7" height="7" rx="2"/><path d="M17.5 3v7M21 6.5h-7"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg>
             {t(L, 'topbar.apps.explorar')}
         </a>
     </div>

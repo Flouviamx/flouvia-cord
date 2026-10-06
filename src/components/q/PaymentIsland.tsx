@@ -1,3 +1,4 @@
+import { iconInner } from '../../lib/icons';
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -286,7 +287,7 @@ function CheckoutForm({ token, color, amountLabel, subscription, onSuccess, T }:
                 onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
             >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fillOpacity="0.12" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconInner('lock') }} />
                 {loading ? T.procesando : subscription ? (amountLabel ? T.autorizarMonto.replace('{monto}', amountLabel) : T.autorizarMensual) : amountLabel ? T.pagarMonto.replace('{monto}', amountLabel) : T.pagarAhora}
             </button>
         </form>

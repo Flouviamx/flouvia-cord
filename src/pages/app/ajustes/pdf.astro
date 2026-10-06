@@ -6,6 +6,7 @@ import '../../../styles/brand-editor.css';
 const org = await getOrg();
 const en = currentLocale() === 'en';
 const say = (es:string, english:string) => en ? english : es;
+import { iconInner } from '../../../lib/icons';
 ---
 <SettingsShell title={say('Documento PDF — Ajustes','PDF document — Settings')} tab="pdf" perm="ajustes" save>
 <div class="brand-editor" id="pdfEditor">
@@ -14,14 +15,14 @@ const say = (es:string, english:string) => en ? english : es;
         <div class="be-controls">
             <div class="be-inherited"><div><b>{say('Identidad compartida','Shared identity')}</b><p>{say('Logo, colores, tipografía y espaciado de tu marca.','Your logo, colors, typography and spacing.')}</p></div><a href="/app/ajustes/branding">{say('Editar →','Edit →')}</a></div>
             <section class="be-section">
-                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h11l5 5v13H4z M14 3v6h6 M8 13h8 M8 17h6"/></svg>{say('Composición del documento','Document layout')}</h3>
+                <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>{say('Composición del documento','Document layout')}</h3>
                 <div class="be-options">
                     {[['minimal',say('Minimal','Minimal')],['clasico',say('Clásico','Classic')],['detallado',say('Detallado','Detailed')]].map(([value,label]) => <label class="be-option"><input type="radio" name="pdfTpl" data-field="pdf_template" value={value} checked={(org.pdfTemplate || 'clasico') === value}/><span class:list={['be-layout-sample',value==='detallado'?'contrast':value==='minimal'?'minimal':'']} aria-hidden="true"><i/><i/><i/></span><b>{label}</b></label>)}
                 </div>
                 <p class="be-help">{say('El encabezado de color utiliza la variante de logo sobre color.','The colored header uses your alternate logo.')}</p>
             </section>
             <section class="be-section">
-                <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4z M8 8h8 M8 12h5"/></svg>{say('Contenido','Content')}</h3>
+                <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>{say('Contenido','Content')}</h3>
                 <label class="be-label" for="pdfMessage">{say('Mensaje al pie','Footer message')}</label>
                 <input class="s-input" id="pdfMessage" data-field="pdf_mensaje" value={org.pdfMensaje} maxlength="500"/>
                 <label class="be-label" for="pdfConditions">{say('Condiciones comerciales','Commercial terms')}</label>

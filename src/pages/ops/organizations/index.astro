@@ -17,9 +17,10 @@ try{
   total=Number(organizations[0]?.total_count||0);
   if(page>1&&organizations.length===0)return Astro.redirect(`/ops/organizations${query?`?q=${encodeURIComponent(query)}`:''}`);
 }catch(cause){error=true;console.error('[ops/organizations]',cause)}
+import { iconInner } from '../../../lib/icons';
 ---
 <OpsLayout title="Organizaciones | Cord Ops"><OpsShell active="organizations" title="Organizaciones" subtitle="Workspaces, actividad comercial e infraestructura conectada.">
-  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar organización" /></form>
+  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Buscar organización" /></form>
   <section class="ops-card ops-metrics cols-3">
     <div class="ops-metric"><span>Organizaciones</span><strong>{opsNumber(total)}</strong><small>{query ? 'Coinciden con la búsqueda' : 'Workspaces en Cord'}</small></div>
     <div class="ops-metric"><span>Activas en 7 días</span><strong>{opsNumber(organizations.filter((o) => o.events_7d > 0).length)}</strong><small>De las {opsNumber(organizations.length)} mostradas</small></div>

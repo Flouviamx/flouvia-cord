@@ -273,6 +273,7 @@ const howToSchema = {
     name: tx('Cómo embeber una cotización de Cord en tu sitio', 'How to embed a Cord quote on your site'),
     step: (devPage.steps ?? []).map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titulo, text: s.copy })),
 };
+import { iconInner } from '../lib/icons';
 ---
 
 <Layout title={devPage.metaTitle!} description={devPage.metaDescription!}>
@@ -294,14 +295,14 @@ const howToSchema = {
                     <div class="pp-actions reveal">
                         <a href={l('/registro')} class="pp-btn-primary">
                             <span>{tx('Empezar gratis', 'Start for free')}</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                         </a>
                         <a href="#sdk" class="pp-btn-ghost">{tx('Explorar el SDK', 'Explore the SDK')}</a>
                     </div>
                     <div class="el-cmd reveal" data-install-cmd>
                         <code><span class="el-cmd-prompt">$</span>npm install @flouviahq/elements</code>
                         <button class="el-cmd-copy" type="button" aria-label={tx('Copiar comando', 'Copy command')}>
-                            <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                            <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg></span>
                             <span class="cp-label" data-cmd-label aria-live="polite">{tx('Copiar', 'Copy')}</span>
                         </button>
                     </div>
@@ -321,7 +322,7 @@ const howToSchema = {
                 {STACK.map((s) => (
                     <li class="reveal">
                         {s.domain ? <img src={favicon(s.domain)} alt="" width="20" height="20" loading="lazy" /> : (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 5 3 12 8 19"/><polyline points="16 5 21 12 16 19"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('code')}></svg>
                         )}
                         <span>{s.label}</span>
                     </li>
@@ -340,7 +341,7 @@ const howToSchema = {
                     {CODES.map((c, i) => (
                         <button class:list={['eli-tab', { active: i === 0 }]} role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-tab={c.id} data-file={c.file} type="button">
                             {c.domain ? <img src={favicon(c.domain)} alt="" width="16" height="16" loading="lazy" /> : (
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 5 3 12 8 19"/><polyline points="16 5 21 12 16 19"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('code')}></svg>
                             )}
                             <span>{c.label}</span>
                         </button>
@@ -355,11 +356,11 @@ const howToSchema = {
                     <div class="el-code">
                         <div class="el-code-bar">
                             <span class="el-code-file">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z"/><path d="M14 3.5v4h4"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                 <span id="elActiveFile">{CODES[0].file}</span>
                             </span>
                             <button class="el-copybtn" data-copy type="button" aria-label={tx('Copiar código', 'Copy code')}>
-                                <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                                <span class="cp-swap"><svg class="cp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('copy')}></svg><svg class="cp-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg></span>
                                 <span data-copy-label>{tx('Copiar', 'Copy')}</span>
                             </button>
                         </div>
@@ -386,7 +387,7 @@ const howToSchema = {
                         <ul class="pp-bcard-bullets">
                             {b.bullets.map((bl) => (
                                 <li class="reveal">
-                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
                                     <span>{bl}</span>
                                 </li>
                             ))}
@@ -440,7 +441,7 @@ const howToSchema = {
                                     <div class="elx3-row"><span>Block 15x20x40</span><b>2,400</b><em>$34,080.00</em></div>
                                     <div class="elx3-tot"><span>Total · MXN</span><strong class="editorial">$138,944.80</strong></div>
                                     <span class="elx3-btn" id="elx3Btn">{tx('Enviar solicitud', 'Send request')}</span>
-                                    <div class="elx3-toast" id="elx3Toast"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>COT-0053 · {tx('link listo', 'link ready')}</div>
+                                    <div class="elx3-toast" id="elx3Toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>COT-0053 · {tx('link listo', 'link ready')}</div>
                                 </div>
                             </div>
                         )}

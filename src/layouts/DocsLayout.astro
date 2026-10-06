@@ -125,6 +125,7 @@ const jsonLd = {
     }
   ]
 };
+import { iconInner } from '../lib/icons';
 ---
 
 <Layout title={`${seoTitle ?? title} | Cord Docs`} description={description} ogType="article" canonicalOrigin={pageOrigin} alternates={alternates}>
@@ -144,7 +145,7 @@ const jsonLd = {
       <div class="header-top">
         <div class="header-left">
           <button id="mobile-menu-trigger" class="mobile-menu-btn" aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('menu')}></svg>
           </button>
           <a href={getUrl('/docs')} class="logo">
             <img src="/imgs/logo-cord-navy.png" alt="Cord" height="24" style="height: 24px; margin-right: 6px;" />
@@ -155,7 +156,7 @@ const jsonLd = {
         <div class="header-center">
           <div class="search-container">
             <button class="search-input" id="search-trigger" aria-label={lang === 'es' ? 'Buscar en la documentación' : 'Search documentation'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
               <span>{lang === 'es' ? 'Buscar en la document...' : 'Search docs...'}</span>
               <kbd>/</kbd>
             </button>
@@ -179,7 +180,7 @@ const jsonLd = {
         </ul>
         <div class="nav-tools">
           <div class="nav-dropdown-wrapper">
-            <button class="nav-dropdown">{lang === 'es' ? 'Ayuda' : 'Help'} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+            <button class="nav-dropdown">{lang === 'es' ? 'Ayuda' : 'Help'} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></button>
             <div class="dropdown-menu">
               <a href={lang === 'es' ? 'https://cordhq.app/soporte' : 'https://cordhq.app/en/support'}>{lang === 'es' ? 'Centro de soporte' : 'Support Center'}</a>
               <a href={lang === 'es' ? 'https://cordhq.app/contacto/ventas' : 'https://cordhq.app/en/contacto/ventas'}>{lang === 'es' ? 'Contactar a ventas' : 'Contact Sales'}</a>
@@ -197,7 +198,7 @@ const jsonLd = {
       <aside class="docs-sidebar" id="docs-sidebar">
         <div class="sidebar-mobile-header">
           <a href={getUrl('/docs')} class="logo"><img src="/imgs/logo-cord-navy.png" alt="Cord" height="20" style="height: 20px; margin-right: 4px;" /><span class="brand-docs">DOCS</span></a>
-          <button id="mobile-menu-close" class="mobile-menu-close" aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+          <button id="mobile-menu-close" class="mobile-menu-close" aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button>
         </div>
         <nav class="sidebar-nav">
           {Astro.url.pathname.includes(getUrl('/docs/pagos')) ? (
@@ -212,7 +213,7 @@ const jsonLd = {
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Configurar cobros' : 'Configure payments'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -224,7 +225,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Modelos de cobro avanzado' : 'Advanced billing models'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -235,7 +236,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Gestión de cobros' : 'Payment management'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -249,7 +250,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Cobranza y tesorería' : 'Collections and treasury'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -272,7 +273,7 @@ const jsonLd = {
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Empezar' : 'Get Started'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -282,7 +283,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Herramientas' : 'Tools'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -296,7 +297,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       Cord Elements
                     </button>
                     <ul class="sidebar-submenu">
@@ -311,7 +312,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Esenciales' : 'Essentials'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -325,7 +326,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Funciones' : 'Features'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -340,7 +341,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Seguridad y Privacidad' : 'Security & Privacy'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -363,14 +364,14 @@ const jsonLd = {
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Crea una cuenta' : 'Create an account'}
                     </button>
                     <ul class="sidebar-submenu">
                       <li class={Astro.url.pathname === getUrl('/docs/cuenta/resumen') || Astro.url.pathname === getUrl('/docs/cuenta/resumen/') ? 'active' : ''}><a href={getUrl('/docs/cuenta/resumen')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/configuracion')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/configuracion')}>{lang === 'es' ? 'Configura tu cuenta' : 'Configure your account'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/csd')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/csd')}>{lang === 'es' ? 'Agrega la información fiscal (CSD)' : 'Add tax information (CSD)'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/configurar-con-ia')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/configurar-con-ia')}>{lang === 'es' ? 'Configura con IA' : 'Set up with AI'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/csd')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/csd')}>{lang === 'es' ? 'Agrega la información fiscal (CSD)' : 'Add tax information (CSD)'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/catalogo')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/catalogo')}>{lang === 'es' ? 'Importa tu catálogo' : 'Import your catalog'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/marca')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/marca')}>{lang === 'es' ? 'Personaliza tu marca' : 'Customize your branding'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/suscripcion')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/suscripcion')}>{lang === 'es' ? 'Tu suscripción a Cord' : 'Your Cord subscription'}</a></li>
@@ -380,7 +381,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Crea una cotización' : 'Create a quote'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -395,7 +396,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Interacción y cierre' : 'Interaction and closing'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -405,7 +406,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Gestión de ventas' : 'Sales management'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -419,7 +420,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Cord Workflows' : 'Cord Workflows'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -439,7 +440,7 @@ const jsonLd = {
                   </li>
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                       {lang === 'es' ? 'Integraciones' : 'Integrations'}
                     </button>
                     <ul class="sidebar-submenu">
@@ -498,8 +499,8 @@ const jsonLd = {
           <div class="docs-footer">
             <div class="feedback-section" role="group" aria-labelledby="feedback-question">
               <span class="feedback-title" id="feedback-question">{lang === 'es' ? '¿Te ha sido útil la página?' : 'Was this page helpful?'}</span>
-              <button class="feedback-btn" id="feedback-yes" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> {lang === 'es' ? 'Sí' : 'Yes'}</button>
-              <button class="feedback-btn" id="feedback-no" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg> {lang === 'es' ? 'No' : 'No'}</button>
+              <button class="feedback-btn" id="feedback-yes" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('thumbs-up')}></svg> {lang === 'es' ? 'Sí' : 'Yes'}</button>
+              <button class="feedback-btn" id="feedback-no" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('thumbs-down')}></svg> {lang === 'es' ? 'No' : 'No'}</button>
               <span class="feedback-thanks" id="feedback-thanks" style="display: none;">{lang === 'es' ? '¡Gracias por tus comentarios!' : 'Thanks for your feedback!'}</span>
             </div>
             
@@ -512,17 +513,17 @@ const jsonLd = {
                 <a href={lang === 'es' ? 'https://cordhq.app/soporte' : 'https://cordhq.app/en/support'}>{lang === 'es' ? 'Consulta el Centro de soporte' : 'Visit the Support Center'}</a>
               </li>
               <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                 {lang === 'es' ? 'Revisa qué está disponible y qué viene después en el ' : 'See what is available and what comes next on the '}
                 <a href={lang === 'es' ? 'https://cordhq.app/roadmap' : 'https://cordhq.app/en/roadmap'}>{lang === 'es' ? 'roadmap de Cord' : 'Cord roadmap'}</a>
               </li>
               <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('help')}></svg>
                 {lang === 'es' ? '¿Tienes alguna pregunta? ' : 'Have questions? '}
                 <a href={lang === 'es' ? 'https://cordhq.app/contacto/ventas' : 'https://cordhq.app/en/contacto/ventas'}>{lang === 'es' ? 'Ponte en contacto con el equipo de ventas' : 'Contact sales team'}</a>
               </li>
               <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('products')}></svg>
                 {lang === 'es' ? '¿LLM? ' : 'LLM? '}
                 <a href="https://cordhq.app/llms.txt">{lang === 'es' ? 'Lee llms.txt' : 'Read llms.txt'}</a>
               </li>
@@ -545,7 +546,7 @@ const jsonLd = {
     <div class="search-modal-backdrop" id="search-backdrop"></div>
     <div class="search-modal-content">
       <div class="search-modal-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
         <input type="text" id="search-input-field" placeholder={lang === 'es' ? 'Buscar en la documentación...' : 'Search documentation...'} autocomplete="off" spellcheck="false" />
         <button id="search-close" class="search-close-btn" aria-label={lang === 'es' ? 'Cerrar búsqueda' : 'Close search'}>ESC</button>
       </div>

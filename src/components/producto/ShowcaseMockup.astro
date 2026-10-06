@@ -49,6 +49,7 @@ const NAV = [
   { k: 'desempeno', l: tx('Equipo', 'Team') },
   { k: 'workflows', l: 'Workflows' },
 ];
+import { iconInner } from '../../lib/icons';
 ---
 <div class={`shwm-wrap shwm-${slug}-${index}${CALCA ? ' shwm-x' : ''}`} data-loc={CALCA ? LOC : undefined}>
 
@@ -89,7 +90,7 @@ const NAV = [
               <span class="t">{tx('Arma la cotización con IA', 'Build the quote with AI')}</span>
               <span class="s">{tx('Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.', "Paste the client's order or attach a photo/PDF of their purchase order.")}</span>
               <span class="ta">{tx('Buen día, me cotizas 120 sacos de cemento gris, 340 varillas de 3/8, 2,400 block de 15 y 180 hojas de malla 6x6. Entrega en obra.', 'Morning, can you quote 120 bags of gray cement, 340 rebars 3/8, 2,400 15 cm blocks and 180 sheets of 6x6 mesh? Delivery to site.')}</span>
-              <span class="ac"><span class="btn" data-aibtn data-busy={tx('Armando…', 'Building…')}>{tx('Armar cotización con IA', 'Build quote with AI')}</span><span class="st" data-aist><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{tx('4 líneas armadas. Revisa cantidades y precios.', '4 lines built. Check quantities and prices.')}</span></span>
+              <span class="ac"><span class="btn" data-aibtn data-busy={tx('Armando…', 'Building…')}>{tx('Armar cotización con IA', 'Build quote with AI')}</span><span class="st" data-aist><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg>{tx('4 líneas armadas. Revisa cantidades y precios.', '4 lines built. Check quantities and prices.')}</span></span>
             </div>
             <div class="shwm-lines shwm-lines-5">
               <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
@@ -106,8 +107,8 @@ const NAV = [
             <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-v="28349.31">{mx(28349.31)}</span></span>
             <span class="dv"></span>
             <span class="l total"><span>Total</span><span class="editorial" data-v="205532.51">{mx(205532.51)}</span></span>
-            <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
-            <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+            <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></span>
+            <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
           </div>
         </div>
       </div>
@@ -118,13 +119,13 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="ed1" data-lines={tx('líneas', 'lines')} data-pcs={tx('piezas', 'pieces')}>
       <div class="shwm-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/nueva</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/app/cotizaciones/nueva</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as">
           <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
             <nav class="shwm-as-nav">
               {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
             </nav>
@@ -137,7 +138,7 @@ const NAV = [
             <div class="shwm-edg shwm-edg-wide">
               <div class="shwm-edg-main">
                 <div class="shwm-steph"><span class="n">1</span><span class="t">{tx('¿A quién le cotizas?', 'Who are you quoting?')}</span></div>
-                <div class="shwm-client"><span class="shwm-fd grow"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
                 <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
                 <div class="shwm-lines shwm-lines-6">
                   <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span><span class="c">{tx('Margen', 'Margin')}</span></div>
@@ -147,7 +148,7 @@ const NAV = [
                 </div>
                 <div class="shwm-add">
                   <span class="shwm-srch">
-                    <span class="shwm-fd grow" data-search><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="q" data-q></span><span class="shwm-crt"></span><span class="ph" data-ph>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
+                    <span class="shwm-fd grow" data-search><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span class="q" data-q></span><span class="shwm-crt"></span><span class="ph" data-ph>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
                     <span class="shwm-drop2" data-drop>
                       <span class="it on"><span class="n">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>VAR-038</small></span><span class="editorial p">{mx(191.48)} <small>/ {tx('pieza', 'piece')}</small></span></span>
                       <span class="it"><span class="n">{tx('Varilla corrugada 1/2" × 12 m', 'Rebar 1/2" × 12 m')}<small>VAR-012</small></span><span class="editorial p">{mx(338.9)} <small>/ {tx('pieza', 'piece')}</small></span></span>
@@ -166,9 +167,9 @@ const NAV = [
                 <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(18113.6)}</span></span>
                 <span class="dv"></span>
                 <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(131323.6)}</span></span>
-                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
-                <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
-                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></span>
+                <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></span>
+                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
               </div>
             </div>
           </div>
@@ -212,7 +213,7 @@ const NAV = [
         <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(27099.2)}</span></span>
         <span class="dv"></span>
         <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(196469.2)}</span></span>
-        <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
       </div>
     </div>
   )}
@@ -224,15 +225,15 @@ const NAV = [
         <div class="shwm-dv-scr shwm-wa2">
           <div class="shwm-dv-ios dark"><span class="t">12:37</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
           <div class="shwm-wa2-head">
-            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
             <span class="av">LG</span>
             <span class="who"><strong>Laura Gómez</strong><em data-wastatus data-typing={tx('escribiendo…', 'typing…')} data-idle="Materiales del Valle">Materiales del Valle</em></span>
-            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M15 10.5 21 7v10l-6-3.5"/></svg>
-            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="currentColor" fill-opacity="0.12"/></svg>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('video')}></svg>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('phone')}></svg>
           </div>
           <div class="shwm-wa2-body">
             <span class="day">{tx('3 sep', 'Sep 3')}</span>
-            <span class="in doc"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.14"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="dtx"><strong>COT-0131.pdf</strong><em>{tx('2 páginas · PDF · 184 kB', '2 pages · PDF · 184 kB')}</em></span><span class="tm">10:14</span></span>
+            <span class="in doc"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg></span><span class="dtx"><strong>COT-0131.pdf</strong><em>{tx('2 páginas · PDF · 184 kB', '2 pages · PDF · 184 kB')}</em></span><span class="tm">10:14</span></span>
             <span class="in">{tx('¿Pudiste revisar la cotización?', 'Did you get a chance to look at the quote?')}<span class="tm">17:40</span></span>
             <span class="day">{tx('8 sep', 'Sep 8')}</span>
             <span class="in">{tx('Raúl, ¿seguimos con el pedido?', 'Raúl, are we moving ahead with the order?')}<span class="tm">09:12</span></span>
@@ -261,7 +262,7 @@ const NAV = [
             </div>
             <div class="shwm-qc-done" data-done aria-hidden="true"><span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><strong>{tx('Cotización aprobada', 'Quote approved')}</strong><em>{tx('Materiales del Valle recibió tu confirmación y se pondrá en contacto contigo en breve.', 'Materiales del Valle received your confirmation and will be in touch shortly.')}</em></div>
           </div>
-          <div class="shwm-qsticky"><span><em>{tx('Total a pagar', 'Total due')}</em><span class="editorial">{mx(196469.2)}</span></span><span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{tx('Aprobar', 'Approve')}</span></div>
+          <div class="shwm-qsticky"><span><em>{tx('Total a pagar', 'Total due')}</em><span class="editorial">{mx(196469.2)}</span></span><span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg>{tx('Aprobar', 'Approve')}</span></div>
           <span class="shwm-tap" data-tap></span>
           <span class="shwm-dv-home"></span>
         </div>
@@ -273,9 +274,9 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="lp1">
       <div class="shwm-brw shwm-lp1-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cotizaciones.materialesdelvalle.mx/q/7Hq2mXe9</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cotizaciones.materialesdelvalle.mx/q/7Hq2mXe9</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-qpage">
           <div class="shwm-qc shwm-qc-lg">
@@ -309,8 +310,8 @@ const NAV = [
             <div class="shwm-qc-pay" data-pay>
               <span class="lb">{tx('A PAGAR AHORA', 'PAY NOW')}</span>
               <span class="editorial am">{mx(412300)} <small>MXN</small></span>
-              <span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Pagar de forma segura', 'Pay securely')}</span>
-              <span class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Tarjeta o transferencia SPEI · Cord Payments', 'Card or bank transfer · Cord Payments')}</span>
+              <span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>{tx('Pagar de forma segura', 'Pay securely')}</span>
+              <span class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>{tx('Tarjeta o transferencia SPEI · Cord Payments', 'Card or bank transfer · Cord Payments')}</span>
               <span class="cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
             </div>
           </div>
@@ -351,7 +352,7 @@ const NAV = [
         </div>
       </div>
       <div class="shwm-cw shwm-tr0-win">
-        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Inicio', 'Home')}</strong><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Inicio', 'Home')}</strong><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
         <div class="shwm-canvas shwm-tr0-grid">
           <div class="shwm-card">
             <div class="shwm-card-h"><strong>{tx('Actividad', 'Activity')}</strong></div>
@@ -380,9 +381,9 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="tr1" data-ap={tx('aperturas', 'opens')}>
       <div class="shwm-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/COT-0148</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/app/cotizaciones/COT-0148</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
           <aside class="shwm-as-side">
@@ -434,24 +435,24 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="tr2">
       <div class="shwm-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/app</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as">
           <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
             <nav class="shwm-as-nav">
               {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
             </nav>
           </aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
             <div class="shwm-card shwm-hero2">
               <div class="top">
                 <span class="pills"><span class="on">{tx('Cerrado', 'Closed')}</span><span>{tx('Cobrado', 'Collected')}</span><span>{tx('Cotizado', 'Quoted')}</span></span>
               </div>
-              <div class="num"><span class="editorial v" data-hero>{mx(920400)}</span><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>18%<em>{tx('vs. periodo anterior', 'vs. previous period')}</em></span></div>
+              <div class="num"><span class="editorial v" data-hero>{mx(920400)}</span><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>18%<em>{tx('vs. periodo anterior', 'vs. previous period')}</em></span></div>
               <svg class="chart" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
                 <defs><linearGradient id={`shwmArea${slug}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a192f" stop-opacity="0.16"/><stop offset="1" stop-color="#0a192f" stop-opacity="0"/></linearGradient></defs>
                 <line x1="0" y1="30" x2="600" y2="30" stroke="rgba(10,25,47,0.06)"/><line x1="0" y1="70" x2="600" y2="70" stroke="rgba(10,25,47,0.06)"/><line x1="0" y1="110" x2="600" y2="110" stroke="rgba(10,25,47,0.08)"/>
@@ -516,11 +517,11 @@ const NAV = [
           <span class="shwm-badge shwm-badge-blue">5 min · una vez</span>
         </div>
         <div class="shwm-drop-zone">
-          <div class="shwm-file"><span class="shwm-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z" fill="currentColor" fill-opacity="0.1"/><path d="m9 12 2 2 4-4"/></svg></span><div><b>certificado.cer</b><em>válido hasta 2028 · 2.1 KB</em></div><i class="shwm-ck"></i></div>
-          <div class="shwm-file"><span class="shwm-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><div><b>llave.key</b><em>cifrada y aislada · 1.7 KB</em></div><i class="shwm-ck"></i></div>
+          <div class="shwm-file"><span class="shwm-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg></span><div><b>certificado.cer</b><em>válido hasta 2028 · 2.1 KB</em></div><i class="shwm-ck"></i></div>
+          <div class="shwm-file"><span class="shwm-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg></span><div><b>llave.key</b><em>cifrada y aislada · 1.7 KB</em></div><i class="shwm-ck"></i></div>
         </div>
         <div class="shwm-connected">
-          <span class="shwm-conn-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="shwm-conn-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span>
           <div><b>Sello conectado</b><em>PAC autorizado por el SAT · RFC MVA240611AB3</em></div>
           <span class="shwm-badge shwm-badge-green">Conectado</span>
         </div>
@@ -538,17 +539,17 @@ const NAV = [
         </div>
         <div class="shwm-thread">
           <div class="shwm-thread-node shwm-thread-done">
-            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span>
             <div class="shwm-tn-tx"><b>Cotización aprobada</b><span>Firmada por El Zarco · hoy 12:36</span></div>
             <b class="editorial">$196,469.20</b>
           </div>
           <div class="shwm-thread-node shwm-thread-done">
-            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span>
             <div class="shwm-tn-tx"><b>Pago recibido</b><span>Stripe · transferencia · 12:41</span></div>
             <img class="shwm-brand-mini" src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://stripe.com&size=128" alt="Stripe" width="20" height="20" loading="lazy" />
           </div>
           <div class="shwm-thread-node shwm-thread-done">
-            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="shwm-tn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span>
             <div class="shwm-tn-tx"><b>CFDI 4.0 timbrado</b><span>Mismo UUID ligado a la cotización · 12:42</span></div>
             <span class="shwm-badge shwm-badge-green">SAT ✓</span>
           </div>
@@ -570,7 +571,7 @@ const NAV = [
             <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
           </aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
             <div class="shwm-wgs">
               <div class="shwm-wg is-hot">
                 <div class="shwm-wg-h"><span><strong>{tx('Clientes en riesgo', 'Clients at risk')}</strong><small>{tx('Tienen historial, pero ninguna actividad en 90 días.', 'They have history, but no activity in 90 days.')}<span class="shwm-tag">{tx('hoy', 'today')}</span></small></span></div>
@@ -599,7 +600,7 @@ const NAV = [
       <div class="shwm-dv shwm-cc0-ph" data-ph>
         <div class="shwm-dv-scr shwm-mrec">
           <div class="shwm-dv-ios"><span class="t">16:20</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
-          <div class="shwm-mapp-top"><span class="mn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span><span class="tt"><em>{tx('Clientes', 'Clients')}</em><strong>Constructora del Pacífico</strong></span></div>
+          <div class="shwm-mapp-top"><span class="mn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('menu')}></svg></span><span class="tt"><em>{tx('Clientes', 'Clients')}</em><strong>Constructora del Pacífico</strong></span></div>
           <div class="shwm-mrec-b">
             <div class="hd"><span class="av">C</span><span class="w"><span class="bg"><span class="tier">{tx('Oro', 'Gold')}</span><span class="fi">{tx('Datos fiscales completos', 'Complete tax data')}</span></span><small>Ing. Rodrigo Ibarra · compras@cpacifico.mx</small></span></div>
             <div class="tot"><em>{tx('CERRADO', 'CLOSED')}</em><span class="editorial">{cm(1284500, 'MXN', 0)}</span></div>
@@ -630,7 +631,7 @@ const NAV = [
             <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
           </aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
             <div class="shwm-wg shwm-cc1-mx">
               <div class="shwm-wg-h"><span><strong>{tx('Matriz nivel × comportamiento de pago', 'Tier × payment behavior matrix')}</strong><small>{tx('Cruza el nivel comercial con la puntualidad histórica real.', 'Crosses commercial tier with actual historical payment timing.')}<span class="shwm-tag">{tx('hoy', 'today')}</span></small></span></div>
               <div class="shwm-hb shwm-hb-lg is-dim" data-hb>
@@ -714,7 +715,7 @@ const NAV = [
         <div class="shwm-dv-scr shwm-wa2">
           <div class="shwm-dv-ios dark"><span class="t">10:42</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
           <div class="shwm-wa2-head">
-            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>
             <span class="av">RM</span>
             <span class="who"><strong>Raúl Mendoza</strong><em data-wast data-typing={tx('escribiendo…', 'typing…')} data-idle="Distribuidora El Zarco">Distribuidora El Zarco</em></span>
           </div>
@@ -738,7 +739,7 @@ const NAV = [
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
           <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
             <nav class="shwm-as-nav">
               {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
             </nav>
@@ -866,7 +867,7 @@ const NAV = [
               </div>
               <div class="shwm-draft">
                 <div class="hd"><span class="av">A</span><span class="w"><strong>Aceros del Norte</strong><small>COT-0134 · {tx('vencida hace 9 días', 'overdue by 9 days')}</small></span><b class="editorial">{cm(88400, 'MXN', 0)}</b></div>
-                <div class="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{tx(`Propone 2 cuotas de ${cm(44200, 'MXN', 0)}`, `Proposes 2 instalments of ${cm(44200, 'MXN', 0)}`)}</div>
+                <div class="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx(`Propone 2 cuotas de ${cm(44200, 'MXN', 0)}`, `Proposes 2 instalments of ${cm(44200, 'MXN', 0)}`)}</div>
               </div>
             </div>
           </div>
@@ -882,7 +883,7 @@ const NAV = [
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/nueva</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
           <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
             <nav class="shwm-as-nav">
               {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
             </nav>
@@ -892,7 +893,7 @@ const NAV = [
             <div class="shwm-edg shwm-edg-wide shwm-fx0-edg">
               <div class="shwm-edg-main">
                 <div class="shwm-steph"><span class="n">1</span><span class="t">{tx('¿A quién le cotizas?', 'Who are you quoting?')}</span></div>
-                <div class="shwm-client"><span class="shwm-fd grow"><span>Harbor Supply Co. — Dana Whitfield</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span class="on">{tx('Contado', 'Cash')}</span><span>Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Harbor Supply Co. — Dana Whitfield</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-chips"><span class="on">{tx('Contado', 'Cash')}</span><span>Net 30</span><span>Net 60</span></span></div>
                 <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
                 <div class="shwm-lines shwm-lines-5 shwm-fx0-lines">
                   <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
@@ -901,7 +902,7 @@ const NAV = [
                   <div class="shwm-lr"><span class="nm">{tx('Boquilla sin arena 5 kg', 'Unsanded grout 5 kg')}<small>{tx('bolsa', 'bag')}</small></span><span class="shwm-inp">90</span><span class="ls eq" data-cur>{cm(6.5, 'USD')}</span><span class="shwm-inp">6.50</span><span class="editorial am" data-cur>{cm(585, 'USD')}</span></div>
                   <div class="shwm-lr"><span class="nm">{tx('Flete a Laredo, TX', 'Freight to Laredo, TX')}<small>{tx('servicio', 'service')}</small></span><span class="shwm-inp">1</span><span class="ls eq" data-cur>{cm(1765, 'USD')}</span><span class="shwm-inp">1,765.00</span><span class="editorial am" data-cur>{cm(1765, 'USD')}</span></div>
                 </div>
-                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
+                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
               </div>
               <div class="shwm-sum shwm-fx0-sum">
                 <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
@@ -910,7 +911,7 @@ const NAV = [
                 <span class="l tax"><span>{'IVA 0%'}</span><span class="editorial" data-cur>{cm(0, 'USD')}</span></span>
                 <span class="dv"></span>
                 <span class="l total"><span>Total</span><span class="editorial" data-cur>{cm(10000, 'USD')}</span></span>
-                <span class="f shwm-fxf"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel" data-sel><span class="cc" data-code>USD</span><span data-name data-mx={tx('MXN — peso mexicano', 'MXN — Mexican Peso')}>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <span class="f shwm-fxf"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel" data-sel><span class="cc" data-code>USD</span><span data-name data-mx={tx('MXN — peso mexicano', 'MXN — Mexican Peso')}>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span>
                   <span class="shwm-fxdrop" data-drop>
                   <span class="it"><span class="cc">MXN</span>{tx('peso mexicano', 'Mexican Peso')}</span>
                   <span class="it on" data-usd><span class="cc">USD</span>{tx('dólar estadounidense', 'US Dollar')}</span>
@@ -924,7 +925,7 @@ const NAV = [
                   <span class="cu"><em>{tx('¿Qué tan cauto quieres ser?', 'How cautious do you want to be?')}</em><span class="ch"><span>{tx('Poco', 'Slightly')} <small>+1%</small></span><span class="on">{tx('Normal', 'Normal')} <small>+2%</small></span><span>{tx('Cauto', 'Cautious')} <small>+5%</small></span></span></span>
                   <span class="pv" data-pv set:html={tx(`Tu cliente paga <b>${cm(10000, 'USD')}</b> · en tus libros ≈ <b>${cm(184000)}</b>`, `Your client pays <b>${cm(10000, 'USD')}</b> · in your books ≈ <b>${cm(184000)}</b>`)}></span>
                 </span>
-                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
               </div>
             </div>
           </div>
@@ -947,11 +948,11 @@ const NAV = [
               <span class="in"><span>4242 4242 4242 4242</span><span class="vs">VISA</span></span>
               <span class="row"><span><span class="lb">{tx('Vencimiento', 'Expiration')}</span><span class="in">08 / 29</span></span><span><span class="lb">CVC</span><span class="in">•••</span></span></span>
               <span class="lb">{tx('País', 'Country')}</span>
-              <span class="in"><span>Chile</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <span class="in"><span>Chile</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span>
             </div>
             <span class="cta" data-cta>{tx(`Pagar ${cm(1250000, 'CLP', 0)}`, `Pay ${cm(1250000, 'CLP', 0)}`)}</span>
           </div>
-          <span class="ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</span>
+          <span class="ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>{tx('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</span>
           <span class="shwm-dv-home"></span>
         </div>
       </div>
@@ -987,13 +988,13 @@ const NAV = [
               <span class="l tax"><span>{p.tax}</span><span class="editorial">{cm(0, 'USD')}</span></span>
               <span class="dv"></span>
               <span class="l total"><span>Total</span><span class="editorial">{cm(p.usd, 'USD')}</span></span>
-              <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel"><span class="cc">USD</span><span>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+              <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd shwm-fxsel"><span class="cc">USD</span><span>{tx('USD — dólar estadounidense', 'USD — US Dollar')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></span>
               <span class="shwm-fxc">
                 <span class="ex" set:html={tx(`Capturas y cobras en <b>USD</b>, pero tu contabilidad va en ${p.name}.`, `You quote and charge in <b>USD</b>, but your books are in ${p.name}.`)}></span>
                 <span class="stp"><span class="s"><em>{tx('Tipo de cambio hoy', "Today's exchange rate")}</em><span class="editorial" data-rate={p.spot} data-c={p.c}>{cm(p.spot, p.c)}</span></span><span class="ar">→</span><span class="s on"><em>{tx('Tu tasa protegida', 'Your locked-in rate')} +2%</em><span class="editorial">{cm(p.app, p.c)}</span></span></span>
                 <span class="pv" set:html={tx(`Tu cliente paga <b>${cm(p.usd, 'USD')}</b> · en tus libros ≈ <b>${cm(p.books, p.c)}</b>`, `Your client pays <b>${cm(p.usd, 'USD')}</b> · in your books ≈ <b>${cm(p.books, p.c)}</b>`)}></span>
               </span>
-              <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+              <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
             </div>
             <span class="shwm-dv-home"></span>
           </div>
@@ -1033,7 +1034,7 @@ const NAV = [
       <div class="shwm-dv shwm-fa0-ph" data-ph>
         <div class="shwm-dv-scr shwm-iml">
           <div class="shwm-dv-ios"><span class="t">9:02</span><span class="isl"></span><span class="ic" set:html={IOS_IC}></span></div>
-          <div class="shwm-iml-nav"><span class="bk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Recibidos', 'Inbox')}</span><span class="ar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+          <div class="shwm-iml-nav"><span class="bk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Recibidos', 'Inbox')}</span><span class="ar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-up')}></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span></div>
           <div class="shwm-iml-hd"><span class="av">MV</span><span class="w"><strong>Materiales del Valle</strong><em>{tx('Para: Raúl Mendoza', 'To: Raúl Mendoza')}</em></span><span class="tm">{tx('1 sep', 'Sep 1')}</span></div>
           <strong class="shwm-iml-s">{tx('Factura A-001041 — Materiales del Valle', 'Invoice A-001041 — Materiales del Valle')}</strong>
           <span class="shwm-iml-att"><span class="pdf">PDF</span><span class="nm"><strong>A-001041.pdf</strong><em>52 KB</em></span></span>
@@ -1088,7 +1089,7 @@ const NAV = [
                 <div class="shwm-actgrid"><span>{tx('Abrir link', 'Open link')}</span><span>{tx('Copiar', 'Copy')}</span><span>{tx('Descargar PDF', 'Download PDF')}</span><span>WhatsApp</span></div>
                 <span class="shwm-fbtn">{tx('Duplicar factura', 'Duplicate invoice')}</span>
                 <div class="shwm-fmore">
-                  <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+                  <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
                   <span class="it" data-ncbtn>{tx('Nota de crédito', 'Credit note')}</span>
                   <span class="it">{tx('Repetir cada mes', 'Repeat monthly')}</span>
                   <span class="it">{tx('Descargar XML', 'Download XML')}</span>
@@ -1111,7 +1112,7 @@ const NAV = [
           <div class="kv"><span>Constructora Apex</span><b class="editorial">{cm(18720.4)}</b></div>
           <div class="kv"><span>{tx('Pagado', 'Paid')}</span><b class="editorial">{cm(0)}</b></div>
           <div class="shwm-fmore">
-            <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            <span class="sm">{tx('Más acciones', 'More actions')}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
             <span class="it">{tx('Marcar incobrable', 'Mark uncollectible')}</span>
             <span class="it">{tx('Nota de crédito', 'Credit note')}</span>
             <span class="it">{tx('Descargar XML', 'Download XML')}</span>
@@ -1232,7 +1233,7 @@ const NAV = [
           <div class="shwm-idc-dots" data-dots><i class="on"></i><i></i><i></i></div>
           <div class="shwm-idc-stack">
             <div class="shwm-idc-card" data-idc="front">
-              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><circle cx="8.5" cy="11" r="2.25"/><path d="M4.5 16c.6-1.8 2-2.8 4-2.8s3.4 1 4 2.8"/><line x1="14.5" y1="9.5" x2="19" y2="9.5"/><line x1="14.5" y1="12.5" x2="19" y2="12.5"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('id')}></svg></span>
               <strong class="h">{tx('Frente de tu identificación', 'Front of your ID')}</strong>
               <span class="p">{tx('INE o pasaporte vigente. Busca buena luz y que se lean todos los datos.', 'A valid voter ID or passport. Find good light and make sure every detail is readable.')}</span>
               <span class="dl">{tx('¿Qué documento vas a usar?', 'Which document will you use?')}</span>
@@ -1243,7 +1244,7 @@ const NAV = [
               <span class="lk">{tx('Elegir foto de la galería', 'Choose a photo instead')}</span>
             </div>
             <div class="shwm-idc-card is-over" data-idc="back">
-              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="15" x2="13" y2="15"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg></span>
               <strong class="h">{tx('Reverso de tu identificación', 'Back of your ID')}</strong>
               <span class="p">{tx('Solo si es INE. Si es pasaporte, omite este paso.', "Only for a voter ID. If it's a passport, skip this step.")}</span>
               <span class="cta" data-cta2>{tx('Tomar foto del reverso', 'Take a photo of the back')}</span>
@@ -1251,7 +1252,7 @@ const NAV = [
               <span class="lk">{tx('Omitir — es un pasaporte', "Skip — it's a passport")}</span>
             </div>
             <div class="shwm-idc-card is-over is-done" data-idc="done">
-              <span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              <span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('check')}></svg></span>
               <strong class="h">{tx('Listo', 'Done')}</strong>
               <span class="p">{tx('Ya puedes regresar a tu computadora — la verificación sigue ahí automáticamente.', 'You can go back to your computer — the verification continues there automatically.')}</span>
             </div>
@@ -1410,7 +1411,7 @@ const NAV = [
             <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'workflows' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
           </aside>
           <div class="shwm-as-main">
-            <div class="shwm-wfb"><span class="x"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><strong>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</strong><span class="bd">{tx('Activo', 'Active')}</span><span class="sp"></span><span class="b">{tx('Probar', 'Test')}</span><span class="b">{tx('Guardar borrador', 'Save draft')}</span><span class="b pri">{tx('Publicar', 'Publish')}</span></div>
+            <div class="shwm-wfb"><span class="x"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg></span><strong>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</strong><span class="bd">{tx('Activo', 'Active')}</span><span class="sp"></span><span class="b">{tx('Probar', 'Test')}</span><span class="b">{tx('Guardar borrador', 'Save draft')}</span><span class="b pri">{tx('Publicar', 'Publish')}</span></div>
             <div class="shwm-wft"><span>Editor</span><span class="on">{tx('Ejecuciones', 'Runs')}</span></div>
             <div class="shwm-wrb"><span class="shwm-btn">{tx('Actualizar', 'Refresh')}</span></div>
             <div class="shwm-wrl">
@@ -1482,7 +1483,7 @@ const NAV = [
       <div class="shwm-cw shwm-wf2-test" data-test>
         <div class="shwm-cw-bar"><span class="shwm-cw-crumbs"><strong>{tx('Escalera de seguimiento de una cotización', 'Quote follow-up ladder')}</strong></span><span class="shwm-wdirty">{tx('Cambios sin publicar', 'Unpublished changes')}</span></div>
         <div class="shwm-wt">
-          <div class="hd"><strong>{tx('Prueba sin publicar', 'Test without publishing')}</strong><span class="x"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+          <div class="hd"><strong>{tx('Prueba sin publicar', 'Test without publishing')}</strong><span class="x"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg></span></div>
           <p class="sub" data-sub data-run={tx('Corriendo con el último evento real...', 'Running with the latest real event...')}>{tx('Con el evento del 21 sep 2026, 10:41. Las consultas se ejecutan de verdad; las acciones no se envían.', 'With the event from Sep 21, 2026, 10:41 AM. Lookups really run; actions are not sent.')}</p>
           <div class="sts">
             <div class="st" data-tst><span class="ic" set:html={WI('wait_until')}></span><span class="tx"><strong>{tx('Espera hasta', 'Wait until')}</strong></span><span class="rs no">{tx('No se cumplió', 'Not met')}</span></div>
@@ -1554,13 +1555,13 @@ const NAV = [
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
           <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
             <nav class="shwm-as-nav">
               {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
             </nav>
           </aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
             <div class="shwm-wg shwm-hlth">
               <div class="shwm-wg-h"><span><strong>{tx('Salud del pipeline', 'Pipeline health')}</strong></span></div>
               <div class="shwm-hg">
@@ -1662,9 +1663,9 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="ap0">
       <div class="shwm-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/nueva</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/app/cotizaciones/nueva</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
           <aside class="shwm-as-side">
@@ -1675,7 +1676,7 @@ const NAV = [
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
             <div class="shwm-edg shwm-edg-wide">
               <div class="shwm-edg-main">
-                <div class="shwm-client"><span class="shwm-fd grow"><span>Constructora GAMA — Ing. Sofía Ruiz</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Constructora GAMA — Ing. Sofía Ruiz</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
                 <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
                 <div class="shwm-lines shwm-lines-6">
                   <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span><span class="c">{tx('Margen', 'Margin')} <span class="i">?</span></span></div>
@@ -1683,7 +1684,7 @@ const NAV = [
                   <div class="shwm-lr"><span class="nm">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="shwm-inp">300</span><span class="ls">{mx(182)}</span><span class="shwm-inp deal">176.00</span><span class="editorial am">{mx(52800)}</span><span class="shwm-mg">19%</span></div>
                   <div class="shwm-lr"><span class="nm">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="shwm-inp">120</span><span class="ls">{mx(312)}</span><span class="shwm-inp deal">298.00</span><span class="editorial am">{mx(35760)}</span><span class="shwm-mg">21%</span></div>
                 </div>
-                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
+                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
               </div>
               <div class="shwm-sum">
                 <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
@@ -1693,8 +1694,8 @@ const NAV = [
                 <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(33241.6)}</span></span>
                 <span class="dv"></span>
                 <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(241001.6)}</span></span>
-                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
-                <span class="send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span></span>
+                <span class="send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></span>
               </div>
             </div>
             <span class="shwm-toast" data-toast><span class="dot"></span>{tx('Aprobación solicitada — COT-0294. Espera el visto bueno de gerencia.', "Approval requested — COT-0294. Waiting for management's sign-off.")}</span>
@@ -1709,10 +1710,10 @@ const NAV = [
       <div class="shwm-dv shwm-ap1-ph">
         <div class="shwm-dv-scr shwm-mapp">
           <div class="shwm-dv-ios"><span class="t">10:23</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
-          <div class="shwm-mapp-top"><span class="mn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span><span class="tt"><em>{tx('Cotizaciones', 'Quotes')}</em><strong>COT-0294</strong></span><span class="shwm-sts draft" data-pill data-to={tx('Enviada', 'Sent')}>{tx('Borrador', 'Draft')}</span></div>
+          <div class="shwm-mapp-top"><span class="mn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('menu')}></svg></span><span class="tt"><em>{tx('Cotizaciones', 'Quotes')}</em><strong>COT-0294</strong></span><span class="shwm-sts draft" data-pill data-to={tx('Enviada', 'Sent')}>{tx('Borrador', 'Draft')}</span></div>
           <div class="shwm-mapp-body">
             <div class="shwm-apb" data-banner>
-              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
+              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('clock')}></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
               <span class="m">{tx('descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span>
               <span class="ac"><span class="ok" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span class="no">{tx('Rechazar', 'Reject')}</span></span>
             </div>
@@ -1749,9 +1750,9 @@ const NAV = [
     <div class="shwm-frame shwm-scene" data-shx="ap2">
       <div class="shwm-brw shwm-ap2-brw">
         <div class="shwm-brw-top">
-          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/COT-0294</span>
-          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>cordhq.app/app/cotizaciones/COT-0294</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
           <aside class="shwm-as-side">
@@ -1785,7 +1786,7 @@ const NAV = [
         </div>
       </div>
       <div class="shwm-audit2" data-audit>
-        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
+        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
         <p class="shwm-audit2-i">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
         <span class="r" data-arow><span class="a">cotizacion.aprobacion_aprobada</span><span class="d">COT-0294</span><span class="w">{tx('hoy, 10:24', 'today, 10:24')} · 201.141.28.77</span></span>
         <span class="r" data-arow><span class="a">cotizacion.aprobacion_solicitada</span><span class="d">{tx('COT-0294 — descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'COT-0294 — discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span><span class="w">{tx('hoy, 10:15', 'today, 10:15')} · 187.190.4.212</span></span>
@@ -1806,7 +1807,7 @@ const NAV = [
           </aside>
           <div class="shwm-as-main">
             <div class="shwm-set">
-              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Equipo y Roles', 'Team & roles')}</b></span>
+              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Equipo y Roles', 'Team & roles')}</b></span>
               <strong class="h">{tx('Equipo y permisos', 'Team & permissions')}</strong>
               <span class="ds">{tx('Invita a tu equipo, define permisos y la seguridad de acceso.', 'Invite your team, set permissions, and access security.')}</span>
               <span class="tb"><span class="on">{tx('Equipo y Roles', 'Team & roles')}</span><span>SSO</span><span>{tx('Seguridad', 'Security')}</span></span>
@@ -1816,22 +1817,22 @@ const NAV = [
             <div class="shwm-eqt">
               <div class="r h"><span>{tx('Miembro', 'Member')}</span><span>{tx('Rol', 'Role')}</span><span>{tx('Actividad', 'Activity')}</span><span></span></div>
               <div class="r"><span class="mb"><span class="av">LG</span><span class="t"><strong>Laura Gómez <em class="you">{tx('Tú', 'You')}</em></strong><small>laura@materialesdelvalle.mx</small></span></span><span><span class="rl ow">{tx('Súper administrador', 'Super admin')}</span></span><span class="ac"><b>{tx('Última sesión hace 2 min', 'Last seen 2 min ago')}</b></span><span></span></div>
-              <div class="r"><span class="mb"><span class="av">AS</span><span class="t"><strong>Andrés Solís</strong><small>andres@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Administrador', 'Admin')}</span></span><span class="ac"><b>{tx('Última sesión hoy, 12:40', 'Last seen today, 12:40 PM')}</b><small>{tx('9 cotización(es) en 30 días', '9 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">AS</span><span class="t"><strong>Andrés Solís</strong><small>andres@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Administrador', 'Admin')}</span></span><span class="ac"><b>{tx('Última sesión hoy, 12:40', 'Last seen today, 12:40 PM')}</b><small>{tx('9 cotización(es) en 30 días', '9 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg></span></span></div>
               <div class="r is-rev" data-rev>
                 <span class="mb"><span class="av">DS</span><span class="t"><strong>Diego Salas</strong><small>diego@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span>
                 <span class="ac"><span class="on-a"><b>{tx('Última sesión hace 18 min', 'Last seen 18 min ago')}</b><small>{tx('12 cotización(es) en 30 días', '12 quote(s) in 30 days')}</small></span><span class="shwm-eqst">{tx('Sin acceso', 'No access')}</span></span>
-                <span class="ra"><span class="on-a"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb" data-x><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span><span class="lk off-a">{tx('Volver a invitar', 'Invite again')}</span></span>
+                <span class="ra"><span class="on-a"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb" data-x><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg></span></span><span class="lk off-a">{tx('Volver a invitar', 'Invite again')}</span></span>
               </div>
-              <div class="r"><span class="mb"><span class="av">MC</span><span class="t"><strong>Mariana Cota</strong><small>mariana@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión ayer, 19:15', 'Last seen yesterday, 7:15 PM')}</b><small>{tx('14 cotización(es) en 30 días', '14 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
-              <div class="r"><span class="mb"><span class="av">TI</span><span class="t"><strong>Tomás Ibarra</strong><small>tomas@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión 22 sep', 'Last seen Sep 22')}</b><small>{tx('6 cotización(es) en 30 días', '6 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
-              <div class="r"><span class="mb"><span class="av">SR</span><span class="t"><strong>Sofía Rentería</strong><small>sofia@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Solo lectura', 'Read only')}</span></span><span class="ac"><b>{tx('Última sesión 18 sep', 'Last seen Sep 18')}</b></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">MC</span><span class="t"><strong>Mariana Cota</strong><small>mariana@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión ayer, 19:15', 'Last seen yesterday, 7:15 PM')}</b><small>{tx('14 cotización(es) en 30 días', '14 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">TI</span><span class="t"><strong>Tomás Ibarra</strong><small>tomas@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Vendedor', 'Rep')}</span></span><span class="ac"><b>{tx('Última sesión 22 sep', 'Last seen Sep 22')}</b><small>{tx('6 cotización(es) en 30 días', '6 quote(s) in 30 days')}</small></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg></span></span></div>
+              <div class="r"><span class="mb"><span class="av">SR</span><span class="t"><strong>Sofía Rentería</strong><small>sofia@materialesdelvalle.mx</small></span></span><span><span class="rl">{tx('Solo lectura', 'Read only')}</span></span><span class="ac"><b>{tx('Última sesión 18 sep', 'Last seen Sep 18')}</b></span><span class="ra"><span class="lk">{tx('Editar funciones', 'Edit permissions')}</span><span class="xb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('x')}></svg></span></span></div>
             </div>
           </div>
         </div>
       </div>
       <span class="shwm-toast shwm-eq0-toast" data-toast><span class="dot"></span>{tx('Acceso revocado', 'Access revoked')}</span>
       <div class="shwm-audit2 shwm-eq0-aud">
-        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
+        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
         <p class="shwm-audit2-i">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
         <div class="shwm-audit2-l">
           <span class="r is-new" data-arow><span class="a">equipo.revocado</span><span class="d"></span><span class="w">{tx('hace 1 min', '1 min ago')} · 189.203.45.112</span></span>
@@ -1856,7 +1857,7 @@ const NAV = [
           </aside>
           <div class="shwm-as-main">
             <div class="shwm-set">
-              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Seguridad', 'Security')}</b></span>
+              <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Seguridad', 'Security')}</b></span>
               <strong class="h">{tx('Equipo y permisos', 'Team & permissions')}</strong>
               <span class="ds">{tx('Invita a tu equipo, define permisos y la seguridad de acceso.', 'Invite your team, set permissions, and access security.')}</span>
               <span class="tb"><span>{tx('Equipo y Roles', 'Team & roles')}</span><span>SSO</span><span class="on">{tx('Seguridad', 'Security')}</span></span>
@@ -1870,7 +1871,7 @@ const NAV = [
             <div class="shwm-sb">
               <strong class="h3">{tx('Sesiones', 'Sessions')}</strong>
               <span class="lb">{tx('Cierre por inactividad', 'Inactivity timeout')}</span>
-              <span class="shwm-fd sel">{tx('8 horas', '8 hours')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <span class="shwm-fd sel">{tx('8 horas', '8 hours')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span>
               <small class="ht">{tx('Tras este tiempo sin actividad, se pedirá iniciar sesión de nuevo.', 'After this much time without activity, sign-in will be required again.')}</small>
             </div>
             <div class="shwm-sb">
@@ -2007,7 +2008,7 @@ const NAV = [
     <div class="shwm-frame shwm-center">
       <div class="shwm-sign">
         <div class="shwm-sign-seal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z" fill="currentColor" fill-opacity="0.1"/><path d="m9 12 2 2 4-4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('shield')}></svg>
         </div>
         <b class="shwm-sign-title">Acuerdo sellado criptográficamente</b>
         <em class="shwm-sign-sub">COT-0148 v3 · aprobada por El Zarco · 23 jun 2026 12:36</em>

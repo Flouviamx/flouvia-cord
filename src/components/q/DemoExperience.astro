@@ -70,11 +70,11 @@ const SEC_LABEL = {
 
 const CATALOGO = lang === 'en' ? FEATURES_EN : FEATURES;
 const ICONOS: Record<string, string> = {
-    'link-publico': '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" /><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" fill-opacity="0.12" stroke="none" />',
-    seguimiento: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" fill="currentColor" fill-opacity="0.14" /><circle cx="12" cy="12" r="3" />',
-    negociacion: '<path d="M21 14.5a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z" fill="currentColor" fill-opacity="0.14" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="12.5" x2="13" y2="12.5" />',
-    pagos: '<rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14" /><line x1="2.5" y1="10" x2="21.5" y2="10" /><line x1="6" y1="15" x2="10" y2="15" />',
-    facturacion: '<path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8Z" fill="currentColor" fill-opacity="0.14" /><polyline points="14 2.5 14 8 19.5 8" /><line x1="8.5" y1="13" x2="15.5" y2="13" /><line x1="8.5" y1="16.5" x2="13" y2="16.5" />',
+    'link-publico': iconInner('link'),
+    seguimiento: iconInner('eye'),
+    negociacion: iconInner('chat'),
+    pagos: iconInner('card'),
+    facturacion: iconInner('invoice'),
 };
 const FEATS = [
     { slug: 'link-publico', desc: 'q.demo_cierre_link' },
@@ -140,6 +140,7 @@ const data = {
     },
 };
 const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
+import { iconInner } from '../../lib/icons';
 ---
 
 <div class="qx-stage" data-qx-root>
@@ -171,7 +172,7 @@ const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
             <div class="qx-close-actions">
                 <a class="qx-btn qx-btn-primary" href={signup}>
                     {t(L, 'q.demo_cierre_cta')}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                 </a>
                 <a class="qx-btn qx-btn-ghost" href={planes}>{t(L, 'q.demo_cierre_planes')}</a>
             </div>
@@ -182,11 +183,11 @@ const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
     <aside class="qx-seller" id="qxSeller" aria-labelledby="qxSellerTitle">
         <div class="qx-seller-top">
             <span class="qx-sim">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2.5" fill="currentColor" fill-opacity="0.14" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
                 {t(L, 'q.seller_sim')}
             </span>
             <button type="button" class="qx-sheet-close" id="qxSheetClose" aria-label={t(L, 'q.seller_cerrar')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
             </button>
         </div>
         <h2 class="qx-seller-title" id="qxSellerTitle">{t(L, 'q.seller_titulo')}</h2>
@@ -257,7 +258,7 @@ const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
         <span class="qx-tour-eyebrow">{t(L, 'q.tour_label')}</span>
         <span class="qx-tour-count" id="qxTourCount" aria-hidden="true">1/5</span>
         <button type="button" class="qx-tour-x" id="qxTourX" aria-label={t(L, 'q.tour_cerrar')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
         </button>
     </div>
     <div class="qx-tour-progress" aria-hidden="true">
@@ -277,11 +278,12 @@ const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
 </div>
 
 <button type="button" class="qx-reopen" id="qxReopen" hidden>
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14" /><polygon points="10 8.5 16 12 10 15.5" fill="currentColor" stroke="none" /></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('play')}></svg>
     {t(L, 'q.tour_reabrir')}
 </button>
 
 <script>
+import { iconInner } from '../../lib/icons';
     interface Paso { titulo: string; texto: string; accion: boolean }
     interface Meta { label: string; color: string; bg: string }
     interface Data {
@@ -349,11 +351,11 @@ const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
         };
 
         const ICONOS: Record<string, string> = {
-            eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
-            check: '<path d="M20 6L9 17l-5-5"/>',
-            x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-            card: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
-            chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+            eye: iconInner('eye'),
+            check: iconInner('check'),
+            x: iconInner('x'),
+            card: iconInner('card'),
+            chat: iconInner('chat'),
         };
         // Mismo icono y tono por tipo que la campana de AppLayout.
         const NOTIF_ICON: Record<string, string> = { viewed: 'eye', approved: 'check', rejected: 'x', paid: 'card', comment: 'chat', counter: 'chat' };

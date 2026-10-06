@@ -33,7 +33,6 @@ const story = INTEGRATION_STORY[page.slug];
 const datos = (isEn ? story.en : story.es).datos;
 const [firstBlock, ...restBlocks] = c.blocks;
 const brandVars = `--ig-from:${story.brand.from};--ig-to:${story.brand.to};--ig-accent:${story.brand.accent}`;
-const arrow = 'M5 12h14M13 6l6 6-6 6';
 
 const schema = {
     '@context': 'https://schema.org',
@@ -71,6 +70,7 @@ const schema = {
         },
     ],
 };
+import { iconInner } from '../../lib/icons';
 ---
 
 <Layout title={c.metaTitle} description={c.metaDescription} imageAlt={`Cord + ${page.nombre}`}>
@@ -98,7 +98,7 @@ const schema = {
                     <div class="ig-actions reveal">
                         <a href="/sign-up" class="ig-btn-primary">
                             <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={arrow}/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                         </a>
                         {c.guias[0] && <a href={c.guias[0].href} class="ig-btn-ghost">{isEn ? 'Read the guide' : 'Ver la guía'}</a>}
                     </div>
@@ -114,11 +114,11 @@ const schema = {
                         <ul>{c.flujo.map((f) => <li>{f.cord}</li>)}</ul>
                     </div>
                     <div class="ig-facts-row">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.13"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.13"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid')}></svg>
                         <span>{category}</span>
                     </div>
                     <div class="ig-facts-row">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.13"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
                         <span>{c.plan}</span>
                     </div>
                 </aside>
@@ -145,7 +145,7 @@ const schema = {
                         <p>{isEn ? 'Ready to connect it?' : '¿Todo listo para conectarla?'}</p>
                         <a href="/sign-up" class="ig-btn-primary ig-btn-sm">
                             <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={arrow}/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg>
                         </a>
                     </div>
                 </aside>
@@ -232,7 +232,7 @@ const schema = {
                     <h2 class="reveal">{isEn ? 'Explore more integrations' : 'Conoce más integraciones'}</h2>
                     <a href={`${pre}/integraciones`} class="ig-all reveal">
                         {isEn ? 'See every integration' : 'Ver todas las integraciones'}
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                     </a>
                 </div>
                 <ul class="ig-related">
@@ -244,10 +244,10 @@ const schema = {
                     <p class="ig-eyebrow">{isEn ? 'GUIDES' : 'GUÍAS'}</p>
                     <ul>
                         {c.guias.map((g) => (
-                            <li><a href={g.href}>{g.label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg></a></li>
+                            <li><a href={g.href}>{g.label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up-right')}></svg></a></li>
                         ))}
                         {producto && (
-                            <li><a href={`${pre}/producto/${producto.slug}`}>{producto.nav}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={arrow}/></svg></a></li>
+                            <li><a href={`${pre}/producto/${producto.slug}`}>{producto.nav}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-right')}></svg></a></li>
                         )}
                     </ul>
                 </div>
