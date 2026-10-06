@@ -16,14 +16,13 @@ const login = codigo ? await findLogin(codigo) : null;
 const valido = !!login && login.estado === 'pendiente' && login.vigente;
 const org = valido ? await getOrg() : null;
 Astro.response.headers.set('Cache-Control', 'no-store');
-import { iconInner } from '../../../lib/icons';
 ---
 
 <AppLayout title={`${t(L, 'cli.auth.title')} | Cord`} page="ajustes" heading={t(L, 'cli.auth.title')}>
     <div class="ca" data-cli-auth data-codigo={codigo ?? ''} data-err={t(L, 'cli.auth.err')}>
         {valido ? (
             <section class="ca-card" data-ca-step="ask">
-                <svg class="ca-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('terminal')}></svg>
+                <svg class="ca-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="16" rx="3" fill="currentColor" fill-opacity="0.13"/><path d="m7 10 3 2.5L7 15M12.5 15H17"/></svg>
                 <h1>{t(L, 'cli.auth.title')}</h1>
                 <p class="ca-sub">{t(L, 'cli.auth.sub')}</p>
                 <p class="ca-code" aria-label={codigo}>{codigo}</p>
@@ -42,7 +41,7 @@ import { iconInner } from '../../../lib/icons';
             <section class="ca-card"><h1>{t(L, 'cli.auth.title')}</h1><p class="ca-sub">{t(L, 'cli.auth.invalid')}</p></section>
         )}
         <section class="ca-card" data-ca-step="done" hidden>
-            <svg class="ca-icon ca-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
+            <svg class="ca-icon ca-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.13"/><path d="m8 12.5 2.8 2.8L16.5 9"/></svg>
             <h1>{t(L, 'cli.auth.done_title')}</h1>
             <p class="ca-sub">{t(L, 'cli.auth.done_sub')}</p>
         </section>
