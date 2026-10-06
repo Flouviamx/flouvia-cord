@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, checkForwardUrl, checkTestKey, maskKey, parseEventList, configPath } from '../packages/cli/src/lib';
+import { parseArgs, checkForwardUrl, checkTestKey, maskKey, parseEventList, configPath, sameOrigin, describeCounts } from '../packages/cli/src/lib';
 
 describe('cord CLI', () => {
     it('parsea comandos y banderas', () => {
@@ -29,6 +29,19 @@ describe('cord CLI', () => {
 
     it('nunca muestra la llave completa', () => {
         expect(maskKey('sk_test_abcdefghijklmnop1234')).toBe('sk_test_…1234');
+    });
+
+    it('solo abre en el navegador URLs del mismo origen que la API', () => {
+        expect(sameOrigin('https://cordhq.app/app/cli/autorizar?codigo=X', 'https://cordhq.app')).toBe(true);
+        expect(sameOrigin('https://evil.example/app', 'https://cordhq.app')).toBe(false);
+        expect(sameOrigin('http://cordhq.app/app', 'https://cordhq.app')).toBe(false);
+        expect(sameOrigin('http://localhost:4321/app', 'http://localhost:4321')).toBe(true);
+        expect(sameOrigin('javascript:alert(1)', 'https://cordhq.app')).toBe(false);
+    });
+
+    it('resume la propuesta en lenguaje humano', () => {
+        expect(describeCounts({ perfil: 4, impuestos: 1, productos: 0, plantillas: 2 })).toEqual(['4 datos del perfil', '1 impuesto', '2 plantillas']);
+        expect(describeCounts({})).toEqual([]);
     });
 
     it('respeta XDG_CONFIG_HOME', () => {

@@ -17,6 +17,7 @@ export const API_RESOURCES = {
     webhooks: ['/webhooks'],
     elements: ['/elements'],
     test_helpers: ['/test_helpers'],
+    setup: ['/setup'],
 } as const;
 
 export type ApiResource = keyof typeof API_RESOURCES;

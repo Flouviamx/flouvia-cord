@@ -6,6 +6,29 @@
 
 ---
 
+✅ **Configuración asistida: una propuesta, tres puertas (6 oct 2026)** — el onboarding, el
+CLI y los agentes configuran la cuenta con el mismo motor. Decisiones que no eran obvias:
+   • **La IA solo redacta.** `src/lib/setup/plan.ts` revalida cada campo con las reglas de
+     Ajustes (RFC por país, correo, color, tasas, SKU) y lo que no pasa va a `descartado` con
+     su motivo. Aplicar invoca los manejadores de Ajustes en proceso, con la sesión de quien
+     aprueba (`PATCH /api/org`, `POST /api/impuestos`, `/api/productos/import`,
+     `/api/plantillas`): no hay un segundo camino de escritura.
+   • **Fuera del navegador solo se propone.** `POST /api/v1/setup/plans` (CLI y MCP) devuelve
+     `review_url`; una persona con permiso de Ajustes aprueba en `/app/setup/[id]`. Una llave
+     de prueba propone sobre la cuenta real (`sandbox_of`), porque es esa la que se configura;
+     en modo prueba la revisión pide salir del entorno de prueba en vez de responder 404.
+   • **El setup no gasta la cuota de IA del plan** (Gratis tiene 3 al mes y es justo la cuenta
+     nueva). Lo acota `strictRateLimit(setup:<org>, 6/día)`.
+   • **`cord login` por navegador (flujo de dispositivo).** La terminal guarda el device code;
+     la base solo su sha256 (`cli_logins`, RLS forzada sin políticas, acceso por funciones
+     `security definer`). Al aprobar se crea con el manejador de `/api/keys` una `rk_test_`
+     restringida a `test_helpers`, `eventos` y `setup`, 90 días, cifrada hasta que la terminal
+     la reclama UNA vez. Si el código venció entre la creación y el registro, la llave se
+     revoca. El CLI solo abre en el navegador URLs del mismo origen que la API.
+   • **Panel de desarrolladores del onboarding** (`DevConnect.astro` + `/api/cli/status`): se
+     marca solo. La "primera llamada a la API" excluye las llaves `CLI ·` porque el propio
+     `cord login` llama a `/me`.
+
 ✅ **Versionado, CLI, OpenAPI, llaves restringidas, <cord-invoice> y accesibilidad (5 oct 2026)** —
 tercera entrega del plan. Decisiones que no eran obvias:
    • **Versión por header, no por URL.** `Cord-Version` se fija en `api_keys.api_version` y

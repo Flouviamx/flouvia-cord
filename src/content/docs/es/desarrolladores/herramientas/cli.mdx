@@ -1,7 +1,7 @@
 ---
 title: "CLI de Cord"
 seoTitle: "CLI de Cord"
-description: "Reenvía los webhooks del modo prueba a tu localhost, dispara eventos y simula al SAT, al cliente y al tiempo desde la terminal."
+description: "Inicia sesión desde el navegador, configura tu cuenta con IA, integra tu proyecto y prueba webhooks en tu localhost desde la terminal."
 ---
 
 <header class="content-header">
@@ -9,14 +9,39 @@ description: "Reenvía los webhooks del modo prueba a tu localhost, dispara even
   <p class="page-subtitle">Prueba tu integración completa sin salir de tu máquina.</p>
 </header>
 
-## Instalar
+## Instalar e iniciar sesión
 
 ```bash
 npm install -g @flouviahq/cli
 cord login
 ```
 
-`cord login` pide una llave de **prueba** (`sk_test_`) y rechaza una en vivo: nada de lo que hagas con el CLI toca datos reales. La llave se guarda en `~/.config/cord/config.json` con permisos `0600`.
+`cord login` abre tu navegador con un código de confirmación (por ejemplo `WXYZ-2346`). Revisa que sea el mismo que ves en la terminal y autoriza con tu sesión de Cord: la terminal recibe sola una llave **restringida de prueba** y no tienes que copiar nada.
+
+- La llave solo puede usar los simuladores, leer eventos y proponer configuraciones. No toca datos reales ni aplica nada sin tu aprobación.
+- Vence en 90 días y aparece en Desarrolladores › API como `CLI · <tu equipo>`, donde puedes revocarla.
+- El código vence en 10 minutos y la llave se entrega una sola vez.
+- Sin navegador (un servidor por SSH): `cord login --no-browser` imprime la dirección para abrirla en otro equipo. Para pegar una llave tuya, `cord login --api-key`.
+
+La llave se guarda en `~/.config/cord/config.json` con permisos `0600`. El CLI rechaza cualquier llave en vivo.
+
+## Configurar tu cuenta con IA
+
+```bash
+cord setup --sitio tuempresa.com --archivo lista-de-precios.xlsx
+```
+
+Sin opciones, `cord setup` te pregunta por tu sitio, a qué se dedica tu negocio y tu lista de precios (`.csv`, `.xlsx`, `.pdf` o foto, hasta 3 MB). Cord lee lo que le des y propone perfil, marca, impuestos, catálogo y plantillas. La propuesta se abre en tu navegador para que la revises: **nada se aplica hasta que la apruebas**, y la terminal te muestra el resultado en cuanto lo haces.
+
+Es el mismo asistente del onboarding y del [servidor MCP](/docs/desarrolladores/herramientas/mcp): una sola propuesta, una sola revisión, sin importar por dónde empieces. La propuesta siempre configura tu cuenta real, aunque la llave sea de prueba.
+
+## Integrar tu proyecto
+
+```bash
+cord init
+```
+
+Detecta tu framework (Next.js, Astro, Express, Laravel, Django, Flask o FastAPI), te da el comando para instalar el SDK, crea la ruta de webhooks con la firma verificada y escribe tus variables de prueba en un archivo de entorno que git ignora. Nunca sobrescribe un archivo existente.
 
 ## Recibir webhooks en tu localhost
 

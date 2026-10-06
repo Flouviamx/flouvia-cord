@@ -1,8 +1,10 @@
 // cord — CLI de desarrollo de Cord. Solo trabaja con llaves de prueba.
 import { mkdirSync, readFileSync, writeFileSync, rmSync, chmodSync, existsSync, appendFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
-import { HELP, VERSION, checkForwardUrl, checkTestKey, configPath, maskKey, parseArgs, parseEventList } from './lib.js';
+import { spawn } from 'node:child_process';
+import { hostname } from 'node:os';
+import { HELP, MAX_SETUP_FILE, VERSION, checkForwardUrl, checkTestKey, configPath, describeCounts, maskKey, parseArgs, parseEventList, sameOrigin } from './lib.js';
 import { planInit, type ProjectFiles } from './init.js';
 
 const API_VERSION = '2026-10-01';
@@ -11,6 +13,8 @@ const baseUrl = String(flags['base-url'] || process.env.CORD_BASE_URL || 'https:
 const dim = (s: string) => (process.stdout.isTTY ? `\x1b[2m${s}\x1b[0m` : s);
 const bold = (s: string) => (process.stdout.isTTY ? `\x1b[1m${s}\x1b[0m` : s);
 const red = (s: string) => (process.stderr.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
+const green = (s: string) => (process.stdout.isTTY ? `\x1b[32m${s}\x1b[0m` : s);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function die(message: string): never {
     process.stderr.write(`${red('Error:')} ${message}\n`);
@@ -72,15 +76,144 @@ function promptHidden(question: string): Promise<string> {
     });
 }
 
-async function login() {
-    const key = String(flags['api-key'] || (await promptHidden('Pega tu llave de prueba (sk_test_…): ')));
+function ask(question: string): Promise<string> {
+    return new Promise((resolve) => {
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        rl.question(question, (answer) => { rl.close(); resolve(answer.trim()); });
+    });
+}
+
+function openBrowser(url: string): boolean {
+    if (flags['no-browser'] || !process.stdout.isTTY || !sameOrigin(url, baseUrl)) return false;
+    const [cmd, args] = process.platform === 'darwin' ? ['open', [url]]
+        : process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
+        : ['xdg-open', [url]];
+    try {
+        const child = spawn(cmd, args as string[], { stdio: 'ignore', detached: true });
+        child.on('error', () => {});
+        child.unref();
+        return true;
+    } catch { return false; }
+}
+
+async function publicPost<T>(path: string, body: unknown): Promise<{ status: number; data: T }> {
+    let res: Response;
+    try {
+        res = await fetch(`${baseUrl}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'User-Agent': `cord-cli/${VERSION}` },
+            body: JSON.stringify(body),
+        });
+    } catch (err) {
+        throw new Error(`No se pudo contactar a Cord (${(err as Error).message}).`);
+    }
+    return { status: res.status, data: (await res.json().catch(() => ({}))) as T };
+}
+
+async function saveKey(key: string) {
     const check = checkTestKey(key);
     if (!check.ok) die(check.error);
     const me = await api<{ org: { nombre: string }; mode: string }>('GET', '/me', undefined, key);
     if (me.mode !== 'test') die('Cord reporta que la llave no es de prueba.');
     writeConfig({ apiKey: key });
-    console.log(`Listo. ${bold(me.org.nombre)} ${dim(`(modo prueba, ${maskKey(key)})`)}`);
+    console.log(`${green('Listo.')} ${bold(me.org.nombre)} ${dim(`(modo prueba, ${maskKey(key)})`)}`);
     console.log(dim(`Guardada en ${configPath()} con permisos 0600.`));
+}
+
+async function login() {
+    if (flags['api-key'] && flags['api-key'] !== true) return saveKey(String(flags['api-key']));
+    if (flags['api-key'] === true) return saveKey(await promptHidden('Pega tu llave de prueba (sk_test_…): '));
+
+    const start = await publicPost<{ device_code: string; user_code: string; verification_url: string; interval: number; expires_in: number; error?: string }>(
+        '/api/cli/login', { host: hostname() });
+    if (start.status !== 200 || !start.data.device_code) die(start.data.error || 'No se pudo iniciar sesión. Intenta en un momento.');
+    const { device_code, user_code, verification_url } = start.data;
+    const interval = Math.max(2, Number(start.data.interval) || 2) * 1000;
+    const deadline = Date.now() + (Number(start.data.expires_in) || 600) * 1000;
+
+    console.log(`\nTu código de confirmación: ${bold(user_code)}\n`);
+    const opened = openBrowser(verification_url);
+    console.log(opened ? `Abrimos tu navegador. Si no se abrió, entra a:\n  ${verification_url}` : `Abre esta dirección e inicia sesión en Cord:\n  ${verification_url}`);
+    console.log(dim('\nConfirma que el código en pantalla es el mismo. Esperando… (Ctrl+C para cancelar)'));
+
+    while (Date.now() < deadline) {
+        await sleep(interval);
+        let r: { status: number; data: { estado?: string; api_key?: string; error?: string } };
+        try { r = await publicPost('/api/cli/login/claim', { device_code }); } catch { continue; }
+        if (r.status === 429) { await sleep(interval); continue; }
+        const estado = r.data.estado;
+        if (estado === 'aprobado' && r.data.api_key) {
+            console.log('');
+            return saveKey(r.data.api_key);
+        }
+        if (estado === 'rechazado') die('Cancelaste el acceso desde el navegador.');
+        if (estado === 'vencido') die('El código venció. Vuelve a correr cord login.');
+        if (estado === 'reclamado' || estado === 'invalido') die(r.data.error || 'Ese código ya se usó. Vuelve a correr cord login.');
+    }
+    die('El código venció. Vuelve a correr cord login.');
+}
+
+interface SetupPlan {
+    id: string; estado: string; review_url: string; resumen?: string;
+    conteos?: Record<string, number>; avisos?: string[];
+    descartado?: Array<{ campo: string; motivo: string }>;
+    resultado?: Array<{ seccion: string; ok: boolean; detalle: string }> | null;
+}
+
+async function setup() {
+    const interactive = process.stdin.isTTY && process.stdout.isTTY;
+    let sitio = typeof flags.sitio === 'string' ? flags.sitio : '';
+    let descripcion = typeof flags.descripcion === 'string' ? flags.descripcion : '';
+    let archivo = typeof flags.archivo === 'string' ? flags.archivo : '';
+    if (!sitio && !descripcion && !archivo) {
+        if (!interactive) die('Pasa al menos --sitio, --descripcion o --archivo.');
+        console.log(`${bold('Configura tu cuenta de Cord con IA')}\n${dim('Lee lo que le des y propone perfil, marca, impuestos, catálogo y plantillas. Nada se aplica sin que lo apruebes.')}\n`);
+        sitio = await ask(`Tu sitio web ${dim('(Enter para omitir)')}: `);
+        descripcion = await ask(`A qué se dedica tu negocio ${dim('(Enter para omitir)')}: `);
+        archivo = await ask(`Ruta de tu lista de precios ${dim('(.csv, .xlsx, .pdf o foto; Enter para omitir)')}: `);
+        if (!sitio && !descripcion && !archivo) die('Necesito al menos una de las tres para proponer algo.');
+    }
+
+    let file: { nombre: string; base64: string } | undefined;
+    if (archivo) {
+        const path = resolve(archivo.replace(/^['"]|['"]$/g, ''));
+        let bytes: Buffer;
+        try { bytes = readFileSync(path); } catch { die(`No pude leer ${path}.`); }
+        if (bytes.length > MAX_SETUP_FILE) die('El archivo pesa más de 3 MB.');
+        file = { nombre: basename(path), base64: bytes.toString('base64') };
+    }
+
+    process.stdout.write(dim('\nLeyendo tu negocio y armando la propuesta… '));
+    const plan = await api<SetupPlan>('POST', '/setup/plans', { sitio: sitio || undefined, descripcion, archivo: file });
+    process.stdout.write(dim('listo.\n\n'));
+
+    if (plan.resumen) console.log(`${plan.resumen}\n`);
+    const partes = describeCounts(plan.conteos ?? {});
+    console.log(partes.length ? `${bold('Propuesta:')} ${partes.join(', ')}.` : 'No encontré nada que configurar con eso. Prueba con tu sitio o tu lista de precios.');
+    for (const a of plan.avisos ?? []) console.log(`  ${dim('·')} ${a}`);
+    if (plan.descartado?.length) console.log(dim(`  ${plan.descartado.length} dato(s) no pasaron la validación y se dejaron fuera.`));
+    if (!partes.length) return;
+
+    const opened = openBrowser(plan.review_url);
+    console.log(`\n${opened ? 'Abrimos la revisión en tu navegador:' : 'Revísala y apruébala aquí:'}\n  ${plan.review_url}`);
+    console.log(dim('\nEsperando tu aprobación… (Ctrl+C para salir; la propuesta sigue disponible 7 días)'));
+
+    const deadline = Date.now() + 30 * 60 * 1000;
+    let wait = 3000;
+    while (Date.now() < deadline) {
+        await sleep(wait);
+        let cur: SetupPlan;
+        try { cur = await api<SetupPlan>('GET', `/setup/plans/${encodeURIComponent(plan.id)}`); wait = 3000; } catch { wait = Math.min(15000, wait * 2); continue; }
+        if (cur.estado === 'aplicado') {
+            console.log(`\n${green('Configuración aplicada.')}`);
+            for (const r of cur.resultado ?? []) console.log(`  ${r.ok ? green('ok') : red('error')}  ${r.seccion.padEnd(12)} ${dim(r.detalle)}`);
+            console.log(`\nSiguiente: ${bold('cord init')} para conectar tu código, o crea tu primera cotización en ${baseUrl}/app`);
+            return;
+        }
+        if (cur.estado === 'descartado') { console.log('\nDescartaste la propuesta. No se cambió nada.'); return; }
+        if (cur.estado === 'fallido') die('No se pudo aplicar la propuesta. Revisa el detalle en el navegador.');
+    }
+    console.log(dim('\nDejé de esperar. La propuesta sigue en el link de arriba.'));
 }
 
 async function whoami() {
@@ -204,7 +337,7 @@ async function init() {
         lockfiles: ['pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', 'bun.lock', 'package-lock.json'].filter((f) => existsSync(`${cwd}/${f}`)),
     };
     const plan = planInit(project);
-    if (plan.framework === 'unknown') die('No reconocí el framework de este proyecto. Mira https://docs.cordhq.app/desarrolladores para instalar a mano.');
+    if (plan.framework === 'unknown') die('No reconocí el framework de este proyecto. Mira https://docs.cordhq.app/docs/desarrolladores/empezar/resumen para instalar a mano.');
     console.log(`Framework: ${bold(plan.framework)}\n`);
     let step = 1;
     if (plan.install) console.log(`${step++}. Instala el SDK:\n   ${bold(plan.install)}\n`);
@@ -232,6 +365,7 @@ async function init() {
     if (plan.webhookPath) {
         console.log(`\n${step++}. Prueba de punta a punta:\n   ${bold(`cord listen --forward-to http://localhost:3000${plan.webhookPath}`)}\n   ${bold('cord trigger quote.approved')}`);
     }
+    console.log(dim(`\n¿Tu cuenta todavía está vacía? ${bold('cord setup')} propone perfil, impuestos y catálogo a partir de tu sitio.`));
 }
 
 async function main() {
@@ -240,6 +374,7 @@ async function main() {
     if (!cmd || flags.help || cmd === 'help') return console.log(HELP);
     if (cmd === 'login') return login();
     if (cmd === 'init') return init();
+    if (cmd === 'setup') return setup();
     if (cmd === 'logout') { rmSync(configPath(), { force: true }); return console.log('Llave borrada.'); }
     if (cmd === 'whoami') return whoami();
     if (cmd === 'listen') return listen();

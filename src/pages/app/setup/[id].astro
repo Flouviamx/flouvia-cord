@@ -13,15 +13,38 @@ if (await requirePerm('ajustes')) return Astro.redirect('/app');
 const id = String(Astro.params.id ?? '');
 if (!isUuid(id)) return Astro.redirect('/app/setup');
 const L = currentLocale();
+const testMode = Astro.cookies.get('cord_test_mode')?.value === '1';
 ---
 
 <AppLayout title={`${t(L, 'setup.review_title')} | Cord`} page="ajustes" heading={t(L, 'setup.review_title')}>
     <div class="setup-page">
-        <SetupWizard origen="app" planId={id} doneHref="/app" />
+        {testMode ? (
+            <section class="setup-test" role="status">
+                <h1>{t(L, 'setup.test_title')}</h1>
+                <p>{t(L, 'setup.test_body')}</p>
+                <button type="button" data-setup-exit-test>{t(L, 'setup.test_exit')}</button>
+            </section>
+        ) : (
+            <SetupWizard origen="app" planId={id} doneHref="/app" />
+        )}
     </div>
 </AppLayout>
 
 <style>
     .setup-page { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-    @media (max-width: 600px) { .setup-page { padding: 1.5rem 16px 3rem; } }
+    .setup-test { padding: 2.2rem; border-radius: 24px; background: #fffbeb; box-shadow: 0 0 0 1px rgba(180,83,9,0.15); }
+    .setup-test h1 { margin: 0 0 0.5rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.035em; color: #050505; }
+    .setup-test p { margin: 0 0 1.5rem; color: #6b4f1d; line-height: 1.55; }
+    .setup-test button { min-height: 46px; padding: 0 24px; border: 0; border-radius: 999px; background: #0a192f; color: #fff; font: inherit; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+    .setup-test button:hover { transform: translateY(-1px); }
+    .setup-test button:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    @media (max-width: 600px) { .setup-page { padding: 1.5rem 16px 3rem; } .setup-test { padding: 1.6rem 1.3rem; } }
 </style>
+
+<script>
+    document.querySelector('[data-setup-exit-test]')?.addEventListener('click', () => {
+        document.cookie = 'cord_test_mode=; path=/; max-age=0; SameSite=Lax';
+        try { localStorage.setItem('cord_test_mode', 'false'); } catch {}
+        window.location.reload();
+    });
+</script>

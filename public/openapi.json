@@ -5795,6 +5795,334 @@
           }
         }
       }
+    },
+    "/setup/plans": {
+      "post": {
+        "operationId": "postSetupPlans",
+        "summary": "Proponer una configuración de la cuenta (una persona la aprueba en review_url)",
+        "tags": [
+          "Configuración"
+        ],
+        "security": [
+          {
+            "secretKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Cord-Version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "2026-10-01"
+              ]
+            },
+            "description": "Default: la versión fijada de tu llave."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "Reintento seguro: misma clave y mismo cuerpo, mismo resultado (24 h)."
+          }
+        ],
+        "x-cord-scope": "write",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Cord-Request-Id": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Identificador de la petición; inclúyelo al pedir soporte."
+              },
+              "Cord-Version": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Versión de la API con la que se respondió."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "object": {
+                          "type": "string",
+                          "const": "setup_plan"
+                        },
+                        "id": {
+                          "type": "string",
+                          "description": "Identificador (UUID)."
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "generando",
+                            "propuesto",
+                            "aplicado",
+                            "descartado",
+                            "fallido"
+                          ],
+                          "description": "propuesto espera la aprobación de una persona en review_url."
+                        },
+                        "review_url": {
+                          "type": "string",
+                          "description": "Página donde una persona con sesión revisa y aplica la propuesta. La API nunca la aplica."
+                        }
+                      },
+                      "required": [
+                        "object",
+                        "id",
+                        "estado",
+                        "review_url"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Llave ausente, inválida o revocada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso para esta operación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones; respeta Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sitio": {
+                    "description": "Sitio web del negocio, por ejemplo tunegocio.com.",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "descripcion": {
+                    "description": "Descripción del negocio: giro, plazos de pago, impuestos que cobra o retiene.",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "archivo": {
+                    "description": "Lista de precios (Excel, CSV, PDF o foto) en base64, hasta 3 MB.",
+                    "type": "object",
+                    "properties": {
+                      "nombre": {
+                        "type": "string"
+                      },
+                      "base64": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "nombre",
+                      "base64"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setup/plans/{id}": {
+      "get": {
+        "operationId": "getSetupPlansById",
+        "summary": "Estado de una propuesta de configuración",
+        "tags": [
+          "Configuración"
+        ],
+        "security": [
+          {
+            "secretKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Cord-Version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "2026-10-01"
+              ]
+            },
+            "description": "Default: la versión fijada de tu llave."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-cord-scope": "read",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Cord-Request-Id": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Identificador de la petición; inclúyelo al pedir soporte."
+              },
+              "Cord-Version": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Versión de la API con la que se respondió."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "object": {
+                          "type": "string",
+                          "const": "setup_plan"
+                        },
+                        "id": {
+                          "type": "string",
+                          "description": "Identificador (UUID)."
+                        },
+                        "estado": {
+                          "type": "string",
+                          "enum": [
+                            "generando",
+                            "propuesto",
+                            "aplicado",
+                            "descartado",
+                            "fallido"
+                          ],
+                          "description": "propuesto espera la aprobación de una persona en review_url."
+                        },
+                        "review_url": {
+                          "type": "string",
+                          "description": "Página donde una persona con sesión revisa y aplica la propuesta. La API nunca la aplica."
+                        }
+                      },
+                      "required": [
+                        "object",
+                        "id",
+                        "estado",
+                        "review_url"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Llave ausente, inválida o revocada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso para esta operación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones; respeta Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {

@@ -94,6 +94,11 @@ export const ApiError = open({
 });
 
 const Ack = open({ id: z.string().optional() });
+const SetupPlan = open({
+    object: z.literal('setup_plan'), id,
+    estado: z.enum(['generando', 'propuesto', 'aplicado', 'descartado', 'fallido']).describe('propuesto espera la aprobación de una persona en review_url.'),
+    review_url: z.string().describe('Página donde una persona con sesión revisa y aplica la propuesta. La API nunca la aplica.'),
+});
 
 // ── Entradas ────────────────────────────────────────────────────────────────
 
@@ -187,6 +192,13 @@ export const OPERATIONS: Operation[] = [
     { method: 'POST', path: '/test_helpers/listen', summary: 'Abrir sesión de cord listen', tag: 'Modo prueba', scope: 'write', testOnly: true, body: z.object({ eventos: z.array(z.string()).optional() }), response: open({ id, secret: z.string(), eventos: z.array(z.string()), expira: z.string() }) },
     { method: 'GET', path: '/test_helpers/listen/{id}', summary: 'Recoger eventos de la sesión', tag: 'Modo prueba', scope: 'write', testOnly: true, response: z.array(open({ event_id: z.string(), evento: z.string(), body: z.string(), headers: z.record(z.string(), z.string()) })) },
     { method: 'DELETE', path: '/test_helpers/listen/{id}', summary: 'Cerrar sesión de cord listen', tag: 'Modo prueba', scope: 'write', testOnly: true, response: Ack },
+
+    { method: 'POST', path: '/setup/plans', summary: 'Proponer una configuración de la cuenta (una persona la aprueba en review_url)', tag: 'Configuración', scope: 'write', body: z.object({
+        sitio: z.string().max(300).optional().describe('Sitio web del negocio, por ejemplo tunegocio.com.'),
+        descripcion: z.string().max(4000).optional().describe('Descripción del negocio: giro, plazos de pago, impuestos que cobra o retiene.'),
+        archivo: z.object({ nombre: z.string(), base64: z.string() }).optional().describe('Lista de precios (Excel, CSV, PDF o foto) en base64, hasta 3 MB.'),
+    }), response: SetupPlan },
+    { method: 'GET', path: '/setup/plans/{id}', summary: 'Estado de una propuesta de configuración', tag: 'Configuración', scope: 'read', response: SetupPlan },
 ];
 
 // ── Webhooks ────────────────────────────────────────────────────────────────

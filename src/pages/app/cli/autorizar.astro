@@ -1,0 +1,108 @@
+---
+// Aprobación de `cord login`: la persona confirma que el código es el de su
+// terminal y autoriza con su sesión. La terminal recibe una llave restringida
+// de prueba; desde aquí nunca se ve la llave.
+export const prerender = false;
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { requirePerm, getOrg } from '../../../lib/queries';
+import { findLogin, normalizeUserCode } from '../../../lib/cli-login';
+import { t } from '../../../i18n/app';
+import { currentLocale } from '../../../lib/context';
+
+if (await requirePerm('ajustes')) return Astro.redirect('/app');
+const L = currentLocale();
+const codigo = normalizeUserCode(Astro.url.searchParams.get('codigo'));
+const login = codigo ? await findLogin(codigo) : null;
+const valido = !!login && login.estado === 'pendiente' && login.vigente;
+const org = valido ? await getOrg() : null;
+Astro.response.headers.set('Cache-Control', 'no-store');
+import { iconInner } from '../../../lib/icons';
+---
+
+<AppLayout title={`${t(L, 'cli.auth.title')} | Cord`} page="ajustes" heading={t(L, 'cli.auth.title')}>
+    <div class="ca" data-cli-auth data-codigo={codigo ?? ''} data-err={t(L, 'cli.auth.err')}>
+        {valido ? (
+            <section class="ca-card" data-ca-step="ask">
+                <svg class="ca-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('terminal')}></svg>
+                <h1>{t(L, 'cli.auth.title')}</h1>
+                <p class="ca-sub">{t(L, 'cli.auth.sub')}</p>
+                <p class="ca-code" aria-label={codigo}>{codigo}</p>
+                <dl class="ca-facts">
+                    <div><dt>{t(L, 'cli.auth.device')}</dt><dd>{login!.host}</dd></div>
+                    <div><dt>{t(L, 'cli.auth.org')}</dt><dd>{org?.nombre}</dd></div>
+                    <div><dt>{t(L, 'cli.auth.access')}</dt><dd>{t(L, 'cli.auth.access_desc')}</dd></div>
+                </dl>
+                <p class="ca-error" data-ca-error role="alert" hidden></p>
+                <div class="ca-actions">
+                    <button type="button" class="ca-ghost" data-ca-decide="no">{t(L, 'cli.auth.cancel')}</button>
+                    <button type="button" class="ca-primary" data-ca-decide="si">{t(L, 'cli.auth.approve')}</button>
+                </div>
+            </section>
+        ) : (
+            <section class="ca-card"><h1>{t(L, 'cli.auth.title')}</h1><p class="ca-sub">{t(L, 'cli.auth.invalid')}</p></section>
+        )}
+        <section class="ca-card" data-ca-step="done" hidden>
+            <svg class="ca-icon ca-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check-circle')}></svg>
+            <h1>{t(L, 'cli.auth.done_title')}</h1>
+            <p class="ca-sub">{t(L, 'cli.auth.done_sub')}</p>
+        </section>
+        <section class="ca-card" data-ca-step="rejected" hidden>
+            <h1>{t(L, 'cli.auth.title')}</h1>
+            <p class="ca-sub">{t(L, 'cli.auth.rejected')}</p>
+        </section>
+    </div>
+</AppLayout>
+
+<style>
+    .ca { max-width: 520px; margin: 0 auto; padding: 3.5rem 1.5rem 4rem; }
+    .ca-card { background: #fff; border-radius: 28px; padding: 2.4rem 2.2rem; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 24px 60px -24px rgba(10,25,47,0.18); }
+    .ca-card[hidden] { display: none; }
+    .ca-icon { width: 40px; height: 40px; color: #0a192f; margin-bottom: 1.2rem; }
+    .ca-ok { color: #047857; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.7rem; font-weight: 600; letter-spacing: -0.035em; color: #050505; }
+    .ca-sub { margin: 0 0 1.6rem; color: #6b7280; line-height: 1.55; font-size: 0.95rem; }
+    .ca-code { margin: 0 0 1.6rem; padding: 18px; border-radius: 16px; background: #f5f5f7; text-align: center; font: 600 1.9rem/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing: 0.18em; color: #0a192f; }
+    .ca-facts { margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+    .ca-facts div { display: grid; grid-template-columns: 92px 1fr; gap: 1rem; font-size: 0.9rem; }
+    .ca-facts dt { color: #6b7280; font-weight: 600; }
+    .ca-facts dd { margin: 0; color: #111; line-height: 1.5; overflow-wrap: anywhere; }
+    .ca-error { margin: 1.2rem 0 0; padding: 10px 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 0.86rem; }
+    .ca-actions { display: flex; justify-content: flex-end; gap: 0.7rem; margin-top: 2rem; }
+    .ca-primary, .ca-ghost { min-height: 46px; padding: 0 24px; border-radius: 999px; font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+    .ca-primary { border: 0; background: #0a192f; color: #fff; box-shadow: 0 8px 22px -10px rgba(10,25,47,0.55); }
+    .ca-primary:hover { transform: translateY(-1px); }
+    .ca-primary:disabled { opacity: 0.55; cursor: progress; }
+    .ca-ghost { border: 1px solid rgba(10,25,47,0.12); background: #fff; color: #374151; }
+    .ca-ghost:hover { background: #f5f5f7; }
+    .ca-primary:focus-visible, .ca-ghost:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    @media (max-width: 520px) {
+        .ca { padding: 1.5rem 16px 3rem; }
+        .ca-card { padding: 1.8rem 1.4rem; }
+        .ca-facts div { grid-template-columns: 1fr; gap: 0.2rem; }
+        .ca-actions { flex-direction: column-reverse; }
+    }
+</style>
+
+<script>
+    const root = document.querySelector<HTMLElement>('[data-cli-auth]');
+    if (root) {
+        const show = (step: string) => root.querySelectorAll<HTMLElement>('[data-ca-step]').forEach((s) => { s.hidden = s.dataset.caStep !== step; });
+        const error = root.querySelector<HTMLElement>('[data-ca-error]');
+        root.querySelectorAll<HTMLButtonElement>('[data-ca-decide]').forEach((btn) => btn.addEventListener('click', async () => {
+            const aprobar = btn.dataset.caDecide === 'si';
+            root.querySelectorAll<HTMLButtonElement>('[data-ca-decide]').forEach((b) => { b.disabled = true; });
+            try {
+                const res = await fetch('/api/cli/login/decide', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo: root.dataset.codigo, aprobar }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || root.dataset.err);
+                show(aprobar ? 'done' : 'rejected');
+            } catch (err: any) {
+                if (error) { error.textContent = err?.message || root.dataset.err || ''; error.hidden = false; }
+                root.querySelectorAll<HTMLButtonElement>('[data-ca-decide]').forEach((b) => { b.disabled = false; });
+            }
+        }));
+    }
+</script>

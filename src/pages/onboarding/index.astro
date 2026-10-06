@@ -27,6 +27,7 @@ import { currentLocale } from '../../lib/context';
 import { listCountries } from '../../lib/countries';
 import FlagSelect from '../../components/ui/FlagSelect';
 import SetupWizard from '../../components/setup/SetupWizard.astro';
+import DevConnect from '../../components/setup/DevConnect.astro';
 
 const L = currentLocale();
 const isEn = L === 'en';
@@ -293,7 +294,9 @@ const T = isEn
                 </div>
             </form>
 
-            <SetupWizard origen="onboarding" doneHref="/app" hidden />
+            <SetupWizard origen="onboarding" doneHref="/app" hidden>
+                <DevConnect slot="after-done" />
+            </SetupWizard>
         </div>
     </div>
 </Layout>

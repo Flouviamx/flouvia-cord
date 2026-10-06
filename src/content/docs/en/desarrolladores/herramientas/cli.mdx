@@ -1,7 +1,7 @@
 ---
 title: "Cord CLI"
 seoTitle: "Cord CLI"
-description: "Forward test-mode webhooks to your localhost, trigger events and simulate the SAT, the client and time from the terminal."
+description: "Sign in from the browser, set up your account with AI, integrate your project and test webhooks on your localhost from the terminal."
 ---
 
 <header class="content-header">
@@ -9,14 +9,39 @@ description: "Forward test-mode webhooks to your localhost, trigger events and s
   <p class="page-subtitle">Test your whole integration without leaving your machine.</p>
 </header>
 
-## Install
+## Install and sign in
 
 ```bash
 npm install -g @flouviahq/cli
 cord login
 ```
 
-`cord login` asks for a **test** key (`sk_test_`) and rejects a live one: nothing you do with the CLI touches real data. The key is stored in `~/.config/cord/config.json` with `0600` permissions.
+`cord login` opens your browser with a confirmation code (for example `WXYZ-2346`). Check that it matches the one in your terminal and authorize with your Cord session: the terminal receives a **restricted test key** on its own, with nothing to copy.
+
+- The key can only use the simulators, read events and propose setups. It never touches live data or applies anything without your approval.
+- It expires in 90 days and shows up in Developers › API as `CLI · <your machine>`, where you can revoke it.
+- The code expires in 10 minutes and the key is handed over only once.
+- No browser (a server over SSH): `cord login --no-browser` prints the address so you can open it on another device. To paste your own key, use `cord login --api-key`.
+
+The key is stored in `~/.config/cord/config.json` with `0600` permissions. The CLI rejects any live key.
+
+## Set up your account with AI
+
+```bash
+cord setup --sitio yourcompany.com --archivo price-list.xlsx
+```
+
+With no options, `cord setup` asks for your website, what your business does and your price list (`.csv`, `.xlsx`, `.pdf` or a photo, up to 3 MB). Cord reads what you give it and proposes profile, branding, taxes, catalog and templates. The proposal opens in your browser for review: **nothing is applied until you approve it**, and the terminal shows the result as soon as you do.
+
+It is the same assistant as onboarding and the [MCP server](/docs/desarrolladores/herramientas/mcp): one proposal, one review, wherever you start. The proposal always sets up your real account, even with a test key.
+
+## Integrate your project
+
+```bash
+cord init
+```
+
+Detects your framework (Next.js, Astro, Express, Laravel, Django, Flask or FastAPI), gives you the SDK install command, creates the webhook route with signature verification and writes your test variables to an environment file that git ignores. It never overwrites an existing file.
 
 ## Receive webhooks on your localhost
 

@@ -263,6 +263,16 @@ APIs de cobros (ago 2026)
                            la marca de la org: PLANTILLA (clasico|minimal|detallado vía
                            data-template en .sheet), LOGO real (ORG.logoUrl) o inicial,
                            color, contacto, mensaje, condiciones. print-color-adjust:exact.
+/app/setup                → configuración asistida con IA (SetupWizard, el mismo del
+                           onboarding): POST /api/setup/plans propone, POST
+                           /api/setup/plans/[id] { action: apply|discard } aplica con los
+                           manejadores de Ajustes. Exige permiso de Ajustes.
+/app/setup/[id]            → revisión de una propuesta que llegó por el CLI o un agente
+                           (MCP). En modo prueba pide salir del entorno de prueba.
+/app/cli/autorizar?codigo= → aprobación de `cord login`. POST /api/cli/login y
+                           /api/cli/login/claim son públicas (device code); /decide exige
+                           sesión y permiso de Ajustes. /api/cli/status alimenta el panel
+                           de desarrolladores del onboarding.
 /app/clientes /app/productos → CRUD real con modal <dialog> (POST/PATCH/DELETE
                            /api/clientes y /api/productos). Productos también con
                            IMPORTACIÓN CSV (botón → modal archivo/mapeo/preview →
@@ -558,6 +568,11 @@ APIs de cobros (ago 2026)
                    un webhook efímero (webhooks.cli_hasta) que el outbox no entrega por HTTP;
                    el CLI recoge los eventos con los headers de firma reales. 24 h, máx 3 por
                    llave, fuera de cuotas y listados; el sweeper borra las vencidas.
+/api/v1/setup/plans  → POST propone la configuración de la cuenta (sitio, descripción,
+                   archivo en base64 hasta 3 MB). Nunca aplica: devuelve review_url. Una llave
+                   de prueba propone sobre la cuenta real (sandbox_of). Recurso `setup` de las
+                   llaves restringidas.
+/api/v1/setup/plans/[id] → GET estado (propuesto | aplicado | descartado | fallido) y resultado.
 /api/v1/cobranza     → GET cartera
 /api/v1/events       → GET historial de domain_events con cursor opaco (type, object_id)
 /api/v1/webhooks     → GET/POST suscripciones de ESTA llave (webhooks.created_by_key)

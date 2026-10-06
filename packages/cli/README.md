@@ -1,12 +1,27 @@
 # @flouviahq/cli
 
-CLI de desarrollo de [Cord](https://cordhq.app). Trabaja solo con llaves de prueba (`sk_test_`): nada de lo que hagas toca datos reales.
+CLI de desarrollo de [Cord](https://cordhq.app). Trabaja solo con llaves de prueba: nada de lo que hagas toca datos reales.
 
 ```bash
 npm install -g @flouviahq/cli
-cord login
-cord init      # detecta tu framework y deja el webhook verificado y el proxy listos
+cord login     # abre tu navegador, confirmas el código y la terminal queda conectada
+cord setup     # Cord propone la configuración de tu cuenta; tú la apruebas en el navegador
+cord init      # detecta tu framework y deja el webhook verificado listo
 ```
+
+## Iniciar sesión
+
+`cord login` abre tu navegador con un código de confirmación. Revisa que coincida con el de la terminal y autoriza: la terminal recibe una llave restringida de prueba (simuladores, eventos y proponer configuraciones) que vence en 90 días. Se entrega una sola vez y puedes revocarla en Desarrolladores › API.
+
+Sin navegador, `cord login --no-browser` imprime la dirección. Para pegar una llave tuya, `cord login --api-key`.
+
+## Configurar tu cuenta con IA
+
+```bash
+cord setup --sitio tuempresa.com --descripcion "Distribuidora de materiales" --archivo precios.xlsx
+```
+
+Sin opciones te pregunta. Cord lee tu sitio, tu descripción y tu lista de precios (`.csv`, `.xlsx`, `.pdf` o foto, hasta 3 MB) y propone perfil, marca, impuestos, catálogo y plantillas. La revisión se abre en tu navegador: nada se aplica hasta que la apruebas, y la terminal muestra el resultado.
 
 ## Webhooks en tu localhost
 

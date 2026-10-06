@@ -2,7 +2,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 export interface ParsedArgs {
     command: string[];
@@ -68,11 +68,41 @@ export function parseEventList(value: string | true | undefined): string[] {
     return value.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+/** Solo se abre en el navegador una URL del mismo origen que la API: el servidor no decide a dónde te manda. */
+export function sameOrigin(url: string, baseUrl: string): boolean {
+    try {
+        const u = new URL(url);
+        const b = new URL(baseUrl);
+        return u.origin === b.origin && (u.protocol === 'https:' || u.hostname === 'localhost' || u.hostname === '127.0.0.1');
+    } catch { return false; }
+}
+
+export interface SetupCounts { perfil: number; marca: number; impuestos: number; productos: number; plantillas: number; cotizaciones: number }
+
+const COUNT_LABELS: Array<[keyof SetupCounts, string, string]> = [
+    ['perfil', 'dato del perfil', 'datos del perfil'],
+    ['marca', 'ajuste de marca', 'ajustes de marca'],
+    ['impuestos', 'impuesto', 'impuestos'],
+    ['productos', 'producto', 'productos'],
+    ['plantillas', 'plantilla', 'plantillas'],
+    ['cotizaciones', 'preferencia de cotización', 'preferencias de cotización'],
+];
+
+export function describeCounts(c: Partial<SetupCounts>): string[] {
+    return COUNT_LABELS.filter(([k]) => (c[k] ?? 0) > 0).map(([k, one, many]) => `${c[k]} ${c[k] === 1 ? one : many}`);
+}
+
+export const MAX_SETUP_FILE = 3 * 1024 * 1024;
+
 export const HELP = `cord ${VERSION} — CLI de desarrollo de Cord
 
 Uso:
   cord init                               Detecta tu framework y deja la integración lista
-  cord login                              Guarda tu llave de prueba (sk_test_)
+  cord login                              Inicia sesión desde el navegador (o --api-key para pegar una llave)
+  cord setup                              Propone la configuración de tu cuenta con IA; tú la apruebas
+        [--sitio <url>]                   Tu sitio web: nombre, marca y contacto
+        [--descripcion <texto>]           A qué se dedica el negocio
+        [--archivo <ruta>]                Lista de precios (.csv, .xlsx, .pdf o foto, hasta 3 MB)
   cord logout                             Borra la llave guardada
   cord whoami                             Muestra la organización de la llave
   cord listen --forward-to <url>          Reenvía los webhooks de prueba a tu servidor local
