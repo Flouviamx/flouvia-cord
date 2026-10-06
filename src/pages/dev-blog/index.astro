@@ -117,7 +117,7 @@ const searchMatrix = [
 
 <DevBlogLayout
   title={lang === 'en' ? 'Cord Developers: engineering, API and payments' : 'Cord Developers: ingeniería, API y pagos'}
-  description={lang === 'en' ? 'Engineering from the Cord team: multi-tenant architecture, financial webhooks, idempotency, the quotes API and how we build payments and invoicing.' : 'Ingeniería del equipo de Cord: arquitectura multi-tenant, webhooks financieros, idempotencia, la API de cotizaciones y cómo construimos pagos y facturación.'}
+  description={lang === 'en' ? 'Engineering from the Cord team: the public API, the CLI, the MCP server, Cord Elements and how we build payments and invoicing.' : 'Ingeniería del equipo de Cord: la API pública, el CLI, el servidor MCP, Cord Elements y cómo construimos pagos y facturación.'}
   lang={lang}
   isHome
 >
@@ -208,16 +208,22 @@ const searchMatrix = [
     
   <!-- Statistics Marquee (Full-Bleed) -->
   <div class="marquee-wrapper">
-    <div class="section-label">{lang === 'en' ? 'STATISTICS' : 'ESTADÍSTICAS'}</div>
+    <div class="section-label">{lang === 'en' ? 'PLATFORM' : 'PLATAFORMA'}</div>
     <div class="stats-marquee-container">
       <div class="stats-marquee">
         <div class="marquee-content">
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MEMBERS:' : 'MIEMBROS:'}</span> <span class="stat-val">4400</span></span>
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CORD DEVELOPER COMMUNITY' : 'COMUNIDAD DE DESARROLLADORES CORD'}</span> <span class="stat-val">5 MILLION</span></span>
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'YOUTUBE WATCH TIME HOURS:' : 'HORAS DE REPRODUCCIÓN EN YOUTUBE:'}</span> <span class="stat-val">380,000</span></span>
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MEMBERS:' : 'MIEMBROS:'}</span> <span class="stat-val">4400</span></span>
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CORD DEVELOPER COMMUNITY' : 'COMUNIDAD DE DESARROLLADORES CORD'}</span> <span class="stat-val">5 MILLION</span></span>
-            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'YOUTUBE WATCH TIME HOURS:' : 'HORAS DE REPRODUCCIÓN EN YOUTUBE:'}</span> <span class="stat-val">380,000</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'API V1:' : 'API V1:'}</span> <span class="stat-val">{lang === 'en' ? '33 OPERATIONS' : '33 OPERACIONES'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'WEBHOOKS:' : 'WEBHOOKS:'}</span> <span class="stat-val">{lang === 'en' ? '41 EVENTS' : '41 EVENTOS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MCP:' : 'MCP:'}</span> <span class="stat-val">{lang === 'en' ? '26 TOOLS' : '26 HERRAMIENTAS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'SDKS:' : 'SDKS:'}</span> <span class="stat-val">{lang === 'en' ? 'NODE · PYTHON · PHP · ELEMENTS' : 'NODE · PYTHON · PHP · ELEMENTS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CLI:' : 'CLI:'}</span> <span class="stat-val">{lang === 'en' ? '0 DEPENDENCIES' : '0 DEPENDENCIAS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MARKETS:' : 'MERCADOS:'}</span> <span class="stat-val">{lang === 'en' ? '12 COUNTRIES' : '12 PAÍSES'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'API V1:' : 'API V1:'}</span> <span class="stat-val">{lang === 'en' ? '33 OPERATIONS' : '33 OPERACIONES'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'WEBHOOKS:' : 'WEBHOOKS:'}</span> <span class="stat-val">{lang === 'en' ? '41 EVENTS' : '41 EVENTOS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MCP:' : 'MCP:'}</span> <span class="stat-val">{lang === 'en' ? '26 TOOLS' : '26 HERRAMIENTAS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'SDKS:' : 'SDKS:'}</span> <span class="stat-val">{lang === 'en' ? 'NODE · PYTHON · PHP · ELEMENTS' : 'NODE · PYTHON · PHP · ELEMENTS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'CLI:' : 'CLI:'}</span> <span class="stat-val">{lang === 'en' ? '0 DEPENDENCIES' : '0 DEPENDENCIAS'}</span></span>
+            <span class="stat-item"><span class="stat-label">{lang === 'en' ? 'MARKETS:' : 'MERCADOS:'}</span> <span class="stat-val">{lang === 'en' ? '12 COUNTRIES' : '12 PAÍSES'}</span></span>
         </div>
       </div>
     </div>
