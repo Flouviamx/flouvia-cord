@@ -155,7 +155,7 @@ import { iconInner } from '../../lib/icons';
                 </div>
             </div>
 
-            <DateRangePicker minISO={diasSerie[0]?.fecha ?? new Date().toISOString().slice(0, 10)} maxISO={diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10)} initialKey="30" storageKey="cord.dash.range.v1" />
+            <DateRangePicker minISO={diasSerie[0]?.fecha ?? new Date().toISOString().slice(0, 10)} maxISO={diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10)} initialKey="30" storageKey="cord.dash.range.v1" syncUrl={false} />
         </div>
         <p class="hero-rev-nota">{t(L, 'dash.rango_nota')}</p>
         <div class="hero-rev-chart" id="heroChart"
