@@ -1,5 +1,3 @@
-import { resolveBrandProfile } from '../brand-profile';
-import { brandImagePng } from '../brand-image';
 // PDF de una factura, listo para adjuntar a un correo.
 //
 // El comentario de `/api/facturas/[id].ts` prometía mandar la factura "con su
@@ -8,27 +6,12 @@ import { brandImagePng } from '../brand-image';
 // cliente recibía un correo con un botón y nada que archivar. Para un área de
 // cuentas por pagar, el archivo ES el trámite.
 //
-// Esta función carga el documento con la MISMA forma que la ruta de descarga —
-// snapshot inmutable para importes y partes, marca en vivo para logo, color y
-// condiciones— y devuelve el binario.
+// Esta función carga el documento con la MISMA consulta y el MISMO armado que la
+// ruta de descarga (`loadInvoiceDocumentRow` + `renderInvoicePdf`) —snapshot
+// inmutable para importes y partes, marca en vivo para logo, color y
+// condiciones— y devuelve el binario. Antes eran dos copias que ya divergían.
 
-import { sql, withOrgTx } from '../db';
-import { createInvoicePdf } from './invoice-pdf';
-import { publicDocumentUrl } from '../public-links';
-
-const TERM_LABEL: Record<string, string> = {
-    contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
-};
-
-function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
-    const days: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-    const offset = days[String(terminos || 'contado')];
-    if (offset === undefined || !baseDate) return null;
-    const due = new Date(baseDate as string);
-    if (!Number.isFinite(due.getTime())) return null;
-    due.setDate(due.getDate() + offset);
-    return due;
-}
+import { loadInvoiceDocumentRow, renderInvoicePdf } from './invoice-download';
 
 export interface InvoiceAttachment {
     filename: string;
@@ -48,66 +31,14 @@ export interface InvoiceAttachment {
  */
 export async function buildInvoicePdfAttachment(orgId: string, documentoId: string): Promise<InvoiceAttachment | null> {
     try {
-        const [[doc]] = await withOrgTx(orgId, sql`
-            select d.document_type, d.country_code, d.invoice_number, d.currency,
-                   d.ledger_currency, d.fx_rate, d.ledger_total,
-                   d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
-                   d.issuer_snapshot,
-                   d.recipient_snapshot, d.line_items_snapshot, d.provider_data,
-                   d.status, d.issued_at,
-                   d.public_token as invoice_token, d.due_date as invoice_due,
-                   orig.invoice_number as credit_note_of_number,
-                   o.logo_url, o.color_marca, o.color_secundario, o.brand_profile, o.pdf_condiciones,
-                   c.terminos, c.public_token,
-                   coalesce(c.approved_at, c.created_at) as base_date
-              from documentos_fiscales d
-              join orgs o on o.id = d.org_id
-              left join cotizaciones c on c.id = d.cotizacion_id
-              left join documentos_fiscales orig on orig.id = d.credit_note_of and orig.org_id = d.org_id
-             where d.id = ${documentoId} and d.org_id = ${orgId}
-             limit 1`);
-
+        const doc = await loadInvoiceDocumentRow(orgId, documentoId);
         if (!doc || doc.status !== 'issued') return null;
         // CFDI timbrado: el archivo con validez es el del PAC, no uno que Cord
         // vuelva a dibujar. Se deja fuera del adjunto en vez de mandar dos
         // documentos que dicen lo mismo con distinta autoridad.
         if (['cfdi_40', 'cfdi_egreso'].includes(doc.document_type) && doc.provider_data?.facturapi_id) return null;
 
-        const term = String(doc.terminos || '');
-        const appearance = resolveBrandProfile(doc.brand_profile);
-        const source = appearance.header === 'contrast' && appearance.logoDark ? appearance.logoDark : doc.logo_url;
-        const logoBytes = await brandImagePng(source);
-        const pdf = createInvoicePdf({
-            brandProfile: appearance,
-            brandSecondary: doc.color_secundario as string | null,
-            invoiceNumber: String(doc.invoice_number || 'INV'),
-            documentType: String(doc.document_type),
-            countryCode: String(doc.country_code || 'US'),
-            currency: String(doc.currency || 'USD'),
-            subtotal: Number(doc.subtotal || 0),
-            taxTotal: Number(doc.tax_total || 0),
-            total: Number(doc.total || 0),
-            retenciones: Array.isArray(doc.retenciones_snapshot) ? doc.retenciones_snapshot : null,
-            issuedAt: doc.issued_at,
-            issuer: doc.issuer_snapshot || { legalName: 'Emisor' },
-            recipient: doc.recipient_snapshot || { legalName: 'Cliente' },
-            lines: Array.isArray(doc.line_items_snapshot) ? doc.line_items_snapshot : [],
-            ledgerCurrency: doc.ledger_currency ? String(doc.ledger_currency) : null,
-            fxRate: doc.fx_rate !== null && doc.fx_rate !== undefined ? Number(doc.fx_rate) : null,
-            ledgerTotal: doc.ledger_total !== null && doc.ledger_total !== undefined ? Number(doc.ledger_total) : null,
-            simulated: Boolean(doc.provider_data?.simulado),
-            logo: logoBytes ? `data:image/png;base64,${logoBytes.toString('base64')}` : null,
-            brandColor: (doc.color_marca as string) || null,
-            dueDate: doc.invoice_due ? new Date(doc.invoice_due as string) : dueDateFrom(doc.terminos, doc.base_date),
-            paymentTerms: TERM_LABEL[term] || null,
-            creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
-            verifactu: doc.provider_data?.verifactu || null,
-            paymentInstructions: doc.invoice_token
-                ? await publicDocumentUrl(orgId, 'i', doc.invoice_token as string)
-                : (doc.public_token ? await publicDocumentUrl(orgId, 'q', doc.public_token as string) : null),
-            notes: (doc.pdf_condiciones as string) || null,
-        });
-
+        const pdf = await renderInvoicePdf(orgId, doc, Boolean(doc.provider_data?.simulado));
         const nombre = String(doc.invoice_number || 'invoice').replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 80) || 'invoice';
         return { filename: `${nombre}.pdf`, content: new Uint8Array(pdf) };
     } catch {

@@ -2071,7 +2071,12 @@ export async function getCotizacionByToken(token: string) {
             brandProfile: resolveBrandProfile(rows[0].org_brand_profile),
             colorSecundario: (rows[0].org_secondary as string) || '',
             pdfMensaje: (rows[0].org_pdf_mensaje as string) ?? '',
-            ivaPct: num(rows[0].org_iva_pct) || 16,
+            // Sin `|| 16`: el servidor calcula las líneas sin tasa propia con
+            // `org_iva_pct` tal cual (taxRateFallback), y una org con tasa 0 —un
+            // negocio exento, o Brasil, que nace sin tasa nacional— recibía aquí
+            // el 16% mexicano. El recálculo en vivo del link público dibujaba
+            // entonces un impuesto que el SSR y la base no tenían.
+            ivaPct: num(rows[0].org_iva_pct),
             embedDomains: (rows[0].org_embed_domains as string) ?? '',
             emailContacto: (rows[0].org_email as string) ?? '',
             telefono: (rows[0].org_tel as string) ?? '',

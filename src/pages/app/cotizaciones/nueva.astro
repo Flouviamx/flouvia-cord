@@ -44,7 +44,7 @@ const PAIS = String(ORG.countryCode || 'MX');
 // Suecia. El nombre sale del perfil del país del emisor, no de un ternario
 // `isMx ? 'IVA' : 'Tax'` que le decía "Tax" genérico a medio mundo.
 const TAX_LABEL = getCountryProfile(PAIS, L).taxLabel;
-const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+const TAX_INCLUDED_LABEL = t(L, 'ed.iva_incluido').replace('{tax}', TAX_LABEL);
 // Mismo constructor que el editor de facturas. Antes esta pantalla ignoraba el
 // catálogo por completo y leía la columna plana orgs.iva_pct, así que capturar
 // "IVA 8% frontera" o "Exento" en Ajustes no cambiaba nada aquí.
@@ -221,7 +221,7 @@ import { iconInner } from '../../../lib/icons';
                 <div class="sum-line sum-save" id="sumSaveLine" hidden><span>{t(L, 'ed.le_descontaste')}</span><span class="editorial" id="sumSave">$0.00</span></div>
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
                     <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{TAX_INCLUDED_LABEL}</label>
-                    <label class="s-toggle" title={isMx ? t(L, 'ed.iva_incluido_title') : TAX_INCLUDED_LABEL}>
+                    <label class="s-toggle" title={t(L, 'ed.iva_incluido_title').replace('{tax}', TAX_LABEL)}>
                         <input type="checkbox" id="ivaIncluido" checked={draftQuote ? draftQuote.iva_incluido : ORG.ivaIncluidoDefecto} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>

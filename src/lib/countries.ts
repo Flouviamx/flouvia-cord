@@ -349,7 +349,7 @@ export function taxKindLabel(kind: TaxKind, locale: 'es' | 'en', countryCode: st
     return locale === 'en' ? 'Exempt' : 'Exento';
 }
 
-export function countryName(code: string, locale: 'es' | 'en' = 'es'): string {
+export function countryName(code: string, locale: string = 'es'): string {
     try {
         return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) || code;
     } catch {

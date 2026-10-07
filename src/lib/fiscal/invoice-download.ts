@@ -13,9 +13,13 @@ const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY
 const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function downloadInvoiceDocument(orgId: string, id: string, format: string, publicToken?: string): Promise<Response> {
-  if (!UUID_RE.test(id) || !['pdf', 'xml'].includes(format)) return new Response('Formato no encontrado', { status: 404 });
-
+/**
+ * Fila del documento con todo lo que su PDF necesita. La comparten la descarga
+ * y el adjunto del correo: antes cada una tenía su propia copia de la consulta
+ * y del armado del PDF, y ya habían divergido (el adjunto no acotaba el join de
+ * la cotización por organización).
+ */
+export async function loadInvoiceDocumentRow(orgId: string, id: string, publicToken?: string): Promise<any | null> {
   const [[doc]] = await withOrgTx(orgId, sql`
     select d.id, d.document_type, d.country_code, d.invoice_number, d.currency,
            d.ledger_currency, d.fx_rate, d.ledger_total,
@@ -30,6 +34,7 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
            -- leen en vivo (el snapshot inmutable sigue mandando en importes y
            -- partes). Un cambio de logo debe reflejarse al re-descargar.
            o.logo_url, o.color_marca, o.color_secundario, o.brand_profile, o.pdf_condiciones, o.moneda,
+           o.zona_horaria,
            c.terminos, c.vigencia, c.public_token,
            coalesce(c.approved_at, c.created_at) as base_date
       from documentos_fiscales d
@@ -40,6 +45,13 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
        and (${publicToken ?? null}::text is null or
             (d.public_token = ${publicToken ?? null} and d.lifecycle not in ('draft', 'void')))
      limit 1`);
+  return doc ?? null;
+}
+
+export async function downloadInvoiceDocument(orgId: string, id: string, format: string, publicToken?: string): Promise<Response> {
+  if (!UUID_RE.test(id) || !['pdf', 'xml'].includes(format)) return new Response('Formato no encontrado', { status: 404 });
+
+  const doc = await loadInvoiceDocumentRow(orgId, id, publicToken);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
 
   if (doc.document_type === 'cfdi_40' || doc.document_type === 'cfdi_egreso') {
@@ -84,7 +96,7 @@ export async function downloadInvoiceDocument(orgId: string, id: string, format:
 }
 
 /** Vencimiento del pago según los términos de crédito de la cotización. */
-function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
+export function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
   const days: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
   const term = String(terminos || 'contado');
   const offset = days[term];
@@ -95,11 +107,18 @@ function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
   return due;
 }
 
-const TERM_LABEL: Record<string, string> = {
-  contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
-};
+const TERM_CODES = new Set(['contado', 'net30', 'net60']);
 
 async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Response> {
+  const pdf = await renderInvoicePdf(orgId, doc, simulated);
+  return new Response(new Uint8Array(pdf), {
+    status: 200,
+    headers: downloadHeaders('application/pdf', `${safeFilename(doc.invoice_number || 'invoice')}.pdf`),
+  });
+}
+
+/** PDF de una factura a partir de la fila de `loadInvoiceDocumentRow`. */
+export async function renderInvoicePdf(orgId: string, doc: any, simulated: boolean): Promise<Buffer> {
   const term = String(doc.terminos || '');
   const appearance = resolveBrandProfile(doc.brand_profile);
   const source = appearance.header === 'contrast' && appearance.logoDark ? appearance.logoDark : doc.logo_url;
@@ -109,7 +128,7 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
     brandSecondary: doc.color_secundario as string | null,
     invoiceNumber: String(doc.invoice_number || 'INV'),
     documentType: String(doc.document_type),
-            countryCode: String(doc.country_code || 'US'),
+    countryCode: String(doc.country_code || 'US'),
     currency: String(doc.currency || 'USD'),
     subtotal: Number(doc.subtotal || 0),
     taxTotal: Number(doc.tax_total || 0),
@@ -131,7 +150,9 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
     dueDate: doc.invoice_due
       ? new Date(doc.invoice_due as string)
       : dueDateFrom(doc.terminos, doc.base_date),
-    paymentTerms: TERM_LABEL[term] || null,
+    // El código, no una etiqueta: el PDF lo traduce al idioma del documento.
+    paymentTerms: TERM_CODES.has(term) ? term : null,
+    timeZone: (doc.zona_horaria as string) || null,
     creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
     verifactu: doc.provider_data?.verifactu || null,
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de
@@ -143,10 +164,7 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
       : (doc.public_token ? await publicDocumentUrl(orgId, 'q', doc.public_token) : null),
     notes: (doc.pdf_condiciones as string) || null,
   });
-  return new Response(new Uint8Array(pdf), {
-    status: 200,
-    headers: downloadHeaders('application/pdf', `${safeFilename(doc.invoice_number || 'invoice')}.pdf`),
-  });
+  return pdf;
 }
 
 function downloadHeaders(contentType: string, filename: string): Record<string, string> {

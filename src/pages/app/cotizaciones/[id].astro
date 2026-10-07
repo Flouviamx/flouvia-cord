@@ -61,10 +61,8 @@ const quoteDocumentType = docsFiscales.find(d => ['pending', 'error'].includes(d
 // El nombre del impuesto sale del perfil del país, no de un ternario que le
 // decía "Tax" genérico a todo negocio fuera de México.
 const TAX_LABEL = getCountryProfile(ORG.countryCode || 'MX', L).taxLabel;
-const TAX_INCLUDED_LABEL = isMx ? t(L, 'id.precios_con_iva') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
-const PARTIAL_TAX_COPY = isMx
-    ? tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)) })
-    : (L === 'en' ? `of ${money(quoteSubtotal(q))} plus tax).` : `de ${money(quoteSubtotal(q))} más impuesto).`);
+const TAX_INCLUDED_LABEL = tf('id.precios_con_iva', { tax: TAX_LABEL });
+const PARTIAL_TAX_COPY = tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)), tax: TAX_LABEL });
 
 // Stepper de estado (solo flujo positivo; rechazada/expirada lo omiten — basta el pill)
 const STEPS = [

@@ -1,6 +1,6 @@
 ---
 import SettingsSection from '../../../components/app/settings/SettingsSection.astro';
-// Ajustes › Cotizaciones e impuestos — folio, IVA, defaults, retenciones y leyenda.
+// Ajustes › Cotizaciones e impuestos — folio, tasa por defecto, retenciones y leyenda.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getImpuestos } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
@@ -18,11 +18,7 @@ const TERMS = [
 ---
 
 <SettingsShell title="Cotizaciones e impuestos — Ajustes" tab="cotizaciones" perm="ajustes"
-    intro={isMx
-        ? t(L, 'set.cot.intro')
-        : (L === 'en'
-            ? 'Numbering, taxes, and defaults used by every new quote. Configure the rate that applies to your business.'
-            : 'Folio, impuestos y valores con los que arranca cada cotización. Configura la tasa que corresponda a tu negocio.')} save>
+    intro={t(L, 'set.cot.intro')} save>
     <SettingsSection icon="document" class="s-block">
         <Fragment slot="heading">{t(L, 'set.cot.folio')}</Fragment>
         <div class="s-body">

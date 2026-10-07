@@ -51,8 +51,20 @@ export interface InvoicePdfInput {
   brandColor?: string | null;
   /** Vencimiento del pago. */
   dueDate?: string | Date | null;
-  /** Condiciones legibles ("Contado", "Net 30"). */
+  /**
+   * Condiciones de pago. Un código conocido (`contado`, `net30`, `net60`) se
+   * traduce al idioma del documento; cualquier otro texto se imprime tal cual.
+   * Antes llegaba "Contado" ya resuelto en español, también a una factura en
+   * inglés de un negocio en Austin.
+   */
   paymentTerms?: string | null;
+  /**
+   * Zona horaria del EMISOR (`orgs.zona_horaria`). La fecha de expedición es un
+   * instante y se imprime en el día del negocio: formateada en la zona del
+   * servidor (UTC en Vercel), una factura emitida a las 19:00 en Ciudad de
+   * México salía fechada el día siguiente (regla 24).
+   */
+  timeZone?: string | null;
   /** Referencia u orden de compra del cliente. */
   reference?: string | null;
   /** Folio de la factura ORIGINAL, si este documento es su nota de crédito/rectificativa. */
@@ -112,7 +124,7 @@ function drawQr(doc: PdfDocument, url: string, x: number, top: number, size: num
   }
 }
 
-function addressLines(party: FiscalParty, locale: 'es' | 'en'): string[] {
+function addressLines(party: FiscalParty, locale: DocLang): string[] {
   const value = party.address;
   if (!value) return [];
   const street = [value.line1, value.line2].filter(Boolean).join(', ');
@@ -126,6 +138,139 @@ function addressLines(party: FiscalParty, locale: 'es' | 'en'): string[] {
   return [street, city, country].map((line) => String(line || '').trim()).filter(Boolean);
 }
 
+// ── Idioma del documento ─────────────────────────────────────────────────────
+//
+// La factura se imprime en el idioma del país del EMISOR. Antes eran dos
+// idiomas (español o inglés), así que un negocio en París o en Berlín emitía
+// su factura en inglés y uno en São Paulo también. Francia exige la factura en
+// francés frente a su administración, y Alemania y Brasil pueden pedir una
+// traducción: el documento que el comprador archiva debe estar en la lengua
+// del emisor. WinAnsi (ver lib/pdf/writer.ts) cubre todos los acentos de estas
+// cinco lenguas, incluidas ß, ç, ã y õ.
+export type DocLang = 'es' | 'en' | 'fr' | 'de' | 'pt';
+
+export function docLangFor(locale: string): DocLang {
+  const base = String(locale || '').slice(0, 2).toLowerCase();
+  return base === 'es' || base === 'fr' || base === 'de' || base === 'pt' ? base : 'en';
+}
+
+type Phrase = Record<DocLang, string>;
+const P = (es: string, en: string, fr: string, de: string, pt: string): Phrase => ({ es, en, fr, de, pt });
+
+const PDF_TEXT = {
+  proforma: P('PROFORMA', 'PRO FORMA', 'PROFORMA', 'PROFORMA', 'PRÓ-FORMA'),
+  creditNote: P('NOTA DE CRÉDITO', 'CREDIT NOTE', 'AVOIR', 'GUTSCHRIFT', 'NOTA DE CRÉDITO'),
+  invoice: P('FACTURA', 'INVOICE', 'FACTURE', 'RECHNUNG', 'FATURA'),
+  testDoc: P('DOCUMENTO DE PRUEBA — SIN VALIDEZ FISCAL', 'TEST DOCUMENT — NOT VALID FOR TAX PURPOSES',
+    'DOCUMENT DE TEST — SANS VALEUR FISCALE', 'TESTDOKUMENT — STEUERLICH UNGÜLTIG', 'DOCUMENTO DE TESTE — SEM VALIDADE FISCAL'),
+  from: P('DE', 'FROM', 'ÉMETTEUR', 'VON', 'EMITENTE'),
+  billTo: P('PARA', 'BILL TO', 'CLIENT', 'AN', 'CLIENTE'),
+  corrects: P('Rectifica a', 'Corrects invoice', 'Rectifie la facture', 'Berichtigt Rechnung', 'Retifica a fatura'),
+  dueDate: P('Vencimiento', 'Due date', "Date d'échéance", 'Fällig am', 'Vencimento'),
+  terms: P('Condiciones', 'Terms', 'Conditions', 'Zahlungsbedingungen', 'Condições'),
+  currency: P('Moneda', 'Currency', 'Devise', 'Währung', 'Moeda'),
+  reference: P('Referencia', 'Reference', 'Référence', 'Referenz', 'Referência'),
+  description: P('Concepto', 'Description', 'Désignation', 'Beschreibung', 'Descrição'),
+  qty: P('Cant.', 'Qty', 'Qté', 'Menge', 'Qtd.'),
+  unitPrice: P('P. unitario', 'Unit price', 'Prix unit. HT', 'Einzelpreis', 'Preço unit.'),
+  amount: P('Importe', 'Amount', 'Montant HT', 'Betrag', 'Valor'),
+  subtotal: P('Subtotal', 'Subtotal', 'Total HT', 'Zwischensumme', 'Subtotal'),
+  base: P('base', 'base', 'base', 'Basis', 'base'),
+  total: P('TOTAL', 'TOTAL', 'TOTAL TTC', 'GESAMT', 'TOTAL'),
+  exchangeRate: P('Tipo de cambio', 'Exchange rate', 'Taux de change', 'Wechselkurs', 'Taxa de câmbio'),
+  totalIn: P('Total en', 'Total in', 'Total en', 'Gesamt in', 'Total em'),
+  howToPay: P('Cómo pagar', 'How to pay', 'Comment payer', 'Zahlung', 'Como pagar'),
+  legalNotice: P('Mención legal', 'Legal notice', 'Mention légale', 'Rechtlicher Hinweis', 'Menção legal'),
+  notes: P('Notas', 'Notes', 'Notes', 'Hinweise', 'Observações'),
+  disclaimerProforma: P(
+    'Documento comercial proforma. No sustituye una factura fiscal ni acredita envío a una autoridad tributaria.',
+    'Pro forma commercial document. It does not replace a tax invoice or certify submission to a tax authority.',
+    "Document commercial pro forma. Il ne remplace pas une facture et n'atteste aucune transmission à une administration fiscale.",
+    'Proforma-Dokument. Es ersetzt keine Rechnung und belegt keine Übermittlung an eine Steuerbehörde.',
+    'Documento comercial pró-forma. Não substitui uma nota fiscal nem comprova envio a uma autoridade tributária.',
+  ),
+  disclaimerCfdi: P(
+    'Representación de un comprobante emitido con Cord. La validez fiscal la determina el CFDI timbrado y su XML.',
+    'Representation of a receipt issued with Cord. Tax validity is determined by the stamped CFDI and its XML.',
+    'Représentation d\'un justificatif émis avec Cord. La validité fiscale est déterminée par le CFDI tamponné et son XML.',
+    'Darstellung eines mit Cord ausgestellten Belegs. Steuerlich maßgeblich sind das gestempelte CFDI und sein XML.',
+    'Representação de um comprovante emitido com Cord. A validade fiscal é determinada pelo CFDI carimbado e seu XML.',
+  ),
+  disclaimerCommercial: P(
+    'Documento comercial emitido por Cord. No representa por sí solo una transmisión, autorización o timbrado ante la autoridad fiscal local.',
+    'Commercial document issued by Cord. It does not by itself represent submission, clearance, or stamping by the local tax authority.',
+    "Document commercial émis par Cord. Il ne constitue pas à lui seul une transmission ou une validation auprès de l'administration fiscale locale.",
+    'Mit Cord erstelltes Handelsdokument. Es stellt für sich genommen keine Übermittlung an oder Freigabe durch die örtliche Steuerbehörde dar.',
+    'Documento comercial emitido pelo Cord. Por si só, não representa transmissão, autorização ou validação perante a autoridade fiscal local.',
+  ),
+} satisfies Record<string, Phrase>;
+
+const TERM_TEXT: Record<string, Phrase> = {
+  contado: P('Contado', 'Due on receipt', 'Paiement à réception', 'Sofort fällig', 'À vista'),
+  net30: P('30 días', 'Net 30', '30 jours', '30 Tage netto', '30 dias'),
+  net60: P('60 días', 'Net 60', '60 jours', '60 Tage netto', '60 dias'),
+};
+
+/**
+ * Mención obligatoria de la inversión del sujeto pasivo (art. 226.11 bis de la
+ * Directiva 2006/112/CE), en la LENGUA y con la base legal del país EMISOR.
+ *
+ * Antes se imprimía para cualquier emisor de la UE la cita de la ley española
+ * (art. 25 de la Ley 37/1992): un estudio de París facturando a Berlín citaba
+ * una ley que no le aplica. Francia exige textualmente "Autoliquidation" (art.
+ * 242 nonies A del CGI) y Alemania "Steuerschuldnerschaft des
+ * Leistungsempfängers" (§ 14a Abs. 5 UStG). El resto de la UE recibe la
+ * mención en inglés con la cita de la Directiva, que es la norma común.
+ */
+export function reverseChargeNotice(issuerCountry: string, lang: DocLang): string {
+  switch (String(issuerCountry || '').toUpperCase()) {
+    case 'ES':
+      return 'Inversión del sujeto pasivo: servicio no sujeto al IVA español (art. 69 de la Ley 37/1992) o entrega intracomunitaria exenta (art. 25); el destinatario autoliquida el IVA (art. 196 de la Directiva 2006/112/CE).';
+    case 'FR':
+      return 'Autoliquidation — TVA due par le preneur (art. 259-1 du CGI ; art. 196 de la directive 2006/112/CE). Livraisons intracommunautaires : exonération de TVA, art. 262 ter I du CGI.';
+    case 'DE':
+      return 'Steuerschuldnerschaft des Leistungsempfängers (§ 13b UStG; Art. 196 MwStSystRL). Innergemeinschaftliche Lieferungen sind nach § 4 Nr. 1b i. V. m. § 6a UStG steuerfrei.';
+    default:
+      return lang === 'es'
+        ? 'Inversión del sujeto pasivo: el destinatario debe autoliquidar el IVA (arts. 138 y 196 de la Directiva 2006/112/CE).'
+        : 'Reverse charge — VAT to be accounted for by the recipient (Articles 138 and 196 of Council Directive 2006/112/EC).';
+  }
+}
+
+/**
+ * Menciones que la ley FRANCESA exige en toda factura entre profesionales
+ * (art. L441-9 y L441-10 del Code de commerce): la tasa de penalización por
+ * retraso, la indemnización fija de 40 € por gastos de cobro y las condiciones
+ * de descuento por pronto pago. Sin ellas la factura es sancionable aunque el
+ * importe sea correcto. La tasa que se imprime es la SUPLETORIA de la ley (BCE
+ * + 10 puntos), que es la que aplica cuando el contrato no fija otra.
+ */
+const FR_B2B_NOTICE = "En cas de retard de paiement, pénalités au taux d'intérêt de la BCE majoré de 10 points et indemnité forfaitaire pour frais de recouvrement de 40 € (art. L441-10 du Code de commerce). Pas d'escompte pour paiement anticipé.";
+
+/**
+ * Fecha de calendario (`date` de Postgres, sin hora). El driver la entrega
+ * como un Date a medianoche LOCAL del proceso; se rearma en UTC con sus
+ * componentes locales (mismo criterio que `venceDia()`) y se formatea en UTC,
+ * para que ninguna zona horaria la corra un día.
+ */
+function calendarDate(value: string | Date): Date {
+  if (value instanceof Date) return new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value));
+  if (match) return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  const parsed = new Date(value);
+  return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+}
+
+function validTimeZone(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return value;
+  } catch {
+    return undefined;
+  }
+}
+
 export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const appearance = resolveBrandProfile(input.brandProfile);
   const fontFamily = appearance.font === 'editorial' ? 'serif' : 'sans';
@@ -134,8 +279,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const wrapText = (text:string,width:number,size:number,font:FontKey='regular') => wrap(text,width,size,font,fontFamily);
   const corner = {precise:0,soft:5,round:10}[appearance.corners];
   const profile = getCountryProfile(input.countryCode);
-  const isSpanish = profile.locale.startsWith('es');
-  const t = (es: string, en: string) => (isSpanish ? es : en);
+  const lang = docLangFor(profile.locale);
+  const tx = (key: keyof typeof PDF_TEXT) => PDF_TEXT[key][lang];
+  const timeZone = validTimeZone(input.timeZone);
 
   const currency = normalizeCurrency(input.currency, 'USD');
   const decimals = currencyDecimals(currency);
@@ -148,15 +294,17 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   });
   const money = (value: number) => nf.format(Number(value) || 0);
   const qtyFmt = new Intl.NumberFormat(profile.locale, { maximumFractionDigits: 3, useGrouping: 'always' });
+  // La expedición es un INSTANTE: se imprime en el día del emisor.
   const fmtDate = (value: string | Date | null | undefined) => (value
-    ? new Intl.DateTimeFormat(profile.locale, { year: 'numeric', month: 'long', day: 'numeric' })
+    ? new Intl.DateTimeFormat(profile.locale, { year: 'numeric', month: 'long', day: 'numeric', timeZone })
       .format(new Date(value))
     : '—');
+  // El vencimiento es una FECHA de calendario: se imprime tal cual, en UTC.
   // Versión corta para la franja de datos clave: ahí cada dato tiene un cuarto
   // del ancho, y "15 de septiembre de 2026" se cortaba a "15 de septiembre d…".
-  const fmtDateShort = (value: string | Date | null | undefined) => (value
-    ? new Intl.DateTimeFormat(profile.locale, { year: 'numeric', month: 'short', day: 'numeric' })
-      .format(new Date(value))
+  const fmtCalendarShort = (value: string | Date | null | undefined) => (value
+    ? new Intl.DateTimeFormat(profile.locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
+      .format(calendarDate(value))
     : '—');
 
   const brand = hexToRgb(input.brandColor, [10, 25, 47]);
@@ -190,7 +338,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   }
 
   const headRight = PAGE_W - MARGIN - 220;
-  doc.text(input.documentType === 'proforma' ? 'PROFORMA' : input.creditNoteOfNumber ? t('NOTA DE CRÉDITO', 'CREDIT NOTE') : t('FACTURA', 'INVOICE'), headRight, 42, {
+  doc.text(input.documentType === 'proforma' ? tx('proforma') : input.creditNoteOfNumber ? tx('creditNote') : tx('invoice'), headRight, 42, {
     size: 9, font: 'bold', color: headerInk, align: 'right', width: 220, tracking: 2.4,
   });
   doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
@@ -207,7 +355,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   if (input.simulated) {
     doc.rect(MARGIN, y, contentW, 26, { fill: WARN_BG, radius: 5 });
     doc.text(
-      t('DOCUMENTO DE PRUEBA — SIN VALIDEZ FISCAL', 'TEST DOCUMENT — NOT VALID FOR TAX PURPOSES'),
+      tx('testDoc'),
       MARGIN, y + 17, { size: 8.5, font: 'bold', color: WARN, align: 'center', width: contentW, tracking: 0.8 },
     );
     y += 40;
@@ -216,8 +364,8 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // ── Emisor y cliente, en dos columnas ──────────────────────────────────────
   const colW = (contentW - 28) / 2;
   const colRight = MARGIN + colW + 28;
-  doc.text(t('DE', 'FROM'), MARGIN, y, { size: 7, font: 'bold', color: MUTED, tracking: 1.2 });
-  doc.text(t('PARA', 'BILL TO'), colRight, y, { size: 7, font: 'bold', color: MUTED, tracking: 1.2 });
+  doc.text(tx('from'), MARGIN, y, { size: 7, font: 'bold', color: MUTED, tracking: 1.2 });
+  doc.text(tx('billTo'), colRight, y, { size: 7, font: 'bold', color: MUTED, tracking: 1.2 });
   y += 16;
 
   const party = (p: FiscalParty, x: number, top: number): number => {
@@ -234,7 +382,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     const rows = [
       p.taxId ? `${partyTaxIdLabel}: ${p.taxId}` : '',
       p.contactName || '',
-      ...addressLines(p, isSpanish ? 'es' : 'en'),
+      ...addressLines(p, lang),
       p.email || '',
     ].filter(Boolean);
     for (const row of rows) {
@@ -252,11 +400,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // La referencia a la factura ORIGINAL es obligatoria en una rectificativa —
   // sin ella, el documento se lee como una factura nueva y no como lo que
   // corrige. Va primero: es el dato más importante de todo el documento.
-  if (input.creditNoteOfNumber) facts.push({ k: t('Rectifica a', 'Corrects invoice'), v: input.creditNoteOfNumber });
-  if (input.dueDate) facts.push({ k: t('Vencimiento', 'Due date'), v: fmtDateShort(input.dueDate) });
-  if (input.paymentTerms) facts.push({ k: t('Condiciones', 'Terms'), v: input.paymentTerms });
-  facts.push({ k: t('Moneda', 'Currency'), v: currency });
-  if (input.reference) facts.push({ k: t('Referencia', 'Reference'), v: input.reference });
+  if (input.creditNoteOfNumber) facts.push({ k: tx('corrects'), v: input.creditNoteOfNumber });
+  if (input.dueDate) facts.push({ k: tx('dueDate'), v: fmtCalendarShort(input.dueDate) });
+  if (input.paymentTerms) {
+    const termText = TERM_TEXT[String(input.paymentTerms)]?.[lang] ?? String(input.paymentTerms);
+    facts.push({ k: tx('terms'), v: termText });
+  }
+  facts.push({ k: tx('currency'), v: currency });
+  if (input.reference) facts.push({ k: tx('reference'), v: input.reference });
 
   const FACT_H = 42;
   doc.rect(MARGIN, y, contentW, FACT_H, { fill: tint(brand, 0.93), radius: 6 });
@@ -271,14 +422,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Tabla de conceptos ─────────────────────────────────────────────────────
   const COLS: { title: string; width: number; align: Align }[] = [
-    { title: t('Concepto', 'Description'), width: contentW - 262, align: 'left' },
-    { title: t('Cant.', 'Qty'), width: 44, align: 'right' },
-    { title: t('P. unitario', 'Unit price'), width: 78, align: 'right' },
+    { title: tx('description'), width: contentW - 262, align: 'left' },
+    { title: tx('qty'), width: 44, align: 'right' },
+    { title: tx('unitPrice'), width: 78, align: 'right' },
     // El nombre real del impuesto del país ('IVA', 'VAT', 'Sales tax'…), no un
     // "Tax" genérico — una factura española decía "Impuesto 21%" en la tabla
     // y "IVA" en el editor de origen; ahora dicen lo mismo.
     { title: truncateText(profile.taxLabel, 58, 6.8, 'bold'), width: 58, align: 'right' },
-    { title: t('Importe', 'Amount'), width: 82, align: 'right' },
+    { title: tx('amount'), width: 82, align: 'right' },
   ];
   const colX = (index: number) => MARGIN + COLS.slice(0, index).reduce((sum, c) => sum + c.width, 0);
   const PAD = appearance.density === 'compact' ? 5 : 8;
@@ -356,10 +507,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     ty += 16;
   };
 
-  totalRow(t('Subtotal', 'Subtotal'), `${money(input.subtotal)} ${currency}`);
+  totalRow(tx('subtotal'), `${money(input.subtotal)} ${currency}`);
   if (taxRows.length) {
     for (const [rate, bucket] of taxRows) {
-      totalRow(`${profile.taxLabel} ${taxLabel(rate)} · ${t('base', 'base')} ${money(bucket.base)}`,
+      totalRow(`${profile.taxLabel} ${taxLabel(rate)} · ${tx('base')} ${money(bucket.base)}`,
         `${money(bucket.amount)} ${currency}`, true);
     }
   } else if (Number(input.taxTotal) > 0) {
@@ -375,7 +526,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // El total va en el color de la marca: es el número que todos buscan primero.
   const TOTAL_H = 36;
   doc.rect(totalsX, ty - 6, totalsW, TOTAL_H, { fill: brand, radius: corner });
-  doc.text(t('TOTAL', 'TOTAL'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
+  doc.text(tx('total'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
   doc.text(`${money(input.total)} ${currency}`, totalsX, ty + 16, {
     size: 13, font: 'bold', color: onBrand, align: 'right', width: totalsW - 13,
   });
@@ -383,14 +534,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   if (hasFx) {
     const rateText = new Intl.NumberFormat(profile.locale, { maximumFractionDigits: 6 }).format(fxRate);
-    doc.text(`${t('Tipo de cambio', 'Exchange rate')}: 1 ${currency} = ${rateText} ${ledger}`,
+    doc.text(`${tx('exchangeRate')}: 1 ${currency} = ${rateText} ${ledger}`,
       totalsX, ty + 8, { size: 7.6, color: MUTED, align: 'right', width: totalsW });
     if (Number(input.ledgerTotal) > 0) {
       const ledgerTotal = new Intl.NumberFormat(profile.locale, {
         minimumFractionDigits: currencyDecimals(ledger), maximumFractionDigits: currencyDecimals(ledger),
         useGrouping: 'always',
       }).format(Number(input.ledgerTotal));
-      doc.text(`${t('Total en', 'Total in')} ${ledger}: ${ledgerTotal}`,
+      doc.text(`${tx('totalIn')} ${ledger}: ${ledgerTotal}`,
         totalsX, ty + 19, { size: 7.6, color: MUTED, align: 'right', width: totalsW });
     }
     ty += 26;
@@ -410,10 +561,9 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const isIntraCommunity = isEuCountry(issuerCountry) && isEuCountry(recipientCountry)
     && issuerCountry !== recipientCountry && !!input.issuer.taxId && !!input.recipient.taxId
     && input.lines.some((l) => (Number(l.taxRate) || 0) === 0);
-  const reverseChargeNotice = t(
-    'Operación intracomunitaria. Inversión del sujeto pasivo — Art. 25 Ley 37/1992 del IVA. El adquirente debe autorrepercutirse el IVA en su declaración.',
-    'Intra-Community supply. Reverse charge — VAT self-assessed by the recipient in accordance with Art. 25 of Spanish VAT Law 37/1992.',
-  );
+  // Francia, entre profesionales: el receptor con identificador fiscal es la
+  // señal de B2B que tiene el documento.
+  const frenchB2b = issuerCountry === 'FR' && !!input.recipient.taxId && input.documentType !== 'proforma';
 
   // ── Verifactu: QR + huella, la evidencia de que este registro se encadenó ──
   // Va ANTES de "Cómo pagar" porque la ley exige que el QR y su leyenda sean
@@ -437,9 +587,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Cómo pagar y notas, a la izquierda de los totales ──────────────────────
   const blocks = [
-    input.paymentInstructions ? { title: t('Cómo pagar', 'How to pay'), body: input.paymentInstructions } : null,
-    isIntraCommunity ? { title: t('Mención legal', 'Legal notice'), body: reverseChargeNotice } : null,
-    input.notes ? { title: t('Notas', 'Notes'), body: input.notes } : null,
+    input.paymentInstructions ? { title: tx('howToPay'), body: input.paymentInstructions } : null,
+    isIntraCommunity ? { title: tx('legalNotice'), body: reverseChargeNotice(issuerCountry, lang) } : null,
+    frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
+    input.notes ? { title: tx('notes'), body: input.notes } : null,
   ].filter(Boolean) as { title: string; body: string }[];
 
   if (blocks.length) {
@@ -462,13 +613,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // Este texto es la diferencia entre una factura comercial y una fiscal: se
   // conserva palabra por palabra y nunca se omite.
   const disclaimer = input.documentType === 'proforma'
-    ? t('Documento comercial proforma. No sustituye una factura fiscal ni acredita envío a una autoridad tributaria.',
-        'Pro forma commercial document. It does not replace a tax invoice or certify submission to a tax authority.')
+    ? tx('disclaimerProforma')
     : input.countryCode.toUpperCase() === 'MX' && ['cfdi_40', 'cfdi_egreso'].includes(input.documentType || 'cfdi_40')
-    ? t('Representación de un comprobante emitido con Cord. La validez fiscal la determina el CFDI timbrado y su XML.',
-        'Representation of a receipt issued with Cord. Tax validity is determined by the stamped CFDI and its XML.')
-    : t('Documento comercial emitido por Cord. No representa por sí solo una transmisión, autorización o timbrado ante la autoridad fiscal local.',
-        'Commercial document issued by Cord. It does not by itself represent submission, clearance, or stamping by the local tax authority.');
+    ? tx('disclaimerCfdi')
+    : tx('disclaimerCommercial');
 
   const pages = doc.pageCount;
   for (let page = 0; page < pages; page++) {

@@ -77,7 +77,13 @@ const TAX_ID_LABEL = profile.taxIdLabel;
 // No es "IVA" en todos lados: es VAT en la UE, GST en Australia/Canadá/India,
 // Sales tax en EE.UU. El nombre sale del perfil del país del emisor.
 const TAX_LABEL = profile.taxLabel;
-const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+const TAX_INCLUDED_LABEL = t(L, 'ed.iva_incluido').replace('{tax}', TAX_LABEL);
+// Ajustes › Impuestos › "Los precios ya incluyen…" aplica a la factura NUEVA,
+// igual que en el editor de cotizaciones. Un borrador guardado no lo hereda:
+// sus líneas ya se persistieron SIN impuesto (precio unitario de la base), así
+// que encender el interruptor al reabrirlo volvería a desagregar el impuesto de
+// un precio que ya no lo trae.
+const DEFAULT_IVA_INCLUIDO = !draft && Boolean(ORG.ivaIncluidoDefecto);
 
 const catalogo = productos.filter((p: any) => p.activo);
 const kitSumaLista = (k: any) => k.items.reduce((s: number, it: any) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
@@ -129,7 +135,7 @@ const BOOT = {
     // salen de dos aritméticas distintas, tarde o temprano difieren.
     retenciones: RETENCIONES,
     taxLabel: TAX_LABEL,
-    ivaIncluido: false,
+    ivaIncluido: DEFAULT_IVA_INCLUIDO,
     preselectCliente,
     catalogo: catalogo.map((p: any) => ({
         id: p.id, nombre: p.nombre, sku: p.sku ?? null, unidad: p.unidad ?? 'pieza',
@@ -389,7 +395,7 @@ import { iconInner } from '../../../lib/icons';
                     <div class="sum-field sum-field-row">
                         <label for="ivaIncluido">{TAX_INCLUDED_LABEL}</label>
                         <label class="s-toggle" title={TAX_INCLUDED_LABEL}>
-                            <input type="checkbox" id="ivaIncluido" />
+                            <input type="checkbox" id="ivaIncluido" checked={DEFAULT_IVA_INCLUIDO} />
                             <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                         </label>
                     </div>

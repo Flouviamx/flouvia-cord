@@ -104,9 +104,9 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
             <label class="s-toggle">
                 <input type="checkbox" id="ivaIncluidoDefecto" checked={ORG.ivaIncluidoDefecto} />
                 <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                <span class="s-toggle-text">{t(L, 'set.imp.toggle_incluido')}</span>
+                <span class="s-toggle-text">{tf('set.imp.toggle_incluido', { tax: PROFILE.taxLabel })}</span>
             </label>
-            <p class="dev-note">{t(L, 'set.imp.toggle_incluido_nota')}</p>
+            <p class="dev-note">{tf('set.imp.toggle_incluido_nota', { tax: PROFILE.taxLabel })}</p>
         </div>
     </SettingsSection>
 </SettingsShell>

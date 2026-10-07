@@ -51,7 +51,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
 const isMx = ORG.countryCode === 'MX';
 const PAIS = String(ORG.countryCode || 'MX');
 const TAX_LABEL = getCountryProfile(PAIS, L).taxLabel;
-const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+const TAX_INCLUDED_LABEL = t(L, 'ed.iva_incluido').replace('{tax}', TAX_LABEL);
 const orgTaxRate = Number(ORG.ivaPct) || 0;
 const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: PAIS, orgTaxRate });
 const DEFAULT_TAX_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
