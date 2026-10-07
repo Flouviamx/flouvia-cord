@@ -17,21 +17,23 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
  * permisos OAuth (Zapier, Make) con su llave de acceso, y las llaves que
  * acuñó `cord login`. Suspender sin esto dejaba a la cuenta operando por API.
  * Las llaves de API de la organización NO se tocan: son del negocio, no de
- * la persona que las creó.
+ * la persona que las creó. Son constructores: el llamador los ejecuta en su
+ * withOpsTx, junto con la mutación y la bitácora.
  */
-function revokeDelegatedAccess(userId: string) {
-    return [
-        sql`
-          update api_keys set revoked_at = now()
-          where revoked_at is null and id in (
-            select g.api_key_id from oauth_grants g where g.user_id = ${userId}
-            union
-            select c.api_key_id from cli_logins c where c.aprobado_por = ${userId} and c.api_key_id is not null
-          )
-          returning id
-        `,
-        sql`update oauth_grants set revoked_at = now() where user_id = ${userId} and revoked_at is null returning id`,
-    ];
+function revokeDelegatedKeys(userId: string) {
+    return sql`
+      update api_keys set revoked_at = now()
+      where revoked_at is null and id in (
+        select g.api_key_id from oauth_grants g where g.user_id = ${userId}
+        union
+        select c.api_key_id from cli_logins c where c.aprobado_por = ${userId} and c.api_key_id is not null
+      )
+      returning id
+    `;
+}
+
+function revokeDelegatedGrants(userId: string) {
+    return sql`update oauth_grants set revoked_at = now() where user_id = ${userId} and revoked_at is null returning id`;
 }
 
 export const PATCH: APIRoute = async (context) => {
@@ -99,7 +101,8 @@ async function handle({ params, request, locals }: Parameters<APIRoute>[0]): Pro
         const reason = typeof body?.reason === 'string' ? body.reason.trim().slice(0, 500) : '';
         const [sessions, keys, grants] = await withOpsTx(
             sql`delete from sessions where user_id = ${targetId} returning id`,
-            ...revokeDelegatedAccess(targetId),
+            revokeDelegatedKeys(targetId),
+            revokeDelegatedGrants(targetId),
             sql`update users set suspended_at = now(), suspended_reason = ${reason || null} where id = ${targetId}`,
             opsAuditQuery({ ...auditBase, action: 'ops.user_suspended', metadata: { target_email: target.email, reason: reason || null } }),
         );
@@ -129,7 +132,8 @@ async function handle({ params, request, locals }: Parameters<APIRoute>[0]): Pro
         // Borrar al usuario borra sus permisos OAuth en cascada, pero NO la
         // llave de acceso que cada permiso acuñó: se revoca antes.
         await withOpsTx(
-            ...revokeDelegatedAccess(targetId),
+            revokeDelegatedKeys(targetId),
+            revokeDelegatedGrants(targetId),
             sql`delete from users where id = ${targetId}`,
             opsAuditQuery({ ...auditBase, action: 'ops.user_deleted', metadata: { target_email: target.email } }),
         );
