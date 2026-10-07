@@ -441,6 +441,10 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         }
         :global(.sb-collapsed) .sb-badge.danger { background: var(--color-danger); }
         :global(.sb-collapsed) .sb-footer-row { justify-content: center; }
+        /* Cuenta en el rail: mismo aire arriba (padding del aside) que abajo, y la
+           línea corta y centrada como la de los grupos, no a todo lo ancho. */
+        :global(.sb-collapsed) .sb-account { display: flex; justify-content: center; padding-bottom: 0.9rem; margin-bottom: 0.5rem; }
+        :global(.sb-collapsed) .sb-account::after { left: 50%; right: auto; width: 16px; margin-left: -8px; background: var(--sb-divider); }
     }
 
     .sb-backdrop { display: none; }
