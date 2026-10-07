@@ -115,7 +115,7 @@ export async function applyPayment(
               referencia, mp_payment_id, nota, registrado_por
             )
             select
-              ${orgId}, ${documentoId}, ${input.cobroId || null}, ${monto}, ${payCurrency},
+              ${orgId}, ${documentoId}, (select cc.id from cotizacion_cobros cc where cc.id = ${input.cobroId || null}::uuid and cc.org_id = ${orgId}), ${monto}, ${payCurrency},
               ${input.metodo || 'manual'}, ${input.referencia || null}, ${mp},
               ${input.nota || null}, ${input.registradoPor || null}
             from documentos_fiscales d
@@ -130,7 +130,7 @@ export async function applyPayment(
               referencia, stripe_payment_intent_id, nota, registrado_por
             )
             select
-              ${orgId}, ${documentoId}, ${input.cobroId || null}, ${monto}, ${payCurrency},
+              ${orgId}, ${documentoId}, (select cc.id from cotizacion_cobros cc where cc.id = ${input.cobroId || null}::uuid and cc.org_id = ${orgId}), ${monto}, ${payCurrency},
               ${input.metodo || 'manual'}, ${input.referencia || null}, ${pi},
               ${input.nota || null}, ${input.registradoPor || null}
             from documentos_fiscales d

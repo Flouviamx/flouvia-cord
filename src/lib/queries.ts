@@ -3477,6 +3477,19 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
 }
 
 /**
+ * Solo el DUEÑO de la organización. Para lo que entrega el control de la cuenta
+ * entera —la configuración de SSO decide quién entra como quién y con qué
+ * permisos—: ningún permiso delegable alcanza (regla 38).
+ */
+export async function requireOwner(): Promise<Response | null> {
+    const m = await getMyMembership();
+    if (m.esOwner || m.rol === 'owner') return null;
+    return new Response(JSON.stringify({ error: 'Solo el dueño de la organización puede cambiar esto.' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+/**
  * Como `requirePerm`, pero basta con UNO de los permisos. Existe para endpoints que
  * sirven a dos superficies con gates distintos: `/api/billing/connect/payouts` lo
  * consume Ajustes › Cobros (permiso `ajustes`) Y el dashboard "Mi dinero" (permiso

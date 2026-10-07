@@ -969,15 +969,23 @@ documentos: si no se hablan, se le cobra dos veces al cliente. El contrato vive 
 `src/lib/fiscal/quote-ledger.ts` y tiene tres partes que no se mezclan:
 
 - **La factura nace sabiendo lo que la cotización ya cobró.** Hereda cada cobro
-  pagado y lo que el vendedor registró como pagado a mano, en la MISMA transacción
-  que la emite. Nunca existe un instante con la factura abierta por un saldo que
+  pagado y lo que el vendedor DECLARÓ pagado a mano, en la MISMA transacción que
+  la emite. La declaración es explícita (`cotizaciones.pago_declarado_at`, que solo
+  pone "marcar pagada"), nunca se infiere de `paid_at`, y se topa a lo que la
+  factura todavía debe: dice "lo que faltaba ya se pagó", no crea dinero. Si la
+  factura ya tiene pagos registrados a mano, los cobros NO se heredan solos: puede
+  ser el mismo dinero, y lo decide una persona. Nunca existe un instante con la factura abierta por un saldo que
   ya entró. La herencia es idempotente contra TODOS los PaymentIntents que el
   cobro tuvo (el que lo pagó —`cotizacion_cobros.paid_payment_intent_id`—, el
   último presentado, el de su comisión y cada intento registrado) y contra su
   pago de Mercado Pago: mirar solo el último contaba dos veces un pago que el
   webhook ya había aplicado con uno anterior.
-- **Una factura saldada con dinero salda su cotización** y cancela lo que aún
-  podía cobrar (cobros pendientes, sus PaymentIntents y sus preferencias). Una
+- **Una factura saldada con dinero salda su cotización** (una sola vez: una ya
+  saldada no se re-salda ni re-anuncia `quote.paid`) y cancela lo que aún podía
+  cobrar: cobros pendientes, sus PaymentIntents de tarjeta y sus preferencias. Un
+  SPEI no se cancela —su CLABE ya está en manos del cliente—: si llega, se aplica
+  como importe por devolver. Marcar pagada una cotización con factura viva llega a
+  la factura. Una
   factura que llega a cero solo con notas de crédito no se pagó: no marca la
   cotización como pagada.
 - **Mientras haya factura viva, `/q` no cobra más de lo que ella debe.** Si el
@@ -1008,8 +1016,10 @@ Cada uno de esos caminos exige las mismas cuatro cosas:
    frescura de la sesión de origen (regla 26) y ese subdominio no sirve la
    configuración de cobros.
 3. **Nadie reparte lo que no tiene.** Nadie se cambia sus propios permisos ni da o
-   quita un permiso que no tiene (`permisoDenegado` en `src/lib/permissions.ts`), y
-   dar un permiso de dinero (`MONEY_PERM_KEYS`) exige reautenticación.
+   quita un permiso que no tiene (`permisoDenegado` en `src/lib/permissions.ts`), ni
+   revoca a quien los tiene; dar un permiso de dinero (`MONEY_PERM_KEYS`) exige
+   reautenticación. La configuración de SSO decide quién entra como quién y con qué
+   permisos: es SOLO del dueño (`requireOwner`), con reautenticación y aviso.
 4. **Los dueños se enteran por SU correo** (`notifyMoneyDestinationChange`), nunca
    por `orgs.email_contacto`: ese campo lo edita cualquiera con `ajustes`, y quien
    desvía el dinero empezaría por desviar el aviso. La auditoría guarda el antes y

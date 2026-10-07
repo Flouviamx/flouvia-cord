@@ -5,11 +5,18 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../../../lib/db';
-import { requirePerm } from '../../../../../lib/queries';
+import { requireOwner } from '../../../../../lib/queries';
+import { requireFreshAuth } from '../../../../../lib/step-up';
+import { notifyMoneyDestinationChange } from '../../../../../lib/auth-email';
+import { after } from '../../../../../lib/after';
+import { currentUserId } from '../../../../../lib/context';
 import { addDomain, removeDomain, getConnectionForOrg, SamlValidationError } from '../../../../../lib/saml';
 
 export const POST: APIRoute = async ({ request, params }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const connectionId = params.id;
     if (!connectionId) return json({ error: 'Falta id' }, 400);
 
@@ -25,6 +32,7 @@ export const POST: APIRoute = async ({ request, params }) => {
     try {
         const domain = await addDomain(orgId, connectionId, domainRaw);
         await logAudit(orgId, { accion: 'sso.dominio_agregado', entidad: 'sso_domain', entidad_id: domain.id, detalle: domain.domain, ip: reqIp(request) });
+        after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: `Dominio agregado: ${domain.domain}`, actorUserId: currentUserId(), ip: reqIp(request) }));
         return json({ domain });
     } catch (e) {
         if (e instanceof SamlValidationError) {
@@ -38,7 +46,10 @@ export const POST: APIRoute = async ({ request, params }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, params }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const connectionId = params.id;
     if (!connectionId) return json({ error: 'Falta id' }, 400);
 
@@ -51,6 +62,7 @@ export const DELETE: APIRoute = async ({ request, params }) => {
     const ok = await removeDomain(orgId, domainId);
     if (!ok) return json({ error: 'Dominio no encontrado' }, 404);
     await logAudit(orgId, { accion: 'sso.dominio_eliminado', entidad: 'sso_domain', entidad_id: domainId, ip: reqIp(request) });
+    after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: 'Dominio eliminado', actorUserId: currentUserId(), ip: reqIp(request) }));
     return json({ ok: true });
 };
 

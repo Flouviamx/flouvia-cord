@@ -142,7 +142,7 @@ export async function saveMpAccount(orgId: string, tokens: TokenResponse, cuenta
     const expira = new Date(Date.now() + Number(tokens.expires_in || 0) * 1000).toISOString();
     await withOrgTx(orgId, sql`
         update orgs
-           set mp_user_id = ${String(tokens.user_id)},
+           set mp_user_id = coalesce(${tokens.user_id !== undefined && tokens.user_id !== null && String(tokens.user_id) !== '' ? String(tokens.user_id) : null}, mp_user_id),
                mp_access_token_enc = ${encryptRequiredSecret(tokens.access_token)},
                mp_refresh_token_enc = ${encryptRequiredSecret(tokens.refresh_token)},
                mp_token_expira = ${expira},
@@ -191,7 +191,13 @@ export async function mpAccessToken(orgId: string, proposito: 'cobrar' | 'leer' 
     if (proposito === 'cobrar' && !org.mp_charges_enabled) return null;
     const token = decryptSecret(org.mp_access_token_enc as string);
     const refresh = decryptSecret(org.mp_refresh_token_enc as string);
-    if (!token) return null;
+    if (!token) {
+        // Hay credencial guardada pero no se pudo descifrar: es Cord (la llave de
+        // cifrado), no el vendedor. Para leer un pago eso es temporal: el
+        // proveedor reintenta en vez de que el aviso se dé por atendido.
+        if (org.mp_access_token_enc && proposito === 'leer') throw new MpTransientError('No se pudo descifrar la credencial de Mercado Pago.');
+        return null;
+    }
 
     const expira = org.mp_token_expira ? new Date(org.mp_token_expira as string).getTime() : 0;
     if (expira && expira - Date.now() > RENEW_MARGIN_MS) return token;
@@ -206,7 +212,14 @@ export async function mpAccessToken(orgId: string, proposito: 'cobrar' | 'leer' 
     }
 
     const creds = mpCredentials();
-    if (!creds) return null;
+    if (!creds) {
+        // Cord sin su propia configuración: tampoco es culpa del vendedor.
+        if (proposito === 'leer') {
+            if (!expira || expira > Date.now()) return token;
+            throw new MpTransientError('Mercado Pago no está configurado en este entorno.');
+        }
+        return null;
+    }
     let res: { status: number; data: any };
     try {
         res = await mpFetch('/oauth/token', {
@@ -236,17 +249,19 @@ export async function mpAccessToken(orgId: string, proposito: 'cobrar' | 'leer' 
         throw new MpTransientError('Mercado Pago no respondió al renovar la autorización.');
     }
 
-    // Definitivo... salvo que otra renovación concurrente ya haya ganado.
+    // Definitivo... salvo que otra renovación concurrente ya haya ganado. Se
+    // apaga con compare-and-set sobre el refresh token que ESTA renovación usó:
+    // si otra ya guardó credenciales nuevas, el UPDATE no encuentra la fila y se
+    // usan las nuevas. Leer y luego apagar dejaba una ventana en la que se
+    // apagaba una conexión recién renovada.
+    const [apagada] = await withOrgTx(orgId, sql`
+        update orgs set mp_charges_enabled = false
+         where id = ${orgId} and mp_refresh_token_enc = ${org.mp_refresh_token_enc as string}
+        returning id`);
+    if (apagada.length) return null;
     const [[actual]] = await withOrgTx(orgId, sql`
-        select mp_access_token_enc, mp_refresh_token_enc from orgs where id = ${orgId}`);
-    const refreshActual = decryptSecret(actual?.mp_refresh_token_enc as string);
-    if (refreshActual && refreshActual !== refresh) {
-        return decryptSecret(actual?.mp_access_token_enc as string) || null;
-    }
-    // La conexión queda marcada como no operativa: el vendedor lo ve en
-    // Ajustes en vez de descubrirlo por un cobro que nunca se abrió.
-    await disableMpCharges(orgId);
-    return null;
+        select mp_access_token_enc from orgs where id = ${orgId}`);
+    return decryptSecret(actual?.mp_access_token_enc as string) || null;
 }
 
 async function disableMpCharges(orgId: string): Promise<void> {
@@ -270,6 +285,16 @@ export function mpNotificationUrl(origin: string, orgId: string): string {
 
 /** Vigencia de una preferencia: después se abre otra con el saldo vigente. */
 const PREFERENCIA_VIGENCIA_MS = 72 * 60 * 60 * 1000;
+
+/**
+ * Vencimiento anclado al DÍA (UTC) y no al instante: la llave de idempotencia de
+ * la preferencia es por día, así que dos clics del mismo día mandan exactamente
+ * el mismo cuerpo. Vence entre 72 y 96 horas después de crearse.
+ */
+export function vigenciaHasta(ahoraMs: number): number {
+    const dia = new Date(ahoraMs);
+    return Date.UTC(dia.getUTCFullYear(), dia.getUTCMonth(), dia.getUTCDate()) + 24 * 60 * 60 * 1000 + PREFERENCIA_VIGENCIA_MS;
+}
 
 /** Fecha en el formato que documenta Mercado Pago (`yyyy-MM-ddTHH:mm:ss.SSS±hh:mm`). */
 function mpDate(ms: number): string {
@@ -347,7 +372,7 @@ export async function createMpPreference(orgId: string, input: PreferenceInput):
                 // cobrable para siempre: vence, y el siguiente clic abre otra
                 // con el saldo vigente.
                 expires: true,
-                expiration_date_to: mpDate(Date.now() + PREFERENCIA_VIGENCIA_MS),
+                expiration_date_to: mpDate(vigenciaHasta(Date.now())),
                 ...(input.emailPagador ? { payer: { email: input.emailPagador } } : {}),
             }),
         });

@@ -89,6 +89,10 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (!leido.ok) {
             if (leido.reason === 'temporal') temporal = true;
             if (leido.reason === 'sin_credenciales') sinCredenciales = orgId;
+            // Un 404 con la credencial de la MISMA cuenta que trae el aviso no es
+            // "no es mío": es el proveedor que todavía no expone el pago. Se pide
+            // reintento en vez de darlo por atendido.
+            if (leido.reason === 'ajeno' && userId && c.mp_user_id && String(c.mp_user_id) === userId) temporal = true;
             continue;
         }
         let resultado;

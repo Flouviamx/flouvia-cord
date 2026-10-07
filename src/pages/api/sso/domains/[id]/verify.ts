@@ -8,12 +8,19 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../../../lib/db';
-import { requirePerm } from '../../../../../lib/queries';
+import { requireOwner } from '../../../../../lib/queries';
+import { requireFreshAuth } from '../../../../../lib/step-up';
+import { notifyMoneyDestinationChange } from '../../../../../lib/auth-email';
+import { after } from '../../../../../lib/after';
+import { currentUserId } from '../../../../../lib/context';
 import { rateLimit, tooMany } from '../../../../../lib/ratelimit';
 import { verifyDomainOwnership } from '../../../../../lib/saml';
 
 export const POST: APIRoute = async ({ request, params }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const domainId = params.id;
     if (!domainId) return json({ error: 'Falta id' }, 400);
 
@@ -24,6 +31,7 @@ export const POST: APIRoute = async ({ request, params }) => {
     const result = await verifyDomainOwnership(orgId, domainId);
     if (result.ok) {
         await logAudit(orgId, { accion: 'sso.dominio_verificado', entidad: 'sso_domain', entidad_id: domainId, ip: reqIp(request) });
+        after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: 'Dominio verificado', actorUserId: currentUserId(), ip: reqIp(request) }));
     }
     return json(result);
 };

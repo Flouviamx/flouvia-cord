@@ -71,7 +71,7 @@ export async function processMpPayment(orgId: string, mpUserId: string | null, p
 async function procesarCobro(orgId: string, pago: MpPayment): Promise<MpProcessResult> {
     const [[cobro]] = await withOrgTx(orgId, sql`
         select cc.id, cc.cotizacion_id, cc.monto, cc.status, cc.mp_payment_id,
-               c.base_currency, o.moneda
+               c.base_currency, c.paid_at, o.moneda
           from cotizacion_cobros cc
           join cotizaciones c on c.id = cc.cotizacion_id and c.org_id = cc.org_id
           join orgs o on o.id = cc.org_id
@@ -111,6 +111,16 @@ async function procesarCobro(orgId: string, pago: MpPayment): Promise<MpProcessR
                 `Organización ${orgId}; cotización ${cotizacionId}; pago ${pago.id}; ${pago.monto} ${pago.moneda} contra ${cobro.monto} ${divisa}`));
         });
         return { propio: true, estado: 'no_coincide' };
+    }
+
+    // Un cobro CANCELADO de una cotización ya saldada (por su factura, por otro
+    // riel o a mano) no se debía: este dinero es de más. Se registra como pago
+    // duplicado —factura con importe por devolver y aviso—, no como un
+    // "anticipo pagado, saldo pendiente" que contaría ingreso que hay que devolver.
+    if (cobro.status === 'cancelado' && cobro.paid_at && String(cobro.mp_payment_id ?? '') !== pago.id) {
+        await avisarUnaVez(orgId, 'cotizacion.pago_duplicado', pago.id, () => avisarDobleCobro(orgId, cotizacionId, pago));
+        await aplicarAFactura(orgId, cotizacionId, pago, null);
+        return { propio: true, estado: 'duplicado' };
     }
 
     // El índice único hace el trabajo: el cobro se reclama UNA vez por un pago.

@@ -117,7 +117,7 @@ export async function sendTeamInviteEmail(to: string, orgName: string, token: st
 
 export type CambioDestinoDinero =
     | 'mp_conectado' | 'mp_cambiado' | 'mp_desconectado'
-    | 'banco' | 'cobros_desconectados' | 'cuenta_creada' | 'permiso';
+    | 'banco' | 'cobros_desconectados' | 'cuenta_creada' | 'permiso' | 'sso';
 
 const CAMBIO_DESTINO_KEY = {
     mp_conectado: 'authEmail.dinero.mp_conectado',
@@ -127,6 +127,7 @@ const CAMBIO_DESTINO_KEY = {
     cobros_desconectados: 'authEmail.dinero.cobros_desconectados',
     cuenta_creada: 'authEmail.dinero.cuenta_creada',
     permiso: 'authEmail.dinero.permiso',
+    sso: 'authEmail.dinero.sso',
 } as const;
 
 /**

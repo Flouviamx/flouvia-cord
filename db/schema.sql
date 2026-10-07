@@ -1813,6 +1813,9 @@ alter table cotizacion_cobros add column if not exists refunded_at timestamptz;
 -- los pagos de su cotización necesita el que movió el dinero para no contarlo
 -- dos veces (src/lib/fiscal/quote-ledger.ts).
 alter table cotizacion_cobros add column if not exists paid_payment_intent_id text;
+-- Última vez que la conciliación diaria de Mercado Pago buscó esta referencia:
+-- recorre de la más vieja a la más nueva para que ninguna se quede sin revisar.
+alter table cotizacion_cobros add column if not exists mp_revisado_at timestamptz;
 create unique index if not exists idx_cotizacion_cobros_org_payment_intent
   on cotizacion_cobros(org_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null;
 
@@ -1888,6 +1891,16 @@ alter table orgs add column if not exists anticipo_default_pct numeric;
 -- automáticamente cada mes con la tarjeta guardada. Cada suscripción vive en
 -- cotizacion_suscripciones (una por cotización).
 alter table cotizaciones add column if not exists es_recurrente boolean default false;
+-- Pago DECLARADO por el vendedor ("marcar pagada": transferencia, efectivo,
+-- cheque) — oct 2026, regla 37. Es lo único que la factura hereda como pago a
+-- mano; inferirlo de `paid_at` contaba como declarado un saldo que pagó la
+-- factura o un cobro en línea. El respaldo marca las cotizaciones ya saldadas a
+-- mano: su método no es de un riel en línea ni el de la factura. Es idempotente:
+-- ningún camino en línea deja `paid_at` con un método fuera de esa lista.
+alter table cotizaciones add column if not exists pago_declarado_at timestamptz;
+update cotizaciones set pago_declarado_at = paid_at
+ where pago_declarado_at is null and paid_at is not null
+   and coalesce(payment_method, 'transferencia') not in ('tarjeta', 'spei', 'mercadopago', 'stripe', 'card', 'factura');
 
 create table if not exists cotizacion_suscripciones (
   id            uuid        default gen_random_uuid() primary key,
@@ -3532,6 +3545,7 @@ create index if not exists idx_documento_pagos_org on documento_pagos(org_id);
 -- pago del proveedor, no el PaymentIntent de Stripe.
 alter table documentos_fiscales add column if not exists mp_preference_id text;
 alter table documentos_fiscales add column if not exists mp_preference_at timestamptz;
+alter table documentos_fiscales add column if not exists mp_revisado_at timestamptz;
 
 alter table documento_pagos add column if not exists mp_payment_id text;
 create unique index if not exists uq_documento_pagos_mp
@@ -3564,12 +3578,23 @@ as $$
      and d.document_type not in ('credit_note', 'cfdi_egreso')
      and c.es_recurrente is not true
      and (
-       (d.lifecycle in ('open', 'uncollectible')
-         and (c.paid_at is not null or exists (
-               select 1 from cotizacion_cobros cc
-                where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado')))
+       -- Abierta con un cobro pagado que la factura todavía no refleja…
+       (d.lifecycle in ('open', 'uncollectible') and exists (
+          select 1 from cotizacion_cobros cc
+           where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado'
+             and not exists (select 1 from documento_pagos p
+                              where p.documento_id = d.id and p.org_id = d.org_id
+                                and (p.cobro_id = cc.id
+                                  or p.stripe_payment_intent_id in (cc.paid_payment_intent_id, cc.stripe_payment_intent_id)
+                                  or p.mp_payment_id = cc.mp_payment_id))))
+       -- …o con un pago declarado que todavía no se aplicó…
+       or (d.lifecycle in ('open', 'uncollectible') and c.pago_declarado_at is not null
+           and not exists (select 1 from documento_pagos p
+                            where p.documento_id = d.id and p.org_id = d.org_id
+                              and p.referencia = 'cotizacion:' || c.id::text))
+       -- …o pagada sin haber saldado su cotización.
        or (d.lifecycle = 'paid' and coalesce(d.amount_paid, 0) > 0
-         and c.status in ('approved', 'invoiced'))
+           and c.status in ('approved', 'invoiced') and c.paid_at is null)
      )
    order by d.created_at asc
    limit least(greatest(coalesce(p_limit, 200), 1), 1000)
@@ -3586,19 +3611,24 @@ set search_path = public, pg_temp
 as $$
   select r.org_id, o.mp_user_id, r.referencia
     from (
-      select cc.org_id, cc.id::text as referencia, cc.mp_preference_at as abierta
+      -- Cobros con preferencia en la ventana: pendientes (¿llegó un pago?) y los
+      -- ya pagados por Mercado Pago (¿un reembolso o un contracargo?).
+      select cc.org_id, cc.id::text as referencia, cc.mp_revisado_at as revisado
         from cotizacion_cobros cc
-       where cc.mp_preference_id is not null and cc.status = 'pendiente'
+       where cc.mp_preference_id is not null
+         and (cc.status = 'pendiente' or cc.mp_payment_id is not null)
          and cc.mp_preference_at > now() - make_interval(days => least(greatest(coalesce(p_dias, 45), 1), 180))
       union all
-      select d.org_id, 'fac:' || d.id::text, d.mp_preference_at
+      select d.org_id, 'fac:' || d.id::text, d.mp_revisado_at
         from documentos_fiscales d
-       where d.mp_preference_at is not null and d.lifecycle in ('open', 'uncollectible')
+       where d.mp_preference_at is not null and d.lifecycle in ('open', 'uncollectible', 'paid')
          and d.mp_preference_at > now() - make_interval(days => least(greatest(coalesce(p_dias, 45), 1), 180))
     ) r
     join orgs o on o.id = r.org_id
    where o.mp_access_token_enc is not null
-   order by r.abierta desc
+   -- La que lleva más tiempo sin revisarse va primero: ninguna se queda fuera
+   -- aunque haya más referencias que el tope de una corrida.
+   order by r.revisado asc nulls first
    limit least(greatest(coalesce(p_limit, 300), 1), 1000)
 $$;
 revoke all on function cord_mp_referencias_abiertas(int, int) from public;

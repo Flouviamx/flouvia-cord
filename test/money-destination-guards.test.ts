@@ -22,7 +22,11 @@ vi.mock('../src/lib/db', () => ({
     reqIp: () => '203.0.113.7',
     withOrgTx: async (_org: string, ...qs: Array<{ text: string }>) => qs.map((q) => (/^\s*select/i.test(q.text) ? m.rows : [])),
 }));
-vi.mock('../src/lib/queries', () => ({ requirePerm: m.perm, getMyMembership: async () => m.actor }));
+vi.mock('../src/lib/queries', async () => ({
+    requirePerm: m.perm,
+    getMyMembership: async () => m.actor,
+    requireOwner: async () => (m.actor.esOwner ? null : new Response(null, { status: 403 })),
+}));
 vi.mock('../src/lib/step-up', () => ({ requireFreshAuth: m.fresh }));
 vi.mock('../src/lib/context', () => ({ currentUserId: () => m.user, currentLocale: () => 'es' }));
 vi.mock('../src/lib/auth-email', () => ({ notifyMoneyDestinationChange: m.notify, sendTeamInviteEmail: vi.fn(async () => ({ sent: true })) }));
@@ -42,6 +46,10 @@ vi.mock('../src/lib/mercadopago', () => ({
     MP_SITE_COUNTRY: { MLM: 'MX', MCO: 'CO' },
 }));
 vi.mock('../src/lib/email', () => ({ siteOrigin: () => 'https://cordhq.app' }));
+vi.mock('../src/lib/saml', () => ({
+    updateConnection: vi.fn(async () => ({ id: 'c-1', nombre: 'IdP' })), deleteConnection: vi.fn(async () => true),
+    SamlValidationError: class extends Error {},
+}));
 
 import { otorgaPermisoDeDinero, permisoDenegado } from '../src/lib/permissions';
 
@@ -164,5 +172,32 @@ describe('billing.cordhq.app no fabrica reautenticación', () => {
         await (GET as any)({ url, request: new Request(url), cookies: { set: vi.fn() }, redirect: (to: string) => new Response(null, { status: 302, headers: { Location: to } }) });
         expect(m.createSession).toHaveBeenCalledWith('u-1', undefined, undefined, { reauthenticatedAt: null });
         m.handoffRow = null;
+    });
+});
+
+describe('SSO entrega el control de la cuenta: solo el dueño, con reautenticación', () => {
+    const patchSso = async () => {
+        const { PATCH } = await import('../src/pages/api/sso/connections/[id]');
+        return (PATCH as any)({ params: { id: 'c-1' }, request: new Request('https://cordhq.app/x', { method: 'PATCH', body: JSON.stringify({ role_mappings: [{ attr: 'g', op: 'eq', value: 'x', preset: 'admin' }] }) }) }) as Promise<Response>;
+    };
+    it('un miembro con `equipo` ya no puede cambiar la conexión SSO (antes: se daba cobros_config por mapeo)', async () => {
+        m.actor = { rol: 'miembro', permisos: { equipo: true }, esOwner: false };
+        expect((await patchSso()).status).toBe(403);
+    });
+    it('el dueño sí, pero con reautenticación reciente y aviso a los dueños', async () => {
+        m.fresh.mockResolvedValueOnce(staleAuth());
+        expect((await patchSso()).status).toBe(428);
+        expect((await patchSso()).status).toBe(200);
+        expect(m.notify).toHaveBeenCalledWith('org-1', 'sso', expect.anything());
+    });
+});
+
+describe('DELETE /api/equipo', () => {
+    it('nadie revoca a quien tiene permisos que él no tiene', async () => {
+        const { DELETE } = await import('../src/pages/api/equipo');
+        m.actor = { rol: 'miembro', permisos: { equipo: true }, esOwner: false };
+        m.rows = [{ rol: 'admin', permisos: { equipo: true, cobros_config: true } }];
+        const res = await (DELETE as any)({ request: new Request('https://cordhq.app/api/equipo', { method: 'DELETE', body: JSON.stringify({ id: 'm-9' }) }) });
+        expect(res.status).toBe(403);
     });
 });

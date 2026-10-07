@@ -58,14 +58,17 @@ export const GET: APIRoute = async ({ request, url }) => {
                 reconcileInvoiceWithQuote(orgId, documentoId, { dryRun: !aplicar }));
             const cambia = aplicar
                 ? r.heredados > 0 || !!r.settled.quoteId || r.settled.cancelados.length > 0
-                : (r.pendiente?.cobros ?? 0) > 0;
-            if (cambia || r.skipped) {
+                : (r.pendiente?.cobros ?? 0) > 0 || !!r.pendiente?.cotizacionPorSaldar;
+            if (cambia || r.skipped || r.revisar) {
                 resultados.push({
                     org_id: orgId, documento_id: documentoId,
                     ...(r.skipped ? { omitida: r.skipped } : {}),
+                    // Pagos a mano en la factura + cobros sin aplicar: puede ser el
+                    // mismo dinero. No se toca; lo revisa una persona.
+                    ...(r.revisar ? { revisar: r.revisar } : {}),
                     ...(aplicar
                         ? { pagos_aplicados: r.heredados, monto: r.monto, estado: r.lifecycle, cotizacion_saldada: !!r.settled.quoteId, cobros_cancelados: r.settled.cancelados.length }
-                        : { pagos_por_aplicar: r.pendiente?.cobros ?? 0, monto: r.pendiente?.monto ?? 0 }),
+                        : { pagos_por_aplicar: r.pendiente?.cobros ?? 0, monto_hasta: r.pendiente?.monto ?? 0, cotizacion_por_saldar: !!r.pendiente?.cotizacionPorSaldar }),
                 });
             }
         } catch (err) {

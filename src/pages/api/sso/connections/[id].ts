@@ -5,12 +5,19 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../../lib/db';
-import { requirePerm } from '../../../../lib/queries';
+import { requireOwner } from '../../../../lib/queries';
+import { requireFreshAuth } from '../../../../lib/step-up';
+import { notifyMoneyDestinationChange } from '../../../../lib/auth-email';
+import { after } from '../../../../lib/after';
+import { currentUserId } from '../../../../lib/context';
 import { requireEntitlement } from '../../../../lib/org-entitlements';
 import { updateConnection, deleteConnection, SamlValidationError, type ConnectionPatch } from '../../../../lib/saml';
 
 export const PATCH: APIRoute = async ({ request, params }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const id = params.id;
     if (!id) return json({ error: 'Falta id' }, 400);
 
@@ -43,6 +50,7 @@ export const PATCH: APIRoute = async ({ request, params }) => {
         const connection = await updateConnection(orgId, id, patch);
         if (!connection) return json({ error: 'Conexión no encontrada' }, 404);
         await logAudit(orgId, { accion: 'sso.conexion_actualizada', entidad: 'sso_connection', entidad_id: id, detalle: Object.keys(patch).join(', '), ip: reqIp(request) });
+        after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: `Conexión ${connection.nombre}: ${Object.keys(patch).join(', ')}`, actorUserId: currentUserId(), ip: reqIp(request) }));
         return json({ connection });
     } catch (e) {
         if (e instanceof SamlValidationError) return json({ error: e.message }, 400);
@@ -51,7 +59,10 @@ export const PATCH: APIRoute = async ({ request, params }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, params }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const id = params.id;
     if (!id) return json({ error: 'Falta id' }, 400);
 
@@ -59,6 +70,7 @@ export const DELETE: APIRoute = async ({ request, params }) => {
     const ok = await deleteConnection(orgId, id);
     if (!ok) return json({ error: 'Conexión no encontrada' }, 404);
     await logAudit(orgId, { accion: 'sso.conexion_eliminada', entidad: 'sso_connection', entidad_id: id, ip: reqIp(request) });
+    after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: 'Conexión eliminada', actorUserId: currentUserId(), ip: reqIp(request) }));
     return json({ ok: true });
 };
 

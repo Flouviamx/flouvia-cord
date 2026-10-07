@@ -94,11 +94,17 @@ describe('webhook de Mercado Pago', () => {
         expect((await aviso()).status).toBe(503);
     });
 
-    it('un pago que ninguna organización reconoce se acusa con 200 (no es de Cord)', async () => {
+    it('un pago que la organización de la URL no reconoce se acusa con 200 (no es de Cord)', async () => {
+        m.resolve.mockResolvedValue([{ org_id: orgA, mp_user_id: '555' }]);
         m.read.mockResolvedValue({ ok: false, reason: 'ajeno' });
-        const res = await aviso();
+        const res = await aviso({ query: `&cord_org=${orgA}` });
         expect(res.status).toBe(200);
         expect(await res.json()).toMatchObject({ ignorado: 'ajeno' });
+    });
+
+    it('un 404 con la credencial de la MISMA cuenta del aviso es temporal: 503, no se pierde', async () => {
+        m.read.mockResolvedValue({ ok: false, reason: 'ajeno' });
+        expect((await aviso()).status).toBe(503);
     });
 
     it('sin organización conectada a esa cuenta se acusa con 200; la conciliación lo verá al reconectar', async () => {

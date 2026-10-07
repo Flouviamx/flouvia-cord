@@ -194,11 +194,15 @@ export const DELETE: APIRoute = async (context) => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el miembro' }, 400);
 
-    const [rows] = await withOrgTx(orgId, sql`select m.rol
+    const [rows] = await withOrgTx(orgId, sql`select m.rol, m.permisos
                            from org_members m join orgs o on o.id = m.org_id
                            where m.id = ${id} and m.org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Miembro no encontrado' }, 404);
     if (rows[0].rol === 'owner') return json({ error: 'No puedes quitar al dueño de la organización.' }, 409);
+    // Quitar a alguien le quita todos sus permisos: nadie revoca a quien tiene
+    // permisos que él mismo no tiene (p. ej. a quien administra los cobros).
+    const negado = permisoDenegado(await getMyMembership(), cleanPermisos(rows[0].permisos), {});
+    if (negado) return json({ error: negado }, 403);
 
     await withOrgTx(orgId, sql`update org_members set estado = 'revocado', user_id = null where id = ${id} and org_id = ${orgId}`);
     await logAudit(orgId, { accion: 'equipo.revocado', entidad: 'miembro', entidad_id: id, ip: reqIp(request) });

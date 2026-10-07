@@ -14,7 +14,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql } from '../../../lib/db';
+import { sql, withOrgTx } from '../../../lib/db';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { reqContext } from '../../../lib/context';
 import { searchMpPayments } from '../../../lib/mercadopago';
@@ -63,6 +63,12 @@ export const GET: APIRoute = async ({ request }) => {
                     processMpPayment(orgId, r.mp_user_id ? String(r.mp_user_id) : null, pago));
                 if (res.propio) aplicados += 1;
             }
+            // Revisada: la próxima corrida empieza por las que llevan más tiempo
+            // sin revisarse. Una falla temporal NO la marca: vuelve a ir primero.
+            const ref = String(r.referencia);
+            await reqContext.run({ userId: null, orgId, actor: 'system' }, () => ref.startsWith('fac:')
+                ? withOrgTx(orgId, sql`update documentos_fiscales set mp_revisado_at = now() where id = ${ref.slice(4)}::uuid and org_id = ${orgId}`)
+                : withOrgTx(orgId, sql`update cotizacion_cobros set mp_revisado_at = now() where id = ${ref}::uuid and org_id = ${orgId}`));
         } catch (err) {
             fallidas += 1;
             log.error('no se pudo conciliar una referencia de Mercado Pago', { route: 'mercadopago-conciliar', orgId, err });

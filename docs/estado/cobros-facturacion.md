@@ -59,9 +59,11 @@ Connect y el negocio elige.
   (`live_mode: false`) no salda nada en producción, contracargos y mediaciones
   quedan en la historia con alerta, y el claim + liquidación son reentrantes.
 - **Conciliación diaria** (`/api/cron/mercadopago-conciliar`, 05:45 UTC): busca en
-  el proveedor cada referencia abierta con preferencia de los últimos 45 días
-  (`cord_mp_referencias_abiertas`) y aplica lo que encuentre con el mismo código
-  que el webhook.
+  el proveedor cada referencia con preferencia de los últimos 45 días —cobros
+  pendientes, cobros ya pagados por Mercado Pago (reembolsos y contracargos) y
+  facturas— empezando por la que lleva más tiempo sin revisarse (`mp_revisado_at`,
+  `cord_mp_referencias_abiertas`), y aplica lo que encuentre con el mismo código
+  que el webhook. Una falla temporal no marca la referencia como revisada.
 - **Preferencias que vencen (oct 2026).** Cada preferencia vence a las 72 h y su
   llave de idempotencia incluye importe, divisa y día: una preferencia vieja con
   un importe viejo ya no queda cobrable para siempre. Cuando la factura salda la
@@ -116,9 +118,11 @@ local en `test/quote-invoice-ledger-db.test.ts`.
 
 - **Herencia al emitir.** `finalizeReservedInvoice` agrega a la transacción que
   emite la factura: `quoteLedgerLock` (primero), los cobros pagados de la
-  cotización y lo "declarado pagado" (`cotizaciones.paid_at` sin cobro en línea
-  que lo respalde, referencia `cotizacion:<id>`) como renglones de
-  `documento_pagos`, y el recálculo del saldo. Una factura de una cotización
+  cotización y lo DECLARADO pagado (`cotizaciones.pago_declarado_at`, que solo pone
+  "marcar pagada"; topado a lo que la factura aún debe; referencia
+  `cotizacion:<id>`) como renglones de `documento_pagos`, y el recálculo del saldo.
+  Si la factura ya tiene pagos registrados a mano, los cobros no se heredan solos
+  (puede ser el mismo dinero): la reparación los reporta como `revisar`. Una factura de una cotización
   cobrada nace `paid`. Si las divisas no coinciden no se hereda nada y se avisa a
   Ops (no se inventa un tipo de cambio).
 - **Qué PaymentIntent pagó.** `cotizacion_cobros.paid_payment_intent_id` lo guarda
@@ -128,8 +132,11 @@ local en `test/quote-invoice-ledger-db.test.ts`.
 - **Factura pagada → cotización pagada.** `applyPayment` (todos los caminos: `/i`
   con Stripe o Mercado Pago, pago manual, API, MCP) salda la cotización en su misma
   transacción cuando la factura queda pagada CON DINERO, y cancela los cobros
-  pendientes; fuera de la transacción cancela sus PaymentIntents y vence sus
-  preferencias (`afterQuoteSettledByInvoice`).
+  pendientes; fuera de la transacción cancela sus PaymentIntents de tarjeta (un
+  SPEI se deja vivo: su CLABE ya está en manos del cliente) y vence sus
+  preferencias (`afterQuoteSettledByInvoice`). Una cotización ya saldada no se
+  re-salda. "Marcar pagada" una cotización con factura viva aplica lo declarado a
+  la factura, bajo el mismo candado.
 - **Pago de cotización → factura viva.** El webhook de Stripe y el de Mercado Pago
   aplican el pago de un cobro a la factura viva de la cotización (abierta, pagada o
   incobrable). Sobre una factura que ya no lo debía queda como `refund_due` y se
@@ -138,8 +145,13 @@ local en `test/quote-invoice-ledger-db.test.ts`.
   `mp-preference` y la página de pago consultan `liveInvoiceForQuote`: factura
   pagada → "ya pagada"; cobro que no cabe en el saldo → la página manda al cliente
   a `/i` (`invoiceUrl`).
-- **Cartera.** `cuentas_por_cobrar` excluye la cotización si tiene factura viva
-  (abierta, pagada o incobrable), no solo abierta.
+- **Cartera y recordatorios.** `cuentas_por_cobrar` excluye la cotización si tiene
+  factura viva (abierta, pagada o incobrable), no solo abierta; el cron de
+  recordatorios usa el mismo criterio (antes recordaba el total de una cotización
+  ya pagada y facturada).
+- **Saldar exige cubrir el total.** `settleQuoteCobro` y el webhook de Stripe solo
+  pasan la cotización a `paid` si lo pagado cubre el total, no solo porque no quede
+  ningún cobro pendiente.
 - **Liquidación atómica.** `settleQuoteCobro` (riel de Mercado Pago) marca el
   cobro, cancela sobrantes y salda la cotización en UNA transacción; un reintento
   repara un estado a medias. El riel de Stripe conserva su copia en el webhook

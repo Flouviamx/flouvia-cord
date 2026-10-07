@@ -990,6 +990,8 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             // 3) Flip atómico e idempotente: la cotización pasa a 'paid' SOLO si ya
             // no queda ningún cobro pendiente. Se corre en cada pago de cobro; el
             // que caiga al último (por orden de commit) es el que la salda.
+            // (y solo si lo pagado cubre el total: un plan que se quedó sin filas
+            // pendientes no salda una cotización cobrada a medias).
             const [flipped] = await withOrgTx(orgId, sql`
                 update cotizaciones
                 set status = 'paid', paid_at = now(), payment_method = ${paymentMethod}
@@ -997,6 +999,8 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                   and not exists (
                       select 1 from cotizacion_cobros
                       where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente')
+                  and (select coalesce(sum(monto), 0) from cotizacion_cobros
+                        where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pagado') >= total - 0.01
                 returning id`);
 
             const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();

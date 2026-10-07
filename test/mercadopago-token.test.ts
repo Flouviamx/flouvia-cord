@@ -9,7 +9,14 @@ vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.join('?'), values }),
     withOrgTx: async (_org: string, ...qs: Array<{ text: string; values: unknown[] }>) => qs.map((q) => {
         if (/^\s*select/i.test(q.text)) return [m.row];
-        m.updates.push(q.text.replace(/\s+/g, ' ').trim());
+        const texto = q.text.replace(/\s+/g, ' ').trim();
+        // Compare-and-set: solo apaga si el refresh token guardado sigue siendo el que se usó.
+        if (texto.includes('mp_charges_enabled = false') && texto.includes('mp_refresh_token_enc =')) {
+            if (m.row.mp_refresh_token_enc !== q.values[1]) return [];
+            m.updates.push(texto);
+            return [{ id: q.values[0] }];
+        }
+        m.updates.push(texto);
         return [];
     }),
 }));

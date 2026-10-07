@@ -70,7 +70,8 @@ beforeAll(async () => {
       serie_folio text, facturapi_live_key text, facturapi_live_key_enc text, sandbox_of uuid, stripe_account_id text, is_demo boolean default false);
     create table clientes (id uuid primary key, org_id uuid, uso_cfdi text);
     create table cotizaciones (id uuid primary key, org_id uuid not null references orgs(id), total numeric not null,
-      status text not null, paid_at timestamptz, payment_method text, base_currency text, es_recurrente boolean default false);
+      status text not null, paid_at timestamptz, payment_method text, base_currency text, es_recurrente boolean default false,
+      pago_declarado_at timestamptz);
     create table cotizacion_cobros (id uuid primary key, org_id uuid not null, cotizacion_id uuid not null references cotizaciones(id),
       tipo text not null, numero_cuota int not null default 0, monto numeric not null, status text not null default 'pendiente',
       stripe_payment_intent_id text, paid_payment_intent_id text, payment_method text, metodo_pago text, paid_at timestamptz,
@@ -157,7 +158,7 @@ describe('la factura nace sabiendo lo que la cotización ya cobró', () => {
 
   it('pagada a mano en la cotización (transferencia): la factura nace pagada por lo declarado', async () => {
     await cobro(saldo, 'total', 100, 'cancelado');
-    await q("update cotizaciones set status='paid', paid_at=now(), payment_method='transferencia' where id=$1", [quote]);
+    await q("update cotizaciones set status='paid', paid_at=now(), pago_declarado_at=now(), payment_method='transferencia' where id=$1", [quote]);
     await borrador();
     await finalizeInvoice(org, doc);
     expect(await factura()).toMatchObject({ lifecycle: 'paid', amount_paid: '100', amount_remaining: '0' });
@@ -167,7 +168,7 @@ describe('la factura nace sabiendo lo que la cotización ya cobró', () => {
   it('cobro en línea + resto declarado: se heredan los dos sin pasarse del total', async () => {
     await cobro(anticipo, 'anticipo', 30, 'pagado', { mp: 'mp_9', metodo: 'mercadopago' });
     await cobro(saldo, 'saldo', 70, 'cancelado');
-    await q("update cotizaciones set status='paid', paid_at=now() where id=$1", [quote]);
+    await q("update cotizaciones set status='paid', paid_at=now(), pago_declarado_at=now() where id=$1", [quote]);
     await borrador();
     await finalizeInvoice(org, doc);
     expect(await factura()).toMatchObject({ lifecycle: 'paid', amount_paid: '100', refund_due: '0' });
@@ -229,7 +230,7 @@ describe('idempotencia: el mismo dinero nunca se cuenta dos veces', () => {
     await emitida();
     await cobro(anticipo, 'anticipo', 30, 'pagado', { paidPi: 'pi_a' });
     const r = await reconcileInvoiceWithQuote(org, doc, { dryRun: true });
-    expect(r.pendiente).toEqual({ cobros: 1, monto: 30 });
+    expect(r.pendiente).toEqual({ cobros: 1, monto: 30, cotizacionPorSaldar: false });
     expect(await pagos()).toHaveLength(0);
   });
 
@@ -404,5 +405,74 @@ describe('Mercado Pago: lo que Cord hace con un pago leído del proveedor', () =
     await processMpPayment(org, '777', pagoMp({ status: 'refunded', reembolsos: [{ id: 'r1', monto: 40, status: 'succeeded' }] }));
     expect(await factura()).toMatchObject({ amount_refunded: '40', amount_remaining: '40', lifecycle: 'open' });
     expect((await q('select amount_cents, status from cobro_reembolsos')).rows).toEqual([{ amount_cents: 4000, status: 'succeeded' }]);
+  });
+});
+
+describe('revisión adversarial: el dinero que ya se registró a mano no se vuelve a contar', () => {
+  it('A: factura ya cerrada con un pago A MANO: la reparación NO hereda el cobro y pide revisar', async () => {
+    await emitida();
+    await cobro(saldo, 'total', 100, 'pagado', { paidPi: 'pi_q' });
+    await q("insert into documento_pagos(org_id,documento_id,monto,currency,metodo) values ($1,$2,100,'MXN','transferencia')", [org, doc]);
+    const vista = await reconcileInvoiceWithQuote(org, doc, { dryRun: true });
+    expect(vista).toMatchObject({ revisar: 'pagos_manuales', pendiente: { cobros: 0 } });
+    const r = await reconcileInvoiceWithQuote(org, doc);
+    expect(r).toMatchObject({ heredados: 0, revisar: 'pagos_manuales' });
+    expect(await pagos()).toHaveLength(1);
+  });
+
+  it('B: una factura pagada en /i y luego reembolsada NO genera un "pago declarado" fantasma', async () => {
+    await emitida();
+    await q("update cotizaciones set status='invoiced' where id=$1", [quote]);
+    await applyPayment(org, doc, { monto: 100, currency: 'MXN', stripePaymentIntentId: 'pi_i' });
+    expect((await cotizacion()).paid_at).not.toBeNull();
+    await q(`insert into documento_reembolsos(org_id,stripe_refund_id,stripe_payment_intent_id,monto,currency,status)
+             values ($1,'re_1','pi_i',60,'MXN','succeeded')`, [org]);
+    const r = await reconcileInvoiceWithQuote(org, doc);
+    expect(r.heredados).toBe(0);
+    expect(await factura()).toMatchObject({ amount_paid: '100', refund_due: '0' });
+  });
+
+  it('C/D: una cotización ya saldada que se facturó no se re-salda ni re-dispara quote.paid en reentregas', async () => {
+    await cobro(saldo, 'total', 100, 'pagado', { paidPi: 'pi_q' });
+    await q("update cotizaciones set status='invoiced', paid_at=now() where id=$1", [quote]);
+    await borrador();
+    await finalizeInvoice(org, doc);
+    expect(await factura()).toMatchObject({ lifecycle: 'paid' });
+    const repetido = await applyPayment(org, doc, { monto: 100, currency: 'MXN', stripePaymentIntentId: 'pi_q' });
+    expect(repetido.duplicate).toBe(true);
+    expect((await cotizacion()).status).toBe('invoiced');
+  });
+
+  it('E: no se salda una cotización si lo pagado no cubre el total, aunque no queden pendientes', async () => {
+    await cobro(anticipo, 'anticipo', 30, 'pendiente');
+    await cobro(saldo, 'saldo', 70, 'cancelado');
+    const r = await settleQuoteCobro(org, {
+      cotizacionId: quote, cobroId: anticipo, monto: 30, moneda: 'MXN', metodo: 'mercadopago', pagoId: 'mp_x', proveedor: 'Mercado Pago',
+    });
+    expect(r).toBe('parcial');
+    expect((await cotizacion()).status).toBe('approved');
+  });
+
+  it('marcar pagada con factura ya emitida: lo declarado se aplica TOPADO al saldo que la factura aún debe', async () => {
+    await emitida();
+    await applyPayment(org, doc, { monto: 50, currency: 'MXN', stripePaymentIntentId: 'pi_parcial' });
+    await q("update cotizaciones set status='paid', paid_at=now(), pago_declarado_at=now() where id=$1", [quote]);
+    const r = await reconcileInvoiceWithQuote(org, doc);
+    expect(r.monto).toBe(50);
+    expect(await factura()).toMatchObject({ lifecycle: 'paid', amount_paid: '100', refund_due: '0' });
+  });
+
+  it('un pago de Mercado Pago sobre un cobro cancelado de una cotización ya saldada es un DUPLICADO, no un anticipo', async () => {
+    await emitida();
+    await cobro(saldo, 'saldo', 100, 'cancelado');
+    await q("update cotizaciones set status='paid', paid_at=now() where id=$1", [quote]);
+    await applyPayment(org, doc, { monto: 100, currency: 'MXN', stripePaymentIntentId: 'pi_factura' });
+    const r = await processMpPayment(org, '777', {
+      id: '9100', status: 'approved', monto: 100, moneda: 'MXN', referencia: saldo, metodo: null,
+      collectorId: '777', liveMode: true, reembolsos: [],
+    });
+    expect(r).toEqual({ propio: true, estado: 'duplicado' });
+    expect((await cobros())[0].status).toBe('cancelado');
+    expect(await factura()).toMatchObject({ amount_paid: '200', refund_due: '100' });
   });
 });

@@ -10,7 +10,10 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
-import { requirePerm } from '../../../lib/queries';
+import { requireOwner, requirePerm } from '../../../lib/queries';
+import { requireFreshAuth } from '../../../lib/step-up';
+import { notifyMoneyDestinationChange } from '../../../lib/auth-email';
+import { after } from '../../../lib/after';
 import { currentUserId } from '../../../lib/context';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { createConnection, listConnections, parseIdpMetadata, SamlValidationError, type ConnectionInput } from '../../../lib/saml';
@@ -23,7 +26,10 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-    const denied = await requirePerm('equipo'); if (denied) return denied;
+    const denied = await requireOwner(); if (denied) return denied;
+    // SSO decide quién entra como quién y con qué permisos: solo el dueño, con
+    // reautenticación reciente, y los dueños se enteran (regla 38).
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
@@ -63,6 +69,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
         const connection = await createConnection(orgId, input, currentUserId());
         await logAudit(orgId, { accion: 'sso.conexion_creada', entidad: 'sso_connection', entidad_id: connection.id, detalle: connection.nombre, ip: reqIp(request) });
+        after(notifyMoneyDestinationChange(orgId, 'sso', { detalle: `Conexión nueva: ${connection.nombre}`, actorUserId: currentUserId(), ip: reqIp(request) }));
         return json({ connection });
     } catch (e) {
         if (e instanceof SamlValidationError) return json({ error: e.message }, 400);

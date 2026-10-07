@@ -302,6 +302,15 @@ import { iconInner } from '../../../lib/icons';
 </style>
 
 <script>
+    // Cambiar SSO exige reautenticación reciente: si el servidor la pide
+    // (428), se confirma la identidad y se reintenta una vez.
+    async function conIdentidad(url: string, init: RequestInit) {
+        let res = await fetch(url, init);
+        if (res.status === 428 && typeof (window as any).cordStepUp === 'function' && await (window as any).cordStepUp()) {
+            res = await fetch(url, init);
+        }
+        return res;
+    }
     function initSso() {
         const newBtn = document.getElementById('ssoNewBtn');
         const newModal = document.getElementById('ssoNewModal') as HTMLDialogElement | null;
@@ -321,7 +330,7 @@ import { iconInner } from '../../../lib/icons';
             }
             (newSubmit as HTMLButtonElement).disabled = true;
             try {
-                const res = await fetch('/api/sso/connections', {
+                const res = await conIdentidad('/api/sso/connections', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nombre, metadata_xml }),
                 });

@@ -20,6 +20,7 @@ import { getEffectivePlan } from '../org-entitlements';
 import { planIncludes } from '../entitlements';
 import { meterInvoiceEmission } from './issuance-usage';
 import { sql, withOrgTx } from '../db';
+import { after } from '../after';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
 import { logInvoiceEvent } from './timeline';
@@ -653,9 +654,10 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     // No ocurre por construcción (emit.ts emite en la divisa de la venta). Si
     // ocurre, no se inventa un tipo de cambio: se avisa y la factura queda con
     // su saldo para conciliarse a mano.
-    const { sendOpsAlert } = await import('../ops-alert');
-    await sendOpsAlert('Factura con divisa distinta a su cotización',
-      `Organización ${orgId}; documento ${documentId}; factura ${docCurrency}; cotización ${quoteCurrency}. No se heredaron los pagos de la cotización.`);
+    // Fuera del camino de la emisión: una alerta nunca demora ni tumba el
+    // registro de un CFDI ya timbrado.
+    after(import('../ops-alert').then((o) => o.sendOpsAlert('Factura con divisa distinta a su cotización',
+      `Organización ${orgId}; documento ${documentId}; factura ${docCurrency}; cotización ${quoteCurrency}. No se heredaron los pagos de la cotización.`)));
   }
   const issuance = await withOrgTx(orgId,
     ...(hereda ? [quoteLedgerLock(orgId, String(head.cotizacion_id))] : []),

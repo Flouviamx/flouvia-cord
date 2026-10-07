@@ -12,6 +12,7 @@ import { sanitizeItem, calculateDocumentTotals } from '../../../packages/element
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { trackServer } from '../posthog-server';
 import { normalizeCurrency } from '../currency';
+import { liveInvoiceForQuote, quoteLedgerLock, reconcileInvoiceWithQuote } from '../fiscal/quote-ledger';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
@@ -306,7 +307,16 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         try { await materializeAnticipoCobros(id, orgId); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = input.payment_method || 'transferencia';
-        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+        // Bajo el candado de la cotización (src/lib/fiscal/quote-ledger.ts) y con
+        // la declaración EXPLÍCITA (`pago_declarado_at`): es lo único que la
+        // factura hereda como "pagado a mano". Inferirlo de `paid_at` contaba
+        // como declarado un saldo que en realidad pagó la factura.
+        const [, moved] = await withOrgTx(orgId,
+            quoteLedgerLock(orgId, id),
+            sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}),
+                       payment_method = coalesce(payment_method, ${method}),
+                       pago_declarado_at = coalesce(pago_declarado_at, ${now})
+                 where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
         if (!moved.length) return lostRace();
         const stripeKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
         const [pendientesPI] = await withOrgTx(orgId, sql`
@@ -330,7 +340,19 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 } catch { /* el webhook concilia si aun así se paga */ }
             }
         }
-        await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and status = 'pendiente'`);
+        await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and org_id = ${orgId} and status = 'pendiente'`);
+        // Si la cotización ya tiene factura viva, "pagada" tiene que llegar a la
+        // FACTURA: si no, seguía abierta en cartera, recordatorios, intereses y
+        // con su link de pago vivo (regla 37). La herencia lo aplica como pago
+        // declarado, topado al saldo que la factura aún debe; es idempotente.
+        const factura = await liveInvoiceForQuote(orgId, id);
+        if (factura.state === 'open') {
+            const r = await reconcileInvoiceWithQuote(orgId, factura.documentoId);
+            if (r.revisar || r.skipped === 'divisa_distinta') {
+                await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                    values (${orgId}, ${id}, 'paid', 'La factura de esta cotización ya tiene pagos registrados a mano: revisa su saldo')`);
+            }
+        }
     } else {
         const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = ${action.to} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
         if (!moved.length) return lostRace();

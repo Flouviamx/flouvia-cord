@@ -314,6 +314,15 @@ import { iconInner } from '../../../../lib/icons';
 </style>
 
 <script define:vars={{ connId: id, copiedText: t(L, 'set.sso.copiado') }}>
+    // Cambiar SSO exige reautenticación reciente: si el servidor la pide
+    // (428), se confirma la identidad y se reintenta una vez.
+    async function conIdentidad(url, init) {
+        let res = await fetch(url, init);
+        if (res.status === 428 && typeof window.cordStepUp === 'function' && await window.cordStepUp()) {
+            res = await fetch(url, init);
+        }
+        return res;
+    }
     function initSsoDetail() {
         // ── Copiar al portapapeles ──
         document.querySelectorAll('[data-copy]').forEach((btn) => {
@@ -350,7 +359,7 @@ import { iconInner } from '../../../../lib/icons';
             body.default_preset = document.getElementById('ssoDefaultPreset')?.value;
             saveFeedback('saving');
             try {
-                const res = await fetch('/api/sso/connections/' + connId, {
+                const res = await conIdentidad('/api/sso/connections/' + connId, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
                 });
                 const data = await res.json();
@@ -369,7 +378,7 @@ import { iconInner } from '../../../../lib/icons';
             const domain = (input?.value || '').trim();
             if (!domain) return;
             try {
-                const res = await fetch('/api/sso/connections/' + connId + '/domains', {
+                const res = await conIdentidad('/api/sso/connections/' + connId + '/domains', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }),
                 });
                 const data = await res.json();
@@ -385,7 +394,7 @@ import { iconInner } from '../../../../lib/icons';
                 const domainId = btn.dataset.domainVerify;
                 btn.disabled = true;
                 try {
-                    const res = await fetch('/api/sso/domains/' + domainId + '/verify', { method: 'POST' });
+                    const res = await conIdentidad('/api/sso/domains/' + domainId + '/verify', { method: 'POST' });
                     const data = await res.json();
                     if (data.ok) {
                         if (window.cordToast) window.cordToast('Dominio verificado', 'ok');
@@ -406,7 +415,7 @@ import { iconInner } from '../../../../lib/icons';
                 const ok = window.cordConfirm ? await window.cordConfirm({ title: 'Eliminar dominio', danger: true, confirmText: 'Eliminar' }) : confirm('¿Eliminar este dominio?');
                 if (!ok) return;
                 try {
-                    const res = await fetch('/api/sso/connections/' + connId + '/domains', {
+                    const res = await conIdentidad('/api/sso/connections/' + connId + '/domains', {
                         method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainId }),
                     });
                     if (!res.ok) throw new Error('No se pudo eliminar');
@@ -448,7 +457,7 @@ import { iconInner } from '../../../../lib/icons';
                 : confirm('¿Eliminar esta conexión?');
             if (!ok) return;
             try {
-                const res = await fetch('/api/sso/connections/' + connId, { method: 'DELETE' });
+                const res = await conIdentidad('/api/sso/connections/' + connId, { method: 'DELETE' });
                 if (!res.ok) throw new Error('No se pudo eliminar');
                 window.location.href = '/app/ajustes/sso';
             } catch (err) {

@@ -68,6 +68,16 @@ export const GET: APIRoute = async ({ request }) => {
         join orgs o on o.id = c.org_id
         where c.status in ('approved', 'invoiced')
           and c.es_recurrente is not true
+          -- Mismo criterio que la cartera (cuentas_por_cobrar, regla 37): una
+          -- cotización ya saldada, o con factura viva, no se cobra aquí. Antes,
+          -- una cotización pagada en /q y luego facturada (queda en 'invoiced')
+          -- recibía "Recordatorio de pago" por el total, y su dedup además
+          -- callaba el recordatorio de la factura, que trae el saldo real.
+          and c.paid_at is null
+          and not exists (
+            select 1 from documentos_fiscales d2
+             where d2.cotizacion_id = c.id and d2.org_id = c.org_id and d2.status = 'issued'
+               and d2.lifecycle in ('open', 'paid', 'uncollectible') and d2.credit_note_of is null)
           and cl.email is not null and cl.email <> ''
           and o.sandbox_of is null
           and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`);

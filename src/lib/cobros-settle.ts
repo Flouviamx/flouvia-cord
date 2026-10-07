@@ -81,8 +81,10 @@ export async function settleQuoteCobro(orgId: string, input: SettleInput): Promi
                and (select coalesce(sum(monto), 0) from cotizacion_cobros
                      where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pagado')
                    >= (select total from cotizaciones where id = ${cid} and org_id = ${orgId}) - 0.01`,
-        // 3) Flip atómico: la cotización se salda SOLO si este cobro está pagado
-        //    y ya no queda ningún pendiente.
+        // 3) Flip atómico: la cotización se salda SOLO si este cobro está pagado,
+        //    ya no queda ningún pendiente Y lo pagado cubre el total. Sin la
+        //    suma, un plan de cuotas que se quedó sin filas pendientes (o un
+        //    cobro cancelado a mano) saldaba una cotización cobrada a medias.
         sql`update cotizaciones
                set status = 'paid', paid_at = now(), payment_method = ${metodo}
              where id = ${cid} and org_id = ${orgId} and status in ('approved', 'invoiced')
@@ -92,6 +94,8 @@ export async function settleQuoteCobro(orgId: string, input: SettleInput): Promi
                and not exists (
                    select 1 from cotizacion_cobros
                     where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente')
+               and (select coalesce(sum(monto), 0) from cotizacion_cobros
+                     where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pagado') >= total - 0.01
             returning id`,
     );
 

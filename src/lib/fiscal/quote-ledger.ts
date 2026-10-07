@@ -90,6 +90,15 @@ export const inheritQuoteCobrosQuery = (orgId: string, documentoId: string, curr
        and d.currency = ${currency}
        and c.es_recurrente is not true
        and cc.status = 'pagado' and cc.monto > 0
+       -- Si la factura ya tiene pagos registrados A MANO, alguien la está
+       -- conciliando a mano: ese dinero puede ser el mismo de estos cobros y
+       -- heredarlo lo contaría dos veces. No se adivina; se reporta para revisar.
+       and not exists (
+         select 1 from documento_pagos m
+          where m.documento_id = d.id and m.org_id = d.org_id
+            and m.stripe_payment_intent_id is null and m.mp_payment_id is null
+            and coalesce(m.referencia, '') not like 'cotizacion:%'
+            and coalesce(m.referencia, '') not like 'cobro:%')
        and not exists (
          select 1 from documento_pagos p
           where p.documento_id = d.id and p.org_id = d.org_id
@@ -122,15 +131,23 @@ export const inheritQuoteCobrosQuery = (orgId: string, documentoId: string, curr
          (select coalesce(sum(monto), 0) from insertados) as monto_insertado`;
 
 /**
- * Lo que el vendedor marcó como pagado en la cotización sin cobro en línea que
- * lo respalde (transferencia, efectivo, cheque): la diferencia entre el total y
- * los cobros pagados. Un solo renglón por cotización, identificado por su
- * referencia, para que reemitir o reconciliar no lo duplique. Misma forma de
+ * Lo que el vendedor DECLARÓ pagado en la cotización sin cobro en línea que lo
+ * respalde (transferencia, efectivo, cheque). Solo cuenta la declaración
+ * explícita (`cotizaciones.pago_declarado_at`, que pone la acción "marcar
+ * pagada"): inferirla de `paid_at` trataba como pago a mano un saldo que en
+ * realidad pagó la factura.
+ *
+ * El importe es la diferencia entre el total y los cobros pagados, TOPADO a lo
+ * que la factura todavía debe (total − notas de crédito − pagos ya aplicados,
+ * incluidos los cobros que esta misma transacción acaba de heredar): una
+ * declaración dice "lo que faltaba ya se pagó", nunca crea dinero de más. Un
+ * solo renglón por cotización, identificado por su referencia. Misma forma de
  * respuesta que `inheritQuoteCobrosQuery`.
  */
 export const inheritDeclaredPaymentQuery = (orgId: string, documentoId: string, currency: string, aplicar = true) => sql`
   with candidatos as (
-    select d.org_id, d.id as documento_id, c.total - pagado.suma as monto, d.currency,
+    select d.org_id, d.id as documento_id,
+           least(c.total - pagado.suma, pendiente.monto) as monto, d.currency,
            coalesce(nullif(c.payment_method, ''), 'manual') as metodo,
            'cotizacion:' || c.id::text as referencia
       from documentos_fiscales d
@@ -139,12 +156,21 @@ export const inheritDeclaredPaymentQuery = (orgId: string, documentoId: string, 
         select coalesce(sum(cc.monto), 0) as suma from cotizacion_cobros cc
          where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado'
       ) pagado
+      cross join lateral (
+        select greatest(d.total
+          - coalesce((select sum(n.total) from documentos_fiscales n
+                       where n.credit_note_of = d.id and n.org_id = d.org_id and n.currency = d.currency
+                         and n.status = 'issued' and n.lifecycle <> 'void'), 0)
+          - coalesce((select sum(p.monto) from documento_pagos p
+                       where p.documento_id = d.id and p.org_id = d.org_id and p.currency = d.currency), 0),
+          0) as monto
+      ) pendiente
      where d.id = ${documentoId} and d.org_id = ${orgId}
        and d.status = 'issued' and d.lifecycle not in ('draft', 'void')
        and d.credit_note_of is null and d.document_type not in ('credit_note', 'cfdi_egreso')
        and d.currency = ${currency}
-       and c.paid_at is not null and c.es_recurrente is not true
-       and c.total - pagado.suma > 0
+       and c.pago_declarado_at is not null and c.es_recurrente is not true
+       and least(c.total - pagado.suma, pendiente.monto) > 0
        and not exists (
          select 1 from documento_pagos p
           where p.documento_id = d.id and p.org_id = d.org_id
@@ -152,7 +178,7 @@ export const inheritDeclaredPaymentQuery = (orgId: string, documentoId: string, 
   ), insertados as (
     insert into documento_pagos (org_id, documento_id, monto, currency, metodo, referencia, nota)
     select org_id, documento_id, monto, currency, metodo, referencia,
-           'Registrado como pagado en la cotización antes de emitir la factura'
+           'Registrado como pagado en la cotización'
       from candidatos
      where ${aplicar}::boolean
     returning monto
@@ -177,13 +203,17 @@ export const settleQuoteFromInvoiceQueries = (orgId: string, documentoId: string
   cancelQuoteCobrosFromInvoiceQuery(orgId, documentoId),
 ];
 
+// `paid_at is null`: una cotización que ya se saldó (y luego se facturó, que la
+// deja en `invoiced`) no se vuelve a saldar en cada reentrega: eso disparaba
+// `quote.paid` otra vez a las integraciones del negocio.
 const settleQuoteFromInvoiceQuery = (orgId: string, documentoId: string) => sql`update cotizaciones c
-         set status = 'paid', paid_at = coalesce(c.paid_at, now())
+         set status = 'paid', paid_at = now(), payment_method = 'factura'
         from documentos_fiscales d
        where d.id = ${documentoId} and d.org_id = ${orgId} and d.lifecycle = 'paid'
          and d.credit_note_of is null and coalesce(d.amount_paid, 0) > 0
          and c.id = d.cotizacion_id and c.org_id = d.org_id
-         and c.status in ('approved', 'invoiced') and c.es_recurrente is not true
+         and c.status in ('approved', 'invoiced') and c.paid_at is null
+         and c.es_recurrente is not true
       returning c.id`;
 
 const cancelQuoteCobrosFromInvoiceQuery = (orgId: string, documentoId: string) => sql`update cotizacion_cobros cc
@@ -252,6 +282,14 @@ async function invalidateLiveCharges(orgId: string, cancelados: QuoteSettledByIn
       const { stripe } = await import('../billing');
       for (const pi of pis) {
         try {
+          // Un SPEI NO se cancela: su CLABE ya está en manos del cliente, y una
+          // transferencia que llegue después de cancelar cae al saldo del
+          // customer sin rastro en Cord. Vivo, si se paga, el webhook lo aplica
+          // a la factura como importe por devolver y avisa.
+          const actual = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, undefined, 'GET', { stripeAccount: account });
+          const tipos: string[] = Array.isArray(actual?.payment_method_types) ? actual.payment_method_types : [];
+          if (tipos.includes('customer_balance')) continue;
+          if (!['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(String(actual?.status))) continue;
           await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, {}, 'POST', { stripeAccount: account });
         } catch (err) {
           // Ya pagado, en proceso o ya cancelado: el webhook concilia lo que llegue.
@@ -380,14 +418,20 @@ export async function recordInheritance(orgId: string, documentoId: string, curr
 export interface ReconcileResult extends InheritanceResult {
   /** Por qué no se tocó: sin cotización o divisas distintas. */
   skipped?: 'sin_cotizacion' | 'divisa_distinta';
-  /** Vista previa: lo que se aplicaría. */
-  pendiente?: { cobros: number; monto: number };
+  /**
+   * Hay cobros pagados que no se heredaron porque la factura ya tiene pagos
+   * registrados a mano: puede ser el mismo dinero. Lo decide una persona.
+   */
+  revisar?: 'pagos_manuales';
+  /** Vista previa: lo que se aplicaría (el declarado, como máximo). */
+  pendiente?: { cobros: number; monto: number; cotizacionPorSaldar: boolean };
 }
 
 /**
  * Concilia una factura YA emitida con su cotización: la misma herencia que la
  * emisión, en su propia transacción. Es el camino de reparación de las facturas
- * que nacieron antes de este contrato con un saldo que ya se había cobrado.
+ * que nacieron antes de este contrato con un saldo que ya se había cobrado, y
+ * el de "marcar pagada" una cotización que ya tiene factura. Idempotente.
  * Con `dryRun` solo dice qué aplicaría.
  */
 export async function reconcileInvoiceWithQuote(
@@ -403,9 +447,30 @@ export async function reconcileInvoiceWithQuote(
      where d.id = ${documentoId} and d.org_id = ${orgId}`);
   const vacio: InheritanceResult = { heredados: 0, monto: 0, lifecycle: null, settled: { quoteId: null, cancelados: [] } };
   if (!head?.cotizacion_id) return { ...vacio, skipped: 'sin_cotizacion' };
+  const quoteId = String(head.cotizacion_id);
   const docCurrency = normalizeCurrency(String(head.currency || ''));
   const quoteCurrency = normalizeCurrency(String(head.base_currency || head.moneda || ''), docCurrency);
   if (quoteCurrency !== docCurrency) return { ...vacio, skipped: 'divisa_distinta' };
+
+  const [[estado]] = await withOrgTx(orgId, sql`
+    select
+      exists (select 1 from documento_pagos m
+               where m.documento_id = ${documentoId} and m.org_id = ${orgId}
+                 and m.stripe_payment_intent_id is null and m.mp_payment_id is null
+                 and coalesce(m.referencia, '') not like 'cotizacion:%'
+                 and coalesce(m.referencia, '') not like 'cobro:%') as manuales,
+      exists (select 1 from cotizacion_cobros cc
+               where cc.cotizacion_id = ${quoteId} and cc.org_id = ${orgId} and cc.status = 'pagado'
+                 and not exists (select 1 from documento_pagos p
+                                  where p.documento_id = ${documentoId} and p.org_id = ${orgId}
+                                    and (p.cobro_id = cc.id
+                                      or p.stripe_payment_intent_id in (cc.paid_payment_intent_id, cc.stripe_payment_intent_id)
+                                      or p.mp_payment_id = cc.mp_payment_id))) as cobros_sin_aplicar,
+      exists (select 1 from documentos_fiscales d join cotizaciones c on c.id = d.cotizacion_id and c.org_id = d.org_id
+               where d.id = ${documentoId} and d.org_id = ${orgId} and d.lifecycle = 'paid'
+                 and coalesce(d.amount_paid, 0) > 0 and c.status in ('approved', 'invoiced')
+                 and c.paid_at is null and c.es_recurrente is not true) as por_saldar`);
+  const revisar = estado?.manuales && estado?.cobros_sin_aplicar ? 'pagos_manuales' as const : undefined;
 
   if (opts.dryRun) {
     const [cobros, declarado] = await withOrgTx(orgId,
@@ -415,17 +480,19 @@ export async function reconcileInvoiceWithQuote(
     const m = declarado[0] ?? {};
     return {
       ...vacio,
+      revisar,
       pendiente: {
         cobros: (Number(c.candidatos) || 0) + (Number(m.candidatos) || 0),
         monto: (Number(c.monto_candidato) || 0) + (Number(m.monto_candidato) || 0),
+        cotizacionPorSaldar: !!estado?.por_saldar,
       },
     };
   }
 
   const results = await withOrgTx(orgId,
-    quoteLedgerLock(orgId, String(head.cotizacion_id)),
+    quoteLedgerLock(orgId, quoteId),
     ...inheritanceQueries(orgId, documentoId, docCurrency));
   const out = readInheritance(results.slice(1));
   await recordInheritance(orgId, documentoId, docCurrency, out);
-  return out;
+  return { ...out, revisar };
 }
