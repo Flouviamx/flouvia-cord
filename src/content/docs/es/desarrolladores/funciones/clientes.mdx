@@ -3,6 +3,9 @@ title: "API de Clientes"
 seoTitle: "API de clientes de Cord"
 description: "Sincroniza y administra el directorio de clientes desde tus sistemas contables."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave con permiso sobre el recurso clientes"]
 ---
 
 <header class="content-header">
@@ -73,7 +76,7 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
       "email": "tony@stark.com",
       "telefono": "",
       "rfc": "STA120412XYZ",
-      "terminos": "A 30 días",
+      "terminos": "Net 30",
       "terminosCode": "net30",
       "limite": 500000,
       "nivel": "oro",

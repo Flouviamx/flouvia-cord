@@ -1,48 +1,71 @@
 ---
 title: "Cord Developers"
-description: "Integra Cord con tus sistemas: API REST, webhooks, servidor MCP, CLI y Cord Elements."
+seoTitle: "Cord para desarrolladores: API, webhooks, SDK, CLI y MCP"
+description: "Integra Cord con tus sistemas: API REST v1, webhooks firmados, SDK de Node, CLI, servidor MCP, OAuth y Cord Elements. Índice completo de la documentación para desarrolladores."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una cuenta de Cord", "El Modo desarrollador activo en Ajustes para crear llaves"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord Developers</h1>
-  <p class="page-subtitle">Integra Cord con tus sistemas: API REST, webhooks, servidor MCP, CLI y Cord Elements.</p>
+  <p class="page-subtitle">Integra Cord con tus sistemas: API REST, webhooks, SDK de Node, CLI, servidor MCP y Cord Elements.</p>
 </header>
 
-## Visión General
+La API de Cord está orientada a recursos, responde JSON con códigos HTTP estándar y está disponible en todos los planes. Cada respuesta trae un `Cord-Request-Id`, cada escritura acepta `Idempotency-Key` y cada llave queda fijada a una versión de la API. Empieza por el [Inicio rápido](/docs/desarrolladores/empezar/inicio-rapido): en cinco minutos creas una cotización y recibes su webhook en tu máquina.
 
-La plataforma de desarrolladores de Cord te permite conectar tus sistemas internos y automatizar flujos de trabajo financieros complejos a través de una arquitectura moderna, segura y orientada a eventos. Nuestra filosofía de diseño se enfoca en APIs predecibles, orientadas a recursos, usando respuestas estándar HTTP.
+## Qué puedes construir
 
-### ¿Qué puedes construir?
+- **Sincronizar tu ERP o tu CRM:** mantén catálogo y clientes al día con la [API de Productos](/docs/desarrolladores/funciones/productos) y la [API de Clientes](/docs/desarrolladores/funciones/clientes).
+- **Reaccionar a eventos:** marca un pedido como pagado cuando llegue `quote.paid` por [webhook](/docs/desarrolladores/herramientas/webhooks), o reconcilia con el [historial de eventos](/docs/desarrolladores/funciones/eventos).
+- **Facturar desde tu sistema:** crea, emite y cobra facturas con la [API de Facturas](/docs/desarrolladores/funciones/facturas).
+- **Conectar agentes de IA:** dale a Claude o a ChatGPT acceso a tus datos con el [servidor MCP](/docs/desarrolladores/herramientas/mcp), o deja que propongan la configuración de una cuenta con la [configuración asistida](/docs/desarrolladores/herramientas/configuracion-asistida).
+- **Embeber el cierre en tu producto:** cotizador, factura y formulario fiscal con [Cord Elements](/docs/desarrolladores/herramientas/elements/resumen).
+- **Publicar una app para muchos negocios:** conéctala con [OAuth](/docs/desarrolladores/herramientas/oauth) en lugar de pedir llaves.
 
-- **Sincronización de ERPs (Enterprise Resource Planning):** Mantén tu catálogo de productos y base de clientes en sincronía con tu sistema contable utilizando la [API de Productos](/docs/desarrolladores/funciones/productos) y la [API de Clientes](/docs/desarrolladores/funciones/clientes).
-- **Automatización de Eventos:** Escucha eventos clave (pagos, aprobaciones) y dispara acciones en tiempo real usando [Webhooks](/docs/desarrolladores/herramientas/webhooks). Por ejemplo, marca un pedido como pagado en tu sistema cuando Cord emita `quote.paid`.
-- **Agentes de IA:** Conecta asistentes inteligentes como Claude o ChatGPT a tus datos financieros usando nuestro [Servidor MCP](/docs/desarrolladores/herramientas/mcp).
-- **Experiencias Embebidas:** Despliega cotizadores nativos dentro de tu propio portal de clientes con [Cord Elements](/docs/desarrolladores/herramientas/elements/resumen).
+## SDKs y herramientas
 
-### Tu panel de control
+| Herramienta | Instala | Para qué |
+|---|---|---|
+| [API REST v1](/docs/desarrolladores/referencia) | — | `https://cordhq.app/api/v1`, con cualquier cliente HTTP. |
+| [SDK de Node](/docs/desarrolladores/herramientas/sdks) | `npm install @flouviahq/node` | La API completa desde tu servidor, con reintentos, idempotencia y verificación de webhooks. Node, Bun, Deno y edge. |
+| [Cord Elements](/docs/desarrolladores/herramientas/elements/resumen) | `npm install @flouviahq/elements` | Cotizador, factura y formulario fiscal en el navegador: React, Vue, Web Components y headless. |
+| [CLI](/docs/desarrolladores/herramientas/cli) | `npx @flouviahq/cli` | Login desde el navegador, configuración con IA, integración del proyecto y webhooks en tu `localhost`. |
+| [Servidor MCP](/docs/desarrolladores/herramientas/mcp) | — | Herramientas para agentes de IA sobre tus datos. |
+| [Cord Workbench](/docs/desarrolladores/herramientas/workbench) | — | Llaves, endpoints, eventos y el registro de cada petición, dentro de la app. |
+| Python y PHP | — | **Aún no publicados.** Usa la API REST directamente. |
 
-Todo lo que construyas se administra y se depura desde el
-[**Cord Workbench**](/docs/desarrolladores/herramientas/workbench): un panel que vive al fondo
-de la app con tus claves de API, tus endpoints de webhook, la línea de tiempo de eventos, el log
-de cada petición y la salud de tu integración. Actívalo con el **Modo desarrollador** al final
-del índice de Ajustes.
+## Especificación y recursos para máquinas
 
-### Entornos de prueba
+| Recurso | Dirección |
+|---|---|
+| OpenAPI 3.1 (JSON) | [`https://cordhq.app/openapi.json`](https://cordhq.app/openapi.json) |
+| OpenAPI 3.1 (YAML) | [`https://cordhq.app/openapi.yaml`](https://cordhq.app/openapi.yaml) |
+| Resumen para asistentes de IA | [`https://cordhq.app/llms.txt`](https://cordhq.app/llms.txt) |
+| Toda la documentación en un archivo | [`https://cordhq.app/llms-full.txt`](https://cordhq.app/llms-full.txt) |
+| Referencia navegable | [Referencia de la API](/docs/desarrolladores/referencia) |
 
-Cada cuenta de Cord tiene un entorno de prueba aislado: lo que creas con una llave `sk_test_` o con el modo prueba de la app no toca tus datos reales (la excepción son las propuestas de configuración de `POST /api/v1/setup/plans`, que van a tu cuenta real y solo se aplican si una persona las aprueba). Desde la app, en modo prueba, puedes vaciar ese entorno por completo; ese reinicio exige tu sesión en el navegador y no forma parte de la API pública. Con una llave de prueba sí tienes simuladores por API para provocar timbrados, vencimientos y webhooks. Lee más en [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas).
+## Entornos de prueba
+
+Cada cuenta tiene un entorno de prueba aislado: lo que creas con una llave `sk_test_` o con el modo prueba de la app no toca tus datos reales. Con una llave de prueba tienes simuladores para provocar timbrados, vencimientos y webhooks, y `cord listen` para recibirlos en tu máquina. La excepción son las propuestas de [configuración asistida](/docs/desarrolladores/herramientas/configuracion-asistida), que siempre van a tu cuenta real y solo se aplican si una persona las aprueba. Ver [Entornos de prueba](/docs/desarrolladores/empezar/pruebas).
+
+{/* MOCKUP: barra Desarrolladores abierta al fondo de la app, con las pestañas Resumen, Webhooks, Eventos, API, Registros y Salud, y el indicador de modo prueba visible. */}
 
 ## Todas las páginas
 
 **Empezar**
 - [Crea tu API Key](/docs/desarrolladores/empezar/apikey)
-- [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas)
+- [Inicio rápido](/docs/desarrolladores/empezar/inicio-rapido)
+- [Entornos de prueba](/docs/desarrolladores/empezar/pruebas)
 
 **Herramientas**
 - [Cord Workbench](/docs/desarrolladores/herramientas/workbench)
 - [Webhooks](/docs/desarrolladores/herramientas/webhooks)
-- [CLI de Cord](/docs/desarrolladores/herramientas/cli)
+- [CLI](/docs/desarrolladores/herramientas/cli)
+- [SDK de Node](/docs/desarrolladores/herramientas/sdks)
 - [Servidor MCP](/docs/desarrolladores/herramientas/mcp)
+- [Configuración asistida](/docs/desarrolladores/herramientas/configuracion-asistida)
 - [OAuth para apps](/docs/desarrolladores/herramientas/oauth)
 - [Integraciones](/docs/desarrolladores/herramientas/integraciones)
 
@@ -50,7 +73,9 @@ Cada cuenta de Cord tiene un entorno de prueba aislado: lo que creas con una lla
 - [Resumen](/docs/desarrolladores/herramientas/elements/resumen)
 - [React y Next.js](/docs/desarrolladores/herramientas/elements/react)
 - [Web Components y Vue](/docs/desarrolladores/herramientas/elements/web-components)
-- [SDK de servidor](/docs/desarrolladores/herramientas/elements/server)
+- [Headless](/docs/desarrolladores/herramientas/elements/headless)
+- [Formulario fiscal](/docs/desarrolladores/herramientas/elements/fiscal)
+- [Proxy de servidor](/docs/desarrolladores/herramientas/elements/server)
 - [Apariencia](/docs/desarrolladores/herramientas/elements/apariencia)
 - [Eventos](/docs/desarrolladores/herramientas/elements/eventos)
 - [Seguridad CSP](/docs/desarrolladores/herramientas/elements/seguridad)
@@ -58,7 +83,7 @@ Cada cuenta de Cord tiene un entorno de prueba aislado: lo que creas con una lla
 **Esenciales**
 - [Autenticación](/docs/desarrolladores/esenciales/autenticacion)
 - [Paginación](/docs/desarrolladores/esenciales/paginacion)
-- [Manejo de Errores](/docs/desarrolladores/esenciales/errores)
+- [Manejo de errores](/docs/desarrolladores/esenciales/errores)
 - [Versiones de la API](/docs/desarrolladores/esenciales/versiones)
 - [Seguridad](/docs/desarrolladores/esenciales/seguridad)
 - [Referencia de la API](/docs/desarrolladores/referencia)
@@ -72,5 +97,5 @@ Cada cuenta de Cord tiene un entorno de prueba aislado: lo que creas con una lla
 - [API de Tareas](/docs/desarrolladores/funciones/tareas)
 - [API de Eventos](/docs/desarrolladores/funciones/eventos)
 
-**Seguridad**
+**Seguridad y privacidad**
 - [SSO y SAML](/docs/desarrolladores/seguridad/sso)

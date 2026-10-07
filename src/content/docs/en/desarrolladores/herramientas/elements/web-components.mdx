@@ -2,6 +2,9 @@
 title: "Elements in Vue and Web Components"
 description: "Discover how to use Cord's native web components in Vue, pure HTML, PHP, or any other stack."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/elements 2.0.0 or later", "Allowed domains in Settings › Embeddable quote builder to receive data in events"]
 ---
 
 <header class="content-header">
@@ -58,6 +61,74 @@ This component is compiled under web platform standards, meaning the browser und
 The pay button opens the hosted invoice in a Cord window: payment details are never captured inside the iframe. While the invoice is open, the embed checks its balance and emits `status_changed` when it changes and `paid` when it's settled. With `embed.js`, add `data-cord-document="invoice"` to the `div`. As with the quote, without allowed domains in **Settings › Embeddable quote builder** events arrive without data.
 
 `theme`, `variables` and `fonts` from the [Appearance API](/en/docs/desarrolladores/herramientas/elements/apariencia) apply to the invoice; `rules` and `layout` are for the quote.
+
+## Live state: `state` and `statechange`
+
+`<cord-quote>` and `<cord-invoice>` reduce the iframe's events to a state you can read at any time through the `state` property, and they emit `statechange` whenever it changes. That way you draw your own summary without listening event by event.
+
+```html
+<cord-quote token="9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"></cord-quote>
+<p id="summary"></p>
+
+<script type="module">
+  const quote = document.querySelector('cord-quote');
+  const summary = document.querySelector('#summary');
+
+  quote.addEventListener('statechange', (e) => {
+    const s = e.detail; // same as quote.state
+    if (!s.ready) return;
+    const total = s.total === null ? '' : new Intl.NumberFormat('en-US', { style: 'currency', currency: s.moneda }).format(s.total);
+    summary.textContent = `${s.folio ?? ''} ${s.status ?? ''} ${total}`;
+    if (s.paid) summary.textContent += ' · paid';
+  });
+</script>
+```
+
+| Field | Content |
+|---|---|
+| `ready` | The quote finished rendering. |
+| `status` | `sent`, `viewed`, `approved`, `rejected`, `paid`, `expired`… |
+| `folio`, `moneda`, `total` | From the document. The total always travels with its currency. |
+| `approved`, `rejected`, `paid` | Boolean shortcuts. `paid` is also true for a quote that was already invoiced. |
+| `signedBy` | Who approved, if they approved in this session. |
+| `lastEvent` | The last event received, for example `cord:approved`. |
+
+Without allowed domains in **Settings › Embeddable quote builder**, events arrive without data and `status`, `folio`, `moneda` and `total` stay `null`. In React it's `onStateChange` on `<CordCotizador>`; in Vue, the `@state` event.
+
+## Styling: `::part`
+
+Both elements live in a Shadow DOM: your styles don't break them and theirs don't touch your page. To customize them from the outside:
+
+```css
+cord-quote::part(frame) {
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(10, 25, 47, 0.08);
+}
+
+cord-quote::part(skeleton) {
+  border-radius: 24px;
+}
+```
+
+| Part | Element |
+|---|---|
+| `root` | The element's container. |
+| `skeleton` | The loading placeholder shown while the document arrives. |
+| `frame` | The `<iframe>` with Cord's document. |
+
+The content inside the iframe is customized with the [Appearance API](/en/docs/desarrolladores/herramientas/elements/apariencia) (the `appearance` attribute as JSON, or the `appearance` property as an object), not with your page's CSS.
+
+| Attribute | Detail |
+|---|---|
+| `token` | **Required.** The document's public token. |
+| `appearance` | Appearance as JSON. |
+| `min-height` | Minimum iframe height in pixels (420 by default). |
+| `base-url` | Cord's origin, if you use a custom domain. |
+| `debug` | Turns on the debug bar (see [Events](/en/docs/desarrolladores/herramientas/elements/eventos)). |
+
+## Tax form
+
+`<cord-fiscal-form>` captures your client's tax details with the same validation Cord uses and plugs into your HTML forms. See [Tax form](/en/docs/desarrolladores/herramientas/elements/fiscal).
 
 ## Vue and Nuxt
 

@@ -1,48 +1,71 @@
 ---
 title: "Cord Developers"
-description: "Integrate Cord with your systems: REST API, webhooks, MCP server, CLI, and Cord Elements."
+seoTitle: "Cord for developers: API, webhooks, SDK, CLI and MCP"
+description: "Integrate Cord with your systems: v1 REST API, signed webhooks, Node SDK, CLI, MCP server, OAuth and Cord Elements. Full index of the developer documentation."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Cord account", "Developer mode turned on in Settings to create keys"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord Developers</h1>
-  <p class="page-subtitle">Integrate Cord with your systems: REST API, webhooks, MCP server, CLI, and Cord Elements.</p>
+  <p class="page-subtitle">Integrate Cord with your systems: REST API, webhooks, Node SDK, CLI, MCP server and Cord Elements.</p>
 </header>
 
-## Overview
+Cord's API is resource-oriented, responds with JSON and standard HTTP status codes, and is available on every plan. Every response carries a `Cord-Request-Id`, every write accepts `Idempotency-Key`, and every key is pinned to an API version. Start with the [Quickstart](/en/docs/desarrolladores/empezar/inicio-rapido): in five minutes you create a quote and receive its webhook on your machine.
 
-Cord's developer platform allows you to connect your internal systems and automate complex financial workflows through a modern, secure, and event-driven architecture. Our design philosophy focuses on predictable, resource-oriented APIs using standard HTTP responses.
+## What you can build
 
-### What can you build?
+- **Sync your ERP or CRM:** keep your catalog and clients up to date with the [Products API](/en/docs/desarrolladores/funciones/productos) and the [Clients API](/en/docs/desarrolladores/funciones/clientes).
+- **React to events:** mark an order as paid when `quote.paid` arrives by [webhook](/en/docs/desarrolladores/herramientas/webhooks), or reconcile with the [event history](/en/docs/desarrolladores/funciones/eventos).
+- **Invoice from your system:** create, issue and collect invoices with the [Invoices API](/en/docs/desarrolladores/funciones/facturas).
+- **Connect AI agents:** give Claude or ChatGPT access to your data with the [MCP server](/en/docs/desarrolladores/herramientas/mcp), or let them propose an account's setup with [assisted setup](/en/docs/desarrolladores/herramientas/configuracion-asistida).
+- **Embed the close in your product:** quote, invoice and tax form with [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen).
+- **Ship an app for many businesses:** connect it with [OAuth](/en/docs/desarrolladores/herramientas/oauth) instead of asking for keys.
 
-- **ERP Synchronization:** Keep your product catalog and customer base in sync with your accounting system using the [Products API](/en/docs/desarrolladores/funciones/productos) and [Clients API](/en/docs/desarrolladores/funciones/clientes).
-- **Event Automation:** Listen to key events (payments, approvals) and trigger real-time actions using [Webhooks](/en/docs/desarrolladores/herramientas/webhooks). For example, mark an order as paid in your system when Cord emits `quote.paid`.
-- **AI Agents:** Connect smart assistants like Claude or ChatGPT to your financial data using our [MCP Server](/en/docs/desarrolladores/herramientas/mcp).
-- **Embedded Experiences:** Deploy native quoters inside your own customer portal with [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen).
+## SDKs and tools
 
-### Your control panel
+| Tool | Install | What for |
+|---|---|---|
+| [v1 REST API](/en/docs/desarrolladores/referencia) | — | `https://cordhq.app/api/v1`, with any HTTP client. |
+| [Node SDK](/en/docs/desarrolladores/herramientas/sdks) | `npm install @flouviahq/node` | The full API from your server, with retries, idempotency and webhook verification. Node, Bun, Deno and edge. |
+| [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen) | `npm install @flouviahq/elements` | Quote, invoice and tax form in the browser: React, Vue, Web Components and headless. |
+| [CLI](/en/docs/desarrolladores/herramientas/cli) | `npx @flouviahq/cli` | Browser sign-in, AI setup, project integration and webhooks on your `localhost`. |
+| [MCP server](/en/docs/desarrolladores/herramientas/mcp) | — | Tools for AI agents over your data. |
+| [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) | — | Keys, endpoints, events and the log of every request, inside the app. |
+| Python and PHP | — | **Not published yet.** Use the REST API directly. |
 
-Everything you build is managed and debugged from the
-[**Cord Workbench**](/en/docs/desarrolladores/herramientas/workbench): a panel that lives at the
-bottom of the app with your API keys, webhook endpoints, event timeline, request log, and the
-health of your integration. Turn it on with **Developer mode** at the bottom of the Settings
-index.
+## Specification and machine-readable resources
 
-### Test environments
+| Resource | Address |
+|---|---|
+| OpenAPI 3.1 (JSON) | [`https://cordhq.app/openapi.json`](https://cordhq.app/openapi.json) |
+| OpenAPI 3.1 (YAML) | [`https://cordhq.app/openapi.yaml`](https://cordhq.app/openapi.yaml) |
+| Summary for AI assistants | [`https://cordhq.app/llms.txt`](https://cordhq.app/llms.txt) |
+| All the documentation in one file | [`https://cordhq.app/llms-full.txt`](https://cordhq.app/llms-full.txt) |
+| Browsable reference | [API Reference](/en/docs/desarrolladores/referencia) |
 
-Every Cord account has an isolated test environment: whatever you create with an `sk_test_` key or in the app's test mode doesn't touch your real data (the exception is configuration proposals from `POST /api/v1/setup/plans`, which go to your real account and only apply if a person approves them). From the app, in test mode, you can wipe that environment completely; that reset requires your browser session and isn't part of the public API. With a test key you do get API simulators to trigger stamping outcomes, expirations, and webhooks. Read more in [Test Environments](/en/docs/desarrolladores/empezar/pruebas).
+## Test environments
+
+Every account has an isolated test environment: what you create with an `sk_test_` key or with the app's test mode doesn't touch your real data. With a test key you get simulators to trigger stamping, expirations and webhooks, and `cord listen` to receive them on your machine. The exception is [assisted setup](/en/docs/desarrolladores/herramientas/configuracion-asistida) proposals, which always go to your real account and are only applied if a person approves them. See [Test environments](/en/docs/desarrolladores/empezar/pruebas).
+
+{/* MOCKUP: Developers bar open at the bottom of the app, with the Overview, Webhooks, Events, API, Logs and Health tabs, and the test mode indicator visible. */}
 
 ## All pages
 
 **Get started**
 - [Create your API Key](/en/docs/desarrolladores/empezar/apikey)
-- [Test Environments](/en/docs/desarrolladores/empezar/pruebas)
+- [Quickstart](/en/docs/desarrolladores/empezar/inicio-rapido)
+- [Test environments](/en/docs/desarrolladores/empezar/pruebas)
 
 **Tools**
 - [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench)
 - [Webhooks](/en/docs/desarrolladores/herramientas/webhooks)
-- [Cord CLI](/en/docs/desarrolladores/herramientas/cli)
+- [CLI](/en/docs/desarrolladores/herramientas/cli)
+- [Node SDK](/en/docs/desarrolladores/herramientas/sdks)
 - [MCP Server](/en/docs/desarrolladores/herramientas/mcp)
+- [Assisted setup](/en/docs/desarrolladores/herramientas/configuracion-asistida)
 - [OAuth for apps](/en/docs/desarrolladores/herramientas/oauth)
 - [Integrations](/en/docs/desarrolladores/herramientas/integraciones)
 
@@ -50,7 +73,9 @@ Every Cord account has an isolated test environment: whatever you create with an
 - [Overview](/en/docs/desarrolladores/herramientas/elements/resumen)
 - [React and Next.js](/en/docs/desarrolladores/herramientas/elements/react)
 - [Web Components and Vue](/en/docs/desarrolladores/herramientas/elements/web-components)
-- [Server SDK](/en/docs/desarrolladores/herramientas/elements/server)
+- [Headless](/en/docs/desarrolladores/herramientas/elements/headless)
+- [Tax form](/en/docs/desarrolladores/herramientas/elements/fiscal)
+- [Server proxy](/en/docs/desarrolladores/herramientas/elements/server)
 - [Appearance](/en/docs/desarrolladores/herramientas/elements/apariencia)
 - [Events](/en/docs/desarrolladores/herramientas/elements/eventos)
 - [CSP Security](/en/docs/desarrolladores/herramientas/elements/seguridad)
@@ -58,7 +83,7 @@ Every Cord account has an isolated test environment: whatever you create with an
 **Essentials**
 - [Authentication](/en/docs/desarrolladores/esenciales/autenticacion)
 - [Pagination](/en/docs/desarrolladores/esenciales/paginacion)
-- [Error Handling](/en/docs/desarrolladores/esenciales/errores)
+- [Error handling](/en/docs/desarrolladores/esenciales/errores)
 - [API Versions](/en/docs/desarrolladores/esenciales/versiones)
 - [Security](/en/docs/desarrolladores/esenciales/seguridad)
 - [API Reference](/en/docs/desarrolladores/referencia)
@@ -72,5 +97,5 @@ Every Cord account has an isolated test environment: whatever you create with an
 - [Tasks API](/en/docs/desarrolladores/funciones/tareas)
 - [Events API](/en/docs/desarrolladores/funciones/eventos)
 
-**Security**
+**Security & Privacy**
 - [SSO & SAML](/en/docs/desarrolladores/seguridad/sso)

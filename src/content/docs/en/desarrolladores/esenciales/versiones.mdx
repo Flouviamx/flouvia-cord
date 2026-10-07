@@ -1,38 +1,110 @@
 ---
 title: "API Versions"
-seoTitle: "Cord API Versions"
-description: "How Cord pins the API version per key and per webhook, and how to change it per request with Cord-Version."
+seoTitle: "Cord API versions"
+description: "Cord's current API version, how it's pinned per key, per webhook endpoint and per request with Cord-Version, what changes without a new version, and the invalid_api_version error."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Cord API key"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">API Versions</h1>
-  <p class="page-subtitle">Your integration doesn't break when Cord changes: each key and each webhook stays on the version it was created with.</p>
+  <p class="page-subtitle">Your integration doesn't break when Cord changes: every key and every webhook endpoint stays on the version it was created with.</p>
 </header>
 
-## How it works
+## Current version
 
-Each version is named by a date (`2026-10-01`). A key and a webhook endpoint are **pinned** to the current version when they are created. Cord produces every response in its newest shape and converts it, change by change, to your integration's version.
+The current version is **`2026-10-01`**. It's also the only one: the baseline that fixed the shape of the API when Cord started versioning it. Each version is named after the date it's published.
 
-Every response carries the `Cord-Version` header with the version it was answered with.
+| Version | Changes |
+|---|---|
+| `2026-10-01` | Baseline: the shape of the API when versioning was introduced. |
 
-## Choosing the version per request
+## How a request's version is chosen
+
+Cord resolves the version of each request to `/api/v1` in this order:
+
+1. **The `Cord-Version` header** on the request, if you send it.
+2. **The key's pinned version.** Every key is pinned to the version that's current on the day it's created. Rotating a key keeps the previous key's version.
+3. **The baseline version** (`2026-10-01`), for keys created before versioning existed.
+
+Cord produces every response in its newest shape and converts it, change by change, to the resolved version. Every response carries the `Cord-Version` header with the version it was answered in.
 
 ```bash
-curl https://cordhq.app/api/v1/cotizaciones \
+curl -i https://cordhq.app/api/v1/me \
   -H "Authorization: Bearer sk_test_..." \
   -H "Cord-Version: 2026-10-01"
 ```
 
-The header wins over the key's pinned version. A version that doesn't exist responds `400 invalid_api_version`: Cord never silently falls back to another one.
+```text
+HTTP/2 200
+content-type: application/json
+cord-request-id: req_3f9c2a1b7d4e6f8a0b1c2d3e
+cord-version: 2026-10-01
+```
 
-The official SDKs (`@flouviahq/node` and `@flouviahq/elements`) send the version they were built against.
+There's currently no way to change the pinned version of an existing key. To move to a new version, send the `Cord-Version` header on your requests or create a new key.
 
-## What counts as a breaking change
+## In the SDKs and the CLI
 
-It never ships without a new version: removing or renaming a field, changing its type or meaning, or changing an error code. Additive changes ship without a new version: new response fields, new events, new endpoints and optional parameters. Your integration must ignore fields it doesn't know.
+The official clients always send the version they were built with, so a Cord update doesn't change what they read:
 
-## Versions
+| Client | Version it sends | How to change it |
+|---|---|---|
+| `@flouviahq/node` | `CORD_API_VERSION` (`2026-10-01`) | `new Cord(sk, { apiVersion: '2026-10-01' })` |
+| `@flouviahq/elements` | `CORD_API_VERSION` (`2026-10-01`) | Updates with the package. |
+| `@flouviahq/cli` | `2026-10-01` | Updates with the package. |
 
-| Version | Changes |
-|---|---|
-| `2026-10-01` | Baseline: the shape of the API when versioning was pinned. |
+```ts
+import { Cord, CORD_API_VERSION } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_SECRET_KEY!, { apiVersion: CORD_API_VERSION });
+```
+
+## Webhooks
+
+Every webhook endpoint is pinned to the version that's current on the day it's created, whether from the Workbench, through `POST /api/v1/webhooks` or with a `cord listen` session. Each delivery's `data` is converted to **that endpoint's** version, not to the version of the key that triggered the event. If you have two endpoints on different versions, both receive the same event, with the same `id`, each in its own shape.
+
+Deliveries don't carry the `Cord-Version` header, and there's no header to request another version per delivery: to receive a different shape, create a new endpoint.
+
+## Invalid version
+
+A version that doesn't exist returns `400` with `code: "invalid_api_version"`. Cord never silently falls back to another version. The message lists the available versions:
+
+```bash
+curl https://cordhq.app/api/v1/me \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Cord-Version: 2025-01-01"
+```
+
+```json
+{
+  "error": "Cord-Version \"2025-01-01\" no existe. Versiones disponibles: 2026-10-01.",
+  "code": "invalid_api_version",
+  "request_id": "req_8a1c4e7b2d9f3a6c0e5b8d1f",
+  "doc_url": "https://docs.cordhq.app/docs/desarrolladores/esenciales/errores#invalid_api_version"
+}
+```
+
+The format matters too: `Cord-Version: 2026-10` or `latest` return the same error.
+
+## Change policy
+
+**Requires a new version** (never reaches your integration unless you ask for it):
+
+- removing or renaming a field in a response or a webhook;
+- changing a field's type or meaning;
+- changing an error code.
+
+**Ships without a new version**, because it doesn't break a well-written integration:
+
+- new fields in a response or in a webhook's `data`;
+- new event types;
+- new endpoints and new optional parameters.
+
+The text of the `error` field is a message for people and may improve at any time: code against `code`, never against the text.
+
+Your integration should ignore fields it doesn't know and treat an unknown event type as something it can discard. If you left an endpoint's events unchecked, you receive **all** of them, including the ones Cord adds later.
+
+When a new version exists, it will show up in the table above with what changed.

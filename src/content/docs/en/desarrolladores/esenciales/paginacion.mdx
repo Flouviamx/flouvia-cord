@@ -1,56 +1,152 @@
 ---
 title: "Pagination"
 seoTitle: "Pagination in the Cord API"
-description: "Walk through long Cord API lists with a cursor, without skipping or repeating records."
+description: "Which Cord API lists paginate by cursor and which by offset, the shape of meta on each, complete loops in curl and Node, and the invalid_cursor error."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["An API key with read permission"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Pagination</h1>
-  <p class="page-subtitle">Walk long lists with a cursor: stable even when records are created while you page.</p>
+  <p class="page-subtitle">Walk long lists with a cursor: stable even if records are created while you paginate.</p>
 </header>
+
+## What paginates how
+
+| Endpoint | Cursor | Offset | Order | `meta` |
+|---|---|---|---|---|
+| `GET /api/v1/cotizaciones` | Yes | Yes | Newest first | `limit`, `offset`, `total`, `next_cursor` |
+| `GET /api/v1/clientes` | Yes | Yes | By `empresa` (A to Z) | `limit`, `offset`, `total`, `next_cursor` |
+| `GET /api/v1/productos` | Yes | Yes | Active first, then by `nombre` | `limit`, `offset`, `total`, `next_cursor` |
+| `GET /api/v1/facturas` | Yes | No | Newest first | `next_cursor` |
+| `GET /api/v1/events` | Yes | No | Newest first | `next_cursor` |
+| `GET /api/v1/webhooks` | No | No | Newest first | No `meta`: returns all of the key's endpoints. |
+| `GET /api/v1/cobranza` | No | No | — | No `meta`: returns the full receivables portfolio. |
+
+On every paginated list, `limit` goes from 1 to 200 and defaults to 50.
 
 ## Use the cursor
 
-Every paginated API list (`cotizaciones`, `clientes`, `productos`, `facturas` and `events`) returns `meta.next_cursor`. For the next page, repeat the request with `?cursor=<next_cursor>`. When there are no more pages, `next_cursor` is `null`.
+Request the first page without a cursor. If `meta.next_cursor` has a value, repeat the same request, with the same filters, adding `cursor=<next_cursor>`. When it comes back `null`, there's nothing left.
 
 ```bash
-curl "https://cordhq.app/api/v1/clientes?limit=50" \
-     -H "Authorization: Bearer sk_test_…"
+curl "https://cordhq.app/api/v1/clientes?limit=2" \
+  -H "Authorization: Bearer sk_test_..."
 ```
 
 ```json
 {
   "data": [
-    { "id": "6f1c…", "empresa": "ACME Corp" },
-    { "id": "7a2d…", "empresa": "Stark Ind" }
+    { "id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90", "empresa": "Aceros Monterrey", "email": "compras@acerosmty.mx" },
+    { "id": "7a2d4c19-5e8b-4f3a-a1d6-9c0e2b4f6d81", "empresa": "Bodega Central", "email": "" }
   ],
-  "meta": { "limit": 50, "offset": 0, "total": 142, "next_cursor": "WyJTdGFyayBJbmQiLCI3YTJk…" }
+  "meta": {
+    "limit": 2,
+    "offset": 0,
+    "total": 142,
+    "next_cursor": "WyJCb2RlZ2EgQ2VudHJhbCIsIjdhMmQ0YzE5LTVlOGItNGYzYS1hMWQ2LTljMGUyYjRmNmQ4MSJd"
+  }
 }
 ```
 
 ```bash
-curl "https://cordhq.app/api/v1/clientes?limit=50&cursor=WyJTdGFyayBJbmQiLCI3YTJk…" \
-     -H "Authorization: Bearer sk_test_…"
+curl "https://cordhq.app/api/v1/clientes?limit=2&cursor=WyJCb2RlZ2EgQ2VudHJhbCIsIjdhMmQ0YzE5LTVlOGItNGYzYS1hMWQ2LTljMGUyYjRmNmQ4MSJd" \
+  -H "Authorization: Bearer sk_test_..."
 ```
 
-The cursor is an **opaque token**: don't parse or build it, send it back as is. A cursor that doesn't belong to that list returns `400 invalid_cursor`.
+The example trims each client to three fields; the real response has the full object.
 
-## Why a cursor and not offset
+The cursor is an **opaque token**: don't interpret it, don't build it and don't keep it for another list. Send it back as is, URL-encoded (the examples below do that for you). With `cursor`, `offset` is ignored and `meta.offset` comes back `null`.
 
-With `offset`, a quote created while you walk the list shifts everything by one position: the next page repeats a record, and if one is deleted you skip another without noticing. The cursor points to the last row you saw, so the next page starts exactly after it, with or without writes.
+## Why cursor and not offset
 
-The SDKs do it for you: `listAll()` in `@flouviahq/node` always pages by cursor.
+With `offset`, a quote created while you walk the list shifts everything by one position: the next page repeats a record, and if one is deleted, you skip another without noticing. The cursor points at the last row you saw, so the next page starts exactly after it, whether or not there were writes.
 
-```ts
-for await (const client of cord.clients.listAll()) {
-  // every page, nothing repeated or skipped
+`offset` still works on quotes, clients and products for compatibility. `meta.total` counts every record matching the filter: it's for showing "142 clients", not for deciding when to stop. Use `next_cursor` for that.
+
+## Walk a complete list
+
+<Tabs>
+<TabItem label="curl">
+
+```bash
+#!/usr/bin/env bash
+# Requires jq. Prints the id and company of every client.
+set -euo pipefail
+args=(-sSG "https://cordhq.app/api/v1/clientes" -d limit=200 -H "Authorization: Bearer $CORD_API_KEY")
+cursor=""
+while :; do
+  if [ -n "$cursor" ]; then
+    page=$(curl "${args[@]}" --data-urlencode "cursor=$cursor")
+  else
+    page=$(curl "${args[@]}")
+  fi
+  echo "$page" | jq -r '.data[] | [.id, .empresa] | @tsv'
+  cursor=$(echo "$page" | jq -r '.meta.next_cursor // empty')
+  [ -z "$cursor" ] && break
+done
+```
+
+</TabItem>
+<TabItem label="Node">
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+
+// listAll() requests pages of 200 and follows next_cursor for you.
+for await (const cliente of cord.clients.listAll()) {
+  console.log(cliente.id, cliente.empresa);
+}
+
+// With filters:
+for await (const factura of cord.invoices.listAll({ estado: 'open' })) {
+  console.log(factura.numero, factura.saldo, factura.moneda);
 }
 ```
 
-## `limit` and `offset`
+</TabItem>
+<TabItem label="Node without the SDK">
 
-- `limit`: results per page (1 to 200, 50 by default).
-- `offset`: still works on `cotizaciones`, `clientes` and `productos` for backward compatibility. If you send `cursor`, it's ignored and `meta.offset` is `null`.
-- `meta.total` counts every record matching the filter; use it to show "142 clients", not to decide when to stop. Use `next_cursor` for that.
+```js
+const base = 'https://cordhq.app/api/v1/events';
+let cursor = null;
+do {
+  const url = new URL(base);
+  url.searchParams.set('limit', '200');
+  url.searchParams.set('type', 'quote.paid');
+  if (cursor) url.searchParams.set('cursor', cursor);
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${process.env.CORD_API_KEY}` } });
+  if (!res.ok) throw new Error(`${res.status} ${(await res.json()).code}`);
+  const page = await res.json();
+  for (const event of page.data) console.log(event.created_at, event.type, event.object_id);
+  cursor = page.meta.next_cursor;
+} while (cursor);
+```
 
-`facturas` and `events` only page by cursor. See [Event history through the API](/en/docs/desarrolladores/herramientas/webhooks#event-history-through-the-api).
+</TabItem>
+</Tabs>
+
+`listAll()` exists on `quotes`, `clients`, `products`, `invoices` and `events`, and always paginates by cursor since version 1.1.0 of the SDK. See [Node SDK](/en/docs/desarrolladores/herramientas/sdks#lists-and-automatic-pagination).
+
+## Errors
+
+| Situation | Response |
+|---|---|
+| A `cursor` that isn't from quotes, clients or products | `400`, `code: "invalid_cursor"`, `error: "El cursor no es válido. Usa el next_cursor de la respuesta anterior."` |
+| A `cursor` that isn't from events | `400`, `code: "invalid_request"`, `error: "cursor inválido"` |
+| `limit` out of range | Not an error: it's clamped to 1 or 200. |
+
+```json
+{
+  "error": "El cursor no es válido. Usa el next_cursor de la respuesta anterior.",
+  "code": "invalid_cursor",
+  "request_id": "req_5d2b8f1a4c7e0b3d6a9f2c5e",
+  "doc_url": "https://docs.cordhq.app/docs/desarrolladores/esenciales/errores#invalid_cursor"
+}
+```
+
+A cursor doesn't carry across lists or filters: if you change `status`, `type` or any other filter, start again without a cursor.

@@ -1,0 +1,209 @@
+---
+title: "Tax form (Fiscal Element)"
+seoTitle: "Cord Fiscal Element: the recipient's tax details"
+description: "Capture RFC, tax regime, CFDI use and postal code (or NIF and EIN) with <cord-fiscal-form>, CordFiscalForm, useCordFiscalForm or <CordBuilder fiscal>, with the same validation Cord applies when issuing."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+appliesToMarkets: [MX, ES, US]
+prerequisites: ["@flouviahq/elements 2.0.0 or later"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tax form</h1>
+  <p class="page-subtitle">Your client's tax details, validated as they type with the same rules Cord uses when invoicing.</p>
+</header>
+
+The Fiscal Element captures the **recipient's** tax details: who gets invoiced. It validates in the browser with the same code Cord's server uses before saving, so what the form accepts is exactly what Cord accepts. An RFC with a mistyped check digit is caught as it's typed, not days later when stamping rejects it.
+
+## Which fields it asks for and what it validates
+
+| Country | Fields | Rules |
+|---|---|---|
+| Mexico (`MX`) | RFC, legal name, tax regime, CFDI use, tax postal code | RFC shape, date and check digit. The RFC type (12 characters, legal entity; 13, individual) filters the applicable regimes and uses. `XAXX010101000` and `XEXX010101000` (general public and foreigners) set regime `616` and use `S01`. A warning if a legal entity's name includes the corporate suffix ("S.A. de C.V."). 5-digit postal code. |
+| Spain (`ES`) | NIF / CIF, legal name, postal code | NIF and NIE control letter, and CIF control digit. 5-digit postal code. |
+| United States (`US`) | EIN, legal name, ZIP | Valid EIN. ZIP of 5 digits or `12345-6789`. |
+| Other country | Tax ID, name | Only presence is checked, with an `unsupported_country` warning. |
+
+Regimes in the catalog: `601`, `603`, `605`, `606`, `612`, `616`, `620`, `621` and `626`. CFDI uses: `G01`, `G03`, `I01`, `I02`, `I04`, `I08`, `S01` and `CP01`.
+
+When valid, the result is the normalized recipient:
+
+```json
+{
+  "country": "MX",
+  "tax_id": "EKU9003173C9",
+  "legal_name": "ESCUELA KEMPER URGATE",
+  "regimen_fiscal": "601",
+  "uso_cfdi": "G03",
+  "cp_fiscal": "42501"
+}
+```
+
+Outside Mexico, `regimen_fiscal` and `uso_cfdi` come back `null`.
+
+## Web Component: `<cord-fiscal-form>`
+
+Importing `@flouviahq/elements` registers `<cord-fiscal-form>` along with `<cord-quote>` and `<cord-invoice>`.
+
+```html
+<script type="module" src="https://unpkg.com/@flouviahq/elements/dist/index.mjs"></script>
+
+<form id="signup" method="post" action="/clients">
+  <cord-fiscal-form name="recipient" country="MX" lang="en"></cord-fiscal-form>
+  <button type="submit">Save</button>
+</form>
+```
+
+It's a **form-associated** element: inside a `<form>`, it contributes its value under its `name` attribute (the normalized recipient as JSON) and blocks submission while there are errors, just like an `<input required>`. The browser shows the first error next to the field that causes it. In Safari before 16.4, which lacks that API, the form works but doesn't take part in submission: read `value` yourself.
+
+| Attribute | Values |
+|---|---|
+| `country` | `MX` (default), `ES`, `US` or another ISO code. Changing it keeps what's already typed. |
+| `lang` | `es` or `en`. Without it, your page's `lang`. |
+| `name` | The name under which it contributes its value to the form. |
+
+| Property or method | What it does |
+|---|---|
+| `value` | The normalized recipient if valid; otherwise `null`. |
+| `state` | The full state: values, touched fields, visible errors, available regimes and uses. |
+| `setValues(data)` | Loads initial values, for example from a saved client. |
+| `submit()` | Shows every error and returns the recipient if valid, or `null`. |
+
+```html
+<script type="module">
+  const fiscal = document.querySelector('cord-fiscal-form');
+  fiscal.setValues({ tax_id: 'EKU9003173C9', legal_name: 'ESCUELA KEMPER URGATE', cp_fiscal: '42501' });
+
+  fiscal.addEventListener('fiscalvalid', (e) => {
+    console.log('Recipient ready:', e.detail);
+  });
+  fiscal.addEventListener('fiscalchange', (e) => {
+    console.log('Visible errors:', e.detail.visibleErrors);
+  });
+</script>
+```
+
+| Event | `detail` |
+|---|---|
+| `fiscalchange` | The full state, on every change. |
+| `fiscalvalid` | The normalized recipient, every time it becomes valid. |
+
+Errors only show on fields the person has already touched, or on all of them after `submit()`.
+
+### Styling
+
+The form lives in a Shadow DOM. Customize it with parts and variables:
+
+```css
+cord-fiscal-form::part(label) { font-weight: 500; }
+cord-fiscal-form::part(input) { min-height: 48px; }
+cord-fiscal-form::part(error) { font-size: 13px; }
+
+cord-fiscal-form {
+  --cord-color-primary: #0a192f;
+  --cord-border-radius: 10px;
+}
+```
+
+| Part | Element |
+|---|---|
+| `field` | Each field's container. |
+| `label` | The label. |
+| `input` | The text field or the select. |
+| `error` | A field's error message. |
+| `warning` | A field's warning (for example, the corporate suffix in the legal name). |
+
+Variables: `--cord-font-family`, `--cord-color-text`, `--cord-color-text-secondary`, `--cord-color-input`, `--cord-color-primary`, `--cord-color-danger` and `--cord-border-radius`.
+
+## React: `<CordFiscalForm>` and `<CordBuilder fiscal>`
+
+```tsx
+import { CordFiscalForm } from '@flouviahq/elements/react';
+
+export function TaxDetails({ onReady }: { onReady: (recipient: unknown) => void }) {
+  return (
+    <CordFiscalForm
+      country="MX"
+      locale="en"
+      title="Billing details"
+      initial={{ tax_id: 'EKU9003173C9' }}
+      onValid={onReady}
+    />
+  );
+}
+```
+
+| Prop | Detail |
+|---|---|
+| `country` | `MX` by default. |
+| `initial` | Initial values. |
+| `locale` | `es` or `en`. |
+| `title` | Section heading. |
+| `onValid` | Called with the normalized recipient every time it becomes valid. |
+| `className`, `style` | For the container. |
+
+Inside the Builder, `fiscal` adds the section and the recipient travels with the quote:
+
+```tsx
+<CordProvider publishableKey="pk_test_...">
+  <CordBuilder fiscal />
+</CordProvider>
+```
+
+The country comes from your organization's tax configuration. If the recipient isn't valid, the Builder doesn't submit and flags the fields with errors. To control the state yourself, `useFiscalForm()` returns the same state as the component.
+
+## Vue: `useCordFiscalForm`
+
+```vue
+<script setup>
+import { useCordFiscalForm } from '@flouviahq/elements/vue';
+
+const { state, form } = useCordFiscalForm({ country: 'MX' });
+
+function save() {
+  const recipient = form.submit();
+  if (recipient) console.log(recipient);
+}
+</script>
+
+<template>
+  <label>
+    RFC
+    <input :value="state.values.tax_id" @input="form.set('tax_id', $event.target.value)" @blur="form.touch('tax_id')" />
+  </label>
+  <p v-for="e in state.visibleErrors" :key="e.field">{{ e.field }}: {{ e.code }}</p>
+  <button @click="save">Save</button>
+</template>
+```
+
+`state` is a `ShallowRef` with the form's state; `form` is the headless form (`set`, `touch`, `submit`). To render each error's text, use `fiscalText()` from [`@flouviahq/elements/headless`](/en/docs/desarrolladores/herramientas/elements/headless).
+
+## Validation codes
+
+| Code | Meaning |
+|---|---|
+| `required` | The value is missing. |
+| `too_long` | Over the maximum (20 characters for the ID, 300 for the name). |
+| `invalid_tax_id` | The tax ID isn't valid for the country. |
+| `invalid_postal_code` | The postal code doesn't match the country's format. |
+| `regimen_not_for_persona` | The regime doesn't match the RFC type. |
+| `uso_not_for_persona` | The CFDI use doesn't match the RFC type. |
+| `generic_requires_616_s01` | A generic RFC requires regime `616` and use `S01`. |
+| `legal_name_has_regime_suffix` | Warning: the legal name includes the corporate suffix. |
+| `unsupported_country` | Warning: for that country only presence is checked. |
+
+## On the server side
+
+- `POST /api/v1/cotizaciones` accepts the recipient in `cliente.fiscal`. If it isn't valid, it returns `400` with `code: "invalid_fiscal_data"` and the list in `issues`:
+
+  ```json
+  {
+    "error": "Los datos fiscales del cliente no son válidos.",
+    "code": "invalid_fiscal_data",
+    "issues": [{ "field": "tax_id", "code": "invalid_tax_id" }]
+  }
+  ```
+
+- `@flouviahq/node` exports `validateFiscalReceptor()`, `validRfc()`, `validSpainTaxId()` and `validEin()`, to validate on your server with the same code.
+- The [MCP server](/en/docs/desarrolladores/herramientas/mcp) has the `validar_datos_fiscales` tool.

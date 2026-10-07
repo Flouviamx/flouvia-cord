@@ -3,6 +3,9 @@ title: "API de Facturas"
 seoTitle: "API de facturas de Cord"
 description: "Lista, crea, emite, envía, cobra y anula facturas desde tu sistema con la API v1 de Cord: borradores, emisión irreversible, pagos parciales y notas de crédito."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave con permiso sobre el recurso facturas", "En México, emitir CFDI requiere plan Starter o superior y tu CSD"]
 ---
 
 <header class="content-header">
@@ -40,15 +43,17 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 {
   "data": [
     {
-      "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
+      "id": "f3a1c7e9-2b4d-4f6a-8c0e-5d7b9a1c3e24", "numero": "F-0231", "folio_fiscal": "6F1C2A9E-7B4D-4E6A-8C2F-1D5B9E3A7C40", "cliente": "Aceros del Norte",
       "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
       "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
-      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "2026-09-15T18:02:11.000Z"
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "15 sep 2026"
     }
   ],
-  "meta": { "next_cursor": "MjAyNi0w..." }
+  "meta": { "next_cursor": null }
 }
 ```
+
+`creada` llega como fecha de presentación (`15 sep 2026`), no como fecha ISO; `vence` sí es `AAAA-MM-DD`.
 
 | Campo | Valores |
 |---|---|
@@ -79,7 +84,7 @@ curl -X POST "https://cordhq.app/api/v1/facturas" \
      -H "Content-Type: application/json" \
      -H "Idempotency-Key: factura-pedido-8812" \
      -d '{
-       "cliente_id": "9b2e...",
+       "cliente_id": "9b2e4c6a-8d1f-4a3b-b5c7-0e2d4f6a8c91",
        "currency": "MXN",
        "due_date": "2026-10-15",
        "items": [{ "descripcion": "Varilla 3/8\"", "cantidad": 120, "precio_unitario": 42, "tax_rate": 0.16 }]
@@ -87,7 +92,7 @@ curl -X POST "https://cordhq.app/api/v1/facturas" \
 ```
 
 ```json
-{ "data": { "id": "f3a1..." } }
+{ "data": { "id": "f3a1c7e9-2b4d-4f6a-8c0e-5d7b9a1c3e24" } }
 ```
 
 Si la factura va en otra divisa que tu divisa contable y no se puede obtener un tipo de cambio verificable, responde `503` con `code: "fx_unavailable"`: reintenta más tarde, Cord no inventa una tasa.

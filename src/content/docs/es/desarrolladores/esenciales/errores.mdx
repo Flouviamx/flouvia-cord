@@ -2,6 +2,9 @@
 title: "Manejo de Errores"
 description: "Comprende los códigos de estado y respuestas de error de la API de Cord."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de API de Cord"]
 ---
 
 <header class="content-header">
@@ -79,6 +82,7 @@ Toda respuesta de `/api/v1` lleva el header `Cord-Request-Id` (`req_…`). En un
 
 - <a id="invalid_json"></a>`invalid_json`: El cuerpo de tu petición `POST` no es JSON válido, o no se envió `Content-Type: application/json`.
 - <a id="invalid_request"></a>`invalid_request`: Fallan las validaciones de negocio (falta un campo, un descuento fuera de rango, una cotización sin cliente válido). El campo `error` explica la razón exacta.
+- <a id="invalid_fiscal_data"></a>`invalid_fiscal_data` (400): Los datos fiscales de `cliente.fiscal` no pasan la validación del país. La respuesta trae `issues`, una lista de `{ field, code }`. Ver [Formulario fiscal](/docs/desarrolladores/herramientas/elements/fiscal#códigos-de-validación).
 - <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
 - <a id="token_expired"></a>`token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
 - <a id="insufficient_scope"></a>`insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).

@@ -3,6 +3,9 @@ title: "Invoices API"
 seoTitle: "Cord invoices API"
 description: "List, create, issue, send, collect and void invoices from your system with Cord's API v1: drafts, irreversible issuing, partial payments and credit notes."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A key with permission on the facturas resource", "In Mexico, issuing CFDI requires the Starter plan or higher and your CSD"]
 ---
 
 <header class="content-header">
@@ -40,15 +43,17 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 {
   "data": [
     {
-      "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
+      "id": "f3a1c7e9-2b4d-4f6a-8c0e-5d7b9a1c3e24", "numero": "F-0231", "folio_fiscal": "6F1C2A9E-7B4D-4E6A-8C2F-1D5B9E3A7C40", "cliente": "Aceros del Norte",
       "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
       "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
-      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "2026-09-15T18:02:11.000Z"
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "15 sep 2026"
     }
   ],
-  "meta": { "next_cursor": "MjAyNi0w..." }
+  "meta": { "next_cursor": null }
 }
 ```
+
+`creada` comes as a display date (`15 sep 2026`), not an ISO date; `vence` is `YYYY-MM-DD`.
 
 | Field | Values |
 |---|---|
@@ -79,7 +84,7 @@ curl -X POST "https://cordhq.app/api/v1/facturas" \
      -H "Content-Type: application/json" \
      -H "Idempotency-Key: invoice-order-8812" \
      -d '{
-       "cliente_id": "9b2e...",
+       "cliente_id": "9b2e4c6a-8d1f-4a3b-b5c7-0e2d4f6a8c91",
        "currency": "USD",
        "due_date": "2026-10-15",
        "items": [{ "descripcion": "Rebar 3/8\"", "cantidad": 120, "precio_unitario": 4.2, "tax_rate": 0.0825 }]
@@ -87,7 +92,7 @@ curl -X POST "https://cordhq.app/api/v1/facturas" \
 ```
 
 ```json
-{ "data": { "id": "f3a1..." } }
+{ "data": { "id": "f3a1c7e9-2b4d-4f6a-8c0e-5d7b9a1c3e24" } }
 ```
 
 If the invoice is in a currency other than your ledger currency and no verifiable exchange rate can be obtained, it responds `503` with `code: "fx_unavailable"`: retry later, Cord never makes up a rate.

@@ -1,0 +1,230 @@
+---
+title: "Quickstart"
+seoTitle: "Cord API quickstart in 5 minutes"
+description: "Create a test key, call /api/v1/me, create a client and a quote, send it and receive the webhook on your machine with the signature verified in Node."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Cord account with Developer mode turned on", "Node 20 or later and curl", "An email address of yours to receive the test quote"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Quickstart</h1>
+  <p class="page-subtitle">From zero to a verified webhook in five minutes, all in the test environment.</p>
+</header>
+
+In this guide you create a test key, confirm which account it belongs to, add a client, build a quote for them, send it, and receive Cord's notifications on your `localhost` with the signature verified. Nothing you do here touches your real data: an `sk_test_` key works on your account's [test environment](/en/docs/desarrolladores/empezar/pruebas).
+
+<Callout type="warning" title="The test email does go out">
+Sending a test quote emails the client for real, with the subject marked as a test. Use your own email address in step 4.
+</Callout>
+
+<Steps>
+
+1. **Create a test key.** In the app, turn on **Developer mode** at the bottom of the Settings index and open the **Developers** bar at the bottom of the screen. In the **API** tab, create a read and write **Secret Key** in **test mode** (if the app is already in test mode, the key is created as a test key). It starts with `sk_test_` and is shown only once: copy it.
+
+   {/* MOCKUP: Workbench API tab in test mode, with the "Create key" dialog open (Secret Key type, read and write permission) and the newly created sk_test_ key shown once with its copy button. */}
+
+   Store it in a terminal variable. The Cord CLI reads it from there too:
+
+   ```bash
+   export CORD_API_KEY="sk_test_..."
+   ```
+
+2. **Check the key.** `GET /api/v1/me` returns the key's organization, permission and mode:
+
+   ```bash
+   curl https://cordhq.app/api/v1/me \
+     -H "Authorization: Bearer $CORD_API_KEY"
+   ```
+
+   ```json
+   {
+     "data": {
+       "org": { "id": "5b1f7d9e-3c2a-4e8b-9f61-0a7c4d2e8b13", "nombre": "Aceros del Norte", "plan": "pro" },
+       "scope": "write",
+       "mode": "test"
+     }
+   }
+   ```
+
+   If you see `"mode": "test"`, everything that follows happens in your test environment. A `401` with `code: "invalid_key"` means the key was copied wrong or was revoked.
+
+3. **Listen for webhooks on your machine.** Cord can't call your `localhost`, so the [CLI](/en/docs/desarrolladores/herramientas/cli) opens a listening session and forwards each event to you with the real signature headers. First, the server that receives them. Install the SDK in an empty folder:
+
+   ```bash
+   npm init -y && npm install @flouviahq/node
+   ```
+
+   Save this as `server.mjs`:
+
+   ```js
+   import { createServer } from 'node:http';
+   import { constructEvent, CordWebhookSignatureError } from '@flouviahq/node';
+
+   createServer(async (req, res) => {
+     if (req.method !== 'POST' || req.url !== '/webhooks/cord') {
+       res.writeHead(404).end();
+       return;
+     }
+     // The signature is computed over the RAW body: don't parse it before verifying.
+     const chunks = [];
+     for await (const chunk of req) chunks.push(chunk);
+     try {
+       const event = await constructEvent(Buffer.concat(chunks), req.headers, process.env.CORD_WEBHOOK_SECRET);
+       console.log(event.event, event.id, event.data.id);
+       res.writeHead(200).end('ok');
+     } catch (err) {
+       if (err instanceof CordWebhookSignatureError) {
+         console.error('Signature rejected:', err.code);
+         res.writeHead(400).end(err.code);
+         return;
+       }
+       throw err;
+     }
+   }).listen(3000, () => console.log('Listening on http://localhost:3000/webhooks/cord'));
+   ```
+
+   In a second terminal (with the same `CORD_API_KEY`), open the listening session:
+
+   ```bash
+   npx @flouviahq/cli listen --forward-to http://localhost:3000/webhooks/cord
+   ```
+
+   The CLI prints the session **secret** (`whsec_…`). Start your server with it in the first terminal:
+
+   ```bash
+   CORD_WEBHOOK_SECRET="whsec_..." node server.mjs
+   ```
+
+   Leave both running. The session expires in 24 hours and Ctrl+C closes it.
+
+4. **Create a client.** With an email address of yours:
+
+   ```bash
+   curl https://cordhq.app/api/v1/clientes \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{ "empresa": "Ferretería La Prueba", "contacto": "Ana Torres", "email": "your-email@example.com" }'
+   ```
+
+   ```json
+   { "data": { "id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90" } }
+   ```
+
+   Your server prints the first event:
+
+   ```text
+   client.created evt_4c1e9a7b2d5f8e0a3b6c9d2e5f8a1b4c 0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90
+   ```
+
+5. **Create the quote.** Use the client's `id`. Without `tax_rate`, each line takes the default rate from your account's tax catalog; without `base_currency`, the quote uses your account's currency.
+
+   ```bash
+   curl https://cordhq.app/api/v1/cotizaciones \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: 6a1d3f5e-8b2c-4e7a-9d0f-1c3e5a7b9d2f" \
+     -d '{
+       "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90",
+       "items": [
+         { "descripcion": "Window frame installation", "cantidad": 1, "precio_unitario": 12000 }
+       ],
+       "vigencia_dias": 15
+     }'
+   ```
+
+   ```json
+   {
+     "data": {
+       "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+       "token": "3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c",
+       "folio": "COT-0001",
+       "link_publico": "https://cordhq.app/q/3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c",
+       "needs_approval": false,
+       "motivo": null
+     }
+   }
+   ```
+
+   The quote starts as a draft and your server receives `quote.created`. The `Idempotency-Key` header makes retrying safe: with the same key and the same body, Cord returns this same response instead of creating a second quote. Generate a new key (for example with `uuidgen`) for each different quote.
+
+6. **Send it.** Sending generates the link and emails the client:
+
+   ```bash
+   curl https://cordhq.app/api/v1/cotizaciones/8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{ "action": "send" }'
+   ```
+
+   ```json
+   { "data": { "ok": true, "status": "sent", "email": { "sent": true } } }
+   ```
+
+   If the client had no email, `email` would come back as `{ "sent": false, "skipped": "el cliente no tiene correo" }` and the quote would still be sent. Your server receives:
+
+   ```text
+   quote.sent evt_9d2a6c4e1f8b3a5d7c0e2f4a6b8d1c3e 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10
+   ```
+
+7. **Simulate the client.** Open the link from the email or trigger the view with a simulator. In another terminal:
+
+   ```bash
+   npx @flouviahq/cli simulate quote 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 vista
+   ```
+
+   `quote.viewed` arrives. To close the loop, approve it through the API (`{ "action": "approve" }`) and `quote.approved` arrives.
+
+</Steps>
+
+## What each notification contains
+
+Every delivery is a `POST` with this body. `id` is the **event's** identity (the same on every retry: deduplicate with it) and `data` is the quote summary:
+
+```json
+{
+  "id": "evt_9d2a6c4e1f8b3a5d7c0e2f4a6b8d1c3e",
+  "event": "quote.sent",
+  "created_at": "2026-10-07T17:04:12.318Z",
+  "data": {
+    "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+    "folio": "COT-0001",
+    "status": "sent",
+    "moneda": "MXN",
+    "total": 13920,
+    "cliente": "Ferretería La Prueba",
+    "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90",
+    "link_publico": "https://cordhq.app/q/3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c"
+  }
+}
+```
+
+The `total` in this example includes the 16% VAT of a Mexican account; yours will use your rates. Every amount travels with its `moneda` (currency).
+
+## The same with the Node SDK
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+
+const me = await cord.me();
+const cliente = await cord.clients.create({ empresa: 'Ferretería La Prueba', email: 'your-email@example.com' });
+const cotizacion = await cord.quotes.create({
+  cliente_id: cliente.id,
+  items: [{ descripcion: 'Window frame installation', cantidad: 1, precio_unitario: 12000 }],
+});
+await cord.quotes.send(cotizacion.id);
+console.log(me.mode, cotizacion.folio, cotizacion.link_publico);
+```
+
+The SDK sends an `Idempotency-Key` on every write and repeats it on its retries. See [Node SDK](/en/docs/desarrolladores/herramientas/sdks).
+
+## Next steps
+
+- [Webhooks](/en/docs/desarrolladores/herramientas/webhooks): register a real endpoint, retries, secret rotation and manual signature verification.
+- [Events](/en/docs/desarrolladores/funciones/eventos): the 41 event types and the history API.
+- [Quotes API](/en/docs/desarrolladores/funciones/cotizaciones): approve, reject, mark as paid and delete.
+- [Error handling](/en/docs/desarrolladores/esenciales/errores): every code and when to retry.
+- Before going live, create an `sk_live_` key and register your endpoint in the Workbench: the `cord listen` secret only works for its session.

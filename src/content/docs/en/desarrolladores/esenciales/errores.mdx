@@ -2,6 +2,9 @@
 title: "Error Handling"
 description: "Understand the status codes and error responses of the Cord API."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Cord API key"]
 ---
 
 <header class="content-header">
@@ -79,6 +82,7 @@ Every `/api/v1` response carries the `Cord-Request-Id` header (`req_…`). On an
 
 - <a id="invalid_json"></a>`invalid_json`: Your `POST` request body is not valid JSON, or `Content-Type: application/json` wasn't sent.
 - <a id="invalid_request"></a>`invalid_request`: A business validation failed (missing field, discount out of range, a quote without a valid client). The `error` field explains the exact reason.
+- <a id="invalid_fiscal_data"></a>`invalid_fiscal_data` (400): The tax details in `cliente.fiscal` fail the country's validation. The response includes `issues`, a list of `{ field, code }`. See [Tax form](/en/docs/desarrolladores/herramientas/elements/fiscal#validation-codes).
 - <a id="missing_key"></a><a id="invalid_key"></a>`missing_key` / `invalid_key`: The `Authorization: Bearer` header is missing, or the key doesn't exist / was revoked.
 - <a id="token_expired"></a>`token_expired`: The credential of an authorized connection (Zapier, Make) expired. The app renews it on its own with its refresh token.
 - <a id="insufficient_scope"></a>`insufficient_scope`: Your key doesn't have the required scope (a read-only key tried to write, or a Publishable Key tried a route outside its allowed list).

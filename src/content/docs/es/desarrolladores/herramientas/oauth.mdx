@@ -3,6 +3,9 @@ title: "OAuth para apps"
 seoTitle: "OAuth 2.0 de Cord para apps de terceros"
 description: "Cómo una app externa se conecta a Cord con OAuth 2.0 en vez de pedir una llave: registro del cliente, autorización, canje de código, PKCE, renovación con rotación y revocación."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Un client_id y client_secret registrados con Cord", "Direcciones de regreso (redirect_uri) https registradas"]
 ---
 
 <header class="content-header">
@@ -26,7 +29,7 @@ Las direcciones de regreso deben ser `https` (o `http://localhost` para desarrol
 
 Manda a la persona a:
 
-```
+```text
 https://cordhq.app/oauth/authorize
   ?response_type=code
   &client_id=cord_oc_...
@@ -39,9 +42,9 @@ https://cordhq.app/oauth/authorize
 
 | Parámetro | Detalle |
 |---|---|
-| `scope` | `read` para solo lectura; `write` para lectura y escritura. |
+| `scope` | `read` para solo lectura; `write` para lectura y escritura (incluye `read`). Sin `scope`, Cord pide `read`. Puedes separar valores con espacio, coma o `+`; cualquier otro valor responde `invalid_scope`. |
 | `state` | Un valor aleatorio que tu app verifica al regreso. Evita que un tercero te inyecte una autorización. |
-| `code_challenge` | PKCE con `S256`. Recomendado siempre; `plain` no se acepta. |
+| `code_challenge` | PKCE: `BASE64URL(SHA256(code_verifier))`, 43 caracteres sin relleno. Recomendado siempre; solo se acepta `code_challenge_method=S256`. |
 
 Si la persona no tiene sesión, Cord le pide iniciarla y regresa a la misma pantalla. Solo quien tiene el permiso de **Ajustes** en un espacio de trabajo puede autorizar apps en él. La pantalla muestra qué podrá hacer tu app y qué no.
 
@@ -98,13 +101,70 @@ curl -X POST "https://cordhq.app/api/oauth/revoke" \
 
 Responde `200` aunque el token no exista, para no revelar qué tokens son válidos. La persona también puede revocar tu app en la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench), donde aparece como **Conexión autorizada**.
 
-## Límites y errores
+## PKCE
 
-| Situación | Respuesta |
+PKCE evita que un código interceptado se pueda canjear. Genera un `code_verifier` aleatorio de 43 a 128 caracteres (`A-Z`, `a-z`, `0-9`, `-`, `.`, `_`, `~`), guárdalo en la sesión de tu servidor y manda su huella al autorizar:
+
+```js
+import { createHash, randomBytes } from 'node:crypto';
+
+const codeVerifier = randomBytes(48).toString('base64url'); // 64 caracteres
+const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url'); // 43 caracteres
+// En /oauth/authorize: code_challenge=<codeChallenge>&code_challenge_method=S256
+// En /api/oauth/token: code_verifier=<codeVerifier>
+```
+
+Si mandaste `code_challenge` al autorizar, el canje exige el `code_verifier` que le corresponde. Si no lo mandaste, el canje no debe llevar `code_verifier`: uno inesperado también responde `invalid_grant`.
+
+## Errores de la autorización
+
+Hay dos clases de error en `/oauth/authorize`, y se comportan distinto a propósito.
+
+**Cord no regresa a tu app** cuando no puede confiar en la dirección de regreso. La persona ve una página de error de Cord y nada se redirige:
+
+| Situación | Lo que pasa |
 |---|---|
-| Credenciales del cliente inválidas | `401` con `error: "invalid_client"` |
-| Código o refresh token vencido, usado o de otro cliente | `400` con `error: "invalid_grant"` |
-| `grant_type` distinto de `authorization_code` o `refresh_token` | `400` con `error: "unsupported_grant_type"` |
-| El espacio ya tiene 25 conexiones vivas de tu app | `400` con `error: "invalid_request"`; la persona debe revocar las que no use |
+| `client_id` que no existe | Página de error de Cord (`unknown_client`). |
+| `redirect_uri` que no coincide exacta con una registrada | Página de error de Cord. Revisa mayúsculas, barra final y puerto. |
+
+**Cord regresa a tu `redirect_uri`** con `error` y tu `state` cuando el cliente y la dirección son válidos pero la petición no:
+
+| `error` | Cuándo |
+|---|---|
+| `unsupported_response_type` | `response_type` no es `code`. |
+| `invalid_scope` | `scope` trae un valor distinto de `read` o `write`. |
+| `invalid_request` | `code_challenge` mal formado, o `code_challenge_method` distinto de `S256`. |
+| `access_denied` | La persona canceló, o eligió un espacio de trabajo en el que no puede autorizar apps. |
+
+```text
+https://tuapp.com/cord/callback?error=invalid_scope&state=VALOR_ALEATORIO
+```
+
+Estas redirecciones no llevan `error_description`. Verifica siempre que `state` sea el que mandaste antes de mostrar el error.
+
+## Errores del canje y la renovación
+
+`POST /api/oauth/token` acepta el cuerpo como `application/x-www-form-urlencoded` o como JSON, y responde siempre JSON con `error` y `error_description`:
+
+```json
+{ "error": "invalid_grant", "error_description": "El código o el token no es válido, ya se usó o venció." }
+```
+
+| Código | `error` | `error_description` | Cuándo |
+|---|---|---|---|
+| `401` | `invalid_client` | Las credenciales de la aplicación no son válidas. | `client_id` o `client_secret` incorrectos, por Basic o en el cuerpo. |
+| `400` | `invalid_request` | El cuerpo de la petición no se pudo leer. | El cuerpo no es un formulario ni JSON válido. |
+| `400` | `invalid_request` | Faltan code o redirect_uri. | Canje sin `code` o sin `redirect_uri`. |
+| `400` | `invalid_request` | Falta refresh_token. | Renovación sin `refresh_token`. |
+| `400` | `invalid_request` | Este espacio ya tiene demasiadas conexiones de esta aplicación… | El espacio de trabajo ya tiene 25 conexiones vivas de tu app. La persona debe revocar las que no use. |
+| `400` | `unsupported_grant_type` | Solo se admite authorization_code y refresh_token. | Cualquier otro `grant_type`. |
+| `400` | `invalid_grant` | El código o el token no es válido, ya se usó o venció. | Código vencido o usado, `redirect_uri` distinta a la de la autorización, `code_verifier` que no cuadra, o refresh token vencido, usado o de otro cliente. |
+| `429` | — | — | Más de 300 peticiones por minuto desde la misma IP. Respeta `Retry-After`. |
+
+`error_description` está en español y puede cambiar: decide por `error`.
+
+`POST /api/oauth/revoke` responde `401` con `error: "invalid_client"` si las credenciales del cliente no son válidas, y `200` en cualquier otro caso.
+
+## Cuota
 
 Las llamadas con un token de OAuth cuentan contra la cuota de API del plan del negocio, igual que una llave. La única excepción es el complemento de Cord para Gmail, que es una superficie de la propia Cord: sus llamadas no consumen la cuota mensual, aunque sí los límites por minuto.

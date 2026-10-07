@@ -2,6 +2,9 @@
 title: "Cord MCP Server"
 description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa — 26 herramientas, paginación real, llamadas seguras de repetir y actividad medida como el resto de la API."
 lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una Secret Key (las llaves restringidas no funcionan con MCP)", "Un cliente compatible con MCP"]
 ---
 
 <header class="content-header">
@@ -110,7 +113,7 @@ además del texto. Los importes viajan con su divisa en `moneda`: nunca asumas p
 
 ```json
 {
-  "items": [ { "id": "…", "empresa": "Distribuidora El Zarco" } ],
+  "items": [ { "id": "9a1c3e5f-7b2d-4f6a-8c0e-1d3b5f7a9c2e", "empresa": "Distribuidora El Zarco" } ],
   "total": 47,
   "moneda": "MXN",
   "has_more": true,
@@ -122,8 +125,8 @@ además del texto. Los importes viajan con su divisa en `moneda`: nunca asumas p
 
 ```json
 {
-  "eventos": [ { "id": "…", "type": "quote.approved" } ],
-  "next_cursor": "MjAyNi0w..."
+  "eventos": [ { "id": "6b0e2f4a-8c1d-4e3b-9a5f-7d2c0e8b1a46", "type": "quote.approved" } ],
+  "next_cursor": "MjAyNi0wOS0xNFQxODozMjowNC4xMjMwMDBafDZiMGUyZjRhLThjMWQtNGUzYi05YTVmLTdkMmMwZThiMWE0Ng"
 }
 ```
 
@@ -151,7 +154,7 @@ otros argumentos devuelve un error, y la clave caduca a las 24 horas.
   "name": "crear_cotizacion_borrador",
   "arguments": {
     "idempotency_key": "a1b2c3d4-…",
-    "cliente_id": "…",
+    "cliente_id": "9a1c3e5f-7b2d-4f6a-8c0e-1d3b5f7a9c2e",
     "items": [{ "descripcion": "Instalación", "cantidad": 1, "precio_unitario": 4500 }]
   }
 }
