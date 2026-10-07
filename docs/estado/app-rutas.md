@@ -493,7 +493,10 @@ APIs de cobros (ago 2026)
                    el token; el crudo original no es recuperable, solo su hash).
 
 # API Pública (REST + MCP)
-/api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
+/api/notificaciones  → GET bandeja de la campana: solo acciones del cliente o pagos, cotizaciones y
+                       facturas juntas (`src/lib/notificaciones.ts`, filtra por `eventos.actor`). El
+                       contador sin leer lo pinta AppLayout en el SSR.
+/api/app/notif-seen  → PUT "visto hasta" por miembro en `org_members.widget_prefs['cord.notif.v1']`.
 /api/q/[token]   → acciones del CLIENTE (sin auth). approve | reject | comment |
                    counter | item_comment | ping | hito.
                    `ping` es el latido del documento vivo: marca la vista (una sola

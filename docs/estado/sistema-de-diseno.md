@@ -221,6 +221,16 @@ hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la a
   no sale del buscador y vuelve al botón al cerrar. La búsqueda al servidor espera 140 ms y
   descarta respuestas de una consulta anterior. Clientes y productos abren su ficha.
 - **Tecla modificadora real:** ⌘ en Mac y Ctrl en el resto (`data-mod-key`).
+- **Iconos quietos (oct 2026):** el hover solo cambia el fondo (`--sb-hover-bg`); nada sube,
+  gira, suena ni se sacude. El engrane activo usa el tinte de "aquí estás" de la sidebar.
+- **Campana = bandeja:** contador con tinte (no punto rojo) calculado en el SSR; "visto hasta"
+  por miembro en el servidor. Solo acciones del cliente o pagos (`src/lib/notificaciones.ts`).
+- **⌘K:** busca también facturas (con permiso de Cobranza), muestra estado y monto en la divisa
+  de cada documento (`moneyIn()`), y el atajo `G` + letra junto a "Ir a…".
+- **Crear:** cada opción con su tecla, la misma letra que `G` + letra usa para esa sección
+  (C, F, L, P) más T de tarea. La tecla sale del propio menú, así que respeta permisos.
+- **Tema en tres modos:** claro, oscuro y sistema (sigue al SO en vivo). `data-theme` es el
+  tema resuelto que lee el CSS; `data-theme-mode` la preferencia que pinta el control.
 - **Móvil:** el tema se cambia desde la fila del drawer (`#sbTheme`) y la guía de
   configuración minimizada conserva su píldora (solo el anillo).
 

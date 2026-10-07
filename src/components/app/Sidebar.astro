@@ -89,10 +89,15 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         </button>
         <!-- Tema: en móvil el botón de la topbar está oculto; sin esta fila no había
              forma de cambiarlo desde el celular. Lo cablea initTheme() de AppLayout. -->
-        <button class="sb-action-row sb-theme" id="sbTheme" type="button" aria-pressed="false">
-            <svg class="sb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
-            <svg class="sb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
-            <span>{t(L, 'layout.aria.tema')}</span>
+        <button class="sb-action-row sb-theme" id="sbTheme" type="button">
+            <svg class="th-ico th-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+            <svg class="th-ico th-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+            <svg class="th-ico th-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
+            <span>{t(L, 'layout.tema')}</span>
+            {/* El modo lo decide el CSS con data-theme-mode (lo fija el <head> antes de pintar). */}
+            <span class="sb-theme-mode th-light">{t(L, 'layout.tema.claro')}</span>
+            <span class="sb-theme-mode th-dark">{t(L, 'layout.tema.oscuro')}</span>
+            <span class="sb-theme-mode th-system">{t(L, 'layout.tema.sistema')}</span>
         </button>
         <a href="/app/ajustes" class="sb-action-row" data-id="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
@@ -597,9 +602,11 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         }
         .sb-action-row svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.85; }
         .sb-action-row:active { background: var(--sb-active-bg); }
-        .sb-theme .sb-sun { display: none; }
-        :global(html[data-theme="dark"]) .sb-theme .sb-sun { display: block; }
-        :global(html[data-theme="dark"]) .sb-theme .sb-moon { display: none; }
+        .sb-theme .th-light, .sb-theme .th-dark, .sb-theme .th-system { display: none; }
+        :global(html:not([data-theme-mode="dark"]):not([data-theme-mode="system"])) .sb-theme .th-light,
+        :global(html[data-theme-mode="dark"]) .sb-theme .th-dark,
+        :global(html[data-theme-mode="system"]) .sb-theme .th-system { display: block; }
+        .sb-theme-mode { margin-left: auto; font-size: 0.85rem; color: var(--sb-text); }
 
         /* Objetivos táctiles de 44px; sin atajos, sin tooltips, sin hover. */
         .sb-item { height: 44px; padding: 0 14px; gap: 14px; border-radius: 12px; font-size: 0.95rem; }

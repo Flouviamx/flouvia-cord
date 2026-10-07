@@ -8,6 +8,7 @@ import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
 import { SIDEBAR_PREFS_KEY, sidebarShortcuts } from '../lib/sidebar-nav';
+import { NOTIF_PREFS_KEY, countNotificacionesSinLeer, notifSeenFrom } from '../lib/notificaciones';
 import TopbarApps from '../components/app/TopbarApps.astro';
 import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
@@ -45,8 +46,17 @@ const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
 const SETTINGS_NAV = localizeCategories(L, ORG.countryCode).flatMap((c) =>
     c.tabs.map((tb) => [`${RT_BASE.cmdkAjustes} · ${tb.label}`, tb.href, 'gear', c.label, tb.keywords || ''])
 );
-const RT = { ...RT_BASE, cmdkNav: [...RT_BASE.cmdkNav, ...SETTINGS_NAV] };
+// ⌘K muestra junto a "Ir a…" el mismo atajo G + letra que enseña la sidebar.
+const CMDK_KEYS = Object.fromEntries(sidebarShortcuts().map((it) => [it.href, `G ${it.key!.toUpperCase()}`]));
+const RT = { ...RT_BASE, cmdkNav: [...RT_BASE.cmdkNav, ...SETTINGS_NAV], cmdkKeys: CMDK_KEYS };
 const analyticsInternal = await isInternalAnalyticsOrg(ORG.id);
+// Contador de la campana en el SSR: antes cada carga de página pedía la lista
+// completa desde el navegador solo para decidir si prendía un punto rojo.
+const notifSeen = notifSeenFrom(ME.widgetPrefs?.[NOTIF_PREFS_KEY]);
+// El sandbox del entorno de prueba no tiene fila de membresía donde guardar
+// "visto": su contador nunca bajaría, así que ahí no se muestra.
+const notifUnread = ORG.id && !ORG.sandboxOf ? await countNotificacionesSinLeer(ORG.id, notifSeen).catch(() => 0) : 0;
+const notifLabel = t(L, 'topbar.notificaciones');
 
 
 const canCotizar = memberCan(ME, 'cotizar');
@@ -142,7 +152,15 @@ import { iconInner } from '../lib/icons';
         <script is:inline>
             // Restaura estado colapsado de la sidebar + tema antes del primer paint (sin flash).
             try { if (localStorage.getItem('cord.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
-            try { if (localStorage.getItem('cord.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+            // Tema en tres modos: claro (default), oscuro o "sistema" (sigue al SO).
+            // data-theme sigue siendo el tema RESUELTO que lee todo el CSS;
+            // data-theme-mode es la preferencia, para pintar el control.
+            try {
+                var thm = localStorage.getItem('cord.theme');
+                if (thm !== 'dark' && thm !== 'system') thm = 'light';
+                document.documentElement.setAttribute('data-theme-mode', thm);
+                if (thm === 'dark' || (thm === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.setAttribute('data-theme', 'dark');
+            } catch (e) {}
             // Cord Workbench: si el "Modo desarrollador" está activo, reserva de una
             // vez el espacio de la píldora colapsada (--wb-h: 40px de alto + 16px de
             // separación del borde) para que el contenido no salte al montar el dock
@@ -234,41 +252,41 @@ import { iconInner } from '../lib/icons';
                                 </button>
                                 <div class="tb-create-menu" id="tbCreateMenu" role="menu" hidden>
                                     {canCotizar && (
-                                        <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem">
+                                        <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem" data-key="c">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('file-plus')}></svg>
                                             <span>{t(L, 'layout.crear.cotizacion')}</span><kbd>C</kbd>
                                         </a>
                                     )}
                                     {canCotizar && (
-                                        <a href="/app/facturas/nueva" class="tb-create-item" role="menuitem">
+                                        <a href="/app/facturas/nueva" class="tb-create-item" role="menuitem" data-key="f">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
                                             <span>{t(L, 'layout.crear.factura')}</span><kbd>F</kbd>
                                         </a>
                                     )}
                                     {canClientes && (
-                                        <a href="/app/clientes?nuevo=1" class="tb-create-item" role="menuitem">
+                                        <a href="/app/clientes?nuevo=1" class="tb-create-item" role="menuitem" data-key="l">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-plus')}></svg>
-                                            <span>{t(L, 'layout.crear.cliente')}</span>
+                                            <span>{t(L, 'layout.crear.cliente')}</span><kbd>L</kbd>
                                         </a>
                                     )}
                                     {canProductos && (
-                                        <a href="/app/productos?nuevo=1" class="tb-create-item" role="menuitem">
+                                        <a href="/app/productos?nuevo=1" class="tb-create-item" role="menuitem" data-key="p">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('package-plus')}></svg>
-                                            <span>{t(L, 'layout.crear.producto')}</span>
+                                            <span>{t(L, 'layout.crear.producto')}</span><kbd>P</kbd>
                                         </a>
                                     )}
-                                    <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem">
+                                    <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem" data-key="t">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('checklist')}></svg>
-                                        <span>{t(L, 'layout.crear.tarea')}</span>
+                                        <span>{t(L, 'layout.crear.tarea')}</span><kbd>T</kbd>
                                     </button>
                                 </div>
                             </div>
                         )}
                         {appsCtx && <TopbarApps lang={L} ctx={appsCtx} />}
                         <div class="tb-notif-wrap">
-                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="dialog" aria-expanded="false" aria-controls="notifPanel">
+                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={notifUnread ? `${notifLabel} (${notifUnread >= 10 ? '9+' : notifUnread})` : notifLabel} data-label={notifLabel} aria-haspopup="dialog" aria-expanded="false" aria-controls="notifPanel">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg>
-                                <span class="tb-notif-dot" id="notifDot" hidden></span>
+                                <span class="tb-notif-count" id="notifCount" hidden={!notifUnread} data-seen={String(notifSeen)} aria-hidden="true">{notifUnread >= 10 ? '9+' : notifUnread}</span>
                             </button>
                             <div class="notif-panel" id="notifPanel" role="dialog" aria-label={t(L, 'layout.notif.titulo')} hidden>
                                 <div class="notif-head">
@@ -282,9 +300,11 @@ import { iconInner } from '../lib/icons';
                         <button class="tb-icon tb-help" id="helpBtn" type="button" title={t(L, 'layout.aria.ayuda')} aria-label={t(L, 'layout.aria.ayuda')} aria-haspopup="dialog" aria-expanded="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg>
                         </button>
-                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.aria.tema')} aria-label={t(L, 'layout.aria.tema')} aria-pressed="false">
-                            <svg class="tb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
-                            <svg class="tb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.tema')} aria-label={t(L, 'layout.tema')}
+                                data-l-tema={t(L, 'layout.tema')} data-l-light={t(L, 'layout.tema.claro')} data-l-dark={t(L, 'layout.tema.oscuro')} data-l-system={t(L, 'layout.tema.sistema')}>
+                            <svg class="th-ico th-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+                            <svg class="th-ico th-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+                            <svg class="th-ico th-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
                         </button>
                         <a class:list={['tb-icon', 'tb-gear', { active: page === 'ajustes' }]} href="/app/ajustes" title={t(L, 'topbar.ajustes')} aria-label={t(L, 'topbar.ajustes')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
@@ -495,8 +515,11 @@ import { iconInner } from '../lib/icons';
                 <div class="kbd-help-head"><strong>{t(L, 'layout.kbd.titulo')}</strong><kbd>esc</kbd></div>
                 <div class="kbd-help-body">
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd data-mod-key>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cotizacion')}</span><span><kbd>C</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>
+                    {canCotizar && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cotizacion')}</span><span><kbd>C</kbd></span></div>}
+                    {canCotizar && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>}
+                    {canClientes && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cliente')}</span><span><kbd>L</kbd></span></div>}
+                    {canProductos && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_producto')}</span><span><kbd>P</kbd></span></div>}
+                    {canCreateAny && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_tarea')}</span><span><kbd>T</kbd></span></div>}
                     {/* Navegación: mismas teclas que muestra la sidebar (src/lib/sidebar-nav.ts). */}
                     {sidebarShortcuts().map((it) => (
                         <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_a').replace('{x}', t(L, it.label))}</span><span><kbd>G</kbd> <kbd>{it.key!.toUpperCase()}</kbd></span></div>
@@ -707,10 +730,11 @@ import { iconInner } from '../lib/icons';
     }
     html[data-theme="dark"] .tb-create-item kbd { background: rgba(255,255,255,0.08); }
     /* Toggle de tema en la topbar */
-    .tb-theme .tb-sun { display: none; }
-    .tb-theme .tb-moon { display: inline-flex; }
-    html[data-theme="dark"] .tb-theme .tb-sun { display: inline-flex; }
-    html[data-theme="dark"] .tb-theme .tb-moon { display: none; }
+    /* El icono muestra el MODO actual (claro / oscuro / sistema). */
+    .tb-theme .th-ico { display: none; }
+    html:not([data-theme-mode="dark"]):not([data-theme-mode="system"]) .tb-theme .th-light,
+    html[data-theme-mode="dark"] .tb-theme .th-dark,
+    html[data-theme-mode="system"] .tb-theme .th-system { display: inline-flex; }
 
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -887,13 +911,19 @@ import { iconInner } from '../lib/icons';
 
     /* ════════ Notificaciones (campana) ════════ */
     .tb-notif-wrap { position: relative; }
-    .tb-notif-dot {
-        position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
-        background: var(--color-danger);
-        /* Aro del color de la topbar (no blanco fijo: en oscuro se veía un aro blanco). */
+    /* Contador (no punto): cuántas faltan por leer, con tinte como los de la sidebar. */
+    .tb-notif-count {
+        position: absolute; top: 2px; right: 1px;
+        min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-family: var(--font-sans); font-size: 0.62rem; font-weight: 700; line-height: 1;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-blue-deep);
+        background: color-mix(in srgb, var(--color-blue-deep) 16%, var(--sb-bg-solid));
         box-shadow: 0 0 0 1.5px var(--sb-bg-solid);
+        pointer-events: none;
     }
-    .tb-notif-dot[hidden] { display: none; }
+    .tb-notif-count[hidden] { display: none; }
     .notif-panel {
         position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 340px;
         background: var(--surface); border: 1px solid var(--color-border); border-radius: 14px;
@@ -1502,13 +1532,13 @@ import { iconInner } from '../lib/icons';
         background: var(--color-blue-deep); color: #fff;
         font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; white-space: nowrap;
         box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
-        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring), background 0.2s;
+        transition: background-color 0.12s;
     }
     .tb-create-plus { width: 15px; height: 15px; flex-shrink: 0; }
     .tb-create-caret { width: 12px; height: 12px; opacity: 0.7; flex-shrink: 0; transition: transform 0.25s var(--ease-spring); }
     .tb-create[aria-expanded="true"] .tb-create-caret { transform: rotate(180deg); }
-    .tb-create:hover { transform: translateY(-1px); background: #11233f; box-shadow: 0 10px 24px -8px rgba(10,25,47,0.55), inset 0 1px 0 rgba(255,255,255,0.16); }
-    .tb-create:active { transform: scale(0.97); }
+    .tb-create:hover { background: color-mix(in srgb, var(--color-blue-deep) 86%, #000); }
+    .tb-create:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
     .tb-create-menu {
         position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 232px;
         padding: 6px; border-radius: 14px;
@@ -1557,32 +1587,18 @@ import { iconInner } from '../lib/icons';
     .tb-icon {
         display: inline-flex; align-items: center; justify-content: center;
         width: 36px; height: 36px; border-radius: 9px; color: var(--color-text-muted);
-        background: transparent; transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring); outline: none;
+        background: transparent; transition: background-color 0.12s, color 0.12s; outline: none;
         border: none; cursor: pointer;
     }
-    .tb-icon svg { width: 17px; height: 17px; transition: transform 0.3s var(--ease-spring); }
-    .tb-icon:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); transform: translateY(-1px); }
-    .tb-icon:active { transform: scale(0.94); }
+    /* Iconos quietos (como Linear/Stripe): el hover cambia el fondo, nada se
+       mueve. Antes cada icono subía 1 px, la campana "sonaba", la ayuda se sacudía
+       y el engrane giraba; con la sidebar sobria, la topbar era lo más ruidoso. */
+    .tb-icon svg { width: 17px; height: 17px; }
+    .tb-icon:hover { background: var(--sb-hover-bg); color: var(--color-text); }
+    .tb-icon[aria-expanded="true"] { background: var(--sb-active-bg); color: var(--color-text); }
     .tb-icon:focus-visible { box-shadow: 0 0 0 2px var(--color-blue-deep); }
-    /* El engrane queda marcado cuando estás en cualquier página de Ajustes */
-    .tb-icon.active { background: var(--color-blue-deep); color: #fff; }
-
-    /* Micro-interacciones topbar (notis, ayuda, ajustes) */
-    .tb-gear:hover svg { transform: rotate(60deg); }
-    @keyframes help-wiggle {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(-12deg) scale(1.05); }
-        75% { transform: rotate(12deg) scale(1.05); }
-    }
-    .tb-help:hover svg { animation: help-wiggle 0.4s var(--ease-spring); }
-    @keyframes bell-ring {
-        0%, 100% { transform: rotate(0); }
-        20% { transform: rotate(14deg) scale(1.05); }
-        40% { transform: rotate(-14deg) scale(1.05); }
-        60% { transform: rotate(7deg) scale(1.05); }
-        80% { transform: rotate(-7deg) scale(1.05); }
-    }
-    .tb-activity:hover svg { animation: bell-ring 0.6s var(--ease-spring); transform-origin: top center; }
+    /* El engrane marcado en Ajustes: mismo tinte de "aquí estás" que la sidebar. */
+    .tb-icon.active { background: var(--sb-active-bg); color: var(--sb-text-active); }
 
     /* ── Píldora de la guía de configuración (estado minimizado del widget) ── */
     .onb-pill {
@@ -1591,10 +1607,10 @@ import { iconInner } from '../lib/icons';
         background: var(--color-bg-soft); border: 1px solid var(--color-border);
         color: var(--color-text); cursor: pointer; font-family: var(--font-sans);
         animation: onb-pill-in 0.4s var(--ease-spring);
-        transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s var(--ease-spring);
+        transition: border-color 0.12s, background-color 0.12s;
     }
     .onb-pill[hidden] { display: none; }
-    .onb-pill:hover { border-color: rgba(10,25,47,0.2); transform: translateY(-1px); box-shadow: 0 6px 16px -10px rgba(10,25,47,0.5); }
+    .onb-pill:hover { border-color: rgba(10,25,47,0.2); background: var(--surface); }
     @keyframes onb-pill-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
     .onb-pill-ring { position: relative; width: 26px; height: 26px; flex-shrink: 0; }
     .onb-pill-ring svg { width: 26px; height: 26px; transform: rotate(-90deg); }
@@ -1721,6 +1737,8 @@ import { iconInner } from '../lib/icons';
         /* El panel de notificaciones a ancho casi completo */
         .notif-panel { width: min(340px, calc(100vw - 1.5rem)); }
         .ph-pin { display: none; }
+        /* Sin teclado físico no hay atajos que enseñar (regla 16). */
+        .cmdk-kbd { display: none; }
     }
 </style>
 
@@ -1790,9 +1808,10 @@ import { iconInner } from '../lib/icons';
         };
         const I18N = (window as any).CORD_I18N || {};
         const G = I18N.cmdkGroups || { ir_a: 'Ir a', acciones: 'Acciones', recientes: 'Recientes', cotizaciones: 'Cotizaciones', clientes: 'Clientes', productos: 'Productos' };
-        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords }));
+        const KEYS: Record<string, string> = I18N.cmdkKeys || {};
+        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords, kbd: mobileUi() ? undefined : KEYS[href] }));
         const ACTIONS: any[] = (I18N.cmdkActions || []).map((a: any) => ({
-            group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: a.kbd, hint: a.hint,
+            group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: mobileUi() ? undefined : a.kbd, hint: a.hint,
             run: a.runKey === 'quickTask' ? () => (window as any).cordQuickTask?.() : undefined,
         }));
         const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -1839,7 +1858,8 @@ import { iconInner } from '../lib/icons';
                 getRecents().forEach((r: any) => list.push({ group: G.recientes, title: r.title, href: r.href, icon: r.icon || I.doc }));
             }
             if (ent) {
-                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, icon: I.doc }));
+                (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, sub: c.sub, href: `/app/cotizaciones/${encodeURIComponent(c.id)}`, icon: I.doc }));
+                (ent.facturas || []).forEach((d: any) => list.push({ group: G.facturas || 'Facturas', title: `${d.folio} · ${d.cliente}`, sub: d.sub, href: `/app/facturas/${encodeURIComponent(d.id)}`, icon: I.receipt }));
                 (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: `/app/clientes/${encodeURIComponent(c.id)}`, icon: I.users }));
                 (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: `/app/productos/${encodeURIComponent(p.id)}`, icon: I.box }));
             }
@@ -1942,26 +1962,37 @@ import { iconInner } from '../lib/icons';
 
 
     // ── Tema claro / oscuro (persistente, sin flash; el <head> lo aplica al cargar) ──
+    // Tema en tres modos que se recorren en orden: claro → oscuro → sistema.
     // Dos disparadores: el botón de la topbar (escritorio) y la fila del drawer
-    // (móvil). En móvil el de la topbar está oculto y antes no había otro: el
-    // tema no se podía cambiar desde el celular.
+    // (móvil; ahí el de la topbar está oculto y antes no había otro).
+    // "Sistema" sigue en vivo al sistema operativo (p. ej. el modo noche de macOS).
     function initTheme() {
         const root = document.documentElement;
+        const MODES = ['light', 'dark', 'system'] as const;
+        type Mode = typeof MODES[number];
         const btns = ['themeBtn', 'sbTheme'].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-        const sync = () => {
-            const dark = root.getAttribute('data-theme') === 'dark';
-            btns.forEach((b) => b.setAttribute('aria-pressed', String(dark)));
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const current = (): Mode => {
+            const m = root.getAttribute('data-theme-mode');
+            return m === 'dark' || m === 'system' ? m : 'light';
         };
-        const toggle = () => {
-            const isDark = root.getAttribute('data-theme') === 'dark';
-            if (isDark) { root.removeAttribute('data-theme'); try { localStorage.setItem('cord.theme', 'light'); } catch (e) {} }
-            else { root.setAttribute('data-theme', 'dark'); try { localStorage.setItem('cord.theme', 'dark'); } catch (e) {} }
-            sync();
+        const apply = (mode: Mode) => {
+            root.setAttribute('data-theme-mode', mode);
+            const dark = mode === 'dark' || (mode === 'system' && media.matches);
+            if (dark) root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
+            const tb = document.getElementById('themeBtn');
+            const name = tb?.dataset[`l${mode[0].toUpperCase()}${mode.slice(1)}` as 'lLight'] || mode;
+            const label = `${tb?.dataset.lTema || ''}: ${name}`;
+            btns.forEach((b) => { b.setAttribute('aria-label', label); b.setAttribute('title', label); });
         };
-        btns.forEach((b) => b.addEventListener('click', toggle));
-        sync();
+        btns.forEach((b) => b.addEventListener('click', () => {
+            const next = MODES[(MODES.indexOf(current()) + 1) % MODES.length];
+            try { localStorage.setItem('cord.theme', next); } catch (e) {}
+            apply(next);
+        }));
+        media.addEventListener('change', () => { if (current() === 'system') apply('system'); });
+        apply(current());
     }
-
 
     // ── window.cordWireModal(dlg) — chrome de <dialog class="modal"> (src/styles/modal.css) ──
     // Pinta hairlines en .m-head/.m-foot solo cuando el .m-body de verdad tiene contenido
@@ -2143,10 +2174,9 @@ import { iconInner } from '../lib/icons';
         const btn = document.getElementById('notifBtn');
         const panel = document.getElementById('notifPanel');
         const list = document.getElementById('notifList');
-        const dot = document.getElementById('notifDot');
+        const count = document.getElementById('notifCount');
         const markAll = document.getElementById('notifMarkAll');
         if (!btn || !panel || !list) return;
-        const SEEN_KEY = 'cord.notif.seen';
         const ICONS: any = {
             send: iconInner('send'),
             eye: iconInner('eye'),
@@ -2156,17 +2186,38 @@ import { iconInner } from '../lib/icons';
             doc: iconInner('document'),
             chat: iconInner('chat'),
         };
-        const TONE: any = { approved: 'ok', paid: 'ok', viewed: 'warn', counter: 'warn', rejected: 'danger' };
-        let latest = 0;
+        const TONE: any = { approved: 'ok', paid: 'ok', payment: 'ok', viewed: 'warn', counter: 'warn', rejected: 'danger' };
         const esc = (s: string) => String(s).replace(/</g, '&lt;');
-        const getSeen = () => { try { return parseInt(localStorage.getItem(SEEN_KEY) || '0', 10) || 0; } catch { return 0; } };
         const I18N = (window as any).CORD_I18N || {};
-        const paint = (data: any) => {
-            const items = data.items || []; latest = data.latest || 0;
+
+        // "Visto hasta" por miembro, en el servidor (lo trae el SSR). Antes vivía
+        // en localStorage y no seguía al usuario entre dispositivos.
+        let seen = Number(count?.dataset.seen || 0) || 0;
+        const setCount = (n: number) => {
+            if (count) { count.hidden = n <= 0; count.textContent = n >= 10 ? '9+' : String(n); }
+            const label = btn.dataset.label || '';
+            btn.setAttribute('aria-label', n > 0 ? `${label} (${n >= 10 ? '9+' : n})` : label);
+        };
+        const save = (ts: number) => {
+            if (!(ts > seen)) return;
+            seen = ts;
+            fetch('/api/app/notif-seen', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seen: ts }), keepalive: true,
+            }).catch(() => {});
+        };
+        // Migración única desde la marca vieja del navegador.
+        try {
+            const LEGACY = 'cord.notif.seen';
+            const local = parseInt(localStorage.getItem(LEGACY) || '0', 10) || 0;
+            if (!seen && local > 0) save(local);
+            localStorage.removeItem(LEGACY);
+        } catch (e) {}
+
+        const paint = (items: any[], prevSeen: number) => {
             if (!items.length) { list.innerHTML = `<div class="notif-empty">${I18N.notifSinActividad || 'Sin actividad reciente'}</div>`; return; }
-            const seen = getSeen();
             list.innerHTML = items.map((n: any) => {
-                const unread = n.ts > seen ? ' unread' : '';
+                const unread = n.ts > prevSeen ? ' unread' : '';
                 const tone = TONE[n.tipo] ? ' ' + TONE[n.tipo] : '';
                 const icon = ICONS[n.icon] || ICONS.doc;
                 return `<a class="notif-item${unread}" href="${escAttr(n.href)}"><span class="notif-ico${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span class="notif-body"><span class="notif-title">${esc(n.title)}</span><span class="notif-sub">${esc(n.sub)}</span><span class="notif-when">${esc(n.cuando)}</span></span></a>`;
@@ -2176,24 +2227,19 @@ import { iconInner } from '../lib/icons';
             list.innerHTML = `<div class="notif-empty">${I18N.notifCargando || 'Cargando…'}</div>`;
             try {
                 const res = await fetch('/api/notificaciones'); const data = await res.json();
-                paint(data);
-                try { localStorage.setItem(SEEN_KEY, String(latest || Date.now())); } catch (e) {}
-                (dot as HTMLElement).hidden = true;
+                const prev = seen;
+                paint(data.items || [], prev);
+                // Abrir la bandeja la marca como vista (se siguen resaltando las nuevas).
+                save(data.latest || Date.now());
+                setCount(0);
             } catch { list.innerHTML = `<div class="notif-empty">${I18N.notifNoCargo || 'No se pudo cargar'}</div>`; }
         };
         wireTopbarMenu(btn, panel as HTMLElement, { id: 'notif', menu: false, onOpen: load });
         markAll?.addEventListener('click', () => {
-            try { localStorage.setItem(SEEN_KEY, String(Date.now())); } catch (e) {}
-            (dot as HTMLElement).hidden = true;
+            save(Date.now());
+            setCount(0);
             list.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
         });
-        // Punto rojo si hay actividad más nueva que la última vista.
-        (async () => {
-            try {
-                const res = await fetch('/api/notificaciones'); const data = await res.json();
-                (dot as HTMLElement).hidden = !((data.latest || 0) > getSeen());
-            } catch (e) {}
-        })();
     }
 
     // ── Atajos de teclado globales ──
@@ -2224,11 +2270,12 @@ import { iconInner } from '../lib/icons';
             if (k === 'g') { gPending = true; gTimer = window.setTimeout(() => { gPending = false; }, 1200); return; }
             if (k === '/') { e.preventDefault(); document.getElementById('cmdkOpen')?.click(); return; }
             if (e.key === '[') { e.preventDefault(); (window as any).__cordToggleSidebar?.(); return; }
-            if (k === 'c') { e.preventDefault(); window.location.href = '/app/cotizaciones/nueva'; return; }
-            // `f` = crear factura, en paralelo exacto a `c` = crear cotización.
-            // Fijar/quitar la página del menú se mudó a `x`: crear un documento
-            // es una acción primaria y merece la tecla obvia; fijar no.
-            if (k === 'f') { e.preventDefault(); window.location.href = '/app/facturas/nueva'; return; }
+            // Crear: la tecla sale del propio menú Crear (data-key), con la misma
+            // letra que `G` + letra usa para ir a esa sección (C/G C, F/G F, L/G L,
+            // P/G P) más T de tarea. Si el permiso esconde la opción, la tecla
+            // tampoco hace nada. Fijar la página quedó en `x`.
+            const createItem = document.querySelector<HTMLElement>(`#tbCreateMenu [data-key="${CSS.escape(k)}"]`);
+            if (createItem) { e.preventDefault(); createItem.click(); return; }
             if (k === 'x') { e.preventDefault(); (window as any).__cordTogglePin?.(); return; }
         });
     }

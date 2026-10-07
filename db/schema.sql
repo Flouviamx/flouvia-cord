@@ -3609,6 +3609,24 @@ alter table documentos_fiscales add column if not exists retenciones_snapshot js
 alter table eventos add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
 create index if not exists idx_eventos_documento on eventos(documento_id, created_at desc);
 
+-- ── Autor de cada evento (oct 2026) ─────────────────────────────────────────
+-- La campana de la topbar mostraba TODO el timeline: "Cotización enviada" o
+-- "Borrador actualizado" encendían el aviso con las acciones del propio
+-- vendedor (regla 19: una señal sin actor es un bug esperando a ocurrir).
+--   'vendedor' = la escribió una sesión de usuario (app.user_id no vacío)
+--   'externo'  = sin sesión: el cliente en /q o /i, un webhook de pago, un cron
+--   null       = histórico, anterior a esta columna
+-- El DEFAULT lo decide Postgres con el contexto que withOrgTx ya fija, así que
+-- ninguna inserción cambia y el código puede desplegarse antes o después de esta
+-- migración. Son DOS sentencias a propósito: un `add column ... default` habría
+-- rellenado el historial evaluando el default AHORA (sin sesión → 'externo') y
+-- todo lo viejo, incluidas las acciones del vendedor, aparecería como del cliente.
+alter table eventos add column if not exists actor text;
+alter table eventos alter column actor set default (
+  case when coalesce(current_setting('app.user_id', true), '') <> '' then 'vendedor' else 'externo' end
+);
+-- ── fin autor de eventos ──
+
 -- Las tareas del CRM tampoco podían colgar de una factura.
 alter table tareas add column if not exists documento_id uuid references documentos_fiscales(id) on delete set null;
 create index if not exists idx_tareas_documento on tareas(documento_id) where documento_id is not null;

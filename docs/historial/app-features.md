@@ -1,5 +1,18 @@
 # Historial — App interna: features y UX
 
+## 2026-10-07 — Topbar: campana como bandeja, ⌘K más útil, tema en tres modos
+
+- `eventos.actor` (`vendedor` | `externo` | null histórico) lo decide un DEFAULT con el
+  `app.user_id` que withOrgTx ya fija: ninguna inserción cambió y el código se puede desplegar
+  antes o después de la migración (la lectura usa `to_jsonb(e)->>'actor'`). Dos sentencias
+  para no rellenar el historial como "externo". Sin la columna, la campana solo muestra
+  vistas, contraofertas y pagos; con ella, también aprobaciones, rechazos y comentarios del
+  cliente. Lo prueba `test/notificaciones-db.test.ts` con la sección real del schema.
+- Campana: cotizaciones y facturas juntas, contador en el SSR (ya no se pedía la lista en cada
+  carga), "visto hasta" por miembro en el servidor (migra el de localStorage).
+- Topbar sin animaciones de juguete; ⌘K con facturas, contexto y atajos; Crear con teclas
+  C/F/L/P/T; tema claro/oscuro/sistema.
+
 ## 2026-10-07 — Topbar: bugs de ⌘K, menús, tema móvil y barra de progreso
 
 - ⌘K: borrar letras dejaba que una respuesta atrasada pintara resultados de la consulta
@@ -14,8 +27,8 @@
 - En móvil no había forma de cambiar el tema ni de reabrir la guía minimizada.
 - Detalles: ⌘K decía ⌘ en Windows/Linux, aro blanco del punto de la campana en oscuro,
   "Ver toda la actividad" iba al tope del Inicio, `href` de notificaciones sin escapar.
-- Pendiente aparte (requiere migración antes del código): la campana muestra las acciones
-  del propio vendedor y no incluye facturas, porque `eventos` no guarda autor.
+- La campana con acciones del propio vendedor y sin facturas se resolvió el mismo día con
+  `eventos.actor` (entrada de arriba), sin depender del orden entre migración y despliegue.
 
 ## 2026-10-07 — Navegación sin parpadeo, invitar al equipo y toggle animado
 
