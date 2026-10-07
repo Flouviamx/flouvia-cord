@@ -1,9 +1,11 @@
 ---
 title: "Publish, pause and delete"
-description: "The life cycle of a workflow in Cord: draft, publishing, unpublished changes, pausing, resuming, duplicating and deleting."
-lastUpdated: "2026-09-15"
+description: "The life cycle of a workflow in Cord: draft and published version, versions, testing without publishing, unpublished changes, pausing, resuming, duplicating and deleting."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission", "A free active-workflow slot in your plan to publish or resume"]
 ---
 
 <header class="content-header">
@@ -42,9 +44,24 @@ While you edit, the published version keeps running unchanged. If the two differ
 
 Publishing changes to a workflow that was already active does not use another slot.
 
-The name and plan limit messages currently appear in Spanish in the app.
+## Versions
+
+Every time you publish, the published version is replaced by a **new version**, and Cord numbers each publish. What matters about that numbering:
+
+- **Each run remembers its version.** When it is created, the run keeps a full copy of the version published at that moment: its steps, its texts and its time limits. It runs with that copy from start to finish, even if a wait makes it last days.
+- **A new version only applies to new events.** Queued or waiting runs carry on with the version they started with, and the same happens if you retry a failed run.
+- **There is no button to go back to a previous version.** To undo a change, edit the draft until it is as it was and publish again: that creates a new version with the previous content.
+
+| You want to | Do this |
+|---|---|
+| Try a change without affecting what runs | Edit it in the draft, click **Save draft** and **Test**. Do not publish yet. |
+| Make the change apply right away | **Publish changes**. It applies to events from that moment on. |
+| Make a waiting run use the change | You cannot: cancel it and let the next event create one with the new version. |
+| Fix the text of a run that failed | Publish the change for the next events. Retrying the failed run uses its original version. |
 
 ## Test before publishing
+
+{/* MOCKUP: "Test without publishing" panel in the workflow editor, open next to the canvas. At the top: "With the event from Oct 6, 2026. Lookups really run; actions are not sent." Below, step by step: "Wait until... — Met", "Create a task — Would do: Call Grupo Andino while COT-00152 is warm". */}
 
 The **Test** button, next to Save, runs the draft **with the latest real event for its trigger** and tells you, step by step, what would have happened.
 
@@ -94,7 +111,8 @@ If you are not sure, pause instead of deleting. A paused workflow keeps its hist
 
 Creating, publishing, pausing, resuming, deleting, retrying or canceling a run is recorded in **Settings › Audit log**, with who did it and when.
 
-## Next
+## Related
 
-- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones)
-- [Limits](/en/docs/automatizacion/workflows/limites)
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones): what happens to each run and how to retry it.
+- [Limits](/en/docs/automatizacion/workflows/limites): how many active workflows your plan allows.
+- [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow): the editor, step by step.

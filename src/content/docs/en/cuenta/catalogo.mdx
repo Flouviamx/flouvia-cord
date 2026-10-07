@@ -1,61 +1,201 @@
 ---
 title: "Import your catalog"
-description: "Upload your products and services, SKUs, and base prices to Cord."
+seoTitle: "Cord catalog: products, kits, volume pricing and CSV import"
+description: "Create products and services, build kits, set volume pricing, and import products and clients from a CSV file with column mapping and preview."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Products permission for the catalog and kits", "Clients permission to import clients", "A .csv file for bulk import"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Import your catalog</h1>
-  <p class="page-subtitle">Upload your products, SKUs, and prices so you can create B2B quotes in seconds.</p>
+  <p class="page-subtitle">Products, kits and clients ready to quote in seconds, one by one or from a CSV.</p>
 </header>
 
-## Manage your SKUs easily
+The catalog is what your team searches and adds when quoting. With it, the name, unit and
+price of each item always come out the same, and Cord can calculate your margin live. It
+lives in **Products**, in the sidebar, with two tabs: **Catalog** and **Kits**.
 
-The heart of a B2B quote is product accuracy. Cord allows you to manage a centralized catalog where your sales team simply searches and selects, ensuring the name, SKU, and tax base are always correct.
+## Requirements
 
-### 1. Manual Creation
+- **Products permission** to create, edit and import products and to manage kits.
+- **Clients permission** to import clients.
+- **Plan limits:** how many products and clients can exist at once depends on your plan
+  (see [Limits by plan](#limits-by-plan)).
 
-If you have a small catalog or sell services, you can add products one by one from **Products > New Product**.
-You will be asked for the following data:
-- **Product / Service Name**
-- **SKU (Internal Code):** Unique identifier, optional.
-- **Unit:** piece, service, hour, m², kg... whichever you sell by.
-- **Description:** free text that accompanies the product on the quote.
-- **Sale Price (Before taxes):** the list price.
-- **Internal Cost (Optional):** If you enter how much the product costs you, Cord will calculate and show you the **Profit Margin** in real-time when building the quote. Your client will never see this cost.
-- **Volume Pricing (Optional):** Vital in B2B. You can set up automatic rules, for example: *"From 1 to 10 pieces the price is $100, from 11 to 50 pieces the price drops to $85"*. Cord will automatically adjust the price based on the quantity the sales rep adds to the quote.
-- **Status (Active / Inactive):** If you discontinue a product or run out of stock long-term, you can mark it as *Inactive* so sales reps can no longer add it to new quotes, without deleting its history.
+## Create a product
 
-<Callout type="info">
-**Tax doesn't live on the product.** Cord calculates tax **per quote line**, not per
-catalog item — the same product can be sold taxed in one deal and exempt in another
-(an export, a tax-exempt client). You pick the rate from your account's tax catalog
-(**Settings > Quotes**) when you add the line item; the tax name follows your country
-(VAT, IVA, GST, Moms...), never a generic label. See
-[Products and discounts](/en/docs/cotizacion/productos) for how this applies when
-quoting.
-</Callout>
+<Steps>
+1. In **Products**, select **+ New product** (or **Create › Product** in the top bar).
+2. Enter the **Name** (required) and, optionally, the **SKU**, the **Unit** (piece,
+   service, hour, m², kg...) and a **Description**.
+3. Enter the **Selling price**, before taxes, in your account's currency.
+4. Optional: under **How much does it cost you?** enter your cost. Cord shows how much
+   you earn or lose per unit and calculates the margin when quoting. Your client never
+   sees the cost.
+5. Optional: add **Volume pricing** (see below).
+6. Choose the **Status** (Active or Inactive) and select **Save product**.
+</Steps>
 
-### 2. Bulk Import (CSV)
-
-For companies with hundreds or thousands of references, Cord supports bulk import.
-Download our **CSV Template** (columns `sku, name, unit, price, active`), paste the
-information extracted from your ERP (such as SAP, Oracle, or Microsip), and upload it
-to Cord to create prices, SKUs, and descriptions in a single move.
+An **inactive** product is no longer offered when quoting, but keeps its history and
+earlier quotes.
 
 <Callout type="info">
-**Tip:** Do your prices change constantly?
-With the **Cord Public API** (Developers), you can synchronize your catalog in real-time. If you update a price in your ERP, a *webhook* or API call can automatically update it in Cord, ensuring your salespeople always quote with the current price list.
-
+**Tax does not live on the product.** Cord calculates taxes per **quote line**: the same
+product can be taxed in one sale and exempt in another. When you add the line you choose
+the rate from your account's tax catalog (**Settings › Quotes › Taxes**), named after
+your country's tax. See [Products and discounts](/en/docs/cotizacion/productos).
 </Callout>
 
-## The product profile
+## Volume pricing
 
-The catalog (**Products** in the main menu) has quick filters (active, inactive, with
-volume pricing, missing cost, low margin) so you can find what you need without
-scrolling a long list.
+Use it for wholesale: the price drops automatically when the line quantity reaches a
+tier.
 
-Click any product to open its **profile**: closed amount and units sold, close rate,
-price realization (the lowest, average, and highest price actually charged against the
-list price), list margin vs. **realized margin** over historical sales, its volume
-pricing ladder, who buys it most, its recent quotes, and which kits include it — all
-computed from your real history, not just the data you entered when creating it.
+<Steps>
+1. In the product form, open **Volume pricing** and select **Add volume tier**.
+2. For each tier, enter **From** (the minimum quantity) and the unit price from that
+   quantity on.
+3. Save the product.
+</Steps>
+
+For example, with a list price of 100.00 MXN and tiers **From 500 → 90.00 MXN** and
+**From 2,000 → 75.00 MXN**: a 300-piece line uses 100.00 MXN, an 800-piece line uses
+90.00 MXN and a 2,500-piece line uses 75.00 MXN. Below the first tier the list price
+applies. The client-level discount is calculated on the price of the applicable tier.
+
+## Kits
+
+A kit groups items you usually quote together, for example an installation package, so
+you can insert them into a quote with one click.
+
+<Steps>
+1. Open **Products › Kits** and select **+ New kit**.
+2. Enter the **Name** and, optionally, a description.
+3. Under **Kit line items**, search catalog products by name or SKU, or add a
+   **+ Free-form line** (for example, labor) with its description. Adjust each line's
+   quantity.
+4. Optional: turn on **Sell the kit at a fixed price** to offer a bundle. Cord shows the
+   sum of list prices and how much the bundle saves (or how much more it costs).
+5. Select **Save kit**.
+</Steps>
+
+{/* MOCKUP: New kit modal with three catalog lines, one free line, and the fixed bundle price showing the saving against the list total */}
+
+When quoting, use **+ Insert kit** in the editor. The lines come in as normal quote
+lines: you can edit or remove them like any other, and changing the kit later does not
+modify quotes already created. With a bundle price, Cord spreads that total across the
+catalog lines; free lines do not take part. Only active kits appear when inserting.
+
+## Import products from CSV
+
+<Steps>
+1. In **Products**, select **Import CSV**. If you don't know the format yet, use
+   **↓ Download sample template**.
+2. **File.** Drag your file or click to choose it. Only `.csv` is accepted.
+3. **Columns.** Match your file's columns to Cord's fields. Cord suggests the matching
+   based on the header names. Uncheck **The first row is headers** if your file has
+   none.
+4. **Review.** You see how many products will be imported, how many rows are skipped
+   for having no name, and a preview of the first rows. Decide whether to
+   **Update existing products with the same SKU**.
+5. Select **Import** to load the catalog.
+</Steps>
+
+### Columns that are imported
+
+| Cord field | Required | How it is read |
+|---|---|---|
+| **Name** | Yes | Rows without a name are skipped. |
+| **SKU / Code** | No | Stored in uppercase. It is the key for updating existing products. |
+| **Unit** | No | If empty, `pieza` (piece) is used. |
+| **List price** | No | Use a period as the decimal separator, for example `1234.50`. A negative price is stored as 0. |
+| **Active** | No | `0`, `no`, `false`, `inactive`, `off` or empty mark it inactive; any other value, active. Without the column, all are active. |
+
+**Not imported:** cost, description and volume pricing. Enter them in each product's
+form after importing.
+
+### Update existing products
+
+With **Update existing products with the same SKU** on (the default), a row whose SKU
+already exists in your catalog **updates** that product instead of creating a new one.
+Rows without a SKU always create a new product.
+
+<Callout type="warning">
+**When updating, Cord rewrites name, unit, price and status with what the file
+contains.** If you don't map the price column, updated products end up with price 0; if
+you don't map the unit, they end up as `pieza`. To change prices safely, first export
+your catalog from **Settings › Advanced › Data & privacy** (same format as the import),
+edit that file and import it again.
+</Callout>
+
+## Import clients from CSV
+
+The **Clients** directory has the same three-step assistant: **Import CSV**, match
+columns and review. It also offers its own sample template.
+
+| Cord field | Required | How it is read |
+|---|---|---|
+| **Company** | Yes | Rows without a company are skipped. |
+| **Contact**, **Email**, **Phone** | No | Text as provided. |
+| **Tax ID** (RFC, NIF, EIN...) | No | Stored in uppercase. |
+| **Payment terms** | No | A value containing "60" becomes Net 60; containing "30", "net" or "credito", Net 30; anything else, Cash. |
+| **Credit limit** | No | A number without a currency symbol; empty means no limit. |
+
+With **Update existing clients (same tax ID or name)** on, a row that matches by tax ID
+or, if it has none, by company name, updates that client. As with products, empty or
+unmapped fields replace what the client already had.
+
+## Limits by plan
+
+| Plan | Products | Clients | Kits |
+|---|---:|---:|---|
+| Free | 50 | 50 | No separate cap |
+| Starter | 500 | 500 | No separate cap |
+| Professional, Scale and Developer | No cap | No cap | No separate cap |
+
+Each import accepts **up to 2,000 rows**; if your file is larger, split it. Inactive
+products also count toward the cap. If you reach the product cap in the middle of an
+import, what was already imported is kept and Cord tells you how many were created and
+updated.
+
+## The product page
+
+The **Products** list has quick filters: **All**, **Active**, **Inactive**,
+**With volume pricing**, **No cost set** and **Low margin**. Opening a product shows its page
+with closed revenue and units sold, win rate, price realization (minimum, average and
+maximum charged against list price), list margin versus realized margin, its volume
+pricing ladder, who buys it most, its latest quotes and which kits include it.
+
+## Common problems
+
+**"Maximum 2000 rows per import".** Split the file into parts of 2,000 rows or fewer.
+
+**"Choose which column has the product name".** Map the **Name** field before
+continuing.
+
+**"The file is empty or couldn't be read".** Save it as CSV with UTF-8 encoding. An
+Excel file (`.xlsx`) is not accepted by this assistant: export it as CSV.
+
+**Prices were imported wrong.** Check the decimal separator: use a period and don't use
+periods as thousands separators.
+
+**I hit my plan's cap.** Deactivate or delete products you no longer use, or change plans
+in [Your subscription](/en/docs/cuenta/suscripcion).
+
+<Callout type="info">
+**Does your catalog live in another system?** You can keep it in sync from
+[Shopify](/en/docs/automatizacion/integraciones/shopify) or with the
+[Products API](/en/docs/desarrolladores/funciones/productos). To build the catalog from
+your price list in Excel, PDF or a photo, use
+[Set up with AI](/en/docs/cuenta/configurar-con-ia).
+</Callout>
+
+## Related pages
+
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Set up your account with AI](/en/docs/cuenta/configurar-con-ia)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)

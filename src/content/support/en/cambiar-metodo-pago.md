@@ -51,4 +51,4 @@ See [the scope of the changes](https://docs.cordhq.app/en/docs/pagos/mejoras-con
 [method-specific fees](https://docs.cordhq.app/en/docs/pagos/condiciones). Sale currency is separate from
 [your Cord subscription currency](https://docs.cordhq.app/en/docs/cuenta/suscripcion).
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

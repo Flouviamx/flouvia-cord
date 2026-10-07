@@ -1,118 +1,209 @@
 ---
-title: "Complete application map"
-description: "What every Cord section does, how quotes, clients, invoices, payments, collections, reports, and settings connect, and where to perform each task."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product and Operations"
+title: "Complete app map"
+description: "What each section of Cord does, how quotes, clients, invoices, payments, collections, reports and settings connect, what is in the sidebar and top bar, and how the test environment and Cord Workbench work."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Have a Cord account", "Select the correct organization before changing data"]
+prerequisites: ["Have a Cord account", "Select the right organization before changing data"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Complete application map</h1>
-  <p class="page-subtitle">An end-to-end view of where every Cord operation begins, changes, and finishes.</p>
+  <h1 class="page-title">Complete app map</h1>
+  <p class="page-subtitle">An end-to-end view of where each operation in Cord starts, changes and ends.</p>
 </header>
 
-Cord organizes work around one commercial cycle: **record the client, prepare the
-offer, negotiate, approve, collect, invoice, and follow up**. Sections aren't
-isolated databases; they expose different stages of the same clients, documents,
-and money movements.
+Cord organizes work around a single sales cycle: **register the client, prepare the
+offer, negotiate, approve, collect, invoice and follow up**. The sections are not isolated
+databases; they show different stages of the same clients, documents and transactions.
 
-## The primary workflow
+## The main flow
 
-1. Create or import the client under **Clients**.
-2. Create reusable products, services, or kits under **Products**.
-3. Prepare a quote manually, from a kit, or with an AI draft.
-4. Send the public link. Cord records the first view and keeps document activity.
-5. The client can chat, approve or reject, and choose a payment method when one is
-   available.
-6. Cord records an online payment or a manually marked payment.
-7. The operation appears under **Invoices** and **Collections** according to its
-   document, outstanding balance, and due date.
-8. **Reports** and **Performance** aggregate those results without creating another
-   copy of the operation.
+<Steps>
+1. Create or import the client in **Clients**.
+2. Create reusable products, services or kits in **Products**.
+3. Prepare a quote by hand, from a kit or with an AI draft.
+4. Send the link. Cord records your client's first view and keeps the document's
+   activity.
+5. The client discusses, approves or rejects and, when applicable, pays online.
+6. Cord records the online payment or the payment you mark manually.
+7. The deal moves to **Invoices** and **Collections** based on the document issued, the
+   balance and the due date.
+8. **Reports** and **Team** aggregate the results without creating a second copy of the
+   transaction.
+</Steps>
 
-## Where each task lives
+## Sidebar
 
-| Section | Route | Purpose |
-|---|---|---|
-| Home | `/app` | KPIs, pipeline, recent activity, and follow-up items. |
-| Quotes | `/app/cotizaciones` | Create, search, filter, open, edit, duplicate, send, and print quotes. |
-| Clients | `/app/clientes` | Directory, CSV import, commercial terms, tax data, credit, and statements. |
-| Products | `/app/productos` | Catalog, prices, taxes, volume pricing, import, and export. |
-| Kits | `/app/productos/kits` | Bundles of line items inserted together into a quote. |
-| Collections | `/app/cobranza` | Receivables, overdue balances, aging, client exposure, and follow-up. |
-| Collections agent | `/app/cobranza/agente` | Configure and supervise AI collections when included in the plan. |
-| My money | `/app/cobros` | Payments, payouts, balances, refunds, and dispute access. |
-| Invoices | `/app/facturas` | Issue, inspect, export, and follow up on fiscal or commercial documents. |
-| Recurring invoices | `/app/facturas/recurrentes` | Schedule repeated issues; requires Pro or above. |
-| Reports | `/app/informes` | Overview, commercial diagnosis, finance, cash flow, collections, clients, and products. |
-| Performance | `/app/desempeno` | Results attributed to the person who created or duplicated each quote. |
-| Workflows | `/app/workflows` | "When this happens, do this" automations, ready-made ideas, and run history. |
-| Integrations | `/app/ajustes/integraciones` | Apps directory (HubSpot, Slack, Make, Zapier) with a page per app. |
-| Settings | `/app/ajustes` | Account, business, branding, fiscal, payments, team, security, integrations, and plan. |
+{/* MOCKUP: Cord app on desktop with the full sidebar (organization switcher, My money and Intelligence groups, one pinned item) and the top bar with Search, Create and notifications */}
+
+At the top of the sidebar is the **organization switcher**. From it you switch
+workspaces, create a new one (**Create workspace**), open **Team settings**, turn the
+**Test environment** on or off, and sign out.
+
+| Group | Item | Route | What it's for |
+|---|---|---|---|
+| — | **Home** | `/app` | KPIs, pipeline, recent activity and pending follow-ups. Guide: [Home and views](/en/docs/gestion/dashboard). |
+| — | **Quotes** | `/app/cotizaciones` | Create, search, filter, edit, duplicate, send and print. The counter shows quotes that need follow-up. Guide: [Quote management](/en/docs/gestion/cotizaciones). |
+| — | **Clients** | `/app/clientes` | Directory, CSV import, commercial terms, tax details, credit and statement. Guide: [Clients and statements](/en/docs/gestion/clientes). |
+| — | **Products** | `/app/productos` | Catalog, volume pricing, CSV import and the **Kits** tab. Guide: [Import your catalog](/en/docs/cuenta/catalogo). |
+| My money | **Invoices** | `/app/facturas` | Issue, review, export and follow up on invoices; includes recurring ones (Professional or higher). Guide: [Invoices](/en/docs/pagos/facturas-emitidas). |
+| My money | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
+| My money | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
+| My money | **AI Collections** | `/app/cobranza/agente` | Configure and supervise AI collections (Scale or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
+| Intelligence | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
+| Intelligence | **Team** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
+| Intelligence | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
+
+Also:
+
+- **Pinned.** The pin button next to any page title (or the `X` key) adds it to the
+  **Pinned** group at the top of the sidebar.
+- **Collapsible groups.** **My money** and **Intelligence** collapse with a click on their
+  title.
+- **Collapse the sidebar.** The button at the bottom of the sidebar shrinks it to icons.
+- **Settings** (`/app/ajustes`) opens with the gear in the top bar. See the
+  [Settings map](/en/docs/cuenta/mapa-de-ajustes).
+- **Set up with AI** (`/app/setup`) opens from **Settings › General**.
+
+## Top bar
+
+| Item | What it does |
+|---|---|
+| **Search…** (`⌘K` or `Ctrl+K`) | Opens the palette to search quotes, clients, products and Settings tabs, or run a command. |
+| **Setup guide** | While your account is incomplete, shows your completion percentage and opens the **Set up Cord** widget. See [Create your account](/en/docs/cuenta/crear-cuenta). |
+| **Create** | Menu to create a **Quote**, **Invoice**, **Client**, **Product** or **Task**. It only shows what your permissions allow. |
+| **Apps** | For people with the Settings permission: which apps are connected and which you can connect, without leaving the screen. |
+| **Notifications** | Recent activity panel with **Mark as read** and **View all activity**. A dot means there is something new. Guide: [Notifications](/en/docs/gestion/notificaciones). |
+| **Help** | **Help center** with search, keyboard shortcuts, user guide, contact support, frequently asked questions and the Cord AI assistant. |
+| **Theme** | Switches between light and dark mode. |
+| **Settings** | Opens the Settings index. |
+
+### Keyboard shortcuts
+
+On desktop you can use these shortcuts when you are not typing in a field. On screens
+narrower than 880 px they are disabled and everything is done with visible buttons.
+
+| Shortcut | Action |
+|---|---|
+| `⌘K` / `Ctrl+K` or `/` | Open search |
+| `C` | New quote |
+| `F` | New invoice |
+| `G` then `D`, `C`, `L`, `P`, `B`, `A` or `F` | Go to Home, Quotes, Clients, Products, Collections, Reports or Invoices |
+| `X` | Pin or unpin the current page in the sidebar |
+| `?` | Show or hide the shortcuts help |
+
+On a phone, the sidebar opens as a panel and includes shortcuts to **Help** and
+**Settings**.
 
 <Callout type="info">
-Visible options depend on **permissions**, the **effective plan**, the **country of
-operation**, and account setup. A page existing doesn't mean every member can change it.
+The options you see depend on your **permissions**, your **effective plan**, your
+**country of operation** and the account's setup state. A page existing does not mean
+any member can change it.
 </Callout>
 
-## Quote states
+## Test environment
 
-| State | Operational meaning |
+The **Test environment** is an isolated copy of your organization for rehearsing without
+touching your real data: quotes, charges with test data, webhooks and integrations.
+
+<Steps>
+1. Open the organization switcher at the top of the sidebar.
+2. Turn on **Test environment**.
+3. The app shows a **Test mode** strip with the notice "Everything you do here is a test —
+   your real data is untouched".
+4. To go back, select **Exit test mode** on the strip or turn the switch off.
+</Steps>
+
+From the strip you can also **Clear test data** to start over.
+
+Keep in mind:
+
+- Test data does not mix with production: when you leave, you won't see what you created
+  inside.
+- Some real actions are not available in test mode: subscribing or changing plans,
+  connecting a custom domain, and applying a **Set up with AI** proposal.
+- Test documents do not consume your plan's allowance.
+
+Guide for integrations: [Test environments](/en/docs/desarrolladores/empezar/pruebas).
+
+## Cord Workbench
+
+**Cord Workbench** is the developer panel. It appears as a dock across the app when you
+turn on **Developer mode** at the bottom of **Settings**, and requires the Settings
+permission.
+
+Its tabs are **Overview**, **Webhooks**, **Events**, **API**, **Logs** and **Health**: API
+keys, webhook endpoints and their deliveries, emitted events, request logs and the status
+of your integration. Guide: [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench).
+
+## Quote statuses
+
+| Status | Operational meaning |
 |---|---|
-| `draft` | Editable draft that hasn't been sent. |
-| `sent` | Sent; the public link is available to the client. |
-| `viewed` | The client opened the quote for the first time. |
-| `approved` | The client recorded approval. A balance may remain outstanding. |
+| `draft` | Editable draft not yet sent to the client. |
+| `sent` | Sent; the link is ready to be viewed. |
+| `viewed` | The client opened the quote for the first time. Your own visit doesn't count. |
+| `approved` | The client recorded their approval. A balance may remain. |
 | `rejected` | The client rejected the proposal. |
-| `expired` | Its validity period ended without closing. |
-| `paid` | A non-recurring flow is paid according to its recorded charges. |
-| `invoiced` | An invoice document is associated with the operation. |
+| `expired` | Its validity ended without closing. |
+| `paid` | The non-recurring flow was paid according to its recorded payments. |
+| `invoiced` | The deal already has an associated invoice. |
 
-A recurring quote doesn't become permanently `paid`: each installment creates its
-own payment and the subscription keeps a separate status.
+A recurring quote does not become `paid` forever: each installment creates its own charge
+and the subscription keeps a separate status.
 
-## Active organization and test mode
+## Active organization
 
-Cord is multi-company. Every client, product, quote, invoice, member, and setting
-belongs to the **active organization**. If you can access more than one, verify the
-organization switcher before importing, issuing, or configuring anything.
-
-**Test mode** uses a separate sandbox organization. Its data doesn't mix with
-production, and its keys, webhooks, and operations are test assets. Records created
-inside the sandbox won't appear after returning to live mode.
+Cord is multi-company. Every client, product, quote, invoice, member and setting belongs
+to the **active organization**. If you have access to more than one, check the
+organization switcher before importing, issuing or changing configuration.
 
 ## Permissions that change the experience
 
-The owner always has full access. Other members receive presets or section-level
-permissions for quotes, approvals, collections, clients, products, analytics,
-settings, payment configuration, refunds, and team administration.
+The owner always has full access. Other members get presets or per-section permissions:
 
-If an action is missing, first check the member's permission, then the plan and the
-setup required by that capability.
+- **Quotes:** create, edit, send and duplicate.
+- **Approvals:** approve discounts, amounts or controlled changes.
+- **Collections:** review and manage receivables.
+- **Clients** and **Products:** change their directories.
+- **Analytics:** open Reports and Team (performance).
+- **Settings:** change the business configuration.
+- **Payment configuration:** change Cord Payments and the payout account.
+- **Refunds:** start refunds of reconciled charges.
+- **Team:** invite people and change permissions.
+
+If an action doesn't appear, check the member's permission first; then the plan and the
+configuration that feature requires.
 
 ## What changes by country
 
-- Signup is available in 12 markets: Mexico, the United States, Canada, Brazil,
-  Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru.
-- Online payments are available in the first eight. The last four can quote, issue
-  commercial invoices, and manage collections, but can't activate Cord Payments yet.
-- Dynamic SPEI is Mexico-only.
-- Mexico can issue CFDI 4.0 with a valid CSD.
-- Outside Mexico, Cord issues a commercial invoice. Spain uses the Verifactu rail
-  only when both the account and Cord's regulatory integration are enabled.
+- Sign-up is available in 12 markets: Mexico, the United States, Canada, Brazil, Spain,
+  the United Kingdom, Germany, France, Colombia, Argentina, Chile and Peru.
+- Cord Payments is available in the first eight. In Colombia, Argentina, Chile and Peru,
+  online payments work with [Mercado Pago](/en/docs/pagos/mercado-pago), which is also
+  offered in Mexico and Brazil as an alternative.
+- SPEI is exclusive to Mexico.
+- Mexico issues CFDI 4.0 with a valid CSD.
+- Outside Mexico, Cord issues commercial invoices. In Spain, registration with the AEAT
+  (Verifactu) is not active yet.
 
-## Before treating something as an error
+## Before looking for an error
 
-Check these in order:
+When something isn't available, check in this order:
 
-1. active organization and test mode;
-2. member permission;
-3. plan limit or capability;
-4. operating country and compatible method;
-5. required client, issuer, or document fields;
-6. previous quote, invoice, or payment state.
+1. active organization and test environment;
+2. the member's permission;
+3. the plan's limit or capability;
+4. country of operation and compatible method;
+5. required fields of the client, issuer or document;
+6. the previous status of the quote, invoice or payment.
 
-Then open the guide for that section. The [Support Center](https://cordhq.app/en/support)
-handles specific incidents; these guides explain the complete operating model.
+Then read the section's guide. The [support center](https://cordhq.app/soporte) is for
+specific incidents; these guides explain the full model.
+
+## Related pages
+
+- [Settings map](/en/docs/cuenta/mapa-de-ajustes)
+- [Create your account](/en/docs/cuenta/crear-cuenta)
+- [All products](/en/docs/productos)

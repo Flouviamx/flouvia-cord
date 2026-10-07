@@ -1,0 +1,159 @@
+---
+title: "Configuración asistida"
+seoTitle: "Configuración asistida con IA por API, CLI y MCP"
+description: "Propón la configuración de una cuenta de Cord desde tu sitio, una descripción y una lista de precios con POST /api/v1/setup/plans: estados, límites, review_url y aprobación humana."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave secreta o restringida con permiso de escritura en setup", "Una persona con permiso de Ajustes que revise y apruebe"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Configuración asistida</h1>
+  <p class="page-subtitle">Un agente o tu terminal proponen la configuración de la cuenta; una persona la revisa y la aprueba.</p>
+</header>
+
+Cord lee el sitio web de un negocio, una descripción en sus palabras y su lista de precios, y arma una propuesta de configuración: datos del perfil, marca, impuestos, catálogo de productos, plantillas de mensaje y preferencias de cotización. Es el mismo asistente del onboarding y de **Ajustes**, expuesto por tres puertas para desarrolladores:
+
+| Puerta | Cómo |
+|---|---|
+| API REST | `POST /api/v1/setup/plans` y `GET /api/v1/setup/plans/{id}` |
+| CLI | `cord setup` (ver [CLI](/docs/desarrolladores/herramientas/cli)) |
+| Servidor MCP | Herramientas `proponer_configuracion` y `estado_configuracion` (ver [Servidor MCP](/docs/desarrolladores/herramientas/mcp)) |
+
+<Callout type="warning" title="La IA nunca aplica">
+Ninguna de las tres puertas cambia la cuenta. Todas devuelven un `review_url`: una página de la app donde una persona con sesión y permiso de **Ajustes** revisa la propuesta, puede editarla y la aplica o la descarta. La propuesta siempre configura la **cuenta real** a la que pertenece la llave, aunque la llave sea de prueba.
+</Callout>
+
+## Proponer una configuración
+
+Manda al menos uno de los tres campos:
+
+| Campo | Tipo | Detalle |
+|---|---|---|
+| `sitio` | string | Sitio web del negocio, por ejemplo `materialesdelvalle.mx`. Cord lee su texto, colores, logo, correos y teléfonos. Hasta 300 caracteres. |
+| `descripcion` | string | A qué se dedica, cómo cobra y qué impuestos cobra o retiene, en sus palabras. Hasta 4,000 caracteres; lo demás se recorta. |
+| `archivo` | objeto | La lista de precios: `{ "nombre": "precios-2026.csv", "base64": "..." }`. Excel (`.xlsx`), CSV, PDF o foto (PNG o JPG), hasta **3 MB** antes de codificar. |
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sitio": "materialesdelvalle.mx",
+    "descripcion": "Vendemos material de construcción a crédito 30 días y retenemos 4% de IVA en fletes."
+  }'
+```
+
+Para incluir la lista de precios desde la terminal:
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d "{\"sitio\":\"materialesdelvalle.mx\",\"archivo\":{\"nombre\":\"precios.csv\",\"base64\":\"$(base64 < precios.csv | tr -d '\n')\"}}"
+```
+
+La respuesta es `201 Created`:
+
+```json
+{
+  "data": {
+    "object": "setup_plan",
+    "id": "c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "estado": "propuesto",
+    "review_url": "https://cordhq.app/app/setup/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "resumen": "Distribuidora de materiales de construcción con crédito a 30 días y retención de IVA en fletes.",
+    "conteos": { "perfil": 3, "marca": 2, "cotizaciones": 1, "impuestos": 1, "productos": 42, "plantillas": 2 },
+    "avisos": [],
+    "descartado": [
+      { "campo": "perfil.telefono", "motivo": "No es un teléfono válido." }
+    ]
+  }
+}
+```
+
+| Campo | Qué es |
+|---|---|
+| `review_url` | La página donde una persona revisa y aplica la propuesta. Compártela con quien administra la cuenta. |
+| `resumen` | Una línea con lo que Cord entendió del negocio. |
+| `conteos` | Cuántos cambios trae cada sección. |
+| `avisos` | Lo que no se pudo leer, por ejemplo un sitio que no respondió o una lista con columnas que no se reconocieron. La propuesta sale igual con lo demás. |
+| `descartado` | Datos que la IA propuso y que no pasaron la validación de Cord (formato fiscal, tasas, precios). Nunca llegan a la propuesta. |
+
+Cord propone solo lo que la fuente respalda: un identificador fiscal solo si aparece literal, un producto solo si trae precio, y un impuesto solo si no está ya en tu catálogo. Cada dato pasa por las mismas reglas del país que Ajustes.
+
+## Consultar el estado
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64 \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```json
+{
+  "data": {
+    "object": "setup_plan",
+    "id": "c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "estado": "aplicado",
+    "review_url": "https://cordhq.app/app/setup/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "resultado": [
+      { "seccion": "perfil", "ok": true, "detalle": "6 ajustes" },
+      { "seccion": "impuestos", "ok": true, "detalle": "1 de 1" },
+      { "seccion": "productos", "ok": true, "detalle": "40 nuevos, 2 actualizados" },
+      { "seccion": "plantillas", "ok": true, "detalle": "2 de 2" }
+    ],
+    "created_at": "2026-10-07T16:20:41.512Z",
+    "aplicado_at": "2026-10-07T16:24:03.007Z",
+    "expira_at": "2026-10-14T16:20:41.512Z"
+  }
+}
+```
+
+| `estado` | Significa |
+|---|---|
+| `generando` | Cord todavía arma la propuesta. |
+| `propuesto` | Lista y esperando a que una persona la revise en `review_url`. |
+| `aplicado` | Una persona la aplicó. `resultado` trae una fila por sección con `ok` y `detalle`; si alguna sección falló, las demás se aplican igual. |
+| `descartado` | Una persona la descartó. No se cambió nada. |
+| `fallido` | No se pudo terminar la propuesta, o al aplicarla fallaron todas las secciones. |
+
+`resultado` es `null` hasta que la propuesta se aplica. Para esperar la decisión, consulta cada pocos segundos (el CLI lo hace cada 3) y detente al llegar a `aplicado`, `descartado` o `fallido`.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Propuestas por organización | 6 al día, sumando la API, el CLI, el MCP y la app. La séptima responde `429` con `code: "rate_limited"`. |
+| Vigencia | 7 días (`expira_at`). Una propuesta vencida ya no se puede aplicar; genera una nueva. |
+| Archivo | 3 MB antes de codificar en base64. Más grande responde `413`. |
+| Catálogo propuesto | Hasta 500 productos, 6 impuestos y 4 plantillas. |
+
+## Errores
+
+| Situación | Respuesta |
+|---|---|
+| No mandaste `sitio`, `descripcion` ni `archivo` | `400`, `code: "invalid_request"` |
+| El archivo no es Excel, CSV, PDF ni foto, o está vacío | `400`, `code: "invalid_request"`, con el motivo en `error` |
+| El archivo pesa más de 3 MB | `413`, `code: "invalid_request"` |
+| Ya se generaron 6 propuestas hoy | `429`, `code: "rate_limited"` |
+| Cord no pudo terminar la propuesta | `502` con el mensaje en `error`; la propuesta queda en `fallido` |
+| El `id` no existe en tu cuenta | `404`, `code: "not_found"` |
+
+## Llaves y permisos
+
+- Proponer exige permiso de escritura en el recurso `setup`; consultar, de lectura. Una [llave restringida](/docs/desarrolladores/esenciales/autenticacion#llaves-restringidas) con solo `setup` basta. La llave que entrega `cord login` ya lo incluye.
+- La página de revisión exige una sesión con permiso de **Ajustes** en esa cuenta. Nadie más puede aplicar.
+- Aplicar queda en la bitácora de la organización con quién lo hizo.
+
+## Desde el CLI
+
+```bash
+npx @flouviahq/cli setup --sitio materialesdelvalle.mx --archivo precios.xlsx
+```
+
+El CLI manda la propuesta, abre `review_url` en tu navegador y espera tu decisión. Cuando la apruebas, imprime el resultado por sección. Enter deja de esperar sin cancelar nada: la propuesta te sigue esperando en el link durante 7 días.
+
+## Desde un agente (MCP)
+
+`proponer_configuracion` recibe `sitio`, `descripcion`, `archivo_base64` y `archivo_nombre` y devuelve lo mismo que la API (`id`, `estado`, `review_url`, `resumen`, `conteos`, `avisos`, `descartado`). `estado_configuracion` recibe el `id` y devuelve `estado`, `review_url`, `resultado`, `creada`, `aplicada` y `vence`. El agente debe compartir el `review_url` con la persona: no tiene manera de aplicar la propuesta por su cuenta.

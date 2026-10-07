@@ -2,9 +2,11 @@
 title: "Triggers"
 seoTitle: "Cord Workflows triggers: the 44 events"
 description: "Cord's 44 events and the scheduled trigger that can start a workflow in Cord, grouped by category, with when they happen and the data each one carries."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission", "Cord Payments active for the dispute, refund, payout and payments account triggers", "Mexico and CFDI for A quote CFDI is stamped"]
 ---
 
 <header class="content-header">
@@ -19,7 +21,9 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 - **Forward only.** A workflow reacts to events that happen after it is published, not earlier ones.
 - **Whoever causes it.** The event counts whether it came from a team member, the client from their link, the API, an AI agent through MCP or another workflow. If the origin matters, use **Who caused it** in a condition.
 
-In the editor, click **Add a trigger** and use **Find a trigger** or the categories.
+In the editor, click **Add a trigger** and use **Find a trigger** or the categories: **Scheduled**, **Quotes**, **Approvals**, **Payments**, **Invoices**, **Clients**, **Products** and **Tasks and promises**.
+
+{/* MOCKUP: "Edit trigger" panel in the workflow editor. At the top the "Find a trigger" search box; below, the category tabs (All, Scheduled, Quotes, Approvals, Payments, Invoices, Clients, Products, Tasks and promises) with "Invoices" selected, and the list: "A quote is invoiced", "A quote CFDI is stamped", "An invoice is issued", "An invoice is sent", "An invoice is paid", "An invoice payment fails", "An invoice becomes overdue", "An invoice is about to be due", "An invoice has been past due for days", "An invoice is voided", "An invoice is marked uncollectible". */}
 
 ## Data they carry
 
@@ -31,6 +35,8 @@ Most triggers for the same kind of object share data. To avoid repeating it in e
 | **Invoice data** | Number, Client, Total, Balance due, Currency, Country, Status at the event, Current invoice status, Who caused it |
 | **Client data** | Company, Email, Country, Payment terms, Who caused it |
 | **Product data** | Name, List price, Active, Who caused it |
+
+In addition, **every** trigger carries your business data: name, contact email, phone, currency and today's date in your time zone.
 
 The exact name of each item for your texts (for example `{{saldo_pendiente}}`) is in [Event data](/en/docs/automatizacion/workflows/datos-del-evento).
 
@@ -135,6 +141,26 @@ Dispute, refund, payout and payments account events come from Cord Payments, so 
 | **A payment promise is kept** | The promise is marked kept. | Promised amount and Who caused it |
 | **A payment promise is broken** | The promise is marked broken. | Promised amount and Who caused it |
 
+## Time-based triggers
+
+Three triggers are not caused by a person but by the calendar: **A quote is about to expire**, **An invoice is about to be due** and **An invoice has been past due for days**. Cord checks them once a day and emits them **once per document per day**, with the distance in days as data (**Days until it expires**, **Days until due** or **Days past due**).
+
+- **You pick the exact day** with a condition, for example "Days until due equals 3". Without a condition, the workflow would run every day of the period.
+- **They are only generated if an active workflow listens to them.** If none of your active workflows uses that trigger, Cord does not emit it.
+- **They are not sent to webhooks, Zapier, Make or n8n**: a subscriber would get the same notice every day. They are exclusive to Cord Workflows, like the scheduled trigger.
+
+## The same events outside Workflows
+
+41 of the 44 events can also be received outside Cord: in your [webhooks](/en/docs/desarrolladores/herramientas/webhooks) and in the [Zapier](/en/docs/automatizacion/integraciones/zapier), [Make](/en/docs/automatizacion/integraciones/make) and [n8n](/en/docs/automatizacion/integraciones/n8n) triggers. The only ones that exist just inside Workflows are the three time-based triggers and the scheduled one.
+
+| Trigger | In Workflows | In webhooks, Zapier, Make and n8n |
+|---|---|---|
+| The 41 quote, approval, payment, invoice, client, product, task and promise events | Yes | Yes, with their technical name (for example `quote.approved`) |
+| A quote is about to expire | Yes | No |
+| An invoice is about to be due | Yes | No |
+| An invoice has been past due for days | Yes | No |
+| On a fixed schedule | Yes | No |
+
 ## Who caused it
 
 Quote, approval, quote payment, invoice, client, product, task and promise triggers carry **Who caused it**, with these values:
@@ -150,8 +176,9 @@ Quote, approval, quote payment, invoice, client, product, task and promise trigg
 
 A typical use: on **A task is created**, add the condition "Who caused it is not Another workflow" so you do not react to tasks created by your own workflows.
 
-## Next
+## Related
 
-- [Actions](/en/docs/automatizacion/workflows/acciones)
-- [Conditions](/en/docs/automatizacion/workflows/condiciones)
-- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)
+- [Conditions](/en/docs/automatizacion/workflows/condiciones): pick the exact day or the case you care about.
+- [Actions](/en/docs/automatizacion/workflows/acciones): which actions fit each trigger.
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento): the exact name of each piece of data.
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): triggers in use, end to end.

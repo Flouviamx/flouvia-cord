@@ -1,0 +1,98 @@
+---
+title: "Installment payment plans"
+seoTitle: "Installment plans for overdue balances in Cord"
+description: "How a monthly installment plan works: who proposes it, how it's approved, how the balance is split, what your customer sees on the link, how each installment is collected, and what happens to the previous balance."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Scale, Developer]
+prerequisites: ["Scale or Developer plan", "Collections permission", "AI collections agent turned on", "Approved quote with an overdue balance"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Installment payment plans</h1>
+  <p class="page-subtitle">When a customer can't settle at once, their overdue balance is split into monthly installments paid from the same link.</p>
+</header>
+
+## What it is
+
+An **installment plan** replaces the outstanding balance of an overdue quote with **2 to 6 monthly installments** that add up to exactly that balance. Each installment is a separate charge: your customer pays it from the same quote link, with the methods you have active, and the quote is paid once the last one is covered.
+
+Today installment plans are negotiated by the [AI collections agent](/en/docs/pagos/cobranza-ia): there's no button to create a plan by hand from the quote. If you want to split a charge **from the start**, use [upfront and balance](/en/docs/pagos/anticipos) or a [credit term](/en/docs/pagos/credito).
+
+## Requirements
+
+| Requirement | Detail |
+|---|---|
+| Plan | Scale or Developer (the plans that include AI collections). |
+| Permission | **Collections**, to approve the email that activates the plan. |
+| Setup | Collections agent turned on, with **Maximum instalments** and **Offer a plan after** configured. |
+| Document | An approved **quote** with an overdue balance. On invoices, the customer can pay part of the balance from the invoice link, but the agent doesn't build an installment plan on them. |
+| Online payments | Optional. Without Cord Payments or Mercado Pago, the customer sees the installments and due dates, and you record each payment by hand. |
+
+## How a plan is created
+
+<Steps>
+1. **The account reaches the threshold.** The agent can offer installments only when the quote is at least as many days overdue as your **Offer a plan after** setting (15 by default) and has no proposed or active plan.
+2. **The customer agrees in the conversation.** The agent proposes the plan only after the customer has accepted paying in installments within the email thread.
+3. **Cord validates the numbers.** Cord checks that the number of installments is between 2 and your configured maximum, and that the proposal covers the full balance, with no discount on the principal. Cord calculates each installment amount, not the agent.
+4. **You approve (approval mode).** The email with the plan sits in the **Approval inbox** labeled "Proposes N instalments of [amount]". When you click **Approve and send**, Cord warns you that the plan will activate and replace the quote's pending charges.
+5. **The plan activates.** Cord cancels the previous pending charge, creates the installments, and sends the email with the payment link to the customer.
+</Steps>
+
+In **Automatic mode**, steps 4 and 5 happen without your review: the plan activates as soon as the agent records it.
+
+<Callout type="warning" title="Discarding a draft cancels its plan">
+If you discard or regenerate a draft that proposed a plan, the proposed plan is deleted. Since it was never activated, there are no charges to undo.
+</Callout>
+
+## How the balance is split
+
+- The balance is divided into equal parts and **the last installment absorbs any rounding difference**, so the total is exact to the cent.
+- The **first installment is due the day the plan activates**; each one after that, one month after the previous one.
+- Installments are in the quote's currency.
+
+For example, a balance of $10,000.00 MXN in 3 installments becomes two installments of $3,333.33 MXN and one of $3,333.34 MXN, due today, in one month, and in two months.
+
+## What your customer sees
+
+{/* MOCKUP: public quote link with the charge breakdown: "Installment 1 · paid", "Installment 2 · due Nov 7, 2026 · $3,333.33 MXN", "Installment 3 · due Dec 7, 2026", and the payment button "Pay Installment 2 due · of a $10,000.00 MXN total". */}
+
+The quote link lists each installment with its number, amount, and status. The payment button charges **the next installment that's already due**, never the full balance or a future installment. When nothing is due today, the link explains when the next one is due instead of showing the button.
+
+Each installment is paid with your account's active methods: card, SPEI (quotes in MXN), or Mercado Pago. With SPEI, each installment has its own transfer instructions.
+
+## Fees
+
+Each installment is a separate transaction for fee purposes: on payments in Mexican pesos (MXN), Cord Payments applies its fee to each installment separately; in other currencies there's no platform fee today. See [Cord Payments fees](/en/docs/pagos/condiciones).
+
+## Tracking
+
+- **Collections agent › Negotiated plans** shows each plan with its progress ("2 of 3 instalments paid") and the next installment's date.
+- **Collections agent › Active payment plans** adds up what's committed in installments.
+- While the customer is **on track** (no overdue unpaid installment), the agent doesn't email them: in **Up next** they show as "Plan on track". If an installment falls due unpaid, the account returns to collections and the email points to that installment, not the full balance.
+- The quote timeline records when the plan was agreed or approved.
+
+## Limits
+
+- 2 to 6 monthly installments; you set the maximum between those values (3 by default).
+- Monthly installments only.
+- One proposed or active plan per quote.
+- No discounts on the principal and no added interest.
+- Quotes only, not invoices.
+- Not created from the quote editor.
+
+## Common problems
+
+**The agent doesn't offer installments.** Check that the account reached the **Offer a plan after** days, that it doesn't already have a plan, and that the customer agreed in the conversation.
+
+**A customer with a plan stopped getting emails from the agent.** They're on track: no installment is overdue. They return to collections if an installment falls due unpaid.
+
+**The customer paid the old balance after the plan activated.** If a transfer that was already on its way arrives later, Cord still records it, because the money did arrive. Review the quote's charges and, if there's an overpayment, arrange the refund with your customer.
+
+## Related
+
+- [AI collections](/en/docs/pagos/cobranza-ia)
+- [Upfront and balance](/en/docs/pagos/anticipos)
+- [Credit terms](/en/docs/pagos/credito)
+- [Receivables and operating collections](/en/docs/pagos/cartera-cobranza)

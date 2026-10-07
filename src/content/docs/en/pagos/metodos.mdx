@@ -1,73 +1,147 @@
 ---
 title: "Payment methods"
-description: "Card, SPEI, manual transfers and confirmation states."
-lastUpdated: "2026-09-08"
+seoTitle: "Payment methods in Cord: card, SPEI, Mercado Pago, and transfer"
+description: "Which payment methods Cord offers by country and currency, how to turn them on, how each one is confirmed, what the quote accepts versus the invoice, and how to switch between SPEI and card without charging twice."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Active Cord Payments account or connected Mercado Pago to collect online", "Payment settings permission to turn on methods"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Payment methods</h1>
-  <p class="page-subtitle">Card, SPEI, manual transfers and confirmation states.</p>
+  <p class="page-subtitle">Card, SPEI, Mercado Pago, and manual transfer: where each applies, how it's confirmed, and what your customer sees.</p>
 </header>
 
+## What it is
+
+Cord has **two online payment rails** and one manual option:
+
+- **Cord Payments:** card and, in Mexico, automatic SPEI transfer. The money lands in your own [payments account](/en/docs/pagos/onboarding) and from there reaches your bank at the [payout frequency](/en/docs/pagos/depositos) you choose.
+- **[Mercado Pago](/en/docs/pagos/mercado-pago):** your customer pays with your own Mercado Pago account, using the methods Mercado Pago offers in your country.
+- **Manual transfer:** you share your bank details and record the payment yourself once you verify it.
+
+## Method by country and currency
+
+| Method | Countries | Payment currency | Quote | Invoice | Retainer |
+|---|---|---|---|---|---|
+| **Card** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | The document's sale currency, if the processor supports it | Yes | Yes | Yes |
+| **Automatic SPEI** (Cord Payments) | MX only | MXN only | Yes | No | No |
+| **Mercado Pago** | MX, BR, CO, AR, CL, PE | Whatever Mercado Pago supports on your account | Yes | Yes | No |
+| **Manual transfer** | All 12 Cord countries | Any | Yes | Yes (manual record) | No |
+
 <Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
+In Mexico and Brazil both rails coexist: Cord Payments is the primary one and Mercado Pago appears as an alternative on the same page. In Colombia, Argentina, Chile, and Peru, Mercado Pago is the way to collect online. See [Cord Payments fees](/en/docs/pagos/condiciones) for the cost of each method.
 </Callout>
 
-## Choose how to pay
+## Turn methods on
 
-The quote link offers methods enabled by the business. Card and automatic bank
-transfer require an enabled payment account. The public invoice page has its own
-card flow; do not assume it offers every quote payment method.
+<Steps>
+1. Open **Settings › Payments** with the **Payment settings** permission.
+2. Under **Payment methods**, turn on **Card** and, if your business is in Mexico, **SPEI**. Both become available once your payments account is **Active**; before that they appear locked.
+3. If the screen shows the current fee schedule with an acceptance checkbox, review and accept it. See [Cord Payments fees](/en/docs/pagos/condiciones#how-your-fee-schedule-is-activated).
+4. To offer manual transfer, turn it on and enter the **bank**, the account in your country's format, and the **beneficiary**.
+5. For Mercado Pago, click **Connect Mercado Pago** on its card. See [Mercado Pago](/en/docs/pagos/mercado-pago).
+</Steps>
 
-### Card
+## Card
 
-The customer reviews the amount and completes the payment fields. Their bank may
-request additional verification. The payment is reflected when confirmation arrives;
-closing the payment screen or returning to the link is not proof of payment.
+Your customer reviews the amount and enters their card details in a form inside the link, without leaving for another page. Their bank may ask for additional verification. The payment shows up once confirmation arrives; closing the screen or returning to the link doesn't prove it was paid.
 
-### SPEI
+Card is the only method for [recurring retainers](/en/docs/pagos/igualas), because it's the only one that can charge itself every month.
 
-Automatic SPEI is available for MXN payments for eligible businesses in Mexico.
-Instructions show the CLABE, bank, reference and remaining amount. Use the current
-instructions for that payment, not a saved screenshot from another document.
+## Automatic SPEI
 
-Each payment keeps a bank-customer reference to identify its funds. Reconciliation
-depends on confirmation; it is not guaranteed to be instant. If you already sent
-a transfer, check its status before trying a card. Do not assume a previous CLABE
-is unusable merely because you changed screens or methods. Contact the seller if
-you sent money to previous instructions.
+SPEI is Mexico's interbank transfer system and only settles in pesos. It appears only on **MXN** payments of businesses in Mexico with SPEI turned on; if the quote is in another currency, your customer pays by card even if SPEI is on.
 
-### Manual bank transfer
+When choosing **SPEI transfer**, your customer sees the **SPEI instructions**:
 
-When a business offers its own bank details, the seller verifies receipt and
-records the payment in Cord. An uploaded receipt does not replace that verification.
-Refunding a manual transfer is handled with the business.
+| Item | Detail |
+|---|---|
+| Amount | The outstanding amount of that charge, with its currency. |
+| CLABE | A CLABE tied to that charge, with a **Copy** button. |
+| Bank | The receiving bank. |
+| Beneficiary | Your business name. |
+| Reference | The charge reference, with a **Copy** button. |
+| Valid until | If the instructions have a deadline, it appears here. |
 
-## Switching between SPEI and card
+From that screen they can **Print or save PDF**, or click **Email these to me**.
 
-The protection improvement for switching methods is **under validation before
-publication**. It verifies the previous attempt, blocks replacement when money
-has been received or is in progress, and preserves the attempt across concurrent
-retries. It aims to reduce duplicate charges caused by switching or lost responses.
+### SPEI instructions by email
 
-While a payment is unresolved, do not repeat the transfer or open another method
-just to try it. Refresh the link or contact the business. The improvement does
-not include automatic refunds of late transfers or automatic recovery of every
-uncertain attempt.
+**Email these to me** sends the same instructions (amount, CLABE, bank, beneficiary, and reference), with your business branding, to **the customer email registered on the quote**. No other recipient can be typed: if your customer needs them at another address, update their record. If the quote has no customer email, the button returns an error and your customer can print or save the PDF. For security, sending is limited to three emails every ten minutes per link.
 
-See [the scope of the changes](/en/docs/pagos/mejoras-confiabilidad) and
-[method-specific fees](/en/docs/pagos/condiciones). Sale currency is separate from
-[your Cord subscription currency](/en/docs/cuenta/suscripcion).
+### How it's confirmed
 
-## One payment flow: implementation prepared
+Each charge keeps its own bank reference, so Cord recognizes the funds without anyone cross-checking receipts. When the money arrives, the charge is marked paid and the quote changes status. Confirmation depends on the bank's notice and **isn't always instant**: if your customer already transferred, they should check the status before trying a card.
 
-Integrations that still request the previous checkout will receive a link to
-Cord's current payment screen. They will use the same payment-attempt registry
-and payable balance instead of creating an independent hosted payment session.
-The API response retains its `url` field and accepted rates remain unchanged.
+## Mercado Pago
 
-Before activation, existing open or pending sessions are reviewed. They are not
-automatically canceled or refunded. The current audit found no sessions in the
-connected accounts checked; it must be repeated at release time. Deployment and
-integrated acceptance remain pending.
+The quote's payment page and the invoice link show **Pay with Mercado Pago**. Your customer goes to Mercado Pago's checkout and returns to your link when done. Cord marks the charge paid only when it **reads the approved payment** in your Mercado Pago account. Details in [Mercado Pago](/en/docs/pagos/mercado-pago).
+
+## Manual transfer
+
+Your customer sees your bank details and transfers from their bank. When you verify the deposit in your bank, you record the payment in Cord: on the quote, on the invoice, or with **Record payment** from [receivables](/en/docs/pagos/cartera-cobranza). A receipt sent by the customer doesn't replace that verification. Refunding a manual transfer is handled directly with your customer.
+
+## What the quote accepts versus the invoice
+
+| | Quote link | Invoice link |
+|---|---|---|
+| Card | Yes | Yes, if **Card** is turned on |
+| Automatic SPEI | Yes, in MXN | No |
+| Mercado Pago | Yes | Yes |
+| Partial payment | In defined parts: deposit, balance, or installments | Free amount: your customer chooses how much to pay |
+| Retainers | Yes, by card | No |
+
+### Partial payment of an invoice
+
+On the invoice link, your customer can pay the full balance or click **Pay another amount** and enter how much they want to pay, by card or with Mercado Pago:
+
+- Cord **caps the payment at the real balance**: if they enter more than they owe, only the balance is charged.
+- There's a **minimum that can be charged online**: 0.50 in the invoice currency (for example, 0.50 USD or 0.50 EUR), or 50 units in currencies without decimals. If the amount is lower, Cord asks them to pay a bit more or settle the balance.
+- Each payment is recorded in the invoice's payment history and the balance is recalculated. The invoice becomes **Paid** when the balance reaches zero.
+- If the balance changes while your customer is paying (for example, because you recorded another payment), Cord asks them to refresh before continuing.
+
+See [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
+
+## Switch between SPEI and card
+
+Your customer can choose another method on the same page. Before offering the new one, Cord checks the previous attempt:
+
+- If the previous attempt **received no money**, it's canceled and the new method opens.
+- If it **already received money or has a payment in progress** (a partial SPEI transfer or a card being authorized), it isn't replaced: your customer sees there's a payment pending confirmation.
+- If two attempts arrive at the same time, the same one is reused instead of creating another.
+- If Cord can't confirm the previous attempt's status, it **doesn't open another one**: it prefers a review over risking a double charge.
+
+While a payment is pending clarification, your customer shouldn't repeat the transfer or try another method: they should refresh the link or contact you. Cord doesn't automatically return a transfer that arrives late at old instructions; you resolve that case with your customer.
+
+## Limits
+
+- SPEI: Mexico only, MXN only, quotes only.
+- The invoice doesn't offer SPEI or retainers.
+- Mercado Pago doesn't run recurring charges and Cord doesn't read its chargebacks today.
+- In Colombia, Argentina, Chile, and Peru there's no Cord Payments: online collection is through Mercado Pago.
+- A test document (without a valid fiscal issue) can't be paid online.
+
+## Common problems
+
+**My customer doesn't see the SPEI option.** The quote isn't in MXN, SPEI is off in **Settings › Payments**, or your account isn't active.
+
+**My customer doesn't see a pay button on the invoice.** Your payments account isn't active, **Card** is off and Mercado Pago isn't connected, or the invoice is a test document.
+
+**"Email these to me" fails.** The quote has no customer email or the sending limit was reached. Your customer can **Print or save PDF**.
+
+**My customer transferred to another charge's CLABE.** Each charge has its own reference. Contact your customer and review the quote's charges before recording anything by hand.
+
+## Integrations using the previous checkout
+
+If an integration still requests a quote's previous checkout, it receives a link to Cord's current payment screen, with the same attempt record and the balance due. The response keeps the `url` field and doesn't change the accepted fees.
+
+## Related
+
+- [Accepting a payment](/en/docs/pagos/aceptar)
+- [Cord Payments fees](/en/docs/pagos/condiciones)
+- [Mercado Pago](/en/docs/pagos/mercado-pago)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Your Cord subscription currency](/en/docs/cuenta/suscripcion)

@@ -30,4 +30,4 @@ mismo siguiente paso que una factura abierta. Los documentos de prueba se
 identifican y no permiten un cobro real. La disponibilidad del botón de pago depende
 del estado del documento, su saldo y la cuenta de cobros del vendedor.
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

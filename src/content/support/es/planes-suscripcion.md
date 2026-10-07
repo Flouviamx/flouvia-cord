@@ -88,7 +88,7 @@ Revisa los datos antes de emitir. La disponibilidad de un documento y su estado
 se muestran por cargo; un comprobante no sustituye la revisión de tus obligaciones
 contables en cada país.
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
 
 ## Documentos comerciales y fiscales
 

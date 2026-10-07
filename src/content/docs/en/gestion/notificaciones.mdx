@@ -1,43 +1,126 @@
 ---
 title: "Notifications"
-description: "Decide which events notify you and how: email to the account owner, Slack or Microsoft Teams."
+seoTitle: "Cord notifications by email, Slack, and Microsoft Teams"
+description: "Which events alert you, when each one fires (including what counts as a view), which channel they arrive on, and what doesn't trigger an alert."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission to change the alert matrix", "Slack or Microsoft Teams connected to receive alerts there"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Notifications</h1>
-  <p class="page-subtitle">Find out the moment your client makes a decision, by email, Slack or Teams, without having to keep checking the dashboard.</p>
+  <p class="page-subtitle">Find out by email, Slack, or Teams when your client decides something, without checking the app.</p>
 </header>
 
-## How it works
+## What it is
 
-Under **Settings › Notifications** there's a matrix of 7 events by 3 channels (email, Slack and Microsoft Teams). Check the boxes you want — every combination saves immediately and applies from that point on.
+In **Settings › Notifications › Notifications** there's a matrix of 7 events by 3
+channels (Email, Slack, and Teams). You check the boxes you want and they apply from
+then on to the whole organization.
 
-| Event | When it fires |
-|---|---|
-| Quote viewed | The client opened the public link |
-| Quote approved | The client accepted the proposal |
-| Quote rejected | The client rejected or countered |
-| Payment received | An online payment was recorded |
-| Quote about to expire | 3 days before the validity date |
-| Overdue payment | A receivable passed its due date |
-| Someone joined the team | An invitee accepted your invitation |
+{/* MOCKUP: Settings › Notifications with the 7-row matrix (Your client viewed the quote, Quote approved, Quote rejected, Payment received, Quote about to expire, Overdue payment, Someone joined the team) and the Email, Slack, and Teams columns; Approved, Rejected, and Payment received checked under Email, and the Slack and Teams cells for "Someone joined the team" showing "Not available for this event". Below, the Slack channel and Teams sections. */}
 
-<Callout type="info">
-**Before you save your matrix for the first time**, Cord already emails you when a quote is approved, rejected, or paid — the three highest-value events, on by default. As soon as you save the screen once, your selection takes over: you can turn any of the three off or turn the rest on.
-</Callout>
+## Requirements
 
-## Email
+- **Permission:** Settings, to change the matrix.
+- **Plan:** all.
+- **Channels:** email always goes to the account owner. Slack and Teams must be connected (see below).
 
-Email always goes to the business owner's account (`Settings › Your account`). It's never sent to the whole team — if several people need to know, use Slack or Teams.
+## The events
 
-## Slack
+| Event | When it fires | Triggered by |
+|---|---|---|
+| **Your client viewed the quote** | The first time the client opens the link (see below what counts as a view). | The client |
+| **Quote approved** | The client signs the proposal, in full or in part, from the link. | The client |
+| **Quote rejected** | The client confirms the rejection from the link. | The client |
+| **Payment received** | Cord confirms an online payment that settles the quote. | Online payment |
+| **Quote about to expire** | Exactly 3 days before the validity date, if it's still sent or viewed. | The daily process |
+| **Overdue payment** | The day after the payment of an approved or invoiced quote comes due without being paid. | The daily process |
+| **Someone joined the team** | An invitee accepts your invitation. | Your team |
 
-Connect an **Incoming Webhook** from Slack on the same screen (`Settings › Integrations`) and check the Slack column for the events you want posted to your channel. The message includes the folio, the client, the total, and a direct link to the quote.
+### What counts as a "view"
+
+The view alert is there so you know **your client** opened the proposal, so Cord
+discards anything that isn't the client:
+
+- **Your team doesn't count.** If you open the link signed in to the organization, you see the preview notice and nothing fires.
+- **Link preview generators don't count.** Pasting the link into WhatsApp, Slack, or an email doesn't mark it as viewed.
+- **It's measured with the page open and visible.** The view is recorded from the link itself when the tab is visible, not when the link loads in the background.
+- **Only once.** The alert goes out when the quote moves from *Sent* to *Viewed*. Reloading or reopening doesn't repeat it.
+
+More in [What your client sees](/en/docs/interaccion/vista-del-cliente).
+
+### What doesn't trigger an alert
+
+- **Messages, per-line comments, and counteroffers.** They stay in the conversation and in the bell on the top bar, but don't trigger email, Slack, or Teams. To receive them, create a [workflow](/en/docs/automatizacion/workflows/primer-workflow) with **A message is posted on a quote**.
+- **What your team does:** **Mark approved**, **Mark rejected**, and **Record payment** change the status but don't send these alerts.
+- **Internal approval requests:** they reach Slack with buttons to decide and Teams with a link to Cord, separately from this matrix (see [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)).
+
+## Before you save for the first time
+
+Until you save the matrix, Cord alerts you **by email** about three events: quote
+approved, rejected, and payment received. Once you save the screen, your selection
+rules: you can turn off any of the three or turn on the others.
+
+## Channels
+
+<Tabs>
+<TabItem label="Email">
+
+Goes to the business owner's account. It isn't sent to the whole team: if several
+people need to know, use Slack or Teams. The email carries the quote number, client,
+total with its currency, and a button to open the quote.
+
+</TabItem>
+<TabItem label="Slack">
+
+In the **Slack channel** section of the same screen, paste the URL of a **Slack
+incoming webhook** and check the Slack column for the events you want. The message
+includes the quote number, client, total, and a link to the quote. See
+[Slack](/en/docs/automatizacion/integraciones/slack).
+
+</TabItem>
+<TabItem label="Microsoft Teams">
+
+Connect Teams with **Connect with Microsoft** in **Settings › Integrations** (you pick
+the channel, nothing to copy), or paste the URL of a Teams Power Automate flow in
+**Settings › Notifications**. Check the Teams column for the events you want. It's a
+separate channel from Slack: you can have both and choose where each alert goes. See
+[Microsoft Teams](/en/docs/automatizacion/integraciones/teams).
+
+</TabItem>
+</Tabs>
 
 <Callout type="warning">
-**"Someone joined the team" has no Slack or Teams version.** That alert isn't tied to any quote (no folio, no amount to show in the channel), so it can only be received by email.
+**"Someone joined the team" only arrives by email.** It isn't tied to a quote (no
+number or amount to show in the channel), so Slack and Teams show "Not available for
+this event".
 </Callout>
 
-## Microsoft Teams
+## What Cord sends your client
 
-Connect Teams in `Settings › Integrations`, with **Connect with Microsoft** (you pick the channel, nothing to copy) or with the URL of a Teams Workflows flow, and check the Teams column for the events you want. It's a separate channel from Slack: you can have both connected and choose where each alert goes. The card carries the same folio, client, total and link.
+Separately from this matrix, and with no setup, Cord emails the client a payment
+reminder when an approved quote comes due within the next 3 days, as long as the client
+has an email on file. Test organizations don't send reminders.
+
+## Limits by plan
+
+Alerts are on every plan. Customizing the sender and signature of emails to the client
+is available from Starter (**Settings › Notifications › Email**).
+
+## Common problems
+
+**I didn't get the view alert.** You opened the link yourself while signed in, the quote was already *Viewed*, or the event isn't checked in your matrix (it's off by default).
+
+**My partner doesn't get the emails.** Email only goes to the account owner; use Slack or Teams.
+
+**Nothing arrives in Slack.** Check that the webhook URL is saved and the Slack column is checked for that event.
+
+## Related
+
+- [Chat and comments](/en/docs/interaccion/chat)
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [Workflow triggers](/en/docs/automatizacion/workflows/disparadores)
+- [Webhooks](/en/docs/desarrolladores/herramientas/webhooks)

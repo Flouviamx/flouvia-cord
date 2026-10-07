@@ -1,0 +1,141 @@
+---
+title: "Internal approvals"
+seoTitle: "Internal quote approvals by discount, amount, or margin"
+description: "How to set discount, amount, and margin caps that hold a quote until a manager approves it, and how the decision is made from Cord, Slack, or Teams."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Scale, Developer]
+prerequisites: ["Scale or Developer plan", "Settings permission to configure the caps", "Approvals permission to decide requests", "Product costs captured for the margin cap"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Internal approvals</h1>
+  <p class="page-subtitle">Protect your margins: a quote that exceeds your caps doesn't reach the client until someone with authority approves it.</p>
+</header>
+
+## What it is
+
+Internal approvals are a rule for your organization. You define how far a seller can
+go without asking (maximum discount, maximum amount, and minimum margin). When a new
+quote exceeds any of those caps on **Create and send**, Cord doesn't send it: it keeps
+it as a draft marked **Pending approval** and notifies whoever can decide.
+
+This is not the client's approval. That's the [signature on the
+link](/en/docs/interaccion/firma); this is an internal control for your team.
+
+## Requirements
+
+- **Plan:** Scale or Developer. On other plans the caps can't be saved with a value above 0 and Cord doesn't evaluate them.
+- **Permission to configure:** **Settings**.
+- **Permission to decide:** **Approvals**. The account owner can always decide.
+- **Country:** available in all 12 markets.
+
+## Set up the caps
+
+<Steps>
+1. Go to **Settings › Quotes › Approvals**.
+2. Under **Approval thresholds**, enter the caps you want to use. Each one is independent; a value of **0** means "no cap".
+3. Save your changes. They apply to quotes created from then on.
+</Steps>
+
+{/* MOCKUP: Settings › Quotes › Approvals with the "Approval thresholds" section: Max discount without approval (%) = 15, Max amount without approval = 250,000, Minimum gross margin without approval (%) = 20, and below it the Treasury section with late interest disabled. */}
+
+| Cap | What Cord compares | When it asks for approval |
+|---|---|---|
+| **Max discount without approval (%)** | The largest discount on any line: the difference between its list price and its negotiated price. | If any line has a discount above the cap. |
+| **Max amount without approval** | The quote total. | If the total is above the cap. |
+| **Minimum gross margin without approval (%)** | The margin of each line with a captured cost: (negotiated price − cost) ÷ negotiated price. | If any line with a cost falls below the minimum. Lines without a cost don't count. |
+
+<Callout type="warning">
+**The amount is compared without converting currencies.** Cord compares the cap number
+against the quote total in the currency you're quoting in. If your cap is 250,000 and
+you quote in USD, the rule triggers from USD 250,000, not its equivalent in your
+accounting currency. If you quote in several currencies, set the cap with the
+highest-value currency in mind.
+</Callout>
+
+## What happens on send
+
+When the seller clicks **Create and send** and the quote exceeds at least one cap:
+
+1. The quote is saved as a **Draft** with the internal status **Pending approval**. The client gets no email and the link isn't activated.
+2. Cord writes the reason: which cap was exceeded and by how much (for example, a 22% discount against an allowed 15%, or a USD 310,000 total against a USD 250,000 cap). The reason shows on the quote detail and in its activity.
+3. The quote appears under **Quotes** with the **Needs approval** filter, and above the list you see how many are **awaiting your approval**.
+4. Cord emits the approval-request event, which feeds Slack, Teams, webhooks, and [workflows](/en/docs/automatizacion/workflows/disparadores).
+
+With **Save draft**, Cord doesn't evaluate the caps: the rule is checked when the quote
+is created with **Create and send**.
+
+## Who approves and how
+
+<Tabs>
+<TabItem label="From Cord">
+
+The quote detail shows the **Pending approval** notice with the reason. Anyone with
+the Approvals permission sees two buttons:
+
+- **Approve and send:** the quote moves to *Sent*, the link becomes active, and the activity logs that management approved it and sent it to the client.
+- **Reject:** Cord asks you to confirm ("Reject this approval request?"). The quote stays a draft and the detail shows **Approval request rejected by management**.
+
+</TabItem>
+<TabItem label="From Slack">
+
+If you connected Cord's Slack app, the request arrives in your channel with the
+number, client, total, reason, and **Approve** and **Reject** buttons.
+
+For the button to decide, the email of your Slack account must match an active Cord
+member with the Approvals permission. If it doesn't, Slack replies that your account
+doesn't match a member with that permission and that you should decide from Cord. Once
+decided, the message updates with who approved or rejected.
+
+</TabItem>
+<TabItem label="From Teams">
+
+If you connected Microsoft Teams, the request arrives in the channel as a card with
+the number, client, total, and reason, and a **Decide in Cord** button that opens the
+detail. Teams doesn't allow deciding from the card: the decision is made in Cord.
+
+</TabItem>
+<TabItem label="With a workflow">
+
+The **Approve the internal request** action in
+[Workflows](/en/docs/automatizacion/workflows/acciones) approves the pending request and
+sends the quote. Use it with care: a workflow that approves without conditions defeats
+the purpose of the cap.
+
+</TabItem>
+</Tabs>
+
+{/* MOCKUP: quote detail with the amber "Pending approval" notice, the reason line (discount 22% over an allowed 15%) and the "Approve and send" and "Reject" buttons; next to it, the Slack message with Approve and Reject buttons. */}
+
+## Behavior and edge cases
+
+- **Approve and send doesn't email the client.** It activates the link and marks the quote as sent, but the email with the link doesn't go out at this step. Share it from the detail with **Copy link**, **WhatsApp**, or your own email.
+- **A draft sent later isn't re-evaluated.** If the quote was saved as a draft and later sent with **Send to client**, from the board, or through the actions API, Cord doesn't check the caps again. If you need everything to go through the rule, ask your team to use **Create and send**.
+- **A request is decided only once.** If two managers decide at the same time, the second is told there's no pending approval request.
+- **The seller sees the margin before sending.** In the editor, the **Margin** column turns red when a line falls below your minimum margin.
+- **If your plan drops below Scale,** Cord stops evaluating the caps on new quotes, and requests left pending can only be decided once the plan is restored.
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Internal approvals | No | No | No | Yes | Yes |
+
+## Common problems
+
+**I can't save a cap above 0.** Your plan doesn't include internal approvals.
+
+**The margin cap doesn't trigger.** The lines have no cost. Capture the cost on each product's profile; free lines have no cost.
+
+**I approved and the client got nothing.** That's expected: share the link from the detail.
+
+**The Slack button says I don't have permission.** Your Slack email doesn't match your Cord user, or your role doesn't have Approvals.
+
+## Related
+
+- [Preview and sending](/en/docs/cotizacion/envio)
+- [Quote management](/en/docs/gestion/cotizaciones)
+- [Team and security](/en/docs/cuenta/equipo-seguridad)
+- [Slack](/en/docs/automatizacion/integraciones/slack) and [Microsoft Teams](/en/docs/automatizacion/integraciones/teams)

@@ -1,42 +1,144 @@
 ---
-title: "Cobranza Autónoma (IA)"
-description: "Delega el seguimiento de cuentas por cobrar a un Agente IA que monitorea vencimientos y negocia planes de pago dinámicos."
-lastUpdated: "2026-08-28"
+title: "Cobranza con IA"
+seoTitle: "Agente de cobranza con IA de Cord: configuración, aprobación y cuotas"
+description: "Cómo funciona el agente de cobranza con IA: qué cuentas elige, cada cuánto escribe, modo con aprobación o automático, la bandeja de borradores, planes de 2 a 6 cuotas, exclusiones, promesas y cuota de IA por plan."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Scale, Developer]
-prerequisites: ["Permiso Cobranza", "Cartera vencida", "Configurar modo, cadencia, tono y exclusiones"]
+prerequisites: ["Plan Scale o Developer", "Permiso Cobranza", "Permiso Ajustes para activar y configurar el agente", "Clientes con correo registrado"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Cobranza Autónoma (IA)</h1>
-  <p class="page-subtitle">Delega el seguimiento de cuentas por cobrar a un Agente IA que monitorea vencimientos y negocia planes de pago dinámicos.</p>
+  <h1 class="page-title">Cobranza con IA</h1>
+  <p class="page-subtitle">Un agente que redacta, negocia y cobra por ti a las cuentas vencidas. Tú decides qué sale.</p>
 </header>
 
-## Tu nuevo gestor de cobranza
+## Qué es
 
-Cord incorpora un Agente de Inteligencia Artificial diseñado específicamente para gestionar cuentas por cobrar. Este agente actúa de forma autónoma (si lo habilitas) para recuperar ingresos de cotizaciones y facturas que han superado sus términos de crédito.
+El **agente de cobranza** (barra lateral › **Mi dinero › Cobranza con IA**) revisa cada día tu cartera vencida, redacta un correo para cada cuenta con el saldo real, los días de atraso y el link de pago, y, si el cliente lo necesita, negocia un [plan de pagos en cuotas](/docs/pagos/cuotas). Nace **apagado**: no escribe a nadie hasta que lo activas.
 
-<Callout type="info">
-La Cobranza Autónoma (IA) está disponible a partir del plan **Scale** (incluye también **Developer**). En **Pro**, la cobranza funciona de forma manual desde la [cartera operativa](/docs/pagos/cartera-cobranza). Free y Starter no incluyen el módulo de cobranza.
-</Callout>
+## Requisitos
 
-### ¿Cómo funciona?
+| Requisito | Detalle |
+|---|---|
+| Plan | Scale o Developer. En Pro, la cobranza es manual desde la [cartera](/docs/pagos/cartera-cobranza); Gratis y Starter no incluyen cobranza. |
+| Permiso | **Cobranza** para ver la página, aprobar, editar o descartar borradores. **Ajustes** para activar y configurar el agente. |
+| Cuota de IA | Cada correo redactado o regenerado consume una unidad de IA de tu plan: 500 incluidas al mes en Scale (el excedente se cobra como consumo) y sin límite en Developer. |
+| Clientes | Con correo registrado. Sin correo, el agente no puede enviar. |
+| Cuenta | No corre en cuentas de prueba ni en la cuenta de demostración. |
 
-1. **Monitoreo periódico:** un proceso automático revisa tu cartera de cuentas por cobrar buscando cotizaciones y facturas vencidas, con la cadencia que configures en días (por defecto, cada 7 días por cuenta).
-2. **Contacto inteligente:** cuando detecta un retraso, redacta un correo al cliente deudor en el tono que elijas (cercano, profesional o firme), solicitando la regularización de la cuenta e incluyendo siempre el link de pago real.
-3. **Negociación activa:** una vez que la cuenta lleva suficientes días vencida (el umbral lo defines tú), el agente puede estructurar y ofrecer un **plan de pago en cuotas mensuales** — de 2 a un máximo configurable entre 2 y 6 cuotas (3 por defecto) — que sumen exactamente el saldo, sin descuentos sobre el capital.
-4. **Links dinámicos:** una vez que se llega a un acuerdo o el cliente accede a pagar, el agente envía enlaces de pago dinámicos (SPEI o Tarjeta) que actualizan el saldo en tiempo real al ser procesados.
+## Activarlo
 
-### Modo Aprobación vs. modo Automático
+<Steps>
+1. Abre **Cobranza con IA**. La primera vez verás qué hace el agente, un ejemplo de correo y a cuántas cuentas les escribiría hoy.
+2. Pulsa **Activar con aprobación**. El agente queda en modo **Requiere aprobación**: nada sale sin tu visto bueno.
+3. Pulsa **Configurar** para ajustar gracia, cadencia, cuotas, tono, idioma y firma.
+4. Revisa **En la mira** para ver a quién le escribirá en la próxima corrida y a quién no.
+</Steps>
 
-Tú decides cuánto control conserva un humano antes de que el cliente reciba algo:
+{/* MOCKUP: Cobranza con IA con los cuatro indicadores (Recuperado por el agente, Esperan tu aprobación, Planes de pago activos, Correos enviados), la "Bandeja de aprobación" con un borrador "vencida hace 18 días" y la etiqueta "Propone 3 cuotas de $3,333.33 MXN", y los botones "Aprobar y enviar", "Regenerar", "Descartar" y "No escribirle". */}
 
-- **Modo Aprobación (default):** el agente redacta el correo y, si negoció un plan de pagos, lo deja **propuesto** sin activarlo — nada se envía ni se reescriben los cobros pendientes hasta que tú lo apruebes. Recibes un solo correo-resumen con los borradores que están esperando tu revisión.
-- **Modo Automático:** el agente envía el correo y activa el plan de pagos negociado sin esperar tu aprobación.
+## Configuración
 
-### Beneficios
+| Opción | Qué controla | Valor por defecto | Rango |
+|---|---|---|---|
+| **Modo de operación** | Con aprobación, el agente redacta y espera. En automático, envía solo. | Requiere aprobación | — |
+| **Días de gracia** | Cuánto espera después del vencimiento antes de escribir. | 3 días | 0 a 90 |
+| **Días entre correos** | Mínimo antes de volver a escribirle a la misma cuenta. | 7 días | 1 a 90 |
+| **Ofrecer plan a los** | Días de atraso a partir de los cuales puede negociar cuotas. | 15 días | 1 a 365 |
+| **Máximo de cuotas** | Tope de cuotas mensuales de un plan. | 3 | 2 a 6 |
+| **Monto mínimo** | No escribe por saldos menores. | Sin mínimo | — |
+| **Máximo por corrida** | Tope de correos por ejecución. | 25 | 1 a 200 |
+| **Tono** | Cercano, Profesional o Firme. | Profesional | — |
+| **Idioma de los correos** | Español o Inglés. | Español | — |
+| **Firma** | Cómo se despide el correo (hasta 400 caracteres). | Sin firma | — |
 
-- **Menos seguimiento repetitivo:** El agente prepara o envía recordatorios dentro de los límites configurados.
-- **Alternativas explícitas:** Cuando está habilitado, puede proponer parcialidades sin descontar el capital.
-- **Auditoría transparente:** Cada correo enviado e interacción negociada por el Agente queda registrada en la pestaña "Actividad" de la cotización, brindándote control total sobre el contexto.
+## Cómo decide a quién escribir
+
+Cada día, el agente toma la cartera de la [vista unificada de cuentas por cobrar](/docs/pagos/cartera-cobranza#la-vista-unificada-de-cuentas-por-cobrar), cotizaciones y facturas, que lleve **más días vencida que tus días de gracia**, de la más atrasada a la menos. De esa lista **omite**:
+
+| Motivo en "En la mira" | Por qué |
+|---|---|
+| **Ya saldada** | El saldo ya es cero. |
+| **Excluida** | El cliente, la cotización o la factura está en **No escribir a**. |
+| **Bajo el monto mínimo** | El saldo es menor que tu monto mínimo. |
+| **Ya le escribió** | Hay un borrador sin resolver, o el último correo enviado fue hace menos días que tu cadencia. |
+| **Plan al corriente** | La cuenta tiene un plan de cuotas y ninguna cuota vencida sin pagar. |
+| **Fuera del tope** | Ya se alcanzó el máximo por corrida; entra en la siguiente. |
+
+Las igualas recurrentes nunca entran: se cobran solas cada mes.
+
+## El correo
+
+- Lo redacta el agente con el **saldo real**, los días de atraso y el tono elegido, en el idioma configurado.
+- Incluye siempre el **link de pago**: el de la factura o el de la cotización. Si cobras en línea, el botón dice "Pagar [monto] en línea" con el monto exigible hoy (la cuota vencida, si hay plan); si no, "Ver cotización y opciones de pago".
+- Sale con el nombre legal de tu negocio "vía Cord" y las respuestas llegan a tu correo de contacto.
+- Al pie incluye tu nombre legal, tu identificación fiscal, un aviso de que es un mensaje automatizado de cobranza enviado por Cord en tu nombre, y cómo pedir que se detengan los mensajes.
+- **Nunca ofrece descuentos sobre el capital.**
+
+## Modo con aprobación y modo automático
+
+| | Requiere aprobación | Automático |
+|---|---|---|
+| Correo | Queda como borrador en la **Bandeja de aprobación**. | Se envía en la corrida. |
+| Plan de cuotas | Queda **propuesto**: no toca los cobros del cliente hasta que apruebas. | Se activa al registrarse. |
+| Aviso para ti | Un solo correo por corrida: "N correos de cobranza esperan tu aprobación". | Los fallidos aparecen en la bandeja. |
+
+En la bandeja puedes:
+
+- **Aprobar y enviar.** Si el borrador propone cuotas, Cord te advierte que el plan reemplazará los cobros pendientes de esa cotización.
+- **Editar** el texto y **Guardar cambios**.
+- **Regenerar**, opcionalmente con una indicación ("más corto y menos formal").
+- **Descartar**: el correo no sale y su plan propuesto se cancela. El agente puede volver a escribir en la siguiente corrida.
+- **No escribirle**: agrega la cuenta a **No escribir a**.
+
+Si apruebas varios correos sin cambiarles una palabra, Cord te sugiere pasar a automático. Tú decides.
+
+## Planes de pago en cuotas
+
+Cuando una cotización llega a los días de **Ofrecer plan a los** y el cliente acepta pagar en partes dentro de la conversación, el agente puede proponer **de 2 a tu máximo de cuotas mensuales** (hasta 6) que suman exactamente el saldo. Cord valida los números y calcula los importes; el agente no puede inventarlos. Detalle completo en [Planes de pago en cuotas](/docs/pagos/cuotas).
+
+## Conversaciones, exclusiones y promesas
+
+- **Conversaciones:** un hilo por cuenta, con cada mensaje marcado como **Agente**, **Cliente** o **Tú**. Puedes tomar el control y escribir tú desde el hilo.
+- **No escribir a:** clientes, cotizaciones o facturas que el agente ignora por completo. Pulsa **Quitar de la lista** para que vuelvan a entrar.
+- **Promesas de pago:** se registran desde la [cartera](/docs/pagos/cartera-cobranza#registrar-una-promesa-de-pago). Una promesa no detiene al agente; para pausar a una cuenta mientras esperas un pago acordado, agrégala a **No escribir a**.
+
+## Correr ahora
+
+**Correr ahora** ejecuta el agente en ese momento con la misma lógica que la corrida diaria. Úsalo para probar tu configuración; respeta igual la cadencia y las exclusiones.
+
+## Indicadores
+
+| Indicador | Qué mide |
+|---|---|
+| **Recuperado por el agente** | Lo cobrado en los últimos 30 días en cuentas a las que el agente escribió. |
+| **Esperan tu aprobación** | Borradores pendientes (en automático, dice que los correos salen solos). |
+| **Planes de pago activos** | Monto comprometido en cuotas. |
+| **Correos enviados** | En los últimos 30 días, con el porcentaje que respondió y los que no se pudieron entregar. |
+
+## Límites
+
+- Solo Scale y Developer.
+- Una corrida diaria más las que lances con **Correr ahora**.
+- Planes solo sobre cotizaciones, de 2 a 6 cuotas mensuales.
+- Cada correo consume cuota de IA del plan.
+- El agente no envía por WhatsApp ni por SMS.
+
+## Problemas comunes
+
+**El agente no le escribe a una cuenta vencida.** Revisa su motivo en **En la mira**: gracia, cadencia, exclusión, monto mínimo, plan al corriente o tope de la corrida.
+
+**No veo Configurar.** Necesitas el permiso **Ajustes**.
+
+**Un correo quedó como "no se envió".** El cliente no tiene correo o el envío falló. Corrige la ficha y vuelve a intentar desde la bandeja.
+
+**Aparecen correos fallidos por cuota de IA.** Se alcanzó el tope de consumo de IA del periodo y el agente no pudo redactar. Revisa tu consumo en [Suscripción](/docs/cuenta/suscripcion).
+
+## Relacionadas
+
+- [Planes de pago en cuotas](/docs/pagos/cuotas)
+- [Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)
+- [Recordatorios automáticos de cobro](/docs/pagos/recordatorios)
+- [Términos de crédito](/docs/pagos/credito)

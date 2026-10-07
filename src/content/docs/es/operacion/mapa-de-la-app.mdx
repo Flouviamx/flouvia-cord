@@ -1,7 +1,7 @@
 ---
 title: "Mapa completo de la aplicación"
-description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, y dónde realizar cada tarea."
-lastUpdated: "2026-08-28"
+description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, qué hay en el menú lateral y la barra superior, y cómo funcionan el entorno de prueba y Cord Workbench."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -13,120 +13,200 @@ prerequisites: ["Tener una cuenta de Cord", "Seleccionar la organización correc
   <p class="page-subtitle">Una vista de extremo a extremo para saber dónde empieza, cambia y termina cada operación en Cord.</p>
 </header>
 
-Cord organiza el trabajo alrededor de un mismo ciclo comercial: **registrar al
-cliente, preparar la oferta, negociar, aprobar, cobrar, facturar y dar seguimiento**.
-Las secciones no son bases de datos aisladas; muestran distintas etapas de los
-mismos clientes, documentos y movimientos.
+Cord organiza el trabajo alrededor de un mismo ciclo comercial: **registrar al cliente,
+preparar la oferta, negociar, aprobar, cobrar, facturar y dar seguimiento**. Las secciones
+no son bases de datos aisladas; muestran distintas etapas de los mismos clientes,
+documentos y movimientos.
 
 ## El flujo principal
 
+<Steps>
 1. Crea o importa al cliente en **Clientes**.
 2. Crea productos, servicios o kits reutilizables en **Productos**.
-3. Prepara una cotización manualmente, desde un kit o con un borrador de IA.
-4. Envía el enlace público. Cord registra la primera vista y conserva la actividad
-   del documento.
-5. El cliente puede conversar, aprobar o rechazar y, cuando corresponde, elegir un
-   método de pago.
-6. Cord registra el cobro en línea o el pago marcado manualmente.
-7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el
-   saldo y la fecha de vencimiento.
-8. **Informes** y **Desempeño** agregan los resultados sin crear una segunda copia
-   de la operación.
+3. Prepara una cotización a mano, desde un kit o con un borrador de IA.
+4. Envía el link. Cord registra la primera vista de tu cliente y conserva la actividad del
+   documento.
+5. El cliente conversa, aprueba o rechaza y, cuando corresponde, paga en línea.
+6. Cord registra el cobro en línea o el pago que marcas a mano.
+7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el saldo y
+   la fecha de vencimiento.
+8. **Informes** y **Equipo** agregan los resultados sin crear una segunda copia de la
+   operación.
+</Steps>
 
-## Dónde se hace cada cosa
+## Menú lateral
 
-| Sección | Ruta | Para qué sirve |
-|---|---|---|
-| Inicio | `/app` | KPIs, pipeline, actividad reciente y pendientes de seguimiento. |
-| Cotizaciones | `/app/cotizaciones` | Crear, buscar, filtrar, abrir, editar, duplicar, enviar e imprimir cotizaciones. |
-| Clientes | `/app/clientes` | Directorio, importación CSV, condiciones comerciales, datos fiscales, crédito y estado de cuenta. |
-| Productos | `/app/productos` | Catálogo, precios, impuestos, precios por volumen e importación/exportación. |
-| Kits | `/app/productos/kits` | Paquetes de conceptos que se insertan juntos en una cotización. |
-| Cobranza | `/app/cobranza` | Cartera por cobrar, saldos vencidos, aging, exposición por cliente y seguimiento. |
-| Agente de cobranza | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA cuando el plan la incluye. |
-| Mi dinero | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y acceso a disputas. |
-| Facturas | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a documentos fiscales o comerciales. |
-| Facturas recurrentes | `/app/facturas/recurrentes` | Programar emisiones repetidas; requiere Pro o superior. |
-| Informes | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. |
-| Desempeño | `/app/desempeno` | Resultados atribuidos a la persona que creó o duplicó cada cotización. |
-| Workflows | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", sus ideas listas y el historial de ejecuciones. |
-| Integraciones | `/app/ajustes/integraciones` | Directorio de apps (HubSpot, Slack, Make, Zapier) con una página por app. |
-| Ajustes | `/app/ajustes` | Cuenta, negocio, marca, fiscal, pagos, equipo, seguridad, integraciones y plan. |
+{/* MOCKUP: app de Cord en escritorio con el menú lateral completo (selector de organización, grupos Mi dinero e Inteligencia, un elemento fijado) y la barra superior con Buscar, Crear y notificaciones */}
+
+Arriba del menú está el **selector de organización**. Desde él cambias de espacio de
+trabajo, creas uno nuevo (**Crear espacio de trabajo**), abres
+**Configuración del equipo**, activas o desactivas el **Entorno de prueba** y cierras
+sesión.
+
+| Grupo | Elemento | Ruta | Para qué sirve |
+|---|---|---|---|
+| — | **Inicio** | `/app` | KPIs, pipeline, actividad reciente y pendientes de seguimiento. Guía: [Inicio y vistas](/docs/gestion/dashboard). |
+| — | **Cotizaciones** | `/app/cotizaciones` | Crear, buscar, filtrar, editar, duplicar, enviar e imprimir. El contador indica cotizaciones que necesitan seguimiento. Guía: [Gestión de cotizaciones](/docs/gestion/cotizaciones). |
+| — | **Clientes** | `/app/clientes` | Directorio, importación CSV, condiciones comerciales, datos fiscales, crédito y estado de cuenta. Guía: [Clientes y estado de cuenta](/docs/gestion/clientes). |
+| — | **Productos** | `/app/productos` | Catálogo, precios por volumen, importación CSV y la pestaña **Kits**. Guía: [Importa tu catálogo](/docs/cuenta/catalogo). |
+| Mi dinero | **Facturas** | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a facturas; incluye las recurrentes (Profesional o superior). Guía: [Facturas](/docs/pagos/facturas-emitidas). |
+| Mi dinero | **Cobros** | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y disputas. Guía: [Dashboard de cobros](/docs/pagos/dashboard). |
+| Mi dinero | **Cobranza** | `/app/cobranza` | Cartera por cobrar, antigüedad de saldos y exposición por cliente (Profesional o superior). El contador en rojo indica documentos vencidos. Guía: [Cartera y seguimiento](/docs/pagos/cartera-cobranza). |
+| Mi dinero | **Cobranza con IA** | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA (Scale o Developer). Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). |
+| Inteligencia | **Informes** | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. Guía: [Informes y desempeño](/docs/gestion/informes). |
+| Inteligencia | **Equipo** | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a quien creó o duplicó cada cotización. |
+| Inteligencia | **Workflows** | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", ideas listas e historial de ejecuciones. Guía: [Cord Workflows](/docs/automatizacion/workflows). |
+
+Además:
+
+- **Fijados.** Con el botón de chincheta junto al título de cualquier página (o la tecla
+  `X`) la agregas al grupo **Fijados**, arriba del menú.
+- **Grupos plegables.** **Mi dinero** e **Inteligencia** se pliegan con un clic en su
+  título.
+- **Contraer el menú.** El botón al pie del menú lo reduce a iconos.
+- **Ajustes** (`/app/ajustes`) se abre con el engrane de la barra superior. Consulta el
+  [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes).
+- **Configurar con IA** (`/app/setup`) se abre desde **Ajustes › General**.
+
+## Barra superior
+
+| Elemento | Qué hace |
+|---|---|
+| **Buscar…** (`⌘K` o `Ctrl+K`) | Abre la paleta para buscar cotizaciones, clientes, productos y pestañas de Ajustes, o ejecutar un comando. |
+| **Guía de configuración** | Mientras tu cuenta no esté completa, muestra tu porcentaje de avance y abre el widget **Configura Cord**. Consulta [Crea tu cuenta](/docs/cuenta/crear-cuenta). |
+| **Crear** | Menú para crear **Cotización**, **Factura**, **Cliente**, **Producto** o **Tarea**. Solo muestra lo que tus permisos permiten. |
+| **Aplicaciones** | Para quien tiene permiso Ajustes: qué apps están conectadas y cuáles puedes conectar, sin salir de la pantalla. |
+| **Notificaciones** | Panel de actividad reciente con **Marcar como leídas** y **Ver toda la actividad**. Un punto indica novedades. Guía: [Notificaciones](/docs/gestion/notificaciones). |
+| **Ayuda** | **Centro de ayuda** con buscador, atajos de teclado, guía de uso, contacto con soporte, preguntas frecuentes y el asistente Cord AI. |
+| **Tema** | Alterna entre modo claro y oscuro. |
+| **Ajustes** | Abre el índice de Ajustes. |
+
+### Atajos de teclado
+
+En escritorio puedes usar estos atajos cuando no estás escribiendo en un campo. En
+pantallas menores a 880 px están desactivados y todo se hace con botones visibles.
+
+| Atajo | Acción |
+|---|---|
+| `⌘K` / `Ctrl+K` o `/` | Abrir la búsqueda |
+| `C` | Nueva cotización |
+| `F` | Nueva factura |
+| `G` y luego `D`, `C`, `L`, `P`, `B`, `A` o `F` | Ir a Inicio, Cotizaciones, Clientes, Productos, Cobranza, Informes o Facturas |
+| `X` | Fijar o quitar la página actual del menú |
+| `?` | Mostrar u ocultar la ayuda de atajos |
+
+En el teléfono, el menú lateral se abre como panel e incluye accesos a **Ayuda** y
+**Configuración**.
 
 <Callout type="info">
-Las opciones visibles dependen de tus **permisos**, tu **plan efectivo**, el **país
-de operación** y el estado de configuración de la cuenta. Que una página exista no
-significa que cualquier miembro pueda modificarla.
+Las opciones visibles dependen de tus **permisos**, tu **plan efectivo**, el **país de
+operación** y el estado de configuración de la cuenta. Que una página exista no significa
+que cualquier miembro pueda modificarla.
 </Callout>
 
-## Estados de una cotización
+## Entorno de prueba
 
-Una cotización puede pasar por estos estados canónicos:
+El **Entorno de prueba** es una copia aislada de tu organización para ensayar sin tocar
+tus datos reales: cotizaciones, cobros con datos de prueba, webhooks e integraciones.
+
+<Steps>
+1. Abre el selector de organización, arriba del menú lateral.
+2. Activa **Entorno de prueba**.
+3. La app muestra una franja **Entorno de prueba** con el aviso "Todo lo que hagas aquí es
+   de prueba — tus datos reales no se tocan".
+4. Para volver, pulsa **Salir del modo de prueba** en la franja o desactiva el interruptor.
+</Steps>
+
+Desde la franja también puedes **Vaciar datos de prueba** para empezar de cero.
+
+Qué tener en cuenta:
+
+- Los datos de prueba no se mezclan con producción: al salir no verás lo que creaste
+  dentro.
+- Algunas acciones reales no están disponibles en prueba: contratar o cambiar de plan,
+  conectar un dominio propio y aplicar una propuesta de **Configurar con IA**.
+- Los documentos de prueba no consumen cuota de tu plan.
+
+Guía para integraciones: [Entornos de prueba](/docs/desarrolladores/empezar/pruebas).
+
+## Cord Workbench
+
+**Cord Workbench** es el panel para desarrolladores. Aparece como un dock en toda la app
+cuando activas **Modo desarrollador** al final de **Ajustes**, y requiere permiso Ajustes.
+
+Sus pestañas son **Resumen**, **Webhooks**, **Eventos**, **API**, **Registros** y
+**Salud**: llaves de API, endpoints de webhook y sus entregas, eventos emitidos, registros
+de solicitudes y el estado de tu integración. Guía:
+[Cord Workbench](/docs/desarrolladores/herramientas/workbench).
+
+## Estados de una cotización
 
 | Estado | Significado operativo |
 |---|---|
 | `draft` | Borrador editable que todavía no se envía al cliente. |
-| `sent` | Enviada; el enlace público está listo para consulta. |
-| `viewed` | El cliente abrió por primera vez la cotización. |
+| `sent` | Enviada; el link está listo para consulta. |
+| `viewed` | El cliente abrió por primera vez la cotización. Tu propia visita no cuenta. |
 | `approved` | El cliente registró su aprobación. Puede quedar saldo pendiente. |
 | `rejected` | El cliente rechazó la propuesta. |
 | `expired` | Terminó su vigencia sin cierre. |
 | `paid` | El flujo no recurrente quedó pagado según sus cobros registrados. |
-| `invoiced` | La operación ya tiene un documento de factura asociado. |
+| `invoiced` | La operación ya tiene una factura asociada. |
 
-Una cotización recurrente no se convierte en `paid` para siempre: cada cuota genera
-su propio cobro y la suscripción conserva un estado separado.
+Una cotización recurrente no se convierte en `paid` para siempre: cada cuota genera su
+propio cobro y la suscripción conserva un estado separado.
 
-## Organización activa y entorno de prueba
+## Organización activa
 
 Cord es multiempresa. Cada cliente, producto, cotización, factura, miembro y ajuste
 pertenece a la **organización activa**. Si tienes acceso a más de una, confirma el
 selector de organización antes de importar, emitir o cambiar configuración.
 
-El **modo de prueba** usa una organización sandbox separada. Sus datos no se mezclan
-con producción y sus llaves, webhooks y operaciones deben tratarse como pruebas. Al
-volver al modo real, no esperes ver los registros creados dentro del sandbox.
-
 ## Permisos que cambian la experiencia
 
-El dueño siempre tiene acceso total. Los demás miembros reciben presets o permisos
-por sección:
+El dueño siempre tiene acceso total. Los demás miembros reciben presets o permisos por
+sección:
 
 - **Cotizaciones:** crear, editar, enviar y duplicar.
 - **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
 - **Cobranza:** consultar y gestionar cuentas por cobrar.
 - **Clientes** y **Productos:** modificar sus directorios.
-- **Analítica:** abrir Informes y Desempeño.
+- **Analítica:** abrir Informes y Equipo (desempeño).
 - **Ajustes:** cambiar la configuración del negocio.
 - **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
 - **Reembolsos:** iniciar devoluciones de cobros conciliados.
 - **Equipo:** invitar personas y cambiar permisos.
 
-Si una acción no aparece, primero revisa el permiso del miembro; después, el plan y
-la configuración requerida por esa función.
+Si una acción no aparece, revisa primero el permiso del miembro; después, el plan y la
+configuración que pide esa función.
 
 ## Qué cambia por país
 
-- El registro está disponible en 12 mercados: México, Estados Unidos, Canadá,
-  Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú.
-- El cobro en línea está disponible en los primeros ocho. Colombia, Argentina,
-  Chile y Perú pueden cotizar, emitir factura comercial y gestionar cobranza, pero
-  todavía no activar Cord Payments.
-- SPEI dinámico es exclusivo de México.
-- México puede emitir CFDI 4.0 con un CSD válido.
-- Fuera de México, Cord emite factura comercial. España solo usa el carril
-  Verifactu cuando la cuenta y la integración regulatoria están activadas.
+- El registro está disponible en 12 mercados: México, Estados Unidos, Canadá, Brasil,
+  España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú.
+- Cord Payments está disponible en los primeros ocho. En Colombia, Argentina, Chile y Perú
+  el cobro en línea funciona con [Mercado Pago](/docs/pagos/mercado-pago), que también se
+  ofrece en México y Brasil como alternativa.
+- SPEI es exclusivo de México.
+- México emite CFDI 4.0 con un CSD válido.
+- Fuera de México, Cord emite factura comercial. En España, el registro ante la AEAT
+  (Verifactu) todavía no está activo.
 
 ## Antes de buscar un error
 
 Cuando algo no esté disponible, revisa en este orden:
 
-1. organización y modo de prueba activos;
+1. organización y entorno de prueba activos;
 2. permiso del miembro;
 3. límite o capacidad del plan;
 4. país de operación y método compatible;
 5. campos obligatorios del cliente, emisor o documento;
 6. estado anterior de la cotización, factura o cobro.
 
-Después consulta la guía específica de la sección. El [Centro de soporte](https://cordhq.app/soporte)
+Después consulta la guía de la sección. El [centro de soporte](https://cordhq.app/soporte)
 sirve para incidencias puntuales; estas guías explican el modelo completo.
+
+## Páginas relacionadas
+
+- [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes)
+- [Crea tu cuenta](/docs/cuenta/crear-cuenta)
+- [Todos los productos](/docs/productos)

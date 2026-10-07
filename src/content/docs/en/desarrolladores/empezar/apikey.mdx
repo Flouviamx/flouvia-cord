@@ -2,6 +2,10 @@
 title: "API Keys"
 seoTitle: "Cord API keys"
 description: "Manage the cryptographic keys that grant access to the platform."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Developer mode turned on in Settings"]
 ---
 
 <header class="content-header">
@@ -11,9 +15,11 @@ description: "Manage the cryptographic keys that grant access to the platform."
 
 ## How Keys Work
 
+{/* MOCKUP: Workbench API tab with the list of keys (name, sk_/rk_/pk_ type, mode, last 4 characters, last used, expiration) and the Create key button. */}
+
 Every programmatic request to the Cord API requires an **API Key**. You can manage, revoke, and monitor their usage from the **API** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) — the "Developers" bar at the bottom of the app, which appears once you turn on **Developer mode** at the bottom of the Settings index.
 
-For security, Cord's systems store your API Key as an irreversible Hash (`sha-256`). The plain text key (the string starting with `sk_...` or `pk_...`) will only be shown to you **once** upon creation. If you lose it, there is no way to recover it; you must revoke it and generate a new one.
+For security, Cord's systems store your API Key as an irreversible Hash (`sha-256`). The plain text key (the string starting with `sk_...`, `rk_...` or `pk_...`) will only be shown to you **once** upon creation. If you lose it, there is no way to recover it; you must revoke it and generate a new one.
 
 ## Security Best Practices
 
@@ -21,7 +27,8 @@ For security, Cord's systems store your API Key as an irreversible Hash (`sha-25
 Never commit (e.g., in Git) a key starting with `sk_live_`. If a public repository exposes your key, anyone can use it with the same permissions as your backend until you manually revoke it from the Workbench — Cord does not detect or suspend it for you. Use environment variables (like unversioned `.env` files) on your servers, and check the key's activity log if you suspect it leaked.
 
 ### Use the correct scope (Publishable vs Secret)
-- **Secret Keys (`sk_`):** Have full read and write access to your finances and clients. They should only live on backend servers under your control.
+- **Secret Keys (`sk_`):** Access the whole API, read-only or read and write depending on the scope you choose when creating them. They should only live on backend servers under your control.
+- **Restricted Keys (`rk_`):** Also server-side, but with a permission per resource (`none`, `read`, or `write`). See [restricted keys](/en/docs/desarrolladores/esenciales/autenticacion#restricted-keys).
 - **Publishable Keys (`pk_`):** Designed to be safely injected into web applications (frontend). Cord will automatically apply restrictions on what these keys can see or hide sensitive fields (such as the cost/margin of [products](/en/docs/desarrolladores/funciones/productos)) when receiving a request signed with them.
 
 ## Real-Time Activity

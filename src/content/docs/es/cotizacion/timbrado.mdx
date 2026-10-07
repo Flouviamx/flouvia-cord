@@ -1,6 +1,12 @@
 ---
 title: "Aprobación y facturación"
-description: "Convierte una cotización aprobada en el documento fiscal que corresponde a tu país, y da seguimiento a la cobranza de tu cartera vencida."
+seoTitle: "De cotización aprobada a factura: CFDI, Verifactu o factura comercial"
+description: "Qué pasa cuando el cliente aprueba, cómo registras un pago y cómo emites el documento que corresponde a tu país: CFDI 4.0, Verifactu, proforma o factura comercial."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Aprobaciones para registrar pagos y emitir el documento desde el detalle", "Cotización Aprobada o Pagada", "En México, plan Starter o superior y CSD cargado para timbrar"]
 ---
 
 <header class="content-header">
@@ -8,42 +14,70 @@ description: "Convierte una cotización aprobada en el documento fiscal que corr
   <p class="page-subtitle">El cierre del ciclo. Tras la aprobación puedes cobrar, emitir el comprobante disponible para tu mercado y dar seguimiento a saldos pendientes.</p>
 </header>
 
+## Requisitos
+
+- **Permiso:** en el detalle de la cotización, **Marcar aprobada**, **Registrar pago** y el botón para emitir el documento aparecen para quien tiene el permiso **Aprobaciones**.
+- **Estado:** el documento se emite desde una cotización *Aprobada* o *Pagada*.
+- **País y plan:** el tipo de documento depende de tu país y tu plan (ver abajo).
+
 ## Aprobación Digital
 
-Cuando el cliente revisa el Enlace Mágico y hace clic en **Aprobar Cotización**, suceden varias cosas:
-1. El estado cambia de *Enviada* a *Aprobada*.
-2. El enlace web se congela comercialmente (ya no se pueden cambiar precios).
-3. Si configuraste un anticipo o pago de contado, el **Checkout de pago en línea se habilita** automáticamente.
+Cuando el cliente revisa el link y hace clic en **Aprobar cotización** (ver [Aprobación y evidencia técnica](/docs/interaccion/firma)), suceden varias cosas:
+1. El estado cambia de *Enviada* o *Vista* a *Aprobada*.
+2. La cotización se congela comercialmente: ya no se puede modificar ni reenviar.
+3. Si configuraste un anticipo o pago de contado y tu cuenta cobra en línea, el **cobro en el link se habilita** automáticamente.
+
+Si el cliente te aprobó por otro medio, puedes usar **Marcar aprobada** desde el detalle de la cotización.
 
 ## Facturación: un documento distinto según tu país
 
-Cord no emite el mismo tipo de comprobante en todos lados — el país de tu negocio decide el carril:
+Cord no emite el mismo tipo de comprobante en todos lados — el país de tu negocio y tu plan deciden el carril. El botón aparece en el panel de acciones de una cotización *Aprobada* o *Pagada*:
 
-- **México:** timbrado CFDI 4.0 ante el SAT, a través de un proveedor certificado de facturación electrónica.
-- **España:** factura comercial. El registro encadenado de Verifactu solo se genera cuando el certificado de la organización y el carril regulatorio de Cord están activos; si no, el estado es `commercial_only`.
-- **Demás mercados soportados** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): factura comercial con folio e impuestos configurados por el negocio, sin presentación automática ante la autoridad fiscal local.
+- **México:** con plan Starter o superior, el botón es **Timbrar CFDI 4.0** y timbra ante el SAT a través de un proveedor certificado de facturación electrónica. En el plan Gratis el botón es **Emitir proforma**: una proforma numerada que no sustituye una factura fiscal.
+- **España:** con plan Starter o superior, el certificado de tu organización cargado y la integración con Verifactu habilitada, Cord emite la factura con su registro encadenado de Verifactu. Mientras no se cumplan esas condiciones, el botón es **Emitir proforma**: una proforma numerada que no sustituye una factura fiscal.
+- **Demás mercados soportados** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): el botón es **Emitir factura** y genera una factura comercial con folio e impuestos configurados por el negocio, sin presentación automática ante la autoridad fiscal local.
 
 Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos/facturacion).
 
-### El timbrado CFDI 4.0 a un clic (México)
+### El timbrado CFDI 4.0 (México)
 
-1. Ve a la cotización aprobada en tu panel y haz clic en **Emitir Factura (Timbrar)**.
-2. El sistema validará que el cliente tenga su RFC, Razón Social, Uso de CFDI y Código Postal bien capturados. Si le falta el código postal fiscal, te lo pedirá en un modal rápido sin sacarte de la pantalla.
-3. Al confirmar, el sistema genera el UUID del SAT en tiempo real.
-4. El cliente recibe automáticamente un correo adjuntando el **XML** y la representación impresa en **PDF** (con tu branding).
+1. Ve a la cotización aprobada (o pagada) y haz clic en **Timbrar CFDI 4.0**. Cord te pide confirmar antes de emitir.
+2. Cord arma el CFDI con los datos que ya tiene el cliente: el nombre capturado en **Empresa**, su RFC, régimen fiscal, código postal y uso del CFDI. No hay un paso extra para completarlos: si el cliente no tiene RFC capturado, el CFDI se emite a **"público en general"**, así que revisa sus datos en su ficha antes de timbrar (ver [Datos del cliente](/docs/cotizacion/cliente)).
+3. Si el cliente aprobó solo algunas partidas, se facturan únicamente las líneas aprobadas.
+4. Al terminar, el comprobante aparece en la sección **Documentos fiscales** del detalle, con su folio, su UUID y los enlaces para descargar el **PDF** y el **XML**, y la cotización pasa a *Facturada*. Cord no le envía el comprobante al cliente automáticamente desde este paso: descárgalo y compártelo, o envíalo por correo desde **Facturas**.
+
+<Callout type="info">
+**Timbrado activo:** para timbrar a nombre de tu negocio necesitas plan Starter o superior y tu CSD cargado (ver [CSD](/docs/cuenta/csd)). Si el timbrado fiscal todavía no está activo en tu cuenta, el documento aparece marcado como **Simulado** o **Modo de prueba fiscal**: queda registrado para auditoría, pero no es un CFDI válido ante el SAT.
+</Callout>
 
 ## Cobranza y Tesorería
 
 Para las cotizaciones con términos de crédito (Net 30/60) o aquellas donde el cliente solo pagó el anticipo, Cord tiene un módulo de **Cobranza** y **Tesorería** — la vista completa vive en [Tesorería y FX Lock](/docs/pagos/tesoreria-fx) y en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia); aquí un resumen de cómo se conecta con el cierre de la cotización.
 
-### Intereses moratorios automáticos
+### Intereses moratorios
 
-Disponible a partir del plan **Scale** (incluye **Developer**) y configurable en **Ajustes › Aprobaciones**: si el saldo de una cotización sobrepasa su fecha de vencimiento, Cord aplica un interés compuesto mensual sobre el capital adeudado, y te envía un correo resumen cada día 1 del mes con todo lo generado por recargos.
+La aplicación automática está suspendida mientras concluye la revisión jurídica
+por país. Las tasas guardadas no generan cargos nuevos durante este periodo.
 
 ### Agente Autónomo de Cobranza (IA)
 
-También disponible a partir del plan **Scale**, el Agente de IA de Cord monitorea tu cartera vencida y, según el modo que elijas (Aprobación o Automático), redacta correos de cobranza personalizados y puede negociar un plan de pagos en cuotas mensuales con el deudor. El detalle completo del funcionamiento vive en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia).
+Disponible a partir del plan **Scale**, el Agente de IA de Cord monitorea tu cartera vencida y, según el modo que elijas (Aprobación o Automático), redacta correos de cobranza personalizados y puede negociar un plan de pagos en cuotas mensuales con el deudor. El detalle completo del funcionamiento vive en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia).
 
 ### Tesorería Predictiva
 
-En `/app/informes`, Cord cruza los términos de crédito de tus cotizaciones abiertas con el comportamiento de pago real de cada cliente para darte un estimado más realista del dinero que efectivamente entrará en los próximos 90 días.
+En **Informes › Flujo de caja · 90 días** (plan Pro o superior), Cord cruza los términos de crédito de tus cotizaciones abiertas con el comportamiento de pago real de cada cliente para darte un estimado más realista del dinero que efectivamente entrará en los próximos 90 días.
+
+## Problemas comunes
+
+**No veo el botón para emitir.** La cotización no está *Aprobada* o *Pagada*, o tu rol no tiene el permiso Aprobaciones.
+
+**El documento salió como Simulado o Modo de prueba fiscal.** El timbrado todavía no está activo en tu cuenta: revisa tu plan y tu [CSD](/docs/cuenta/csd).
+
+**La factura incluye menos líneas que la cotización.** El cliente aprobó solo algunas partidas; se facturan solo las aprobadas.
+
+## Relacionadas
+
+- [Aprobación y evidencia](/docs/interaccion/firma)
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Facturas emitidas](/docs/pagos/facturas-emitidas)
+- [Cartera y cobranza](/docs/pagos/cartera-cobranza)

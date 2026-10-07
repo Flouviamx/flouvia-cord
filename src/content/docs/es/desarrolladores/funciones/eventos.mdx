@@ -1,59 +1,249 @@
 ---
 title: "API de Eventos"
-seoTitle: "API de eventos y verificación de llave de Cord"
-description: "Consulta el historial de eventos de tu negocio con la API v1 de Cord para reconciliar webhooks perdidos, y verifica a qué organización pertenece una llave con /me."
+seoTitle: "API de eventos de Cord: catálogo, historial y /me"
+description: "Los 41 tipos de evento de Cord con su objeto y cuándo se emiten, la forma de data por objeto, los valores de actor, el historial GET /api/v1/events y la verificación de llave con /me."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una llave de API con permiso de lectura (recurso eventos en una llave restringida)"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Eventos</h1>
-  <p class="page-subtitle">El historial de lo que pasó en tu negocio, para reconciliar lo que tus webhooks no alcanzaron a entregar.</p>
+  <p class="page-subtitle">Lo que pasó en tu negocio, con el mismo catálogo que entregan los webhooks y un historial para reconciliar lo que tu servidor no alcanzó a recibir.</p>
 </header>
 
-## Historial de eventos
+Cada cambio relevante en Cord produce un **evento**: un registro con tipo, objeto, datos y quién lo originó. Los mismos eventos se entregan a tus [webhooks](/docs/desarrolladores/herramientas/webhooks), disparan Cord Workflows y quedan en un historial que consultas con `GET /api/v1/events`, haya o no endpoints suscritos.
 
-`GET /api/v1/events` devuelve los eventos de tu organización, del más nuevo al más viejo. Son los mismos que entregan los [webhooks](/docs/desarrolladores/herramientas/webhooks): si tu servidor estuvo caído, aquí recuperas lo que te perdiste.
+## Catálogo de eventos
+
+Hay 41 tipos. La columna **Objeto** es el valor de `object` en el historial y decide la forma de `data` (ver la sección siguiente).
+
+| Evento | Objeto | Se emite cuando… |
+|---|---|---|
+| `quote.created` | `quote` | Se crea una cotización desde la app, la API, el MCP o Cord Elements. |
+| `quote.sent` | `quote` | Se envía la cotización al cliente. |
+| `quote.viewed` | `quote` | El cliente abre el link público por primera vez. Las vistas del propio vendedor no cuentan. |
+| `quote.updated` | `quote` | El vendedor la modifica y la reenvía. |
+| `quote.approved` | `quote` | El cliente la aprueba (total o parcialmente), o se marca aprobada por API. |
+| `quote.rejected` | `quote` | El cliente la rechaza, o se marca rechazada por API. |
+| `quote.expired` | `quote` | Pasa su vigencia sin decisión (estaba enviada o vista). |
+| `quote.deleted` | `quote` | Se elimina un borrador que nunca se envió. |
+| `quote.paid` | `quote` | Se recibe el pago total, o el último cobro pendiente de un plan de anticipos o cuotas. |
+| `quote.approval_requested` | `quote` | Una cotización queda pendiente de aprobación interna por descuento, monto o margen. |
+| `quote.approval_decided` | `quote` | Gerencia aprueba o rechaza esa solicitud. |
+| `quote.comment_added` | `quote` | El cliente o el vendedor escribe en la conversación de la cotización. |
+| `payment.partial` | `quote` | Se recibe un cobro parcial (anticipo, saldo o cuota) que no completa el total. |
+| `payment.failed` | `quote` | Falla un cobro recurrente de una iguala. |
+| `invoice.stamped` | `quote` | Se timbra el CFDI de una cotización (México). |
+| `invoice.issued` | `quote` | Se emite la factura comercial de una cotización fuera de México. |
+| `invoice.finalized` | `invoice` | Se emite una factura de Cord Invoicing. |
+| `invoice.sent` | `invoice` | Se envía esa factura al cliente. |
+| `invoice.paid` | `invoice` | La factura queda totalmente pagada. |
+| `invoice.payment_failed` | `invoice` | Falla un cobro contra la factura. |
+| `invoice.voided` | `invoice` | Se anula la factura. |
+| `invoice.marked_uncollectible` | `invoice` | Se marca la factura como incobrable. |
+| `invoice.overdue` | `invoice` | Pasa su fecha de vencimiento sin liquidarse. |
+| `client.created` | `client` | Se crea un cliente. |
+| `client.updated` | `client` | Se editan los datos de un cliente. |
+| `client.deleted` | `client` | Se elimina un cliente. |
+| `product.created` | `product` | Se crea un producto. |
+| `product.updated` | `product` | Se edita un producto. |
+| `product.deleted` | `product` | Se elimina un producto. |
+| `task.created` | `task` | Se crea una tarea. |
+| `task.completed` | `task` | Se marca una tarea como hecha. |
+| `promise.created` | `promise` | Se registra una promesa de pago. |
+| `promise.kept` | `promise` | La promesa se cumple. |
+| `promise.broken` | `promise` | La promesa se incumple. |
+| `dispute.created` | `dispute` | Un cliente abre un contracargo sobre un cobro de Cord Payments. |
+| `dispute.closed` | `dispute` | El contracargo se cierra con su resultado. |
+| `refund.succeeded` | `refund` | Un reembolso se completa. |
+| `refund.failed` | `refund` | Un reembolso falla. |
+| `payout.paid` | `payout` | Un depósito llega a tu cuenta bancaria. |
+| `payout.failed` | `payout` | Un depósito falla. |
+| `account.updated` | `account` | Cambia lo que tu cuenta de cobros puede hacer. Solo se emite cuando cambia algún campo. |
+
+`ping` no es un evento del catálogo: es la entrega de prueba del botón **Probar** del Workbench y nunca aparece en el historial.
+
+<Callout type="info" title="Tipos internos en el historial">
+Además de los 41 tipos, el historial puede mostrar `quote.expiring`, `invoice.due_soon`, `invoice.past_due` y `schedule.tick`. Son señales internas que usan Cord Workflows para actuar antes de una fecha límite; no se entregan por webhook y no forman parte del catálogo. Si recorres el historial completo, ignora los tipos que no conoces.
+</Callout>
+
+## Forma de `data` por objeto
+
+Todo importe viaja con su divisa en `moneda`. Los nombres de campo son los del servidor, en español.
+
+| Objeto | Campos de `data` |
+|---|---|
+| `quote` | `id`, `folio`, `status`, `moneda`, `total`, `cliente`, `cliente_id`, `link_publico` |
+| `invoice` | `id`, `object`, `numero`, `folio_fiscal`, `estado`, `estado_fiscal`, `pais`, `tipo`, `moneda`, `total`, `pagado`, `saldo`, `vence`, `cliente`, `cotizacion_id`, `link_publico` |
+| `client` | `id`, `object`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` |
+| `product` | `id`, `object`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (nunca el costo ni el margen) |
+| `task` | `id`, `object`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `promise` | `id`, `object`, `cotizacion_id`, `fecha_promesa`, `monto`, `moneda`, `estado` |
+| `dispute` | `id`, `object`, `monto`, `moneda`, `motivo`, `estado`, `fecha_limite`, `referencia`, `cotizacion_id`, `folio`, `cliente` |
+| `refund` | `object`, `monto`, `moneda`, `motivo`, `motivo_falla`, `referencia`, `cotizacion_id`, `folio`, `cliente` |
+| `payout` | `id`, `object`, `monto`, `moneda`, `llegada`, `metodo`, `motivo_falla`, `referencia` |
+| `account` | `object`, `puede_cobrar`, `puede_depositar`, `motivo_bloqueo`, `pendientes` |
+
+Campos extra por evento:
+
+| Evento | Agrega |
+|---|---|
+| `payment.partial` | `tipo` (`anticipo`, `saldo` o `cuota`), `monto` (de este cobro), `numero_cuota`, `saldo_pendiente`, `payment_method` |
+| `quote.approval_requested` | `motivo` |
+| `quote.approval_decided` | `decision` (`approved` o `rejected`) |
+| `quote.comment_added` | `autor` (`cliente` o `vendedor`), `mensaje`, `item_id` si es sobre una línea; una contraoferta del cliente trae `tipo: "contraoferta"` y `propuesta` |
+| `client.updated` | `empresa_anterior`, `email_anterior`, `terminos_anterior` cuando cambiaron |
+| `product.updated` | `precio_lista_anterior`, `activo_anterior` cuando cambiaron |
+| `client.deleted` | Solo `id`, `object` y `empresa` |
+| `product.deleted` | Solo `id`, `object` y `nombre` |
+
+En una factura, `estado` es su ciclo de vida (`draft`, `open`, `paid`, `void` o `uncollectible`) y `estado_fiscal` su registro ante el proveedor fiscal (`pending`, `issued`, `cancelled` o `error`). En una cotización, `status` es `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `invoiced` o `paid`.
+
+El `data` que guarda el historial es el mismo del webhook **sin** `link_publico`: el link es una credencial del cliente y no se guarda.
+
+## Quién originó el evento: `actor`
+
+| Valor | Significa |
+|---|---|
+| `user:<uuid>` | Una persona de tu equipo, con sesión en la app. |
+| `api:<id de llave>` | Una petición a la API con esa llave (o una conexión OAuth). |
+| `mcp:<id de llave>` | Una herramienta del servidor MCP. |
+| `client` | Tu cliente, desde el link público de la cotización o de la factura. |
+| `workflow:<uuid>` | Una acción de Cord Workflows. |
+| `integration:<proveedor>:<id>` | Una integración sincronizando hacia Cord, por ejemplo HubSpot. |
+| `slack`, `slack:<correo>`, `shopify` | Una acción desde esas integraciones. |
+| `system`, `system:cron` | Cord mismo: un vencimiento, un cobro del procesador de pagos o una tarea programada. |
+
+Trata `actor` como texto con un prefijo: decide por lo que va antes de los dos puntos y no asumas que la lista no crecerá.
+
+## Historial: `GET /api/v1/events`
+
+Devuelve los eventos de tu organización, del más nuevo al más viejo. Si tu servidor estuvo caído más tiempo del que cubren los reintentos, aquí recuperas lo que te perdiste.
 
 | Parámetro | Qué hace |
 |---|---|
 | `type` | Un tipo de evento, por ejemplo `quote.approved`. Un tipo desconocido responde `400`. |
-| `object_id` | El id (UUID) del objeto: la historia de una cotización o una factura. |
+| `object_id` | El UUID del objeto: la historia completa de una cotización, una factura o un cliente. |
 | `limit` | De 1 a 200; por defecto 50. |
 | `cursor` | El `next_cursor` de la página anterior. |
 
+<Tabs>
+<TabItem label="curl">
+
 ```bash
-curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=10" \
-     -H "Authorization: Bearer sk_live_tU..."
+curl "https://cordhq.app/api/v1/events?object_id=8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10&limit=10" \
+  -H "Authorization: Bearer sk_test_..."
 ```
+
+</TabItem>
+<TabItem label="Node">
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+const page = await cord.events.list({ object_id: '8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10', limit: 10 });
+for (const event of page.data) console.log(event.created_at, event.type, event.actor);
+```
+
+</TabItem>
+</Tabs>
 
 ```json
 {
   "data": [
     {
-      "id": "e81c...",
+      "id": "e81c5a3f-7d2b-4e9a-b6c1-0f4d8a2e5c71",
       "type": "quote.approved",
       "object": "quote",
-      "object_id": "2a9d...",
-      "data": { "folio": "COT-00104", "total": 6000, "moneda": "MXN" },
+      "object_id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+      "data": {
+        "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+        "folio": "COT-0001",
+        "status": "approved",
+        "moneda": "MXN",
+        "total": 13920,
+        "cliente": "Ferretería La Prueba",
+        "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90"
+      },
       "actor": "client",
-      "created_at": "2026-09-20T16:41:07.512Z"
+      "created_at": "2026-10-07T17:31:44.208Z"
+    },
+    {
+      "id": "3a7f1c9e-2b4d-4a6e-8c0f-5d9b3e7a1c24",
+      "type": "quote.sent",
+      "object": "quote",
+      "object_id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+      "data": {
+        "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+        "folio": "COT-0001",
+        "status": "sent",
+        "moneda": "MXN",
+        "total": 13920,
+        "cliente": "Ferretería La Prueba",
+        "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90"
+      },
+      "actor": "api:2c6e0a9d-4f1b-4c3e-8a7d-9b5f1e3c7a20",
+      "created_at": "2026-10-07T17:04:12.318Z"
     }
   ],
-  "meta": { "next_cursor": "MjAyNi0w..." }
+  "meta": { "next_cursor": null }
 }
 ```
 
-La paginación es por cursor y estable: un evento nuevo no desplaza la página que estás leyendo. Requiere una llave de lectura.
+- El `id` del historial es un UUID propio del registro. **No** es el `evt_…` de la entrega del webhook: para deduplicar entre los dos, usa `object_id` más `type` más `created_at`.
+- `object_id` llega `null` en los eventos sin un objeto con UUID, como `account.updated`.
+- La paginación es por cursor y estable: un evento nuevo no desplaza la página que estás leyendo. Ver [Paginación](/docs/desarrolladores/esenciales/paginacion).
+- Un `object_id` que no es UUID o un `cursor` inválido responden `400` con `code: "invalid_request"`.
 
-## Verificar una llave
+### Retención
 
-`GET /api/v1/me` es la llamada más simple de la API: confirma que la llave es válida y te dice a qué organización pertenece, su permiso y su modo.
+El historial es de solo anexar: un evento no se edita ni se borra después de escribirse, y no se depura por antigüedad como el log de entregas de webhooks (30 días; 90 los fallidos). Se elimina con la organización.
+
+## Verificar una llave: `GET /api/v1/me`
+
+Es la llamada más simple de la API: confirma que la llave es válida y dice a qué organización pertenece, su permiso y su modo. Responde con cualquier llave secreta, restringida o conexión OAuth, sin importar sus permisos por recurso.
+
+<Tabs>
+<TabItem label="curl">
 
 ```bash
-curl "https://cordhq.app/api/v1/me" -H "Authorization: Bearer sk_live_tU..."
+curl https://cordhq.app/api/v1/me \
+  -H "Authorization: Bearer sk_test_..."
 ```
 
-```json
-{ "data": { "org": { "id": "6f65...", "nombre": "Aceros del Norte", "plan": "pro" }, "scope": "write", "mode": "live" } }
+</TabItem>
+<TabItem label="Node">
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+const me = await cord.me();
+console.log(me.org.nombre, me.scope, me.mode);
 ```
+
+</TabItem>
+</Tabs>
+
+```json
+{
+  "data": {
+    "org": { "id": "5b1f7d9e-3c2a-4e8b-9f61-0a7c4d2e8b13", "nombre": "Aceros del Norte", "plan": "pro" },
+    "scope": "write",
+    "mode": "test"
+  }
+}
+```
+
+| Campo | Contenido |
+|---|---|
+| `org.id` | El id de la organización sobre la que opera la llave. Con una llave de prueba es el de tu entorno de prueba, distinto al de la cuenta real. |
+| `org.nombre` | Nombre de la organización. |
+| `org.plan` | Plan vigente: `free`, `starter`, `pro`, `scale` o `developer`. |
+| `scope` | `read` o `write`. En una llave restringida, los permisos por recurso mandan sobre este valor. |
+| `mode` | `test` o `live`. |
 
 Úsala para probar una credencial antes de guardarla en tu integración.

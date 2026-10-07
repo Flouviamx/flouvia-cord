@@ -1,6 +1,10 @@
 ---
 title: "Eventos de Elements"
 description: "Aprende a escuchar las acciones del cliente dentro del iframe para construir experiencias dinámicas."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["@flouviahq/elements 2.0.0 o superior", "Dominios permitidos en Ajustes › Cotizador embebible para recibir datos en los eventos"]
 ---
 
 <header class="content-header">
@@ -53,7 +57,7 @@ Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres co
 
 ## Modo de solo lectura
 
-Si tu organización no tiene dominios permitidos en Ajustes › Elements, o la página anfitriona no está en esa lista, el cotizador se muestra en **solo lectura**: no ofrece aprobar, firmar, pagar ni escribir, y el botón lleva al link público de la cotización en una pestaña nueva. En ese modo los eventos llegan **sin `detail`**: una página que no está en tu lista no recibe quién firmó, importes ni la URL de pago.
+Si tu organización no tiene dominios permitidos en **Ajustes › Cotizador embebible**, o la página anfitriona no está en esa lista, el cotizador se muestra en **solo lectura**: no ofrece aprobar, firmar, pagar ni escribir, y el botón lleva al link público de la cotización en una pestaña nueva. En ese modo los eventos llegan **sin `detail`**: una página que no está en tu lista no recibe quién firmó, importes ni la URL de pago.
 
 ## Barra de depuración
 

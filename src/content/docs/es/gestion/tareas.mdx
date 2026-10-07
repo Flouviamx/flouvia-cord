@@ -1,42 +1,120 @@
 ---
-title: "Tareas y Seguimiento"
-description: "Crea tareas y recordatorios para asegurar el cierre de tus ventas."
+title: "Tareas y seguimiento"
+seoTitle: "Tareas y recordatorios de seguimiento en Cord"
+description: "Crea pendientes con fecha límite desde la app, la API, el MCP o un workflow; cómo se ven, quién los ve, qué tareas crea Cord por ti y qué eventos emiten."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cotizaciones, Cobranza o Clientes para crear, completar o eliminar tareas"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Tareas y Seguimiento</h1>
-  <p class="page-subtitle">Las ventas no se cierran solas. Crea recordatorios con fecha límite para dar seguimiento puntual a cada prospecto.</p>
+  <h1 class="page-title">Tareas y seguimiento</h1>
+  <p class="page-subtitle">Pendientes con fecha límite para que ningún trato se enfríe por falta de seguimiento.</p>
 </header>
 
-## No dejes enfriar a tus clientes
+## Qué es
 
-El seguimiento oportuno es la diferencia entre una venta cerrada y una perdida. Cord incluye un sistema ligero de **Tareas y recordatorios**: una lista de pendientes de tu cuenta, siempre visible en el widget del mismo nombre en tu Dashboard.
+Las tareas son una lista ligera de pendientes de tu organización. Se ven en el widget
+**Tareas y recordatorios** del [Inicio](/docs/gestion/dashboard), ordenadas por fecha
+límite. Una tarea puede estar ligada a una cotización; en ese caso muestra su folio.
 
-Aunque es una función pequeña, es útil para asegurar que ningún trato se escape por falta de seguimiento.
+{/* MOCKUP: widget "Tareas y recordatorios" del Inicio con el campo "Ej. Llamar a GAMA para dar seguimiento…", el selector de fecha y el botón Agregar; debajo cuatro tareas: "Llamar a Luis por COT-0149" (COT-0149 · 9 oct), "Responder contracargo" con la etiqueta roja "vencida", "Transferir reembolso SPEI" (COT-0131) y "Enviar catálogo actualizado" sin fecha. */}
 
-### Cómo crear una tarea
+## Requisitos
 
-Tienes dos caminos, y ambos llevan al mismo lugar:
+- **Permiso:** Cotizaciones, Cobranza o Clientes (cualquiera de los tres) para crear, completar o eliminar.
+- **Plan:** todos.
+- **Quién las ve:** todos los miembros que ven el Inicio. Una tarea no se asigna a una persona.
 
-1. **Desde cualquier pantalla de la app:** haz clic en el botón **"Crear"** de la barra superior y selecciona **"Tarea"**. Se abre un formulario rápido encima de lo que estabas viendo.
-2. **Desde el Dashboard:** en el widget **"Tareas y recordatorios"**, usa el campo de texto y la fecha al inicio de la lista.
+## Crea una tarea
 
-En cualquiera de los dos, completa:
-- **Descripción:** por ejemplo, *"Llamar a Luis para preguntar si ya revisó la cotización"*.
-- **Fecha límite** (opcional): selecciona el día en el calendario.
+<Steps>
+1. **Desde cualquier pantalla:** pulsa **Crear** en la barra superior y elige **Tarea**. O, en el Inicio, usa el campo del widget **Tareas y recordatorios**.
+2. Escribe la descripción, por ejemplo "Llamar a Luis para preguntar si ya revisó la cotización". Admite hasta 200 caracteres.
+3. Opcional: elige la **Fecha límite**.
+4. Pulsa **Agregar** (o **Crear**, según dónde la abriste).
+</Steps>
 
-Haz clic en **Agregar** (o **Crear**, según de dónde la abriste) y la tarea aparece de inmediato en el widget de tu Dashboard, junto con el resto de tus pendientes.
+Las tareas que creas desde la app no se ligan a una cotización. Las que crean un
+workflow, la API o el MCP sí pueden quedar ligadas.
 
-<Callout type="info">
-**Una tarea es de tu cuenta, no de una cotización en particular.** Desde la interfaz se crea como seguimiento general de tu operación. Las tareas que crea un [workflow](/docs/automatizacion/workflows) o la API sí pueden quedar ligadas a la cotización que las originó.
+## Seguimiento
+
+- El widget lista hasta 12 tareas pendientes, la de fecha más próxima primero; las que no tienen fecha van al final.
+- Cuando la fecha límite ya pasó, la tarea lleva la etiqueta **vencida** en rojo.
+- Marca la casilla para completarla: sale de la lista de pendientes.
+- El botón **×** la elimina por completo.
+
+<Callout type="warning">
+**Cord no envía recordatorios de tareas.** Al llegar la fecha límite no recibes correo
+ni aviso: la tarea solo se marca como vencida en el widget. Revisa tu Inicio con
+frecuencia.
 </Callout>
 
-### Seguimiento visual
+## Tareas que Cord crea por ti
 
-- Las tareas pendientes se listan ordenadas por fecha límite, la más próxima primero.
-- En cuanto la fecha límite ya pasó, la tarea se marca con la etiqueta **"Vencida"** en rojo, para que salte a la vista.
-- Marca la casilla junto a la tarea para darla por completada — desaparece de la lista de pendientes. El botón **×** la elimina por completo.
+Cuando una operación de cobro necesita tu intervención, Cord agrega la tarea:
 
-<Callout type="info">
-**Consejo pro:** crea una tarea de *"Llamada de seguimiento"* inmediatamente después de enviar el Enlace Mágico, con fecha límite 48 horas después del envío.
-</Callout>
+- **Responder contracargo:** cuando un cliente disputa un cargo con tarjeta, con el monto y, como fecha límite, el plazo para enviar evidencia (ver [Disputas](/docs/pagos/disputas)).
+- **Transferir reembolso SPEI:** cuando solicitas el reembolso de un cobro por SPEI, que se transfiere por fuera, ligada a la cotización (ver [Reembolsos](/docs/pagos/reembolsos)).
+
+## Otras formas de crear tareas
+
+<Tabs>
+<TabItem label="Workflows">
+
+La acción **Crear una tarea** de [Workflows](/docs/automatizacion/workflows/acciones)
+agrega una tarea con un título (puede usar datos del evento, como el folio o el cliente)
+y, opcionalmente, **Vence en (días)**, hasta 365. Si el evento es de una cotización, la
+tarea queda ligada a ella. Ejemplo: "cuando el cliente rechace una cotización, crea una
+tarea para llamarle mañana".
+
+</TabItem>
+<TabItem label="API">
+
+`POST /api/v1/tareas` crea una tarea con `titulo`, `due_date` opcional (AAAA-MM-DD) y
+`cotizacion_id` opcional. Requiere una llave con permiso de escritura. La API crea
+tareas; completarlas y eliminarlas se hace desde la app. Ver [API de
+tareas](/docs/desarrolladores/funciones/tareas).
+
+</TabItem>
+<TabItem label="MCP">
+
+La herramienta **crear_tarea** del [servidor MCP](/docs/desarrolladores/herramientas/mcp)
+permite que un asistente de IA cree una tarea de seguimiento, opcionalmente ligada a
+una cotización y con fecha.
+
+</TabItem>
+</Tabs>
+
+## Eventos de las tareas
+
+Cada tarea emite eventos que puedes usar en [workflows](/docs/automatizacion/workflows/disparadores)
+y [webhooks](/docs/desarrolladores/herramientas/webhooks):
+
+| Evento | Cuándo |
+|---|---|
+| **Se crea una tarea** | Al crearla desde la app, un workflow, la API o el MCP. |
+| **Se completa una tarea** | Al marcarla como completada. |
+
+Eliminar una tarea no emite evento.
+
+## Límites por plan
+
+Las tareas no tienen tope por plan.
+
+## Problemas comunes
+
+**No veo el widget de tareas.** Lo ocultaste al personalizar el Inicio: recupéralo desde la **Biblioteca**.
+
+**No puedo agregar una tarea.** Tu rol no tiene los permisos Cotizaciones, Cobranza ni Clientes.
+
+**Falta una tarea en la lista.** El widget muestra 12 pendientes; completa o elimina las que ya no aplican.
+
+## Relacionadas
+
+- [Inicio y vistas](/docs/gestion/dashboard)
+- [Acciones de workflows](/docs/automatizacion/workflows/acciones)
+- [API de tareas](/docs/desarrolladores/funciones/tareas)

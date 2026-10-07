@@ -1,0 +1,83 @@
+---
+// Migas de pan sobre el h1: Docs › Sección › Grupo › Página. Los niveles salen de
+// breadcrumbs() en src/lib/docs-nav.ts, el mismo que alimenta el JSON-LD.
+import { breadcrumbs, type DocsLang } from '../../lib/docs-nav';
+import { iconInner } from '../../lib/icons';
+
+interface Props {
+  slug: string;
+  lang: DocsLang;
+}
+
+const { slug, lang } = Astro.props;
+const crumbs = breadcrumbs(slug, lang);
+---
+
+{crumbs.length > 1 && (
+  <nav class="dn-crumbs" aria-label={lang === 'es' ? 'Ruta de navegación' : 'Breadcrumb'}>
+    <ol>
+      {crumbs.map((crumb, index) => {
+        const last = index === crumbs.length - 1;
+        return (
+          <li>
+            {index > 0 && (
+              <svg class="dn-crumb-sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
+            )}
+            {last ? (
+              <span aria-current="page">{crumb.label}</span>
+            ) : crumb.href ? (
+              <a href={crumb.href}>{crumb.label}</a>
+            ) : (
+              <span>{crumb.label}</span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  </nav>
+)}
+
+<style>
+  .dn-crumbs {
+    margin: 0 0 16px;
+  }
+  .dn-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+  }
+  .dn-crumbs li {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .dn-crumb-sep {
+    flex-shrink: 0;
+    margin: 0 6px;
+    color: #a3acb9;
+  }
+  .dn-crumbs a {
+    color: #4f566b;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .dn-crumbs a:hover {
+    color: #050505;
+  }
+  .dn-crumbs a:focus-visible {
+    outline: 3px solid rgba(0, 113, 227, 0.45);
+    outline-offset: 2px;
+  }
+  .dn-crumbs [aria-current='page'] {
+    color: #050505;
+    font-weight: 500;
+  }
+</style>

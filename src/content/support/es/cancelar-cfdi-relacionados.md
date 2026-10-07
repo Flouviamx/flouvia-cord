@@ -41,4 +41,4 @@ Cord usa el carril disponible para el país y conserva el historial del document
 La anulación local de una factura comercial no acredita que una autoridad fiscal
 haya recibido o aceptado una cancelación.
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

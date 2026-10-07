@@ -1,94 +1,93 @@
 ---
-title: "Mejoras de pagos y facturación"
-description: "Cambios comprobados, beneficios y validaciones pendientes."
-lastUpdated: "2026-09-08"
+title: "Novedades de pagos y facturación"
+description: "Los cambios recientes en cómo cobras, facturas y recibes tu dinero en Cord, y dónde encontrarlos."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Ninguno: es el registro de cambios de la sección"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Mejoras de pagos y facturación</h1>
-  <p class="page-subtitle">Cambios comprobados, beneficios y validaciones pendientes.</p>
+  <h1 class="page-title">Novedades de pagos y facturación</h1>
+  <p class="page-subtitle">Los cambios recientes en cómo cobras, facturas y recibes tu dinero en Cord.</p>
 </header>
 
-## Qué cambia y para qué sirve
+## Resumen
 
-Esta guía reúne la revisión de Cord Payments, Cord Invoicing y la suscripción.
-Distingue lo construido de lo pendiente de activar: una prueba aprobada no equivale
-a disponibilidad comprobada en producción.
-
-| Mejora | Qué aporta al negocio | Guía |
+| Novedad | Qué cambia para tu negocio | Guía |
 | --- | --- | --- |
-| 2FA también en solicitudes del panel | Exige completar la verificación antes de operar cuando el negocio la requiere | [Equipo y seguridad](/docs/cuenta/equipo-seguridad) |
-| Cobros sucesivos por el saldo de la factura | Permite completar pagos parciales sin volver a cobrar el total original | [Facturas](/docs/pagos/facturas-emitidas) |
-| Pagos, créditos y reembolsos separados | Explica lo cobrado, lo pendiente y lo que corresponde devolver | [Saldo y conciliación](/docs/pagos/facturas-emitidas) |
-| Impuestos, retenciones y créditos fiscales | Conserva el detalle por concepto y la relación de una nota de crédito con su factura | [Facturación](/docs/pagos/facturacion) |
-| Cancelación confirmada | Evita presentar como anulada una factura cuya solicitud sigue pendiente | [Ayuda sobre cancelaciones](https://cordhq.app/soporte/cancelar-facturas) |
-| Descargas desde el enlace de factura | El destinatario obtiene los documentos disponibles sin entrar al panel del vendedor | [Enlace de factura](https://cordhq.app/soporte/enlace-publico-factura) |
-| Saldo actualizable y siguiente acción | El cliente distingue pagar, esperar confirmación o contactar al negocio | [Facturas](/docs/pagos/facturas-emitidas) |
-| Protección de periodos recurrentes | Reduce emisiones duplicadas por ejecuciones simultáneas y respeta cambios de calendario | [Recurrencias](/docs/pagos/facturas-recurrentes) |
-| Suscripción en EUR y excedentes explícitos | Permite contratar con precios fijos en euros y conservar la moneda del contrato existente | [Suscripción](/docs/cuenta/suscripcion) |
-| Marca según el plan efectivo | Mantiene las condiciones de personalización al subir o bajar de plan | [Suscripción](/docs/cuenta/suscripcion) |
+| Pagos parciales de una factura | Tu cliente puede abonar una parte del saldo, y el siguiente pago se calcula sobre lo que queda | [Facturas](/docs/pagos/facturas-emitidas) |
+| Notas de crédito | Reduces el importe de una factura emitida sin anularla; en México se timbra como CFDI de egreso relacionado | [Facturas](/docs/pagos/facturas-emitidas) |
+| Descargas en el link de la factura | Tu cliente descarga el PDF y, en México, el XML desde la misma página donde paga | [Facturas](/docs/pagos/facturas-emitidas) |
+| Facturas comerciales en Gratis | El plan Gratis incluye 10 facturas comerciales al mes; desde Starter son ilimitadas | [Facturación por país](/docs/pagos/facturacion) |
+| Precios de la suscripción en euros | En España, Alemania y Francia, los planes de autoservicio se contratan con precios fijos en EUR | [Suscripción](/docs/cuenta/suscripcion) |
+| Mercado Pago | Un segundo riel de cobro en línea, con tu propia cuenta, en cotizaciones y facturas | [Mercado Pago](/docs/pagos/mercado-pago) |
+| Cambio seguro entre SPEI y tarjeta | Cambiar de método no puede generar un cobro duplicado si ya hay dinero recibido o en proceso | [Métodos de cobro](/docs/pagos/metodos) |
+| Frecuencia de depósito | Eliges cada cuánto sale tu dinero hacia tu banco | [Tarifas de Cord Payments](/docs/pagos/condiciones) |
 
-Las correcciones están implementadas y tienen pruebas de regresión. La configuración
-de precios USD/EUR y las migraciones autorizadas se verificaron en los servicios
-conectados. La publicación conjunta de estos cambios sigue pendiente de verificación;
-consulta el estado que muestra tu cuenta y no asumas una activación por leer esta guía.
+## Pagos parciales de una factura
 
-## Cambio seguro de SPEI a tarjeta: en validación
+En el link de una factura, tu cliente puede pagar el saldo completo o elegir
+**Pagar otra cantidad** y escribir cuánto quiere abonar. Cord acota ese importe al
+saldo real de la factura. Después de un abono, el siguiente pago se prepara por el
+saldo vigente, no por el total original, y un aviso repetido del mismo pago no se
+suma dos veces.
 
-El primer bloque de confiabilidad verifica el intento previo antes de sustituirlo,
-conserva los reintentos y bloquea otro método cuando hay dinero recibido o en proceso.
-El registro necesario ya está preparado en la base conectada. Falta la prueba
-integrada y verificar la publicación. No incluye recuperación automática de todos
-los intentos inciertos ni devolución automática de transferencias tardías.
+## Notas de crédito y saldo de la factura
 
-## Comisiones de facturas directas: implementado, pendiente de aceptación
+Desde el detalle de una factura emitida puedes emitir una nota de crédito. En
+México se timbra como un CFDI de egreso relacionado con el folio fiscal de la
+factura original.
 
-Los pagos desde el enlace de una factura también registran su comisión, vinculada
-al documento y al negocio. Se conserva el desglose preparado para ese cobro y se
-consulta el cargo para registrar el costo de procesamiento y el neto verificables.
-Esto ayuda a que el pago no quede fuera del registro de comisiones por haberse
-cobrado sin una cotización.
+Cord lleva por separado los pagos, las notas de crédito emitidas y los reembolsos
+confirmados, y calcula el saldo así: **total − créditos emitidos − pagos
+registrados + reembolsos confirmados**, con un mínimo de cero. El detalle y
+ejemplos están en [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
 
-Si faltan datos del costo, el registro queda pendiente. Si no puede comprobarse
-el desglose o las divisas no coinciden, requiere revisión y no entra al borrador
-mensual automático de comisiones. No se cambian las tarifas ni se recalculan
-cobros históricos con los precios actuales. Falta comprobar el recorrido integrado,
-la recuperación de pendientes y su publicación.
+## Descargas desde el link de la factura
 
-## Sesiones por inactividad: implementado, pendiente de aceptación
+La página pública de la factura incluye la descarga del PDF y, para facturas
+timbradas en México, del XML. Tu cliente ya no necesita pedírtelos por correo.
 
-La política de inactividad se comprueba también en las API protegidas y en
-facturación. Consultar páginas públicas no renueva la sesión, y una petición
-concurrente no puede revivir una sesión vencida. [Consulta el alcance y cómo se
-mide la actividad](/docs/cuenta/equipo-seguridad).
+## Facturas comerciales en el plan Gratis
 
-## Qué comprueban las pruebas
+El plan Gratis incluye **10 facturas comerciales al mes**, independientes de los
+envíos de cotizaciones. Desde Starter son ilimitadas. La emisión fiscal (CFDI en
+México) empieza en Starter, con su propia cuota mensual.
 
-Se probaron casos normales y fallos simulados: notificaciones repetidas, pagos
-parciales, reembolsos que llegan antes que el pago, cancelaciones pendientes,
-reintentos de emisión, periodos concurrentes y acceso al documento correcto.
-También se ejecutaron pruebas SQL con un rol restringido y comprobaciones de
-compilación y contratos de seguridad. Esto no garantiza cero fallos, restauración
-de respaldos, aislamiento del rol real ni todos los recorridos de producción.
+## Precios en euros
 
-## Lo siguiente: confiabilidad antes que nuevas funciones
+En España, Alemania y Francia, la suscripción a Cord se contrata con precios fijos
+en euros (EUR) para los planes de autoservicio. Si ya tienes un contrato en otra
+moneda, Cord la conserva. Developer no tiene precio en euros de autoservicio; se
+contrata con ventas. Ver
+[Suscripción](/docs/cuenta/suscripcion).
 
-La fase 1 continúa con comisiones de facturas directas, aislamiento real de la base,
-inactividad de sesiones, recuperación de eventos, alertas, restauración de respaldos
-y pruebas integradas. La fase 2 contempla mayor continuidad comercial, seguimiento
-y flujos útiles para negocios de productos y servicios; no está entregada.
+## Mercado Pago como segundo riel de cobro
 
-Consulta el [roadmap](https://cordhq.app/roadmap) para el alcance de cada iniciativa.
+Puedes conectar tu propia cuenta de Mercado Pago en **Ajustes › Cobros**. Tu cliente
+la ve en la página de pago de la cotización y en el link de la factura, incluido el
+abono parcial. Los reembolsos que hagas desde Mercado Pago se reflejan solos en el
+saldo. Ver [Mercado Pago](/docs/pagos/mercado-pago).
 
-## Un solo flujo de pago: implementación preparada
+## Cambio seguro entre SPEI y tarjeta
 
-Las integraciones que todavía solicitan el checkout anterior recibirán un enlace
-a la pantalla actual de pago de Cord. Así usan el mismo registro de intentos y
-el saldo que corresponde pagar, en vez de crear otra sesión de cobro independiente.
-La respuesta de la API conserva el campo `url` y no cambia las tarifas aceptadas.
+Si tu cliente empieza a pagar por un método y cambia a otro, Cord revisa primero el
+intento anterior. Si ya recibió dinero o tiene un pago en proceso, no lo sustituye
+y le pide esperar la confirmación. Ver [Métodos de cobro](/docs/pagos/metodos).
 
-Antes de activar el cambio se revisan las sesiones antiguas que pudieran seguir
-abiertas o pendientes. No se cancelan ni reembolsan automáticamente. La revisión
-actual no detectó sesiones en las cuentas conectadas consultadas; debe repetirse
-al publicar. El cambio todavía está pendiente de despliegue y aceptación integrada.
+## Frecuencia de depósito
+
+En **Ajustes › Cobros** eliges cada cuánto sale tu dinero de Cord Payments hacia tu
+cuenta bancaria: diaria, semanal (eligiendo el día), mensual (del día 1 al 28) o
+manual. Si la verificación de tu cuenta tiene requisitos pendientes, esa misma
+pantalla te avisa que los depósitos están pausados.
+
+## Reembolsos con aviso de tarifa
+
+Al reembolsar un cobro desde **Mis cobros**, el diálogo te pide confirmar que
+entiendes que la tarifa de plataforma de Cord no se reembolsa automáticamente.
+Ver [Reembolsos](/docs/pagos/reembolsos).
+
+Consulta el [roadmap](https://cordhq.app/roadmap) para lo que viene.

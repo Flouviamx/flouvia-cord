@@ -1,8 +1,8 @@
 ---
 title: "Equipo, permisos y seguridad"
 description: "Cómo invitar miembros, asignar permisos, exigir 2FA, limitar dominios, gestionar sesiones, passkeys, OAuth y acceso SSO en Cord."
-lastUpdated: "2026-09-08"
-reviewedBy: "Producto y seguridad de Cord"
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Permiso Equipo para administrar miembros", "Permiso Ajustes para políticas de la organización"]
@@ -12,10 +12,6 @@ prerequisites: ["Permiso Equipo para administrar miembros", "Permiso Ajustes par
   <h1 class="page-title">Equipo, permisos y seguridad</h1>
   <p class="page-subtitle">Separa la seguridad personal de cada usuario de las reglas compartidas por toda la organización.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 Cord tiene tres capas distintas de acceso:
 
@@ -27,34 +23,36 @@ Cord tiene tres capas distintas de acceso:
 
 ## Planes y asientos
 
-Invitar equipo y usar roles personalizados empieza en **Pro**. La cuota incluida
-actual es:
+Invitar equipo y usar roles personalizados empieza en **Profesional**. La cuota
+incluida actual es:
 
-| Plan | Asientos incluidos |
-|---|---:|
-| Free | 1 |
-| Starter | 1 |
-| Pro | 5 |
-| Scale | 15 |
-| Developer | Sin límite incluido |
+| Plan | Usuarios incluidos | Usuarios adicionales |
+|---|---:|---|
+| Gratis | 1 | No disponible |
+| Starter | 1 | No disponible |
+| Profesional | 5 | Con cargo mensual por usuario |
+| Scale | 15 | Con cargo mensual por usuario |
+| Developer | Ilimitados | Incluidos |
 
 Una invitación vigente ya reserva asiento aunque todavía no haya sido aceptada. Si
-el indicador está lleno, revoca una invitación que ya no usarás o revisa el plan.
+el indicador está lleno, revoca una invitación que ya no usarás o revisa el plan. Las
+tarifas de usuario adicional están en [Tu suscripción](/docs/cuenta/suscripcion).
 
 ## Invitar a una persona
 
-Abre **Ajustes > Equipo y permisos > Agregar miembro**:
-
-1. escribe su correo;
-2. elige Administrador, Vendedor, Solo lectura o una combinación personalizada;
-3. revisa cada permiso y envía la invitación.
+<Steps>
+1. Abre **Ajustes › Equipo y permisos › Equipo y Roles** y pulsa **Agregar miembro**.
+2. Escribe su correo.
+3. Elige Administrador, Vendedor, Solo lectura o una combinación personalizada.
+4. Revisa cada permiso y envía la invitación.
+</Steps>
 
 La invitación vence en **7 días**. Cord intenta enviarla por correo y también devuelve
 un enlace copiable como respaldo. **Reenviar** rota el token anterior y crea otro con
 siete días de vigencia; el enlace viejo deja de servir.
 
 Si la organización limita dominios, el correo debe terminar exactamente en uno de
-los dominios configurados en **Ajustes > Seguridad**.
+los dominios configurados en **Ajustes › Equipo y permisos › Seguridad**.
 
 ## Roles y permisos
 
@@ -87,18 +85,27 @@ que esa persona creó.
 
 ## Exigir verificación en dos pasos
 
-En **Ajustes > Seguridad**, activa **Exigir 2FA** para la organización. Un miembro
-que todavía no tenga TOTP configurado será dirigido a **Ajustes > Tu cuenta** para
+En **Ajustes › Equipo y permisos › Seguridad**, activa **Exigir verificación en dos pasos (2FA)** para la organización. Un miembro
+que todavía no tenga TOTP configurado será dirigido a **Ajustes › Tu cuenta** para
 terminar la activación antes de continuar usando las secciones protegidas.
 
-La activación personal muestra un código QR para una app autenticadora y genera códigos
-de respaldo. Guarda esos códigos fuera de Cord. Regenerarlos invalida el conjunto
-anterior. Para desactivar 2FA se exige contraseña actual o código autenticador, según
-el tipo de cuenta.
+La activación personal se hace en **Ajustes › Tu cuenta**: escanea el código QR con
+tu app autenticadora, confirma el código y guarda los diez códigos de respaldo de un
+solo uso que se muestran al activarlo. Guarda esos códigos fuera de Cord. Regenerarlos
+invalida el conjunto anterior. Para desactivar 2FA se exige contraseña actual o código
+autenticador, según el tipo de cuenta.
+
+Cuando la organización exige 2FA, la protección aplica también a las solicitudes del
+panel, no solo a la pantalla visible. Se conservan las acciones necesarias para
+configurar 2FA, confirmar tu identidad o cerrar sesión.
+
+Si una acción sensible pide verificar tu identidad de nuevo, complétala antes de
+reintentar. Los permisos del equipo siguen siendo necesarios; tener 2FA no concede
+permiso para reembolsar o administrar el negocio.
 
 ## Passkeys y contraseña
 
-En **Ajustes > Tu cuenta** cada persona puede:
+En **Ajustes › Tu cuenta** cada persona puede:
 
 - crear o cambiar su contraseña;
 - registrar varias passkeys compatibles con el dispositivo o administrador de llaves;
@@ -113,18 +120,59 @@ el último método útil, confirma que conservas otra forma de acceso.
 La lista de sesiones muestra dispositivo, IP conocida, última actividad y cuál es la
 sesión actual. Puedes cerrar una sesión individual o todas las demás.
 
-La organización también puede configurar cierre por inactividad: sin límite, 1, 4,
-8 o 24 horas. Esta regla es distinta de cerrar manualmente sesiones personales.
+La organización también puede configurar cierre por inactividad en **Ajustes ›
+Equipo y permisos › Seguridad**: sin límite, 1, 4, 8 o 24 horas. Esta regla es distinta de cerrar
+manualmente sesiones personales.
+
+El plazo se comprueba al entrar a la aplicación, a facturación y a las API internas
+protegidas, y también al registrar una passkey. Cuando vence, la operación se detiene
+y debes iniciar sesión otra vez. La actividad se mide por solicitudes autenticadas a
+esas superficies, no por mover el mouse; las consultas automáticas de la app también
+pueden contar. Visitar una página pública o usar las rutas de recuperación de 2FA no
+reinicia el plazo. "Sin límite" desactiva el cierre por inactividad, pero conserva la
+expiración máxima de la sesión, las revocaciones y la suspensión de cuenta.
 
 ## SSO empresarial
 
-Las conexiones SAML 2.0 se administran en **Ajustes > SSO** y requieren Scale o
-Developer. El acceso y la administración SSO requieren el plan efectivo correspondiente;
-una configuración guardada no garantiza acceso después de perder ese plan.
+Las conexiones SAML 2.0 se administran en **Ajustes › Equipo y permisos › SSO** y
+requieren plan **Scale o Developer** y permiso **Equipo**. Una configuración guardada no
+garantiza acceso después de perder ese plan. La configuración técnica de la conexión
+(Entity ID, URL de inicio, certificado, dominios, aprovisionamiento y mapeo de roles) está
+en [SSO y SAML](/docs/desarrolladores/seguridad/sso).
 
-Los miembros gestionados por SSO aparecen identificados en Equipo. Configura y verifica
-dominios antes de dirigir a todos los usuarios al proveedor de identidad y conserva
-el carril de emergencia definido por tu organización.
+Los miembros gestionados por SSO aparecen identificados en Equipo y sus permisos los
+gestiona tu proveedor de identidad.
+
+### Exigir SSO
+
+Cuando ya tienes una conexión funcionando, puedes obligar a tu equipo a entrar solo por
+SSO.
+
+<Steps>
+1. En **Ajustes › Equipo y permisos › SSO**, confirma que tienes al menos una conexión
+   **Activa** con un dominio verificado. Sin ella, Cord rechaza el cambio.
+2. En **Exigir SSO**, activa **Exigir a tu equipo iniciar sesión por SSO**.
+3. Guarda.
+</Steps>
+
+Con la opción activa, Cord bloquea la contraseña, Google, Apple y las passkeys para todos
+los miembros **excepto el dueño de la cuenta**, que siempre conserva su contraseña como
+respaldo.
+
+### Acceso de emergencia
+
+Si tu proveedor de identidad está caído y tu equipo no puede entrar, el dueño puede
+desactivar temporalmente el requisito:
+
+<Steps>
+1. En **Ajustes › Equipo y permisos › SSO**, pulsa **Desactivar por 1 hora**.
+2. Confirma tu contraseña (o tu código de verificación) y pulsa **Desactivar 1 hora**.
+</Steps>
+
+Durante esa hora el equipo puede volver a usar sus otros métodos de acceso, y la pantalla
+muestra **SSO desactivado temporalmente hasta** la fecha y hora de vencimiento. Al
+cumplirse, el requisito vuelve solo. Solo el dueño puede usar esta opción, y la acción
+queda registrada en la auditoría de la organización.
 
 ## Eliminar una cuenta personal
 
@@ -135,7 +183,7 @@ afecta esa organización. Reasigna propiedad y exporta datos antes de continuar.
 
 ## Problemas frecuentes
 
-**No puedo invitar.** Revisa permiso Equipo, plan Pro o superior, asiento disponible y
+**No puedo invitar.** Revisa permiso Equipo, plan Profesional o superior, asiento disponible y
 dominio permitido.
 
 **El enlace venció.** Usa Reenviar; no intentes recuperar el token anterior.
@@ -146,34 +194,15 @@ el nombre del rol.
 **La organización exige 2FA.** La persona debe completar TOTP en su propia cuenta; un
 administrador no puede generar los códigos por ella.
 
-## Verificación en dos pasos y acceso
+**No puedo activar Exigir SSO.** Necesitas una conexión activa con al menos un dominio
+verificado.
 
-Activa 2FA desde **Ajustes > Tu cuenta**: escanea el QR con tu app autenticadora,
-confirma el código y guarda los diez códigos de respaldo de un solo uso que se
-muestran al activarlo.
+**El proveedor de identidad está caído.** El dueño puede entrar con su contraseña y usar
+**Desactivar por 1 hora**.
 
-Cuando la organización exige 2FA y todavía no lo configuraste, debes completarlo
-antes de continuar. La protección aplica también a las solicitudes del panel,
-no solo a la pantalla visible. Se conservan las acciones necesarias para configurar
-2FA, confirmar tu identidad o cerrar sesión.
+## Páginas relacionadas
 
-Si una acción sensible pide verificar tu identidad de nuevo, complétala antes de
-reintentar. Los permisos del equipo siguen siendo necesarios; tener 2FA no concede
-permiso para reembolsar o administrar el negocio.
-
-## Cierre por inactividad: implementación en validación
-
-El plazo que el negocio configura en **Ajustes › Seguridad** se comprueba al
-entrar a la aplicación, a facturación y a las API internas protegidas. Cuando
-vence, la operación se detiene y debes iniciar sesión otra vez. También se
-comprueba al registrar una passkey.
-
-Visitar una página pública o usar las rutas de recuperación de 2FA no reinicia
-ese plazo. La actividad se mide por solicitudes autenticadas a las superficies
-protegidas, no por mover el mouse; las consultas automáticas de la app también
-pueden contar. El valor cero desactiva el límite de inactividad, pero conserva
-la expiración máxima, las revocaciones y la suspensión de cuenta.
-
-La comprobación y renovación ocurren juntas para impedir que solicitudes
-simultáneas renueven una sesión ya vencida. Este refuerzo tiene pruebas locales;
-falta verificar su publicación y el recorrido integrado de inicio de sesión.
+- [SSO y SAML](/docs/desarrolladores/seguridad/sso)
+- [Tu suscripción a Cord](/docs/cuenta/suscripcion): asientos incluidos y usuarios adicionales.
+- [Mapa de Ajustes](/docs/cuenta/mapa-de-ajustes)
+- [Crea tu cuenta](/docs/cuenta/crear-cuenta)

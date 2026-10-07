@@ -1,4 +1,6 @@
 ---
+import { iconInner, type IconName } from '../../../lib/icons';
+
 export interface Props {
   type?: 'info' | 'warning' | 'success';
   title?: string;
@@ -6,17 +8,18 @@ export interface Props {
 
 const { type = 'info', title } = Astro.props;
 
-const icons = {
-  info: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`,
-  warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
-  success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
+// Iconos del registro único "Cord Glass" (regla 9): nada de <svg> pegado.
+const icons: Record<NonNullable<Props['type']>, IconName> = {
+  info: 'info',
+  warning: 'alert-circle',
+  success: 'check-circle',
 };
 ---
 
 <div class={`callout callout-${type}`}>
-  <div class="callout-icon" set:html={icons[type]} />
+  <svg class="callout-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(icons[type])}></svg>
   <div class="callout-content">
-    {title && <div class="callout-title">{title}</div>}
+    {title && <p class="callout-title">{title}</p>}
     <div class="callout-body">
       <slot />
     </div>
@@ -24,59 +27,91 @@ const icons = {
 </div>
 
 <style>
+  /*
+   * La gramática de la nota la comparte el <blockquote> del contenido
+   * (DocsLayout): superficie suave, hairline y radio 14px, sin borde
+   * izquierdo grueso. El texto hereda el color del tipo: sin estas reglas,
+   * `.content-container p` (color gris, 16px) le ganaba al cuerpo y la
+   * advertencia nunca se veía ámbar.
+   */
   .callout {
     display: flex;
-    gap: 16px;
-    padding: 20px 24px;
-    border-radius: 12px;
-    margin: 24px 0;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 14px;
+    margin: 28px 0;
     font-size: 15px;
     line-height: 1.6;
     border: 1px solid transparent;
   }
-  
+
   .callout-icon {
     flex-shrink: 0;
     margin-top: 2px;
   }
-  
+
   .callout-content {
     flex: 1;
     min-width: 0;
   }
-  
+
   .callout-title {
     font-weight: 600;
-    margin-bottom: 4px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
   }
-  
-  .callout-body :global(p:first-child) { margin-top: 0; }
-  .callout-body :global(p:last-child) { margin-bottom: 0; }
-  
+
+  .callout-body :global(p),
+  .callout-body :global(ul),
+  .callout-body :global(ol),
+  .callout-body :global(li),
+  .callout-body :global(strong),
+  .callout-body :global(a) {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+  .callout-body :global(p) { margin: 0 0 10px; max-width: none; }
+  .callout-body :global(ul),
+  .callout-body :global(ol) { margin: 0 0 10px; }
+  .callout-body :global(li) { margin-bottom: 4px; }
+  .callout-body :global(a) {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .callout-body > :global(:first-child) { margin-top: 0; }
+  .callout-body > :global(:last-child) { margin-bottom: 0; }
+
   /* Info */
   .callout-info {
-    background: #f8fafc;
-    border-color: #e2e8f0;
+    background: var(--docs-surface, #ffffff);
+    border-color: var(--docs-hairline, rgba(0, 0, 0, 0.07));
   }
-  .callout-info .callout-icon { color: #0f172a; }
-  .callout-info .callout-title { color: #0f172a; }
-  .callout-info .callout-body { color: #334155; }
-  
+  .callout-info .callout-icon,
+  .callout-info .callout-title { color: var(--docs-text, #050505); }
+  .callout-info .callout-body { color: var(--docs-text-2, #4f566b); }
+
   /* Warning */
   .callout-warning {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: #fffaeb;
+    border-color: #fbe3a6;
   }
   .callout-warning .callout-icon { color: #b45309; }
-  .callout-warning .callout-title { color: #92400e; }
+  .callout-warning .callout-title { color: #7c2d12; }
   .callout-warning .callout-body { color: #78350f; }
-  
+
   /* Success */
   .callout-success {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
+    background: #f1fbf4;
+    border-color: #c6ecd2;
   }
   .callout-success .callout-icon { color: #15803d; }
-  .callout-success .callout-title { color: #166534; }
-  .callout-success .callout-body { color: #14532d; }
+  .callout-success .callout-title { color: #14532d; }
+  .callout-success .callout-body { color: #166534; }
+
+  @media (max-width: 880px) {
+    .callout { padding: 14px 16px; gap: 12px; }
+  }
 </style>

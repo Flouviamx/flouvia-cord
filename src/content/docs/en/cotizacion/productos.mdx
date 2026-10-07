@@ -1,53 +1,132 @@
 ---
 title: "Products and discounts"
-description: "Add SKUs, group items into kits, and negotiate prices."
+seoTitle: "Products, kits, discounts, and margin in a quote"
+description: "Add products, kits, and free lines, negotiate prices, use the price suggested by your history, watch your margin, and understand how taxes and discounts are calculated."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission", "Products permission to create or import the catalog"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Products and discounts</h1>
-  <p class="page-subtitle">Build your commercial proposal by adding items, grouping into kits, and negotiating the perfect price.</p>
+  <p class="page-subtitle">Build the proposal from your catalog, negotiate each line's price, and see the margin before you send.</p>
 </header>
 
-## Ways to build your Catalog
+## What it is
 
-Before adding products to a quote, Cord allows you to nourish your base catalog in different ways:
+The **What are you quoting them?** step of the editor is where you add lines. Each line
+keeps its **List** price (from your catalog) and its **Negotiated** price (what the
+client will actually pay). The discount isn't a separate field: it's the difference
+between the two.
 
-1. **Manual Creation:** Add SKUs one by one, defining their SKU, name, description, unit, and List Price. If you also capture the cost, Cord calculates the list margin automatically and compares it against the margin you actually charge on each sale.
-2. **Bulk Import via CSV / Excel:** Download our template, paste your inventory from your current ERP (SAP, Microsip, Excel), and upload it. Cord detects the name, SKU, unit, and price columns automatically; you can update thousands of products in a single batch.
-3. **Product Kits (Bundles):** If you usually sell the same things together (e.g., *Point of Sale Kit: Computer + Barcode Scanner + Thermal Printer*), you can create a **Kit** in Cord. When quoting, simply select the Kit and the system will automatically add all its parts, saving you from searching for and adding the same items multiple times. A kit can carry a fixed combo price, different from the sum of its parts — Cord prorates that total across the lines when it's inserted.
+{/* MOCKUP: "What are you quoting them?" step with three lines (Annual license × 5, Laptop Pro 14 × 2, Training per hour × 10), columns Product, Qty., List, Negotiated, Tax, Amount, and Margin; under the second line's name the text "Suggested: MXN 27,550.00 (68% close)" and an 18% margin in red. */}
+
+## Requirements
+
+- **Permission:** Quotes to quote; **Products** to create, edit, or import the catalog.
+- **Plan:** all. The price suggested by history is available from Starter. Free allows up to 50 products and Starter up to 500; from Pro there's no cap.
+- **Per-quote limit:** 200 lines.
+
+## Build your catalog
+
+1. **Manually:** in **Products › + New product** you set SKU, name, description, unit, and list price. If you capture the **cost**, Cord calculates the margin.
+2. **CSV import:** with **Import CSV**, Cord proposes which column is name, SKU, unit, price, and status; you confirm the mapping. Up to 2,000 rows per file; if a SKU already exists, it's updated.
+3. **Kits:** group products you sell together. A kit can have a fixed **combo price**, different from the sum of its parts.
+
+See [Import your catalog](/en/docs/cuenta/catalogo) for the import details.
 
 ### Volume pricing
 
-From each product's detail page you can define price tiers by minimum quantity (e.g., *10% off starting at 50 units*). When quoting, Cord automatically applies the tier that matches the quantity you entered, so you never have to remember the table or calculate it by hand.
+On each product's profile you can define tiers: a fixed unit price from a minimum
+quantity (for example, 90 per piece from 500 units). When quoting, Cord applies the
+tier that matches the quantity entered.
 
-## Adding line items to the quote
+## Add lines
 
-In the **Line Items** section of the quoter, you have two options:
+<Steps>
+1. **Search the catalog** by name or SKU in the section's search box. Press Enter to add the result and keep typing to add several in a row.
+2. **Insert a kit** with **+ Insert kit**: choose the kit, type how many times to insert it, and click **Add**. Cord adds all its parts multiplying the quantities; if the kit has a combo price, it spreads it across its lines and tells you how much the client saves.
+3. **Add a free line** with **+ Free line** for something that isn't in your catalog: you type the description, quantity, and price.
+4. **Adjust each line:** quantity, **Negotiated** price and, if your catalog has more than one rate, the line's tax.
+</Steps>
 
-1. **Search the Catalog:** Use the search bar to find the products, services, or Kits you already configured in your catalog.
-2. **Free-text Line Item:** If you need to quote something unique on the fly (e.g., *A special weekend installation service*), you can add a **Free Line**. You simply type any name you want, set the quantity, and assign whatever price you want right there, without having to go create a product in the catalog first.
+Lines don't carry their own notes. For clarifications to the client use **Notes for the
+client** (see [Advanced options](/en/docs/cotizacion/opciones)).
 
-For each item you add, you can customize:
-- **Quantity:** Number of units.
-- **Override Unit Price:** The system will load the Base Price from your catalog, but you can freely edit it on the spot (e.g., lower it from $500 to $450) for that specific quote without affecting the general catalog.
-- **Notes for the client:** Add notes or long descriptions right below the product. If you sell "Consulting", you can add a note: *"Includes 10 hours of frontend development and 2 hours of design"*. The client will see these notes under each item in the web link.
+## How the discount is built
 
-### Smart Discounts
+1. **Client tier (automatic):** if the client has a discount on their price tier, Cord lowers the negotiated price of catalog products by that percentage and notes that the client's tier discount was applied to list prices.
+2. **Shopify B2B price list (automatic):** if you connected [Shopify](/en/docs/automatizacion/integraciones/shopify) and the client buys through a company with a B2B price list, that list wins over the tier discount, product by product, and only when the quote is in the list's currency. If you already changed the negotiated price by hand, Cord doesn't overwrite it.
+3. **Volume price (automatic):** if the quantity reaches a tier, the line's list price becomes the tier's.
+4. **Manual negotiated price:** you can lower the negotiated price of any line.
 
-B2B thrives on negotiation. Cord handles discounts hierarchically:
-
-1. **Client Tier Discount (Automatic):** If you selected a VIP client, Cord has already applied their base discount automatically.
-2. **Line item discount:** Applied only to a specific product (e.g., *20% off Software, but Hardware is charged full price*).
-3. **Global discount:** Applied to the subtotal of the entire quote. You can enter it as a percentage (*10%*) or a fixed amount in the quote's currency (e.g., *-$5,000*).
+In **Review and send**, **You discounted them** adds up the difference between list and
+negotiated across the whole quote. Cord has no global discount on the subtotal.
 
 <Callout type="warning">
-Discounts are always calculated **before** taxes are applied — that's a rule of Cord's calculation engine, not an optional setting, so there's never a cent mismatch between what the seller sees and what the system invoices. For accounts in Mexico, this also complies with CFDI 4.0 rounding rules.
+Discounts are always calculated **before** taxes. The editor and the server use the
+same calculation engine: what you see is what's saved, charged, and invoiced.
 </Callout>
 
-## Real-Time Calculation
+## Price suggested by your history
 
-As you add products or modify discounts, Cord instantly updates the breakdown at the bottom of the screen:
-- **Subtotal:** Sum of all line items without taxes.
-- **Discounts:** Total subtracted.
-- **Taxes:** Each line item carries its own rate, taken from your country's tax catalog when you enter it — the name printed is your country's own (VAT in the UK, GST in Canada, Sales tax by state in the United States, IVA in Mexico and Spain), never a generic label.
-- **Total:** What the client will ultimately pay.
+From Starter, when you add a catalog product Cord looks at your already decided quotes
+(approved, paid, invoiced, rejected, or expired) and suggests a price. It groups history
+into discount bands of 5 points and picks the lowest band that closes at least 60% of
+the time; if none does, it picks the band with the best close rate.
+
+- Cord looks first at the history of **that product**, then at **that client's**, and finally at **your whole organization's**, and uses the first with at least 3 decided lines.
+- The suggestion appears under the name as "Suggested: … (68% close)". Click it to apply it to the negotiated price.
+- If the negotiated price already matches the suggestion, or there isn't enough history, nothing appears.
+
+## Margin
+
+The **Margin** column shows your profit on the negotiated price after cost:
+(negotiated − cost) ÷ negotiated. Lines without a cost show a dash. If your organization
+has a minimum margin in [internal approvals](/en/docs/cotizacion/aprobaciones-internas),
+lines below it turn red.
+
+The margin column is internal: it doesn't appear on the link or in the PDF.
+
+## Shopify stock
+
+If your products come from a connected Shopify store, the editor shows "N in stock",
+"Only N in stock" if the quantity exceeds what's available, or "Out of stock" next to
+each one. It's a warning: Cord doesn't block the quote.
+
+## Real-time calculation
+
+The **Review and send** panel updates instantly:
+
+- **Subtotal:** the sum of the lines before taxes.
+- **You discounted them:** total difference between list and negotiated (only if there's a discount).
+- **Taxes:** one row per rate, with your country's name for it (IVA in Mexico and Spain, VAT in the United Kingdom, GST in Canada, Sales tax by state in the United States).
+- **Withholding:** if your catalog has any, it's subtracted.
+- **Total:** what the client will pay.
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Products in the catalog | 50 | 500 | No cap | No cap | No cap |
+| Price suggested by history | No | Yes | Yes | Yes | Yes |
+| Lines per quote | 200 | 200 | 200 | 200 | 200 |
+
+## Common problems
+
+**"Suggested" doesn't appear.** You're on Free, the product doesn't have enough history, or the negotiated price is already the suggested one.
+
+**The margin shows a dash.** The product has no cost captured, or it's a free line.
+
+**I don't see the per-line tax column.** Your catalog has a single rate; every line uses it.
+
+**The Shopify list wasn't applied.** The quote is in a different currency from the list's, or you already edited that line's negotiated price.
+
+## Related
+
+- [Client data](/en/docs/cotizacion/cliente)
+- [Advanced options](/en/docs/cotizacion/opciones)
+- [Import your catalog](/en/docs/cuenta/catalogo)
+- [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)

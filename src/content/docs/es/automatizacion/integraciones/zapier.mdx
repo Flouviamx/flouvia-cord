@@ -1,16 +1,30 @@
 ---
 title: "Zapier"
 seoTitle: "Conectar Cord con Zapier"
-description: "Cómo conectar la app de Cord en Zapier, qué disparadores y acciones incluye y cómo usar Webhooks by Zapier y la API de Cord."
-lastUpdated: "2026-09-21"
+description: "Cómo conectar la app de Cord en Zapier: requisitos, autorización con un clic, disparadores, acciones y búsquedas, qué viaja en cada dirección, cuota mensual de API por plan, cómo desconectar, Webhooks by Zapier como alternativa y problemas comunes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en el espacio de trabajo de Cord", "Una cuenta de Zapier", "Cuota mensual de API disponible en tu plan de Cord"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Zapier</h1>
-  <p class="page-subtitle">Conecta Cord con miles de apps sin escribir código.</p>
+  <p class="page-subtitle">Conecta Cord con miles de apps sin escribir código: tus Zaps arrancan cuando pasa algo en Cord y pueden crear datos en Cord.</p>
 </header>
+
+## Qué hace
+
+La app de Cord para Zapier tiene **disparadores instantáneos** (un Zap arranca en cuanto pasa algo en Cord), **acciones** (el Zap crea o cambia datos en Cord) y **búsquedas** (el Zap encuentra un cliente o una cotización antes de actuar). Se autoriza con un clic en una pantalla de Cord: no creas ni pegas ninguna llave.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes** en el espacio de trabajo que vas a conectar. Cualquier plan. |
+| **Zapier** | Una cuenta de Zapier. Lo que puedas armar (cuántos Zaps, cuántos pasos) depende de tu plan de Zapier. |
+| **Cuota** | Cada acción y búsqueda gasta llamadas de la cuota mensual de API de tu plan de Cord. Ver [Límites](#límites). |
 
 ## Conectar la app de Cord
 
@@ -19,28 +33,69 @@ La app de Cord para Zapier se comparte por invitación. En **Ajustes › Integra
 <Steps>
 1. **Acepta la invitación.** Pulsa **Abrir Cord en Zapier** y acepta. Zapier agrega Cord a tus apps.
 2. **Crea un Zap.** Elige Cord como disparador o como acción y pulsa **Conectar**.
-3. **Autoriza en Cord.** Se abre una pantalla de Cord donde eliges el espacio de trabajo y pulsas **Autorizar**. No hay llaves que crear ni que pegar.
+3. **Autoriza en Cord.** Se abre una pantalla de Cord donde eliges el espacio de trabajo y pulsas **Autorizar**. La pantalla dice qué podrá hacer Zapier y qué no: no puede ver contraseñas ni datos de tarjeta, cambiar tu plan ni administrar a tu equipo.
+4. **Prueba el Zap.** Zapier trae un evento de ejemplo para que mapees los campos en los pasos siguientes.
 </Steps>
 
-Quien autoriza necesita acceso a **Ajustes** en ese espacio. Zapier renueva el acceso solo; si algún día quieres cortarlo, revoca la conexión en **Ajustes › Modo desarrollador › API**, donde aparece como **Conexión autorizada** de Zapier.
+Zapier renueva el acceso solo. La conexión aparece en Cord como **Conexión autorizada** de Zapier, en **Ajustes › Modo desarrollador › API**.
+
+{/* MOCKUP: pantalla de autorización de Cord abierta desde Zapier. Título "Zapier quiere conectarse a Cord", selector "Espacio de trabajo" con "Distribuidora Andina", lista "Zapier podrá": "Ver tus cotizaciones, facturas, clientes, productos y cobranza", "Crear y modificar cotizaciones, facturas, clientes, productos y tareas", "Registrar pagos y recibir avisos cuando algo cambie en Cord"; debajo "No podrá ver tus contraseñas ni datos de tarjeta, cambiar tu plan ni administrar a tu equipo." Botones "Cancelar" y "Autorizar". */}
 
 ## Qué incluye la app
 
 | Tipo | Qué puedes hacer |
 |---|---|
-| **Disparadores instantáneos** | Cotización creada, enviada, abierta, aprobada, rechazada o pagada; pago parcial; factura pagada; cliente nuevo; o cualquier evento de Cord. |
-| **Acciones** | Crear y actualizar clientes, crear y enviar cotizaciones, marcarlas pagadas y crear tareas. |
-| **Búsquedas** | Cliente por correo o nombre, y cotización por folio. |
+| **Disparadores instantáneos** | Cotización creada, enviada, abierta por el cliente, aprobada, rechazada o pagada; pago parcial recibido; factura pagada; cliente nuevo; o **New Event**, para elegir cualquiera de los 41 eventos de Cord. |
+| **Acciones** | Crear cliente, actualizar cliente, crear cotización (con líneas, divisa, términos, vigencia y la opción de enviarla en ese momento), enviar cotización, marcar cotización como pagada y crear tarea. |
+| **Búsquedas** | Cliente por correo exacto o por nombre, y cotización por folio. |
 
-Cada Zap activo crea su propio webhook en Cord, con un cupo de 100 por organización **aparte** de los endpoints de tu plan, así que tus Zaps no te quitan lugares.
+La lista de los 41 eventos está en [Disparadores](/docs/automatizacion/workflows/disparadores#los-mismos-eventos-fuera-de-workflows) y en [Webhooks para desarrolladores](/docs/desarrolladores/herramientas/webhooks).
+
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Zapier** | El evento que elegiste, con los datos del objeto: folio, cliente, total, divisa, estado y el link público en una cotización. | Al instante, cada vez que pasa en Cord. |
+| **De Zapier a Cord** | Lo que haga la acción: un cliente nuevo o actualizado, una cotización nueva o enviada, un pago registrado o una tarea. | Cuando el Zap corre. |
+| **Búsquedas** | Zapier lee un cliente o una cotización para usarlo en el paso siguiente. No cambia nada. | Cuando el Zap corre. |
+
+Lo que una acción hace en Cord dispara los mismos eventos que si lo hiciera una persona, con **Quién lo originó: La API**. Si tienes workflows o Zaps escuchando esos eventos, también corren.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Llamadas a la API al mes | Gratis 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| Al pasar la cuota | En Gratis las llamadas se rechazan hasta el siguiente mes; desde Starter se cobran como excedente, con un tope de seguridad de 10 veces lo incluido |
+| Webhooks que crean tus Zaps | 100 por organización, aparte de los endpoints de webhook de tu plan |
+| Conexiones autorizadas vivas | 25 por app y por organización |
+
+- **Qué gasta cuota:** cada acción y cada búsqueda (al menos una llamada; algunas acciones leen la cotización después de cambiarla) y registrar o borrar el webhook al encender o apagar un Zap. Recibir eventos no gasta cuota.
+- **Cuánto llevas:** en **Ajustes › Planes y suscripción › Suscripción**, fila **Llamadas a la API**.
+- Cada Zap activo con un disparador de Cord crea su propio webhook en Cord; al apagar el Zap, Zapier lo borra.
+
+## Desconectar
+
+Tienes dos niveles, según si quieres apagar un Zap o cortar el acceso de Zapier por completo.
+
+**Apagar un Zap:** apágalo o bórralo en Zapier. Zapier borra en Cord el webhook que ese Zap había creado; los demás Zaps siguen funcionando.
+
+**Cortar el acceso de Zapier a Cord:**
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › Zapier** y pulsa **Ver conexiones autorizadas**. Se abre **Ajustes › Modo desarrollador › API**.
+2. Busca la fila **Conexión autorizada** de Zapier, con la etiqueta **OAuth**.
+3. Pulsa **Revocar** y confirma.
+</Steps>
+
+Desde ese momento Zapier ya no puede llamar a la API con esa conexión, y los webhooks que sus Zaps habían creado dejan de recibir eventos. En Zapier, los Zaps de Cord fallan con un error de autorización hasta que vuelvas a conectar la cuenta. Si también quieres quitar la cuenta de Zapier, bórrala en **My Apps** de Zapier.
 
 ## Alternativa: Webhooks by Zapier
 
-Si prefieres no instalar la app, puedes conectar Zapier con los módulos genéricos.
+Si prefieres no instalar la app, puedes conectar Zapier con los módulos genéricos. Webhooks by Zapier es una app de Zapier disponible en sus planes de pago.
 
-Webhooks by Zapier es una app de Zapier disponible en sus planes de pago.
-
-### Recibir eventos de Cord
+<Tabs>
+<TabItem label="Recibir eventos de Cord">
 
 <Steps>
 1. **Crea el Zap.** En Zapier, elige como disparador **Webhooks by Zapier › Catch Hook** y copia la URL que te da.
@@ -58,7 +113,8 @@ Zapier no verifica la firma de Cord. Trata la URL del Catch Hook como un secreto
 
 Los endpoints que registras así cuentan dentro del límite de webhooks de tu plan: 16 en Gratis, Starter y Pro; 32 en Scale; 100 en Developer.
 
-### Crear o actualizar datos en Cord
+</TabItem>
+<TabItem label="Crear o actualizar datos en Cord">
 
 <Steps>
 1. En **API**, dentro del panel de Desarrolladores, crea una **llave secreta** con alcance de **escritura**.
@@ -67,15 +123,31 @@ Los endpoints que registras así cuentan dentro del límite de webhooks de tu pl
 4. Agrega el header `Idempotency-Key` con un valor único por operación (por ejemplo el id del registro que originó el Zap) para que un reintento no duplique datos.
 </Steps>
 
-Las peticiones disponibles son las mismas que en [Make](/docs/automatizacion/integraciones/make): buscar y crear clientes, crear cotizaciones, enviarlas, aprobarlas o marcarlas pagadas, y crear tareas. Los campos están en la [documentación para desarrolladores](/docs/desarrolladores/funciones/clientes).
+Las peticiones disponibles son las mismas que en [Make](/docs/automatizacion/integraciones/make#qué-puedes-hacer): buscar y crear clientes, crear cotizaciones, enviarlas, aprobarlas o marcarlas pagadas, y crear tareas. Los campos están en la [documentación para desarrolladores](/docs/desarrolladores/funciones/clientes). Estas peticiones también gastan la cuota mensual de API.
+
+</TabItem>
+</Tabs>
 
 ## Ejemplos
 
-- **Cotización pagada → Google Sheets:** Catch Hook con `quote.paid` → Google Sheets › Create Spreadsheet Row.
-- **Nuevo lead en tu formulario → cliente en Cord:** tu app de formularios → Custom Request `POST /api/v1/clientes`.
-- **Cotización aprobada → proyecto nuevo:** Catch Hook con `quote.approved` → Asana, Trello o ClickUp › Create task.
+- **Cotización pagada → Google Sheets:** disparador **Quote Paid** → Google Sheets › Create Spreadsheet Row. (Si solo quieres la hoja, la [integración directa de Google Sheets](/docs/automatizacion/integraciones/google-sheets) no gasta cuota.)
+- **Nuevo lead en tu formulario → cliente en Cord:** tu app de formularios → **Find Client** por correo → si no existe, **Create Client**.
+- **Cotización aprobada → proyecto nuevo:** disparador **Quote Approved** → Asana, Trello o ClickUp › Create task.
 
-## Siguiente
+## Problemas comunes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **"No puedes conectar apps aquí"** al autorizar | Tu usuario no tiene el permiso de Ajustes en ese espacio. Pide a quien lo tenga que autorice, o inicia sesión con otra cuenta. |
+| **"La dirección de regreso de esta solicitud no coincide..."** | Vuelve a empezar la conexión desde Zapier, no desde un enlace guardado. |
+| **El Zap falla con un error de autorización** | La conexión se revocó en Cord. Vuelve a conectar la cuenta de Cord en Zapier. |
+| **El Zap falla con 429** | Pasaste el límite por minuto o la cuota mensual de API. Revisa tu consumo en Ajustes › Planes y suscripción; en Gratis, espera al siguiente mes o sube de plan. |
+| **"Tus integraciones ya crearon 100 suscripciones, el máximo por organización."** | Apaga los Zaps, escenarios o flujos de n8n que ya no uses para liberar espacio. |
+| **El disparador no recibe eventos** | Revisa que el Zap esté encendido y que el evento ocurra después de encenderlo: un Zap no recibe los eventos anteriores. Para probar, genera el evento real, por ejemplo enviando una cotización a tu propio correo. |
+
+## Relacionadas
 
 - [Make](/docs/automatizacion/integraciones/make)
-- [Integraciones](/docs/automatizacion/integraciones)
+- [n8n](/docs/automatizacion/integraciones/n8n)
+- [Integraciones y cuota de API](/docs/automatizacion/integraciones#integraciones-y-cuota-de-api)
+- [OAuth de Cord para desarrolladores](/docs/desarrolladores/herramientas/oauth)

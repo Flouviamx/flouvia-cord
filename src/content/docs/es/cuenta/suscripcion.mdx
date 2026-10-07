@@ -1,108 +1,229 @@
 ---
 title: "Tu suscripción a Cord"
-description: "Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu contrato."
-lastUpdated: "2026-09-08"
+seoTitle: "Planes de Cord: precios, cuotas, excedentes y cambio de plan"
+description: "Planes en MXN, USD y EUR, cuotas incluidas, excedentes, cómo cambiar de plan o de ciclo, qué pasa al bajar de plan y comprobantes de tu suscripción."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes para cambiar el plan y administrar la facturación", "Salir del entorno de prueba para contratar o cambiar de plan"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tu suscripción a Cord</h1>
-  <p class="page-subtitle">Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu contrato.</p>
+  <p class="page-subtitle">Planes, cuotas, excedentes y cómo cambiar de plan sin perder tus datos.</p>
 </header>
 
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
+Tu suscripción paga el uso de Cord. Es independiente de lo que cobras a tus clientes:
+la divisa en la que cotizas, las comisiones de Cord Payments y tus facturas a clientes se
+administran por separado.
 
-## Divisa y precio base
+## Requisitos
 
-La suscripción paga el uso de Cord. Las comisiones de Cord Payments y la moneda
-que usas para vender a tus clientes se administran por separado.
+- **Permiso Ajustes** para ver el plan, cambiarlo y entrar a Facturación.
+- **Fuera del entorno de prueba.** En modo de prueba la pantalla muestra
+  **No disponible en prueba** y no se puede contratar ni cambiar de plan.
+- **Developer** no se contrata en autoservicio: se acuerda con ventas.
 
-| País para nuevas contrataciones | Divisa |
+## Divisa de tu suscripción
+
+Cord te cobra en una de tres divisas, según el país de tu organización:
+
+| País | Divisa de la suscripción |
 | --- | --- |
 | México | MXN |
 | España, Alemania y Francia | EUR |
-| Otros mercados soportados | USD |
+| Estados Unidos, Canadá, Brasil, Reino Unido, Colombia, Argentina, Chile y Perú | USD |
 
-Un contrato existente conserva su moneda. Cambiar el país, el idioma o el selector
-de precios no convierte una suscripción activa. Revisa la divisa y el total del
-resumen antes de confirmar; si no coinciden, actualiza la página antes de pagar.
+**Un contrato existente conserva su divisa.** Una vez que pagaste una factura en una
+divisa, Cord sigue cobrándote en ella aunque cambies el país, el idioma o la moneda de tu
+cuenta. La moneda que eliges en **Ajustes › General** es la de tus ventas, no la de tu
+suscripción.
 
-| Plan | MXN al mes | USD al mes | EUR al mes | EUR al año |
-| --- | --- | --- | --- | --- |
-| Gratis | 0 | 0 | 0 | 0 |
-| Starter | 240 | 12 | 12 | 120 |
-| Profesional | 590 | 30 | 30 | 300 |
-| Scale | 1.390 | 70 | 70 | 700 |
-| Developer | 2.990 | 150 | A medida | A medida |
+## Precios
 
-El precio anual base equivale a diez mensualidades y se cobra por año. Los
-excedentes se calculan por separado: no son parte de esos dos meses de ahorro.
-La selección anual se conserva durante el registro y el checkout.
+| Plan | MXN al mes | USD al mes | EUR al mes |
+| --- | ---: | ---: | ---: |
+| Gratis | 0 MXN | 0 USD | 0 EUR |
+| Starter | 240 MXN | 12 USD | 12 EUR |
+| Profesional | 590 MXN | 30 USD | 30 EUR |
+| Scale | 1,390 MXN | 70 USD | 70 EUR |
+| Developer | Con ventas | Con ventas | Con ventas |
 
-## Cuotas y excedentes
+El **ciclo anual** cuesta diez mensualidades y se cobra por año (por ejemplo, Starter
+anual: 2,400 MXN, 120 USD o 120 EUR). Los excedentes se facturan aparte y no forman parte
+de ese ahorro. Los precios incluyen impuestos: lo que ves es lo que pagas.
 
-| Plan | IA al mes | Facturas al mes | Solicitudes API al mes | Usuarios incluidos |
-| --- | --- | --- | --- | --- |
-| Gratis | 3 | 5 | 100 | 1 |
-| Starter | 20 | 20 | 1.000 | 1 |
-| Profesional | 50 | 500 | 5.000 | 5 |
-| Scale | 500 | 100 | 10.000 | 15 |
-| Developer | Sin cuota numérica | 1.000 | 50.000 | Sin cuota numérica |
+## Cuotas incluidas cada mes
 
-Gratis tiene topes duros. Starter permite excedentes de IA, facturas y API, pero
-mantiene un solo usuario. Profesional y Scale también permiten usuarios extra.
-Los envíos de cotizaciones de Gratis tienen un tope de cinco por mes; no se cobra
-un excedente para saltarlo. Revisa uso y límites en **Ajustes > Planes y suscripción**.
+| Plan | Armados con IA | Facturas fiscales | Facturas comerciales | Solicitudes API | Usuarios incluidos | Cotizaciones enviadas |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Gratis | 3 | No incluidas | 10 | 100 | 1 | 5 |
+| Starter | 20 | 30 | Ilimitadas | 1,000 | 1 | Ilimitadas |
+| Profesional | 50 | 200 | Ilimitadas | 5,000 | 5 | Ilimitadas |
+| Scale | 500 | 500 | Ilimitadas | 10,000 | 15 | Ilimitadas |
+| Developer | Ilimitados | 1,000 | Ilimitadas | 50,000 | Ilimitados | Ilimitadas |
 
-Para contratos EUR, estas son las tarifas sobre la cuota incluida:
+Consulta tu consumo del periodo en **Ajustes › Planes y suscripción › Uso del plan este
+periodo**.
 
-| Concepto extra | Starter | Profesional | Scale |
-| --- | --- | --- | --- |
-| Acción de IA | 0,20 EUR | 0,175 EUR | 0,15 EUR |
-| Factura | 0,15 EUR | 0,15 EUR | 0,10 EUR |
-| 100 solicitudes API | 0,03 EUR | 0,03 EUR | 0,02 EUR |
-| Usuario al mes | No disponible | 15 EUR | 15 EUR |
+## Límites de capacidad
 
-Las tarifas son fijas por contrato, no una conversión diaria de divisas. Solo se
-factura el excedente de uso, no otra vez la cuota incluida. Developer en EUR se
-cotiza por ventas.
+Además de las cuotas mensuales, Gratis y Starter tienen un tope de recursos que existen
+al mismo tiempo. No se pagan como excedente: para pasarlos hay que subir de plan.
 
-## Administrar el plan y los pagos
+| Plan | Cotizaciones activas | Productos | Clientes | Workflows activos |
+| --- | ---: | ---: | ---: | ---: |
+| Gratis | 5 | 50 | 50 | 1 |
+| Starter | 50 | 500 | 500 | 5 |
+| Profesional, Scale y Developer | Sin tope | Sin tope | Sin tope | Sin tope |
 
-En **Ajustes > Planes y suscripción** ves tu plan, consumo y opciones de cambio.
-Desde ahí abre [el portal de facturación](https://billing.cordhq.app) para consultar
-tarjeta, cobros y comprobantes.
+Una cotización **activa** es la que sigue viva: borrador, enviada, vista o aprobada. Las
+pagadas, facturadas, rechazadas o vencidas no cuentan.
 
-- **Subir de plan:** requiere confirmar el pago correspondiente antes de activar
-  las capacidades nuevas.
-- **Bajar de plan o cancelar:** se programa según el periodo pagado; revisa la
-  fecha efectiva que muestra el portal.
-- **Pago pendiente:** no garantiza acceso de pago. Cord comprueba que exista una
-  suscripción activa con el periodo cubierto. Si falta esa evidencia, aplica los
-  permisos de Gratis y mantiene el acceso a la recuperación del pago.
+## Excedentes
 
-Los datos se conservan después de bajar de plan; las funciones y recursos que
-excedan el nuevo contrato dejan de operar. La eliminación de la marca de Cord
-requiere Starter o superior: si deja de corresponder, vuelve a mostrarse en las
-superficies públicas. Desde Profesional, los enlaces pueden servirse desde un subdominio propio
-configurado en Ajustes › Dominio.
+**Gratis tiene topes duros**: al llegar al límite, la función se detiene hasta el mes
+siguiente o hasta que subas de plan. Desde Starter, el uso por encima de la cuota se
+cobra al cierre del periodo, y solo se factura el excedente, nunca otra vez lo incluido.
+Los envíos de cotizaciones de Gratis no tienen excedente: el tope de cinco al mes es fijo.
 
-## Comprobantes de la suscripción
+<Tabs>
+<TabItem label="MXN">
 
-El recibo del cargo y la factura fiscal son distintos. Para facturar un pago en
-México, completa los datos fiscales y usa la opción disponible en el portal.
-Revisa los datos antes de emitir. La disponibilidad de un documento y su estado
-se muestran por cargo; un comprobante no sustituye la revisión de tus obligaciones
-contables en cada país.
+| Concepto extra | Starter | Profesional | Scale | Developer |
+| --- | ---: | ---: | ---: | ---: |
+| Armado con IA | 4.00 MXN | 3.50 MXN | 3.00 MXN | Ilimitado |
+| Factura fiscal | 3.00 MXN | 3.00 MXN | 2.00 MXN | 1.50 MXN |
+| 100 solicitudes API | 0.60 MXN | 0.60 MXN | 0.40 MXN | 0.40 MXN |
+| Usuario adicional al mes | No disponible | 300 MXN | 300 MXN | Ilimitado |
+
+</TabItem>
+<TabItem label="USD">
+
+| Concepto extra | Starter | Profesional | Scale | Developer |
+| --- | ---: | ---: | ---: | ---: |
+| Armado con IA | 0.20 USD | 0.175 USD | 0.15 USD | Ilimitado |
+| Factura fiscal | 0.15 USD | 0.15 USD | 0.10 USD | 0.075 USD |
+| 100 solicitudes API | 0.03 USD | 0.03 USD | 0.02 USD | 0.02 USD |
+| Usuario adicional al mes | No disponible | 15 USD | 15 USD | Ilimitado |
+
+</TabItem>
+<TabItem label="EUR">
+
+| Concepto extra | Starter | Profesional | Scale | Developer |
+| --- | ---: | ---: | ---: | ---: |
+| Armado con IA | 0.20 EUR | 0.175 EUR | 0.15 EUR | A medida |
+| Factura fiscal | 0.15 EUR | 0.15 EUR | 0.10 EUR | A medida |
+| 100 solicitudes API | 0.03 EUR | 0.03 EUR | 0.02 EUR | A medida |
+| Usuario adicional al mes | No disponible | 15 EUR | 15 EUR | A medida |
+
+</TabItem>
+</Tabs>
+
+Las tarifas son fijas por divisa, no una conversión diaria de tipo de cambio. Starter
+mantiene un solo usuario: para invitar equipo necesitas Profesional o superior. Como
+protección, un uso extraordinariamente alto en un periodo se detiene y te pide
+contactarnos antes de seguir.
+
+## Cambiar de plan o de ciclo
+
+<Steps>
+1. Abre **Ajustes › Planes y suscripción** y pulsa **Cambiar de plan**.
+2. Elige el ciclo **Mensual** o **Anual** (**2 meses gratis**).
+3. Pulsa **Elegir** en el plan que quieras. Para Developer, el botón te lleva a hablar
+   con ventas.
+4. Revisa el resumen, la divisa y el total, y confirma el pago.
+</Steps>
+
+{/* MOCKUP: selector de planes en Ajustes con el interruptor Mensual/Anual, el plan actual marcado y el resumen de prorrateo */}
+
+Qué pasa según el cambio:
+
+- **Subir de plan** se aplica de inmediato. Cord cobra en ese momento la diferencia
+  prorrateada del periodo en curso, y las capacidades nuevas se activan cuando el pago
+  queda confirmado.
+- **Bajar de plan** o **cambiar solo de ciclo** (por ejemplo, de mensual a anual en el
+  mismo plan) se programa para el cierre de tu periodo pagado. Conservas tu plan actual
+  hasta esa fecha.
+- **Cancelar** se hace desde **Facturación** y también surte efecto al cierre del
+  periodo. Puedes reanudar la suscripción antes de esa fecha.
+
+## Qué pasa al bajar de plan
+
+**Tus datos no se borran.** Cotizaciones, clientes, productos, facturas, miembros y
+configuración se conservan. Lo que cambia es qué puede seguir operando:
+
+- **Recursos sobre el tope** (cotizaciones activas, productos, clientes, workflows
+  activos): los existentes se conservan, pero no puedes crear más (ni activar más
+  workflows) hasta quedar por debajo del límite del nuevo plan.
+- **Equipo:** si el nuevo plan incluye menos usuarios, siguen operando el dueño y los
+  primeros miembros que caben en el plan, por orden de antigüedad. Los demás conservan su
+  membresía, pero no pueden operar hasta que recuperes asientos.
+- **Funciones de plan** (cobranza, facturas recurrentes, SSO, aprobaciones, dominio
+  propio, auditoría...): quedan inoperantes, con su configuración guardada, hasta que
+  recuperes un plan elegible.
+- **Marca de Cord:** si bajas a Gratis, vuelve a mostrarse en tus links.
+- **Dominio propio:** los links con tu dominio redirigen a `cordhq.app`. Consulta
+  [Dominio propio](/docs/cuenta/dominio-propio).
+- **Facturas emitidas** siguen disponibles para descarga y pago. Emitir una nueva factura
+  fiscal requiere un plan Starter o superior.
+
+## Pago pendiente
+
+Si un cobro de tu suscripción falla, tu plan de pago no se garantiza: Cord solo concede
+las capacidades de pago con una suscripción activa y un periodo cubierto por una factura
+pagada. Mientras no se regularice, tu cuenta opera con los permisos de Gratis. Desde
+**Facturación** puedes liquidar el cobro vencido sin salir de Cord; al pagarlo, recuperas
+tu plan.
+
+## Facturación y comprobantes
+
+En **Ajustes › Planes y suscripción**, **Ir a Facturación →** abre
+[billing.cordhq.app](https://billing.cordhq.app), donde administras tu tarjeta, consultas
+cargos y descargas recibos.
+
+El recibo de un cargo y la factura fiscal son documentos distintos. En México puedes
+solicitar el CFDI de un pago de tu suscripción desde Facturación, con tus datos fiscales
+completos. Solo se factura un cargo pagado y con importe; un cargo de 0 MXN no genera
+CFDI. Fuera de México, el recibo del cargo es tu comprobante.
 
 ## Documentos comerciales y fiscales
 
-Gratis incluye **10 facturas comerciales por mes natural (UTC)**, independientes de sus cinco envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez fiscal empiezan en Starter: **30/200/500** al mes en Starter/Profesional/Scale; Developer conserva 1.000. Cada tipo tiene su propia cuota.
+Gratis incluye **10 facturas comerciales por mes natural (UTC)**, independientes de sus
+cinco envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez
+fiscal empiezan en Starter: **30, 200 y 500** al mes en Starter, Profesional y Scale, y
+**1,000** en Developer. Cada tipo tiene su propia cuota.
 
-La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, emisor configurado e integración habilitada. La activación fiscal española y su aceptación integrada siguen pendientes: pagar el plan no las activa. Los demás mercados admitidos conservan facturas comerciales, sin promesa de integración ante su autoridad fiscal local.
+En México y España, la opción comercial genera **proformas** identificadas como tales; no
+sustituyen una factura fiscal. La emisión fiscal integrada (CFDI 4.0 en México) requiere
+Starter o superior y tus datos de emisor configurados. En España, el registro de facturas
+ante la AEAT (Verifactu) todavía no está activo: pagar un plan no lo activa. En los demás
+mercados, Cord emite facturas comerciales sin integración con la autoridad fiscal local.
 
-Crear borradores, descargar y reenviar no consume otro documento. Una emisión comercial exitosa consume una unidad, igual que la fiscal; los documentos de prueba no consumen. Una emisión incierta conserva su reserva hasta revisar el resultado. Alcanzar el límite no desactiva las descargas ni los pagos de documentos existentes. Cambiar de plan no transforma documentos emitidos. Una nueva emisión fiscal después de bajar de plan requiere recuperar un plan elegible.
+Crear borradores, descargar y reenviar no consume otro documento. Una emisión exitosa
+consume una unidad de su cuota; los documentos de prueba no consumen. Alcanzar el límite
+no desactiva las descargas ni los pagos de documentos existentes.
 
-Implementación local; publicación pendiente. Los precios base y las tarifas publicadas de excedentes se conservan.
+## Problemas comunes
+
+**No veo el botón para cambiar de plan.** Necesitas permiso Ajustes y estar fuera del
+entorno de prueba.
+
+**Pagué, pero sigo viendo Gratis.** Espera a que el pago quede confirmado y recarga la
+página. Si el cargo quedó pendiente, termina el pago desde Facturación.
+
+**La divisa del resumen no es la que esperaba.** Si ya tienes un contrato, Cord conserva
+su divisa. Si es tu primera contratación y no coincide con tu país, actualiza la página
+antes de pagar y revisa el país en **Ajustes › General**.
+
+**Bajé de plan y un compañero ya no puede trabajar.** Tu plan incluye menos usuarios.
+Sube de plan o, desde Profesional, agrega usuarios adicionales.
+
+## Páginas relacionadas
+
+- [Equipo, permisos y seguridad](/docs/cuenta/equipo-seguridad)
+- [Dominio propio](/docs/cuenta/dominio-propio)
+- [Portal del cliente](/docs/cuenta/portal-cliente)
+- [Facturación por país](/docs/pagos/facturacion)
+- [Todos los productos y su plan mínimo](/docs/productos)

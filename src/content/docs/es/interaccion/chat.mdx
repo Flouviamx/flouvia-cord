@@ -1,38 +1,94 @@
 ---
-title: "Chat y Negociación"
-description: "Comunícate con tu cliente directamente dentro de la cotización."
+title: "Chat y comentarios"
+seoTitle: "Chat de la cotización y comentarios por partida"
+description: "La conversación general y los hilos por partida dentro del link de la cotización: quién escribe, cómo respondes desde Cord, cuándo se ve en vivo y cómo enterarte de un mensaje."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Opción Comentarios y contrapropuestas activa en Portal del cliente", "Permiso Cotizaciones para responder"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Chat y Negociación en Tiempo Real</h1>
-  <p class="page-subtitle">Olvídate de las cadenas de correo infinitas. Negocia cambios directamente sobre el documento.</p>
+  <h1 class="page-title">Chat y comentarios</h1>
+  <p class="page-subtitle">Tu cliente pregunta sobre la propuesta, o sobre una sola partida, sin salir del link. Tú respondes desde la cotización.</p>
 </header>
 
-## La cotización como espacio de trabajo
+## Qué es
 
-En el modelo tradicional B2B, si un cliente quiere cambiar una cantidad o pedir un descuento diferente, responde por correo, el vendedor edita el Excel, genera un PDF nuevo (Cotización_v2_final.pdf) y lo vuelve a enviar.
+Cada cotización tiene dos espacios de conversación:
 
-En Cord, **el Enlace Mágico es interactivo y colaborativo.**
+- **Conversación general:** la sección **CONVERSACIÓN** al final del link, para preguntas sobre la propuesta completa ("¿Podemos ajustar la entrega a 15 días?").
+- **Comentarios por partida:** un hilo propio en cada línea, para dudas sobre un producto ("¿Me lo cambias por el modelo de 16 GB?").
 
-### Chat General
+Todo queda en la cotización, visible para tu equipo, sin depender de correos personales.
+Para contraofertas, aprobación parcial y versiones, ver [Negociación y
+contraofertas](/docs/interaccion/negociacion).
 
-En la parte inferior de la vista web, tanto tú como tu cliente tendrán acceso a un **Panel de Chat**.
-- El cliente puede escribir preguntas generales como: *"¿Podemos ajustar el tiempo de entrega a 15 días?"*
-- El vendedor recibe una notificación instantánea y puede responder directamente en la plataforma.
-- Toda la conversación queda registrada permanentemente en el historial de esa cotización, dando visibilidad total a los gerentes de ventas sin tener que escarbar en correos personales.
+## Requisitos
 
-### Comentarios por Partida (Producto)
+- **Opción del portal:** **Comentarios y contrapropuestas** activa en **Ajustes › Marca y apariencia › Portal del cliente**. Viene activa; si la apagas, el link no muestra la conversación ni los botones de comentario.
+- **Permiso para responder:** Cotizaciones.
+- **Estado:** el cliente puede escribir mientras la cotización no está aprobada ni rechazada.
+- **Plan:** todos. Ver mensajes nuevos en vivo desde Cord requiere Pro o superior.
 
-Si la cotización es muy extensa (ej. 40 artículos diferentes) y el cliente tiene dudas sobre un producto en específico, no necesita escribir *"Sobre la partida 14, el servidor modelo X..."*.
+## Del lado del cliente
 
-Cord permite **comentarios a nivel de partida**.
-1. El cliente pasa el mouse sobre un producto específico en la cotización web.
-2. Hace clic en el icono de comentario que aparece al lado del precio.
-3. Deja su duda: *"¿Me puedes cambiar este modelo por el de 16GB de RAM?"*
-4. El vendedor recibe la alerta exacta de qué partida necesita modificarse; el icono de esa línea muestra un contador con el número de mensajes.
+<Steps>
+1. **Conversación general:** escribe en "Escribe un mensaje o propuesta…" y pulsa enviar.
+2. **Comentario en una línea:** pulsa el botón de comentario junto al nombre del producto (lleva el número de mensajes de esa línea), escribe en "Comentar sobre esta línea..." y pulsa **Enviar**.
+</Steps>
 
-### Actualización en vivo
+Cada burbuja lleva su autor junto a la hora: **Tú** para los mensajes del cliente y el
+nombre de tu negocio para tus respuestas. Tus respuestas llegan al link del cliente en
+vivo, sin recargar, en la conversación general y en cada línea.
 
-Cuando el vendedor ajusta una cantidad, cambia un producto o aplica un nuevo descuento tras la negociación en el chat, **el cliente no necesita un enlace nuevo**. 
+{/* MOCKUP: link público con la partida "Servidor Dell R750" expandida mostrando su hilo: comentario del cliente "¿Me lo cambias por el modelo de 16 GB?" rotulado "Tú · hace 5 min" y respuesta "Sí, te actualizo la versión hoy" rotulada "Constructora Norte · ahora"; debajo, la sección CONVERSACIÓN con dos burbujas. */}
 
-Simplemente ve cómo la cotización web se actualiza en tiempo real frente a sus ojos, lista para ser aprobada.
+## Del lado de tu equipo
+
+En el detalle de la cotización:
+
+- **Conversación** muestra el hilo general. Responde en "Responder al cliente (aparece en su link)…".
+- Cada línea tiene su botón de comentario; al abrirlo ves **Comentarios de esta línea** y respondes en "Responder sobre esta línea…".
+- Las burbujas dicen **Tú** para tu equipo y el nombre del cliente para las suyas.
+
+Tus respuestas aparecen en el link del cliente; no se le envían por correo.
+
+## Cómo te enteras de un mensaje
+
+Cord no manda correo, Slack ni Teams por cada mensaje o comentario del cliente.
+
+- **Pro, Scale y Developer:** con el detalle abierto, los mensajes llegan en vivo y aparece **Nuevo** en Conversación.
+- **Gratis y Starter:** recarga el detalle para ver mensajes nuevos.
+- **La campana de la barra superior** lista los 15 movimientos más recientes de tu organización, entre ellos "Nuevo mensaje del cliente" y "Contraoferta del cliente", con el folio y el cliente.
+- **Cualquier plan:** crea un [workflow](/docs/automatizacion/workflows/primer-workflow) con el disparador **Llega un mensaje en una cotización** para recibir el aviso donde quieras (correo al equipo, Slack, Teams). El mismo evento llega a tus [webhooks](/docs/desarrolladores/herramientas/webhooks).
+
+## Comportamiento y casos límite
+
+- **Mensajes de hasta 800 caracteres.**
+- **Al aprobar o rechazar,** el link deja de mostrar el campo para escribir y los botones de comentario; el historial se conserva en la cotización.
+- **La conversación no cambia la cotización.** Un mensaje no modifica precios ni estado. Para cambiar la propuesta usa **Modificar y reenviar**.
+- **El menú lateral no cuenta mensajes.** El número junto a **Cotizaciones** cuenta las cotizaciones enviadas o vistas que siguen esperando decisión, no los mensajes.
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Conversación y comentarios por partida | Sí | Sí | Sí | Sí | Sí |
+| Mensajes en vivo en el detalle | No | No | Sí | Sí | Sí |
+
+## Problemas comunes
+
+**El cliente no ve dónde escribir.** La opción **Comentarios y contrapropuestas** está apagada, o la cotización ya se aprobó o rechazó.
+
+**No me enteré de un mensaje.** Los mensajes no generan avisos. Crea un workflow con **Llega un mensaje en una cotización**.
+
+**No puedo responder.** Tu rol no tiene el permiso Cotizaciones.
+
+## Relacionadas
+
+- [Negociación y contraofertas](/docs/interaccion/negociacion)
+- [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente)
+- [Notificaciones](/docs/gestion/notificaciones)
+- [Disparadores de workflows](/docs/automatizacion/workflows/disparadores)

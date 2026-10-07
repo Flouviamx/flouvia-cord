@@ -1,6 +1,11 @@
 ---
 title: "Anticipo y saldo"
 description: "Aprende cómo fraccionar el cobro de una cotización para recibir un porcentaje por adelantado y cobrar el resto después."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cotización con término de pago definido", "Cord Payments o Mercado Pago activo para cobrar el anticipo en línea"]
 ---
 
 <header class="content-header">
@@ -18,7 +23,7 @@ En plataformas de facturación tradicionales, esto te obliga a generar **dos lin
 
 1. Abre el editor de cotizaciones.
 2. En la barra lateral derecha, busca la sección de **Condiciones**.
-3. Asegúrate de que el término de pago sea **Contado** (los anticipos no aplican para créditos Net 30/60).
+3. Elige el término de pago. Con **Contado**, el saldo se puede pagar en cuanto se cubre el anticipo; con **Net 30** o **Net 60**, el saldo vence a los 30 o 60 días de la aprobación y se habilita para pago en esa fecha.
 4. Activa el campo de **"% de Anticipo"** e ingresa el porcentaje (por ejemplo, `50`).
 5. Verás que la vista previa en vivo se actualiza al instante, mostrando al cliente exactamente cuánto va a pagar hoy para aprobar.
 
@@ -30,19 +35,19 @@ En plataformas de facturación tradicionales, esto te obliga a generar **dos lin
 
 Cuando el cliente abre el link público de la cotización, debajo del monto total verá un desglose claro:
 
-- **Total del proyecto:** $10,000
-- **Hoy pagas de anticipo (50%):** $5,000
-- **Saldo:** $5,000 (Vence a la entrega)
+- **Total del proyecto:** $10,000.00 MXN
+- **Hoy pagas de anticipo (50%):** $5,000.00 MXN
+- **Saldo:** $5,000.00 MXN (vence según el término de pago)
 
 ### Mutación automática del botón de pago
 
-La magia de la arquitectura de Cord (basada en PaymentIntents independientes) ocurre al momento del cobro:
+Cada parte de la cotización —el anticipo y el saldo— es un cobro independiente dentro del mismo link:
 
-1. **Primer cobro:** El cliente da clic en "Aprobar y Pagar". El botón le cobra **únicamente los $5,000** del anticipo. Al procesarse el pago, la cotización queda "Aprobada" y lista para que inicies a trabajar.
-2. **Segundo cobro:** Semanas después, cuando estés listo para cobrar el saldo, el cliente puede **volver a entrar exactamente al mismo link** de la cotización original. El sistema detectará que el anticipo ya fue pagado, y el botón de pago habrá mutado automáticamente para cobrar el **Saldo restante**.
+1. **Primer cobro:** El cliente da clic en "Aprobar y Pagar". El botón le cobra **únicamente los $5,000.00 MXN** del anticipo. Al procesarse el pago, la cotización queda "Aprobada" y lista para que inicies a trabajar.
+2. **Segundo cobro:** Cuando el saldo está habilitado, el cliente puede **volver a entrar exactamente al mismo link** de la cotización original. El sistema detectará que el anticipo ya fue pagado, y el botón de pago habrá mutado automáticamente para cobrar el **Saldo restante**.
 
 Tú no tuviste que enviar un segundo correo, ni generar un "link de pago para el saldo". Todo vive en el mismo ecosistema.
 
 <Callout type="info">
-Cada cobro (el anticipo y el saldo) es una transacción independiente para efectos de comisión — Cord Payments cobra su tarifa sobre cada uno por separado, con la misma tabla de tarifas que un cobro normal. Ver [Tarifas y ventajas](/docs/pagos/condiciones).
+Cada cobro (el anticipo y el saldo) es una transacción independiente para efectos de comisión: en cobros en pesos mexicanos (MXN), Cord Payments cobra su tarifa sobre cada uno por separado, con la misma tabla de tarifas que un cobro normal. En otras divisas, Cord no aplica hoy comisión de plataforma. Ver [Tarifas y ventajas](/docs/pagos/condiciones).
 </Callout>

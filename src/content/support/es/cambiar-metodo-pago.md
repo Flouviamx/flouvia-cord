@@ -52,4 +52,4 @@ Consulta [el alcance de las mejoras](https://docs.cordhq.app/docs/pagos/mejoras-
 [las tarifas por método](https://docs.cordhq.app/docs/pagos/condiciones). La moneda de venta es distinta
 de [la moneda de tu suscripción a Cord](https://docs.cordhq.app/docs/cuenta/suscripcion).
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

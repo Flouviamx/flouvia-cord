@@ -1,15 +1,17 @@
 ---
 title: "Approval and technical evidence"
-description: "How Cord records an approval with declared identity, IP address, time, and a fingerprint of the accepted document."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product and Security"
+seoTitle: "Signing a quote and the technical evidence of the approval"
+description: "How your client signs a quote in Cord and what Cord records: declared name, IP address, browser, date and time, and the SHA-256 fingerprint of the accepted lines."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Sent or Viewed quote", "The client enters their full name and accepts the terms"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Approval and technical evidence</h1>
-  <p class="page-subtitle">Cord keeps a verifiable record of who approved, when they did it, and which document version they accepted.</p>
+  <p class="page-subtitle">Cord keeps a verifiable record of who approved, when they did it, and which line items and amounts they accepted.</p>
 </header>
 
 ## The "OK" via email problem
@@ -18,35 +20,69 @@ Traditionally, a sales rep sends a PDF and the client replies "Authorized, proce
 
 Cord adds an **electronic approval and technical evidence** layer at that moment.
 
+## Requirements
+
+- **Status:** the quote must be *Sent* or *Viewed*. An expired, rejected, or already approved quote doesn't accept the signature.
+- **For the client:** just the link; no account needed.
+- **Plan and country:** every plan and all 12 markets.
+
 ## The approval process
 
-When your client clicks **Approve Quote** inside the link, Cord shows a confirmation modal before changing the status.
+When your client clicks **Approve quote** inside the link, the same quote card moves to the **Digital signature** step (it's not a separate window), with a summary of the folio and the total being approved.
 
 To proceed, the client must:
-1. **Enter their Full Name.**
-2. **Enter their Corporate Email.**
-3. **Check a confirmation box** declaring that they have authority to accept the terms and commercial obligation described in the quote.
+1. **Type their full name** in *Signer's full name* (at least two characters).
+2. **Check the box** *"I have reviewed this quote and accept the stated terms and conditions"*.
+
+The *Email (optional)* field can be left blank. The **Confirm and sign** button is enabled as soon as there's a name and the box is checked.
+
+If you changed the proposal while the client was reviewing it, Cord doesn't accept a signature on the previous version: it asks them to review the changes before approving.
+
+### Partial approval
+
+Before approving, the client can uncheck the line items they don't want to include (each line has its own *Include this line in your approval* checkbox). The signature covers only the included lines: Cord recalculates subtotal, taxes, and total with those lines, and the rest are marked as **Not included**.
+
+### Rejection with a reason
+
+If the client disagrees, they can use **Reject**, write a *Reason (optional)*, and **Confirm rejection**. The reason shows up in the quote's activity, and the rejection triggers the matching notification (see [Notifications](/en/docs/gestion/notificaciones)).
 
 ### Audit trail data
 
 At confirmation, Cord stores a **technical audit trail**:
-- **Public IP Address** from which the approval was made.
-- **Exact Timestamp** synchronized with secure servers.
-- **Cryptographic fingerprint** of the approved version and scope, used to detect later changes to the data covered by the approval.
+- **Signer's name** and, if they entered it, their email.
+- **IP address** from which the approval was made and the browser used.
+- **Date and time** of the signature, recorded by Cord's database at the moment it's saved.
+- **Cryptographic fingerprint (SHA-256)** computed over the quote, the type of approval (full or partial), the signer's name, the IP, and the approved lines (description, quantity, prices, and tax rate), used to detect later changes to the data covered by the approval.
 
 ## The Audit Stamp
 
-Once approved, the quote's status changes visually. At the bottom of the document (both in the web view and the subsequently generated downloadable PDF), an **Audit Stamp** is permanently embedded.
+Once approved, the quote's link shows an **audit stamp** in the web view, with this content:
 
-This stamp clearly shows:
-> *"Digitally approved by [Client Name] ([Client Email]) on [Date and Time] from IP address [192.168.x.x]."*
+> **Document verified** — **Signer:** [Signer's name] (IP: [IP address]) — **Date:** [date and time] — **Seal:** [SHA-256 fingerprint]
+
+The signer's email doesn't appear on the stamp. The quote PDF you download from Cord doesn't include the stamp; in the quote's details, the activity records who signed, from which IP, and, for a partial approval, how many lines and what amount they accepted.
 
 ### What it is useful for
 - **Preparing a dispute:** if the client disputes a card charge, the record can form part of the evidence you submit. The issuing bank decides the outcome, and Cord does not guarantee that a dispute will be won.
-- **Partial approval, also signed:** if your client only wants to accept some line items from a lengthy quote, they can approve it partially — the same audit stamp covers exactly the lines and amount they accepted, not the original total.
+- **Partial approval, also signed:** the fingerprint covers exactly the lines the client accepted, not the original total.
 - **Collections context:** the team can review who accepted, when, and for what amount instead of relying only on a verbal "yes" or a stray email.
 - **Connecting the commercial workflow:** the approved version can be used to begin collection and prepare the invoice available for the account's market.
 
 <Callout type="warning">
 Cord stores technical evidence of approval; it does not provide notarial services or legal advice. Validity and evidentiary weight depend on the document, workflow, and jurisdiction. Consult a professional for high-risk cases.
 </Callout>
+
+## Common problems
+
+**The Confirm and sign button doesn't enable.** The name (at least two characters) or the acceptance checkbox is missing.
+
+**Cord says the quote can no longer be modified.** The quote expired, was rejected, or was already approved.
+
+**The client went back to review when signing.** You changed the proposal while they were reading it; they need to review the changes with **See changes** and sign again (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)).
+
+## Related
+
+- [What your client sees](/en/docs/interaccion/vista-del-cliente)
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [Approval and invoicing](/en/docs/cotizacion/timbrado)
+- [Disputes](/en/docs/pagos/disputas)

@@ -1,11 +1,11 @@
 ---
 title: "Informes y desempeño comercial"
 description: "Qué mide cada informe de Cord, qué datos respetan el rango, cuáles son una foto de hoy y cómo se atribuye el desempeño por vendedor."
-lastUpdated: "2026-08-28"
-reviewedBy: "Producto y analítica de Cord"
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Permiso Analítica", "Permiso Cobranza para el informe de cartera"]
+prerequisites: ["Permiso Informes", "Permiso Cobranza para el informe de cartera", "Plan Pro o superior para Finanzas, Flujo de caja y Cobranza"]
 ---
 
 <header class="content-header">
@@ -14,28 +14,35 @@ prerequisites: ["Permiso Analítica", "Permiso Cobranza para el informe de carte
 </header>
 
 **Informes** es la única superficie analítica de Cord. Reúne siete vistas y un
-selector común, mientras **Desempeño** compara resultados por la persona que creó o
+selector común, mientras **Equipo** compara resultados por la persona que creó o
 duplicó cada cotización.
 
 ## Los siete informes
 
-| Informe | Qué responde | Alcance temporal |
-|---|---|---|
-| Resumen | Tasa de cierre, valor cerrado y perdido, velocidad y madurez. | Rango elegido |
-| Diagnóstico comercial | Embudo, pipeline, detenidas, descuento cedido y tiempo por etapa. | Mixto: cohorte + foto de hoy |
-| Finanzas | MRR, ARR, DSO, MRR en riesgo, pipeline ponderado y concentración. | Foto de hoy |
-| Flujo de caja · 90 días | Cartera, pipeline probable, igualas y concentración próxima. | Foto y proyección actual |
-| Cobranza y cartera | Por cobrar, vencido, aging, promesas y comportamiento de pago. | Foto de hoy |
-| Clientes | Valor y conversión por cliente, cohortes y clientes sin actividad. | Mixto: rango + foto de hoy |
-| Productos | Importe, volumen, elasticidad del descuento y cierre por producto. | Rango elegido |
+**Informes** está en el menú lateral, en el grupo **Inteligencia**. Cada informe tiene
+su propia URL y su propia disposición de widgets.
 
-Los informes **Finanzas**, **Flujo** y **Cobranza** requieren Pro o superior. Cobranza
-exige además el permiso Cobranza; los demás parten del permiso Analítica.
+{/* MOCKUP: Informes › Resumen con la lista de informes a la izquierda agrupada en Dirección (Resumen, Diagnóstico comercial, Finanzas, Flujo de caja · 90 días) y Operación (Cobranza y cartera, Clientes, Productos), el selector "Últimos 30 días" arriba y widgets de tasa de cierre, valor cerrado y la dona Ganado / Perdido / Aún abierto. */}
+
+| Informe | Qué responde | Alcance temporal | Permiso | Plan |
+|---|---|---|---|---|
+| Resumen | Tasa de cierre, valor cerrado y perdido, velocidad y madurez. | Rango elegido | Informes | Todos |
+| Diagnóstico comercial | Embudo, pipeline, detenidas, descuento cedido y tiempo por etapa. | Mixto: cohorte + foto de hoy | Informes | Todos |
+| Finanzas | MRR, ARR, DSO, MRR en riesgo, pipeline ponderado y concentración. | Foto de hoy | Informes | Pro o superior |
+| Flujo de caja · 90 días | Cartera, pipeline probable, igualas y concentración próxima. | Foto y proyección actual | Informes | Pro o superior |
+| Cobranza y cartera | Por cobrar, vencido, aging, promesas y comportamiento de pago. | Foto de hoy | Informes y Cobranza | Pro o superior |
+| Clientes | Valor y conversión por cliente, cohortes y clientes sin actividad. | Mixto: rango + foto de hoy | Informes | Todos |
+| Productos | Importe, volumen, elasticidad del descuento y cierre por producto. | Rango elegido | Informes | Todos |
+
+Si te falta el permiso, el informe te pide solicitarlo a quien administra el equipo.
+Si te falta el plan, te ofrece ir a **Ajustes › Planes y suscripción**.
+
 
 ## Informes con rango
 
-Resumen, Diagnóstico comercial, Clientes y Productos muestran selector de fechas. El
-rango máximo consultable en esta interfaz es el último año. Cuando cambias fechas,
+Resumen, Diagnóstico comercial, Clientes y Productos muestran selector de fechas, que
+arranca en los últimos 30 días. El rango máximo consultable en esta interfaz es el
+último año. Cuando cambias fechas,
 Cord vuelve a cargar la cohorte sin recargar toda la página.
 
 En métricas de cohorte, una cotización pertenece al rango por su fecha de origen. Una
@@ -72,7 +79,7 @@ actividad interna no crean conversiones nuevas.
 
 - **MRR contratado:** importe mensual de igualas activas.
 - **ARR:** MRR anualizado; no es ingreso bancario ya recibido.
-- **MRR en riesgo:** suscripciones `past_due` o programadas para cancelación.
+- **MRR en riesgo:** igualas con cobro pendiente o programadas para cancelarse.
 - **DSO:** tiempo estimado hasta el cobro a partir del historial disponible.
 - **Pipeline ponderado:** valor esperado usando probabilidad y tiempo derivados del
   comportamiento histórico; no es efectivo garantizado.
@@ -114,8 +121,8 @@ Ocultar un widget no elimina datos ni cambia los cálculos.
 
 ## Desempeño por vendedor
 
-`/app/desempeno` atribuye una cotización a `creado_por`: la persona que la creó o la
-duplicó. Muestra cotizaciones creadas, tasa de cierre, valor cerrado, cobrado, ticket
+**Equipo**, en el grupo **Inteligencia** del menú lateral, atribuye cada cotización a
+la persona que la creó o la duplicó. Requiere el permiso Informes. Muestra cotizaciones creadas, tasa de cierre, valor cerrado, cobrado, ticket
 promedio y días al cierre.
 
 Los documentos antiguos sin creador aparecen como **Sin asignar**. La página no
@@ -123,9 +130,9 @@ redistribuye ese historial ni atribuye automáticamente una venta al último edi
 La tasa del equipo es el promedio de las tasas mostradas por vendedor, no una comisión
 ni un cálculo de nómina.
 
-## Problemas frecuentes
+## Problemas comunes
 
-**No aparece un informe.** Revisa permiso Analítica; Cobranza requiere además su
+**No aparece un informe.** Revisa permiso Informes; Cobranza requiere además su
 permiso propio. Finanzas, Flujo y Cobranza requieren Pro o superior.
 
 **Cambiar fechas no modifica un widget.** Es una foto actual y aparece marcado “hoy”.
@@ -133,5 +140,12 @@ permiso propio. Finanzas, Flujo y Cobranza requieren Pro o superior.
 **El valor cerrado de una cohorte parece bajo.** Parte puede seguir abierta; revisa
 madurez y vuelve a comparar cuando haya transcurrido el ciclo normal de venta.
 
-**Un cierre sale Sin asignar.** La cotización no conserva un `creado_por`, normalmente
-por ser anterior a la atribución actual.
+**Un cierre sale Sin asignar.** La cotización no conserva a la persona que la creó:
+es anterior a la atribución actual o se creó por la API.
+
+## Relacionadas
+
+- [Inicio y vistas](/docs/gestion/dashboard)
+- [Cartera y cobranza](/docs/pagos/cartera-cobranza)
+- [Tesorería y FX Lock](/docs/pagos/tesoreria-fx)
+- [Equipo y seguridad](/docs/cuenta/equipo-seguridad)

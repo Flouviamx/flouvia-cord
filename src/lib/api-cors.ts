@@ -16,7 +16,7 @@ export function publishableKeyAllows(method: string, pathname: string): boolean 
 
 const ALLOWED_HEADERS = 'Authorization, Content-Type, Idempotency-Key, If-None-Match, Cord-Version';
 const EXPOSED_HEADERS = 'Cord-Request-Id, Cord-Version, Retry-After, ETag';
-export const ERRORS_DOC_URL = 'https://docs.cordhq.app/desarrolladores/esenciales/errores';
+export const ERRORS_DOC_URL = 'https://docs.cordhq.app/docs/desarrolladores/esenciales/errores';
 
 function browserOrigin(request: Request): string | null {
     const origin = request.headers.get('origin');

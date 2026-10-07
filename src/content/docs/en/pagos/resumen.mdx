@@ -1,29 +1,29 @@
 ---
 title: "Cord Payments Overview"
-description: "Collect from your B2B customers by card, SPEI, or manual transfer directly from the cotización. Money straight to your bank, one transparent fee."
-lastUpdated: "2026-09-08"
-reviewedBy: "Cord Payments and Operations"
-appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+description: "Collect from your customers by card, SPEI, Mercado Pago, or manual transfer directly from the quote. The money lands in your own account and you see the fee before you charge."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Activate Cord Payments for online payments", "Configure the receiving bank account"]
+prerequisites: ["Activate Cord Payments or connect Mercado Pago to collect online", "Configure the receiving bank account"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord Payments Overview</h1>
-  <p class="page-subtitle">The collection engine of your B2B business. Card, SPEI, or manual transfer, with the money going straight to your bank.</p>
+  <p class="page-subtitle">The collection engine of your business. Card, SPEI, Mercado Pago, or manual transfer, with the money in your own account.</p>
 </header>
 
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
+**Cord Payments** is the system you use to accept card, SPEI (Mexico and pesos only), or manual-transfer payments directly from a quote. The money lands in your own payments account and from there it is paid out to your bank account at the [frequency you choose](/en/docs/pagos/depositos) in **Settings › Payments**: daily, weekly, monthly, or manual.
 
-**Cord Payments** is the system you use to accept card, SPEI, or manual-transfer payments directly from a cotización, with funds deposited into your own bank account within 2 to 7 business days. Cord charges a single fee per transaction, calculated transparently and visible before you charge — no hidden fees, no surprises. See the [full fee schedule](/en/docs/pagos/condiciones).
+On payments in Mexican pesos (MXN), Cord charges a per-transaction fee that you see and accept before you start collecting. On payments in any other currency, Cord applies no platform fee today. See the [full fee schedule](/en/docs/pagos/condiciones).
+
+In Mexico, Brazil, Colombia, Argentina, Chile, and Peru you can also collect with [Mercado Pago](/en/docs/pagos/mercado-pago), using your own Mercado Pago account.
 
 <section class="docs-section split" style="margin-top: 40px; border-top: none; padding-top: 0; margin-bottom: 64px;">
   <div class="section-text">
     <h2>Start now</h2>
-    <p>Integrate Cord to start accepting B2B payments online instantly, automate bank transfer reconciliation, and — in Mexico — natively issue CFDI invoices.</p>
-    <a href="/docs/pagos/aceptar?lang=en" class="action-link-text">Find your use case &rarr;</a>
+    <p>Use Cord to accept online payments from the same quote link, automatically reconcile the payments that go through Cord, and — in Mexico, once your Digital Seal Certificate (CSD) is uploaded — stamp the CFDI for your sales.</p>
+    <a href="/en/docs/pagos/aceptar" class="action-link-text">Find your use case &rarr;</a>
   </div>
   <div class="section-visual">
     <div class="mockup-card" style="border-radius: 12px; transform: scale(1); box-shadow: 0 12px 32px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05); overflow: hidden; display: flex; width: 100%; min-height: 380px;">
@@ -31,7 +31,7 @@ This guide includes the September improvements. Their combined publication and i
       <div style="flex: 1; background: #1a1f36; padding: 24px; color: white;">
         <div style="font-size: 13px; color: #8792a2; font-weight: 500; margin-bottom: 32px;">&larr; Invoice 0451</div>
         <div style="font-size: 13px; color: #a0aec0; margin-bottom: 4px;">Enterprise Subscription</div>
-        <div style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 32px;">$14,500.00</div>
+        <div style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 32px;">$14,500.00 MXN</div>
         
         {/* Cart Item abstract visual */}
         <div style="display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;">
@@ -67,7 +67,7 @@ This guide includes the September improvements. Their combined publication and i
             <div class="input-field half"><span>CVC</span></div>
           </div>
           
-          <div style="margin-top: 12px; height: 36px; background: #050505; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 600;">Pay $14,500.00</div>
+          <div style="margin-top: 12px; height: 36px; background: #050505; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 600;">Pay $14,500.00 MXN</div>
         </div>
       </div>
     </div>
@@ -76,26 +76,53 @@ This guide includes the September improvements. Their combined publication and i
 
 ## Goodbye manual reconciliations
 
-In traditional B2B, receiving a payment means: asking the client to email the transfer receipt, sales forwarding it to finance, and finance searching for the exact deposit in the bank portal the next day to cross-reference it against the quote.
+In many businesses, receiving a payment means: asking the client to email the transfer receipt, sales forwarding it to finance, and finance searching for the exact deposit in the bank portal the next day to cross-reference it against the quote.
 
-**Cord Payments completely eliminates this process.** Our payment infrastructure is natively designed for B2B, automating reconciliation and sending the money straight to your bank account.
+**Cord Payments eliminates this process for online payments.** Every card or SPEI payment is tied to its quote and changes its status as soon as it is confirmed, with no receipts to cross-check by hand.
 
 ### What you will learn in this section:
 
-1. **[Accepting a payment](/en/docs/pagos/aceptar):** How dynamic CLABEs (SPEI wire transfers) and card payments work, and why the money goes straight to you.
-2. **[Fees and advantages](/en/docs/pagos/condiciones):** How much Cord charges for each method, and why.
-3. **[Deposits and balances](/en/docs/pagos/anticipos):** How to charge a percentage today and the rest later.
-4. **[Recurring retainers](/en/docs/pagos/igualas):** How to set up an automatic monthly charge.
-5. **[Refunds](/en/docs/pagos/reembolsos)** and **[disputes](/en/docs/pagos/disputas):** What to do when something doesn't go as expected.
+**Activate and collect**
 
-## A "Direct-to-Bank" architecture
+1. **[Accepting a payment](/en/docs/pagos/aceptar):** What your customer sees when paying from the quote or invoice link.
+2. **[Connect your account](/en/docs/pagos/onboarding):** Verifying your business, documents by country, phone capture, and account statuses.
+3. **[Cord Payments fees](/en/docs/pagos/condiciones):** How much Cord charges by method and currency, and how the fee is activated.
+4. **[Payment methods](/en/docs/pagos/metodos):** Card, SPEI, Mercado Pago, and manual transfer by country and currency, and how each one is confirmed.
+5. **[Mercado Pago](/en/docs/pagos/mercado-pago):** The second online payment rail, with your own account.
 
-Unlike generic payment gateways that hold your money and then do periodic "payouts", Cord Payments uses **direct charges**: when your customer pays, the money travels straight to your own connected bank account — it never passes through a Cord account. Cord isn't a middleman for the money — it's the software layer that orchestrates the transaction, verifies your identity, and calculates the fee — in Mexico, it also issues the CFDI for that fee (see [Fiscal invoicing by country](/en/docs/pagos/facturacion)).
+**Payment models**
+
+6. **[Upfront and balance](/en/docs/pagos/anticipos):** How to charge a percentage today and the rest later.
+7. **[Installment payment plans](/en/docs/pagos/cuotas):** An overdue balance split into monthly installments from the same link.
+8. **[Monthly retainers](/en/docs/pagos/igualas):** An automatic monthly card charge.
+9. **[Credit terms](/en/docs/pagos/credito):** Net 30 and Net 60, and when payment is enabled.
+
+**Tracking the money**
+
+10. **[Payments dashboard](/en/docs/pagos/dashboard):** Balance, payouts, fees, disputes, and recent payments.
+11. **[Payouts to your bank](/en/docs/pagos/depositos):** Frequency, statuses, history, payout account by country, and paused payouts.
+12. **[Refunds](/en/docs/pagos/reembolsos)** and **[disputes and chargebacks](/en/docs/pagos/disputas):** What to do when something doesn't go as expected.
+
+**Invoicing**
+
+13. **[Invoicing by country](/en/docs/pagos/facturacion):** CFDI 4.0 in Mexico, the status in Spain, commercial invoices in other markets, and quotas per plan.
+14. **[Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas):** The full life of an invoice and its balance.
+15. **[Recurring invoices](/en/docs/pagos/facturas-recurrentes):** Repeat an invoice every month without re-entering it.
+
+**Collections and treasury**
+
+16. **[Automatic payment reminders](/en/docs/pagos/recordatorios):** The email ladder before and after the due date.
+17. **[Receivables and operating collections](/en/docs/pagos/cartera-cobranza)** and **[AI collections](/en/docs/pagos/cobranza-ia):** How to follow up on what you're owed.
+18. **[Treasury and FX Lock](/en/docs/pagos/tesoreria-fx):** Cash-flow forecast and locked exchange rates.
+
+## Direct charges to your own account
+
+Cord Payments uses **direct charges**: when your customer pays, the payment is recorded in your own payments account, in your business's name — it never passes through a Cord account. From there, the money is paid out to your bank account at the payout frequency you choose. Cord isn't a middleman for the money — it's the software layer that orchestrates the transaction, verifies your identity, and calculates the fee — in Mexico, it also issues the CFDI for that fee (see [Fiscal invoicing by country](/en/docs/pagos/facturacion)).
 
 <Callout type="info">
 This also means you're the merchant of record for every payment — not Cord. You're responsible to your customer for the goods or services sold, and to the bank for any chargeback. See [Fees and advantages](/en/docs/pagos/condiciones) for the details.
 </Callout>
 
-## Recent improvements
+## What's new
 
-See [what changed in payments, invoices, security and plans](/en/docs/pagos/mejoras-confiabilidad), how it helps operations and what still needs validation.
+See [what's new in payments and invoicing](/en/docs/pagos/mejoras-confiabilidad): changes to invoice payments, credit notes, downloads from the invoice link, and plans.

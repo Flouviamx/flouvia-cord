@@ -4,7 +4,7 @@
   "description": "SDK de servidor de Cord: API v1 completa, verificación de webhooks y proxy seguro para Cord Elements. Sin dependencias; corre en Node, Bun, Deno y edge.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://docs.cordhq.app/desarrolladores",
+  "homepage": "https://docs.cordhq.app/docs/desarrolladores/empezar/resumen",
   "keywords": [
     "cord",
     "cotizaciones",

@@ -87,7 +87,7 @@ in the portal. Check the details before issuing. Availability and status are
 shown per charge; a receipt does not replace reviewing your accounting obligations
 in each country.
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
 
 ## Commercial and fiscal documents
 

@@ -1,0 +1,124 @@
+---
+title: "Custom domain"
+seoTitle: "Connect a custom domain for your Cord links"
+description: "Serve your quote and invoice links from a subdomain of your company: requirements, TXT and CNAME DNS records, connection statuses, and what happens if it stops being available."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Professional plan or higher", "Settings permission", "Access to your domain's DNS panel", "Being outside the test environment"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Custom domain</h1>
+  <p class="page-subtitle">Give your quotes and invoices an address that carries your brand, such as quotes.yourcompany.com.</p>
+</header>
+
+With a custom domain, the link your client receives no longer starts with `cordhq.app`
+and uses a subdomain of your company instead. Your main website does not change: Cord
+only uses the address you assign to it.
+
+## Requirements
+
+- **Professional plan or higher.** On Free and Starter the tab shows
+  **View Professional plan**.
+- **Settings permission** in your role.
+- **An unused subdomain** of a domain you already own, for example
+  `quotes.yourcompany.com`. You do not need to buy another domain. Root domains
+  (`yourcompany.com`), wildcards, IP addresses, ports and paths are not accepted.
+- **Access to the DNS panel** where you manage your domain.
+- **Being outside the test environment.** In test mode the tab shows
+  **Unavailable in the test environment**.
+
+An organization has one custom domain at a time.
+
+## Connect your domain
+
+Open **Settings › Brand appearance › Custom domain**.
+
+<Steps>
+1. **Choose your domain.** In **Subdomain** enter only the hostname, without
+   `https://`, paths or ports, and select **Save domain**.
+2. **Configure DNS.** Cord shows a table with **Type**, **Name** and **Value**. First
+   comes an ownership **TXT** record, named `_cord.` followed by your subdomain. Add it in
+   your DNS panel exactly as shown (use **Copy name** and **Copy value**).
+3. Select **Verify connection**. Once Cord confirms the TXT, the **CNAME** record that
+   connects your subdomain appears. Add it as well.
+4. Select **Verify connection** again until the status reads **Active**. DNS changes can
+   take time to propagate, and the HTTPS certificate also needs time.
+</Steps>
+
+{/* MOCKUP: Custom domain tab with the three numbered steps, the TXT and CNAME records table, and the "Waiting for DNS" status */}
+
+<Callout type="warning">
+**Keep the TXT record** after your domain is active: Cord checks it again periodically.
+Only change the subdomain you are going to use, without touching your website or email
+records. If your DNS panel appends the domain to the name automatically, do not type it
+twice.
+</Callout>
+
+## Connection statuses
+
+| Status | What it means | What to do |
+|---|---|---|
+| **Setup pending** | The domain is saved, but the connection is not active. | Add the DNS records and verify. |
+| **Waiting for DNS** | Cord has not confirmed your records yet. | Check names and values; verify again later. |
+| **Preparing HTTPS** | DNS is correct and the certificate is being issued. | Wait a few minutes and verify again. |
+| **Active** | Your address works and is secured with HTTPS. | Nothing; you can open it with **Open domain**. |
+| **Needs attention** | The connection could not be completed. | Read the message shown with the status; if it persists, contact support. |
+
+Status is checked when you open the tab or select **Verify connection**. The screen shows
+the **Last verified** date.
+
+## What changes once it is active
+
+- **New links use your domain.** The public link of every quote (`/q/...`) and every
+  invoice (`/i/...`), including the one in the emails Cord sends on your behalf, is built
+  with your subdomain.
+- **The root of your subdomain** shows a minimal page with your business branding.
+- **Only your documents are served.** Your domain cannot be used to enter the app,
+  Settings or another organization's documents: a link that does not belong to your
+  account does not open there.
+- **Your links are not indexed** by search engines.
+
+## If the domain stops being available
+
+- **If the connection fails or a verification expires,** Cord tries to verify it again
+  when someone opens a link. Until it is confirmed, new links are generated with
+  `cordhq.app` so your sends keep working.
+- **If you downgrade,** links your clients already have with your domain redirect them
+  to the same quote or invoice on `cordhq.app`. Nothing is deleted; you get your domain
+  back when you return to an eligible plan.
+- **If the tab says "Custom domains are being prepared",** the connection is not yet
+  available for your account. Your links keep working on `cordhq.app`; you will be able
+  to set it up there when it is ready.
+
+## Disconnect or change domain
+
+To use a different domain, first disconnect the current one with **Disconnect domain**
+and confirm. Links using that address will no longer be available at it. Cord does not
+remove records from your DNS provider: delete them yourself if you no longer need them.
+
+## Common problems
+
+**"We could not find the ownership TXT."** Check that the name starts with `_cord.` and
+that the value is complete, without extra quotes.
+
+**"The DNS server did not respond."** Do not change your records because of this
+message: wait one minute and verify again.
+
+**"This address is already assigned or needs a review."** Contact support. Do not
+delete its configuration to try connecting it again.
+
+**"Enter a valid domain name."** Enter only the subdomain, without a protocol, paths or
+ports.
+
+**"You do not have permission to manage domains."** Ask your organization's
+administrator to give you the Settings permission or to make the connection.
+
+## Related pages
+
+- [Customize your branding](/en/docs/cuenta/marca)
+- [Client portal](/en/docs/cuenta/portal-cliente)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)
+- [Preview and sending](/en/docs/cotizacion/envio)

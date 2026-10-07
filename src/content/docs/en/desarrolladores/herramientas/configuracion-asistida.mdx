@@ -1,0 +1,159 @@
+---
+title: "Assisted setup"
+seoTitle: "AI-assisted account setup via API, CLI and MCP"
+description: "Propose a Cord account's setup from a website, a description and a price list with POST /api/v1/setup/plans: states, limits, review_url and human approval."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A secret or restricted key with write permission on setup", "A person with Settings permission to review and approve"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Assisted setup</h1>
+  <p class="page-subtitle">An agent or your terminal proposes the account's setup; a person reviews and approves it.</p>
+</header>
+
+Cord reads a business's website, a description in its own words and its price list, and builds a setup proposal: profile details, branding, taxes, product catalog, message templates and quote preferences. It's the same assistant as onboarding and **Settings**, exposed through three doors for developers:
+
+| Door | How |
+|---|---|
+| REST API | `POST /api/v1/setup/plans` and `GET /api/v1/setup/plans/{id}` |
+| CLI | `cord setup` (see [CLI](/en/docs/desarrolladores/herramientas/cli)) |
+| MCP server | The `proponer_configuracion` and `estado_configuracion` tools (see [MCP Server](/en/docs/desarrolladores/herramientas/mcp)) |
+
+<Callout type="warning" title="The AI never applies anything">
+None of the three doors changes the account. All of them return a `review_url`: an app page where a signed-in person with **Settings** permission reviews the proposal, can edit it, and applies or discards it. The proposal always configures the **real account** the key belongs to, even when the key is a test key.
+</Callout>
+
+## Propose a setup
+
+Send at least one of the three fields:
+
+| Field | Type | Detail |
+|---|---|---|
+| `sitio` | string | The business's website, for example `materialesdelvalle.mx`. Cord reads its text, colors, logo, emails and phone numbers. Up to 300 characters. |
+| `descripcion` | string | What the business does, how it gets paid and which taxes it charges or withholds, in its own words. Up to 4,000 characters; the rest is trimmed. |
+| `archivo` | object | The price list: `{ "nombre": "prices-2026.csv", "base64": "..." }`. Excel (`.xlsx`), CSV, PDF or a photo (PNG or JPG), up to **3 MB** before encoding. |
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sitio": "materialesdelvalle.mx",
+    "descripcion": "We sell building materials on 30-day credit and withhold 4% VAT on freight."
+  }'
+```
+
+To include the price list from the terminal:
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d "{\"sitio\":\"materialesdelvalle.mx\",\"archivo\":{\"nombre\":\"prices.csv\",\"base64\":\"$(base64 < prices.csv | tr -d '\n')\"}}"
+```
+
+The response is `201 Created`:
+
+```json
+{
+  "data": {
+    "object": "setup_plan",
+    "id": "c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "estado": "propuesto",
+    "review_url": "https://cordhq.app/app/setup/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "resumen": "Building materials distributor with 30-day credit and VAT withholding on freight.",
+    "conteos": { "perfil": 3, "marca": 2, "cotizaciones": 1, "impuestos": 1, "productos": 42, "plantillas": 2 },
+    "avisos": [],
+    "descartado": [
+      { "campo": "perfil.telefono", "motivo": "No es un teléfono válido." }
+    ]
+  }
+}
+```
+
+| Field | What it is |
+|---|---|
+| `review_url` | The page where a person reviews and applies the proposal. Share it with whoever manages the account. |
+| `resumen` | One line with what Cord understood about the business. It's written in the account's language. |
+| `conteos` | How many changes each section brings. |
+| `avisos` | What couldn't be read, for example a website that didn't respond or a list whose columns weren't recognized. The proposal still comes out with the rest. |
+| `descartado` | Data the AI proposed that didn't pass Cord's validation (tax format, rates, prices). It never reaches the proposal. |
+
+Cord only proposes what the source supports: a tax ID only if it appears verbatim, a product only if it has a price, and a tax only if it isn't already in your catalog. Every value goes through the same country rules as Settings.
+
+## Check the status
+
+```bash
+curl https://cordhq.app/api/v1/setup/plans/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64 \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```json
+{
+  "data": {
+    "object": "setup_plan",
+    "id": "c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "estado": "aplicado",
+    "review_url": "https://cordhq.app/app/setup/c7a2e9d1-4b6f-4f0a-8e3c-2d9b1a5f7e64",
+    "resultado": [
+      { "seccion": "perfil", "ok": true, "detalle": "6 ajustes" },
+      { "seccion": "impuestos", "ok": true, "detalle": "1 de 1" },
+      { "seccion": "productos", "ok": true, "detalle": "40 nuevos, 2 actualizados" },
+      { "seccion": "plantillas", "ok": true, "detalle": "2 de 2" }
+    ],
+    "created_at": "2026-10-07T16:20:41.512Z",
+    "aplicado_at": "2026-10-07T16:24:03.007Z",
+    "expira_at": "2026-10-14T16:20:41.512Z"
+  }
+}
+```
+
+| `estado` | Meaning |
+|---|---|
+| `generando` | Cord is still building the proposal. |
+| `propuesto` | Ready and waiting for a person to review it at `review_url`. |
+| `aplicado` | A person applied it. `resultado` has one row per section with `ok` and `detalle`; if one section failed, the others are still applied. |
+| `descartado` | A person discarded it. Nothing changed. |
+| `fallido` | The proposal couldn't be finished, or every section failed when applying it. |
+
+`resultado` is `null` until the proposal is applied. To wait for the decision, poll every few seconds (the CLI polls every 3) and stop at `aplicado`, `descartado` or `fallido`.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Proposals per organization | 6 per day, adding up the API, the CLI, MCP and the app. The seventh returns `429` with `code: "rate_limited"`. |
+| Validity | 7 days (`expira_at`). An expired proposal can no longer be applied; generate a new one. |
+| File | 3 MB before base64 encoding. Larger returns `413`. |
+| Proposed catalog | Up to 500 products, 6 taxes and 4 templates. |
+
+## Errors
+
+| Situation | Response |
+|---|---|
+| You didn't send `sitio`, `descripcion` or `archivo` | `400`, `code: "invalid_request"` |
+| The file isn't Excel, CSV, PDF or a photo, or it's empty | `400`, `code: "invalid_request"`, with the reason in `error` |
+| The file is larger than 3 MB | `413`, `code: "invalid_request"` |
+| 6 proposals were already generated today | `429`, `code: "rate_limited"` |
+| Cord couldn't finish the proposal | `502` with the message in `error`; the proposal is left as `fallido` |
+| The `id` doesn't exist in your account | `404`, `code: "not_found"` |
+
+## Keys and permissions
+
+- Proposing requires write permission on the `setup` resource; checking status, read. A [restricted key](/en/docs/desarrolladores/esenciales/autenticacion#restricted-keys) with only `setup` is enough. The key `cord login` hands out already includes it.
+- The review page requires a session with **Settings** permission on that account. Nobody else can apply.
+- Applying is recorded in the organization's audit log with who did it.
+
+## From the CLI
+
+```bash
+npx @flouviahq/cli setup --sitio materialesdelvalle.mx --archivo prices.xlsx
+```
+
+The CLI sends the proposal, opens `review_url` in your browser and waits for your decision. Once you approve, it prints the result per section. Enter stops waiting without cancelling anything: the proposal keeps waiting for you at the link for 7 days.
+
+## From an agent (MCP)
+
+`proponer_configuracion` takes `sitio`, `descripcion`, `archivo_base64` and `archivo_nombre` and returns the same as the API (`id`, `estado`, `review_url`, `resumen`, `conteos`, `avisos`, `descartado`). `estado_configuracion` takes the `id` and returns `estado`, `review_url`, `resultado`, `creada`, `aplicada` and `vence`. The agent must share the `review_url` with the person: it has no way to apply the proposal on its own.

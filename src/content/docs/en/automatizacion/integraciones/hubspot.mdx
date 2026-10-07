@@ -1,9 +1,11 @@
 ---
 title: "Connect HubSpot"
 description: "How to connect your HubSpot account with Cord: requirements, requested permissions, what happens when you connect, possible messages, switching accounts and disconnecting."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A HubSpot user who can install apps in the account", "The currencies you quote in enabled in HubSpot"]
 ---
 
 <header class="content-header">
@@ -23,6 +25,19 @@ Field-by-field detail in [What syncs](/en/docs/automatizacion/integraciones/hubs
 <Callout type="info">
 **Cord owns the sale status.** Moving a Deal to another stage in HubSpot does not change the quote in Cord: its status is decided by the client's approval and payment.
 </Callout>
+
+{/* MOCKUP: HubSpot page in Settings › Integrations, connected. At the top "Connected" with the account "48213377 · lonestarsupply.com"; data "Last sync: 4 min ago", "Queued: 0", "Errors (7 days): 0". Below, "HubSpot stage for each quote status" with the "Sales Pipeline" pipeline and one selector per status (Sent → Presentation Scheduled, Viewed by client → Decision Maker Bought-In, Approved → Contract Sent, Paid → Closed Won...), "Save stages" button. At the bottom, "Existing data" with "Send existing data" and the "Disconnect" button. */}
+
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to HubSpot** | Every client as a Company and Contact; every sent quote as a Deal, with its amount, currency and stage. | When the client is created or changed, and every time the quote moves forward. |
+| **From HubSpot to Cord** | Corrections to the Company name, and to the Contact's name, email and phone, only on records already linked to Cord. | When they are saved in HubSpot. |
+| **From HubSpot to Cord** | Nothing else: moving a Deal to another stage or creating new Companies or Deals in HubSpot changes nothing in Cord. | — |
+| **From a workflow** | A note on the Deal or the Company, with the **Add a note in HubSpot** action. | When the workflow runs. |
+
+Field-by-field detail is in [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion).
 
 ## Before connecting
 
@@ -87,6 +102,10 @@ What to do with each error: [HubSpot troubleshooting](/en/docs/automatizacion/in
 
 ## The Cord card inside HubSpot
 
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
 With HubSpot connected, every **Deal**, **Company** and **Contact** shows the Cord card in its sidebar:
 
 | Record | What it shows |
@@ -121,8 +140,20 @@ When you disconnect:
 - **What is already in HubSpot is not deleted**: Companies, Contacts, Deals and notes stay as they are.
 - Workflows with the **Add a note in HubSpot** action start failing with "Connect HubSpot in Settings › Integrations to use this action."
 
-## Next
+## Limits
+
+| Limit | Value |
+|---|---|
+| HubSpot accounts per organization | One, and each HubSpot account can only be in one Cord organization |
+| Time to authorize in HubSpot | 10 minutes from when you click **Connect HubSpot** |
+| **Send existing data** | Up to 500 clients and 500 sent quotes per run, up to 3 times per hour |
+| Cord card on a Company or Contact | Its latest 8 quotes |
+| Notes from workflows | 120 per hour per organization, up to 2,000 characters |
+| Quotes without a currency or in a status without a stage | Not sent as a Deal: Cord never sends an amount without its currency |
+
+## Related
 
 - [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion)
 - [Pipeline and stages](/en/docs/automatizacion/integraciones/hubspot-etapas)
 - [HubSpot troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas)
+- [HubSpot note when the client approves](/en/docs/automatizacion/workflows/ideas#4-hubspot-note-when-the-client-approves), a ready-made idea

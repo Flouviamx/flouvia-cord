@@ -55,23 +55,22 @@ export function bodyExample(op: Operation): unknown {
     return example(z.toJSONSchema(op.body, { unrepresentable: 'any' }));
 }
 
-const RESOURCES: Record<string, { node: string; python: string; php: string }> = {
-    '/cotizaciones': { node: 'quotes', python: 'quotes', php: 'quotes' },
-    '/clientes': { node: 'clients', python: 'clients', php: 'clients' },
-    '/productos': { node: 'products', python: 'products', php: 'products' },
-    '/facturas': { node: 'invoices', python: 'invoices', php: 'invoices' },
-    '/events': { node: 'events', python: 'events', php: 'events' },
-    '/webhooks': { node: 'webhookEndpoints', python: 'webhook_endpoints', php: 'webhookEndpoints' },
+// Solo curl y @flouviahq/node: los SDK de Python y PHP no están publicados, y un
+// ejemplo con un paquete que no se puede instalar es documentación falsa.
+const RESOURCES: Record<string, string> = {
+    '/cotizaciones': 'quotes',
+    '/clientes': 'clients',
+    '/productos': 'products',
+    '/facturas': 'invoices',
+    '/events': 'events',
+    '/webhooks': 'webhookEndpoints',
 };
 
 const NODE_ACTION: Record<string, string> = { mark_paid: 'markPaid', payment: 'recordPayment', credit_note: 'creditNote' };
-const PY_ACTION: Record<string, string> = { payment: 'record_payment' };
 
 const json = (v: unknown, indent = 2) => JSON.stringify(v, null, indent);
-const pyLiteral = (v: unknown): string => json(v).replace(/\btrue\b/g, 'True').replace(/\bfalse\b/g, 'False').replace(/\bnull\b/g, 'None');
-const phpLiteral = (v: unknown): string => json(v, 4).replace(/\{/g, '[').replace(/\}/g, ']').replace(/":/g, '" =>').replace(/"/g, "'");
 
-export interface CodeSamples { curl: string; node?: string; python?: string; php?: string }
+export interface CodeSamples { curl: string; node?: string }
 
 export function samples(op: Operation): CodeSamples {
     const url = `https://cordhq.app/api/v1${op.path.replace('{id}', 'ID')}`;
@@ -88,47 +87,26 @@ export function samples(op: Operation): CodeSamples {
     const isItem = op.path.endsWith('{id}');
     const action = (body as any)?.action as string | undefined;
 
-    if (op.method === 'GET' && !isItem && !op.page) {
-        return { curl, node: `const items = await cord.${r.node}.list();`, python: `items = cord.${r.python}.list()`, php: `$items = $cord->${r.php}->list();` };
-    }
-    if (op.method === 'GET' && !isItem) {
-        return {
-            curl,
-            node: `for await (const item of cord.${r.node}.listAll()) {\n  console.log(item.id);\n}`,
-            python: `for item in cord.${r.python}.list_all():\n    print(item["id"])`,
-            php: `foreach ($cord->${r.php}->listAll() as $item) {\n    echo $item['id'], PHP_EOL;\n}`,
-        };
-    }
-    if (op.method === 'GET') return { curl, node: `const item = await cord.${r.node}.retrieve('ID');`, python: `item = cord.${r.python}.retrieve("ID")`, php: `$item = $cord->${r.php}->retrieve('ID');` };
-    if (op.method === 'DELETE') return { curl, node: `await cord.${r.node}.del('ID');`, python: `cord.${r.python}.delete("ID")`, php: `$cord->${r.php}->delete('ID');` };
-    if (op.method === 'PATCH') return { curl, node: `await cord.${r.node}.update('ID', { email: 'compras@acme.mx' });`, python: `cord.${r.python}.update("ID", email="compras@acme.mx")`, php: `$cord->${r.php}->update('ID', ['email' => 'compras@acme.mx']);` };
-    if (op.method === 'POST' && isItem && action) {
-        return {
-            curl,
-            node: `await cord.${r.node}.${NODE_ACTION[action] ?? action}('ID');`,
-            python: `cord.${r.python}.${PY_ACTION[action] ?? action}("ID")`,
-            php: `$cord->${r.php}->action('ID', '${action}');`,
-        };
-    }
-    return {
-        curl,
-        node: `const created = await cord.${r.node}.create(${json(body)});`,
-        python: `created = cord.${r.python}.create(**${pyLiteral(body)})`,
-        php: `$created = $cord->${r.php}->create(${phpLiteral(body)});`,
-    };
+    if (op.method === 'GET' && !isItem && !op.page) return { curl, node: `const items = await cord.${r}.list();` };
+    if (op.method === 'GET' && !isItem) return { curl, node: `for await (const item of cord.${r}.listAll()) {\n  console.log(item.id);\n}` };
+    if (op.method === 'GET') return { curl, node: `const item = await cord.${r}.retrieve('ID');` };
+    if (op.method === 'DELETE') return { curl, node: `await cord.${r}.del('ID');` };
+    if (op.method === 'PATCH') return { curl, node: `await cord.${r}.update('ID', { email: 'compras@acme.mx' });` };
+    if (op.method === 'POST' && isItem && action) return { curl, node: `await cord.${r}.${NODE_ACTION[action] ?? action}('ID');` };
+    return { curl, node: `const created = await cord.${r}.create(${json(body)});` };
 }
 
 function special(op: Operation): Omit<CodeSamples, 'curl'> {
     const key = `${op.method} ${op.path}`;
     const table: Record<string, Omit<CodeSamples, 'curl'>> = {
-        'GET /me': { node: 'const me = await cord.me();', python: 'me = cord.me()', php: '$me = $cord->me();' },
-        'GET /cobranza': { node: 'const cartera = await cord.collections.retrieve();', python: 'cartera = cord.collections()', php: '$cartera = $cord->collections();' },
-        'POST /cotizaciones/ia': { node: "const { items } = await cord.quotes.draftFromText('5 sacos de cemento');", python: 'draft = cord.quotes.draft_from_text("5 sacos de cemento")' },
-        'POST /tareas': { node: "await cord.tasks.create({ titulo: 'Llamar a Acme' });", python: 'cord.create_task("Llamar a Acme")' },
-        'GET /elements/config': { node: 'const config = await cord.elements.config();', python: 'config = cord.elements_config()' },
-        'POST /test_helpers/fiscal': { node: "await cord.testHelpers.fiscal.setNextOutcome('pac_caido');", python: 'cord.test_helpers.set_next_fiscal_outcome("pac_caido")', php: "$cord->testHelpers->setNextFiscalOutcome('pac_caido');" },
-        'POST /test_helpers/cotizaciones/{id}': { node: "await cord.testHelpers.quotes.expire('ID');", python: 'cord.test_helpers.expire_quote("ID")', php: "$cord->testHelpers->expireQuote('ID');" },
-        'POST /test_helpers/webhooks': { node: "await cord.testHelpers.webhooks.trigger('invoice.paid');", python: 'cord.test_helpers.trigger_webhook("invoice.paid")', php: "$cord->testHelpers->triggerWebhook('invoice.paid');" },
+        'GET /me': { node: 'const me = await cord.me();' },
+        'GET /cobranza': { node: 'const cartera = await cord.collections.retrieve();' },
+        'POST /cotizaciones/ia': { node: "const { items } = await cord.quotes.draftFromText('5 sacos de cemento');" },
+        'POST /tareas': { node: "await cord.tasks.create({ titulo: 'Llamar a Acme' });" },
+        'GET /elements/config': { node: 'const config = await cord.elements.config();' },
+        'POST /test_helpers/fiscal': { node: "await cord.testHelpers.fiscal.setNextOutcome('pac_caido');" },
+        'POST /test_helpers/cotizaciones/{id}': { node: "await cord.testHelpers.quotes.expire('ID');" },
+        'POST /test_helpers/webhooks': { node: "await cord.testHelpers.webhooks.trigger('invoice.paid');" },
     };
     return table[key] ?? {};
 }
@@ -141,4 +119,31 @@ export function groupedOperations(): Array<[string, Operation[]]> {
     const groups = new Map<string, Operation[]>();
     for (const op of OPERATIONS) groups.set(op.tag, [...(groups.get(op.tag) ?? []), op]);
     return [...groups];
+}
+
+// Metadatos de la página de referencia (src/pages/{,en/}docs/desarrolladores/referencia.astro).
+// No es una entrada de la colección docs: el índice de búsqueda, el sitemap y
+// llms-full la leen de aquí para no repetir título y descripción.
+export const API_REFERENCE_PAGE = {
+    es: {
+        title: 'Referencia de la API',
+        description: 'Todas las operaciones de la API v1 de Cord con sus campos y ejemplos en curl y Node, generadas del contrato de la API.',
+        url: '/docs/desarrolladores/referencia',
+    },
+    en: {
+        title: 'API Reference',
+        description: 'Every Cord API v1 operation with its fields and examples in curl and Node, generated from the API contract.',
+        url: '/en/docs/desarrolladores/referencia',
+    },
+} as const;
+
+/** Texto buscable de la referencia: cada grupo con sus operaciones y campos. */
+export function referenceSearchText(): string {
+    return groupedOperations().map(([tag, ops]) => [
+        tag,
+        ...ops.map((op) => {
+            const fields = fieldsOf(op.body).map((f) => f.name);
+            return `${op.method} /api/v1${op.path} ${op.summary}${fields.length ? ` (${fields.join(', ')})` : ''}`;
+        }),
+    ].join('. ')).join('. ');
 }

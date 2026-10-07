@@ -1,59 +1,249 @@
 ---
 title: "Events API"
-seoTitle: "Cord events API and key verification"
-description: "Read your business event history with Cord's API v1 to reconcile missed webhooks, and verify which organization a key belongs to with /me."
+seoTitle: "Cord events API: catalog, history and /me"
+description: "Cord's 41 event types with their object and when they're emitted, the shape of data per object, actor values, the GET /api/v1/events history and key verification with /me."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord engineering"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["An API key with read permission (the eventos resource on a restricted key)"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Events</h1>
-  <p class="page-subtitle">The history of what happened in your business, to reconcile what your webhooks could not deliver.</p>
+  <p class="page-subtitle">What happened in your business, with the same catalog webhooks deliver and a history to reconcile whatever your server didn't receive.</p>
 </header>
 
-## Event history
+Every relevant change in Cord produces an **event**: a record with a type, an object, data and who caused it. The same events are delivered to your [webhooks](/en/docs/desarrolladores/herramientas/webhooks), trigger Cord Workflows and stay in a history you query with `GET /api/v1/events`, whether or not any endpoint is subscribed.
 
-`GET /api/v1/events` returns your organization's events, newest first. They are the same ones [webhooks](/en/docs/desarrolladores/herramientas/webhooks) deliver: if your server was down, this is where you recover what you missed.
+## Event catalog
+
+There are 41 types. The **Object** column is the value of `object` in the history and determines the shape of `data` (see the next section).
+
+| Event | Object | Emitted when… |
+|---|---|---|
+| `quote.created` | `quote` | A quote is created from the app, the API, MCP or Cord Elements. |
+| `quote.sent` | `quote` | The quote is sent to the client. |
+| `quote.viewed` | `quote` | The client opens the public link for the first time. The seller's own views don't count. |
+| `quote.updated` | `quote` | The seller edits and resends it. |
+| `quote.approved` | `quote` | The client approves it (fully or partially), or it's marked approved through the API. |
+| `quote.rejected` | `quote` | The client rejects it, or it's marked rejected through the API. |
+| `quote.expired` | `quote` | Its validity passes without a decision (it was sent or viewed). |
+| `quote.deleted` | `quote` | A draft that was never sent is deleted. |
+| `quote.paid` | `quote` | Full payment is received, or the last pending charge of a deposit or installment plan. |
+| `quote.approval_requested` | `quote` | A quote is held for internal approval because of discount, amount or margin. |
+| `quote.approval_decided` | `quote` | Management approves or rejects that request. |
+| `quote.comment_added` | `quote` | The client or the seller writes in the quote's conversation. |
+| `payment.partial` | `quote` | A partial charge (deposit, balance or installment) arrives without completing the total. |
+| `payment.failed` | `quote` | A recurring charge of a retainer fails. |
+| `invoice.stamped` | `quote` | A quote's CFDI is stamped (Mexico). |
+| `invoice.issued` | `quote` | A quote's commercial invoice is issued outside Mexico. |
+| `invoice.finalized` | `invoice` | A Cord Invoicing invoice is issued. |
+| `invoice.sent` | `invoice` | That invoice is sent to the client. |
+| `invoice.paid` | `invoice` | The invoice is fully paid. |
+| `invoice.payment_failed` | `invoice` | A charge against the invoice fails. |
+| `invoice.voided` | `invoice` | The invoice is voided. |
+| `invoice.marked_uncollectible` | `invoice` | The invoice is marked uncollectible. |
+| `invoice.overdue` | `invoice` | Its due date passes without it being settled. |
+| `client.created` | `client` | A client is created. |
+| `client.updated` | `client` | A client's details are edited. |
+| `client.deleted` | `client` | A client is deleted. |
+| `product.created` | `product` | A product is created. |
+| `product.updated` | `product` | A product is edited. |
+| `product.deleted` | `product` | A product is deleted. |
+| `task.created` | `task` | A task is created. |
+| `task.completed` | `task` | A task is marked done. |
+| `promise.created` | `promise` | A payment promise is recorded. |
+| `promise.kept` | `promise` | The promise is kept. |
+| `promise.broken` | `promise` | The promise is broken. |
+| `dispute.created` | `dispute` | A client opens a chargeback on a Cord Payments charge. |
+| `dispute.closed` | `dispute` | The chargeback closes with its outcome. |
+| `refund.succeeded` | `refund` | A refund completes. |
+| `refund.failed` | `refund` | A refund fails. |
+| `payout.paid` | `payout` | A payout reaches your bank account. |
+| `payout.failed` | `payout` | A payout fails. |
+| `account.updated` | `account` | What your payments account can do changes. Only emitted when a field changes. |
+
+`ping` isn't a catalog event: it's the test delivery from the Workbench's **Test** button and never shows up in the history.
+
+<Callout type="info" title="Internal types in the history">
+Besides the 41 types, the history may show `quote.expiring`, `invoice.due_soon`, `invoice.past_due` and `schedule.tick`. They're internal signals Cord Workflows use to act before a deadline; they aren't delivered by webhook and aren't part of the catalog. If you walk the full history, ignore types you don't know.
+</Callout>
+
+## Shape of `data` per object
+
+Every amount travels with its currency in `moneda`. Field names are the server's, in Spanish.
+
+| Object | `data` fields |
+|---|---|
+| `quote` | `id`, `folio`, `status`, `moneda`, `total`, `cliente`, `cliente_id`, `link_publico` |
+| `invoice` | `id`, `object`, `numero`, `folio_fiscal`, `estado`, `estado_fiscal`, `pais`, `tipo`, `moneda`, `total`, `pagado`, `saldo`, `vence`, `cliente`, `cotizacion_id`, `link_publico` |
+| `client` | `id`, `object`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` |
+| `product` | `id`, `object`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (never the cost or margin) |
+| `task` | `id`, `object`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `promise` | `id`, `object`, `cotizacion_id`, `fecha_promesa`, `monto`, `moneda`, `estado` |
+| `dispute` | `id`, `object`, `monto`, `moneda`, `motivo`, `estado`, `fecha_limite`, `referencia`, `cotizacion_id`, `folio`, `cliente` |
+| `refund` | `object`, `monto`, `moneda`, `motivo`, `motivo_falla`, `referencia`, `cotizacion_id`, `folio`, `cliente` |
+| `payout` | `id`, `object`, `monto`, `moneda`, `llegada`, `metodo`, `motivo_falla`, `referencia` |
+| `account` | `object`, `puede_cobrar`, `puede_depositar`, `motivo_bloqueo`, `pendientes` |
+
+Extra fields per event:
+
+| Event | Adds |
+|---|---|
+| `payment.partial` | `tipo` (`anticipo`, `saldo` or `cuota`), `monto` (of this charge), `numero_cuota`, `saldo_pendiente`, `payment_method` |
+| `quote.approval_requested` | `motivo` |
+| `quote.approval_decided` | `decision` (`approved` or `rejected`) |
+| `quote.comment_added` | `autor` (`cliente` or `vendedor`), `mensaje`, `item_id` when it's about a line; a client counteroffer carries `tipo: "contraoferta"` and `propuesta` |
+| `client.updated` | `empresa_anterior`, `email_anterior`, `terminos_anterior` when they changed |
+| `product.updated` | `precio_lista_anterior`, `activo_anterior` when they changed |
+| `client.deleted` | Only `id`, `object` and `empresa` |
+| `product.deleted` | Only `id`, `object` and `nombre` |
+
+On an invoice, `estado` is its lifecycle (`draft`, `open`, `paid`, `void` or `uncollectible`) and `estado_fiscal` its registration with the tax provider (`pending`, `issued`, `cancelled` or `error`). On a quote, `status` is `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `invoiced` or `paid`.
+
+The `data` stored in the history is the webhook's **without** `link_publico`: the link is a client credential and isn't stored.
+
+## Who caused the event: `actor`
+
+| Value | Meaning |
+|---|---|
+| `user:<uuid>` | A person on your team, signed in to the app. |
+| `api:<key id>` | An API request with that key (or an OAuth connection). |
+| `mcp:<key id>` | An MCP server tool. |
+| `client` | Your client, from the public link of the quote or invoice. |
+| `workflow:<uuid>` | A Cord Workflows action. |
+| `integration:<provider>:<id>` | An integration syncing into Cord, for example HubSpot. |
+| `slack`, `slack:<email>`, `shopify` | An action from those integrations. |
+| `system`, `system:cron` | Cord itself: an expiration, a charge from the payment processor or a scheduled job. |
+
+Treat `actor` as text with a prefix: decide by what comes before the colon and don't assume the list won't grow.
+
+## History: `GET /api/v1/events`
+
+Returns your organization's events, newest first. If your server was down longer than the retries cover, this is where you recover what you missed.
 
 | Parameter | What it does |
 |---|---|
-| `type` | An event type, for example `quote.approved`. An unknown type responds `400`. |
-| `object_id` | The object's id (UUID): the history of one quote or invoice. |
+| `type` | An event type, for example `quote.approved`. An unknown type returns `400`. |
+| `object_id` | The object's UUID: the full history of a quote, an invoice or a client. |
 | `limit` | From 1 to 200; defaults to 50. |
-| `cursor` | The previous page's `next_cursor`. |
+| `cursor` | The `next_cursor` from the previous page. |
+
+<Tabs>
+<TabItem label="curl">
 
 ```bash
-curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=10" \
-     -H "Authorization: Bearer sk_live_tU..."
+curl "https://cordhq.app/api/v1/events?object_id=8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10&limit=10" \
+  -H "Authorization: Bearer sk_test_..."
 ```
+
+</TabItem>
+<TabItem label="Node">
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+const page = await cord.events.list({ object_id: '8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10', limit: 10 });
+for (const event of page.data) console.log(event.created_at, event.type, event.actor);
+```
+
+</TabItem>
+</Tabs>
 
 ```json
 {
   "data": [
     {
-      "id": "e81c...",
+      "id": "e81c5a3f-7d2b-4e9a-b6c1-0f4d8a2e5c71",
       "type": "quote.approved",
       "object": "quote",
-      "object_id": "2a9d...",
-      "data": { "folio": "COT-00104", "total": 6000, "moneda": "MXN" },
+      "object_id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+      "data": {
+        "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+        "folio": "COT-0001",
+        "status": "approved",
+        "moneda": "MXN",
+        "total": 13920,
+        "cliente": "Ferretería La Prueba",
+        "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90"
+      },
       "actor": "client",
-      "created_at": "2026-09-20T16:41:07.512Z"
+      "created_at": "2026-10-07T17:31:44.208Z"
+    },
+    {
+      "id": "3a7f1c9e-2b4d-4a6e-8c0f-5d9b3e7a1c24",
+      "type": "quote.sent",
+      "object": "quote",
+      "object_id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+      "data": {
+        "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+        "folio": "COT-0001",
+        "status": "sent",
+        "moneda": "MXN",
+        "total": 13920,
+        "cliente": "Ferretería La Prueba",
+        "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90"
+      },
+      "actor": "api:2c6e0a9d-4f1b-4c3e-8a7d-9b5f1e3c7a20",
+      "created_at": "2026-10-07T17:04:12.318Z"
     }
   ],
-  "meta": { "next_cursor": "MjAyNi0w..." }
+  "meta": { "next_cursor": null }
 }
 ```
 
-Pagination is cursor-based and stable: a new event does not shift the page you are reading. It needs a read key.
+- The history's `id` is the record's own UUID. It is **not** the `evt_…` of the webhook delivery: to deduplicate across the two, use `object_id` plus `type` plus `created_at`.
+- `object_id` is `null` for events without an object that has a UUID, such as `account.updated`.
+- Pagination is by cursor and stable: a new event doesn't shift the page you're reading. See [Pagination](/en/docs/desarrolladores/esenciales/paginacion).
+- An `object_id` that isn't a UUID or an invalid `cursor` returns `400` with `code: "invalid_request"`.
 
-## Verify a key
+### Retention
 
-`GET /api/v1/me` is the simplest API call: it confirms the key is valid and tells you which organization it belongs to, its permission and its mode.
+The history is append-only: an event isn't edited or deleted after it's written, and it isn't pruned by age like the webhook delivery log (30 days; 90 for failed ones). It's deleted along with the organization.
+
+## Verify a key: `GET /api/v1/me`
+
+It's the simplest call in the API: it confirms the key is valid and says which organization it belongs to, its permission and its mode. It answers with any secret key, restricted key or OAuth connection, regardless of per-resource permissions.
+
+<Tabs>
+<TabItem label="curl">
 
 ```bash
-curl "https://cordhq.app/api/v1/me" -H "Authorization: Bearer sk_live_tU..."
+curl https://cordhq.app/api/v1/me \
+  -H "Authorization: Bearer sk_test_..."
 ```
 
-```json
-{ "data": { "org": { "id": "6f65...", "nombre": "Aceros del Norte", "plan": "pro" }, "scope": "write", "mode": "live" } }
+</TabItem>
+<TabItem label="Node">
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+const me = await cord.me();
+console.log(me.org.nombre, me.scope, me.mode);
 ```
+
+</TabItem>
+</Tabs>
+
+```json
+{
+  "data": {
+    "org": { "id": "5b1f7d9e-3c2a-4e8b-9f61-0a7c4d2e8b13", "nombre": "Aceros del Norte", "plan": "pro" },
+    "scope": "write",
+    "mode": "test"
+  }
+}
+```
+
+| Field | Content |
+|---|---|
+| `org.id` | The id of the organization the key operates on. With a test key it's your test environment's id, different from the real account's. |
+| `org.nombre` | The organization's name. |
+| `org.plan` | Current plan: `free`, `starter`, `pro`, `scale` or `developer`. |
+| `scope` | `read` or `write`. On a restricted key, per-resource permissions take precedence over this value. |
+| `mode` | `test` or `live`. |
 
 Use it to test a credential before saving it in your integration.

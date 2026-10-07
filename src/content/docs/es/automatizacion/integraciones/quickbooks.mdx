@@ -1,10 +1,12 @@
 ---
 title: "QuickBooks Online"
 seoTitle: "Conectar Cord con QuickBooks Online"
-description: "Cómo conectar QuickBooks Online con Cord: qué crea en tu contabilidad (cliente, factura y el servicio Cord), qué no hace todavía, garantías contra duplicados y problemas frecuentes."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar QuickBooks Online con Cord: qué crea en tu contabilidad (cliente, factura y el servicio Cord), cómo viajan los pagos en los dos sentidos, qué no hace todavía, garantías contra duplicados y problemas frecuentes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Una empresa en QuickBooks Online (no QuickBooks Desktop)", "Un usuario de QuickBooks que administre esa empresa", "Facturas emitidas en Cord Invoicing"]
 ---
 
 <header class="content-header">
@@ -12,11 +14,23 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Cada factura de Cord, asentada en tu QuickBooks con su cliente, sus conceptos y su divisa.</p>
 </header>
 
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
 ## Cómo funciona
 
 Cada factura que emites en Cord aparece en tu contabilidad con su cliente, sus conceptos y su divisa. Dejas de capturar lo mismo dos veces.
 
 **QuickBooks no maneja borradores**: lo que entra queda asentado en tus libros. Por eso Cord solo manda facturas que ya son **definitivas** de su lado.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. Facturas emitidas en Cord: los borradores no viajan. |
+| **QuickBooks** | Una empresa en **QuickBooks Online** y un usuario que la administre. QuickBooks Desktop no se puede conectar. |
+| **Impuestos** | En tu QuickBooks, un código de impuesto con cada tasa que uses en Cord, o el impuesto sobre ventas automático en Estados Unidos. |
 
 ## Conectar
 
@@ -35,12 +49,21 @@ Cada factura que emites en Cord aparece en tu contabilidad con su cliente, sus c
 | **Factura** | Fecha, vencimiento, divisa y una línea por concepto con el precio negociado y su descuento aplicados. |
 | **Servicio "Cord"** | Se crea una sola vez. QuickBooks exige que cada línea cuelgue de un producto; Cord usa uno solo en vez de llenarte el catálogo. |
 | **Nota privada** | Lleva el folio de Cord. El número de factura es de tu contabilidad y Cord no lo pisa. |
+| **Pago** | Uno por cada cobro de una factura que ya está en QuickBooks. Ver [Pagos](#pagos). |
+
+## Pagos
+
+Los pagos viajan en los dos sentidos, solo para facturas que ya están en QuickBooks:
+
+- **De Cord a QuickBooks.** Cada cobro de una factura que ya está en QuickBooks se registra allá como pago contra esa factura, en **Fondos no depositados**. Pasa al registrar el cobro en Cord y también al contabilizar una factura que ya tenía cobros.
+- **De QuickBooks a Cord.** Un pago que registres en QuickBooks contra una factura de Cord la marca en Cord, con QuickBooks como método. Cord los revisa una vez al día, y también al pulsar **Enviar las facturas pendientes**. Si un pago de QuickBooks cubre varias facturas, Cord toma solo la parte aplicada a cada una.
+
+Un pago no se registra dos veces ni rebota: lo que entró desde QuickBooks no se vuelve a mandar allá. QuickBooks no pide un permiso nuevo para esto.
 
 ## Qué no hace todavía
 
-- **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
 - **Las facturas con retenciones no se envían.** QuickBooks no las registra en una factura de venta; asiéntalas a mano.
-- **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+- **Solo trae los pagos de tu contabilidad a Cord.** Clientes, productos y facturas creados en QuickBooks no entran a Cord.
 
 ## Impuestos
 
@@ -51,6 +74,25 @@ Cada línea entra con el código de impuesto de QuickBooks cuya tasa coincide co
 - **Una factura nunca se manda dos veces.** Cord recuerda qué factura quedó registrada y no la repite, aunque el evento se reintente.
 - **Solo viajan facturas definitivas.** Nunca una cotización ni un borrador de Cord.
 - **El importe de cada línea se calcula sobre el precio ya redondeado**, para que la suma cuadre con la de Cord al centavo.
+
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a QuickBooks** | El cliente (si no existe), la factura definitiva con sus líneas, su impuesto y su divisa, y el servicio "Cord" la primera vez. | Al emitir o enviar la factura en Cord, y al pulsar **Enviar las facturas pendientes**. |
+| **De Cord a QuickBooks** | Cada cobro de una factura que ya está en QuickBooks, como pago en **Fondos no depositados**. | Al registrar el cobro en Cord. |
+| **De QuickBooks a Cord** | Los pagos que registres allá contra una factura de Cord, con QuickBooks como método. | Una vez al día y al pulsar **Enviar las facturas pendientes**. |
+| **De QuickBooks a Cord** | Nada más: clientes, productos y facturas creados en QuickBooks no entran a Cord. | — |
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Empresas por organización | Una |
+| **Enviar las facturas pendientes** | Hasta 50 facturas definitivas que falten, y hasta 3 veces cada 5 minutos |
+| Facturas por documento de Cord | Una, aunque el evento se repita |
+| Facturas con retenciones | No se envían |
+| Pagos que llegan de QuickBooks | Se revisan una vez al día |
 
 ## Desconectar
 
@@ -64,3 +106,10 @@ Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabi
 | **"0 facturas enviadas"** | No hay facturas definitivas pendientes, o ya estaban todas registradas. |
 | **"Tu contabilidad no tiene una tasa de impuesto de ventas de…"** | Crea en QuickBooks un código de impuesto con esa tasa exacta y pulsa **Enviar las facturas pendientes**. En Estados Unidos, activa el impuesto sobre ventas automático. |
 | **"El total no coincidió"** | QuickBooks calculó otro total y Cord borró la factura en vez de dejarla mal asentada. Revisa que la tasa sea la misma en los dos lados. |
+
+## Relacionadas
+
+- [Xero](/docs/automatizacion/integraciones/xero)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Google Sheets](/docs/automatizacion/integraciones/google-sheets), si solo necesitas la lista de facturas en una hoja.

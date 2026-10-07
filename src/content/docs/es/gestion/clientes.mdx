@@ -1,11 +1,11 @@
 ---
 title: "Clientes, condiciones y estado de cuenta"
 description: "Cómo crear e importar clientes, configurar descuentos, crédito, términos y datos fiscales, y leer su historial comercial y saldo."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Permiso Clientes para crear, editar, importar o eliminar", "Nombre de empresa obligatorio"]
+prerequisites: ["Permiso Clientes para crear, editar, importar, exportar o eliminar", "Nombre de empresa obligatorio"]
 ---
 
 <header class="content-header">
@@ -16,6 +16,8 @@ prerequisites: ["Permiso Clientes para crear, editar, importar o eliminar", "Nom
 Un cliente en Cord no es solo un contacto. Su ficha guarda la identidad comercial
 y fiscal que se reutiliza al cotizar, además de las condiciones que controlan el
 descuento sugerido, el vencimiento y la exposición de crédito.
+
+{/* MOCKUP: directorio de Clientes con el buscador "Buscar clientes…", los filtros Todos / Con cotizaciones / Sin cotizar / Con nivel / Con crédito / Sin datos fiscales, el orden "Mayor cerrado" y filas con cliente, contacto, RFC, términos, límite de crédito y número de cotizaciones; a la derecha la ficha de "Constructora GAMA" con cerrado, pipeline, tasa de cierre, uso del límite de crédito y el estado de cuenta por antigüedad. */}
 
 ## Crear un cliente
 
@@ -99,25 +101,48 @@ para cotizaciones y facturas: saldo, vencido, documento más antiguo y bandas co
 Una operación facturada aparece como factura, no también como cotización, para evitar
 duplicar el saldo.
 
+## Origen del cliente
+
+La ficha indica en **Origen** cómo llegó el cliente:
+
+- **Alta manual:** se dio de alta desde Clientes, el editor de cotizaciones, la importación por CSV o la API de clientes.
+- **Autoregistrado:** se creó solo al llegar una cotización desde tu [cotizador embebido](/docs/desarrolladores/herramientas/elements/resumen) (o por la API de cotizaciones) con los datos de un cliente cuya empresa o correo no existía en tu directorio. La ficha lo marca con una etiqueta.
+
+Un cliente autoregistrado nunca se actualiza solo: si la misma empresa vuelve a cotizar
+desde tu sitio, Cord reutiliza la ficha existente sin cambiar sus datos. Revisa estos
+clientes y completa su información antes de facturarles.
+
+## Exportar clientes a CSV
+
+<Steps>
+1. Ve a **Ajustes › Avanzado › Datos y privacidad**.
+2. En **Catálogo y clientes (CSV)**, pulsa **Clientes**.
+3. Se descarga un CSV con las columnas empresa, contacto, email, telefono, rfc, terminos y limite: el mismo formato que la importación, para abrirlo en Excel o migrarlo.
+</Steps>
+
+Para entrar a esa pantalla necesitas el permiso Ajustes, y para descargar el archivo,
+el permiso Clientes. En la misma pantalla, **Descargar todo (JSON)** exporta productos,
+clientes, cotizaciones con sus líneas y eventos, tareas y la bitácora de auditoría.
+
 ## Crear una cotización desde el cliente
 
-Usa **Nueva cotización** dentro de la ficha. Cord abre el editor con ese cliente
+Usa **Nueva cotización** dentro de la ficha (requiere el permiso Clientes). Cord abre el editor con ese cliente
 seleccionado; sus datos y condiciones funcionan como valores iniciales. Revisa siempre
 el destinatario, moneda, impuestos, descuentos y vencimiento del documento actual.
 
 Editar después la ficha no reescribe silenciosamente documentos fiscales ya emitidos:
-estos conservan sus snapshots de emisor, receptor, líneas e importes.
+estos conservan la copia de emisor, receptor, líneas e importes con que se emitieron.
 
 ## Permisos, límites y eliminación
 
 - Ver el directorio no concede edición.
 - Crear, editar, importar y eliminar requiere el permiso **Clientes**.
-- Free admite hasta 50 clientes y Starter hasta 500; Pro, Scale y Developer no tienen
+- Gratis admite hasta 50 clientes y Starter hasta 500; Pro, Scale y Developer no tienen
   un límite duro de clientes en el contrato actual.
 - Eliminar es una acción permanente y queda en la bitácora de auditoría. Antes de
   hacerlo, revisa las cotizaciones y el estado de cuenta asociados.
 
-## Problemas frecuentes
+## Problemas comunes
 
 **No aparece “Nuevo cliente” o “Importar CSV”.** Falta el permiso Clientes.
 
@@ -129,3 +154,12 @@ los campos fiscales específicos del documento que vas a emitir.
 
 **El saldo supera el límite.** Es una alerta; decide si cambias términos, solicitas
 anticipo o detienes nuevas ventas.
+
+**No encuentro cómo exportar.** La exportación vive en **Ajustes › Avanzado › Datos y privacidad**, no en el directorio.
+
+## Relacionadas
+
+- [Datos del cliente en una cotización](/docs/cotizacion/cliente)
+- [Cartera y cobranza](/docs/pagos/cartera-cobranza)
+- [Términos de crédito](/docs/pagos/credito)
+- [API de clientes](/docs/desarrolladores/funciones/clientes)

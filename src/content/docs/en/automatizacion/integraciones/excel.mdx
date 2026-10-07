@@ -2,9 +2,11 @@
 title: "Microsoft Excel"
 seoTitle: "Connect Cord with Microsoft Excel"
 description: "How to connect Excel with Cord: the workbook Cord creates in your OneDrive with real Excel tables, its columns, how rows update by number and how to fix problems."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A Microsoft 365 work or school account with OneDrive"]
 ---
 
 <header class="content-header">
@@ -18,7 +20,15 @@ Cord creates an Excel workbook in your OneDrive and writes your quotes and invoi
 
 Data goes into a real **Excel table**, not a loose range: you get filters, banding, a header that stays visible while scrolling and formulas by column name, such as `=SUM(CordCotizaciones[total])`. The tables are named `CordCotizaciones` and `CordFacturas`.
 
-**Cord works only with the workbook it creates.** It uses the same Microsoft app as Microsoft Teams, but permissions are requested per connection: if you only connect Excel, you never see the Teams permissions.
+**Cord works only with the workbook it creates.** When you authorize, Microsoft asks for permission to read and write your OneDrive files; Cord only opens and writes the workbook it created. Connecting Excel does not give Cord access to your Teams channels.
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. |
+| **Microsoft Excel** | A Microsoft 365 work or school account with OneDrive. Cord creates the file in that account. |
+| **Another spreadsheet** | You can have Google Sheets connected at the same time; each one keeps its own file. |
 
 ## Connect
 
@@ -45,11 +55,32 @@ Two tabs, **Quotes** and **Invoices**, with one row per document:
 
 ## How it stays current
 
-When a quote is sent, approved, rejected, expires or is paid —and when an invoice is issued, sent, paid, becomes overdue or is canceled— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end.
+When a quote is sent, resent, approved, rejected, expires, receives a partial payment or is paid —and when an invoice is issued, sent, paid, becomes overdue, is voided or is marked uncollectible— Cord looks for its **number in column A** and replaces that row. If it is not there, it adds it at the end. Drafts are not written.
 
 That is why you can sort, filter and add your own columns to the right: Cord matches by number, not by row position. The only thing you should not touch is **column A**.
 
 **Update now** rewrites your latest 500 documents in each tab. Use it right after connecting or whenever you are unsure.
+
+## What flows and in which direction
+
+Microsoft Excel is an **outbound-only** integration: Cord writes to the workbook in your OneDrive and reads nothing back.
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to the spreadsheet** | One row per quote and one per invoice, with the columns above. | When you connect (initial fill), when the document changes status and when you click **Update now**. |
+| **From the spreadsheet to Cord** | Nothing. Editing a cell, deleting a row or adding columns changes nothing in Cord. | — |
+
+If you fix a row by hand, Cord writes it again the next time that document changes. Your columns to the right of Cord's are not touched.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Files per connection | One, which Cord creates when you connect |
+| Initial fill and **Update now** | The latest 500 documents in each tab |
+| **Update now** | Up to 3 times every 5 minutes |
+| Connections per organization | One per provider |
+| Documents included | Quotes from sent onward and issued invoices; drafts are not |
 
 ## Disconnect
 
@@ -64,3 +95,9 @@ With **Disconnect** on the card. The file stays in your account with what it had
 | **You deleted the first row** | No problem: Cord writes it again on the next update. |
 | **"The workbook could not be opened"** right after connecting | OneDrive sometimes takes a few seconds to have a new file ready. Click **Update now** in a minute. |
 | **A row got duplicated** | Check that nobody edited column A; Cord matches by number. |
+
+## Related
+
+- [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets)
+- [QuickBooks Online](/en/docs/automatizacion/integraciones/quickbooks) and [Xero](/en/docs/automatizacion/integraciones/xero), if what you want is to take invoices to your accounting.
+- [Reports and sales performance](/en/docs/gestion/informes): your business numbers without leaving Cord.

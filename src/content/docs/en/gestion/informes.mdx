@@ -1,11 +1,11 @@
 ---
 title: "Reports and sales performance"
 description: "What each Cord report measures, which data follows the date range, what is a current snapshot, and how seller performance is attributed."
-lastUpdated: "2026-08-28"
-reviewedBy: "Cord Product and Analytics"
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Analytics permission", "Collections permission for the receivables report"]
+prerequisites: ["Reports permission", "Collections permission for the receivables report", "Pro plan or higher for Finance, Cash flow, and Collections"]
 ---
 
 <header class="content-header">
@@ -14,27 +14,33 @@ prerequisites: ["Analytics permission", "Collections permission for the receivab
 </header>
 
 **Reports** is Cord's single analytics surface. It contains seven views, while
-**Performance** compares results by the person who created or duplicated each quote.
+**Team** compares results by the person who created or duplicated each quote.
 
 ## The seven reports
 
-| Report | Main question | Time scope |
-|---|---|---|
-| Overview | Close rate, closed and lost value, velocity, and maturity. | Selected range |
-| Commercial diagnosis | Funnel, pipeline, stalled quotes, discount cost, and stage time. | Cohort plus current snapshot |
-| Finance | MRR, ARR, DSO, MRR at risk, weighted pipeline, and concentration. | Current snapshot |
-| Cash flow · 90 days | Receivables, probable pipeline, retainers, and near-term concentration. | Current projection |
-| Collections and receivables | Open, overdue, aging, promises, and payment behavior. | Current snapshot |
-| Clients | Value and conversion by client, cohorts, and inactive clients. | Range plus current snapshot |
-| Products | Quoted amount, volume, discount elasticity, and close rate. | Selected range |
+**Reports** is in the side menu, under the **Intelligence** group. Each report has its
+own URL and its own widget layout.
 
-Finance, Cash flow, and Collections require Pro or above. Collections also requires
-the Collections permission; the others begin with Analytics permission.
+{/* MOCKUP: Reports › Overview with the report list on the left grouped into Leadership (Overview, Commercial diagnosis, Finance, Cash flow · 90 days) and Operations (Collections and receivables, Clients, Products), the "Last 30 days" picker at the top, and widgets for close rate, closed value, and the Won / Lost / Still open donut. */}
+
+| Report | Main question | Time scope | Permission | Plan |
+|---|---|---|---|---|
+| Overview | Close rate, closed and lost value, velocity, and maturity. | Selected range | Reports | All |
+| Commercial diagnosis | Funnel, pipeline, stalled quotes, discount cost, and stage time. | Cohort plus current snapshot | Reports | All |
+| Finance | MRR, ARR, DSO, MRR at risk, weighted pipeline, and concentration. | Current snapshot | Reports | Pro or higher |
+| Cash flow · 90 days | Receivables, probable pipeline, retainers, and near-term concentration. | Current projection | Reports | Pro or higher |
+| Collections and receivables | Open, overdue, aging, promises, and payment behavior. | Current snapshot | Reports and Collections | Pro or higher |
+| Clients | Value and conversion by client, cohorts, and inactive clients. | Range plus current snapshot | Reports | All |
+| Products | Quoted amount, volume, discount elasticity, and close rate. | Selected range | Reports | All |
+
+If you're missing the permission, the report asks you to request it from whoever
+manages the team. If you're missing the plan, it offers to take you to **Settings ›
+Plans & subscription**.
 
 ## Range-based reports
 
-Overview, Commercial diagnosis, Clients, and Products provide a date picker covering
-up to the last year. Cohort metrics assign a quote to the range by its creation date.
+Overview, Commercial diagnosis, Clients, and Products provide a date picker that
+starts at the last 30 days and covers up to the last year. Cohort metrics assign a quote to the range by its creation date.
 A quote created yesterday may still be open and shouldn't be compared directly with a
 six-month-old cohort that had time to close.
 
@@ -59,7 +65,7 @@ first real opening; internal activity and reloads don't create new conversions.
 
 - **Contracted MRR:** monthly value of active retainers.
 - **ARR:** annualized MRR, not cash already received.
-- **MRR at risk:** `past_due` or cancellation-scheduled subscriptions.
+- **MRR at risk:** retainers with a pending charge or scheduled for cancellation.
 - **DSO:** estimated time to collection from available history.
 - **Weighted pipeline:** expected value from historical probability and timing; not
   guaranteed cash.
@@ -86,8 +92,8 @@ change calculations.
 
 ## Seller performance
 
-`/app/desempeno` attributes each quote to `created_by`: the person who created or
-duplicated it. It shows quotes created, close rate, closed value, collected value,
+**Team**, under the **Intelligence** group in the side menu, attributes each quote to
+the person who created or duplicated it. It requires the Reports permission. It shows quotes created, close rate, closed value, collected value,
 average ticket, and days to close.
 
 Older documents without a creator appear as **Unassigned**. Cord doesn't redistribute
@@ -96,12 +102,19 @@ displayed seller rates, not payroll or commission accounting.
 
 ## Common problems
 
-**Report is missing.** Check Analytics permission; Collections has its own permission,
+**Report is missing.** Check the Reports permission; Collections has its own permission,
 and Finance, Cash flow, and Collections require Pro or above.
 
 **Changing dates doesn't change a widget.** It is a current snapshot marked “today.”
 
 **A cohort's closed value looks low.** Some quotes may remain open; review maturity.
 
-**A closing is Unassigned.** The quote has no stored creator, often because it predates
-the current attribution model.
+**A closing is Unassigned.** The quote has no stored creator: it predates the current
+attribution model or was created through the API.
+
+## Related
+
+- [Home and views](/en/docs/gestion/dashboard)
+- [Receivables and collections](/en/docs/pagos/cartera-cobranza)
+- [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx)
+- [Team and security](/en/docs/cuenta/equipo-seguridad)

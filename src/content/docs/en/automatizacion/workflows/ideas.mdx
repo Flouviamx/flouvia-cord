@@ -1,137 +1,198 @@
 ---
 title: "Ready-made ideas"
-description: "The 9 example workflows Cord ships with: which event starts them, what steps they run, what they need and how to adapt them to your operation."
-lastUpdated: "2026-09-15"
+description: "The 9 example workflows Cord ships with, step by step: which event starts them, what each step does with its texts, which business they suit, what they need and how to adapt them."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission", "A free active-workflow slot in your plan to publish", "Some ideas need Slack, Teams or HubSpot connected, or the Scale plan for internal approvals"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Ready-made ideas</h1>
-  <p class="page-subtitle">Nine workflows built for the most common follow-ups. Each one is created as a draft so you can review it before publishing.</p>
+  <p class="page-subtitle">Nine workflows built for the most common follow-ups, one per use case. Each one is created as a draft so you can review it before publishing.</p>
 </header>
 
 ## How to use an idea
 
-There are two ways:
+There are three ways:
 
 - In the **Workflows** list, under **Ideas to get started**, click **Use** on the idea.
-- Inside the editor of an empty workflow, in **Start with an example**, click **Customize this workflow**.
+- Inside the editor of an empty workflow, in **Start with an example**, click **Customize this workflow**. If the draft already had steps, Cord asks **Replace what you have?** before replacing them.
+- In **Settings › Integrations**, the Slack, Teams and HubSpot pages show the ideas that use that app.
 
-Both create a **draft** with the idea's name, trigger and steps, in your account's language. Nothing runs until you click **Publish**. Change whatever you want first: amounts, days, texts or recipients.
+Every way creates a **draft** with the idea's name, trigger and steps, with the texts in your account's language. Nothing runs until you click **Publish**, and before that you can click **Test** to see what it would do with the latest real event. Change whatever you want: amounts, days, texts or recipients.
+
+{/* MOCKUP: "Ideas to get started" section at the bottom of the Workflows list. Three cards visible in a row: "Quote follow-up ladder" with the quote icon and the text "Waits for the client to open it; if they do not in 2 days it emails them...", "Staged collection of an overdue invoice" and "Collections summary every Monday", each with its "Use" button. */}
 
 <Callout type="info">
-Ideas that use Slack or HubSpot can be created even if those apps are not connected, but those steps will fail when they run until you connect them in **Settings › Integrations**.
+Ideas that use Slack, Teams or HubSpot can be created and published even if those apps are not connected, but those steps will fail when they run until you connect them in **Settings › Integrations**.
 </Callout>
+
+## At a glance
+
+| Idea | Trigger | Needs | Best for |
+|---|---|---|---|
+| [Follow-up ladder](#1-quote-follow-up-ladder) | A quote is sent | Client with an email | Anyone sending many quotes and losing track |
+| [Auto-approve small quotes](#2-auto-approve-only-small-quotes) | A quote requests internal approval | Scale plan or higher | Sales teams with discount rules |
+| [Teams on approval](#3-teams-when-the-client-approves) | A quote is approved | Microsoft Teams | Teams that live in Microsoft 365 |
+| [HubSpot note](#4-hubspot-note-when-the-client-approves) | A quote is approved | HubSpot and Slack | Sales teams with a CRM |
+| [Staged collection](#5-staged-collection-of-an-overdue-invoice) | An invoice has been past due for days | Invoices with a due date, client with an email | Businesses that extend credit |
+| [Kick off on the deposit](#6-kick-off-when-the-deposit-arrives) | A partial payment arrives | Nothing extra | Projects and made-to-order work |
+| [Monday summary](#7-collections-summary-every-monday) | On a fixed schedule | Nothing extra | Owners who want the number without opening the app |
+| [Remind 3 days before](#8-remind-the-client-3-days-before-the-due-date) | An invoice is about to be due | Invoices with a due date, client with an email | Recurring services and receivables |
+| [Last call and close-out](#9-last-call-and-quote-close-out) | A quote is about to expire | Quotes with a validity date, client with an email | Anyone quoting prices that expire |
 
 ## 1. Quote follow-up ladder
 
 So no quote goes cold in silence.
 
-- **Trigger:** a quote is sent.
-- **Steps:**
-  1. Waits until the client opens or approves it, with a 2-day limit.
-  2. If it happens: creates the task to call while the deal is warm.
-  3. If the time runs out: emails the client asking if anything needs clearing up, and waits another 5 days for a decision. If none comes, it looks up the client's balance and tells the owner what they already owe.
-- **Needs:** a client with an email on file.
-- **Adapt it:** change the limits, or drop the client email if you want follow-up to stay internal.
+**Which business:** agencies, firms, industrial suppliers or any team that sends many quotes a week and has no time to check one by one who opened them.
+
+<Steps>
+1. **Trigger:** a quote is sent.
+2. **Wait until** the **Current quote status** is **Viewed** or **Approved** (any is met), with a **2-day** limit.
+3. **If it happens:** create the task "Call `{{cliente}}` while `{{folio}}` is warm", due in 1 day. The client has seen it: it is time to call.
+4. **If the time runs out:** email the client with the subject "Any questions about `{{folio}}`?" and the message "Hi, we are following up on quote `{{folio}}` for `{{total}}` `{{moneda}}`. If anything needs adjusting, reply to this email and we will sort it out."
+5. **Then wait until** the status is **Approved** or **Rejected**, with a **5-day** limit. If the client decides, the run ends there.
+6. **If there is still no decision:** look up the client's balance and tell the owner, with the subject "`{{folio}}` went a week without a decision" and the open balance with you (`{{cliente_saldo}}`, of which `{{cliente_vencido}}` is overdue).
+</Steps>
+
+- **Needs:** the client with an email on file. The email to the client uses your plan's sending quota.
+- **Adapt it:** change the time limits, or remove the client email if you want the follow-up to stay within the team.
 
 ## 2. Auto-approve only small quotes
 
-So an internal approval for 8,000 does not wait for someone to open the app.
+So an 8,000 internal approval does not wait for someone to open the app.
 
-- **Trigger:** a quote requests internal approval.
-- **Steps:**
-  1. Condition: **Total** is under 50,000.
-  2. If met: approves the internal request and the quote goes out to the client.
-  3. If not: emails the whole team with the reason, so a person reviews it.
-- **Needs:** internal approvals in your plan.
-- **Adapt it:** the amount is yours. You can add a condition by client or by currency.
+**Which business:** sales teams where a discount or a large amount needs a manager's sign-off, but most requests are small and always get approved.
+
+<Steps>
+1. **Trigger:** a quote requests internal approval.
+2. **Condition:** the **Total** is less than **50,000**.
+3. **If the condition is met:** approve the internal request; the quote goes out to the client.
+4. **If the condition isn't met:** email the whole team with the subject "`{{folio}}` needs a person: `{{total}}` `{{moneda}}`" and the reason for the request (`{{motivo}}`).
+</Steps>
+
+- **Needs:** internal approvals, which come with the **Scale** plan or higher. Without them, the approve step fails with "Your current plan does not include internal approvals."
+- **Adapt it:** the amount is yours and is compared in the quote's currency. If you sell in several currencies, add a rule on **Currency** so 50,000 pesos and 50,000 dollars are not treated the same.
 
 ## 3. Teams when the client approves
 
-So the team finds out in the channel where they already work.
+So the team hears about it in the channel where it already works.
 
-- **Trigger:** a quote is approved.
-- **Steps:**
-  1. Sends a Teams message: "`{{cliente}}` approved `{{folio}}`: `{{total}}` `{{moneda}}`".
-- **Needs:** Microsoft Teams connected in Settings › Integrations.
-- **Adapt it:** switch it to **Send a Slack message** if your team lives there, or add a **Total** condition to post only the large deals.
+**Which business:** companies that use Microsoft 365 and coordinate production, deliveries or purchasing in a Teams channel.
+
+<Steps>
+1. **Trigger:** a quote is approved.
+2. **Action:** send a Teams message: "`{{cliente}}` approved `{{folio}}`: `{{total}}` `{{moneda}}`".
+</Steps>
+
+- **Needs:** [Microsoft Teams](/en/docs/automatizacion/integraciones/teams) connected in Settings › Integrations.
+- **Adapt it:** swap it for **Send a Slack message** if your team lives there, or add a condition on **Total** to post only large sales.
 
 ## 4. HubSpot note when the client approves
 
-So the CRM has the story without anyone copying it over.
+So the CRM has the history without anyone copying it.
 
-- **Trigger:** a quote is approved.
-- **Steps:**
-  1. Adds a note to the quote's Deal (or the client's Company).
-  2. Posts the alert to Slack.
-- **Needs:** HubSpot and Slack connected.
-- **Adapt it:** drop the Slack step if you only want the HubSpot record.
+**Which business:** sales teams that run their pipeline in HubSpot and quote in Cord.
+
+<Steps>
+1. **Trigger:** a quote is approved.
+2. **Action:** add a note to the quote's Deal (or, if there is no Deal, to the client's Company): "`{{cliente}}` approved `{{folio}}` for `{{total}}` `{{moneda}}` in Cord."
+3. **Action:** post "`{{cliente}}` approved `{{folio}}`" to Slack.
+</Steps>
+
+- **Needs:** [HubSpot](/en/docs/automatizacion/integraciones/hubspot) and [Slack](/en/docs/automatizacion/integraciones/slack) connected.
+- **Adapt it:** remove the Slack step if you only want the record in HubSpot.
 
 ## 5. Staged collection of an overdue invoice
 
 To chase the money with judgment, not with a single email.
 
-- **Trigger:** an invoice has been past due for days.
-- **Steps:**
-  1. At exactly 3 days: emails the client with the pay button.
-  2. At exactly 15: looks up the client's total balance and tells the owner, to decide whether to stop credit.
-- **Needs:** invoices with a due date and a client with an email.
+**Which business:** distributors, wholesalers and services that invoice on 30 or 60-day credit and need an even collections process.
+
+<Steps>
+1. **Trigger:** an invoice has been past due for days. It happens every day while the invoice stays open with a balance, for up to 90 days.
+2. **Condition:** **Days past due** equals **3**. If met, it emails the client with the subject "Invoice `{{numero}}` is past due" and the balance (`{{saldo}}` `{{moneda}}`); Cord adds the button to pay.
+3. **Condition:** **Days past due** equals **15**. If met, it looks up the client's balance and tells the owner, with the subject "`{{cliente}}`: 15 days past due", the total open, the overdue amount and across how many documents, to decide whether to stop credit.
+</Steps>
+
+Since the trigger happens every day, each condition picks the exact day it acts on; on the other days the run ends without doing anything.
+
+- **Needs:** invoices with a due date and the client with an email.
 - **Adapt it:** change the days, or add a third stage at 30 with a collections task.
 
 ## 6. Kick off when the deposit arrives
 
-So production does not wait for someone to pass the word.
+So production does not wait for someone to say so.
 
-- **Trigger:** a partial payment arrives.
-- **Steps:**
-  1. Condition: the payment type is **Deposit**.
-  2. If met: creates the task to start the work and tells the owner the remaining balance.
-- **Needs:** nothing extra.
-- **Adapt it:** send the alert to the whole team instead of only the owner.
+**Which business:** workshops, made-to-order manufacturing, construction, events or consulting: anything that charges a deposit before starting.
+
+<Steps>
+1. **Trigger:** a partial payment arrives.
+2. **Condition:** the **Payment type** is **Deposit**.
+3. **If the condition is met:** create the task "Start the work for `{{folio}}` (`{{cliente}}`)" due in 1 day, and tell the owner: "A deposit of `{{monto}}` `{{moneda}}` arrived. Remaining balance: `{{saldo_pendiente}}` `{{moneda}}`."
+</Steps>
+
+- **Needs:** quotes with a deposit. See [Deposits](/en/docs/pagos/anticipos).
+- **Adapt it:** send the notice to the whole team instead of only the owner, or post it to Slack or Teams.
 
 ## 7. Collections summary every Monday
 
-To start the week knowing who needs chasing.
+To start the week knowing whom to chase.
 
-- **Trigger:** every Monday at 9 (your account's time).
-- **Steps:**
-  1. Looks up overdue receivables.
-  2. Looks up the open pipeline.
-  3. Emails the summary to the account owner.
+**Which business:** owners and finance leads who want the week's number in their inbox without opening the app.
+
+<Steps>
+1. **Trigger:** on a fixed schedule, every week, on Monday at 9 (in your account's time zone).
+2. **Look up** overdue receivables.
+3. **Look up** the open pipeline.
+4. **Email the owner** with the subject "Your week in Cord (`{{fecha}}`)": what is overdue, across how many documents, how many days the oldest one is past due, and what sits in open quotes.
+</Steps>
+
 - **Needs:** nothing extra.
-- **Adapt it:** switch it to monthly on the 1st, add the **what was collected** lookup and send it to Slack too.
+- **Adapt it:** make it monthly on day 1, add the **what was collected** or **what is about to be due** lookup, and also send it to Slack.
 
 ## 8. Remind the client 3 days before the due date
 
-To collect before the date, not after it.
+To collect before the date, not after.
 
-- **Trigger:** an invoice is about to be due.
-- **Steps:**
-  1. Condition: **Days until due** equals **3**.
-  2. If met: emails the client with their balance. Cord adds the pay button.
-- **Needs:** invoices with a due date and a client with an email.
-- **Adapt it:** change the 3 to whatever notice you want.
+**Which business:** recurring services, retainers and any business with receivables where the client pays on time if reminded.
+
+<Steps>
+1. **Trigger:** an invoice is about to be due. It happens every day while there are 1 to 30 days left and the invoice is still open with a balance.
+2. **Condition:** **Days until due** equals **3**.
+3. **If the condition is met:** email the client with the subject "Invoice `{{numero}}` is due on `{{vence}}`" and the balance. Cord adds the button to pay.
+</Steps>
+
+- **Needs:** invoices with a due date and the client with an email.
+- **Adapt it:** change the 3 to the days you want, or swap the email for **Send the client a WhatsApp** if you connected [WhatsApp Business](/en/docs/automatizacion/integraciones/whatsapp).
 
 ## 9. Last call and quote close-out
 
-To close the loop instead of leaving quotes alive forever.
+To close the loop instead of leaving quotes open forever.
 
-- **Trigger:** a quote is about to expire.
-- **Steps:**
-  1. Condition: **Days until it expires** equals **2**.
-  2. If met: emails the client and waits 2 days for a decision.
-  3. If none comes: expires the quote and tells the owner.
-- **Needs:** quotes with an expiration date and a client with an email.
+**Which business:** anyone quoting prices that change (materials, imports, exchange rates, seasons) who cannot honor an old quote.
+
+<Steps>
+1. **Trigger:** a quote is about to expire. It happens every day while there are 1 to 30 days left and the quote is still sent or viewed.
+2. **Condition:** **Days until it expires** equals **2**.
+3. **If the condition is met:** email the client with the subject "Quote `{{folio}}` expires on `{{vence}}`" inviting them to approve it from the link.
+4. **Wait until** the status is **Approved** or **Rejected**, with a **2-day** limit.
+5. **If the time runs out:** expire the quote (the client can no longer approve it from the link) and tell the owner: "`{{folio}}` expired without an answer".
+</Steps>
+
+- **Needs:** quotes with a validity date and the client with an email.
 - **Adapt it:** remove the **Expire the quote** step if you prefer to close it by hand.
 
 ## Combining ideas
 
-An idea is a starting point, not a limit. For example, you can merge "HubSpot note when the client approves" and "Teams when the client approves" into one workflow: always add the HubSpot note and, with a **Total** condition, post to Teams only for the large deals.
+An idea is a starting point, not a limit. For example, you can merge "HubSpot note when the client approves" and "Teams when the client approves" into one workflow: always add the HubSpot note and, with a condition on **Total**, post to Teams only the large sales. On the Free and Starter plans, merging ideas into one workflow also saves active-workflow slots.
 
-## Next
+## Related
 
+- [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow)
 - [Triggers](/en/docs/automatizacion/workflows/disparadores)
 - [Actions](/en/docs/automatizacion/workflows/acciones)
 - [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar)

@@ -1,64 +1,95 @@
 ---
-title: "Cord AI: automatic quoting"
-description: "Generate entire quotes by pasting text, a photo, or a PDF thanks to Cord AI, Cord's own AI engine."
+title: "Cord AI: automatic quotes"
+seoTitle: "Cord AI: build a quote from text, a PDF, or a photo"
+description: "Build a quote's lines by pasting text, a photo, or a PDF: Cord AI matches them against your catalog and you review before sending."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to open the editor", "A product catalog for Cord AI to match lines against"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Cord AI: automatic quoting</h1>
-  <p class="page-subtitle">Let artificial intelligence build your quotes. Upload an email, a PDF, or a photo of a napkin and we do the rest.</p>
+  <h1 class="page-title">Cord AI: automatic quotes</h1>
+  <p class="page-subtitle">Paste an email or upload a PDF or a photo of a napkin and Cord fills the lines from your catalog.</p>
 </header>
 
-Cord AI is the AI engine built into Cord that generates a quote draft from text, a PDF file, or an image. It extracts products and quantities and matches them against your real Cord catalog, instead of you keying in every line item by hand.
+## What it is
 
-*Last updated: August 2026*
+Cord AI is the artificial intelligence engine in the quote editor. It reads an order as
+text, a PDF, or an image, extracts products and quantities, and matches them against
+**your real catalog**. It doesn't save or send anything on its own: it fills the
+editor and you decide.
 
-## The end of manual data entry
+{/* MOCKUP: "Build the quote with AI" block at the top of the editor, with the sample text "Hi, I need 200 bags of grey cement, 50 rebar rods 3/8 and 2 m³ of sand. Can you send me a price?", the attach clip, and the "Build quote with AI" button; below, three newly added lines. */}
 
-Many sales start chaotically: a client sends you a massive WhatsApp message asking for 15 products, or forwards a scanned PDF with a bill of materials, or even sends a photo of handwritten notes.
+## Requirements
 
-Traditionally, you'd have to open that file and manually type product by product into the system, searching for prices one by one. **Cord AI removes that data entry: it reads the file and hands you back a draft already built from your catalog.**
+- **Permission:** Quotes, to open **New quote**.
+- **Plan:** all, with a monthly allowance per plan (see below).
+- **Catalog:** Cord AI matches against your products. Without a catalog, everything comes in as free lines.
 
-## How does Cord AI work?
+## How to use it
 
-On your Dashboard's main screen, next to the "New quote" button, you'll find the **Generate with AI** button.
+<Steps>
+1. Open **Quotes › New quote**. The first block is **Build the quote with AI**. You can also get there from the command palette with **Build with AI**.
+2. Paste the order into the text box, attach a file with the clip, or both.
+3. Click **Build quote with AI**.
+4. Review the lines that were added, pick the client, adjust prices and validity, and save or send.
+</Steps>
 
-Clicking it opens an assistant where you can provide input in three different ways:
+## What it can read
 
-### 1. Paste text (messages or emails)
-If a client sends an email asking: *"Hi, I need 5 annual software licenses, 2 high-end laptops, and 10 hours of training"*, simply copy and paste that text into Cord AI.
-- The AI reads the text and searches **your Cord catalog** for matches (licenses, laptops, training).
-- It extracts the requested quantities and applies the base prices from your catalog automatically.
+| Input | Limit | What Cord AI does |
+|---|---|---|
+| **Text** (email, WhatsApp, notes) | 2,000 characters | Finds matches in your catalog, takes the list price and, if the client mentions a lower price, proposes it as negotiated. |
+| **PDF** (purchase order, requisition, tender) | 3 MB, can have several pages | Reads it with the same vision model as a photo, with no separate OCR. |
+| **Image** (JPG, PNG, or WEBP) | Cord compresses it before uploading | Reads the photo and builds the lines. |
 
-### 2. Upload a PDF file
-If you take part in tenders or a client sends a scanned purchase order or requisition:
-- Upload the PDF file (it can have multiple pages).
-- Cord AI reads it with the same vision model it uses for a photo — no separate OCR engine —, maps the concepts to your SKUs, and pre-fills the line items.
-
-### 3. Images (AI vision)
-Did they send you a photo of physical inventory or notes from a napkin after a business lunch?
-- Upload the photo directly (JPG, PNG, WEBP, or GIF).
-- The same model reads the image and builds the draft proposal for you.
+Anything it can't find in your catalog comes in as a **free line** so you decide what
+to do with it. The list price and product data always come from your catalog, not
+from the text.
 
 ## Human review
 
-Cord AI is designed to be your copilot, not your replacement.
+Cord AI is a copilot. You:
 
-Once it processes your input, it doesn't send anything to the client automatically. Instead, it generates a **quote draft** already structured from your catalog. You get the chance to:
+- confirm the products are the right ones;
+- adjust quantities if something was misread;
+- choose the client, negotiated prices, and validity before saving or sending.
 
-- Review that the selected products are correct.
-- Adjust quantities if there was any interpretation error.
-- Apply discounts and set the validity period before sending the link.
+## Limits by plan
+
+Each build that identifies products uses one unit of the monthly allowance. If it
+identifies none, nothing is used.
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Builds included per month | 3 | 20 | 50 | 500 | No cap |
+| Beyond the allowance | Stops | Overage billed | Overage billed | Overage billed | Not applicable |
+
+See your usage in **Settings › Plans & subscription › Subscription**.
+
+## Common problems
+
+**Cord asks for the order.** You clicked the button with no text and no file: paste the client's order or attach a photo or PDF.
+
+**"The PDF is over 3MB".** Scan it at a lower resolution or upload a photo instead.
+
+**Unsupported format.** Upload a photo (JPG, PNG, or WEBP) or a PDF. Spreadsheets aren't processed by this assistant; to load many products use the [CSV import](/en/docs/cuenta/catalogo).
+
+**It matched a product wrong.** Clear names and defined SKUs in your catalog improve matching. Fix the line before sending.
 
 ## Frequently asked questions
 
-**Does Cord AI replace the sales rep?**
-No. Cord AI generates a draft that always requires human review before sending. The sales rep keeps full control over prices, discounts, and commercial terms.
+**Does Cord AI replace the seller?**
+No. It fills a draft that a person always reviews before it's sent.
 
-**What file types can Cord AI process?**
-Plain text (copied from emails or messages), a PDF file, and photos in JPG, PNG, WEBP, or GIF format. Spreadsheets aren't processed by this assistant.
+**Does it work in any language?**
+Yes. It understands orders in Spanish, English, and other languages and matches them against your catalog.
 
-**Does Cord AI work in any language?**
-Yes. The model can interpret requests in Spanish, English, and other languages, mapping them to your catalog's products regardless of the input language.
+## Related
 
-**How accurate is Cord AI?**
-It depends on how well-structured your catalog is: with clear names and defined SKUs, the AI matches products with more confidence than against a messy catalog or ambiguous names. The draft always goes through your review before sending, precisely because no automatic match is infallible.
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Set up with AI](/en/docs/cuenta/configurar-con-ia)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)

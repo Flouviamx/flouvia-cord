@@ -1,33 +1,176 @@
 ---
-title: "Dashboard and Views"
-description: "Organize your sales pipeline with List and Kanban views in Cord."
+title: "Home and quote views"
+seoTitle: "Cord Home: widgets, date range, and the quotes board"
+description: "What every Home widget shows, how to customize it on desktop and mobile, what the date picker affects, which permissions hide widgets, and how to use the List and Board views in Quotes."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Reports permission for the funnel, pipeline, trend, rankings, and health widgets", "Collections permission for receivables aging"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Dashboard and Views</h1>
-  <p class="page-subtitle">Get total visibility of your revenue pipeline. Learn to navigate your quotes using our dynamic views.</p>
+  <h1 class="page-title">Home and quote views</h1>
+  <p class="page-subtitle">A snapshot of your commercial operation when you sign in, and your pipeline as a list or a board.</p>
 </header>
 
-## Your Sales Pipeline
+## What it is
 
-Cord isn't just a document generator, it's a mini-CRM focused on closing deals. When you log into your account, the main page shows all your quotes organized by status.
+**Home** is the first screen when you sign in to Cord: a money indicator at the top
+and, below it, a board of widgets you can reorder, resize, and hide. Your full pipeline
+lives in **Quotes**, with a **List** view and a **Board** view.
 
-### 1. List View
-By default, you will see the List View: a dense, spreadsheet-style table with your most recent quotes first, ideal if you handle a high volume and need to scan folio, client, terms, expiration, amount, and status at a glance.
-- Use the filter pills above the table to narrow by pipeline stage: All, Open, Needs approval, Approved, Paid, or Closed (rejected/expired).
-- Click any row to open that quote's full details.
+{/* MOCKUP: Home on desktop: at the top the money indicator with the Closed / Collected / Quoted pills, "MXN 1,284,500.00", "+18% vs. previous period", and the "Last 30 days" picker; below, the grid with In progress, Close rate, Average ticket, Needs follow-up, Conversion funnel, Pipeline, Monthly trend, and Tasks and reminders. */}
 
-### 2. Kanban View (Board)
-Click the **Board** icon next to the List icon to switch views. This view organizes your quotes into columns based on their status, allowing you to quickly understand the health of your sales pipeline.
-- **Drafts:** Half-finished quotes.
-- **Sent:** Waiting for the client to open them.
-- **Viewed:** The client has opened the link (perfect time to call!).
-- **Approved:** The client accepted the terms.
-- **Paid / Invoiced:** Closed and collected deals (share a column).
+## Requirements
 
-**How to use it:** Drag and drop a card into the next column of the pipeline to force that status change (for example, from Sent to Approved). The board only accepts forward moves along the normal sales flow — you can't drag a card back to an earlier status. Cord automates most of these changes when the client interacts with the link, so drag-and-drop is for the cases where you need to force it yourself.
+- **Permission:** every member sees Home. The analytics widgets require **Reports** and receivables aging requires **Collections**; without them, those widgets don't appear.
+- **Plan:** the indicator, KPIs, lists, and tasks are on every plan. The data for **Expected cash flow**, **Pipeline health**, **Needs follow-up**, and **Expected pipeline** comes from the finance panel (Pro or higher), and **Receivables aging** from the collections module (Pro or higher); on Free and Starter those widgets appear empty.
+
+## The money indicator
+
+Fixed at the top is the period's amount with three metrics to choose from:
+
+- **Closed:** what was approved in the period.
+- **Collected:** what was paid in the period.
+- **Quoted:** what was quoted in the period.
+
+Next to the amount you see the change **vs. previous period** and, below, the period's chart.
+
+## Date picker
+
+The picker starts at **Last 30 days** and remembers your last choice in that browser.
+Options: **Today**, **Yesterday**, **Last 7 days**, **Last 30 days**, **Last 90 days**,
+**This month**, **Last month**, **This quarter**, **Year to date**, **All**, and
+**Custom** (with **From**, **To**, and **Apply**).
+
+As the note under the indicator says: "The range applies to revenue, trend, funnel and
+rankings. Receivables, pipeline and health always show today."
+
+## The widgets
+
+| Widget | What it shows | Follows the range | Requires |
+|---|---|---|---|
+| **In progress** | Total of sent and viewed quotes, how many there are, and a sparkline of what was quoted in the last 14 days. | No (today) | — |
+| **Close rate** | Approved, paid, or invoiced quotes out of all quotes that left draft. | No | Reports |
+| **Average ticket** | Average amount per closed quote, across your whole history. | No | Reports |
+| **Needs follow-up** | *Viewed* quotes the client hasn't decided on yet. Links to Quotes. | No (today) | — |
+| **Conversion funnel** | Sent → Viewed → Approved → Paid. Each bar opens Quotes with the matching filter. | Yes | Reports |
+| **Pipeline** | Amount and number of quotes per status (Draft, Sent, Viewed, Approved, Paid). | No (today) | Reports |
+| **Monthly trend** | Quoted versus closed over time. | Yes | Reports |
+| **Receivables aging** | Receivable balances by age. | No (today) | Collections · Pro or higher |
+| **Expected cash flow · 5 weeks** | Expected collections per week, with a link to **Treasury**. | No (today) | Reports · Pro or higher |
+| **Pipeline health** | Average days to collect (DSO), risk concentration, margin given up, and weighted expected revenue. | No (today) | Reports · Pro or higher |
+| **Clients by approval rate** | The 5 clients with the best approval rate. | Yes | Reports |
+| **Products by revenue** | The 5 products with the highest amount in quotes that left draft. | Yes | Reports |
+| **Needs follow-up** (list) | Open quotes with more than 7 days without activity, showing days without a reply and amount. | No (today) | Pro or higher |
+| **Recent quotes** | The 5 latest quotes with their status. | No | — |
+| **Activity** | The 7 most recent events (sends, views, approvals, payments). | No | — |
+| **Tasks and reminders** | Your to-dos, with a field to add a new one (see [Tasks](/en/docs/gestion/tareas)). | No | — |
+
+Two optional widgets start hidden and are added from the library: **Sent to paid**
+(percentage of sent quotes that ended up paid; requires Reports) and **Expected
+pipeline** (open pipeline weighted by probability; requires Reports and Pro or higher).
+
+## Customize Home
+
+<Tabs>
+<TabItem label="Desktop">
+
+1. Click **Customize** in the top bar.
+2. **Move** a widget by dragging it.
+3. **Resize** it with **Compact** or **Expanded**.
+4. **Hide** it with the hide button; it moves to the **Library**, where you can search for it ("Search widgets…") and show it again with **Add**.
+5. Click **Done** to leave edit mode.
+
+**Reset** asks "Reset the dashboard's widget order and hidden widgets?" and returns to
+the original layout.
+
+</TabItem>
+<TabItem label="Mobile">
+
+Below 880 px the widgets stack in a single column and can't be dragged. In
+**Customize** mode, each widget shows **Move up**, **Move down**, and **Hide** buttons.
+Hidden widgets come back from the **Library** just like on desktop.
+
+</TabItem>
+</Tabs>
+
+Your layout is personal: it's saved to your user in the organization and follows you
+across devices. It doesn't change what your teammates see. Hiding a widget doesn't
+delete data.
+
+## Quotes: List and Board
+
+In **Quotes**, above the list you see the value of your open quotes, the value already
+approved and, if there are internal approval requests, how many are **awaiting your
+approval**.
+
+### List view
+
+The default view is a table with **Quote**, **Client**, **Terms**, **Valid until**,
+**Total**, and **Status**. The filter pills carry their counts; each filter is described
+in [Quote management](/en/docs/gestion/cotizaciones). Click a row to open the detail.
+
+### Board view
+
+Click **Board**, next to **List**. Each column shows its number of quotes and the sum of
+their totals:
+
+| Column | Statuses it groups |
+|---|---|
+| **Draft** | Draft |
+| **Sent** | Sent |
+| **Viewed** | Viewed |
+| **Approved** | Approved |
+| **Paid** | Paid and Invoiced |
+
+Rejected and expired quotes don't appear on the board; you find them in the List with
+the **Closed** filter.
+
+{/* MOCKUP: Board view with the five columns, each with its count and total ("Sent · 4 · MXN 186,400"), a card being dragged from Viewed to Approved with the target column highlighted in green, and the hint "↔ Drag cards to move each quote through its pipeline." */}
+
+### Valid moves on the board
+
+Dragging a card **runs the real action**, it doesn't just change a label. There are
+only three valid destinations; the column turns green when the move is allowed:
+
+| You drag to | From | What it does | Permission |
+|---|---|---|---|
+| **Sent** | Draft | Sends the quote exactly like **Send to client**: activates the link, emails the client if they have an email, and on Free uses one of the month's sends. | Quotes |
+| **Approved** | Sent or Viewed | Marks it as approved on the client's behalf, like **Mark approved**: enables payment and, if you asked for a deposit, creates the payment plan. No client signature is recorded. | Approvals |
+| **Paid** | Approved or Invoiced | Records the payment manually, like **Record payment**, and cancels pending online charges. | Quotes |
+
+Any other move, including moving a card back, is rejected with "That move isn't valid
+in the pipeline." If the server rejects the action (for example, over permissions or the
+send cap), the card returns to its column and you see the reason.
 
 <Callout type="info">
-**Summary above the table:** before the filter pills, you'll see the total value of your open quotes, the value already approved, and, if applicable, how many are waiting on your internal approval — a quick snapshot of your pipeline without adding anything up by hand.
-
+**There's no board on mobile.** Below 880 px, Quotes shows only the list, with each
+quote on two lines. To move a quote forward, open it and use the detail's buttons.
 </Callout>
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Home, KPIs, funnel, trend, and board | Yes | Yes | Yes | Yes | Yes |
+| Expected cash flow, Health, Needs follow-up, Expected pipeline | Empty | Empty | Yes | Yes | Yes |
+| Receivables aging | Empty | Empty | Yes | Yes | Yes |
+
+## Common problems
+
+**I don't see the funnel or the trend.** Your role doesn't have the Reports permission.
+
+**Pipeline health shows zeros.** Your plan doesn't include the finance panel (Pro or higher), or you have no open quotes.
+
+**I changed the range and a widget didn't change.** That widget is a snapshot of today; see the table above.
+
+**I can't drag a card.** You're on a phone, or the destination isn't valid for the current status.
+
+## Related
+
+- [Quote management](/en/docs/gestion/cotizaciones)
+- [Reports and performance](/en/docs/gestion/informes)
+- [Tasks and follow-up](/en/docs/gestion/tareas)
+- [Complete app map](/en/docs/operacion/mapa-de-la-app)

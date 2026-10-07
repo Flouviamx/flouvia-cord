@@ -1,33 +1,181 @@
 ---
-title: "Dashboard y Vistas"
-description: "Organiza tu pipeline de ventas con las vistas de Lista y Kanban en Cord."
+title: "Inicio y vistas de cotizaciones"
+seoTitle: "El Inicio de Cord: widgets, rango de fechas y tablero de cotizaciones"
+description: "Qué muestra cada widget del Inicio, cómo personalizarlo en escritorio y en celular, qué respeta el selector de fechas, qué permisos ocultan widgets, y cómo usar las vistas de Lista y Tablero en Cotizaciones."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Informes para los widgets de embudo, pipeline, tendencia, rankings y salud", "Permiso Cobranza para la antigüedad de cartera"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Dashboard y Vistas</h1>
-  <p class="page-subtitle">Ten visibilidad total de tu flujo de ingresos. Aprende a navegar por tus cotizaciones usando nuestras vistas dinámicas.</p>
+  <h1 class="page-title">Inicio y vistas de cotizaciones</h1>
+  <p class="page-subtitle">La foto de tu operación comercial al entrar, y tu pipeline en lista o en tablero.</p>
 </header>
 
-## Tu Pipeline de Ventas
+## Qué es
 
-Cord no es solo un generador de documentos, es un mini-CRM enfocado en cerrar tratos. Cuando entras a tu cuenta, la página principal te muestra todas tus cotizaciones organizadas por estado.
+**Inicio** es la primera pantalla al entrar a Cord: un indicador de dinero arriba y,
+debajo, un tablero de widgets que puedes reordenar, redimensionar y ocultar. Tu
+pipeline completo vive en **Cotizaciones**, con una vista de **Lista** y otra de
+**Tablero**.
 
-### 1. Vista de Lista
-Por defecto, verás la Vista de Lista: una tabla densa, estilo hoja de cálculo con las cotizaciones más recientes primero, ideal si manejas un volumen alto y necesitas escanear rápido folio, cliente, términos, vigencia, monto y estado de un vistazo.
-- Usa las píldoras de filtro sobre la tabla para acotar por etapa del pipeline: Todas, Abiertas, Por aprobar, Aprobadas, Pagadas o Cerradas (rechazadas/vencidas).
-- Haz clic en cualquier fila para abrir el detalle completo de esa cotización.
+{/* MOCKUP: Inicio en escritorio: arriba el indicador de dinero con las píldoras Cerrado / Cobrado / Cotizado, "MXN 1,284,500.00", "+18% vs. periodo anterior" y el selector "Últimos 30 días"; debajo la cuadrícula con Por cerrar, Tasa de cierre, Ticket promedio, Por dar seguimiento, Embudo de conversión, Pipeline, Tendencia mensual y Tareas y recordatorios. */}
 
-### 2. Vista de Kanban (Tablero)
-Haz clic en el ícono de **Tablero** junto al de Lista para cambiar de vista. Esta vista organiza tus cotizaciones en columnas según su estado, permitiéndote entender rápidamente la salud de tu flujo de ventas.
-- **Borradores:** Cotizaciones a medio terminar.
-- **Enviadas:** Esperando que el cliente las abra.
-- **Vistas:** El cliente ya abrió el enlace (¡momento ideal para llamarlo!).
-- **Aprobadas:** El cliente aceptó los términos.
-- **Pagadas / Facturadas:** Tratos cerrados y cobrados (comparten columna).
+## Requisitos
 
-**Cómo usarla:** Arrastra y suelta (drag-and-drop) una tarjeta a la siguiente columna del pipeline para forzar ese avance de estado (por ejemplo, de Enviada a Aprobada). El tablero solo acepta movimientos hacia adelante en el flujo normal de venta — no puedes regresar una tarjeta a un estado anterior arrastrándola. Cord automatiza la mayoría de estos cambios cuando el cliente interactúa con el enlace, así que el drag-and-drop es para los casos en que necesitas forzarlo tú mismo.
+- **Permiso:** cualquier miembro ve el Inicio. Los widgets analíticos requieren **Informes** y la antigüedad de cartera requiere **Cobranza**; sin ellos, esos widgets no aparecen.
+- **Plan:** el indicador, los KPI, las listas y las tareas están en todos los planes. Los datos de **Flujo esperado**, **Salud del pipeline**, **Necesitan seguimiento** y **Pipeline esperado** vienen del panel financiero (Pro o superior), y la **Antigüedad de cartera** del módulo de cobranza (Pro o superior); en Gratis y Starter esos widgets aparecen vacíos.
+
+## El indicador de dinero
+
+Arriba de todo, fijo, está el monto del periodo con tres métricas a elegir:
+
+- **Cerrado:** lo aprobado en el periodo.
+- **Cobrado:** lo pagado en el periodo.
+- **Cotizado:** lo cotizado en el periodo.
+
+Junto al monto aparece la variación **vs. periodo anterior** y, debajo, la gráfica del
+periodo.
+
+## Selector de fechas
+
+El selector arranca en **Últimos 30 días** y recuerda tu última elección en ese
+navegador. Opciones: **Hoy**, **Ayer**, **Últimos 7 días**, **Últimos 30 días**,
+**Últimos 90 días**, **Este mes**, **Mes pasado**, **Este trimestre**, **Año a la
+fecha**, **Todo** y **Personalizado** (con **Desde**, **Hasta** y **Aplicar**).
+
+Como dice la nota bajo el indicador: "El rango aplica a ingreso, tendencia, embudo y
+rankings. Cartera, pipeline y salud siempre muestran hoy."
+
+## Los widgets
+
+| Widget | Qué muestra | Respeta el rango | Requiere |
+|---|---|---|---|
+| **Por cerrar** | Suma de las cotizaciones enviadas y vistas, cuántas son y una minigráfica de lo cotizado en los últimos 14 días. | No (hoy) | — |
+| **Tasa de cierre** | Cotizaciones aprobadas, pagadas o facturadas entre todas las que salieron del borrador. | No | Informes |
+| **Ticket promedio** | Importe promedio por cotización cerrada, sobre todo tu historial. | No | Informes |
+| **Por dar seguimiento** | Cotizaciones *Vistas* que el cliente todavía no decide. Lleva a Cotizaciones. | No (hoy) | — |
+| **Embudo de conversión** | Enviadas → Vistas → Aprobadas → Pagadas. Cada barra lleva a Cotizaciones con el filtro correspondiente. | Sí | Informes |
+| **Pipeline** | Monto y número de cotizaciones por estado (Borrador, Enviada, Vista, Aprobada, Pagada). | No (hoy) | Informes |
+| **Tendencia mensual** | Cotizado contra cerrado en el tiempo. | Sí | Informes |
+| **Antigüedad de cartera** | Saldos por cobrar por antigüedad. | No (hoy) | Cobranza · Pro o superior |
+| **Flujo esperado · 5 semanas** | Cobros esperados por semana, con enlace a **Tesorería**. | No (hoy) | Informes · Pro o superior |
+| **Salud del pipeline** | Días promedio de cobro (DSO), concentración de riesgo, margen cedido e ingreso esperado ponderado. | No (hoy) | Informes · Pro o superior |
+| **Clientes por tasa de aprobación** | Los 5 clientes con mejor tasa de aprobación. | Sí | Informes |
+| **Productos por ingreso** | Los 5 productos con más importe en cotizaciones que salieron del borrador. | Sí | Informes |
+| **Necesitan seguimiento** | Cotizaciones abiertas con más de 7 días sin actividad, con días sin respuesta y monto. | No (hoy) | Pro o superior |
+| **Cotizaciones recientes** | Las 5 últimas cotizaciones con su estado. | No | — |
+| **Actividad** | Los 7 eventos más recientes (envíos, vistas, aprobaciones, pagos). | No | — |
+| **Tareas y recordatorios** | Tus pendientes, con campo para agregar uno nuevo (ver [Tareas](/docs/gestion/tareas)). | No | — |
+
+Hay dos widgets opcionales que empiezan ocultos y se agregan desde la biblioteca:
+**De enviada a pagada** (porcentaje de cotizaciones enviadas que terminaron pagadas; requiere Informes) y **Pipeline
+esperado** (pipeline abierto ponderado por probabilidad; requiere Informes y Pro o
+superior).
+
+## Personaliza el Inicio
+
+<Tabs>
+<TabItem label="Escritorio">
+
+1. Pulsa **Personalizar** en la barra superior.
+2. **Mueve** un widget arrastrándolo.
+3. **Cambia su tamaño** con **Compacto** o **Ampliado**.
+4. **Ocúltalo** con el botón de ocultar; pasa a la **Biblioteca**, donde puedes buscarlo ("Buscar widgets…") y volver a mostrarlo con **Agregar**.
+5. Pulsa **Listo** para salir del modo edición.
+
+**Restablecer** pregunta "¿Restablecer el orden y los widgets ocultos del dashboard?" y
+vuelve al diseño original.
+
+</TabItem>
+<TabItem label="Celular">
+
+Por debajo de 880 px los widgets se apilan en una columna y no se arrastran. En modo
+**Personalizar**, cada widget muestra botones de **Subir**, **Bajar** y **Ocultar**. Los
+ocultos se recuperan desde la **Biblioteca** igual que en escritorio.
+
+</TabItem>
+</Tabs>
+
+Tu diseño es personal: se guarda en tu usuario de la organización y te sigue en otros
+dispositivos. No cambia lo que ven tus compañeros. Ocultar un widget no borra datos.
+
+## Cotizaciones: Lista y Tablero
+
+En **Cotizaciones**, arriba de la lista ves el valor de tus cotizaciones abiertas, el
+valor ya aprobado y, si hay solicitudes de aprobación interna, cuántas **esperan tu
+aprobación**.
+
+### Vista de Lista
+
+La vista predeterminada es una tabla con **Cotización**, **Cliente**, **Términos**,
+**Vigencia**, **Total** y **Estado**. Las píldoras de filtro llevan su conteo; los
+detalles de cada filtro están en [Gestión de cotizaciones](/docs/gestion/cotizaciones).
+Haz clic en una fila para abrir el detalle.
+
+### Vista de Tablero
+
+Pulsa **Tablero**, junto a **Lista**. Cada columna muestra su número de cotizaciones y
+la suma de sus totales:
+
+| Columna | Estados que agrupa |
+|---|---|
+| **Borrador** | Borrador |
+| **Enviada** | Enviada |
+| **Vista** | Vista |
+| **Aprobada** | Aprobada |
+| **Pagada** | Pagada y Facturada |
+
+Las rechazadas y las vencidas no aparecen en el tablero; las ves en la Lista con el
+filtro **Cerradas**.
+
+{/* MOCKUP: vista de Tablero con las cinco columnas, cada una con su conteo y total ("Enviada · 4 · MXN 186,400"), una tarjeta arrastrándose de Vista a Aprobada con la columna destino resaltada en verde y la pista "↔ Arrastra las tarjetas para avanzar cada cotización en su pipeline." */}
+
+### Movimientos válidos en el tablero
+
+Arrastrar una tarjeta **ejecuta la acción real**, no solo cambia la etiqueta. Solo hay
+tres destinos válidos; la columna se pinta en verde si el movimiento se permite:
+
+| Arrastras a | Desde | Qué hace | Permiso |
+|---|---|---|---|
+| **Enviada** | Borrador | Envía la cotización igual que **Enviar al cliente**: activa el link, manda el correo si el cliente tiene uno y, en Gratis, consume un envío del mes. | Cotizaciones |
+| **Aprobada** | Enviada o Vista | La marca como aprobada en nombre del cliente, igual que **Marcar aprobada**: habilita el cobro y, si pediste anticipo, genera el plan de pagos. No queda firma del cliente. | Aprobaciones |
+| **Pagada** | Aprobada o Facturada | Registra el pago a mano, igual que **Registrar pago**, y cancela los cobros en línea pendientes. | Cotizaciones |
+
+Cualquier otro movimiento, incluido regresar una tarjeta, se rechaza con "Ese
+movimiento no es válido en el pipeline." Si el servidor rechaza la acción (por
+ejemplo, por permisos o por el tope de envíos), la tarjeta vuelve a su columna y ves
+el motivo.
 
 <Callout type="info">
-**Resumen arriba de la tabla:** antes de la lista de filtros verás el valor total de tus cotizaciones abiertas, el valor ya aprobado y, si aplica, cuántas están esperando tu aprobación interna — la foto rápida de tu pipeline sin tener que sumar nada a mano.
-
+**En celular no hay tablero.** Por debajo de 880 px, Cotizaciones muestra solo la
+lista, con cada cotización en dos líneas. Para avanzar una cotización, ábrela y usa los
+botones del detalle.
 </Callout>
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Inicio, KPI, embudo, tendencia y tablero | Sí | Sí | Sí | Sí | Sí |
+| Flujo esperado, Salud, Necesitan seguimiento, Pipeline esperado | Vacíos | Vacíos | Sí | Sí | Sí |
+| Antigüedad de cartera | Vacía | Vacía | Sí | Sí | Sí |
+
+## Problemas comunes
+
+**No veo el embudo ni la tendencia.** Tu rol no tiene el permiso Informes.
+
+**Salud del pipeline sale en ceros.** Tu plan no incluye el panel financiero (Pro o superior), o no tienes cotizaciones abiertas.
+
+**Cambié el rango y un widget no cambió.** Ese widget es una foto de hoy; ver la tabla de arriba.
+
+**No puedo arrastrar una tarjeta.** Estás en un celular, o el destino no es válido para el estado actual.
+
+## Relacionadas
+
+- [Gestión de cotizaciones](/docs/gestion/cotizaciones)
+- [Informes y desempeño](/docs/gestion/informes)
+- [Tareas y seguimiento](/docs/gestion/tareas)
+- [Mapa completo de la app](/docs/operacion/mapa-de-la-app)

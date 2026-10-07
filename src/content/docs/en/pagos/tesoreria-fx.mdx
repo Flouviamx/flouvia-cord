@@ -1,6 +1,11 @@
 ---
 title: "Treasury and FX Lock"
 description: "Where to see your cash-flow forecast, the status of late interest, and 30-day FX coverage."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quote in a currency different from your accounting currency to use FX Lock", "Pro plan or higher for the 90-day cash flow"]
 ---
 
 <header class="content-header">
@@ -12,13 +17,13 @@ description: "Where to see your cash-flow forecast, the status of late interest,
 
 This document covers three distinct financial tools in Cord that sometimes get confused with each other because they all touch "money", but they live in different parts of the app:
 
-- **Cash-flow forecasting** (90 days out, with the AI CFO Insight) lives in **`/app/informes`**, not in My Payments. It's an analytics report, separate from the [Cord Payments dashboard](/en/docs/pagos/dashboard) that shows what you've already collected.
-- **Late-payment interest** is configured in **Settings › Approvals**.
+- **Cash-flow forecasting** 90 days out is the **Cash flow · 90 days** report in **Reports** (`/app/informes`), not in My Payments. It requires the Pro plan or higher. It's an analytics report, separate from the [Cord Payments dashboard](/en/docs/pagos/dashboard) that shows what you've already collected.
+- **Late-payment interest** appears in **Settings › Approvals** (currently suspended; see below).
 - **FX Lock** is a property of each individual quote in the editor, not a separate panel.
 
 ## 90-Day Cash Flow
 
-In `/app/informes`, the cash-flow report cross-references the credit terms of your open quotes with each client's **real payment behavior history**.
+In **Reports › Cash flow · 90 days** (Pro plan or higher), the report cross-references the credit terms of your open quotes with each client's **real payment behavior history**.
 
 If a client has Net 30 terms but historically pays 15 days late on average, the forecast adjusts the expected incoming capital based on that real behavior — it doesn't assume everything gets paid exactly on the due date — giving you a more realistic view of your 90-day liquidity.
 
@@ -52,8 +57,9 @@ different selling currency in the quote editor, the currency coverage panel appe
 When you save a quote in another currency, Cord takes that day's exchange rate and
 **locks it for 30 days**:
 
-- **Protection cushion:** you can add a margin on top of the day's rate to absorb
-  volatility during the credit window. You choose how much.
+- **Protection cushion:** you add a margin on top of the day's rate to absorb
+  volatility during the credit window. In the editor you choose **Slightly** (+1%),
+  **Normal** (+2%, the default), or **Cautious** (+5%).
 - **Certainty on both sides:** your client knows exactly what they pay in their
   currency, and you know the rate your books will see even if the market moves between
   approval and payment.

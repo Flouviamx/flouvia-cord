@@ -1,6 +1,11 @@
 ---
 title: "Monthly retainers"
 description: "Turn your quotes into automatic monthly subscriptions where the client authorizes their card only once."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Active Cord Payments account with card turned on", "Upfront quote without a deposit", "Collections permission to cancel a retainer"]
 ---
 
 <header class="content-header">
@@ -26,7 +31,7 @@ For the recurring model to work, it is strictly required that you have Cord Paym
 
 When you send the quote link, the client will read their proposal normally, but they will notice the approval button is different:
 
-1. The button will say **"Authorize monthly charge of $X"**.
+1. The button will say **"Authorize monthly charge"**, next to the monthly amount and its currency (for example, $12,000.00 MXN). On the payment screen, the final button shows that same amount per month.
 2. Upon clicking, the client will securely enter their credit or debit card.
 3. The system will make the **first charge immediately** to activate the retainer, marking the quote as Approved.
 4. Cord Payments handles **tokenizing the card** and charging that exact amount automatically every month, sending the funds straight to your bank account.
@@ -34,7 +39,7 @@ When you send the quote link, the client will read their proposal normally, but 
 You never store card data — the system handles tokenization and automatic retries if the client's card fails one month due to insufficient funds. If a monthly charge fails, you'll see it flagged in the "Active retainers" widget on the [payments dashboard](/en/docs/pagos/dashboard).
 
 <Callout type="info">
-Every monthly charge pays the same fee as a normal card payment — there's no volume discount for recurring charges. That fee (4% + $3.00 MXN + VAT) is the current rate for retainers charged in Mexican pesos; for a retainer in another currency, check **Settings › Payments**. See the details in [Fees and advantages](/en/docs/pagos/condiciones).
+Every monthly charge pays the same total fee as a normal card payment — there's no volume discount for recurring charges. That total fee (4% + $3.00 MXN + VAT, which includes card processing) is the current rate for retainers charged in Mexican pesos (MXN). On a retainer in another currency, Cord applies no platform fee today; **Settings › Payments** shows this in your account's currency. See the details in [Fees and advantages](/en/docs/pagos/condiciones).
 </Callout>
 
 ## Cancellation

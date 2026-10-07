@@ -1,13 +1,66 @@
 ---
 title: "CLI de Cord"
-seoTitle: "CLI de Cord"
-description: "Inicia sesión desde el navegador, configura tu cuenta con IA, integra tu proyecto y prueba webhooks en tu localhost desde la terminal."
+seoTitle: "CLI de Cord: comandos, opciones y variables"
+description: "Todos los comandos del CLI de Cord (@flouviahq/cli): asistente, login, whoami, logout, setup, init, listen, trigger, simulate y events tail, con sus opciones y variables de entorno."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Node 20 o superior", "Una cuenta de Cord (el CLI solo usa llaves de prueba)"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">CLI de Cord</h1>
-  <p class="page-subtitle">Prueba tu integración completa sin salir de tu máquina.</p>
+  <p class="page-subtitle">Inicia sesión desde el navegador, configura tu cuenta, integra tu proyecto y prueba webhooks en tu localhost.</p>
 </header>
+
+`@flouviahq/cli` es una herramienta de desarrollo: **solo acepta llaves de prueba** (`sk_test_` o `rk_test_`), así que nada de lo que hagas con él toca datos reales. La excepción es `cord setup`, que propone la configuración de tu cuenta real y no aplica nada sin tu aprobación.
+
+## Instalar
+
+Úsalo sin instalar:
+
+```bash
+npx @flouviahq/cli
+```
+
+O instálalo global para tener el comando `cord`:
+
+```bash
+npm install -g @flouviahq/cli
+cord --version
+```
+
+Los ejemplos de esta página usan `cord`; con `npx` es lo mismo anteponiendo `npx @flouviahq/cli`.
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `cord` | Sin comando y en una terminal interactiva, abre el asistente. Fuera de una terminal imprime la ayuda. |
+| `cord wizard` | Abre el asistente explícitamente. |
+| `cord login` | Inicia sesión desde el navegador y guarda una llave de prueba. |
+| `cord whoami` | Muestra la organización, el modo, el permiso y la llave en uso. |
+| `cord logout` | Borra la llave guardada en tu equipo. |
+| `cord setup` | Propone la configuración de tu cuenta con IA; tú la apruebas. |
+| `cord init` | Detecta tu framework y deja la integración lista. |
+| `cord listen` | Reenvía los webhooks de prueba a tu servidor local. |
+| `cord trigger` | Dispara un webhook de prueba. |
+| `cord simulate` | Fuerza el resultado de la próxima emisión fiscal, o simula al cliente o al tiempo. |
+| `cord events tail` | Muestra los eventos conforme ocurren. |
+| `cord help` | La ayuda. También `--help` o `-h`. |
+
+## Opciones globales y variables
+
+| Opción | Variable | Detalle |
+|---|---|---|
+| `--api-key <llave>` | `CORD_API_KEY` | La llave de prueba a usar. Gana sobre la guardada. |
+| `--base-url <url>` | `CORD_BASE_URL` | Origen de Cord. Default `https://cordhq.app`. |
+| `--version`, `-v` | — | Imprime la versión. |
+| `--help`, `-h` | — | Imprime la ayuda. |
+
+La llave se busca en este orden: `--api-key`, `CORD_API_KEY` y la guardada por `cord login` en `~/.config/cord/config.json` (o `$XDG_CONFIG_HOME/cord/config.json`), con permisos `0600`. Una llave en vivo (`sk_live_`, `rk_live_`) o publicable (`pk_`) se rechaza antes de llamar a Cord.
+
+Las opciones aceptan `--opcion valor` y `--opcion=valor`.
 
 ## El asistente
 
@@ -15,70 +68,146 @@ description: "Inicia sesión desde el navegador, configura tu cuenta con IA, int
 npx @flouviahq/cli
 ```
 
-Sin comando, el CLI abre el asistente y te lleva paso a paso:
-
-1. **Conecta tu terminal.** Abre tu navegador con un código; lo confirmas y listo. Si el asistente va a integrar tu proyecto, en la misma pantalla puedes crear también una Secret Key de prueba para él.
+1. **Conecta tu terminal.** Si no hay una sesión válida, abre el inicio de sesión del navegador. Si el asistente va a integrar tu proyecto, en la misma pantalla puedes crear una Secret Key de prueba para él.
 2. **Elige qué hacer** con las flechas y la barra espaciadora: configurar tu cuenta con IA, integrar Cord en el proyecto y probar webhooks en tu localhost.
-3. **Configura tu cuenta con IA.** Te pregunta tu sitio, a qué te dedicas y tu lista de precios, te muestra la propuesta y espera a que la apruebes en el navegador (Enter para seguir sin esperar).
-4. **Integra tu proyecto.** Te dice exactamente qué va a hacer y, si aceptas, instala el SDK con tu gestor de paquetes, crea las rutas y guarda la llave en tu archivo de entorno ignorado por git. Nunca sobrescribe un archivo existente.
-5. **Escucha webhooks.** Abre una sesión, guarda su secreto en tu `.env.local` y reenvía cada evento a tu servidor local.
+3. Cada paso corre como su comando suelto (`setup`, `init`, `listen`) y al final ves un resumen con lo que quedó listo y el siguiente paso.
 
-Al final te deja un resumen con lo que quedó listo y el siguiente paso. Cada paso también existe como comando suelto.
+El asistente necesita una terminal interactiva. En scripts y CI usa los comandos sueltos.
 
-## Instalar e iniciar sesión
+## `cord login`
 
 ```bash
-npm install -g @flouviahq/cli
 cord login
 ```
 
-`cord login` abre tu navegador con un código de confirmación (por ejemplo `WXYZ-2346`). Revisa que sea el mismo que ves en la terminal y autoriza con tu sesión de Cord: la terminal recibe sola una llave **restringida de prueba** y no tienes que copiar nada.
+Abre tu navegador con un código de confirmación (por ejemplo `WXYZ-2346`). Revisa que sea el mismo que ves en la terminal y autoriza con tu sesión de Cord: la terminal recibe sola una llave y no copias nada.
 
-- La llave solo puede usar los simuladores, leer eventos y proponer configuraciones. No toca datos reales ni aplica nada sin tu aprobación.
-- Vence en 90 días y aparece en Desarrolladores › API como `CLI · <tu equipo>`, donde puedes revocarla.
+- La llave es **restringida y de prueba**: solo puede usar los simuladores (`test_helpers`, escritura), leer eventos (`eventos`, lectura) y proponer configuraciones (`setup`, escritura).
+- Vence en 90 días y aparece en **Desarrolladores › API** como `CLI · <nombre de tu equipo>`, donde puedes revocarla. Volver a conectar el mismo equipo revoca la llave anterior.
 - El código vence en 10 minutos y la llave se entrega una sola vez.
-- Sin navegador (un servidor por SSH): `cord login --no-browser` imprime la dirección para abrirla en otro equipo. Para pegar una llave tuya, `cord login --api-key`.
+- El CLI solo abre en el navegador direcciones del mismo origen que `--base-url`.
 
-La llave se guarda en `~/.config/cord/config.json` con permisos `0600`. El CLI rechaza cualquier llave en vivo.
+| Variante | Qué hace |
+|---|---|
+| `cord login --no-browser` | Imprime la dirección para abrirla en otro equipo (por ejemplo, en un servidor por SSH). |
+| `cord login --api-key` | Te pide pegar una llave de prueba tuya y la verifica antes de guardarla. |
+| `cord login --api-key sk_test_...` | Guarda esa llave sin preguntar, después de verificarla. |
 
-## Configurar tu cuenta con IA
+Para `cord listen` y `cord init` también sirve una Secret Key de prueba normal: ponla en `CORD_API_KEY`.
+
+## `cord whoami` y `cord logout`
 
 ```bash
-cord setup --sitio tuempresa.com --archivo lista-de-precios.xlsx
+cord whoami
 ```
 
-Sin opciones, `cord setup` te pregunta por tu sitio, a qué se dedica tu negocio y tu lista de precios (`.csv`, `.xlsx`, `.pdf` o foto, hasta 3 MB). Cord lee lo que le des y propone perfil, marca, impuestos, catálogo y plantillas. La propuesta se abre en tu navegador para que la revises: **nada se aplica hasta que la apruebas**, y la terminal te muestra el resultado en cuanto lo haces.
+```text
+Empresa  Aceros del Norte
+Modo     prueba
+Permiso  write
+Llave    sk_test_…9f2a
+```
 
-Es el mismo asistente del onboarding y del [servidor MCP](/docs/desarrolladores/herramientas/mcp): una sola propuesta, una sola revisión, sin importar por dónde empieces. La propuesta siempre configura tu cuenta real, aunque la llave sea de prueba.
+`cord logout` borra el archivo de configuración. No revoca la llave en Cord: para eso, revócala en **Desarrolladores › API**.
 
-## Integrar tu proyecto
+## `cord setup`
+
+```bash
+cord setup --sitio materialesdelvalle.mx --descripcion "Material de construcción a crédito 30 días" --archivo precios.xlsx
+```
+
+| Opción | Detalle |
+|---|---|
+| `--sitio <url>` | Tu sitio web: nombre, marca y contacto. |
+| `--descripcion <texto>` | A qué se dedica el negocio, cómo cobra y qué impuestos maneja. |
+| `--archivo <ruta>` | Lista de precios: `.csv`, `.xlsx`, `.pdf` o foto, hasta 3 MB. |
+
+Sin opciones, te pregunta lo mismo paso a paso. Cord arma la propuesta, la abre en tu navegador y espera tu aprobación (hasta 30 minutos; Enter deja de esperar). **Nada se aplica hasta que la apruebas.** La propuesta siempre configura tu cuenta real, aunque la llave sea de prueba, y cuenta en el límite de 6 propuestas al día. Detalle en [Configuración asistida](/docs/desarrolladores/herramientas/configuracion-asistida).
+
+## `cord init`
 
 ```bash
 cord init
 ```
 
-Detecta tu framework (Next.js, Astro, Express, Laravel, Django, Flask o FastAPI), te da el comando para instalar el SDK, crea la ruta de webhooks con la firma verificada y escribe tus variables de prueba en un archivo de entorno que git ignora. Nunca sobrescribe un archivo existente.
+Detecta el framework de la carpeta actual, te dice exactamente qué va a hacer y, si aceptas, lo hace. Nunca sobrescribe un archivo existente.
 
-## Recibir webhooks en tu localhost
+| Framework | Instala | Crea o sugiere | Archivo de entorno |
+|---|---|---|---|
+| Next.js (App Router) | `@flouviahq/node` y `@flouviahq/elements` | `app/api/webhooks/cord/route.ts` y el proxy `app/api/cord/[...path]/route.ts` (bajo `src/` si existe `src/app`) | `.env.local` |
+| Astro | `@flouviahq/node` y `@flouviahq/elements` | `src/pages/api/webhooks/cord.ts` | `.env.local` |
+| Next.js (Pages Router), Express | `@flouviahq/node` y `@flouviahq/elements` | Te muestra la ruta de webhooks para pegar | `.env` |
+| Laravel, Django, Flask, FastAPI | Nada: los SDK de PHP y Python aún no están publicados | Te muestra una ruta que verifica la firma sin dependencias | `.env` |
+
+- Instala con el gestor de tu proyecto según el lockfile: pnpm, yarn, bun o npm.
+- Escribe `CORD_SECRET_KEY` solo en un archivo de entorno que tu `.gitignore` ignora. Si no hay uno, no escribe llaves y te lo dice.
+- La ruta generada verifica la firma con `CORD_WEBHOOK_SECRET`.
+
+## `cord listen`
 
 ```bash
-cord listen --forward-to http://localhost:3000/api/webhooks/cord
+cord listen --forward-to http://localhost:3000/api/webhooks/cord --env-file .env.local
 ```
 
-Cord no puede hacer peticiones a tu máquina, así que el CLI abre una sesión en la sandbox. Los eventos pasan por el mismo motor de entrega que en producción (firma, versión de la API, historial) y el CLI los reenvía a tu servidor con los headers de firma reales. Al arrancar imprime el secreto de la sesión: ponlo en `CORD_WEBHOOK_SECRET` y verifica con `constructEvent` igual que en producción.
+| Opción | Detalle |
+|---|---|
+| `--forward-to <url>` | **Obligatoria.** URL `http://` o `https://` de tu servidor local. |
+| `--events <lista>` | Solo esos eventos, separados por coma: `--events quote.paid,invoice.paid`. Sin ella, todos. |
+| `--env-file <archivo>` | Guarda ahí el secreto de la sesión como `CORD_WEBHOOK_SECRET`, sin tocar las demás líneas. |
+| `--allow-remote` | Permite reenviar a un host que no es tu máquina. |
 
-- Solo reenvía a `localhost`; para otro host usa `--allow-remote`.
-- `--events quote.paid,invoice.paid` limita los eventos de la sesión.
-- La sesión vence en 24 horas y Ctrl+C la cierra.
+Cord no puede hacer peticiones a tu máquina, así que el CLI abre una **sesión de escucha** en tu entorno de prueba y la consulta cada segundo y medio. Los eventos pasan por el mismo motor que en producción (firma, versión de la API, historial) y el CLI los reenvía con los headers de firma reales. Verifica con `constructEvent` y el secreto de la sesión, igual que en producción.
 
-## Simular
+```text
+│  17:04:12  200  quote.sent                 evt_9d2a6c4e1f8b3a5d7c0e2f4a6b8d1c3e  41 ms
+```
+
+- Por defecto solo reenvía a `localhost`, `127.0.0.1`, `::1` y hosts `*.localhost`. La URL no puede llevar usuario ni contraseña, y una redirección de tu servidor no se sigue.
+- La sesión vence en 24 horas y Ctrl+C la cierra. Puedes tener hasta 3 sesiones abiertas por llave.
+- El secreto de la sesión cambia cada vez y solo sirve para esa sesión.
+- Un evento se da por entregado cuando el CLI lo recoge. Si tu servidor no responde, el CLI lo muestra y no lo reintenta: vuelve a dispararlo con `cord trigger`.
+
+## `cord trigger`
 
 ```bash
-cord trigger invoice.paid                 # evento con datos de ejemplo
-cord trigger quote.approved --objeto <id> # con los datos reales de una cotización de prueba
-cord simulate fiscal pac_caido            # la próxima emisión falla como si el PAC no respondiera
-cord simulate quote <id> vencer           # la cotización vence
-cord events tail --type quote.paid        # eventos conforme ocurren
+cord trigger invoice.paid
+cord trigger quote.approved --objeto 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10
 ```
 
-Son los mismos [simuladores](/docs/desarrolladores/empezar/pruebas) de la API, desde la terminal.
+Dispara cualquiera de los 41 eventos del catálogo a tus endpoints de prueba y a tus sesiones de `cord listen`. Sin `--objeto`, con datos de ejemplo; con el UUID de una cotización o factura de prueba, con sus datos reales. La entrega pasa por el motor real: firma, reintentos e historial en el Workbench.
+
+## `cord simulate`
+
+```bash
+cord simulate fiscal pac_caido
+cord simulate quote 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 vista
+cord simulate quote 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 vencer
+```
+
+| Forma | Efecto |
+|---|---|
+| `simulate fiscal <resultado>` | La próxima emisión fiscal de prueba resulta en `exito`, `pac_caido`, `receptor_invalido`, `certificado_vencido` o `timbre_duplicado`. |
+| `simulate quote <id> vista` | El cliente abre el link: emite `quote.viewed`. |
+| `simulate quote <id> vencer` | La cotización vence: emite `quote.expired`. Solo con una cotización enviada o vista. |
+
+Son los mismos [simuladores](/docs/desarrolladores/empezar/pruebas#simuladores-test-helpers) de la API.
+
+## `cord events tail`
+
+```bash
+cord events tail --type quote.paid
+```
+
+Consulta el [historial de eventos](/docs/desarrolladores/funciones/eventos) cada 2 segundos y muestra los nuevos conforme ocurren, a partir de que arrancas. `--type` filtra por un tipo. Ctrl+C para salir.
+
+## Errores comunes
+
+| Mensaje | Qué hacer |
+|---|---|
+| `No hay sesión. Corre cord login…` | No hay llave en `--api-key`, `CORD_API_KEY` ni en la configuración. |
+| `Esa es una llave en vivo…` | El CLI solo usa llaves de prueba. Crea una `sk_test_` o usa `cord login`. |
+| `Falta --forward-to…` | `cord listen` necesita la URL de tu servidor. |
+| `--forward-to apunta a <host>…` | Para reenviar fuera de tu máquina, agrega `--allow-remote`. |
+| `Ya hay 3 sesiones de escucha abiertas con esta llave…` | Cierra alguna con Ctrl+C o espera a que venza. |
+
+Los errores de la API incluyen el `request_id` entre paréntesis: búscalo en **Desarrolladores › Registros**.

@@ -1,0 +1,230 @@
+---
+title: "Inicio rápido"
+seoTitle: "Inicio rápido de la API de Cord en 5 minutos"
+description: "Crea una llave de prueba, llama a /api/v1/me, crea un cliente y una cotización, envíala y recibe el webhook en tu máquina con la firma verificada en Node."
+lastUpdated: "2026-10-07"
+reviewedBy: "Ingeniería de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Una cuenta de Cord con el Modo desarrollador activo", "Node 20 o superior y curl", "Un correo tuyo para recibir la cotización de prueba"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Inicio rápido</h1>
+  <p class="page-subtitle">De cero a un webhook verificado en cinco minutos, todo en el entorno de prueba.</p>
+</header>
+
+En esta guía creas una llave de prueba, confirmas a qué cuenta pertenece, das de alta un cliente, le armas una cotización, se la envías y recibes los avisos de Cord en tu `localhost` con la firma verificada. Nada de lo que hagas aquí toca tus datos reales: una llave `sk_test_` trabaja sobre el [entorno de prueba](/docs/desarrolladores/empezar/pruebas) de tu cuenta.
+
+<Callout type="warning" title="El correo de prueba sí sale">
+Enviar una cotización de prueba manda un correo real al cliente, con el asunto marcado como prueba. Usa un correo tuyo en el paso 4.
+</Callout>
+
+<Steps>
+
+1. **Crea una llave de prueba.** En la app, activa el **Modo desarrollador** al final del índice de Ajustes y abre la barra **Desarrolladores** al fondo de la pantalla. En la pestaña **API**, crea una **Secret Key** de lectura y escritura en **modo prueba** (si la app ya está en modo prueba, la llave nace de prueba). Empieza con `sk_test_` y se muestra una sola vez: cópiala.
+
+   {/* MOCKUP: pestaña API del Workbench en modo prueba, con el diálogo "Crear llave" abierto (tipo Secret Key, permiso lectura y escritura) y la llave sk_test_ recién creada visible una sola vez con su botón de copiar. */}
+
+   Guárdala en una variable de tu terminal. El CLI de Cord también la lee de ahí:
+
+   ```bash
+   export CORD_API_KEY="sk_test_..."
+   ```
+
+2. **Confirma la llave.** `GET /api/v1/me` responde con la organización, el permiso y el modo de la llave:
+
+   ```bash
+   curl https://cordhq.app/api/v1/me \
+     -H "Authorization: Bearer $CORD_API_KEY"
+   ```
+
+   ```json
+   {
+     "data": {
+       "org": { "id": "5b1f7d9e-3c2a-4e8b-9f61-0a7c4d2e8b13", "nombre": "Aceros del Norte", "plan": "pro" },
+       "scope": "write",
+       "mode": "test"
+     }
+   }
+   ```
+
+   Si ves `"mode": "test"`, todo lo que sigue ocurre en tu entorno de prueba. Un `401` con `code: "invalid_key"` significa que la llave está mal copiada o fue revocada.
+
+3. **Escucha los webhooks en tu máquina.** Cord no puede llamar a tu `localhost`, así que el [CLI](/docs/desarrolladores/herramientas/cli) abre una sesión de escucha y te reenvía cada evento con los headers de firma reales. Primero, el servidor que los recibe. Instala el SDK en una carpeta vacía:
+
+   ```bash
+   npm init -y && npm install @flouviahq/node
+   ```
+
+   Guarda esto como `server.mjs`:
+
+   ```js
+   import { createServer } from 'node:http';
+   import { constructEvent, CordWebhookSignatureError } from '@flouviahq/node';
+
+   createServer(async (req, res) => {
+     if (req.method !== 'POST' || req.url !== '/webhooks/cord') {
+       res.writeHead(404).end();
+       return;
+     }
+     // La firma se calcula sobre el cuerpo CRUDO: no lo parses antes de verificar.
+     const chunks = [];
+     for await (const chunk of req) chunks.push(chunk);
+     try {
+       const event = await constructEvent(Buffer.concat(chunks), req.headers, process.env.CORD_WEBHOOK_SECRET);
+       console.log(event.event, event.id, event.data.id);
+       res.writeHead(200).end('ok');
+     } catch (err) {
+       if (err instanceof CordWebhookSignatureError) {
+         console.error('Firma rechazada:', err.code);
+         res.writeHead(400).end(err.code);
+         return;
+       }
+       throw err;
+     }
+   }).listen(3000, () => console.log('Escuchando en http://localhost:3000/webhooks/cord'));
+   ```
+
+   En una segunda terminal (con la misma `CORD_API_KEY`), abre la sesión de escucha:
+
+   ```bash
+   npx @flouviahq/cli listen --forward-to http://localhost:3000/webhooks/cord
+   ```
+
+   El CLI imprime el **secreto** de la sesión (`whsec_…`). Arranca tu servidor con él en la primera terminal:
+
+   ```bash
+   CORD_WEBHOOK_SECRET="whsec_..." node server.mjs
+   ```
+
+   Deja ambas corriendo. La sesión vence en 24 horas y Ctrl+C la cierra.
+
+4. **Crea un cliente.** Con un correo tuyo:
+
+   ```bash
+   curl https://cordhq.app/api/v1/clientes \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{ "empresa": "Ferretería La Prueba", "contacto": "Ana Torres", "email": "tu-correo@ejemplo.com" }'
+   ```
+
+   ```json
+   { "data": { "id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90" } }
+   ```
+
+   Tu servidor imprime el primer evento:
+
+   ```text
+   client.created evt_4c1e9a7b2d5f8e0a3b6c9d2e5f8a1b4c 0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90
+   ```
+
+5. **Crea la cotización.** Usa el `id` del cliente. Sin `tax_rate`, cada línea toma la tasa predeterminada del catálogo de impuestos de tu cuenta; sin `base_currency`, la cotización va en la divisa de tu cuenta.
+
+   ```bash
+   curl https://cordhq.app/api/v1/cotizaciones \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: 6a1d3f5e-8b2c-4e7a-9d0f-1c3e5a7b9d2f" \
+     -d '{
+       "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90",
+       "items": [
+         { "descripcion": "Instalación de cancelería", "cantidad": 1, "precio_unitario": 12000 }
+       ],
+       "vigencia_dias": 15
+     }'
+   ```
+
+   ```json
+   {
+     "data": {
+       "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+       "token": "3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c",
+       "folio": "COT-0001",
+       "link_publico": "https://cordhq.app/q/3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c",
+       "needs_approval": false,
+       "motivo": null
+     }
+   }
+   ```
+
+   La cotización nace como borrador y tu servidor recibe `quote.created`. El header `Idempotency-Key` hace seguro reintentar: con la misma clave y el mismo cuerpo, Cord devuelve esta misma respuesta en vez de crear una segunda cotización. Genera una clave nueva (por ejemplo con `uuidgen`) para cada cotización distinta.
+
+6. **Envíala.** El envío genera el link y manda el correo al cliente:
+
+   ```bash
+   curl https://cordhq.app/api/v1/cotizaciones/8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 \
+     -H "Authorization: Bearer $CORD_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{ "action": "send" }'
+   ```
+
+   ```json
+   { "data": { "ok": true, "status": "sent", "email": { "sent": true } } }
+   ```
+
+   Si el cliente no tuviera correo, `email` llegaría como `{ "sent": false, "skipped": "el cliente no tiene correo" }` y la cotización quedaría enviada de todos modos. Tu servidor recibe:
+
+   ```text
+   quote.sent evt_9d2a6c4e1f8b3a5d7c0e2f4a6b8d1c3e 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10
+   ```
+
+7. **Simula al cliente.** Abre el link desde el correo o provoca la apertura con un simulador. En otra terminal:
+
+   ```bash
+   npx @flouviahq/cli simulate quote 8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10 vista
+   ```
+
+   Llega `quote.viewed`. Para cerrar el ciclo, apruébala desde la API (`{ "action": "approve" }`) y llegará `quote.approved`.
+
+</Steps>
+
+## Qué contiene cada aviso
+
+Cada entrega es un `POST` con este cuerpo. `id` es la identidad del **evento** (igual en cada reintento: deduplica con él) y `data` es el resumen de la cotización:
+
+```json
+{
+  "id": "evt_9d2a6c4e1f8b3a5d7c0e2f4a6b8d1c3e",
+  "event": "quote.sent",
+  "created_at": "2026-10-07T17:04:12.318Z",
+  "data": {
+    "id": "8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10",
+    "folio": "COT-0001",
+    "status": "sent",
+    "moneda": "MXN",
+    "total": 13920,
+    "cliente": "Ferretería La Prueba",
+    "cliente_id": "0e6f2b8a-91c4-4d7e-b3a5-6c2d8f1e4a90",
+    "link_publico": "https://cordhq.app/q/3f9a1c2e7b4d6f8a0b1c2d3e4f5a6b7c"
+  }
+}
+```
+
+El `total` de este ejemplo incluye el IVA del 16 % de una cuenta mexicana; en tu cuenta saldrá con tus tasas. Todo importe viaja con su `moneda`.
+
+## Lo mismo con el SDK de Node
+
+```js
+import { Cord } from '@flouviahq/node';
+
+const cord = new Cord(process.env.CORD_API_KEY);
+
+const me = await cord.me();
+const cliente = await cord.clients.create({ empresa: 'Ferretería La Prueba', email: 'tu-correo@ejemplo.com' });
+const cotizacion = await cord.quotes.create({
+  cliente_id: cliente.id,
+  items: [{ descripcion: 'Instalación de cancelería', cantidad: 1, precio_unitario: 12000 }],
+});
+await cord.quotes.send(cotizacion.id);
+console.log(me.mode, cotizacion.folio, cotizacion.link_publico);
+```
+
+El SDK manda una `Idempotency-Key` en cada operación que escribe y la repite en sus reintentos. Ver [SDK de Node](/docs/desarrolladores/herramientas/sdks).
+
+## Siguientes pasos
+
+- [Webhooks](/docs/desarrolladores/herramientas/webhooks): registra un endpoint real, reintentos, rotación de secreto y verificación manual de la firma.
+- [Eventos](/docs/desarrolladores/funciones/eventos): los 41 tipos de evento y el historial por API.
+- [API de Cotizaciones](/docs/desarrolladores/funciones/cotizaciones): aprobar, rechazar, marcar pagada y borrar.
+- [Manejo de errores](/docs/desarrolladores/esenciales/errores): todos los códigos y cuándo reintentar.
+- Antes de producción, crea una llave `sk_live_` y registra tu endpoint en el Workbench: el secreto de `cord listen` solo sirve para la sesión.

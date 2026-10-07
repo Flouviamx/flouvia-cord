@@ -1,8 +1,8 @@
 ---
 title: "Facturas recurrentes"
-description: "Cómo repetir una factura mensual, trimestral o anualmente, qué datos se congelan, cómo se emite cada documento y qué ocurre al pausar, fallar o eliminar la recurrencia."
-lastUpdated: "2026-09-08"
-reviewedBy: "Producto y operaciones fiscales de Cord"
+description: "Cómo repetir una factura cada mes, qué datos se congelan, cómo se emite cada documento y qué ocurre al pausar, fallar o eliminar la recurrencia."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Pro, Scale, Developer]
 prerequisites: ["Permiso Cobranza", "Una factura emitida correctamente", "Datos fiscales vigentes para cada emisión"]
@@ -12,10 +12,6 @@ prerequisites: ["Permiso Cobranza", "Una factura emitida correctamente", "Datos 
   <h1 class="page-title">Facturas recurrentes</h1>
   <p class="page-subtitle">Repite una factura emitida sin volver a capturar los mismos conceptos cada periodo.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 Una **factura recurrente** es una instrucción para crear y emitir documentos nuevos en
 un calendario. No es el mismo producto que una **iguala con cobro recurrente**:
@@ -31,11 +27,14 @@ pago. Cada factura nueva entra a cobranza según su vencimiento y pagos registra
 La recurrencia nace desde una factura que ya se emitió correctamente:
 
 1. abre **Facturas** y entra al detalle de la factura base;
-2. elige **Repetir esta factura** o **Crear recurrencia**;
-3. asigna un nombre interno;
-4. selecciona cadencia mensual, trimestral o anual;
-5. define día de emisión, días de crédito, primera emisión y, si aplica, fecha final;
-6. confirma.
+2. en **Más acciones**, elige **Repetir cada mes**;
+3. Cord crea la recurrencia y te lleva a **Facturas › Ver recurrentes**.
+
+La recurrencia que crea la app es **mensual**: emite el día 1 de cada mes, con
+vencimiento el mismo día de la emisión (0 días de crédito). Su nombre interno es el
+del cliente o, si no lo tiene, el folio de la factura base. Hoy la app no permite
+cambiar después la cadencia, el día, los días de crédito ni una fecha final; desde
+la lista puedes pausarla, reanudarla o eliminarla.
 
 Cord copia cliente, moneda, notas y los conceptos del snapshot emitido. No vuelve a
 leer el precio actual del catálogo. Así, un cambio posterior en Productos no altera
@@ -43,12 +42,11 @@ la programación silenciosamente.
 
 ## Calendario y vencimiento
 
-- **Cadencia:** mensual, trimestral o anual.
-- **Día del mes:** de 1 a 28. El límite evita saltarse febrero.
-- **Días de crédito:** de 0 a 365; se suman a la fecha de cada emisión.
-- **Primera emisión:** si no la indicas, Cord calcula el próximo periodo según cadencia
-  y día.
-- **Fecha final:** opcional; después de ella no se seleccionan nuevas emisiones.
+- **Cadencia:** mensual.
+- **Día del mes:** el día 1. El día de emisión nunca pasa del 28, para no saltarse febrero.
+- **Días de crédito:** 0; el vencimiento de cada factura es su fecha de emisión.
+- **Primera emisión:** Cord calcula el próximo periodo según la cadencia y el día.
+- **Fecha final:** ninguna; la recurrencia sigue activa hasta que la pausas o la eliminas.
 
 Un proceso diario busca recurrencias activas cuya próxima fecha ya llegó. Las
 organizaciones sandbox no emiten documentos recurrentes.
@@ -79,8 +77,8 @@ próxima fecha, número de documentos emitidos, estado y último error.
 - **Reanudar** vuelve a habilitarla si el plan sigue incluyendo recurrencias.
 - **Eliminar** borra la programación, no las facturas que ya produjo.
 
-Pausar siempre debe estar disponible, incluso después de bajar de plan. Crear, editar
-o reanudar requiere Pro o superior y se vuelve a validar en cada corrida.
+Pausar siempre está disponible, incluso después de bajar de plan. Crear o reanudar
+requiere Pro o superior, y el plan se vuelve a validar en cada corrida.
 
 ## Si el correo falla
 
