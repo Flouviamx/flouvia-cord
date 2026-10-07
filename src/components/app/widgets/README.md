@@ -12,7 +12,6 @@ Punto de entrada para construir widgets de la app. En VS Code: ⌘P y escribir
 | `ChartWidget.astro` | Encabezado, datos declarativos, gráfica y estado vacío | Informes; líneas, barras, rankings, embudo y segmentos |
 | `ListWidget.astro` | Filas, enlaces, detalles y estado vacío | Volumen de productos |
 | `WidgetHeader.astro` | Título y descripción uniformes | Gráficas y listas |
-| `ChartPreview.astro` | Miniatura estática derivada de datos reales | Biblioteca de gráficas, aun estando ocultas |
 
 ```astro
 ---
@@ -34,7 +33,15 @@ reescribir la etiqueta, descripción o superficie.
 
 ## Infraestructura compartida
 
-- `../WidgetGrid.astro`: posiciones, edición, biblioteca, visibilidad y persistencia.
+- `../WidgetGrid.astro`: posiciones, edición, visibilidad y persistencia.
+- `src/lib/widget-library.ts`: la biblioteca flotante (tarjeta anclada al botón en
+  escritorio, hoja inferior en móvil). Se monta en `<body>` para escapar del
+  `transform` y los `overflow:hidden` de los ancestros del grid.
+- `src/lib/widget-preview.ts`: miniaturas de la biblioteca, dibujadas con los MISMOS
+  datos que la tarjeta trae en su markup (`data-items`, `data-points`, `data-steps`,
+  `data-segments`, `data-slices`, `data-values`, `.kpi-num`, filas de lista). Un
+  widget nuevo se ve bien en la biblioteca si declara sus datos así; no hace falta
+  una plantilla aparte.
 - `../WidgetEditButtons.astro`: controles de cada widget.
 - `../WidgetCustomizeButtons.astro`: entrada/salida del editor.
 - `../WidgetEmpty.astro`: estados vacíos existentes.
@@ -79,8 +86,10 @@ Catálogo opcional (13 widgets):
 - Cobranza IA: fallos de envío en 30 días.
 
 Todos usan datos ya cargados por su página; conservan sus rangos y permisos.
-La biblioteca permite buscar, filtrar Todos/Para agregar y recuperar widgets.
-Las previews son inertes, sin IDs ni bindings duplicados.
+La biblioteca permite buscar, filtrar por Todos / Para agregar / categoría
+(`group`) y recuperar widgets. Un widget oculto desde el servidor (permiso, plan o
+conexión) queda bloqueado y la biblioteca no lo ofrece. Las miniaturas no clonan
+DOM: no arrastran ids ni bindings.
 
 La migración es incremental: Informes comparte la superficie de todas sus tarjetas;
 varias gráficas y la lista de volumen ya son componentes completos. Los widgets

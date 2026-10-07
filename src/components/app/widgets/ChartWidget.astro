@@ -1,6 +1,5 @@
 ---
 import WidgetCard from './WidgetCard.astro';
-import ChartPreview from './ChartPreview.astro';
 import WidgetHeader from './WidgetHeader.astro';
 import type { Props as CardProps } from './WidgetCard.astro';
 interface Props extends Omit<CardProps, 'contentClass'> {
@@ -18,6 +17,5 @@ const dataKey = kind === 'line' ? 'data-points' : kind === 'funnel' ? 'data-step
     <WidgetHeader title={card.title} description={card.description} />
     <div class="chart-host report-chart" data-chart={kind} data-format={format}
         {...{[dataKey]:JSON.stringify(data)}} data-empty-icon={emptyIcon} data-empty-title={emptyTitle} data-empty-desc={emptyDescription}></div>
-    <ChartPreview title={card.title} kind={kind} data={data} />
     <slot />
 </WidgetCard>

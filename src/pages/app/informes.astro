@@ -103,7 +103,7 @@ import { iconInner } from '../../lib/icons';
                 etapa: Object.fromEntries(['created_sent', 'sent_viewed', 'viewed_approved', 'approved_paid'].map((k) => [k, t(L, `inf.etapa.${k}` as any)])),
                 vacio: t(L, 'inf.sin_resultados_rango'),
             })}>
-        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} serverPrefs={ME.widgetPrefs?.[`cord.report.${reportId}.v1`] as Record<string, unknown> | undefined} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" trayTitle={es ? 'Widgets ocultos' : 'Hidden widgets'} resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels} librarySearchPlaceholder={es ? 'Buscar widgets…' : 'Search widgets…'} libraryNoResults={es ? 'Sin resultados' : 'No results'} libraryAddLabel={es ? 'Agregar' : 'Add'}>
+        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} serverPrefs={ME.widgetPrefs?.[`cord.report.${reportId}.v1`] as Record<string, unknown> | undefined} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels}>
             {reportId === 'resumen' && <ResumenReport data={data} L={L} />}
             {reportId === 'comercial' && <ComercialReport data={data} L={L} />}
             {reportId === 'finanzas' && <FinanzasReport data={data} L={L} />}

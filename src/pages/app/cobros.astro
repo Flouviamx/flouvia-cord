@@ -125,9 +125,8 @@ const CBR_T = {
         <WidgetGrid
             id="cobrosWidgets" storageKey="cord.cobros.v1"
             serverPrefs={ME.widgetPrefs?.['cord.cobros.v1'] as Record<string, unknown> | undefined}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbrEditBtn" doneButtonId="cbrDoneBtn" resetButtonId="cbrResetBtn"
-            trayTitle={t(L, 'cbr.widgets_ocultos')} resetConfirm={t(L, 'cbr.reset_confirm')}
+            resetConfirm={t(L, 'cbr.reset_confirm')}
             labels={widgetLabels}
         >
             <section class="cbr-zone cbr-balance-zone" data-widget-zone="balance" aria-labelledby="cbrBalanceHeading">

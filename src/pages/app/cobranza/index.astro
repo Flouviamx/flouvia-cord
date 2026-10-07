@@ -126,9 +126,8 @@ import { iconInner } from '../../../lib/icons';
         <WidgetGrid
             id="cobranzaWidgets" storageKey="cord.cobranza.v1"
             serverPrefs={ME.widgetPrefs?.['cord.cobranza.v1'] as Record<string, unknown> | undefined}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbzEditBtn" doneButtonId="cbzDoneBtn" resetButtonId="cbzResetBtn"
-            trayTitle={t(L, 'cob.widgets_ocultos')} resetConfirm={t(L, 'cob.reset_confirm')}
+            resetConfirm={t(L, 'cob.reset_confirm')}
             labels={widgetLabels}
         >
             <!-- 1 · Vencido. Clic → filtra la tabla. -->
