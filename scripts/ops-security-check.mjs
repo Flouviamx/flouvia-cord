@@ -1,0 +1,141 @@
+// Contrato de seguridad de Cord Ops. Corre en `npm run security:ops`.
+//
+// Cord Ops es la superficie de mayor privilegio de Cord: lee todas las
+// organizaciones y puede borrarlas. Cada regla de abajo nació de un hallazgo
+// real de la auditoría de oct 2026, y todas fallan en silencio si alguien las
+// revierte: el build pasa, los tests pasan y Ops sigue funcionando. Este script
+// es lo único que nota la regresión.
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+const ROOT = new URL('..', import.meta.url).pathname;
+const read = (p) => readFileSync(join(ROOT, p), 'utf8');
+const failures = [];
+const fail = (rule, detail) => failures.push(`${rule}: ${detail}`);
+
+function walk(dir) {
+    return readdirSync(join(ROOT, dir)).flatMap((name) => {
+        const rel = join(dir, name);
+        return statSync(join(ROOT, rel)).isDirectory() ? walk(rel) : [rel];
+    });
+}
+
+const opsApi = walk('src/pages/api/ops').filter((f) => f.endsWith('.ts'));
+const opsPages = walk('src/pages/ops').filter((f) => f.endsWith('.astro'));
+const opsCode = [...opsApi, ...opsPages, 'src/lib/ops-auth.ts'];
+
+// 1. Ops nunca verifica contra las passkeys de la app. Esas se registran con
+//    rpID `cordhq.app` y una sesión normal como única prueba: aceptarlas
+//    convertía una cookie robada de la app en acceso a Ops. Aplica al código de
+//    AUTENTICACIÓN; las fichas de Ops sí pueden mostrar las passkeys de un cliente.
+for (const file of [...opsApi, 'src/lib/ops-auth.ts']) {
+    const src = read(file);
+    if (/\b(from|join|update|into)\s+passkeys\b/.test(src)) {
+        fail('passkeys-propias', `${file} consulta la tabla \`passkeys\` de la app; Ops usa \`ops_passkeys\``);
+    }
+    if (/rpID\s*[:=]\s*['"]cordhq\.app['"]/.test(src) || /expectedRPID:\s*['"]cordhq\.app['"]/.test(src)) {
+        fail('passkeys-propias', `${file} usa el rpID de la app`);
+    }
+}
+const auth = read('src/lib/ops-auth.ts');
+if (!/OPS_RP_ID\s*=\s*import\.meta\.env\.PROD\s*\?\s*'ops\.cordhq\.app'/.test(auth)) {
+    fail('passkeys-propias', 'OPS_RP_ID debe ser `ops.cordhq.app` en producción');
+}
+
+// 2. El login de Ops no comparte el bloqueo de la app ni lo reinicia al
+//    acertar la contraseña (eso permitía adivinar el TOTP sin bloquearse).
+const login = read('src/pages/api/ops/auth.ts');
+for (const legacy of ['checkAndConsumeLockout', 'recordFailedLogin', 'resetFailedLogins']) {
+    if (login.includes(legacy)) fail('bloqueo-propio', `api/ops/auth.ts usa ${legacy}() del login de la app`);
+}
+const postHandler = login.slice(login.indexOf('export const POST'), login.indexOf('export const PUT'));
+if (/resetOpsLockout/.test(postHandler.slice(postHandler.indexOf('createOpsChallenge') - 400, postHandler.indexOf('createOpsChallenge')))) {
+    fail('bloqueo-propio', 'el paso de contraseña reinicia el contador antes del TOTP');
+}
+if (!/claimOpsTotpStep/.test(login)) fail('totp-un-uso', 'el TOTP de Ops debe reclamar su paso (anti-replay)');
+
+// 3. Toda ruta de API de Ops que muta exige operador, y las de administración
+//    exigen rol admin. Las de login son la excepción por definición.
+const LOGIN_ROUTES = new Set(['src/pages/api/ops/auth.ts', 'src/pages/api/ops/passkey-options.ts', 'src/pages/api/ops/passkey-verify.ts']);
+const ADMIN_ROUTES = ['src/pages/api/ops/users/[id].ts', 'src/pages/api/ops/organizations/[id].ts', 'src/pages/api/ops/security.ts', 'src/pages/api/ops/status-incidents.ts'];
+for (const file of opsApi) {
+    if (LOGIN_ROUTES.has(file)) continue;
+    const src = read(file);
+    if (!/export const (POST|PATCH|PUT|DELETE)/.test(src)) continue;
+    if (!/locals\.opsOperator/.test(src)) fail('operador', `${file} muta sin leer locals.opsOperator`);
+}
+for (const file of ADMIN_ROUTES) {
+    if (!/role\s*!==\s*'admin'/.test(read(file))) fail('rol-admin', `${file} no exige rol admin`);
+}
+
+// 4. Lo irreversible exige autenticación fuerte reciente.
+const fresh = [
+    'src/pages/api/ops/users/[id].ts',
+    'src/pages/api/ops/organizations/[id].ts',
+    'src/pages/api/ops/passkeys/register-options.ts',
+    'src/pages/api/ops/passkeys/register.ts',
+    'src/pages/api/ops/passkeys/[id].ts',
+];
+for (const file of fresh) {
+    if (!/requireFreshOpsAuth\(/.test(read(file))) fail('auth-reciente', `${file} no exige requireFreshOpsAuth()`);
+}
+
+// 5. Borrar una organización suelta primero su suscripción.
+if (!/releaseOrgBilling\(/.test(read('src/pages/api/ops/organizations/[id].ts'))) {
+    fail('borrado-org', 'Ops borra organizaciones sin cancelar su suscripción (releaseOrgBilling)');
+}
+
+// 6. Suspender revoca también el acceso delegado (OAuth y CLI).
+const users = read('src/pages/api/ops/users/[id].ts');
+if (!/oauth_grants/.test(users) || !/cli_logins/.test(users)) {
+    fail('suspension', 'suspender no revoca permisos OAuth ni llaves del CLI');
+}
+
+// 7. Un `__Host-` no se borra sin `secure`: el logout dejaba la cookie viva.
+for (const file of opsCode) {
+    const src = read(file);
+    for (const m of src.matchAll(/cookies\.delete\((OPS_[A-Z_]+),\s*([^)]*)\)/g)) {
+        if (!m[2].includes('opsCookieDeleteOptions')) fail('cookies', `${file} borra ${m[1]} sin opsCookieDeleteOptions()`);
+    }
+}
+
+// 8. El explorador lee en el carril de Ops, es solo para admin y audita la
+//    vista en la misma transacción (antes era fire-and-forget).
+const explorer = read('src/pages/ops/database/[table].astro');
+if (!/withOpsTx\(/.test(explorer)) fail('explorador', 'la tabla se lee fuera de withOpsTx');
+if (!/opsAuditQuery\(/.test(explorer) || /logOpsAudit\(/.test(explorer)) fail('explorador', 'la vista debe auditarse dentro de la misma transacción');
+if (!/role\s*!==\s*'admin'/.test(explorer)) fail('explorador', 'el explorador de filas debe ser solo para admin');
+
+// 9. Schema: bitácora de solo agregar y políticas de Ops por comando. Ninguna
+//    redefinición posterior al bloque de endurecimiento puede deshacerlo.
+const schema = read('db/schema.sql');
+const block = schema.indexOf('-- BEGIN ops-hardening');
+const blockEnd = schema.indexOf('-- END ops-hardening');
+if (block < 0 || blockEnd < 0) {
+    fail('schema', 'falta el bloque ops-hardening en db/schema.sql');
+} else {
+    const migration = read('db/migrations/2026-10-07-ops-hardening.sql').trim();
+    if (!schema.includes(migration)) fail('schema', 'schema.sql y db/migrations/2026-10-07-ops-hardening.sql divergen');
+    if (!/trg_ops_audit_log_append_only/.test(schema.slice(block, blockEnd))) fail('schema', 'ops_audit_log sin trigger de solo agregar');
+    for (const name of ['rls_clientes', 'rls_productos', 'rls_api_keys', 'rls_webhooks', 'rls_sso_connections', 'ops_payouts', 'ops_connect_personas', 'ops_connect_kyc_evidencia']) {
+        const last = schema.lastIndexOf(`create policy "${name}"`);
+        if (last > blockEnd) fail('schema', `${name} se redefine después del bloque ops-hardening`);
+    }
+    // Una política nueva que mencione el carril de Ops se limita a un comando.
+    for (const stmt of schema.slice(blockEnd).match(/create policy[^;]*;/gi) || []) {
+        if (/'ops'/.test(stmt) && !/\bfor (select|update)\b/i.test(stmt)) {
+            fail('schema', `política posterior al endurecimiento otorga \`ops\` sin limitarla a SELECT o UPDATE: ${stmt.slice(0, 80)}`);
+        }
+    }
+}
+const role = read('db/cord-app-role.sql');
+if (!/revoke update, delete, truncate on ops_audit_log from cord_app/.test(role)) {
+    fail('schema', 'db/cord-app-role.sql debe revocar update/delete/truncate de ops_audit_log');
+}
+
+if (failures.length) {
+    console.error(`security:ops — ${failures.length} violaciones del contrato de Cord Ops\n`);
+    for (const f of failures) console.error(`  - ${f}`);
+    process.exit(1);
+}
+console.log(`security:ops — ${opsApi.length} rutas de API y ${opsPages.length} páginas de Ops cumplen el contrato.`);

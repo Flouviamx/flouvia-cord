@@ -49,6 +49,7 @@ if (!orgRows.length) return Astro.redirect('/ops/organizations');
 const org: any = orgRows[0];
 const commerce: any = commerceRows[0] || {};
 const endpoint = `/api/ops/organizations/${id}`;
+const isAdmin = Astro.locals.opsOperator?.role === 'admin';
 const plan = org.plan || 'free';
 const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Invitación pendiente';
 ---
@@ -58,12 +59,12 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
   <section class="ops-card">
     <div class="ops-detail-hero">
       <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p></div></div>
-      <div class="ops-detail-actions">
-        <button class="ops-button secondary sm" data-ops-action="revoke_api_keys" data-endpoint={endpoint} data-title="Revocar llaves API" data-description={`Revocará ${org.active_api_keys} llaves activas.`}>Revocar llaves API</button>
-        <button class="ops-button secondary sm" data-ops-action="disable_webhooks" data-endpoint={endpoint} data-title="Desactivar webhooks" data-description={`Desactivará ${org.active_webhooks} endpoints activos.`}>Desactivar webhooks</button>
+      {isAdmin && <div class="ops-detail-actions">
+        <button class="ops-button secondary sm" data-ops-action="revoke_api_keys" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Revocar llaves API" data-description={`Revocará ${org.active_api_keys} llaves activas. No se puede deshacer: el negocio tendrá que crear llaves nuevas.`}>Revocar llaves API</button>
+        <button class="ops-button secondary sm" data-ops-action="disable_webhooks" data-endpoint={endpoint} data-confirm={org.nombre} data-title="Desactivar webhooks" data-description={`Desactivará ${org.active_webhooks} endpoints activos.`}>Desactivar webhooks</button>
         <button class="ops-button danger-soft sm" data-ops-action="revoke_member_sessions" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Cerrar sesiones del equipo" data-description="Cerrará las sesiones Cord de todos los miembros.">Cerrar sesiones</button>
-        {!org.protected && <button class="ops-button danger sm" data-ops-action="delete_organization" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Eliminar organización" data-description="Eliminará permanentemente el workspace y toda su información dependiente.">Eliminar</button>}
-      </div>
+        {!org.protected && <button class="ops-button danger sm" data-ops-action="delete_organization" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Eliminar organización" data-description="Cancelará su suscripción y eliminará permanentemente el workspace y toda su información dependiente. Exige haber entrado a Ops hace menos de 10 minutos.">Eliminar</button>}
+      </div>}
     </div>
     <div class="ops-facts cols-6">
       <div class="ops-fact"><span>Miembros</span><strong>{opsNumber(org.member_count)}</strong></div>

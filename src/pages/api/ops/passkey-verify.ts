@@ -8,20 +8,19 @@ import { trustedIp } from '../../../lib/ip';
 import { sendOpsLoginAlertEmail } from '../../../lib/auth-email';
 import { log } from '../../../lib/log';
 import {
+    OPS_ORIGIN,
     OPS_PASSKEY_CHALLENGE_COOKIE,
+    OPS_RP_ID,
     OPS_SESSION_COOKIE,
     consumeOpsPasskeyChallenge,
     createOpsSession,
     isAllowedOpsEmail,
     logOpsAudit,
     normalizeOpsEmail,
+    opsCookieDeleteOptions,
     opsSessionCookieOptions,
+    resetOpsLockout,
 } from '../../../lib/ops-auth';
-
-const rpID = import.meta.env.PROD ? 'cordhq.app' : 'localhost';
-const expectedOrigin = import.meta.env.PROD
-    ? 'https://ops.cordhq.app'
-    : 'http://localhost:4321';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
     const ip = trustedIp(request);
@@ -36,7 +35,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const expectedChallenge = cookies.get(OPS_PASSKEY_CHALLENGE_COOKIE)?.value;
-    cookies.delete(OPS_PASSKEY_CHALLENGE_COOKIE, { path: '/' });
+    cookies.delete(OPS_PASSKEY_CHALLENGE_COOKIE, opsCookieDeleteOptions());
     let challengedOperatorId: string | null = null;
     try {
         challengedOperatorId = await consumeOpsPasskeyChallenge(expectedChallenge);
@@ -60,13 +59,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     try {
         const rows = await sql`
-            select p.id, p.public_key, p.counter, p.user_id, p.transports,
+            select p.id, p.public_key, p.counter, p.operator_id as user_id, p.transports,
                    u.email, u.email_verified_at, u.suspended_at, o.active,
                    o.email as operator_email
-            from passkeys p
-            join users u on u.id = p.user_id
+            from ops_passkeys p
+            join users u on u.id = p.operator_id
             join ops_operators o on o.user_id = u.id
-            where p.id = ${body.id} and p.user_id = ${challengedOperatorId}
+            where p.id = ${body.id} and p.operator_id = ${challengedOperatorId}
             limit 1
         `;
         if (!rows.length) {
@@ -96,8 +95,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             verification = await verifyAuthenticationResponse({
                 response: body,
                 expectedChallenge,
-                expectedOrigin,
-                expectedRPID: rpID,
+                expectedOrigin: OPS_ORIGIN,
+                expectedRPID: OPS_RP_ID,
                 requireUserVerification: true,
                 credential: {
                     id: passkey.id as string,
@@ -123,8 +122,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
 
         const updated = await sql`
-            update passkeys set counter = ${verification.authenticationInfo.newCounter}, last_used_at = now()
-            where id = ${passkey.id} and user_id = ${challengedOperatorId}
+            update ops_passkeys set counter = ${verification.authenticationInfo.newCounter}, last_used_at = now()
+            where id = ${passkey.id} and operator_id = ${challengedOperatorId}
               and counter = ${Number(passkey.counter)}
             returning id
         `;
@@ -140,6 +139,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             });
             return new Response(JSON.stringify({ error: 'invalid_credential' }), { status: 401 });
         }
+        await resetOpsLockout(passkey.user_id);
         const sessionToken = await createOpsSession(
             passkey.user_id,
             'passkey',

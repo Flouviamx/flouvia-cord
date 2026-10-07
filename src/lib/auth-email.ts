@@ -78,6 +78,23 @@ export async function sendNewDeviceAlertEmail(to: string): Promise<SendResult> {
     });
 }
 
+/** Aviso de una passkey nueva: registrarla es la forma más silenciosa de quedarse con una cuenta. */
+export async function sendPasskeyAddedEmail(to: string): Promise<SendResult> {
+    const L = currentLocale();
+    const link = `${siteOrigin()}/app/ajustes/cuenta`;
+    return sendEmail({
+        to,
+        subject: t(L, 'authEmail.passkey.asunto'),
+        fromName: FROM_NAME,
+        html: shell({
+            titulo: t(L, 'authEmail.passkey.titulo'),
+            cuerpo: `${t(L, 'authEmail.passkey.cuerpo')} ${t(L, 'authEmail.passkey.detalle')}`,
+            ctaLabel: t(L, 'authEmail.passkey.boton'),
+            ctaHref: link,
+        }),
+    });
+}
+
 /** Alerta de cada acceso exitoso al panel privilegiado de plataforma. */
 export async function sendOpsLoginAlertEmail(to: string, ip: string, userAgent: string): Promise<SendResult> {
     const detail = `Se inició una sesión en Cord Ops. IP: ${escapeHtml(ip)}. Dispositivo: ${escapeHtml(userAgent)}. Si no fuiste tú, cambia tu contraseña, revoca tus sesiones y contacta al equipo de inmediato.`;
@@ -90,6 +107,38 @@ export async function sendOpsLoginAlertEmail(to: string, ip: string, userAgent: 
             cuerpo: detail,
             ctaLabel: 'Abrir Cord Ops',
             ctaHref: 'https://ops.cordhq.app/ops',
+        }),
+    });
+}
+
+/** Alguien acertó la contraseña de un operador y falló el TOTP varias veces. */
+export async function sendOpsLockAlertEmail(to: string, ip: string, userAgent: string): Promise<SendResult> {
+    const detail = `Alguien escribió tu contraseña correcta de Cord Ops y falló el código de verificación varias veces, así que el acceso con contraseña quedó bloqueado una hora. IP: ${escapeHtml(ip)}. Dispositivo: ${escapeHtml(userAgent)}. Si no fuiste tú, tu contraseña está comprometida: cámbiala de inmediato. Tu passkey de Ops sigue funcionando.`;
+    return sendEmail({
+        to,
+        subject: 'Intentos bloqueados en Cord Ops',
+        fromName: FROM_NAME,
+        html: shell({
+            titulo: 'Tu contraseña de Cord Ops podría estar comprometida',
+            cuerpo: detail,
+            ctaLabel: 'Cambiar contraseña',
+            ctaHref: `${siteOrigin()}/app/ajustes/cuenta`,
+        }),
+    });
+}
+
+/** Se registró una passkey nueva para Cord Ops. */
+export async function sendOpsPasskeyAddedEmail(to: string, ip: string, userAgent: string): Promise<SendResult> {
+    const detail = `Se registró una passkey nueva para entrar a Cord Ops. IP: ${escapeHtml(ip)}. Dispositivo: ${escapeHtml(userAgent)}. Si no fuiste tú, elimínala desde Seguridad en Cord Ops, cambia tu contraseña y revoca tus sesiones.`;
+    return sendEmail({
+        to,
+        subject: 'Nueva passkey en Cord Ops',
+        fromName: FROM_NAME,
+        html: shell({
+            titulo: 'Nueva passkey de Cord Ops',
+            cuerpo: detail,
+            ctaLabel: 'Revisar en Cord Ops',
+            ctaHref: 'https://ops.cordhq.app/ops/security',
         }),
     });
 }

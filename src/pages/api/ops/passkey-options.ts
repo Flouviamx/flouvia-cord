@@ -8,13 +8,12 @@ import { trustedIp } from '../../../lib/ip';
 import { sha256Hex } from '../../../lib/auth';
 import {
     OPS_PASSKEY_CHALLENGE_COOKIE,
+    OPS_RP_ID,
     createOpsPasskeyChallenge,
     isAllowedOpsEmail,
     normalizeOpsEmail,
     opsChallengeCookieOptions,
 } from '../../../lib/ops-auth';
-
-const rpID = import.meta.env.PROD ? 'cordhq.app' : 'localhost';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
     const ip = trustedIp(request);
@@ -44,7 +43,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             select u.id as operator_id, p.id, p.transports
             from users u
             join ops_operators o on o.user_id = u.id and o.active = true
-            left join passkeys p on p.user_id = u.id
+            left join ops_passkeys p on p.operator_id = u.id
             where lower(u.email) = ${email} and lower(o.email) = ${email}
               and u.email_verified_at is not null and u.suspended_at is null
         `;
@@ -67,7 +66,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Cuenta inexistente/no autorizada recibe una respuesta WebAuthn válida
     // con lista vacía; no revelamos por HTTP si el correo es operador.
     const options = await generateAuthenticationOptions({
-        rpID,
+        rpID: OPS_RP_ID,
         allowCredentials: credentials,
         userVerification: 'required',
         timeout: 60_000,

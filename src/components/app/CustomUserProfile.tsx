@@ -278,7 +278,13 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
   const createPasskey = async () => {
     setAddingPasskey(true);
     try {
-      const optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
+      // El alta exige identidad confirmada hace poco: si el servidor responde
+      // 428, el diálogo de step-up de AppLayout la pide y se reintenta una vez.
+      let optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
+      if (optRes.status === 428 && typeof (window as any).cordStepUp === 'function') {
+        if (!await (window as any).cordStepUp()) { setAddingPasskey(false); return; }
+        optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
+      }
       const options = await optRes.json();
       if (!optRes.ok) throw new Error(options.error || 'Error al iniciar');
       const attResp = await startRegistration(options);

@@ -17,11 +17,26 @@ interface OrgToDelete {
 }
 
 export async function deleteOrgCascade(org: OrgToDelete): Promise<void> {
+    await releaseOrgBilling(org);
+    await withOrgTx(org.id, sql`delete from orgs where id = ${org.id}`);
+}
+
+/**
+ * Lo que hay que soltar en el proveedor ANTES de borrar la fila: la suscripción
+ * (si no, Stripe sigue cobrándole a una organización que ya no existe) y la
+ * constancia de una cuenta Connect viva. Cord Ops la usa por separado porque
+ * borra en su propio carril, con la bitácora en la misma transacción.
+ */
+export async function releaseOrgBilling(org: OrgToDelete): Promise<{ subscriptionCanceled: boolean; connectAccount: boolean }> {
+    let subscriptionCanceled = false;
     if (org.stripe_subscription_id) {
         try {
             await stripe(`/v1/subscriptions/${org.stripe_subscription_id}`, {}, 'DELETE');
-        } catch (e) {
-            log.error('no se pudo cancelar la suscripción al borrar la org', { route: 'org-delete', orgId: org.id, subscriptionId: org.stripe_subscription_id, err: e });
+            subscriptionCanceled = true;
+        } catch (e: any) {
+            // Ya no existe del lado del proveedor: no queda nada que cobrar.
+            if (e?.code === 'resource_missing') subscriptionCanceled = true;
+            else log.error('no se pudo cancelar la suscripción al borrar la org', { route: 'org-delete', orgId: org.id, subscriptionId: org.stripe_subscription_id, err: e });
         }
     }
     if (org.stripe_account_id) {
@@ -30,5 +45,5 @@ export async function deleteOrgCascade(org: OrgToDelete): Promise<void> {
         // real vive en los logs del servidor (Vercel), no en la BD.
         log.warn('org eliminada con cuenta Connect activa — revisar manualmente en el proveedor', { route: 'org-delete', orgId: org.id, orgNombre: org.nombre, connectAccountId: org.stripe_account_id });
     }
-    await withOrgTx(org.id, sql`delete from orgs where id = ${org.id}`);
+    return { subscriptionCanceled, connectAccount: Boolean(org.stripe_account_id) };
 }

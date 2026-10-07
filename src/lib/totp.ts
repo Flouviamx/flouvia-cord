@@ -69,13 +69,25 @@ export function generateTotpSecret(): string {
 
 /** Verifica un código de 6 dígitos contra el secreto, con ventana de ±1 paso (±30s) por deriva de reloj del cliente. */
 export function verifyTotp(base32Secret: string, token: string, window = 1): boolean {
-    if (!/^\d{6}$/.test(token)) return false;
+    return verifyTotpStep(base32Secret, token, window) !== null;
+}
+
+/**
+ * Igual que verifyTotp, pero devuelve el paso (contador de 30 s) que coincidió,
+ * o null. Quien guarda el último paso aceptado puede rechazar que el mismo
+ * código se use dos veces dentro de su ventana de ~90 s.
+ */
+export function verifyTotpStep(base32Secret: string, token: string, window = 1): number | null {
+    if (!/^\d{6}$/.test(token)) return null;
     const secret = base32Decode(base32Secret);
     const counter = Math.floor(Date.now() / 1000 / STEP_SECONDS);
+    let matched: number | null = null;
+    // Recorre la ventana completa aunque ya haya coincidido: el tiempo de
+    // respuesta no debe revelar en qué paso cayó el código.
     for (let drift = -window; drift <= window; drift++) {
-        if (timingSafeEqualStr(hotp(secret, counter + drift), token)) return true;
+        if (timingSafeEqualStr(hotp(secret, counter + drift), token) && matched === null) matched = counter + drift;
     }
-    return false;
+    return matched;
 }
 
 /** URI otpauth:// estándar para que el autenticador dibuje el QR. */

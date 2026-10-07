@@ -36,6 +36,7 @@ if (!userRows.length) return Astro.redirect('/ops/users');
 const user:any=userRows[0];
 const name=[user.first_name,user.last_name].filter(Boolean).join(' ')||'Sin nombre';
 const endpoint=`/api/ops/users/${id}`;
+const isAdmin=Astro.locals.opsOperator?.role==='admin';
 const locked=user.locked_until&&new Date(user.locked_until)>new Date();
 const acts:any=actionStats[0]||{};
 const lastSeen=sessions.reduce((max:any,s:any)=>!max||new Date(s.last_used_at)>new Date(max)?s.last_used_at:max,null);
@@ -45,13 +46,13 @@ const lastSeen=sessions.reduce((max:any,s:any)=>!max||new Date(s.last_used_at)>n
     <div class="ops-links"><a class="ops-back" href="/ops/users">Usuarios</a><a class="ops-link" href={`/ops/activity?user=${id}`}>Toda su actividad</a></div>
     <section class="ops-card">
       <div class="ops-detail-hero"><div class="ops-detail-identity"><span class="ops-avatar">{name==='Sin nombre'?user.email.charAt(0).toUpperCase():name.charAt(0).toUpperCase()}</span><div><h2>{name}</h2><p>{user.email}</p></div></div>
-        <div class="ops-detail-actions">
+        {isAdmin && <div class="ops-detail-actions">
           <button class="ops-button secondary sm" data-ops-action="revoke_sessions" data-endpoint={endpoint} data-title="Revocar sesiones" data-description="Cerrará todas las sesiones normales de Cord de esta cuenta.">Revocar sesiones</button>
           {locked&&<button class="ops-button secondary sm" data-ops-action="unlock" data-endpoint={endpoint} data-title="Desbloquear cuenta" data-description="Restablecerá intentos fallidos y quitará el bloqueo temporal.">Desbloquear</button>}
-          {!user.is_operator&&!user.suspended_at&&<button class="ops-button danger-soft sm" data-ops-action="suspend" data-endpoint={endpoint} data-confirm={user.email} data-reason="true" data-danger="true" data-title="Suspender cuenta" data-description="Impedirá nuevos accesos por contraseña, OAuth, passkey y SSO, y cerrará todas las sesiones actuales.">Suspender</button>}
+          {!user.is_operator&&!user.suspended_at&&<button class="ops-button danger-soft sm" data-ops-action="suspend" data-endpoint={endpoint} data-confirm={user.email} data-reason="true" data-danger="true" data-title="Suspender cuenta" data-description="Impedirá nuevos accesos por contraseña, OAuth, passkey y SSO, cerrará todas las sesiones actuales y revocará sus integraciones autorizadas y llaves del CLI.">Suspender</button>}
           {!user.is_operator&&user.suspended_at&&<button class="ops-button sm" data-ops-action="restore" data-endpoint={endpoint} data-title="Restaurar cuenta" data-description="Devolverá el acceso a la cuenta y limpiará cualquier bloqueo temporal.">Restaurar</button>}
-          {!user.is_operator&&<button class="ops-button danger sm" data-ops-action="delete_user" data-endpoint={endpoint} data-confirm={user.email} data-danger="true" data-title="Eliminar usuario" data-description="Eliminará permanentemente la identidad si no posee organizaciones.">Eliminar</button>}
-        </div>
+          {!user.is_operator&&<button class="ops-button danger sm" data-ops-action="delete_user" data-endpoint={endpoint} data-confirm={user.email} data-danger="true" data-title="Eliminar usuario" data-description="Eliminará permanentemente la identidad si no posee organizaciones. Exige haber entrado a Ops hace menos de 10 minutos.">Eliminar</button>}
+        </div>}
       </div>
       <div class="ops-facts cols-6"><div class="ops-fact"><span>Última vez</span><strong>{opsAgo(lastSeen,'Nunca')}</strong></div><div class="ops-fact"><span>Acciones 30 días</span><strong>{opsNumber(acts.actions_30d)} · {opsNumber(acts.actions_7d)} en 7 días</strong></div><div class="ops-fact"><span>Estado</span><strong>{user.suspended_at?'Suspendida':locked?'Bloqueada':'Activa'}</strong></div><div class="ops-fact"><span>Correo</span><strong>{user.email_verified_at?'Verificado':'Pendiente'}</strong></div><div class="ops-fact"><span>Segundo factor</span><strong>{Number(user.passkey_count)>0?'Passkey':user.totp_enabled?'TOTP':'No configurado'}</strong></div><div class="ops-fact"><span>Alta</span><strong>{opsDate(user.created_at)}</strong></div></div>
     </section>

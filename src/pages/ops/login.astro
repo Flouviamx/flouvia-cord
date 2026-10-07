@@ -96,6 +96,12 @@ import { iconInner } from '../../lib/icons';
     const errorBox = document.getElementById('ops-error') as HTMLDivElement;
     const noticeBox = document.getElementById('ops-notice') as HTMLDivElement;
     let totpStage = false;
+    // Destino tras entrar. Solo rutas internas de Ops: un `next` arbitrario
+    // convertiría el login en un redirector abierto.
+    const nextUrl = (() => {
+      const next = new URLSearchParams(window.location.search).get('next') || '';
+      return /^\/ops(\/[A-Za-z0-9_\-\/]*)?(\?[A-Za-z0-9_\-=&%.]*)?$/.test(next) ? next : '/ops';
+    })();
 
     function setBusy(busy: boolean) {
       primary.disabled = busy;
@@ -176,7 +182,7 @@ import { iconInner } from '../../lib/icons';
           return;
         }
         if (response.ok) {
-          window.location.replace('/ops');
+          window.location.replace(nextUrl);
           return;
         }
 
@@ -217,7 +223,7 @@ import { iconInner } from '../../lib/icons';
         });
         const result = await verifyResponse.json().catch(() => ({}));
         if (!verifyResponse.ok) throw new Error(result.code || result.error || 'invalid_credential');
-        window.location.replace('/ops');
+        window.location.replace(nextUrl);
       } catch (error: any) {
         if (error?.name === 'NotAllowedError') {
           message('error', 'La clave de acceso fue cancelada o no está disponible para esta cuenta.');
@@ -226,7 +232,7 @@ import { iconInner } from '../../lib/icons';
         } else if (error?.message === 'access_temporarily_unavailable') {
           message('error', 'El control de acceso no está disponible. Ops permanece cerrado.');
         } else {
-          message('error', 'No pudimos verificar la clave de acceso.');
+          message('error', 'No pudimos verificar la clave de acceso. Ops usa passkeys propias: si aún no registras una, entra con contraseña y código y agrégala en Seguridad.');
         }
       } finally {
         setBusy(false);
