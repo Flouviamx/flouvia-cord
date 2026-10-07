@@ -1629,6 +1629,10 @@ import { iconInner } from '../lib/icons';
     .page-head {
         padding: 1.6rem 2rem 0;
         animation: app-fadein 0.5s var(--ease-spring) both;
+        /* La animación (transform) crea un contexto de apilamiento propio; sin z-index,
+           el contenido que viene después (el grid de widgets, z-index 1) se pintaba
+           ENCIMA de lo que sale del encabezado: tooltips de Biblioteca/Restablecer/Listo. */
+        position: relative; z-index: 3;
     }
     .ph-inner {
         max-width: var(--content-max); width: 100%;

@@ -593,7 +593,7 @@ export async function getVentasVendedor(r: Rango): Promise<TablaReport> {
                    coalesce(sum(c.total * ${fx}) filter (where ${ganada}), 0) as vendido,
                    avg(extract(epoch from (c.approved_at - c.created_at)) / 86400) filter (where ${ganada} and c.approved_at is not null) as dias
               from org_members m
-              left join cotizaciones c on c.creado_por = m.user_id and c.org_id = ${orgId}
+              left join cotizaciones c on c.creado_por = m.user_id::text and c.org_id = ${orgId}
              where m.org_id = ${orgId} and m.estado = 'activo' and m.user_id is not null
              group by m.user_id, coalesce(m.nombre, m.email, 'Sin nombre')
              order by vendido desc, enviadas desc`);

@@ -15,7 +15,7 @@
     gap: 1.4rem;
     position: relative;
     z-index: 1;
-    align-items: start;
+    align-items: stretch;
 }
 [data-widget-grid] > .dash-widget { position: relative; grid-column: span 1; min-width: 0; }
 [data-widget-grid] > .dash-widget[data-span="2"] { grid-column: span 2; }
@@ -31,7 +31,9 @@
 [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="2"] { grid-column: span 2; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="4"] { grid-column: span 4; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget[hidden] { display: none; }
-/* Cards follow their content; a short pipeline never inherits a neighbour's height. */
+/* Las tarjetas de una fila llenan su alto: con `align-items: start` una tarjeta corta
+   ("No hay seguimientos detenidos") junto a una gráfica alta dejaba un hueco vacío
+   en el grid (oct 2026). */
 [data-widget-grid] > .dash-widget > .dash-card,
 [data-widget-grid] > .dash-widget > .surface-card { height: 100%; }
 [data-widget-grid] > [data-widget-zone] > .dash-widget > .dash-card,
@@ -162,6 +164,23 @@
 
 .widget-edit-btn:hover { background: var(--row-hover); }
 .widget-edit-btn:active { transform: scale(0.97); }
+/* Foco solo para teclado, y discreto: el anillo azul grueso del navegador salía
+   también al usar el mouse. */
+.widget-edit-btn:focus { outline: none; }
+.widget-edit-btn:focus-visible { outline: 2px solid rgba(66, 108, 197, 0.55); outline-offset: 2px; }
+
+/* "Personalizar": misma familia que los círculos de edición — superficie blanca,
+   hairline y sombra de contacto — en vez de una píldora gris pesada. */
+.widget-edit-btn.is-customize {
+    min-height: 38px; height: 38px; padding: 0 14px 0 12px; gap: 7px;
+    font-size: 0.8rem; font-weight: 600; letter-spacing: -0.01em;
+    background: var(--surface); color: var(--color-text);
+    box-shadow: 0 1px 2px rgba(10, 25, 47, 0.06);
+}
+.widget-edit-btn.is-customize svg { color: var(--color-text-muted); transition: color 0.15s, transform 0.3s var(--ease-spring); }
+.widget-edit-btn.is-customize:hover { background: var(--surface); border-color: rgba(10, 25, 47, 0.16); box-shadow: 0 2px 8px -2px rgba(10, 25, 47, 0.14); }
+.widget-edit-btn.is-customize:hover svg { color: var(--color-text); transform: rotate(90deg); }
+html[data-theme="dark"] .widget-edit-btn.is-customize:hover { border-color: rgba(255, 255, 255, 0.18); }
 .widget-edit-btn.is-done {
     background: var(--color-blue-deep);
     color: #fff;
@@ -189,7 +208,6 @@
     color: var(--color-blue-deep);
 }
 .widget-edit-btn.is-icon.is-done { background: var(--color-blue-deep); box-shadow: 0 4px 12px rgba(10, 25, 47, 0.22); }
-.widget-edit-btn.is-icon:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
 .widget-edit-btn.is-icon[data-tip]::after {
     content: attr(data-tip);
     position: absolute;
@@ -217,6 +235,7 @@
 /* Regla 16: por debajo de 880 px el objetivo táctil sube a 44 px. */
 @media (max-width: 880px) {
     .widget-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
+    .widget-edit-btn.is-customize { height: 44px; }
     .widget-edit-btn.is-icon { width: 44px; height: 44px; min-height: 44px; padding: 0; }
     .widget-edit-btn.is-icon[data-tip]::after { display: none; }
 }
