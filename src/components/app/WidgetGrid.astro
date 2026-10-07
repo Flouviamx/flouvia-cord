@@ -2,6 +2,7 @@
 import WidgetEditButtons from './WidgetEditButtons.astro';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { iconInner } from '../../lib/icons';
 const L = currentLocale();
 
 interface Props {
@@ -11,21 +12,17 @@ interface Props {
     editButtonId?: string;
     doneButtonId?: string;
     resetButtonId?: string;
-    trayTitle: string;
     resetConfirm: string;
     labels: { drag: string; up: string; down: string; resize: string; remove: string };
     /** Layout guardado en servidor para ESTE grid (ME.widgetPrefs?.[storageKey]), si existe. */
     serverPrefs?: Record<string, unknown>;
-    /** Copy de la biblioteca de widgets ocultos. */
-    librarySearchPlaceholder?: string;
-    libraryNoResults?: string;
-    libraryAddLabel?: string;
 }
 const {
     id, storageKey, class: className, editButtonId = '', doneButtonId = '', resetButtonId = '',
-    trayTitle, resetConfirm, labels, serverPrefs,
-    librarySearchPlaceholder = '', libraryNoResults = '', libraryAddLabel = '+',
+    resetConfirm, labels, serverPrefs,
 } = Astro.props;
+// Id estable para aria-labelledby del panel; una página puede tener más de un grid.
+const libId = `wlib-${storageKey.replace(/[^a-z0-9]+/gi, '-')}`;
 ---
 <div
     id={id}
@@ -37,16 +34,43 @@ const {
     data-reset-button={resetButtonId}
     data-reset-confirm={resetConfirm}
     data-server-prefs={serverPrefs && Object.keys(serverPrefs).length ? JSON.stringify(serverPrefs) : ''}
-    data-library-search-ph={librarySearchPlaceholder}
-    data-library-no-results={libraryNoResults}
-    data-library-add-label={libraryAddLabel}
-    data-library-visible-label={t(L, 'widgets.en_pantalla')}
+    data-announce-moved={t(L, 'widgets.anuncio_movido')}
+    data-announce-added={t(L, 'widgets.anuncio_agregado')}
+    data-announce-hidden={t(L, 'widgets.anuncio_oculto')}
 >
     <slot />
-    <section class="dash-card widget-tray" data-widget-tray hidden>
-        <p class="widget-tray-title">{t(L, 'widgets.biblioteca')}</p>
-        <div class="widget-tray-list" data-widget-tray-list></div>
-    </section>
+    <p class="widget-live" data-widget-live aria-live="polite"></p>
+    <!-- Biblioteca: se mueve a <body> al montar (ver src/lib/widget-library.ts). -->
+    <div class="wlib" data-widget-library hidden tabindex="-1" role="dialog" aria-modal="false" aria-labelledby={`${libId}-title`}
+        data-sub-template={t(L, 'widgets.lib_resumen')}
+        data-add-template={t(L, 'widgets.lib_agregar_x')}
+        data-onscreen-template={t(L, 'widgets.lib_en_pantalla_x')}
+        data-label-all={t(L, 'widgets.filtro_todos')}
+        data-label-available={t(L, 'widgets.filtro_agregar')}
+        data-label-add={t(L, 'widgets.agregar')}
+        data-label-onscreen={t(L, 'widgets.en_pantalla')}
+        data-label-empty={t(L, 'widgets.sin_resultados')}
+        data-other-group={t(L, 'widgets.lib_otros')}>
+        <span class="wlib-grabber" aria-hidden="true"></span>
+        <header class="wlib-head">
+            <div>
+                <h2 class="wlib-title" id={`${libId}-title`}>{t(L, 'widgets.lib_titulo')}</h2>
+                <p class="wlib-sub" data-wlib-sub></p>
+            </div>
+            <button type="button" class="wlib-close" data-wlib-close aria-label={t(L, 'widgets.lib_cerrar')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+            </button>
+        </header>
+        <label class="wlib-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
+            <input type="search" autocomplete="off" data-wlib-search placeholder={t(L, 'widgets.buscar_ph')} aria-label={t(L, 'widgets.buscar_ph')} />
+        </label>
+        <div class="wlib-body">
+            <nav class="wlib-cats" data-wlib-cats aria-label={t(L, 'widgets.lib_categorias')}></nav>
+            <div class="wlib-list" data-wlib-list role="list"></div>
+        </div>
+    </div>
+    <div class="wlib-scrim" data-widget-library-scrim hidden></div>
     <WidgetEditButtons {...labels} />
 </div>
 <script is:inline>
@@ -69,7 +93,9 @@ const {
             if (server && (Number(server.at) || 0) > (Number(local.at) || 0)) {
                 raw = server;
                 try { localStorage.setItem(host.dataset.storageKey, JSON.stringify(server)); } catch (e) {}
-            } else if (server) {
+            } else if (server && (Number(local.at) || 0) > (Number(server.at) || 0)) {
+                // Solo si local es MÁS nuevo. Con el mismo reloj ya están en sync: marcarlo
+                // dirty mandaba un PUT idéntico en cada carga de cada página con widgets.
                 host.dataset.prefsDirty = '1';
             }
             var order = Array.isArray(raw.order) ? raw.order : [];
@@ -79,9 +105,14 @@ const {
             var byId = {};
             widgets.forEach(function (w) {
                 byId[w.dataset.widget] = w;
+                // Oculto desde el servidor y no opcional = bloqueado por permiso, plan o
+                // conexión. La biblioteca nunca lo ofrece: "agregarlo" mostraría un widget
+                // al que esta persona no tiene derecho (o vacío).
+                if (w.hidden && w.dataset.widgetOptional !== '1') w.dataset.widgetLocked = '1';
                 if (w.dataset.widgetOptional === '1') w.hidden = hidden.indexOf(w.dataset.widget) !== -1 || order.indexOf(w.dataset.widget) === -1;
-                // A metric without a chart or detailed view has one honest size.
-                if (w.dataset.sizeSm === '1' && !w.querySelector('[data-chart], .kpi-spark, .kpi-gauge, [data-widget-detail]')) {
+                // A metric without a chart or detailed view has one honest size — salvo que
+                // el autor le haya dado un tamaño inicial mayor (data-span), que se respeta.
+                if (w.dataset.sizeSm === '1' && w.dataset.span === w.dataset.sizeSm && !w.querySelector('[data-chart], .kpi-spark, .kpi-gauge, [data-widget-detail], .report-list, table, ul, ol')) {
                     w.dataset.sizeLg = w.dataset.sizeSm;
                     w.dataset.span = w.dataset.sizeSm;
                 }
@@ -94,9 +125,11 @@ const {
             parents.forEach(function (parent) {
                 widgets.filter(function (w) { return w.parentElement === parent; })
                     .sort(function (a, b) { return rank[a.dataset.widget] - rank[b.dataset.widget]; })
-                    .forEach(function (w) { parent.insertBefore(w, parent === host ? host.querySelector('[data-widget-tray]') : null); });
+                    .forEach(function (w) { parent.insertBefore(w, parent === host ? host.querySelector('[data-widget-library]') : null); });
             });
             hidden.forEach(function (widgetId) { if (byId[widgetId]) byId[widgetId].hidden = true; });
+            // Un widget bloqueado sigue oculto aunque un layout viejo lo tuviera visible.
+            widgets.forEach(function (w) { if (w.dataset.widgetLocked === '1') w.hidden = true; });
             Object.keys(sizes).forEach(function (widgetId) {
                 var w = byId[widgetId]; if (!w) return;
                 var span = sizes[widgetId] === 'lg' ? w.dataset.sizeLg : w.dataset.sizeSm;
@@ -107,8 +140,8 @@ const {
 </script>
 
 <script>
-    import { iconSvg } from '../../lib/icons';
     import { optionalWidgetHidden } from '../../lib/widget-defaults';
+    import { createWidgetLibrary, type LibraryHandle } from '../../lib/widget-library';
     type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'>; rev?: number; at?: number };
 
     // Debounce compartido por TODOS los grids de la página: cada uno empuja bajo
@@ -153,15 +186,11 @@ const {
                 if (current && typeof current === 'object') queuePush(key, current);
             } catch {}
         }
-        const tray = host.querySelector<HTMLElement>('[data-widget-tray]');
-        const trayList = host.querySelector<HTMLElement>('[data-widget-tray-list]');
         const template = host.querySelector<HTMLTemplateElement>('[data-widget-edit-template]');
         const editButton = document.getElementById(host.dataset.editButton || '');
         const doneButton = document.getElementById(host.dataset.doneButton || '');
         const resetButton = document.getElementById(host.dataset.resetButton || '');
         const libraryButton = document.getElementById(`${host.dataset.editButton}Library`);
-        let libraryOpen = false;
-        if (tray) host.prepend(tray);
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
         const mobileLayout = matchMedia('(max-width: 880px)');
         const syncInputMode = () => {
@@ -211,129 +240,33 @@ const {
                 w.addEventListener('transitionend', () => { w.style.transition = ''; }, { once: true });
             }));
         }
-        // Biblioteca de widgets ocultos: buscador + agrupado por
-        // data-group + preview real del widget (clonado del DOM, sin montar sus
-        // gráficas — mountAll() nunca ve el clon porque no se le pasa como root).
-        // Nunca es un <dialog>: Regla 12, AppLayout no carga modal.css en estas páginas.
-        let librarySearch = '';
-        let libraryFilter: 'all' | 'available' = 'all';
-        function renderTray() {
-            if (!tray || !trayList) return;
-            const prefs = getPrefs();
-            const available = widgets().filter((w) => !w.hidden || w.dataset.widgetOptional === '1' || prefs.hidden.includes(w.dataset.widget!));
-            tray.hidden = !libraryOpen; trayList.innerHTML = '';
-            if (!libraryOpen) return;
-
-            tray.classList.add('wx-library');
-            const filters = document.createElement('div'); filters.className = 'wx-lib-filters';
-            const en = document.documentElement.lang.startsWith('en');
-            for (const mode of ['all', 'available'] as const) {
-                const button = document.createElement('button'); button.type = 'button';
-                const count = mode === 'all' ? available.length : available.filter(w => w.hidden).length;
-                button.textContent = `${mode === 'all' ? (en ? 'All widgets' : 'Todos') : (en ? 'To add' : 'Para agregar')} · ${count}`;
-                button.setAttribute('aria-pressed', String(libraryFilter === mode));
-                button.addEventListener('click', () => { libraryFilter = mode; renderTray(); });
-                filters.appendChild(button);
-            }
-            trayList.appendChild(filters);
-
-            {
-                const search = document.createElement('label');
-                search.className = 'wx-lib-search';
-                search.innerHTML = '' + iconSvg('search') + '';
-                const input = document.createElement('input');
-                input.type = 'search'; input.autocomplete = 'off';
-                input.placeholder = host.dataset.librarySearchPh || '';
-                input.setAttribute('aria-label', input.placeholder);
-                input.value = librarySearch;
-                input.addEventListener('input', () => { librarySearch = input.value; renderRows(); });
-                search.appendChild(input);
-                trayList.appendChild(search);
-            }
-
-            const rowsHost = document.createElement('div');
-            rowsHost.className = 'wx-lib-rows';
-            trayList.appendChild(rowsHost);
-
-            function renderRows() {
-                rowsHost.innerHTML = '';
-                const q = librarySearch.trim().toLocaleLowerCase();
-                const visible = available.filter((w) => {
-                    if (libraryFilter === 'available' && !w.hidden) return false;
-                    if (!q) return true;
-                    const hay = `${w.dataset.title || ''} ${w.dataset.desc || ''}`.toLocaleLowerCase();
-                    return hay.includes(q);
-                });
-                const groups = Array.from(new Set(visible.map((w) => w.dataset.group || '')));
-                const hasGroups = groups.some((g) => g) && groups.length > 1;
-                if (!hasGroups) {
-                    visible.forEach((w) => rowsHost.appendChild(libraryRow(w)));
-                } else {
-                    groups.forEach((g) => {
-                        const inGroup = visible.filter((w) => (w.dataset.group || '') === g);
-                        if (!inGroup.length) return;
-                        if (g) {
-                            const label = document.createElement('p');
-                            label.className = 'wx-lib-group-label';
-                            label.textContent = g;
-                            rowsHost.appendChild(label);
-                        }
-                        inGroup.forEach((w) => rowsHost.appendChild(libraryRow(w)));
-                    });
-                }
-                if (!visible.length) {
-                    const empty = document.createElement('p');
-                    empty.className = 'wx-lib-noresults';
-                    empty.textContent = host.dataset.libraryNoResults || '';
-                    rowsHost.appendChild(empty);
-                }
-            }
-            renderRows();
-        }
-        function libraryRow(w: HTMLElement) {
-            const row = document.createElement('div'); row.className = 'wx-lib-row';
-            const preview = document.createElement('div'); preview.className = 'wx-lib-preview';
-            const previewTemplate = w.querySelector<HTMLTemplateElement>('template[data-widget-preview]');
-            const card = previewTemplate?.content.firstElementChild || w.querySelector('.dash-card, .surface-card');
-            if (card) {
-                const clone = card.cloneNode(true) as HTMLElement;
-                clone.removeAttribute('id');
-                clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
-                // Previews must not become inputs to page controllers (team rows,
-                // chart sinks, totals, etc.). Keep only Astro's styling attributes.
-                [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))].forEach((node) => {
-                    Array.from(node.attributes).forEach((attr) => {
-                        if (attr.name.startsWith('data-') && !attr.name.startsWith('data-astro-')) node.removeAttribute(attr.name);
-                    });
-                });
-                clone.setAttribute('inert', '');
-                preview.setAttribute('aria-hidden', 'true');
-                // Fit the actual card, without a second miniature card frame.
-                const rect = card.getBoundingClientRect();
-                const width = previewTemplate ? 360 : rect.width || (w.dataset.sizeSm === '1' ? 280 : 520);
-                const height = previewTemplate ? 220 : rect.height || 180;
-                const scale = Math.min(128 / width, 86 / height);
-                clone.style.width = `${width}px`;
-                clone.style.height = `${height}px`;
-                clone.style.transform = `translate(-50%, -50%) scale(${scale})`;
-                preview.appendChild(clone);
-            }
-            const info = document.createElement('div'); info.className = 'wx-lib-info';
-            const strong = document.createElement('strong'); strong.textContent = w.dataset.title || w.dataset.widget || '';
-            info.appendChild(strong);
-            if (w.dataset.desc) { const small = document.createElement('small'); small.textContent = w.dataset.desc; info.appendChild(small); }
-            const add = document.createElement('button'); add.type = 'button'; add.className = 'wx-lib-add';
-            add.textContent = w.hidden ? host.dataset.libraryAddLabel || '+' : host.dataset.libraryVisibleLabel || '';
-            add.disabled = !w.hidden;
-            add.setAttribute('aria-label', `${add.textContent} ${strong.textContent}`);
-            add.addEventListener('click', () => setHidden(w.dataset.widget!, false));
-            row.append(preview, info, add);
-            return row;
-        }
+        const live = host.querySelector<HTMLElement>('[data-widget-live]');
+        const announce = (template: string | undefined, w: HTMLElement | undefined) => {
+            if (!live || !template || !w) return;
+            live.textContent = '';
+            requestAnimationFrame(() => { live.textContent = template.replace('{titulo}', w.dataset.title || w.dataset.widget || ''); });
+        };
+        // Biblioteca flotante (src/lib/widget-library.ts). Ofrece todo widget no
+        // bloqueado: los de pantalla aparecen con palomita, los ocultos con "+".
+        const panel = host.querySelector<HTMLElement>('[data-widget-library]');
+        const library: LibraryHandle | null = panel ? createWidgetLibrary({
+            panel,
+            scrim: host.querySelector<HTMLElement>('[data-widget-library-scrim]'),
+            button: libraryButton,
+            reduceMotion,
+            candidates: () => widgets().filter((w) => w.dataset.widgetLocked !== '1'),
+            onAdd: (w) => { setHidden(w.dataset.widget!, false); announce(host.dataset.announceAdded, w); },
+        }) : null;
         function setHidden(id: string, hidden: boolean) {
             const prefs = getPrefs();
             prefs.hidden = hidden ? [...new Set([...prefs.hidden, id])] : prefs.hidden.filter((value) => value !== id);
-            setPrefs(prefs); const widget = widgets().find((w) => w.dataset.widget === id); if (widget) widget.hidden = hidden; if (hidden) { libraryOpen = true; libraryButton?.setAttribute('aria-expanded', 'true'); } renderTray();
+            setPrefs(prefs); const widget = widgets().find((w) => w.dataset.widget === id); if (widget) widget.hidden = hidden;
+            library?.refresh();
+            // Ocultar ya no abre la biblioteca de golpe: el botón cuenta lo que hay para
+            // agregar y late una vez para decir a dónde se fue el widget.
+            if (hidden && libraryButton && !reduceMotion) {
+                libraryButton.classList.remove('is-pulse'); void libraryButton.offsetWidth; libraryButton.classList.add('is-pulse');
+            }
         }
         function setContentInert(inert: boolean) {
             widgets().forEach((w) => Array.from(w.children).forEach((child) => {
@@ -342,12 +275,18 @@ const {
                 else if (!inert && child.dataset.widgetInert) { child.inert = false; delete child.dataset.widgetInert; }
             }));
         }
-        function enterEdit() { host.dataset.editing = '1'; setContentInert(true); if (libraryButton) libraryButton.hidden = false; renderTray(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
-        function exitEdit() { if (dragging) end(); delete host.dataset.editing; setContentInert(false); libraryOpen = false; if (libraryButton) { libraryButton.hidden = true; libraryButton.setAttribute('aria-expanded', 'false'); } if (tray) tray.hidden = true; if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
-        libraryButton?.addEventListener('click', () => { libraryOpen = !libraryOpen; libraryButton.setAttribute('aria-expanded', String(libraryOpen)); renderTray(); });
-        editButton?.addEventListener('click', enterEdit); doneButton?.addEventListener('click', exitEdit);
+        function enterEdit() { host.dataset.editing = '1'; setContentInert(true); if (libraryButton) libraryButton.hidden = false; library?.refresh(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
+        function exitEdit() { if (dragging) end(); delete host.dataset.editing; setContentInert(false); library?.close(false); if (libraryButton) { libraryButton.hidden = true; libraryButton.setAttribute('aria-expanded', 'false'); } if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
+        libraryButton?.addEventListener('click', () => library?.toggle());
+        editButton?.addEventListener('click', enterEdit);
+        doneButton?.addEventListener('click', () => { exitEdit(); editButton?.focus(); });
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && host.dataset.editing === '1') { if (dragging) end(false); else exitEdit(); }
+            if (event.key !== 'Escape' || host.dataset.editing !== '1') return;
+            if (dragging) { end(false); return; }
+            // Con la biblioteca abierta, Escape cierra SOLO la biblioteca (y regresa el foco
+            // a su botón); si no, sale del modo edición.
+            if (library?.isOpen()) { library.close(); return; }
+            exitEdit(); editButton?.focus();
         });
         resetButton?.addEventListener('click', async () => {
             const confirmFn = (window as any).cordConfirm;
@@ -357,9 +296,11 @@ const {
 
         widgets().forEach((widget) => {
             const id = widget.dataset.widget!;
-            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const previous = siblings[siblings.indexOf(widget) - 1]; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { widget.parentElement?.insertBefore(widget, previous); persistOrder(); }); });
-            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const next = siblings[siblings.indexOf(widget) + 1]; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); });
-            widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); });
+            // Subir mueve al VECINO de arriba debajo de este widget (no al revés): mover el
+            // nodo enfocado lo saca del DOM y el foco de teclado se pierde.
+            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const previous = siblings[siblings.indexOf(widget) - 1]; if (previous instanceof HTMLElement && previous.dataset.widget) { flip(() => { widget.parentElement?.insertBefore(previous, widget.nextSibling); persistOrder(); }); announce(host.dataset.announceMoved, widget); } });
+            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const next = siblings[siblings.indexOf(widget) + 1]; if (next instanceof HTMLElement && next.dataset.widget) { flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); announce(host.dataset.announceMoved, widget); } });
+            widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); announce(host.dataset.announceHidden, widget); });
             const sizeControls = widget.querySelector<HTMLElement>('.we-sizes');
             const syncSize = () => {
                 widget.dataset.widgetSize = widget.dataset.span === widget.dataset.sizeLg && widget.dataset.sizeLg !== widget.dataset.sizeSm ? 'lg' : 'sm';
@@ -401,7 +342,9 @@ const {
             ghost.classList.add('widget-drag-ghost'); ghost.setAttribute('inert', '');
             ghost.setAttribute('aria-hidden', 'true');
             Object.assign(ghost.style, { width: `${rect.width}px`, height: `${rect.height}px` });
-            widget.parentElement!.appendChild(ghost);
+            // Al grid, no al padre directo: en Cobros el padre es una zona con
+            // overflow:hidden que recortaba la copia al salir de ella.
+            host.appendChild(ghost);
             widget.classList.add('is-dragging');
             move(x, y);
             const autoScroll = () => {

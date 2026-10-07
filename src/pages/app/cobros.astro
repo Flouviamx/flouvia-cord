@@ -125,9 +125,8 @@ const CBR_T = {
         <WidgetGrid
             id="cobrosWidgets" storageKey="cord.cobros.v1"
             serverPrefs={ME.widgetPrefs?.['cord.cobros.v1'] as Record<string, unknown> | undefined}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbrEditBtn" doneButtonId="cbrDoneBtn" resetButtonId="cbrResetBtn"
-            trayTitle={t(L, 'cbr.widgets_ocultos')} resetConfirm={t(L, 'cbr.reset_confirm')}
+            resetConfirm={t(L, 'cbr.reset_confirm')}
             labels={widgetLabels}
         >
             <section class="cbr-zone cbr-balance-zone" data-widget-zone="balance" aria-labelledby="cbrBalanceHeading">
@@ -803,8 +802,10 @@ const CBR_T = {
     .cbr-balance-zone .dash-card, .cbr-kpi-zone .dash-card {
         border-radius: 0; background: transparent; box-shadow: none;
     }
-    .cbr-balance-zone .dash-widget + .dash-widget .dash-card,
-    .cbr-kpi-zone .dash-widget + .dash-widget .dash-card { border-left: 1px solid var(--color-border); }
+    /* Divisor solo entre widgets VISIBLES: con `+` un hermano oculto (sin Stripe
+       conectado) dejaba una raya a la izquierda del primero que sí se ve. */
+    .cbr-balance-zone .dash-widget:not([hidden]) ~ .dash-widget:not([hidden]) .dash-card,
+    .cbr-kpi-zone .dash-widget:not([hidden]) ~ .dash-widget:not([hidden]) .dash-card { border-left: 1px solid var(--color-border); }
     .cbr-balance-zone .dash-card { min-height: 210px; padding: 1.5rem 1.7rem; }
     .cbr-balance-primary { justify-content: center; }
     .cbr-balance-primary .report-kpi-value { font-size: clamp(2.6rem, 5vw, 4.4rem); letter-spacing: -.055em; }
@@ -816,11 +817,15 @@ const CBR_T = {
     .cbr-kpi-tile .report-kpi-value { font-size: clamp(1.65rem, 2.5vw, 2.15rem); }
     .cbr-sparkline { min-height: 32px; width: 100%; margin-top: auto; opacity: .72; }
 
+    /* Hairlines dibujadas por cada tarjeta, no por el fondo de la zona: con gap de 1 px
+       sobre fondo gris, una celda vacía (widget oculto o sin Stripe) quedaba como una
+       placa gris. Ahora lo vacío es superficie. */
     .cbr-detail-zone {
-        gap: 1px; overflow: hidden; border-radius: 32px; background: var(--color-border);
+        gap: 0; overflow: hidden; border-radius: 32px; background: var(--surface);
         box-shadow: 0 18px 60px -34px rgba(10,25,47,.28);
     }
     .cbr-detail-zone .dash-card { border-radius: 0; background: var(--surface); box-shadow: none; }
+    .cbr-detail-zone > .dash-widget > .dash-card { box-shadow: 0 0 0 1px var(--color-border); }
     .cbr-detail-zone .report-chart { min-height: 0; }
     .cbr-detail-zone .sec-head { margin-bottom: .8rem; padding-bottom: .65rem; }
     .cbr-segbar-chart { min-height: 72px !important; }

@@ -171,9 +171,8 @@ import { iconInner } from '../../../lib/icons';
         <WidgetGrid
             id="ciaWidgets" storageKey="cord.cobranza-ia.v1"
             serverPrefs={ME.widgetPrefs?.['cord.cobranza-ia.v1'] as Record<string, unknown> | undefined}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="ciaEditBtn" doneButtonId="ciaDoneBtn" resetButtonId="ciaResetBtn"
-            trayTitle={t(L, 'cia.widgets_ocultos')} resetConfirm={t(L, 'cia.reset_confirm')}
+            resetConfirm={t(L, 'cia.reset_confirm')}
             labels={widgetLabels}
         >
             {/* 1 · La cifra que justifica el feature */}

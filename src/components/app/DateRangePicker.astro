@@ -276,6 +276,15 @@ import { iconInner } from '../../lib/icons';
                 if (applied.key === 'custom') { url.searchParams.set('desde', applied.desde); url.searchParams.set('hasta', applied.hasta); }
                 else url.searchParams.set('rango', applied.key);
                 history.replaceState(history.state, '', url);
+            } else if (initial) {
+                // Sin syncUrl el rango vive en localStorage y la pagina lo pide por fetch:
+                // un ?rango= heredado (marcador, link viejo) ya se leyo arriba y solo ensucia
+                // la barra de direcciones.
+                const url = new URL(location.href);
+                if (url.searchParams.has('rango') || url.searchParams.has('desde') || url.searchParams.has('hasta')) {
+                    url.searchParams.delete('desde'); url.searchParams.delete('hasta'); url.searchParams.delete('rango');
+                    history.replaceState(history.state, '', url);
+                }
             }
             root.dispatchEvent(new CustomEvent('cord:range', { bubbles: true, detail: { ...state, compare: compareRangeFor(applied, minISO), initial } }));
         }

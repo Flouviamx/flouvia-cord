@@ -123,8 +123,7 @@ import { iconInner } from '../../../lib/icons';
         </div>
         <WidgetGrid storageKey="cord.equipo.v1" serverPrefs={ME.widgetPrefs?.['cord.equipo.v1'] as Record<string, unknown> | undefined}
             editButtonId="eqEditWidgets" doneButtonId="eqDoneWidgets" resetButtonId="eqResetWidgets"
-            trayTitle={t(L, 'dash.widgets_ocultos')} resetConfirm={t(L, 'dash.confirmar_restablecer')}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
+            resetConfirm={t(L, 'dash.confirmar_restablecer')}
             labels={{ drag: t(L, 'dash.widget_arrastrar'), up: t(L, 'dash.widget_subir'), down: t(L, 'dash.widget_bajar'), resize: t(L, 'dash.widget_tamano'), remove: t(L, 'dash.widget_ocultar') }}>
             <article class="dash-widget" data-widget="eq-overview" data-title={t(L, 'set.eq.activos')} data-span="2" data-size-sm="2" data-size-lg="4">
                 <div class="dash-card eq-summary">

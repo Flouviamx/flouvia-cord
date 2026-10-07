@@ -59,8 +59,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
         </div>
         <WidgetGrid storageKey="cord.desempeno.v1" serverPrefs={ME.widgetPrefs?.['cord.desempeno.v1'] as Record<string, unknown> | undefined}
             editButtonId="desEdit" doneButtonId="desDone" resetButtonId="desReset"
-            trayTitle={t(L, 'dash.widgets_ocultos')} resetConfirm={t(L, 'dash.confirmar_restablecer')}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
+            resetConfirm={t(L, 'dash.confirmar_restablecer')}
             labels={{drag:t(L, 'dash.widget_arrastrar'),up:t(L, 'dash.widget_subir'),down:t(L, 'dash.widget_bajar'),resize:t(L, 'dash.widget_tamano'),remove:t(L, 'dash.widget_ocultar')}}>
             <MetricWidget id="des-cerrado" title={t(L, 'des.kpi_cerrado')} tone="finance"
                 value={money(D.totalCerrado, 0)} description={t(L, 'des.kpi_cerrado_sub')}
