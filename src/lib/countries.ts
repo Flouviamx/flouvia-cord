@@ -137,18 +137,21 @@ const PROFILE_DEFAULTS: Partial<Record<CountryCode, Partial<ProfileDefaults>>> =
     AR: { currency: 'ARS', locale: 'es-AR', timeZone: 'America/Argentina/Buenos_Aires', taxIdLabel: 'CUIT', taxLabel: 'IVA' },
     AU: { currency: 'AUD', locale: 'en-AU', timeZone: 'Australia/Sydney', taxIdLabel: 'ABN', taxLabel: 'GST' },
     BR: { currency: 'BRL', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', taxIdLabel: 'CNPJ / CPF', taxLabel: 'ICMS / ISS' },
-    CA: { currency: 'CAD', locale: 'en-CA', timeZone: 'America/Toronto', taxIdLabel: 'Business number / Tax ID', taxLabel: 'GST/HST' },
+    CA: { currency: 'CAD', locale: 'en-CA', timeZone: 'America/Toronto', taxIdLabel: 'BN / GST/HST no.', taxLabel: 'GST/HST' },
     CH: { currency: 'CHF', locale: 'de-CH', timeZone: 'Europe/Zurich', taxIdLabel: 'UID / VAT ID', taxLabel: 'MWST / TVA' },
     CL: { currency: 'CLP', locale: 'es-CL', timeZone: 'America/Santiago', taxIdLabel: 'RUT', taxLabel: 'IVA' },
     CN: { currency: 'CNY', locale: 'zh-CN', timeZone: 'Asia/Shanghai', taxIdLabel: 'Unified social credit code', taxLabel: 'VAT' },
     CO: { currency: 'COP', locale: 'es-CO', timeZone: 'America/Bogota', taxIdLabel: 'NIT', taxLabel: 'IVA' },
     CR: { currency: 'CRC', locale: 'es-CR', timeZone: 'America/Costa_Rica', taxIdLabel: 'Cédula jurídica / NITE', taxLabel: 'IVA' },
-    DE: { currency: 'EUR', locale: 'de-DE', timeZone: 'Europe/Berlin', taxIdLabel: 'USt-IdNr.', taxLabel: 'USt.' },
+    // La mayoría de las pequeñas empresas alemanas solo tiene Steuernummer; la
+    // factura lleva una de las dos (§ 14 Abs. 4 UStG).
+    DE: { currency: 'EUR', locale: 'de-DE', timeZone: 'Europe/Berlin', taxIdLabel: 'Steuernummer / USt-IdNr.', taxLabel: 'USt.' },
     DO: { currency: 'DOP', locale: 'es-DO', timeZone: 'America/Santo_Domingo', taxIdLabel: 'RNC', taxLabel: 'ITBIS' },
     EC: { currency: 'USD', locale: 'es-EC', timeZone: 'America/Guayaquil', taxIdLabel: 'RUC', taxLabel: 'IVA' },
     ES: { currency: 'EUR', locale: 'es-ES', timeZone: 'Europe/Madrid', taxIdLabel: 'NIF / CIF', taxLabel: 'IVA' },
-    FR: { currency: 'EUR', locale: 'fr-FR', timeZone: 'Europe/Paris', taxIdLabel: 'SIREN / VAT ID', taxLabel: 'TVA' },
-    GB: { currency: 'GBP', locale: 'en-GB', timeZone: 'Europe/London', taxIdLabel: 'UTR / VAT number', taxLabel: 'VAT' },
+    FR: { currency: 'EUR', locale: 'fr-FR', timeZone: 'Europe/Paris', taxIdLabel: 'SIREN / N° TVA', taxLabel: 'TVA' },
+    // El UTR nunca va en una factura: lo que la ley pide es el VAT reg. no.
+    GB: { currency: 'GBP', locale: 'en-GB', timeZone: 'Europe/London', taxIdLabel: 'VAT reg. no.', taxLabel: 'VAT' },
     GT: { currency: 'GTQ', locale: 'es-GT', timeZone: 'America/Guatemala', taxIdLabel: 'NIT', taxLabel: 'IVA' },
     HK: { currency: 'HKD', locale: 'en-HK', timeZone: 'Asia/Hong_Kong', taxIdLabel: 'Business registration number', taxLabel: 'Tax' },
     ID: { currency: 'IDR', locale: 'id-ID', timeZone: 'Asia/Jakarta', taxIdLabel: 'NPWP', taxLabel: 'PPN' },
@@ -222,12 +225,18 @@ export type TaxKind = 'consumo' | 'retencion' | 'exento';
 /** Exento estándar: toda org lo necesita, ningún país lo omite. */
 const EXENTO: TaxPreset = { nombre: 'Exento', kind: 'exento', tipo: 'exento', tasa: 0 };
 const ZERO_RATED: TaxPreset = { nombre: 'Zero-rated', kind: 'exento', tipo: 'exento', tasa: 0 };
+// El nombre se IMPRIME en la factura: va en la lengua del país. Una factura
+// francesa o alemana con "Zero-rated" (inglés) se leía como un error de
+// captura, y una brasileña con "Exento" (español) también.
+const exempt = (nombre: string): TaxPreset => ({ nombre, kind: 'exento', tipo: 'exento', tasa: 0 });
 
 const std = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa, esDefault: true });
 const red = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa });
 
 export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     // Norteamérica
+    // El 8% fronterizo es un decreto de estímulo prorrogado hasta el 31 de
+    // diciembre de 2026: revisar su vigencia antes de 2027.
     MX: [
         std('IVA 16%', 16),
         red('IVA 8% región fronteriza', 8),
@@ -259,7 +268,9 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
 
     // Latinoamérica
     AR: [std('IVA 21%', 21), red('IVA 10,5%', 10.5), red('IVA 27%', 27), EXENTO],
-    CL: [std('IVA 19%', 19), EXENTO],
+    // Retención de boletas de honorarios: 15,25% en 2026 (sube a 16% en 2027,
+    // Ley 21.133). La aplica quien PAGA la boleta; nace NO predeterminada.
+    CL: [std('IVA 19%', 19), EXENTO, { nombre: 'Retención honorarios 15,25%', kind: 'retencion', tipo: 'ret_isr', tasa: 15.25 }],
     CO: [
         std('IVA 19%', 19),
         red('IVA 5%', 5),
@@ -277,13 +288,15 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     // operación, tasa única sin importar el rubro — a diferencia de las
     // Detracciones (SPOT), que varían 4-12% por tipo de bien o servicio y por
     // eso NO se agregan aquí como una sola tasa.
-    PE: [std('IGV 18%', 18), EXENTO, { nombre: 'Retención IGV 3%', kind: 'retencion', tipo: 'ret_iva', tasa: 3 }],
+    // "Exonerado" es el término de SUNAT (Apéndice I del TUO de la Ley del IGV);
+    // "Inafecto" es otra cosa (operación fuera del campo del impuesto).
+    PE: [std('IGV 18%', 18), exempt('Exonerado'), exempt('Inafecto'), { nombre: 'Retención IGV 3%', kind: 'retencion', tipo: 'ret_iva', tasa: 3 }],
     PY: [std('IVA 10%', 10), red('IVA 5%', 5), EXENTO],
     UY: [std('IVA 22%', 22), red('IVA 10%', 10), EXENTO],
 
     // Europa
     CH: [std('MWST 8.1%', 8.1), red('MWST 3.8%', 3.8), red('MWST 2.6%', 2.6), ZERO_RATED],
-    DE: [std('USt. 19%', 19), red('USt. 7%', 7), ZERO_RATED],
+    DE: [std('USt. 19%', 19), red('USt. 7%', 7), exempt('Steuerfrei')],
     // IRPF del autónomo: 15% general, 7% los primeros 3 años de alta (art. 101
     // LIRPF). Es retención del PROPIO emisor —se resta de lo que cobra—, no un
     // impuesto que el negocio le traslade a nadie.
@@ -292,8 +305,10 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         { nombre: 'Retención IRPF 15%', kind: 'retencion', tipo: 'ret_isr', tasa: 15 },
         { nombre: 'Retención IRPF 7% (nuevo autónomo)', kind: 'retencion', tipo: 'ret_isr', tasa: 7 },
     ],
-    FR: [std('TVA 20%', 20), red('TVA 10%', 10), red('TVA 5,5%', 5.5), red('TVA 2,1%', 2.1), ZERO_RATED],
-    GB: [std('VAT 20%', 20), red('VAT 5%', 5), ZERO_RATED],
+    FR: [std('TVA 20%', 20), red('TVA 10%', 10), red('TVA 5,5%', 5.5), red('TVA 2,1%', 2.1), exempt('Exonéré de TVA')],
+    // En Reino Unido "zero-rated" y "exempt" son regímenes distintos (el
+    // primero permite recuperar el VAT soportado, el segundo no): van los dos.
+    GB: [std('VAT 20%', 20), red('VAT 5%', 5), ZERO_RATED, exempt('Exempt')],
     IE: [std('VAT 23%', 23), red('VAT 13.5%', 13.5), red('VAT 9%', 9), ZERO_RATED],
     IT: [std('IVA 22%', 22), red('IVA 10%', 10), red('IVA 5%', 5), red('IVA 4%', 4), EXENTO],
     NL: [std('BTW 21%', 21), red('BTW 9%', 9), ZERO_RATED],
@@ -317,17 +332,58 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     // Sin preset a propósito:
     //   US — sales tax por estado/condado/ciudad, no hay tasa nacional.
     //   BR — ICMS estatal + ISS municipal + PIS/COFINS; una sola tasa mentiría.
+    //        La reforma (LC 214/2025) tampoco se siembra: la CBS 0,9% + IBS
+    //        0,1% de prueba de 2026 no se cobra a quien cumple las obligaciones
+    //        accesorias (art. 348), y sembrarla le cobraría de más al cliente.
     //   HK — no existe impuesto al consumo general.
 };
 
-/** Presets del país, o solo "Exento" cuando no hay tasa nacional que sugerir. */
-export function taxPresetsFor(code: string): TaxPreset[] {
+/** El renglón exento de un país sin preset nacional, en SU lengua. */
+const EXEMPT_ONLY: Partial<Record<CountryCode, TaxPreset>> = {
+    US: exempt('Exempt / Resale'),
+    BR: exempt('Isento'),
+};
+
+/**
+ * España no es un solo territorio de IVA: Canarias aplica IGIC (7% general) y
+ * Ceuta y Melilla IPSI (tasas por ordenanza de cada ciudad). Sembrarles el IVA
+ * peninsular del 21% les hacía cobrar un impuesto que ahí no existe. `region` es
+ * el código INE de la provincia (35 Las Palmas, 38 Santa Cruz de Tenerife, 51
+ * Ceuta, 52 Melilla).
+ */
+export function spainTaxTerritory(region?: string | null): 'iva' | 'igic' | 'ipsi' {
+    const raw = String(region || '').trim();
+    const code = /^\d{1,2}$/.test(raw) ? raw.padStart(2, '0') : '';
+    // El campo de provincia de Ajustes › Fiscal también admite el nombre.
+    const name = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (code === '35' || code === '38' || /canari|las palmas|tenerife|lanzarote|fuerteventura|la palma|la gomera|el hierro/.test(name)) return 'igic';
+    if (code === '51' || code === '52' || /ceuta|melilla/.test(name)) return 'ipsi';
+    return 'iva';
+}
+
+function spainRegionPresets(region?: string | null): TaxPreset[] | null {
+    const territory = spainTaxTerritory(region);
+    if (territory === 'igic') {
+        return [std('IGIC 7%', 7), red('IGIC 3%', 3), red('IGIC 0%', 0), exempt('Exento')];
+    }
+    // IPSI: sin tasa única que sugerir (cada ciudad fija las suyas).
+    if (territory === 'ipsi') return [exempt('Exento')];
+    return null;
+}
+
+/** Presets del país, o solo el exento cuando no hay tasa nacional que sugerir. */
+export function taxPresetsFor(code: string, region?: string | null): TaxPreset[] {
     const normalized = code.toUpperCase();
     // Un código inválido NO cae a 'MX': eso heredaba el 16% mexicano completo
     // (con retenciones incluidas) exactamente en el caso que el comentario de
     // arriba dice evitar — "el 16% mexicano heredado". `hasTaxPreset` ya
     // devolvía `false` para lo mismo; las dos funciones se contradecían.
-    return isCountryCode(normalized) ? (TAX_PRESETS[normalized] ?? [EXENTO]) : [EXENTO];
+    if (!isCountryCode(normalized)) return [EXENTO];
+    if (normalized === 'ES') {
+        const regional = spainRegionPresets(region);
+        if (regional) return regional;
+    }
+    return TAX_PRESETS[normalized] ?? [EXEMPT_ONLY[normalized] ?? EXENTO];
 }
 
 /** ¿Cord tiene tasas estándar que sugerir para este país? */
@@ -559,17 +615,21 @@ export function isUsState(code: string): boolean {
     return US_STATES.some((s) => s.code === normalized);
 }
 
-// Tasa BASE estatal de sales tax, en porcentaje. 0 = el estado no cobra sales
-// tax estatal (puede seguir habiendo impuesto local — Alaska tiene sales tax
-// municipal pese a no tener estatal). No es una tabla tributaria completa:
-// condado y ciudad se editan a mano en Ajustes.
+// Tasa MÍNIMA ESTATAL de sales tax, en porcentaje: la estatal más el impuesto
+// local que la ley hace obligatorio en todo el estado (por eso California es
+// 7.25 y no 6, Utah 6.1 y no 4.85, Virginia 5.3 y no 4.3). 0 = el estado no
+// cobra sales tax estatal (puede seguir habiendo impuesto local — Alaska lo
+// tiene municipal). No es una tabla tributaria completa: el condado y la
+// ciudad se suman a mano en Ajustes. Verificada contra Tax Foundation, julio
+// 2026; Luisiana subió de 4.45% a 5% el 1 de enero de 2025 (HB 10, 2024), y
+// el aumento de DC a 7% quedó pospuesto a octubre de 2027.
 export const US_STATE_TAX: Record<string, number> = {
     AL: 4, AK: 0, AZ: 5.6, AR: 6.5, CA: 7.25, CO: 2.9, CT: 6.35, DE: 0, DC: 6,
-    FL: 6, GA: 4, HI: 4, ID: 6, IL: 6.25, IN: 7, IA: 6, KS: 6.5, KY: 6, LA: 4.45,
+    FL: 6, GA: 4, HI: 4, ID: 6, IL: 6.25, IN: 7, IA: 6, KS: 6.5, KY: 6, LA: 5,
     ME: 5.5, MD: 6, MA: 6.25, MI: 6, MN: 6.875, MS: 7, MO: 4.225, MT: 0, NE: 5.5,
     NV: 6.85, NH: 0, NJ: 6.625, NM: 4.875, NY: 4, NC: 4.75, ND: 5, OH: 5.75,
-    OK: 4.5, OR: 0, PA: 6, RI: 7, SC: 6, SD: 4.2, TN: 7, TX: 6.25, UT: 4.85,
-    VT: 6, VA: 4.3, WA: 6.5, WV: 6, WI: 5, WY: 4,
+    OK: 4.5, OR: 0, PA: 6, RI: 7, SC: 6, SD: 4.2, TN: 7, TX: 6.25, UT: 6.1,
+    VT: 6, VA: 5.3, WA: 6.5, WV: 6, WI: 5, WY: 4,
 };
 
 /**

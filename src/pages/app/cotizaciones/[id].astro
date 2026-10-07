@@ -260,7 +260,7 @@ import { iconInner } from '../../../lib/icons';
                                         <span class="df-type">{DOC_LABEL[d.tipo] || d.tipo}</span>
                                         <span class="df-pais">{d.pais}</span>
                                         {d.simulado && <span class="df-sim">{t(L, 'id.simulado')}</span>}
-                                        {!d.simulado && d.testMode && <span class="df-sim" title={t(L, 'id.modo_prueba_fiscal_title')}>{t(L, 'id.modo_prueba_fiscal')}</span>}
+                                        {!d.simulado && d.testMode && <span class="df-sim" title={String(d.pais || '').toUpperCase() === 'MX' ? t(L, 'id.modo_prueba_fiscal_title') : t(L, 'id.modo_prueba_fiscal_title_intl')}>{t(L, 'id.modo_prueba_fiscal')}</span>}
                                         <span class:list={['df-state', d.status]}>
                                             {d.status === 'issued' ? t(L, 'id.emitido') : d.status === 'error' ? t(L, 'id.error') : t(L, 'id.pendiente')}
                                         </span>
@@ -277,7 +277,7 @@ import { iconInner } from '../../../lib/icons';
                         ))}
                     </div>
                     {docsFiscales.some((d) => d.simulado) && (
-                        <p class="df-note" set:html={t(L, 'id.df_note')} />
+                        <p class="df-note" set:html={isMx ? t(L, 'id.df_note') : t(L, 'id.df_note_intl')} />
                     )}
                 </section>
             )}

@@ -7,7 +7,9 @@ const denied = await requirePerm('ajustes');
 if (denied) return denied;
 const org = await getOrg();
 const sample = getDemoQuote();
-const brandOrg = { ...sample.org, nombre:org.nombre, inicial:org.inicial, logoUrl:org.logoUrl, rfc:'', colorMarca:org.colorMarca, colorSecundario:org.colorSecundario, brandProfile:org.brandProfile, portalBanner:'…', portalBienvenida:'…', portalMostrarChat:true, portalPowered:true };
+// El país de la org: sin él la vista previa heredaba el de la cotización demo
+// (México) y un negocio de París veía "IVA" en su propia marca.
+const brandOrg = { ...sample.org, paisCode:org.countryCode, nombre:org.nombre, inicial:org.inicial, logoUrl:org.logoUrl, rfc:'', colorMarca:org.colorMarca, colorSecundario:org.colorSecundario, brandProfile:org.brandProfile, portalBanner:'…', portalBienvenida:'…', portalMostrarChat:true, portalPowered:true };
 const quoteOnly=Astro.url.searchParams.get('view')==='quote';
 Astro.response.headers.set('Cache-Control','private, no-store');
 ---

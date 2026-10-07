@@ -4,7 +4,8 @@
 // directorio para poder tener clientes/[id].astro (detalle) como hermano.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
-import { getClientes, getMyMembership, money } from '../../../lib/queries';
+import { getClientes, getMyMembership, getOrg, money } from '../../../lib/queries';
+import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -17,8 +18,19 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     return s;
 };
 
-const [CLIENTES, ME] = await Promise.all([getClientes(), getMyMembership()]);
+const [CLIENTES, ME, ORG] = await Promise.all([getClientes(), getMyMembership(), getOrg()]);
 const canEdit = memberCan(ME, 'clientes');
+// El identificador fiscal se nombra como en el país del negocio: "RFC" es de
+// México, y la columna, el importador y su plantilla se lo decían a todos.
+const PAIS = String(ORG.countryCode || 'MX').toUpperCase();
+const TAX_ID_LABEL = getCountryProfile(PAIS, L).taxIdLabel;
+// Plantilla CSV: encabezado y ejemplo del país. El ejemplo mexicano (RFC,
+// correos .mx, lada 55) es exactamente lo que un negocio de Lyon no reconoce.
+const IMPORT_TEMPLATE = PAIS === 'MX'
+    ? 'empresa,contacto,email,telefono,rfc,terminos,limite\nDistribuidora El Zarco,Raul Mendoza,compras@elzarco.mx,55 1234 5678,DEZ981123QX5,net30,500000\nConstructora GAMA,Lucia Ferreira,lucia@gama.com.mx,55 8765 4321,CGA050617HJ1,net60,850000\n'
+    : L === 'en'
+        ? 'company,contact,email,phone,tax_id,terms,limit\nNorthwind Supplies,Jane Cooper,purchasing@northwind.example,,,net30,50000\nBlue Harbor Builders,Lucas Martin,lucas@blueharbor.example,,,net60,85000\n'
+        : 'empresa,contacto,email,telefono,id_fiscal,terminos,limite\nSuministros Northwind,Ana Cooper,compras@northwind.example,,,net30,50000\nConstructora Blue Harbor,Lucas Martin,lucas@blueharbor.example,,,net60,85000\n';
 
 const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cmod.nivel_estandar'), plata: t(L, 'cmod.nivel_plata'), oro: t(L, 'cmod.nivel_oro'), distribuidor: t(L, 'cmod.nivel_distribuidor') };
 
@@ -80,7 +92,7 @@ import { iconInner } from '../../../lib/icons';
         </div>
 
         <div class="t-head">
-            <span>{t(L, 'cli.th_cliente')}</span><span>{t(L, 'cli.th_contacto')}</span><span>{t(L, 'cli.th_rfc')}</span><span>{t(L, 'cli.th_terminos')}</span><span class="t-right">{t(L, 'cli.th_limite')}</span><span class="t-right">{t(L, 'cli.th_cotizaciones')}</span><span></span>
+            <span>{t(L, 'cli.th_cliente')}</span><span>{t(L, 'cli.th_contacto')}</span><span>{TAX_ID_LABEL}</span><span>{t(L, 'cli.th_terminos')}</span><span class="t-right">{t(L, 'cli.th_limite')}</span><span class="t-right">{t(L, 'cli.th_cotizaciones')}</span><span></span>
         </div>
         <div class="t-body" id="lfBody">
             {CLIENTES.map((c) => (
@@ -117,7 +129,7 @@ import { iconInner } from '../../../lib/icons';
                         )}
                     </span>
                     <span class="t-contact">{c.contacto}<small>{c.email}</small></span>
-                    <span class="t-muted" data-mobile-label={t(L, 'cli.th_rfc')}>{c.rfc}</span>
+                    <span class="t-muted" data-mobile-label={TAX_ID_LABEL}>{c.rfc}</span>
                     <span class="t-term" data-mobile-label={t(L, 'cli.th_terminos')}>{c.terminos}</span>
                     <span class="editorial t-amount t-right" data-mobile-label={t(L, 'cli.th_limite')}>{c.limite > 0 ? money(c.limite, 0) : '—'}</span>
                     <span class="t-muted t-right" data-mobile-label={t(L, 'cli.th_cotizaciones')}>{c.nCotizaciones}</span>
@@ -149,11 +161,11 @@ import { iconInner } from '../../../lib/icons';
     {canEdit && <dialog class="modal modal-lg" id="importModal"
         data-i18n-field-empresa={t(L, 'cli.field_empresa')} data-i18n-field-contacto={t(L, 'cli.field_contacto')}
         data-i18n-field-correo={t(L, 'cli.field_correo')} data-i18n-field-telefono={t(L, 'cli.field_telefono')}
-        data-i18n-field-rfc={t(L, 'cli.field_rfc')} data-i18n-field-terminos={t(L, 'cli.field_terminos')}
+        data-i18n-field-rfc={TAX_ID_LABEL} data-i18n-field-terminos={t(L, 'cli.field_terminos')}
         data-i18n-field-limite={t(L, 'cli.field_limite')} data-i18n-ninguna={t(L, 'cli.ninguna')}
         data-i18n-columna={t(L, 'cli.columna')} data-i18n-elige-empresa={t(L, 'cli.elige_columna_empresa')}
         data-i18n-a-importar={t(L, 'cli.clientes_a_importar')} data-i18n-filas-omitidas={t(L, 'cli.filas_omitidas')}
-        data-i18n-th-email={t(L, 'cli.th_email')} data-i18n-th-contacto={t(L, 'cli.th_contacto')} data-i18n-th-rfc={t(L, 'cli.th_rfc')}
+        data-i18n-th-email={t(L, 'cli.th_email')} data-i18n-th-contacto={t(L, 'cli.th_contacto')} data-i18n-th-rfc={TAX_ID_LABEL} data-import-template={IMPORT_TEMPLATE}
         data-i18n-th-terminos={t(L, 'cli.th_terminos')} data-i18n-th-limite={t(L, 'cli.th_limite')} data-i18n-th-empresa={t(L, 'cli.field_empresa')}
         data-i18n-term-contado={t(L, 'cli.term_contado')} data-i18n-term-net30={t(L, 'cli.term_net30')} data-i18n-term-net60={t(L, 'cli.term_net60')}
         data-i18n-continuar={t(L, 'cli.continuar')} data-i18n-importar-n={t(L, 'cli.importar_n')} data-i18n-importando={t(L, 'cli.importando')}
@@ -176,7 +188,7 @@ import { iconInner } from '../../../lib/icons';
                         <input type="file" id="impFile" accept=".csv,text/csv" hidden />
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('file-up')}></svg>
                         <b>{t(L, 'cli.drop_titulo')}</b>
-                        <span>{t(L, 'cli.drop_hint')}</span>
+                        <span>{tf('cli.drop_hint', { taxId: TAX_ID_LABEL })}</span>
                     </label>
                     <button type="button" class="imp-tpl" id="impTpl">{t(L, 'cli.descargar_plantilla')}</button>
                 </div>
@@ -189,7 +201,7 @@ import { iconInner } from '../../../lib/icons';
 
                 <div class="imp-step" id="impStepPrev" hidden>
                     <div class="imp-summary" id="impSummary"></div>
-                    <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> {t(L, 'cli.actualizar_existentes')}</label>
+                    <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> {tf('cli.actualizar_existentes', { taxId: TAX_ID_LABEL })}</label>
                     <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
                 </div>
             </div>
@@ -495,7 +507,13 @@ import { iconInner } from '../../../lib/icons';
             { key: 'contacto', label: I.i18nFieldContacto || 'Contacto', req: false, guess: ['contacto', 'contact', 'atencion'] },
             { key: 'email', label: I.i18nFieldCorreo || 'Correo', req: false, guess: ['email', 'correo', 'mail'] },
             { key: 'telefono', label: I.i18nFieldTelefono || 'Teléfono', req: false, guess: ['telefono', 'tel', 'phone', 'celular', 'movil', 'whats'] },
-            { key: 'rfc', label: I.i18nFieldRfc || 'RFC', req: false, guess: ['rfc'] },
+            // El identificador fiscal tiene un nombre por país. Los nombres largos
+            // se buscan dentro del encabezado; las siglas cortas solo como palabra
+            // completa (`exact`), porque "ust" vive dentro de "customer" y "nit"
+            // dentro de "unitario".
+            { key: 'rfc', label: I.i18nFieldRfc || 'Tax ID', req: false,
+                guess: ['rfc', 'tax id', 'taxid', 'id fiscal', 'identificacion fiscal', 'numero fiscal', 'steuernummer', 'ustid', 'ust idnr', 'vat number', 'vat reg', 'siren', 'siret', 'cuit', 'cnpj', 'business number'],
+                exact: ['nif', 'cif', 'nie', 'vat', 'tva', 'ust', 'rut', 'ruc', 'nit', 'ein', 'cpf', 'bn', 'tin', 'utr'] },
             { key: 'terminos', label: I.i18nFieldTerminos || 'Términos de pago', req: false, guess: ['terminos', 'term', 'pago', 'condicion'] },
             { key: 'limite', label: I.i18nFieldLimite || 'Límite de crédito', req: false, guess: ['limite', 'credito', 'limit', 'credit'] },
         ];
@@ -567,7 +585,11 @@ import { iconInner } from '../../../lib/icons';
             const n = ncols();
             mapsEl.innerHTML = FIELDS.map(f => {
                 let guessed = -1;
-                if (useHeader) guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
+                if (useHeader) guessed = headers.findIndex(h => {
+                    // "tax_id", "Tax-ID" y "tax id" son el mismo encabezado.
+                    const plano = norm(h).replace(/[^a-z0-9]+/g, ' ').trim();
+                    return f.guess.some(g => plano.includes(g)) || (f.exact ?? []).some(g => plano.split(' ').includes(g));
+                });
                 const opts = [`<option value="-1">${I.i18nNinguna || '— ninguna —'}</option>`];
                 for (let i = 0; i < n; i++) {
                     const label = useHeader && headers[i] ? headers[i] : (I.i18nColumna || 'Columna {n}').replace('{n}', String(i + 1));
@@ -603,7 +625,7 @@ import { iconInner } from '../../../lib/icons';
                 `<div><span class="is-num">${valid.length}</span><small>${I.i18nAImportar || 'clientes a importar'}</small></div>` +
                 (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>${I.i18nFilasOmitidas || 'filas omitidas (sin empresa)'}</small></div>` : '');
 
-            $('impPrevHead').innerHTML = `<tr><th>${I.i18nThEmpresa || 'Empresa'}</th><th>${I.i18nThContacto || 'Contacto'}</th><th>${I.i18nThEmail || 'Email'}</th><th>${I.i18nThRfc || 'RFC'}</th><th>${I.i18nThTerminos || 'Términos'}</th><th class="n">${I.i18nThLimite || 'Límite'}</th></tr>`;
+            $('impPrevHead').innerHTML = `<tr><th>${I.i18nThEmpresa || 'Empresa'}</th><th>${I.i18nThContacto || 'Contacto'}</th><th>${I.i18nThEmail || 'Email'}</th><th>${esc(I.i18nThRfc || 'Tax ID')}</th><th>${I.i18nThTerminos || 'Términos'}</th><th class="n">${I.i18nThLimite || 'Límite'}</th></tr>`;
             $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
                 const bad = !p.empresa;
                 return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${TERM_LABEL[p.terminos]}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
@@ -627,6 +649,14 @@ import { iconInner } from '../../../lib/icons';
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoImportar);
+                // Filas con identificador fiscal inválido: se importó el resto y
+                // se dice cuáles faltaron, en vez de recargar como si todo entrara.
+                if (Array.isArray(data.rejected) && data.rejected.length) {
+                    errorEl.textContent = data.rejected.map((r: any) => `${r.empresa}: ${r.error}`).join(' · ');
+                    btnNext.disabled = false;
+                    btnNext.textContent = (I.i18nImportarN || 'Importar {n} clientes').replace('{n}', String(valid.length)).replace('{s}', 's');
+                    return;
+                }
                 location.reload();
             } catch (err: any) {
                 errorEl.textContent = err.message;
@@ -667,7 +697,7 @@ import { iconInner } from '../../../lib/icons';
             else if (step === 'map') showStep('file');
         });
         $('impTpl').addEventListener('click', () => {
-            const csv = 'empresa,contacto,email,telefono,rfc,terminos,limite\nDistribuidora El Zarco,Raul Mendoza,compras@elzarco.mx,55 1234 5678,DEZ981123QX1,net30,500000\nConstructora GAMA,Lucia Ferreira,lucia@gama.com.mx,55 8765 4321,CGA050617HJ8,net60,850000\n';
+            const csv = modal.dataset.importTemplate || '';
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);

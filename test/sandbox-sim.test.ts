@@ -48,6 +48,14 @@ describe('simulación fiscal', () => {
         expect(r.rawProviderData).toMatchObject({ simulado: true, simulacion: resultado });
     });
 
+    it.each(['pac_caido', 'receptor_invalido', 'certificado_vencido', 'timbre_duplicado'] as const)('%s fuera de México no habla del SAT', (resultado) => {
+        for (const country of ['ES', 'FR', 'US', 'CO']) {
+            const r = sim.simulatedFiscalResponse(resultado, 'doc', { regulatory: country === 'ES', country });
+            expect(r.success).toBe(false);
+            expect(r.error, `${resultado} ${country}`).not.toMatch(/\bSAT\b|RFC|CFDI|timbr|sello digital/i);
+        }
+    });
+
     it('consume el resultado forzado una sola vez', async () => {
         m.consumed = [[{ resultado: 'pac_caido' }]];
         expect(await sim.consumeFiscalOutcome('o')).toBe('pac_caido');

@@ -4,7 +4,8 @@
 // redirect si no existe, crumbs, .detail-grid con sidebar sticky.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
-import { getCliente, getEstadoCuentaCliente, getMyMembership, STATUS_META, money } from '../../../lib/queries';
+import { getCliente, getEstadoCuentaCliente, getMyMembership, getOrg, STATUS_META, money } from '../../../lib/queries';
+import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -18,10 +19,14 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 };
 
 const { id } = Astro.params;
-const [c, ME, EC] = await Promise.all([
-    getCliente(id ?? ''), getMyMembership(), getEstadoCuentaCliente(id ?? ''),
+const [c, ME, EC, ORG] = await Promise.all([
+    getCliente(id ?? ''), getMyMembership(), getEstadoCuentaCliente(id ?? ''), getOrg(),
 ]);
 if (!c) return Astro.redirect('/app/clientes');
+// El identificador fiscal del CLIENTE se nombra como en SU país (un cliente
+// español de un negocio mexicano tiene NIF, no RFC); si no lo tiene guardado,
+// como en el país del negocio.
+const TAX_ID_LABEL = getCountryProfile(String(c.countryCode || ORG.countryCode || 'MX'), L).taxIdLabel;
 const canEdit = memberCan(ME, 'clientes');
 
 const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cdet.nivel_estandar'), plata: t(L, 'cdet.nivel_plata'), oro: t(L, 'cdet.nivel_oro'), distribuidor: t(L, 'cdet.nivel_distribuidor') };
@@ -210,7 +215,7 @@ import { iconInner } from '../../../lib/icons';
             <section class="dc-side-block">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.condiciones_titulo')}</h2></div>
                 <div class="dc-kv-list">
-                    <div class="dc-kv"><span class="dc-kv-label">{t(L, 'cdet.rfc_label')}</span><span>{c.rfc || t(L, 'cdet.sin_rfc')}</span></div>
+                    <div class="dc-kv"><span class="dc-kv-label">{TAX_ID_LABEL}</span><span>{c.rfc || tf('cdet.sin_rfc', { taxId: TAX_ID_LABEL })}</span></div>
                     <div class="dc-kv"><span class="dc-kv-label">{t(L, 'cdet.limite_label')}</span><span class="editorial">{c.limite > 0 ? money(c.limite, 0) : '—'}</span></div>
                     <div class="dc-kv"><span class="dc-kv-label">{t(L, 'cdet.terminos_label')}</span><span>{c.terminos}</span></div>
                 </div>

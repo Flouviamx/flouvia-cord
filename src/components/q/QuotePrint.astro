@@ -18,6 +18,10 @@ const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(B
 const PROFILE = getCountryProfile(ORG.countryCode || 'MX', L);
 const TAX_LABEL = PROFILE.taxLabel;
 const TAX_ID_LABEL = PROFILE.taxIdLabel;
+// Fuera de México el identificador se captura en el perfil fiscal
+// (`fiscal_metadata.tax_id`): el SIREN de París o la USt-IdNr. de Berlín no
+// viven en `rfc`, y el PDF los omitía aunque el negocio ya los hubiera guardado.
+const TAX_ID = String((PROFILE.code !== 'MX' && (ORG.fiscalMetadata?.tax_id || ORG.fiscalTaxId)) || ORG.rfc || '');
 
 const hoy = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 
@@ -54,7 +58,7 @@ const darkLogo = profile.logoDark || printLogo;
                 <div>
                     <h1>{ORG.nombre}</h1>
                     {ORG.razonSocial && <p>{ORG.razonSocial}</p>}
-                    {ORG.rfc && <p>{TAX_ID_LABEL} {ORG.rfc}</p>}
+                    {TAX_ID && <p>{TAX_ID_LABEL} {TAX_ID}</p>}
                     {ORG.direccion && <p>{ORG.direccion}</p>}
                     {(ORG.email || ORG.telefono) && <p>{[ORG.email, ORG.telefono].filter(Boolean).join(' · ')}</p>}
                 </div>

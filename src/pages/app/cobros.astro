@@ -15,7 +15,8 @@ import AccessGate from '../../components/app/AccessGate.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
-import { getMyMembership, money } from '../../lib/queries';
+import { getMyMembership, getOrg, money } from '../../lib/queries';
+import { supportsOnlinePayments } from '../../lib/countries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
@@ -41,6 +42,13 @@ const D = hasAccess ? await loadCobros(rango, { withStripe: false, minISO }) : n
 // `withStripe: false` ese campo es null y esconderíamos los widgets de Stripe aun
 // teniendo la cuenta activa.
 const conectado = !!D?.connected;
+// Sin Cord Payments, el aviso depende del país: "ni SPEI automático" es de
+// México, y donde Cord Payments no se puede activar (CO, AR, CL, PE) decir "aún
+// no lo activas" invitaba a algo que el país no tiene. Solo se lee la org en
+// ese caso; con la cuenta conectada el aviso no se dibuja.
+const PAIS = hasAccess && !conectado ? String((await getOrg()).countryCode || 'MX').toUpperCase() : '';
+const saludSinConnect = !supportsOnlinePayments(PAIS) ? t(L, 'cbr.salud_no_disponible')
+    : PAIS === 'MX' ? t(L, 'cbr.salud_sin_connect') : t(L, 'cbr.salud_sin_connect_intl');
 
 // Delta contra el mismo tramo anterior.
 const prev = D?.prev ?? null;
@@ -163,7 +171,7 @@ const CBR_T = {
                         </div>
                         {conectado
                             ? <div class="cbr-salud-body" data-cbr-bind="salud"></div>
-                            : <p class="report-empty cbr-salud-off">{t(L, 'cbr.salud_sin_connect')}</p>}
+                            : <p class="report-empty cbr-salud-off">{saludSinConnect}</p>}
                     </div>
                 </article>
             </section>

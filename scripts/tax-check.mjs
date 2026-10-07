@@ -23,6 +23,7 @@ import {
 } from '../packages/elements/src/engine.ts';
 import {
     TAX_PRESETS,
+    US_STATE_TAX,
     getCountryProfile,
     taxKindLabel,
     taxPresetsFor,
@@ -114,6 +115,22 @@ for (const code of ['US', 'BR']) {
     assert.equal(taxPresetsFor(code).length, 1, `${code} no debe traer tasas inventadas`);
     assert.equal(taxPresetsFor(code)[0].tasa, 0);
 }
+
+// ── 7b. Vocabulario y tasas verificadas por país (oct 2026) ─────────────────
+// El nombre de un preset se IMPRIME en la factura: va en la lengua del país.
+for (const code of ['FR', 'DE', 'BR', 'PE']) {
+    assert.ok(!taxPresetsFor(code).some((p) => p.nombre === 'Zero-rated'),
+        `${code}: "Zero-rated" es inglés; la factura de ese país no lo usa`);
+}
+assert.equal(taxPresetsFor('BR')[0].nombre, 'Isento', 'BR: el exento se llama "Isento"');
+assert.equal(taxPresetsFor('US')[0].nombre, 'Exempt / Resale', 'US sin estado: exento en inglés');
+assert.ok(!taxPresetsFor('FR').some((p) => /^IVA\b/.test(p.nombre)), 'FR no puede sembrar "IVA"');
+// Canarias cobra IGIC, no el IVA peninsular.
+assert.ok(taxPresetsFor('ES', '35').some((p) => p.nombre.startsWith('IGIC')), 'Las Palmas debe sembrar IGIC');
+assert.ok(!taxPresetsFor('ES', 'Santa Cruz de Tenerife').some((p) => p.nombre.startsWith('IVA')), 'Tenerife no lleva IVA');
+assert.ok(taxPresetsFor('ES', '28').some((p) => p.nombre === 'IVA 21%'), 'Madrid conserva el IVA 21%');
+// Luisiana: 5% desde el 1 de enero de 2025 (antes 4.45%).
+assert.equal(US_STATE_TAX.LA, 5, 'Luisiana: la tasa estatal es 5% desde 2025');
 
 // ── 8. La constante muerta no vuelve a las superficies de dinero ────────────
 // Los totales que lee el cliente salen del motor compartido y de la tasa de la

@@ -22,11 +22,49 @@ import { requireFreshAuth } from '../../lib/step-up';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import type { FeatureKey } from '../../lib/entitlements';
 import { getCountryProfile, isCountryCode, isSupportedCountry } from '../../lib/countries';
+import { defaultCountryTaxPct } from '../../lib/impuestos';
+import { validateTaxId } from '../../lib/tax-id';
+import { payoutSpecFor, clabeValida, ibanValido } from '../../lib/payout-fields';
+import { reseedTaxCatalogForTerritory } from '../../lib/impuestos-db';
 import { listOfferedCurrencies } from '../../lib/currency';
 import { isValidTimeZone } from '../../lib/timezones';
 import { validateLateInterestRate } from '../../lib/late-interest-policy';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Cuenta bancaria para TRANSFERENCIA MANUAL (la que el cliente ve en el link
+ * para pagar por su cuenta), validada con el riel del país:
+ *   · México: CLABE de 18 dígitos con su dígito de control.
+ *   · Zona SEPA y demás países IBAN: IBAN con mod-97.
+ *   · El resto (EE.UU., Reino Unido, Canadá, Brasil, Latam sin IBAN): son
+ *     varios datos (routing + cuenta, sort code + cuenta, banco + agência +
+ *     conta) que el negocio escribe juntos; se acota a un texto legible.
+ */
+function normalizeBankAccount(country: string, raw: string, locale: 'es' | 'en'): { ok: true; value: string | null } | { ok: false; error: string } {
+    const text = raw.trim();
+    if (!text) return { ok: true, value: null };
+    const format = payoutSpecFor(country).format;
+    if (format === 'clabe') {
+        const clabe = text.replace(/\D/g, '');
+        if (!/^\d{18}$/.test(clabe)) return { ok: false, error: locale === 'en' ? 'The CLABE must have 18 digits.' : 'La CLABE debe tener 18 dígitos.' };
+        if (!clabeValida(clabe)) return { ok: false, error: locale === 'en' ? "That CLABE isn't valid: the control digit doesn't match." : 'La CLABE no es válida: el dígito de control no coincide.' };
+        return { ok: true, value: clabe };
+    }
+    if (format === 'iban') {
+        const iban = text.replace(/\s+/g, '').toUpperCase();
+        if (!ibanValido(iban)) return { ok: false, error: locale === 'en' ? "That IBAN isn't valid. Check the characters." : 'El IBAN no es válido. Revisa los caracteres.' };
+        // Se guarda en grupos de 4, que es como se lee y se copia un IBAN.
+        return { ok: true, value: iban.replace(/(.{4})/g, '$1 ').trim() };
+    }
+    const value = text.replace(/\s+/g, ' ');
+    if (value.length < 4 || value.length > 80 || !/^[\p{L}\p{N} .,:;#/·()\-]+$/u.test(value) || (value.match(/\d/g) || []).length < 4) {
+        return { ok: false, error: locale === 'en'
+            ? 'Enter your bank details (for example routing and account number).'
+            : 'Escribe los datos de tu cuenta (por ejemplo, número de banco y de cuenta).' };
+    }
+    return { ok: true, value };
+}
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
 // La API acepta exactamente lo que el selector ofrece. Validar contra el ISO
 // completo dejaba entrar por POST una divisa que la UI ya no lista y que
@@ -123,7 +161,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const nombre = body.nombre !== undefined ? String(body.nombre).trim() : actual.nombre;
     if (!nombre) return json({ error: 'El nombre del negocio es obligatorio', field: 'nombre' }, 400);
 
-    const rfc = body.rfc !== undefined ? (String(body.rfc).trim().toUpperCase() || null) : actual.rfc;
+    let rfc = body.rfc !== undefined ? (String(body.rfc).trim().toUpperCase() || null) : actual.rfc;
     const razon = body.razon_social !== undefined ? (String(body.razon_social).trim() || null) : actual.razon_social;
     const color = body.color_marca !== undefined
         ? (HEX.test(String(body.color_marca).trim()) ? String(body.color_marca).trim() : '#0a192f')
@@ -240,6 +278,30 @@ export const PATCH: APIRoute = async ({ request }) => {
     const paisValido = isSupportedCountry(countryCode)
         || (countryCode === paisActual && isCountryCode(countryCode));
     if (!paisValido) return json({ error: 'País no soportado.' }, 400);
+
+    // ── Identificador fiscal del propio negocio ─────────────────────────────
+    // Se valida con el algoritmo del país (dígito verificador del RFC, letra
+    // del NIF, Luhn del SIREN, mod 97 del VAT británico, DV del CUIT/RUT/RUC…)
+    // antes de guardarse: es el dato que imprime cada factura y que Verifactu
+    // encadena para siempre. Antes no se validaba en absoluto.
+    if (body.rfc !== undefined && rfc) {
+        const checked = validateTaxId(countryCode, rfc, { locale: currentLocale() });
+        if (!checked.ok) return json({ error: checked.reason, code: 'invalid_tax_id', field: 'rfc' }, 400);
+        if (countryCode === 'MX') {
+            rfc = checked.normalized;
+        } else {
+            // Fuera de México el identificador vive en el perfil fiscal
+            // internacional; `rfc` es la columna del CFDI. La configuración
+            // asistida (src/lib/setup) lo manda como `rfc` en cualquier país.
+            currentFiscalMetadata.tax_id = checked.normalized;
+            rfc = actual.rfc;
+        }
+    }
+    if (body.fiscal_tax_id !== undefined && currentFiscalMetadata.tax_id) {
+        const checked = validateTaxId(countryCode, String(currentFiscalMetadata.tax_id), { locale: currentLocale() });
+        if (!checked.ok) return json({ error: checked.reason, code: 'invalid_tax_id', field: 'fiscal_tax_id' }, 400);
+        currentFiscalMetadata.tax_id = checked.normalized;
+    }
 
     // ── El país de una cuenta de cobros es INMUTABLE ────────────────────────
     //
@@ -370,8 +432,18 @@ export const PATCH: APIRoute = async ({ request }) => {
     const cobroSpeiAuto = body.cobro_spei_auto !== undefined ? Boolean(body.cobro_spei_auto) : actual.cobro_spei_auto;
     const bancoNombre = body.banco_nombre !== undefined ? str(body.banco_nombre, 100) : actual.banco_nombre;
     const previousClabe = decryptSecret(actual.banco_clabe_enc as string) || (actual.banco_clabe as string) || null;
-    const bancoClabe = body.banco_clabe !== undefined ? (String(body.banco_clabe) === '' ? null : String(body.banco_clabe).replace(/\D/g, '').slice(0, 18) || null) : previousClabe;
-    if (bancoClabe && !/^\d{18}$/.test(bancoClabe)) return json({ error: 'La CLABE debe tener 18 dígitos.', field: 'banco_clabe' }, 400);
+    // La cuenta para transferencia MANUAL se valida con el formato del país de
+    // la organización. Antes TODO país pasaba por la regla de la CLABE (quitar
+    // lo que no fuera dígito, cortar a 18 y exigir 18): Estados Unidos, Reino
+    // Unido, Canadá y Brasil no podían guardar su cuenta, y un IBAN de Madrid o
+    // París perdía sus letras y se cortaba a 18 dígitos — y ese número
+    // corrompido era el que el cliente veía para transferir.
+    let bancoClabe: string | null = previousClabe;
+    if (body.banco_clabe !== undefined) {
+        const cuenta = normalizeBankAccount(countryCode, String(body.banco_clabe ?? ''), currentLocale());
+        if (!cuenta.ok) return json({ error: cuenta.error, field: 'banco_clabe' }, 400);
+        bancoClabe = cuenta.value;
+    }
     let bancoClabeEnc = actual.banco_clabe_enc;
     if (body.banco_clabe !== undefined) {
         try {
@@ -380,8 +452,35 @@ export const PATCH: APIRoute = async ({ request }) => {
             return json({ error: 'El servicio de cifrado no está disponible.' }, 503);
         }
     }
-    const bancoClabeLast4 = body.banco_clabe !== undefined ? bancoClabe?.slice(-4) || null : actual.banco_clabe_last4;
+    const bancoClabeLast4 = body.banco_clabe !== undefined ? bancoClabe?.replace(/[^A-Za-z0-9]/g, '').slice(-4) || null : actual.banco_clabe_last4;
     const bancoBen = body.banco_beneficiario !== undefined ? str(body.banco_beneficiario, 150) : actual.banco_beneficiario;
+
+    // ── Lo que deja de existir al salir de México ───────────────────────────
+    // Régimen SAT, uso de CFDI, CP de expedición, serie del CFDI y SPEI son de
+    // México. Al cambiar de país a otro se vacían: antes se quedaban y el
+    // link público seguía mostrando "RFC …" y ofreciendo SPEI a un cliente en
+    // Madrid. El RFC anterior queda en la bitácora.
+    const saleDeMexico = paisCambio && paisActual === 'MX';
+    const rfcFinal = saleDeMexico && body.rfc === undefined ? null : rfc;
+    const regimenFinal = saleDeMexico ? null : regimen;
+    const usoCfdiFinal = saleDeMexico ? null : usoCfdi;
+    const cpFiscalFinal = saleDeMexico ? null : cpFiscal;
+    const serieFolioFinal = saleDeMexico ? null : serieFolio;
+    const cobroSpeiAutoFinal = countryCode === 'MX' ? cobroSpeiAuto : false;
+    // La tasa plana heredada sigue al país si nunca se personalizó (mismo
+    // criterio que la divisa): una org que pasaba de México a Francia
+    // conservaba 16 y `taxCatalogFor` lo aceptaba como tasa válida.
+    const ivaFinal = paisCambio && body.iva_pct === undefined
+        && Number(actual.iva_pct) === defaultCountryTaxPct(paisActual)
+        ? defaultCountryTaxPct(countryCode)
+        : iva;
+    if (saleDeMexico && (actual.rfc || actual.regimen_fiscal)) {
+        await logAudit(orgId, {
+            accion: 'org.fiscal_mx_archivado', entidad: 'org', entidad_id: orgId,
+            detalle: `País ${paisActual} → ${countryCode}; RFC anterior ${actual.rfc || '—'}, régimen ${actual.regimen_fiscal || '—'}`,
+            ip: reqIp(request),
+        });
+    }
 
     const revision = createSettingsRevision(actual, {
         color_marca:color,color_secundario:colorSec,brand_profile:brandProfile,
@@ -390,8 +489,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     }, Object.keys(body));
     const [recorded] = await withOrgTx(orgId, sql`
         with updated as (update orgs set
-            nombre = ${nombre}, rfc = ${rfc}, razon_social = ${razon},
-            color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${iva}, iva_incluido_defecto = ${ivaIncluidoDef},
+            nombre = ${nombre}, rfc = ${rfcFinal}, razon_social = ${razon},
+            color_marca = ${color}, quote_prefix = ${prefix}, iva_pct = ${ivaFinal}, iva_incluido_defecto = ${ivaIncluidoDef},
             email_contacto = ${email}, telefono = ${telefono}, direccion = ${direccion},
             logo_url = ${logoUrl}, pdf_template = ${pdfTemplate},
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
@@ -404,7 +503,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             ai_cobranza_monto_min = ${aiMontoMin}, ai_cobranza_max_corrida = ${aiMaxCorrida},
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
-            regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio},
+            regimen_fiscal = ${regimenFinal}, uso_cfdi = ${usoCfdiFinal}, cp_fiscal = ${cpFiscalFinal}, serie_folio = ${serieFolioFinal},
             country_code = ${countryCode},
             fiscal_metadata = ${JSON.stringify(currentFiscalMetadata)},
             moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
@@ -415,7 +514,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             embed_domains = ${embedDomains},
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
             email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma},
-            acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAuto},
+            acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAutoFinal},
             banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${bancoClabeEnc},
             banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
         where id = ${orgId} and xmin::text = ${actual._revision}
@@ -447,6 +546,28 @@ export const PATCH: APIRoute = async ({ request }) => {
     // bloque ai_cobranza_*, getCobranza lee interes_moratorio_pct). Sin esto,
     // guardar en Ajustes y recargar seguía mostrando los valores viejos hasta
     // 30-60 s: el usuario cree que no se guardó y vuelve a guardar.
+    // ── Impuestos del territorio ────────────────────────────────────────────
+    // Cambiar el país, o el estado / la provincia que decide el impuesto
+    // (sales tax estatal en EE.UU., IGIC en Canarias), reemplaza el catálogo
+    // de ARRANQUE del territorio anterior si sigue intacto. Antes una cuenta de
+    // EE.UU. que declaraba su estado se quedaba con solo "Exempt" (toda
+    // cotización salía al 0%) y una que pasaba de México a Francia conservaba
+    // el IVA 16% mexicano.
+    const regionAnterior = String((actual.fiscal_metadata as Record<string, unknown> | null)?.region || '') || null;
+    const regionNueva = String(currentFiscalMetadata.region || '') || null;
+    if (paisCambio || regionAnterior !== regionNueva) {
+        const sembrados = await reseedTaxCatalogForTerritory(orgId,
+            { country: paisActual, region: regionAnterior },
+            { country: countryCode, region: regionNueva });
+        if (sembrados > 0) {
+            await logAudit(orgId, {
+                accion: 'impuesto.catalogo_territorio', entidad: 'impuesto',
+                detalle: `${sembrados} perfiles de ${countryCode}${regionNueva ? `/${regionNueva}` : ''} (antes ${paisActual}${regionAnterior ? `/${regionAnterior}` : ''})`,
+                ip: reqIp(request),
+            });
+        }
+    }
+
     invalidateMoneyCaches(orgId);
 
     return json({ ok: true });

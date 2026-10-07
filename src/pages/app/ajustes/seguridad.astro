@@ -59,7 +59,7 @@ const TIMEOUTS = [
         <div class="s-body">
             <div class="s-field">
                 <label for="oDomains">{t(L, 'set.seg.dominios_permitidos')}</label>
-                <input class="s-input" id="oDomains" data-field="invite_domains" value={ORG.inviteDomains} placeholder="tuempresa.mx, tuempresa.com" />
+                <input class="s-input" id="oDomains" data-field="invite_domains" value={ORG.inviteDomains} placeholder={L === 'en' ? 'yourcompany.com, yourcompany.net' : 'tuempresa.com, tuempresa.net'} />
                 <span class="s-hint">{t(L, 'set.seg.dominios_hint')}</span>
             </div>
         </div>

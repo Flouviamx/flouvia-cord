@@ -252,9 +252,13 @@ import { iconInner } from '../../../lib/icons';
                                         {f.enviada && <span class="t-delivery">{L === 'en' ? 'Sent' : 'Enviada'}</span>}
                                         {f.enviada && testDocument && <span class="t-status-sep" aria-hidden="true">·</span>}
                                         {testDocument && (
-                                            <span class="t-test-mode" title={L === 'en'
-                                                ? 'The fiscal provider did not issue this document. It is not valid before the tax authority.'
-                                                : 'El proveedor fiscal no timbró este documento. No es válido ante el SAT.'}>
+                                            <span class="t-test-mode" title={String(f.pais || '').toUpperCase() === 'MX'
+                                                ? (L === 'en'
+                                                    ? 'The fiscal provider did not stamp this document. It is not a valid CFDI before the SAT.'
+                                                    : 'El proveedor fiscal no timbró este documento. No es válido ante el SAT.')
+                                                : (L === 'en'
+                                                    ? 'The fiscal provider did not issue this document. It is not valid for tax purposes.'
+                                                    : 'El proveedor fiscal no emitió este documento. No es válido ante la autoridad fiscal.')}>
                                                 {L === 'en' ? 'Test' : 'Prueba'}
                                             </span>
                                         )}

@@ -15,6 +15,10 @@ const isEs = ORG.countryCode === 'ES';
 const verifactuOn = ORG.verifactuModo === 'verifactu';
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
+// El ejemplo sale del prefijo real (el guardado o el del país), no de un
+// "INV-000001" fijo. España numera por serie Y ejercicio (regla 29), así que
+// el año va pegado al prefijo, igual que lo arma la emisión.
+const FOLIO_EJEMPLO = `${FM.invoice_prefix || PROFILE.invoicePrefix}${isEs ? new Date().getFullYear() : ''}-000001`;
 import { iconInner } from '../../../lib/icons';
 ---
 
@@ -88,7 +92,7 @@ import { iconInner } from '../../../lib/icons';
                     <div class="s-field">
                         <label for="fPrefix">{L === 'en' ? 'Invoice prefix' : 'Prefijo de factura'}</label>
                         <input class="s-input" id="fPrefix" data-field="fiscal_invoice_prefix" value={FM.invoice_prefix || PROFILE.invoicePrefix} maxlength="12" />
-                        <span class="s-hint">{L === 'en' ? 'Example: INV-000001' : 'Ejemplo: INV-000001'}</span>
+                        <span class="s-hint">{(L === 'en' ? 'Example: ' : 'Ejemplo: ') + FOLIO_EJEMPLO}</span>
                     </div>
                 </div>
                 <a class="fact-link" href="/app/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>

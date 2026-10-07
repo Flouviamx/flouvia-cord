@@ -1,9 +1,19 @@
 ---
 import { resolveBrandProfile } from '../../lib/brand-profile';
+import { getCountryProfile } from '../../lib/countries';
+import { currentLocale } from '../../lib/context';
 interface Props { org: any; folio: string; label: string; demo?: boolean; }
 const { org, folio, label, demo = false } = Astro.props;
 const profile = resolveBrandProfile(org.brandProfile);
 const logo = profile.header === 'contrast' && profile.logoDark ? profile.logoDark : org.logoUrl;
+// El identificador fiscal se nombra como en el país del EMISOR. Antes era un
+// "RFC" literal, así que el link de un negocio en París o en Austin le decía
+// RFC a su cliente. Fuera de México el dato vive en el perfil fiscal
+// (`fiscal_metadata.tax_id`, expuesto como `fiscalTaxId`); `rfc` queda como
+// respaldo de las cuentas que lo capturaron antes de existir ese perfil.
+const pais = String(org.paisCode || org.countryCode || 'MX').toUpperCase();
+const taxIdLabel = getCountryProfile(pais, currentLocale()).taxIdLabel;
+const taxId = String((pais !== 'MX' && org.fiscalTaxId) || org.rfc || '');
 ---
 <header class="q-header brand-header" data-brand-header={profile.header}>
     <div class="q-brand-row">
@@ -11,7 +21,7 @@ const logo = profile.header === 'contrast' && profile.logoDark ? profile.logoDar
         <div class="q-logo-initial" data-brand-initial hidden={!!logo}>{org.inicial}</div>
         <div class="q-brand-text" hidden={demo && !!logo}>
             <span class="q-company">{org.nombre}</span>
-            {org.rfc && <span class="q-rfc">RFC {org.rfc}</span>}
+            {taxId && <span class="q-rfc">{taxIdLabel} {taxId}</span>}
         </div>
     </div>
     <div class="q-folio-tag">

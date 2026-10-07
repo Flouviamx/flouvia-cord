@@ -85,7 +85,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </div>
                 <div class="m-field">
                     <label for="cmRfc" id="cmRfcLabel">{isMx ? t(L, 'cmod.rfc') : COUNTRY.taxIdLabel}</label>
-                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX1' : COUNTRY.taxIdLabel} maxlength={64} />
+                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX5' : COUNTRY.taxIdLabel} maxlength={64} />
                 </div>
             </div>
             <div class="m-field">
@@ -134,7 +134,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                     </div>
                     <div class="m-field">
                         <label for="cmCp">{t(L, 'cmod.cp')}</label>
-                        <input class="m-input" id="cmCp" maxlength="20" placeholder="06600" />
+                        <input class="m-input" id="cmCp" maxlength="20" autocomplete="postal-code" />
                     </div>
                 </div>
                 <div class="m-field">
@@ -157,7 +157,11 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </div>
             </details>
 
-            <details class="m-fiscal" id="cmFiscal">
+            {/* Régimen SAT y uso del CFDI solo existen cuando el NEGOCIO timbra en
+                México y el cliente es mexicano. Se renderiza siempre (el script lee
+                y escribe estos campos al abrir y guardar) pero nace oculto fuera de
+                México; syncCountryDependent() decide con el país del cliente. */}
+            <details class="m-fiscal" id="cmFiscal" style={isMx ? undefined : 'display:none'}>
                 <summary>{t(L, 'cmod.fiscal_summary')}</summary>
                 <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
                 <div class="m-field">
@@ -190,10 +194,12 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 </dialog>
 
 <script>
+    import { createMoney0 } from '../../lib/money-client';
     // CRUD de clientes contra /api/clientes, disparado por 'clientmodal:open' y
     // notificando 'clientmodal:saved'/'clientmodal:deleted' — la página anfitriona decide
     // qué hacer con eso (recargar, insertar un <option>, quitar una fila…).
     (function () {
+        const money0 = createMoney0();
         const dlgEl = document.getElementById('clientModal') as HTMLDialogElement | null;
         if (!dlgEl) return;
         const dlg: HTMLDialogElement = dlgEl;
@@ -219,14 +225,17 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
 
         // El país RESUELTO del cliente: el suyo si lo eligió, si no el del negocio.
-        // De ahí sale el label del tax id y si se muestra el bloque de CFDI mexicano
-        // — un cliente francés de una empresa española no es "NIF / CIF" ni tiene RFC.
+        // De ahí sale el label del tax id — un cliente francés de una empresa
+        // española no es "NIF / CIF" ni tiene RFC. El bloque de CFDI exige además
+        // que el NEGOCIO sea mexicano: solo él timbra ante el SAT. Antes bastaba
+        // con que el cliente lo fuera, y una empresa de Madrid con un cliente en
+        // Monterrey veía "Régimen fiscal" y "Uso del CFDI" que nunca iba a usar.
         const syncCountryDependent = () => {
             const chosen = input('cmCountry').value.toUpperCase();
             const resolved = chosen || orgCountry;
             rfcLabel.textContent = taxIdLabels[resolved] || rfcDefaultLabel;
             input('cmRfc').placeholder = rfcLabel.textContent || '';
-            if (fiscalDetails) fiscalDetails.style.display = resolved === 'MX' ? '' : 'none';
+            if (fiscalDetails) fiscalDetails.style.display = orgCountry === 'MX' && resolved === 'MX' ? '' : 'none';
         };
         input('cmCountry').addEventListener('change', syncCountryDependent);
         const setTerm = (v: string) => {
@@ -239,7 +248,9 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             const el = document.getElementById('cmDiscPreview');
             if (!el) return;
             if (d <= 0) { el.innerHTML = I.sinDescuento || 'Sin descuento'; el.classList.remove('on'); }
-            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX')}</b>`; el.classList.add('on'); }
+            // Ejemplo en la divisa del negocio (regla 21): "$1,000 → $900" fijo
+            // le hablaba en pesos a una cuenta que cotiza en euros o libras.
+            else { el.innerHTML = `${money0(1000)} → <b>${money0(1000 * (1 - d / 100))}</b>`; el.classList.add('on'); }
         };
         const setNivel = (v: string, applySuggested = false) => {
             input('cmNivel').value = v;

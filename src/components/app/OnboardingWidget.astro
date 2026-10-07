@@ -15,6 +15,7 @@
 
 import type { getSetupProgress } from '../../lib/queries';
 import { currentLocale } from '../../lib/context';
+import { getCountryProfile } from '../../lib/countries';
 import { t } from '../../i18n/app';
 
 interface Props {
@@ -23,6 +24,25 @@ interface Props {
 const { progress } = Astro.props;
 const L = currentLocale();
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+
+// Vocabulario por país. Tres pasos hablaban en mexicano a todas las cuentas
+// ("RFC… timbrar CFDI 4.0 válidos ante el SAT", "tarjeta o SPEI", "factura el
+// CFDI"): una cuenta en París leía trámites que en su país no existen. Fuera de
+// México el texto nombra el identificador fiscal DEL PAÍS y no promete SPEI ni
+// CFDI. Sin país conocido se usa la variante neutra: decirle "SAT" a quien no
+// es de México es peor que no decírselo a quien sí lo es.
+const PAIS = String((progress as { pais?: string }).pais || '').toUpperCase();
+const esMx = PAIS === 'MX';
+const taxId = PAIS ? getCountryProfile(PAIS, L).taxIdLabel : (L === 'en' ? 'tax ID' : 'identificador fiscal');
+const descIntl: Record<string, string> = {
+    fiscal: tpl(t(L, 'onb.t.fiscal_intl.desc'), { taxId }),
+    online_cobros: t(L, 'onb.t.online_cobros_intl.desc'),
+    cobro: t(L, 'onb.t.cobro_intl.desc'),
+};
+// `copy` (cuando existe) es la variante que ya eligió getSetupProgress; la de
+// Mercado Pago no se toca porque no menciona rieles mexicanos.
+const descFor = (task: { id: string; desc: string; copy?: string }) =>
+    esMx ? task.desc : (descIntl[task.copy ?? task.id] ?? task.desc);
 
 // Primer grupo incompleto abierto por defecto (acordeón).
 const firstOpen = progress.groups.find((g) => !g.done)?.id ?? '';
@@ -91,7 +111,7 @@ import { iconInner } from '../../lib/icons';
                                     </span>
                                     <div class="onb-step-main">
                                         <span class="onb-step-title">{task.label}</span>
-                                        <p class="onb-step-desc">{task.desc}</p>
+                                        <p class="onb-step-desc">{descFor(task)}</p>
                                         <a href={task.href} class="onb-step-cta">{t(L, 'onb.configurar')} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-right')}></svg></a>
                                     </div>
                                 </div>
@@ -134,6 +154,13 @@ import { iconInner } from '../../lib/icons';
         const pill = document.getElementById('onbPill');   // vive en la topbar (AppLayout)
         if (!card) return;
 
+        // Plantillas ya traducidas por el servidor (data-i18n). El repintado tras
+        // el polling escribía "X de Y pasos listos" fijo en español, así que una
+        // cuenta en inglés veía cambiar su contador de idioma al primer avance.
+        let I18N = {};
+        try { I18N = JSON.parse(card.dataset.i18n || '{}'); } catch {}
+        const fill = (s, n, total) => String(s || '{n}/{total}').replace('{n}', String(n)).replace('{total}', String(total));
+
         if (new URLSearchParams(location.search).has('guia')) store.set({ view: 'card', dismissed: false });
 
         function applyView(s) {
@@ -166,7 +193,7 @@ import { iconInner } from '../../lib/icons';
             const cardPct = card.querySelector('[data-pct]');
             if (cardPct) cardPct.textContent = p.pct + '%';
             const cardCount = card.querySelector('[data-count]');
-            if (cardCount) cardCount.textContent = `${p.doneN} de ${p.total} pasos listos`;
+            if (cardCount) cardCount.textContent = fill(I18N.pasosListosTpl, p.doneN, p.total);
             if (pill) {
                 const pFg = pill.querySelector('.onb-ring-fg');
                 if (pFg) pFg.style.strokeDasharray = dash(p.pct);
@@ -211,7 +238,7 @@ import { iconInner } from '../../lib/icons';
                 const isDone = total > 0 && doneN === total;
                 gEl.setAttribute('data-done', isDone ? 'true' : 'false');
                 const sub = gEl.querySelector('[data-gsub]');
-                if (sub) sub.textContent = `${doneN}/${total} completados`;
+                if (sub) sub.textContent = fill(I18N.completadosTpl, doneN, total);
                 // Al completar un grupo, se colapsa y abre el siguiente pendiente.
                 if (isDone && !wasDone && gEl.getAttribute('data-open') === 'true') {
                     gEl.setAttribute('data-open', 'false');

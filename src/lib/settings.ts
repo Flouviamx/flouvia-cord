@@ -79,8 +79,10 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     },
     {
         id: 'cobros', label: 'Cobros', labelEn: 'Payments',
-        desc: 'Recibe pagos de tus clientes: tarjeta vía Stripe y transferencia bancaria.',
-        descEn: 'Accept payments from your clients: card via Stripe and bank transfer.',
+        // Sin el nombre del procesador (regla 14): el dueño del negocio cobra con
+        // tarjeta o transferencia, no "vía" un proveedor interno.
+        desc: 'Recibe pagos de tus clientes: tarjeta y transferencia bancaria.',
+        descEn: 'Accept payments from your clients: card and bank transfer.',
         icon: iconInner('wallet'),
         tabs: [
             { id: 'cobros', label: 'Cobros', labelEn: 'Payments', href: '/app/ajustes/cobros', keywords: 'stripe connect pagos payments tarjeta card transferencia spei clabe deposito payout comision fee banco mercado pago mercadopago' },

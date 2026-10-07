@@ -11,7 +11,7 @@ import SettingsSection from '../../../components/app/settings/SettingsSection.as
 // orgs.iva_pct se conserva solo como compatibilidad con cuentas anteriores.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getImpuestos, getOrg } from '../../../lib/queries';
-import { getCountryProfile, hasTaxPreset, taxKindLabel, type TaxKind } from '../../../lib/countries';
+import { getCountryProfile, hasTaxPreset, taxKindLabel, taxPresetsFor, usStateTaxPresets, type TaxKind } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -28,11 +28,22 @@ const isUs = PAIS === 'US';
 // Sales tax es ESTATAL, no nacional (por eso US no está en TAX_PRESETS): solo
 // hay algo que sembrar si el negocio ya declaró su estado en Ajustes › Fiscal.
 const usState = isUs ? String((ORG.fiscalMetadata as any)?.region || '') : '';
-const PUEDE_SEMBRAR = IMPUESTOS.length === 0 && (hasTaxPreset(PAIS) || (isUs && !!usState));
+// En EE.UU. el catálogo nace con solo el renglón exento hasta que el negocio
+// declara su estado: eso cuenta como "sin tasa" y se puede sembrar la estatal.
+const SOLO_EXENTOS = IMPUESTOS.length > 0 && IMPUESTOS.every((i) => i.kind === 'exento');
+const CATALOGO_SIN_TASA = IMPUESTOS.length === 0 || (isUs && SOLO_EXENTOS);
+const PUEDE_SEMBRAR = CATALOGO_SIN_TASA && (hasTaxPreset(PAIS) || (isUs && !!usState));
 // Las tres clases neutras, nombradas como se dicen en este país.
 const KINDS: { id: TaxKind; label: string }[] = (['consumo', 'retencion', 'exento'] as TaxKind[])
     .map((id) => ({ id, label: taxKindLabel(id, L, PAIS) }));
-const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' : '21'}%…`;
+// El ejemplo del diálogo es la tasa ESTÁNDAR del país (la misma con la que se
+// siembra el catálogo), no un 16/21 fijo: "TVA 21%" no existe en Francia y
+// "Sales tax 21%" no existe en ningún estado. Sin tasa nacional que sugerir
+// (Brasil, o EE.UU. sin estado declarado) el campo de tasa no sugiere nada.
+const PRESETS = isUs && usState ? usStateTaxPresets(usState) : taxPresetsFor(PAIS);
+const PRESET_DEFAULT = PRESETS.find((p) => p.esDefault);
+const NOMBRE_PLACEHOLDER = PRESET_DEFAULT ? `${PRESET_DEFAULT.nombre}…` : `${PROFILE.taxLabel}…`;
+const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
 ---
 
 <SettingsShell title="Impuestos — Ajustes" tab="impuestos" perm="ajustes"
@@ -45,7 +56,7 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
                 <button class="dev-new" id="impNew">{t(L, 'set.imp.nuevo')}</button>
             </div>
             <div class="imp-list" id="impList">
-                {IMPUESTOS.length === 0 && (
+                {CATALOGO_SIN_TASA && (
                     <div class="imp-seed" id="impEmpty">
                         <p class="imp-empty">
                             {isUs && !usState
@@ -127,7 +138,29 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
             </div>
             <div class="s-field">
                 <label for="iTasa">{t(L, 'set.imp.tasa')}</label>
-                <input class="s-input" id="iTasa" type="number" min="0" max="100" step="0.001" value="16" />
+                <input class="s-input" id="iTasa" type="number" min="0" max="100" step="0.001" value="" placeholder={TASA_DEFAULT} />
+            </div>
+        </div>
+        <!-- Solo retenciones. En México el CFDI necesita saber QUÉ impuesto se
+             retiene: sin este selector toda retención capturada a mano nacía
+             como de IVA y una "Retención ISR" se timbraba como retención de IVA.
+             La base es el caso Colombia (ReteIVA = 15% DEL IVA, no del subtotal). -->
+        <div class="s-row" id="iRetRow" style="margin-bottom:1rem" hidden>
+            {PAIS === 'MX' && (
+                <div class="s-field">
+                    <label for="iRetTipo">{t(L, 'set.imp.ret_impuesto_mx')}</label>
+                    <select class="s-input" id="iRetTipo">
+                        <option value="ret_iva">IVA</option>
+                        <option value="ret_isr">ISR</option>
+                    </select>
+                </div>
+            )}
+            <div class="s-field">
+                <label for="iRetBase">{t(L, 'set.imp.ret_sobre')}</label>
+                <select class="s-input" id="iRetBase">
+                    <option value="subtotal">{t(L, 'set.imp.ret_sobre_subtotal')}</option>
+                    <option value="impuesto">{t(L, 'set.imp.ret_sobre_impuesto')}</option>
+                </select>
             </div>
         </div>
         <label class="s-toggle" style="margin-bottom:0.3rem">
@@ -196,9 +229,21 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
         const meta = document.getElementById('impMeta') as HTMLElement | null;
         const M = meta?.dataset || ({} as DOMStringMap);
 
+        const kindSel = document.getElementById('iKind') as HTMLSelectElement;
+        const retRow = document.getElementById('iRetRow') as HTMLElement | null;
+        const tasaInput = document.getElementById('iTasa') as HTMLInputElement;
+        const syncKind = () => {
+            if (retRow) retRow.hidden = kindSel.value !== 'retencion';
+            // Un exento no lleva tasa: el campo se vacía y se bloquea.
+            tasaInput.disabled = kindSel.value === 'exento';
+            if (kindSel.value === 'exento') tasaInput.value = '0';
+        };
+        kindSel.addEventListener('change', syncKind);
+
         newBtn.addEventListener('click', () => {
             (document.getElementById('iNombre') as HTMLInputElement).value = '';
             (document.getElementById('iKind') as HTMLSelectElement).value = 'consumo';
+            syncKind();
             (document.getElementById('iTasa') as HTMLInputElement).value = '';
             (document.getElementById('iDefault') as HTMLInputElement).checked = true;
             dlg.showModal();
@@ -221,12 +266,14 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
             const nombre = (document.getElementById('iNombre') as HTMLInputElement).value.trim();
             if (!nombre) { (document.getElementById('iNombre') as HTMLInputElement).focus(); return; }
             const kind = (document.getElementById('iKind') as HTMLSelectElement).value;
-            const tasa = Number((document.getElementById('iTasa') as HTMLInputElement).value) || 0;
+            const tasa = kind === 'exento' ? 0 : Number((document.getElementById('iTasa') as HTMLInputElement).value) || 0;
             const es_default = (document.getElementById('iDefault') as HTMLInputElement).checked;
+            const tipo = kind === 'retencion' ? (document.getElementById('iRetTipo') as HTMLSelectElement | null)?.value : undefined;
+            const retencion_base = kind === 'retencion' ? (document.getElementById('iRetBase') as HTMLSelectElement | null)?.value : undefined;
             const btn = document.getElementById('impCreate') as HTMLButtonElement;
             btn.disabled = true;
             try {
-                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, kind, tasa, es_default }) });
+                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, kind, tasa, es_default, tipo, retencion_base }) });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nCrearErr || 'No se pudo crear');
                 location.reload();

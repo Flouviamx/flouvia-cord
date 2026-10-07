@@ -72,7 +72,11 @@ assert.match(schema, /create table if not exists invoice_sequences/);
 assert.match(schema, /alter table invoice_sequences force row level security/);
 assert.match(emit, /pg_advisory_xact_lock/);
 assert.match(emit, /quote:\$\{cotizacionId\}:invoice:v1/);
-assert.match(emit, /return finalizeInvoice\(orgId, String\(reserved.id\)\)/);
+// La emisión desde cotización delega en finalizeInvoice (mismo control y
+// contador) y después traslada a la factura los cobros ya pagados en la
+// cotización (carryQuotePayments): sin eso nacía `open` con el saldo completo.
+assert.match(emit, /= await finalizeInvoice\(orgId, String\(reserved.id\)\)/);
+assert.match(emit, /carryQuotePayments\(orgId, cotizacionId\)/);
 assert.match(await readFile(new URL('../src/lib/fiscal/issuance-usage.ts', import.meta.url), 'utf8'), /delivery_uncertain/);
 assert.match(emit, /isBillableCfdi/);
 assert.match(provider, /regulatory_status: 'commercial_only'/);

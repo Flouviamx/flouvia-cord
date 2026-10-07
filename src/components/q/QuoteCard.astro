@@ -9,6 +9,7 @@ import '../../styles/brand-surface.css';
 import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
 import { canCollectOnline } from '../../lib/payment-rail';
+import { payoutSpecFor } from '../../lib/payout-fields';
 import { splitAnticipo } from '../../lib/cobros';
 import { currentLocale } from '../../lib/context';
 import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
@@ -46,6 +47,15 @@ const viva = !yaAprobada && !yaRechazada;
 // `paisCode === 'MX' ? null : 'Tax'`, así que a un negocio en Londres le decía
 // "Tax" genérico en vez de "VAT" y a uno en Sídney en vez de "GST".
 const TAX_LABEL = getCountryProfile(ORG.paisCode || 'MX', L).taxLabel;
+// Riel bancario del EMISOR. La fila de transferencia decía "CLABE" a cualquier
+// cliente, y un IBAN de Madrid o un routing number de Austin no lo son. Se
+// nombra con los mismos datos que pide Ajustes › Cobros para ese país.
+const PAIS_EMISOR = String(ORG.paisCode || 'MX').toUpperCase();
+const CUENTA_LABEL = payoutSpecFor(PAIS_EMISOR).fields.map((f) => (L === 'en' ? f.labelEn : f.label)).join(' · ');
+// SPEI es el riel interbancario de México: fuera de ahí no existe aunque la
+// bandera haya quedado encendida, y un cobro por Mercado Pago sin tarjeta no
+// es una transferencia SPEI.
+const speiAuto = PAIS_EMISOR === 'MX' && !!ORG.cobroSpeiAuto;
 
 // Vigencia / urgencia
 const dias: number | undefined = typeof q.diasVigencia === 'number' ? q.diasVigencia : undefined;
@@ -488,7 +498,7 @@ import { iconInner } from '../../lib/icons';
                                     <div class="ql-transfer-title">{t(L, 'q.datos_transferencia')}</div>
                                     <div class="ql-transfer-details">
                                         <div class="ql-transfer-row"><span>{t(L, 'q.banco')}</span><strong>{ORG.bancoNombre || 'N/A'}</strong></div>
-                                        <div class="ql-transfer-row"><span>{t(L, 'q.clabe')}</span><strong>{ORG.bancoClabe || 'N/A'}</strong></div>
+                                        <div class="ql-transfer-row"><span>{CUENTA_LABEL}</span><strong>{ORG.bancoClabe || 'N/A'}</strong></div>
                                         <div class="ql-transfer-row"><span>{t(L, 'q.beneficiario')}</span><strong>{ORG.bancoBeneficiario || 'N/A'}</strong></div>
                                         <div class="ql-transfer-note">{t(L, 'q.transferencia_nota')}</div>
                                     </div>
@@ -507,11 +517,11 @@ import { iconInner } from '../../lib/icons';
                                     </div>
                                     <button class="ql-cta" id="qPayBtn" style={`background:${color}`}>
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
-                                        {ORG.aceptaTarjeta ? t(L, 'q.pagar_seguro') : t(L, 'q.pagar_spei')}
+                                        {!ORG.aceptaTarjeta && speiAuto ? t(L, 'q.pagar_spei') : t(L, 'q.pagar_seguro')}
                                     </button>
                                     <div class="ql-pay-secure">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
-                                        {ORG.aceptaTarjeta && ORG.cobroSpeiAuto ? t(L, 'q.tarjeta_o_spei') : ORG.cobroSpeiAuto ? t(L, 'q.solo_spei') : t(L, 'q.pago_protegido')}
+                                        {ORG.aceptaTarjeta && speiAuto ? t(L, 'q.tarjeta_o_spei') : speiAuto ? t(L, 'q.solo_spei') : t(L, 'q.pago_protegido')}
                                         {ORG.aceptaTarjeta && <span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>}
                                     </div>
                                 </div>
@@ -747,6 +757,7 @@ import { iconInner } from '../../lib/icons';
 <script>
     import { iconSvg } from '../../lib/icons';
     import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+    import { currencyDecimals } from '../../lib/currency';
 
     const card = document.querySelector('.q-card') as HTMLElement | null;
     const folio = card?.dataset.folio ?? '';
@@ -901,7 +912,7 @@ import { iconInner } from '../../lib/icons';
             precio_unitario: l.precio,
             tax_rate: l.taxRate ?? fallbackRate,
         }));
-        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones });
+        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY) });
     }
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
@@ -960,7 +971,8 @@ import { iconInner } from '../../lib/icons';
                         };
                     });
                     try {
-                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones });
+                        // Mismo redondeo por línea que el servidor al firmar.
+                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones, roundLines: currencyDecimals(QCURRENCY) });
                         tot.textContent = moneyFmt(totals.total);
                     } catch {
                         // Una tasa corrupta no debe tumbar la vista previa — el

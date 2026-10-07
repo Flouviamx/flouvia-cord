@@ -44,7 +44,7 @@ export async function seedTaxCatalog(orgId: string, countryCode: string, region?
 
         const presets = countryCode.toUpperCase() === 'US' && region && isUsState(region)
             ? usStateTaxPresets(region)
-            : taxPresetsFor(countryCode);
+            : taxPresetsFor(countryCode, region);
         for (const p of presets) {
             await withOrgTx(orgId, sql`
                 insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base)
@@ -115,4 +115,59 @@ export async function taxCatalogFor(orgId: string) {
             return fallback;
         },
     };
+}
+
+const sameRate = (a: unknown, b: unknown) => Math.abs(Number(a) - Number(b)) < 1e-9;
+
+/**
+ * El catálogo es el de ARRANQUE del país anterior, sin tocar: cada fila
+ * coincide (nombre, clase y tasa) con un preset de ese país. Solo entonces se
+ * puede reemplazar al cambiar de país sin pisar algo que el negocio configuró.
+ */
+function isUntouchedSeed(rows: any[], presets: { nombre: string; kind: string; tasa: number }[]): boolean {
+    if (!rows.length) return true;
+    return rows.every((r) => presets.some((p) =>
+        p.nombre === String(r.nombre) && p.kind === String(r.kind ?? 'consumo') && sameRate(p.tasa, r.tasa)));
+}
+
+function presetsFor(country: string, region?: string | null) {
+    const code = country.toUpperCase();
+    return code === 'US' && region && isUsState(region) ? usStateTaxPresets(region) : taxPresetsFor(code, region);
+}
+
+/**
+ * Al cambiar el país (o el estado / la provincia que decide el impuesto), el
+ * catálogo de arranque del territorio anterior se reemplaza por el del nuevo.
+ *
+ * Sin esto, una organización que pasaba de México a Francia seguía ofreciendo
+ * "IVA 16%" e "IVA 8% región fronteriza" en su selector, con las retenciones
+ * mexicanas, y `taxCatalogFor` las aceptaba como tasas válidas. Solo se
+ * reemplaza un catálogo INTACTO: si el negocio ya editó, agregó o borró algo,
+ * no se toca (el banner de Ajustes › Impuestos le ofrece hacerlo a mano).
+ * Devuelve cuántos perfiles sembró (0 = no se tocó nada).
+ */
+export async function reseedTaxCatalogForTerritory(
+    orgId: string,
+    previous: { country: string; region?: string | null },
+    next: { country: string; region?: string | null },
+): Promise<number> {
+    try {
+        const [rows] = await withOrgTx(orgId, sql`select nombre, kind, tasa from impuestos where org_id = ${orgId}`);
+        const oldPresets = presetsFor(previous.country, previous.region);
+        // Estados Unidos nace con solo "Exempt / Resale" hasta que declara su
+        // estado: ese catálogo también cuenta como intacto.
+        const usExemptOnly = previous.country.toUpperCase() === 'US' && rows.every((r: any) => String(r.kind) === 'exento');
+        if (!isUntouchedSeed(rows, oldPresets) && !usExemptOnly) return 0;
+        const newPresets = presetsFor(next.country, next.region);
+        if (isUntouchedSeed(rows, newPresets) && rows.length === newPresets.length) return 0;
+        await withOrgTx(orgId, sql`delete from impuestos where org_id = ${orgId}`);
+        const seeded = await seedTaxCatalog(orgId, next.country, next.region);
+        // La columna heredada sigue la tasa predeterminada del catálogo nuevo:
+        // `taxCatalogFor` la acepta como tasa válida y como respaldo.
+        const def = newPresets.find((p) => p.esDefault);
+        await withOrgTx(orgId, sql`update orgs set iva_pct = ${def ? def.tasa : 0} where id = ${orgId}`);
+        return seeded;
+    } catch {
+        return 0;
+    }
 }

@@ -89,7 +89,9 @@ import { iconInner } from '../../lib/icons';
                     <span>
                         <strong>{L === 'en' ? 'Test document' : 'Documento de prueba'}</strong>
                         {f.simulado
-                            ? (L === 'en' ? 'It has no fiscal stamp and is not valid before the tax authority.' : 'No tiene timbre fiscal y no es válido ante el SAT.')
+                            ? (String(f.pais || '').toUpperCase() === 'MX'
+                                ? (L === 'en' ? 'It has no fiscal stamp and is not a valid CFDI before the SAT.' : 'No tiene timbre fiscal y no es válido ante el SAT.')
+                                : (L === 'en' ? 'It was not issued through a fiscal provider and is not valid for tax purposes.' : 'No se emitió ante un proveedor fiscal y no es válido ante la autoridad fiscal.'))
                             : (L === 'en' ? 'It was created in a test environment and cannot be used as a fiscal receipt.' : 'Fue creado en un entorno de prueba y no funciona como comprobante fiscal.')}
                     </span>
                 </div>

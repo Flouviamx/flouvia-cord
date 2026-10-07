@@ -73,11 +73,11 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
             <div class="s-row">
                 <div class="s-field">
                     <label for="oEmail">{t(L, 'set.general.correo_contacto')}</label>
-                    <input class="s-input" id="oEmail" data-field="email_contacto" type="email" value={ORG.email} placeholder="ventas@tunegocio.mx" />
+                    <input class="s-input" id="oEmail" data-field="email_contacto" type="email" value={ORG.email} placeholder={L === 'en' ? 'sales@yourbusiness.com' : 'ventas@tunegocio.com'} />
                 </div>
                 <div class="s-field">
                     <label for="oTelefono">{t(L, 'set.general.telefono')}</label>
-                    <input class="s-input" id="oTelefono" data-field="telefono" value={ORG.telefono} placeholder="55 1234 5678" />
+                    <input class="s-input" id="oTelefono" data-field="telefono" value={ORG.telefono} autocomplete="tel" />
                 </div>
             </div>
             <div class="s-field">
@@ -93,11 +93,11 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
             <div class="s-row">
                 <div class="s-field">
                     <label for="oWeb">{t(L, 'set.general.sitio_web')}</label>
-                    <input class="s-input" id="oWeb" data-field="sitio_web" value={ORG.sitioWeb} placeholder="https://tunegocio.mx" />
+                    <input class="s-input" id="oWeb" data-field="sitio_web" value={ORG.sitioWeb} placeholder={L === 'en' ? 'https://yourbusiness.com' : 'https://tunegocio.com'} />
                 </div>
                 <div class="s-field">
                     <label for="oWa">{t(L, 'set.general.whatsapp')}</label>
-                    <input class="s-input" id="oWa" data-field="whatsapp" value={ORG.whatsapp} placeholder="5215512345678" />
+                    <input class="s-input" id="oWa" data-field="whatsapp" value={ORG.whatsapp} inputmode="tel" />
                     <span class="s-hint">{t(L, 'set.general.whatsapp_hint')}</span>
                 </div>
             </div>

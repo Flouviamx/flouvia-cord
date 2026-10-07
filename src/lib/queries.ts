@@ -1918,7 +1918,7 @@ export async function getCotizacionByToken(token: string) {
     const quoteId = identity.id;
     const [rows, items, conv, comentarios, firmas, cobrosRows, susRows] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
-               o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
+               o.nombre as org_nombre, o.rfc as org_rfc, o.fiscal_metadata as org_fiscal_metadata, o.color_marca as org_color,
                o.logo_url as org_logo_url, o.brand_profile as org_brand_profile, o.color_secundario as org_secondary,
                o.pdf_mensaje as org_pdf_mensaje, o.iva_pct as org_iva_pct,
                o.embed_domains as org_embed_domains,
@@ -2085,6 +2085,9 @@ export async function getCotizacionByToken(token: string) {
             nombre: rows[0].org_nombre as string,
             inicial: initials(rows[0].org_nombre),
             rfc: (rows[0].org_rfc as string) ?? '',
+            // Identificador fiscal del perfil internacional (SIREN, NIF, EIN…):
+            // fuera de México es el que el negocio capturó, no `rfc`.
+            fiscalTaxId: String((rows[0].org_fiscal_metadata as Record<string, unknown> | null)?.tax_id || '') || null,
             colorMarca: (rows[0].org_color as string) || '#0a192f',
             logoUrl: (rows[0].org_logo_url as string) ?? '',
             brandProfile: resolveBrandProfile(rows[0].org_brand_profile),
@@ -3938,7 +3941,7 @@ function buildPricingSuggestion(rows: any[], precioLista: number): PricingSugges
 // ── GUÍA DE CONFIGURACIÓN ─────────────────────────────────────────────────────
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
-    const [[o]] = await withOrgTx(orgId, sql`select logo_url, email_contacto, telefono, rfc, color_marca,
+    const [[o]] = await withOrgTx(orgId, sql`select logo_url, email_contacto, telefono, rfc, fiscal_metadata, color_marca,
         pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled, mp_charges_enabled,
         upper(coalesce(country_code, 'MX')) as pais, created_at,
         (sandbox_of is not null) as is_sandbox, is_demo
@@ -3993,7 +3996,12 @@ export async function getSetupProgress() {
 
     const tasks = ([
         { group: 'negocio',  id: 'marca',         href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
-        { group: 'negocio',  id: 'fiscal',        href: '/app/ajustes/fiscal',      done: !!o?.rfc },
+        // Fuera de México el identificador fiscal se guarda en el perfil fiscal
+        // internacional (`fiscal_metadata.tax_id`), no en `rfc`: con `!!rfc` el
+        // paso nunca se completaba para un negocio en Madrid o en Austin.
+        { group: 'negocio',  id: 'fiscal',        href: '/app/ajustes/fiscal',      done: String(o?.pais || 'MX') === 'MX'
+            ? !!o?.rfc
+            : !!((o?.fiscal_metadata as Record<string, unknown> | null)?.tax_id || o?.rfc) },
         { group: 'negocio',  id: 'documento',     href: '/app/ajustes/pdf',         done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
         { group: 'catalogo', id: 'productos',     href: '/app/productos',           done: Number(np) > 0 },
         { group: 'catalogo', id: 'clientes',      href: '/app/clientes',            done: Number(nc) > 0 },
@@ -4039,7 +4047,7 @@ export async function getSetupProgress() {
         })), !!o?.is_sandbox, !!o?.is_demo));
     }
 
-    return { groups, tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
+    return { pais: String(o?.pais || 'MX'), groups, tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
 }
 
 // ── BADGES DE LA SIDEBAR ──────────────────────────────────────────────────────

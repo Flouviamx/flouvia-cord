@@ -20,7 +20,17 @@ import { seedTaxCatalog } from '../../lib/impuestos-db';
 
 const TIPOS = new Set(['iva', 'ieps', 'ret_iva', 'ret_isr', 'exento']);
 const KINDS = new Set(['consumo', 'retencion', 'exento']);
-const clampTasa = (v: unknown) => Math.min(100, Math.max(0, Number(v) || 0));
+/** Tasa en porcentaje: número finito entre 0 y 100, o null (inválida). Antes
+ * "abc" se guardaba como 0 y 150 como 100, en silencio. */
+const parseTasa = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+};
+/** Subcódigos por clase. `ieps`, `ret_iva` y `ret_isr` existen para el CFDI. */
+const TIPOS_POR_KIND: Record<string, string[]> = {
+    consumo: ['iva', 'ieps'], retencion: ['ret_iva', 'ret_isr'], exento: ['exento'],
+};
 
 // Deriva la clasificación neutra del subcódigo, para peticiones viejas que solo
 // mandan `tipo` (la API pública y el MCP pueden seguir haciéndolo).
@@ -77,8 +87,20 @@ export const POST: APIRoute = async ({ request }) => {
     // como si fuera el IVA de consumo.
     const kind = KINDS.has(String(body.kind)) ? String(body.kind) : 'consumo';
     const defaultTipo = kind === 'retencion' ? 'ret_iva' : kind === 'exento' ? 'exento' : 'iva';
-    const tipo = TIPOS.has(String(body.tipo)) ? String(body.tipo) : defaultTipo;
-    const tasa = clampTasa(body.tasa);
+    const orgIdTipo = await getActiveOrgId();
+    const [[orgPais]] = await withOrgTx(orgIdTipo, sql`select country_code from orgs where id = ${orgIdTipo}`);
+    const esMx = String(orgPais?.country_code || 'MX').toUpperCase() === 'MX';
+    // El subcódigo solo tiene efecto en México (mapea al CFDI) y debe ser
+    // coherente con la clase: antes se aceptaba `tipo` libre en cualquier país
+    // —un "ieps" en París— y una retención con `tipo:'iva'` se colaba como si
+    // fuera el impuesto de consumo.
+    const pedido = String(body.tipo ?? '');
+    const tipo = esMx && TIPOS.has(pedido) && TIPOS_POR_KIND[kind].includes(pedido) ? pedido : defaultTipo;
+    const tasaPedida = parseTasa(body.tasa);
+    if (tasaPedida === null) return json({ error: 'La tasa debe ser un porcentaje entre 0 y 100.' }, 400);
+    // Un exento con tasa no es exento: la aritmética lo trataría como gravado.
+    if (kind === 'exento' && tasaPedida !== 0) return json({ error: 'Un perfil exento no lleva tasa.' }, 400);
+    const tasa = tasaPedida;
     const esDefault = !!body.es_default;
     // Solo aplica a retenciones (regla del motor, engine.ts): sobre qué base
     // se calcula. 'subtotal' es el default correcto para la enorme mayoría de
@@ -123,7 +145,14 @@ export const PATCH: APIRoute = async ({ request }) => {
         await withOrgTx(orgId, sql`update impuestos set nombre = ${nombre} where id = ${id} and org_id = ${orgId}`);
     }
     if (body.tasa !== undefined) {
-        await withOrgTx(orgId, sql`update impuestos set tasa = ${clampTasa(body.tasa)} where id = ${id} and org_id = ${orgId}`);
+        const tasa = parseTasa(body.tasa);
+        if (tasa === null) return json({ error: 'La tasa debe ser un porcentaje entre 0 y 100.' }, 400);
+        if (kind === 'exento' && tasa !== 0) return json({ error: 'Un perfil exento no lleva tasa.' }, 400);
+        await withOrgTx(orgId, sql`update impuestos set tasa = ${tasa} where id = ${id} and org_id = ${orgId}`);
+    }
+    if (body.retencion_base !== undefined && kind === 'retencion') {
+        const base = body.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal';
+        await withOrgTx(orgId, sql`update impuestos set retencion_base = ${base} where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.activo === 'boolean') {
         await withOrgTx(orgId, sql`update impuestos set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`);
@@ -164,18 +193,22 @@ export const DELETE: APIRoute = async ({ request }) => {
 async function seedFromCountry(request: Request) {
     const orgId = await getActiveOrgId();
     const [[existente], [org]] = await withOrgTx(orgId,
-        sql`select count(*)::int as n from impuestos where org_id = ${orgId}`,
+        sql`select count(*)::int as n, count(*) filter (where kind <> 'exento')::int as gravados from impuestos where org_id = ${orgId}`,
         sql`select country_code, fiscal_metadata from orgs where id = ${orgId}`,
     );
-    if (Number(existente?.n ?? 0) > 0) {
-        return json({ error: 'Tu catálogo ya tiene perfiles. Elimina los que no uses antes de volver a partir de cero.' }, 409);
-    }
-
     const pais = String(org?.country_code || 'MX').toUpperCase();
     // Sales tax es ESTATAL en Estados Unidos: sin el estado del negocio
     // (Ajustes › Fiscal, ya capturado ahí para la dirección de facturación)
-    // no hay tasa que sembrar y se cae al mismo "Exento" de siempre.
-    const region = pais === 'US' ? String((org?.fiscal_metadata as any)?.region || '') : null;
+    // no hay tasa que sembrar y se cae al mismo "Exempt" de siempre. En España
+    // la provincia decide si es IVA, IGIC (Canarias) o IPSI (Ceuta y Melilla).
+    const region = ['US', 'ES'].includes(pais) ? String((org?.fiscal_metadata as any)?.region || '') || null : null;
+    // Una cuenta de EE.UU. nace con solo el renglón exento: antes eso contaba
+    // como "catálogo con perfiles" y nunca podía sembrar la tasa de su estado.
+    const soloExentos = Number(existente?.n ?? 0) > 0 && Number(existente?.gravados ?? 0) === 0;
+    if (Number(existente?.n ?? 0) > 0 && !(pais === 'US' && soloExentos)) {
+        return json({ error: 'Tu catálogo ya tiene perfiles. Elimina los que no uses antes de volver a partir de cero.' }, 409);
+    }
+    if (soloExentos) await withOrgTx(orgId, sql`delete from impuestos where org_id = ${orgId} and kind = 'exento'`);
     const creados = await seedTaxCatalog(orgId, pais, region);
     await syncOrg(orgId, 'iva', 'consumo');
     await logAudit(orgId, { accion: 'impuesto.sembrado', entidad: 'impuesto', detalle: `${creados} perfiles de ${pais}`, ip: reqIp(request) });

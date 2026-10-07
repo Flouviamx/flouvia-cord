@@ -34,9 +34,12 @@ if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe) {
     return Astro.redirect(`/app/facturas/nueva?draft=${f.id}`);
 }
 
+// SAT, CFDI y "timbre" son vocabulario de México: una factura de Madrid o de
+// Lyon nunca pasa por el SAT, y decírselo es hablarle de un trámite ajeno.
+const esMx = String(f?.pais || '').toUpperCase() === 'MX';
 const cancellationLabels: Record<string, string> = {
     pending: L === 'en' ? 'Awaiting recipient acceptance.' : 'Pendiente de aceptación del receptor.',
-    verifying: L === 'en' ? 'The tax authority is verifying the request.' : 'El SAT está verificando la solicitud.',
+    verifying: L === 'en' ? 'The tax authority is verifying the request.' : (esMx ? 'El SAT está verificando la solicitud.' : 'La autoridad fiscal está verificando la solicitud.'),
     rejected: L === 'en' ? 'Cancellation rejected.' : 'Cancelación rechazada.',
     expired: L === 'en' ? 'Cancellation request expired.' : 'La solicitud de cancelación expiró.',
 };
@@ -161,10 +164,14 @@ import { iconInner } from '../../../lib/icons';
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('alert')}></svg>
                         </span>
                         <span>
-                            <strong>{L === 'en' ? 'Not fiscally issued' : 'Sin timbre fiscal'}</strong>
+                            <strong>{L === 'en' ? 'Not fiscally issued' : (esMx ? 'Sin timbre fiscal' : 'Sin registro fiscal')}</strong>
                             <small>{L === 'en'
-                                ? 'Cord generated this document in test mode because no active fiscal provider issued it. It is not valid before the tax authority.'
-                                : 'Cord generó este documento en modo de prueba porque ningún proveedor fiscal activo lo timbró. No es válido ante el SAT.'}</small>
+                                ? (esMx
+                                    ? 'Cord generated this document in test mode because no active fiscal provider stamped it. It is not a valid CFDI before the SAT.'
+                                    : 'Cord generated this document in test mode because no active fiscal provider issued it. It is not valid for tax purposes.')
+                                : (esMx
+                                    ? 'Cord generó este documento en modo de prueba porque ningún proveedor fiscal activo lo timbró. No es válido ante el SAT.'
+                                    : 'Cord generó este documento en modo de prueba porque ningún proveedor fiscal activo lo emitió. No es válido ante la autoridad fiscal.')}</small>
                         </span>
                     </div>
                 )}

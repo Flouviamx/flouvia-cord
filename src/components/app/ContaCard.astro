@@ -1,6 +1,8 @@
 ---
 import SettingsSection from './settings/SettingsSection.astro';
 import { t, type AppLocale } from '../../i18n/app';
+import { getOrg } from '../../lib/queries';
+import { getCountryProfile } from '../../lib/countries';
 
 interface Props {
     lang: AppLocale;
@@ -23,10 +25,15 @@ const fecha = conexion?.ultimaSync
     ? new Date(conexion.ultimaSync).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' })
     : null;
 const pct = (tasa: number) => `${Number((tasa * 100).toFixed(4))}%`;
+// El aviso nombra el impuesto como se llama en el país del negocio. Decía
+// "sales tax" a todos, y una cuenta de Londres o de Madrid conectada a Xero
+// lleva VAT o IVA, no un impuesto estatal de ventas de EE.UU.
+const TAX = getCountryProfile(String((await getOrg()).countryCode || 'MX'), L).taxLabel;
+const conTax = (s: string) => s.split('{tax}').join(TAX);
 const textoAviso = (a: { motivo: string; tasa: number | null }) =>
     a.motivo === 'impuesto' && a.tasa === null
-        ? t(L, 'conta.aviso.impuesto_general')
-        : t(L, `conta.aviso.${a.motivo}` as any).replace('{tasa}', a.tasa === null ? '' : pct(a.tasa));
+        ? conTax(t(L, 'conta.aviso.impuesto_general'))
+        : conTax(t(L, `conta.aviso.${a.motivo}` as any)).replace('{tasa}', a.tasa === null ? '' : pct(a.tasa));
 const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
 ---
 
@@ -86,8 +93,8 @@ const aviso = conexion?.aviso ? textoAviso(conexion.aviso) : null;
             data-i18n-enviando={t(L, 'conta.contabilizando')}
             data-i18n-resultado={t(L, 'conta.resultado')}
             data-i18n-omitidas={t(L, 'conta.omitidas')}
-            data-i18n-impuesto={t(L, 'conta.aviso.impuesto')}
-            data-i18n-impuesto-general={t(L, 'conta.aviso.impuesto_general')}
+            data-i18n-impuesto={conTax(t(L, 'conta.aviso.impuesto'))}
+            data-i18n-impuesto-general={conTax(t(L, 'conta.aviso.impuesto_general'))}
             data-i18n-retenciones={t(L, 'conta.aviso.retenciones')}
             data-i18n-descuadre={t(L, 'conta.aviso.descuadre')}
             data-i18n-pagos={t(L, 'conta.resultado_pagos')}

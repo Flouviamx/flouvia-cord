@@ -41,11 +41,25 @@ export async function consumeFiscalOutcome(orgId: string): Promise<ResultadoFisc
     }
 }
 
-const FALLAS: Record<Exclude<ResultadoFiscal, 'exito'>, { error: string; uncertain?: boolean }> = {
+type Falla = { error: string; uncertain?: boolean };
+
+// Los mensajes simulan lo que respondería el rail del PAÍS de la factura. SAT,
+// RFC, régimen, sello digital y "timbrar" son de México: una sandbox de Madrid
+// o de Austin que fuerza `receptor_invalido` no puede leer que su cliente no
+// coincide "con el registro del SAT". Los códigos de resultado no cambian —son
+// contrato de la API—; cambia el texto que acompaña a cada uno.
+const FALLAS_MX: Record<Exclude<ResultadoFiscal, 'exito'>, Falla> = {
     pac_caido: { error: 'El servicio de timbrado no respondió. La factura quedó en borrador: reintenta en unos minutos.', uncertain: true },
     receptor_invalido: { error: 'Los datos fiscales del cliente no coinciden con el registro del SAT (nombre, RFC, régimen o código postal).' },
     certificado_vencido: { error: 'Tu certificado de sello digital venció. Sube uno vigente en Ajustes › Fiscal para volver a timbrar.' },
     timbre_duplicado: { error: 'Este documento ya se había timbrado. Revisa la factura original antes de reintentar.' },
+};
+
+const FALLAS_INTL: Record<Exclude<ResultadoFiscal, 'exito'>, Falla> = {
+    pac_caido: { error: 'El servicio de emisión fiscal no respondió. La factura quedó en borrador: reintenta en unos minutos.', uncertain: true },
+    receptor_invalido: { error: 'Los datos fiscales del cliente no coinciden con el registro de la autoridad fiscal (nombre, identificador fiscal o domicilio).' },
+    certificado_vencido: { error: 'Tu certificado electrónico venció. Sube uno vigente en Ajustes › Fiscal para volver a emitir.' },
+    timbre_duplicado: { error: 'Este documento ya se había emitido. Revisa la factura original antes de reintentar.' },
 };
 
 export function simulatedFiscalResponse(
@@ -64,7 +78,7 @@ export function simulatedFiscalResponse(
             rawProviderData: { simulado: true, modo_prueba: true, regulatory_status: stamped ? 'not_stamped' : 'commercial_only' },
         };
     }
-    const falla = FALLAS[resultado];
+    const falla = (String(opts.country || '').toUpperCase() === 'MX' ? FALLAS_MX : FALLAS_INTL)[resultado];
     return {
         success: false,
         provider: 'cord-sandbox',

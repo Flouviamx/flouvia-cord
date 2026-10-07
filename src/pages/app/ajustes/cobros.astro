@@ -40,6 +40,23 @@ const mpFlash = Astro.url.searchParams.get('mp');
 const soloMercadoPago = mercadoPago && !cobrosEnLinea;
 // El formato de la cuenta de depósito depende del país: CLABE, IBAN, sort code.
 const PAYOUT = payoutSpecFor(PAIS);
+// Transferencia manual: es UN campo de texto que el link público muestra tal
+// cual. Se rotulaba con el primer campo del formato del país, así que en
+// Estados Unidos pedía solo el routing number y en Reino Unido solo el sort
+// code: el cliente recibía medio dato y no podía transferir. Cuando el país usa
+// más de un dato se nombran todos, en el orden en que se le dictan al banco.
+const fieldLabel = (f: { label: string; labelEn: string }) => (L === 'en' ? f.labelEn : f.label);
+const MANUAL_LABEL = PAYOUT.fields.map(fieldLabel).join(' · ');
+const MANUAL_UNICO = PAYOUT.fields.length === 1;
+// El IBAN empieza con el código del país: ese prefijo es mejor pista que la
+// frase del formato, que trae un ejemplo español.
+const MANUAL_PH = !MANUAL_UNICO ? ''
+    : PAYOUT.format === 'iban' ? `${PAIS}…`
+    : ((L === 'en' ? PAYOUT.fields[0].hintEn : PAYOUT.fields[0].hint) ?? '');
+// Varios datos en un campo llevan separadores: el tope suma cada longitud más
+// el espacio entre ellos, y el teclado no puede ser solo numérico.
+const MANUAL_MAX = PAYOUT.fields.reduce((n, f) => n + f.maxLength, 0) + (PAYOUT.fields.length - 1) * 3;
+const MANUAL_NUMERICO = MANUAL_UNICO && PAYOUT.fields[0].kind === 'digits';
 // La divisa que gobierna la comisión es la de la CUENTA CONECTADA, que Stripe
 // fija por país al crearla — no `orgs.moneda`, que es la divisa contable y el
 // usuario edita libre en Ajustes. Fuera de México, `describeFee` devuelve null:
@@ -71,7 +88,9 @@ const WIZARD_ORG = {
     direccion: ORG.direccion,
     cpFiscal: ORG.cpFiscal,
     telefono: ORG.telefono,
-    emailContacto: ORG.emailContacto,
+    // getOrg() lo expone como `email`; `emailContacto` no existe y el asistente
+    // arrancaba siempre con el correo vacío.
+    emailContacto: ORG.email,
     sitioWeb: ORG.sitioWeb,
     bancoBeneficiario: ORG.bancoBeneficiario,
     // Sólo los últimos cuatro dígitos, para poder decir "termina en ••••1234".
@@ -133,7 +152,7 @@ import { iconInner } from '../../../lib/icons';
                 <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0;">
                     <svg style="width: 20px; height: 20px; color: var(--color-blue-deep);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{t(L, 'set.cobros.f3_titulo')}</strong>
+                        <strong style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{speiDisponible ? t(L, 'set.cobros.f3_titulo') : t(L, 'set.cobros.f3_titulo_intl')}</strong>
                         <span style="font-size: 0.75rem; color: var(--color-text-muted);">{t(L, 'set.cobros.f3_desc')}</span>
                     </div>
                 </div>
@@ -194,11 +213,17 @@ import { iconInner } from '../../../lib/icons';
         <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--color-text);">{t(L, 'set.cobros.metodos_pago')}</h3>
         <div>
             <div class={`pay-methods ${!puedeCobrar ? 'has-locked' : ''}`}>
+                {/* Tres mensajes, no uno: SPEI es solo de México, y donde Cord
+                    Payments no existe (CO, AR, CL, PE) no hay cuenta "arriba" que
+                    activar — decirlo así prometía algo que el país no tiene. */}
                 {!puedeCobrar && (
-                    <p class="methods-locked">{t(L, 'set.cobros.methods_locked')}</p>
+                    <p class="methods-locked">{!cobrosEnLinea
+                        ? t(L, 'set.cobros.methods_locked_sin_connect')
+                        : speiDisponible ? t(L, 'set.cobros.methods_locked') : t(L, 'set.cobros.methods_locked_intl')}</p>
                 )}
 
-                <!-- Tarjeta -->
+                <!-- Tarjeta (Cord Payments): no se dibuja donde el país no lo tiene -->
+                {cobrosEnLinea && (
                 <div class={`pay-method ${!puedeCobrar ? 'is-locked' : ''}`}>
                     <div class="pm-ico">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('card')}></svg>
@@ -212,6 +237,7 @@ import { iconInner } from '../../../lib/icons';
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
+                )}
 
                 <!-- SPEI automático (riel de México) -->
                 {speiDisponible && (
@@ -249,14 +275,15 @@ import { iconInner } from '../../../lib/icons';
                         <div class="s-row">
                             <div class="s-field">
                                 <label for="oBanco">{t(L, 'set.cobros.banco')}</label>
-                                <input class="s-input" id="oBanco" data-field="banco_nombre" value={ORG.bancoNombre} placeholder="Ej. BBVA" />
+                                <input class="s-input" id="oBanco" data-field="banco_nombre" value={ORG.bancoNombre} />
                             </div>
                             <div class="s-field">
-                                <label for="oClabe">{PAYOUT.fields[0] ? (L === 'en' ? PAYOUT.fields[0].labelEn : PAYOUT.fields[0].label) : t(L, 'set.cobros.clabe')}</label>
+                                <label for="oClabe">{MANUAL_LABEL}</label>
                                 <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe}
-                                    placeholder={PAIS === 'MX' ? t(L, 'set.cobros.clabe_placeholder') : ''}
-                                    maxlength={PAYOUT.fields[0]?.maxLength ?? 34}
-                                    inputmode={PAYOUT.fields[0]?.kind === 'digits' ? 'numeric' : 'text'} />
+                                    placeholder={MANUAL_PH}
+                                    maxlength={MANUAL_MAX}
+                                    autocomplete="off"
+                                    inputmode={MANUAL_NUMERICO ? 'numeric' : 'text'} />
                             </div>
                         </div>
                         <div class="s-field">
