@@ -202,10 +202,58 @@
     color: #fff;
     border-color: var(--color-blue-deep);
 }
+.widget-edit-btn.is-done:hover { background: var(--color-blue-deep); filter: brightness(1.18); }
+
+/* Modo edición: Biblioteca, Restablecer y Listo son círculos de icono. El nombre
+   viaja en aria-label y en un tooltip propio (data-tip) que solo es ayuda visual. */
+.widget-edit-btn.is-icon {
+    position: relative;
+    width: 38px;
+    min-height: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(10, 25, 47, 0.06);
+}
+.widget-edit-btn.is-icon svg { flex: 0 0 auto; }
+.widget-edit-btn.is-icon[aria-expanded="true"] {
+    background: var(--color-bg-soft);
+    border-color: rgba(10, 25, 47, 0.18);
+    color: var(--color-blue-deep);
+}
+.widget-edit-btn.is-icon.is-done { background: var(--color-blue-deep); box-shadow: 0 4px 12px rgba(10, 25, 47, 0.22); }
+.widget-edit-btn.is-icon:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+.widget-edit-btn.is-icon[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translate(-50%, -2px);
+    padding: 5px 9px;
+    border-radius: 8px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s var(--ease-ios);
+    z-index: 30;
+}
+@media (hover: hover) {
+    .widget-edit-btn.is-icon:hover::after,
+    .widget-edit-btn.is-icon:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+}
 
 /* Regla 16: por debajo de 880 px el objetivo táctil sube a 44 px. */
 @media (max-width: 880px) {
     .widget-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
+    .widget-edit-btn.is-icon { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+    .widget-edit-btn.is-icon[data-tip]::after { display: none; }
 }
 
 /* Shared editing surface: a stable landing slot and a pointer-only preview. */
