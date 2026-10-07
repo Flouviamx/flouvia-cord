@@ -1,82 +1,125 @@
 ---
 title: "Ideas listas para usar"
-description: "Los 9 workflows de ejemplo que trae Cord: qué evento los inicia, qué pasos hacen, qué necesitan y cómo adaptarlos a tu operación."
+description: "Los 9 workflows de ejemplo que trae Cord, paso por paso: qué evento los inicia, qué hace cada paso con sus textos, para qué negocio sirven, qué necesitan y cómo adaptarlos."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Un lugar libre de workflows activos en tu plan para publicar", "Algunas ideas necesitan Slack, Teams o HubSpot conectados, o el plan Scale para aprobaciones internas"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Ideas listas para usar</h1>
-  <p class="page-subtitle">Nueve workflows armados para los seguimientos más comunes. Cada uno se crea como borrador para que lo revises antes de publicarlo.</p>
+  <p class="page-subtitle">Nueve workflows armados para los seguimientos más comunes, uno por caso de uso. Cada uno se crea como borrador para que lo revises antes de publicarlo.</p>
 </header>
 
 ## Cómo usar una idea
 
-Hay dos caminos:
+Hay tres caminos:
 
 - En la lista de **Workflows**, sección **Ideas para empezar**, pulsa **Usar** en la idea.
-- Dentro del editor de un workflow vacío, en **Empieza con un ejemplo**, pulsa **Personalizar este workflow**.
+- Dentro del editor de un workflow vacío, en **Empieza con un ejemplo**, pulsa **Personalizar este workflow**. Si el borrador ya tenía pasos, Cord pregunta **¿Reemplazar lo que llevas?** antes de sustituirlos.
+- En **Ajustes › Integraciones**, la página de Slack, Teams y HubSpot muestra las ideas que usan esa app.
 
-En los dos casos se crea un **borrador** con el nombre, el disparador y los pasos de la idea, en el idioma de tu cuenta. Nada corre hasta que pulses **Publicar**. Cambia lo que quieras antes: montos, días, textos o destinatarios.
+En todos los casos se crea un **borrador** con el nombre, el disparador y los pasos de la idea, con los textos en el idioma de tu cuenta. Nada corre hasta que pulses **Publicar**, y antes puedes pulsar **Probar** para ver qué haría con el último evento real. Cambia lo que quieras: montos, días, textos o destinatarios.
+
+{/* MOCKUP: sección "Ideas para empezar" al final de la lista de Workflows. Tres tarjetas visibles en fila: "Escalera de seguimiento de una cotización" con el ícono de cotización y el texto "Espera a que el cliente abra; si no abre en 2 días le escribe...", "Cobranza escalonada de una factura vencida" y "Resumen de cobranza cada lunes", cada una con su botón "Usar". */}
 
 <Callout type="info">
-Las ideas que usan Slack o HubSpot se pueden crear aunque no tengas esas apps conectadas, pero esos pasos fallarán al ejecutarse hasta que las conectes en **Ajustes › Integraciones**.
+Las ideas que usan Slack, Teams o HubSpot se pueden crear y publicar aunque no tengas esas apps conectadas, pero esos pasos fallarán al ejecutarse hasta que las conectes en **Ajustes › Integraciones**.
 </Callout>
+
+## De un vistazo
+
+| Idea | Disparador | Necesita | Sirve sobre todo a |
+|---|---|---|---|
+| [Escalera de seguimiento](#1-escalera-de-seguimiento-de-una-cotización) | Se envía una cotización | Cliente con correo | Quien envía muchas cotizaciones y pierde el hilo |
+| [Aprobar solo las chicas](#2-aprobar-solo-las-cotizaciones-chicas) | Una cotización pide aprobación interna | Plan Scale o superior | Equipos de ventas con reglas de descuento |
+| [Teams cuando aprueba](#3-teams-cuando-el-cliente-aprueba) | Se aprueba una cotización | Microsoft Teams | Equipos que viven en Microsoft 365 |
+| [Nota en HubSpot](#4-nota-en-hubspot-cuando-el-cliente-aprueba) | Se aprueba una cotización | HubSpot y Slack | Equipos comerciales con CRM |
+| [Cobranza escalonada](#5-cobranza-escalonada-de-una-factura-vencida) | Una factura lleva días vencida | Facturas con vencimiento, cliente con correo | Negocios que dan crédito |
+| [Arrancar con el anticipo](#6-arrancar-cuando-llega-el-anticipo) | Llega un pago parcial | Nada extra | Proyectos y fabricación sobre pedido |
+| [Resumen de cada lunes](#7-resumen-de-cobranza-cada-lunes) | En un horario fijo | Nada extra | Dueños que quieren el número sin abrir la app |
+| [Recordar 3 días antes](#8-recordar-al-cliente-3-días-antes-del-vencimiento) | Se acerca el vencimiento de una factura | Facturas con vencimiento, cliente con correo | Servicios recurrentes y cuentas por cobrar |
+| [Última llamada y cierre](#9-última-llamada-y-cierre-de-la-cotización) | Se acerca el vencimiento de una cotización | Cotizaciones con vigencia, cliente con correo | Quien cotiza con precios que caducan |
 
 ## 1. Escalera de seguimiento de una cotización
 
 Para que ninguna cotización se enfríe en silencio.
 
-- **Disparador:** se envía una cotización.
-- **Pasos:**
-  1. Espera hasta que el cliente la abra o la apruebe, con plazo de 2 días.
-  2. Si ocurre: crea la tarea de llamarle mientras está caliente.
-  3. Si se acaba el plazo: le escribe al cliente preguntando si hay dudas, y espera su decisión 5 días más. Si tampoco llega, consulta el saldo del cliente y avisa al dueño con lo que ya te debe.
-- **Necesita:** el cliente con correo registrado.
+**Para qué negocio:** agencias, despachos, proveedores industriales o cualquier equipo que envía muchas cotizaciones a la semana y no tiene tiempo de revisar una por una quién la abrió.
+
+<Steps>
+1. **Disparador:** se envía una cotización.
+2. **Espera hasta que** el **Estado actual de la cotización** sea **Vista** o **Aprobada** (se cumple alguna), con plazo de **2 días**.
+3. **Si ocurre:** crea la tarea "Llamar a `{{cliente}}` mientras `{{folio}}` está caliente", con vencimiento a 1 día. El cliente ya la vio: es el momento de llamar.
+4. **Si se acaba el plazo:** le escribe al cliente con el asunto "¿Alguna duda sobre `{{folio}}`?" y el mensaje "Hola, damos seguimiento a la cotización `{{folio}}` por `{{total}}` `{{moneda}}`. Si hay algo que ajustar, responde este correo y lo vemos."
+5. **Después, espera hasta que** el estado sea **Aprobada** o **Rechazada**, con plazo de **5 días**. Si el cliente decide, la ejecución termina ahí.
+6. **Si tampoco decide:** consulta el saldo del cliente y avisa al dueño con el asunto "`{{folio}}` lleva una semana sin decisión" y el saldo abierto contigo (`{{cliente_saldo}}`, de los cuales `{{cliente_vencido}}` están vencidos).
+</Steps>
+
+- **Necesita:** el cliente con correo registrado. El correo al cliente consume la cuota de envíos de tu plan.
 - **Adáptalo:** cambia los plazos, o quita el correo al cliente si prefieres que el seguimiento sea solo del equipo.
 
 ## 2. Aprobar solo las cotizaciones chicas
 
 Para que una aprobación interna de 8,000 no espere a que alguien abra la app.
 
-- **Disparador:** una cotización pide aprobación interna.
-- **Pasos:**
-  1. Condición: el **Total** es menor a 50,000.
-  2. Si se cumple: aprueba la solicitud interna y la cotización sale al cliente.
-  3. Si no: avisa a todo el equipo con el motivo, para que la revise una persona.
-- **Necesita:** aprobaciones internas en tu plan (Scale o superior).
-- **Adáptalo:** el monto es tuyo. Puedes sumar una condición por cliente o por divisa.
+**Para qué negocio:** equipos de ventas donde un descuento o un monto alto exige el visto bueno de un gerente, pero la mayoría de las solicitudes son pequeñas y se aprueban siempre.
+
+<Steps>
+1. **Disparador:** una cotización pide aprobación interna.
+2. **Condición:** el **Total** es menor que **50,000**.
+3. **Si se cumple:** aprueba la solicitud interna; la cotización sale al cliente.
+4. **Si no se cumple:** avisa a todo el equipo por correo con el asunto "`{{folio}}` necesita a una persona: `{{total}}` `{{moneda}}`" y el motivo de la solicitud (`{{motivo}}`).
+</Steps>
+
+- **Necesita:** aprobaciones internas, que son del plan **Scale** o superior. Sin ellas, el paso de aprobar falla con "Tu plan actual no incluye aprobaciones internas."
+- **Adáptalo:** el monto es tuyo y se compara en la divisa de la cotización. Si vendes en varias divisas, agrega una regla por **Divisa** para que 50,000 pesos y 50,000 dólares no se traten igual.
 
 ## 3. Teams cuando el cliente aprueba
 
 Para que el equipo se entere en el canal donde ya trabaja.
 
-- **Disparador:** se aprueba una cotización.
-- **Pasos:**
-  1. Envía un mensaje a Teams: "`{{cliente}}` aprobó `{{folio}}`: `{{total}}` `{{moneda}}`".
-- **Necesita:** Microsoft Teams conectado en Ajustes › Integraciones.
+**Para qué negocio:** empresas que usan Microsoft 365 y coordinan producción, entregas o compras en un canal de Teams.
+
+<Steps>
+1. **Disparador:** se aprueba una cotización.
+2. **Acción:** envía un mensaje a Teams: "`{{cliente}}` aprobó `{{folio}}`: `{{total}}` `{{moneda}}`".
+</Steps>
+
+- **Necesita:** [Microsoft Teams](/docs/automatizacion/integraciones/teams) conectado en Ajustes › Integraciones.
 - **Adáptalo:** cámbialo por **Enviar un mensaje a Slack** si tu equipo vive ahí, o agrega una condición por **Total** para publicar solo las ventas grandes.
 
 ## 4. Nota en HubSpot cuando el cliente aprueba
 
 Para que el CRM tenga la historia sin que nadie la copie.
 
-- **Disparador:** se aprueba una cotización.
-- **Pasos:**
-  1. Deja una nota en el Deal de la cotización (o en la Empresa del cliente).
-  2. Publica el aviso en Slack.
-- **Necesita:** HubSpot y Slack conectados.
+**Para qué negocio:** equipos comerciales que llevan su pipeline en HubSpot y cotizan en Cord.
+
+<Steps>
+1. **Disparador:** se aprueba una cotización.
+2. **Acción:** deja una nota en el Deal de la cotización (o, si no hay Deal, en la Empresa del cliente): "`{{cliente}}` aprobó `{{folio}}` por `{{total}}` `{{moneda}}` en Cord."
+3. **Acción:** publica en Slack "`{{cliente}}` aprobó `{{folio}}`".
+</Steps>
+
+- **Necesita:** [HubSpot](/docs/automatizacion/integraciones/hubspot) y [Slack](/docs/automatizacion/integraciones/slack) conectados.
 - **Adáptalo:** quita el paso de Slack si solo quieres el registro en HubSpot.
 
 ## 5. Cobranza escalonada de una factura vencida
 
 Para perseguir el dinero con criterio, no con un solo correo.
 
-- **Disparador:** una factura lleva días vencida.
-- **Pasos:**
-  1. Si lleva exactamente 3 días: le escribe al cliente con el botón para pagar.
-  2. Si lleva exactamente 15: consulta el saldo total del cliente y avisa al dueño, para decidir si se detiene el crédito.
+**Para qué negocio:** distribuidores, mayoristas y servicios que facturan a crédito a 30 o 60 días y necesitan un proceso de cobranza parejo.
+
+<Steps>
+1. **Disparador:** una factura lleva días vencida. Ocurre cada día mientras siga abierta con saldo, hasta 90 días.
+2. **Condición:** **Días de vencida** es igual a **3**. Si se cumple, le escribe al cliente con el asunto "La factura `{{numero}}` está vencida" y su saldo (`{{saldo}}` `{{moneda}}`); Cord agrega el botón para pagar.
+3. **Condición:** **Días de vencida** es igual a **15**. Si se cumple, consulta el saldo del cliente y avisa al dueño con el asunto "`{{cliente}}`: 15 días de vencido", con el total abierto, lo vencido y en cuántos documentos, para decidir si se detiene el crédito.
+</Steps>
+
+Como el disparador ocurre cada día, cada condición elige el día exacto en que actúa; los demás días la ejecución termina sin hacer nada.
+
 - **Necesita:** facturas con fecha de vencimiento y el cliente con correo.
 - **Adáptalo:** cambia los días, o agrega un tercer escalón a los 30 con una tarea de cobranza.
 
@@ -84,54 +127,72 @@ Para perseguir el dinero con criterio, no con un solo correo.
 
 Para que producción no espere a que alguien avise.
 
-- **Disparador:** llega un pago parcial.
-- **Pasos:**
-  1. Condición: el tipo de pago es **Anticipo**.
-  2. Si se cumple: crea la tarea para arrancar el trabajo y avisa al dueño con el saldo pendiente.
-- **Necesita:** nada extra.
-- **Adáptalo:** manda el aviso a todo el equipo en vez de solo al dueño.
+**Para qué negocio:** talleres, fabricación sobre pedido, construcción, eventos o consultoría: todo lo que cobra un anticipo antes de empezar.
+
+<Steps>
+1. **Disparador:** llega un pago parcial.
+2. **Condición:** el **Tipo de pago** es **Anticipo**.
+3. **Si se cumple:** crea la tarea "Arrancar el trabajo de `{{folio}}` (`{{cliente}}`)" con vencimiento a 1 día, y avisa al dueño: "Llegó un anticipo de `{{monto}}` `{{moneda}}`. Saldo pendiente: `{{saldo_pendiente}}` `{{moneda}}`."
+</Steps>
+
+- **Necesita:** cotizaciones con anticipo. Ver [Anticipos](/docs/pagos/anticipos).
+- **Adáptalo:** manda el aviso a todo el equipo en vez de solo al dueño, o publícalo en Slack o Teams.
 
 ## 7. Resumen de cobranza cada lunes
 
 Para empezar la semana sabiendo a quién hay que perseguir.
 
-- **Disparador:** cada lunes a las 9 (hora de tu cuenta).
-- **Pasos:**
-  1. Consulta la cartera vencida.
-  2. Consulta el pipeline abierto.
-  3. Manda el resumen por correo al dueño de la cuenta.
+**Para qué negocio:** dueños y responsables de finanzas que quieren el número de la semana en su correo sin abrir la app.
+
+<Steps>
+1. **Disparador:** en un horario fijo, cada semana, el lunes a las 9 (en la zona horaria de tu cuenta).
+2. **Consulta** la cartera vencida.
+3. **Consulta** el pipeline abierto.
+4. **Avisa al dueño** con el asunto "Tu semana en Cord (`{{fecha}}`)": lo vencido, en cuántos documentos, cuántos días lleva el más atrasado, y lo que hay en cotizaciones abiertas.
+</Steps>
+
 - **Necesita:** nada extra.
-- **Adáptalo:** cámbialo a mensual el día 1, agrega la consulta de **lo cobrado** y mándalo también a Slack.
+- **Adáptalo:** cámbialo a mensual el día 1, agrega la consulta de **lo cobrado** o de **lo que está por vencer**, y mándalo también a Slack.
 
 ## 8. Recordar al cliente 3 días antes del vencimiento
 
 Para cobrar antes de la fecha, no después.
 
-- **Disparador:** se acerca el vencimiento de una factura.
-- **Pasos:**
-  1. Condición: **Días para que venza** es igual a **3**.
-  2. Si se cumple: escríbele al cliente con su saldo. Cord agrega el botón para pagar.
+**Para qué negocio:** servicios recurrentes, igualas y cualquier negocio con cuentas por cobrar donde el cliente paga a tiempo si se lo recuerdan.
+
+<Steps>
+1. **Disparador:** se acerca el vencimiento de una factura. Ocurre cada día mientras falten de 1 a 30 días y la factura siga abierta con saldo.
+2. **Condición:** **Días para que venza** es igual a **3**.
+3. **Si se cumple:** le escribe al cliente con el asunto "La factura `{{numero}}` vence el `{{vence}}`" y su saldo. Cord agrega el botón para pagar.
+</Steps>
+
 - **Necesita:** facturas con fecha de vencimiento y el cliente con correo.
-- **Adáptalo:** cambia el 3 por los días que quieras.
+- **Adáptalo:** cambia el 3 por los días que quieras, o cambia el correo por **Mandarle un WhatsApp al cliente** si conectaste [WhatsApp Business](/docs/automatizacion/integraciones/whatsapp).
 
 ## 9. Última llamada y cierre de la cotización
 
 Para cerrar el ciclo en vez de dejar cotizaciones vivas para siempre.
 
-- **Disparador:** se acerca el vencimiento de una cotización.
-- **Pasos:**
-  1. Condición: **Días para que venza** es igual a **2**.
-  2. Si se cumple: le escribe al cliente y espera su decisión 2 días.
-  3. Si no decide: caduca la cotización y avisa al dueño.
+**Para qué negocio:** quien cotiza con precios que cambian —materiales, importación, tipo de cambio, temporada— y no puede sostener una cotización vieja.
+
+<Steps>
+1. **Disparador:** se acerca el vencimiento de una cotización. Ocurre cada día mientras falten de 1 a 30 días y la cotización siga enviada o vista.
+2. **Condición:** **Días para que venza** es igual a **2**.
+3. **Si se cumple:** le escribe al cliente con el asunto "La cotización `{{folio}}` vence el `{{vence}}`" invitándolo a aprobarla desde el enlace.
+4. **Espera hasta que** el estado sea **Aprobada** o **Rechazada**, con plazo de **2 días**.
+5. **Si se acaba el plazo:** caduca la cotización —el cliente ya no puede aprobarla desde el link— y avisa al dueño: "`{{folio}}` caducó sin respuesta".
+</Steps>
+
 - **Necesita:** cotizaciones con fecha de vigencia y el cliente con correo.
 - **Adáptalo:** quita el paso **Caducar la cotización** si prefieres cerrarla a mano.
 
 ## Combinar ideas
 
-Una idea es un punto de partida, no un límite. Por ejemplo, puedes unir "Nota en HubSpot cuando el cliente aprueba" y "Teams cuando el cliente aprueba" en un solo workflow: deja la nota en HubSpot siempre y, con una condición por **Total**, publica en Teams solo las ventas grandes.
+Una idea es un punto de partida, no un límite. Por ejemplo, puedes unir "Nota en HubSpot cuando el cliente aprueba" y "Teams cuando el cliente aprueba" en un solo workflow: deja la nota en HubSpot siempre y, con una condición por **Total**, publica en Teams solo las ventas grandes. En los planes Gratis y Starter, juntar ideas en un solo workflow también ahorra lugares de workflows activos.
 
-## Siguiente
+## Relacionadas
 
+- [Crea tu primer workflow](/docs/automatizacion/workflows/primer-workflow)
 - [Disparadores](/docs/automatizacion/workflows/disparadores)
 - [Acciones](/docs/automatizacion/workflows/acciones)
 - [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar)

@@ -1,10 +1,12 @@
 ---
 title: "WhatsApp Business"
 seoTitle: "Conectar Cord con WhatsApp Business"
-description: "Cómo conectar tu número de WhatsApp Business con Cord: plantillas aprobadas por Meta, variables con datos del evento, teléfonos con lada, límites, cómo desconectar y problemas frecuentes."
+description: "Cómo conectar tu número de WhatsApp Business con Cord: requisitos de Meta (app, número emisor, plantilla aprobada y token), conectar paso a paso, variables con datos del evento, dirección solo de salida, límites, cómo desconectar y problemas frecuentes."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Una app de WhatsApp Business en Meta for Developers con tu número emisor", "Una plantilla de mensaje aprobada por Meta", "Un token de acceso permanente de Meta", "Clientes con teléfono y lada de país"]
 ---
 
 <header class="content-header">
@@ -12,52 +14,108 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Tu cliente recibe el recordatorio donde sí lo lee, desde tu propio número.</p>
 </header>
 
-## Cómo funciona
+## Qué hace
+
+Con WhatsApp conectado, la acción **Mandarle un WhatsApp al cliente** de [Cord Workflows](/docs/automatizacion/workflows/acciones) manda tu plantilla aprobada al teléfono del cliente del documento, con datos del evento en sus variables: un recordatorio de pago antes del vencimiento, el aviso de una cotización por caducar, la confirmación de un anticipo.
 
 Cord manda WhatsApp con la **Cloud API de Meta** y con **tu** cuenta: los mensajes salen de tu número y Meta le cobra la conversación a tu cuenta, no Cord.
 
 Meta no permite iniciar una conversación con texto libre, solo con una **plantilla aprobada**. Por eso Cord te pide el nombre de tu plantilla y rellena sus variables; no hay un campo de mensaje libre porque Meta lo rechazaría.
 
+<Callout type="info">
+Sin conectar nada, **Cobranza** (botón **Recordar por WhatsApp**) y la ficha de cada cliente tienen un botón que abre WhatsApp en tu teléfono o tu computadora con el mensaje listo, para que lo mandes tú. Ese botón no usa esta integración: esta página es para que Cord mande el mensaje solo, desde un workflow.
+</Callout>
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. |
+| **Meta for Developers** | Una app con el producto **WhatsApp** y tu número emisor agregado. De ahí sale el **identificador del número** (solo dígitos). |
+| **Administrador de WhatsApp** | Una **plantilla de mensaje aprobada** por Meta, con hasta 4 variables (`{{1}}` a `{{4}}`). Anota su nombre exacto y su idioma. |
+| **Token** | Un **token de acceso permanente** de tu cuenta de Meta con permiso para mandar mensajes desde ese número. Un token que vence deja de funcionar y los mensajes empiezan a fallar. |
+| **Tus clientes** | Un teléfono guardado **con lada de país** (`+52 55 1234 5678`). Cord no adivina el país: el mismo número existe en varios. |
+| **Costo** | Meta cobra cada conversación iniciada con plantilla a tu cuenta de Meta, según el país del destinatario. Cord no cobra por los mensajes. |
+
 ## Conectar
 
 <Steps>
 1. En [Meta for Developers](https://developers.facebook.com) crea una app de **WhatsApp Business** y agrega tu número emisor.
-2. En el **Administrador de WhatsApp** crea una plantilla y mándala a aprobar. Ejemplo: `Hola {{1}}, tu cotización {{2}} vence el {{3}}. Puedes verla aquí: {{4}}`.
+2. En el **Administrador de WhatsApp** crea una plantilla y mándala a aprobar. Ejemplo: `Hola {{1}}, tu factura {{2}} por {{3}} vence el {{4}}. Puedes pagarla desde el enlace que te enviamos por correo.`
 3. Copia el **identificador del número** (solo dígitos) y genera un **token de acceso permanente**.
-4. En Cord, ve a **Ajustes › Integraciones › WhatsApp Business**, pega los dos datos, el nombre de la plantilla y su idioma (por ejemplo `es_MX`).
+4. En Cord, ve a **Ajustes › Integraciones › WhatsApp Business** y llena **Identificador del número**, **Token de acceso**, **Nombre de la plantilla** (en minúsculas, sin espacios ni acentos, como aparece en Meta) e **Idioma de la plantilla** (por ejemplo `es_MX` o `en_US`).
 5. Pulsa **Guardar** y luego **Mandar prueba** a tu propio número, con lada de país.
 </Steps>
 
-El token se guarda cifrado y no se vuelve a mostrar. Para cambiar la plantilla deja el campo del token vacío.
+El token se guarda cifrado y no se vuelve a mostrar; la tarjeta solo dice "Hay un token guardado". Para cambiar la plantilla, deja el campo del token vacío y guarda: Cord conserva el que ya tenía.
+
+{/* MOCKUP: tarjeta de WhatsApp Business en Ajustes › Integraciones. Campos "Identificador del número" (109876543210987), "Token de acceso" vacío con la nota "Hay un token guardado", "Nombre de la plantilla" (recordatorio_pago) e "Idioma de la plantilla" (es_MX). Botones "Guardar" y "Desconectar". Debajo, "Tu número con lada" (+52 55 1234 5678) y el botón "Mandar prueba". */}
 
 ## Usarlo en un workflow
 
-La acción **Mandarle un WhatsApp al cliente** de [Cord Workflows](/docs/automatizacion/workflows) manda tu plantilla al teléfono del cliente del documento. El paso tiene hasta **4 variables**, de hasta 200 caracteres cada una. Cada variable rellena `{{1}}`, `{{2}}`… en orden, y acepta datos del evento: `{{cliente}}`, `{{folio}}`, `{{total}}`, `{{vence}}`. Los saltos de línea dentro de una variable se convierten en espacios.
+El paso **Mandarle un WhatsApp al cliente** tiene hasta **4 variables**, de hasta 200 caracteres cada una. Cada variable rellena `{{1}}`, `{{2}}`… de tu plantilla en orden, y acepta datos del evento: `{{cliente}}`, `{{folio}}`, `{{numero}}`, `{{total}}`, `{{saldo}}`, `{{vence}}`. Los saltos de línea dentro de una variable se convierten en espacios.
 
-El teléfono sale del cliente, nunca de un campo del paso, y debe tener **lada de país** (`+52 55 1234 5678`). Cord no adivina el país: el mismo número existe en varios.
+Con la plantilla del ejemplo, en un workflow con el disparador **Se acerca el vencimiento de una factura**:
+
+| Variable del paso | Valor | Llega como |
+|---|---|---|
+| Variable 1 | `{{cliente}}` | Grupo Andino |
+| Variable 2 | `{{numero}}` | F-00231 |
+| Variable 3 | `{{saldo}} {{moneda}}` | 12,500 MXN |
+| Variable 4 | `{{vence}}` | 2026-10-10 |
+
+El teléfono sale del cliente del documento, nunca de un campo del paso: un workflow no puede escribirle a un número que no sea el de tu cliente.
+
+## Qué viaja y en qué dirección
+
+WhatsApp es una integración **solo de salida**.
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord al cliente** | Tu plantilla aprobada, con las variables ya llenas, desde tu número. | Cuando corre el paso del workflow. |
+| **Del cliente a Cord** | Nada. Si el cliente responde, la respuesta llega a tu número en las herramientas de Meta; Cord no la lee ni la guarda. | — |
+
+Por eso conviene que la plantilla lleve al cliente a donde sí actúa —el enlace del documento que ya recibió por correo— y que tu equipo atienda las respuestas desde la cuenta de WhatsApp del negocio.
 
 ## Límites
 
 | Límite | Valor |
 |---|---|
-| Mensajes desde workflows | 60 por hora por cuenta |
+| Mensajes desde workflows | 60 por hora por organización |
 | Pruebas desde Ajustes | 5 por hora |
+| Variables por mensaje | 4, de hasta 200 caracteres |
+| Números emisores por organización | 1 |
+| Plantillas por organización | 1 (la que guardaste en la tarjeta) |
 | Costo por conversación | Lo cobra Meta a tu cuenta, según el país |
+
+## Desconectar
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › WhatsApp Business**.
+2. Pulsa **Desconectar**. Verás "WhatsApp desconectado".
+</Steps>
+
+Cord borra el identificador del número, el token y la plantilla, y deja de mandar mensajes. Los workflows con la acción de WhatsApp fallarán con "Conecta WhatsApp en Ajustes › Integraciones para usar esta acción." hasta que vuelvas a conectar.
+
+Desconectar en Cord no revoca el token en Meta. Si quieres invalidarlo, hazlo también desde tu cuenta de Meta.
 
 ## Problemas frecuentes
 
 | Mensaje o síntoma | Qué hacer |
 |---|---|
-| **"El cliente no tiene un teléfono con lada de país registrado"** | Edita el cliente y guarda el número con `+` y su lada. |
-| **"WhatsApp no aceptó tu plantilla"** | Revisa que esté aprobada, que el nombre coincida y que el número de variables sea el mismo. |
-| **"WhatsApp no aceptó el mensaje"** | Normalmente el token venció o el número emisor se desactivó en Meta. En un workflow, Cord reintenta solo. |
+| **"El cliente no tiene un teléfono con lada de país registrado"** | Edita el cliente y guarda el número con `+` y su lada. Después pulsa **Reintentar** en la ejecución. |
+| **"WhatsApp no aceptó tu plantilla"** | Revisa que esté aprobada, que el nombre y el idioma coincidan, y que el número de variables del paso sea el mismo que el de la plantilla. |
+| **"WhatsApp no aceptó el mensaje"** | Normalmente el token venció o el número emisor se desactivó en Meta. En un workflow, Cord reintenta solo; en la prueba, revisa el token y el número emisor. |
 | **"Conecta WhatsApp en Ajustes › Integraciones para usar esta acción"** | Falta el identificador del número, el token o el nombre de la plantilla. Complétalos y guarda. |
+| **"El identificador del número solo lleva dígitos..."** | Pegaste el teléfono en lugar del identificador. Cópialo del panel de WhatsApp de Meta. |
 | **"El nombre de la plantilla va en minúsculas, sin espacios ni acentos"** | Escribe el nombre tal como aparece en Meta, por ejemplo `recordatorio_pago`. |
+| **"El idioma de la plantilla va como es_MX o en_US"** | Usa el código de idioma con el que aprobaste la plantilla. |
 | **La prueba falla pero la plantilla está aprobada** | **Mandar prueba** rellena solo `{{1}}` con la palabra "prueba". Si tu plantilla no tiene exactamente una variable, Meta puede rechazar la prueba aunque el workflow funcione: prueba desde un workflow con todas las variables. |
 | **El texto de una variable sale en otro lugar** | Si dejas vacía una variable de en medio (por ejemplo la 2) y llenas la siguiente, Cord no manda la vacía y las siguientes se recorren: la 3 rellena `{{2}}`. Llena las variables en orden, sin huecos. |
 
-## Desconectar
+## Relacionadas
 
-En **Ajustes › Integraciones › WhatsApp Business**, pulsa **Desconectar**. Cord borra el identificador del número, el token y la plantilla, y deja de mandar mensajes. Los workflows con la acción de WhatsApp fallarán con "Conecta WhatsApp en Ajustes › Integraciones para usar esta acción."
-
-Desconectar en Cord no revoca el token en Meta. Si quieres invalidarlo, hazlo también desde tu cuenta de Meta.
+- [Acciones de workflows](/docs/automatizacion/workflows/acciones)
+- [Ideas listas para usar](/docs/automatizacion/workflows/ideas): cambia el correo de "Recordar al cliente 3 días antes del vencimiento" por un WhatsApp.
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones#whatsapp)
+- [Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)

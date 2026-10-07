@@ -2,9 +2,11 @@
 title: "Google Sheets"
 seoTitle: "Conectar Cord con Google Sheets"
 description: "Cómo conectar Google Sheets con Cord: la hoja que Cord crea en tu Drive, qué columnas trae, cómo se actualiza por folio, el permiso que pide y cómo resolver problemas."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Una cuenta de Google (Gmail o Google Workspace) con Google Drive"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,14 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 Cord crea una hoja de cálculo en tu Google Drive y escribe ahí tus cotizaciones y facturas: una fila por documento, que se actualiza sola cuando el documento cambia de estado. Sirve para lo de siempre —sumar el mes, filtrar por cliente, armar una gráfica— sin exportar nada a mano.
 
 **Cord solo puede abrir la hoja que crea.** Pide el permiso `drive.file`, el más estrecho que ofrece Google: no ve nada más de tu Drive. Pedir acceso a todas tus hojas habría metido a tu cuenta en un permiso mucho más amplio del que esta función necesita.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. |
+| **Google Sheets** | Una cuenta de Google (Gmail o Google Workspace) con Google Drive. Cord crea el archivo en esa cuenta. |
+| **Otra hoja** | Puedes tener Microsoft Excel conectado al mismo tiempo; cada uno lleva su propio archivo. |
 
 ## Conectar
 
@@ -45,11 +55,32 @@ Dos pestañas, **Cotizaciones** y **Facturas**, con una fila por documento:
 
 ## Cómo se mantiene al día
 
-Cuando una cotización se envía, se aprueba, se rechaza, vence o se paga —y cuando una factura se emite, se envía, se paga, se vence o se cancela— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final.
+Cuando una cotización se envía, se reenvía, se aprueba, se rechaza, vence, recibe un pago parcial o se paga —y cuando una factura se emite, se envía, se paga, se vence, se anula o se marca como incobrable— Cord busca su **folio en la columna A** y reemplaza esa fila. Si no la encuentra, la agrega al final. Los borradores no se escriben.
 
 Por eso puedes ordenar, filtrar y agregar tus propias columnas a la derecha: Cord se guía por el folio, no por el número de fila. Lo único que no conviene tocar es la **columna A**.
 
 **Actualizar ahora** vuelve a escribir tus últimos 500 documentos de cada pestaña. Úsalo al conectar por primera vez o si dudas de algo.
+
+## Qué viaja y en qué dirección
+
+Google Sheets es una integración **solo de salida**: Cord escribe en la hoja en tu Google Drive y no lee nada de vuelta.
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a la hoja** | Una fila por cotización y una por factura, con las columnas de arriba. | Al conectar (relleno inicial), cuando el documento cambia de estado y al pulsar **Actualizar ahora**. |
+| **De la hoja a Cord** | Nada. Editar una celda, borrar una fila o agregar columnas no cambia nada en Cord. | — |
+
+Si corriges a mano una fila, Cord la vuelve a escribir la siguiente vez que ese documento cambie. Tus columnas a la derecha de las de Cord no se tocan.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Archivos por conexión | Uno, que Cord crea al conectar |
+| Relleno inicial y **Actualizar ahora** | Los últimos 500 documentos de cada pestaña |
+| **Actualizar ahora** | Hasta 3 veces cada 5 minutos |
+| Conexiones por organización | Una por proveedor |
+| Documentos que entran | Cotizaciones enviadas en adelante y facturas emitidas; los borradores no |
 
 ## Desconectar
 
@@ -63,3 +94,9 @@ Desde la misma tarjeta, con **Desconectar**. El archivo se queda en tu cuenta co
 | **Borraste el archivo** | Desconecta y vuelve a conectar; Cord crea uno nuevo y lo llena. |
 | **Borraste la primera fila** | No pasa nada: Cord la vuelve a escribir en la siguiente actualización. |
 | **Una fila se duplicó** | Revisa que nadie haya editado la columna A; Cord empareja por folio. |
+
+## Relacionadas
+
+- [Microsoft Excel](/docs/automatizacion/integraciones/excel)
+- [QuickBooks Online](/docs/automatizacion/integraciones/quickbooks) y [Xero](/docs/automatizacion/integraciones/xero), si lo que buscas es llevar las facturas a tu contabilidad.
+- [Informes y desempeño comercial](/docs/gestion/informes): los números de tu negocio sin salir de Cord.

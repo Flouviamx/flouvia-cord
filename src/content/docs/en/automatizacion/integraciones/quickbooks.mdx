@@ -4,7 +4,9 @@ seoTitle: "Connect Cord with QuickBooks Online"
 description: "How to connect QuickBooks Online with Cord: what it creates in your accounting (customer, invoice and the Cord service), how payments travel both ways, what it does not do yet, duplicate guarantees and common issues."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A company in QuickBooks Online (not QuickBooks Desktop)", "A QuickBooks user who administers that company", "Invoices issued in Cord Invoicing"]
 ---
 
 <header class="content-header">
@@ -22,13 +24,21 @@ Every invoice you issue in Cord shows up in your accounting with its customer, l
 
 **QuickBooks has no drafts**: what goes in is recorded in your books. That is why Cord only sends invoices that are already **final** on its side.
 
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. Invoices issued in Cord: drafts do not travel. |
+| **QuickBooks** | A company in **QuickBooks Online** and a user who administers it. QuickBooks Desktop cannot be connected. |
+| **Taxes** | In your QuickBooks, a tax code for every rate you use in Cord, or automated sales tax in the United States. |
+
 ## Connect
 
 <Steps>
 1. Go to **Settings › Integrations › QuickBooks Online**. You need the **Settings** permission.
 2. Click **Connect QuickBooks** and authorize with the account that manages your company.
 3. When you come back you see the connected company's name. From then on, each new invoice travels on its own.
-4. If you already had invoices, click **Send pending invoices** to send the latest 50 missing ones.
+4. If you already had invoices, click **Send the pending invoices** to send the latest 50 missing ones.
 </Steps>
 
 ## What it creates in your accounting
@@ -65,6 +75,25 @@ Each line enters with the QuickBooks tax code whose rate matches Cord's. In the 
 - **Only final invoices travel.** Never a quote or a Cord draft.
 - **Each line amount is computed on the already-rounded price**, so the total matches Cord to the cent.
 
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to QuickBooks** | The customer (if it does not exist), the final invoice with its lines, tax and currency, and the "Cord" service the first time. | When the invoice is issued or sent in Cord, and when you click **Send the pending invoices**. |
+| **From Cord to QuickBooks** | Every payment on an invoice that is already in QuickBooks, as a payment to **Undeposited Funds**. | When the payment is recorded in Cord. |
+| **From QuickBooks to Cord** | Payments you record there against a Cord invoice, with QuickBooks as the method. | Once a day and when you click **Send the pending invoices**. |
+| **From QuickBooks to Cord** | Nothing else: customers, products and invoices created in QuickBooks do not come into Cord. | — |
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Companies per organization | One |
+| **Send the pending invoices** | Up to 50 missing final invoices, and up to 3 times every 5 minutes |
+| Invoices per Cord document | One, even if the event repeats |
+| Invoices with withholdings | Not sent |
+| Payments coming from QuickBooks | Checked once a day |
+
 ## Disconnect
 
 With **Disconnect** on the card. What was already recorded stays in your accounting. If you connect a different company or organization, Cord starts from scratch with it instead of reusing the previous one.
@@ -73,7 +102,14 @@ With **Disconnect** on the card. What was already recorded stays in your account
 
 | Message or symptom | What to do |
 |---|---|
-| **The card asks you to reconnect** | QuickBooks expired or revoked access. Reconnect; missed invoices go out with **Send pending invoices**. |
+| **The card asks you to reconnect** | QuickBooks expired or revoked access. Reconnect; missed invoices go out with **Send the pending invoices**. |
 | **"0 invoices sent"** | There are no pending final invoices, or they were all already recorded. |
 | **"Your accounting has no … sales tax rate"** | Create a QuickBooks tax code with that exact rate and click **Send the pending invoices**. In the United States, turn on automated sales tax. |
 | **"The total did not match"** | QuickBooks computed a different total and Cord deleted the invoice instead of leaving it posted wrong. Check that the rate is the same on both sides. |
+
+## Related
+
+- [Xero](/en/docs/automatizacion/integraciones/xero)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Invoicing by country](/en/docs/pagos/facturacion)
+- [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets), if you only need the list of invoices in a spreadsheet.

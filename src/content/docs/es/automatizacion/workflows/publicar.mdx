@@ -1,9 +1,11 @@
 ---
 title: "Publicar, pausar y eliminar"
-description: "El ciclo de vida de un workflow en Cord: borrador, publicación, cambios sin publicar, pausa, reanudación, duplicado y eliminación."
-lastUpdated: "2026-09-15"
+description: "El ciclo de vida de un workflow en Cord: borrador y versión publicada, versiones, probar sin publicar, cambios sin publicar, pausa, reanudación, duplicado y eliminación."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Un lugar libre de workflows activos en tu plan para publicar o reanudar"]
 ---
 
 <header class="content-header">
@@ -42,7 +44,24 @@ Mientras editas, la versión publicada sigue corriendo sin cambios. Si hay difer
 
 Publicar cambios en un workflow que ya estaba activo no consume otro lugar del límite.
 
+## Versiones
+
+Cada vez que publicas, la versión publicada se reemplaza por una **versión nueva**, y Cord numera cada publicación. Lo que importa de esa numeración:
+
+- **Cada ejecución recuerda su versión.** Al crearse, la ejecución guarda una copia completa de la versión publicada en ese momento: sus pasos, sus textos y sus plazos. Corre con esa copia de principio a fin, aunque tarde días por una espera.
+- **Una versión nueva solo aplica a eventos nuevos.** Las ejecuciones en cola o en espera siguen con la versión con la que empezaron, y lo mismo pasa si reintentas una ejecución fallida.
+- **No hay un botón para volver a una versión anterior.** Para deshacer un cambio, edita el borrador hasta dejarlo como estaba y publica otra vez: eso crea una versión nueva con el contenido anterior.
+
+| Quieres | Haz esto |
+|---|---|
+| Probar un cambio sin afectar lo que corre | Edítalo en el borrador, pulsa **Guardar borrador** y **Probar**. No publiques todavía. |
+| Que el cambio aplique desde ya | **Publicar cambios**. Aplica a los eventos que ocurran desde ese momento. |
+| Que una ejecución en espera use el cambio | No se puede: cancélala y deja que el siguiente evento cree una con la versión nueva. |
+| Corregir el texto de una ejecución que falló | Publica el cambio para los eventos siguientes. Reintentar la fallida usa su versión original. |
+
 ## Probar antes de publicar
+
+{/* MOCKUP: panel "Prueba sin publicar" del editor de workflows, abierto junto al lienzo. Arriba: "Con el evento del 6 oct 2026. Las consultas se ejecutan de verdad; las acciones no se envían." Debajo, paso por paso: "Espera hasta que... — Se cumplió", "Crear una tarea — Haría: Llamar a Grupo Andino mientras COT-00152 está caliente". */}
 
 El botón **Probar**, junto a Guardar, corre el borrador **con el último evento real de su disparador** y te dice, paso por paso, qué habría pasado.
 
@@ -92,7 +111,8 @@ Si no estás seguro, pausa en lugar de eliminar. Un workflow pausado conserva su
 
 Crear, publicar, pausar, reanudar, eliminar, reintentar o cancelar una ejecución queda registrado en **Ajustes › Auditoría**, con quién lo hizo y cuándo.
 
-## Siguiente
+## Relacionadas
 
-- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones)
-- [Límites](/docs/automatizacion/workflows/limites)
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones): qué pasa con cada ejecución y cómo reintentarla.
+- [Límites](/docs/automatizacion/workflows/limites): cuántos workflows activos permite tu plan.
+- [Crea tu primer workflow](/docs/automatizacion/workflows/primer-workflow): el editor, paso a paso.

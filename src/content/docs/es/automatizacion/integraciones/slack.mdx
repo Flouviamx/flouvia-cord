@@ -4,7 +4,9 @@ seoTitle: "Conectar Cord con Slack"
 description: "Cómo conectar un canal de Slack con Cord con Añadir a Slack o un webhook propio, activar los avisos por evento, qué contiene cada mensaje, vistas previas de links, el comando /cord, botones de aprobación, usar Slack en workflows y resolver problemas."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Un espacio de trabajo de Slack donde puedas instalar apps", "Plan Scale o superior para los botones de aprobación"]
 ---
 
 <header class="content-header">
@@ -25,6 +27,14 @@ Hay dos formas de recibir mensajes, y puedes usar las dos:
 | **Qué publica** | Un mensaje estándar por evento de cotización. | El texto que tú escribas, con datos del evento. |
 | **Cuándo** | En los eventos que marques en Ajustes › Notificaciones. | Con cualquiera de los 44 disparadores de eventos o con el disparador programado, con condiciones y esperas. |
 | **Dónde se configura** | **Ajustes › Notificaciones** | **Workflows** |
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. |
+| **Slack** | Poder instalar apps en tu espacio de trabajo. Si tu espacio restringe la instalación, un administrador de Slack tendrá que aprobar la app de Cord. |
+| **Botones de aprobación** | Aprobaciones internas, que son del plan **Scale** o superior, y que quien pulse el botón use en Slack el mismo correo que en Cord y tenga el permiso de **Aprobaciones**. |
 
 ## 1. Conecta tu canal
 
@@ -95,6 +105,27 @@ Con la acción **Enviar un mensaje a Slack** de [Cord Workflows](/docs/automatiz
 
 Esta acción publica en el mismo canal y funciona aunque los avisos de Notificaciones estén apagados.
 
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Slack** | Los avisos que marques en Notificaciones: folio, lo que pasó, cliente, total con su divisa y el enlace **Ver cotización**. | Al ocurrir el evento. |
+| **De Cord a Slack** | El texto que escribas en la acción **Enviar un mensaje a Slack** de un workflow. | Cuando corre el workflow. |
+| **De Cord a Slack** | La tarjeta de vista previa de un link de cotización de tu organización, y la respuesta de `/cord`, que solo ve quien escribió el comando. | Cuando alguien pega el link o usa el comando. |
+| **De Slack a Cord** | La decisión de los botones **Aprobar** o **Rechazar** de una solicitud de aprobación interna. | Cuando alguien con permiso pulsa el botón. |
+| **De Slack a Cord** | Nada más. Cord no lee los mensajes de tus canales. | — |
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Canales por organización | Uno a la vez, el que elegiste al conectar |
+| Mensajes desde workflows | 120 por hora por organización |
+| Largo del mensaje de un workflow | 1,000 caracteres |
+| Resultados de `/cord` | Hasta 5 cotizaciones |
+| Vista previa de links | Solo cotizaciones de tu propia organización |
+| Avisos de Notificaciones | Solo eventos de cotizaciones con folio |
+
 ## Cambiar de canal o desconectar
 
 - **Cambiar de canal:** pulsa **Cambiar de canal** en la tarjeta y elige otro en Slack. Con webhook propio, crea otro en Slack y pega la URL nueva.
@@ -109,7 +140,7 @@ Cord solo puede publicar en **un canal** a la vez. Si quieres avisos en varios c
 |---|---|---|
 | La URL debe ser de hooks.slack.com | Pegaste otra URL, por ejemplo la del canal o la de la app. | Copia la URL del Incoming Webhook, la que empieza con `https://hooks.slack.com/`. |
 | No hay un webhook de Slack conectado. Pega la URL y guarda primero. | Pulsaste **Enviar prueba** sin guardar. | Pulsa **Guardar** y luego prueba. |
-| Slack respondió … Revisa la URL del webhook. | Slack rechazó el mensaje: el webhook se borró, la app se quitó o la URL está incompleta. | Crea un webhook nuevo y pega la URL completa. |
+| Slack no aceptó el mensaje. Revisa la URL del webhook. | Slack rechazó el mensaje: el webhook se borró, la app se quitó o la URL está incompleta. | Crea un webhook nuevo y pega la URL completa. |
 | No se pudo enviar | Error de red al probar. | Intenta de nuevo. |
 | La prueba llega pero los avisos no | Los eventos no tienen Slack marcado. | Revisa **Ajustes › Notificaciones**. |
 
@@ -117,7 +148,9 @@ Cord solo puede publicar en **un canal** a la vez. Si quieres avisos en varios c
 Trata la URL del webhook como una contraseña: cualquiera que la tenga puede publicar en tu canal. Si crees que se filtró, bórrala en Slack y crea una nueva.
 </Callout>
 
-## Siguiente
+## Relacionadas
 
+- [Microsoft Teams](/docs/automatizacion/integraciones/teams)
+- [Notificaciones](/docs/gestion/notificaciones)
 - [Acciones de workflows](/docs/automatizacion/workflows/acciones)
-- [Integraciones](/docs/automatizacion/integraciones)
+- [Ideas listas para usar](/docs/automatizacion/workflows/ideas): "Nota en HubSpot cuando el cliente aprueba" también publica en Slack.

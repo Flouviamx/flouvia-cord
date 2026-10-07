@@ -4,7 +4,9 @@ seoTitle: "Connect Cord with Shopify"
 description: "How to connect Shopify with Cord: catalog and customers into Cord, the order back to your store when the quote closes, currencies, inventory, taxes and common issues."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "A Shopify store and a user who can install apps on it", "Shopify Plus with B2B for company-specific prices"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,15 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 With Shopify connected, your catalog and customers come into Cord and stay current. You quote wholesale with the prices and SKUs you already have, and when the quote closes, Cord can create the order in your store so fulfillment and inventory live there.
 
 **Cord reads your store and writes only what you turn on.** Products and customers come in on their own; orders start switched off. Cord never changes prices or edits your catalog.
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan, but the products and customers that come in count against your plan's limit: 50 and 50 on Free, 500 and 500 on Starter, no limit from Pro. |
+| **Shopify** | A store and a user who can install apps on it. The domain ending in `myshopify.com`. |
+| **B2B prices** | A store with Shopify B2B, which is available on Shopify Plus. |
+| **Orders in another currency** | Your store must have that currency enabled in **Shopify › Settings › Markets**. |
 
 ## Connect
 
@@ -102,6 +113,30 @@ On the Shopify card, **Invoice your store orders** starts off. With **Create the
 
 You review the draft and issue it: Cord never issues on its own, because issuing is your tax decision and, in Mexico, a stamped CFDI cannot be undone without canceling it with the SAT. An order creates **a single draft**, and orders Cord created from a quote are not invoiced here, since they already have theirs. An order without a customer (guest checkout) is not invoiced.
 
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Shopify to Cord** | Products (one variant, one product, with price, SKU and status) and customers. | When you connect, when you click **Sync now** and within seconds every time they change in Shopify. |
+| **From Shopify to Cord** | Stock for a product that tracks inventory. | When syncing and when the editor asks for it as you add the product. |
+| **From Shopify to Cord** | The customer's B2B price list. | When you pick the client in the editor. |
+| **From Shopify to Cord** | A paid store order, as an **invoice draft**. | When the order is paid, if you turned on **Invoice your store orders**. |
+| **From Cord to Shopify** | One order per quote, as a draft or as paid. | When the quote is approved or paid, depending on what you chose. It starts off. |
+| **From Cord to Shopify** | Nothing else. Cord never changes your store's prices, products, customers or inventory directly. | — |
+
+What you change in Cord on a product or a customer that came from Shopify does not go back to the store. If that product or customer later changes in Shopify, Shopify's data replaces yours. A customer you delete in Shopify stays in Cord.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Stores per organization | One |
+| **Sync now** | Up to 3 times per hour |
+| One full sync | Up to 2,000 products (with up to 100 variants each) and up to 4,000 customers; later changes arrive through Shopify's notifications |
+| Products and customers in Cord | Your plan's: 50 and 50 on Free, 500 and 500 on Starter, no limit from Pro |
+| Orders per quote | One, even if the event repeats |
+| Invoice drafts per order | One; orders without a customer are not invoiced |
+
 ## Disconnect
 
 With **Disconnect** on the card. Products and customers already in Cord stay and stop updating. If you uninstall the app from Shopify, Cord detects it and marks the connection as disconnected.
@@ -114,3 +149,9 @@ With **Disconnect** on the card. Products and customers already in Cord stay and
 | **"We could not verify the response came from Shopify"** | Start again from Cord, not from a saved link. |
 | **The card asks you to reconnect** | Someone uninstalled the app or changed its permissions. Connect it again. |
 | **No order was created** | Check the quote's history: it says whether it was the currency, a missing permission or a Shopify rejection. |
+
+## Related
+
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas): issue the draft created from a store order.
+- [Integrations](/en/docs/automatizacion/integraciones)

@@ -4,7 +4,9 @@ seoTitle: "Conectar Cord con Gmail: envío y complemento"
 description: "Cómo enviar cotizaciones y facturas desde tu Gmail, y cómo usar el complemento de Cord dentro de Gmail: cotización del hilo en vivo, cotizar con IA, responder en el hilo e insertar al redactar."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord para el envío desde Gmail", "Una cuenta de Gmail o de Google Workspace", "Cotizaciones con IA disponibles en tu plan para cotizar desde el complemento"]
 ---
 
 <header class="content-header">
@@ -20,6 +22,14 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Dónde se conecta** | **Ajustes › Integraciones › Gmail** | Dentro de Gmail, con **Conectar con Cord** |
 | **Permiso de Google** | Solo enviar (`gmail.send`); no lee tu correo. | Solo el correo que tienes abierto. |
 | **Disponible** | Sí, como función nueva | Pendiente de publicarse en Google Workspace Marketplace |
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | Para el envío, el permiso de **Ajustes**. Para el complemento, el permiso de Ajustes en el espacio que autorizas. Cualquier plan. |
+| **Google** | Una cuenta de Gmail o de Google Workspace. Si tu organización de Google Workspace bloquea las apps sin verificar, un administrador tendrá que permitir la app de Cord mientras Google termina de verificarla. |
+| **Cotizar con IA** | Cotizaciones con IA disponibles en tu plan: 3 al mes en Gratis, 20 en Starter, 50 en Pro, 500 en Scale y sin cuota numérica en Developer. |
 
 ## Enviar desde tu Gmail
 
@@ -52,6 +62,8 @@ Los avisos internos (a ti y a tu equipo) siguen saliendo desde Cord.
 
 Abre un correo y pulsa el ícono de Cord en el panel derecho. La primera vez pulsa **Conectar con Cord** y autoriza en la pantalla de Cord: no copias ninguna llave. El complemento habla español o inglés según el idioma de tu Gmail.
 
+{/* MOCKUP: Gmail con un correo de "Compras — Grupo Andino" abierto y el panel de Cord a la derecha. Arriba, "Cotización en este hilo": COT-0006, Enviada, 48,300.00 MXN, "Vista por el cliente hace 2 h", con botones "Responder con ella", "Reenviar por Cord" y "Abrir". Debajo, "Grupo Andino" con sus últimas cotizaciones y los botones "Cotizar con IA" y "Cotización en blanco". */}
+
 ### Sobre un correo abierto
 
 - **Quién te escribe.** Si el remitente ya es tu cliente, ves su empresa y sus últimas cotizaciones.
@@ -80,6 +92,27 @@ En la barra de redacción, el ícono de Cord (o el menú de tres puntos, si Gmai
 
 Cord no vende estos datos, no los usa para publicidad y su uso de la información de las APIs de Google se ajusta a la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.
 
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Gmail** (envío) | Los correos a tus clientes —cotización, factura con su PDF, recordatorio de pago y el correo al cliente de un workflow— salen por tu cuenta y quedan en tus Enviados. | Cada vez que Cord le escribe a un cliente. |
+| **De Gmail a Cord** (complemento) | Del correo abierto: el remitente, el asunto y el folio de una cotización. El texto del correo, solo al pulsar **Cotizar con IA**. | Al abrir el panel de Cord en un correo. |
+| **De Cord a Gmail** (complemento) | La cotización del hilo con su estado, tus cotizaciones del cliente y la tarjeta que insertas al redactar. | Al abrir el panel o al insertar. |
+| **Lo que crea en Cord** (complemento) | Un cliente nuevo si el remitente no existía, y la cotización como borrador. | Al pulsar **Crear cotización** o **Cotización en blanco**. |
+
+Cord nunca lee tu bandeja completa ni guarda tus correos.
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Cuentas de Gmail para el envío | Una por organización |
+| Correos que salen por Gmail | Los de Cord a tus clientes, dentro del límite diario de envío de tu cuenta de Google. Si Gmail rechaza un envío, sale desde Cord. |
+| Avisos internos | Siguen saliendo desde Cord, no desde tu Gmail |
+| Cotizar con IA | Gasta una cotización con IA de tu plan por cada lectura |
+| Cuota de API | El complemento no gasta la cuota mensual de API de tu plan |
+
 ## Desconectar
 
 - **El envío:** **Dejar de enviar desde Gmail** en la tarjeta. Los correos vuelven a salir desde Cord.
@@ -95,3 +128,10 @@ Cord no vende estos datos, no los usa para publicidad y su uso de la informació
 | **El complemento dice que se requiere autorización** | Abre el ícono de Cord y acepta todos los permisos que pide Google, sin desmarcar ninguno. |
 | **"Tu plan ya usó sus cotizaciones con IA de este mes"** | Crea la cotización en blanco o sube de plan. |
 | **No aparece "Cotización en este hilo"** | El correo no trae un folio en el asunto ni al inicio del texto. |
+
+## Relacionadas
+
+- [Vista previa y envío](/docs/cotizacion/envio)
+- [Cord AI: cotizaciones automáticas](/docs/cotizacion/ia)
+- [Google Sheets](/docs/automatizacion/integraciones/google-sheets): usa la misma cuenta de Google, con su propio permiso.
+- [Integraciones](/docs/automatizacion/integraciones)

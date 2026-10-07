@@ -1,16 +1,30 @@
 ---
 title: "Make"
 seoTitle: "Connect Cord with Make"
-description: "How to connect the Cord app on Make, which modules it includes, and how to use Webhooks and HTTP as an alternative: events, duplicates and errors."
-lastUpdated: "2026-09-21"
+description: "How to connect the Cord app on Make: requirements, one-click authorization, modules, what flows each way, the monthly API quota per plan, how to disconnect, Webhooks and HTTP as an alternative, duplicates and errors."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in the Cord workspace", "A Make account with the Admin, Owner or App Developer role to install the app", "Monthly API quota available on your Cord plan"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Make</h1>
   <p class="page-subtitle">Send what happens in Cord to any Make app, and create data in Cord from your scenarios.</p>
 </header>
+
+## What it does
+
+The Cord app for Make has an instant trigger (**Watch Events**), actions to create and change data in Cord, searches with pagination and a universal module for any other API operation. It is authorized with one click on a Cord screen, without keys, and works in every Make zone.
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission in the workspace you are connecting. Any plan. |
+| **Make** | A Make account. To install the app, being an Admin, Owner or App Developer of that Make organization. The operations your scenarios use are billed by Make according to your Make plan. |
+| **Quota** | Every action or search module uses calls from your Cord plan's monthly API quota. See [Limits](#limits). |
 
 ## Connect the Cord app
 
@@ -32,6 +46,45 @@ Whoever authorizes needs access to **Settings** in that workspace. Make renews t
 | **Universal** | **Make an API Call**, for any other operation in the Cord API. |
 
 Each active **Watch Events** creates its own webhook in Cord, with a limit separate from your plan's endpoints.
+
+{/* MOCKUP: Make scenario with three chained modules: "Cord — Watch Events" (events: quote.approved), "Cord — Get a Client" and "Google Sheets — Add a Row". Below, the Cord connection panel with "Create a connection" and the name "Cord (Distribuidora Andina)". */}
+
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Make** | The event you chose in **Watch Events**, with the object's data. | Instantly, every time it happens in Cord. |
+| **From Make to Cord** | Whatever the module does: create or update a client, create or send a quote, mark it paid or create a task. | When the scenario runs. |
+| **Searches and lookups** | Make reads clients or quotes to use them in the next module. It changes nothing. | When the scenario runs. |
+
+What a module does in Cord fires the same events as if a person had done it, with **Who caused it: The API**.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| API calls per month | Free 100, Starter 1,000, Pro 5,000, Scale 10,000, Developer 50,000 |
+| When you go over the quota | On Free, calls are rejected until the next month; from Starter they are billed as overage, with a safety cap of 10 times what is included |
+| Webhooks created by your scenarios | 100 per organization, separate from your plan's webhook endpoints |
+| Live authorized connections | 25 per app and per organization |
+
+- **What uses quota:** every action, search or **Make an API Call** module, and registering or removing the **Watch Events** webhook. Receiving events does not use quota.
+- **How much you have used:** in **Settings › Plans & subscription › Subscription**, **API calls** row.
+- Requests with **HTTP › Make a request** and an `sk_live_…` key also use quota; with `sk_test_…` they do not.
+
+## Disconnect
+
+**Turn off a scenario:** deactivate it in Make. For Cord to stop sending it events, also delete its webhook in Make's **Webhooks** section: when you delete it, Make removes it from Cord.
+
+**Cut Make's access to Cord:**
+
+<Steps>
+1. Go to **Settings › Integrations › Make** and click **View authorized connections**. **Settings › Developer mode › API** opens.
+2. Find Make's **Authorized connection** row, with the **OAuth** tag.
+3. Click **Revoke** and confirm.
+</Steps>
+
+From that moment Make can no longer call the API with that connection, and the webhooks its scenarios had created stop receiving events. In Make, Cord modules fail with an authorization error until you create the connection again. If you used the Webhooks and HTTP alternative, delete the endpoint in **Webhooks** and revoke the key in **API**.
 
 ## Alternative: Webhooks and HTTP
 
@@ -133,11 +186,14 @@ With an `sk_test_…` key your scenario works against your account's test enviro
 | **404** | The id does not exist in your organization. | Check that you mapped the right `id`, not the quote number. |
 | **409** `invalid_state` | The action does not apply to the current status, for example approving a draft. | Check the quote status before the action. |
 | **422** `idempotency_key_reused` | You used the same `Idempotency-Key` with another request. | Use a different key per operation. |
-| **429** | You exceeded the per-minute limit or the monthly quota. | Add a pause between modules or reduce frequency. |
+| **429** | You exceeded the per-minute limit or the monthly API quota. | Add a pause between modules or reduce frequency. Check your usage in Settings › Plans & subscription; on Free, wait for the next month or upgrade. |
+| **"You cannot connect apps here"** when authorizing | Your user does not have the Settings permission in that workspace. | Ask someone who has it to authorize. |
 
 More in [API errors](/en/docs/desarrolladores/esenciales/errores).
 
-## Next
+## Related
 
 - [Zapier](/en/docs/automatizacion/integraciones/zapier)
+- [n8n](/en/docs/automatizacion/integraciones/n8n)
+- [Integrations and the API quota](/en/docs/automatizacion/integraciones#integrations-and-the-api-quota)
 - [Developer integrations guide](/en/docs/desarrolladores/herramientas/integraciones)

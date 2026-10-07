@@ -4,7 +4,9 @@ seoTitle: "Connect Cord with Gmail: sending and add-on"
 description: "How to send quotes and invoices from your Gmail, and how to use the Cord add-on inside Gmail: the thread quote live, quote with AI, reply in the thread and insert while composing."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord for sending from Gmail", "A Gmail or Google Workspace account", "AI quotes available on your plan to quote from the add-on"]
 ---
 
 <header class="content-header">
@@ -20,6 +22,14 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Where you connect it** | **Settings › Integrations › Gmail** | Inside Gmail, with **Connect with Cord** |
 | **Google permission** | Send only (`gmail.send`); it does not read your email. | Only the email you have open. |
 | **Available** | Yes, as a new feature | Pending publication on Google Workspace Marketplace |
+
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | For sending, the **Settings** permission. For the add-on, the Settings permission in the workspace you authorize. Any plan. |
+| **Google** | A Gmail or Google Workspace account. If your Google Workspace organization blocks unverified apps, an administrator will need to allow the Cord app while Google finishes verifying it. |
+| **Quote with AI** | AI quotes available on your plan: 3 a month on Free, 20 on Starter, 50 on Pro, 500 on Scale and no numeric quota on Developer. |
 
 ## Send from your Gmail
 
@@ -52,6 +62,8 @@ Internal notifications (to you and your team) still go out from Cord.
 
 Open an email and click the Cord icon in the right panel. The first time, click **Connect with Cord** and authorize on the Cord screen: no key to copy. The add-on speaks English or Spanish according to your Gmail language.
 
+{/* MOCKUP: Gmail with an email from "Purchasing — Lone Star Supply" open and the Cord panel on the right. At the top, "Quote in this thread": COT-0006, Sent, 48,300.00 USD, "Viewed by the client 2 h ago", with buttons "Reply with it", "Resend via Cord" and "Open". Below, "Lone Star Supply" with its latest quotes and the buttons "Quote with AI" and "Blank quote". */}
+
 ### On an open email
 
 - **Who is writing.** If the sender is already your client, you see their company and latest quotes.
@@ -80,6 +92,27 @@ In the compose toolbar, the Cord icon (or the three-dot menu, when Gmail hides i
 
 Cord does not sell this data or use it for advertising, and its use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.
 
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Gmail** (sending) | Emails to your clients (quote, invoice with its PDF, payment reminder and a workflow's email to the client) go out through your account and stay in your Sent folder. | Every time Cord writes to a client. |
+| **From Gmail to Cord** (add-on) | From the open email: the sender, the subject and a quote number. The email's text, only when you click **Quote with AI**. | When you open the Cord panel on an email. |
+| **From Cord to Gmail** (add-on) | The thread's quote with its status, your quotes for that client and the card you insert while composing. | When you open the panel or insert. |
+| **What it creates in Cord** (add-on) | A new client if the sender did not exist, and the quote as a draft. | When you click **Create quote** or **Blank quote**. |
+
+Cord never reads your whole inbox or stores your emails.
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Gmail accounts for sending | One per organization |
+| Emails that go out through Gmail | Cord's emails to your clients, within your Google account's daily sending limit. If Gmail rejects a send, it goes out from Cord. |
+| Internal alerts | Still go out from Cord, not from your Gmail |
+| Quote with AI | Uses one AI quote from your plan per read |
+| API quota | The add-on does not use your plan's monthly API quota |
+
 ## Disconnect
 
 - **Sending:** **Stop sending from Gmail** on the card. Emails go back to being sent from Cord.
@@ -95,3 +128,10 @@ Cord does not sell this data or use it for advertising, and its use of informati
 | **The add-on says authorization is required** | Open the Cord icon and accept every permission Google asks for, without unchecking any. |
 | **"Your Cord plan used its AI quotes for this month"** | Create a blank quote or upgrade your plan. |
 | **"Quote in this thread" does not appear** | The email has no quote number in the subject or at the start of the text. |
+
+## Related
+
+- [Preview and sending](/en/docs/cotizacion/envio)
+- [Cord AI: automatic quotes](/en/docs/cotizacion/ia)
+- [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets): uses the same Google account, with its own permission.
+- [Integrations](/en/docs/automatizacion/integraciones)

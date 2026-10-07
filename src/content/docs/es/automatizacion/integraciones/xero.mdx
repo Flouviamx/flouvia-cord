@@ -4,7 +4,9 @@ seoTitle: "Conectar Cord con Xero"
 description: "Cómo conectar Xero con Cord: facturas en borrador para que las apruebe tu contador, contactos sin duplicar, importes sin impuesto incluido, pagos en los dos sentidos y problemas frecuentes."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Una organización en Xero y un usuario que pueda autorizar apps en ella", "Una cuenta de banco activa en Xero para sincronizar pagos", "Facturas emitidas en Cord Invoicing"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,15 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 Cada factura que emites en Cord aparece en tu Xero con su contacto, sus conceptos y su divisa.
 
 **Entra como borrador y la apruebas tú.** Un sistema de fuera no debería asentar solo en los libros de nadie: Cord deja la factura lista y tu contador la revisa antes de aprobarla.
+
+## Requisitos
+
+| Dónde | Qué necesitas |
+|---|---|
+| **Cord** | El permiso de **Ajustes**. Cualquier plan. Facturas emitidas en Cord: los borradores no viajan. |
+| **Xero** | Una organización en Xero y un usuario que pueda darle acceso a una app. Si tienes varias organizaciones, eliges una al autorizar. |
+| **Pagos** | Una cuenta de banco activa en Xero, que eliges en la tarjeta como **Cuenta de banco de los pagos**. |
+| **Impuestos** | En tu Xero, una tasa de impuesto con cada tasa que uses en Cord. |
 
 ## Conectar
 
@@ -66,6 +77,26 @@ Un pago no se registra dos veces ni rebota: lo que entró desde Xero no se vuelv
 - **Solo viajan facturas definitivas.** Nunca una cotización ni un borrador de Cord.
 - **El importe de cada línea se calcula sobre el precio ya redondeado**, para que la suma cuadre con la de Cord al centavo.
 
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a Xero** | El contacto (si no existe) y la factura definitiva, como **borrador**, con sus líneas, su impuesto y su divisa. | Al emitir o enviar la factura en Cord, y al pulsar **Enviar las facturas pendientes**. |
+| **De Cord a Xero** | Cada cobro de una factura **aprobada** en Xero, como pago en la cuenta de banco elegida. | Al registrar el cobro en Cord; si la factura sigue en borrador, cuando la apruebes. |
+| **De Xero a Cord** | Los pagos que registres allá contra una factura de Cord, con Xero como método. | Una vez al día y al pulsar **Enviar las facturas pendientes**. |
+| **De Xero a Cord** | Nada más: contactos, productos y facturas creados en Xero no entran a Cord, y aprobar la factura en Xero no cambia nada en Cord. | — |
+
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Organizaciones de Xero por organización de Cord | Una |
+| **Enviar las facturas pendientes** | Hasta 50 facturas definitivas que falten, y hasta 3 veces cada 5 minutos |
+| Facturas por documento de Cord | Una, aunque el evento se repita |
+| Facturas con retenciones | No se envían |
+| Pagos que llegan de Xero | Se revisan una vez al día |
+| Pagos hacia Xero | Solo de facturas aprobadas allá |
+
 ## Desconectar
 
 Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabilidad. Si conectas otra empresa u organización, Cord empieza de cero con ella en vez de reusar lo de la anterior.
@@ -79,3 +110,10 @@ Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabi
 | **"Para sincronizar pagos, Xero necesita un permiso más."** | Pulsa **Volver a conectar** y autoriza de nuevo. |
 | **"Tu Xero no tiene cuentas de banco activas."** | Crea una cuenta de banco en Xero y vuelve a la tarjeta para elegirla. |
 | **Un cobro de Cord no aparece en Xero** | Revisa que la factura esté aprobada en Xero y que hayas elegido la cuenta de banco de los pagos. |
+
+## Relacionadas
+
+- [QuickBooks Online](/docs/automatizacion/integraciones/quickbooks)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Google Sheets](/docs/automatizacion/integraciones/google-sheets), si solo necesitas la lista de facturas en una hoja.

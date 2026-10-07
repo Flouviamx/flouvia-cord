@@ -1,22 +1,51 @@
 ---
 title: "Integrations"
 seoTitle: "Cord integrations: Shopify, QuickBooks, Xero, Sheets and more"
-description: "How Settings › Integrations works in Cord: the app directory, what each status means, which integration fits each case and who can connect them."
+description: "The 13 apps that connect with Cord in Settings › Integrations: what each one does, which way the data flows, which plan it needs, its status, what fits each case and who can connect them."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission to connect, configure and disconnect", "An account in the other tool"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Integrations</h1>
-  <p class="page-subtitle">Connect Cord with the tools your team already uses. Nothing is required: Cord works fully without connecting anything.</p>
+  <p class="page-subtitle">Connect Cord with the tools your team already works in. None of it is required: Cord works fully without connecting anything.</p>
 </header>
 
 ## The app directory
 
-Open **Settings › Integrations**. Each app shows as a card with its logo, category and status. **Connected** apps sit at the top and **Available** ones below, so the page stays short as more apps are added.
+Open **Settings › Integrations**. Each app shows as a card with its logo, its category and its status. **Connected** apps are at the top and **Available** ones below, so the page does not grow as apps are added.
 
 Tap a card to open that app's page. Everything about the integration lives there: the connection, its settings, a link to the guide and, where it applies, **Use it in Workflows** with workflow ideas that use that app and that you can create with one tap.
+
+{/* MOCKUP: Settings › Integrations. "Connected" section with three cards: HubSpot (CRM, Connected), Slack (Messaging, Connected), Google Sheets (Productivity, Connected). "Available" section with cards in a grid: Shopify, Microsoft Excel, Gmail, QuickBooks Online, Xero, Microsoft Teams, WhatsApp Business (Not connected), Make and Zapier (Direct connection), n8n (With an API key). Each card with the brand's real logo, the name and the category below. At the bottom, the "Using another tool?" block. */}
+
+## The 13 apps
+
+| App | What it does | Data direction | Plan | Status | Guide |
+|---|---|---|---|---|---|
+| **HubSpot** | Clients as Companies and Contacts, quotes as Deals that move on their own, and the Cord card inside HubSpot. | Both: clients both ways; quotes from Cord to HubSpot | All | Available; the card inside HubSpot is a new feature | [Connect](/en/docs/automatizacion/integraciones/hubspot) |
+| **Slack** | Alerts in your channel, your own messages from workflows, link previews, the `/cord` command and approval buttons. | From Cord to Slack; the command and buttons answer from Slack | All (approval buttons, Scale or higher) | Available; previews, `/cord` and buttons are a new feature | [Slack](/en/docs/automatizacion/integraciones/slack) |
+| **Microsoft Teams** | A card in your channel when a quote moves forward, and your own messages from workflows. | From Cord to Teams | All | Available with Power Automate; **Connect with Microsoft** is a new feature | [Teams](/en/docs/automatizacion/integraciones/teams) |
+| **WhatsApp Business** | Your approved WhatsApp template to the client's phone, from a workflow. | From Cord to the client | All | Available | [WhatsApp](/en/docs/automatizacion/integraciones/whatsapp) |
+| **Gmail** | Quotes, invoices and reminders go out from your address; inside Gmail, the thread's quote and quoting with AI. | Sending: from Cord to Gmail. Add-on: reads the open email and creates in Cord | All | Sending as a new feature; the add-on cannot be installed yet | [Gmail](/en/docs/automatizacion/integraciones/gmail) |
+| **Google Sheets** | Every quote and every invoice as a row in your spreadsheet, kept current on its own. | From Cord to the spreadsheet | All | Available | [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets) |
+| **Microsoft Excel** | The same, in an Excel table inside a workbook in your OneDrive. | From Cord to the workbook | All | Available | [Excel](/en/docs/automatizacion/integraciones/excel) |
+| **QuickBooks Online** | Every final invoice is posted with its customer, its lines and its currency. | Invoices from Cord to QuickBooks; payments both ways | All | New feature | [QuickBooks](/en/docs/automatizacion/integraciones/quickbooks) |
+| **Xero** | The same, as a draft for your accountant to approve. | Invoices from Cord to Xero; payments both ways | All | Available; payments are a new feature | [Xero](/en/docs/automatizacion/integraciones/xero) |
+| **Shopify** | Your store's catalog and customers for wholesale quoting, and the order back when the quote closes. | Catalog and customers from Shopify to Cord; orders from Cord to Shopify; paid store orders to invoice drafts in Cord | All | Available; stock, B2B prices and invoicing orders are a new feature | [Shopify](/en/docs/automatizacion/integraciones/shopify) |
+| **Zapier** | Connect Cord with thousands of apps without code. | Both: Cord events go out, actions create data in Cord | All; uses the monthly API quota | Available by invitation | [Zapier](/en/docs/automatizacion/integraciones/zapier) |
+| **Make** | Receive Cord events in your scenarios and create or update data in Cord. | Both | All; uses the monthly API quota | Available by invitation | [Make](/en/docs/automatizacion/integraciones/make) |
+| **n8n** | Your own flows with the `n8n-nodes-cord` node, with verified signatures. | Both | All; uses the monthly API quota | Available on self-hosted n8n | [n8n](/en/docs/automatizacion/integraciones/n8n) |
+
+No integration requires a paid plan to connect. What does depend on the plan:
+
+- **Zapier, Make and n8n** work with the Cord API, and every call counts against the [monthly API quota](#integrations-and-the-api-quota).
+- Slack, Teams, WhatsApp and HubSpot actions inside a workflow count like any workflow: 1 active on Free, 5 on Starter and no limit from Pro. See [Workflow limits](/en/docs/automatizacion/workflows/limites).
+- **Products and customers** that come in from Shopify count against your plan's limit, like the ones you create by hand.
+- Slack's **approval buttons** and the Teams approval card only appear with internal approvals, which come with the **Scale** plan or higher.
 
 ## What each status means
 
@@ -26,42 +55,26 @@ Tap a card to open that app's page. Everything about the integration lives there
 | **Needs reconnecting** | The connection exists but lost its authorization (for example, someone removed the app in HubSpot). Open the app and click **Reconnect**. |
 | **Not connected** | Available and not set up yet. |
 | **Direct connection** | Connected from the other tool and authorized with one click on a Cord screen, without keys. This is the case for Zapier and Make. |
-| **With an API key** | Connected from the other tool by pasting a Cord API key. |
+| **With an API key** | Connected from the other tool by pasting a Cord API key. This is the case for n8n. |
 | **Coming soon** | On the way and not usable yet. |
-
-## The apps
-
-| App | Category | What it is for | How it connects | Guide |
-|---|---|---|---|---|
-| **HubSpot** | CRM | Clients, contacts and Deals synced with your quotes. | **Connect HubSpot** button and authorization in HubSpot. | [Connect](/en/docs/automatizacion/integraciones/hubspot), [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion), [Stages](/en/docs/automatizacion/integraciones/hubspot-etapas), [Troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas) |
-| **Slack** | Communication | An alert in your channel when a quote moves forward, custom messages from workflows, quote link previews, the `/cord` command and buttons to decide approvals. | **Add to Slack** button and pick the channel (or paste your own webhook). | [Slack](/en/docs/automatizacion/integraciones/slack) |
-| **Microsoft Teams** | Communication | A card in your channel when a quote moves forward, and your own messages from workflows. | **Connect with Microsoft** button and pick team and channel, or paste a Power Automate flow URL. | [Connect Teams](/en/docs/automatizacion/integraciones/teams) |
-| **WhatsApp Business** | Communication | Send clients reminders and alerts on the channel they actually open, from your workflows. | Paste the phone number ID and a Meta token. | [Connect WhatsApp](/en/docs/automatizacion/integraciones/whatsapp) |
-| **Make** | Automation | Receive Cord events in your scenarios and create or update Cord data from Make. | Accept the invitation to the Cord app on Make and authorize with one click. | [Make](/en/docs/automatizacion/integraciones/make) |
-| **Zapier** | Automation | Connect Cord with thousands of apps without writing code. | Accept the invitation to the Cord app on Zapier and authorize with one click. | [Zapier](/en/docs/automatizacion/integraciones/zapier) |
-| **n8n** | Automation | Your own flows with the Cord community node, which registers its webhook and verifies the signature. | Install the `n8n-nodes-cord` node in n8n and paste an API key in its credential. Self-hosted n8n today; n8n Cloud once n8n finishes verifying it. | [Connect n8n](/en/docs/automatizacion/integraciones/n8n) |
-| **Shopify** | E-commerce | Your store's products and customers flow into Cord to quote wholesale, and a closed quote creates the order in your store. | Type your `your-store.myshopify.com` domain and authorize in Shopify. | [Connect Shopify](/en/docs/automatizacion/integraciones/shopify) |
-| **Google Sheets** | Productivity | Every quote and every invoice as a row in your spreadsheet, kept current on its own. | **Connect Google Sheets** button and authorization with your Google account. | [Connect Google Sheets](/en/docs/automatizacion/integraciones/google-sheets) |
-| **Microsoft Excel** | Productivity | The same, in a workbook in your OneDrive, inside a real Excel table. | **Connect Excel** button and authorization with your Microsoft work account. | [Connect Excel](/en/docs/automatizacion/integraciones/excel) |
-| **Gmail** | Productivity | Quotes, invoices and reminders go out from your address; inside Gmail, the thread's quote live and quote with AI. | **Connect Gmail** button in Settings; the add-on, with **Connect with Cord** inside Gmail. | [Gmail](/en/docs/automatizacion/integraciones/gmail) |
-| **QuickBooks Online** | Accounting | Every final Cord invoice lands in your accounting with its customer, its lines and its currency, and its payments travel both ways. | **Connect QuickBooks** button and authorization at Intuit. | [Connect QuickBooks](/en/docs/automatizacion/integraciones/quickbooks) |
-| **Xero** | Accounting | The same, with the invoice arriving as a draft for your accountant to approve. | **Connect Xero** button and picking the organisation. | [Connect Xero](/en/docs/automatizacion/integraciones/xero) |
 
 ## What fits each case
 
 | You want | Use |
 |---|---|
-| Your sales team to see Cord clients and sales in HubSpot | **HubSpot** |
-| To hear in a channel when the client opens, approves or pays | **Slack** or **Microsoft Teams** with the Settings › Notifications alerts |
+| Your sales team to see Cord's clients and sales in HubSpot | **HubSpot** |
+| To hear in a channel when the client opens, approves or pays | **Slack** or **Microsoft Teams** with the alerts in Settings › Notifications |
+| A Slack or Teams message with your own text, or only in some cases | **Slack** or **Teams** with a [workflow](/en/docs/automatizacion/workflows) |
 | Your client to get the reminder where they actually read it | **WhatsApp Business** with a [workflow](/en/docs/automatizacion/workflows) |
-| A Slack message with your own text, or only in certain cases | **Slack** with a [workflow](/en/docs/automatizacion/workflows) |
-| To create tasks or email the team when something happens in Cord | [Cord Workflows](/en/docs/automatizacion/workflows), no connection needed |
-| To push your quotes and invoices into a spreadsheet | **Google Sheets** or **Microsoft Excel**, with nothing exported by hand |
-| Your invoices and their payments to appear in your accounting without entering them twice | **QuickBooks Online** or **Xero** |
+| To create tasks or email the team when something happens in Cord | [Cord Workflows](/en/docs/automatizacion/workflows), without connecting anything |
+| Your quotes and invoices in a spreadsheet | **Google Sheets** or **Microsoft Excel**, without exporting anything by hand |
+| Your invoices and their payments to appear in your accounting without entering them twice | **QuickBooks Online** (posted) or **Xero** (as a draft) |
 | To quote wholesale with your online store's catalog | **Shopify** |
 | Your quotes and invoices to go out from your own email | **Gmail**: connect your account in Settings › Integrations › Gmail |
 | To see the thread's quote and quote with AI inside Gmail | The **Cord for Gmail** add-on, once it is published (it cannot be installed yet) |
-| To send Cord data to an ERP or any other app | **Make**, **n8n** (or Zapier) |
+| To send Cord data to an ERP or any other app without coding | **Zapier** or **Make** |
+| The same, on your own server or with flows you control | Self-hosted **n8n** |
+| To send an event to your system only in some cases | The **Send the data to a URL** action in [Workflows](/en/docs/automatizacion/workflows/acciones) |
 | Your client to pay with Mercado Pago | [Mercado Pago](/en/docs/pagos/mercado-pago), in **Settings › Payments** (it is a payment rail, not a directory app) |
 | To build your own integration | The [developer guide](/en/docs/desarrolladores/herramientas/integraciones) |
 
@@ -71,20 +84,39 @@ What works today and what is still missing, as of October 7, 2026. What is marke
 
 | App | Works today | Still missing |
 |---|---|---|
-| **HubSpot** | One-click connection and sync of clients, contacts, and Deals. | Nothing pending. |
+| **HubSpot** | One-click connection and sync of clients, contacts and Deals. The Cord card inside HubSpot, as a new feature. | A listing in the HubSpot marketplace. |
 | **Slack** | **Add to Slack** to pick the channel, with your own webhook as an alternative. Link previews, the `/cord` command and approval buttons, as a new feature. | A listing in the Slack app directory. |
-| **Microsoft Teams** | With a Power Automate flow. **Connect with Microsoft** to pick team and channel in Cord, as a new feature. | Microsoft publisher verification: until then, Microsoft may show an unverified publisher notice. |
+| **Microsoft Teams** | With a Power Automate flow. **Connect with Microsoft** to pick team and channel in Cord, as a new feature. | Microsoft publisher verification: until then, Microsoft may show an unverified publisher notice. Buttons to decide approvals inside Teams. |
 | **WhatsApp Business** | Messages with your approved template, by pasting the phone number ID and a Meta token. | Connecting with a button, once Meta approves Cord as a provider. |
 | **Make** | Cord app with an invitation and one-click authorization, in every Make zone. | A listing in Make's public catalog. |
 | **Zapier** | Cord app with an invitation and one-click authorization. | A listing in Zapier's public directory. |
 | **n8n** | The `n8n-nodes-cord` node on npm for self-hosted n8n. | n8n's verification, submitted on September 21, so it appears in n8n Cloud. |
-| **Shopify** | Catalog and customers into Cord, and the order back when the quote is approved or paid, in the quote's currency if your store accepts it. The order starts off and you turn it on. | Invoicing the orders born in the store, and quoting from the Shopify admin. |
+| **Shopify** | Catalog and customers into Cord, and the order back when the quote is approved or paid, in the quote's currency if your store accepts it. The order starts off and you turn it on. Stock, B2B prices and invoicing the store's orders, as a new feature. | Quoting from the Shopify admin. |
 | **Google Sheets** and **Excel** | One row per quote and per invoice, kept current, with amounts as real numbers. | Picking a spreadsheet you already have instead of Cord creating one. |
 | **QuickBooks Online** and **Xero** | The final invoice arrives with its customer and lines: posted in QuickBooks, a draft in Xero. QuickBooks, and payments both ways in both, are a new feature. | QuickBooks: Intuit approving the app for every account. Xero: whoever connected before payments must reconnect. |
 | **Gmail** | Quotes, invoices and payment reminders go out from your Gmail address, as a new feature. The add-on shows the thread's quote, replies with it and quotes with AI from the email. | Google verification: until then, you may see the notice "Google hasn't verified this app". Publishing the add-on in the Google Workspace Marketplace. |
 | **Mercado Pago** (Settings › Payments) | Collecting quotes and invoices with your account in Mexico and Latin America, with refunds read back. | Recurring retainers, which stay on Cord Payments. Details in [Mercado Pago](/en/docs/pagos/mercado-pago). |
 
 Upcoming work also appears on the [roadmap](https://cordhq.app/en/roadmap).
+
+## Integrations and the API quota
+
+Zapier, Make and n8n work with the Cord API. Every action or search they run in Cord (create a client, find a quote, mark it paid) is at least one API call, and so is registering or removing their webhook when you turn a Zap, scenario or flow on or off. Receiving Cord events does not use calls.
+
+| Plan | API calls included per month | When you go over |
+|---|---|---|
+| **Free** | 100 | Calls are rejected until the next month |
+| **Starter** | 1,000 | Billed as overage |
+| **Pro** | 5,000 | Billed as overage |
+| **Scale** | 10,000 | Billed as overage |
+| **Developer** | 50,000 | Billed as overage |
+
+- Only calls in **live mode** count. With an `sk_test_…` key (n8n or your own requests) you work against your test environment without using quota.
+- On plans with overage there is a safety cap of 10 times what is included: if a connection runs away, Cord stops it there and asks you to write to us.
+- Besides the monthly quota, each key has a per-minute limit; if you exceed it, the call returns **429** until the minute is over.
+- Webhooks created by your integrations have their own allowance of **100 per organization**, separate from your plan's webhook endpoints.
+
+Your usage for the month is in **Settings › Plans & subscription › Subscription**, in the **API calls** row. Overage pricing and plans are in [Your Cord subscription](/en/docs/cuenta/suscripcion).
 
 ## Who can connect integrations
 
@@ -94,12 +126,19 @@ Integrations belong to the **organization**, not a person: if whoever connected 
 
 ## Security
 
-- **Cord never asks for another tool's password.** HubSpot, Slack, Shopify, Google Sheets, Excel, QuickBooks and Xero are authorized on the provider's own page. n8n uses a key you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
-- **Each integration asks for the narrowest permission it needs.** Google Sheets can only open the spreadsheet Cord created, not the rest of your Drive; Xero gets access to invoices, contacts and payments, plus reading your accounting settings, but not bank transactions or manual journals.
+- **Cord never asks for another tool's password.** HubSpot, Slack, Teams, Shopify, Google Sheets, Excel, Gmail, QuickBooks and Xero are authorized on the provider's own page. n8n uses a key you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
+- **Each integration asks for the narrowest permission it needs.** Google Sheets can only open the spreadsheet Cord created, not the rest of your Drive; sending from Gmail can only send, not read your inbox; Xero gets access to invoices, contacts and payments, plus reading your accounting settings, but not bank transactions or manual journals.
 - **Access credentials are stored encrypted** and only used for what each integration describes.
 - **Disconnecting really cuts access.** For HubSpot, Cord also revokes its authorization in your account.
 - **Webhook URLs are secrets.** Anyone with the URL of your Slack webhook, your Teams flow or Make can post to it; do not share them.
 
 ## If your tool is not listed
 
-With Cord's webhooks and API you can connect today any system that receives or makes HTTP calls. If you want a direct integration with another app, write to contacto@cordhq.app.
+With Cord's webhooks and API you can connect today any system that receives or makes HTTP calls, or use Zapier, Make or n8n as a bridge. If you want a direct integration with another app, write to contacto@cordhq.app.
+
+## Related
+
+- [Cord Workflows](/en/docs/automatizacion/workflows): use Slack, Teams, WhatsApp and HubSpot inside a rule.
+- [Notifications](/en/docs/gestion/notificaciones): which alerts reach Slack and Teams.
+- [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks): the events Zapier, Make and n8n receive.
+- [Cord OAuth](/en/docs/desarrolladores/herramientas/oauth): how Zapier and Make authorize.

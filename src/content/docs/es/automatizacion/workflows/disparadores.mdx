@@ -2,9 +2,11 @@
 title: "Disparadores"
 seoTitle: "Disparadores de Cord Workflows: los 44 eventos"
 description: "Los 44 eventos de Cord y el disparador programado que pueden iniciar un workflow en Cord, agrupados por categoría, con cuándo ocurren y qué datos trae cada uno."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes", "Cord Payments activo para los disparadores de contracargos, reembolsos, depósitos y cuenta de cobros", "México y CFDI para Se timbra el CFDI de una cotización"]
 ---
 
 <header class="content-header">
@@ -19,7 +21,9 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 - **Solo hacia adelante.** Un workflow reacciona a los eventos que ocurren después de publicarlo, no a los anteriores.
 - **Da igual quién lo provoque.** El evento cuenta si lo hizo alguien del equipo, el cliente desde su link, la API, un agente de IA por MCP u otro workflow. Si te importa el origen, usa el dato **Quién lo originó** en una condición.
 
-En el editor, pulsa **Agregar un disparador** y usa **Busca un disparador** o las categorías para encontrarlo.
+En el editor, pulsa **Agregar un disparador** y usa **Busca un disparador** o las categorías para encontrarlo: **Programado**, **Cotizaciones**, **Aprobaciones**, **Pagos**, **Facturas**, **Clientes**, **Productos** y **Tareas y promesas**.
+
+{/* MOCKUP: panel "Editar disparador" del editor de workflows. Arriba el buscador "Busca un disparador"; debajo las pestañas de categoría (Todos, Programado, Cotizaciones, Aprobaciones, Pagos, Facturas, Clientes, Productos, Tareas y promesas) con "Facturas" seleccionada, y la lista: "Se factura una cotización", "Se timbra el CFDI de una cotización", "Se emite una factura", "Se envía una factura", "Se paga una factura", "Falla el pago de una factura", "Vence una factura", "Se acerca el vencimiento de una factura", "Una factura lleva días vencida", "Se anula una factura", "Se marca una factura como incobrable". */}
 
 ## Datos que traen
 
@@ -31,6 +35,8 @@ Casi todos los disparadores de un mismo tipo de objeto comparten datos. Para no 
 | **Datos de factura** | Número, Cliente, Total, Saldo pendiente, Divisa, País, Estado en el evento, Estado actual de la factura, Quién lo originó |
 | **Datos de cliente** | Empresa, Correo, País, Términos de pago, Quién lo originó |
 | **Datos de producto** | Nombre, Precio de lista, Activo, Quién lo originó |
+
+Además, **todos** los disparadores traen los datos de tu negocio: nombre, correo de contacto, teléfono, divisa y la fecha de hoy en tu zona horaria.
 
 El nombre exacto de cada dato para usarlo en textos (por ejemplo `{{saldo_pendiente}}`) está en [Datos del evento](/docs/automatizacion/workflows/datos-del-evento).
 
@@ -135,6 +141,26 @@ Los eventos de contracargos, reembolsos, depósitos y cuenta de cobros vienen de
 | **Se cumple una promesa de pago** | La promesa se marca como cumplida. | Monto prometido y Quién lo originó |
 | **Se incumple una promesa de pago** | La promesa se marca como incumplida. | Monto prometido y Quién lo originó |
 
+## Disparadores de tiempo
+
+Tres disparadores no los provoca una persona sino el calendario: **Se acerca el vencimiento de una cotización**, **Se acerca el vencimiento de una factura** y **Una factura lleva días vencida**. Cord los revisa una vez al día y los emite **una vez por documento y por día**, con la distancia en días como dato (**Días para que venza** o **Días de vencida**).
+
+- **Tú eliges el día exacto** con una condición, por ejemplo "Días para que venza es igual a 3". Sin condición, el workflow correría cada día del periodo.
+- **Solo se generan si los escucha un workflow activo.** Si ninguno de tus workflows activos usa ese disparador, Cord no lo emite.
+- **No salen por webhooks, Zapier, Make ni n8n**: un suscriptor recibiría el mismo aviso todos los días. Son exclusivos de Cord Workflows, igual que el disparador programado.
+
+## Los mismos eventos fuera de Workflows
+
+41 de los 44 eventos también se pueden recibir fuera de Cord: en tus [webhooks](/docs/desarrolladores/herramientas/webhooks) y en los disparadores de [Zapier](/docs/automatizacion/integraciones/zapier), [Make](/docs/automatizacion/integraciones/make) y [n8n](/docs/automatizacion/integraciones/n8n). Los que solo existen dentro de Workflows son los tres disparadores de tiempo y el programado.
+
+| Disparador | En Workflows | En webhooks, Zapier, Make y n8n |
+|---|---|---|
+| Los 41 eventos de cotizaciones, aprobaciones, pagos, facturas, clientes, productos, tareas y promesas | Sí | Sí, con su nombre técnico (por ejemplo `quote.approved`) |
+| Se acerca el vencimiento de una cotización | Sí | No |
+| Se acerca el vencimiento de una factura | Sí | No |
+| Una factura lleva días vencida | Sí | No |
+| En un horario fijo | Sí | No |
+
 ## Quién lo originó
 
 Los disparadores de cotizaciones, aprobaciones, pagos de cotizaciones, facturas, clientes, productos, tareas y promesas traen **Quién lo originó**, con estos valores:
@@ -150,8 +176,9 @@ Los disparadores de cotizaciones, aprobaciones, pagos de cotizaciones, facturas,
 
 Un uso típico: en **Se crea una tarea**, agregar la condición "Quién lo originó no es Otro workflow" para no reaccionar a las tareas que crean tus propios workflows.
 
-## Siguiente
+## Relacionadas
 
-- [Acciones](/docs/automatizacion/workflows/acciones)
-- [Condiciones](/docs/automatizacion/workflows/condiciones)
-- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)
+- [Condiciones](/docs/automatizacion/workflows/condiciones): elegir el día exacto o el caso que te interesa.
+- [Acciones](/docs/automatizacion/workflows/acciones): qué acciones encajan con cada disparador.
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento): el nombre exacto de cada dato.
+- [Ideas listas para usar](/docs/automatizacion/workflows/ideas): disparadores en uso, de punta a punta.

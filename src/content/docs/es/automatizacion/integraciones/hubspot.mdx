@@ -3,7 +3,9 @@ title: "Conectar HubSpot"
 description: "Cómo conectar tu cuenta de HubSpot con Cord: requisitos, permisos que se piden, qué pasa al conectar, mensajes posibles, cambiar de cuenta y desconectar."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes en Cord", "Un usuario de HubSpot que pueda instalar apps en la cuenta", "Las divisas en que cotizas activadas en HubSpot"]
 ---
 
 <header class="content-header">
@@ -23,6 +25,19 @@ El detalle completo de qué campo va a dónde está en [Qué se sincroniza](/doc
 <Callout type="info">
 **Cord manda sobre el estado de la venta.** Mover un Deal de etapa en HubSpot no cambia la cotización en Cord: su estado lo deciden la aprobación y el pago del cliente.
 </Callout>
+
+{/* MOCKUP: página de HubSpot en Ajustes › Integraciones, conectada. Arriba "Conectado" con la cuenta "48213377 · distribuidoraandina.com"; datos "Última sincronización: hace 4 min", "En cola: 0", "Errores (7 días): 0". Debajo, "Etapa de HubSpot para cada estado de la cotización" con el pipeline "Sales Pipeline" y un selector por estado (Enviada → Presentation Scheduled, Vista por el cliente → Decision Maker Bought-In, Aprobada → Contract Sent, Pagada → Closed Won...), botón "Guardar etapas". Al final, "Datos que ya tenías" con "Enviar datos existentes" y el botón "Desconectar". */}
+
+## Qué viaja y en qué dirección
+
+| Dirección | Qué viaja | Cuándo |
+|---|---|---|
+| **De Cord a HubSpot** | Cada cliente como Empresa y Contacto; cada cotización enviada como Deal, con su monto, su divisa y su etapa. | Al crear o cambiar el cliente, y cada vez que la cotización avanza. |
+| **De HubSpot a Cord** | Correcciones del nombre de la Empresa, y del nombre, correo y teléfono del Contacto, solo en registros ya ligados a Cord. | Al guardarlas en HubSpot. |
+| **De HubSpot a Cord** | Nada más: mover un Deal de etapa, crear Empresas o Deals nuevos en HubSpot no cambia nada en Cord. | — |
+| **Desde un workflow** | Una nota en el Deal o en la Empresa, con la acción **Agregar una nota en HubSpot**. | Cuando corre el workflow. |
+
+El detalle campo por campo está en [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion).
 
 ## Antes de conectar
 
@@ -125,8 +140,20 @@ Al desconectar:
 - **Lo que ya está en HubSpot no se borra**: Empresas, Contactos, Deals y notas se quedan como están.
 - Los workflows con la acción **Agregar una nota en HubSpot** empiezan a fallar con "Conecta HubSpot en Ajustes › Integraciones para usar esta acción."
 
-## Siguiente
+## Límites
+
+| Límite | Valor |
+|---|---|
+| Cuentas de HubSpot por organización | Una, y cada cuenta de HubSpot solo puede estar en una organización de Cord |
+| Tiempo para autorizar en HubSpot | 10 minutos desde que pulsas **Conectar HubSpot** |
+| **Enviar datos existentes** | Hasta 500 clientes y 500 cotizaciones enviadas por vez, hasta 3 veces por hora |
+| Tarjeta de Cord en una Empresa o Contacto | Sus últimas 8 cotizaciones |
+| Notas desde workflows | 120 por hora por organización, de hasta 2,000 caracteres |
+| Cotizaciones sin divisa o en un estado sin etapa | No se envían como Deal: Cord nunca manda un importe sin su divisa |
+
+## Relacionadas
 
 - [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion)
 - [Pipeline y etapas](/docs/automatizacion/integraciones/hubspot-etapas)
 - [Problemas con HubSpot](/docs/automatizacion/integraciones/hubspot-problemas)
+- [Nota en HubSpot cuando el cliente aprueba](/docs/automatizacion/workflows/ideas#4-nota-en-hubspot-cuando-el-cliente-aprueba), una idea lista para usar

@@ -4,7 +4,9 @@ seoTitle: "Connect Cord with Xero"
 description: "How to connect Xero with Cord: invoices as drafts for your accountant to approve, contacts without duplicates, tax-exclusive amounts, payments both ways and common issues."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission in Cord", "An organization in Xero and a user who can authorize apps on it", "An active bank account in Xero to sync payments", "Invoices issued in Cord Invoicing"]
 ---
 
 <header class="content-header">
@@ -18,13 +20,22 @@ Every invoice you issue in Cord shows up in your Xero with its contact, lines an
 
 **It arrives as a draft and you approve it.** An outside system should not post to anyone's books on its own: Cord prepares the invoice and your accountant reviews it before approving.
 
+## Requirements
+
+| Where | What you need |
+|---|---|
+| **Cord** | The **Settings** permission. Any plan. Invoices issued in Cord: drafts do not travel. |
+| **Xero** | An organization in Xero and a user who can give an app access to it. If you have several organizations, you pick one when authorizing. |
+| **Payments** | An active bank account in Xero, which you pick on the card as the **Bank account for payments**. |
+| **Taxes** | In your Xero, a tax rate for every rate you use in Cord. |
+
 ## Connect
 
 <Steps>
 1. Go to **Settings › Integrations › Xero**. You need the **Settings** permission.
 2. Click **Connect Xero** and authorize. Xero asks which organization to grant access to: choose your company's.
 3. When you come back you see the organization's name. From then on, each new invoice travels on its own.
-4. If you already had invoices, click **Send pending invoices** to send the latest 50 missing ones.
+4. If you already had invoices, click **Send the pending invoices** to send the latest 50 missing ones.
 </Steps>
 
 ## What it creates in your accounting
@@ -66,6 +77,26 @@ A payment is never recorded twice and never bounces back: what came in from Xero
 - **Only final invoices travel.** Never a quote or a Cord draft.
 - **Each line amount is computed on the already-rounded price**, so the total matches Cord to the cent.
 
+## What flows and in which direction
+
+| Direction | What flows | When |
+|---|---|---|
+| **From Cord to Xero** | The contact (if it does not exist) and the final invoice, as a **draft**, with its lines, tax and currency. | When the invoice is issued or sent in Cord, and when you click **Send the pending invoices**. |
+| **From Cord to Xero** | Every payment on an invoice **approved** in Xero, as a payment to the chosen bank account. | When the payment is recorded in Cord; if the invoice is still a draft, once you approve it. |
+| **From Xero to Cord** | Payments you record there against a Cord invoice, with Xero as the method. | Once a day and when you click **Send the pending invoices**. |
+| **From Xero to Cord** | Nothing else: contacts, products and invoices created in Xero do not come into Cord, and approving the invoice in Xero changes nothing in Cord. | — |
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Xero organizations per Cord organization | One |
+| **Send the pending invoices** | Up to 50 missing final invoices, and up to 3 times every 5 minutes |
+| Invoices per Cord document | One, even if the event repeats |
+| Invoices with withholdings | Not sent |
+| Payments coming from Xero | Checked once a day |
+| Payments to Xero | Only for invoices approved there |
+
 ## Disconnect
 
 With **Disconnect** on the card. What was already recorded stays in your accounting. If you connect a different company or organization, Cord starts from scratch with it instead of reusing the previous one.
@@ -79,3 +110,10 @@ With **Disconnect** on the card. What was already recorded stays in your account
 | **"To sync payments, Xero needs one more permission."** | Click **Reconnect** and authorize again. |
 | **"Your Xero has no active bank accounts."** | Create a bank account in Xero and come back to the card to choose it. |
 | **A Cord payment does not show up in Xero** | Check that the invoice is approved in Xero and that you chose the bank account for payments. |
+
+## Related
+
+- [QuickBooks Online](/en/docs/automatizacion/integraciones/quickbooks)
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Invoicing by country](/en/docs/pagos/facturacion)
+- [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets), if you only need the list of invoices in a spreadsheet.

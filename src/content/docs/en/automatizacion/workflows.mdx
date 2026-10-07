@@ -1,10 +1,12 @@
 ---
 title: "Cord Workflows"
 seoTitle: "Cord Workflows: no-code automations"
-description: "What Cord Workflows is, how a workflow works inside, and where to find the guide for each piece: triggers, actions, conditions, waits, event data, publishing and runs."
+description: "What Cord Workflows is, how a workflow works inside (trigger, conditions, waits, lookups and actions), how many you can have active on each plan and where to find the guide for each piece."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission to view, create and publish workflows", "A free active-workflow slot in your plan to publish"]
 ---
 
 <header class="content-header">
@@ -20,7 +22,9 @@ The point is that follow-up does not depend on someone remembering. If your team
 
 ## Where to find it
 
-Open **Workflows** in the app sidebar. The list shows each workflow as a card with its name, the event that starts it, its status (**Draft**, **Active** or **Paused**), how many times it ran in the last 30 days and how many of those runs failed. At the top you see how many active workflows you have against your plan limit.
+Open **Workflows** in the app sidebar. The list shows each workflow as a card with its name, the event that starts it, its status (**Draft**, **Active** or **Paused**), how many times it ran in the last 30 days and how many of those runs failed. At the top you see how many active workflows you have against your plan limit, and the **How your automations are doing** panel with the last 30 days.
+
+{/* MOCKUP: Workflows list at /app/workflows. At the top, the counter "3 of 5 active workflows on your plan" and the "How your automations are doing" panel (Runs 214, Completed 205, Failed 4, Running or waiting 5; below, "Why they failed" with "Connect Slack in Settings › Integrations to use this action" x3). Then cards: "Quote follow-up ladder" (A quote is sent, Active, 96 runs), "Collections summary every Monday" (On a fixed schedule, Active, 4), "Staged collection of an overdue invoice" (An invoice has been past due for days, Active, 110, "2 failed"), "Teams when the client approves" (Draft). At the bottom, the "Ideas to get started" section with "Use" buttons. */}
 
 <Callout type="info">
 Cord Workflows is for admins. You need the **Settings** permission to view, create, edit or publish workflows. People without it see "Cord Workflows is for admins" and can ask the account owner for access.
@@ -28,57 +32,115 @@ Cord Workflows is for admins. You need the **Settings** permission to view, crea
 
 ## The pieces of a workflow
 
-Each workflow reads top to bottom in the editor, in two blocks: **When this happens** and **Do this**.
+Each workflow reads top to bottom in the editor, in two blocks: **When this happens** (the trigger) and **Do this** (the steps).
+
+{/* MOCKUP: workflow editor at /app/workflows/[id], Editor tab. "When this happens" block with the card "A quote is sent". "Do this" block with a "Wait until..." card (Up to 2 days) that splits into two branches: "If it happens" → "Create a task: Call {{cliente}} while {{folio}} is warm"; "If the time runs out" → "Email the client" and another "Wait until..." (Up to 5 days). Top right: "Test", "Save draft", "Publish changes" and the "Unpublished changes" label. Right side panel open on "Edit action" with the "Event data" list. */}
 
 | Piece | What it does | Guide |
 |---|---|---|
 | **Trigger** | What starts the workflow: one of Cord's 44 events, or a **fixed schedule** ("every Monday at 9"). Each workflow has exactly one. | [Triggers](/en/docs/automatizacion/workflows/disparadores) |
+| **Condition** | Splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. Up to 5 rules per condition, with "all are met" or "any is met". | [Conditions](/en/docs/automatizacion/workflows/condiciones) |
+| **Wait** | Pauses the flow for 1 to 30 days and then continues. | [Waits](/en/docs/automatizacion/workflows/esperas) |
+| **Wait until...** | Waits for something to happen (the client opens, approves or pays) with a time limit of 1 to 30 days, then continues through **If it happens** or **If the time runs out**. | [Waits](/en/docs/automatizacion/workflows/esperas#wait-until-something-happens) |
+| **Lookup** | Brings a number from your account to use in the following steps: overdue receivables, open pipeline, what was collected, what is about to be due or the client's balance. It only reads; it never changes anything. | [Lookups](/en/docs/automatizacion/workflows/consultas) |
 | **Action** | Something Cord does for you, among 11 actions: create a task, email the team, email the client, send the client a WhatsApp, expire a quote, approve an internal request, void an invoice, send the data to a URL, post to Slack, post to Teams or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
-| **Condition** | Splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. | [Conditions](/en/docs/automatizacion/workflows/condiciones) |
-| **Wait** | Pauses the flow for 1 to 30 days and then continues. It can also wait **until something happens**, with a time limit. | [Waits](/en/docs/automatizacion/workflows/esperas) |
-| **Lookup** | Brings a number from your account — overdue receivables, pipeline, client balance — to use in the steps that follow. | [Lookups](/en/docs/automatizacion/workflows/consultas) |
-| **Event data** | Values like `{{cliente}}`, `{{folio}}` or `{{total}}` that you can put in your texts and that are filled in when the workflow runs. | [Event data](/en/docs/automatizacion/workflows/datos-del-evento) |
+| **Event data** | Values like `{{cliente}}`, `{{folio}}` or `{{total}}` that you put in your texts and that are filled in when the workflow runs, plus your business data (`{{negocio}}`, `{{hoy}}`). | [Event data](/en/docs/automatizacion/workflows/datos-del-evento) |
+
+## How a workflow runs inside
+
+<Steps>
+1. **The event happens.** Someone sends a quote, the client pays, a scheduled workflow's time comes. Each event is recorded only once.
+2. **Cord creates a run** for every **active** workflow whose trigger matches, with a copy of the version published at that moment. Ten quotes sent are ten independent runs.
+3. **The steps run in order.** Conditions pick a branch, lookups keep their result for the following steps, and actions run with the event data already written into your texts.
+4. **A wait saves the run** and resumes it when it ends. A plain wait continues during the day it ends; a **wait until...** is checked every hour until the condition is met or the time runs out.
+5. **If an action fails**, Cord retries it. After 3 attempts the run is **Failed** and you can retry it by hand from its history.
+</Steps>
+
+Statuses, retries and error messages are covered in [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
 
 ## A complete example
 
-"Quote follow-up ladder" is one of the ideas Cord ships with. It reads like this:
+"Quote follow-up ladder" is one of the ready-made ideas in Cord. It reads like this:
 
 1. **When this happens:** a quote is sent.
 2. **Wait until** the client opens or approves it, with a 2-day limit.
-3. **If it happens:** creates the task "Call `{{cliente}}` while `{{folio}}` is warm".
-4. **If the time runs out:** emails the client asking if anything needs clearing up, and waits another 5 days for a decision.
-5. **If they still do not decide:** looks up the client's balance and tells the owner what they already owe.
+3. **If it happens:** create the task "Call `{{cliente}}` while `{{folio}}` is warm".
+4. **If the time runs out:** email the client asking if they have questions, and wait 5 more days for a decision.
+5. **If there is still no decision:** look up the client's balance and tell the owner how much they already owe you.
 
 Every quote you send starts its own run of this workflow, and each one checks its own quote: the one the client opened within the hour goes one way, the one nobody touched goes the other.
 
+## How many workflows you can have
+
+| Plan | Active workflows | Drafts and paused | Runs |
+|---|---|---|---|
+| **Free** | 1 | No limit | No limit |
+| **Starter** | 5 | No limit | No limit |
+| **Pro** | No limit | No limit | No limit |
+| **Scale** | No limit | No limit | No limit |
+| **Developer** | No limit | No limit | No limit |
+
+Only **Active** workflows take up a slot. Some actions depend on more than the workflows plan:
+
+- **Email the client** uses your plan's sending quota (5 a month on Free, no limit on the other plans).
+- **Approve the internal request** needs internal approvals, which come with the **Scale** plan or higher.
+- **Slack**, **Teams**, **WhatsApp** and **HubSpot** need that app connected in **Settings › Integrations**.
+
+Maximum workflow size, hourly caps per action and what happens when you downgrade: [Limits](/en/docs/automatizacion/workflows/limites).
+
 ## Draft, published version and runs
 
-- **Draft:** what you edit. Change it as often as you like without affecting anything.
-- **Published version:** what runs. It only changes when you click **Publish** or **Publish changes**.
+- **Draft:** what you edit. You can change it as many times as you want without affecting anything.
+- **Published version:** what runs. It only changes when you press **Publish** or **Publish changes**, and every publish is a new version.
 - **Run:** every time the event happens, Cord creates a run with a copy of the version published at that moment. If you publish changes later, runs already in progress finish with the version they started with.
 
-All of this is explained in [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar) and [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
+Before publishing you can press **Test**: it runs the draft against the latest real event for its trigger and shows what each step would have done, without sending anything. All of this is covered in [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar) and [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
+
+## Ideas to get started
+
+Cord comes with nine ready-made workflows, one per use case. Each one is created as a draft so you can review it before publishing:
+
+| Idea | Starts when | What for |
+|---|---|---|
+| Quote follow-up ladder | A quote is sent | So no quote goes cold in silence. |
+| Auto-approve only small quotes | A quote requests internal approval | So small approvals do not wait for a person. |
+| Teams when the client approves | A quote is approved | So the team hears about it in its channel. |
+| HubSpot note when the client approves | A quote is approved | So the CRM has the history without copying it. |
+| Staged collection of an overdue invoice | An invoice has been past due for days | Chase the money in stages. |
+| Kick off when the deposit arrives | A partial payment arrives | So work starts as soon as the money comes in. |
+| Collections summary every Monday | On a fixed schedule | Start the week knowing whom to collect from. |
+| Remind the client 3 days before the due date | An invoice is about to be due | Collect before the date. |
+| Last call and quote close-out | A quote is about to expire | Close the loop instead of leaving quotes open forever. |
+
+Each idea, step by step, and which business it suits: [Ready-made ideas](/en/docs/automatizacion/workflows/ideas).
 
 ## What a workflow never does
 
 <Callout type="warning">
-A workflow **never charges, never issues invoices or CFDIs, never records payments, and never approves or rejects a quote on your client's behalf.** Those decisions stay with a person or with the client.
+A workflow **does not charge, does not issue invoices or CFDI, does not record payments and does not approve or reject a quote on behalf of your client.** Those decisions still belong to a person or to the client.
 
-What it does do to your documents is narrow and explicit: write to the document's client by email or WhatsApp (never to an address or number typed into the step), expire a quote that is past its validity date, approve an internal approval request, and void an invoice that has no payments yet. Each of those actions only applies when the trigger carries the document it acts on; otherwise the workflow cannot be published.
+What it does do to your documents is narrow and explicit: email or WhatsApp the document's client (never an address or number typed into the step), expire a quote that is past its validity, approve an internal approval request, and void an invoice that has no payments yet. Each of those actions is only offered when the trigger brings the document it acts on; otherwise the workflow cannot be published.
 </Callout>
 
-It also cannot create infinite loops: a workflow is never triggered by the events it causes itself, and a chain of workflows triggering each other stops after three levels. Details in [Limits](/en/docs/automatizacion/workflows/limites).
+It cannot create infinite loops either: a workflow is never triggered by events it caused itself, and a chain of workflows triggering each other is cut after three levels. Details in [Limits](/en/docs/automatizacion/workflows/limites).
+
+## Workflows or integrations
+
+A workflow runs inside Cord and needs nothing connected to create tasks, email your team or write to the client. When the next step lives in another tool:
+
+- To **post to Slack or Teams, send a WhatsApp or add a note in HubSpot**, connect the app and use its action in the workflow.
+- To **take the event to any other app**, use the **Send the data to a URL** action with the address Zapier, Make or n8n gives you, or connect those apps directly with their Cord triggers. See [Integrations](/en/docs/automatizacion/integraciones).
 
 ## Cord Workflows guides
 
 - [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow): the editor, step by step.
-- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 ideas Cord ships with and how to adapt them.
-- [Triggers](/en/docs/automatizacion/workflows/disparadores): the 44 events and the data each one carries.
-- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, team and client emails, WhatsApp to the client, document actions, POST to a URL, Slack, Teams and HubSpot.
-- [Conditions](/en/docs/automatizacion/workflows/condiciones): branches, comparisons and current status.
-- [Waits](/en/docs/automatizacion/workflows/esperas): how days are counted.
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 ideas that come with Cord and how to adapt them.
+- [Triggers](/en/docs/automatizacion/workflows/disparadores): the 44 events, the scheduled trigger and the data each one brings.
+- [Conditions](/en/docs/automatizacion/workflows/condiciones): branches, comparisons, current status and changes.
+- [Waits](/en/docs/automatizacion/workflows/esperas): waits by days and waits until something happens.
+- [Lookups](/en/docs/automatizacion/workflows/consultas): bring a number in before deciding.
+- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, emails to the team and the client, WhatsApp to the client, document actions, POST to a URL, Slack, Teams and HubSpot.
 - [Event data](/en/docs/automatizacion/workflows/datos-del-evento): variables in your texts.
-- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar): the life cycle of a workflow.
-- [Lookups](/en/docs/automatizacion/workflows/consultas): bring a number before deciding.
-- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones): how to read the history and fix failures.
+- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar): versions, testing without publishing and lifecycle.
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones): how to read the history, retries and failures.
 - [Limits](/en/docs/automatizacion/workflows/limites): plans, size and hourly caps.

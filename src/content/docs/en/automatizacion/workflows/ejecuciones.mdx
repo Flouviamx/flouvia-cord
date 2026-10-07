@@ -1,9 +1,11 @@
 ---
 title: "Runs and errors"
-description: "How to read a workflow's Runs tab: statuses, the result of each step, automatic retries, retry and cancel, and what to do with each error message."
+description: "How to read a workflow's Runs tab: statuses, the result of each step, automatic retries and when they happen, retrying by hand with the original version, canceling, and what to do with each error message."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission", "A workflow published at least once"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,8 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 - Inside the editor, the **Runs** tab shows the 50 most recent, newest first. Click **Refresh** to load the latest.
 
 Each row shows the status, the event that started it and when it happened. Tap it to see the detail.
+
+{/* MOCKUP: "Runs" tab of a workflow editor. List with rows: "Completed — A quote is sent — 2 h ago", "Waiting — Resumes Oct 9, 2026", "Queued — Attempt 1 of 3", "Failed — Connect Slack in Settings › Integrations to use this action" with a "Retry" button. One open row shows the step-by-step detail: "Wait until... — Met", "Create a task — Done", "Send a Slack message — Error" with the reason below. Top right, the "Refresh" button. */}
 
 ## Run statuses
 
@@ -48,18 +52,37 @@ Steps in the branch that was not taken do not appear, because they did not run.
 When an action fails, Cord does not give up at the first try:
 
 1. **Immediate retry.** If the failure looks temporary (Slack or HubSpot did not respond, the email did not go out), Cord retries the same step seconds later, without using an attempt.
-2. **Another attempt later.** If it still fails, the run goes back to **Queued** and the detail shows "Attempt 1 of 3". The next attempt is scheduled with more spacing each time and processed in Cord's next check or when your account has new activity.
+2. **Another attempt later.** If it still fails, the run goes back to **Queued** and the detail shows "Attempt 1 of 3". The second attempt is scheduled one hour after the first failure, and the third two hours after the second. Cord checks pending runs every hour and also when your account has new activity, so the attempt may run a little after its scheduled time.
 3. **Failed.** If the third attempt also fails, the run becomes **Failed** with the last error message.
 
 Errors that do not fix themselves, like "Connect Slack…", skip the immediate retry but still go through the 3 attempts: if you connect Slack in time, the next attempt works.
 
 Every attempt continues **from the step that failed**. Steps already done are not repeated: if the task was created and the Slack message after it failed, the retry only sends the Slack message.
 
+| Attempt | When it runs | Status while it waits |
+|---|---|---|
+| 1 | When the event happens, with an immediate retry if the failure looks temporary | Running |
+| 2 | One hour after the first failure | Queued, "Attempt 1 of 3" |
+| 3 | Two hours after the second failure | Queued, "Attempt 2 of 3" |
+| No more attempts | The run becomes **Failed** | Failed |
+
 ## Retry by hand
 
 On a **Failed** run, click **Retry**. It goes back to **Queued** with attempts reset, continues from the failed step and runs right away. Use it after fixing the cause, for example after reconnecting HubSpot.
 
 Only failed runs can be retried; otherwise you see "Only failed runs can be retried."
+
+<Callout type="warning">
+**Retry uses the version the run started with.** It helps when the cause was outside the workflow: a disconnected app, a client without an email or phone, a service that did not respond. If the cause was in the workflow itself (an empty text, a wrong URL, the WhatsApp variables), fix it and publish: the fix applies to new events, and retrying the old run will fail the same way.
+</Callout>
+
+## Run it again
+
+There is no button to repeat a run that already finished (**Completed** or **Canceled**): repeating it could send the same email to the client twice or create the same task twice. Depending on what you need:
+
+- **See what it would do with a real event**, without sending anything: use **Test** in the editor. See [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar#test-before-publishing).
+- **Make it really run again**: cause the event again, for example by resending the quote. Every new event creates its own run.
+- **Recover a failed run**: **Retry**, as explained above.
 
 ## Cancel
 
@@ -103,7 +126,7 @@ Messages appear in your account's language.
 |---|---|---|
 | Connect WhatsApp in Settings › Integrations to use this action. | WhatsApp is not connected. | [Connect WhatsApp](/en/docs/automatizacion/integraciones/whatsapp) and click **Retry**. |
 | The client has no phone with a country code on file. | The client has no phone, or it does not start with `+` and the country code. | Edit the client, save the number with `+` and retry. |
-| WhatsApp did not accept your template. Check it in Settings › Integrations: it must be approved and have the same number of variables. | The template is not approved, the name does not match, or the number of variables differs. | Fix the template or the step's variables and retry. |
+| WhatsApp did not accept your template. Check it in Settings › Integrations: it must be approved and have the same number of variables. | The template is not approved, the name does not match, or the number of variables differs. | If the problem is the template, fix it in Meta or in Settings › Integrations and retry. If it is the step's variables, fix them and publish: it applies to new events. |
 | WhatsApp did not accept the message. It retries on its own. | A temporary rejection. | Nothing; Cord retries. |
 | Workflows reached their hourly limit of WhatsApp messages. | 60 messages in one hour. | Retry later. |
 
@@ -140,7 +163,7 @@ Messages appear in your account's language.
 
 | Message | Cause | What to do |
 |---|---|---|
-| The destination URL is not valid or points to an internal server. | The URL is not `https` or not on a public server. | Fix the URL, publish again and retry. |
+| The destination URL is not valid or points to an internal server. | The URL is not `https` or not on a public server. | Fix the URL and publish. The fix applies to new events; this run keeps the previous URL. |
 | The destination URL did not accept the request. | The destination responded with an error or did not respond in time. | Check the destination; Cord retries within the 3 attempts. |
 | Workflows reached their hourly limit of posts to a URL. | 120 posts in one hour. | Retry later. |
 
@@ -175,7 +198,8 @@ Below it, **Why they failed**: the five most frequent causes, with how many time
 
 The panel shows up as soon as there are runs. If nothing failed in the period, it says so instead of showing an empty list.
 
-## Next
+## Related
 
-- [Limits](/en/docs/automatizacion/workflows/limites)
-- [Actions](/en/docs/automatizacion/workflows/acciones)
+- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar): versions and testing without publishing.
+- [Limits](/en/docs/automatizacion/workflows/limites): hourly caps that can make a step fail.
+- [Actions](/en/docs/automatizacion/workflows/acciones): what each action needs to work.
