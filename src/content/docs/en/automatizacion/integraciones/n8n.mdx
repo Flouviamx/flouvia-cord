@@ -1,8 +1,8 @@
 ---
 title: "n8n"
 seoTitle: "Connect Cord with n8n"
-description: "How to connect n8n with Cord using the n8n-nodes-cord node or the HTTP Request node: API key credential, signature-verified trigger, available actions and limits."
-lastUpdated: "2026-09-28"
+description: "How to connect n8n with Cord using the n8n-nodes-cord node or the HTTP Request node: API key credential, signature-verified trigger, available actions, limits, how to disconnect and common issues."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -46,3 +46,18 @@ The trigger verifies the `X-Cord-Signature-V1` signature of each delivery: a POS
 ## Limits
 
 Webhooks and API calls count against your plan limits, same as with Zapier or Make. You see them under **Settings › Developer mode**.
+
+## Disconnect
+
+- **Turn off a flow:** when you deactivate a flow with **Cord Trigger**, n8n deletes the webhook it had registered in Cord. If the webhook no longer existed in Cord, n8n deactivates anyway.
+- **Cut access entirely:** revoke the key under **Settings › Developer mode › API**. From then on n8n can no longer call the API with it, and the webhooks that key had registered stop receiving events. Delete the **Cord API** credential in n8n too.
+- **With the HTTP Request node:** delete the webhook under **Settings › Developer mode › Webhooks**.
+
+## Common issues
+
+| Message or symptom | What to do |
+|---|---|
+| **The credential test fails** | Paste a secret key (`sk_live_` or `sk_test_`). Publishable keys (`pk_`) do not work here. If the key was revoked, create a new one. |
+| **The flow does not activate with Cord Trigger** | The key needs write permission to register the webhook. Also check that the n8n address is `https` and public: Cord rejects `http`, `localhost` and internal or private addresses. |
+| **Cord says your integrations reached the maximum of 100 subscriptions per organization** | Deactivate the n8n flows, Zaps or scenarios you no longer use to free up space. |
+| **n8n answers 401 to Cord deliveries** | The trigger rejects deliveries whose signature does not match the secret it received when it registered the webhook. Deactivate and reactivate the flow so it registers a new one. |

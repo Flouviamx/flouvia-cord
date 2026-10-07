@@ -1,8 +1,8 @@
 ---
 title: "Xero"
 seoTitle: "Conectar Cord con Xero"
-description: "Cómo conectar Xero con Cord: facturas en borrador para que las apruebe tu contador, contactos sin duplicar, importes sin impuesto incluido y problemas frecuentes."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar Xero con Cord: facturas en borrador para que las apruebe tu contador, contactos sin duplicar, importes sin impuesto incluido, pagos en los dos sentidos y problemas frecuentes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -34,16 +34,31 @@ Cada factura que emites en Cord aparece en tu Xero con su contacto, sus concepto
 | **Contacto** | Si no existe, buscándolo primero por correo. Cord recuerda el vínculo. |
 | **Factura de venta** | Tipo `ACCREC`, en estado **borrador**, con fecha, vencimiento, divisa, el folio de Cord en la referencia y una línea por concepto. |
 | **Importes** | Sin impuesto incluido (`Exclusive`), y cada línea con la tasa de Xero que coincide con la de Cord y el impuesto que Cord ya calculó. |
+| **Pago** | Uno por cada cobro de una factura aprobada en Xero, en la cuenta de banco que elijas. Ver [Pagos](#pagos). |
 
-Cord pide los permisos granulares de Xero para facturas y contactos (`accounting.invoices` y `accounting.contacts`), más la lectura de tus tasas de impuesto (`accounting.settings.read`), no acceso a toda tu contabilidad. Si conectaste Xero antes de que Cord pidiera ese permiso, la tarjeta te pedirá reconectar una vez.
+Cord pide los permisos granulares de Xero para facturas, contactos y pagos (`accounting.invoices`, `accounting.contacts` y `accounting.payments`), más la lectura de tu configuración contable (`accounting.settings.read`) para leer tus tasas de impuesto y tus cuentas de banco. No pide movimientos bancarios ni asientos manuales.
+
+## Pagos
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+Los pagos viajan en los dos sentidos, solo para facturas que ya están en Xero:
+
+- **De Cord a Xero.** Cada cobro de una factura **aprobada** en Xero se registra allá como pago contra esa factura, en la cuenta de banco que elijas en la tarjeta (**Cuenta de banco de los pagos**). Mientras la factura siga en borrador, el pago espera y se manda en la siguiente pasada, cuando ya la aprobaste.
+- **De Xero a Cord.** Un pago que registres en Xero contra una factura de Cord la marca en Cord, con Xero como método. Cord los revisa una vez al día, y también al pulsar **Enviar las facturas pendientes**.
+
+Un pago no se registra dos veces ni rebota: lo que entró desde Xero no se vuelve a mandar allá.
+
+**Si conectaste Xero antes de que Cord sincronizara pagos**, la tarjeta te dice "Para sincronizar pagos, Xero necesita un permiso más." Pulsa **Volver a conectar** y después elige la cuenta de banco. Hasta entonces, las facturas siguen viajando, pero los pagos no.
 
 ## Qué no hace todavía
 
 - **No aprueba la factura.** Es deliberado: la apruebas tú en Xero.
-- **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
 - **Tu impuesto entra con su tasa.** Cada línea lleva la tasa de impuesto de tu contabilidad que coincide exactamente con la de Cord. Si esa tasa no existe allá, la factura no se envía y la tarjeta te dice cuál falta: créala y pulsa **Enviar las facturas pendientes**.
 - **Las facturas con retenciones no se envían.** Tu contabilidad no las registra en una factura de venta; asiéntalas a mano.
-- **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+- **Solo trae los pagos de tu contabilidad a Cord.** Contactos, productos y facturas creados en Xero no entran a Cord.
 
 ## Garantías
 
@@ -61,3 +76,6 @@ Con **Desconectar** en la tarjeta. Lo que ya se registró se queda en tu contabi
 |---|---|
 | **La tarjeta pide reconectar** | Xero renueva su acceso cada 30 minutos y revoca el anterior; si la renovación falla, reconecta. |
 | **No veo la factura** | Búscala en Xero en **Borradores**: ahí entra hasta que la apruebas. |
+| **"Para sincronizar pagos, Xero necesita un permiso más."** | Pulsa **Volver a conectar** y autoriza de nuevo. |
+| **"Tu Xero no tiene cuentas de banco activas."** | Crea una cuenta de banco en Xero y vuelve a la tarjeta para elegirla. |
+| **Un cobro de Cord no aparece en Xero** | Revisa que la factura esté aprobada en Xero y que hayas elegido la cuenta de banco de los pagos. |

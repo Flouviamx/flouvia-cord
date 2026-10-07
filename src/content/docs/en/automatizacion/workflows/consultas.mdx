@@ -2,7 +2,7 @@
 title: "Lookups"
 seoTitle: "Lookups in Cord Workflows"
 description: "How to bring a number from your account into a workflow: overdue receivables, open pipeline, what was collected, what is about to be due, and a client's balance."
-lastUpdated: "2026-09-20"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -55,14 +55,14 @@ The same applies inside a branch: what the **If met** branch looks up does not e
 
 ## A full example
 
-"Month-end summary for the team", one of the ideas Cord ships with:
+"Collections summary every Monday", one of the ideas Cord ships with:
 
-1. **When this happens:** on the 1st of each month at 8.
-2. **Lookup:** what was collected in 30 days.
+1. **When this happens:** every Monday at 9.
+2. **Lookup:** overdue receivables.
 3. **Lookup:** the open pipeline.
-4. **Lookup:** overdue receivables.
-5. **Action:** email the whole team with the three numbers together.
-6. **Action:** post the summary to Slack.
+4. **Action:** email the account owner, with the subject "Your week in Cord (`{{fecha}}`)" and the message "Overdue: `{{vencido_total}}` across `{{vencido_cantidad}}` documents, the oldest `{{vencido_dias_max}}` days past due. Open pipeline: `{{pipeline_total}}` across `{{pipeline_cantidad}}` quotes."
+
+You can extend it: add the lookup for what was collected in the period, change the recipient to the whole team, or add a Slack message with the same summary.
 
 ## Limits
 

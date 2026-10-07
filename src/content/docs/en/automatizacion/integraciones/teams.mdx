@@ -2,7 +2,7 @@
 title: "Microsoft Teams"
 seoTitle: "Connect Cord with Microsoft Teams"
 description: "How to connect Microsoft Teams with Cord by signing in with Microsoft or with a Power Automate flow, turn on alerts per event, use Teams in workflows and fix problems."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -24,6 +24,10 @@ Cord posts a card in the Teams channel you choose when a quote moves forward. Th
 
 ## Connect with Microsoft
 
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
 <Steps>
 1. Go to **Settings › Integrations › Microsoft Teams**.
 2. Click **Connect with Microsoft** and sign in with your work account.
@@ -31,7 +35,7 @@ Cord posts a card in the Teams channel you choose when a quote moves forward. Th
 4. Click **Send test**: a sample card appears in the channel.
 </Steps>
 
-Cord asks to read your profile, the teams and channels you belong to, and to send channel messages. None needs an administrator's approval.
+Cord asks to read your profile, the teams and channels you belong to, and to send channel messages. Microsoft may show you a notice that the app's publisher is unverified. If your organization does not let each person authorize apps on their own, a Microsoft 365 administrator will need to approve it.
 
 ## With a Power Automate flow
 
@@ -64,6 +68,10 @@ Email, Slack and Teams are checked separately.
 ## Teams in a workflow
 
 The **Send a Teams message** action in [Cord Workflows](/en/docs/automatizacion/workflows) posts your own text with event data (`{{cliente}}`, `{{folio}}`, `{{total}}`), even if alerts are off.
+
+## Approval requests
+
+When a quote requests internal approval, Cord posts a card in the connected channel with the quote number, client, total and a **Decide in Cord** button. The decision is made in Cord: the Teams card has no buttons to approve or reject. Internal approvals require the **Scale** plan or higher.
 
 ## Disconnect
 

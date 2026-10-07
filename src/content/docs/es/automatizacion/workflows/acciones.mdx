@@ -1,8 +1,8 @@
 ---
 title: "Acciones"
 seoTitle: "Acciones de Cord Workflows"
-description: "Las nueve acciones de Cord Workflows en detalle: tarea, correo al equipo, correo al cliente, caducar cotización, aprobar solicitud interna, anular factura, POST a una URL, Slack y HubSpot."
-lastUpdated: "2026-09-15"
+description: "Las once acciones de Cord Workflows en detalle: tarea, correo al equipo, correo al cliente, WhatsApp al cliente, caducar cotización, aprobar solicitud interna, anular factura, POST a una URL, Slack, Teams y HubSpot."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -22,7 +22,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Agregar una nota en HubSpot** | Deja una nota en el Deal de la cotización o en la Empresa del cliente. | HubSpot conectado |
 | **Escribirle al cliente** | Manda un correo con tu marca al contacto del cliente, con el botón para ver y pagar el documento. | Un disparador de cotización o de factura, y el cliente con correo |
 | **Caducar la cotización** | Marca la cotización como vencida para que el cliente ya no pueda aprobarla. | Un disparador de cotización |
-| **Aprobar la solicitud interna** | Aprueba la aprobación interna pendiente y envía la cotización al cliente. | Aprobaciones en tu plan |
+| **Aprobar la solicitud interna** | Aprueba la aprobación interna pendiente y envía la cotización al cliente. | Un disparador de cotización y aprobaciones internas en tu plan (Scale o superior) |
 | **Anular la factura** | Anula la factura si todavía no tiene pagos aplicados. | Un disparador de factura |
 | **Mandar los datos a una URL** | Hace un POST con los datos del evento a la URL que pegues. | Una URL https pública |
 | **Enviar un mensaje a Teams** | Publica una tarjeta en tu canal de Microsoft Teams. | Teams conectado |
@@ -104,11 +104,16 @@ Solo funciona con disparadores que traen una cotización; si la cotización ya s
 
 Aprueba la solicitud de aprobación interna pendiente de la cotización y la envía al cliente, igual que si alguien la aprobara desde la app. Úsala con una condición delante — por ejemplo, un total por debajo de cierto monto — para que las aprobaciones chicas no esperen a una persona.
 
-Requiere aprobaciones internas en tu plan. Si la cotización ya no tiene una solicitud pendiente, el paso lo dice y no cambia nada.
+Solo funciona con disparadores que traen una cotización y requiere aprobaciones internas en tu plan: están en **Scale** o superior.
+
+**Cuándo falla:**
+
+- "Tu plan actual no incluye aprobaciones internas.": tu plan no tiene aprobaciones.
+- "Esta cotización ya no tiene una solicitud de aprobación pendiente.": alguien ya la decidió o se retiró. No cambia nada.
 
 ## Anular la factura
 
-Anula la factura del evento. Sigue las mismas reglas que anular a mano desde **Facturas**: una factura con pagos aplicados **no** se anula —para eso está la nota de crédito—, y la cancelación de un CFDI ante el SAT puede quedar pendiente de respuesta. Cuando no se puede anular, el paso falla y la factura se queda como estaba.
+Anula la factura del evento. Sigue las mismas reglas que anular a mano desde **Facturas**: una factura con pagos aplicados **no** se anula —para eso está la nota de crédito—, y en México la cancelación de un CFDI ante el SAT puede quedar pendiente de respuesta. Cuando no se puede anular, el paso falla con "Esta factura no se puede anular: revísala en Facturas." y la factura se queda como estaba.
 
 | Campo | Obligatorio | Detalle |
 |---|---|---|
@@ -138,7 +143,11 @@ El cuerpo se ve así:
 }
 ```
 
-**Cuándo falla:** si la URL no es válida o apunta a un servidor interno, y si el destino responde con un error. Se reintenta dentro de los 3 intentos de la ejecución.
+**Cuándo falla:**
+
+- "La URL de destino no es válida o apunta a un servidor interno.": corrige la URL; no se reintenta.
+- "La URL de destino no aceptó el envío.": el destino respondió con un error o no respondió. Se reintenta dentro de los 3 intentos de la ejecución.
+- "Se alcanzó el máximo de envíos por hora a una URL.": 120 envíos en la última hora.
 
 <Callout type="info">
 Esta acción no firma el envío. Si necesitas verificar que la petición viene de Cord, usa los [webhooks](/docs/desarrolladores/herramientas/webhooks) del dock de Desarrolladores, que sí van firmados.
@@ -167,7 +176,10 @@ Cómo conectar Slack: [Slack](/docs/automatizacion/integraciones/slack).
 
 ## Enviar un mensaje a Teams
 
-Publica una tarjeta en el canal que conectaste en **Ajustes › Integraciones › Microsoft Teams**.
+Publica una tarjeta en el canal que conectaste en **Ajustes › Integraciones › Microsoft Teams**, por cualquiera de las dos formas de conexión:
+
+- **Conectar con Microsoft:** la tarjeta sale en el equipo y canal que elegiste, a nombre de quien conectó.
+- **Flujo de Power Automate:** la tarjeta sale por el flujo cuya URL pegaste.
 
 | Campo | Obligatorio | Detalle |
 |---|---|---|
@@ -179,11 +191,13 @@ Es independiente de los avisos de **Ajustes › Notificaciones**: el workflow pu
 
 **Cuándo falla:**
 
-- "Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción.": no hay una URL de flujo guardada.
-- "Teams no aceptó el mensaje.": el flujo de Power Automate se apagó o se borró. Crea otro y pega la URL nueva.
+- "Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción.": Teams no está conectado de ninguna de las dos formas.
+- "Microsoft ya no acepta la conexión de Teams. Vuelve a conectarla en Ajustes › Integraciones.": con **Conectar con Microsoft**, el acceso caducó o se revocó. Pulsa **Volver a conectar** en la tarjeta.
+- "Teams no aceptó el mensaje. Revisa que el canal o el flujo sigan activos.": el canal ya no existe o perdiste acceso a él, o el flujo de Power Automate se apagó o se borró. Elige otro canal, o crea otro flujo y pega la URL nueva. Mientras tanto, Cord reintenta.
+- "El mensaje quedó vacío.": el mensaje solo tenía datos del evento y llegaron vacíos.
 - "Se alcanzó el máximo de mensajes de Teams por hora de los workflows.": 120 mensajes en la última hora.
 
-Cómo conectar Teams: [Conectar Microsoft Teams](https://cordhq.app/soporte/conectar-teams).
+Cómo conectar Teams: [Microsoft Teams](/docs/automatizacion/integraciones/teams).
 
 ## Mandarle un WhatsApp al cliente
 
@@ -200,10 +214,12 @@ Manda la plantilla que configuraste en **Ajustes › Integraciones › WhatsApp 
 **Cuándo falla:**
 
 - "El cliente no tiene un teléfono con lada de país registrado.": edita el cliente y guarda el número con `+`.
-- "WhatsApp no aceptó tu plantilla.": no está aprobada, el nombre no coincide o el número de variables es distinto.
+- "Conecta WhatsApp en Ajustes › Integraciones para usar esta acción.": WhatsApp no está conectado.
+- "WhatsApp no aceptó tu plantilla. Revísala en Ajustes › Integraciones: tiene que estar aprobada y con el mismo número de variables.": no está aprobada, el nombre no coincide o el número de variables es distinto.
+- "WhatsApp no aceptó el mensaje. Se reintenta solo.": un rechazo temporal; Cord reintenta.
 - "Se alcanzó el máximo de WhatsApp por hora de los workflows.": 60 mensajes en la última hora.
 
-Cómo conectarlo: [Conectar WhatsApp Business](https://cordhq.app/soporte/conectar-whatsapp).
+Cómo conectarlo: [WhatsApp Business](/docs/automatizacion/integraciones/whatsapp).
 
 ## Agregar una nota en HubSpot
 
@@ -221,14 +237,14 @@ Deja una nota en HubSpot para que tu equipo comercial vea lo que pasó en Cord.
 
 La nota queda con la fecha y hora en que se creó y aparece en la línea de tiempo del registro en HubSpot.
 
-**Qué disparadores tienen dónde dejar la nota:** los de cotizaciones, pagos de cotizaciones, contracargos, reembolsos y los de clientes. En disparadores sin cotización ni cliente (por ejemplo **Se paga un depósito a tu banco** o **Se crea un producto**) la nota no tiene a qué registro ligarse: el paso se reintenta y la ejecución termina como **Fallida** con el aviso "Este registro todavía no está en HubSpot". Usa esta acción solo con disparadores que tengan cotización o cliente.
+**Qué disparadores tienen dónde dejar la nota:** los de cotizaciones, pagos de cotizaciones, contracargos, reembolsos y los de clientes. En disparadores sin cotización ni cliente (por ejemplo **Se paga un depósito a tu banco** o **Se crea un producto**) la nota no tiene a qué registro ligarse: el paso se reintenta y la ejecución termina como **Fallida** con el aviso "HubSpot no aceptó los datos de este paso. Revisa la configuración en Ajustes › Integraciones." Usa esta acción solo con disparadores que tengan cotización o cliente.
 
 **Cuándo falla:**
 
-- "Conecta HubSpot en Ajustes › Integraciones para usar esta acción.": HubSpot no está conectado.
 - "HubSpot necesita reconectarse en Ajustes › Integraciones.": la conexión perdió su autorización.
-- "Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse.": ver el punto 3 de arriba. Si persiste, revisa que el pipeline y las etapas estén completos; las cotizaciones en un estado sin etapa no se envían a HubSpot.
-- "El registro ya no existe en HubSpot.": el Deal o la Empresa se borró en HubSpot.
+- "HubSpot no aceptó los datos de este paso. Revisa la configuración en Ajustes › Integraciones.": HubSpot no está conectado o pide reconectar; el registro todavía no está en HubSpot (ver el punto 3 de arriba; si persiste, revisa que el pipeline y las etapas estén completos, porque las cotizaciones en un estado sin etapa no se envían a HubSpot); o el Deal o la Empresa se borró en HubSpot.
+- "HubSpot no respondió. Se reintenta solo.": un fallo temporal de HubSpot.
+- "La nota quedó vacía.": la nota solo tenía datos del evento y llegaron vacíos.
 - "Se alcanzó el máximo de notas por hora en HubSpot.": 120 notas en la última hora.
 
 Cómo conectar HubSpot: [HubSpot](/docs/automatizacion/integraciones/hubspot).

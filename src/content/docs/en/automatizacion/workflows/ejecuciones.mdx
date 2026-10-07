@@ -1,7 +1,7 @@
 ---
 title: "Runs and errors"
 description: "How to read a workflow's Runs tab: statuses, the result of each step, automatic retries, retry and cancel, and what to do with each error message."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -67,16 +67,15 @@ On a **Queued** or **Waiting** run, click **Cancel**. It becomes **Canceled** an
 
 ## Error messages and what to do
 
-<Callout type="info">
-Step error messages currently appear in Spanish in the app. The tables below give the English meaning.
-</Callout>
+Messages appear in your account's language.
 
 ### Tasks
 
 | Message | Cause | What to do |
 |---|---|---|
-| The task title ended up empty. | The title only had event data and it arrived empty. | Add fixed text to the title. |
-| Hourly task limit for workflows reached. | Your workflows created 120 tasks in one hour. | Check whether a workflow triggers more than expected; retry later. |
+| The task title came out empty. | The title only had event data and it arrived empty. | Add fixed text to the title. |
+| The task could not be created. | Cord could not save the task. | Click **Retry**. If it persists, write to us. |
+| Workflows reached their hourly limit of tasks. | Your workflows created 120 tasks in one hour. | Check whether a workflow triggers more than expected; retry later. |
 
 ### Team email
 
@@ -84,7 +83,29 @@ Step error messages currently appear in Spanish in the app. The tables below giv
 |---|---|---|
 | There is nobody to send the email to. | The account has no owner with an email, or no active members. | Check **Settings › Team & roles** or change **To**. |
 | Email is not available right now. | It could not be delivered to anyone. | Cord retries on its own. If it persists, write to contacto@cordhq.app. |
-| Hourly email limit for workflows reached. | 30 emails in one hour. | Consider Slack for frequent alerts. |
+| Workflows reached their hourly limit of emails. | 30 emails in one hour. | Consider Slack or Teams for frequent alerts. |
+
+### Client email
+
+| Message | Cause | What to do |
+|---|---|---|
+| This event does not carry a quote to act on. | The trigger carries no quote, or the quote no longer exists. | Use a quote or invoice trigger. |
+| This event does not carry an invoice to act on. | The event's invoice no longer exists. | Nothing to retry for that document. |
+| The client has no email on file. | The document's client has no email. | Add the email to the client and click **Retry**. |
+| The message came out empty. | The message only had empty data. | Add fixed text. |
+| You reached your plan's sending limit for this month. | The monthly sending quota ran out (5 on the Free plan). | Wait for next month or upgrade. |
+| The email to the client could not be sent. | Sending failed. | Cord retries on its own. If it ends Failed, click **Retry**. |
+| Workflows reached their hourly limit of emails to clients. | 60 client emails in one hour. | Retry later. |
+
+### WhatsApp
+
+| Message | Cause | What to do |
+|---|---|---|
+| Connect WhatsApp in Settings › Integrations to use this action. | WhatsApp is not connected. | [Connect WhatsApp](/en/docs/automatizacion/integraciones/whatsapp) and click **Retry**. |
+| The client has no phone with a country code on file. | The client has no phone, or it does not start with `+` and the country code. | Edit the client, save the number with `+` and retry. |
+| WhatsApp did not accept your template. Check it in Settings › Integrations: it must be approved and have the same number of variables. | The template is not approved, the name does not match, or the number of variables differs. | Fix the template or the step's variables and retry. |
+| WhatsApp did not accept the message. It retries on its own. | A temporary rejection. | Nothing; Cord retries. |
+| Workflows reached their hourly limit of WhatsApp messages. | 60 messages in one hour. | Retry later. |
 
 ### Slack
 
@@ -92,19 +113,47 @@ Step error messages currently appear in Spanish in the app. The tables below giv
 |---|---|---|
 | Connect Slack in Settings › Integrations to use this action. | No Slack URL saved. | [Connect Slack](/en/docs/automatizacion/integraciones/slack) and click **Retry**. |
 | Slack did not accept the message. Check the connection in Settings › Integrations. | The webhook was deleted or the app was removed from the channel. | Create a new webhook in Slack, paste the URL and retry. |
-| The message ended up empty. | The message only had empty data. | Add fixed text. |
-| Hourly message limit for workflows reached. | 120 messages in one hour. | Retry later. |
+| The message came out empty. | The message only had empty data. | Add fixed text. |
+| Workflows reached their hourly limit of Slack messages. | 120 messages in one hour. | Retry later. |
+
+### Teams
+
+| Message | Cause | What to do |
+|---|---|---|
+| Connect Microsoft Teams in Settings › Integrations to use this action. | Teams is not connected. | [Connect Teams](/en/docs/automatizacion/integraciones/teams) and click **Retry**. |
+| Microsoft no longer accepts the Teams connection. Reconnect it in Settings › Integrations. | With **Connect with Microsoft**, access expired or was revoked. | Click **Reconnect** on the card and retry. |
+| Teams did not accept the message. Check that the channel or the flow is still active. | The channel no longer exists, you lost access to it, or the Power Automate flow was turned off or deleted. | Pick another channel or paste a new flow URL, and retry. |
+| The message came out empty. | The message only had empty data. | Add fixed text. |
+| Workflows reached their hourly limit of Teams messages. | 120 messages in one hour. | Retry later. |
 
 ### HubSpot
 
 | Message | Cause | What to do |
 |---|---|---|
-| Connect HubSpot in Settings › Integrations to use this action. | HubSpot is not connected. | [Connect HubSpot](/en/docs/automatizacion/integraciones/hubspot). |
 | HubSpot needs to be reconnected in Settings › Integrations. | Cord's access was revoked. | Click **Reconnect** and retry. |
-| This record is not in HubSpot yet. It will retry once it finishes syncing. | The quote or client has not reached HubSpot yet, or the trigger has no quote or client. | Wait; if it ends Failed, check that stages are complete and that the trigger is about a quote or client. |
-| The record no longer exists in HubSpot. | The Deal or Company was deleted in HubSpot. | Nothing to retry for that record. |
-| HubSpot did not grant permission for this operation. Reconnect the account to accept the permissions. | The connection is missing permissions. | Reconnect HubSpot. |
-| Hourly note limit in HubSpot reached. | 120 notes in one hour. | Retry later. |
+| HubSpot did not accept this step's data. Check the setup in Settings › Integrations. | HubSpot is not connected or needs reconnecting; the quote or client has not reached HubSpot yet, or the trigger has no quote or client; or the Deal or Company was deleted in HubSpot. | Check the connection. If the record has not arrived, wait; if it ends Failed, check that stages are complete and that the trigger is about a quote or client. |
+| HubSpot did not respond. It retries on its own. | A temporary HubSpot failure. | Nothing; Cord retries. |
+| The note came out empty. | The note only had empty data. | Add fixed text. |
+| Workflows reached their hourly limit of HubSpot notes. | 120 notes in one hour. | Retry later. |
+
+### Send the data to a URL
+
+| Message | Cause | What to do |
+|---|---|---|
+| The destination URL is not valid or points to an internal server. | The URL is not `https` or not on a public server. | Fix the URL, publish again and retry. |
+| The destination URL did not accept the request. | The destination responded with an error or did not respond in time. | Check the destination; Cord retries within the 3 attempts. |
+| Workflows reached their hourly limit of posts to a URL. | 120 posts in one hour. | Retry later. |
+
+### Document actions
+
+| Message | Cause | What to do |
+|---|---|---|
+| This event does not carry a quote to act on. | **Expire the quote** or **Approve the internal request** with an event that has no quote. | Use a quote trigger. |
+| The quote is no longer in a state that allows this action. | When expiring: the quote was already approved, rejected or expired. | Nothing to retry. |
+| Your current plan does not include internal approvals. | **Approve the internal request** without approvals in your plan. | Internal approvals require the Scale plan or higher. |
+| This quote no longer has a pending approval request. | Someone already decided it or it was withdrawn. | Nothing to retry. |
+| This event does not carry an invoice to act on. | **Void the invoice** with an event that has no invoice. | Use an invoice trigger. |
+| This invoice cannot be voided: review it in Invoices. | It has payments applied (it needs a credit note) or another rule prevents voiding it. | Review it in **Invoices**. |
 
 ### General
 
@@ -113,7 +162,9 @@ Step error messages currently appear in Spanish in the app. The tables below giv
 | The workflow was paused or deleted before this run finished. | It was paused when the run had to continue. | Nothing; if you wanted it to run, resume before the wait ends. |
 | Your current plan does not include this active workflow. | You downgraded and this workflow fell outside the limit. | Pause other workflows or upgrade. See [Limits](/en/docs/automatizacion/workflows/limites). |
 | The event that started this run no longer exists. | The event record was removed. | Nothing to do. |
+| The workflow went over the allowed number of steps. | The run went past the maximum number of steps. | Split the rule into two workflows. |
 | This action is no longer available. | The run used an action Cord retired. | Edit the workflow and publish again. |
+| This lookup is no longer available. | The run used a lookup Cord retired. | Edit the workflow and publish again. |
 | Internal error while running the action. | An unexpected Cord failure. | It retries on its own. If it ends Failed, click **Retry** or write to us. |
 
 ## The health panel

@@ -1,8 +1,8 @@
 ---
 title: "Actions"
 seoTitle: "Cord Workflows actions"
-description: "The four Cord Workflows actions in detail: create a task, email the team, send a Slack message and add a note in HubSpot."
-lastUpdated: "2026-09-15"
+description: "The eleven Cord Workflows actions in detail: task, email to the team, email to the client, WhatsApp to the client, expire quote, approve internal request, void invoice, POST to a URL, Slack, Teams and HubSpot."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -22,7 +22,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Add a note in HubSpot** | Adds a note to the quote's Deal or the client's Company. | HubSpot connected |
 | **Email the client** | Sends a branded email to the client's contact, with the button to view and pay the document. | A quote or invoice trigger, and a client with an email |
 | **Expire the quote** | Marks the quote as expired so the client can no longer approve it. | A quote trigger |
-| **Approve the internal request** | Approves the pending internal approval and sends the quote to the client. | Approvals in your plan |
+| **Approve the internal request** | Approves the pending internal approval and sends the quote to the client. | A quote trigger and internal approvals in your plan (Scale or higher) |
 | **Void the invoice** | Voids the invoice if it has no payments applied. | An invoice trigger |
 | **Send the data to a URL** | POSTs the event data to the URL you paste. | A public https URL |
 | **Send a Teams message** | Posts a card to your Microsoft Teams channel. | Teams connected |
@@ -108,11 +108,16 @@ It only works with triggers that carry a quote; if the quote was already approve
 
 Approves the quote's pending internal approval request and sends the quote to the client, exactly as if someone approved it in the app. Use it behind a condition — a total below a certain amount, for example — so small approvals do not wait on a person.
 
-It requires internal approvals in your plan. If the quote no longer has a pending request, the step says so and nothing changes.
+It only works with triggers that carry a quote and requires internal approvals in your plan: they come with **Scale** or higher.
+
+**When it fails:**
+
+- "Your current plan does not include internal approvals.": your plan has no approvals.
+- "This quote no longer has a pending approval request.": someone already decided it or it was withdrawn. Nothing changes.
 
 ## Void the invoice
 
-Voids the event's invoice. It follows the same rules as voiding by hand from **Invoices**: an invoice with payments applied is **not** voided — that is what the credit note is for — and canceling a CFDI with the SAT may stay pending a response. When it cannot be voided, the step fails and the invoice stays as it was.
+Voids the event's invoice. It follows the same rules as voiding by hand from **Invoices**: an invoice with payments applied is **not** voided — that is what the credit note is for — and in Mexico canceling a CFDI with the SAT may stay pending a response. When it cannot be voided, the step fails with "This invoice cannot be voided: review it in Invoices." and the invoice stays as it was.
 
 | Field | Required | Detail |
 |---|---|---|
@@ -142,7 +147,11 @@ The body looks like this:
 }
 ```
 
-**When it fails:** if the URL is not valid or points to an internal server, and if the destination responds with an error. It retries within the run's 3 attempts.
+**When it fails:**
+
+- "The destination URL is not valid or points to an internal server.": fix the URL; it is not retried.
+- "The destination URL did not accept the request.": the destination responded with an error or did not respond. It retries within the run's 3 attempts.
+- "Workflows reached their hourly limit of posts to a URL.": 120 posts in the last hour.
 
 <Callout type="info">
 This action does not sign the request. If you need to verify that the request comes from Cord, use the [webhooks](/docs/desarrolladores/herramientas/webhooks) in the Developers dock, which are signed.
@@ -171,7 +180,10 @@ How to connect Slack: [Slack](/en/docs/automatizacion/integraciones/slack).
 
 ## Send a Teams message
 
-Posts a card to the channel you connected in **Settings › Integrations › Microsoft Teams**.
+Posts a card to the channel you connected in **Settings › Integrations › Microsoft Teams**, through either connection method:
+
+- **Connect with Microsoft:** the card goes to the team and channel you picked, in the name of whoever connected.
+- **Power Automate flow:** the card goes through the flow whose URL you pasted.
 
 | Field | Required | Detail |
 |---|---|---|
@@ -183,11 +195,13 @@ It is independent from **Settings › Notifications**: the workflow posts even w
 
 **When it fails:**
 
-- "Connect Microsoft Teams in Settings › Integrations to use this action.": there is no flow URL saved.
-- "Teams did not accept the message.": the Power Automate flow was turned off or deleted. Create a new one and paste the new URL.
+- "Connect Microsoft Teams in Settings › Integrations to use this action.": Teams is not connected either way.
+- "Microsoft no longer accepts the Teams connection. Reconnect it in Settings › Integrations.": with **Connect with Microsoft**, access expired or was revoked. Click **Reconnect** on the card.
+- "Teams did not accept the message. Check that the channel or the flow is still active.": the channel no longer exists or you lost access to it, or the Power Automate flow was turned off or deleted. Pick another channel, or create a new flow and paste the new URL. Meanwhile, Cord retries.
+- "The message came out empty.": the message only had event data and it came out empty.
 - "Workflows reached their hourly limit of Teams messages.": 120 messages in the last hour.
 
-How to connect Teams: [Connect Microsoft Teams](https://cordhq.app/en/support/conectar-teams).
+How to connect Teams: [Microsoft Teams](/en/docs/automatizacion/integraciones/teams).
 
 ## Send the client a WhatsApp
 
@@ -204,10 +218,12 @@ Sends the template you set up in **Settings › Integrations › WhatsApp Busine
 **When it fails:**
 
 - "The client has no phone with a country code on file.": edit the client and save the number with `+`.
-- "WhatsApp did not accept your template.": it is not approved, the name does not match, or the number of variables differs.
+- "Connect WhatsApp in Settings › Integrations to use this action.": WhatsApp is not connected.
+- "WhatsApp did not accept your template. Check it in Settings › Integrations: it must be approved and have the same number of variables.": it is not approved, the name does not match, or the number of variables differs.
+- "WhatsApp did not accept the message. It retries on its own.": a temporary rejection; Cord retries.
 - "Workflows reached their hourly limit of WhatsApp messages.": 60 messages in the last hour.
 
-How to connect it: [Connect WhatsApp Business](https://cordhq.app/en/support/conectar-whatsapp).
+How to connect it: [WhatsApp Business](/en/docs/automatizacion/integraciones/whatsapp).
 
 ## Add a note in HubSpot
 
@@ -225,15 +241,15 @@ Adds a note in HubSpot so your sales team sees what happened in Cord.
 
 The note is timestamped when created and appears on the record's timeline in HubSpot.
 
-**Which triggers have somewhere to put the note:** quote triggers, quote payments, disputes, refunds and client triggers. On triggers without a quote or client (for example **A payout is paid to your bank** or **A product is created**) the note has no record to attach to: the step retries and the run ends as **Failed** with "This record is not in HubSpot yet". Use this action only with triggers that have a quote or client.
+**Which triggers have somewhere to put the note:** quote triggers, quote payments, disputes, refunds and client triggers. On triggers without a quote or client (for example **A payout is paid to your bank** or **A product is created**) the note has no record to attach to: the step retries and the run ends as **Failed** with "HubSpot did not accept this step's data. Check the setup in Settings › Integrations." Use this action only with triggers that have a quote or client.
 
 **When it fails:**
 
-- "Connect HubSpot in Settings › Integrations to use this action": HubSpot is not connected.
-- "HubSpot needs to be reconnected in Settings › Integrations": the connection lost its authorization.
-- "This record is not in HubSpot yet. It will retry once it finishes syncing": see point 3 above. If it persists, check that the pipeline and stages are complete; quotes in a status without a stage are not sent to HubSpot.
-- "The record no longer exists in HubSpot": the Deal or Company was deleted in HubSpot.
-- "Hourly note limit in HubSpot reached": 120 notes in the last hour.
+- "HubSpot needs to be reconnected in Settings › Integrations.": the connection lost its authorization.
+- "HubSpot did not accept this step's data. Check the setup in Settings › Integrations.": HubSpot is not connected or needs reconnecting; the record is not in HubSpot yet (see point 3 above; if it persists, check that the pipeline and stages are complete, because quotes in a status without a stage are not sent to HubSpot); or the Deal or Company was deleted in HubSpot.
+- "HubSpot did not respond. It retries on its own.": a temporary HubSpot failure.
+- "The note came out empty.": the note only had event data and it came out empty.
+- "Workflows reached their hourly limit of HubSpot notes.": 120 notes in the last hour.
 
 How to connect HubSpot: [HubSpot](/en/docs/automatizacion/integraciones/hubspot).
 

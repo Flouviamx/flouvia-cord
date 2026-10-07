@@ -1,8 +1,8 @@
 ---
 title: "QuickBooks Online"
 seoTitle: "Connect Cord with QuickBooks Online"
-description: "How to connect QuickBooks Online with Cord: what it creates in your accounting (customer, invoice and the Cord service), what it does not do yet, duplicate guarantees and common issues."
-lastUpdated: "2026-09-28"
+description: "How to connect QuickBooks Online with Cord: what it creates in your accounting (customer, invoice and the Cord service), how payments travel both ways, what it does not do yet, duplicate guarantees and common issues."
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -11,6 +11,10 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <h1 class="page-title">QuickBooks Online</h1>
   <p class="page-subtitle">Every Cord invoice, recorded in your QuickBooks with its customer, lines and currency.</p>
 </header>
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
 
 ## How it works
 
@@ -35,12 +39,21 @@ Every invoice you issue in Cord shows up in your accounting with its customer, l
 | **Invoice** | Date, due date, currency and one line per item with the negotiated price and its discount applied. |
 | **"Cord" service** | Created once. QuickBooks requires every sales line to hang from a product; Cord uses one instead of filling your catalog. |
 | **Private note** | Holds the Cord number. The invoice number belongs to your accounting and Cord does not overwrite it. |
+| **Payment** | One for each payment on an invoice already in QuickBooks. See [Payments](#payments). |
+
+## Payments
+
+Payments travel both ways, only for invoices already in QuickBooks:
+
+- **From Cord to QuickBooks.** Every payment on an invoice already in QuickBooks is recorded there as a payment against that invoice, in **Undeposited Funds**. It happens when the payment is recorded in Cord, and also when an invoice that already had payments is posted.
+- **From QuickBooks to Cord.** A payment you record in QuickBooks against a Cord invoice marks it in Cord, with QuickBooks as the method. Cord checks once a day, and also when you click **Send the pending invoices**. If a QuickBooks payment covers several invoices, Cord takes only the part applied to each one.
+
+A payment is never recorded twice and never bounces back: what came in from QuickBooks is not sent there again. QuickBooks does not ask for a new permission for this.
 
 ## What it does not do yet
 
-- **It does not send payments.** You record the payment in your accounting as usual.
 - **Invoices with withholdings are not sent.** QuickBooks does not record them on a sales invoice; post them by hand.
-- **It brings nothing from your accounting into Cord.** It flows one way.
+- **It only brings payments from your accounting into Cord.** Customers, products and invoices created in QuickBooks do not come into Cord.
 
 ## Taxes
 

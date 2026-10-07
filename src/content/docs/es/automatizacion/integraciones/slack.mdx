@@ -1,8 +1,8 @@
 ---
 title: "Slack"
 seoTitle: "Conectar Cord con Slack"
-description: "Cómo conectar un canal de Slack con Cord con Añadir a Slack o un webhook propio, activar los avisos por evento, qué contiene cada mensaje, usar Slack en workflows y resolver problemas."
-lastUpdated: "2026-09-21"
+description: "Cómo conectar un canal de Slack con Cord con Añadir a Slack o un webhook propio, activar los avisos por evento, qué contiene cada mensaje, vistas previas de links, el comando /cord, botones de aprobación, usar Slack en workflows y resolver problemas."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -14,14 +14,16 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 ## Cómo funciona
 
-Cord publica en Slack con un **Incoming Webhook**: una dirección que Slack genera para un canal específico. Con **Añadir a Slack** eliges el canal en Slack y Cord recibe esa dirección sola; Cord no lee tus mensajes y solo puede publicar en ese canal.
+Cord publica en Slack con un **Incoming Webhook**: una dirección que Slack genera para un canal específico. Con **Añadir a Slack** eliges el canal en Slack y Cord recibe esa dirección sola. Los avisos y los mensajes de workflows salen solo en ese canal.
+
+Al autorizar, Slack te muestra los permisos que pide la app de Cord: publicar en el canal que elegiste, ver y completar los links de Cord que se pegan en tu espacio de trabajo (para la vista previa), recibir el comando `/cord` y leer el nombre y el correo de quien pulsa un botón de aprobación. Ninguno le permite a Cord leer tus mensajes.
 
 Hay dos formas de recibir mensajes, y puedes usar las dos:
 
 | | Avisos de Notificaciones | Acción de workflow |
 |---|---|---|
 | **Qué publica** | Un mensaje estándar por evento de cotización. | El texto que tú escribas, con datos del evento. |
-| **Cuándo** | En los eventos que marques en Ajustes › Notificaciones. | Con cualquiera de los 41 disparadores, con condiciones y esperas. |
+| **Cuándo** | En los eventos que marques en Ajustes › Notificaciones. | Con cualquiera de los 44 disparadores de eventos o con el disparador programado, con condiciones y esperas. |
 | **Dónde se configura** | **Ajustes › Notificaciones** | **Workflows** |
 
 ## 1. Conecta tu canal
@@ -68,6 +70,20 @@ Cada aviso de Notificaciones es un mensaje corto con:
 - Un enlace **Ver cotización** que abre la cotización en Cord.
 
 Los avisos de Notificaciones son de cotizaciones: si un evento no tiene folio, no se publica en Slack.
+
+## Vistas previas, comando /cord y aprobaciones
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
+Con **Añadir a Slack**, la app de Cord también hace esto en tu espacio de trabajo:
+
+- **Vista previa de links.** Un link público de cotización pegado en Slack se abre como tarjeta con el folio, el cliente, el estado, el total y un botón **Abrir en Cord**. Solo pasa con cotizaciones de tu propia organización.
+- **Comando `/cord`.** Escribe `/cord` y un folio o el nombre de un cliente, por ejemplo `/cord COT-0152`. La respuesta solo la ves tú y trae hasta 5 cotizaciones.
+- **Botones de aprobación.** Cuando una cotización pide aprobación interna, llega al canal con los botones **Aprobar**, **Rechazar** y **Abrir en Cord**. Los botones solo funcionan si tu cuenta de Slack usa el mismo correo que tu cuenta de Cord y tienes el permiso de **Aprobaciones**; si no, Slack te dice que decidas desde Cord. Las aprobaciones internas requieren el plan **Scale** o superior.
+
+Si conectaste Slack antes de que existieran, la tarjeta te pide volver a conectar: pulsa **Cambiar de canal** y autoriza de nuevo. Con un webhook propio no están disponibles.
 
 ## Mensajes propios con workflows
 

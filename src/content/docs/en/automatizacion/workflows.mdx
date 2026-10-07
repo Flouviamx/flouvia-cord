@@ -2,7 +2,7 @@
 title: "Cord Workflows"
 seoTitle: "Cord Workflows: no-code automations"
 description: "What Cord Workflows is, how a workflow works inside, and where to find the guide for each piece: triggers, actions, conditions, waits, event data, publishing and runs."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -14,7 +14,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 ## What a workflow is
 
-A workflow is a rule that watches your Cord account. When a specific event happens (a client opens a quote, a deposit arrives, an invoice becomes overdue, a dispute is opened), the workflow runs the steps you defined, in order: create a task, email your team, post to Slack or add a note in HubSpot.
+A workflow is a rule that watches your Cord account. When a specific event happens (a client opens a quote, a deposit arrives, an invoice becomes overdue, a dispute is opened), the workflow runs the steps you defined, in order: create a task, email your team, write to your client with your branding or on WhatsApp, close a quote that expired, approve an internal request, void an invoice, send the data to the URL you use in another tool, post to Slack or Teams, or add a note in HubSpot.
 
 The point is that follow-up does not depend on someone remembering. If your team checks by hand which quotes nobody opened, who paid the deposit or which invoices are overdue, a workflow does it for you and leaves the task ready for the right person.
 
@@ -33,7 +33,7 @@ Each workflow reads top to bottom in the editor, in two blocks: **When this happ
 | Piece | What it does | Guide |
 |---|---|---|
 | **Trigger** | What starts the workflow: one of Cord's 44 events, or a **fixed schedule** ("every Monday at 9"). Each workflow has exactly one. | [Triggers](/en/docs/automatizacion/workflows/disparadores) |
-| **Action** | Something Cord does for you: create a task, email the team, email the client, expire a quote, approve an internal request, void an invoice, send the data to a URL, post to Slack or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
+| **Action** | Something Cord does for you, among 11 actions: create a task, email the team, email the client, send the client a WhatsApp, expire a quote, approve an internal request, void an invoice, send the data to a URL, post to Slack, post to Teams or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
 | **Condition** | Splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. | [Conditions](/en/docs/automatizacion/workflows/condiciones) |
 | **Wait** | Pauses the flow for 1 to 30 days and then continues. It can also wait **until something happens**, with a time limit. | [Waits](/en/docs/automatizacion/workflows/esperas) |
 | **Lookup** | Brings a number from your account — overdue receivables, pipeline, client balance — to use in the steps that follow. | [Lookups](/en/docs/automatizacion/workflows/consultas) |
@@ -64,7 +64,7 @@ All of this is explained in [Publish, pause and delete](/en/docs/automatizacion/
 <Callout type="warning">
 A workflow **never charges, never issues invoices or CFDIs, never records payments, and never approves or rejects a quote on your client's behalf.** Those decisions stay with a person or with the client.
 
-What it does do to your documents is narrow and explicit: email the document's client (never an address typed into the step), expire a quote that is past its validity date, approve an internal approval request, and void an invoice that has no payments yet. Each of those actions only applies when the trigger carries the document it acts on; otherwise the workflow cannot be published.
+What it does do to your documents is narrow and explicit: write to the document's client by email or WhatsApp (never to an address or number typed into the step), expire a quote that is past its validity date, approve an internal approval request, and void an invoice that has no payments yet. Each of those actions only applies when the trigger carries the document it acts on; otherwise the workflow cannot be published.
 </Callout>
 
 It also cannot create infinite loops: a workflow is never triggered by the events it causes itself, and a chain of workflows triggering each other stops after three levels. Details in [Limits](/en/docs/automatizacion/workflows/limites).
@@ -74,7 +74,7 @@ It also cannot create infinite loops: a workflow is never triggered by the event
 - [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow): the editor, step by step.
 - [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 ideas Cord ships with and how to adapt them.
 - [Triggers](/en/docs/automatizacion/workflows/disparadores): the 44 events and the data each one carries.
-- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, team and client emails, document actions, POST to a URL, Slack and HubSpot.
+- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, team and client emails, WhatsApp to the client, document actions, POST to a URL, Slack, Teams and HubSpot.
 - [Conditions](/en/docs/automatizacion/workflows/condiciones): branches, comparisons and current status.
 - [Waits](/en/docs/automatizacion/workflows/esperas): how days are counted.
 - [Event data](/en/docs/automatizacion/workflows/datos-del-evento): variables in your texts.

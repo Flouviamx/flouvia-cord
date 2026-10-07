@@ -2,7 +2,7 @@
 title: "Shopify"
 seoTitle: "Connect Cord with Shopify"
 description: "How to connect Shopify with Cord: catalog and customers into Cord, the order back to your store when the quote closes, currencies, inventory, taxes and common issues."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -65,9 +65,17 @@ The order's tax is computed by Shopify with your store settings. The tax documen
 
 ## Stock while quoting
 
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
+
 If your store tracks a product's inventory, Cord brings its stock. In the quote editor, search shows how many are available and, when you add the product, Cord asks your store at that moment. If you quote more than is available, the line says so ("Only 12 in stock"), and an out-of-stock product says **Out of stock**. Quoting more is not blocked: selling something to be restocked is normal.
 
 ## B2B prices per client
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
 
 If your store uses **Shopify B2B** (available on Shopify Plus), each company buys with its catalog's price list. When you quote a Cord client linked to a Shopify customer who buys for a company, the editor uses **their B2B list as the agreed price** of each product from your store, and the line says so: "Their B2B price list".
 
@@ -77,6 +85,10 @@ If your store uses **Shopify B2B** (available on Shopify Plus), each company buy
 - When you open a saved draft, its prices are not rewritten; the list applies to products you add.
 
 ## Invoice your store orders
+
+<Callout type="info">
+This feature is new and may not be enabled on your account yet. If you do not see it, write to us.
+</Callout>
 
 On the Shopify card, **Invoice your store orders** starts off. With **Create the draft when the order is paid**, every paid store order creates its draft invoice in Cord:
 
@@ -88,7 +100,7 @@ On the Shopify card, **Invoice your store orders** starts off. With **Create the
 | Currency | The one the customer paid in. |
 | Tax | The order's rate if it exists in your tax catalog; otherwise your account's. |
 
-You review the draft and issue it: Cord never issues on its own, because a CFDI is irreversible. An order creates **a single draft**, and orders Cord created from a quote are not invoiced here, since they already have theirs. An order without a customer (guest checkout) is not invoiced.
+You review the draft and issue it: Cord never issues on its own, because issuing is your tax decision and, in Mexico, a stamped CFDI cannot be undone without canceling it with the SAT. An order creates **a single draft**, and orders Cord created from a quote are not invoiced here, since they already have theirs. An order without a customer (guest checkout) is not invoiced.
 
 ## Disconnect
 

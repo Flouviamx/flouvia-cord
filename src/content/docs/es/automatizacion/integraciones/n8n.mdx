@@ -1,8 +1,8 @@
 ---
 title: "n8n"
 seoTitle: "Conectar Cord con n8n"
-description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: credencial con llave de API, disparador con firma verificada, acciones disponibles y límites."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar n8n con Cord con el nodo n8n-nodes-cord o con el nodo HTTP Request: credencial con llave de API, disparador con firma verificada, acciones disponibles, límites, cómo desconectar y problemas comunes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -46,3 +46,18 @@ El disparador verifica la firma `X-Cord-Signature-V1` de cada entrega: un POST q
 ## Límites
 
 Los webhooks y las llamadas de API cuentan contra los límites de tu plan, igual que con Zapier o Make. Los ves en **Ajustes › Modo desarrollador**.
+
+## Desconectar
+
+- **Apagar un flujo:** al desactivar un flujo con **Cord Trigger**, n8n borra en Cord el webhook que había registrado. Si el webhook ya no existía en Cord, n8n se desactiva igual.
+- **Cortar el acceso por completo:** revoca la llave en **Ajustes › Modo desarrollador › API**. Desde ese momento n8n ya no puede llamar a la API con ella, y los webhooks que esa llave había registrado dejan de recibir eventos. Borra también la credencial **Cord API** en n8n.
+- **Con el nodo HTTP Request:** borra el webhook en **Ajustes › Modo desarrollador › Webhooks**.
+
+## Problemas comunes
+
+| Mensaje o síntoma | Qué hacer |
+|---|---|
+| **La prueba de la credencial falla** | Pega una llave secreta (`sk_live_` o `sk_test_`). Las llaves publicables (`pk_`) no sirven aquí. Si la llave se revocó, crea otra. |
+| **El flujo no se activa con Cord Trigger** | La llave necesita permiso de escritura para registrar el webhook. Revisa también que la dirección de n8n sea `https` y pública: Cord rechaza `http`, `localhost` y direcciones internas o privadas. |
+| **"Tus integraciones ya crearon 100 suscripciones, el máximo por organización."** | Desactiva los flujos de n8n, Zaps o escenarios que ya no uses para liberar espacio. |
+| **n8n responde 401 a las entregas de Cord** | El disparador rechaza las entregas cuya firma no coincide con el secreto que recibió al registrar el webhook. Desactiva y vuelve a activar el flujo para que registre uno nuevo. |

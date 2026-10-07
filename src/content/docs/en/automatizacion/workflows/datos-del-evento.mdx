@@ -2,7 +2,7 @@
 title: "Event data"
 seoTitle: "Event data in Cord Workflows"
 description: "How to insert event data into workflow texts with double braces, how it looks when it runs, and the full list of data available per trigger."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -26,7 +26,7 @@ When quote COT-128 from Northwind for 48,500 USD triggers the workflow, that tit
 
 In each action panel, below the text fields, you see **Event data**. Place the cursor where you want the item and tap its name: Cord inserts the braces for you. Only the data carried by the trigger you chose is shown.
 
-It works in: the task title, the email subject and message, the Slack message and the HubSpot note.
+It works in: the task title, the email subject and message (to the team or to the client), the WhatsApp variables, the Slack message, the Teams message, the HubSpot note, the message of the POST to a URL, and the void reason. The POST's destination URL does not accept it.
 
 ## How it looks when it runs
 
@@ -99,12 +99,15 @@ Plus, depending on the trigger:
 | A partial payment arrives | Amount paid | `{{monto}}` | Number |
 | A partial payment arrives | Balance due | `{{saldo_pendiente}}` | Number |
 | A partial payment arrives | Payment type | `{{tipo}}` | Option |
+| A quote is edited and resent | Previous total | `{{total_anterior}}` | Number |
+| A quote is about to expire | Days until it expires | `{{dias_para_vencer}}` | Number |
+| A quote is about to expire | Expiration date | `{{vence}}` | Text |
 
 **A draft is deleted** carries everything in the first table except current status.
 
 ### Cord Invoicing invoices
 
-Applies to issued, sent, paid, payment fails, overdue, voided and marked uncollectible.
+Applies to issued, sent, paid, payment fails, overdue, about to be due, past due for days, voided and marked uncollectible.
 
 | Item | Name | Type |
 |---|---|---|
@@ -117,6 +120,15 @@ Applies to issued, sent, paid, payment fails, overdue, voided and marked uncolle
 | Status at the event | `{{estado}}` | Option |
 | Current invoice status | `{{estado_actual}}` | Option, checked at run time |
 | Who caused it | `{{actor_tipo}}` | Option |
+
+Plus, depending on the trigger:
+
+| Trigger | Item | Name | Type |
+|---|---|---|---|
+| An invoice is about to be due | Days until due | `{{dias_para_vencer}}` | Number |
+| An invoice is about to be due | Due date | `{{vence}}` | Text |
+| An invoice has been past due for days | Days past due | `{{dias_vencida}}` | Number |
+| An invoice has been past due for days | Due date | `{{vence}}` | Text |
 
 "A quote is invoiced" and "A quote CFDI is stamped" use quote data, not these.
 
@@ -162,6 +174,8 @@ Applies to issued, sent, paid, payment fails, overdue, voided and marked uncolle
 | Payment terms | `{{terminos}}` | Option (Upfront, Net 30, Net 60) |
 | Who caused it | `{{actor_tipo}}` | Option |
 
+**A client is updated** also carries the previous value of three items: Previous company `{{empresa_anterior}}`, Previous email `{{email_anterior}}` and Previous payment terms `{{terminos_anterior}}`.
+
 **A client is deleted** only carries Company and Who caused it.
 
 ### Products
@@ -173,6 +187,8 @@ Applies to issued, sent, paid, payment fails, overdue, voided and marked uncolle
 | Active | `{{activo}}` | Yes or no |
 | Who caused it | `{{actor_tipo}}` | Option |
 
+**A product is updated** also carries Previous list price `{{precio_lista_anterior}}` and Active before `{{activo_anterior}}`.
+
 **A product is deleted** only carries Name and Who caused it.
 
 ### Tasks and promises
@@ -182,6 +198,15 @@ Applies to issued, sent, paid, payment fails, overdue, voided and marked uncolle
 | A task is created, A task is completed | Title `{{titulo}}`, Who caused it `{{actor_tipo}}` |
 | A payment promise is recorded | Promised amount `{{monto}}`, Promised date `{{fecha_promesa}}`, Who caused it `{{actor_tipo}}` |
 | A payment promise is kept / broken | Promised amount `{{monto}}`, Who caused it `{{actor_tipo}}` |
+
+### Scheduled trigger
+
+| Item | Name | Type |
+|---|---|---|
+| Date | `{{fecha}}` | Text |
+| Day of the week | `{{dia_semana}}` | Text |
+| Day of the month | `{{dia_mes}}` | Number |
+| Hour | `{{hora}}` | Number |
 
 ## Next
 

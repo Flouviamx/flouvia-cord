@@ -1,8 +1,8 @@
 ---
 title: "QuickBooks Online"
 seoTitle: "Conectar Cord con QuickBooks Online"
-description: "Cómo conectar QuickBooks Online con Cord: qué crea en tu contabilidad (cliente, factura y el servicio Cord), qué no hace todavía, garantías contra duplicados y problemas frecuentes."
-lastUpdated: "2026-09-28"
+description: "Cómo conectar QuickBooks Online con Cord: qué crea en tu contabilidad (cliente, factura y el servicio Cord), cómo viajan los pagos en los dos sentidos, qué no hace todavía, garantías contra duplicados y problemas frecuentes."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -11,6 +11,10 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <h1 class="page-title">QuickBooks Online</h1>
   <p class="page-subtitle">Cada factura de Cord, asentada en tu QuickBooks con su cliente, sus conceptos y su divisa.</p>
 </header>
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
 
 ## Cómo funciona
 
@@ -35,12 +39,21 @@ Cada factura que emites en Cord aparece en tu contabilidad con su cliente, sus c
 | **Factura** | Fecha, vencimiento, divisa y una línea por concepto con el precio negociado y su descuento aplicados. |
 | **Servicio "Cord"** | Se crea una sola vez. QuickBooks exige que cada línea cuelgue de un producto; Cord usa uno solo en vez de llenarte el catálogo. |
 | **Nota privada** | Lleva el folio de Cord. El número de factura es de tu contabilidad y Cord no lo pisa. |
+| **Pago** | Uno por cada cobro de una factura que ya está en QuickBooks. Ver [Pagos](#pagos). |
+
+## Pagos
+
+Los pagos viajan en los dos sentidos, solo para facturas que ya están en QuickBooks:
+
+- **De Cord a QuickBooks.** Cada cobro de una factura que ya está en QuickBooks se registra allá como pago contra esa factura, en **Fondos no depositados**. Pasa al registrar el cobro en Cord y también al contabilizar una factura que ya tenía cobros.
+- **De QuickBooks a Cord.** Un pago que registres en QuickBooks contra una factura de Cord la marca en Cord, con QuickBooks como método. Cord los revisa una vez al día, y también al pulsar **Enviar las facturas pendientes**. Si un pago de QuickBooks cubre varias facturas, Cord toma solo la parte aplicada a cada una.
+
+Un pago no se registra dos veces ni rebota: lo que entró desde QuickBooks no se vuelve a mandar allá. QuickBooks no pide un permiso nuevo para esto.
 
 ## Qué no hace todavía
 
-- **No manda los pagos.** Registras el cobro en tu contabilidad como siempre.
 - **Las facturas con retenciones no se envían.** QuickBooks no las registra en una factura de venta; asiéntalas a mano.
-- **No trae nada de tu contabilidad a Cord.** El flujo va en un solo sentido.
+- **Solo trae los pagos de tu contabilidad a Cord.** Clientes, productos y facturas creados en QuickBooks no entran a Cord.
 
 ## Impuestos
 

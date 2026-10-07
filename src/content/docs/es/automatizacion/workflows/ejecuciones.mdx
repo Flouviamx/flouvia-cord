@@ -1,7 +1,7 @@
 ---
 title: "Ejecuciones y errores"
 description: "Cómo leer la pestaña Ejecuciones de un workflow: estados, resultado de cada paso, reintentos automáticos, reintentar y cancelar, y qué hacer con cada mensaje de error."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -72,6 +72,7 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
 | El título de la tarea quedó vacío. | El título solo tenía datos del evento y llegaron vacíos. | Agrega texto fijo al título. |
+| No se pudo crear la tarea. | Cord no pudo guardar la tarea. | Pulsa **Reintentar**. Si persiste, escríbenos. |
 | Se alcanzó el máximo de tareas por hora de los workflows. | Tus workflows crearon 120 tareas en una hora. | Revisa si un workflow se dispara más de lo esperado; reintenta después. |
 
 ### Correo al equipo
@@ -80,7 +81,29 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 |---|---|---|
 | No hay a quién enviar el correo. | La cuenta no tiene dueño con correo o no hay miembros activos. | Revisa **Ajustes › Equipo y Roles** o cambia **Para**. |
 | El correo no está disponible por ahora. | No se pudo entregar a nadie. | Cord reintenta solo. Si persiste, escríbenos a contacto@cordhq.app. |
-| Se alcanzó el máximo de correos por hora de los workflows. | 30 correos en una hora. | Considera Slack para avisos frecuentes. |
+| Se alcanzó el máximo de correos por hora de los workflows. | 30 correos en una hora. | Considera Slack o Teams para avisos frecuentes. |
+
+### Correo al cliente
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Este evento no trae una cotización sobre la que actuar. | El disparador no trae una cotización, o la cotización ya no existe. | Usa un disparador de cotización o de factura. |
+| Este evento no trae una factura sobre la que actuar. | La factura del evento ya no existe. | Nada que reintentar para ese documento. |
+| El cliente no tiene un correo registrado. | El cliente del documento no tiene correo. | Agrega el correo en el cliente y pulsa **Reintentar**. |
+| El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
+| Alcanzaste el límite de envíos de tu plan este mes. | Se acabó la cuota mensual de envíos (5 en el plan Gratis). | Espera al siguiente mes o sube de plan. |
+| No se pudo enviar el correo al cliente. | El envío falló. | Cord reintenta solo. Si queda Fallida, pulsa **Reintentar**. |
+| Se alcanzó el máximo de correos al cliente por hora de los workflows. | 60 correos al cliente en una hora. | Reintenta después. |
+
+### WhatsApp
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta WhatsApp en Ajustes › Integraciones para usar esta acción. | WhatsApp no está conectado. | [Conecta WhatsApp](/docs/automatizacion/integraciones/whatsapp) y pulsa **Reintentar**. |
+| El cliente no tiene un teléfono con lada de país registrado. | El cliente no tiene teléfono, o no empieza con `+` y la lada. | Edita el cliente, guarda el número con `+` y reintenta. |
+| WhatsApp no aceptó tu plantilla. Revísala en Ajustes › Integraciones: tiene que estar aprobada y con el mismo número de variables. | La plantilla no está aprobada, el nombre no coincide o el número de variables es distinto. | Corrige la plantilla o las variables del paso y reintenta. |
+| WhatsApp no aceptó el mensaje. Se reintenta solo. | Un rechazo temporal. | Nada; Cord reintenta. |
+| Se alcanzó el máximo de WhatsApp por hora de los workflows. | 60 mensajes en una hora. | Reintenta después. |
 
 ### Slack
 
@@ -91,16 +114,44 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
 | Se alcanzó el máximo de mensajes por hora de los workflows. | 120 mensajes en una hora. | Reintenta después. |
 
+### Teams
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción. | Teams no está conectado. | [Conecta Teams](/docs/automatizacion/integraciones/teams) y pulsa **Reintentar**. |
+| Microsoft ya no acepta la conexión de Teams. Vuelve a conectarla en Ajustes › Integraciones. | Con **Conectar con Microsoft**, el acceso caducó o se revocó. | Pulsa **Volver a conectar** en la tarjeta y reintenta. |
+| Teams no aceptó el mensaje. Revisa que el canal o el flujo sigan activos. | El canal ya no existe, perdiste acceso a él, o el flujo de Power Automate se apagó o se borró. | Elige otro canal o pega la URL de un flujo nuevo, y reintenta. |
+| El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
+| Se alcanzó el máximo de mensajes de Teams por hora de los workflows. | 120 mensajes en una hora. | Reintenta después. |
+
 ### HubSpot
 
 | Mensaje | Causa | Qué hacer |
 |---|---|---|
-| Conecta HubSpot en Ajustes › Integraciones para usar esta acción. | HubSpot no está conectado. | [Conecta HubSpot](/docs/automatizacion/integraciones/hubspot). |
 | HubSpot necesita reconectarse en Ajustes › Integraciones. | Se revocó el acceso de Cord. | Pulsa **Volver a conectar** y reintenta. |
-| Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse. | La cotización o el cliente aún no llegan a HubSpot, o el disparador no tiene cotización ni cliente. | Espera; si queda Fallida, revisa que las etapas estén completas y que el disparador sea de cotización o cliente. |
-| El registro ya no existe en HubSpot. | El Deal o la Empresa se borró en HubSpot. | Nada que reintentar para ese registro. |
-| HubSpot no dio permiso para esta operación. Vuelve a conectar la cuenta para aceptar los permisos. | Faltan permisos en la conexión. | Reconecta HubSpot. |
+| HubSpot no aceptó los datos de este paso. Revisa la configuración en Ajustes › Integraciones. | HubSpot no está conectado o pide reconectar; la cotización o el cliente aún no llegan a HubSpot, o el disparador no tiene cotización ni cliente; o el Deal o la Empresa se borró en HubSpot. | Revisa la conexión. Si el registro no ha llegado, espera; si queda Fallida, revisa que las etapas estén completas y que el disparador sea de cotización o cliente. |
+| HubSpot no respondió. Se reintenta solo. | Un fallo temporal de HubSpot. | Nada; Cord reintenta. |
+| La nota quedó vacía. | La nota solo tenía datos vacíos. | Agrega texto fijo. |
 | Se alcanzó el máximo de notas por hora en HubSpot. | 120 notas en una hora. | Reintenta después. |
+
+### Mandar los datos a una URL
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| La URL de destino no es válida o apunta a un servidor interno. | La URL no es `https` o no es de un servidor público. | Corrige la URL, publica de nuevo y reintenta. |
+| La URL de destino no aceptó el envío. | El destino respondió con un error o no respondió a tiempo. | Revisa el destino; Cord reintenta dentro de los 3 intentos. |
+| Se alcanzó el máximo de envíos por hora a una URL. | 120 envíos en una hora. | Reintenta después. |
+
+### Acciones sobre el documento
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Este evento no trae una cotización sobre la que actuar. | **Caducar la cotización** o **Aprobar la solicitud interna** con un evento sin cotización. | Usa un disparador de cotización. |
+| La cotización ya no está en un estado que admita esta acción. | Al caducar: la cotización ya se aprobó, se rechazó o ya estaba vencida. | Nada que reintentar. |
+| Tu plan actual no incluye aprobaciones internas. | **Aprobar la solicitud interna** sin aprobaciones en tu plan. | Las aprobaciones internas requieren el plan Scale o superior. |
+| Esta cotización ya no tiene una solicitud de aprobación pendiente. | Alguien ya la decidió o se retiró. | Nada que reintentar. |
+| Este evento no trae una factura sobre la que actuar. | **Anular la factura** con un evento sin factura. | Usa un disparador de factura. |
+| Esta factura no se puede anular: revísala en Facturas. | Tiene pagos aplicados (pide una nota de crédito) u otra regla impide anularla. | Revísala en **Facturas**. |
 
 ### Generales
 
@@ -109,7 +160,9 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | El workflow se pausó o se eliminó antes de terminar esta ejecución. | Estaba pausado cuando le tocaba continuar. | Nada; si querías que corriera, reanuda antes de que termine la espera. |
 | Tu plan actual no incluye este workflow activo. | Bajaste de plan y este workflow quedó fuera del límite. | Pausa otros workflows o sube de plan. Ver [Límites](/docs/automatizacion/workflows/limites). |
 | El evento que inició esta ejecución ya no existe. | El registro del evento se eliminó. | Nada que hacer. |
+| El workflow excedió el número de pasos permitido. | La ejecución pasó del máximo de pasos. | Divide la regla en dos workflows. |
 | Esta acción ya no está disponible. | La ejecución usaba una acción que Cord retiró. | Edita el workflow y publica de nuevo. |
+| Esta consulta ya no está disponible. | La ejecución usaba una consulta que Cord retiró. | Edita el workflow y publica de nuevo. |
 | Error interno al ejecutar la acción. | Un fallo inesperado de Cord. | Se reintenta solo. Si queda Fallida, pulsa **Reintentar** o escríbenos. |
 
 ## El panel de salud

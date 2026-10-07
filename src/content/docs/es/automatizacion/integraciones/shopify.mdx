@@ -2,7 +2,7 @@
 title: "Shopify"
 seoTitle: "Conectar Cord con Shopify"
 description: "Cómo conectar Shopify con Cord: catálogo y clientes hacia Cord, el pedido de vuelta a tu tienda al cerrar la cotización, divisas, inventario, impuestos y problemas frecuentes."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -65,9 +65,17 @@ El impuesto del pedido lo calcula Shopify con la configuración de tu tienda. El
 
 ## Existencias al cotizar
 
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
 Si tu tienda controla el inventario de un producto, Cord trae sus existencias. En el editor de cotizaciones, el buscador dice cuántas hay y, al agregar el producto, Cord le pregunta a tu tienda en ese momento. Si cotizas más de lo que hay, la línea lo avisa ("Solo hay 12 en existencia"), y un producto agotado dice **Agotado**. Cotizar de más no se bloquea: es normal vender algo que se surtirá después.
 
 ## Precios B2B por cliente
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
 
 Si tu tienda usa **B2B de Shopify** (disponible en Shopify Plus), cada empresa compra con la lista de precios de su catálogo. Cuando cotizas a un cliente de Cord ligado a un cliente de Shopify que compra por una empresa, el editor usa **su lista B2B como precio pactado** de cada producto que viene de tu tienda, y la línea lo dice: "Precio de su lista B2B".
 
@@ -77,6 +85,10 @@ Si tu tienda usa **B2B de Shopify** (disponible en Shopify Plus), cada empresa c
 - Al abrir un borrador ya guardado, sus precios no se reescriben; la lista aplica a los productos que agregues.
 
 ## Facturar los pedidos de tu tienda
+
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
 
 En la tarjeta de Shopify, **Facturar los pedidos de tu tienda** nace apagado. Con **Crear el borrador cuando el pedido se paga**, cada pedido pagado de tu tienda crea en Cord el borrador de su factura:
 
@@ -88,7 +100,7 @@ En la tarjeta de Shopify, **Facturar los pedidos de tu tienda** nace apagado. Co
 | Divisa | La que pagó el cliente. |
 | Impuesto | La tasa del pedido si existe en tu catálogo de impuestos; si no, la de tu cuenta. |
 
-Tú revisas el borrador y lo emites: Cord nunca emite solo, porque un CFDI es irreversible. Un pedido genera **un solo borrador**, y los pedidos que Cord creó desde una cotización no se facturan aquí, porque ya tienen la suya. Un pedido sin cliente (compra como invitado) no se factura.
+Tú revisas el borrador y lo emites: Cord nunca emite solo, porque emitir es una decisión fiscal tuya y, en México, un CFDI timbrado ya no se deshace sin cancelarlo ante el SAT. Un pedido genera **un solo borrador**, y los pedidos que Cord creó desde una cotización no se facturan aquí, porque ya tienen la suya. Un pedido sin cliente (compra como invitado) no se factura.
 
 ## Desconectar
 

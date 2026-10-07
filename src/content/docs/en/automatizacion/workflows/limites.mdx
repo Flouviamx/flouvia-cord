@@ -2,7 +2,7 @@
 title: "Limits"
 seoTitle: "Cord Workflows limits by plan"
 description: "Cord Workflows limits: active workflows per plan, what happens when you downgrade, workflow size, hourly caps per action and loop protection."
-lastUpdated: "2026-09-15"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -60,6 +60,8 @@ Lookups and conditional waits count as steps, the same as an action. At 30, the 
 | Email subject | 150 characters |
 | Email message | 2,000 characters |
 | Slack message | 1,000 characters |
+| Teams message | 1,000 characters |
+| WhatsApp variables | Up to 4, 200 characters each |
 | HubSpot note | 2,000 characters |
 | Client email subject | 150 characters |
 | Client email message | 2,000 characters |
@@ -77,8 +79,10 @@ So a configuration mistake does not flood your team, each organization has an ho
 | Create a task | 120 |
 | Email the team | 30 |
 | Send a Slack message | 120 |
+| Send a Teams message | 120 |
+| Send the client a WhatsApp | 60 |
 | Add a note in HubSpot | 120 |
-| Email the client | 60 (and it uses your plan's sending quota) |
+| Email the client | 60 (and it uses your plan's sending quota: 5 a month on Free, no cap on the other plans) |
 | Send the data to a URL | 120 |
 
 When exceeded, the step fails with a message like "Hourly task limit for workflows reached" and the run is retried later, within its 3 attempts. If you see these often, check whether a workflow fires on an event more frequent than you thought, such as **A client is updated** or **The client opens the quote**.

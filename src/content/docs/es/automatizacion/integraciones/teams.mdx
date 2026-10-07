@@ -2,7 +2,7 @@
 title: "Microsoft Teams"
 seoTitle: "Conectar Cord con Microsoft Teams"
 description: "Cómo conectar Microsoft Teams con Cord iniciando sesión con Microsoft o con un flujo de Power Automate, activar los avisos por evento, usar Teams en workflows y resolver problemas."
-lastUpdated: "2026-09-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -24,6 +24,10 @@ Cord publica una tarjeta en el canal de Teams que elijas cuando una cotización 
 
 ## Conectar con Microsoft
 
+<Callout type="info">
+Esta función es nueva y puede no estar habilitada todavía en tu cuenta. Si no la ves, escríbenos.
+</Callout>
+
 <Steps>
 1. Ve a **Ajustes › Integraciones › Microsoft Teams**.
 2. Pulsa **Conectar con Microsoft** e inicia sesión con tu cuenta de trabajo.
@@ -31,7 +35,7 @@ Cord publica una tarjeta en el canal de Teams que elijas cuando una cotización 
 4. Pulsa **Enviar prueba**: aparece una tarjeta de ejemplo en el canal.
 </Steps>
 
-Cord pide leer tu perfil, los equipos y canales a los que perteneces, y enviar mensajes a canales. Ninguno requiere que un administrador lo apruebe.
+Cord pide leer tu perfil, los equipos y canales a los que perteneces, y enviar mensajes a canales. Microsoft puede mostrarte el aviso de que el editor de la app no está verificado. Si tu organización no deja que cada persona autorice apps por su cuenta, un administrador de Microsoft 365 tendrá que aprobarla.
 
 ## Con un flujo de Power Automate
 
@@ -64,6 +68,10 @@ Correo, Slack y Teams se marcan por separado.
 ## Teams en un workflow
 
 La acción **Enviar un mensaje a Teams** de [Cord Workflows](/docs/automatizacion/workflows) publica tu propio texto con datos del evento (`{{cliente}}`, `{{folio}}`, `{{total}}`), aunque los avisos estén apagados.
+
+## Solicitudes de aprobación
+
+Cuando una cotización pide aprobación interna, Cord publica en el canal conectado una tarjeta con el folio, el cliente, el total y un botón **Decidir en Cord**. La decisión se toma en Cord: la tarjeta de Teams no tiene botones para aprobar o rechazar. Las aprobaciones internas requieren el plan **Scale** o superior.
 
 ## Desconectar
 
