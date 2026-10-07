@@ -117,6 +117,12 @@ if (block < 0 || blockEnd < 0) {
     const migration = read('db/migrations/2026-10-07-ops-hardening.sql').trim();
     if (!schema.includes(migration)) fail('schema', 'schema.sql y db/migrations/2026-10-07-ops-hardening.sql divergen');
     if (!/trg_ops_audit_log_append_only/.test(schema.slice(block, blockEnd))) fail('schema', 'ops_audit_log sin trigger de solo agregar');
+    // El login lee ops_passkeys antes de que exista contexto: con RLS forzada y
+    // sin políticas, el rol cord_app vería cero filas y nadie entraría con passkey.
+    if (/alter table ops_passkeys (enable|force) row level security/.test(schema.slice(blockEnd))
+        || /alter table ops_passkeys force row level security/.test(schema.slice(block, blockEnd))) {
+        fail('schema', 'ops_passkeys no puede tener RLS forzada: el login de Ops la lee sin contexto');
+    }
     for (const name of ['rls_clientes', 'rls_productos', 'rls_api_keys', 'rls_webhooks', 'rls_sso_connections', 'ops_payouts', 'ops_connect_personas', 'ops_connect_kyc_evidencia']) {
         const last = schema.lastIndexOf(`create policy "${name}"`);
         if (last > blockEnd) fail('schema', `${name} se redefine después del bloque ops-hardening`);

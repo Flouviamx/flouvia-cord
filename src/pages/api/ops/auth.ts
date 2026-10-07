@@ -230,7 +230,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await jsonBody(request);
-    const code = typeof body?.code === 'string' ? body.code.trim() : '';
+    const code = typeof body?.code === 'string' ? body.code.replace(/\s+/g, '') : '';
 
     try {
         const rows = await sql`
@@ -269,7 +269,10 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
         const valid = step !== null && await claimOpsTotpStep(operatorId, step);
 
         if (!valid) {
-            const justLocked = await recordOpsTotpFailure(operatorId);
+            // Un código correcto ya usado (doble envío, o reenviado tras entrar)
+            // no es un intento de adivinar: se rechaza sin acercar el bloqueo.
+            const replay = step !== null;
+            const justLocked = replay ? false : await recordOpsTotpFailure(operatorId);
             await logOpsAudit({
                 actorUserId: operatorId,
                 actorEmail: email,

@@ -114,7 +114,9 @@ const displayName = (u: any) => [u.first_name, u.last_name].filter(Boolean).join
 
   <div class="ops-grid-3 ops-section">
     <OpsBars title="Actividad" hint={`Eventos de negocio por día · ${range.label}`} series={pick('events')} previous={pickPrev('events')} />
-    <OpsBars title="Personas activas" hint="Promedio diario de personas con sesión" series={pick('active_users')} previous={pickPrev('active_users')} total={avg(pick('active_users'))} previousTotal={pickPrev('active_users').length ? avg(pickPrev('active_users')) : undefined} />
+    {/* Sin comparación: `sessions` solo conserva el último día de uso de cada
+        sesión y borra las vencidas, así que el periodo anterior sale subcontado. */}
+    <OpsBars title="Personas activas" hint="Promedio diario de personas con sesión" series={pick('active_users')} total={avg(pick('active_users'))} />
     <OpsBars title="Altas" hint={`Cuentas nuevas por día · ${range.label}`} series={pick('signups')} previous={pickPrev('signups')} />
   </div>
 

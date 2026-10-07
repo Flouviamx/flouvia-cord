@@ -20,8 +20,12 @@ create table if not exists ops_passkeys (
   last_used_at  timestamptz
 );
 create index if not exists idx_ops_passkeys_operator on ops_passkeys(operator_id);
-alter table ops_passkeys enable row level security;
-alter table ops_passkeys force row level security;
+-- Sin RLS, igual que ops_sessions y ops_operators: el login la lee ANTES de que
+-- exista contexto, así que ninguna política podría filtrarla, y con RLS forzada
+-- sin políticas el rol cord_app vería cero filas (login con passkey roto). El
+-- aislamiento lo da la tabla propia, que ninguna ruta fuera de Ops consulta.
+alter table ops_passkeys no force row level security;
+alter table ops_passkeys disable row level security;
 
 -- Las sesiones Ops abiertas con una passkey de la app dejan de ser válidas.
 delete from ops_sessions s

@@ -280,17 +280,26 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
     try {
       // El alta exige identidad confirmada hace poco: si el servidor responde
       // 428, el diálogo de step-up de AppLayout la pide y se reintenta una vez.
-      let optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
-      if (optRes.status === 428 && typeof (window as any).cordStepUp === 'function') {
-        if (!await (window as any).cordStepUp()) { setAddingPasskey(false); return; }
-        optRes = await fetch('/api/auth/passkeys/register-options', { method: 'POST' });
-      }
+      // Una cuenta sin contraseña ni TOTP no puede confirmar ahí: para ella el
+      // camino es volver a entrar, y se dice así en vez del código crudo.
+      const REAUTH_MSG = 'Para agregar una clave de acceso confirma tu identidad. Si tu cuenta no tiene contraseña ni código de verificación, cierra sesión y vuelve a entrar.';
+      const withStepUp = async (doFetch: () => Promise<Response>) => {
+        let res = await doFetch();
+        if (res.status === 428) {
+          const stepUp = (window as any).cordStepUp;
+          if (typeof stepUp !== 'function' || !await stepUp()) throw new Error(REAUTH_MSG);
+          res = await doFetch();
+          if (res.status === 428) throw new Error(REAUTH_MSG);
+        }
+        return res;
+      };
+      const optRes = await withStepUp(() => fetch('/api/auth/passkeys/register-options', { method: 'POST' }));
       const options = await optRes.json();
       if (!optRes.ok) throw new Error(options.error || 'Error al iniciar');
       const attResp = await startRegistration(options);
-      const verifyRes = await fetch('/api/auth/passkeys/register', {
+      const verifyRes = await withStepUp(() => fetch('/api/auth/passkeys/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(attResp),
-      });
+      }));
       const verifyData = await verifyRes.json();
       if (!verifyRes.ok) throw new Error(verifyData.error || 'No se pudo registrar la clave');
       const listRes = await fetch('/api/account/passkeys');

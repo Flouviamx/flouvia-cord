@@ -153,6 +153,14 @@ const svg = (name: IconName) => iconInner(name);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && shell?.classList.contains('drawer-open')) setDrawer(false);
   });
+  // Si la ventana crece por encima de 880 px con el cajón abierto, no queda
+  // backdrop para cerrarlo: se cierra solo y el contenido deja de estar inerte.
+  window.matchMedia('(min-width: 881px)').addEventListener('change', (event) => {
+    if (!event.matches || !shell?.classList.contains('drawer-open')) return;
+    shell.classList.remove('drawer-open');
+    shell.querySelector('.ops-app-main')?.removeAttribute('inert');
+    toggle?.setAttribute('aria-expanded', 'false');
+  });
 
   // Tema: sistema → claro → oscuro. Se guarda en cookie para que el servidor
   // pinte el siguiente documento ya con el tema correcto.

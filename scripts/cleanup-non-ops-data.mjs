@@ -116,12 +116,8 @@ const results = await sql.transaction([
     sql`
       delete from org_members where user_id is null returning id
     `,
-    // Conserva únicamente auditoría atribuida a los dos operadores reales.
-    sql`
-      delete from ops_audit_log
-      where actor_email is null or lower(actor_email) <> all(${allowedEmails}::text[])
-      returning id
-    `,
+    // ops_audit_log ya no se limpia: es de solo agregar (trigger en
+    // db/schema.sql) y un DELETE revertiría la transacción completa.
 ]);
 
 console.log(JSON.stringify({
@@ -130,5 +126,4 @@ console.log(JSON.stringify({
     organizationsDeleted: results[1].length,
     usersDeleted: results[2].length,
     pendingInvitesDeleted: results[3].length,
-    unrelatedOpsAuditDeleted: results[4].length,
 }, null, 2));
