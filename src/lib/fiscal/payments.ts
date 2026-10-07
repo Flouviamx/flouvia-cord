@@ -15,6 +15,7 @@ import { normalizeCurrency } from '../currency';
 import { logInvoiceEvent } from './timeline';
 import { after } from '../after';
 import { invoiceBalanceLock, invoiceBalanceQuery, invoicePaymentLock } from './reconciliation';
+import { afterQuoteSettledByInvoice, quoteLedgerLock, readSettledQuote, settleQuoteFromInvoiceQueries } from './quote-ledger';
 
 export interface ApplyPaymentInput {
   monto: number;
@@ -57,7 +58,7 @@ export async function applyPayment(
   if (!(monto > 0)) return { ok: false, error: 'El monto del pago debe ser mayor a cero.' };
 
   const [docRows] = await withOrgTx(orgId, sql`
-    select id, lifecycle, status, currency, total, amount_paid, credit_note_of, document_type
+    select id, lifecycle, status, currency, total, amount_paid, credit_note_of, document_type, cotizacion_id
       from documentos_fiscales
      where id = ${documentoId} and org_id = ${orgId}
      limit 1`);
@@ -99,7 +100,14 @@ export async function applyPayment(
   // Insertar + recalcular + promover, en UNA transacción. El recálculo lee el
   // ledger completo (incluida la fila recién insertada) y el lifecycle se
   // deriva de ese número, nunca de un incremento.
-  const [, , inserted, updated, recorded] = await withOrgTx(orgId,
+  //
+  // Si la factura es de una cotización, la misma transacción salda la
+  // cotización cuando la factura queda pagada (src/lib/fiscal/quote-ledger.ts):
+  // sin eso, `/q` seguía cobrando lo que el cliente ya pagó en `/i`. El candado
+  // de la cotización va PRIMERO, en el mismo orden que la emisión y el webhook.
+  const quoteId = doc.cotizacion_id ? String(doc.cotizacion_id) : null;
+  const results = await withOrgTx(orgId,
+    ...(quoteId ? [quoteLedgerLock(orgId, quoteId)] : []),
     invoicePaymentLock(orgId, proveedorId || documentoId), invoiceBalanceLock(orgId, documentoId),
     mp
       ? sql`insert into documento_pagos (
@@ -139,7 +147,13 @@ export async function applyPayment(
           and mp_payment_id = ${mp} and currency = ${payCurrency}`
       : sql`select id from documento_pagos where documento_id = ${documentoId} and org_id = ${orgId}
           and stripe_payment_intent_id = ${pi} and currency = ${payCurrency}`,
+    ...(quoteId ? settleQuoteFromInvoiceQueries(orgId, documentoId) : []),
   );
+  const base = quoteId ? 1 : 0;
+  const inserted = results[base + 2];
+  const updated = results[base + 3];
+  const recorded = results[base + 4];
+  const settled = quoteId ? readSettledQuote(results[base + 5], results[base + 6]) : null;
   if (!proveedorId && !inserted.length) return { ok: false, error: 'El pago supera el saldo actual o la factura ya no admite pagos.' };
 
   if (proveedorId && !inserted.length && !recorded.length) return { ok: false, error: 'El pago recibido aún no pudo aplicarse a la factura.' };
@@ -149,11 +163,23 @@ export async function applyPayment(
 
   const lifecycle = String(row.lifecycle);
   const justPaidNow = !duplicate && lifecycle === 'paid' && row.previous_lifecycle !== 'paid';
+  if (settled) afterQuoteSettledByInvoice(orgId, documentoId, settled);
   if (!duplicate) {
     await logInvoiceEvent(orgId, documentoId, 'payment', `Abono de ${money(monto)} ${String(doc.currency || '')}`.trim());
     if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
     // Un abono que no liquida no emite evento de dominio, pero cambia pagado y saldo en la hoja.
     else after(import('../integraciones/hojas/service').then((m) => m.onAbonoFactura(orgId, documentoId)));
+    // Dinero de un proveedor que la factura ya no debía: el cliente pagó de más
+    // (dos rieles, dos documentos, un SPEI tardío). No se pierde ni se oculta:
+    // queda como importe por devolver y se avisa — devolverlo es decisión del
+    // negocio, no de un webhook.
+    const porDevolver = money(Number(row.refund_due) || 0);
+    if (proveedorId && porDevolver > 0) {
+      await logInvoiceEvent(orgId, documentoId, 'payment',
+        `Se recibió más de lo que debía la factura: ${porDevolver} ${String(doc.currency || '')} por devolver`.trim());
+      after(import('../ops-alert').then((o) => o.sendOpsAlert('Pago de más en una factura',
+        `Organización ${orgId}; documento ${documentoId}; pago ${proveedorId}; por devolver ${porDevolver} ${String(doc.currency || '')}`)));
+    }
     // Cada cobro llega también a la contabilidad conectada, si la factura ya está allá.
     after(import('../integraciones/contabilidad/pagos').then((m) => m.onPagoFactura(orgId, documentoId)));
   }

@@ -37,6 +37,7 @@ beforeAll(async () => {
       iva_pct numeric, cp_fiscal text, uso_cfdi text, email_contacto text, direccion text, moneda text, fiscal_metadata jsonb,
       serie_folio text, facturapi_live_key text, facturapi_live_key_enc text, sandbox_of uuid);
     create table clientes (id uuid primary key, org_id uuid, uso_cfdi text);
+    create table cotizaciones (id uuid primary key, org_id uuid, base_currency text);
     create table invoice_sequences(org_id uuid, country_code text, document_type text, serie text, ejercicio int, prefix text,
       next_value int, updated_at timestamptz, primary key(org_id,country_code,document_type,serie,ejercicio));
     create table documentos_fiscales (

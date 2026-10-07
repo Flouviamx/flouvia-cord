@@ -31,6 +31,7 @@ const cobrosEnLinea = supportsOnlinePayments(PAIS);
 // igual a la cuenta del negocio; lo que cambia es quién procesa la tarjeta.
 const mercadoPago = supportsMercadoPago(PAIS);
 const mpConectado = Boolean(ORG.mpChargesEnabled);
+const mpCuenta = { nickname: String(ORG.mpNickname || ''), siteId: String(ORG.mpSiteId || '') };
 const mpFlash = Astro.url.searchParams.get('mp');
 // Tres casos, y el orden es la prioridad:
 //   - solo Cord Payments: nada cambia;
@@ -97,7 +98,7 @@ import { iconInner } from '../../../lib/icons';
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="cobros_config"
     intro={t(L, 'set.cobros.intro')} save>
 
-    {soloMercadoPago && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={false} />}
+    {soloMercadoPago && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={false} cuenta={mpCuenta} />}
 
     {!cobrosEnLinea && estado === 'nuevo' ? (
         <div class="settings-surface">
@@ -329,7 +330,7 @@ import { iconInner } from '../../../lib/icons';
         </section>
     )}
 
-    {mercadoPago && cobrosEnLinea && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={true} />}
+    {mercadoPago && cobrosEnLinea && <MercadoPagoCard lang={L} conectado={mpConectado} flash={mpFlash} alterno={true} cuenta={mpCuenta} />}
 
     <p class="cobros-foot">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('lock')}></svg>

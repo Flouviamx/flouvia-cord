@@ -7,6 +7,29 @@
 
 ---
 
+**Auditoría de pagos: los tres críticos (7 oct 2026)** — una auditoría de punta a
+punta de Cord Payments y Mercado Pago (seis frentes revisados en paralelo y cada
+hallazgo grave verificado contra el código) encontró que el cobro en sí estaba bien
+hecho y que lo que fallaba era lo que pasa DESPUÉS de cobrar. Se arreglaron los tres
+críticos, cada uno con pruebas que fallan contra el código anterior:
+- **C1, dos ledgers que no se hablaban** (regla 37). Facturar una cotización ya
+  cobrada creaba una factura abierta con el total; pagar la factura no saldaba la
+  cotización. Ahora la factura hereda en su propia transacción de emisión, pagarla
+  salda la cotización y `/q` no cobra lo que la factura ya no debe.
+- **C2, el webhook de Mercado Pago perdía pagos** (regla 39). Barría máximo 25
+  organizaciones con cobros pendientes de 30 días y respondía 200 ante fallas
+  temporales. Ahora resuelve la organización por `cord_org`/`user_id`, responde 503
+  ante fallas temporales, verifica cuenta, importe, divisa y modo de prueba, y una
+  conciliación diaria recoge lo que se escape.
+- **C3, el destino del dinero se podía desviar** (regla 38). Mercado Pago se
+  conectaba con el permiso `ajustes` y sin reautenticación; el traspaso a
+  `billing.cordhq.app` fabricaba una reautenticación; un miembro con `equipo` se daba
+  `cobros_config`. Ahora todo cambio de destino exige `cobros_config` y
+  reautenticación, nadie reparte permisos que no tiene y los dueños reciben un correo
+  a la cuenta de cada uno.
+Lo que la auditoría dejó para después (altos y medios) vive en
+`docs/estado/pendientes-integraciones.md` y en el reporte de la auditoría.
+
 **Mercado Pago cobra facturas y lee sus reembolsos (22 sep 2026)** — el riel dejó de
 ser solo de cotizaciones. Tres cosas que costaron decisión:
 - **Dos ledgers, una notificación.** El webhook recibe un id de pago y nada más, así

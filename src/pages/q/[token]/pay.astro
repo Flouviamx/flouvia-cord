@@ -10,6 +10,8 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import type { PayStrings } from '../../../components/q/PaymentIsland';
 import { availableRails } from '../../../lib/payment-rail';
+import { liveInvoiceForQuote, quoteChargeBlockedByInvoice } from '../../../lib/fiscal/quote-ledger';
+import { publicDocumentUrl } from '../../../lib/public-links';
 
 const token = Astro.params.token ?? '';
 const identity = await resolvePublicQuote(token);
@@ -32,7 +34,7 @@ if (!rows.length) {
 
 const q = rows[0];
 const orgId = q.org_id as string;
-const yaPagada = q.status === 'paid';
+let yaPagada = q.status === 'paid';
 
 // Rieles de cobro en orden de prioridad: Cord Payments primero. Donde la cuenta
 // tiene los dos se ofrece el primero y el otro queda como alternativa; donde
@@ -164,6 +166,19 @@ if (esRecurrente) {
     // Sin nada pagable hoy (crédito vigente, o anticipo ya cubierto y saldo a futuro):
     // regresar al link público, que explica cuándo vence el pago.
     const hayQuePagar = cobros.length > 0 ? !!nextCobro : totalPagableHoy;
+
+    // Con la factura emitida, el saldo real lo lleva ELLA (src/lib/fiscal/
+    // quote-ledger.ts): si ya se pagó, esta página lo dice en vez de cobrar
+    // otra vez; si lo que toca pagar aquí no cabe en lo que la factura aún
+    // debe, el cliente paga desde la factura.
+    if (!yaPagada && pagable && hayQuePagar) {
+        const factura = await liveInvoiceForQuote(orgId, q.id as string);
+        if (factura.state === 'settled') yaPagada = true;
+        else if (factura.state === 'open'
+            && quoteChargeBlockedByInvoice(factura, nextCobro ? Number(nextCobro.monto) : Number(q.total), CURRENCY, null)) {
+            return Astro.redirect(await publicDocumentUrl(orgId, 'i', factura.token));
+        }
+    }
     if (!yaPagada && (!pagable || !hayQuePagar)) {
         return Astro.redirect(`/q/${token}`);
     }
@@ -399,6 +414,8 @@ import { iconInner } from '../../../lib/icons';
                 const data = await res.json().catch(() => ({}));
                 // Ya estaba pagado: de vuelta al link, que lo explica.
                 if (data.alreadyPaid) { window.location.href = `/q/${btn.dataset.token}`; return; }
+                // El saldo se cobra en la factura: allá se paga lo que de verdad se debe.
+                if (typeof data.invoiceUrl === 'string' && /^https?:\/\//.test(data.invoiceUrl)) { window.location.href = data.invoiceUrl; return; }
                 if (!res.ok || !data.url) throw new Error(data.error || '');
                 window.location.href = data.url;
             } catch (e: any) {

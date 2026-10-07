@@ -382,6 +382,11 @@ alter table orgs add column if not exists mp_access_token_enc text;
 alter table orgs add column if not exists mp_refresh_token_enc text;
 alter table orgs add column if not exists mp_token_expira timestamptz;
 alter table orgs add column if not exists mp_charges_enabled boolean not null default false;
+-- Identidad de la cuenta de Mercado Pago conectada (oct 2026): a dónde llega el
+-- dinero tiene que poder VERSE en Ajustes, no solo "Conectado". El sitio
+-- (MLM, MCO…) decide además en qué divisa puede cobrar esa cuenta.
+alter table orgs add column if not exists mp_nickname text;
+alter table orgs add column if not exists mp_site_id text;
 -- Integraciones: qué conectores están activados (jsonb, maqueta que persiste).
 alter table orgs add column if not exists integraciones jsonb not null default '{}'::jsonb;
 -- Facturación/CFDI: estado del CSD. REAL (jun 2026) vía Facturapi Organizations
@@ -1803,6 +1808,11 @@ alter table cotizacion_cobros add column if not exists stripe_application_fee_id
 alter table cotizacion_cobros add column if not exists reembolsado_cents int not null default 0;
 alter table cotizacion_cobros add column if not exists reembolso_status text;
 alter table cotizacion_cobros add column if not exists refunded_at timestamptz;
+-- PaymentIntent que de verdad liquidó el cobro (oct 2026). `stripe_payment_intent_id`
+-- es el ÚLTIMO presentado y puede haber sido sustituido; la factura que hereda
+-- los pagos de su cotización necesita el que movió el dinero para no contarlo
+-- dos veces (src/lib/fiscal/quote-ledger.ts).
+alter table cotizacion_cobros add column if not exists paid_payment_intent_id text;
 create unique index if not exists idx_cotizacion_cobros_org_payment_intent
   on cotizacion_cobros(org_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null;
 
@@ -2328,6 +2338,25 @@ revoke all on function cord_pending_payment_intents(int) from public;
 revoke all on function cord_resolve_org_for_quote(uuid, text) from public;
 revoke all on function cord_resolve_org_for_billing(text, text) from public;
 revoke all on function cord_resolve_org_for_quote_subscription(text, text) from public;
+
+-- Webhook de Mercado Pago (oct 2026): qué organización(es) leen un pago. Las
+-- pistas son la organización que Cord puso en la `notification_url` de la
+-- preferencia y la cuenta de Mercado Pago que trae el aviso (`user_id`). Solo
+-- devuelve identidad, nunca credenciales; el webhook verifica después que el
+-- pago leído sea de la cuenta conectada a esa organización.
+create or replace function cord_resolve_mp_orgs(p_org uuid, p_user_id text)
+returns table (org_id uuid, mp_user_id text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select o.id, o.mp_user_id
+    from orgs o
+   where (p_org is not null and o.id = p_org)
+      or (p_user_id is not null and p_user_id <> '' and o.mp_user_id = p_user_id)
+   order by (o.id = p_org) desc nulls last
+   limit 10
+$$;
+revoke all on function cord_resolve_mp_orgs(uuid, text) from public;
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- ── Auth hardening (ago 2026) ────────────────────────────────────────────
@@ -2896,6 +2925,11 @@ create table if not exists billing_handoff_tokens (
     created_at   timestamptz not null default now()
 );
 create index if not exists idx_billing_handoff_expires on billing_handoff_tokens (expires_at);
+-- La frescura de la reautenticación viaja CON el traspaso (oct 2026). Antes la
+-- sesión nueva del subdominio nacía con `reauthenticated_at = now()`: una
+-- cookie robada del apex conseguía, con dos redirects, una sesión "recién
+-- reautenticada" que pasaba el step-up de cambiar la cuenta de depósito.
+alter table billing_handoff_tokens add column if not exists reauthenticated_at timestamptz;
 
 -- ── CFDI de los pagos de suscripción a Cord ──────────────────────────────────
 -- Cord le factura al negocio lo que le cobró por la plataforma, con su PROPIO
@@ -3514,6 +3548,61 @@ create policy "rls_documento_pagos" on documento_pagos
   with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table documento_pagos force row level security;
 
+-- Facturas emitidas desde una cotización que pueden no reflejar lo que la
+-- cotización ya cobró, o pagadas sin haber saldado su cotización (oct 2026,
+-- src/lib/fiscal/quote-ledger.ts). Solo descubre pares (org, factura) para la
+-- ruta de reparación; el trabajo vuelve al carril de cada organización.
+create or replace function cord_facturas_cotizacion_por_conciliar(p_limit int default 200)
+returns table (org_id uuid, documento_id uuid)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select d.org_id, d.id
+    from documentos_fiscales d
+    join cotizaciones c on c.id = d.cotizacion_id and c.org_id = d.org_id
+   where d.status = 'issued' and d.credit_note_of is null
+     and d.document_type not in ('credit_note', 'cfdi_egreso')
+     and c.es_recurrente is not true
+     and (
+       (d.lifecycle in ('open', 'uncollectible')
+         and (c.paid_at is not null or exists (
+               select 1 from cotizacion_cobros cc
+                where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado')))
+       or (d.lifecycle = 'paid' and coalesce(d.amount_paid, 0) > 0
+         and c.status in ('approved', 'invoiced'))
+     )
+   order by d.created_at asc
+   limit least(greatest(coalesce(p_limit, 200), 1), 1000)
+$$;
+revoke all on function cord_facturas_cotizacion_por_conciliar(int) from public;
+
+-- Conciliación diaria de Mercado Pago: referencias de Cord que siguen abiertas
+-- con una preferencia en la ventana. Solo pares (org, referencia); cada pago se
+-- busca y se aplica en el carril de su organización.
+create or replace function cord_mp_referencias_abiertas(p_dias int default 45, p_limit int default 300)
+returns table (org_id uuid, mp_user_id text, referencia text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select r.org_id, o.mp_user_id, r.referencia
+    from (
+      select cc.org_id, cc.id::text as referencia, cc.mp_preference_at as abierta
+        from cotizacion_cobros cc
+       where cc.mp_preference_id is not null and cc.status = 'pendiente'
+         and cc.mp_preference_at > now() - make_interval(days => least(greatest(coalesce(p_dias, 45), 1), 180))
+      union all
+      select d.org_id, 'fac:' || d.id::text, d.mp_preference_at
+        from documentos_fiscales d
+       where d.mp_preference_at is not null and d.lifecycle in ('open', 'uncollectible')
+         and d.mp_preference_at > now() - make_interval(days => least(greatest(coalesce(p_dias, 45), 1), 180))
+    ) r
+    join orgs o on o.id = r.org_id
+   where o.mp_access_token_enc is not null
+   order by r.abierta desc
+   limit least(greatest(coalesce(p_limit, 300), 1), 1000)
+$$;
+revoke all on function cord_mp_referencias_abiertas(int, int) from public;
+
 -- Resolutor del token de la hosted invoice page. Mismo patrón, mismas razones
 -- que cord_resolve_public_quote: la página pública necesita traducir un token
 -- opaco a (documento, organización) ANTES de poder abrir una transacción con
@@ -3722,11 +3811,16 @@ create or replace view cuentas_por_cobrar as
   where c.status in ('approved', 'invoiced')
     and c.es_recurrente is not true
     and c.paid_at is null
-    -- Si ya se emitió una factura ABIERTA de esta cotización, el saldo real lo
-    -- lleva la factura: contarla en los dos rieles duplicaría la cartera.
+    -- Si ya se emitió una factura VIVA de esta cotización (abierta, pagada o
+    -- incobrable), el saldo real lo lleva la factura: contarla en los dos rieles
+    -- duplicaría la cartera. Antes solo se excluía la ABIERTA, y una factura ya
+    -- pagada en `/i` devolvía la cotización a la cartera con su total completo
+    -- (src/lib/fiscal/quote-ledger.ts).
     and not exists (
       select 1 from documentos_fiscales d2
-       where d2.cotizacion_id = c.id and d2.lifecycle = 'open'
+       where d2.cotizacion_id = c.id and d2.org_id = c.org_id
+         and d2.lifecycle in ('open', 'paid', 'uncollectible')
+         and d2.credit_note_of is null
     );
 
 -- `intereses_moratorios.cotizacion_id` era NOT NULL: literalmente no cabía un

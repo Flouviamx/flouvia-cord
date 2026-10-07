@@ -11,6 +11,8 @@ import { after } from '../../../../lib/after';
 import { log } from '../../../../lib/log';
 import { limitPublicPayment } from '../../../../lib/connect-security';
 import { claimQuotePaymentAttempt, publishQuotePaymentAttempt, QuotePaymentConflict } from '../../../../lib/quote-payment-attempts';
+import { liveInvoiceForQuote, quoteChargeBlockedByInvoice } from '../../../../lib/fiscal/quote-ledger';
+import { publicDocumentUrl } from '../../../../lib/public-links';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -153,6 +155,16 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (cobro.vence && venceDia(cobro.vence) > hoyISO) {
         return json({ error: `Este pago aún no está disponible — se habilita el ${venceDia(cobro.vence)}.` }, 409);
     }
+
+    // Con la factura emitida, el saldo real lo lleva ELLA (src/lib/fiscal/
+    // quote-ledger.ts): si ya se pagó, aquí no se cobra otra vez; si este cobro
+    // no cabe en lo que la factura aún debe, el cliente paga desde la factura.
+    const factura = await liveInvoiceForQuote(orgId, String(c.id));
+    const porFactura = quoteChargeBlockedByInvoice(
+        factura, Number(cobro.monto), currency,
+        factura.state === 'none' ? null : await publicDocumentUrl(orgId, 'i', factura.token),
+    );
+    if (porFactura) return json(porFactura.body, porFactura.status);
 
     let amount: number; // unidad mínima de la divisa (no siempre /100)
     try { amount = toCents(cobro.monto); }

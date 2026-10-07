@@ -19,6 +19,9 @@ grant execute on function cord_pending_payment_intents(int) to cord_app;
 grant execute on function cord_resolve_org_for_quote(uuid, text) to cord_app;
 grant execute on function cord_resolve_org_for_billing(text, text) to cord_app;
 grant execute on function cord_resolve_org_for_quote_subscription(text, text) to cord_app;
+grant execute on function cord_facturas_cotizacion_por_conciliar(int) to cord_app;
+grant execute on function cord_resolve_mp_orgs(uuid, text) to cord_app;
+grant execute on function cord_mp_referencias_abiertas(int, int) to cord_app;
 
 -- ⚠️ Faltaba: `cord_effective_plan` está revocada de public en db/schema.sql y
 -- nunca se le concedió a cord_app. La consultan las políticas y media aplicación

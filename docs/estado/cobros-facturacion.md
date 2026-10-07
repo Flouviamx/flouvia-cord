@@ -44,7 +44,37 @@ Connect y el negocio elige.
   tienen Connect, para no pedirles algo imposible).
 - **Doble cobro entre rieles**: si una cotización se paga por Cord Payments y
   por Mercado Pago a la vez, el webhook lo distingue de un reenvío (mismo
-  `mp_payment_id`) y avisa a Ops y al historial en vez de tragárselo.
+  `mp_payment_id`) y avisa a Ops y al historial en vez de tragárselo. Desde oct
+  2026 el segundo pago además se aplica a la factura de la cotización, donde
+  queda como importe por devolver (`refund_due`) con aviso.
+- **Ruteo del webhook (oct 2026, regla 39).** La preferencia lleva
+  `?source_news=webhooks&cord_org=<org>` en su `notification_url` (que tiene
+  prioridad sobre la del panel) y el aviso trae el `user_id` del vendedor;
+  `cord_resolve_mp_orgs` los resuelve sin barrer organizaciones y el pago leído
+  tiene que ser de esa cuenta (`collector_id`). Falla temporal del proveedor, de
+  la base o de la credencial → 503 y Mercado Pago reintenta (durante días); un
+  error permanente (factura anulada, divisa distinta) se registra, se avisa una
+  vez y se acusa con 200. El procesamiento vive en `src/lib/mercadopago-cobro.ts`:
+  importe y divisa tienen que cuadrar con el cobro, un pago de prueba
+  (`live_mode: false`) no salda nada en producción, contracargos y mediaciones
+  quedan en la historia con alerta, y el claim + liquidación son reentrantes.
+- **Conciliación diaria** (`/api/cron/mercadopago-conciliar`, 05:45 UTC): busca en
+  el proveedor cada referencia abierta con preferencia de los últimos 45 días
+  (`cord_mp_referencias_abiertas`) y aplica lo que encuentre con el mismo código
+  que el webhook.
+- **Preferencias que vencen (oct 2026).** Cada preferencia vence a las 72 h y su
+  llave de idempotencia incluye importe, divisa y día: una preferencia vieja con
+  un importe viejo ya no queda cobrable para siempre. Cuando la factura salda la
+  cotización, las preferencias de sus cobros pendientes se vencen en el proveedor.
+- **Renovación de credenciales.** Solo un rechazo definitivo del proveedor apaga
+  `mp_charges_enabled`; un 429/5xx/red usa el token vigente mientras no venza, y
+  una carrera entre dos renovaciones usa las credenciales que ganó la otra. Un
+  pago que ya ocurrió se puede LEER aunque la conexión esté apagada.
+- **Conectar la cuenta (oct 2026, regla 38).** Exige `cobros_config` y
+  reautenticación; la cuenta tiene que ser del país del negocio (su `site_id`,
+  MLM/MCO/…, decide la divisa); `orgs.mp_nickname`/`mp_site_id` dejan VER en
+  Ajustes a qué cuenta llega el dinero, y cada cuenta nueva o distinta se audita
+  con el antes y el después y se avisa a los dueños por correo.
 - El `init_point` que devuelve Mercado Pago se valida (`isMpCheckoutUrl`, solo
   https y dominios de Mercado Pago) antes de mandar al cliente ahí.
 - **Los dos documentos.** La cotización cobra "rebanadas" (anticipo, saldo,
@@ -78,6 +108,46 @@ Primer pago real de punta a punta confirmado el 2026-09-21 ($10 MXN con tarjeta,
 marcado pagado por el webhook). La app de México (MLM) conecta vendedores de otro
 país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
 no hace falta una app por país.
+
+## Un solo saldo por venta: cotización y factura — oct 2026
+
+Regla 37. Contrato en `src/lib/fiscal/quote-ledger.ts`; pruebas contra PostgreSQL
+local en `test/quote-invoice-ledger-db.test.ts`.
+
+- **Herencia al emitir.** `finalizeReservedInvoice` agrega a la transacción que
+  emite la factura: `quoteLedgerLock` (primero), los cobros pagados de la
+  cotización y lo "declarado pagado" (`cotizaciones.paid_at` sin cobro en línea
+  que lo respalde, referencia `cotizacion:<id>`) como renglones de
+  `documento_pagos`, y el recálculo del saldo. Una factura de una cotización
+  cobrada nace `paid`. Si las divisas no coinciden no se hereda nada y se avisa a
+  Ops (no se inventa un tipo de cambio).
+- **Qué PaymentIntent pagó.** `cotizacion_cobros.paid_payment_intent_id` lo guarda
+  el webhook de Stripe al marcar el cobro (bajo el candado). La herencia no aplica
+  un cobro si la factura ya tiene un renglón de ese cobro o de cualquier
+  PaymentIntent que le haya pertenecido.
+- **Factura pagada → cotización pagada.** `applyPayment` (todos los caminos: `/i`
+  con Stripe o Mercado Pago, pago manual, API, MCP) salda la cotización en su misma
+  transacción cuando la factura queda pagada CON DINERO, y cancela los cobros
+  pendientes; fuera de la transacción cancela sus PaymentIntents y vence sus
+  preferencias (`afterQuoteSettledByInvoice`).
+- **Pago de cotización → factura viva.** El webhook de Stripe y el de Mercado Pago
+  aplican el pago de un cobro a la factura viva de la cotización (abierta, pagada o
+  incobrable). Sobre una factura que ya no lo debía queda como `refund_due` y se
+  avisa (historia de la factura + Ops).
+- **`/q` no cobra lo que la factura ya no debe.** `payment-intent`,
+  `mp-preference` y la página de pago consultan `liveInvoiceForQuote`: factura
+  pagada → "ya pagada"; cobro que no cabe en el saldo → la página manda al cliente
+  a `/i` (`invoiceUrl`).
+- **Cartera.** `cuentas_por_cobrar` excluye la cotización si tiene factura viva
+  (abierta, pagada o incobrable), no solo abierta.
+- **Liquidación atómica.** `settleQuoteCobro` (riel de Mercado Pago) marca el
+  cobro, cancela sobrantes y salda la cotización en UNA transacción; un reintento
+  repara un estado a medias. El riel de Stripe conserva su copia en el webhook
+  (pendiente unificar).
+- **Reparación de lo existente.** `/api/cron/conciliar-cotizacion-factura` (no
+  calendarizado, a mano con `CRON_SECRET`): sin parámetros es vista previa; con
+  `?aplicar=1` aplica la misma herencia a las facturas emitidas antes de este
+  contrato. Idempotente.
 
 ## Facturación internacional — ago 2026
 

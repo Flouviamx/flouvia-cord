@@ -23,6 +23,7 @@ import { sanitizeStripeRequirements } from '../../../lib/connect-fields';
 import { sendOpsAlert } from '../../../lib/ops-alert';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { computeSubscriptionFee } from '../../../lib/fees';
+import { quoteLedgerLock } from '../../../lib/fiscal/quote-ledger';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
 import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
@@ -378,26 +379,34 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
     const monto = fromMinorUnits(Number(intent?.amount_received ?? intent?.amount ?? 0), currency);
     if (!(monto > 0)) return;
 
-    // Sin documento explícito se busca la factura ABIERTA de esa cotización.
-    // Si no hay ninguna, no pasa nada: la cotización se cobró sin facturar.
+    // Sin documento explícito se busca la factura VIVA de esa cotización: abierta,
+    // pagada o incobrable. Antes solo la abierta, y un pago que llegaba sobre una
+    // factura ya saldada (el cliente pagó en `/i` y luego en `/q`, o un SPEI
+    // tardío) no quedaba en ningún ledger de la factura. Aplicado, deja un
+    // importe por devolver con aviso (applyPayment). Si no hay factura viva no
+    // pasa nada: la cotización se cobró sin facturar, o la factura aún se está
+    // emitiendo y la herencia lo recoge (src/lib/fiscal/quote-ledger.ts).
     let targetId = docId || '';
     if (!targetId) {
         const [rows] = await withOrgTx(orgId, sql`
             select id from documentos_fiscales
              where org_id = ${orgId} and cotizacion_id = ${quoteId}
-               and lifecycle = 'open' and credit_note_of is null
+               and status = 'issued' and lifecycle in ('open', 'paid', 'uncollectible')
+               and credit_note_of is null
                and document_type not in ('credit_note', 'cfdi_egreso')
              order by created_at desc limit 1`);
         if (!rows.length) return;
         targetId = String(rows[0].id);
     }
 
+    const cobroId = intent?.metadata?.cobro_id as string | undefined;
     const result = await applyPayment(orgId, targetId, {
         monto,
         currency,
         metodo: 'stripe',
         stripePaymentIntentId: String(intent?.id || ''),
         referencia: String(intent?.id || ''),
+        cobroId: !docId && cobroId && /^[0-9a-f-]{36}$/i.test(cobroId) ? cobroId : null,
     });
     if (!result.ok) {
         await sendOpsAlert('Pago sin aplicar a factura',
@@ -930,9 +939,20 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             // en vuelo (CLABE SPEI ya emitida) puede liquidarse DESPUÉS de que el
             // cobro se canceló (pago manual del vendedor, plan de cuotas que lo
             // reemplazó) — el dinero llegó de todos modos y hay que registrarlo.
-            const [marked] = await withOrgTx(orgId, sql`
+            //
+            // Bajo el candado de la cotización (src/lib/fiscal/quote-ledger.ts):
+            // si su factura se está emitiendo en este instante, o este cobro
+            // entra antes y la emisión lo hereda, o entra después y
+            // `settleInvoiceFromIntent` lo aplica a la factura ya emitida.
+            // Nunca queda fuera de los dos ledgers. Se guarda QUÉ PaymentIntent
+            // lo pagó: la herencia lo usa para no contarlo dos veces.
+            const pagadoCon = eventType === 'payment_intent.succeeded'
+                ? String(sessionOrIntent?.id || '')
+                : String(typeof sessionOrIntent?.payment_intent === 'string' ? sessionOrIntent.payment_intent : sessionOrIntent?.payment_intent?.id || '');
+            const [, marked] = await withOrgTx(orgId, quoteLedgerLock(orgId, cid), sql`
                 update cotizacion_cobros
-                set status = 'pagado', paid_at = now(), payment_method = ${paymentMethod}
+                set status = 'pagado', paid_at = now(), payment_method = ${paymentMethod},
+                    paid_payment_intent_id = ${pagadoCon.startsWith('pi_') ? pagadoCon : null}
                 where id = ${cobroId} and org_id = ${orgId} and cotizacion_id = ${cid}
                   and status in ('pendiente', 'cancelado')
                 returning tipo, numero_cuota, monto`);

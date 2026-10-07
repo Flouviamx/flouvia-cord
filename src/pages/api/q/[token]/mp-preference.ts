@@ -12,12 +12,13 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { dueDateFor, isoDay, materializeAnticipoCobros } from '../../../../lib/cobros';
-import { normalizeCurrency } from '../../../../lib/currency';
+import { normalizeCurrency, toMinorUnits } from '../../../../lib/currency';
 import { limitPublicPayment } from '../../../../lib/connect-security';
-import { createMpPreference } from '../../../../lib/mercadopago';
+import { createMpPreference, mpNotificationUrl } from '../../../../lib/mercadopago';
 import { supportsMercadoPago } from '../../../../lib/countries';
 import { publicDocumentUrl } from '../../../../lib/public-links';
 import { siteOrigin } from '../../../../lib/email';
+import { liveInvoiceForQuote, quoteChargeBlockedByInvoice } from '../../../../lib/fiscal/quote-ledger';
 
 export const POST: APIRoute = async ({ params, request }) => {
     const token = params.token ?? '';
@@ -103,21 +104,32 @@ export const POST: APIRoute = async ({ params, request }) => {
         cobro = pendientes[0];
     }
 
+    // Con la factura emitida, el saldo real lo lleva ELLA (quote-ledger.ts).
+    const factura = await liveInvoiceForQuote(orgId, String(c.id));
+    const porFactura = quoteChargeBlockedByInvoice(
+        factura, Number(cobro.monto), currency,
+        factura.state === 'none' ? null : await publicDocumentUrl(orgId, 'i', factura.token),
+    );
+    if (porFactura) return json(porFactura.body, porFactura.status);
+
     const etiqueta = cobro.tipo === 'anticipo' ? 'Anticipo'
         : cobro.tipo === 'saldo' ? 'Saldo'
             : cobro.tipo === 'cuota' ? `Cuota ${cobro.numero_cuota}` : 'Pago';
     const link = await publicDocumentUrl(orgId, 'q', String(c.public_token));
 
     const preferencia = await createMpPreference(orgId, {
-        // Determinística por COBRO: un reintento del navegador no acuña una
-        // segunda preferencia para el mismo dinero (regla 33).
-        idempotencyKey: `cord-cobro-${cobro.id}`,
+        // Determinística por cobro, importe y día: un reintento del navegador no
+        // acuña una segunda preferencia para el mismo dinero (regla 33), pero un
+        // importe distinto —o una preferencia ya vencida— abre una nueva. Con
+        // solo el cobro, el proveedor devolvía la preferencia VIEJA con el
+        // importe viejo.
+        idempotencyKey: `cord-cobro-${cobro.id}-${toMinorUnits(Number(cobro.monto), currency)}${currency}-${new Date().toISOString().slice(0, 10)}`,
         titulo: `${etiqueta} ${c.folio} · ${c.org_nombre}`,
         monto: Number(cobro.monto),
         moneda: currency,
         referencia: String(cobro.id),
         emailPagador: (c.cliente_email as string) || null,
-        notificationUrl: `${siteOrigin()}/api/mercadopago/webhook`,
+        notificationUrl: mpNotificationUrl(siteOrigin(), orgId),
         backUrl: link,
     });
 

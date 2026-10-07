@@ -16,9 +16,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicInvoice, withOrgTx } from '../../../../lib/db';
-import { normalizeCurrency } from '../../../../lib/currency';
+import { normalizeCurrency, toMinorUnits } from '../../../../lib/currency';
 import { limitPublicPayment } from '../../../../lib/connect-security';
-import { createMpPreference, MP_INVOICE_REF } from '../../../../lib/mercadopago';
+import { createMpPreference, MP_INVOICE_REF, mpNotificationUrl } from '../../../../lib/mercadopago';
 import { supportsMercadoPago } from '../../../../lib/countries';
 import { publicDocumentUrl } from '../../../../lib/public-links';
 import { siteOrigin } from '../../../../lib/email';
@@ -86,13 +86,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     const preferencia = await createMpPreference(orgId, {
         // Por documento y por importe: reintentar el mismo abono reusa la
         // preferencia, y cambiar de importe abre una nueva (regla 33).
-        idempotencyKey: `cord-factura-${d.id}-${Math.round(cobrar * 100)}`,
+        idempotencyKey: `cord-factura-${d.id}-${toMinorUnits(cobrar, currency)}${currency}-${new Date().toISOString().slice(0, 10)}`,
         titulo: `Factura ${d.invoice_number || ''} · ${d.org_nombre}`.replace(/\s+/g, ' ').trim(),
         monto: cobrar,
         moneda: currency,
         referencia: `${MP_INVOICE_REF}${d.id}`,
         emailPagador: (d.cliente_email as string) || null,
-        notificationUrl: `${siteOrigin()}/api/mercadopago/webhook`,
+        notificationUrl: mpNotificationUrl(siteOrigin(), orgId),
         backUrl: link,
     });
 

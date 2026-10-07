@@ -960,3 +960,90 @@ Caso que originó la regla (sep 2026): `app.ts` acumulaba **466** claves sin
 consumidor —el perfil de cuenta anterior, las pantallas CFO/analítica/flujo
 retiradas, los modales viejos de cliente y producto, el menú "Crear"— y `ui.ts`
 **36**. Cada rediseño había dejado su texto anterior vivo en ambos idiomas.
+
+### 37. Una venta tiene un solo saldo aunque tenga dos documentos
+
+Una cotización cobra por rebanadas (`cotizacion_cobros`) y su factura lleva su
+propio saldo (`documento_pagos`). Son el mismo dinero visto desde dos
+documentos: si no se hablan, se le cobra dos veces al cliente. El contrato vive en
+`src/lib/fiscal/quote-ledger.ts` y tiene tres partes que no se mezclan:
+
+- **La factura nace sabiendo lo que la cotización ya cobró.** Hereda cada cobro
+  pagado y lo que el vendedor registró como pagado a mano, en la MISMA transacción
+  que la emite. Nunca existe un instante con la factura abierta por un saldo que
+  ya entró. La herencia es idempotente contra TODOS los PaymentIntents que el
+  cobro tuvo (el que lo pagó —`cotizacion_cobros.paid_payment_intent_id`—, el
+  último presentado, el de su comisión y cada intento registrado) y contra su
+  pago de Mercado Pago: mirar solo el último contaba dos veces un pago que el
+  webhook ya había aplicado con uno anterior.
+- **Una factura saldada con dinero salda su cotización** y cancela lo que aún
+  podía cobrar (cobros pendientes, sus PaymentIntents y sus preferencias). Una
+  factura que llega a cero solo con notas de crédito no se pagó: no marca la
+  cotización como pagada.
+- **Mientras haya factura viva, `/q` no cobra más de lo que ella debe.** Si el
+  cobro no cabe en el saldo de la factura, el cliente paga desde la factura.
+
+Todo cambio de dinero de una cotización toma `quoteLedgerLock` como PRIMER
+candado de su transacción (webhook de Stripe, webhook de Mercado Pago, emisión y
+`applyPayment`): un orden único evita interbloqueos y cierra la ventana en que un
+cobro marcado pagado mientras la factura se emitía quedaba fuera de los dos
+ledgers. Un pago que llega a una factura que ya no lo debía no se pierde ni se
+oculta: queda como `refund_due` con aviso.
+
+Caso que originó la regla (oct 2026): el flujo más común de México —el cliente
+paga en `/q`, el vendedor timbra después— producía una factura abierta con el
+total completo, que entraba a cartera, recordatorios, intereses moratorios y
+cobranza IA, y cuyo link dejaba pagarla otra vez.
+
+### 38. Cambiar a dónde llega el dinero es la operación más sensible del sistema
+
+Quien controla la cuenta de depósito, la cuenta de Mercado Pago conectada, la
+CLABE de transferencia o quién puede cambiarlas, controla el dinero del negocio.
+Cada uno de esos caminos exige las mismas cuatro cosas:
+
+1. **El permiso de dinero** (`cobros_config`), nunca uno vecino. Mercado Pago se
+   conectaba con `ajustes` —el de marca y PDF—.
+2. **Reautenticación reciente** (`requireFreshAuth`). Un camino que no nace de una
+   credencial no la fabrica: el traspaso a `billing.cordhq.app` hereda la
+   frescura de la sesión de origen (regla 26) y ese subdominio no sirve la
+   configuración de cobros.
+3. **Nadie reparte lo que no tiene.** Nadie se cambia sus propios permisos ni da o
+   quita un permiso que no tiene (`permisoDenegado` en `src/lib/permissions.ts`), y
+   dar un permiso de dinero (`MONEY_PERM_KEYS`) exige reautenticación.
+4. **Los dueños se enteran por SU correo** (`notifyMoneyDestinationChange`), nunca
+   por `orgs.email_contacto`: ese campo lo edita cualquiera con `ajustes`, y quien
+   desvía el dinero empezaría por desviar el aviso. La auditoría guarda el antes y
+   el después, y la cuenta conectada se VE en Ajustes, no solo "Conectado".
+
+Una cuenta de un proveedor que no puede cobrar en la divisa del país del negocio no
+se acepta: su sitio se verifica al conectarla (regla 28).
+
+### 39. Un webhook de dinero distingue "no es mío" de "no pude saberlo"
+
+Responder 200 a un proveedor es decirle "ya no me lo mandes". Solo se responde 200
+cuando el aviso de verdad no le toca a Cord (otra cuenta, otra referencia) o ya se
+registró. Si el proveedor, la base o la credencial fallaron de forma temporal, la
+respuesta es 5xx y el proveedor reintenta —Mercado Pago lo hace durante días—. Un
+error PERMANENTE (factura anulada, divisa distinta) es lo contrario: se registra en
+la historia del documento, se avisa UNA vez y se responde 200, porque reintentarlo
+durante días solo produce una alerta por intento.
+
+Tres reglas de apoyo:
+
+- **El dueño de un pago se resuelve, no se adivina.** La preferencia lleva la
+  organización en su `notification_url` y el aviso trae la cuenta del vendedor;
+  se resuelven con una función `security definer` estrecha y el pago leído tiene
+  que ser de esa cuenta (`collector_id`). Barrer organizaciones con la credencial
+  de cada una ni escala ni es correcto.
+- **El importe y la divisa del pago tienen que cuadrar con lo que se cobró.** Uno
+  que no cuadra se registra y se concilia a mano; nunca salda a ciegas. Un pago de
+  prueba (`live_mode: false`) no salda un documento real en producción.
+- **Todo webhook de dinero tiene una conciliación periódica** que encuentra lo que
+  el camino rápido no alcanzó (`/api/cron/mercadopago-conciliar`,
+  `/api/cron/billing-reconcile`), con el MISMO código de aplicación.
+
+Caso que originó la regla (oct 2026): el webhook de Mercado Pago leía el pago con la
+credencial de hasta 25 organizaciones, solo las que tenían cobros PENDIENTES de los
+últimos 30 días, y respondía 200 aunque el proveedor no hubiera contestado. La
+organización 26, un reembolso sobre un cobro ya pagado y cualquier caída momentánea
+perdían el pago para siempre.

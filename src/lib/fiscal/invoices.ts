@@ -31,6 +31,7 @@ import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
+import { inheritanceQueries, quoteLedgerLock, readInheritance, recordInheritance } from './quote-ledger';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import {
   cleanPrefix,
@@ -474,11 +475,12 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
            d.fiscal_id, d.provider, d.provider_data, d.credit_note_of,
            original.fiscal_id as original_fiscal_id, original.status as original_status,
-           cl.uso_cfdi as cliente_uso
+           cl.uso_cfdi as cliente_uso, q.base_currency as quote_currency
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
       left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
       left join documentos_fiscales original on original.id = d.credit_note_of and original.org_id = d.org_id
+      left join cotizaciones q on q.id = d.cotizacion_id and q.org_id = d.org_id
      where d.id = ${documentId} and d.org_id = ${orgId}
      limit 1`);
   const head = headRows[0];
@@ -635,7 +637,28 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     ...(response.rawProviderData ?? {}),
     ...(!response.success ? { error: response.error || 'fallo del proveedor fiscal' } : {}),
   };
-  await withOrgTx(orgId,
+  // La factura de una cotización nace sabiendo lo que la cotización YA cobró
+  // (src/lib/fiscal/quote-ledger.ts): la herencia viaja en la MISMA transacción
+  // que la emite, así que no existe un instante con la factura abierta por un
+  // saldo que ya entró. El candado de la cotización va PRIMERO — es el mismo que
+  // toma el webhook al marcar un cobro pagado.
+  const deCotizacion = response.success && !!head.cotizacion_id && !head.credit_note_of
+    && !['credit_note', 'cfdi_egreso'].includes(docType);
+  const docCurrency = normalizeCurrency(String(head.currency || ''));
+  const quoteCurrency = deCotizacion
+    ? normalizeCurrency(String(head.quote_currency || head.org_moneda || ''), docCurrency)
+    : docCurrency;
+  const hereda = deCotizacion && quoteCurrency === docCurrency;
+  if (deCotizacion && !hereda) {
+    // No ocurre por construcción (emit.ts emite en la divisa de la venta). Si
+    // ocurre, no se inventa un tipo de cambio: se avisa y la factura queda con
+    // su saldo para conciliarse a mano.
+    const { sendOpsAlert } = await import('../ops-alert');
+    await sendOpsAlert('Factura con divisa distinta a su cotización',
+      `Organización ${orgId}; documento ${documentId}; factura ${docCurrency}; cotización ${quoteCurrency}. No se heredaron los pagos de la cotización.`);
+  }
+  const issuance = await withOrgTx(orgId,
+    ...(hereda ? [quoteLedgerLock(orgId, String(head.cotizacion_id))] : []),
     ...(head.credit_note_of ? [invoiceBalanceLock(orgId, String(head.credit_note_of))] : []),
     sql`
     update documentos_fiscales
@@ -652,6 +675,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId}`,
     ...(response.success && head.credit_note_of ? [invoiceBalanceQuery(orgId, String(head.credit_note_of))] : []),
+    ...(hereda ? inheritanceQueries(orgId, documentId, docCurrency) : []),
   );
 
   await logInvoiceEvent(
@@ -659,6 +683,10 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     response.success ? 'issued' : 'created',
     response.success ? `Factura ${invoiceNumber} emitida` : `Error al emitir: ${response.error || 'desconocido'}`,
   );
+  if (hereda) {
+    // `inheritanceQueries` son las últimas seis sentencias del lote.
+    await recordInheritance(orgId, documentId, docCurrency, readInheritance(issuance.slice(-6)));
+  }
 
   return {
     emitted: response.success,

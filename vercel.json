@@ -43,6 +43,10 @@
       "schedule": "15 5 * * *"
     },
     {
+      "path": "/api/cron/mercadopago-conciliar",
+      "schedule": "45 5 * * *"
+    },
+    {
       "path": "/api/cron/comisiones-mensuales",
       "schedule": "0 8 2 * *"
     },

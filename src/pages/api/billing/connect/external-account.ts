@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
+import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createExternalAccount, retrieveAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -12,7 +12,9 @@ import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
 import { requireFreshAuth } from '../../../../lib/step-up';
 import { validatePayout, stripeExternalAccountFields } from '../../../../lib/payout-fields';
 import { getCountryProfile } from '../../../../lib/countries';
-import { currentLocale } from '../../../../lib/context';
+import { currentLocale, currentUserId } from '../../../../lib/context';
+import { notifyMoneyDestinationChange } from '../../../../lib/auth-email';
+import { after } from '../../../../lib/after';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('cobros_config');
@@ -90,6 +92,11 @@ export const POST: APIRoute = async ({ request }) => {
             entityId: result.id,
             detail: `last4 ${String(org.banco_clabe_last4 || 'ninguna')} -> ${validation.last4}`,
         });
+        // A dónde llega el dinero cambió: los dueños se enteran por SU correo.
+        after(notifyMoneyDestinationChange(orgId, 'banco', {
+            detalle: `termina en ${validation.last4}${org.banco_clabe_last4 ? ` (antes ${String(org.banco_clabe_last4)})` : ''}`,
+            actorUserId: currentUserId(), ip: reqIp(request),
+        }));
 
         return new Response(JSON.stringify({ ok: true, external_account: result, requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {

@@ -40,6 +40,9 @@ con el `org_id` que la función devolvió.
 | Error de validación SAML | `cord_sso_record_error` | Corre en el `catch`, donde puede no haberse resuelto la organización. |
 | ¿Debe entrar por SSO? | `cord_sso_requirement_for` | Se pregunta mientras intenta entrar por otro método. |
 | Correo entrante | `cord_resolve_inbound_email` | El proveedor no sabe de qué organización es el mensaje. |
+| Webhook de Mercado Pago | `cord_resolve_mp_orgs` | El aviso solo trae la organización de la `notification_url` y la cuenta del vendedor (oct 2026, regla 39). |
+| Conciliación diaria de Mercado Pago | `cord_mp_referencias_abiertas` | Cron cross-org; `cotizacion_cobros` no tiene política de sistema. |
+| Reparación cotización ↔ factura | `cord_facturas_cotizacion_por_conciliar` | Ruta manual cross-org (regla 37). |
 | Alta de organización | *(ninguna)* | No hizo falta: la organización nace a nombre de quien llama, y `withUserTx` ya lo cubre. |
 
 **El caso que obligó a este diseño** fue la baja de cuenta. Su comprobación de
@@ -76,8 +79,8 @@ Ambos grants están ya en el archivo, junto con los de las funciones nuevas.
 - `security:rls` reporta el rol sin `SUPERUSER`/`BYPASSRLS`;
 - lo único que reporta como diferido es `orgs` / `org_members` sin `FORCE`;
 - pasan a mano: login, cambio de organización, entorno de prueba, link público
-  `/q/[token]`, factura pública `/i/[token]`, webhook de Stripe, un cron, el MCP
-  y Cord Ops;
+  `/q/[token]`, factura pública `/i/[token]`, webhook de Stripe, webhook de
+  Mercado Pago (un pago de prueba firmado), un cron, el MCP y Cord Ops;
 - 48 horas en staging sin incidencias.
 
 **Revert:** cambiar `DATABASE_URL` de vuelta al rol anterior. No se elimina

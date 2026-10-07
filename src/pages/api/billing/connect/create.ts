@@ -1,9 +1,11 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
+import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { currentLocale } from '../../../../lib/context';
+import { currentLocale, currentUserId } from '../../../../lib/context';
+import { notifyMoneyDestinationChange } from '../../../../lib/auth-email';
+import { after } from '../../../../lib/after';
 import { t } from '../../../../i18n/app';
 import { createConnectAccount, retrieveAccount, updateConnectAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -71,6 +73,9 @@ export const POST: APIRoute = async ({ request }) => {
         await withOrgTx(orgId, sql`update orgs set stripe_account_id = ${accountId}, stripe_account_type = 'custom', stripe_business_type = ${business_type} where id = ${orgId}`);
         account = await retrieveAccount(accountId);
         await auditConnect(orgId, request, 'cuenta_creada', { entityId: accountId, detail: business_type });
+        after(notifyMoneyDestinationChange(orgId, 'cuenta_creada', {
+            detalle: accountId, actorUserId: currentUserId(), ip: reqIp(request),
+        }));
     } else if (account && account.business_type !== business_type && !account.details_submitted) {
         // El usuario cambió Persona Moral ↔ Física antes de enviar sus datos:
         // Stripe permite corregir business_type mientras la cuenta no esté verificada.

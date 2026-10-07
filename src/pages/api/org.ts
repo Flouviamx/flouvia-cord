@@ -12,6 +12,8 @@ import { brandProfileSchema } from '../../lib/brand-profile';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
 import { currentUserId, currentLocale } from '../../lib/context';
+import { notifyMoneyDestinationChange } from '../../lib/auth-email';
+import { after } from '../../lib/after';
 import { t } from '../../i18n/app';
 import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
@@ -428,6 +430,15 @@ export const PATCH: APIRoute = async ({ request }) => {
     const submittedFields = Object.keys(body).filter((key) => key !== 'banco_clabe').sort();
     if (body.banco_clabe !== undefined) submittedFields.push(`banco_clabe(last4:${actual.banco_clabe_last4 || 'ninguna'}->${bancoClabeLast4 || 'ninguna'})`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: `Campos: ${submittedFields.join(', ') || 'ninguno'}`, ip: reqIp(request) });
+    // La CLABE de transferencia es la que el link público le da al cliente para
+    // pagar: cambiarla es cambiar a dónde llega el dinero, y los dueños se
+    // enteran por el correo de SU cuenta.
+    if (body.banco_clabe !== undefined && (bancoClabe || null) !== (previousClabe || null)) {
+        after(notifyMoneyDestinationChange(orgId, 'banco', {
+            detalle: `CLABE para transferencias ${bancoClabeLast4 ? `termina en ${bancoClabeLast4}` : 'eliminada'}${actual.banco_clabe_last4 ? ` (antes ${String(actual.banco_clabe_last4)})` : ''}`,
+            actorUserId: currentUserId(), ip: reqIp(request),
+        }));
+    }
 
     // Al ACTIVAR "Exigir SSO": las sesiones de contraseña de los no-owner
     // pueden seguir vivas hasta 30 días — sin esto, la política no surte

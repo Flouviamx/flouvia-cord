@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId } from '../../../lib/db';
 import { sha256Hex } from '../../../lib/auth';
-import { currentUserId } from '../../../lib/context';
+import { currentSessionId, currentUserId } from '../../../lib/context';
 
 /** 90 s. Solo tiene que sobrevivir un redirect, no una sesión de trabajo. */
 const TTL_MS = 90_000;
@@ -26,9 +26,14 @@ export const GET: APIRoute = async ({ redirect }) => {
     const orgId = await getActiveOrgId().catch(() => null);
     const token = randomBytes(32).toString('hex');
 
+    // La sesión del subdominio hereda la frescura de ESTA sesión, no una nueva:
+    // un traspaso no es una credencial (regla 26).
+    const sessionId = currentSessionId();
     await sql`
-        insert into billing_handoff_tokens (id, user_id, org_id, expires_at)
-        values (${sha256Hex(token)}, ${userId}, ${orgId}, ${new Date(Date.now() + TTL_MS)})`;
+        insert into billing_handoff_tokens (id, user_id, org_id, expires_at, reauthenticated_at)
+        select ${sha256Hex(token)}, ${userId}, ${orgId}, ${new Date(Date.now() + TTL_MS)},
+               (select s.reauthenticated_at from sessions s
+                 where s.id = ${sessionId} and s.user_id = ${userId} and s.revoked_at is null)`;
 
     // Barrido oportunista: sin esto la tabla solo crece. No hace falta un cron
     // para filas de 90 segundos.

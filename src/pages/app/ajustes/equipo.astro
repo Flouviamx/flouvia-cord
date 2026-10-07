@@ -488,7 +488,13 @@ import { iconInner } from '../../../lib/icons';
         const tpl = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 
         async function req(url: string, body: any, method = 'POST') {
-            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const send = () => fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            let res = await send();
+            // Dar un permiso sobre el dinero exige reautenticación reciente.
+            if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                if (!(await (window as any).cordStepUp())) throw new Error(T.error);
+                res = await send();
+            }
             const d = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(d.error || T.error);
             return d;

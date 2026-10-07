@@ -375,14 +375,36 @@ variables. Meta le cobra cada mensaje de plantilla a la cuenta del negocio.
 - [ ] Opcional: `quality_evaluation` del MCP sobre el primer pago real para ver qué
   pide Mercado Pago mejorar en la integración.
 
+**Hecho (7 oct, auditoría de pagos):** ruteo del webhook por `cord_org`/`user_id`
+con 503 ante fallas temporales, verificación de cuenta/importe/divisa/modo de
+prueba, conciliación diaria (`/api/cron/mercadopago-conciliar`), preferencias que
+vencen a las 72 h, renovación de credenciales que no se apaga por un 5xx, conexión
+con `cobros_config` + reautenticación + país de la cuenta verificado + aviso a los
+dueños, contracargos y mediaciones visibles (historia + alerta). Ver reglas 37–39.
+
+**Falta, operativo (después del despliegue de la auditoría):**
+- [ ] Correr `/api/cron/conciliar-cotizacion-factura` en vista previa, revisar la
+  lista y luego con `?aplicar=1` (repara facturas que nacieron con un saldo ya
+  cobrado).
+- [ ] Los pagos de PRUEBA (`live_mode: false`) ya no saldan documentos en
+  producción: la prueba en COP de "Flouvia Colombia" con un comprador de prueba
+  dejará el registro en la historia pero no marcará pagado. Para probar de punta a
+  punta en producción hace falta un pago real.
+- [ ] Probar un pago con un vendedor TERCERO (no el dueño de la app): el aviso llega
+  a la `notification_url` de la preferencia, con `cord_org`.
+
 **Falta, código:**
+- [ ] Contracargos de Mercado Pago dentro del ledger (hoy se VEN y alertan, pero la
+  cotización/factura sigue pagada) y tópico `topic_chargebacks_wh`.
+- [ ] Validar en el botón (no solo en el proveedor) que la divisa de la cotización
+  sea la del sitio de la cuenta (`orgs.mp_site_id`), y redondear COP/CLP a enteros.
+- [ ] Reembolsar un pago de Mercado Pago desde Cord.
+- [ ] Comisión de Cord en Mercado Pago (`marketplace_fee`) o declararla en cero.
 - [x] Mercado Pago en la factura hospedada, con abono parcial (22 sep).
 - [x] Reembolsos leídos del proveedor, en cotización y en factura (22 sep).
 - [x] Link de pago en la cobranza con IA con cualquiera de los dos rieles (22 sep).
 - [ ] Igualas recurrentes con Mercado Pago: exige guardar el medio de pago, que
   Checkout Pro no hace. Requiere el producto de suscripciones del proveedor.
-- [ ] Contracargos de Mercado Pago (`topic_chargebacks_wh`): hoy solo se leen pagos
-  y reembolsos.
 - [ ] Opcional: PKCE en la autorización (Cord no lo manda; no activarlo en el panel
   hasta implementarlo).
 

@@ -129,3 +129,31 @@ export const minPlanOf = (plans: string[]): string => plans[0] ?? 'pro';
 export function planUpsell(plan: string, feature: string, plans: string[]): string {
     return `${feature} requiere el plan ${planLabel(minPlanOf(plans))} o superior. Tu plan actual es ${planLabel(plan)}.`;
 }
+
+// ── Quién puede repartir permisos (auditoría oct 2026) ───────────────────────
+//
+// Antes, cualquiera con `equipo` podía darle a cualquiera —incluido a sí mismo—
+// cualquier permiso: un miembro con solo `equipo` se otorgaba `cobros_config`,
+// se reautenticaba con SU contraseña y cambiaba la cuenta de depósito.
+
+/** Permisos que deciden a dónde va el dinero: darlos exige reautenticación y avisa a los dueños. */
+export const MONEY_PERM_KEYS: PermKey[] = ['cobros_config', 'reembolsar'];
+
+/**
+ * ¿Puede `actor` llevar los permisos de alguien de `antes` a `despues`?
+ * `null` = sí; si no, el motivo para la persona. Nadie da ni quita un permiso
+ * que no tiene (el dueño los tiene todos).
+ */
+export function permisoDenegado(actor: Membership, antes: PermMap, despues: PermMap): string | null {
+    if (actor.esOwner || actor.rol === 'owner') return null;
+    for (const k of ALL_PERM_KEYS) {
+        if (!!antes[k] === !!despues[k]) continue;
+        if (!actor.permisos?.[k]) return 'No puedes dar ni quitar un permiso que tú no tienes.';
+    }
+    return null;
+}
+
+/** ¿Este cambio OTORGA un permiso sobre el dinero que antes no tenía? */
+export function otorgaPermisoDeDinero(antes: PermMap, despues: PermMap): PermKey[] {
+    return MONEY_PERM_KEYS.filter((k) => !antes[k] && !!despues[k]);
+}

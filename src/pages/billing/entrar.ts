@@ -25,14 +25,19 @@ export const GET: APIRoute = async ({ url, cookies, request, redirect }) => {
         update billing_handoff_tokens
            set used_at = now()
          where id = ${sha256Hex(raw)} and used_at is null and expires_at > now()
-        returning user_id, org_id`;
+        returning user_id, org_id, reauthenticated_at`;
     if (!row) return fail();
 
     let token: string;
     try {
+        // La reautenticación NO se fabrica aquí: se hereda la de la sesión que
+        // pidió el traspaso (o ninguna). Antes `createSession` marcaba `now()`
+        // y el subdominio regalaba un step-up a cualquier cookie robada.
         token = await createSession(
             row.user_id as string,
             request.headers.get('user-agent') || undefined,
+            undefined,
+            { reauthenticatedAt: (row.reauthenticated_at as string | null) ?? null },
         );
     } catch {
         // createSession lanza si la cuenta está suspendida. Falla cerrado.

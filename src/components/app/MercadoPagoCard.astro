@@ -13,9 +13,14 @@ interface Props {
     flash: string | null;
     /** true = Cord Payments también está disponible en el país: esta es la alternativa. */
     alterno: boolean;
+    /** La cuenta que recibe el dinero: el dueño tiene que VERLA, no solo leer "Conectado". */
+    cuenta?: { nickname: string; siteId: string } | null;
 }
 
-const { lang: L, conectado: mpConectado, flash: mpFlash, alterno } = Astro.props;
+const { lang: L, conectado: mpConectado, flash: mpFlash, alterno, cuenta } = Astro.props;
+const cuentaTexto = cuenta && (cuenta.nickname || cuenta.siteId)
+    ? [cuenta.nickname, cuenta.siteId].filter(Boolean).join(' · ')
+    : '';
 ---
 
 <section class:list={['mp-card', { 'is-alterno': alterno }]} data-mp>
@@ -30,13 +35,16 @@ const { lang: L, conectado: mpConectado, flash: mpFlash, alterno } = Astro.props
         </span>
     </div>
     <p class="mp-desc">{alterno ? t(L, 'set.cobros.mp.desc_alterno') : t(L, 'set.cobros.mp.desc_unico')}</p>
-    {mpFlash && ['conectada', 'cancelada', 'estado', 'error'].includes(mpFlash) && (
+    {mpConectado && cuentaTexto && (
+        <p class="mp-cuenta">{t(L, 'set.cobros.mp.cuenta')} <b>{cuentaTexto}</b></p>
+    )}
+    {mpFlash && ['conectada', 'cancelada', 'estado', 'error', 'pais'].includes(mpFlash) && (
         <p class="mp-flash" data-bad={mpFlash !== 'conectada' ? '1' : undefined}>{t(L, `set.cobros.mp.flash_${mpFlash}` as any)}</p>
     )}
     <div class="mp-actions">
         <button type="button" class="mp-btn" data-mp-connect>{mpConectado ? t(L, 'set.cobros.mp.reconectar') : t(L, 'set.cobros.mp.conectar')}</button>
         {mpConectado && <button type="button" class="mp-btn is-ghost" data-mp-off>{t(L, 'set.integ.wa.desconectar')}</button>}
-        <span class="mp-msg" data-mp-msg data-i18n-err={t(L, 'settings.no_se_pudo_guardar')}></span>
+        <span class="mp-msg" data-mp-msg data-i18n-err={t(L, 'settings.no_se_pudo_guardar')} data-i18n-reauth={t(L, 'set.cobros.mp.reautenticar')}></span>
     </div>
 </section>
 
@@ -53,6 +61,8 @@ const { lang: L, conectado: mpConectado, flash: mpFlash, alterno } = Astro.props
     .mp-pill { flex-shrink: 0; align-self: flex-start; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 100px; background: var(--surface); color: var(--color-text-muted); }
     .mp-pill[data-estado="on"] { color: var(--color-ok); }
     .mp-desc { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); max-width: 62ch; margin: 0.8rem 0 1rem; }
+    .mp-cuenta { font-size: 0.85rem; color: var(--color-text-muted); margin: -0.4rem 0 1rem; }
+    .mp-cuenta b { color: var(--color-text); font-weight: 600; }
     .mp-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
     .mp-flash[data-bad] { color: var(--color-danger); }
     .mp-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
@@ -80,10 +90,23 @@ const { lang: L, conectado: mpConectado, flash: mpFlash, alterno } = Astro.props
                 setTimeout(() => { msg.textContent = ''; }, 4000);
             };
 
+            // Cambiar a dónde llega el dinero exige reautenticación reciente: si
+            // el servidor la pide (428), se confirma la identidad y se reintenta.
+            const send = async (method: 'POST' | 'DELETE') => {
+                const go = () => fetch('/api/billing/mercadopago/connect', { method });
+                let res = await go();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    const confirmed = await (window as any).cordStepUp();
+                    if (!confirmed) throw new Error(msg?.dataset.i18nReauth || '');
+                    res = await go();
+                }
+                return res;
+            };
+
             connect.addEventListener('click', async () => {
                 connect.disabled = true;
                 try {
-                    const res = await fetch('/api/billing/mercadopago/connect', { method: 'POST' });
+                    const res = await send('POST');
                     const data = await res.json();
                     if (!res.ok || !data.redirect) throw new Error(data.error || '');
                     window.location.href = data.redirect;
@@ -96,11 +119,11 @@ const { lang: L, conectado: mpConectado, flash: mpFlash, alterno } = Astro.props
             off?.addEventListener('click', async () => {
                 off.disabled = true;
                 try {
-                    const res = await fetch('/api/billing/mercadopago/connect', { method: 'DELETE' });
+                    const res = await send('DELETE');
                     if (!res.ok) throw new Error();
                     window.location.href = '/app/ajustes/cobros';
-                } catch {
-                    fail(msg?.dataset.i18nErr || '');
+                } catch (err: any) {
+                    fail(err?.message || msg?.dataset.i18nErr || '');
                     off.disabled = false;
                 }
             });

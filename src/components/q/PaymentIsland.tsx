@@ -336,6 +336,8 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
                 if (!alive) return;
 
                 if (data.alreadyPaid || data.alreadyActive) { setPaid(true); return; }
+                // El saldo se cobra en la factura: allá se paga lo que de verdad se debe.
+                if (typeof data.invoiceUrl === 'string' && /^https?:\/\//.test(data.invoiceUrl)) { window.location.href = data.invoiceUrl; return; }
                 if (!res.ok) throw new Error(data.error || T.errorIniciarPago);
 
                 if (data.metodo === 'spei' && data.instructions) {

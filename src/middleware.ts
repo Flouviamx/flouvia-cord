@@ -123,7 +123,12 @@ const SUBDOMAINS = [
     // ella porque la página llama a esos endpoints y la política CSRF exige
     // mismo origen: servida desde billing.cordhq.app, un fetch al apex sería
     // cross-origin y se rechazaría con 403.
-    { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"], passthrough: ["/robots.txt", "/sitemap.xml"] },
+    { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"], passthrough: ["/robots.txt", "/sitemap.xml"],
+      // La superficie de facturación cobra la SUSCRIPCIÓN a Cord. La
+      // configuración de cobros del negocio —a dónde llega su dinero— vive en
+      // el apex (Ajustes › Cobros) y no se sirve aquí: una superficie más que
+      // puede cambiar la cuenta de depósito es una superficie más que blindar.
+      blocked: ["/api/billing/connect", "/api/billing/mercadopago", "/api/billing/fees"] },
 ];
 
 // status.cordhq.app: una sola página por idioma. La raíz y /en sirven el estado;
@@ -168,6 +173,9 @@ const subdomainRewrite = async (context: any, next: any) => {
         // en inglés rebotaba a la portada en español en vez de mostrar su contenido.
         // Con "/en/docs" en la whitelist, ese path pasa tal cual y llega a la ruta
         // real src/pages/en/docs/[...slug].astro.
+        if (sub.blocked?.some((p) => path === p || path.startsWith(p + "/"))) {
+            return new Response(null, { status: 404 });
+        }
         const matchedPrefix = sub.prefixes.find((p) => path === p || path.startsWith(p + "/"));
         const matchedPassthrough = sub.passthrough?.includes(path);
         if (matchedPrefix || matchedPassthrough || path.startsWith("/_") || path === "/404") {

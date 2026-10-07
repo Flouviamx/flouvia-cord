@@ -2,9 +2,11 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
+import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { currentLocale } from '../../../../lib/context';
+import { currentLocale, currentUserId } from '../../../../lib/context';
+import { notifyMoneyDestinationChange } from '../../../../lib/auth-email';
+import { after } from '../../../../lib/after';
 import { t } from '../../../../i18n/app';
 import { stripe } from '../../../../lib/billing';
 import { limitConnectMutation } from '../../../../lib/connect-security';
@@ -88,6 +90,11 @@ export const POST: APIRoute = async ({ request }) => {
     await auditConnect(orgId, request, 'cuenta_desconectada', {
         detail: borradaAlla ? 'cuenta eliminada en el proveedor' : 'cuenta ya inexistente en el proveedor',
     });
+    if (org?.stripe_account_id) {
+        after(notifyMoneyDestinationChange(orgId, 'cobros_desconectados', {
+            detalle: String(org.stripe_account_id), actorUserId: currentUserId(), ip: reqIp(request),
+        }));
+    }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 };

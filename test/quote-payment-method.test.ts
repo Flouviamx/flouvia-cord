@@ -7,6 +7,8 @@ vi.mock('../src/lib/cobros', () => ({ dueDateFor: () => new Date(), isoDay: () =
 vi.mock('../src/lib/posthog-server', () => ({ trackServer: vi.fn() }));
 vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn() } }));
+// Sin factura emitida: la regla "la factura viva manda sobre /q" se prueba en quote-invoice-ledger-db.test.ts.
+vi.mock('../src/lib/fiscal/quote-ledger', () => ({ liveInvoiceForQuote: async () => ({ state: 'none' }), quoteChargeBlockedByInvoice: () => null }));
 import { QuotePaymentConflict } from '../src/lib/quote-payment-attempts';
 const quote = { id: 'quote-a', org_id: 'org-a', folio: 'Q-1', total: 1000, status: 'approved', base_currency: 'MXN', stripe_account_id: 'acct-a', stripe_charges_enabled: true, acepta_tarjeta: true, cobro_spei_auto: true, checkout_v2: true, org_nombre: 'Empresa' };
 let cobro: any, fetchMock: ReturnType<typeof vi.fn>;

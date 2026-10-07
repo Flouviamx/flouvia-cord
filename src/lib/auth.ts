@@ -132,7 +132,19 @@ const SESSION_ABSOLUTE_MS = 180 * 24 * 60 * 60 * 1000; // 180 días, tope duro (
 const SESSION_SLIDE_THROTTLE_MS = 5 * 60 * 1000; // renovar expiración/cookie como máximo cada 5 min
 
 /** Crea una sesión y devuelve el token CRUDO (va en la cookie; nunca se guarda). */
-export async function createSession(userId: string, userAgent?: string, ip?: string): Promise<string> {
+/**
+ * Abre una sesión. Por defecto cuenta como reautenticación (`reauthenticated_at
+ * = now()`): quien llega aquí acaba de presentar una credencial. Un camino que
+ * NO nace de una credencial —el traspaso a billing.cordhq.app— pasa la
+ * frescura que tenía la sesión de origen, o `null` si no tenía, y nunca la
+ * fabrica.
+ */
+export async function createSession(
+    userId: string,
+    userAgent?: string,
+    ip?: string,
+    opts: { reauthenticatedAt?: Date | string | null } = {},
+): Promise<string> {
     // Control común a password, OAuth, passkey, SAML y verificación de correo.
     // Ningún método alterno puede abrir sesión si Ops suspendió la identidad.
     const account = await sql`select suspended_at from users where id = ${userId} limit 1`;
@@ -144,9 +156,12 @@ export async function createSession(userId: string, userAgent?: string, ip?: str
     const now = Date.now();
     const expiresAt = new Date(now + SESSION_TTL_MS);
     const absoluteExpiresAt = new Date(now + SESSION_ABSOLUTE_MS);
+    const heredada = 'reauthenticatedAt' in opts;
+    const reauth = heredada && opts.reauthenticatedAt ? new Date(opts.reauthenticatedAt) : null;
     await sql`
         insert into sessions (id, user_id, expires_at, absolute_expires_at, user_agent, ip, last_used_at, reauthenticated_at)
-        values (${tokenHash}, ${userId}, ${expiresAt}, ${absoluteExpiresAt}, ${userAgent || null}, ${ip || null}, now(), now())
+        values (${tokenHash}, ${userId}, ${expiresAt}, ${absoluteExpiresAt}, ${userAgent || null}, ${ip || null}, now(),
+                case when ${heredada} then ${reauth}::timestamptz else now() end)
     `;
     return token;
 }

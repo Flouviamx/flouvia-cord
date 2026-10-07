@@ -8,11 +8,13 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
-import { requirePerm } from '../../lib/queries';
-import { PRESETS, ALL_PERM_KEYS, type PermMap } from '../../lib/permissions';
+import { getMyMembership, requirePerm } from '../../lib/queries';
+import { PRESETS, ALL_PERM_KEYS, otorgaPermisoDeDinero, permisoDenegado, type PermMap } from '../../lib/permissions';
+import { requireFreshAuth } from '../../lib/step-up';
+import { after } from '../../lib/after';
 import { requireEntitlement, requireResourceCapacity, resourceLimitError } from '../../lib/org-entitlements';
 import { sha256Hex } from '../../lib/auth';
-import { sendTeamInviteEmail } from '../../lib/auth-email';
+import { notifyMoneyDestinationChange, sendTeamInviteEmail } from '../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { trackServer } from '../../lib/posthog-server';
@@ -69,6 +71,17 @@ export const POST: APIRoute = async (context) => {
         : cleanPermisos(PRESETS[preset]?.permisos ?? PRESETS.vendedor.permisos);
     const rol = PRESETS[preset] ? preset : 'miembro';
 
+    // Nadie invita con un permiso que no tiene, y dar un permiso sobre el
+    // dinero exige reautenticación reciente (ver permisoDenegado).
+    const actor = await getMyMembership();
+    const negado = permisoDenegado(actor, {}, permisos);
+    if (negado) return json({ error: negado }, 403);
+    const dinero = otorgaPermisoDeDinero({}, permisos);
+    if (dinero.length) {
+        const staleAuth = await requireFreshAuth();
+        if (staleAuth) return staleAuth;
+    }
+
     // El token CRUDO viaja en el link/correo; solo su sha256 se guarda (mismo
     // patrón que sesiones/reset — antes se guardaba en claro, así que
     // cualquier lectura de `org_members` filtraba invitaciones vivas y
@@ -86,7 +99,12 @@ export const POST: APIRoute = async (context) => {
         return resourceLimitError(error) ?? json({ error: 'No se pudo crear la invitación.' }, 500);
     }
 
-    await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
+    await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: `${email ?? 'invitación por link'}${dinero.length ? `; permisos de dinero: ${dinero.join(', ')}` : ''}`, ip: reqIp(request), userAgent: request.headers.get('user-agent') });
+    if (dinero.length) {
+        after(notifyMoneyDestinationChange(orgId, 'permiso', {
+            detalle: `${email ?? 'invitación por link'}: ${dinero.join(', ')}`, actorUserId: currentUserId(), ip: reqIp(request),
+        }));
+    }
     await trackServer('team_member_invited', orgId, { role_assigned: rol }, !!org.is_sandbox, !!org.is_demo);
     const link = `${new URL(request.url).origin}/unirse/${token}`;
 
@@ -115,14 +133,33 @@ export const PATCH: APIRoute = async ({ request }) => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el miembro' }, 400);
 
-    const [rows] = await withOrgTx(orgId, sql`select rol from org_members where id = ${id} and org_id = ${orgId}`);
+    const [rows] = await withOrgTx(orgId, sql`
+        select rol, permisos, email, user_id from org_members where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Miembro no encontrado' }, 404);
     if (rows[0].rol === 'owner') return json({ error: 'No puedes cambiar los permisos del dueño.' }, 409);
+    // Nadie se cambia sus propios permisos: es exactamente cómo un miembro con
+    // `equipo` se daba `cobros_config` a sí mismo.
+    const yo = currentUserId();
+    if (yo && rows[0].user_id && String(rows[0].user_id) === yo) {
+        return json({ error: 'No puedes cambiar tus propios permisos. Pídeselo al dueño de la organización.' }, 403);
+    }
 
     const permisos = body.permisos ? cleanPermisos(body.permisos) : null;
     const rol = body.rol !== undefined
         ? (PRESETS[String(body.rol)] ? String(body.rol) : 'miembro')
         : null;
+
+    // Lo que el miembro tendría DESPUÉS de este cambio, contra lo que tiene hoy.
+    const antes = cleanPermisos(rows[0].permisos);
+    const despues = permisos ?? (rol ? cleanPermisos(PRESETS[rol]?.permisos) : antes);
+    const actor = await getMyMembership();
+    const negado = permisoDenegado(actor, antes, despues);
+    if (negado) return json({ error: negado }, 403);
+    const dinero = otorgaPermisoDeDinero(antes, despues);
+    if (dinero.length) {
+        const staleAuth = await requireFreshAuth();
+        if (staleAuth) return staleAuth;
+    }
 
     if (permisos && rol) {
         await withOrgTx(orgId, sql`update org_members set permisos = ${JSON.stringify(permisos)}::jsonb, rol = ${rol} where id = ${id} and org_id = ${orgId}`);
@@ -135,7 +172,14 @@ export const PATCH: APIRoute = async ({ request }) => {
         return json({ error: 'Nada que actualizar' }, 400);
     }
 
-    await logAudit(orgId, { accion: 'equipo.actualizado', entidad: 'miembro', entidad_id: id, detalle: rol ?? 'permisos', ip: reqIp(request) });
+    const cambiados = ALL_PERM_KEYS.filter((k) => !!antes[k] !== !!despues[k])
+        .map((k) => `${despues[k] ? '+' : '-'}${k}`).join(' ');
+    await logAudit(orgId, { accion: 'equipo.actualizado', entidad: 'miembro', entidad_id: id, detalle: `${rol ?? 'permisos'}${cambiados ? `; ${cambiados}` : ''}`, ip: reqIp(request) });
+    if (dinero.length) {
+        after(notifyMoneyDestinationChange(orgId, 'permiso', {
+            detalle: `${(rows[0].email as string) || id}: ${dinero.join(', ')}`, actorUserId: yo, ip: reqIp(request),
+        }));
+    }
     return json({ ok: true });
 };
 

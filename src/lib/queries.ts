@@ -135,6 +135,8 @@ export async function getOrg() {
         whatsappIdioma: (o.whatsapp_plantilla_idioma as string) ?? '',
         whatsappConectado: !!(o.whatsapp_phone_id && o.whatsapp_token_enc && o.whatsapp_plantilla),
         mpChargesEnabled: (o.mp_charges_enabled as boolean) ?? false,
+        mpNickname: (o.mp_nickname as string) ?? '',
+        mpSiteId: (o.mp_site_id as string) ?? '',
         aiCobranzaActiva: (o.ai_cobranza_activa as boolean) ?? false,
         csdEstado: (o.csd_estado as string) ?? '',
         csdNombre: (o.csd_nombre as string) ?? '',

@@ -7,6 +7,7 @@ import { sendEmail, siteOrigin, type SendResult } from './email';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
 import { escapeHtml } from './escape';
+import { sql, withOrgTx } from './db';
 
 const FROM_NAME = 'Cord Seguridad';
 
@@ -110,4 +111,71 @@ export async function sendTeamInviteEmail(to: string, orgName: string, token: st
             footer: t(L, 'authEmail.invite.expira'),
         }),
     });
+}
+
+// ── A dónde llega el dinero ──────────────────────────────────────────────────
+
+export type CambioDestinoDinero =
+    | 'mp_conectado' | 'mp_cambiado' | 'mp_desconectado'
+    | 'banco' | 'cobros_desconectados' | 'cuenta_creada' | 'permiso';
+
+const CAMBIO_DESTINO_KEY = {
+    mp_conectado: 'authEmail.dinero.mp_conectado',
+    mp_cambiado: 'authEmail.dinero.mp_cambiado',
+    mp_desconectado: 'authEmail.dinero.mp_desconectado',
+    banco: 'authEmail.dinero.banco',
+    cobros_desconectados: 'authEmail.dinero.cobros_desconectados',
+    cuenta_creada: 'authEmail.dinero.cuenta_creada',
+    permiso: 'authEmail.dinero.permiso',
+} as const;
+
+/**
+ * Avisa a los DUEÑOS de la organización que cambió a dónde llega su dinero:
+ * la cuenta de depósito, la cuenta de Mercado Pago, la cuenta de cobros, o
+ * quién puede cambiarlas.
+ *
+ * Va al correo de la CUENTA de cada dueño, nunca a `orgs.email_contacto`: ese
+ * campo lo edita cualquiera con permiso de ajustes, y quien desvía el dinero
+ * empezaría por desviar el aviso. Best-effort: nunca bloquea la operación,
+ * pero tampoco la sustituye — la operación ya exigió permiso y reautenticación.
+ */
+export async function notifyMoneyDestinationChange(
+    orgId: string,
+    cambio: CambioDestinoDinero,
+    opts: { detalle?: string | null; actorUserId?: string | null; ip?: string | null } = {},
+): Promise<void> {
+    try {
+        const [[org], owners, [actor]] = await withOrgTx(orgId,
+            sql`select nombre, idioma from orgs where id = ${orgId}`,
+            sql`select distinct lower(u.email) as email
+                  from org_members m join users u on u.id = m.user_id
+                 where m.org_id = ${orgId} and m.rol = 'owner' and m.estado = 'activo'
+                   and u.email is not null and u.suspended_at is null
+                union
+                select lower(u.email) from orgs o join users u on u.id = o.owner_id
+                 where o.id = ${orgId} and u.email is not null and u.suspended_at is null`,
+            sql`select email from users where id = ${opts.actorUserId ?? null}::uuid`);
+        if (!org || !owners.length) return;
+        const L = org.idioma === 'en' ? 'en' : 'es';
+        const nombre = escapeHtml(String(org.nombre || 'Cord'));
+        const lineas = [
+            `${t(L, CAMBIO_DESTINO_KEY[cambio])} <b>${nombre}</b>.`,
+            opts.detalle ? `${t(L, 'authEmail.dinero.detalle')} ${escapeHtml(opts.detalle)}` : '',
+            actor?.email ? `${t(L, 'authEmail.dinero.quien')} ${escapeHtml(String(actor.email))}${opts.ip ? ` (IP ${escapeHtml(opts.ip)})` : ''}` : '',
+            new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC',
+        ].filter(Boolean);
+        const html = shell({
+            titulo: t(L, 'authEmail.dinero.titulo'),
+            cuerpo: lineas.join('<br>'),
+            ctaLabel: t(L, 'authEmail.dinero.boton'),
+            ctaHref: `${siteOrigin()}/app/ajustes/cobros`,
+            footer: t(L, 'authEmail.dinero.no_fui_yo'),
+        });
+        for (const o of owners) {
+            await sendEmail({
+                to: String(o.email), subject: t(L, 'authEmail.dinero.asunto'), fromName: FROM_NAME,
+                html, orgId, operation: 'money_destination_alert',
+            });
+        }
+    } catch { /* el aviso nunca tumba la operación que ya se autorizó */ }
 }
