@@ -1,24 +1,31 @@
 ---
 title: "Payment methods"
-description: "Card, SPEI, manual transfers and confirmation states."
-lastUpdated: "2026-09-08"
+description: "Card, SPEI, Mercado Pago, manual transfers and confirmation states."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Payment methods</h1>
-  <p class="page-subtitle">Card, SPEI, manual transfers and confirmation states.</p>
+  <p class="page-subtitle">Card, SPEI, Mercado Pago, manual transfers and confirmation states.</p>
 </header>
-
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Choose how to pay
 
-The quote link offers methods enabled by the business. Card and automatic bank
-transfer require an enabled payment account. The public invoice page has its own
-card flow; do not assume it offers every quote payment method.
+The quote link offers methods enabled by the business. Cord has two online payment
+rails:
+
+- **Cord Payments:** card and, in Mexico, automatic SPEI bank transfer. It requires a
+  verified, active [payments account](/en/docs/pagos/onboarding).
+- **[Mercado Pago](/en/docs/pagos/mercado-pago):** the customer pays into your own
+  Mercado Pago account. It is offered in Mexico, Brazil, Colombia, Argentina, Chile,
+  and Peru; where you also have Cord Payments, it appears as an alternative on the
+  same page.
+
+The public invoice page accepts card through Cord Payments and, if you connected it,
+Mercado Pago; it does not offer SPEI. Do not assume it offers every quote payment method.
 
 ### Card
 
@@ -46,28 +53,23 @@ Refunding a manual transfer is handled with the business.
 
 ## Switching between SPEI and card
 
-The protection improvement for switching methods is **under validation before
-publication**. It verifies the previous attempt, blocks replacement when money
-has been received or is in progress, and preserves the attempt across concurrent
-retries. It aims to reduce duplicate charges caused by switching or lost responses.
+Before offering another method, Cord checks the previous payment attempt. If that
+attempt has already received money or has a payment in progress — for example, a
+partial SPEI transfer or an authorized card — it is not replaced: the customer sees
+that a payment is waiting for confirmation. A concurrent retry reuses the same
+attempt instead of creating another one. This prevents duplicate charges caused by
+switching methods or by a lost response.
 
 While a payment is unresolved, do not repeat the transfer or open another method
-just to try it. Refresh the link or contact the business. The improvement does
-not include automatic refunds of late transfers or automatic recovery of every
-uncertain attempt.
+just to try it. Refresh the link or contact the business. Cord does not automatically
+return a transfer that arrives late to earlier instructions; that case is resolved
+with the business.
 
-See [the scope of the changes](/en/docs/pagos/mejoras-confiabilidad) and
-[method-specific fees](/en/docs/pagos/condiciones). Sale currency is separate from
+See [method-specific fees](/en/docs/pagos/condiciones). Sale currency is separate from
 [your Cord subscription currency](/en/docs/cuenta/suscripcion).
 
-## One payment flow: implementation prepared
+## Integrations that use the previous checkout
 
-Integrations that still request the previous checkout will receive a link to
-Cord's current payment screen. They will use the same payment-attempt registry
-and payable balance instead of creating an independent hosted payment session.
-The API response retains its `url` field and accepted rates remain unchanged.
-
-Before activation, existing open or pending sessions are reviewed. They are not
-automatically canceled or refunded. The current audit found no sessions in the
-connected accounts checked; it must be repeated at release time. Deployment and
-integrated acceptance remain pending.
+If an integration still requests a quote's previous checkout, it receives a link to
+Cord's current payment screen, with the same payment-attempt registry and the balance
+that is due. The response keeps its `url` field and accepted fees remain unchanged.

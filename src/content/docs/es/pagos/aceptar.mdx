@@ -1,6 +1,9 @@
 ---
 title: "Aceptar un pago"
 description: "Cómo se ve el checkout de Cord Payments desde la perspectiva del cliente: elegir método, pagar con tarjeta o SPEI, y qué pasa con anticipos y saldos."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 ---
 
 <header class="content-header">
@@ -17,8 +20,8 @@ Si activaste más de un método (ver [Métodos de cobro](/docs/pagos/metodos)), 
 ### Pagar con tarjeta
 
 - Formulario nativo dentro del documento, sin redirecciones a ningún sitio externo.
-- Acepta Visa, Mastercard y American Express.
-- En cuanto el cliente confirma, la cotización pasa a "Pagada" en segundos y los fondos se depositan en tu cuenta bancaria en el siguiente ciclo de depósitos.
+- Acepta las tarjetas de crédito y débito que admite tu cuenta de cobros.
+- En cuanto se confirma el pago, la cotización pasa a "Pagada" y los fondos se depositan en tu cuenta bancaria según la frecuencia de depósito que elegiste en **Ajustes › Cobros**.
 - Es el único método compatible con [igualas recurrentes](/docs/pagos/igualas).
 
 ### Pagar con SPEI
@@ -38,7 +41,7 @@ La tarjeta y el SPEI tienen tarifas distintas (ver el detalle completo en [Tarif
 ¿Qué pasa si configuraste un **anticipo del 50%** en la cotización?
 
 1. El checkout inicial muestra únicamente el monto del anticipo.
-2. Una vez que el cliente lo paga, la cotización se marca como "Anticipo pagado" y el saldo queda pendiente según tus términos (contado o crédito).
-3. Cuando llega el momento de cobrar el saldo, Cord envía un correo al cliente con el botón para liquidarlo, que lo lleva de vuelta al mismo checkout por el monto restante.
+2. Una vez que el cliente lo paga, Cord registra el anticipo como cobrado y el saldo queda pendiente según tus términos (contado o crédito).
+3. Para pagar el saldo, el cliente vuelve al **mismo link** de la cotización y el checkout le muestra el monto restante; no hace falta un segundo link de pago. Con términos de crédito, el saldo se habilita al llegar su fecha de vencimiento. En los días previos al vencimiento, Cord envía al cliente un recordatorio automático por correo con el link de la cotización.
 
 Ver el detalle completo en [Anticipo y saldo](/docs/pagos/anticipos).

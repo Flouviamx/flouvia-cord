@@ -1,7 +1,7 @@
 ---
 title: "Crear, emitir y cobrar facturas"
 description: "Crea una factura, asígnale folio al emitir, envíala y sigue su saldo desde Cord."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones fiscales de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -12,10 +12,6 @@ prerequisites: ["Permiso Cobranza", "Cliente y datos del emisor", "Configuració
   <h1 class="page-title">Crear, emitir y cobrar facturas</h1>
   <p class="page-subtitle">Cord reúne la captura, emisión fiscal, entrega y cobranza de cada factura en un solo flujo.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Dónde encontrar tus facturas
 
@@ -38,7 +34,7 @@ Emitir es irreversible: asigna el folio oficial y bloquea el documento fiscal. S
 
 ## Qué recibe tu cliente
 
-El correo incluye el PDF y la liga pública de la factura. Desde esa página, el cliente puede consultar el saldo y su historial de pagos; si tu cuenta de cobros está habilitada, también puede pagar con tarjeta.
+El correo incluye el PDF y la liga pública de la factura. Desde esa página, el cliente puede consultar el saldo y su historial de pagos; si tu cuenta de cobros está habilitada, también puede pagar con tarjeta, y con [Mercado Pago](/docs/pagos/mercado-pago) si lo conectaste. Puede pagar el saldo completo o elegir **Pagar otra cantidad** para abonar una parte.
 
 La página pública presenta la marca de tu negocio, el folio, el saldo pendiente, las partes, los conceptos y las descargas en una sola vista. Si el documento se generó en modo de prueba o sin timbre fiscal, Cord lo advierte claramente y deshabilita el pago en línea.
 
@@ -59,7 +55,7 @@ Así, **Prueba** nunca sustituye ni contradice estados como **Abierta** o **Paga
 
 ## Acciones desde el detalle
 
-Desde una factura puedes reenviar el correo, registrar pagos manuales o parciales, copiar la liga pública, descargar PDF y XML cuando corresponda, anular, emitir una nota de crédito, duplicar como borrador o crear una recurrencia mensual.
+Desde una factura puedes reenviar el correo, registrar pagos manuales o parciales, copiar la liga pública, descargar PDF y XML cuando corresponda, anular, emitir una nota de crédito, usar **Duplicar factura** para abrir una copia nueva en el editor o crear una recurrencia mensual con **Repetir cada mes**.
 
 El progreso superior separa cinco momentos: **Borrador**, **Emitida**, **Enviada**, **Vista** y **Pagada**. A la derecha encuentras accesos directos para abrir o copiar la liga del cliente, descargar el PDF y compartir por WhatsApp. Las acciones excepcionales, como anular o marcar incobrable, permanecen dentro de **Más acciones**.
 
@@ -117,7 +113,7 @@ confirmados y actividad. Comprueba la moneda y el documento correspondiente. Si
 hay un movimiento pendiente, espera la confirmación o pide revisión; no registres
 un segundo pago manual para forzar el saldo a cero.
 
-Estas mejoras no recalculan silenciosamente todos los documentos históricos.
-Los casos anteriores que no coincidan requieren revisión individual.
+Cord no recalcula en silencio los documentos anteriores. Si una factura antigua
+no coincide, revísala de forma individual.
 
-Los documentos comerciales están incluidos en Gratis (5/mes); la emisión fiscal integrada comienza en Starter donde esté habilitada. La opción comercial en México y España es una proforma, no una factura de prueba. No genera XML fiscal ni sustituye una factura fiscal.
+Los documentos comerciales están incluidos en Gratis (10 al mes); la emisión fiscal integrada comienza en Starter donde esté habilitada. La opción comercial en México y España es una proforma, no una factura de prueba. No genera XML fiscal ni sustituye una factura fiscal.

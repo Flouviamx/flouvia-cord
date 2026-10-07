@@ -1,7 +1,7 @@
 ---
 title: "Fiscal invoicing by country"
 description: "How Cord issues CFDI 4.0 in Mexico and commercial invoices in other available markets, including Verifactu's operating status in Spain."
-lastUpdated: "2026-09-09"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord Product and Fiscal Operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -13,13 +13,9 @@ prerequisites: ["Complete the business tax identity", "In Mexico, upload a valid
   <p class="page-subtitle">One invoicing engine, a different receipt depending on where your business operates.</p>
 </header>
 
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
-
 ## Documents and plans
 
-Free includes 10 commercial invoices per month, separately from quote sends; from Starter they are unlimited. Tax-compliant invoices have their own allowance: 30/200/500 per month on Starter/Professional/Scale. Pro formas do not replace tax invoices. A paid plan does not itself activate a fiscal integration.
+Free includes 10 commercial invoices per month, separately from quote sends; from Starter they are unlimited. Tax-compliant invoices have their own monthly included allowance: 30 on Starter, 200 on Pro, 500 on Scale, and 1,000 on Developer; Free doesn't include fiscal issuance. If you go over your plan's allowance, additional fiscal invoices are billed as overage usage (see [Subscription](/en/docs/cuenta/suscripcion)). Pro formas do not replace tax invoices. A paid plan does not itself activate a fiscal integration.
 
 ## Document types by country
 
@@ -40,11 +36,13 @@ separate portal or reattaching the certificate to every invoice.
 
 ### Pulling data from the catalog
 
-Unlike systems that issue to the "General Public" and then force the client to self-invoice through an external portal, Cord is proactive and pulls fiscal data directly from the client's record:
+Cord pulls the recipient's fiscal data directly from the client's record:
 
 - **Tax Regime:** the one assigned to that client's profile.
-- **CFDI Use:** based on the type of product or service, or explicitly set on the client's profile.
-- **Zip code:** the one registered on their tax status certificate.
+- **CFDI Use:** the one set on the client's profile; if there isn't one, your account's default use, and if that doesn't exist either, G03 (general expenses).
+- **Zip code:** the one on the client's profile, which must match their tax status certificate.
+
+The client's tax regime, CFDI use, and zip code are optional on their profile. If they're missing, Cord applies default values — and without an RFC, it issues to "General Public" — which may not match your client's tax certificate. Fill them in before issuing so the CFDI is useful to whoever receives it.
 
 ### Issuance, taxes and confirmation
 
@@ -72,6 +70,11 @@ Spanish fiscal activation and integrated validation remain pending. The commerci
 ## Other supported markets: commercial invoice
 
 In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord can issue a **commercial invoice** with a sequential number, per-line taxes and withholdings configured by the business, and the captured tax details of both parties. Cord does not automatically file it with the local tax authority. Whether the business must issue, report, or supplement that document depends on its country and tax regime; confirm that obligation with a tax adviser.
+
+## What Cord doesn't do today
+
+- **Payment Receipt Complement (REP).** In Mexico, Cord stamps the income CFDI with the PUE payment method (single payment) and does not issue payment complements. If your operation requires invoicing on credit with the PPD method and issuing a REP for each payment, you'll need to do that outside Cord for now.
+- **Automatic filing outside Mexico and Spain.** In other markets, the commercial invoice isn't sent to any tax authority.
 
 ## The receipt for Cord Payments' own fee (Mexico)
 

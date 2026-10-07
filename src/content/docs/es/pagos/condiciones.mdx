@@ -1,6 +1,9 @@
 ---
 title: "Tarifas de Cord Payments"
 description: "La tabla de tarifas real de Cord Payments por método de cobro, cómo se calcula el IVA, el tope en SPEI y qué pasa con la comisión si reembolsas un pago."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 ---
 
 <header class="content-header">
@@ -16,28 +19,28 @@ Cord Payments cobra una comisión por transacción que **ya incluye** el costo d
 **Esta tabla es la tarifa vigente para cobros en pesos mexicanos (MXN)** — hoy el único riel donde Cord Payments tiene una tarifa publicada y activa. Si cobras en cualquier otra divisa (USD, EUR, GBP, CAD, BRL), **Cord no aplica hoy ninguna comisión de plataforma sobre ese cobro**: pagas únicamente el costo de tu procesador y tu suscripción a Cord. Ajustes › Cobros lo dice también ahí, con la divisa de tu cuenta.
 </Callout>
 
-| Método | Tarifa | Ejemplo sobre $10,000 MXN |
+| Método | Tarifa total | Ejemplo sobre un cobro de $10,000.00 MXN |
 |---|---|---|
-| **Tarjeta** (crédito/débito) | 4% + $3.00 MXN + IVA | $46.40 |
-| **SPEI** (transferencia automática) | 1% + $7.00 MXN + IVA, con un **tope de $588.12 MXN** por cobro | $11.60 |
+| **Tarjeta** (crédito/débito) | 4% + $3.00 MXN + IVA | $467.48 MXN |
+| **SPEI** (transferencia automática) | 1% + $7.00 MXN + IVA, con un **máximo de $588.12 MXN** por cobro | $124.12 MXN |
 | **Igualas** (cobro recurrente mensual) | 4% + $3.00 MXN + IVA por cada cargo mensual | — |
-| **Transferencia manual** | $0.00 — no pasa por Cord Payments | $0.00 |
+| **Transferencia manual** | $0.00 MXN — no pasa por Cord Payments | $0.00 MXN |
 
 <Callout type="info">
-El IVA (16%) se calcula sobre el componente porcentual + el componente fijo de la tarifa, nunca sobre el monto total del cobro. La cifra que ves arriba ya lo incluye.
+El IVA (16%) se calcula sobre la tarifa (el componente porcentual más el fijo), nunca sobre el monto total del cobro. Los ejemplos ya lo incluyen: con tarjeta, (4% de $10,000.00 + $3.00) × 1.16 = $467.48 MXN; con SPEI, (1% de $10,000.00 + $7.00) × 1.16 = $124.12 MXN.
 </Callout>
 
 ### Por qué SPEI tiene tope y tarjeta no
 
-El costo real de procesar un SPEI es prácticamente el mismo sin importar el monto — mover $1,000 o mover $500,000 cuesta lo mismo por debajo. Por eso, a partir de cotizaciones de **$50,000 MXN en adelante**, la comisión de Cord en un cobro por SPEI deja de crecer y se congela en **$588.12 MXN** (IVA incluido), sin importar qué tan grande sea el cobro:
+El costo de procesar un SPEI es prácticamente el mismo sin importar el monto. Por eso la parte porcentual de la tarifa SPEI (el 1%) tiene un tope de **$500.00 MXN** antes de IVA, que se alcanza en un cobro de **$50,000.00 MXN**. A partir de ese monto, la tarifa total de un cobro por SPEI deja de crecer y queda en **$588.12 MXN**: ($500.00 + $7.00 de componente fijo) × 1.16 de IVA, sin importar qué tan grande sea el cobro:
 
-| Monto del cobro | Comisión por tarjeta | Comisión por SPEI |
+| Monto del cobro | Tarifa total con tarjeta | Tarifa total con SPEI |
 |---|---|---|
-| $50,000 | $2,320.00 (4.64%) | $580.00 → **$588.12 con IVA** |
-| $100,000 | $4,640.00 (4.64%) | **$588.12** (0.59% efectivo) |
-| $500,000 | $23,200.00 (4.64%) | **$588.12** (0.12% efectivo) |
+| $50,000.00 MXN | $2,323.48 MXN (4.65%) | **$588.12 MXN** (1.18% efectivo) |
+| $100,000.00 MXN | $4,643.48 MXN (4.64%) | **$588.12 MXN** (0.59% efectivo) |
+| $500,000.00 MXN | $23,203.48 MXN (4.64%) | **$588.12 MXN** (0.12% efectivo) |
 
-Para cotizaciones B2B grandes, esto hace que SPEI sea, por mucho, la forma más barata de cobrar en línea con tarjeta o transferencia automática.
+Para cobros grandes en pesos, esto hace que SPEI sea, por mucho, el método en línea más barato de Cord Payments.
 
 ### Igualas y cobros recurrentes
 
@@ -45,7 +48,7 @@ Una iguala (retainer mensual) se cobra siempre con tarjeta — es la única form
 
 ### Transferencia manual — sigue siendo gratis
 
-Si prefieres compartir tu CLABE directamente y que el cliente te transfiera fuera de Cord Payments (subiendo su comprobante para que tú marques el cobro a mano), esa opción sigue costando **$0.00**. No pasa por Cord Payments, así que no genera ninguna comisión — pero tampoco tiene conciliación automática ni protección ante contracargos.
+Si prefieres compartir tus datos bancarios directamente y que el cliente te transfiera fuera de Cord Payments (subiendo su comprobante para que tú marques el cobro a mano), esa opción sigue sin comisión de Cord. No pasa por Cord Payments, así que no genera ninguna comisión — pero tampoco tiene conciliación automática ni protección ante contracargos.
 
 ## Cómo se activa tu tabla de tarifas
 
@@ -79,8 +82,8 @@ Si un cliente desconoce el cargo con su banco (un contracargo/chargeback), verá
 
 ## Consideraciones antes de activar
 
-1. **Tiempo de depósito.** El dinero no llega a tu banco al instante — los depósitos siguen un calendario que normalmente tarda entre 2 y 7 días hábiles después de cada cobro.
-2. **Verificación de identidad (KYC).** Para activar Cord Payments necesitas pasar una verificación — identificación oficial, RFC, y datos de tu negocio. Es un requisito regulatorio, no una decisión de Cord.
+1. **Tiempo de depósito.** El dinero no llega a tu banco al instante. Cada cobro queda primero en el saldo de tu cuenta de cobros y se deposita según la frecuencia que elijas en **Ajustes › Cobros** (diaria, semanal, mensual o manual). Mientras la verificación de tu cuenta tenga requisitos pendientes, los depósitos pueden quedar pausados; esa misma pantalla te lo dice.
+2. **Verificación de identidad (KYC).** Para activar Cord Payments necesitas pasar una verificación con la identificación fiscal de tu negocio, los datos de las personas que lo controlan y su documento de identidad. Qué se pide exactamente depende de tu país y tu tipo de entidad. Es un requisito regulatorio, no una decisión de Cord. Ver [Conectar tu cuenta](/docs/pagos/onboarding).
 3. **Contracargos.** Si un cliente desconoce un cargo, el dinero puede quedar retenido mientras se resuelve la disputa. Cord te da las herramientas para defenderte con evidencia, pero la responsabilidad del contracargo es del negocio que cobró.
 
 <Callout type="info">

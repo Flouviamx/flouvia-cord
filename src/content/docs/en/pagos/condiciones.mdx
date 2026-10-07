@@ -1,6 +1,9 @@
 ---
 title: "Cord Payments fees"
 description: "The real per-method fee schedule for Cord Payments, how VAT is calculated, the SPEI cap, and what happens to the fee if you refund a payment."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 ---
 
 <header class="content-header">
@@ -16,28 +19,28 @@ Cord Payments charges a per-transaction fee that **already includes** the cost o
 **This table is the current fee schedule for payments in Mexican pesos (MXN)** — today the only rail where Cord Payments has a published, active fee schedule. If you charge in any other currency (USD, EUR, GBP, CAD, BRL), **Cord applies no platform fee at all on that payment today**: you pay only your processor's cost and your Cord subscription. Settings › Payments says the same thing there, in your account's currency.
 </Callout>
 
-| Method | Fee | Example on $10,000 MXN |
+| Method | Total fee | Example on a $10,000.00 MXN payment |
 |---|---|---|
-| **Card** (credit/debit) | 4% + $3.00 MXN + VAT | $46.40 |
-| **SPEI** (automatic bank transfer) | 1% + $7.00 MXN + VAT, capped at **$588.12 MXN** per payment | $11.60 |
+| **Card** (credit/debit) | 4% + $3.00 MXN + VAT | $467.48 MXN |
+| **SPEI** (automatic bank transfer) | 1% + $7.00 MXN + VAT, up to a **maximum of $588.12 MXN** per payment | $124.12 MXN |
 | **Retainers** (monthly recurring charge) | 4% + $3.00 MXN + VAT per monthly charge | — |
-| **Manual transfer** | $0.00 — doesn't go through Cord Payments | $0.00 |
+| **Manual transfer** | $0.00 MXN — doesn't go through Cord Payments | $0.00 MXN |
 
 <Callout type="info">
-VAT (16%) is calculated over the percentage component + the fixed component of the fee, never over the total payment amount. The figures above already include it.
+VAT (Mexican IVA, 16%) is calculated over the fee (its percentage component plus its fixed component), never over the total payment amount. The examples already include it: by card, (4% of $10,000.00 + $3.00) × 1.16 = $467.48 MXN; by SPEI, (1% of $10,000.00 + $7.00) × 1.16 = $124.12 MXN.
 </Callout>
 
 ### Why SPEI has a cap and cards don't
 
-The real cost of processing a SPEI transfer is nearly the same regardless of the amount — moving $1,000 or $500,000 costs about the same underneath. That's why, starting at cotizaciones of **$50,000 MXN and up**, Cord's fee on a SPEI payment stops growing and freezes at **$588.12 MXN** (VAT included), no matter how large the payment gets:
+The cost of processing a SPEI transfer is nearly the same regardless of the amount. That's why the percentage part of the SPEI fee (the 1%) is capped at **$500.00 MXN** before VAT, a cap reached on a **$50,000.00 MXN** payment. From that amount on, the total fee for a SPEI payment stops growing and stays at **$588.12 MXN**: ($500.00 + the $7.00 fixed component) × 1.16 VAT, no matter how large the payment gets:
 
-| Payment amount | Card fee | SPEI fee |
+| Payment amount | Total card fee | Total SPEI fee |
 |---|---|---|
-| $50,000 | $2,320.00 (4.64%) | $580.00 → **$588.12 with VAT** |
-| $100,000 | $4,640.00 (4.64%) | **$588.12** (0.59% effective) |
-| $500,000 | $23,200.00 (4.64%) | **$588.12** (0.12% effective) |
+| $50,000.00 MXN | $2,323.48 MXN (4.65%) | **$588.12 MXN** (1.18% effective) |
+| $100,000.00 MXN | $4,643.48 MXN (4.64%) | **$588.12 MXN** (0.59% effective) |
+| $500,000.00 MXN | $23,203.48 MXN (4.64%) | **$588.12 MXN** (0.12% effective) |
 
-For large B2B quotes, this makes SPEI by far the cheapest way to collect online, whether compared to card or to nothing at all.
+For large payments in pesos, this makes SPEI by far the cheapest online method in Cord Payments.
 
 ### Retainers and recurring charges
 
@@ -45,7 +48,7 @@ A retainer (monthly recurring quote) is always charged by card — it's the only
 
 ### Manual transfer — still free
 
-If you'd rather share your CLABE directly and have the customer transfer outside Cord Payments (uploading proof of payment for you to mark the charge by hand), that option still costs **$0.00**. It doesn't go through Cord Payments, so it doesn't generate any fee — but it also doesn't have automatic reconciliation or chargeback protection.
+If you'd rather share your bank details directly and have the customer transfer outside Cord Payments (uploading proof of payment for you to mark the charge by hand), that option still carries no Cord fee. It doesn't go through Cord Payments, so it doesn't generate any fee — but it also doesn't have automatic reconciliation or chargeback protection.
 
 ## How your fee schedule gets activated
 
@@ -75,12 +78,12 @@ If a customer disputes a charge with their bank (a chargeback), you'll see the c
 1. **100% automatic reconciliation.** Every payment gets tied to its cotización and the status flips to paid in real time — no more chasing bank deposits.
 2. **The money is yours, straight to your account.** Cord Payments never holds your funds or acts as a middleman for the money — you're the merchant of record for every payment.
 3. **Checkout with your brand.** Your customer pays on a screen embedded in the document, with your name and colors — no redirects to external sites, no third-party logos.
-4. **Deposits, balances, and retainers.** The same system collects a deposit today and the balance later (Net 30/60), or a monthly retainer automatically, without you having to chase the payment by hand.
+4. **Down payments, balances, and retainers.** The same system collects a down payment today and the balance later (Net 30/60), or a monthly retainer automatically, without you having to chase the payment by hand.
 
 ## Things to consider before activating
 
-1. **Deposit timing.** Money doesn't land in your bank instantly — deposits follow a schedule that usually takes between 2 and 7 business days after each payment.
-2. **Identity verification (KYC).** Activating Cord Payments requires you to pass a verification — official ID, RFC, and information about your business. It's a regulatory requirement, not a Cord decision.
+1. **Payout timing.** Money doesn't land in your bank instantly. Each payment first goes to the balance of your payments account and is paid out at the frequency you choose in **Settings › Payments** (daily, weekly, monthly, or manual). While your account's verification has pending requirements, payouts may be paused; that same screen tells you so.
+2. **Identity verification (KYC).** Activating Cord Payments requires you to pass a verification with your business's tax identifier, the details of the people who control it, and their identity document. Exactly what is requested depends on your country and entity type. It's a regulatory requirement, not a Cord decision. See [Connect your account](/en/docs/pagos/onboarding).
 3. **Chargebacks.** If a customer disputes a charge, the money can be held while the dispute is resolved. Cord gives you the tools to defend yourself with evidence, but responsibility for the chargeback belongs to the business that collected the payment.
 
 <Callout type="info">

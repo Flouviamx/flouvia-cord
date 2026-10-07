@@ -1,25 +1,30 @@
 ---
 title: "Métodos de cobro"
-description: "Tarjeta, SPEI, transferencia manual y estados de confirmación."
-lastUpdated: "2026-09-08"
+description: "Tarjeta, SPEI, Mercado Pago, transferencia manual y estados de confirmación."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Métodos de cobro</h1>
-  <p class="page-subtitle">Tarjeta, SPEI, transferencia manual y estados de confirmación.</p>
+  <p class="page-subtitle">Tarjeta, SPEI, Mercado Pago, transferencia manual y estados de confirmación.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Elegir cómo pagar
 
-El enlace de cotización ofrece los métodos habilitados por el negocio. Tarjeta y
-transferencia automática requieren una cuenta de cobros habilitada. La factura
-pública tiene su propio flujo de tarjeta; no supongas que ofrece todos los métodos
-de la cotización.
+El enlace de cotización ofrece los métodos habilitados por el negocio. Cord tiene
+dos rieles de cobro en línea:
+
+- **Cord Payments:** tarjeta y, en México, transferencia SPEI automática. Requiere
+  una [cuenta de cobros](/docs/pagos/onboarding) verificada y activa.
+- **[Mercado Pago](/docs/pagos/mercado-pago):** el cliente paga con tu propia cuenta
+  de Mercado Pago. Se ofrece en México, Brasil, Colombia, Argentina, Chile y Perú;
+  donde también tienes Cord Payments, aparece como alternativa en la misma página.
+
+La factura pública acepta tarjeta por Cord Payments y, si lo conectaste, Mercado
+Pago; no ofrece SPEI. No supongas que ofrece todos los métodos de la cotización.
 
 ### Tarjeta
 
@@ -47,28 +52,24 @@ La devolución de una transferencia manual se gestiona con el negocio.
 
 ## Cambiar entre SPEI y tarjeta
 
-La mejora de protección al cambiar de método está **en validación antes de su
-publicación**. Verifica el intento anterior, bloquea la sustitución si hay dinero
-recibido o en proceso y conserva el intento ante reintentos simultáneos. Su objetivo
-es reducir cobros duplicados por cambios de método o respuestas perdidas.
+Antes de ofrecer otro método, Cord revisa el intento de pago anterior. Si ese
+intento ya recibió dinero o tiene un pago en proceso —por ejemplo, una transferencia
+SPEI parcial o una tarjeta autorizada—, no se sustituye: el cliente ve que hay un
+pago pendiente de confirmar. Un reintento simultáneo reutiliza el mismo intento en
+lugar de crear otro. Así se evitan cobros duplicados por cambiar de método o por
+una respuesta perdida.
 
 Mientras un pago esté pendiente de aclarar, no repitas la transferencia ni abras
-otro método para probar. Actualiza el enlace o contacta al negocio. La mejora no
-incluye devolución automática de transferencias tardías ni recuperación automática
-de todos los intentos inciertos.
+otro método para probar. Actualiza el enlace o contacta al negocio. Cord no devuelve
+automáticamente una transferencia que llegue tarde a instrucciones anteriores; ese
+caso se resuelve con el negocio.
 
-Consulta [el alcance de las mejoras](/docs/pagos/mejoras-confiabilidad) y
-[las tarifas por método](/docs/pagos/condiciones). La moneda de venta es distinta
-de [la moneda de tu suscripción a Cord](/docs/cuenta/suscripcion).
+Consulta [las tarifas por método](/docs/pagos/condiciones). La moneda de venta es
+distinta de [la moneda de tu suscripción a Cord](/docs/cuenta/suscripcion).
 
-## Un solo flujo de pago: implementación preparada
+## Integraciones que usan el checkout anterior
 
-Las integraciones que todavía solicitan el checkout anterior recibirán un enlace
-a la pantalla actual de pago de Cord. Así usan el mismo registro de intentos y
-el saldo que corresponde pagar, en vez de crear otra sesión de cobro independiente.
-La respuesta de la API conserva el campo `url` y no cambia las tarifas aceptadas.
-
-Antes de activar el cambio se revisan las sesiones antiguas que pudieran seguir
-abiertas o pendientes. No se cancelan ni reembolsan automáticamente. La revisión
-actual no detectó sesiones en las cuentas conectadas consultadas; debe repetirse
-al publicar. El cambio todavía está pendiente de despliegue y aceptación integrada.
+Si una integración todavía solicita el checkout anterior de una cotización, recibe
+un enlace a la pantalla de pago actual de Cord, con el mismo registro de intentos y
+el saldo que corresponde pagar. La respuesta conserva el campo `url` y no cambia
+las tarifas aceptadas.

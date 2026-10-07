@@ -1,92 +1,91 @@
 ---
-title: "Payment and invoicing improvements"
-description: "Verified changes, benefits and pending validation."
-lastUpdated: "2026-09-08"
+title: "What's new in payments and invoicing"
+description: "Recent changes to how you collect, invoice, and receive your money in Cord, and where to find them."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Payment and invoicing improvements</h1>
-  <p class="page-subtitle">Verified changes, benefits and pending validation.</p>
+  <h1 class="page-title">What's new in payments and invoicing</h1>
+  <p class="page-subtitle">Recent changes to how you collect, invoice, and receive your money in Cord.</p>
 </header>
 
-## What changes and why it helps
+## Summary
 
-This guide brings together the review of Cord Payments, Cord Invoicing and the
-subscription. It separates implemented work from pending activation: a passing
-test is not proof of production availability.
-
-| Improvement | Business benefit | Guide |
+| What's new | What changes for your business | Guide |
 | --- | --- | --- |
-| 2FA on dashboard requests | Requires verification before operating when the business mandates it | [Team and security](/en/docs/cuenta/equipo-seguridad) |
-| Subsequent payments use the invoice balance | Supports completing partial payments without charging the original total again | [Invoices](/en/docs/pagos/facturas-emitidas) |
-| Separate payments, credits and refunds | Explains money collected, amounts due and money to return | [Balances](/en/docs/pagos/facturas-emitidas) |
-| Taxes, withholdings and fiscal credit notes | Preserves line detail and the relationship between a credit note and its invoice | [Invoicing](/en/docs/pagos/facturacion) |
-| Confirmed cancellation | Prevents presenting an invoice as void while its request is pending | [Cancellation help](https://cordhq.app/en/support/cancelar-facturas) |
-| Downloads from invoice links | Recipients obtain available documents without entering the seller dashboard | [Invoice links](https://cordhq.app/en/support/enlace-publico-factura) |
-| Refreshable balance and next action | Helps customers distinguish paying, waiting for confirmation and contacting the business | [Invoices](/en/docs/pagos/facturas-emitidas) |
-| Recurring-period protection | Reduces duplicate issuance from concurrent runs and respects calendar edits | [Recurring invoices](/en/docs/pagos/facturas-recurrentes) |
-| EUR subscriptions and explicit overage | Offers fixed euro prices while preserving existing contract currency | [Subscription](/en/docs/cuenta/suscripcion) |
-| Branding follows effective plan | Preserves customization terms during upgrades and downgrades | [Subscription](/en/docs/cuenta/suscripcion) |
+| Partial invoice payments | Your customer can pay part of the balance, and the next payment is calculated on what remains | [Invoices](/en/docs/pagos/facturas-emitidas) |
+| Credit notes | Reduce the amount of an issued invoice without voiding it; in Mexico it is stamped as a related expense CFDI | [Invoices](/en/docs/pagos/facturas-emitidas) |
+| Downloads on the invoice link | Your customer downloads the PDF and, in Mexico, the XML from the same page where they pay | [Invoices](/en/docs/pagos/facturas-emitidas) |
+| Commercial invoices on Free | The Free plan includes 10 commercial invoices per month; from Starter they are unlimited | [Invoicing by country](/en/docs/pagos/facturacion) |
+| Subscription prices in euros | In Spain, Germany, and France, self-service plans are purchased at fixed EUR prices | [Subscription](/en/docs/cuenta/suscripcion) |
+| Mercado Pago | A second online payment rail, with your own account, on quotes and invoices | [Mercado Pago](/en/docs/pagos/mercado-pago) |
+| Safe switching between SPEI and card | Switching methods can't create a duplicate charge when money has already been received or is in progress | [Payment methods](/en/docs/pagos/metodos) |
+| Payout frequency | You choose how often your money goes out to your bank | [Cord Payments fees](/en/docs/pagos/condiciones) |
 
-The fixes are implemented and have regression tests. USD/EUR pricing configuration
-and authorized migrations were checked in connected services. Combined publication
-of these changes still needs verification; check the state shown by your account
-rather than assuming activation from this guide.
+## Partial invoice payments
 
-## Safe switching from SPEI to card: under validation
+On an invoice link, your customer can pay the full balance or choose **Pay another
+amount** and type how much they want to pay. Cord caps that amount at the invoice's
+real balance. After a partial payment, the next payment is prepared for the current
+balance, not the original total, and a repeated notice for the same payment is not
+added twice.
 
-The first reliability block verifies the previous attempt before replacing it,
-preserves retries and blocks another method when funds have been received or are
-in progress. Its required registry is prepared in the connected database. Integrated
-testing and publication verification remain pending. It does not automatically
-recover every uncertain attempt or refund late transfers.
+## Credit notes and the invoice balance
 
-## Direct-invoice fees: implemented, acceptance pending
+From the detail of an issued invoice you can issue a credit note. In Mexico it is
+stamped as an expense CFDI related to the original invoice's fiscal folio.
 
-Payments through an invoice link also record their platform fee, linked to the
-correct document and business. The fee split prepared for that payment is retained,
-and the charge is retrieved to record verifiable processing costs and net proceeds.
-This helps prevent payments made without a quote from being omitted from the fee ledger.
+Cord keeps payments, issued credit notes, and confirmed refunds separate, and
+calculates the balance as: **total − issued credits − recorded payments + confirmed
+refunds**, with a minimum of zero. Details and examples are in
+[Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
 
-Missing processing costs leave the record pending. Unverifiable fee splits or
-currency mismatches require review and are excluded from the automatic monthly
-fee-invoice draft. Rates are unchanged and historical charges are not recalculated
-using current prices. Integrated acceptance, pending-record recovery and publication
-still need verification.
+## Downloads from the invoice link
 
-## Idle sessions: implemented, acceptance pending
+The invoice's public page includes the PDF download and, for invoices stamped in
+Mexico, the XML. Your customer no longer needs to ask you for them by email.
 
-The inactivity policy is also checked on protected APIs and billing. Public-page
-visits do not refresh sessions, and concurrent requests cannot revive an expired
-session. [See the scope and how activity is measured](/en/docs/cuenta/equipo-seguridad).
+## Commercial invoices on the Free plan
 
-## What tests establish
+The Free plan includes **10 commercial invoices per month**, separately from quote
+sends. From Starter they are unlimited. Fiscal issuance (CFDI in Mexico) starts on
+Starter, with its own monthly allowance.
 
-Normal flows and simulated failures were tested: repeated notifications, partial
-payments, refunds arriving before payments, pending cancellations, issuance retries,
-concurrent periods and access to the correct document. SQL tests with a restricted
-role, compilation and security contract checks also ran. They do not guarantee
-zero failures, backup restoration, actual connection-role isolation or all production
-journeys.
+## Prices in euros
 
-## Next: reliability before new capabilities
+In Spain, Germany, and France, the Cord subscription is purchased at fixed prices in
+euros (EUR) for the self-service plans. If you already have a contract in another
+currency, Cord keeps it. Developer has no self-service euro price; it is purchased
+through sales. See [Subscription](/en/docs/cuenta/suscripcion).
 
-Phase 1 continues with direct-invoice fees, actual database isolation, session
-inactivity, event recovery, alerts, backup restoration and integrated tests. Phase 2
-covers commercial continuity, follow-up and useful workflows for product and service
-businesses; it has not been delivered.
+## Mercado Pago as a second payment rail
 
-See the [roadmap](https://cordhq.app/en/roadmap) for each initiative's scope.
+You can connect your own Mercado Pago account in **Settings › Payments**. Your
+customer sees it on the quote's payment page and on the invoice link, including
+partial payments. Refunds you issue from Mercado Pago are reflected in the balance
+automatically. See [Mercado Pago](/en/docs/pagos/mercado-pago).
 
-## One payment flow: implementation prepared
+## Safe switching between SPEI and card
 
-Integrations that still request the previous checkout will receive a link to
-Cord's current payment screen. They will use the same payment-attempt registry
-and payable balance instead of creating an independent hosted payment session.
-The API response retains its `url` field and accepted rates remain unchanged.
+If your customer starts paying with one method and switches to another, Cord first
+checks the previous attempt. If it has already received money or has a payment in
+progress, it isn't replaced and the customer is asked to wait for confirmation. See
+[Payment methods](/en/docs/pagos/metodos).
 
-Before activation, existing open or pending sessions are reviewed. They are not
-automatically canceled or refunded. The current audit found no sessions in the
-connected accounts checked; it must be repeated at release time. Deployment and
-integrated acceptance remain pending.
+## Payout frequency
+
+In **Settings › Payments** you choose how often your money goes out from Cord Payments
+to your bank account: daily, weekly (choosing the day), monthly (from the 1st to the
+28th), or manual. If your account's verification has pending requirements, that same
+screen tells you payouts are paused.
+
+## Refunds with a fee notice
+
+When you refund a payment from **My Payments**, the dialog asks you to confirm that
+you understand Cord's platform fee is not refunded automatically. See
+[Refunds](/en/docs/pagos/reembolsos).
+
+See the [roadmap](https://cordhq.app/en/roadmap) for what's coming next.

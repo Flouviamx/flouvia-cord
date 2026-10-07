@@ -1,7 +1,7 @@
 ---
 title: "Facturación fiscal por país"
 description: "Cómo Cord emite CFDI 4.0 en México y facturas comerciales en los demás mercados disponibles, incluido el estado operativo de Verifactu en España."
-lastUpdated: "2026-09-09"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones fiscales de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -13,13 +13,9 @@ prerequisites: ["Completar la identidad fiscal del negocio", "En México, cargar
   <p class="page-subtitle">Un motor de facturación, un comprobante distinto según dónde opera tu negocio.</p>
 </header>
 
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
-
 ## Documentos y planes
 
-Gratis incluye 10 facturas comerciales al mes, independientes de los envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez fiscal tienen cuota propia: 30/200/500 al mes en Starter/Profesional/Scale. Una proforma no sustituye una factura fiscal. Contratar un plan no activa por sí solo una integración fiscal.
+Gratis incluye 10 facturas comerciales al mes, independientes de los envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez fiscal tienen su propia cuota mensual incluida: 30 en Starter, 200 en Pro, 500 en Scale y 1,000 en Developer; Gratis no incluye emisión fiscal. Si superas la cuota de tu plan, las facturas fiscales adicionales se cobran como consumo excedente (ver [Suscripción](/docs/cuenta/suscripcion)). Una proforma no sustituye una factura fiscal. Contratar un plan no activa por sí solo una integración fiscal.
 
 ## Tipos de documento por país
 
@@ -40,11 +36,13 @@ otro portal ni volver a adjuntar el certificado en cada factura.
 
 ### Extracción de datos del catálogo
 
-A diferencia de sistemas que emiten al "Público en General" y luego obligan al cliente a autofacturarse en un portal externo, Cord es proactivo y toma los datos fiscales directamente de la ficha del cliente:
+Cord toma los datos fiscales del receptor directamente de la ficha del cliente:
 
 - **Régimen Fiscal:** el asignado a ese cliente en su ficha.
-- **Uso de CFDI:** según el tipo de servicio o producto, o el que hayas definido explícitamente en el perfil del cliente.
-- **Código Postal (C.P.):** el registrado en su constancia de situación fiscal.
+- **Uso de CFDI:** el que hayas definido en la ficha del cliente; si no hay uno, el uso predeterminado de tu cuenta, y si tampoco existe, G03 (Gastos en general).
+- **Código Postal (C.P.):** el registrado en su ficha, que debe coincidir con su constancia de situación fiscal.
+
+El régimen, el uso de CFDI y el código postal del cliente son opcionales en su ficha. Si faltan, Cord aplica valores predeterminados —y sin RFC, emite a "Público en General"—, que pueden no coincidir con la constancia de tu cliente. Complétalos antes de emitir para que el CFDI le sirva a quien lo recibe.
 
 ### Emisión, impuestos y confirmación
 
@@ -72,6 +70,11 @@ La activación fiscal española y su validación integrada siguen pendientes. La
 ## Otros mercados soportados: factura comercial
 
 En Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú, Cord puede emitir una **factura comercial** con folio consecutivo, impuestos y retenciones por línea configurados por el negocio, y los datos fiscales capturados de las partes. Cord no la presenta automáticamente ante la autoridad fiscal local. La obligación de emitir, reportar o complementar ese documento depende del país y régimen del negocio; confírmala con tu asesor fiscal.
+
+## Lo que Cord no hace hoy
+
+- **Complemento de Recepción de Pagos (REP).** En México, Cord timbra el CFDI de ingreso con método de pago PUE (pago en una sola exhibición) y no emite complementos de pago. Si tu operación requiere facturar a crédito con método PPD y emitir el REP de cada abono, hoy tendrás que hacerlo fuera de Cord.
+- **Presentación automática fuera de México y España.** En los demás mercados, la factura comercial no se envía a ninguna autoridad fiscal.
 
 ## El comprobante de la comisión de Cord Payments (México)
 

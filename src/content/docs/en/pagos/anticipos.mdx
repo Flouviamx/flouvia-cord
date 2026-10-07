@@ -1,6 +1,9 @@
 ---
 title: "Upfront and balance"
 description: "Learn how to split the payment of a quote to receive a percentage upfront and collect the rest later."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 ---
 
 <header class="content-header">
@@ -18,7 +21,7 @@ In traditional invoicing platforms, this forces you to generate **two different 
 
 1. Open the quote editor.
 2. On the right sidebar, look for the **Terms** section.
-3. Make sure the payment term is set to **Due on receipt (Contado)** (upfront payments do not apply to Net 30/60 credit terms).
+3. Choose the payment term. With **Due on receipt (Contado)**, the balance can be paid as soon as the upfront payment is covered; with **Net 30** or **Net 60**, the balance is due 30 or 60 days after approval and is enabled for payment on that date.
 4. Check the **"% Upfront"** field and enter the percentage (e.g., `50`).
 5. You'll see the live preview update instantly, showing the client exactly how much they will pay today to approve the document.
 
@@ -30,19 +33,19 @@ In traditional invoicing platforms, this forces you to generate **two different 
 
 When the client opens the public link of the quote, below the total amount they will see a clear breakdown:
 
-- **Project total:** $10,000
-- **Pay upfront today (50%):** $5,000
-- **Balance:** $5,000 (Due upon delivery)
+- **Project total:** $10,000.00 MXN
+- **Pay upfront today (50%):** $5,000.00 MXN
+- **Balance:** $5,000.00 MXN (due according to the payment term)
 
 ### Automatic payment button mutation
 
-The magic of Cord's architecture (based on independent PaymentIntents for each slice) happens at checkout:
+Each part of the quote — the upfront payment and the balance — is an independent payment within the same link:
 
-1. **First charge:** The client clicks "Approve and Pay". The button charges them **only the $5,000** of the upfront deposit. Once processed, the quote switches to "Approved" and is ready for you to start working.
-2. **Second charge:** Weeks later, when you are ready to collect the balance, the client can **re-enter the exact same link** from the original quote. The system will detect that the upfront deposit has already been paid, and the payment button will have automatically mutated to charge the **remaining Balance**.
+1. **First charge:** The client clicks "Approve and Pay". The button charges them **only the $5,000.00 MXN** of the upfront payment. Once processed, the quote switches to "Approved" and is ready for you to start working.
+2. **Second charge:** Once the balance is enabled, the client can **re-enter the exact same link** from the original quote. The system will detect that the upfront payment has already been made, and the payment button will have automatically mutated to charge the **remaining Balance**.
 
 You didn't have to send a second email, nor generate a "payment link for the balance". Everything lives in the same ecosystem.
 
 <Callout type="info">
-Each payment (the upfront deposit and the balance) is an independent transaction for fee purposes — Cord Payments charges its fee on each one separately, using the same fee schedule as a normal payment. See [Fees and advantages](/en/docs/pagos/condiciones).
+Each payment (the upfront payment and the balance) is an independent transaction for fee purposes: on payments in Mexican pesos (MXN), Cord Payments charges its fee on each one separately, using the same fee schedule as a normal payment. In other currencies, Cord applies no platform fee today. See [Fees and advantages](/en/docs/pagos/condiciones).
 </Callout>

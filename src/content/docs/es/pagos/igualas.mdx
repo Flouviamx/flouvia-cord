@@ -1,6 +1,9 @@
 ---
 title: "Igualas recurrentes"
 description: "Convierte tus cotizaciones en suscripciones mensuales automáticas donde el cliente autoriza su tarjeta una sola vez."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 ---
 
 <header class="content-header">
@@ -26,7 +29,7 @@ Para que el modelo recurrente funcione, es requisito indispensable que tengas Co
 
 Cuando le envíes el link de la cotización, el cliente leerá su propuesta normal, pero notará que el botón de aprobación es diferente:
 
-1. El botón dirá **"Autorizar cobro mensual de $X"**.
+1. El botón dirá **"Autorizar cobro mensual"**, junto al importe mensual con su divisa (por ejemplo, $12,000.00 MXN). En la pantalla de pago, el botón final muestra ese mismo importe por mes.
 2. Al dar clic, el cliente ingresará su tarjeta de crédito o débito de forma segura.
 3. El sistema hará el **primer cargo inmediatamente** para activar la iguala, marcando la cotización como Aprobada.
 4. Cord Payments se encarga de **domiciliar la tarjeta** y cobrar ese mismo monto exacto cada mes, enviando los fondos directo a tu cuenta bancaria.
@@ -34,7 +37,7 @@ Cuando le envíes el link de la cotización, el cliente leerá su propuesta norm
 Tú nunca almacenas los datos de la tarjeta — el sistema se encarga de tokenizarlos y de hacer los reintentos automáticos si un mes la tarjeta del cliente falla por falta de fondos. Si un cargo mensual falla, lo verás señalado en el widget "Igualas activas" del [dashboard de cobros](/docs/pagos/dashboard).
 
 <Callout type="info">
-Cada cargo mensual paga la misma tarifa que un cobro de tarjeta normal — no hay descuento por volumen recurrente. Esa tarifa (4% + $3.00 MXN + IVA) es la vigente para igualas cobradas en pesos mexicanos; para una iguala en otra moneda, revisa **Ajustes › Cobros**. Ver el detalle en [Tarifas y ventajas](/docs/pagos/condiciones).
+Cada cargo mensual paga la misma tarifa total que un cobro de tarjeta normal — no hay descuento por volumen recurrente. Esa tarifa total (4% + $3.00 MXN + IVA, que incluye el procesamiento de la tarjeta) es la vigente para igualas cobradas en pesos mexicanos (MXN). En una iguala en otra moneda, Cord no aplica hoy comisión de plataforma; **Ajustes › Cobros** te lo muestra con la divisa de tu cuenta. Ver el detalle en [Tarifas y ventajas](/docs/pagos/condiciones).
 </Callout>
 
 ## Cancelación

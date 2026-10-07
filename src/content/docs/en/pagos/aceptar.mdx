@@ -1,6 +1,9 @@
 ---
 title: "Accepting a payment"
-description: "What the Cord Payments checkout looks like from the customer's side: picking a method, paying by card or SPEI, and how deposits/balances work."
+description: "What the Cord Payments checkout looks like from the customer's side: picking a method, paying by card or SPEI, and how down payments and balances work."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
 ---
 
 <header class="content-header">
@@ -17,8 +20,8 @@ If you activated more than one method (see [Payment methods](/en/docs/pagos/meto
 ### Paying by card
 
 - Native form embedded in the document, no redirects to any external site.
-- Accepts Visa, Mastercard, and American Express.
-- As soon as the customer confirms, the cotización flips to "Paid" within seconds and funds are deposited into your bank account on the next deposit cycle.
+- Accepts the credit and debit cards your payments account supports.
+- As soon as the payment is confirmed, the cotización flips to "Paid" and funds are paid out to your bank account at the payout frequency you chose in **Settings › Payments**.
 - The only method compatible with [recurring retainers](/en/docs/pagos/igualas).
 
 ### Paying by SPEI
@@ -33,12 +36,12 @@ If you activated more than one method (see [Payment methods](/en/docs/pagos/meto
 Card and SPEI have different fees (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)); that table is the current schedule for payments in Mexican pesos.
 </Callout>
 
-## Partial payments and deposits
+## Partial payments and down payments
 
-What happens if you configured a **50% deposit** on the cotización?
+What happens if you configured a **50% down payment** on the cotización?
 
-1. The initial checkout shows only the deposit amount.
-2. Once the customer pays it, the cotización is marked "Deposit paid" and the balance is pending according to your terms (cash or credit).
-3. When it's time to collect the balance, Cord emails the customer a button to settle it, which takes them back to the same checkout for the remaining amount.
+1. The initial checkout shows only the down payment amount.
+2. Once the customer pays it, Cord records the down payment as collected and the balance is pending according to your terms (cash or credit).
+3. To pay the balance, the customer returns to the **same link** of the cotización and the checkout shows the remaining amount; no second payment link is needed. With credit terms, the balance is enabled when its due date arrives. In the days before the due date, Cord sends the customer an automatic email reminder with the cotización link.
 
-See the full detail in [Deposit and balance](/en/docs/pagos/anticipos).
+See the full detail in [Upfront and balance](/en/docs/pagos/anticipos).
