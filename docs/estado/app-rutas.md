@@ -723,6 +723,15 @@ gated por la cookie `cord_test_mode` (ver ../historial/README.md). Entradas con 
 escalonado (NO GSAP). Mobile: sidebar → drawer (ocupa 80vw, tab bar inferior ELIMINADA jun 2026).
 En móvil la topbar muestra burger + crear (círculo) + lupa (ícono) + campana. Ayuda y config
 viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).
+**Panel de Ayuda (oct 2026):** hoja flotante a z-index 870 (sobre el Workbench y el
+widget de onboarding) con dos vistas: inicio (buscador de FAQ + artículos del Centro de
+ayuda vía `/api/support-search.json`, accesos y la tarjeta de Cord AI) y chat. El chat
+llama a `POST /api/ayuda/ia` (`src/lib/help-assistant.ts`): Claude Haiku 5.5 sin
+pensamiento, esfuerzo bajo, prompt de sistema cacheado (reglas + FAQ + índice) y solo
+los 3 artículos más relevantes por pregunta. Lo paga Cord — no reserva cuota del plan;
+el gasto lo acotan los topes de la ruta (por persona y global diario). Si la IA no
+responde, el panel contesta con la búsqueda local (`src/lib/help-search.ts`, la misma
+que usa el servidor). No ve datos de la cuenta ni ejecuta acciones.
 ⚠️ Estilos de contenido inyectado por JS (Cmd+K items, notif panel, toasts, pins)
 DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el HTML
 dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.

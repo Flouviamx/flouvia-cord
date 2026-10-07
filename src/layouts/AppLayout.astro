@@ -1429,6 +1429,7 @@ import { iconInner } from '../lib/icons';
     .chat-msg.user { align-self: flex-end; align-items: flex-end; }
     @keyframes chat-in { from { opacity: 0; transform: translateY(6px); } }
     .chat-author { font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); padding: 0 4px; }
+    .chat-bubble > div:first-child { white-space: pre-line; }
     .chat-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.5; font-family: var(--font-sans); overflow-wrap: anywhere; }
     .chat-msg.bot .chat-bubble { background: var(--help-fill); color: var(--color-text); border-top-left-radius: 6px; }
     .chat-msg.user .chat-bubble { background: #0a192f; color: #fff; border-top-right-radius: 6px; }
@@ -1487,13 +1488,11 @@ import { iconInner } from '../lib/icons';
     .chat-send:not(:disabled):active { transform: scale(0.92); }
 
     /* ── Transición inicio ⇄ chat ──
-       El chat se monta ENCIMA de la vista inicio (que sigue visible debajo) y se
-       revela con un clip-path que parte de la caja exacta de la tarjeta de Cord AI
-       hasta cubrir el panel, mientras el panel anima su ancho: la tarjeta "se abre"
-       y se convierte en el chat. Sin capturas ni escalados, el texto nunca se
-       estira. La coreografía vive en morph() (initHelp); aquí solo el andamiaje. */
-    .help-chat.is-morphing { position: absolute; inset: 0; z-index: 3; will-change: clip-path; }
-    .help-home.is-pinned { position: absolute; top: 0; right: 0; bottom: 0; }
+       Durante el cambio las dos vistas se apilan ancladas a la derecha, cada una a
+       su ancho final (lo fija setView() en initHelp), y el panel recorta. El chat
+       va encima: entra desde la derecha como una pantalla de navegación iOS. */
+    .help-home.is-sliding, .help-chat.is-sliding { position: absolute; top: 0; right: 0; bottom: 0; will-change: transform; }
+    .help-chat.is-sliding { z-index: 3; }
 
     /* ──────────────────────────────────────────────────────────────
        PULIDO MÓVIL GLOBAL (is:global → alcanza inputs de las páginas hijas)
@@ -1836,6 +1835,7 @@ import { iconInner } from '../lib/icons';
 
 <script>
     import { iconInner, iconSvg } from '../lib/icons';
+    import { normalizeText, tokenize, scoreDoc } from '../lib/help-search';
     const mobileUi = () => window.matchMedia('(max-width: 880px)').matches;
 
     // ── Salir del entorno de prueba (banner ámbar) ──
@@ -2316,19 +2316,11 @@ import { iconInner } from '../lib/icons';
         const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const esc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 
-        // ── Búsqueda: texto normalizado (sin acentos) y por palabras, no por frase ──
-        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-        const STOP = new Set(('como cómo que qué para por con los las del una uno unos unas mis mi tu sus hay puedo puede hago hacer the and for how can what does with your you this that are '
-            + 'de la el en y o a es se me lo le al un no si mas más ya').split(' ').map(norm));
-        const tokens = (s: string) => norm(s).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2 && !STOP.has(w));
-        // Puntaje = fracción de palabras de la consulta presentes (el título pesa doble).
-        const score = (q: string[], title: string, body: string) => {
-            if (!q.length) return 0;
-            const T = norm(title), B = norm(body);
-            let s = 0;
-            for (const w of q) s += T.includes(w) ? 2 : B.includes(w) ? 1 : 0;
-            return s / (q.length * 2);
-        };
+        // Búsqueda por palabras y sin acentos: src/lib/help-search.ts (la misma que
+        // usa Cord AI en el servidor para elegir qué artículos lee).
+        const norm = normalizeText;
+        const tokens = tokenize;
+        const score = scoreDoc;
 
         // Artículos del Centro de ayuda: índice estático, cargado al abrir por primera vez.
         type Art = { title: string; description: string; category: string; keywords?: string; url: string };
@@ -2456,31 +2448,53 @@ import { iconInner } from '../lib/icons';
             return { text: I18N.chatNoMatch || '', links: [{ title: I18N.chatSupportLink || 'Soporte', url: isEn ? '/en/support' : '/soporte', description: '', category: '' }] };
         };
 
-        let pending: number | null = null;
-        const ask = (text: string) => {
+        // Conversación que viaja a Cord AI (solo texto; el servidor la recorta).
+        let turns: { role: 'user' | 'assistant'; text: string }[] = [];
+        let inflight: AbortController | null = null;
+        const ask = async (text: string) => {
             const q = text.trim();
-            if (!q) return;
+            if (!q || inflight) return;
             if (quick) quick.hidden = true;
             addMsg('user', q);
             input.value = '';
             send.disabled = true;
-            if (pending) clearTimeout(pending);
             const dots = showTyping();
-            // La búsqueda es local; la pausa breve solo evita que la respuesta
-            // aparezca antes de que se lea la pregunta.
-            loadArts().then(() => {
-                pending = window.setTimeout(() => {
-                    dots.remove();
-                    const r = answer(q);
-                    addMsg('bot', r.text, r.links, true);
-                    pending = null;
-                }, reduced() ? 0 : 450);
-            });
+            const prior = turns.slice();
+            turns.push({ role: 'user', text: q });
+            const ctrl = (inflight = new AbortController());
+            let reply: { text: string; links: Art[] } | null = null;
+            try {
+                const res = await fetch('/api/ayuda/ia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, history: prior }),
+                    signal: ctrl.signal,
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.text) reply = {
+                        text: String(data.text),
+                        links: (data.links || []).map((l: any) => ({ title: String(l.title), url: String(l.url), description: '', category: '' })),
+                    };
+                }
+            } catch {
+                if (ctrl.signal.aborted) return;   // el chat se reinició: nada que pintar
+            }
+            if (ctrl.signal.aborted) return;
+            inflight = null;
+            // Sin respuesta de la IA (caída, tope, sin llave): la búsqueda local
+            // responde igual, desde el FAQ y los artículos.
+            if (!reply) { await loadArts(); reply = answer(q); }
+            dots.remove();
+            turns.push({ role: 'assistant', text: reply.text });
+            addMsg('bot', reply.text, reply.links, true);
+            send.disabled = !input.value.trim();
         };
 
         const resetChat = () => {
             if (typing) { clearInterval(typing); typing = null; }
-            if (pending) { clearTimeout(pending); pending = null; }
+            if (inflight) { inflight.abort(); inflight = null; }
+            turns = [];
             history.innerHTML = '';
             addMsg('bot', I18N.chatGreeting || '');
             if (quick) quick.hidden = false;
@@ -2496,7 +2510,10 @@ import { iconInner } from '../lib/icons';
                 if (!f) return;
                 quick.hidden = true;
                 addMsg('user', f.q);
-                window.setTimeout(() => addMsg('bot', f.a, findArts(f.q, 0.5, 2), true), reduced() ? 0 : 260);
+                // Las sugeridas salen del FAQ: respuesta instantánea y gratis. Entran
+                // al historial para que una pregunta de seguimiento tenga contexto.
+                turns.push({ role: 'user', text: f.q }, { role: 'assistant', text: f.a });
+                window.setTimeout(() => addMsg('bot', f.a, findArts(f.q, 0.75, 2), true), reduced() ? 0 : 260);
             });
         }
         input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
@@ -2504,16 +2521,17 @@ import { iconInner } from '../lib/icons';
         resetChat();
 
         // ── Vistas inicio ⇄ chat ──
-        // morph(): el chat se monta encima de la vista inicio y se revela con un
-        // clip-path que parte de la caja de la tarjeta de Cord AI, mientras el panel
-        // anima su ancho (anclado a la derecha). La vista inicio queda fija a su
-        // ancho original debajo, así no se re-acomoda mientras la tapa el chat. De
-        // regreso es la misma coreografía al revés. Sin Web Animations o con
+        // Navegación tipo iOS, coherente con el "← Atrás" del chat: el chat entra
+        // deslizándose desde la derecha mientras el inicio se corre un poco a la
+        // izquierda y se apaga; de regreso, al revés. El panel anima su ancho a la
+        // vez. Cada vista queda FIJA a su propio ancho final y anclada a la derecha
+        // durante el cambio, así ningún texto se re-acomoda a media animación; el
+        // panel (overflow hidden) es el que recorta. Sin Web Animations o con
         // movimiento reducido, el cambio es directo.
-        const card = document.getElementById('helpAiOpen') as HTMLElement | null;
         let view: 'home' | 'chat' = 'home';
-        let morphing: Animation[] = [];
-        const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+        let moving: Animation[] = [];
+        const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+        const DUR = 460;
         const applyView = (v: 'home' | 'chat') => {
             view = v;
             panel.classList.toggle('ai-active', v === 'chat');
@@ -2521,76 +2539,57 @@ import { iconInner } from '../lib/icons';
             chat.hidden = v === 'home';
         };
         const cleanup = () => {
-            morphing.forEach((a) => a.cancel());
-            morphing = [];
-            chat.classList.remove('is-morphing');
-            home.classList.remove('is-pinned');
-            home.style.width = '';
-            home.style.background = '';
+            moving.forEach((a) => a.cancel());
+            moving = [];
+            for (const el of [home, chat]) {
+                el.classList.remove('is-sliding');
+                el.style.width = '';
+                el.style.background = '';
+            }
             panel.style.backgroundColor = '';
         };
         const setView = (v: 'home' | 'chat', after?: () => void) => {
-            if (v === view && !morphing.length) { after?.(); return; }
+            if (v === view && !moving.length) { after?.(); return; }
             cleanup();
-            if (!card || !('animate' in chat) || reduced() || drawer.hidden) {
+            if (!('animate' in chat) || reduced() || drawer.hidden) {
                 applyView(v);
                 after?.();
                 return;
             }
             const toChat = v === 'chat';
-            // Medir con la vista inicio visible: la tarjeta da el rectángulo de origen.
-            if (!toChat) { home.hidden = false; }
-            const p0 = panel.getBoundingClientRect();
-            const c = card.getBoundingClientRect();
-            const homeW = home.getBoundingClientRect().width;
-            const surfaceOf = () => getComputedStyle(panel).getPropertyValue('--help-surface').trim();
-            const s0 = surfaceOf();
+            const surface = () => getComputedStyle(panel).getPropertyValue('--help-surface').trim();
+            const w0 = panel.getBoundingClientRect().width;
+            const s0 = surface();
             panel.classList.toggle('ai-active', toChat);
-            const p1 = panel.getBoundingClientRect();
-            const s1 = surfaceOf();
-            // El panel cambia de superficie al instante (gris ⇄ blanco); la vista
-            // inicio conserva la suya mientras se ve debajo del chat.
-            const homeSurface = (toChat ? s0 : s1) || '#f5f5f7';
-            const surface = (toChat ? s1 : s0) || '#ffffff';
+            const w1 = panel.getBoundingClientRect().width;
+            const s1 = surface();
             view = v;
-            // Inicio fijo a su ancho y anclado a la derecha mientras dura el cambio.
+            const homeW = toChat ? w0 : w1, chatW = toChat ? w1 : w0;
+            const homeBg = (toChat ? s0 : s1) || '#f5f5f7', chatBg = (toChat ? s1 : s0) || '#ffffff';
             home.hidden = false;
-            home.classList.add('is-pinned');
-            home.style.width = homeW + 'px';
-            home.style.background = homeSurface;
-            // Mientras el panel se ensancha, la franja que todavía no cubre el chat
-            // conserva el gris de inicio (si no, asoma el blanco del chat).
-            panel.style.backgroundColor = homeSurface;
             chat.hidden = false;
-            chat.classList.add('is-morphing');
-            const radius = getComputedStyle(card).borderRadius || '20px';
-            // Recorte medido contra el panel de partida: el borde derecho es
-            // invariante (panel anclado a la derecha), el izquierdo converge a 0.
-            const cardClip = `inset(${c.top - p0.top}px ${p0.right - c.right}px ${p0.bottom - c.bottom}px ${c.left - p0.left}px round ${radius})`;
-            const fullClip = 'inset(0px 0px 0px 0px round 0px)';
-            const dur = 520;
-            const content = Array.from(chat.children) as HTMLElement[];
-            const navy = '#0a1324';
-            // Tres capas: la caja (clip) crece en navy; la superficie del chat entra
-            // cuando la caja ya casi llena el panel; el contenido llega al final. De
-            // regreso, el orden se invierte y todo es más corto (salir pesa menos).
-            const clipKF = toChat ? [{ clipPath: cardClip }, { clipPath: fullClip }] : [{ clipPath: fullClip }, { clipPath: cardClip }];
-            const bgKF = toChat ? [{ backgroundColor: navy }, { backgroundColor: surface }] : [{ backgroundColor: surface }, { backgroundColor: navy }];
-            morphing = [
-                panel.animate([{ width: p0.width + 'px' }, { width: p1.width + 'px' }], { duration: dur, easing: EASE }),
-                chat.animate(clipKF, { duration: dur, easing: EASE, fill: 'both' }),
-                chat.animate(bgKF, toChat
-                    ? { duration: 260, delay: 160, easing: 'ease-out', fill: 'both' }
-                    : { duration: 200, delay: 60, easing: 'ease-in', fill: 'both' }),
-                ...content.map((el) => el.animate(
-                    toChat ? [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }]
-                           : [{ opacity: 1 }, { opacity: 0 }],
-                    toChat ? { duration: 300, delay: 220, easing: 'ease-out', fill: 'both' }
-                           : { duration: 140, easing: 'ease-in', fill: 'both' },
-                )),
+            home.classList.add('is-sliding');
+            chat.classList.add('is-sliding');
+            home.style.width = homeW + 'px';
+            chat.style.width = chatW + 'px';
+            home.style.background = homeBg;
+            chat.style.background = chatBg;
+            // La franja que el panel descubre al ensancharse lleva el color de inicio.
+            panel.style.backgroundColor = homeBg;
+            const homeOut = [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(-22%)', opacity: 0 }];
+            const chatIn = [
+                { transform: 'translateX(100%)', boxShadow: '-24px 0 48px -24px rgba(10,25,47,0)' },
+                { transform: 'translateX(0)', boxShadow: '-24px 0 48px -24px rgba(10,25,47,0.28)' },
             ];
-            const done = morphing[1];
-            done.finished.then(() => {
+            // De regreso se invierten los KEYFRAMES, no la dirección: `direction:
+            // 'reverse'` también invierte la curva y la salida arrancaría lenta.
+            const opts: KeyframeAnimationOptions = { duration: DUR, easing: EASE, fill: 'both' };
+            moving = [
+                panel.animate([{ width: w0 + 'px' }, { width: w1 + 'px' }], { duration: DUR, easing: EASE }),
+                home.animate(toChat ? homeOut : [...homeOut].reverse(), opts),
+                chat.animate(toChat ? chatIn : [...chatIn].reverse(), opts),
+            ];
+            moving[2].finished.then(() => {
                 cleanup();
                 applyView(v);
                 after?.();
