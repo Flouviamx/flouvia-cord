@@ -1,6 +1,7 @@
 ---
 title: "Cord Webhooks"
 description: "Build real-time integrations by reacting to events that occur in Cord — durable delivery with retries, event identity, and zero-downtime secret rotation."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -142,7 +143,9 @@ During the window, Cord signs every delivery with **both** secrets at once:
 X-Cord-Signature-V1: t=1732650000,v1=<hmac with the NEW secret>,v1=<hmac with the OLD secret>
 ```
 
-That means you can update your `CORD_WEBHOOK_SECRET` at any point within the window — before or after rotating on Cord's side — without a single delivery getting rejected. The SDK already accepts whichever `v1=` matches. If you verify by hand and only read the first `v1=` you find, you're still covered (it's the newest one). Once the window closes, Cord stops sending the old secret.
+The order is fixed: the **new** secret's `v1=` comes first and the **old** secret's comes last. That lets you update your `CORD_WEBHOOK_SECRET` at any point within the window without a single delivery getting rejected, as long as your verification compares **every** `v1=` in the header. The SDK already accepts whichever one matches. If you verify by hand, don't keep a single value: reading only the first one requires that you already have the new secret, and a parser that keeps the last `v1=` (for example, one that builds a key-value map) only validates with the old secret during the window, so it fails as soon as you switch to the new one before the window closes.
+
+The legacy `X-Cord-Signature` signature holds a single value, so during the window it's computed with the **old** secret; once the window closes it's signed with the new one. When the window closes, Cord stops signing with the old secret in both headers.
 
 ## Event catalog
 
@@ -204,11 +207,11 @@ own public link, not something derived from a quote — and carry a DIFFERENT `d
     "id": "d4a1...",
     "object": "invoice",
     "numero": "FAC-0032",
-    "folio_fiscal": "3f2a...-uuid-cfdi",
+    "folio_fiscal": "3F2A9C1E-7B4D-4E6A-8C2F-1D5B9E3A7C40",
     "estado": "paid",
-    "estado_fiscal": "stamped",
+    "estado_fiscal": "issued",
     "pais": "MX",
-    "tipo": "factura",
+    "tipo": "cfdi_40",
     "moneda": "MXN",
     "total": 12500.00,
     "pagado": 12500.00,
@@ -221,10 +224,15 @@ own public link, not something derived from a quote — and carry a DIFFERENT `d
 }
 ```
 
+`estado` is the invoice lifecycle (`draft`, `open`, `paid`, `void`, or `uncollectible`).
+`estado_fiscal` is the registration with the tax provider: `pending`, `issued`, `cancelled`, or
+`error`. `tipo` is the document type: `cfdi_40`, `cfdi_egreso`, `proforma`,
+`commercial_invoice`, `commercial_credit_note`, `verifactu_invoice`, or `verifactu_credit_note`.
+
 Note the public link: `/i/{token}` for a Cord Invoicing invoice, versus `/q/{token}` for a
-quote. If you use the Server SDK in TypeScript, `CordWebhookEvent` today only types the
-discriminated union of `quote.*`/`payment.*` events — for the seven Cord Invoicing `invoice.*`
-events, type `data` by hand against the shape above until the SDK covers it.
+quote. If you use `@flouviahq/node` in TypeScript, `constructEvent` returns `CordWebhookEvent`,
+a union discriminated by `event` that already types all 41 events in the catalog, including
+the seven Cord Invoicing `invoice.*` events with the shape above.
 </Callout>
 
 ### Shape of `data` for clients, products, tasks, and promises

@@ -1,6 +1,7 @@
 ---
 title: "Autenticación"
 description: "Cómo autenticar tus solicitudes a la API de Cord utilizando Bearer Tokens."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -33,7 +34,7 @@ Cord tiene tres tipos de llave:
 
 Las claves publicables tienen restricciones de seguridad automáticas impuestas por la API. Por ejemplo, si consultas la [API de Productos](/docs/desarrolladores/funciones/productos) usando una clave publicable, el servidor de Cord omitirá automáticamente el campo `costo` (margen) para garantizar que los visitantes de tu sitio web no puedan descubrir tus márgenes de ganancia.
 
-Además, una Publishable Key solo puede usarse en cuatro rutas: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config` y `POST /api/v1/elements/ai-draft`. Cualquier otra responde `403 insufficient_scope`. La petición también debe enviar un header `Origin` o `Referer`; si registraste dominios permitidos para esa llave, Cord verifica que coincidan antes de aceptarla.
+Además, una Publishable Key solo puede usarse en cuatro rutas: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config` y `POST /api/v1/elements/ai-draft`. Cualquier otra responde `403 insufficient_scope`. La petición también debe enviar un header `Origin` o `Referer` que coincida con los dominios permitidos de tu organización, configurados en **Ajustes › Cotizador embebible**. Una `pk_live_` sin dominios configurados responde `403 origin_allowlist_required`; una `pk_test_` se acepta desde cualquier origen.
 
 <Callout type="info">
 **Atención:**
@@ -56,18 +57,25 @@ Una llave `rk_` lleva un nivel por recurso. Cord deriva el recurso de la ruta, a
 | `webhooks` | `/api/v1/webhooks/*` |
 | `elements` | `/api/v1/elements/*` |
 | `test_helpers` | `/api/v1/test_helpers/*` |
+| `setup` | `/api/v1/setup/*` |
 
-`read` permite `GET`; `write` permite además crear, editar y las acciones. `GET /api/v1/me` responde con cualquier llave secreta o restringida. Una llave restringida no funciona con el servidor MCP, que abarca varios recursos a la vez: usa una Secret Key de solo lectura para eso. Sin permiso, la respuesta es `403 insufficient_permissions` y nombra el recurso.
+`read` permite `GET`; `write` permite además crear, editar y las acciones. `GET /api/v1/me` responde con cualquier llave secreta o restringida. Una llave restringida no funciona con el servidor MCP, que abarca varios recursos a la vez: usa una Secret Key para eso (de solo lectura si tu agente solo consulta). Sin permiso, la respuesta es `403 insufficient_permissions` y nombra el recurso.
 
 ## IPs permitidas
 
 A una llave `sk_` o `rk_` le puedes fijar hasta 20 IPs o rangos CIDR (IPv4 o IPv6). Cord compara la IP de origen que registra su red de entrega, no un header que el cliente pueda escribir, así que `X-Forwarded-For` no sirve para saltarse la lista. Una petición desde otra IP responde `403 ip_not_allowed` y queda en la bitácora de tu organización, una vez por hora por IP.
 
-Las Publishable Keys se limitan por dominio en Ajustes › Elements, no por IP.
+Las Publishable Keys se limitan por dominio en **Ajustes › Cotizador embebible**, no por IP.
 
 ## Vencimiento y rotación
 
 Al crear una llave puedes elegir que venza en 7, 30, 90 o 365 días; después responde `401 key_expired`. **Rotar** crea una llave nueva con los mismos permisos, IPs y versión de la API, y deja la anterior viva el tiempo que elijas (inmediato, 1 hora, 24 horas o 7 días) mientras actualizas tus sistemas. La llave en gracia ya no cuenta contra el límite de tu plan. Crear, editar, rotar y revocar llaves queda registrado en la bitácora con quién y desde qué IP.
+
+## Llaves incluidas por plan
+
+Cada plan incluye un número máximo de llaves activas: 2 en Gratis, 5 en Starter, 20 en Profesional, 50 en Scale y 200 en Developer. Cuentan las llaves secretas, restringidas y publicables que no están revocadas, vencidas ni en periodo de gracia por una rotación; las conexiones autorizadas por OAuth (Zapier, Make) no cuentan. Al llegar al tope, el Workbench no te deja crear otra hasta que revoques una.
+
+Si tu organización queda con más llaves activas de las que incluye su plan (por ejemplo, después de bajar de plan), las más antiguas siguen funcionando y las que exceden el cupo responden `402 subscription_key_limit` hasta que revoques llaves o subas de plan.
 
 ## Comprobación Rápida de Identidad
 

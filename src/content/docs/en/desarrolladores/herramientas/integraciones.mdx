@@ -1,6 +1,7 @@
 ---
 title: "Integrations and automation"
 description: "Which path to take to connect Cord with another system: no-code workflows, managed HubSpot sync, Zapier and Make, or the API with webhooks."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -29,12 +30,12 @@ Cord manages the sync: clients with Companies and Contacts both ways, and every 
 
 ## Zapier and Make
 
-Both platforms talk to Cord's public API and connect through **OAuth 2.0**: the person authorizes on a Cord screen and there are no keys to create or paste. Each authorization becomes a short-lived credential that Cord renews with a refresh token, and it shows up in **Settings › Developer mode › API** as an **Authorized connection**.
+Both platforms talk to Cord's public API and connect through **OAuth 2.0**: the person authorizes on a Cord screen and there are no keys to create or paste. Each authorization becomes a short-lived credential that Cord renews with a refresh token, and it shows up in the **API** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) as an **Authorized connection**.
 
 - **Events out:** a webhook subscription created with that connection's credential. They are created and deleted automatically when you turn the Zap or scenario on and off.
 - **Actions into Cord:** the `/api/v1` endpoints with that same credential.
 
-Cord's OAuth clients are registered by Cord (today: Zapier and Make); there is no open registration for third-party applications. For your own server, use a secret key.
+Cord registers OAuth clients on request; there is no self-service registration. Today there are registered clients for Zapier and Make, plus the Cord add-on for Gmail, which belongs to Cord itself. If you're building an app other businesses will connect, follow [OAuth for apps](/en/docs/desarrolladores/herramientas/oauth). For your own server, use a secret key.
 
 ## n8n
 

@@ -2,6 +2,7 @@
 title: "OAuth para apps"
 seoTitle: "OAuth 2.0 de Cord para apps de terceros"
 description: "Cómo una app externa se conecta a Cord con OAuth 2.0 en vez de pedir una llave: registro del cliente, autorización, canje de código, PKCE, renovación con rotación y revocación."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -11,7 +12,7 @@ description: "Cómo una app externa se conecta a Cord con OAuth 2.0 en vez de pe
 
 ## Cuándo usarlo
 
-Si construyes una app que muchos negocios van a conectar con su Cord —un conector, un complemento, una plataforma de automatización—, usa OAuth 2.0 en lugar de pedirles una llave de API. La persona autoriza en una pantalla de Cord, elige el espacio de trabajo y puede revocar el acceso cuando quiera. Es el mismo mecanismo que usan las apps de Cord en Zapier, Make y el complemento de Gmail.
+Si construyes una app que muchos negocios van a conectar con su Cord —un conector, un complemento, una plataforma de automatización—, usa OAuth 2.0 en lugar de pedirles una llave de API. La persona autoriza en una pantalla de Cord, elige el espacio de trabajo y puede revocar el acceso cuando quiera. Es el mismo mecanismo que usan las apps de Cord en Zapier y Make, y el complemento de Cord para Gmail.
 
 Para una integración de tu propio negocio, una [llave de API](/docs/desarrolladores/empezar/apikey) es más simple.
 
@@ -95,7 +96,7 @@ curl -X POST "https://cordhq.app/api/oauth/revoke" \
      -d token=cord_rt_... -d client_id=cord_oc_... -d client_secret=cord_cs_...
 ```
 
-Responde `200` aunque el token no exista, para no revelar qué tokens son válidos. La persona también puede revocar tu app en **Ajustes › Modo desarrollador**, entre las conexiones autorizadas.
+Responde `200` aunque el token no exista, para no revelar qué tokens son válidos. La persona también puede revocar tu app en la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench), donde aparece como **Conexión autorizada**.
 
 ## Límites y errores
 
@@ -106,4 +107,4 @@ Responde `200` aunque el token no exista, para no revelar qué tokens son válid
 | `grant_type` distinto de `authorization_code` o `refresh_token` | `400` con `error: "unsupported_grant_type"` |
 | El espacio ya tiene 25 conexiones vivas de tu app | `400` con `error: "invalid_request"`; la persona debe revocar las que no use |
 
-Las llamadas con un token de OAuth cuentan contra la cuota de API del plan del negocio, igual que una llave.
+Las llamadas con un token de OAuth cuentan contra la cuota de API del plan del negocio, igual que una llave. La única excepción es el complemento de Cord para Gmail, que es una superficie de la propia Cord: sus llamadas no consumen la cuota mensual, aunque sí los límites por minuto.

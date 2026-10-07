@@ -2,6 +2,7 @@
 title: "API de Facturas"
 seoTitle: "API de facturas de Cord"
 description: "Lista, crea, emite, envía, cobra y anula facturas desde tu sistema con la API v1 de Cord: borradores, emisión irreversible, pagos parciales y notas de crédito."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -13,7 +14,7 @@ description: "Lista, crea, emite, envía, cobra y anula facturas desde tu sistem
 
 Una factura nace como **borrador** y solo se vuelve definitiva cuando la emites. Emitir es una acción explícita e irreversible: consume el timbrado de tu plan cuando aplica (CFDI en México) y deja la factura con su número. Crear nunca emite por sí solo.
 
-La API de facturas requiere que tu plan incluya la facturación de tu país; si no, responde `402`.
+La API de facturas está disponible en todos los planes, incluido Gratis, con facturas comerciales (proforma en México y España). La emisión fiscal integrada (CFDI en México, y Verifactu en España cuando está habilitado para tu cuenta) requiere Starter o superior: pedir `document_mode: "fiscal"` sin ese plan responde `400 invalid_request`.
 
 ## Listar facturas
 
@@ -21,10 +22,10 @@ La API de facturas requiere que tu plan incluya la facturación de tu país; si 
 
 | Parámetro | Qué hace |
 |---|---|
-| `estado` | Filtra por estado de la factura. |
+| `estado` | `draft`, `open`, `paid`, `void`, `uncollectible` u `overdue` (abiertas con el vencimiento ya pasado). |
 | `cliente` | Id del cliente. |
-| `desde`, `hasta` | Rango de fechas `YYYY-MM-DD`. |
-| `q` | Busca por número o cliente. |
+| `desde`, `hasta` | Rango por fecha de creación, `YYYY-MM-DD`, ambos extremos incluidos. |
+| `q` | Busca por número, folio fiscal, folio de la cotización de origen o nombre del cliente. |
 | `limit` | De 1 a 200; por defecto 50. |
 | `cursor` | El `next_cursor` de la página anterior. |
 
@@ -42,7 +43,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
       "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
       "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
       "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
-      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d...", "creada": "2026-09-15T18:02:11.000Z"
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "2026-09-15T18:02:11.000Z"
     }
   ],
   "meta": { "next_cursor": "MjAyNi0w..." }
@@ -53,7 +54,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 |---|---|
 | `estado` | `draft` (borrador), `open` (emitida y por cobrar), `paid` (pagada), `void` (anulada) o `uncollectible` (incobrable). |
 | `estado_fiscal` | `pending`, `issued` (registrada ante el proveedor fiscal), `cancelled` o `error`. |
-| `tipo` | `cfdi_40` (CFDI en México) o `invoice` (factura comercial). |
+| `tipo` | `cfdi_40` (CFDI de ingreso, México), `cfdi_egreso` (nota de crédito CFDI), `proforma` (documento comercial en México y España), `commercial_invoice` (factura comercial), `commercial_credit_note` (nota de crédito comercial), `verifactu_invoice` o `verifactu_credit_note` (España con Verifactu). |
 
 ## Crear un borrador
 
@@ -62,11 +63,13 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 | Campo | Obligatorio | Detalle |
 |---|---|---|
 | `cliente_id` | Sí | Un cliente de tu organización. |
-| `items` | Sí | De 1 al máximo por factura. Cada uno con `descripcion` y `cantidad`; opcionales `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` y `tax_rate`. |
+| `items` | Sí | De 1 a 200 conceptos. Cada uno con `descripcion` y `cantidad`; opcionales `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` y `tax_rate`. |
 | `currency` | No | Divisa de la factura; por defecto la de tu cuenta. |
 | `due_date` | No | Vencimiento en `YYYY-MM-DD`. |
 | `notas` | No | Hasta 1000 caracteres. |
 | `iva_incluido` | No | `true` si los precios ya traen el impuesto. |
+| `document_mode` | No | `commercial` o `fiscal`. Sin él, Cord emite fiscal si tu plan lo incluye y tu país lo tiene habilitado, y comercial en otro caso. `fiscal` sin el plan o el país habilitado responde `400 invalid_request`. |
+| `fx_buffer_pct` | No | Cobertura en puntos porcentuales sobre el tipo de cambio de referencia cuando `currency` difiere de tu divisa contable (`2` = +2%, tope 25). Por defecto `0`. |
 
 `tax_rate` es una fracción (`0.16`, no `16`) y se valida contra tu catálogo de impuestos: no puedes declarar una línea exenta en una venta gravada. `0` significa exenta a propósito; omitirla usa la tasa de tu cuenta.
 
@@ -114,6 +117,9 @@ Si una factura ya timbrada no puede anularse directamente, `void` responde `409`
 | Código | Cuándo |
 |---|---|
 | `invalid_request` (400) | Falta `cliente_id` o `items`, una línea no trae descripción o cantidad, o `due_date` no es `YYYY-MM-DD`. |
-| `invalid_state` (409) | La acción no aplica al estado actual (por ejemplo, enviar un borrador). |
+| `invalid_state` (409) | La acción no aplica al estado actual (por ejemplo, enviar un borrador). Enviar a un cliente sin correo responde `400` con este mismo código. |
+| `credit_note_required` (409) | La factura ya timbrada no se puede anular directamente: emite una nota de crédito. |
+| `not_found` (404) | La factura no existe en tu organización. |
 | `provider_error` (502) | El proveedor fiscal rechazó la emisión; el mensaje dice por qué. |
+| `send_failed` (502) | No se pudo enviar el correo de la factura. Reintenta `send`. |
 | `fx_unavailable`, `tax_catalog_unavailable` (503) | No hay tipo de cambio verificable o no se pudo leer tu catálogo de impuestos. Reintenta. |

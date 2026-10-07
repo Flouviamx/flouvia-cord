@@ -2,6 +2,7 @@
 title: "API de Clientes"
 seoTitle: "API de clientes de Cord"
 description: "Sincroniza y administra el directorio de clientes desde tus sistemas contables."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -40,7 +41,7 @@ curl -X POST "https://cordhq.app/api/v1/clientes" \
 ```json
 {
   "data": {
-    "id": "cus_8f7b2c..."
+    "id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b"
   }
 }
 ```
@@ -66,7 +67,7 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 {
   "data": [
     {
-      "id": "cus_8f7b2c...",
+      "id": "8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b",
       "empresa": "Stark Industries",
       "contacto": "Tony Stark",
       "email": "tony@stark.com",
@@ -86,11 +87,11 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
       "cerrado": 32000
     }
   ],
-  "meta": { "limit": 100, "offset": 0, "total": 1 }
+  "meta": { "limit": 100, "offset": 0, "total": 1, "next_cursor": null }
 }
 ```
 
-`direccionLine1`/`direccionLine2`, `ciudad` y `region` viajan en la lectura (los completa la app para cumplir el domicilio del receptor en la factura), pero la API todavía no los acepta — hoy solo se capturan desde Ajustes › Clientes. `country_code` sí se acepta al crear y al actualizar.
+Al **crear** un cliente, `POST /api/v1/clientes` acepta además los datos del domicilio y fiscales del receptor: `country_code` (ISO 3166-1 alfa-2), `direccion_line1` y `direccion_line2` (hasta 200 caracteres), `ciudad` y `region` (hasta 100), y para México `regimen_fiscal`, `uso_cfdi` y `cp_fiscal`. En la lectura viajan como `countryCode`, `direccionLine1`, `direccionLine2`, `ciudad`, `region`, `regimenFiscal`, `usoCfdi` y `cpFiscal`. Al **actualizar** con `PATCH`, solo `country_code` de ese grupo se puede cambiar; el domicilio y los datos fiscales se editan desde la ficha del cliente en la app.
 
 ### Buscar clientes
 
@@ -110,7 +111,7 @@ curl -X GET "https://cordhq.app/api/v1/clientes?email=tony@stark.com" \
 `PATCH /api/v1/clientes/{id}` cambia solo los campos que envíes: `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos` y `country_code`. El resto se conserva. El límite de crédito, el nivel y el descuento no se pueden cambiar por este endpoint aunque los envíes. Requiere una llave con permiso de escritura.
 
 ```bash
-curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c..." \
+curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c1e-4d3a-4b9f-a6e2-1c5d7e9f0a3b" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{ "email": "compras@stark.com" }'

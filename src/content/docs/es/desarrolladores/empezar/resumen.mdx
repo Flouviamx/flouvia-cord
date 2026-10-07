@@ -1,11 +1,12 @@
 ---
 title: "Cord Developers"
-description: "Construye integraciones financieras potentes con las herramientas para desarrolladores de Cord."
+description: "Integra Cord con tus sistemas: API REST, webhooks, servidor MCP, CLI y Cord Elements."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord Developers</h1>
-  <p class="page-subtitle">Construye integraciones financieras potentes con las herramientas para desarrolladores de Cord.</p>
+  <p class="page-subtitle">Integra Cord con tus sistemas: API REST, webhooks, servidor MCP, CLI y Cord Elements.</p>
 </header>
 
 ## Visión General
@@ -15,7 +16,7 @@ La plataforma de desarrolladores de Cord te permite conectar tus sistemas intern
 ### ¿Qué puedes construir?
 
 - **Sincronización de ERPs (Enterprise Resource Planning):** Mantén tu catálogo de productos y base de clientes en sincronía con tu sistema contable utilizando la [API de Productos](/docs/desarrolladores/funciones/productos) y la [API de Clientes](/docs/desarrolladores/funciones/clientes).
-- **Automatización de Eventos:** Escucha eventos clave (pagos, aprobaciones) y dispara acciones en tiempo real usando [Webhooks](/docs/desarrolladores/herramientas/webhooks). Por ejemplo, marca una factura como pagada en tu sistema cuando el cliente firme la cotización en Cord.
+- **Automatización de Eventos:** Escucha eventos clave (pagos, aprobaciones) y dispara acciones en tiempo real usando [Webhooks](/docs/desarrolladores/herramientas/webhooks). Por ejemplo, marca un pedido como pagado en tu sistema cuando Cord emita `quote.paid`.
 - **Agentes de IA:** Conecta asistentes inteligentes como Claude o ChatGPT a tus datos financieros usando nuestro [Servidor MCP](/docs/desarrolladores/herramientas/mcp).
 - **Experiencias Embebidas:** Despliega cotizadores nativos dentro de tu propio portal de clientes con [Cord Elements](/docs/desarrolladores/herramientas/elements/resumen).
 
@@ -27,6 +28,49 @@ de la app con tus claves de API, tus endpoints de webhook, la línea de tiempo d
 de cada petición y la salud de tu integración. Actívalo con el **Modo desarrollador** al final
 del índice de Ajustes.
 
-### Entornos Seguros
+### Entornos de prueba
 
-Construimos para el desarrollo empresarial. Es por eso que todas las cuentas de Cord incluyen entornos de prueba aislados (Sandbox) donde puedes hacer pruebas destructivas (como borrar todos los datos del entorno con un solo endpoint) sin afectar tus datos de producción reales. Lee más en [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas).
+Cada cuenta de Cord tiene un entorno de prueba aislado: lo que creas con una llave `sk_test_` o con el modo prueba de la app no toca tus datos reales (la excepción son las propuestas de configuración de `POST /api/v1/setup/plans`, que van a tu cuenta real y solo se aplican si una persona las aprueba). Desde la app, en modo prueba, puedes vaciar ese entorno por completo; ese reinicio exige tu sesión en el navegador y no forma parte de la API pública. Con una llave de prueba sí tienes simuladores por API para provocar timbrados, vencimientos y webhooks. Lee más en [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas).
+
+## Todas las páginas
+
+**Empezar**
+- [Crea tu API Key](/docs/desarrolladores/empezar/apikey)
+- [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas)
+
+**Herramientas**
+- [Cord Workbench](/docs/desarrolladores/herramientas/workbench)
+- [Webhooks](/docs/desarrolladores/herramientas/webhooks)
+- [CLI de Cord](/docs/desarrolladores/herramientas/cli)
+- [Servidor MCP](/docs/desarrolladores/herramientas/mcp)
+- [OAuth para apps](/docs/desarrolladores/herramientas/oauth)
+- [Integraciones](/docs/desarrolladores/herramientas/integraciones)
+
+**Cord Elements**
+- [Resumen](/docs/desarrolladores/herramientas/elements/resumen)
+- [React y Next.js](/docs/desarrolladores/herramientas/elements/react)
+- [Web Components y Vue](/docs/desarrolladores/herramientas/elements/web-components)
+- [SDK de servidor](/docs/desarrolladores/herramientas/elements/server)
+- [Apariencia](/docs/desarrolladores/herramientas/elements/apariencia)
+- [Eventos](/docs/desarrolladores/herramientas/elements/eventos)
+- [Seguridad CSP](/docs/desarrolladores/herramientas/elements/seguridad)
+
+**Esenciales**
+- [Autenticación](/docs/desarrolladores/esenciales/autenticacion)
+- [Paginación](/docs/desarrolladores/esenciales/paginacion)
+- [Manejo de Errores](/docs/desarrolladores/esenciales/errores)
+- [Versiones de la API](/docs/desarrolladores/esenciales/versiones)
+- [Seguridad](/docs/desarrolladores/esenciales/seguridad)
+- [Referencia de la API](/docs/desarrolladores/referencia)
+
+**Funciones**
+- [API de Cotizaciones](/docs/desarrolladores/funciones/cotizaciones)
+- [API de Clientes](/docs/desarrolladores/funciones/clientes)
+- [API de Productos](/docs/desarrolladores/funciones/productos)
+- [API de Cobranza](/docs/desarrolladores/funciones/cobranza)
+- [API de Facturas](/docs/desarrolladores/funciones/facturas)
+- [API de Tareas](/docs/desarrolladores/funciones/tareas)
+- [API de Eventos](/docs/desarrolladores/funciones/eventos)
+
+**Seguridad**
+- [SSO y SAML](/docs/desarrolladores/seguridad/sso)

@@ -1,6 +1,7 @@
 ---
 title: "Elements in Vue and Web Components"
 description: "Discover how to use Cord's native web components in Vue, pure HTML, PHP, or any other stack."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -21,7 +22,7 @@ This component is compiled under web platform standards, meaning the browser und
 <!-- Render the native component -->
 <div style="height: 800px;">
   <cord-quote
-    token="tok_A1B2C3D4E5"
+    token="9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
     min-height="500">
   </cord-quote>
 </div>
@@ -54,7 +55,7 @@ This component is compiled under web platform standards, meaning the browser und
 </script>
 ```
 
-The pay button opens the hosted invoice in a Cord window: payment details are never captured inside the iframe. While the invoice is open, the embed checks its balance and emits `status_changed` when it changes and `paid` when it's settled. With `embed.js`, add `data-cord-document="invoice"` to the `div`. As with the quote, without allowed domains in Settings › Elements events arrive without data.
+The pay button opens the hosted invoice in a Cord window: payment details are never captured inside the iframe. While the invoice is open, the embed checks its balance and emits `status_changed` when it changes and `paid` when it's settled. With `embed.js`, add `data-cord-document="invoice"` to the `div`. As with the quote, without allowed domains in **Settings › Embeddable quote builder** events arrive without data.
 
 `theme`, `variables` and `fonts` from the [Appearance API](/en/docs/desarrolladores/herramientas/elements/apariencia) apply to the invoice; `rules` and `layout` are for the quote.
 
@@ -77,7 +78,7 @@ Import the `<CordCotizador>` component from the `/vue` entrypoint and pass it to
 import { CordCotizador } from '@flouviahq/elements/vue';
 import { ref } from 'vue';
 
-const myToken = ref('tok_A1B2C3D4E5');
+const myToken = ref('9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46');
 
 function handleApproved(detail) {
   console.log('The client signed:', detail.signed_by);

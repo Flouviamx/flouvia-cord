@@ -1,6 +1,7 @@
 ---
 title: "Cord MCP Server"
 description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa — 26 herramientas, paginación real, llamadas seguras de repetir y actividad medida como el resto de la API."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -23,8 +24,8 @@ Al configurar el Servidor MCP de Cord, empoderas a agentes como Claude o asisten
 
 La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API** estándar de Cord (`sk_live_…` / `sk_test_…`) — la misma que usa la API REST.
 
-1. Navega a **Ajustes › Desarrolladores › MCP** en la interfaz de Cord (aparece al activar el
-   **Modo desarrollador** al final del índice de Ajustes).
+1. Navega a **Ajustes › MCP** en la interfaz de Cord. Está en la sección **Desarrolladores** del
+   índice de Ajustes, que aparece al activar el **Modo desarrollador** al final de ese índice.
 2. Un tablero de estado arriba te dice si ya tienes una llave activa y, si ya conectaste un
    cliente de IA, cuándo se usó por última vez. Si no tienes ninguna, el botón **"Crear llave
    para MCP"** genera una llave `write` sin salir de la página — se pega sola en la
@@ -67,7 +68,7 @@ pertenecer a la misma organización que abrió la sesión.
 | `crear_cotizacion_borrador` | Crea una cotización en BORRADOR (no la envía). Idempotente si mandas `idempotency_key`. | **escritura** |
 | `listar_facturas` | Lista las facturas de **Cord Invoicing** con su saldo y estado (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filtra por estado, cliente o texto libre. Paginado. | lectura |
 | `detalle_factura` | Detalle completo de UNA factura: conceptos, emisor, receptor, impuestos, tipo de cambio declarado, saldo y pagos recibidos. | lectura |
-| `crear_factura_borrador` | Crea una factura en BORRADOR para un cliente, sin necesidad de una cotización previa. Requiere el plan Starter o superior (Cord Invoicing). | **escritura** |
+| `crear_factura_borrador` | Crea una factura en BORRADOR para un cliente, sin necesidad de una cotización previa. Disponible en todos los planes, incluido Gratis. | **escritura** |
 | `enviar_cotizacion` | Envía al cliente una cotización en borrador (correo con el link). En el plan Gratis consume un envío del mes. | **escritura** |
 | `aprobar_cotizacion` | Marca como aprobada una cotización enviada o vista. | **escritura** |
 | `rechazar_cotizacion` | Marca como rechazada una cotización enviada o vista. | **escritura** |
@@ -103,20 +104,31 @@ además del texto. Los importes viajan con su divisa en `moneda`: nunca asumas p
 
 ## Paginación
 
-`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas` y `listar_eventos` devuelven páginas, no la tabla completa:
+`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas` y `listar_eventos` devuelven páginas, no la tabla completa. Hay dos formas de respuesta.
+
+`buscar_cliente` y `listar_productos` devuelven la lista en `items`, con `total`, `has_more`, `next_cursor` y la divisa en `moneda`; `listar_cotizaciones` devuelve `total`, `has_more` y `next_cursor` con la lista en `cotizaciones`, y la divisa va en cada cotización:
 
 ```json
 {
   "items": [ { "id": "…", "empresa": "Distribuidora El Zarco" } ],
   "total": 47,
+  "moneda": "MXN",
   "has_more": true,
   "next_cursor": "20"
 }
 ```
 
-Si `has_more` viene en `true`, vuelve a llamar la misma tool pasando `cursor: next_cursor` para
-la siguiente página. `next_cursor` viene en `null` cuando ya no hay más resultados.
-`listar_cotizaciones` devuelve la lista en `cotizaciones` y `listar_eventos` en `eventos`.
+`listar_facturas` y `listar_eventos` devuelven solo la lista (en `facturas` o `eventos`) y `next_cursor`, sin `total` ni `has_more`:
+
+```json
+{
+  "eventos": [ { "id": "…", "type": "quote.approved" } ],
+  "next_cursor": "MjAyNi0w..."
+}
+```
+
+En todos los casos, vuelve a llamar la misma tool pasando `cursor: next_cursor` para la
+siguiente página. `next_cursor` viene en `null` cuando ya no hay más resultados.
 
 <Callout type="info">
 `listar_productos` **nunca** incluye el costo/margen interno del producto — solo precio de
@@ -169,8 +181,12 @@ Las reglas de negocio se aplican estrictamente. Si la IA intenta aplicar un desc
 ## Límites, medición y actividad
 
 Cada llamada real (no las notificaciones de protocolo como `notifications/initialized`) cuenta
-igual que una llamada a la API REST: contra tu cuota de uso del plan, contra el límite de
-peticiones por llave (600/min), y queda en la pestaña **Registros** del
+igual que una llamada a la API REST contra tu cuota de uso del plan. Toda petición HTTP al
+servidor MCP, incluidas las notificaciones, cuenta contra los límites por minuto de la API
+(600 por llave secreta y 120 por IP de origen), y las herramientas que cambian el estado de una
+cotización comparten además el límite de 120 por minuto por organización; ver la
+[tabla de límites](/docs/desarrolladores/esenciales/errores#límites-de-peticiones). Cada
+llamada queda en la pestaña **Registros** del
 [Cord Workbench](/docs/desarrolladores/herramientas/workbench) con la tool que se llamó (ej.
 `/mcp/tools/call:listar_productos`) — así puedes ver exactamente qué está haciendo tu agente,
 con qué llave y cuándo. Puedes filtrar ese log por método o por status, o buscar `mcp` en la

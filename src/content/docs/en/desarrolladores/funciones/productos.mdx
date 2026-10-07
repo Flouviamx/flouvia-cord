@@ -2,6 +2,7 @@
 title: "Products API"
 seoTitle: "Cord Products API"
 description: "Feed and query your product and service catalog."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -37,7 +38,7 @@ curl -X POST "https://cordhq.app/api/v1/productos" \
 ```json
 {
   "data": {
-    "id": "prod_1a2b3c..."
+    "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2"
   }
 }
 ```
@@ -60,13 +61,13 @@ curl -X GET "https://cordhq.app/api/v1/productos?limit=50" \
 With `sk_live_...` the same product includes `costo`:
 
 ```json
-{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "costo": 4000, "activo": true } ] }
+{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "costo": 4000, "activo": true } ] }
 ```
 
 With `pk_live_...`, `costo` simply isn't present on the object (not `null` or `0` — the key doesn't exist):
 
 ```json
-{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "activo": true } ] }
+{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "activo": true } ] }
 ```
 
-Note: a Publishable Key can only be used on `GET /api/v1/productos` and `POST /api/v1/cotizaciones` — any other route (creating products, reading clients, collections) responds `403 insufficient_scope`, and it also requires an `Origin`/`Referer` header matching the domains you registered for that key.
+Note: a Publishable Key can only be used on four routes: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config`, and `POST /api/v1/elements/ai-draft`. Any other route (creating products, reading clients, collections) responds `403 insufficient_scope`. It also requires an `Origin` or `Referer` header matching your organization's allowed domains, configured in **Settings › Embeddable quote builder**. A `pk_live_` key with no domains configured responds `403 origin_allowlist_required`; a `pk_test_` key works from any origin.

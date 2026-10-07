@@ -1,6 +1,7 @@
 ---
 title: "Cord Webhooks"
 description: "Construye integraciones en tiempo real reaccionando a eventos que ocurren en Cord — entrega durable con reintentos, identidad de evento y rotación de secreto sin downtime."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -142,7 +143,9 @@ Durante la ventana, Cord firma cada entrega con **ambos** secretos a la vez:
 X-Cord-Signature-V1: t=1732650000,v1=<hmac con el secreto NUEVO>,v1=<hmac con el secreto VIEJO>
 ```
 
-Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momento dentro de la ventana — antes o después de rotar en Cord — sin que ninguna entrega se rechace. El SDK ya acepta cualquiera de los dos `v1=` que cuadre. Si verificas a mano y solo lees el primer `v1=` que encuentres, sigues funcionando igual (es el más nuevo). Al cerrarse la ventana, Cord deja de mandar el secreto viejo.
+El orden es fijo: el `v1=` del secreto **nuevo** va primero y el del secreto **viejo** al final. Así puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momento dentro de la ventana sin que ninguna entrega se rechace, siempre que tu verificación compare **todos** los `v1=` del header. El SDK ya acepta cualquiera de los dos que cuadre. Si verificas a mano, no te quedes con un solo valor: leer solo el primero exige que ya tengas el secreto nuevo, y un parser que guarda el último `v1=` (por ejemplo, uno que arma un mapa clave-valor) durante la ventana solo valida con el secreto viejo, así que falla en cuanto cambias al nuevo antes de que la ventana cierre.
+
+La firma legacy `X-Cord-Signature` solo admite un valor, así que durante la ventana se calcula con el secreto **viejo**; al cerrarse pasa a firmarse con el nuevo. Al cerrarse la ventana, Cord deja de firmar con el secreto viejo en los dos headers.
 
 ## Catálogo de eventos
 
@@ -206,11 +209,11 @@ cotización — y traen una forma de `data` DISTINTA:
     "id": "d4a1...",
     "object": "invoice",
     "numero": "FAC-0032",
-    "folio_fiscal": "3f2a...-uuid-cfdi",
+    "folio_fiscal": "3F2A9C1E-7B4D-4E6A-8C2F-1D5B9E3A7C40",
     "estado": "paid",
-    "estado_fiscal": "stamped",
+    "estado_fiscal": "issued",
     "pais": "MX",
-    "tipo": "factura",
+    "tipo": "cfdi_40",
     "moneda": "MXN",
     "total": 12500.00,
     "pagado": 12500.00,
@@ -223,11 +226,15 @@ cotización — y traen una forma de `data` DISTINTA:
 }
 ```
 
+`estado` es el ciclo de vida de la factura (`draft`, `open`, `paid`, `void` o
+`uncollectible`). `estado_fiscal` es el registro ante el proveedor fiscal: `pending`, `issued`,
+`cancelled` o `error`. `tipo` es el tipo de documento: `cfdi_40`, `cfdi_egreso`, `proforma`,
+`commercial_invoice`, `commercial_credit_note`, `verifactu_invoice` o `verifactu_credit_note`.
+
 Nota el link público: `/i/{token}` para una factura de Cord Invoicing, contra `/q/{token}`
-para una cotización. Si usas el Server SDK en TypeScript, hoy `CordWebhookEvent` solo tipa la
-unión discriminada de los eventos `quote.*`/`payment.*` — para los siete eventos `invoice.*`
-de Cord Invoicing, tipa el `data` manualmente contra la forma de arriba hasta que el SDK lo
-cubra.
+para una cotización. Si usas `@flouviahq/node` en TypeScript, `constructEvent` devuelve
+`CordWebhookEvent`, una unión discriminada por `event` que ya tipa los 41 eventos del catálogo,
+incluidos los siete `invoice.*` de Cord Invoicing con la forma de arriba.
 </Callout>
 
 ### Forma de `data` en clientes, productos, tareas y promesas

@@ -2827,6 +2827,24 @@
             "description": "Cliente al que va dirigido: nombre de la empresa, o los datos para darlo de alta si no existe."
           },
           {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha inicial YYYY-MM-DD, incluida; filtra por fecha de creación."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha final YYYY-MM-DD, incluida; filtra por fecha de creación."
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
@@ -2915,7 +2933,7 @@
                           },
                           "tipo": {
                             "type": "string",
-                            "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                            "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                           },
                           "moneda": {
                             "anyOf": [
@@ -3198,6 +3216,7 @@
                   },
                   "items": {
                     "minItems": 1,
+                    "maxItems": 200,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -3251,6 +3270,22 @@
                   "notas": {
                     "type": "string",
                     "description": "Notas internas; el cliente no las ve."
+                  },
+                  "iva_incluido": {
+                    "type": "boolean",
+                    "description": "true si los precios capturados ya incluyen el impuesto."
+                  },
+                  "document_mode": {
+                    "type": "string",
+                    "enum": [
+                      "commercial",
+                      "fiscal"
+                    ],
+                    "description": "commercial o fiscal. Sin él, fiscal si el plan lo incluye y el país lo tiene habilitado; fiscal sin eso responde 400."
+                  },
+                  "fx_buffer_pct": {
+                    "type": "number",
+                    "description": "Cobertura en puntos porcentuales sobre el tipo de cambio de referencia (2 = +2%); se acota a 25. Default 0."
                   }
                 },
                 "required": [
@@ -3376,7 +3411,7 @@
                         },
                         "tipo": {
                           "type": "string",
-                          "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                          "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                         },
                         "moneda": {
                           "anyOf": [
@@ -3923,7 +3958,7 @@
                           "description": "Totales de un vistazo."
                         },
                         "aging": {
-                          "description": "Saldo vencido agrupado por antigüedad (0-30, 31-60, 61-90 y más de 90 días)."
+                          "description": "Cartera por antigüedad en cuatro cubetas fijas: vigente (por vencer), d30 (1-30 días vencida), d60 (31-60) y d60p (más de 60). Cada una trae key, label, monto y n."
                         },
                         "items": {
                           "type": "array",
@@ -7942,7 +7977,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8124,7 +8159,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8306,7 +8341,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8488,7 +8523,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8670,7 +8705,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -8852,7 +8887,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [
@@ -9034,7 +9069,7 @@
                       },
                       "tipo": {
                         "type": "string",
-                        "description": "Formato del documento según el país, por ejemplo cfdi_40 (México) o invoice (comercial)."
+                        "description": "Tipo de documento: cfdi_40, cfdi_egreso, proforma, commercial_invoice, commercial_credit_note, verifactu_invoice o verifactu_credit_note."
                       },
                       "moneda": {
                         "anyOf": [

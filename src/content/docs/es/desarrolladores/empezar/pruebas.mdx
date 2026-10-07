@@ -1,6 +1,7 @@
 ---
 title: "Entornos de Prueba"
 description: "Aprende cómo aislar tu desarrollo usando el Sandbox de Cord."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -72,4 +73,4 @@ curl -X POST https://cordhq.app/api/v1/test_helpers/webhooks \
   -d '{ "evento": "invoice.paid", "objeto_id": "uuid-opcional" }'
 ```
 
-Acepta cualquiera de los eventos del catálogo. Con `objeto_id` de una cotización o factura de prueba usa sus datos reales; sin él, datos de ejemplo con ids `test_…`. La entrega pasa por el outbox real: firma, reintentos e historial en Ajustes › Developers.
+Acepta cualquiera de los eventos del catálogo. Con `objeto_id` de una cotización o factura de prueba usa sus datos reales; sin él, datos de ejemplo con ids `test_…`. La entrega pasa por el outbox real: firma, reintentos e historial en las pestañas **Webhooks** y **Eventos** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench).

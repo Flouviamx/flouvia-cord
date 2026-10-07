@@ -1,6 +1,7 @@
 ---
 title: "Elements en Vue y Web Components"
 description: "Descubre cómo usar los componentes web nativos de Cord en Vue, HTML puro, PHP o cualquier otro stack."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -21,7 +22,7 @@ Este componente está compilado bajo los estándares de la plataforma web, lo qu
 <!-- Renderizar el componente nativo -->
 <div style="height: 800px;">
   <cord-quote
-    token="tok_A1B2C3D4E5"
+    token="9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
     min-height="500">
   </cord-quote>
 </div>
@@ -54,7 +55,7 @@ Este componente está compilado bajo los estándares de la plataforma web, lo qu
 </script>
 ```
 
-El botón de pago abre la factura hospedada en una ventana de Cord: los datos de pago nunca se capturan dentro del iframe. Mientras la factura sigue abierta, el embed consulta su saldo y emite `status_changed` cuando cambia y `paid` cuando queda saldada. Con `embed.js`, agrega `data-cord-document="invoice"` al `div`. Igual que la cotización, sin dominios permitidos en Ajustes › Elements los eventos llegan sin datos.
+El botón de pago abre la factura hospedada en una ventana de Cord: los datos de pago nunca se capturan dentro del iframe. Mientras la factura sigue abierta, el embed consulta su saldo y emite `status_changed` cuando cambia y `paid` cuando queda saldada. Con `embed.js`, agrega `data-cord-document="invoice"` al `div`. Igual que la cotización, sin dominios permitidos en **Ajustes › Cotizador embebible** los eventos llegan sin datos.
 
 `theme`, `variables` y `fonts` del [Appearance API](/docs/desarrolladores/herramientas/elements/apariencia) aplican a la factura; `rules` y `layout` son del cotizador.
 
@@ -77,7 +78,7 @@ Importa el componente `<CordCotizador>` desde el entrypoint `/vue` y pásalo a t
 import { CordCotizador } from '@flouviahq/elements/vue';
 import { ref } from 'vue';
 
-const miToken = ref('tok_A1B2C3D4E5');
+const miToken = ref('9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46');
 
 function handleApproved(detail) {
   console.log('El cliente firmó:', detail.signed_by);

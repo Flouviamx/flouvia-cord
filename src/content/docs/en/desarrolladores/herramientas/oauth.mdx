@@ -2,6 +2,7 @@
 title: "OAuth for apps"
 seoTitle: "Cord OAuth 2.0 for third-party apps"
 description: "How an external app connects to Cord with OAuth 2.0 instead of asking for a key: client registration, authorization, code exchange, PKCE, refresh with rotation and revocation."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -11,7 +12,7 @@ description: "How an external app connects to Cord with OAuth 2.0 instead of ask
 
 ## When to use it
 
-If you are building an app that many businesses will connect to their Cord account —a connector, an add-on, an automation platform— use OAuth 2.0 instead of asking them for an API key. The person authorizes on a Cord screen, picks the workspace and can revoke access at any time. It is the same mechanism Cord's apps on Zapier and Make and the Gmail add-on use.
+If you are building an app that many businesses will connect to their Cord account —a connector, an add-on, an automation platform— use OAuth 2.0 instead of asking them for an API key. The person authorizes on a Cord screen, picks the workspace and can revoke access at any time. It is the same mechanism Cord's apps on Zapier and Make, and the Cord add-on for Gmail, use.
 
 For an integration of your own business, an [API key](/en/docs/desarrolladores/empezar/apikey) is simpler.
 
@@ -95,7 +96,7 @@ curl -X POST "https://cordhq.app/api/oauth/revoke" \
      -d token=cord_rt_... -d client_id=cord_oc_... -d client_secret=cord_cs_...
 ```
 
-It responds `200` even if the token does not exist, so it never reveals which tokens are valid. The person can also revoke your app under **Settings › Developer mode**, among authorized connections.
+It responds `200` even if the token does not exist, so it never reveals which tokens are valid. The person can also revoke your app in the **API** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench), where it shows up as an **Authorized connection**.
 
 ## Limits and errors
 
@@ -106,4 +107,4 @@ It responds `200` even if the token does not exist, so it never reveals which to
 | `grant_type` other than `authorization_code` or `refresh_token` | `400` with `error: "unsupported_grant_type"` |
 | The workspace already has 25 live connections of your app | `400` with `error: "invalid_request"`; the person must revoke unused ones |
 
-Calls with an OAuth token count against the business plan's API quota, same as a key.
+Calls with an OAuth token count against the business plan's API quota, same as a key. The only exception is the Cord add-on for Gmail, which is a surface of Cord itself: its calls don't consume the monthly quota, though they do count against the per-minute limits.

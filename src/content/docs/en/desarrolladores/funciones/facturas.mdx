@@ -2,6 +2,7 @@
 title: "Invoices API"
 seoTitle: "Cord invoices API"
 description: "List, create, issue, send, collect and void invoices from your system with Cord's API v1: drafts, irreversible issuing, partial payments and credit notes."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -13,7 +14,7 @@ description: "List, create, issue, send, collect and void invoices from your sys
 
 An invoice is born as a **draft** and only becomes final when you issue it. Issuing is an explicit, irreversible action: it uses your plan's stamping when it applies (CFDI in Mexico) and gives the invoice its number. Creating never issues on its own.
 
-The invoices API requires your plan to include invoicing for your country; otherwise it responds `402`.
+The invoices API is available on every plan, including Free, with commercial invoices (pro forma in Mexico and Spain). Integrated tax issuing (CFDI in Mexico, and Verifactu in Spain when it's enabled for your account) requires Starter or higher: requesting `document_mode: "fiscal"` without that plan responds `400 invalid_request`.
 
 ## List invoices
 
@@ -21,10 +22,10 @@ The invoices API requires your plan to include invoicing for your country; other
 
 | Parameter | What it does |
 |---|---|
-| `estado` | Filters by invoice status. |
+| `estado` | `draft`, `open`, `paid`, `void`, `uncollectible` or `overdue` (open and past their due date). |
 | `cliente` | Client id. |
-| `desde`, `hasta` | Date range `YYYY-MM-DD`. |
-| `q` | Searches by number or client. |
+| `desde`, `hasta` | Range by creation date, `YYYY-MM-DD`, both ends inclusive. |
+| `q` | Searches by number, tax folio, originating quote folio or client name. |
 | `limit` | From 1 to 200; defaults to 50. |
 | `cursor` | The previous page's `next_cursor`. |
 
@@ -42,7 +43,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
       "id": "f3a1...", "numero": "F-0231", "folio_fiscal": "6F1C...", "cliente": "Aceros del Norte",
       "estado": "open", "estado_fiscal": "issued", "pais": "MX", "tipo": "cfdi_40",
       "moneda": "MXN", "total": 184300, "pagado": 0, "saldo": 184300,
-      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d...", "creada": "2026-09-15T18:02:11.000Z"
+      "vence": "2026-10-15", "vencida": false, "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f", "creada": "2026-09-15T18:02:11.000Z"
     }
   ],
   "meta": { "next_cursor": "MjAyNi0w..." }
@@ -53,7 +54,7 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 |---|---|
 | `estado` | `draft`, `open` (issued and awaiting payment), `paid`, `void` or `uncollectible`. |
 | `estado_fiscal` | `pending`, `issued` (registered with the tax provider), `cancelled` or `error`. |
-| `tipo` | `cfdi_40` (CFDI in Mexico) or `invoice` (commercial invoice). |
+| `tipo` | `cfdi_40` (income CFDI, Mexico), `cfdi_egreso` (CFDI credit note), `proforma` (commercial document in Mexico and Spain), `commercial_invoice` (commercial invoice), `commercial_credit_note` (commercial credit note), `verifactu_invoice` or `verifactu_credit_note` (Spain with Verifactu). |
 
 ## Create a draft
 
@@ -62,11 +63,13 @@ curl "https://cordhq.app/api/v1/facturas?limit=20" \
 | Field | Required | Detail |
 |---|---|---|
 | `cliente_id` | Yes | A client in your organization. |
-| `items` | Yes | From 1 up to the per-invoice maximum. Each with `descripcion` and `cantidad`; optional `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` and `tax_rate`. |
+| `items` | Yes | From 1 to 200 line items. Each with `descripcion` and `cantidad`; optional `precio_unitario`, `precio_negociado`, `producto_id`, `costo_unitario` and `tax_rate`. |
 | `currency` | No | Invoice currency; defaults to your account's. |
 | `due_date` | No | Due date as `YYYY-MM-DD`. |
 | `notas` | No | Up to 1000 characters. |
 | `iva_incluido` | No | `true` if prices already include tax. |
+| `document_mode` | No | `commercial` or `fiscal`. Without it, Cord issues a tax document if your plan includes it and your country has it enabled, and a commercial one otherwise. `fiscal` without the plan or an enabled country responds `400 invalid_request`. |
+| `fx_buffer_pct` | No | Coverage in percentage points over the reference exchange rate when `currency` differs from your accounting currency (`2` = +2%, capped at 25). Defaults to `0`. |
 
 `tax_rate` is a fraction (`0.16`, not `16`) and is validated against your tax catalog: you cannot declare an exempt line on a taxed sale. `0` means deliberately exempt; omitting it uses your account's rate.
 
@@ -114,6 +117,9 @@ If an already stamped invoice cannot be voided directly, `void` responds `409` w
 | Code | When |
 |---|---|
 | `invalid_request` (400) | `cliente_id` or `items` is missing, a line has no description or quantity, or `due_date` is not `YYYY-MM-DD`. |
-| `invalid_state` (409) | The action does not apply to the current status (for example, sending a draft). |
+| `invalid_state` (409) | The action does not apply to the current status (for example, sending a draft). Sending to a client with no email responds `400` with this same code. |
+| `credit_note_required` (409) | The invoice is already stamped and can't be voided directly: issue a credit note. |
+| `not_found` (404) | The invoice doesn't exist in your organization. |
 | `provider_error` (502) | The tax provider rejected issuing; the message says why. |
+| `send_failed` (502) | The invoice email couldn't be sent. Retry `send`. |
 | `fx_unavailable`, `tax_catalog_unavailable` (503) | No verifiable exchange rate, or your tax catalog could not be read. Retry. |

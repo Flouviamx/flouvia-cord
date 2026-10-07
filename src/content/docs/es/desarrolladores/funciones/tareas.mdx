@@ -2,6 +2,7 @@
 title: "API de Tareas"
 seoTitle: "API de tareas de Cord"
 description: "Crea tareas de seguimiento para tu equipo desde otras herramientas."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -9,9 +10,19 @@ description: "Crea tareas de seguimiento para tu equipo desde otras herramientas
   <p class="page-subtitle">Pendientes de seguimiento para el equipo, opcionalmente ligados a una cotización.</p>
 </header>
 
+## Qué ofrece la API
+
+La API de tareas tiene un solo método: `POST /api/v1/tareas`, para crear una tarea. No hay endpoints para listar, editar, completar ni borrar tareas por API; eso se hace desde la app. Para enterarte de cambios, escucha los eventos `task.created` y `task.completed` con [webhooks](/docs/desarrolladores/herramientas/webhooks) o consúltalos en el [historial de eventos](/docs/desarrolladores/funciones/eventos).
+
 ## Crear una Tarea
 
-`POST /api/v1/tareas` crea una tarea en la bandeja del equipo. `titulo` es obligatorio. `due_date` es opcional y va en formato `YYYY-MM-DD`. `cotizacion_id` también es opcional; si lo envías, debe ser una cotización de tu organización o la petición responde `404`. Requiere una llave con permiso de escritura y acepta `Idempotency-Key`.
+`POST /api/v1/tareas` crea una tarea en la bandeja del equipo. Requiere una llave con permiso de escritura (en una llave restringida, `write` sobre el recurso `tareas`) y acepta `Idempotency-Key`.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| `titulo` | Sí | Texto de la tarea. Se guardan los primeros 200 caracteres; el resto se descarta sin error. |
+| `due_date` | No | Fecha límite en formato `YYYY-MM-DD`. |
+| `cotizacion_id` | No | UUID de una cotización de tu organización para ligar la tarea. |
 
 ```bash
 curl -X POST "https://cordhq.app/api/v1/tareas" \
@@ -21,12 +32,23 @@ curl -X POST "https://cordhq.app/api/v1/tareas" \
      -d '{
        "titulo": "Llamar a Stark Industries por COT-00104",
        "due_date": "2026-09-20",
-       "cotizacion_id": "2a9d8..."
+       "cotizacion_id": "2a9d8e4f-6b1c-4d7a-9e3f-5c8b1a2d4e6f"
      }'
 ```
 
 ```json
-{ "data": { "id": "7c1e0..." } }
+{ "data": { "id": "7c1e0b4a-3f2d-4e8c-9a6b-5d1f0e2c3b4a" } }
 ```
 
-Cada tarea nueva emite el evento `task.created`.
+Cada tarea nueva emite el evento `task.created`. Cuando alguien la marca como hecha en la app se emite `task.completed`.
+
+## Errores posibles
+
+| Código | Cuándo |
+|---|---|
+| `invalid_request` (400) | Falta `titulo` (o viene vacío), o `due_date` no tiene el formato `YYYY-MM-DD`. |
+| `not_found` (404) | `cotizacion_id` no es un UUID o no es una cotización de tu organización. |
+| `invalid_json` (400) | El cuerpo no es JSON válido. |
+| `insufficient_scope` / `insufficient_permissions` (403) | La llave es de solo lectura, o es una llave restringida sin `write` en `tareas`. |
+
+El resto de los códigos comunes están en [Manejo de Errores](/docs/desarrolladores/esenciales/errores).
