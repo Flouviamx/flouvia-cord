@@ -1,50 +1,94 @@
 ---
-title: "Chat and Negotiation"
-description: "Communicate with your client directly inside the quote."
+title: "Chat and comments"
+seoTitle: "Quote chat and per-line comments"
+description: "The general conversation and per-line threads inside the quote link: who writes, how you reply from Cord, when it shows live, and how to find out about a message."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Comments and counteroffers turned on in Client portal", "Quotes permission to reply"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Real-Time Chat and Negotiation</h1>
-  <p class="page-subtitle">Forget endless email chains. Negotiate changes directly on the document.</p>
+  <h1 class="page-title">Chat and comments</h1>
+  <p class="page-subtitle">Your client asks about the proposal, or about a single line, without leaving the link. You reply from the quote.</p>
 </header>
 
-## The quote as a workspace
+## What it is
 
-In the traditional business-to-business sales model, if a client wants to change a quantity or ask for a different discount, they reply by email, the sales rep edits the Excel file, generates a new PDF (Quote_v2_final.pdf), and sends it back.
+Each quote has two conversation spaces:
 
-In Cord, **the quote's link is interactive.**
+- **General conversation:** the **CONVERSATION** section at the end of the link, for questions about the whole proposal ("Can we move delivery to 15 days?").
+- **Per-line comments:** a thread on each line, for questions about one product ("Can you switch this to the 16 GB model?").
 
-### General Chat
+Everything stays on the quote, visible to your team, without depending on personal
+email. For counteroffers, partial approval, and versions, see [Negotiation and
+counteroffers](/en/docs/interaccion/negociacion).
 
-Below the quote, in the web view, there's the **Conversation** section.
-- The client can write general questions like: *"Can we adjust the delivery time to 15 days?"*
-- You see it in the **Conversation** panel of the quote's details and reply from there; your reply shows up on the client's link (instantly, if they have it open). The reply isn't emailed to them.
-- Each message shows who wrote it: **You** for your own and the other party's name for theirs.
-- The entire conversation is logged in the history of that quote, giving sales managers visibility without having to dig through personal emails.
+## Requirements
 
-<Callout type="info">
-**How you find out about a message:** Cord doesn't email or alert you for each client message. On the Pro, Scale, and Developer plans, the quote's details update live while you have them open; on other plans, reload the details to see new messages. If you want an alert, create a [workflow](/en/docs/automatizacion/workflows) with the **A message is posted on a quote** trigger.
-</Callout>
+- **Portal option:** **Comments and counteroffers** on in **Settings › Brand appearance › Client portal**. It's on by default; if you turn it off, the link shows neither the conversation nor the comment buttons.
+- **Permission to reply:** Quotes.
+- **Status:** the client can write while the quote isn't approved or rejected.
+- **Plan:** all. Seeing new messages live from Cord requires Pro or higher.
 
-### Counteroffer
+## On the client's side
 
-Next to the message box, the client can enter an amount in the proposal field and send it with **Counteroffer**. The counteroffer shows up in the conversation with a distinct style, with the proposed amount and the message, and doesn't change the quote's status: if you accept it, adjust the prices with **Modify and resend** from the details. Like messages, a counteroffer doesn't trigger an email alert.
+<Steps>
+1. **General conversation:** they type in "Write a message or proposal…" and send.
+2. **Comment on a line:** they click the comment button next to the product name (it shows that line's message count), type in "Comment on this line...", and click **Send**.
+</Steps>
 
-### Line-Item Comments (Product)
+Each bubble carries its author next to the time: **You** for the client's messages and
+your business name for your replies. Your replies reach the client's link live, without
+reloading, in the general conversation and on each line.
 
-If the quote is very extensive (e.g., 40 different items) and the client has doubts about a specific product, they don't need to write *"Regarding line item 14, the X model server..."*.
+{/* MOCKUP: public link with the "Dell R750 server" line expanded showing its thread: client comment "Can you switch this to the 16 GB model?" labeled "You · 5 min ago" and reply "Yes, I'll update the version today" labeled "Constructora Norte · now"; below, the CONVERSATION section with two bubbles. */}
 
-Cord allows **line-item level comments**.
-1. Next to each product's name there's a comment button, always visible (on mobile too), with a counter of that line's messages.
-2. The client clicks the button on the line they care about.
-3. Leaves their question: *"Can you swap this model for the 16GB RAM one?"*
-4. You see the comment on that same line in the quote's details (**Comments on this line**) and reply there.
+## On your team's side
 
-Chat and line-item comments close once the quote is approved or rejected. If you don't want to offer them, turn them off in **Settings › Brand appearance › Client portal**, with the **Comments and counteroffers** option.
+On the quote detail:
 
-### Live Update
+- **Conversation** shows the general thread. Reply in "Reply to the client (shows on their link)…".
+- Each line has its comment button; opening it shows **Comments on this line** and you reply in "Reply about this line…".
+- Bubbles say **You** for your team and the client's name for theirs.
 
-When you adjust a quantity, change a product, or lower a price after the negotiation, use **Modify and resend** from the details: a new version is created and **the client doesn't need a new link**.
+Your replies appear on the client's link; they aren't emailed to them.
 
-If they have the link open, they see the changes applied without reloading, plus a **The proposal was updated** notice with a **See changes** button. The approve button is locked until they review the changes, so they never sign a version that's no longer current.
+## How you find out about a message
+
+Cord doesn't send email, Slack, or Teams for every client message or comment.
+
+- **Pro, Scale, and Developer:** with the detail open, messages arrive live and **New** appears in Conversation.
+- **Free and Starter:** reload the detail to see new messages.
+- **The bell on the top bar** lists your organization's 15 most recent activities, including "New message from your client" and "Counteroffer from your client", with the quote number and client.
+- **Any plan:** create a [workflow](/en/docs/automatizacion/workflows/primer-workflow) with the **A message is posted on a quote** trigger to get the alert wherever you want (team email, Slack, Teams). The same event reaches your [webhooks](/en/docs/desarrolladores/herramientas/webhooks).
+
+## Behavior and edge cases
+
+- **Messages up to 800 characters.**
+- **On approval or rejection,** the link stops showing the message field and the comment buttons; the history is kept on the quote.
+- **The conversation doesn't change the quote.** A message doesn't change prices or status. To change the proposal use **Modify and resend**.
+- **The side menu doesn't count messages.** The number next to **Quotes** counts sent or viewed quotes still waiting for a decision, not messages.
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Conversation and per-line comments | Yes | Yes | Yes | Yes | Yes |
+| Live messages on the detail | No | No | Yes | Yes | Yes |
+
+## Common problems
+
+**The client doesn't see where to write.** **Comments and counteroffers** is off, or the quote was already approved or rejected.
+
+**I missed a message.** Messages don't trigger alerts. Create a workflow with **A message is posted on a quote**.
+
+**I can't reply.** Your role doesn't have the Quotes permission.
+
+## Related
+
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [What your client sees](/en/docs/interaccion/vista-del-cliente)
+- [Notifications](/en/docs/gestion/notificaciones)
+- [Workflow triggers](/en/docs/automatizacion/workflows/disparadores)

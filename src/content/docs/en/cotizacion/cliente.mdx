@@ -1,77 +1,106 @@
 ---
 title: "Client data"
-seoTitle: "Client data on a quote"
-description: "Add clients manually or via CSV, assign them a price tier with an automatic discount, and complete their fiscal information."
+seoTitle: "Client data in a quote"
+description: "Pick or create the client for a quote, apply their price tier and terms, and complete the tax information the invoice will need."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to pick the client", "Clients permission to create a new one"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Client data</h1>
-  <p class="page-subtitle">The first step of your quote: define who you are selling to and ensure the invoice will be generated without errors.</p>
+  <p class="page-subtitle">The first step of your quote: define who you're selling to, on which terms, and with which data their invoice will be issued.</p>
 </header>
 
-## Ways to add clients
+## What it is
 
-When starting a new quote, the first step of the editor is **Who are you quoting?**. Cord offers different ways to nourish your database:
+The **Who are you quoting?** step of the editor links the quote to a client in your
+directory. Three things come from their profile: their price tier discount, their
+payment terms, and the recipient data the invoice will use.
 
-1. **Manual creation:** directly from the quoter, open the client selector and choose **+ Create new client…** to fill out a quick form with their commercial and fiscal data. You can also create them from **Clients** with **+ New client**.
-2. **Bulk import (CSV):** if you are migrating from another CRM or ERP, go to **Clients** in the main menu, use **Import CSV**, download the example template, and upload your file. Each import accepts up to **2,000 rows**; it loads company, contact, email, phone, tax ID, payment terms, and credit limit (the price tier and CFDI tax details are completed later on the client's profile).
-3. **API synchronization:** for development teams, Cord offers a public REST API to create and sync clients automatically from your own internal system.
+{/* MOCKUP: "Who are you quoting?" step with the client selector open ("— Select a client —", "+ Create new client…", "Constructora GAMA — Luis Pérez"), the Cash / Net 30 / Net 60 chips with Net 30 active, and the note that the client's tier discount of −10% was applied to list prices. */}
 
-## Price tiers and automatic discount
+## Requirements
 
-In business-to-business sales, not all clients pay the same. When creating or editing a client, under **Price tier** you can assign one of four tiers. Each one suggests a discount that you can freely change in the **Automatic discount on their prices** field:
+- **Permission:** Quotes to pick a client; **Clients** to create a new one.
+- **Plan:** Free allows up to 50 clients and Starter up to 500; from Pro there's no cap.
+- **To send:** the quote needs a client. A draft can be saved without one, but on send Cord asks you to "Choose a client in step 1 to be able to send".
 
-- **Standard:** no suggested discount.
-- **Silver:** 5% suggested.
-- **Gold:** 10% suggested.
-- **Distributor:** 15% suggested.
+## Pick or create the client
 
-**How does it work?** When you select that client in your quote, Cord automatically lowers the **Negotiated** price of each product from your catalog by the configured percentage (for example, with 10%, a product listed at $1,000 comes in at $900). Your catalog's list price doesn't change, and you can adjust the negotiated price of any line by hand.
+<Steps>
+1. In **Who are you quoting?**, open the selector and pick a client from your directory.
+2. If they don't exist, choose **+ Create new client…**, fill in the form, and click **Create and select**. They're saved in your directory and selected on the quote.
+3. Check the preselected payment terms and change them if needed.
+</Steps>
 
-## Commercial and Fiscal Information
+Other ways to fill your directory:
 
-For a client profile to be complete, it consists of two parts:
+- **From Clients:** **+ New client** for one, or **Import CSV** to load up to 2,000 rows per file (company, contact, email, phone, tax ID, payment terms, and credit limit).
+- **From a client's profile:** **New quote** opens the editor with that client already selected.
+- **Through the API:** the [clients API](/en/docs/desarrolladores/funciones/clientes) creates and syncs clients from your system.
 
-### Commercial information
-- **Company** (required): the client's name (e.g., *Flouvia*). It's also the name used as the recipient on their invoice, so write it as it appears on their tax documents if you'll invoice their tax ID.
-- **Contact:** the person making the decision (e.g., *André Valle*).
-- **Email:** where the quote link is sent when you send it from Cord.
-- **Phone**, **Credit limit**, and **Payment terms** (Cash, Net 30, or Net 60) proposed by default when you quote them.
+## Price tier and automatic discount
 
-### Fiscal information
-- **Tax ID:** the label adapts to the client's country — **RFC** in Mexico, and the
-  local equivalent everywhere else (NIF/CIF in Spain, EIN/Tax ID in the US, etc.). Cord
-  stores it in uppercase with leading and trailing spaces removed; it doesn't validate
-  its structure, so double-check it's typed correctly.
-- **Address:** country, postal code, address, city, and state/province, in the collapsible **Address** section.
+Each client can have a **Price tier** with a suggested discount you can change in the
+automatic discount field:
 
-If the client is Mexican (or you don't assign a country and your business is in Mexico), the form also shows the **Tax details for CFDI (Mexico)** section, with two fields exclusive to CFDI 4.0:
-- **Tax regime:** the regime under which they file with the SAT (e.g., *601 - General de Ley Personas Morales*).
-- **CFDI use:** the reason they're requesting the invoice (e.g., *G03 - Gastos en general*, which is used if you leave it unspecified).
+| Tier | Suggested discount |
+|---|---|
+| Standard | 0% |
+| Silver | 5% |
+| Gold | 10% |
+| Distributor | 15% |
 
-Leaving these fields for later still leaves your quote commercially valid. In Mexico,
-if the client has no RFC on file, Cord stamps the CFDI to **"general public"** (público
-en general). If they have an RFC but you leave the tax regime empty, Cord uses regime
-601; check that the RFC, postal code, and regime match their tax status certificate
-(constancia de situación fiscal) before stamping.
+When you pick the client, Cord lowers the **Negotiated** price of each catalog product
+by that percentage: with 10%, a product listed at 1,000 comes in at 900. The list price
+doesn't change and you can adjust any line's negotiated price by hand.
 
-## The client profile
+## Commercial and tax information
 
-From **Clients** in the main menu, your directory has quick filters (with quotes,
-not quoted yet, with a tier, with credit, missing fiscal data) and a search box — handy
-once your directory grows into hundreds of contacts.
+### Commercial
 
-Click any client to open their **profile**: it's not just the edit form anymore, it's a
-full picture of what Cord already knows about that relationship — how much you've
-closed with them, how much sits in open pipeline, their real close rate, how much of
-their credit limit is in use (with a visual warning if they're over it), the discount
-you've given them in negotiation, their activity over the last 12 months, their recent
-quotes, and which products they buy most. Editing and deleting are still one click away
-from there.
+- **Company** (required): the client's name. It's also the recipient name on their invoice; write it as it appears on their tax documents.
+- **Contact:** the person who decides.
+- **Email:** where the link is sent when you send the quote from Cord.
+- **Phone**, **Credit limit**, and **Payment terms** (Cash, Net 30, or Net 60) proposed when you quote them.
 
-<Callout type="info">
-**Tip:** if a client has a credit limit configured, their profile shows you right away
-how much open balance they carry against that limit — the same signal the risk engine
-uses to block (or allow) their next quote on credit.
-</Callout>
+### Tax
+
+- **Tax ID:** the label adapts to the client's country: **RFC** in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on. Cord stores it uppercased and trimmed; it doesn't validate its structure.
+- **Address:** country, postal code, address, city, and state or province, in the **Address** section.
+
+If the client is Mexican (or you don't set a country and your business is in Mexico),
+a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
+
+- **Tax regime**, for example *601 - General de Ley Personas Morales*.
+- **CFDI use**, for example *G03 - Gastos en general*, which is used if you leave it empty.
+
+## Behavior and edge cases
+
+- **Incomplete tax data:** the quote is still commercially valid. In Mexico, without an RFC the CFDI is issued to "público en general" (the general public); with an RFC but no regime, Cord uses 601. Check RFC, postal code, and regime against the client's tax certificate before stamping.
+- **Changing the client after sending** isn't possible with **Modify and resend**: duplicate the quote and send it to the right client.
+- **Editing the profile** doesn't rewrite fiscal documents already issued: they keep the recipient data they were issued with.
+- **Credit limit:** if the client has one, their profile shows how much open balance they have against it. It's a signal for you, not a block.
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Clients in the directory | 50 | 500 | No cap | No cap | No cap |
+
+## Common problems
+
+**"+ Create new client…" is missing or fails to save.** Your role doesn't have the Clients permission, or you reached your plan's client cap.
+
+**The tier discount wasn't applied.** It only lowers catalog products; free lines have no list price.
+
+**The CFDI was issued to "público en general".** The client had no RFC when you stamped.
+
+## Related
+
+- [Clients and statements](/en/docs/gestion/clientes)
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Approval and invoicing](/en/docs/cotizacion/timbrado)

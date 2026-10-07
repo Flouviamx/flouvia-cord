@@ -1,10 +1,12 @@
 ---
 title: "Aprobación y evidencia técnica"
-description: "Cómo Cord registra una aprobación con identidad declarada, IP, fecha, hora y huella del documento aceptado."
+seoTitle: "Firma de una cotización y evidencia técnica de la aprobación"
+description: "Cómo firma tu cliente una cotización en Cord y qué registra Cord: nombre declarado, IP, navegador, fecha y hora, y la huella SHA-256 de las líneas aceptadas."
 lastUpdated: "2026-10-07"
-reviewedBy: "Producto y seguridad de Cord"
+reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cotización Enviada o Vista", "El cliente escribe su nombre completo y acepta los términos"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,12 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 Tradicionalmente, un vendedor envía un PDF y el cliente responde "Autorizado, procedan". Después puede ser difícil demostrar qué versión, partidas o monto estaba revisando cada persona.
 
 Cord agrega una capa de **aprobación electrónica y evidencia técnica** justo en ese momento.
+
+## Requisitos
+
+- **Estado:** la cotización debe estar *Enviada* o *Vista*. Una cotización vencida, rechazada o ya aprobada no acepta la firma.
+- **Para el cliente:** solo el link; no necesita cuenta.
+- **Plan y país:** todos los planes y los 12 mercados.
 
 ## El proceso de aprobación
 
@@ -63,3 +71,18 @@ El correo del firmante no aparece en el sello. El PDF de la cotización que desc
 <Callout type="warning">
 Cord conserva evidencia técnica de la aprobación; no presta servicios notariales ni asesoría legal. La validez y fuerza probatoria dependen del documento, el flujo y la jurisdicción. Consulta a un profesional para casos de alto riesgo.
 </Callout>
+
+## Problemas comunes
+
+**El botón Confirmar y firmar no se activa.** Falta el nombre (al menos dos caracteres) o la casilla de aceptación.
+
+**"Esta cotización ya no se puede modificar".** La cotización venció, se rechazó o ya estaba aprobada.
+
+**El cliente volvió al paso de revisión al firmar.** Cambiaste la propuesta mientras la leía; debe revisar los cambios con **Ver cambios** y firmar de nuevo (ver [Negociación y contraofertas](/docs/interaccion/negociacion)).
+
+## Relacionadas
+
+- [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente)
+- [Negociación y contraofertas](/docs/interaccion/negociacion)
+- [Aprobación y facturación](/docs/cotizacion/timbrado)
+- [Disputas](/docs/pagos/disputas)

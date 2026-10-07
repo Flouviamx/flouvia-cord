@@ -1,56 +1,135 @@
 ---
 title: "Quote creation overview"
-description: "The complete workflow to create, send, and close a quote in Cord: from client data to payment, with CFDI 4.0 stamping in Mexico."
+seoTitle: "Quote and close in Cord: the life cycle of a quote"
+description: "The full life cycle of a quote in Cord: the real statuses, who triggers each step, every guide in this section, and the limits per plan."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to create, edit, and send", "At least one product or free line per quote"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Create a quote: Overview</h1>
-  <p class="page-subtitle">The heart of Cord. Learn how to transform a tedious sales process into an interactive digital experience, from proposal to payment.</p>
+  <p class="page-subtitle">From proposal to payment, all in one link: how a quote moves, who moves it, and where each step is explained.</p>
 </header>
 
-Cord is the deal-closing platform that takes a sale from proposal to payment, all in one link: negotiated pricing, credit terms, online payment, and, in Mexico, integrated CFDI 4.0 invoicing. The quoting engine is the same across the 12 countries where Cord operates (Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru); what changes between countries is the fiscal document that closes the cycle — see the approval and invoicing section below.
+A quote in Cord is a living document with its own link. Your team builds it in the
+internal editor; your client reviews, negotiates, signs, and pays from the link without
+creating an account. The quoting engine is the same in the 12 countries where Cord
+operates (Mexico, the United States, Canada, Brazil, Spain, the United Kingdom,
+Germany, France, Colombia, Argentina, Chile, and Peru); what changes between countries
+is the fiscal document that closes the cycle (see [Approval and
+invoicing](/en/docs/cotizacion/timbrado)).
 
-## The new commercial standard
+{/* MOCKUP: horizontal life cycle diagram with the 8 statuses (Draft, Sent, Viewed, Approved, Paid, Invoiced, plus Rejected and Expired as side exits), each arrow labeled with who triggers it: Seller, Client, or Daily process. */}
 
-Building a commercial proposal with spreadsheets, static PDFs, and email threads to negotiate prices is slow and error-prone: outdated prices, different versions circulating at once, and no trail of what was actually agreed. Cord replaces that workflow with a **high-speed internal quoter** (for your sales team) connected to an **interactive web link** (for your client), which ends in payment and, where it applies, the corresponding fiscal document.
+## Requirements
 
-### The workflow in Cord
+- **Permission:** creating, editing, sending, and resending requires the **Quotes** permission. Marking a quote as approved or rejected, and deciding internal approvals, requires **Approvals**. The account owner has every permission.
+- **Plan:** every plan can quote. Limits change by plan (see below).
+- **Country:** any of the 12 markets. CFDI 4.0 stamping is exclusive to Mexico.
 
-To create and close a quote, the process is divided into 5 main stages:
+## Quote statuses
 
-1. **[Client data](/en/docs/cotizacion/cliente):** Select or create your client's commercial and fiscal profile.
-2. **[Products and discounts](/en/docs/cotizacion/productos):** Build the proposal by adding catalog products, setting quantities, and applying discounts.
-3. **[Advanced options](/en/docs/cotizacion/opciones):** Configure the validity period, currency, payment terms (upfront or credit), and commercial or legal notes.
-4. **[Preview and sending](/en/docs/cotizacion/envio):** Review how the quote will look and share it via its link.
-5. **[Approval and invoicing](/en/docs/cotizacion/timbrado):** When the client approves digitally, Cord enables payment and issues the fiscal document that corresponds to your country.
+Cord uses eight statuses. They are the same in the app, the public link, the API, and
+webhooks.
 
-If you'd rather not build the proposal by hand, **[Cord AI](/en/docs/cotizacion/ia)** can generate a complete draft from text, a PDF, or an image — you always review the draft before sending it.
+| Status | What it means | Who triggers it |
+|---|---|---|
+| **Draft** | Saved, but the client doesn't have an active link yet. | The seller, with **Save draft**. A quote waiting for an [internal approval](/en/docs/cotizacion/aprobaciones-internas) also stays a draft. |
+| **Sent** | The link is active and the client can review it. | The seller, with **Create and send**, **Send to client**, **Modify and resend**, or by dragging the card on the board. Also a manager with **Approve and send**. |
+| **Viewed** | The client opened the link for the first time. | The client. Only a real open with the tab visible counts; your own preview doesn't (see [What your client sees](/en/docs/interaccion/vista-del-cliente)). |
+| **Approved** | The client signed the full proposal or only some lines. | The client, with **Approve quote** and **Confirm and sign**. The seller can use **Mark approved** if approval came another way. |
+| **Rejected** | The proposal closed without a sale. | The client, with **Reject** and **Confirm rejection**. The seller with **Mark rejected**. |
+| **Expired** | The validity date passed without a decision. | Cord's daily process, which checks sent or viewed quotes whose validity date has passed. A [workflow](/en/docs/automatizacion/workflows/acciones) can also expire it earlier. |
+| **Paid** | The charge is settled. | Cord, when it confirms an online payment; or the seller with **Record payment**. |
+| **Invoiced** | The fiscal or commercial document was issued. | The seller, with **Stamp CFDI 4.0**, **Issue invoice**, or **Issue pro forma**. |
+
+Valid transitions are strict. For example, only a *Sent* or *Viewed* quote can be
+approved or rejected, and only an *Approved* or *Invoiced* quote can move to *Paid*. If
+two people act on the same quote at the same time, the first one wins and the second
+is asked to reload and try again.
 
 <Callout type="info">
-**Note:** each Cord organization has its own tax details. If you manage several organizations (for example, one per legal entity), confirm in the organization switcher that you're in the right one before you start quoting.
+**Expired isn't final.** An *Expired* quote still allows **Modify and resend**, but
+resending doesn't change its validity date, so the daily process expires it again. To
+propose it again with a new date, use **Duplicate quote** (see [Quote
+management](/en/docs/gestion/cotizaciones)).
 </Callout>
 
-## After sending
+## The workflow, step by step
 
-Sending the quote isn't the end: the link stays live and Cord helps you follow it through to payment.
+<Steps>
+1. **[Build with AI (optional)](/en/docs/cotizacion/ia).** Paste the client's order or upload a photo or PDF and Cord fills the lines from your catalog.
+2. **[Choose the client](/en/docs/cotizacion/cliente).** In **Who are you quoting?** you select or create the client and their payment terms.
+3. **[Add products and negotiate](/en/docs/cotizacion/productos).** In **What are you quoting them?** you add products, kits, or free lines and adjust the **Negotiated** price.
+4. **[Set the options](/en/docs/cotizacion/opciones).** In **Review and send** you choose validity, currency, deposit, monthly retainer, and tax-inclusive prices.
+5. **[Review and send](/en/docs/cotizacion/envio).** Open the preview and send the link by email, WhatsApp, or wherever you talk to your client.
+6. **[Negotiate on the link](/en/docs/interaccion/negociacion).** The client asks, comments on lines, or proposes a counteroffer; you reply with a new version.
+7. **[The client signs](/en/docs/interaccion/firma).** Cord keeps the technical evidence of the approval.
+8. **[Collect and invoice](/en/docs/cotizacion/timbrado).** Payment is enabled on the link and you issue the document that applies to your country.
+</Steps>
 
-- **[Chat and negotiation](/en/docs/interaccion/chat):** your client can ask questions, comment on line items, and propose a counteroffer inside the same link.
-- **[Approval and technical evidence](/en/docs/interaccion/firma):** how the client signs and what record Cord keeps of that approval.
-- **[Quote management](/en/docs/gestion/cotizaciones):** drafts, versions with **Modify and resend**, and duplicates.
-- **[Home and quote views](/en/docs/gestion/dashboard):** the list and board of your pipeline.
-- **[Clients, terms, and statements](/en/docs/gestion/clientes):** the directory and each client's profile.
-- **[Reports and sales performance](/en/docs/gestion/informes):** how your sales operation is doing.
-- **[Notifications](/en/docs/gestion/notificaciones):** which events alert you by email, Slack, or Teams.
-- **[Tasks and follow-up](/en/docs/gestion/tareas):** to-dos with due dates so no deal goes cold.
+## Every guide in this section
+
+### Create a quote
+
+- [Generate with AI](/en/docs/cotizacion/ia): text, PDF, or photo turned into lines.
+- [Client data](/en/docs/cotizacion/cliente): create or pick a client, price tier, and tax data.
+- [Products and discounts](/en/docs/cotizacion/productos): catalog, kits, volume, suggested price, and margin.
+- [Advanced options](/en/docs/cotizacion/opciones): validity, currency, deposit, retainer, taxes, and defaults.
+- [Preview and sending](/en/docs/cotizacion/envio): send, share, and what the client receives.
+- [Internal approvals](/en/docs/cotizacion/aprobaciones-internas): discount, amount, and margin caps that require sign-off.
+- [Approval and invoicing](/en/docs/cotizacion/timbrado): from the client's yes to the fiscal document.
+
+### Interaction and closing
+
+- [What your client sees](/en/docs/interaccion/vista-del-cliente): the link step by step and which signals your team gets.
+- [Chat and comments](/en/docs/interaccion/chat): the general conversation and per-line threads.
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion): counteroffer, partial approval, rejection, and versions.
+- [Approval and evidence](/en/docs/interaccion/firma): the signature and its audit trail.
+
+### Sales management
+
+- [Home and views](/en/docs/gestion/dashboard): Home widgets and the quotes board.
+- [Quote management](/en/docs/gestion/cotizaciones): filters, actions by status, duplicating, and versions.
+- [Clients and statements](/en/docs/gestion/clientes): directory, client profile, import, and export.
+- [Tasks and follow-up](/en/docs/gestion/tareas): to-dos with due dates.
+- [Notifications](/en/docs/gestion/notificaciones): what Cord alerts you about and through which channel.
+- [Reports and performance](/en/docs/gestion/informes): what each report measures.
+
+## Limits by plan
+
+| Limit | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Active quotes (draft, sent, viewed, or approved) | 5 | 50 | No cap | No cap | No cap |
+| Quote sends per month | 5 | No cap | No cap | No cap | No cap |
+| AI builds included per month | 3 | 20 | 50 | 500 | No cap |
+| Lines per quote | 200 | 200 | 200 | 200 | 200 |
+| Live presence and client attention | No | No | Yes | Yes | Yes |
+| Internal approvals | No | No | No | Yes | Yes |
+
+Paid, invoiced, rejected, and expired quotes don't count as active. On Free, the AI cap
+is hard; from Starter up, AI overage is billed. When you hit the active-quote cap,
+Cord tells you how many active quotes your plan allows and asks you to free up space or
+upgrade. Plan details live in [Your Cord subscription](/en/docs/cuenta/suscripcion).
+
+## Common problems
+
+**I don't see "New quote".** Your role doesn't have the Quotes permission. Ask whoever manages the team.
+
+**I can't create more quotes.** You reached your plan's active-quote cap. Close the ones that won't move forward (reject them or delete drafts) or change plans.
+
+**The client says they can't approve.** Check the status: if it's *Expired*, *Rejected*, or already *Approved*, the link no longer accepts a signature.
 
 ## Frequently asked questions
 
 **Does Cord work for businesses outside Mexico?**
-Yes. Cord offers signup in 12 countries. Quotes and invoices can use Cord's offered currencies (MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, and PEN, plus JPY, CNY, CHF, and AUD for international trade). Each organization configures its applicable rates; Cord provides editable presets where a market has a stable national rate. Online payments are available in all 12 countries: with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France, and with Mercado Pago in Mexico, Brazil, Colombia, Argentina, Chile, and Peru. In Colombia, Argentina, Chile, and Peru, online payments require connecting your Mercado Pago account; without it, you can quote, invoice, track collections, and record payments received outside Cord.
+Yes. A quote can use any currency Cord offers (MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, and PEN, plus JPY, CNY, CHF, and AUD for international trade). Online payment is available with Cord Payments in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France, and with Mercado Pago in Mexico, Brazil, Colombia, Argentina, Chile, and Peru. Without a connected rail you can quote, invoice, and record payments you receive outside Cord.
 
-**Does CFDI 4.0 stamping work in every country?**
-No. SAT stamping is exclusive to Mexico. In Spain, Cord issues the invoice with a chained Verifactu record only when the company's certificate and the Verifactu integration are active; until then it issues a pro forma, which does not replace a tax invoice. In other markets, Cord issues a commercial invoice without automatically filing it with the local tax authority. See [Approval and invoicing](/en/docs/cotizacion/timbrado).
+**Does CFDI 4.0 stamping work in any country?**
+No: stamping with the SAT is exclusive to Mexico. In Spain, Cord issues the invoice with a Verifactu record only when the company certificate and the integration are active; until then it issues a pro forma. In the other markets it issues a commercial invoice. See [Approval and invoicing](/en/docs/cotizacion/timbrado).
 
-**Do I need technical knowledge to use Cord?**
-No. Cord is designed for sales teams. It doesn't require any technical integration to get started: create your account, upload your catalog, and send your first quote.
+**Do I need technical knowledge?**
+No. Create your account, upload your catalog, and send your first quote. The [API](/en/docs/desarrolladores/funciones/cotizaciones) is optional.

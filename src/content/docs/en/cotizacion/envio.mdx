@@ -1,48 +1,122 @@
 ---
 title: "Preview and sending"
-description: "Review the client experience, share your quote, and receive online payments."
+seoTitle: "Preview and send a quote in Cord"
+description: "Review the quote as your client will see it, send it by email or share it on WhatsApp, and what happens with the link, send limits, and payment."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission", "Client email captured for automatic sending"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Preview and sending</h1>
-  <p class="page-subtitle">Make sure everything is perfect before sending the link to your client, and offer them a payment experience right inside the quote.</p>
+  <p class="page-subtitle">Review the link exactly as your client will see it and deliver it on the channel where you already talk.</p>
 </header>
 
-## The client experience (the link)
+## What it is
 
-One of Cord's biggest advantages is that you don't send a dead file (PDF) attached to an email. You send a **link** to a dynamic web experience with your brand (your colors and logo) where the client can interact, approve, and pay.
+Sending a quote activates its **public link**: a page with your brand where the client
+reviews, comments, signs, and pays. It isn't an attached PDF; it's the same document
+your team keeps seeing in Cord, and any new version arrives at the same link.
 
-Before sending, open the draft's details and click **Preview** to review the link exactly as your client will see it. While you're signed in, Cord shows you a preview notice and your visit isn't counted as a client view. Check:
-- A clean and responsive design (mobile-optimized).
-- The breakdown of what the client will pay (if you requested a deposit, the deposit amount and the balance).
-- The **Approve quote** button.
+## Requirements
 
-## Pay from the link
+- **Permission:** Quotes.
+- **Plan:** all. Free has a cap of 5 sends per month.
+- **Client email:** optional. Without an email, the quote is still marked as sent and you share the link.
+- **Online payment:** optional. For the client to pay from the link you need an active payment rail (see [Payment methods](/en/docs/pagos/metodos)).
 
-Once the client approves, the quote turns into an active checkout point, as long as your account has an active online payment rail.
+## Review before sending
 
-The client can pay the total (or the agreed deposit) with:
+<Steps>
+1. Open the draft from **Quotes** and, in the actions panel, click **Preview**.
+2. The link opens in a new tab with the notice "Preview — this is what your client sees. Your visit is not counted as a view." While you're signed in to the organization that owns the quote, your visit doesn't mark it as *Viewed* or trigger notifications.
+3. Check the total, the lines, the struck-through prices where you negotiated, the payment plan if you asked for a deposit, and the notes. What the client sees is explained in [What your client sees](/en/docs/interaccion/vista-del-cliente).
+</Steps>
 
-1. **Credit / Debit Card:** processed via Cord Payments, inside the same link (see [Payment methods](/en/docs/pagos/metodos)).
-2. **SPEI bank transfer (Mexico, MXN only):** the system generates a dedicated interbank CLABE for that charge. When the client makes the transfer from their banking app, Cord detects the deposit, marks the charge as paid, and alerts you according to your [notifications](/en/docs/gestion/notificaciones). On quotes in another currency, SPEI isn't offered.
-3. **Mercado Pago:** in Mexico, Brazil, Colombia, Argentina, Chile, and Peru, if you connected your Mercado Pago account, the client can pay through that rail; the payment is completed in Mercado Pago's checkout (see [Mercado Pago](/en/docs/pagos/mercado-pago)). Where you also have Cord Payments, Cord Payments is the primary rail and Mercado Pago is the alternative.
+{/* MOCKUP: public link in preview mode with the top notice "Preview — this is what your client sees. Your visit is not counted as a view.", quote COT-0149, total MXN 48,720.00, and three lines, one with a struck-through list price. */}
+
+## Send the quote
+
+There are three paths and all three do the same thing: they change the status to
+*Sent*, activate the link and, if the client has an email, send them an email with the
+link and log the email in the activity.
+
+| From | Button |
+|---|---|
+| The editor of a new quote | **Create and send** |
+| The editor of a draft | **Save and send** |
+| The detail of a draft | **Send to client** |
+
+You can also drag the card from *Draft* to *Sent* on the board (see [Home and
+views](/en/docs/gestion/dashboard)); it performs exactly the same send.
 
 <Callout type="info">
-**Money straight to your account:** with direct charges to your connected bank account, card or SPEI funds never pass through a Cord account. Today Cord charges a platform fee only on payments in MXN, calculated transparently and shown before you charge; in other currencies Cord charges no fee of its own (see [Fees and terms](/en/docs/pagos/condiciones)).
+**Internal approval.** If your organization uses [internal
+approvals](/en/docs/cotizacion/aprobaciones-internas) and a new quote exceeds your caps
+on **Create and send**, it stays a draft **Pending approval** until a manager approves it.
 </Callout>
 
-## Sending methods
+## Share the link
 
-**Send to client** (on the draft's details) or **Create and send** / **Save and send** (in the editor) change the quote's status to *Sent*, generate the public link and, if the client has an email on file, automatically send them an email with the link and record the send in the activity. If the client has no email, the quote is still marked as sent and you share the link yourself.
+Once sent, the detail's actions panel gives you more ways to deliver it:
 
-Once it's sent, the details' actions panel gives you more ways to deliver it:
+- **Copy link:** to paste it into your email, Slack, or the chat where you talk with your client.
+- **WhatsApp:** opens WhatsApp with a ready message: "Hi! Here's your quote COT-0149 for … You can review and approve it here:" followed by the link.
+- **PDF:** opens the printable version to download or print it.
+- **Open link:** opens the public view to review it.
 
-1. **Copy link:** paste it into Slack, your personal email, or wherever you talk to your client.
-2. **WhatsApp:** opens WhatsApp with a ready-made message that includes the link.
-3. **PDF:** download or print the PDF version of the quote.
-4. **Open link:** opens the public view so you can review it.
+The link doesn't change when you create a new version with **Modify and resend**: the
+client keeps using the same one.
+
+## Paying from the link
+
+Once the client approves, the quote becomes a payment point, as long as your account
+has an active online rail:
+
+1. **Credit or debit card** with Cord Payments, inside the same link.
+2. **SPEI transfer** (Mexico, MXN only): Cord generates a dedicated CLABE for that charge and marks the quote as paid when the deposit arrives. In other currencies, SPEI isn't offered.
+3. **Mercado Pago** in Mexico, Brazil, Colombia, Argentina, Chile, and Peru, if you connected your account. Where you also have Cord Payments, Cord Payments is the primary rail.
+
+If you enabled bank transfer details, the link also shows them with the note "After
+transferring, send your receipt to the seller to confirm payment." You record that
+payment yourself with **Record payment**.
 
 <Callout type="info">
-**Limits and customization:** the Free plan includes 5 quote sends per month. From the Starter plan you can customize the sender name, reply-to address, introduction, and signature of the email in **Settings › Notifications › Email**. If your organization has internal approval rules (Scale plan) and a new quote exceeds them when you use **Create and send**, it stays as a draft waiting for a manager to approve it.
+**Money straight to your account.** Card and SPEI funds go to your connected account,
+not to a Cord account. Today Cord charges a platform fee only on MXN charges; in other
+currencies it charges no fee of its own (see [Fees and advantages](/en/docs/pagos/condiciones)).
 </Callout>
+
+## Behavior and edge cases
+
+- **No client email:** the quote moves to *Sent* and no email goes out. Share the link.
+- **Resending doesn't use sends.** **Modify and resend** creates a new version and sends the email again, but doesn't count against Free's monthly cap.
+- **The email carries your brand.** From Starter you can customize the sender, reply-to address, introduction, and signature in **Settings › Notifications › Email**.
+- **A test quote** is marked on the link with the ribbon "Test quote — no commercial or fiscal validity".
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Sends per month | 5 | No cap | No cap | No cap | No cap |
+| Custom email | No | Yes | Yes | Yes | Yes |
+
+When you hit Free's cap, **Send to client** tells you that you reached your plan's
+monthly limit and suggests upgrading.
+
+## Common problems
+
+**The client didn't get the email.** Check that their profile has an email and look for the email entry in the activity. If it isn't there, share the link manually.
+
+**I don't see the pay button on the link.** Payment shows after approval and only if you have an active rail. With Net 30 or Net 60 terms it's enabled on the due date (see [Advanced options](/en/docs/cotizacion/opciones)).
+
+**My own visit marked the quote as viewed.** It shouldn't: open the link while signed in to the same organization. From another browser without a session, Cord can't tell you apart from the client.
+
+## Related
+
+- [What your client sees](/en/docs/interaccion/vista-del-cliente)
+- [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)
+- [Notifications](/en/docs/gestion/notificaciones)
+- [Accept a payment](/en/docs/pagos/aceptar)

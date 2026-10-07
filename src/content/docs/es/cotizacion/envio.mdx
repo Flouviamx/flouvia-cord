@@ -1,48 +1,123 @@
 ---
 title: "Vista previa y envío"
-description: "Revisa la experiencia del cliente, comparte tu cotización y recibe el pago en línea."
+seoTitle: "Vista previa y envío de una cotización en Cord"
+description: "Revisa la cotización como la verá tu cliente, envíala por correo o compártela por WhatsApp, y qué pasa con el link, los límites de envío y el cobro."
 lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cotizaciones", "Correo del cliente capturado para el envío automático"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Vista previa y envío</h1>
-  <p class="page-subtitle">Asegúrate de que todo esté perfecto antes de enviar el link a tu cliente y ofrécele una experiencia de pago dentro de la propia cotización.</p>
+  <p class="page-subtitle">Revisa el link tal como lo verá tu cliente y entrégalo por el canal donde ya conversan.</p>
 </header>
 
-## La experiencia del cliente (el link)
+## Qué es
 
-Una de las mayores ventajas de Cord es que no envías un archivo muerto (PDF) adjunto en un correo. Envías un **link** hacia una experiencia web dinámica, con tu marca (tus colores y logotipo), donde el cliente puede interactuar, aprobar y pagar.
+Enviar una cotización activa su **link público**: una página con tu marca donde el
+cliente revisa, comenta, firma y paga. No es un PDF adjunto; es el mismo documento que
+tu equipo sigue viendo en Cord, y cualquier versión nueva llega al mismo link.
 
-Antes de enviar, abre el detalle del borrador y haz clic en **Vista previa** para revisar el link tal como lo verá tu cliente. Mientras tienes la sesión iniciada, Cord te muestra un aviso de vista previa y tu visita no cuenta como vista del cliente. Revisa:
-- Un diseño limpio y responsivo (optimizado para móviles).
-- El desglose de qué pagará el cliente (si solicitaste anticipo, el monto del anticipo y el del saldo).
-- El botón para **Aprobar cotización**.
+## Requisitos
 
-## Pagar desde el link
+- **Permiso:** Cotizaciones.
+- **Plan:** todos. En Gratis hay un tope de 5 envíos al mes.
+- **Correo del cliente:** opcional. Sin correo, la cotización se marca como enviada igual y tú compartes el link.
+- **Cobro en línea:** opcional. Para que el cliente pague desde el link necesitas un riel de cobro activo (ver [Métodos de cobro](/docs/pagos/metodos)).
 
-Una vez que el cliente aprueba, la cotización se convierte en un punto de cobro activo, siempre que tu cuenta tenga un riel de cobro en línea activo.
+## Revisa antes de enviar
 
-El cliente puede pagar el total (o el anticipo acordado) con:
+<Steps>
+1. Abre el borrador desde **Cotizaciones** y, en el panel de acciones, pulsa **Vista previa**.
+2. Se abre el link en una pestaña nueva con el aviso "Vista previa — así lo ve tu cliente. Tu visita no cuenta como vista." Mientras tengas la sesión iniciada en la organización dueña de la cotización, tu visita no marca la cotización como *Vista* ni genera avisos.
+3. Revisa el total, las partidas, los precios tachados donde negociaste, el plan de pago si pediste anticipo y las notas. Lo que ve el cliente se explica en [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente).
+</Steps>
 
-1. **Tarjeta de Crédito / Débito:** procesamiento vía Cord Payments, dentro del mismo link (ver [Métodos de cobro](/docs/pagos/metodos)).
-2. **Transferencia SPEI (México, solo en MXN):** el sistema genera una CLABE interbancaria propia para ese cobro. Cuando el cliente hace la transferencia desde su app bancaria, Cord detecta el depósito, marca el cobro como pagado y te avisa según tus [notificaciones](/docs/gestion/notificaciones). En cotizaciones en otra divisa, SPEI no se ofrece.
-3. **Mercado Pago:** en México, Brasil, Colombia, Argentina, Chile y Perú, si conectaste tu cuenta de Mercado Pago, el cliente puede pagar con ese riel; el pago se completa en el checkout de Mercado Pago (ver [Mercado Pago](/docs/pagos/mercado-pago)). Donde también tienes Cord Payments, Cord Payments es el riel principal y Mercado Pago queda como alternativa.
+{/* MOCKUP: link público en modo vista previa con el aviso superior "Vista previa — así lo ve tu cliente. Tu visita no cuenta como vista.", folio COT-0149, total MXN 48,720.00 y tres partidas, una con precio de lista tachado. */}
+
+## Envía la cotización
+
+Hay tres caminos y los tres hacen lo mismo: cambian el estado a *Enviada*, activan el
+link y, si el cliente tiene correo, le mandan un correo con el link y registran
+"Correo enviado al cliente" en la actividad.
+
+| Desde | Botón |
+|---|---|
+| El editor de una cotización nueva | **Crear y enviar** |
+| El editor de un borrador | **Guardar y enviar** |
+| El detalle de un borrador | **Enviar al cliente** |
+
+También puedes arrastrar la tarjeta de *Borrador* a *Enviada* en el tablero (ver
+[Inicio y vistas](/docs/gestion/dashboard)); hace exactamente el mismo envío.
 
 <Callout type="info">
-**Dinero directo a tu cuenta:** con cargos directos a tu cuenta bancaria conectada, los fondos de tarjeta o SPEI nunca pasan por una cuenta de Cord. Hoy Cord cobra comisión de plataforma solo en cobros en MXN, calculada de forma transparente y visible antes de cobrar; en otras divisas Cord no cobra comisión propia (ver [Tarifas y ventajas](/docs/pagos/condiciones)).
+**Aprobación interna.** Si tu organización usa [aprobaciones
+internas](/docs/cotizacion/aprobaciones-internas) y una cotización nueva rebasa tus
+topes al usar **Crear y enviar**, se queda como borrador **Pendiente de aprobación**
+hasta que un responsable la apruebe.
 </Callout>
 
-## Métodos de envío
-
-**Enviar al cliente** (en el detalle del borrador) o **Crear y enviar** / **Guardar y enviar** (en el editor) cambian el estado de la cotización a *Enviada*, generan el link público y, si el cliente tiene correo capturado, le mandan automáticamente un correo con el link y dejan registro del envío en la actividad. Si el cliente no tiene correo, la cotización se marca como enviada igual y tú compartes el link.
+## Comparte el link
 
 Una vez enviada, el panel de acciones del detalle te da más formas de entregarla:
 
-1. **Copiar link:** pégalo en Slack, tu correo personal o donde conversas con tu cliente.
-2. **WhatsApp:** abre WhatsApp con un mensaje listo que incluye el link.
-3. **PDF:** descarga o imprime la versión en PDF de la cotización.
-4. **Abrir link:** abre la vista pública para revisarla.
+- **Copiar link:** para pegarlo en tu correo, en Slack o en el chat donde hablas con tu cliente.
+- **WhatsApp:** abre WhatsApp con un mensaje listo: "¡Hola! Te comparto la cotización COT-0149 por … Puedes revisarla y aprobarla aquí:" seguido del link.
+- **PDF:** abre la versión imprimible para descargarla o imprimirla.
+- **Abrir link:** abre la vista pública para revisarla.
+
+El link no cambia cuando creas una versión nueva con **Modificar y reenviar**: el
+cliente sigue usando el mismo.
+
+## Pagar desde el link
+
+Una vez que el cliente aprueba, la cotización se convierte en un punto de cobro,
+siempre que tu cuenta tenga un riel en línea activo:
+
+1. **Tarjeta de crédito o débito** con Cord Payments, dentro del mismo link.
+2. **Transferencia SPEI** (México, solo en MXN): Cord genera una CLABE propia para ese cobro y marca la cotización como pagada cuando llega el depósito. En otra divisa, SPEI no se ofrece.
+3. **Mercado Pago** en México, Brasil, Colombia, Argentina, Chile y Perú, si conectaste tu cuenta. Donde también tienes Cord Payments, Cord Payments es el riel principal.
+
+Si activaste los datos de transferencia bancaria, el link también los muestra con la
+nota "Tras transferir, envía tu comprobante al vendedor para confirmar el pago". Ese
+pago lo registras tú con **Registrar pago**.
 
 <Callout type="info">
-**Límites y personalización:** el plan Gratis incluye 5 envíos de cotización al mes. Desde el plan Starter puedes personalizar el nombre del remitente, la dirección de respuesta, la introducción y la firma del correo en **Ajustes › Notificaciones › Correo**. Si tu organización tiene reglas de aprobación interna (plan Scale) y una cotización nueva las rebasa al usar **Crear y enviar**, queda como borrador en espera de que un responsable la apruebe.
+**Dinero directo a tu cuenta.** Los fondos de tarjeta o SPEI van a tu cuenta conectada,
+no a una cuenta de Cord. Hoy Cord cobra comisión de plataforma solo en cobros en MXN;
+en otras divisas no cobra comisión propia (ver [Tarifas y ventajas](/docs/pagos/condiciones)).
 </Callout>
+
+## Comportamiento y casos límite
+
+- **Sin correo del cliente:** la cotización pasa a *Enviada* y no sale ningún correo. Comparte el link.
+- **Reenviar no consume envíos.** **Modificar y reenviar** crea una versión nueva y vuelve a mandar el correo, pero no cuenta contra el tope mensual de Gratis.
+- **El correo lleva tu marca.** Desde Starter puedes personalizar remitente, dirección de respuesta, introducción y firma en **Ajustes › Notificaciones › Correo**.
+- **Una cotización de prueba** se marca en el link con la cinta "Cotización de prueba — sin validez comercial ni fiscal".
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Envíos al mes | 5 | Sin tope | Sin tope | Sin tope | Sin tope |
+| Correo personalizado | No | Sí | Sí | Sí | Sí |
+
+Al llegar al tope de Gratis, **Enviar al cliente** responde "Alcanzaste el límite de tu
+plan (5 este mes). Sube de plan para seguir usando esta función."
+
+## Problemas comunes
+
+**El cliente no recibió el correo.** Revisa que su ficha tenga correo y busca "Correo enviado al cliente" en la actividad. Si no aparece, comparte el link a mano.
+
+**No veo el botón de pago en el link.** El cobro aparece después de aprobar y solo si tienes un riel activo. Con términos Net 30 o Net 60 se habilita al vencer (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
+
+**Mi propia visita marcó la cotización como vista.** No debería: abre el link con tu sesión iniciada en la misma organización. Desde otro navegador sin sesión, Cord no puede distinguirte del cliente.
+
+## Relacionadas
+
+- [Lo que ve tu cliente](/docs/interaccion/vista-del-cliente)
+- [Aprobaciones internas](/docs/cotizacion/aprobaciones-internas)
+- [Notificaciones](/docs/gestion/notificaciones)
+- [Aceptar un pago](/docs/pagos/aceptar)

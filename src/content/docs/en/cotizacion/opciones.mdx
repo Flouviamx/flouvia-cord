@@ -1,40 +1,144 @@
 ---
 title: "Advanced options"
-description: "Configure validities, currency, credit terms, advances, and recurring payments."
+seoTitle: "Quote options: validity, currency, deposit, retainer, and taxes"
+description: "Payment terms, deposit, monthly retainer, tax-inclusive prices, withholding, sales versus accounting currency, locked rate, validity, notes, and the defaults in Settings › Quotes."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to use the options", "Settings permission to change the defaults"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Advanced options</h1>
-  <p class="page-subtitle">Customize how you get paid. From upfront deposits to monthly retainers and credit terms.</p>
+  <p class="page-subtitle">Decide how and when your client pays you, in which currency, and with which conditions each quote starts.</p>
 </header>
 
-## Control the commercial and financial context
+## What it is
 
-A quote in Cord is not just a document; it's a **collection engine**. Payment terms are chosen next to the client, in the **Who are you quoting?** step; the rest of the options live in the **Review and send** panel, on the right side of the quoter, where you decide exactly *how* and *when* your client pays you.
+Beyond client and lines, each quote carries its commercial and financial conditions.
+Payment terms are chosen with the client, in **Who are you quoting?**; the rest lives
+in the **Review and send** panel on the right of the editor. The values a new quote
+starts with are set once in **Settings › Quotes**.
 
-### 1. Payment Terms and Advances
+{/* MOCKUP: "Review and send" panel of the editor with Subtotal, "You discounted them", tax 16% breakdown, Total, the "Prices already include tax" switch, Valid for 30 days, "Monthly recurring charge", Deposit (%) = 50, "What currency are you quoting in?" = USD, and the locked-rate block with the Slightly +1%, Normal +2%, Cautious +5% chips. */}
 
-Unlike static quoters, Cord understands the reality of business-to-business sales, where 100% upfront is rarely charged:
+## Requirements
 
-- **Deposit (%):** You can request a percentage as an advance (e.g., *50%*). Upon quote approval, the system automatically splits the charge into deposit and balance: the client sees their payment plan and a button to immediately pay the deposit, and the balance stays pending with its due date based on the payment terms.
-- **Cash:** Payment is available as soon as the client approves.
-- **Credit (Net 30 / Net 60):** The immediate payment button is hidden. The client sees a message confirming their order with 30 or 60-day credit, counted from approval. Online payment is enabled automatically once the due date is reached.
+- **Permission:** Quotes to use the options; Settings to change the defaults.
+- **Plan:** every option is on every plan. The monthly retainer and paying the deposit online require an active payment rail.
+- **Country:** the invoice series is Mexico only; SPEI is Mexico and MXN only.
 
-### 2. Recurring Payments (Retainers)
+## Payment terms
 
-If you are an agency, consultancy, or sell continuous services, you can turn a quote into a **Monthly retainer**.
-- Turn on **Monthly recurring charge** in the summary panel. The retainer is only available with **Cash** terms and is mutually exclusive with a deposit: when you turn it on, the deposit field is hidden; if you pick Net 30 or Net 60, the retainer option disappears.
-- The quote turns into a real Cord Payments subscription (see [Monthly retainers](/en/docs/pagos/igualas)). The client authorizes their credit/debit card **only once** from the public link when approving the proposal, pays the first month at that moment, and from then on is charged the same amount automatically every month until it's canceled.
-- Each monthly charge is recorded in the quote's activity. The retainer doesn't issue an invoice per cycle on its own: if you need to invoice automatically every month, use [recurring invoices](/en/docs/pagos/facturas-recurrentes).
+In **Who are you quoting?** you choose **Cash**, **Net 30**, or
+**Net 60**. When you pick a client, Cord preselects the terms from their profile.
 
-### 3. Currencies and Exchange Rate Coverage (FX Lock)
+- **Cash:** payment is available as soon as the client approves.
+- **Net 30 / Net 60:** the pay button doesn't appear on approval. The client sees that the order is confirmed on credit and the date it's due; online payment is enabled on that date, counted from approval.
 
-- **Sales currency vs. accounting currency:** In business-to-business sales it's common to quote in one currency (e.g. USD or EUR) to protect against devaluation, but keep your books in your country's currency (e.g. MXN, COP, BRL). Cord handles this natively whenever the two differ: you pick the currency in **What currency are you quoting in?**, and your accounting currency is your business's.
-- **Locked rate:** When the sales currency differs from your accounting currency, Cord fetches a real, dated exchange rate from an external provider (never a made-up rate — if no source responds, the quote isn't saved in that currency). On top of today's rate you apply a coverage cushion with the **Slightly** (+1%), **Normal** (+2%), or **Cautious** (+5%) options; the server doesn't accept coverage above 25%. The resulting rate is set when you save the quote (or when you change the currency pair on a draft) and isn't recalculated afterward: if the exchange rate moves tomorrow, the accounting total and the invoice keep using the rate that was locked. The editor labels it "Rate locked for 30 days"; today that period is informational, because the saved rate is kept for as long as you don't change the pair.
-- **Validity:** Set the commercial validity days. A daily process marks sent or viewed quotes whose validity date has passed as expired; from that point on, the link no longer accepts approval. To propose it again, use **Duplicate quote**: the copy starts as a draft with a fresh 30-day validity.
+## Deposit
 
-### 4. Notes and Commercial Terms
+In **Deposit (%)** you enter a percentage between 1 and 99. On approval, Cord splits the
+charge into deposit and balance: the client pays the deposit immediately (even if the
+terms are on credit) and the balance keeps its due date. Even before approval, the
+link shows what they'll pay once approved. Details in [Upfront and
+balance](/en/docs/pagos/anticipos).
 
-- **Notes for the client:** each quote has an optional notes field (e.g., *on-site delivery included*). It appears both on the link and in the PDF.
-- **Commercial terms:** cancellation policies, delivery times, or warranties belong to your organization, not to each quote. They're set in **Settings › Quotes › PDF document** (one term per line) and are printed only on the quote's PDF; they don't appear in the link's web view.
+## Monthly retainer
+
+Turn on **Monthly recurring charge** to charge the total every month by card.
+
+- It only exists with **cash** terms: if you choose Net 30 or Net 60, the switch disappears.
+- It excludes a deposit: when on, the deposit field is hidden.
+- The client authorizes their card once from the link on approval; they pay the first month then, and the same amount is charged every month until it's canceled.
+
+Details in [Monthly retainers](/en/docs/pagos/igualas).
+
+## Tax-inclusive prices and withholding
+
+- **Prices already include tax**: with the switch on, the price you enter already includes tax and Cord breaks it out instead of adding it on top. To have it on for every new quote, turn it on in **Settings › Quotes › Taxes**, under **Behavior in quotes**.
+- **Tax per line:** each line carries its rate, taken from your tax catalog. See [Products and discounts](/en/docs/cotizacion/productos).
+- **Withholding:** if your catalog has active withholding entries marked as default, Cord applies them to every quote and **subtracts** them from the total; they show as rows in the summary, on the link, and in the PDF. They aren't toggled per quote: they're managed in **Settings › Quotes › Taxes**. Where your country has no withholding, no row appears.
+
+## Sales currency and accounting currency
+
+These are two different pieces of data and Cord doesn't mix them:
+
+- **Sales currency:** the one you choose in **What currency are you quoting in?**. It's what the client sees on the link, what they're charged in, and what the invoice is issued in. You can choose MXN, USD, CAD, BRL, EUR, GBP, COP, ARS, CLP, PEN, JPY, CNY, CHF, or AUD.
+- **Accounting currency:** your business's currency, set in **Settings › General**. It's the one you keep your books in.
+
+When both are the same there's no exchange rate. When they differ, Cord gets a real,
+dated rate from an external provider and adds a coverage cushion:
+
+| Option | Cushion |
+|---|---|
+| **Slightly** | +1% |
+| **Normal** (default) | +2% |
+| **Cautious** | +5% |
+
+The editor shows **Today's exchange rate** and **Your locked-in rate**. The rate is
+locked when you save the quote (or when you change the currency pair on a draft) and
+isn't recalculated: the invoice declares it as the exchange rate even if the market moves.
+
+<Callout type="warning">
+**No provable rate, no save.** If no source publishes that pair's rate at that moment,
+Cord doesn't save the quote in that currency and asks you to try again or quote in your
+business currency. It never uses a made-up rate. The "Rate locked for 30 days" label is
+informational: the rate is kept as long as you don't change the pair.
+</Callout>
+
+More in [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx).
+
+## Validity
+
+In **Valid for** you choose how many days the proposal is valid: 15, 30, 60, or your
+organization's default. A daily process marks as *Expired* every sent or viewed quote
+whose date has passed, and three days earlier it can alert you (see
+[Notifications](/en/docs/gestion/notificaciones)). An expired quote no longer accepts the
+client's approval.
+
+## Notes and conditions
+
+- **Notes for the client:** free text for the quote (for example, "on-site delivery included"). It appears on the link and in the PDF.
+- **PDF conditions:** your business policies (cancellation, delivery, warranty) are set once in **Settings › Quotes › PDF document**, one per line, and are printed only in the PDF.
+
+## Defaults (Settings › Quotes)
+
+In **Settings › Quotes › Numbering & tax** you define what every quote starts with:
+
+| Field | What it does |
+|---|---|
+| **Quote number prefix** | Up to 6 letters or numbers (Cord uppercases it). The quote number is prefix, hyphen, and a 4-digit sequence, for example COT-0149. Without a prefix, Cord uses COT. |
+| **Series (optional)** | Mexico only: series for CFDI numbering. |
+| **Default rate (%)** | The rate new lines get when your catalog has no profile marked as default. |
+| **Withholding applied** | Read only: lists your catalog's default withholding, with the **Manage taxes** link. |
+| **Default validity (days)** | Between 1 and 365. The editor starts with this value. |
+| **Default payment terms** | Cash, Net 30, or Net 60. Preselected on creation; the client's profile wins when you pick one. |
+| **Default deposit (%)** | Between 1 and 99, or empty for no deposit. Prefills the editor field. |
+| **Default legal text** | Saved on your organization, but today it isn't printed on the link or in the PDF. For text that is printed, use **PDF document**. |
+
+Changing a default doesn't modify quotes already created.
+
+## Limits by plan
+
+The options on this page have no cap by plan. Online payment, retainers, and SPEI
+depend on having an active payment rail in your country (see [Payment
+methods](/en/docs/pagos/metodos)).
+
+## Common problems
+
+**I don't see the retainer switch.** You chose Net 30 or Net 60; retainers only exist with cash terms.
+
+**I don't see the deposit field.** You have the retainer turned on.
+
+**Cord couldn't get the exchange rate.** No source published that pair's rate at that moment. Try again shortly or quote in your business currency.
+
+**I changed the default validity and my quotes didn't change.** That's expected: it applies to new ones.
+
+## Related
+
+- [Products and discounts](/en/docs/cotizacion/productos)
+- [Preview and sending](/en/docs/cotizacion/envio)
+- [Upfront and balance](/en/docs/pagos/anticipos) · [Credit terms](/en/docs/pagos/credito) · [Retainers](/en/docs/pagos/igualas)
+- [Settings map](/en/docs/cuenta/mapa-de-ajustes)

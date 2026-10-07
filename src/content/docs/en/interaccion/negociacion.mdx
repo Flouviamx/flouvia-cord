@@ -1,0 +1,155 @@
+---
+title: "Negotiation and counteroffers"
+seoTitle: "Counteroffers, partial approval, rejection, and quote versions"
+description: "How your client negotiates from the link (counteroffer, partial approval, rejection with a reason), how you reply with Modify and resend, what happens if you change the proposal while they read it, and what Cord notifies you about."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Sent or Viewed quote", "Comments and counteroffers turned on for counteroffers", "Quotes permission to reply and resend"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Negotiation and counteroffers</h1>
+  <p class="page-subtitle">The client proposes, accepts only part, or rejects from the same link. You reply with a new version without changing the link.</p>
+</header>
+
+## What it is
+
+In Cord, negotiation happens on the document, not in an email thread. While the quote
+is *Sent* or *Viewed*, the client has four ways to respond: write a message, send a
+**counteroffer**, **approve only some lines**, or **reject** with a reason. Your answer
+is another version of the same quote, which arrives at the same link.
+
+## Requirements
+
+- **Status:** *Sent* or *Viewed*. An approved, rejected, or expired quote no longer accepts counteroffers or a signature.
+- **Portal option:** counteroffers and messages require **Comments and counteroffers** to be on in **Settings › Brand appearance › Client portal**. Partial approval and rejection are always available.
+- **Permission:** Quotes to reply to messages and to **Modify and resend**; Approvals to **Mark approved** or **Mark rejected**.
+- **Plan:** all.
+
+## Counteroffer
+
+<Steps>
+1. In the link's **CONVERSATION** section, the client enters an amount in the proposal field (in the quote's currency) and, optionally, a message.
+2. They click **Counteroffer**.
+3. The proposal appears in the conversation with a distinct style, showing the proposed amount followed by the message.
+</Steps>
+
+{/* MOCKUP: link CONVERSATION section with a regular client bubble, an amber counteroffer bubble showing the proposed amount MXN 42,000.00 and the message "If you can do this total we'll close this week", labeled "You · now", and below it the proposal field with the "Counteroffer" button. */}
+
+A counteroffer **doesn't change the quote's status** or amounts: it's a message with an
+amount. To accept it, adjust the prices and resend (see below). If you don't accept it,
+reply in the conversation.
+
+## Partial approval
+
+Before signing, the client can uncheck the lines they don't want with **Include this
+line in your approval**. The link shows how many lines they'll approve and the new
+total, calculated with the same engine Cord uses when saving.
+
+When a partial approval is signed:
+
+- The quote moves to *Approved* with the **total recalculated** from the included lines only: subtotal, per-line taxes, and withholding.
+- The other lines are marked **Not included** on the link and on the detail, which shows "Partial approval — the client only signed the included lines".
+- The activity logs who signed, how many lines they approved out of the total, and the approved amount against the original.
+- If you asked for a deposit, it's calculated on the approved total.
+- The invoice includes only the approved lines.
+
+At least one line must stay included: with every line unchecked, the approve button is
+disabled.
+
+## Rejection with a reason
+
+<Steps>
+1. From review, the client clicks **Reject**.
+2. They write a **Reason (optional — helps the seller improve)**.
+3. They click **Confirm rejection**.
+</Steps>
+
+The quote moves to *Rejected*. The activity logs the client's reason (or that they
+rejected it from the link without a reason), and the client sees "We notified [your
+business]". A rejection can't be undone: to propose again, duplicate the quote.
+
+## How you reply: Modify and resend
+
+While the quote is *Sent*, *Viewed*, or *Expired*, the detail shows **Modify and resend
+(V2)**; the number is the version you're about to create.
+
+<Steps>
+1. Click **Modify and resend (V2)**. The editor opens with the current lines.
+2. Change products, quantities, negotiated prices, taxes, or **Prices already include tax**. The client and payment terms can't be changed here ("The client can't be changed while editing the quote").
+3. Click **Generate V2 and resend**.
+</Steps>
+
+When you resend, Cord:
+
+- saves the new version and adds it to the detail's **Version history**, with its date and total;
+- keeps the **same link**;
+- emails the client again if they have an email on file;
+- moves the quote back to *Sent*;
+- emits the quote-modified event with the previous total, so your automations can tell an unchanged resend from one with a discount.
+
+Resending an *Expired* quote doesn't give it a new validity date: the daily process
+expires it again. To propose it again with a new date, use **Duplicate quote**.
+
+## If you change the proposal while the client reads it
+
+The link is connected in real time. If the client has it open when you resend:
+
+1. Changed lines update without reloading, with a highlight and the previous amount for a few seconds ("was …").
+2. **The proposal was updated** appears with the **See changes** button.
+3. The approve button is **locked** until the client clicks **See changes**, which takes them to the lines.
+
+On top of that, every signature carries the document revision the client had on
+screen. If it doesn't match the current one, Cord **rejects the signature**, takes the
+client back to review with the notice on, and never saves an approval on a version that
+no longer exists.
+
+<Callout type="info">
+Cord detects changes through the document revision, which advances with any write to
+the quote (lines, charges, messages, and events). That's why the notice can also appear
+after someone writes in the conversation. Clicking **See changes** is enough to approve
+again.
+</Callout>
+
+## What Cord notifies you about and what it doesn't
+
+| Client action | Changes the status | Email, Slack, or Teams alert | Webhook and workflow |
+|---|---|---|---|
+| Message in the conversation | No | No | Yes: "A message is posted on a quote" |
+| Comment on a line | No | No | Yes: "A message is posted on a quote" |
+| Counteroffer | No | No | Yes: "A message is posted on a quote", flagged as a counteroffer |
+| Full or partial approval | Yes, to *Approved* | Yes: **Quote approved** (by email, on by default) | Yes: "A quote is approved" |
+| Rejection | Yes, to *Rejected* | Yes: **Quote rejected** (by email, on by default) | Yes: "A quote is rejected" |
+
+Messages and counteroffers do appear in the bell on the top bar, which lists the most
+recent activity. To get an alert outside Cord, create a
+[workflow](/en/docs/automatizacion/workflows/primer-workflow) with the **A message is
+posted on a quote** trigger, for example to notify your Slack channel. Email, Slack,
+and Teams alerts are configured in [Notifications](/en/docs/gestion/notificaciones).
+
+**Mark approved** and **Mark rejected** from the app change the status and fire the
+webhook, but don't trigger the Notifications alerts, which are for the client's decisions.
+
+## Limits by plan
+
+Negotiation is on every plan. On Pro or higher, the quote detail receives the client's
+messages live; on Free and Starter, reload the detail to see them.
+
+## Common problems
+
+**The client doesn't see the counteroffer field.** **Comments and counteroffers** is off, or the quote is no longer *Sent* or *Viewed*.
+
+**Cord rejects the counteroffer.** The quote was already approved, rejected, or expired.
+
+**The client can't approve after I resent.** They need to click **See changes** first; if the button is still disabled, check that at least one line is included.
+
+**I don't see Modify and resend.** The quote is a draft (use **Continue editing**), it's already approved or paid, or your role doesn't have the Quotes permission.
+
+## Related
+
+- [What your client sees](/en/docs/interaccion/vista-del-cliente)
+- [Chat and comments](/en/docs/interaccion/chat)
+- [Approval and evidence](/en/docs/interaccion/firma)
+- [Quote management](/en/docs/gestion/cotizaciones)

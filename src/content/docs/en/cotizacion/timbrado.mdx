@@ -1,13 +1,24 @@
 ---
 title: "Approval and invoicing"
-description: "Turn an approved quote into the fiscal document that matches your country, and follow up on your overdue accounts."
+seoTitle: "From approved quote to invoice: CFDI, Verifactu, or commercial invoice"
+description: "What happens when the client approves, how you record a payment, and how you issue the document that applies to your country: CFDI 4.0, Verifactu, pro forma, or commercial invoice."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Approvals permission to record payments and issue the document from the quote detail", "An Approved or Paid quote", "In Mexico, Starter plan or higher and a CSD uploaded to stamp"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Approval and invoicing</h1>
   <p class="page-subtitle">Closing the loop. After approval, you can collect payment, issue the document available for your market, and follow up on pending balances.</p>
 </header>
+
+## Requirements
+
+- **Permission:** on the quote detail, **Mark approved**, **Record payment**, and the button to issue the document appear for anyone with the **Approvals** permission.
+- **Status:** the document is issued from an *Approved* or *Paid* quote.
+- **Country and plan:** the document type depends on your country and plan (see below).
 
 ## Digital Approval
 
@@ -54,4 +65,19 @@ Available from the **Scale** plan, Cord's AI Agent monitors your overdue portfol
 
 ### Predictive Treasury
 
-In `/app/informes`, Cord crosses the credit terms of your open quotes with each client's actual payment behavior to give you a more realistic estimate of the money that will actually come in over the next 90 days.
+In **Reports › Cash flow · 90 days** (Pro plan or higher), Cord crosses the credit terms of your open quotes with each client's actual payment behavior to give you a more realistic estimate of the money that will actually come in over the next 90 days.
+
+## Common problems
+
+**I don't see the button to issue.** The quote isn't *Approved* or *Paid*, or your role doesn't have the Approvals permission.
+
+**The document came out as Simulated or Tax test mode.** Stamping isn't active on your account yet: check your plan and your [CSD](/en/docs/cuenta/csd).
+
+**The invoice has fewer lines than the quote.** The client approved only some lines; only approved lines are invoiced.
+
+## Related
+
+- [Approval and evidence](/en/docs/interaccion/firma)
+- [Fiscal invoicing by country](/en/docs/pagos/facturacion)
+- [Issued invoices](/en/docs/pagos/facturas-emitidas)
+- [Receivables and collections](/en/docs/pagos/cartera-cobranza)

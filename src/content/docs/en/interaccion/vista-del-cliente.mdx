@@ -1,0 +1,151 @@
+---
+title: "What your client sees"
+seoTitle: "The quote link: what your client sees and what your team sees"
+description: "A walkthrough of a quote's public link: review, sign, and pay, list versus negotiated price, language and currency, PDF, chat, seller presence, and which activity signals your team receives."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A sent quote", "Pro plan or higher for live presence and client attention"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">What your client sees</h1>
+  <p class="page-subtitle">Your client doesn't create an account or download anything: they open the link, review, sign, and pay. Here's what each part looks like and what your team learns from their visit.</p>
+</header>
+
+## What it is
+
+Every quote has a unique public link. It's a page with your logo and colors where the
+client sees the full proposal and acts on it. The link is the credential: whoever has
+it can see the quote, so share it only with your client.
+
+To see it the way they will, use **Preview** or **Open link** from the quote detail
+while signed in (see [Preview and sending](/en/docs/cotizacion/envio)).
+
+{/* MOCKUP: full public link on desktop: logo and quote COT-0149, FOR / VALID UNTIL (chip "Due in 6 days") / TERMS row, featured total "MXN 48,720.00" with the note that MXN 24,360.00 (50%) is paid on approval, line table with a struck-through list price, subtotal, tax 16% and total, the indicator "Ana Torres is online", the "Approve quote" button, and the CONVERSATION section below. */}
+
+## Requirements
+
+- **For the client:** just the link and a browser. No account needed.
+- **For your team:** the quote must be sent. Live presence and per-section attention require the Pro plan or higher.
+- **Country:** the same in all 12 markets; the language, currency, tax name, and payment rails change.
+
+## What they see, top to bottom
+
+1. **Header** with your logo, the quote number and, if you set them up, the **top announcement** and the **welcome message** (in **Settings › Brand appearance › Client portal**).
+2. **FOR**, **VALID UNTIL**, and **TERMS**. Next to the validity date there's a notice: "Due in N days", "Due today", or "Expired".
+3. **TOTAL DUE**, with the currency. If you asked for a deposit, below it says how much they pay on approval and what balance remains; if it's a retainer, how much is charged each month.
+4. **Lines**: item, quantity, unit price, and amount. When the negotiated price is lower than the list price, the list price appears **struck through** next to the one they pay. The table doesn't show your cost or your margin.
+5. **Subtotal, taxes, and total**: one row per rate with your country's tax name (IVA, VAT, GST, Sales tax) and, if applicable, withholding subtracted.
+6. **Notes for the client**, if you wrote any.
+7. **Actions**: approve, download PDF, or reject.
+8. **Conversation**, if you have it turned on.
+9. **Contact**: "Questions about this quote? Contact [your business]" with WhatsApp, email, or phone, depending on your business contact details.
+
+At the bottom is Cord's branding ("Legally binding signature · Verified by Cord"). From
+Starter you can remove it in **Client portal › Show Cord branding**.
+
+## The steps: review, sign, pay
+
+<Steps>
+1. **Review.** The client reads the proposal. Each line has the checkbox **Include this line in your approval**: if they uncheck any, they see how many lines they'll approve and the recalculated total to approve.
+2. **Sign.** With **Approve quote** the same card moves to **Digital signature**: a summary of the quote number and total, **Signer's full name**, **Email (optional)**, the acceptance checkbox, and **Confirm and sign**. See [Approval and evidence](/en/docs/interaccion/firma).
+3. **Pay.** After confirming, **Quote approved** appears with the audit stamp. If your account collects online and an amount is due today, **PAY NOW** and **Pay securely** appear. On credit, they see the date their payment is due; with a deposit, the **Payment plan** with deposit and balance.
+</Steps>
+
+On mobile, a bar with the total and the **Approve** button sticks to the bottom as they
+scroll. From review they can also choose **Reject**, write an optional reason, and
+**Confirm rejection** (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)).
+
+{/* MOCKUP: mobile view of the link in three side-by-side screens: (1) review with one line unchecked and "You'll approve 2 of 3 lines"; (2) "Digital signature" step with the name "María García López" and the box checked; (3) "Quote approved" with the "Document verified" stamp and the "Pay securely" button. */}
+
+## Language, format, and currency
+
+- **Language:** the link is shown in your organization's language (Spanish or English, in **Settings › General**), not in the client's browser language.
+- **Date and number format:** your country's.
+- **Currency:** that quote's sales currency. A business in Madrid quoting in EUR shows euros; if you quote in USD, the client sees and pays dollars (see [Advanced options](/en/docs/cotizacion/opciones)).
+
+## PDF and printing
+
+**Download PDF** opens the browser's print dialog with a clean version of the quote
+(no buttons, chat, or contact block), which the client can save as a PDF. After
+approval, the same button is called **Download receipt**.
+
+## Conversation and presence
+
+If you left **Comments and counteroffers** on (in **Client portal**), the client sees
+the **CONVERSATION** section to write messages or send a counteroffer, and a comment
+button on each line. Each bubble says who wrote it: **You** for the client and your
+business name for your replies. See [Chat and comments](/en/docs/interaccion/chat).
+
+While the proposal is open, a strip shows the connection status:
+
+- **Connected in real time** when nobody from your team is looking at it.
+- **[Name] is online** when someone on your team has that quote's detail open (Pro plan or higher). Cord uses the member's profile name, or their email if they have no name.
+- **[Name] is typing…** when that person is writing a reply.
+
+If you change the proposal with **Modify and resend** while the client has it open, the
+amounts update without reloading and **The proposal was updated** appears with **See
+changes** (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)).
+
+## What your team sees of the visit
+
+| Signal | Where you see it | Plan |
+|---|---|---|
+| **Viewed** (first open) | The quote moves to *Viewed*, the activity logs that the client opened it from the link and, if you turned it on, the [Quote viewed](/en/docs/gestion/notificaciones) alert arrives. | All |
+| **Viewing now** | Badge next to the client's name on the detail, for example "Viewing now — Line items". | Pro or higher |
+| **Client attention** | Detail block with distinct people, opens, first and last visit, time per section (Summary, Line items, Notes and terms, Approval and payment, Conversation), and total time. | Pro or higher |
+| **New message** | **New** appears in Conversation when the client writes while you have the detail open. | Pro or higher |
+
+{/* MOCKUP: seller-side quote detail with the green "Viewing now — Line items" badge next to the client's name and the "Client attention" block: "2 people · 5 opens", First Oct 3, Last today, horizontal bars per section (Line items 4 min, Approval and payment 1 min 20 s, Summary 40 s) and "Total time on the proposal". */}
+
+### What counts and what doesn't
+
+Cord only counts what the client does, and it measures it from the open page itself:
+
+- **Your team doesn't count.** Anyone who opens the link with an active session in your organization sees "Preview — this is what your client sees. Your visit is not counted as a view." and generates no view, client presence, or attention.
+- **Link preview generators don't count.** When you paste the link into WhatsApp, Slack, or an email, the service that builds the link card isn't recorded as the client.
+- **It's measured with the page visible.** The view is recorded when the link is open in a visible tab and the page has finished loading; a background tab adds no time.
+- **The view is counted once.** Reloading or reopening doesn't trigger new view alerts. In Client attention, each new tab adds one open.
+
+If you open the link from another browser without a session, Cord can't tell you apart
+from the client and will count your visit.
+
+## Transparency notice
+
+Below the card, the client reads: "Whoever sent you this proposal can see when you open
+it and which sections you review." This notice isn't shown in your preview. IP
+addresses for these signals are stored as a hash, not in clear text; the full IP is
+kept only as signature evidence.
+
+## Behavior and edge cases
+
+- **Expired quote:** the link still opens with "Expired", but Cord no longer accepts the signature and tells the client the quote can no longer be modified.
+- **Rejected:** the link shows **Quote rejected** and "We notified [your business]. If you change your mind, contact them directly."
+- **Paid, rejected, or expired while open:** the page reloads by itself to show the final status.
+- **Test quote:** the ribbon "Test quote — no commercial or fiscal validity" appears.
+- **Quote builder embedded on your site:** if the quote is shown on a site that isn't authorized, it appears read-only with **Respond from the secure link** and the **Open proposal** button (see [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen)).
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Public link, signature, and PDF | Yes | Yes | Yes | Yes | Yes |
+| Remove Cord branding | No | Yes | Yes | Yes | Yes |
+| Live presence and client attention | No | No | Yes | Yes | Yes |
+
+## Common problems
+
+**The quote was marked as viewed and the client says they didn't open it.** Someone else with the link may have opened it, or you opened it without a session. Check **Client attention** to see how many distinct people opened it.
+
+**The client doesn't see the pay button.** They haven't approved yet, the payment is on credit and not yet due, or your account has no active payment rail.
+
+**The client doesn't see the conversation.** It's turned off in **Client portal › Comments and counteroffers**, or the quote was already approved or rejected.
+
+## Related
+
+- [Chat and comments](/en/docs/interaccion/chat)
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [Approval and evidence](/en/docs/interaccion/firma)
+- [Customize your branding](/en/docs/cuenta/marca)

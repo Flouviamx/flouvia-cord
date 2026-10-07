@@ -1,76 +1,106 @@
 ---
 title: "Datos del cliente"
 seoTitle: "Datos del cliente en una cotización"
-description: "Añade clientes manualmente o por CSV, asígnales un nivel de precio con descuento automático y completa su información fiscal."
+description: "Elige o crea al cliente de una cotización, aplica su nivel de precio y sus términos, y completa la información fiscal que necesitará la factura."
 lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cotizaciones para elegir al cliente", "Permiso Clientes para crear uno nuevo"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Datos del cliente</h1>
-  <p class="page-subtitle">El primer paso de tu cotización: define a quién le estás vendiendo y asegura que la factura saldrá sin errores.</p>
+  <p class="page-subtitle">El primer paso de tu cotización: define a quién le vendes, con qué condiciones y con qué datos saldrá su factura.</p>
 </header>
 
-## Formas de agregar clientes
+## Qué es
 
-Al iniciar una nueva cotización, el primer paso del editor es **¿A quién le cotizas?**. Cord te ofrece diferentes maneras de nutrir tu base de datos:
+El paso **¿A quién le cotizas?** del editor une la cotización con un cliente de tu
+directorio. De su ficha salen tres cosas: el descuento de su nivel de precio, sus
+términos de pago y los datos del receptor que usará la factura.
 
-1. **Creación manual:** directamente desde el cotizador, abre el selector de cliente y elige **+ Crear nuevo cliente…** para llenar un formulario rápido con sus datos comerciales y fiscales. También puedes crearlo desde **Clientes** con **+ Nuevo cliente**.
-2. **Importación masiva (CSV):** si estás migrando desde otro CRM o ERP, ve a **Clientes** en el menú principal, usa **Importar CSV**, descarga la plantilla de ejemplo y sube tu archivo. Cada importación admite hasta **2,000 filas**; la importación carga empresa, contacto, correo, teléfono, identificador fiscal, términos de pago y límite de crédito (el nivel de precio y los datos fiscales de CFDI se completan después en la ficha).
-3. **Sincronización por API:** para equipos de desarrollo, Cord ofrece una API REST pública para crear y sincronizar clientes automáticamente desde tu propio sistema interno.
+{/* MOCKUP: paso "¿A quién le cotizas?" con el selector de cliente abierto ("— Selecciona un cliente —", "+ Crear nuevo cliente…", "Constructora GAMA — Luis Pérez"), los chips Contado / Net 30 / Net 60 con Net 30 activo y la nota "Nivel del cliente: −10% aplicado automáticamente a los precios de lista". */}
 
-## Niveles de precio y descuento automático
+## Requisitos
 
-En ventas entre empresas, no todos los clientes pagan lo mismo. Al crear o editar un cliente, en **Nivel de precio** puedes asignarle uno de cuatro niveles. Cada uno sugiere un descuento que puedes cambiar libremente en el campo **Descuento automático en sus precios**:
+- **Permiso:** Cotizaciones para elegir a un cliente; **Clientes** para crear uno nuevo.
+- **Plan:** Gratis admite hasta 50 clientes y Starter hasta 500; desde Pro no hay tope.
+- **Para enviar:** la cotización necesita cliente. Un borrador se puede guardar sin él, pero al enviar Cord te pide "Elige un cliente en el paso 1 para poder enviar".
 
-- **Estándar:** sin descuento sugerido.
-- **Plata:** 5% sugerido.
-- **Oro:** 10% sugerido.
-- **Distribuidor:** 15% sugerido.
+## Elige o crea al cliente
 
-**¿Cómo funciona?** Cuando seleccionas a ese cliente en tu cotización, Cord baja automáticamente el precio **Negociado** de cada producto de tu catálogo en el porcentaje que tenga configurado (por ejemplo, con 10%, un producto de $1,000 de lista entra en $900). El precio de lista de tu catálogo no cambia, y puedes ajustar el negociado de cualquier línea a mano.
+<Steps>
+1. En **¿A quién le cotizas?**, abre el selector y elige un cliente de tu directorio.
+2. Si no existe, elige **+ Crear nuevo cliente…**, llena el formulario y pulsa **Crear y seleccionar**. Queda guardado en tu directorio y seleccionado en la cotización.
+3. Revisa los términos de pago que se preseleccionaron y cámbialos si hace falta.
+</Steps>
 
-## La Información Comercial y Fiscal
+Otras formas de llenar tu directorio:
 
-Para que un perfil de cliente esté completo, consta de dos partes:
+- **Desde Clientes:** **+ Nuevo cliente** para uno, o **Importar CSV** para cargar hasta 2,000 filas por archivo (empresa, contacto, correo, teléfono, identificador fiscal, términos de pago y límite de crédito).
+- **Desde la ficha de un cliente:** **Nueva cotización** abre el editor con ese cliente ya seleccionado.
+- **Por API:** la [API de clientes](/docs/desarrolladores/funciones/clientes) crea y sincroniza clientes desde tu sistema.
 
-### Información comercial
-- **Empresa** (obligatorio): el nombre del cliente (Ej: *Flouvia*). Es también el nombre que se usa como receptor en su factura, así que escríbelo como aparece en sus documentos fiscales si vas a facturar a su identificador.
-- **Contacto:** la persona que tomará la decisión (Ej: *André Valle*).
-- **Correo:** a dónde se envía el link de la cotización cuando la mandas desde Cord.
-- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 30 o Net 60) que se proponen por defecto al cotizarle.
+## Nivel de precio y descuento automático
 
-### Información fiscal
-- **Identificador fiscal:** la etiqueta se adapta al país del cliente — **RFC** en
-  México, y el equivalente local en cualquier otro (NIF/CIF en España, EIN/Tax ID en
-  Estados Unidos, etc.). Cord lo guarda en mayúsculas y sin espacios al inicio o al
-  final; no valida su estructura, así que revisa que esté bien escrito.
-- **Dirección:** país, código postal, dirección, ciudad y estado/provincia, en la sección desplegable **Dirección**.
+Cada cliente puede tener un **Nivel de precio** con un descuento sugerido que puedes
+cambiar en **Descuento automático en sus precios**:
 
-Si el cliente es mexicano (o no le asignas país y tu negocio está en México), el formulario muestra además la sección **Datos fiscales para CFDI (México)**, con dos campos exclusivos del CFDI 4.0:
-- **Régimen fiscal:** el régimen bajo el que tributa ante el SAT (Ej: *601 - General de Ley Personas Morales*).
-- **Uso del CFDI:** el motivo por el que solicita la factura (Ej: *G03 - Gastos en general*, que es el que se usa si lo dejas sin especificar).
+| Nivel | Descuento sugerido |
+|---|---|
+| Estándar | 0% |
+| Plata | 5% |
+| Oro | 10% |
+| Distribuidor | 15% |
 
-Si dejas estos datos para después, tu cotización sigue siendo válida comercialmente.
-En México, si el cliente no tiene RFC capturado, al timbrar Cord emite el CFDI a
-nombre de **"público en general"**. Si tiene RFC pero dejas vacío el régimen fiscal,
-Cord usa el régimen 601; verifica que el RFC, el código postal y el régimen coincidan
-con su constancia de situación fiscal antes de timbrar.
+Al elegir al cliente, Cord baja el precio **Negociado** de cada producto de catálogo en
+ese porcentaje: con 10%, un producto de 1,000 de lista entra en 900. El precio de lista
+no cambia y puedes ajustar el negociado de cualquier línea a mano.
 
-## La ficha del cliente
+## Información comercial y fiscal
 
-Desde **Clientes** en el menú principal, tu directorio tiene filtros rápidos (con
-cotizaciones, sin cotizar, con nivel, con crédito, sin datos fiscales) y un buscador —
-útil en cuanto el directorio crece a cientos de contactos.
+### Comercial
 
-Haz clic en cualquier cliente para abrir su **ficha**: no es solo el formulario de
-edición, es un perfil completo con lo que Cord ya sabe de esa relación comercial —
-cuánto le has cerrado, cuánto tiene en pipeline abierto, su tasa de cierre real, el uso
-de su límite de crédito (con aviso visual si lo excede), el descuento que le has cedido
-en la negociación, su actividad de los últimos 12 meses, sus últimas cotizaciones y qué
-productos le compra más. Editar y eliminar siguen siendo un clic desde ahí mismo.
+- **Empresa** (obligatorio): el nombre del cliente. También es el nombre del receptor en su factura; escríbelo como aparece en sus documentos fiscales.
+- **Contacto:** la persona que decide.
+- **Correo:** a dónde se envía el link al mandar la cotización desde Cord.
+- **Teléfono**, **Límite de crédito** y **Términos de pago** (Contado, Net 30 o Net 60) que se proponen al cotizarle.
 
-<Callout type="info">
-**Consejo:** si un cliente tiene un límite de crédito configurado, su ficha te muestra
-de inmediato cuánto saldo abierto tiene contra ese límite — la misma señal que usa el
-motor de riesgo para bloquear (o permitir) su siguiente cotización a crédito.
-</Callout>
+### Fiscal
+
+- **Identificador fiscal:** la etiqueta se adapta al país del cliente: **RFC** en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, etc. Cord lo guarda en mayúsculas y sin espacios al inicio o al final; no valida su estructura.
+- **Dirección:** país, código postal, dirección, ciudad y estado o provincia, en la sección **Dirección**.
+
+Si el cliente es mexicano (o no le asignas país y tu negocio está en México), aparece
+**Datos fiscales para CFDI (México)** con dos campos del CFDI 4.0:
+
+- **Régimen fiscal**, por ejemplo *601 - General de Ley Personas Morales*.
+- **Uso del CFDI**, por ejemplo *G03 - Gastos en general*, que es el que se usa si lo dejas vacío.
+
+## Comportamiento y casos límite
+
+- **Datos fiscales incompletos:** la cotización sigue siendo válida comercialmente. En México, sin RFC el CFDI se emite a "público en general"; con RFC pero sin régimen, Cord usa el 601. Verifica RFC, código postal y régimen contra la constancia del cliente antes de timbrar.
+- **Cambiar de cliente después de enviar** no es posible con **Modificar y reenviar**: duplica la cotización y envíala al cliente correcto.
+- **Editar la ficha** no reescribe documentos fiscales ya emitidos: conservan los datos del receptor con que se emitieron.
+- **Límite de crédito:** si el cliente lo tiene, su ficha muestra cuánto saldo abierto tiene contra ese límite. Es una señal para ti, no un bloqueo.
+
+## Límites por plan
+
+| | Gratis | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Clientes en el directorio | 50 | 500 | Sin tope | Sin tope | Sin tope |
+
+## Problemas comunes
+
+**No aparece "+ Crear nuevo cliente…" o falla al guardarlo.** Tu rol no tiene el permiso Clientes, o llegaste al tope de clientes de tu plan.
+
+**El descuento del nivel no se aplicó.** Solo baja productos de catálogo; las líneas libres no tienen precio de lista.
+
+**El CFDI salió a "público en general".** El cliente no tenía RFC capturado al timbrar.
+
+## Relacionadas
+
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Aprobación y facturación](/docs/cotizacion/timbrado)

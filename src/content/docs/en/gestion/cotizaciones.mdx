@@ -1,51 +1,141 @@
 ---
-title: "Quote Management"
-description: "Learn how to manage the lifecycle of your quotes: drafts, duplicates, and versions."
+title: "Quote management"
+seoTitle: "Quote management: filters, actions, duplicating, and versions"
+description: "Find any quote, the actions available in each status and the permission they need, how to delete drafts, duplicate (and what isn't copied), and keep versions with Modify and resend."
 lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Quotes permission to create, edit, send, and delete drafts", "Approvals permission to mark approved or rejected and decide internal approvals"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Quote Management</h1>
-  <p class="page-subtitle">Master the lifecycle of your commercial proposals. Save drafts, reuse successful quotes, and easily update versions.</p>
+  <h1 class="page-title">Quote management</h1>
+  <p class="page-subtitle">Find each proposal, know what you can do with it in its current status, and reuse what already worked.</p>
 </header>
 
-## The Draft Lifecycle
+## What it is
 
-Not all quotes are finished in 5 minutes. Sometimes you need to check prices with suppliers or wait for your manager's approval before sending it.
+**Quotes**, in the main menu, gathers all your organization's quotes, newest first.
+From there you open each one's detail, where its actions, activity, conversation, and
+versions live.
 
-### 1. Save as Draft
-- While creating a quote, you can click **Save draft**, in the **Review and send** panel on the right.
-- This saves your progress (client, terms, line items, and negotiated prices).
-- The quote appears in **Quotes** (*Open* filter) and, in the board view, in the **Draft** column.
+{/* MOCKUP: Quotes list with the top summary (MXN 412,300 in 9 open · MXN 188,000 approved · 2 awaiting your approval), the pills All 34 / Open 9 / Needs approval 2 / Approved 5 / Paid 14 / Closed 4, the List | Board toggle, and six rows with quote number, client, terms, valid until, total, and status. */}
 
-### 2. Continue Editing
-To resume a draft:
-1. Go to **Quotes** in the main menu.
-2. Click the row (or the board card) of the draft you want to continue.
-3. The details view will open. Click **Continue editing**.
-4. You'll be taken to the quoter with what you saved. When finished, use **Save and send** and its status will change to *Sent*. If you no longer need it, **Delete draft** removes it.
+## Requirements
 
-## Duplicating Quotes (Time-saver)
+- **View:** any member of the organization.
+- **Quotes permission:** create, continue editing, send, modify and resend, delete drafts, and reply in the conversation.
+- **Approvals permission:** mark approved or rejected, decide internal approvals, and record payment and issue the document from the detail.
+- **Plan:** all. The number of active quotes is capped on Free (5) and Starter (50).
 
-If you have a standardized service or want to sell the same thing to another client, you don't have to start from scratch.
+## Find a quote
 
-**How to duplicate in the app:**
-1. Go to the details view of any quote, regardless of its status — paid, rejected, or a draft.
-2. In the actions panel, click **Duplicate quote**.
-3. Cord creates a new draft, with its own number and a fresh 30-day validity period, that copies the client, payment terms, notes, and line items (description, quantity, list price, and negotiated price).
+**Filters** (pills above the list, each with its count):
+
+| Filter | Includes |
+|---|---|
+| **All** | Every quote. |
+| **Open** | Draft, Sent, and Viewed. |
+| **Needs approval** | Those waiting for an [internal approval](/en/docs/cotizacion/aprobaciones-internas). |
+| **Approved** | Approved. |
+| **Paid** | Paid and Invoiced. |
+| **Closed** | Rejected and Expired. |
+
+**Search:** the list has no search box of its own. On desktop, open the command palette
+(⌘K on Mac, Ctrl+K on Windows) and type at least two characters of the quote number or
+the client's name; it shows up to 6 quotes, plus matching clients and products.
+
+**From other screens:** the funnel and pipeline bars on Home open this list with the
+matching filter already applied.
+
+## Actions by status
+
+| Status | Actions on the detail | Permission |
+|---|---|---|
+| **Draft** | **Send to client**, **Continue editing**, **Preview**, **Duplicate quote**, **Delete draft** | Quotes |
+| **Draft pending approval** | **Approve and send**, **Reject** (in addition to the above) | Approvals |
+| **Sent / Viewed** | **Mark approved**, **Mark rejected** | Approvals |
+| | **Modify and resend (V2)**, **Open link**, **Copy link**, **PDF**, **WhatsApp**, **Duplicate quote** | Quotes |
+| **Expired** | **Modify and resend**, sharing, **Duplicate quote** | Quotes |
+| **Approved** | **Record payment**, **Stamp CFDI 4.0** / **Issue invoice** / **Issue pro forma** | Approvals |
+| | Sharing, **Duplicate quote** | — |
+| **Paid** | **Stamp CFDI 4.0** / **Issue invoice** / **Issue pro forma** | Approvals |
+| **Invoiced** | Sharing, **Duplicate quote**; documents appear under **Tax documents** | — |
+| **Rejected** | Sharing, **Duplicate quote** | — |
+
+A quote with a monthly retainer doesn't show **Record payment**: its charge is the
+subscription, which you can cancel with **Cancel retainer**.
+
+{/* MOCKUP: detail of a Viewed quote: the Draft › Sent › Viewed › Approved › Paid stepper with Viewed active, the V2 badge, the Actions panel with Mark approved, Mark rejected, Modify and resend (V3), the Open link / Copy link / PDF / WhatsApp grid, and Duplicate quote below; on the right, Activity and Conversation. */}
+
+## Drafts
+
+- **Save draft** in the editor saves the client, terms, lines, negotiated prices, and options. A draft can be saved without a client; to send it you need one.
+- To pick it up again, open it and click **Continue editing**. When you're done, **Save and send** sends it.
+- **Delete draft** asks for confirmation ("This action cannot be undone. Delete this draft?") and removes it completely. Only drafts can be deleted: a quote that already went out isn't deleted, it's rejected or left to expire.
+
+## Duplicate a quote
+
+<Steps>
+1. Open any quote, in any status.
+2. Click **Duplicate quote**.
+3. Cord creates a new draft with its own number and a 30-day validity, and takes you to it. The duplicate's activity notes which quote it was duplicated from.
+</Steps>
+
+**What it copies:** client, payment terms, notes, and lines (description, quantity,
+list price, and negotiated price).
 
 <Callout type="warning">
-**What the copy doesn't carry over:** the sales currency (the new draft is set to MXN), the exchange rate, the deposit, the monthly retainer, the prices-include-tax option, and the tax rate chosen on each line (it goes back to your catalog's default). Open the copy with **Continue editing** and review those fields before sending it.
+**What the duplicate doesn't copy:** the sales currency (the duplicate is in MXN), the
+exchange rate, the deposit, the monthly retainer, **Prices already include tax**, each
+line's tax rate (it goes back to your catalog's default), each line's cost, the
+conversation, the signature, and the versions. Open the duplicate with **Continue
+editing** and check those fields before sending it.
 </Callout>
 
-## Version Control
+The duplicate counts as an active quote: if you've hit your plan's cap, it isn't created.
 
-If you've already sent a quote and the client asks you to adjust line items or prices, you don't need to create another one: while it's *Sent*, *Viewed*, or *Expired*, the details show the **Modify and resend (V2)** button (the number is the version you're about to create).
+## Versions
 
-- It opens an editor with the current line items: you can change products, quantities, negotiated prices, and taxes. The client and the payment terms can't be changed here.
-- When you resend, Cord saves the new version, keeps the **same link**, emails the client again (if they have an email on file), and the quote goes back to *Sent*.
-- If the client had the link open, they see the changes live and must review them before they can approve (see [Chat and negotiation](/en/docs/interaccion/chat)).
-- In the details, the **Version history** section lists each version with its date and total.
-- On an *Expired* quote, resending doesn't extend its validity date. To propose it again with a new validity period, duplicate it.
+While a quote is *Sent*, *Viewed*, or *Expired*, **Modify and resend (V2)** creates a
+new version on the same link:
 
-If you need to change something **Modify and resend** doesn't allow (the client, the currency, or the terms), duplicate the quote, adjust it, and send the new link. Then, on the original (while it's still *Sent* or *Viewed*), use **Mark rejected** to take it out of your active pipeline. Cord doesn't have a separate "Canceled" status: rejected is the status that marks a link as no longer active.
+- you can change products, quantities, negotiated prices, taxes, and **Prices already include tax**; not the client or the payment terms;
+- the quote goes back to *Sent* and the client gets the email again if they have an email on file;
+- the badge next to the client's name shows the current version (V1, V2, V3…);
+- **Version history** on the detail lists each version with its date and total.
+
+If the client has the link open, they see the changes live and must review them before
+approving (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)).
+
+### When a version isn't enough
+
+To change something **Modify and resend** doesn't allow (client, currency, or terms),
+duplicate the quote, adjust it, and send the new link. Then, on the original (while
+it's still *Sent* or *Viewed*), use **Mark rejected** to take it out of the pipeline.
+Cord has no "Canceled" status: *Rejected* signals that link is no longer active.
+
+## Limits by plan
+
+| | Free | Starter | Pro | Scale | Developer |
+|---|---|---|---|---|---|
+| Active quotes (draft, sent, viewed, or approved) | 5 | 50 | No cap | No cap | No cap |
+| Sends per month | 5 | No cap | No cap | No cap | No cap |
+
+## Common problems
+
+**I don't see Mark approved or Record payment.** Your role doesn't have the Approvals permission.
+
+**I can't delete a quote.** Only drafts can be deleted.
+
+**Cord says the quote can't move with this action.** The quote already changed status (for example, the client approved it while you had it open). Reload the detail.
+
+**The duplicate came out in MXN.** The duplicate doesn't copy the currency; change it with **Continue editing**.
+
+## Related
+
+- [Home and views](/en/docs/gestion/dashboard)
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [Internal approvals](/en/docs/cotizacion/aprobaciones-internas)
+- [Quotes API](/en/docs/desarrolladores/funciones/cotizaciones)

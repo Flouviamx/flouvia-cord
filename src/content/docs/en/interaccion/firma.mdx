@@ -1,10 +1,12 @@
 ---
 title: "Approval and technical evidence"
-description: "How Cord records an approval with declared identity, IP address, time, and a fingerprint of the accepted document."
+seoTitle: "Signing a quote and the technical evidence of the approval"
+description: "How your client signs a quote in Cord and what Cord records: declared name, IP address, browser, date and time, and the SHA-256 fingerprint of the accepted lines."
 lastUpdated: "2026-10-07"
-reviewedBy: "Cord Product and Security"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["A Sent or Viewed quote", "The client enters their full name and accepts the terms"]
 ---
 
 <header class="content-header">
@@ -17,6 +19,12 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 Traditionally, a sales rep sends a PDF and the client replies "Authorized, proceed." It can later be difficult to show which version, line items, or amount each person was reviewing.
 
 Cord adds an **electronic approval and technical evidence** layer at that moment.
+
+## Requirements
+
+- **Status:** the quote must be *Sent* or *Viewed*. An expired, rejected, or already approved quote doesn't accept the signature.
+- **For the client:** just the link; no account needed.
+- **Plan and country:** every plan and all 12 markets.
 
 ## The approval process
 
@@ -63,3 +71,18 @@ The signer's email doesn't appear on the stamp. The quote PDF you download from 
 <Callout type="warning">
 Cord stores technical evidence of approval; it does not provide notarial services or legal advice. Validity and evidentiary weight depend on the document, workflow, and jurisdiction. Consult a professional for high-risk cases.
 </Callout>
+
+## Common problems
+
+**The Confirm and sign button doesn't enable.** The name (at least two characters) or the acceptance checkbox is missing.
+
+**Cord says the quote can no longer be modified.** The quote expired, was rejected, or was already approved.
+
+**The client went back to review when signing.** You changed the proposal while they were reading it; they need to review the changes with **See changes** and sign again (see [Negotiation and counteroffers](/en/docs/interaccion/negociacion)).
+
+## Related
+
+- [What your client sees](/en/docs/interaccion/vista-del-cliente)
+- [Negotiation and counteroffers](/en/docs/interaccion/negociacion)
+- [Approval and invoicing](/en/docs/cotizacion/timbrado)
+- [Disputes](/en/docs/pagos/disputas)

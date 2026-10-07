@@ -1,13 +1,24 @@
 ---
 title: "Aprobación y facturación"
-description: "Convierte una cotización aprobada en el documento fiscal que corresponde a tu país, y da seguimiento a la cobranza de tu cartera vencida."
+seoTitle: "De cotización aprobada a factura: CFDI, Verifactu o factura comercial"
+description: "Qué pasa cuando el cliente aprueba, cómo registras un pago y cómo emites el documento que corresponde a tu país: CFDI 4.0, Verifactu, proforma o factura comercial."
 lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Aprobaciones para registrar pagos y emitir el documento desde el detalle", "Cotización Aprobada o Pagada", "En México, plan Starter o superior y CSD cargado para timbrar"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Aprobación y facturación</h1>
   <p class="page-subtitle">El cierre del ciclo. Tras la aprobación puedes cobrar, emitir el comprobante disponible para tu mercado y dar seguimiento a saldos pendientes.</p>
 </header>
+
+## Requisitos
+
+- **Permiso:** en el detalle de la cotización, **Marcar aprobada**, **Registrar pago** y el botón para emitir el documento aparecen para quien tiene el permiso **Aprobaciones**.
+- **Estado:** el documento se emite desde una cotización *Aprobada* o *Pagada*.
+- **País y plan:** el tipo de documento depende de tu país y tu plan (ver abajo).
 
 ## Aprobación Digital
 
@@ -54,4 +65,19 @@ Disponible a partir del plan **Scale**, el Agente de IA de Cord monitorea tu car
 
 ### Tesorería Predictiva
 
-En `/app/informes`, Cord cruza los términos de crédito de tus cotizaciones abiertas con el comportamiento de pago real de cada cliente para darte un estimado más realista del dinero que efectivamente entrará en los próximos 90 días.
+En **Informes › Flujo de caja · 90 días** (plan Pro o superior), Cord cruza los términos de crédito de tus cotizaciones abiertas con el comportamiento de pago real de cada cliente para darte un estimado más realista del dinero que efectivamente entrará en los próximos 90 días.
+
+## Problemas comunes
+
+**No veo el botón para emitir.** La cotización no está *Aprobada* o *Pagada*, o tu rol no tiene el permiso Aprobaciones.
+
+**El documento salió como Simulado o Modo de prueba fiscal.** El timbrado todavía no está activo en tu cuenta: revisa tu plan y tu [CSD](/docs/cuenta/csd).
+
+**La factura incluye menos líneas que la cotización.** El cliente aprobó solo algunas partidas; se facturan solo las aprobadas.
+
+## Relacionadas
+
+- [Aprobación y evidencia](/docs/interaccion/firma)
+- [Facturación fiscal por país](/docs/pagos/facturacion)
+- [Facturas emitidas](/docs/pagos/facturas-emitidas)
+- [Cartera y cobranza](/docs/pagos/cartera-cobranza)
