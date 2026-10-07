@@ -8,7 +8,7 @@
 //
 // Usa el SDK oficial @anthropic-ai/sdk con tool_choice forzado (salida estructurada).
 // Necesita ANTHROPIC_API_KEY en el entorno. Modelo configurable con AI_MODEL
-// (default claude-haiku-4-5-20251001). El emparejamiento se valida en el servidor: la IA
+// (default claude-haiku-5-5, ver src/lib/ai-model.ts). El emparejamiento se valida en el servidor: la IA
 // sugiere producto_id, pero el precio de lista y los datos salen del catálogo real.
 export const prerender = false;
 

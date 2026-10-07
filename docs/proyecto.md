@@ -76,7 +76,7 @@ Los scripts especializados de seguridad y operación se descubren en
 | Cobros | Stripe Connect para pagos directos a las cuentas conectadas. |
 | Correo | Resend para correo transaccional y cobranza. |
 | Fiscal | Facturapi mediante `MexicoSatProvider` para CFDI 4.0 en México; `SpainVerifactuProvider` para Verifactu en España (huella SHA-256 encadenada + envío SOAP a la AEAT). |
-| IA | Anthropic SDK; `AI_MODEL` permite override. El default del código es `claude-haiku-4-5-20251001`. |
+| IA | Anthropic SDK; `AI_MODEL` permite override. El default del código es `claude-haiku-5-5` (oct 2026; antes Haiku 4.5, 10x más caro). Las llamadas fijan `output_config.effort`; la ayuda de la app usa siempre el default. |
 | Animación | GSAP 3 únicamente en landing y login; dentro de la aplicación se usa CSS. |
 | Analytics | PostHog para producto y Vercel Analytics para Web Vitals. El contrato detallado vive en [`estado/analytics.md`](estado/analytics.md). |
 | Tipografía | Inter como única familia. Los montos usan `.editorial`: Inter 600, tracking `-0.03em` y números tabulares. |

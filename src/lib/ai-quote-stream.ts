@@ -70,7 +70,10 @@ export async function streamLineasConIa(
     try {
         const stream = aiDraftClient().messages.stream({
             model: AI_DRAFT_MODEL,
-            max_tokens: 4096,
+            // La llamada forzada a la herramienta no piensa; el margen extra es
+            // por el tokenizer de Haiku 5.5 (~30% más tokens por el mismo texto).
+            max_tokens: 6000,
+            output_config: { effort: 'medium' },
             system: AI_DRAFT_SYSTEM + UNTRUSTED,
             tools: [AI_DRAFT_TOOL],
             tool_choice: { type: 'tool', name: AI_DRAFT_TOOL.name },

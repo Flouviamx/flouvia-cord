@@ -17,8 +17,11 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getAppRuntimeI18n } from '../i18n/app';
 import { rankDocs } from './help-search';
 import { log } from './log';
+import { DEFAULT_AI_MODEL } from './ai-model';
 
-export const HELP_AI_MODEL = 'claude-haiku-5-5';
+// El default de Cord, NO aiModel(): un override de AI_MODEL no debe encarecer la
+// ayuda, que paga Cord.
+export const HELP_AI_MODEL = DEFAULT_AI_MODEL;
 const MAX_OUTPUT_TOKENS = 450;
 const ARTICLES_PER_QUESTION = 3;
 const ARTICLE_CHARS = 2200;
