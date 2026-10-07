@@ -146,13 +146,14 @@ import { iconInner } from '../lib/icons';
             try { if (localStorage.getItem('cord.sb.collapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
             try { if (localStorage.getItem('cord.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
             // Cord Workbench: si el "Modo desarrollador" está activo, reserva de una
-            // vez el espacio de la barra colapsada (--wb-h) para que el contenido no
-            // salte al montar el dock (mismo patrón anti-flash que sidebar/tema).
+            // vez el espacio de la píldora colapsada (--wb-h: 40px de alto + 16px de
+            // separación del borde) para que el contenido no salte al montar el dock
+            // (mismo patrón anti-flash que sidebar/tema). El script la remide.
             try {
                 if (localStorage.getItem('cord.devmode') === '1') {
                     document.documentElement.classList.add('cord-dev');
-                    document.documentElement.style.setProperty('--wb-h', '46px');
-                    document.documentElement.style.setProperty('--wb-bar-h', '46px');
+                    document.documentElement.style.setProperty('--wb-h', '56px');
+                    document.documentElement.style.setProperty('--wb-bar-h', '56px');
                 }
             } catch (e) {}
         </script>
