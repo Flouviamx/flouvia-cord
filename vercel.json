@@ -76,6 +76,12 @@
   ],
   "redirects": [
     {
+      "source": "/((?!en$|_|api/|desarrolladores/status$|en/desarrolladores/status$|.*\\.[A-Za-z0-9]+$).+)",
+      "has": [{ "type": "host", "value": "status\\.cordhq\\.app" }],
+      "destination": "https://cordhq.app/$1",
+      "permanent": false
+    },
+    {
       "source": "/((?!(?:q|i)(?:/|$)|api/|_astro/|imgs/|fonts/|favicon\\.ico$|robots\\.txt$|\\.well-known/cord-domain-check$).+)",
       "has": [{ "type": "host", "value": "(?!(?:(?:www|dev|docs|ops|billing|build|pay|status)\\.)?cordhq\\.app$|cord\\.flouvia\\.com$|[a-z0-9.-]+\\.vercel\\.app$).+" }],
       "destination": "/",
