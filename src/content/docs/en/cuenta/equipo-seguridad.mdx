@@ -1,8 +1,8 @@
 ---
 title: "Team, permissions, and security"
-description: "How to invite members, assign permissions, require 2FA, restrict domains, manage sessions, passkeys, OAuth, and SSO access in Cord."
+description: "How to invite members, assign permissions, require 2FA, restrict domains, manage sessions, passkeys, OAuth, SSO access, and emergency access in Cord."
 lastUpdated: "2026-10-07"
-reviewedBy: "Cord Product and Security"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Team permission to administer members", "Settings permission for organization policies"]
@@ -10,108 +10,197 @@ prerequisites: ["Team permission to administer members", "Settings permission fo
 
 <header class="content-header">
   <h1 class="page-title">Team, permissions, and security</h1>
-  <p class="page-subtitle">Separate each user's personal security from policies shared by the organization.</p>
+  <p class="page-subtitle">Separate each user's personal security from the rules shared by the whole organization.</p>
 </header>
 
-Cord has three access layers: **Your account** protects personal identity;
-**Team and permissions** controls what a member can do in one organization; and
-**Organization security** applies 2FA, inactivity, and invitation-domain policies.
+Cord has three distinct access layers:
+
+1. **Your account** protects personal identity: password, 2FA, passkeys, sessions, and
+   connected Google or Apple accounts.
+2. **Team and permissions** decides what each member can do inside an organization.
+3. **Organization security** applies requirements such as 2FA, inactivity timeout, and
+   allowed domains for invitations.
 
 ## Plans and seats
 
-Team invitations and custom roles begin on **Pro**. Included seats are Free 1,
-Starter 1, Pro 5, Scale 15, and unlimited on Developer. A valid pending invitation
-already reserves a seat.
+Inviting a team and using custom roles start on **Professional**. The current included
+allowance is:
+
+| Plan | Included users | Additional users |
+|---|---:|---|
+| Free | 1 | Not available |
+| Starter | 1 | Not available |
+| Professional | 5 | Monthly charge per user |
+| Scale | 15 | Monthly charge per user |
+| Developer | Unlimited | Included |
+
+A valid invitation already reserves a seat even if it has not been accepted yet. If the
+indicator is full, revoke an invitation you won't use or review your plan. Additional
+user rates are in [Your subscription](/en/docs/cuenta/suscripcion).
 
 ## Invite a person
 
-Open **Settings > Team and permissions > Add member**, enter an email, choose a
-preset or custom permissions, review access, and send.
+<Steps>
+1. Open **Settings › Team & permissions › Team & roles** and select **Add member**.
+2. Enter their email.
+3. Choose Administrator, Sales rep, Read only, or a custom combination.
+4. Review each permission and send the invitation.
+</Steps>
 
-Invitations expire after **7 days**. Cord attempts email delivery and returns a
-copyable backup link. Resending rotates the previous token and creates a new seven-day
-link. When invitation domains are restricted, the address must match one exactly.
+The invitation expires after **7 days**. Cord tries to send it by email and also returns
+a copyable link as a backup. **Resend** rotates the previous token and creates a new one
+valid for seven days; the old link stops working.
+
+If the organization restricts domains, the email must end exactly in one of the domains
+configured under **Settings › Team & permissions › Security**.
 
 ## Roles and permissions
 
-- **Administrator:** almost all access, including Team; Refunds isn't enabled by default.
-- **Sales rep:** quotes, clients, products, and analytics; no settings or approvals.
-- **Read only:** can enter the app without modification permissions.
-- **Custom:** member-specific combination.
-- **Owner:** full override; can't be downgraded or revoked from Team.
+Roles are editable presets, not a replacement for effective permissions:
 
-Independent permissions cover Quotes, Approvals, Collections, Clients, Products,
+- **Administrator:** almost everything, including team; refunds are not enabled.
+- **Sales rep:** quotes, clients, products, and analytics; no settings or approvals.
+- **Read only:** enters the app without modification permissions.
+- **Custom:** a combination saved specifically for that member.
+- **Owner:** full access by definition; cannot be downgraded or revoked from Team.
+
+The independent permissions are Quotes, Approvals, Collections, Clients, Products,
 Analytics, Settings, Payment configuration, Refunds, and Team.
 
 <Callout type="info">
-Hidden UI is not the security boundary. APIs validate both permission and active
-organization before reading or modifying data.
+Hiding a button is not the security boundary. The APIs validate the permission and the
+active organization again before reading or modifying data.
 </Callout>
 
 ## Membership states
 
-An **active** member accepted access. An **invited** member has a pending, current, or
-expired link. A **revoked** member no longer has access, but remains visible for history
-and may be invited again. Revocation doesn't automatically reassign or delete documents.
+- **Active:** accepted the invitation and keeps access.
+- **Invited:** the link is still pending; it may be valid or expired.
+- **Revoked:** no longer enters the organization. The record is kept to show history and
+  the person can be invited again.
+
+The screen shows last session, recent quotes, and last action when data is available.
+Revoking removes access; it does not automatically reassign or delete documents that
+person created.
 
 ## Require two-step verification
 
-Enable **Require 2FA** under **Settings > Security**. Members without TOTP are sent to
-**Settings > Your account** to complete setup before continuing into protected areas.
+Under **Settings › Team & permissions › Security**, turn on **Require two-factor
+authentication (2FA)** for the organization. A member who has not set up TOTP yet is sent
+to **Settings › Your account** to finish activation before continuing to use protected
+sections.
 
-Personal setup happens under **Settings > Your account**: scan the QR code with your
-authenticator, confirm the code, and store the ten one-time backup codes shown during
-activation. Store those outside Cord. Regenerating them invalidates the previous set.
-Disabling 2FA requires a current password or authenticator code depending on the account.
+Personal activation happens under **Settings › Your account**: scan the QR code with
+your authenticator app, confirm the code, and save the ten single-use backup codes shown
+on activation. Store those codes outside Cord. Regenerating them invalidates the previous
+set. Disabling 2FA requires your current password or an authenticator code, depending on
+the account type.
 
 When the organization requires 2FA, protection also applies to dashboard requests, not
-only the visible screen. Actions needed to set up 2FA, confirm identity, or sign out
-remain available.
+only to the visible screen. Actions needed to set up 2FA, confirm your identity, or sign
+out remain available.
 
 If a sensitive action asks you to verify your identity again, complete it before
-retrying. Team permissions still apply; enabling 2FA does not grant refund or
-business administration permissions.
+retrying. Team permissions are still required; having 2FA does not grant permission to
+refund or administer the business.
 
-## Passkeys, password, and OAuth
+## Passkeys and password
 
-Under **Your account**, a user can create or change a password, add or remove passkeys,
-and connect or disconnect Google and Apple. OAuth-created accounts may establish a
-password later. Keep another working sign-in method before disconnecting one.
+Under **Settings › Your account** each person can:
+
+- create or change their password;
+- register several passkeys compatible with the device or key manager;
+- remove a passkey they no longer recognize;
+- connect or disconnect Google and Apple.
+
+An account created with OAuth can set a password later. Before disconnecting the last
+working method, confirm you keep another way to sign in.
 
 ## Active sessions
 
-The session list shows device, known IP, last activity, and the current session. A user
-can close one session or all other sessions. The organization can separately enforce
-an inactivity timeout under **Settings > Security**: unlimited, 1, 4, 8, or 24 hours.
+The session list shows device, known IP, last activity, and which one is the current
+session. You can close an individual session or all the others.
 
-The timeout is checked when entering the app, billing, and protected internal APIs,
-and when enrolling a passkey. Once it expires, the operation stops and you must sign in
-again. Activity means authenticated requests to those surfaces, not mouse movement;
-automatic app requests may also count. Visiting a public page or using 2FA recovery
-routes does not restart the window. "Unlimited" disables the idle timeout while
-retaining the maximum session lifetime, revocation, and account suspension.
+The organization can also configure an inactivity timeout under **Settings › Team &
+permissions › Security**: unlimited, 1, 4, 8, or 24 hours. This rule is different from
+manually closing personal sessions.
+
+The timeout is checked when entering the app, billing, and protected internal APIs, and
+also when registering a passkey. When it expires, the operation stops and you must sign
+in again. Activity is measured by authenticated requests to those surfaces, not by
+moving the mouse; automatic app requests may also count. Visiting a public page or using
+the 2FA recovery routes does not restart the window. "Unlimited" disables the inactivity
+timeout but keeps the maximum session lifetime, revocations, and account suspension.
 
 ## Enterprise SSO
 
-SAML 2.0 connections are administered under **Settings > SSO** and require Scale or
-Developer. SSO authentication and administration require the corresponding effective plan;
-a saved connection does not guarantee access after losing that plan. Configure and verify domains
-before routing everyone to the identity provider and preserve the organization's
-emergency-access path.
+SAML 2.0 connections are administered under **Settings › Team & permissions › SSO** and
+require the **Scale or Developer** plan and the **Team** permission. A saved
+configuration does not guarantee access after losing that plan. The technical setup of
+the connection (Entity ID, sign-in URL, certificate, domains, provisioning, and role
+mapping) is in [SSO & SAML](/en/docs/desarrolladores/seguridad/sso).
+
+Members managed by SSO are flagged in Team, and their permissions are managed by your
+identity provider.
+
+### Require SSO
+
+Once a connection is working, you can require your team to sign in only through SSO.
+
+<Steps>
+1. Under **Settings › Team & permissions › SSO**, confirm you have at least one
+   **Active** connection with a verified domain. Without one, Cord rejects the change.
+2. Under **Require SSO**, turn on **Require your team to sign in via SSO**.
+3. Save.
+</Steps>
+
+With the option on, Cord blocks password, Google, Apple, and passkeys for every member
+**except the account owner**, who always keeps their password as a fallback.
+
+### Emergency access
+
+If your identity provider is down and your team cannot sign in, the owner can
+temporarily disable the requirement:
+
+<Steps>
+1. Under **Settings › Team & permissions › SSO**, select **Disable for 1 hour**.
+2. Confirm your password (or your verification code) and select **Disable for 1 hour**.
+</Steps>
+
+During that hour the team can use their other sign-in methods again, and the screen
+shows **SSO temporarily disabled until** the expiration date and time. When it ends, the
+requirement comes back on its own. Only the owner can use this option, and the action is
+recorded in the organization's audit log.
 
 ## Delete a personal account
 
-The danger zone permanently removes the personal identity, sessions, passkeys, and
-connected accounts. It requires a credential and typing the account email. If that
-person is the sole owner, owned organizations are affected too. Transfer ownership and
-export data first.
+The danger zone in **Your account** permanently deletes the personal identity, sessions,
+passkeys, and connected accounts. It requires a credential and typing the email to
+confirm. If that person is the sole owner of an organization, the deletion also affects
+that organization. Transfer ownership and export data before continuing.
 
 ## Common problems
 
-**Can't invite.** Check Team permission, Pro-or-higher plan, available seat, and domain.
+**I can't invite.** Check the Team permission, Professional plan or higher, an available
+seat, and an allowed domain.
 
-**Invitation expired.** Resend it; the old token can't be recovered.
+**The link expired.** Use Resend; don't try to recover the previous token.
 
-**Member can sign in but can't edit.** Inspect effective permissions, not only role name.
+**The person signs in but can't edit.** Check the effective permissions, not only the
+role name.
 
-**Organization requires 2FA.** The member must enroll TOTP in their own account.
+**The organization requires 2FA.** The person must complete TOTP in their own account; an
+administrator cannot generate the codes for them.
+
+**I can't turn on Require SSO.** You need an active connection with at least one verified
+domain.
+
+**The identity provider is down.** The owner can sign in with their password and use
+**Disable for 1 hour**.
+
+## Related pages
+
+- [SSO & SAML](/en/docs/desarrolladores/seguridad/sso)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion): included seats and additional users.
+- [Settings map](/en/docs/cuenta/mapa-de-ajustes)
+- [Create your account](/en/docs/cuenta/crear-cuenta)

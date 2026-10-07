@@ -1,63 +1,208 @@
 ---
 title: "Importa tu catálogo"
-description: "Carga tus productos y servicios, SKUs, y precios base en Cord."
+seoTitle: "Catálogo de Cord: productos, kits, volumen e importación CSV"
+description: "Da de alta productos y servicios, arma kits, configura precios por volumen e importa productos y clientes desde un archivo CSV con mapeo de columnas y vista previa."
 lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Productos para el catálogo y los kits", "Permiso Clientes para importar clientes", "Un archivo .csv para la importación masiva"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Importa tu catálogo</h1>
-  <p class="page-subtitle">Sube tus productos, SKUs y precios para poder crear cotizaciones en segundos.</p>
+  <p class="page-subtitle">Productos, kits y clientes listos para cotizar en segundos, uno por uno o desde un CSV.</p>
 </header>
 
-## Administra tus SKUs fácilmente
+El catálogo es lo que tu equipo busca y agrega al cotizar. Con él, el nombre, la unidad
+y el precio de cada concepto salen siempre igual, y Cord puede calcular tu margen en vivo.
+Vive en **Productos**, en el menú lateral, con dos pestañas: **Catálogo** y **Kits**.
 
-El corazón de una cotización es la precisión de los productos. Cord te permite gestionar un catálogo centralizado donde tu equipo de ventas simplemente busca y selecciona, garantizando que el nombre, el SKU y la base fiscal siempre sean correctos.
+## Requisitos
 
-### 1. Creación Manual
+- **Permiso Productos** para crear, editar, importar productos y administrar kits.
+- **Permiso Clientes** para importar clientes.
+- **Límites por plan:** el número de productos y clientes que pueden existir a la vez
+  depende de tu plan (ver [Límites por plan](#límites-por-plan)).
 
-Si tienes un catálogo pequeño o vendes servicios, puedes agregar productos uno a uno desde **Productos > Nuevo Producto**.
-Se te pedirán los siguientes datos:
-- **Nombre del Producto / Servicio**
-- **SKU (Código Interno):** Identificador único, opcional.
-- **Unidad:** pieza, servicio, hora, m², kg... la que uses para vender.
-- **Descripción:** texto libre que acompaña al producto en la cotización.
-- **Precio de venta (Antes de impuestos):** el precio de lista.
-- **Costo Interno (Opcional):** Si capturas cuánto te cuesta a ti el producto, Cord te calculará e indicará el **Margen de Ganancia** en tiempo real al momento de armar la cotización. Tu cliente nunca verá este costo.
-- **Precios por Volumen (Opcional):** Útil cuando vendes por mayoreo. Puedes configurar reglas automáticas, por ejemplo: *"De 1 a 10 piezas el precio es $100, de 11 a 50 piezas el precio baja a $85"*. Cord ajustará el precio automáticamente según la cantidad que el vendedor agregue a la cotización.
-- **Estado (Activo / Inactivo):** Si descontinúas un producto o te quedas sin stock de largo plazo, puedes marcarlo como *Inactivo* para que los vendedores ya no puedan agregarlo a nuevas cotizaciones, sin borrar su historial.
+## Crear un producto
 
-<Callout type="info">
-**El impuesto no vive en el producto.** Cord calcula impuestos por **línea de la
-cotización**, no por artículo del catálogo — el mismo producto puede venderse gravado
-en una venta y exento en otra (una exportación, un cliente exento). Al agregar la
-partida eliges la tasa desde el catálogo fiscal de tu cuenta (**Ajustes >
-Cotizaciones**); el nombre del impuesto es el de tu país (IVA, VAT, GST, Moms...), no
-un genérico. Ver [Productos y descuentos](/docs/cotizacion/productos) para el
-detalle de cómo se aplica al cotizar.
-</Callout>
+<Steps>
+1. En **Productos**, pulsa **+ Nuevo producto** (o **Crear › Producto** en la barra
+   superior).
+2. Captura el **Nombre** (obligatorio) y, si quieres, el **SKU**, la **Unidad** (pieza,
+   servicio, hora, m², kg...) y una **Descripción**.
+3. Escribe el **Precio de venta**, antes de impuestos, en la divisa de tu cuenta.
+4. Opcional: en **¿Cuánto te cuesta?** captura tu costo. Cord te muestra cuánto ganas o
+   pierdes por unidad y calcula el margen al cotizar. Tu cliente nunca ve el costo.
+5. Opcional: agrega **Precios por volumen** (ver abajo).
+6. Elige el **Estado** (Activo o Inactivo) y pulsa **Guardar producto**.
+</Steps>
 
-### 2. Importación Masiva (CSV)
-
-Para empresas con cientos o miles de referencias, Cord soporta la importación masiva.
-Descarga nuestra **Plantilla CSV** (columnas `sku, nombre, unidad, precio, activo`),
-pega la información extraída de tu ERP (como SAP, Oracle, o Microsip), y súbela a Cord
-para dar de alta precios, SKUs y descripciones en un solo movimiento.
+Un producto **inactivo** deja de ofrecerse al cotizar, pero conserva su historial y sus
+cotizaciones anteriores.
 
 <Callout type="info">
-**Consejo:** ¿Tus precios cambian constantemente?
-Con la **API Pública de Cord** (Desarrolladores), puedes sincronizar tu catálogo en tiempo real. Si actualizas un precio en tu ERP, un *webhook* o llamada de API puede actualizarlo automáticamente en Cord, asegurando que tus vendedores siempre coticen con la lista de precios vigente.
-
+**El impuesto no vive en el producto.** Cord calcula los impuestos por **línea de la
+cotización**: el mismo producto puede venderse gravado en una venta y exento en otra. Al
+agregar la partida eliges la tasa del catálogo fiscal de tu cuenta
+(**Ajustes › Cotizaciones › Impuestos**), con el nombre del impuesto de tu país. Consulta
+[Productos y descuentos](/docs/cotizacion/productos).
 </Callout>
+
+## Precios por volumen
+
+Sirven para vender al mayoreo: el precio baja automáticamente cuando la cantidad de la
+línea alcanza un nivel.
+
+<Steps>
+1. En la ficha del producto, abre **Precios por volumen** y pulsa
+   **Agregar nivel de volumen**.
+2. En cada nivel captura **Desde** (la cantidad mínima) y el precio por unidad a partir
+   de esa cantidad.
+3. Guarda el producto.
+</Steps>
+
+Por ejemplo, con precio de lista de 100.00 MXN y niveles **Desde 500 → 90.00 MXN** y
+**Desde 2,000 → 75.00 MXN**: una línea de 300 piezas usa 100.00 MXN, una de 800 usa
+90.00 MXN y una de 2,500 usa 75.00 MXN. Por debajo del primer nivel aplica el precio de
+lista. El descuento por nivel de cliente se calcula sobre el precio del nivel que
+corresponda.
+
+## Kits
+
+Un kit agrupa conceptos que sueles cotizar juntos, por ejemplo un paquete de
+instalación, para insertarlos en una cotización con un clic.
+
+<Steps>
+1. Abre **Productos › Kits** y pulsa **+ Nuevo kit**.
+2. Escribe el **Nombre** y, si quieres, una descripción.
+3. En **Renglones del kit**, busca productos de tu catálogo por nombre o SKU, o agrega
+   una **+ Línea libre** (por ejemplo, mano de obra) con su descripción. Ajusta la
+   cantidad de cada renglón.
+4. Opcional: activa **Vender el kit a un precio fijo** para ofrecer un combo. Cord te
+   muestra la suma de precios de lista y cuánto ahorra (o cuánto más cuesta) el combo.
+5. Pulsa **Guardar kit**.
+</Steps>
+
+{/* MOCKUP: modal de Nuevo kit con tres renglones de catálogo, una línea libre y el precio fijo de combo mostrando el ahorro contra la suma de lista */}
+
+Al cotizar, usa **+ Insertar kit** en el editor. Los renglones entran como líneas
+normales de la cotización: puedes editarlas o quitarlas como cualquier otra, y cambiar el
+kit después no modifica cotizaciones ya creadas. Con precio de combo, Cord reparte ese
+total entre las líneas de catálogo; las líneas libres no participan del reparto. Solo los
+kits activos aparecen al insertar.
+
+## Importar productos desde CSV
+
+<Steps>
+1. En **Productos**, pulsa **Importar CSV**. Si aún no conoces el formato, usa
+   **↓ Descargar plantilla de ejemplo**.
+2. **Archivo.** Arrastra tu archivo o haz clic para elegirlo. Solo se acepta `.csv`.
+3. **Columnas.** Empareja las columnas de tu archivo con los campos de Cord. Cord sugiere
+   el emparejamiento por el nombre del encabezado. Desmarca
+   **La primera fila son encabezados** si tu archivo no los tiene.
+4. **Revisar.** Ves cuántos productos se van a importar, cuántas filas se omiten por no
+   tener nombre y una vista previa de las primeras filas. Decide si quieres
+   **Actualizar productos existentes con el mismo SKU**.
+5. Pulsa **Importar** para cargar el catálogo.
+</Steps>
+
+### Columnas que se importan
+
+| Campo de Cord | Obligatorio | Cómo se interpreta |
+|---|---|---|
+| **Nombre** | Sí | Las filas sin nombre se omiten. |
+| **SKU / Clave** | No | Se guarda en mayúsculas. Es la llave para actualizar productos existentes. |
+| **Unidad** | No | Si viene vacía, se usa `pieza`. |
+| **Precio de lista** | No | Usa punto como separador decimal, por ejemplo `1234.50`. Un precio negativo se guarda como 0. |
+| **Activo** | No | `0`, `no`, `false`, `inactivo`, `off` o vacío lo marcan inactivo; cualquier otro valor, activo. Sin columna, todos quedan activos. |
+
+**No se importan** el costo, la descripción ni los precios por volumen: captúralos en la
+ficha de cada producto después de importar.
+
+### Actualizar productos existentes
+
+Con **Actualizar productos existentes con el mismo SKU** activado (es el valor por
+defecto), una fila cuyo SKU ya existe en tu catálogo **actualiza** ese producto en lugar
+de crear uno nuevo. Las filas sin SKU siempre crean un producto nuevo.
+
+<Callout type="warning">
+**Al actualizar, Cord reescribe nombre, unidad, precio y estado con lo que trae el
+archivo.** Si no emparejas la columna de precio, los productos actualizados quedan con
+precio 0; si no emparejas la unidad, quedan en `pieza`. Para cambiar precios de forma
+segura, exporta primero tu catálogo en **Ajustes › Avanzado › Datos y privacidad**
+(mismo formato que la importación), edita ese archivo y vuelve a importarlo.
+</Callout>
+
+## Importar clientes desde CSV
+
+El directorio de **Clientes** tiene el mismo asistente de tres pasos: **Importar CSV**,
+emparejar columnas y revisar. También ofrece su plantilla de ejemplo.
+
+| Campo de Cord | Obligatorio | Cómo se interpreta |
+|---|---|---|
+| **Empresa** | Sí | Las filas sin empresa se omiten. |
+| **Contacto**, **Correo**, **Teléfono** | No | Texto tal como viene. |
+| **Identificador fiscal** (RFC, NIF, EIN...) | No | Se guarda en mayúsculas. |
+| **Términos de pago** | No | Un valor con "60" queda en Net 60; con "30", "net" o "crédito", en Net 30; cualquier otro, Contado. |
+| **Límite de crédito** | No | Número sin símbolo de divisa; vacío significa sin límite. |
+
+Con **Actualizar clientes existentes (mismo RFC o nombre)** activado, una fila que
+coincide por identificador fiscal o, si no lo trae, por nombre de empresa, actualiza a
+ese cliente. Igual que con productos, los campos vacíos o sin emparejar reemplazan lo que
+ya tenía el cliente.
+
+## Límites por plan
+
+| Plan | Productos | Clientes | Kits |
+|---|---:|---:|---|
+| Gratis | 50 | 50 | Sin tope propio |
+| Starter | 500 | 500 | Sin tope propio |
+| Profesional, Scale y Developer | Sin tope | Sin tope | Sin tope propio |
+
+Cada importación admite **hasta 2,000 filas**; si tu archivo es más grande, divídelo.
+Los productos inactivos también cuentan para el tope. Si alcanzas el tope de productos a
+mitad de una importación, lo ya importado se conserva y Cord te dice cuántos se crearon y
+actualizaron.
 
 ## La ficha del producto
 
-El catálogo (**Productos** en el menú principal) tiene filtros rápidos (activos,
-inactivos, con precio por volumen, sin costo capturado, margen bajo) para encontrar lo
-que buscas sin scrollear una lista larga.
+La lista de **Productos** tiene filtros rápidos: **Todos**, **Activos**, **Inactivos**,
+**Con precio por volumen**, **Sin costo** y **Margen bajo**. Al abrir un producto ves su
+ficha con importe cerrado y unidades vendidas, tasa de cierre, realización de precio
+(mínimo, promedio y máximo cobrado contra el precio de lista), margen de lista frente a
+margen realizado, su escalera de precios por volumen, quién lo compra más, sus últimas
+cotizaciones y qué kits lo incluyen.
 
-Haz clic en cualquier producto para abrir su **ficha**: importe cerrado y unidades
-vendidas, tasa de cierre, realización de precio (lo mínimo, promedio y máximo que
-realmente se ha cobrado contra el precio de lista), margen de lista vs. **margen
-realizado** sobre ventas históricas, su escalera de precios por volumen, quién lo
-compra más, sus últimas cotizaciones y qué kits lo incluyen — todo calculado sobre tu
-historial real, no solo los datos que capturaste al darlo de alta.
+## Problemas comunes
+
+**"Máximo 2000 filas por importación".** Divide el archivo en partes de 2,000 filas o
+menos.
+
+**"Elige qué columna tiene el nombre del producto".** Empareja el campo **Nombre** antes
+de continuar.
+
+**"El archivo está vacío o no se pudo leer".** Guárdalo como CSV con codificación UTF-8.
+Un archivo de Excel (`.xlsx`) no se acepta en este asistente: expórtalo como CSV.
+
+**Los precios se importaron mal.** Revisa el separador decimal: usa punto y no incluyas
+separadores de miles con punto.
+
+**Llegué al tope de mi plan.** Desactiva o elimina productos que ya no uses, o cambia de
+plan en [Tu suscripción](/docs/cuenta/suscripcion).
+
+<Callout type="info">
+**¿Tu catálogo vive en otro sistema?** Puedes mantenerlo sincronizado desde
+[Shopify](/docs/automatizacion/integraciones/shopify) o con la
+[API de Productos](/docs/desarrolladores/funciones/productos). Para armar el catálogo
+desde tu lista de precios en Excel, PDF o foto, usa
+[Configurar con IA](/docs/cuenta/configurar-con-ia).
+</Callout>
+
+## Páginas relacionadas
+
+- [Productos y descuentos](/docs/cotizacion/productos)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Configura tu cuenta con IA](/docs/cuenta/configurar-con-ia)
+- [Tu suscripción a Cord](/docs/cuenta/suscripcion)

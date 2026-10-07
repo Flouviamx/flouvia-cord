@@ -1,25 +1,38 @@
 ---
 title: "Get Started"
 seoTitle: "Cord documentation: quotes, payments, invoices and API"
-description: "Create an account and learn how to build on Cord."
+description: "Official Cord documentation to create quotes, close deals, collect payments, invoice, automate follow-up and integrate your systems in the 12 available markets."
 lastUpdated: "2026-10-07"
-reviewedBy: "Cord Product and Operations"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Get started</h1>
-  <p class="page-subtitle">Create an account and learn how to configure and use Cord.</p>
+  <p class="page-subtitle">From proposal to payment. All in one link.</p>
 </header>
 
-Cord is standalone software for quoting, payments, invoicing, and collections. It lets teams build proposals with negotiated pricing, record approvals with technical evidence, collect online payments with Cord Payments or Mercado Pago, and automate collections with AI. Built by the Flouvia team, Cord offers signup in 12 countries — Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru. Cord Payments isn't available in the last four, but you can collect online with [Mercado Pago](/en/docs/pagos/mercado-pago), which also operates in Mexico and Brazil. In Mexico, Cord can stamp CFDI 4.0; see the fiscal guide for Verifactu's operating status in Spain.
+Cord is the deal-closing platform that covers the sales cycle from proposal to payment.
+You build a quote —by hand, from a kit or with AI— and your client receives it in a link
+where they discuss it, counteroffer, approve with technical evidence and pay online. Then
+Cord issues the invoice, tracks receivables, follows up on overdue balances and shows you
+how your business is doing. All with your brand, in each sale's currency and with
+per-person permissions.
+
+Cord is available in 12 countries: Mexico, the United States, Canada, Brazil, Spain, the
+United Kingdom, Germany, France, Colombia, Argentina, Chile and Peru. In the first eight
+you collect online with Cord Payments; in Colombia, Argentina, Chile and Peru, with
+[Mercado Pago](/en/docs/pagos/mercado-pago), which also works in Mexico and Brazil. In
+Mexico, Cord stamps CFDI 4.0 with your CSD; in the other countries it issues commercial
+invoices. See what changes in each market in
+[Invoicing by country](/en/docs/pagos/facturacion).
 
 <section class="docs-section split">
   <div class="section-text">
     <h2>Create an account</h2>
-    <p>Create an account with email, Google, or Apple. Then configure your company, catalog, and first commercial workflow.</p>
-    <p>Complete the <a href="/en/docs/cuenta/configuracion" class="inline-link">setup guide</a> or go directly to the developer reference.</p>
+    <p>Sign up with email, Google or Apple, choose your country, and Cord sets up your currency, taxes and payment methods. You start on the Free plan, with no card required.</p>
+    <p>Follow the <a href="/en/docs/cuenta/crear-cuenta" class="inline-link">Create your account</a> guide or go straight to the developer reference.</p>
     <a href="https://cordhq.app/sign-up" class="action-link-text">Create a free account &rarr;</a>
   </div>
   <div class="section-visual">
@@ -29,14 +42,14 @@ Cord is standalone software for quoting, payments, invoicing, and collections. I
           <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
           <path d="M8 12l3 3 5-5"/>
         </svg>
-        <h3 style="margin: 0 0 8px 0; color: #0f172a;">Set up your account</h3>
-        <p style="margin: 0; color: #64748b; font-size: 14px;">The onboarding widget guides you until you complete your first sale.</p>
+        <h3 style="margin: 0 0 8px 0; color: #0f172a;">Set up Cord</h3>
+        <p style="margin: 0; color: #64748b; font-size: 14px;">The setup widget guides you until you complete your first sale.</p>
       </div>
       <div class="mockup-right">
         <ul class="mockup-steps" style="max-height: 240px; overflow-y: auto; padding-right: 8px;">
-          <li class="active"><span class="step-num">✓</span> Customize your brand</li>
-          <li class="active"><span class="step-num">✓</span> Complete your tax details</li>
-          <li class="active"><span class="step-num">✓</span> Customize your PDF and portal</li>
+          <li class="active"><span class="step-num">1</span> Customize your brand</li>
+          <li class="active"><span class="step-num">2</span> Complete your tax details</li>
+          <li class="active"><span class="step-num">3</span> Customize your PDF and portal</li>
           <li><span class="step-num">4</span> Create your catalog</li>
           <li><span class="step-num">5</span> Add your clients</li>
           <li><span class="step-num">6</span> Create your first quote</li>
@@ -51,105 +64,161 @@ Cord is standalone software for quoting, payments, invoicing, and collections. I
   </div>
 </section>
 
-<section class="docs-section">
-  <h2>Explore Cord's modules</h2>
-  <div class="use-cases-grid">
-    <a href="/en/docs/cotizacion/resumen" class="use-case-card">
-      <h3>Create dynamic quotes</h3>
-      <p>Generate quotes manually or with AI, add products, and send them to your clients.</p>
-    </a>
+## First steps
 
+This is the actual order in which Cord guides you. Each step links to its full guide.
+
+<Steps>
+1. **Sign up and verify your email.** With email and password, Cord sends you a
+   verification link; with Google or Apple you go straight in.
+   [Create your account](/en/docs/cuenta/crear-cuenta).
+2. **Set up your workspace.** A four-step wizard asks for your company name, country,
+   role, industry and what you will use Cord for. The country sets your currency, time
+   zone and the taxes your account starts with.
+3. **Set up with AI (optional).** Give Cord your website or price list and review the
+   proposed brand, catalog and taxes. [Set up with AI](/en/docs/cuenta/configurar-con-ia).
+4. **Prepare your business.** Your [brand](/en/docs/cuenta/marca), your tax details (in
+   Mexico, your [CSD](/en/docs/cuenta/csd)) and the message of your PDF and
+   [portal](/en/docs/cuenta/portal-cliente).
+5. **Build your catalog.** Products, kits and clients, one by one or by CSV.
+   [Import your catalog](/en/docs/cuenta/catalogo).
+6. **Create and send your first quote.** [Create a quote](/en/docs/cotizacion/resumen)
+   and [send it](/en/docs/cotizacion/envio).
+7. **Turn on online payments.** Connect [Cord Payments](/en/docs/pagos/onboarding) or
+   [Mercado Pago](/en/docs/pagos/mercado-pago), depending on your country.
+8. **Collect and invoice.** [Accept a payment](/en/docs/pagos/aceptar) and issue the
+   [invoice](/en/docs/pagos/facturas-emitidas).
+9. **Automate your follow-up.** Publish your
+   [first workflow](/en/docs/automatizacion/workflows/primer-workflow).
+10. **Invite your team.** From the Professional plan.
+    [Team, permissions and security](/en/docs/cuenta/equipo-seguridad).
+</Steps>
+
+## Explore the documentation
+
+The documentation has five sections, one per tab at the top.
+
+<section class="docs-section">
+  <div class="use-cases-grid">
+    <a href="/en/docs/operacion/mapa-de-la-app" class="use-case-card">
+      <h3>Get started</h3>
+      <p>Your account, setup, the app and Settings maps, and your subscription.</p>
+    </a>
+    <a href="/en/docs/cotizacion/resumen" class="use-case-card">
+      <h3>Quote and close</h3>
+      <p>Quotes with AI, products and discounts, sending, chat, approval and sales management.</p>
+    </a>
     <a href="/en/docs/pagos/resumen" class="use-case-card">
-      <h3>Manage your payments</h3>
-      <p>Configure upfront payments, monthly retainers, or net credit terms for your projects.</p>
-    </a>
-    <a href="/en/docs/interaccion/chat" class="use-case-card">
-      <h3>Close deals faster</h3>
-      <p>Negotiate through the integrated chat and record approval with technical evidence.</p>
-    </a>
-    <a href="/en/docs/gestion/dashboard" class="use-case-card">
-      <h3>Manage your pipeline</h3>
-      <p>Follow up on tasks and opportunities, and review progress on the sales dashboard.</p>
+      <h3>Get paid and invoice</h3>
+      <p>Cord Payments, Mercado Pago, deposits, retainers, credit, invoices and collections.</p>
     </a>
     <a href="/en/docs/automatizacion/workflows" class="use-case-card">
-      <h3>Automate your operation</h3>
-      <p>Build workflows that take the next step on their own and connect your CRM, store, accounting, spreadsheets, and messaging, such as HubSpot, Shopify, QuickBooks Online, Slack, or Make.</p>
+      <h3>Automate</h3>
+      <p>Workflows that take the next step on their own and integrations with your other tools.</p>
     </a>
-    <a href="/en/docs/cuenta/resumen" class="use-case-card">
-      <h3>Configure your company</h3>
-      <p>Customize your brand, import your catalog, and add your tax information (CSD).</p>
+    <a href="/en/docs/desarrolladores/empezar/resumen" class="use-case-card">
+      <h3>Developers</h3>
+      <p>REST API, webhooks, CLI, MCP server, OAuth and Cord Elements.</p>
     </a>
-  </div>
-</section>
-
-<section class="docs-section">
-  <h2>Quick guides</h2>
-  <div class="use-cases-grid">
-    <a href="/en/docs/cotizacion/ia" class="use-case-card">
-      <h3>Quote with AI</h3>
-      <p>Let the Artificial Intelligence engine structure the quote for you.</p>
-    </a>
-
-    <a href="/en/docs/pagos/onboarding" class="use-case-card">
-      <h3>Connect your bank</h3>
-      <p>Complete your KYC verification to start receiving real payments.</p>
-    </a>
-
-    <a href="/en/docs/interaccion/firma" class="use-case-card">
-      <h3>Approval and evidence</h3>
-      <p>Learn which identity, version, date, time, and IP address Cord stores at approval.</p>
-    </a>
-    <a href="/en/docs/cuenta/catalogo" class="use-case-card">
-      <h3>Import your catalog</h3>
-      <p>Learn how to bulk upload your products and services to the platform.</p>
+    <a href="/en/docs/productos" class="use-case-card">
+      <h3>All products</h3>
+      <p>The complete catalog of what Cord does, with the minimum plan for each feature.</p>
     </a>
   </div>
 </section>
+
+### Get started
+
+- [Create your account](/en/docs/cuenta/crear-cuenta) and [configure it](/en/docs/cuenta/configuracion)
+- [Set up with AI](/en/docs/cuenta/configurar-con-ia)
+- [Complete app map](/en/docs/operacion/mapa-de-la-app) and [Settings map](/en/docs/cuenta/mapa-de-ajustes)
+- [Team, permissions and security](/en/docs/cuenta/equipo-seguridad)
+- [Your Cord subscription](/en/docs/cuenta/suscripcion)
+
+### Quote and close
+
+- [Create a quote](/en/docs/cotizacion/resumen) and [generate it with AI](/en/docs/cotizacion/ia)
+- [Products and discounts](/en/docs/cotizacion/productos) and [advanced options](/en/docs/cotizacion/opciones)
+- [Preview and sending](/en/docs/cotizacion/envio)
+- [Chat and negotiation](/en/docs/interaccion/chat) and [approval and evidence](/en/docs/interaccion/firma)
+- [Quote management](/en/docs/gestion/cotizaciones), [clients](/en/docs/gestion/clientes) and [reports](/en/docs/gestion/informes)
+
+### Get paid and invoice
+
+- [Payments overview](/en/docs/pagos/resumen) and [how to accept a payment](/en/docs/pagos/aceptar)
+- [Connect your account (KYC)](/en/docs/pagos/onboarding), [methods](/en/docs/pagos/metodos) and [fees](/en/docs/pagos/condiciones)
+- [Upfront and balance](/en/docs/pagos/anticipos), [retainers](/en/docs/pagos/igualas) and [credit](/en/docs/pagos/credito)
+- [Invoices](/en/docs/pagos/facturas-emitidas), [recurring invoices](/en/docs/pagos/facturas-recurrentes) and [invoicing by country](/en/docs/pagos/facturacion)
+- [Receivables and follow-up](/en/docs/pagos/cartera-cobranza) and [AI collections](/en/docs/pagos/cobranza-ia)
+
+### Automate
+
+- [Cord Workflows](/en/docs/automatizacion/workflows) and [your first workflow](/en/docs/automatizacion/workflows/primer-workflow)
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas)
+- [Integrations](/en/docs/automatizacion/integraciones): HubSpot, Shopify, QuickBooks Online, Xero, Slack, Make, Zapier and more
+
+### Developers
+
+- [Developer overview](/en/docs/desarrolladores/empezar/resumen) and [your API key](/en/docs/desarrolladores/empezar/apikey)
+- [API reference](/en/docs/desarrolladores/referencia)
+- [Webhooks](/en/docs/desarrolladores/herramientas/webhooks), [CLI](/en/docs/desarrolladores/herramientas/cli) and [MCP server](/en/docs/desarrolladores/herramientas/mcp)
+- [Cord Elements](/en/docs/desarrolladores/herramientas/elements/resumen)
 
 <section class="docs-section">
   <h2>More resources</h2>
   <div class="resources-split">
-    <div class="resource-card video-card">
-      <p class="resource-tag">YouTube resources</p>
-      <p class="resource-desc">Watch tutorials, discover new features, and hear customer stories.</p>
-      <div class="video-thumbnail">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff0000"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-        <span>Coming soon</span>
-      </div>
-    </div>
     <div class="resource-card links-card">
-      <a href="/en/docs/desarrolladores/empezar/resumen" class="resource-link">
-        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      <a href="/en/docs/pagos/mejoras-confiabilidad" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3a1 1 0 0 0 1 1h2l6 4.5v-14L7 9.5H5a1 1 0 0 0-1 1z"></path><path d="M16.5 9a4 4 0 0 1 0 6"></path></svg>
         <div class="resource-link-content">
-          <h3>Developer resources</h3>
-          <p>Configure an API key and explore the API, webhooks, MCP, and Cord Elements.</p>
+          <h3>What's new</h3>
+          <p>What changed in payments, invoices, security and plans, and how it helps your operations.</p>
         </div>
       </a>
-      <a href="https://cordhq.app/en/roadmap" class="resource-link">
-        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <a href="https://status.cordhq.app/en" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M7 12h2.5l1.5-3 2 6 1.5-3H17"></path></svg>
         <div class="resource-link-content">
-          <h3>Cord roadmap</h3>
-          <p>See which features are available, in development, or planned.</p>
+          <h3>Service status</h3>
+          <p>Cord's current availability and ongoing incidents.</p>
         </div>
       </a>
-      <a href="/en/docs/desarrolladores/herramientas/webhooks" class="resource-link">
-        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+      <a href="https://cordhq.app/llms.txt" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h5"></path></svg>
         <div class="resource-link-content">
-          <h3>Integrations and webhooks</h3>
-          <p>Connect Cord with your systems and receive signed events in real time.</p>
+          <h3>llms.txt</h3>
+          <p>An index of Cord designed for AI assistants and tools that read the documentation.</p>
         </div>
       </a>
       <a href="https://cordhq.app/en/support" class="resource-link">
         <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         <div class="resource-link-content">
           <h3>Support site</h3>
-          <p>Discover answers to common questions and quick solutions.</p>
+          <p>Answers to common questions, quick guides and contact with the team.</p>
+        </div>
+      </a>
+    </div>
+    <div class="resource-card links-card">
+      <a href="/en/docs/desarrolladores/empezar/resumen" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        <div class="resource-link-content">
+          <h3>Developer resources</h3>
+          <p>Set up an API key and explore the API, webhooks, MCP and Cord Elements.</p>
+        </div>
+      </a>
+      <a href="https://cordhq.app/en/roadmap" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <div class="resource-link-content">
+          <h3>Cord roadmap</h3>
+          <p>Which features are available, in development or planned.</p>
+        </div>
+      </a>
+      <a href="/en/docs/automatizacion/integraciones" class="resource-link">
+        <svg class="resource-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+        <div class="resource-link-content">
+          <h3>Integrations</h3>
+          <p>Connect Cord with your CRM, store, accounting, spreadsheets and messaging.</p>
         </div>
       </a>
     </div>
   </div>
 </section>
-
-## Recent improvements
-
-See [what changed in payments, invoices, security and plans](/en/docs/pagos/mejoras-confiabilidad) and how it helps operations.
