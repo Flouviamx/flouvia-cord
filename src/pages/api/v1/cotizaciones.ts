@@ -1,5 +1,5 @@
 // /api/v1/cotizaciones — API PÚBLICA de cotizaciones.
-//   GET  ?status=&folio=&cliente_id=&limit=&offset=   → { data: [...], meta: { limit, offset, total } }
+//   GET  ?status=&folio=&cliente_id=&limit=&offset=|cursor=   → { data: [...], meta: { limit, offset, total, next_cursor } }
 //   POST { cliente_id?, terminos?, vigencia_dias?, notas?, send?, items[] }
 //        → { data: { id, folio, link_publico, ... } }   (scope: write)
 export const prerender = false;
@@ -8,17 +8,20 @@ import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, reqIp } from '../../../lib/db';
 import { getCotizacionesPage } from '../../../lib/queries';
 import { createCotizacion, QuoteError } from '../../../lib/cotizaciones';
-import { ok, fail, pageParams, quoteListItem, readJsonBody } from '../../../lib/apiv1';
+import { ok, fail, pageParams, quoteListItem, readJsonBody, listCursor, listMeta, encodeListCursor } from '../../../lib/apiv1';
 import { publicDocumentUrl } from '../../../lib/public-links';
 
 export const GET = withApiAuth('read', async ({ url }) => {
     const orgId = await getActiveOrgId();
     const { limit, offset } = pageParams(url);
+    const after = listCursor(url, 2);
+    if (after instanceof Response) return after;
     const status = url.searchParams.get('status') || null;
     const clienteId = url.searchParams.get('cliente_id') || null;
     if (clienteId && !/^[0-9a-f-]{36}$/i.test(clienteId)) return fail('cliente_id no es válido.', 'invalid_cliente_id');
-    const page = await getCotizacionesPage({ limit, offset, status, folio: url.searchParams.get('folio'), clienteId });
-    return ok(await Promise.all(page.items.map((q) => quoteListItem(q, orgId))), { limit, offset, total: page.total });
+    const page = await getCotizacionesPage({ limit, offset, status, folio: url.searchParams.get('folio'), clienteId, after });
+    return ok(await Promise.all(page.items.map((q) => quoteListItem(q, orgId))),
+        listMeta(limit, offset, page.total, after, page.nextKeys ? encodeListCursor(page.nextKeys) : null));
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {

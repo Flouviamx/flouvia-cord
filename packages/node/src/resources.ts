@@ -40,19 +40,9 @@ export interface CreatedQuote {
     email?: { sent: boolean; skipped?: string };
 }
 
-export interface OffsetPage<T> { data: T[]; meta: { limit: number; offset: number; total: number } }
+/** Listas que aceptan offset y cursor: con `cursor`, `offset` viene null. */
+export interface OffsetPage<T> { data: T[]; meta: { limit: number; offset: number | null; total: number; next_cursor: string | null } }
 export interface CursorPage<T> { data: T[]; meta: { next_cursor: string | null } }
-
-/** Recorre todas las páginas de una lista por offset. */
-async function* offsetIterator<T>(fetchPage: (offset: number) => Promise<OffsetPage<T>>): AsyncGenerator<T> {
-    let offset = 0;
-    for (;;) {
-        const page = await fetchPage(offset);
-        for (const item of page.data) yield item;
-        offset += page.data.length;
-        if (!page.data.length || offset >= page.meta.total) return;
-    }
-}
 
 /** Recorre todas las páginas de una lista por cursor. */
 async function* cursorIterator<T>(fetchPage: (cursor: string | undefined) => Promise<CursorPage<T>>): AsyncGenerator<T> {
@@ -74,11 +64,11 @@ export function createResources(http: HttpClient) {
     };
 
     const quotes = {
-        list: (params: { status?: string; folio?: string; cliente_id?: string; limit?: number; offset?: number } = {}): Promise<OffsetPage<Obj>> =>
+        list: (params: { status?: string; folio?: string; cliente_id?: string; limit?: number; offset?: number; cursor?: string } = {}): Promise<OffsetPage<Obj>> =>
             page('/cotizaciones', params),
-        /** `for await (const q of cord.quotes.listAll())` */
+        /** `for await (const q of cord.quotes.listAll())`. Usa cursor: no salta ni repite aunque haya escrituras. */
         listAll: (params: { status?: string; cliente_id?: string } = {}) =>
-            offsetIterator<Obj>((offset) => page('/cotizaciones', { ...params, limit: 200, offset })),
+            cursorIterator<Obj>((cursor) => page('/cotizaciones', { ...params, limit: 200, cursor })),
         retrieve: (id: string) => get<Obj>(`/cotizaciones/${encodeURIComponent(id)}`),
         create: (params: CreateQuoteParams, opts?: RequestOptions) => post<CreatedQuote>('/cotizaciones', params, opts),
         send: (id: string, opts?: RequestOptions) => post<Obj>(`/cotizaciones/${encodeURIComponent(id)}`, { action: 'send' }, opts),
@@ -95,8 +85,8 @@ export function createResources(http: HttpClient) {
     };
 
     const clients = {
-        list: (params: { limit?: number; offset?: number } = {}): Promise<OffsetPage<Obj>> => page('/clientes', params),
-        listAll: () => offsetIterator<Obj>((offset) => page('/clientes', { limit: 200, offset })),
+        list: (params: { q?: string; email?: string; limit?: number; offset?: number; cursor?: string } = {}): Promise<OffsetPage<Obj>> => page('/clientes', params),
+        listAll: () => cursorIterator<Obj>((cursor) => page('/clientes', { limit: 200, cursor })),
         retrieve: (id: string) => get<Obj>(`/clientes/${encodeURIComponent(id)}`),
         create: (params: Obj, opts?: RequestOptions) => post<{ id: string }>('/clientes', params, opts),
         update: async (id: string, params: Obj, opts?: RequestOptions) =>
@@ -104,8 +94,8 @@ export function createResources(http: HttpClient) {
     };
 
     const products = {
-        list: (params: { limit?: number; offset?: number } = {}): Promise<OffsetPage<Obj>> => page('/productos', params),
-        listAll: () => offsetIterator<Obj>((offset) => page('/productos', { limit: 200, offset })),
+        list: (params: { limit?: number; offset?: number; cursor?: string } = {}): Promise<OffsetPage<Obj>> => page('/productos', params),
+        listAll: () => cursorIterator<Obj>((cursor) => page('/productos', { limit: 200, cursor })),
         create: (params: Obj, opts?: RequestOptions) => post<{ id: string }>('/productos', params, opts),
     };
 

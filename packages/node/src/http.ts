@@ -47,7 +47,7 @@ export interface ApiResponse<T> {
     requestId: string | null;
 }
 
-const SDK_VERSION = '1.0.0';
+const SDK_VERSION = '1.1.0';
 const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 export function newIdempotencyKey(): string {

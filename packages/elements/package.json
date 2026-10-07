@@ -1,6 +1,6 @@
 {
   "name": "@flouviahq/elements",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Cord Elements: cotizador embebible con Shadow DOM, Builder headless dirigido por el servidor y Fiscal Element. Web Components + React, Vue, Framer y Webflow.",
   "type": "module",
   "license": "MIT",

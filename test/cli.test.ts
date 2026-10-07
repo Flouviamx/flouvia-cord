@@ -79,7 +79,18 @@ describe('cord init', () => {
 
     it('usa el gestor de paquetes del proyecto', () => {
         expect(installCommand('next-app', ['pnpm-lock.yaml'])).toMatch(/^pnpm add/);
-        expect(installCommand('laravel', [])).toBe('composer require flouviahq/cord');
+        expect(installCommand('laravel', [])).toBeNull();
+        expect(installCommand('django', [])).toBeNull();
+    });
+
+    it('en Python y Laravel deja un verificador de firma sin depender de un SDK sin publicar', () => {
+        const py = planInit({ ...base, pythonDeps: 'fastapi==0.110' });
+        expect(py.install).toBeNull();
+        expect(py.snippet).toContain('hmac.compare_digest');
+        expect(py.snippet).not.toContain('import cord');
+        const php = planInit({ ...base, composerJson: { require: { 'laravel/framework': '^11' } } });
+        expect(php.snippet).toContain('hash_equals');
+        expect(php.snippet).toContain('Illuminate\\Http\\Request');
     });
 
     it('solo escribe la llave en un archivo ignorado por git', () => {

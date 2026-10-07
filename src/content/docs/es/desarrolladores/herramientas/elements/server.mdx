@@ -96,6 +96,23 @@ export const POST = proxy;
 
 El proxy solo atiende la configuración, el catálogo, crear cotizaciones y, si lo autorizas, el directorio de clientes; solo desde tu origen, y sanea la cotización igual que una llave publicable.
 
+### Dale al proxy una llave restringida
+
+El proxy no necesita una Secret Key con todos los permisos. Crea una **llave restringida** (`rk_`) en Desarrolladores › API con solo esto:
+
+| Recurso | Nivel | Para qué |
+|---|---|---|
+| `elements` | escritura | Configuración y llenado de partidas con IA |
+| `productos` | lectura | El catálogo del Builder |
+| `cotizaciones` | escritura | Crear la cotización |
+| `clientes` | lectura | Solo si usas `authorizeClients` |
+
+Si tu servidor se ve comprometido, esa llave no puede leer facturas, cobranza ni webhooks. Puedes además fijar las IPs de tu servidor y ponerle vencimiento. `createElementsProxy` acepta una `rk_` igual que una `sk_`.
+
+## Registro de peticiones
+
+Cada llamada a la API queda en **Desarrolladores › Registros**: método, ruta, estado, duración, IP y llave. Busca ahí el `requestId` de un `CordError` para ver qué recibió Cord.
+
 ## Modo prueba
 
 Con una `sk_test_` puedes provocar lo que en producción hace un tercero, por el mismo código que producción:

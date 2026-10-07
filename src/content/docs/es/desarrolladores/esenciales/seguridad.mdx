@@ -17,6 +17,14 @@ Esta página describe controles que existen hoy en el producto. Si tu equipo nec
 - Los secretos que Cord guarda en tu nombre (credenciales de integraciones, secretos de firma de webhooks) se cifran con AES-256-GCM antes de llegar a la base de datos. La llave de cifrado se puede rotar sin perder lo cifrado con la anterior.
 - Las contraseñas se guardan con Argon2id. Los tokens de sesión y las API keys se guardan solo como hash: si alguien leyera la base de datos, no obtendría una credencial utilizable.
 
+## Dónde viven los datos y quién timbra
+
+- **Base de datos:** PostgreSQL en Neon, región AWS `us-east-1` (Virginia, Estados Unidos).
+- **Ejecución:** las funciones corren en Vercel, región `iad1` (Washington D.C., Estados Unidos).
+- **Facturación en México:** el timbrado de CFDI 4.0 lo hace Facturapi como PAC, con el CSD de cada negocio. Cord cancela CFDI con su motivo del SAT y, en ventas a crédito, emite con método PPD. El complemento de recepción de pagos todavía no se genera automáticamente.
+- **Facturación en España:** Cord genera los registros encadenados de Verifactu; el envío directo a la AEAT está construido y pendiente de activarse. Mientras tanto la factura se emite como documento comercial.
+- **Certificaciones:** Cord no tiene hoy SOC 2 ni ISO 27001. Ver [auditorías de seguridad](https://cordhq.app/soporte/auditorias-seguridad).
+
 ## Identidad y acceso
 
 - Inicio de sesión con contraseña, Google, Apple o passkeys, y SSO con SAML para equipos.

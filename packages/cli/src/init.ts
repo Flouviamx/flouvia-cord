@@ -27,9 +27,8 @@ export function detectFramework(p: ProjectFiles): Framework {
 }
 
 export function installCommand(f: Framework, lockfiles: string[]): string | null {
-    if (f === 'laravel') return 'composer require flouviahq/cord';
-    if (f === 'django' || f === 'flask' || f === 'fastapi') return 'pip install cord-sdk';
-    if (f === 'unknown') return null;
+    // Los SDK de PHP y Python aún no están publicados: la ruta verifica la firma sin dependencias.
+    if (f === 'laravel' || f === 'django' || f === 'flask' || f === 'fastapi' || f === 'unknown') return null;
     if (lockfiles.includes('pnpm-lock.yaml')) return 'pnpm add @flouviahq/node @flouviahq/elements';
     if (lockfiles.includes('yarn.lock')) return 'yarn add @flouviahq/node @flouviahq/elements';
     if (lockfiles.includes('bun.lockb') || lockfiles.includes('bun.lock')) return 'bun add @flouviahq/node @flouviahq/elements';
@@ -71,6 +70,37 @@ export const GET = proxy;
 export const POST = proxy;
 `;
 
+const PYTHON_WEBHOOK = `# Verifica la firma X-Cord-Signature-V1 sin dependencias. Usa el cuerpo CRUDO.
+import hashlib, hmac, os, time
+
+def verify_cord(raw_body: bytes, header: str, tolerance: int = 300) -> bool:
+    parts = [p.split("=", 1) for p in header.split(",") if "=" in p]
+    t = next((v for k, v in parts if k == "t"), None)
+    sigs = [v for k, v in parts if k == "v1"]
+    if not t or not sigs or abs(time.time() - int(t)) > tolerance:
+        return False
+    secret = os.environ["CORD_WEBHOOK_SECRET"].encode()
+    expected = hmac.new(secret, f"{t}.".encode() + raw_body, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, s) for s in sigs)
+
+# En tu vista: if not verify_cord(request.body, request.headers["X-Cord-Signature-V1"]): responde 400`;
+
+const PHP_WEBHOOK = `// routes/web.php (excluye esta ruta de VerifyCsrfToken). Verifica la firma sin dependencias.
+Route::post('/webhooks/cord', function (Illuminate\\Http\\Request $request) {
+    $body = $request->getContent();
+    $t = null; $sigs = [];
+    foreach (explode(',', (string) $request->header('X-Cord-Signature-V1')) as $part) {
+        [$k, $v] = array_pad(explode('=', $part, 2), 2, '');
+        if ($k === 't') $t = $v; elseif ($k === 'v1') $sigs[] = $v;
+    }
+    if (!$t || !$sigs || abs(time() - (int) $t) > 300) abort(400);
+    $expected = hash_hmac('sha256', $t . '.' . $body, env('CORD_WEBHOOK_SECRET'));
+    foreach ($sigs as $s) {
+        if (hash_equals($expected, $s)) { $event = json_decode($body, true); return response('ok'); }
+    }
+    abort(400);
+});`;
+
 export interface PlannedFile { path: string; content: string }
 
 export interface InitPlan {
@@ -110,14 +140,14 @@ export function planInit(p: ProjectFiles): InitPlan {
             webhookPath = '/api/webhooks/cord';
             break;
         case 'laravel':
-            snippet = `// routes/web.php (excluye esta ruta de VerifyCsrfToken)\nuse Flouvia\\Cord\\Webhook;\n\nRoute::post('/webhooks/cord', function (Illuminate\\Http\\Request $request) {\n    $event = Webhook::constructEvent($request->getContent(), $request->headers->all(), env('CORD_WEBHOOK_SECRET'));\n    return response('ok');\n});`;
+            snippet = PHP_WEBHOOK;
             envFile = '.env';
             webhookPath = '/webhooks/cord';
             break;
         case 'django':
         case 'flask':
         case 'fastapi':
-            snippet = `from cord import construct_event\n\n# Usa el cuerpo crudo de la petición (request.body / await request.body()).\nevent = construct_event(raw_body, headers, os.environ["CORD_WEBHOOK_SECRET"])`;
+            snippet = PYTHON_WEBHOOK;
             envFile = '.env';
             webhookPath = '/webhooks/cord';
             break;

@@ -831,12 +831,23 @@ export async function getProductos() {
     return rows.map(mapProducto);
 }
 
-export async function getProductosPage(page: { limit: number; offset: number }) {
+export async function getProductosPage(page: { limit: number; offset: number; after?: string[] | null }) {
     const orgId = await getActiveOrgId();
+    const after = page.after ?? null;
     const [[count], rows] = await withOrgTx(orgId,
         sql`select count(*)::int as n from productos where org_id = ${orgId}`,
-        sql`select * from productos where org_id = ${orgId} order by activo desc, nombre, id limit ${page.limit} offset ${page.offset}`);
-    return { items: rows.map(mapProducto), total: Number(count?.n ?? 0) };
+        sql`select * from productos where org_id = ${orgId}
+              and (${after?.[0] ?? null}::boolean is null
+                   or activo < ${after?.[0] ?? null}::boolean
+                   or (activo = ${after?.[0] ?? null}::boolean and (nombre, id) > (${after?.[1] ?? null}::text, ${after?.[2] ?? null}::uuid)))
+            order by activo desc, nombre, id limit ${page.limit + 1} offset ${after ? 0 : page.offset}`);
+    const visible = rows.slice(0, page.limit);
+    const last = visible[visible.length - 1];
+    return {
+        items: visible.map(mapProducto),
+        total: Number(count?.n ?? 0),
+        nextKeys: rows.length > page.limit && last ? [String(last.activo), String(last.nombre), String(last.id)] : null,
+    };
 }
 
 // Ficha + métricas de UN producto para /app/productos/[id]. Sin cachear.
@@ -1131,15 +1142,21 @@ export async function getClientes() {
     return rows.map(mapCliente);
 }
 
-export async function getClientesPage(page: { limit: number; offset: number; q?: string | null; email?: string | null }) {
+export async function getClientesPage(page: { limit: number; offset: number; q?: string | null; email?: string | null; after?: string[] | null }) {
     const orgId = await getActiveOrgId();
     const f = clienteFilter(page.q, page.email);
     const [[count], rows] = await withOrgTx(orgId,
         sql`select count(*)::int as n from clientes c where c.org_id = ${orgId}
             and (${f.q} = '' or c.empresa ilike ${f.like} or c.contacto ilike ${f.like} or c.email ilike ${f.like} or c.rfc ilike ${f.like})
             and (${f.email} = '' or lower(c.email) = ${f.email})`,
-        clientesQuery(orgId, page.limit, page.offset, f));
-    return { items: rows.map(mapCliente), total: Number(count?.n ?? 0) };
+        clientesQuery(orgId, page.limit + 1, page.after ? 0 : page.offset, f, null, page.after ?? null));
+    const visible = rows.slice(0, page.limit);
+    const last = visible[visible.length - 1];
+    return {
+        items: visible.map(mapCliente),
+        total: Number(count?.n ?? 0),
+        nextKeys: rows.length > page.limit && last ? [String(last.empresa), String(last.id)] : null,
+    };
 }
 
 export async function getClienteBasico(id: string) {
@@ -1156,7 +1173,7 @@ function clienteFilter(q: string | null | undefined, email: string | null | unde
 // Lateral join: cuenta y suma cotizaciones POR CLIENTE en la misma query — antes
 // clientes.astro cargaba getCotizaciones() completo (todas las de la org, sin límite)
 // solo para hacer un .filter() por nombre de empresa en memoria. Esto es O(n) real.
-function clientesQuery(orgId: string, limit: number, offset: number, f = clienteFilter(null, null), id: string | null = null) {
+function clientesQuery(orgId: string, limit: number, offset: number, f = clienteFilter(null, null), id: string | null = null, after: string[] | null = null) {
     return sql`
         select c.*,
                coalesce(q.n, 0)       as n_cotizaciones,
@@ -1174,6 +1191,7 @@ function clientesQuery(orgId: string, limit: number, offset: number, f = cliente
           and (${id}::uuid is null or c.id = ${id}::uuid)
           and (${f.q} = '' or c.empresa ilike ${f.like} or c.contacto ilike ${f.like} or c.email ilike ${f.like} or c.rfc ilike ${f.like})
           and (${f.email} = '' or lower(c.email) = ${f.email})
+          and (${after?.[0] ?? null}::text is null or (c.empresa, c.id) > (${after?.[0] ?? null}::text, ${after?.[1] ?? null}::uuid))
         order by c.empresa, c.id
         limit ${limit} offset ${offset}`;
 }
@@ -1428,7 +1446,8 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
     return rows.map(c => rowToQuote(c, [], [], []));
 }
 
-export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null; folio?: string | null; clienteId?: string | null }) {
+export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null; folio?: string | null; clienteId?: string | null; after?: string[] | null }) {
+    const after = page.after ?? null;
     const folio = String(page.folio ?? '').trim().slice(0, 60);
     const clienteId = page.clienteId ?? null;
     const orgId = await getActiveOrgId();
@@ -1438,15 +1457,23 @@ export async function getCotizacionesPage(page: { limit: number; offset: number;
               and (${folio} = '' or lower(c.folio) = lower(${folio}))
               and (${clienteId}::text is null or c.cliente_id::text = ${clienteId})`,
         sql`select c.*, cl.empresa, cl.terminos_default,
-                   coalesce(c.terminos, cl.terminos_default) as terminos
+                   coalesce(c.terminos, cl.terminos_default) as terminos,
+                   c.created_at::text as _k0, c.id::text as _k1
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
             where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
               and (${folio} = '' or lower(c.folio) = lower(${folio}))
               and (${clienteId}::text is null or c.cliente_id::text = ${clienteId})
+              and (${after?.[0] ?? null}::timestamptz is null or (c.created_at, c.id) < (${after?.[0] ?? null}::timestamptz, ${after?.[1] ?? null}::uuid))
             order by c.created_at desc, c.id desc
-            limit ${page.limit} offset ${page.offset}`);
-    return { items: rows.map(c => rowToQuote(c, [], [], [])), total: Number(count?.n ?? 0) };
+            limit ${page.limit + 1} offset ${after ? 0 : page.offset}`);
+    const visible = rows.slice(0, page.limit);
+    const last = visible[visible.length - 1];
+    return {
+        items: visible.map(c => rowToQuote(c, [], [], [])),
+        total: Number(count?.n ?? 0),
+        nextKeys: rows.length > page.limit && last ? [String(last._k0), String(last._k1)] : null,
+    };
 }
 
 // Detalle con items y timeline. Cuatro queries en un solo batch.

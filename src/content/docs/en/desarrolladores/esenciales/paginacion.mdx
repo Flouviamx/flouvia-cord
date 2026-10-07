@@ -1,68 +1,56 @@
 ---
 title: "Pagination"
 seoTitle: "Pagination in the Cord API"
-description: "Learn to navigate long lists of results in the Cord API."
+description: "Walk through long Cord API lists with a cursor, without skipping or repeating records."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Pagination</h1>
-  <p class="page-subtitle">Efficiently navigate large volumes of data using offset cursors.</p>
+  <p class="page-subtitle">Walk long lists with a cursor: stable even when records are created while you page.</p>
 </header>
 
-## Why do we paginate?
+## Use the cursor
 
-Endpoints that return collections of objects, like listing all your clients or quotes, can return hundreds of thousands of records. To ensure the Cord API is always fast and stable, these endpoints limit the number of objects returned by default (usually 50 or 100) using a pagination model based on `limit` and `offset`.
-
-## Query Parameters
-
-All list reading routes (`GET /api/v1/cotizaciones`, `GET /api/v1/clientes`, `GET /api/v1/productos`) accept the following parameters in the URL:
-
-- `limit`: (Integer) Determines the maximum number of results to return.
-- `offset`: (Integer) Specifies how many results to skip before starting to return data.
-
-**Request Example (Page 2):**
+Every paginated API list (`cotizaciones`, `clientes`, `productos`, `facturas` and `events`) returns `meta.next_cursor`. For the next page, repeat the request with `?cursor=<next_cursor>`. When there are no more pages, `next_cursor` is `null`.
 
 ```bash
-curl -X GET "https://cordhq.app/api/v1/clientes?limit=50&offset=50" \
-     -H "Authorization: Bearer sk_live_tU..."
+curl "https://cordhq.app/api/v1/clientes?limit=50" \
+     -H "Authorization: Bearer sk_test_…"
 ```
-
-## Response Structure (Meta)
-
-All Cord paginated responses return a JSON object with two main properties: `data` (the array of objects) and `meta` (pagination information for your frontend or scripts).
 
 ```json
 {
   "data": [
-    { "id": "cus_123", "empresa": "ACME Corp" },
-    { "id": "cus_124", "empresa": "Stark Ind" }
+    { "id": "6f1c…", "empresa": "ACME Corp" },
+    { "id": "7a2d…", "empresa": "Stark Ind" }
   ],
-  "meta": {
-    "limit": 50,
-    "offset": 50,
-    "total": 142
-  }
+  "meta": { "limit": 50, "offset": 0, "total": 142, "next_cursor": "WyJTdGFyayBJbmQiLCI3YTJk…" }
 }
 ```
-
-- Use `meta.total` to build pagination controls in your UI or to know exactly when to stop a data export script.
-
-## Exceptions: invoices and events use a cursor, not offset
-
-Invoices are listed with **keyset pagination** (`cursor` / `next_cursor`), not `limit`/`offset`. With offset, a new invoice shifts the entire next page and can hide a record without you noticing — unacceptable in a listing that feeds collections or accounting reconciliation.
 
 ```bash
-curl -X GET "https://cordhq.app/api/v1/facturas?limit=50" \
-     -H "Authorization: Bearer sk_live_tU..."
+curl "https://cordhq.app/api/v1/clientes?limit=50&cursor=WyJTdGFyayBJbmQiLCI3YTJk…" \
+     -H "Authorization: Bearer sk_test_…"
 ```
 
-```json
-{
-  "data": [ { "id": "fac_...", "numero": "F-2026-104", "estado": "open" } ],
-  "meta": { "next_cursor": "2026-08-20T14:32:00.000Z" }
+The cursor is an **opaque token**: don't parse or build it, send it back as is. A cursor that doesn't belong to that list returns `400 invalid_cursor`.
+
+## Why a cursor and not offset
+
+With `offset`, a quote created while you walk the list shifts everything by one position: the next page repeats a record, and if one is deleted you skip another without noticing. The cursor points to the last row you saw, so the next page starts exactly after it, with or without writes.
+
+The SDKs do it for you: `listAll()` in `@flouviahq/node` always pages by cursor.
+
+```ts
+for await (const client of cord.clients.listAll()) {
+  // every page, nothing repeated or skipped
 }
 ```
 
-`next_cursor` is the creation date (ISO 8601) of the last row on the page, not an opaque token: repeat the request adding `?cursor=<next_cursor>` to fetch the next one. When there are no more pages, `next_cursor` comes back `null`.
+## `limit` and `offset`
 
-`GET /api/v1/events` also paginates with a cursor, but its `next_cursor` is an **opaque token**: do not parse or build it, just send it back as-is in `?cursor=`. See [Event history through the API](/en/docs/desarrolladores/herramientas/webhooks#event-history-through-the-api).
+- `limit`: results per page (1 to 200, 50 by default).
+- `offset`: still works on `cotizaciones`, `clientes` and `productos` for backward compatibility. If you send `cursor`, it's ignored and `meta.offset` is `null`.
+- `meta.total` counts every record matching the filter; use it to show "142 clients", not to decide when to stop. Use `next_cursor` for that.
+
+`facturas` and `events` only page by cursor. See [Event history through the API](/en/docs/desarrolladores/herramientas/webhooks#event-history-through-the-api).

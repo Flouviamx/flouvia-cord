@@ -1,6 +1,6 @@
 {
   "name": "@flouviahq/cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "CLI de Cord: inicia sesión desde el navegador, configura tu cuenta con IA, integra tu proyecto y prueba webhooks en tu localhost.",
   "type": "module",
   "license": "MIT",

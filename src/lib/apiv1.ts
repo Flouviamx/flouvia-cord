@@ -80,6 +80,27 @@ export function pageParams(url: URL): { limit: number; offset: number } {
     return { limit, offset };
 }
 
+/** Cursor opaco de las listas: la llave de orden de la última fila, tal como la guarda Postgres. */
+export function encodeListCursor(keys: string[]): string {
+    return Buffer.from(JSON.stringify(keys)).toString('base64url');
+}
+
+/** `null` sin cursor; `Response` 400 si el cursor no es de esta lista. */
+export function listCursor(url: URL, arity: number): string[] | null | Response {
+    const raw = url.searchParams.get('cursor');
+    if (!raw) return null;
+    try {
+        const keys = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
+        if (Array.isArray(keys) && keys.length === arity && keys.every((k) => typeof k === 'string' && k.length <= 500)) return keys;
+    } catch { /* cae al error */ }
+    return fail('El cursor no es válido. Usa el next_cursor de la respuesta anterior.', 'invalid_cursor', 400);
+}
+
+/** meta de una lista que admite offset y cursor a la vez. */
+export function listMeta(limit: number, offset: number, total: number, after: string[] | null, nextCursor: string | null) {
+    return { limit, offset: after ? null : offset, total, next_cursor: nextCursor };
+}
+
 // ── Serializadores ───────────────────────────────────────────────────────────
 export async function quoteListItem(q: Quote, orgId: string) {
     return {

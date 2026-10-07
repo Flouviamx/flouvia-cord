@@ -27,7 +27,7 @@ function envelope(op) {
     }
     const data = schema(op.response);
     const props = { data: op.page ? { type: 'array', items: data } : data };
-    if (op.page === 'offset') props.meta = { type: 'object', properties: { limit: { type: 'integer' }, offset: { type: 'integer' }, total: { type: 'integer' } }, required: ['limit', 'offset', 'total'] };
+    if (op.page === 'offset') props.meta = { type: 'object', properties: { limit: { type: 'integer' }, offset: { type: ['integer', 'null'] }, total: { type: 'integer' }, next_cursor: { type: ['string', 'null'] } }, required: ['limit', 'offset', 'total', 'next_cursor'] };
     if (op.page === 'cursor') props.meta = { type: 'object', properties: { next_cursor: { type: ['string', 'null'] } }, required: ['next_cursor'] };
     return {
         description: 'OK',

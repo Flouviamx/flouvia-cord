@@ -149,7 +149,7 @@ export interface Operation {
     page?: 'offset' | 'cursor';
 }
 
-const listQ = { limit: z.number().int().min(1).max(200), offset: z.number().int().min(0) };
+const listQ = { limit: z.number().int().min(1).max(200), offset: z.number().int().min(0), cursor: z.string().describe('Cursor de la página siguiente (meta.next_cursor). Con cursor se ignora offset: es estable aunque haya escrituras concurrentes.') };
 const cursorQ = { limit: z.number().int().min(1).max(200), cursor: z.string() };
 const action = (actions: string[], extra: z.ZodRawShape = {}) => z.object({ action: z.enum(actions as [string, ...string[]]), ...extra });
 
@@ -292,7 +292,7 @@ export const FIELD_DOCS: Record<string, string> = {
     object: 'Tipo de objeto: quote, invoice, client, product, task, promise…',
     object_id: 'ID del objeto al que se refiere.',
     objeto_id: 'ID de una cotización o factura de la sandbox; sin él se usan datos de ejemplo.',
-    offset: 'Cuántos resultados saltar.',
+    offset: 'Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas.',
     opciones: 'Opciones disponibles.',
     org: 'Organización dueña de la llave.',
     pagos: 'Pagos recibidos.',

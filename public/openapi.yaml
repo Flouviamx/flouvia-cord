@@ -251,7 +251,17 @@
               "minimum": 0,
               "maximum": 9007199254740991
             },
-            "description": "Cuántos resultados saltar."
+            "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Cursor de la página siguiente (meta.next_cursor). Con cursor se ignora offset: es estable aunque haya escrituras concurrentes."
+            },
+            "description": "Cursor opaco de la página siguiente; viene en meta.next_cursor."
           },
           {
             "name": "status",
@@ -409,18 +419,29 @@
                           "description": "Resultados por página."
                         },
                         "offset": {
-                          "type": "integer",
-                          "description": "Cuántos resultados saltar."
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
                         },
                         "total": {
                           "type": "integer",
                           "description": "Total con impuestos, en la divisa indicada por moneda."
+                        },
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Cursor de la página siguiente; null si no hay más."
                         }
                       },
                       "required": [
                         "limit",
                         "offset",
-                        "total"
+                        "total",
+                        "next_cursor"
                       ],
                       "description": "Paginación."
                     }
@@ -1635,7 +1656,17 @@
               "minimum": 0,
               "maximum": 9007199254740991
             },
-            "description": "Cuántos resultados saltar."
+            "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Cursor de la página siguiente (meta.next_cursor). Con cursor se ignora offset: es estable aunque haya escrituras concurrentes."
+            },
+            "description": "Cursor opaco de la página siguiente; viene en meta.next_cursor."
           },
           {
             "name": "q",
@@ -1775,18 +1806,29 @@
                           "description": "Resultados por página."
                         },
                         "offset": {
-                          "type": "integer",
-                          "description": "Cuántos resultados saltar."
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
                         },
                         "total": {
                           "type": "integer",
                           "description": "Total con impuestos, en la divisa indicada por moneda."
+                        },
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Cursor de la página siguiente; null si no hay más."
                         }
                       },
                       "required": [
                         "limit",
                         "offset",
-                        "total"
+                        "total",
+                        "next_cursor"
                       ],
                       "description": "Paginación."
                     }
@@ -2362,7 +2404,17 @@
               "minimum": 0,
               "maximum": 9007199254740991
             },
-            "description": "Cuántos resultados saltar."
+            "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Cursor de la página siguiente (meta.next_cursor). Con cursor se ignora offset: es estable aunque haya escrituras concurrentes."
+            },
+            "description": "Cursor opaco de la página siguiente; viene en meta.next_cursor."
           }
         ],
         "x-cord-scope": "read",
@@ -2494,18 +2546,29 @@
                           "description": "Resultados por página."
                         },
                         "offset": {
-                          "type": "integer",
-                          "description": "Cuántos resultados saltar."
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Cuántos resultados saltar. Para recorrer listas grandes usa cursor: offset puede saltar o repetir registros si hay escrituras mientras paginas."
                         },
                         "total": {
                           "type": "integer",
                           "description": "Total con impuestos, en la divisa indicada por moneda."
+                        },
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Cursor de la página siguiente; null si no hay más."
                         }
                       },
                       "required": [
                         "limit",
                         "offset",
-                        "total"
+                        "total",
+                        "next_cursor"
                       ],
                       "description": "Paginación."
                     }

@@ -96,6 +96,23 @@ export const POST = proxy;
 
 The proxy only serves the configuration, the catalog, quote creation and, if you authorize it, the client directory; only from your origin, and it sanitizes the quote the same way a publishable key does.
 
+### Give the proxy a restricted key
+
+The proxy doesn't need a Secret Key with every permission. Create a **restricted key** (`rk_`) in Developers › API with only this:
+
+| Resource | Level | What for |
+|---|---|---|
+| `elements` | write | Configuration and AI line drafting |
+| `productos` | read | The Builder's catalog |
+| `cotizaciones` | write | Creating the quote |
+| `clientes` | read | Only if you use `authorizeClients` |
+
+If your server is compromised, that key can't read invoices, collections or webhooks. You can also pin your server's IPs and give it an expiry. `createElementsProxy` accepts an `rk_` just like an `sk_`.
+
+## Request log
+
+Every API call is recorded in **Developers › Logs**: method, path, status, duration, IP and key. Look up a `CordError`'s `requestId` there to see what Cord received.
+
 ## Test mode
 
 With an `sk_test_` you can trigger what a third party does in production, through the same code as production:

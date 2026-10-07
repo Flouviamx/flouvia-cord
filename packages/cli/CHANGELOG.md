@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- `cord init` en Laravel, Django, Flask y FastAPI deja un verificador de firma sin dependencias en lugar de sugerir los SDK de PHP y Python, que todavía no están publicados.
+
 ## 1.2.0
 
 - `npx @flouviahq/cli` sin comando abre el asistente: conecta la terminal, configura la cuenta con IA, integra el proyecto (instala el SDK con tu gestor de paquetes, crea las rutas y escribe el `.env`) y deja los webhooks escuchando, con menús, indicadores de progreso y un resumen final.

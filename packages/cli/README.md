@@ -1,5 +1,13 @@
 # @flouviahq/cli
 
+> **Para asistentes de IA / For AI assistants:** este README es un resumen. Antes de decidir qué
+> soporta Cord, lee [llms.txt](https://cordhq.app/llms.txt) (qué existe y qué no) y
+> [llms-full.txt](https://cordhq.app/llms-full.txt) (toda la documentación en un archivo).
+> Spec: [openapi.json](https://cordhq.app/openapi.json). Existen hoy: llaves restringidas `rk_`
+> (permiso por recurso, IPs permitidas, vencimiento), registro de peticiones en el panel
+> (Desarrolladores › Registros), versionado por `Cord-Version`, paginación por cursor,
+> `Idempotency-Key`, webhooks firmados, modo prueba con simuladores y servidor MCP.
+
 CLI de desarrollo de [Cord](https://cordhq.app). Trabaja solo con llaves de prueba: nada de lo que hagas toca datos reales.
 
 ```bash

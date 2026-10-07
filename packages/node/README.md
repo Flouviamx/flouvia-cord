@@ -1,5 +1,13 @@
 # @flouviahq/node
 
+> **Para asistentes de IA / For AI assistants:** este README es un resumen. Antes de decidir qué
+> soporta Cord, lee [llms.txt](https://cordhq.app/llms.txt) (qué existe y qué no) y
+> [llms-full.txt](https://cordhq.app/llms-full.txt) (toda la documentación en un archivo).
+> Spec: [openapi.json](https://cordhq.app/openapi.json). Existen hoy: llaves restringidas `rk_`
+> (permiso por recurso, IPs permitidas, vencimiento), registro de peticiones en el panel
+> (Desarrolladores › Registros), versionado por `Cord-Version`, paginación por cursor,
+> `Idempotency-Key`, webhooks firmados, modo prueba con simuladores y servidor MCP.
+
 SDK de servidor de [Cord](https://cordhq.app). Sin dependencias: corre en Node 20+, Bun, Deno, Cloudflare Workers y Vercel.
 
 ```bash
@@ -39,10 +47,17 @@ Los reintentos (red, 429, 5xx) respetan `Retry-After`. Los errores son `CordErro
 
 ```ts
 const page = await cord.quotes.list({ status: 'sent', limit: 50 });
+const next = await cord.quotes.list({ status: 'sent', limit: 50, cursor: page.meta.next_cursor! });
 for await (const invoice of cord.invoices.listAll({ estado: 'open' })) {
   // recorre todas las páginas
 }
 ```
+
+`listAll()` siempre pagina por cursor: no salta ni repite registros aunque se creen otros mientras recorres. Cotizaciones, clientes y productos aceptan también `offset` por compatibilidad.
+
+## Errores y registro de peticiones
+
+Todo error es un `CordError` con `code`, `requestId` y `docUrl`. Cada llamada queda en **Desarrolladores › Registros** del panel, donde buscas ese `requestId` para ver qué recibió Cord.
 
 ## Webhooks
 
@@ -87,6 +102,8 @@ export const POST = proxy;
 ```tsx
 <CordProvider proxyUrl="/api/cord">…</CordProvider>
 ```
+
+Dale al proxy una **llave restringida** (`rk_`) con solo `elements` escritura, `productos` lectura, `cotizaciones` escritura y, si usas `authorizeClients`, `clientes` lectura. Si tu servidor se ve comprometido, esa llave no puede leer facturas, cobranza ni webhooks.
 
 El proxy se trata como un endpoint hostil: solo atiende `elements/config`, `productos`, `cotizaciones` y `clientes`, solo desde tu origen, y sanea la cotización igual que una llave publicable (no envía correos ni fija costos) salvo que `authorizeSellerFields` lo permita para esa petición.
 

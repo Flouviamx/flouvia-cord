@@ -34,11 +34,12 @@ describe('Cord (cliente de servidor)', () => {
         expect((fetch.mock.calls[0] as any)[1].headers['Idempotency-Key']).toBeUndefined();
     });
 
-    it('autopagina por offset y por cursor', async () => {
+    it('autopagina siempre por cursor, también en las listas que aceptan offset', async () => {
         const fetch = vi.fn(async (u: URL) => {
             if (u.pathname.endsWith('/clientes')) {
-                const offset = Number(u.searchParams.get('offset'));
-                return json({ data: offset === 0 ? [{ id: 1 }, { id: 2 }] : [{ id: 3 }], meta: { limit: 200, offset, total: 3 } });
+                expect(u.searchParams.get('offset')).toBeNull();
+                const cursor = u.searchParams.get('cursor');
+                return json({ data: cursor ? [{ id: 3 }] : [{ id: 1 }, { id: 2 }], meta: { limit: 200, offset: cursor ? null : 0, total: 3, next_cursor: cursor ? null : 'k2' } });
             }
             const cursor = u.searchParams.get('cursor');
             return json({ data: cursor ? [{ id: 'b' }] : [{ id: 'a' }], meta: { next_cursor: cursor ? null : 'c1' } });

@@ -2,7 +2,13 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
-## [2.0.1] — sin publicar
+## [2.0.2] — sin publicar
+
+### Docs
+
+- El README abre con un bloque para asistentes de IA que apunta a `llms.txt`, `llms-full.txt` y el OpenAPI, y resume lo que Cord ya tiene (llaves restringidas, registro de peticiones, versionado, paginación por cursor).
+
+## [2.0.1] — 2026-10-06
 
 ### Changed
 
@@ -44,7 +50,9 @@ se separa en `@flouviahq/node`.
 - El relay del iframe solo acepta los eventos conocidos y acota la altura.
 - Todo appearance pasa por el validador por gramática antes de llegar a CSS.
 
-## [1.1.0] — sin publicar
+## [1.1.0] — nunca publicada
+
+Estos cambios no salieron como 1.1.0: se publicaron dentro de la 2.0.0. Se conservan aquí como registro de qué cambió y por qué.
 
 ### Security
 

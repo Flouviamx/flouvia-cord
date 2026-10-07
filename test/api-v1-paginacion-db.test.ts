@@ -112,3 +112,44 @@ describe('búsquedas para integraciones', () => {
         expect((await getCotizacionesPage({ limit: 5, offset: 0, status: null, folio: 'COT-' })).total).toBe(0);
     });
 });
+
+describe('paginación por cursor', () => {
+    async function recorrer<T extends { id: string }>(fetch: (after: string[] | null) => Promise<{ items: T[]; nextKeys: string[] | null }>) {
+        const vistos: T[] = [];
+        let after: string[] | null = null;
+        for (let i = 0; i < 50; i++) {
+            const page = await fetch(after);
+            vistos.push(...page.items);
+            if (!page.nextKeys) break;
+            after = page.nextKeys;
+        }
+        return vistos;
+    }
+
+    it('cotizaciones: recorre todo sin repetir aunque dos filas compartan el mismo instante', async () => {
+        await m.db.exec(`insert into cotizaciones(org_id, folio, status, total, created_at)
+            select '${A}', 'GEMELA-' || g, 'draft', 1, '2026-01-01 00:00:00.123456+00' from generate_series(1, 3) g`);
+        const total = (await getCotizacionesPage({ limit: 500, offset: 0, status: null })).total;
+        const todas = await recorrer((after) => getCotizacionesPage({ limit: 2, offset: 0, status: null, after }));
+        expect(todas).toHaveLength(total);
+        expect(new Set(todas.map((q) => q.id)).size).toBe(total);
+    });
+
+    it('cotizaciones: una fila nueva a media paginación no desplaza a las demás', async () => {
+        const p1 = await getCotizacionesPage({ limit: 3, offset: 0, status: null });
+        await m.db.exec(`insert into cotizaciones(org_id, folio, status, total, created_at) values ('${A}', 'NUEVA', 'draft', 1, now() + interval '1 hour')`);
+        const conCursor = await getCotizacionesPage({ limit: 3, offset: 0, status: null, after: p1.nextKeys });
+        const conOffset = await getCotizacionesPage({ limit: 3, offset: 3, status: null });
+        expect(conCursor.items.map((q) => q.id)).not.toContain(p1.items[2].id);
+        expect(conOffset.items.map((q) => q.id)).toContain(p1.items[2].id);
+    });
+
+    it('clientes y productos: el cursor recorre la lista completa en orden', async () => {
+        const clientes = await recorrer((after) => getClientesPage({ limit: 2, offset: 0, after }));
+        expect(clientes.map((c) => c.empresa)).toEqual((await getClientesPage({ limit: 100, offset: 0 })).items.map((c) => c.empresa));
+        await m.db.exec(`insert into productos(org_id, nombre, activo) values ('${A}', 'Archivado', false), ('${A}', 'Aaa activo', true)`);
+        const productos = await recorrer((after) => getProductosPage({ limit: 1, offset: 0, after }));
+        expect(productos.map((p) => p.nombre)).toEqual((await getProductosPage({ limit: 100, offset: 0 })).items.map((p) => p.nombre));
+        expect(productos[productos.length - 1].nombre).toBe('Archivado');
+    });
+});

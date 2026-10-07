@@ -1,6 +1,12 @@
 # Changelog
 
-## [1.0.0] — sin publicar
+## [1.1.0] — sin publicar
+
+- `quotes.listAll()`, `clients.listAll()` y `products.listAll()` recorren por cursor: no saltan ni repiten registros aunque haya escrituras mientras paginas.
+- `list()` de cotizaciones, clientes y productos acepta `cursor`, y `meta` trae `next_cursor` (con cursor, `offset` llega `null`). Pedir por `offset` sigue funcionando igual.
+- `clients.list()` acepta `q` y `email`.
+
+## [1.0.0] — 2026-10-05
 
 Primera versión. Reemplaza a `@flouviahq/elements/server`.
 

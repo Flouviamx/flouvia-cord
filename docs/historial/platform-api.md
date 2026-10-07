@@ -6,6 +6,20 @@
 
 ---
 
+✅ **Que una IA no se pierda + paginación por cursor (6 oct 2026)** — otra IA evaluó Cord
+leyendo solo el README de npm y concluyó que faltaban cosas que sí existen (llaves `rk_`,
+registro de peticiones). Lo que cambió:
+   • `llms-full.txt` y `llms-full.es.txt`: toda la documentación en un archivo, prerenderizada
+     desde la colección `docs` (no puede quedarse atrás). `llms.txt` abre con qué existe y qué
+     no, y los README de npm empiezan con un bloque que apunta ahí.
+   • Cotizaciones, clientes y productos paginan por cursor (keyset sobre la llave de orden
+     con la precisión de Postgres: `created_at::text`, no un `Date` de JS que pierde los
+     microsegundos). `offset` sigue funcionando; `meta` trae `next_cursor` siempre y `offset`
+     llega `null` con cursor. `listAll()` de `@flouviahq/node` 1.1.0 ya va por cursor.
+   • `cord init` dejó de sugerir los SDK de Python y PHP (no publicados) y deja un verificador
+     de firma sin dependencias, probado contra una firma real del SDK de Node.
+   • CHANGELOG con fechas reales de npm; la 1.1.0 de Elements nunca salió (está en la 2.0.0).
+
 ✅ **Asistente del CLI (6 oct 2026)** — `npx @flouviahq/cli` sin comando abre un asistente con
 menús y progreso (`@clack/prompts`, empaquetado por esbuild: el paquete publicado sigue sin
 dependencias). Decisiones:
