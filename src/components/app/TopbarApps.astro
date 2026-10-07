@@ -40,7 +40,7 @@ import { iconInner } from '../../lib/icons';
 <div class="tb-apps-wrap">
     <button class:list={['tb-apps', { 'has-apps': CONECTADAS.length > 0 }]} id="tbAppsBtn" type="button"
             title={t(L, 'topbar.apps.titulo')} aria-label={t(L, 'topbar.apps.titulo')}
-            aria-haspopup="menu" aria-expanded="false">
+            aria-haspopup="menu" aria-expanded="false" aria-controls="tbAppsPanel">
         {LOGOS.length > 0 && (
             <span class="tb-apps-logos" aria-hidden="true">
                 {LOGOS.map(({ app }) => (
@@ -172,25 +172,16 @@ import { iconInner } from '../../lib/icons';
 </style>
 
 <script>
+    import { wireTopbarMenu } from '../../lib/topbar-menu';
+
     function initTopbarApps() {
         const btn = document.getElementById('tbAppsBtn');
         const panel = document.getElementById('tbAppsPanel');
         if (!btn || !panel) return;
 
-        const cerrar = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const abierto = !panel.hidden;
-            // Cierra lo demás de la topbar antes de abrir: dos paneles abiertos
-            // a la vez se tapan entre sí.
-            document.getElementById('notifPanel')?.setAttribute('hidden', '');
-            panel.hidden = abierto;
-            btn.setAttribute('aria-expanded', String(!abierto));
-        });
-        document.addEventListener('click', (e) => {
-            if (!panel.hidden && !panel.contains(e.target as Node) && e.target !== btn) cerrar();
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrar(); });
+        // Mismo contrato que Crear y Notificaciones: uno abierto a la vez y
+        // teclado de menú (src/lib/topbar-menu.ts).
+        wireTopbarMenu(btn, panel, { id: 'apps' });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTopbarApps);
     else initTopbarApps();

@@ -210,6 +210,20 @@ hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la a
   asiento (`INCLUDED[plan].usuarios`). Abre el modal de Ajustes › Equipo con `?invitar=1`.
 - **MISMO material glass que la pill de la topbar (regla, jul 2026; tokens oct 2026):** la sidebar y la `.topbar` leen los MISMOS tokens: `--sb-bg` (blanco al 72% en claro, navy al 75% en oscuro), `--sb-shadow` y `--sb-bg-solid` (respaldo del `@supports not` cuando no hay blur), con `blur(40px) saturate(1.8)` y radio 22px. Antes cada una repetía los valores a mano y los tokens `--sb-bg`/`--sb-shadow` existían sin consumidor, con valores que ya no eran los reales. Un cambio de material se hace en el token, no en una de las dos pills. ⚠️ **No re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el token `--sb-sheen` se retiró en oct 2026 porque ya solo valía `transparent`.
 
+### Topbar (AppLayout)
+- **Menús desplegables con un solo contrato** (`src/lib/topbar-menu.ts`, oct 2026): Crear,
+  Notificaciones y Apps se abren de a uno (abrir uno cierra los demás y actualiza su
+  `aria-expanded`). Los `role="menu"` se manejan con teclado: Enter/Espacio o flecha abajo
+  enfocan el primer ítem, flechas/Home/End recorren, Escape cierra y devuelve el foco al
+  botón. Notificaciones es `role="dialog"` (es una lista de enlaces, no un menú). Un menú
+  nuevo en la topbar usa `wireTopbarMenu()`, no su propio juego de listeners.
+- **⌘K** es un combobox con `listbox`: la selección se mueve sin redibujar la lista, el foco
+  no sale del buscador y vuelve al botón al cerrar. La búsqueda al servidor espera 140 ms y
+  descarta respuestas de una consulta anterior. Clientes y productos abren su ficha.
+- **Tecla modificadora real:** ⌘ en Mac y Ctrl en el resto (`data-mod-key`).
+- **Móvil:** el tema se cambia desde la fila del drawer (`#sbTheme`) y la guía de
+  configuración minimizada conserva su píldora (solo el anillo).
+
 ### Base mobile-first de la app (ago 2026)
 
 - `src/styles/mobile-app.css` es la última capa responsive de `AppLayout` y solo actúa

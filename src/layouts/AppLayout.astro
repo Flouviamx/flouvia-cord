@@ -212,7 +212,7 @@ import { iconInner } from '../lib/icons';
                     <button class="tb-search" id="cmdkOpen" type="button" aria-label={t(L, 'layout.aria.buscar_cmdk')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                         <span class="tb-search-label">{t(L, 'topbar.buscar')}</span>
-                        <kbd class="tb-kbd">⌘K</kbd>
+                        <kbd class="tb-kbd" data-mod-key>⌘K</kbd>
                     </button>
 
                     <div class="tb-right">
@@ -227,7 +227,7 @@ import { iconInner } from '../lib/icons';
                         )}
                         {canCreateAny && (
                             <div class="tb-create-wrap">
-                                <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false">
+                                <button class="tb-create" id="tbCreate" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="tbCreateMenu">
                                     <svg class="tb-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                                     <span>{t(L, 'layout.crear')}</span>
                                     <svg class="tb-create-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
@@ -266,23 +266,23 @@ import { iconInner } from '../lib/icons';
                         )}
                         {appsCtx && <TopbarApps lang={L} ctx={appsCtx} />}
                         <div class="tb-notif-wrap">
-                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="menu" aria-expanded="false">
+                            <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="dialog" aria-expanded="false" aria-controls="notifPanel">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg>
                                 <span class="tb-notif-dot" id="notifDot" hidden></span>
                             </button>
-                            <div class="notif-panel" id="notifPanel" role="menu" hidden>
+                            <div class="notif-panel" id="notifPanel" role="dialog" aria-label={t(L, 'layout.notif.titulo')} hidden>
                                 <div class="notif-head">
                                     <strong>{t(L, 'layout.notif.titulo')}</strong>
                                     <button type="button" id="notifMarkAll" class="notif-mark">{t(L, 'layout.notif.marcar_leidas')}</button>
                                 </div>
                                 <div class="notif-list" id="notifList"></div>
-                                <a class="notif-foot" href="/app">{t(L, 'layout.notif.ver_todo')}</a>
+                                <a class="notif-foot" href="/app#actividad">{t(L, 'layout.notif.ver_todo')}</a>
                             </div>
                         </div>
                         <button class="tb-icon tb-help" id="helpBtn" type="button" title={t(L, 'layout.aria.ayuda')} aria-label={t(L, 'layout.aria.ayuda')} aria-haspopup="dialog" aria-expanded="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg>
                         </button>
-                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.aria.tema')} aria-label={t(L, 'layout.aria.cambiar_tema')}>
+                        <button class="tb-icon tb-theme" id="themeBtn" type="button" title={t(L, 'layout.aria.tema')} aria-label={t(L, 'layout.aria.tema')} aria-pressed="false">
                             <svg class="tb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
                             <svg class="tb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
                         </button>
@@ -421,10 +421,10 @@ import { iconInner } from '../lib/icons';
             <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.cmdk.aria')}>
                 <div class="cmdk-input-row">
                     <svg class="cmdk-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                    <input id="cmdkInput" type="text" placeholder={t(L, 'layout.cmdk.placeholder')} autocomplete="off" spellcheck="false" />
+                    <input id="cmdkInput" type="text" placeholder={t(L, 'layout.cmdk.placeholder')} autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="cmdkResults" aria-autocomplete="list" aria-label={t(L, 'layout.cmdk.aria')} />
                     <kbd class="cmdk-esc">ESC</kbd>
                 </div>
-                <div class="cmdk-results" id="cmdkResults"></div>
+                <div class="cmdk-results" id="cmdkResults" role="listbox" aria-label={t(L, 'layout.cmdk.aria')}></div>
                 <div class="cmdk-foot">
                     <span><kbd>↑</kbd><kbd>↓</kbd> {t(L, 'layout.cmdk.navegar')}</span>
                     <span><kbd>↵</kbd> {t(L, 'layout.cmdk.abrir')}</span>
@@ -494,8 +494,8 @@ import { iconInner } from '../lib/icons';
             <div class="kbd-help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.kbd.titulo')}>
                 <div class="kbd-help-head"><strong>{t(L, 'layout.kbd.titulo')}</strong><kbd>esc</kbd></div>
                 <div class="kbd-help-body">
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.armar_ia')}</span><span><kbd>C</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd data-mod-key>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cotizacion')}</span><span><kbd>C</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>
                     {/* Navegación: mismas teclas que muestra la sidebar (src/lib/sidebar-nav.ts). */}
                     {sidebarShortcuts().map((it) => (
@@ -889,7 +889,9 @@ import { iconInner } from '../lib/icons';
     .tb-notif-wrap { position: relative; }
     .tb-notif-dot {
         position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
-        background: var(--color-danger); border: 1.5px solid #fff;
+        background: var(--color-danger);
+        /* Aro del color de la topbar (no blanco fijo: en oscuro se veía un aro blanco). */
+        box-shadow: 0 0 0 1.5px var(--sb-bg-solid);
     }
     .tb-notif-dot[hidden] { display: none; }
     .notif-panel {
@@ -1704,14 +1706,18 @@ import { iconInner } from '../lib/icons';
         .tb-search:hover { background: var(--color-bg-soft); box-shadow: none; }
         .tb-search svg { width: 18px; height: 18px; }
         .tb-search-label, .tb-kbd { display: none; }
-        /* Topbar móvil = solo lupa + notificaciones. Crear, engrane, ayuda y guía pasan al drawer. */
+        /* Topbar móvil = lupa, guía (solo el anillo), crear, apps y notificaciones.
+           Engrane, ayuda y tema viven en el drawer. */
         .tb-notif-wrap { display: inline-flex; }
         .tb-gear, .tb-help, .tb-theme { display: none; }
         .tb-create {
             width: 36px; height: 36px; border-radius: 50%; padding: 0; justify-content: center;
         }
         .tb-create span, .tb-create-caret { display: none; }
-        .onb-pill { display: none; }
+        /* La guía minimizada vive en esta píldora: ocultarla en móvil dejaba la guía
+           inalcanzable. Se queda solo el anillo de progreso. */
+        .onb-pill { padding: 3px; gap: 0; }
+        .onb-pill-label { display: none; }
         /* El panel de notificaciones a ancho casi completo */
         .notif-panel { width: min(340px, calc(100vw - 1.5rem)); }
         .ph-pin { display: none; }
@@ -1728,7 +1734,9 @@ import { iconInner } from '../lib/icons';
 <script>
     import { iconInner, iconSvg } from '../lib/icons';
     import { normalizeText, tokenize, scoreDoc } from '../lib/help-search';
+    import { wireTopbarMenu } from '../lib/topbar-menu';
     const mobileUi = () => window.matchMedia('(max-width: 880px)').matches;
+    const escAttr = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
     // ── Salir del entorno de prueba (banner ámbar) ──
     // Limpia la cookie (fuente de verdad server-side) + el espejo en localStorage
@@ -1832,14 +1840,15 @@ import { iconInner } from '../lib/icons';
             }
             if (ent) {
                 (ent.cotizaciones || []).forEach((c: any) => list.push({ group: G.cotizaciones, title: `${c.folio} · ${c.cliente}`, href: `/app/cotizaciones/${c.id}`, icon: I.doc }));
-                (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: '/app/clientes', icon: I.users }));
-                (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: '/app/productos', icon: I.box }));
+                (ent.clientes || []).forEach((c: any) => list.push({ group: G.clientes, title: c.empresa, href: `/app/clientes/${encodeURIComponent(c.id)}`, icon: I.users }));
+                (ent.productos || []).forEach((p: any) => list.push({ group: G.productos, title: p.sku ? `${p.nombre} · ${p.sku}` : p.nombre, href: `/app/productos/${encodeURIComponent(p.id)}`, icon: I.box }));
             }
             staticMatches(q).forEach((c) => list.push(c));
             return list;
         };
         const paint = (q = '') => {
             if (!items.length) {
+                input.removeAttribute('aria-activedescendant');
                 const noResults = (I18N.cmdkSinResultados || 'Sin resultados para “{q}”').replace('{q}', esc(q));
                 const hint = I18N.cmdkSugerencia || 'Prueba con un folio, cliente, producto o sección.';
                 results.innerHTML = `<div class="cmdk-empty">${iconSvg('search')}<p>${noResults}</p><span>${hint}</span></div>`;
@@ -1851,43 +1860,80 @@ import { iconInner } from '../lib/icons';
                 const right = it.kbd ? `<kbd class="cmdk-kbd">${esc(it.kbd)}</kbd>`
                     : it.hint ? `<span class="cmdk-hint">${esc(it.hint)}</span>`
                     : it.sub ? `<span class="cmdk-hint">${esc(it.sub)}</span>` : '';
-                html += `<button class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span>${right}</button>`;
+                html += `<button type="button" tabindex="-1" role="option" id="cmdkOpt${i}" aria-selected="${i === sel}" class="cmdk-item ${i === sel ? 'sel' : ''}" data-i="${i}"><span class="cmdk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.icon}</svg></span><span class="cmdk-item-body"><span class="cmdk-item-title">${esc(it.title)}</span></span>${right}</button>`;
             });
             results.innerHTML = html;
+            input.setAttribute('aria-activedescendant', `cmdkOpt${sel}`);
             results.querySelector('.cmdk-item.sel')?.scrollIntoView({ block: 'nearest' });
         };
-        const render = async (q: string) => {
+        // Mover la selección sin redibujar la lista. Redibujar en cada mousemove
+        // re-creaba todos los botones y desplazaba la lista sola cerca del borde.
+        const select = (i: number, scroll: boolean) => {
+            if (!items.length) return;
+            const next = Math.max(0, Math.min(i, items.length - 1));
+            results.querySelector('.cmdk-item.sel')?.classList.remove('sel');
+            results.querySelector('[aria-selected="true"]')?.setAttribute('aria-selected', 'false');
+            sel = next;
+            const el = document.getElementById(`cmdkOpt${sel}`);
+            el?.classList.add('sel');
+            el?.setAttribute('aria-selected', 'true');
+            input.setAttribute('aria-activedescendant', `cmdkOpt${sel}`);
+            if (scroll) el?.scrollIntoView({ block: 'nearest' });
+        };
+        // Cada tecla invalida las búsquedas en vuelo (antes solo las de 2+ letras:
+        // borrar de "acm" a "a" dejaba que la respuesta de "acm" pintara encima) y
+        // la consulta al servidor espera a que se deje de escribir.
+        let searchTimer = 0;
+        const render = (q: string) => {
+            const my = ++seq;
             items = buildItems(q, null); sel = 0; paint(q);
-            if (q.trim().length >= 2) {
-                const my = ++seq;
+            clearTimeout(searchTimer);
+            if (q.trim().length < 2) return;
+            searchTimer = window.setTimeout(async () => {
                 try {
                     const res = await fetch('/api/search?q=' + encodeURIComponent(q.trim()));
                     const data = await res.json();
                     if (my !== seq) return;
                     items = buildItems(q, data); sel = 0; paint(q);
-                } catch { /* ignora */ }
-            }
+                } catch { /* sin red: se quedan los resultados locales */ }
+            }, 140);
         };
         const activate = (i: number) => {
             const it = items[i];
             if (!it) return;
-            if (typeof it.run === 'function') { close(); it.run(); return; }
-            if (it.href) { pushRecent(it); close(); window.location.href = it.href; }
+            if (typeof it.run === 'function') { close(false); it.run(); return; }
+            if (it.href) { pushRecent(it); close(false); window.location.href = it.href; }
         };
-        const open = () => { (cmdk as HTMLElement).hidden = false; document.body.style.overflow = 'hidden'; input.value = ''; render(''); setTimeout(() => input.focus(), 20); };
-        const close = () => { (cmdk as HTMLElement).hidden = true; document.body.style.overflow = ''; };
+        // El foco vuelve a donde estaba al cerrar (botón de búsqueda o la página).
+        let returnFocus: HTMLElement | null = null;
+        const open = () => {
+            returnFocus = document.activeElement as HTMLElement | null;
+            (cmdk as HTMLElement).hidden = false; document.body.style.overflow = 'hidden';
+            input.value = ''; render(''); setTimeout(() => input.focus(), 20);
+        };
+        const close = (restore = true) => {
+            if ((cmdk as HTMLElement).hidden) return;
+            (cmdk as HTMLElement).hidden = true; document.body.style.overflow = '';
+            clearTimeout(searchTimer); seq++;
+            if (restore) returnFocus?.focus?.();
+        };
 
         input.addEventListener('input', () => render(input.value));
         results.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) activate(parseInt(b.dataset.i!, 10)); });
-        results.addEventListener('mousemove', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) { const i = parseInt(b.dataset.i!, 10); if (i !== sel) { sel = i; paint(); } } });
+        results.addEventListener('mousemove', (e) => { const b = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement; if (b) { const i = parseInt(b.dataset.i!, 10); if (i !== sel) select(i, false); } });
+        // El buscador es lo único enfocable del diálogo: Tab no se escapa a la página de atrás.
+        results.addEventListener('mousedown', (e) => e.preventDefault());
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); paint(); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1, true); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); select(sel - 1, true); }
+            else if (e.key === 'Home' && e.ctrlKey) { e.preventDefault(); select(0, true); }
+            else if (e.key === 'End' && e.ctrlKey) { e.preventDefault(); select(items.length - 1, true); }
             else if (e.key === 'Enter') { e.preventDefault(); activate(sel); }
+            else if (e.key === 'Tab') { e.preventDefault(); }
         });
 
         document.getElementById('cmdkOpen')?.addEventListener('click', open);
-        document.getElementById('cmdkBackdrop')?.addEventListener('click', close);
+        document.getElementById('cmdkBackdrop')?.addEventListener('click', () => close());
         document.addEventListener('keydown', (e) => {
             if (!mobileUi() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (cmdk as HTMLElement).hidden ? open() : close(); }
             else if (e.key === 'Escape' && !(cmdk as HTMLElement).hidden) { close(); }
@@ -1896,19 +1942,25 @@ import { iconInner } from '../lib/icons';
 
 
     // ── Tema claro / oscuro (persistente, sin flash; el <head> lo aplica al cargar) ──
+    // Dos disparadores: el botón de la topbar (escritorio) y la fila del drawer
+    // (móvil). En móvil el de la topbar está oculto y antes no había otro: el
+    // tema no se podía cambiar desde el celular.
     function initTheme() {
-        const btn = document.getElementById('themeBtn');
-        if (!btn) return;
-        btn.addEventListener('click', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (isDark) { document.documentElement.removeAttribute('data-theme'); try { localStorage.setItem('cord.theme', 'light'); } catch (e) {} }
-            else { document.documentElement.setAttribute('data-theme', 'dark'); try { localStorage.setItem('cord.theme', 'dark'); } catch (e) {} }
-            // Reposiciona el indicador del sidebar por si cambió alguna métrica.
-            window.dispatchEvent(new Event('resize'));
-        });
+        const root = document.documentElement;
+        const btns = ['themeBtn', 'sbTheme'].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+        const sync = () => {
+            const dark = root.getAttribute('data-theme') === 'dark';
+            btns.forEach((b) => b.setAttribute('aria-pressed', String(dark)));
+        };
+        const toggle = () => {
+            const isDark = root.getAttribute('data-theme') === 'dark';
+            if (isDark) { root.removeAttribute('data-theme'); try { localStorage.setItem('cord.theme', 'light'); } catch (e) {} }
+            else { root.setAttribute('data-theme', 'dark'); try { localStorage.setItem('cord.theme', 'dark'); } catch (e) {} }
+            sync();
+        };
+        btns.forEach((b) => b.addEventListener('click', toggle));
+        sync();
     }
-
-    // ── Indicador deslizante del sidebar (segmented control tipo iOS) ──
 
 
     // ── window.cordWireModal(dlg) — chrome de <dialog class="modal"> (src/styles/modal.css) ──
@@ -2066,18 +2118,23 @@ import { iconInner } from '../lib/icons';
             clearInterval(timer);
             timer = window.setInterval(() => { prog = Math.min(prog + Math.random() * 12, 90); (bar as HTMLElement).style.width = prog + '%'; }, 220);
         };
-        const done = () => { clearInterval(timer); bar.classList.remove('active'); (bar as HTMLElement).style.width = '0'; };
-        document.addEventListener('click', (e) => {
-            const a = (e.target as HTMLElement).closest('a');
-            if (!a) return;
-            const href = a.getAttribute('href');
-            if (!href || href.startsWith('#') || a.target === '_blank' || a.hasAttribute('download')) return;
-            if (e.metaKey || e.ctrlKey || e.shiftKey || (e as MouseEvent).button !== 0) return;
-            try { const u = new URL(a.href); if (u.origin !== location.origin) return; if (u.pathname === location.pathname && u.search === location.search) return; } catch { return; }
-            start();
-        });
+        const done = () => { clearInterval(timer); clearTimeout(safety); bar.classList.remove('active'); (bar as HTMLElement).style.width = '0'; };
+        // Respaldo: si seguimos aquí, la navegación no ocurrió (un mailto:, un
+        // protocolo externo, un "salir sin guardar" cancelado que no se detectó).
+        let safety = 0;
+        const arm = () => { clearTimeout(safety); safety = window.setTimeout(done, 10000); };
+        // Arranca en `beforeunload`, que cubre enlaces, formularios y navegaciones
+        // por script (⌘K, atajos). Antes también arrancaba con cada clic, y si una
+        // página preguntaba "¿salir sin guardar?" y se cancelaba, la barra se
+        // quedaba al 90 % hasta recargar. Se registra al final (después de los
+        // guardas de las páginas) para ver si alguno canceló con preventDefault.
+        window.setTimeout(() => {
+            window.addEventListener('beforeunload', (e) => {
+                if (e.defaultPrevented) return;
+                start(); arm();
+            });
+        }, 0);
         window.addEventListener('pageshow', done);
-        window.addEventListener('beforeunload', start);
     }
 
     // ── Utilidades Globales ──
@@ -2112,10 +2169,9 @@ import { iconInner } from '../lib/icons';
                 const unread = n.ts > seen ? ' unread' : '';
                 const tone = TONE[n.tipo] ? ' ' + TONE[n.tipo] : '';
                 const icon = ICONS[n.icon] || ICONS.doc;
-                return `<a class="notif-item${unread}" href="${n.href}"><span class="notif-ico${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span class="notif-body"><span class="notif-title">${esc(n.title)}</span><span class="notif-sub">${esc(n.sub)}</span><span class="notif-when">${esc(n.cuando)}</span></span></a>`;
+                return `<a class="notif-item${unread}" href="${escAttr(n.href)}"><span class="notif-ico${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span class="notif-body"><span class="notif-title">${esc(n.title)}</span><span class="notif-sub">${esc(n.sub)}</span><span class="notif-when">${esc(n.cuando)}</span></span></a>`;
             }).join('');
         };
-        const closeP = () => { (panel as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); };
         const load = async () => {
             list.innerHTML = `<div class="notif-empty">${I18N.notifCargando || 'Cargando…'}</div>`;
             try {
@@ -2125,10 +2181,7 @@ import { iconInner } from '../lib/icons';
                 (dot as HTMLElement).hidden = true;
             } catch { list.innerHTML = `<div class="notif-empty">${I18N.notifNoCargo || 'No se pudo cargar'}</div>`; }
         };
-        const openP = () => { (panel as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); load(); };
-        btn.addEventListener('click', (e) => { e.stopPropagation(); (panel as HTMLElement).hidden ? openP() : closeP(); });
-        document.addEventListener('click', (e) => { if (!(panel as HTMLElement).hidden && !panel.contains(e.target as Node) && !btn.contains(e.target as Node)) closeP(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeP(); });
+        wireTopbarMenu(btn, panel as HTMLElement, { id: 'notif', menu: false, onOpen: load });
         markAll?.addEventListener('click', () => {
             try { localStorage.setItem(SEEN_KEY, String(Date.now())); } catch (e) {}
             (dot as HTMLElement).hidden = true;
@@ -2573,22 +2626,22 @@ import { iconInner } from '../lib/icons';
 
     // ── Menú "Crear" genérico (botón + popover) — reusado por móvil y desktop ──
     // ── Menú "Crear" de la topbar (desktop) ──
+    let createMenu: ReturnType<typeof wireTopbarMenu> | null = null;
     function initCreateMenu(btnId: string, menuId: string) {
         const btn = document.getElementById(btnId);
         const menu = document.getElementById(menuId);
         if (!btn || !menu) return;
-        const m = menu as HTMLElement;
-        const closeMenu = () => { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const willOpen = m.hidden;
-            m.hidden = !willOpen;
-            btn.setAttribute('aria-expanded', String(willOpen));
+        createMenu = wireTopbarMenu(btn, menu, { id: 'create' });
+    }
+
+    // ⌘ en Mac; Ctrl en Windows y Linux (antes decía ⌘K para todos).
+    function initModKey() {
+        const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+        const plat = nav.userAgentData?.platform || navigator.platform || navigator.userAgent;
+        if (/mac|iphone|ipad|ipod/i.test(plat)) return;
+        document.querySelectorAll<HTMLElement>('[data-mod-key]').forEach((el) => {
+            el.textContent = (el.textContent || '').replace('⌘', el.textContent === '⌘' ? 'Ctrl' : 'Ctrl ');
         });
-        document.addEventListener('click', (e) => {
-            if (!m.hidden && !menu.contains(e.target as Node) && !btn.contains(e.target as Node)) closeMenu();
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
     }
 
     // ── Quick-add de Tarea (modal desde el botón "Crear") ──
@@ -2601,7 +2654,7 @@ import { iconInner } from '../lib/icons';
         const open = () => { (modal as HTMLElement).hidden = false; document.body.style.overflow = 'hidden'; setTimeout(() => titulo.focus(), 30); };
         const close = () => { (modal as HTMLElement).hidden = true; document.body.style.overflow = ''; form.reset(); };
         // Disparadores: botón de la topbar y el menú móvil (si existiera un item de tarea).
-        document.getElementById('tbCreateTarea')?.addEventListener('click', () => { document.getElementById('tbCreateMenu')!.hidden = true; document.getElementById('tbCreate')?.setAttribute('aria-expanded', 'false'); open(); });
+        document.getElementById('tbCreateTarea')?.addEventListener('click', () => { createMenu?.close(); open(); });
         (window as any).cordQuickTask = open;
         document.getElementById('qtaskClose')?.addEventListener('click', close);
         document.getElementById('qtaskBackdrop')?.addEventListener('click', close);
@@ -2620,7 +2673,7 @@ import { iconInner } from '../lib/icons';
         });
     }
 
-    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initStepUp(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
+    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initStepUp(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); initModKey(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

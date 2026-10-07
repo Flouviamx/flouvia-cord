@@ -336,7 +336,7 @@ export const appStrings = {
         // AppLayout — overlay de atajos de teclado
         "layout.kbd.titulo": "Atajos de teclado",
         "layout.kbd.buscar_menu": "Buscar / menú de comandos",
-        "layout.kbd.armar_ia": "Armar con IA (cotización)",
+        "layout.kbd.crear_cotizacion": "Crear cotización",
         "layout.kbd.crear_factura": "Crear factura",
         "layout.kbd.fijar_quitar": "Fijar / quitar página del menú",
         "layout.kbd.mostrar_atajos": "Mostrar estos atajos",
@@ -3883,7 +3883,7 @@ export const appStrings = {
         // AppLayout — keyboard shortcuts overlay
         "layout.kbd.titulo": "Keyboard shortcuts",
         "layout.kbd.buscar_menu": "Search / command menu",
-        "layout.kbd.armar_ia": "Build with AI (quote)",
+        "layout.kbd.crear_cotizacion": "Create quote",
         "layout.kbd.crear_factura": "Create invoice",
         "layout.kbd.fijar_quitar": "Pin / unpin page from menu",
         "layout.kbd.mostrar_atajos": "Show this help",

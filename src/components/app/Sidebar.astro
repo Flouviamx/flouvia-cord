@@ -87,6 +87,13 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('help')}></svg>
             <span>{t(L, 'sidebar.ayuda')}</span>
         </button>
+        <!-- Tema: en móvil el botón de la topbar está oculto; sin esta fila no había
+             forma de cambiarlo desde el celular. Lo cablea initTheme() de AppLayout. -->
+        <button class="sb-action-row sb-theme" id="sbTheme" type="button" aria-pressed="false">
+            <svg class="sb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+            <svg class="sb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+            <span>{t(L, 'layout.aria.tema')}</span>
+        </button>
         <a href="/app/ajustes" class="sb-action-row" data-id="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
             <span>{t(L, 'sidebar.configuracion')}</span>
@@ -590,6 +597,9 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         }
         .sb-action-row svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.85; }
         .sb-action-row:active { background: var(--sb-active-bg); }
+        .sb-theme .sb-sun { display: none; }
+        :global(html[data-theme="dark"]) .sb-theme .sb-sun { display: block; }
+        :global(html[data-theme="dark"]) .sb-theme .sb-moon { display: none; }
 
         /* Objetivos táctiles de 44px; sin atajos, sin tooltips, sin hover. */
         .sb-item { height: 44px; padding: 0 14px; gap: 14px; border-radius: 12px; font-size: 0.95rem; }

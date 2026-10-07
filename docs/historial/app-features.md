@@ -1,5 +1,22 @@
 # Historial — App interna: features y UX
 
+## 2026-10-07 — Topbar: bugs de ⌘K, menús, tema móvil y barra de progreso
+
+- ⌘K: borrar letras dejaba que una respuesta atrasada pintara resultados de la consulta
+  anterior; cada mousemove redibujaba la lista y la desplazaba; clientes y productos
+  llevaban a la lista general en vez de su ficha; el foco se escapaba con Tab y no volvía al
+  cerrar. Ahora: debounce de 140 ms, descarte por secuencia, selección sin redibujar,
+  combobox/listbox y foco atrapado.
+- Crear, Notificaciones y Apps podían quedar abiertos a la vez; ahora comparten
+  `src/lib/topbar-menu.ts` (uno a la vez y teclado de menú).
+- La barra de progreso se quedaba al 90 % si un "¿salir sin guardar?" se cancelaba; ahora
+  arranca solo en `beforeunload` no cancelado, con respaldo de 10 s.
+- En móvil no había forma de cambiar el tema ni de reabrir la guía minimizada.
+- Detalles: ⌘K decía ⌘ en Windows/Linux, aro blanco del punto de la campana en oscuro,
+  "Ver toda la actividad" iba al tope del Inicio, `href` de notificaciones sin escapar.
+- Pendiente aparte (requiere migración antes del código): la campana muestra las acciones
+  del propio vendedor y no incluye facturas, porque `eventos` no guarda autor.
+
 ## 2026-10-07 — Navegación sin parpadeo, invitar al equipo y toggle animado
 
 - Se evaluó `<ClientRouter />` para mantener viva la sidebar y se descartó por ahora: con
