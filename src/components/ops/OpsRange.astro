@@ -1,0 +1,25 @@
+---
+// Periodo de análisis como enlaces (?range=7d|30d|90d): compartible por URL y
+// funciona sin JavaScript. Conserva el resto de los filtros de la página.
+import { OPS_RANGES, type OpsRange } from '../../lib/ops-range';
+
+interface Props {
+  current: OpsRange;
+  url: URL;
+}
+
+const { current, url } = Astro.props;
+const hrefFor = (range: OpsRange) => {
+  const params = new URLSearchParams(url.search);
+  params.delete('page');
+  if (range === '30d') params.delete('range');
+  else params.set('range', range);
+  const query = params.toString();
+  return `${url.pathname}${query ? `?${query}` : ''}`;
+};
+---
+<nav class="ops-range" aria-label="Periodo">
+  {OPS_RANGES.map((range) => (
+    <a href={hrefFor(range.id)} aria-current={range.id === current ? 'true' : undefined} title={range.title}>{range.label}</a>
+  ))}
+</nav>

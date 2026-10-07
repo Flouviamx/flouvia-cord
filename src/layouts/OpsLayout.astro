@@ -7,16 +7,21 @@ interface Props {
 }
 
 const { title } = Astro.props;
+// Preferencia de tema del operador. Se lee en servidor para pintar desde el
+// primer byte sin parpadeo: la CSP de Ops no admite un script inline en <head>.
+// Sin cookie, el CSS sigue al sistema.
+const savedTheme = Astro.cookies.get('cord_ops_theme')?.value;
+const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : undefined;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme={theme}>
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="robots" content="noindex, nofollow, noarchive" />
         <meta name="referrer" content="no-referrer" />
-        <meta name="color-scheme" content="light" />
+        <meta name="color-scheme" content={theme ?? 'light dark'} />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <title>{title}</title>
     </head>

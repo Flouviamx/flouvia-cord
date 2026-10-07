@@ -10,7 +10,8 @@ import { iconInner } from '../../lib/icons';
 <OpsLayout title="Acceso interno | Cord Ops">
   <main class="ops-login">
     <div class="ops-brand">
-      <img src="/imgs/logo-cord-navy.png" alt="Cord" height="26" />
+      <img class="logo-light" src="/imgs/logo-cord-navy.png" alt="Cord" height="26" />
+      <img class="logo-dark" src="/imgs/logo-cord-white.png" alt="" aria-hidden="true" height="26" />
       <span class="ops-product">Ops</span>
     </div>
 
@@ -73,8 +74,8 @@ import { iconInner } from '../../lib/icons';
         <div class="ops-divider"><span>o</span></div>
 
         <button id="passkey-submit" class="ops-secondary" type="button">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user')}></svg>
-          Usar Touch ID
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('key')}></svg>
+          <span id="passkey-label">Entrar con passkey</span>
         </button>
       </form>
     </section>
@@ -93,6 +94,7 @@ import { iconInner } from '../../lib/icons';
     const totpFields = document.getElementById('totp-fields') as HTMLDivElement;
     const primary = document.getElementById('password-submit') as HTMLButtonElement;
     const passkey = document.getElementById('passkey-submit') as HTMLButtonElement;
+    const passkeyLabel = document.getElementById('passkey-label') as HTMLSpanElement;
     const errorBox = document.getElementById('ops-error') as HTMLDivElement;
     const noticeBox = document.getElementById('ops-notice') as HTMLDivElement;
     let totpStage = false;
@@ -204,7 +206,7 @@ import { iconInner } from '../../lib/icons';
         return;
       }
       setBusy(true);
-      passkey.textContent = 'Esperando dispositivo';
+      passkeyLabel.textContent = 'Esperando dispositivo';
 
       try {
         const optionsResponse = await fetch('/api/ops/passkey-options', {
@@ -236,18 +238,16 @@ import { iconInner } from '../../lib/icons';
         }
       } finally {
         setBusy(false);
-        passkey.textContent = 'Usar Touch ID';
+        passkeyLabel.textContent = 'Entrar con passkey';
       }
     });
   </script>
 
   <!--
-    Misma composición que el login público (/sign-in): lienzo blanco, columna
-    centrada, logo real arriba y formulario SIN tarjeta (sin borde, sin sombra,
-    sin fondo propio). Los tokens de color/radio/foco son los de styles/auth.css
-    y se copian aquí porque Ops corre bajo una CSP propia y no comparte hojas
-    con el sitio público. La tipografía es la del sistema a propósito: la CSP de
-    Ops fija `font-src 'self'` y no carga Google Fonts.
+    Misma composición que el login público (/sign-in): columna centrada, logo
+    real arriba y formulario SIN tarjeta. Los colores salen de los tokens de
+    styles/ops.css (claro y oscuro); la tipografía es la del sistema porque la
+    CSP de Ops fija `font-src 'self'`.
   -->
   <style>
     .ops-login {
@@ -259,210 +259,85 @@ import { iconInner } from '../../lib/icons';
       justify-content: center;
       gap: 2.25rem;
       padding: 2.5rem 1.5rem;
-      background: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI',
-                   system-ui, sans-serif;
+      background: var(--ops-surface);
+      color: var(--ops-text);
     }
-
-    .ops-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      opacity: 0.95;
-    }
-
+    .ops-brand { display: flex; align-items: center; gap: 0.7rem; }
     .ops-brand img { display: block; }
-
+    .ops-brand .logo-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+      :global(:root:not([data-theme="light"])) .ops-brand .logo-light { display: none; }
+      :global(:root:not([data-theme="light"])) .ops-brand .logo-dark { display: block; }
+    }
+    :global(:root[data-theme="dark"]) .ops-brand .logo-light { display: none; }
+    :global(:root[data-theme="dark"]) .ops-brand .logo-dark { display: block; }
     .ops-product {
       padding-left: 0.7rem;
-      border-left: 1px solid #e4e8ee;
-      color: #6b7686;
+      border-left: 1px solid var(--ops-line-strong);
+      color: var(--ops-faint);
       font-size: 0.8rem;
       font-weight: 500;
-      letter-spacing: 0.01em;
     }
-
-    .ops-auth {
-      width: 100%;
-      max-width: 380px;
-      min-width: 0;
-      animation: ops-fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    .ops-heading {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    h1 {
-      margin: 0 0 0.4rem;
-      color: #0a192f;
-      font-size: 1.5rem;
-      font-weight: 600;
-      letter-spacing: -0.025em;
-    }
-
-    .ops-heading > p:last-child {
-      margin: 0;
-      color: #6b7686;
-      font-size: 0.9rem;
-      font-weight: 400;
-      line-height: 1.5;
-    }
-
-    .ops-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.9rem;
-      min-width: 0;
-    }
-
+    .ops-auth { width: 100%; max-width: 380px; min-width: 0; animation: ops-fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .ops-heading { text-align: center; margin-bottom: 2rem; }
+    h1 { margin: 0 0 0.4rem; color: var(--ops-ink); font-size: 1.5rem; font-weight: 650; letter-spacing: -0.03em; }
+    .ops-heading > p:last-child { margin: 0; color: var(--ops-faint); font-size: 0.9rem; line-height: 1.5; }
+    .ops-form { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
     /* `display: contents` deja que los campos hereden el gap del formulario:
        ocultar un paso no debe dejar un hueco vertical. */
-    .password-fields,
-    .totp-fields { display: contents; }
-
-    .password-fields[hidden],
-    .totp-fields[hidden] { display: none; }
-
-    .ops-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      min-width: 0;
-    }
-
-    label {
-      color: #4a5567;
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-    }
-
+    .password-fields, .totp-fields { display: contents; }
+    .password-fields[hidden], .totp-fields[hidden] { display: none; }
+    .ops-field { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+    label { color: var(--ops-muted); font-size: 0.78rem; font-weight: 560; }
     input {
       width: 100%;
-      box-sizing: border-box;
       padding: 0.72rem 0.9rem;
-      border: 1px solid #e4e8ee;
-      border-radius: 10px;
-      font-family: inherit;
+      border: 1px solid transparent;
+      border-radius: 12px;
       font-size: 0.95rem;
-      color: #0a192f;
-      background: #ffffff;
+      color: var(--ops-text);
+      background: var(--ops-fill);
       outline: none;
-      transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
-
-    input:hover { border-color: #cdd4dd; }
-    input:focus {
-      border-color: #0a192f;
-      box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08);
-    }
-    input:read-only { color: #6b7686; background: #fafbfc; }
-
-    .totp-fields input {
-      letter-spacing: 0.22em;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .totp-fields p {
-      margin: 0;
-      color: #8891a0;
-      font-size: 0.75rem;
-      line-height: 1.5;
-    }
-
+    input:focus { background: var(--ops-surface); border-color: var(--ops-line-strong); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
+    input:read-only { color: var(--ops-faint); }
+    .totp-fields input { letter-spacing: 0.22em; font-variant-numeric: tabular-nums; }
+    .totp-fields p { margin: 0; color: var(--ops-faint); font-size: 0.75rem; line-height: 1.5; }
     button {
       width: 100%;
       padding: 0.78rem 1rem;
-      border-radius: 10px;
-      font-family: inherit;
+      border-radius: 999px;
       font-size: 0.95rem;
       font-weight: 600;
-      letter-spacing: -0.01em;
       cursor: pointer;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     }
-
     button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-    .ops-primary {
-      margin-top: 0.6rem;
-      border: none;
-      color: #ffffff;
-      background: #0a192f;
-    }
-    .ops-primary:hover:not(:disabled) {
-      background: #112444;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 22px -8px rgba(10, 25, 47, 0.4);
-    }
-    .ops-primary:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
-
+    .ops-primary { margin-top: 0.6rem; border: none; color: var(--ops-on-primary); background: var(--ops-primary); }
+    .ops-primary:hover:not(:disabled) { transform: scale(0.985); }
+    .ops-primary:active:not(:disabled) { transform: scale(0.965); }
     .ops-secondary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      border: 1px solid #e4e8ee;
-      color: #1e293b;
-      background: #ffffff;
-      font-weight: 500;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+      border: 0; box-shadow: inset 0 0 0 1px var(--ops-line-strong);
+      color: var(--ops-text); background: var(--ops-surface); font-weight: 560;
     }
-    .ops-secondary:hover:not(:disabled) { border-color: #cdd4dd; background: #fafbfc; }
+    .ops-secondary:hover:not(:disabled) { background: var(--ops-surface-2); }
     .ops-secondary svg { display: block; }
     .ops-secondary[hidden] { display: none; }
-
-    .ops-divider {
-      position: relative;
-      text-align: center;
-      margin: 0.6rem 0 0.1rem;
-    }
-    .ops-divider::before {
-      content: '';
-      position: absolute;
-      top: 50%; left: 0; right: 0;
-      height: 1px;
-      background: #ebeef2;
-    }
-    .ops-divider span {
-      position: relative;
-      padding: 0 0.875rem;
-      background: #ffffff;
-      color: #aab2bf;
-      font-size: 0.74rem;
-      font-weight: 500;
-    }
+    .ops-divider { position: relative; text-align: center; margin: 0.6rem 0 0.1rem; }
+    .ops-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--ops-line); }
+    .ops-divider span { position: relative; padding: 0 0.875rem; background: var(--ops-surface); color: var(--ops-faint); font-size: 0.74rem; font-weight: 500; }
     /* El divisor solo tiene sentido si el botón de passkey sigue visible. */
     .ops-form:has(#passkey-submit[hidden]) .ops-divider { display: none; }
-
-    .ops-message {
-      padding: 0.7rem 0.875rem;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      line-height: 1.5;
-    }
-    .ops-error { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; }
-    .ops-notice { color: #0a192f; background: #f5f5f7; border: 1px solid #e4e8ee; }
-
-    .ops-login-footer {
-      margin: 0;
-      color: #b4bcc7;
-      font-size: 0.72rem;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    @keyframes ops-fadein {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
+    .ops-message { padding: 0.7rem 0.875rem; border-radius: 12px; font-size: 0.82rem; line-height: 1.5; }
+    .ops-error { color: var(--ops-red); background: var(--ops-red-bg); }
+    .ops-notice { color: var(--ops-text); background: var(--ops-fill); }
+    .ops-login-footer { margin: 0; color: var(--ops-faint); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.02em; }
+    @keyframes ops-fadein { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
     }
-
     @media (max-width: 600px) {
       .ops-login {
         justify-content: flex-start;

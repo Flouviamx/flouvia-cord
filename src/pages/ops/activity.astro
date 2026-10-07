@@ -8,6 +8,8 @@ import { sql, withOpsTx } from '../../lib/db';
 import { opsAgo, opsDate, opsNumber, opsPct, OPS_EVENT_CATEGORIES } from '../../lib/ops-format';
 import { OPS_FEED_PAGE, opsActivityStats, opsDailySeries, opsEventFeed, opsRecentLogins, opsTopUsers } from '../../lib/ops-insights';
 import { parseOpsPage } from '../../lib/ops-pagination';
+import { parseOpsRange, splitPeriods } from '../../lib/ops-range';
+import OpsRange from '../../components/ops/OpsRange.astro';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const params = Astro.url.searchParams;
@@ -16,6 +18,7 @@ const cat = OPS_EVENT_CATEGORIES.some((c) => c.id === params.get('cat')) ? Strin
 const orgId = UUID.test(params.get('org') || '') ? String(params.get('org')) : null;
 const userId = UUID.test(params.get('user') || '') ? String(params.get('user')) : null;
 const page = parseOpsPage(params.get('page'));
+const range = parseOpsRange(params.get('range'));
 
 let stats: any = {};
 let feed: any[] = [];
@@ -28,7 +31,7 @@ try {
   const r = await withOpsTx(
     opsActivityStats(),
     opsEventFeed({ orgId, userId, category: cat, offset: (page - 1) * OPS_FEED_PAGE }),
-    opsDailySeries(30),
+    opsDailySeries(range.days * 2),
     opsTopUsers(7),
     opsRecentLogins(10),
     sql`select (select nombre from orgs where id = ${orgId}::uuid) org_nombre,
@@ -43,11 +46,13 @@ const hasMore = feed.length > OPS_FEED_PAGE;
 const rows = feed.slice(0, OPS_FEED_PAGE);
 const href = (next: Record<string, string | number | null>) => {
   const q = new URLSearchParams();
-  const merged = { cat, org: orgId, user: userId, page: 1, ...next };
+  const merged = { cat, org: orgId, user: userId, range: range.id === '30d' ? null : range.id, page: 1, ...next };
   for (const [k, v] of Object.entries(merged)) if (v && !(k === 'page' && Number(v) <= 1)) q.set(k, String(v));
   const s = q.toString();
   return `/ops/activity${s ? `?${s}` : ''}`;
 };
+const periods = splitPeriods(series, range.days);
+const pickFrom = (rows: any[], key: string) => rows.map((row) => ({ day: String(row.day), value: Number(row[key] || 0) }));
 const trend = Number(stats.events_7d || 0) - Number(stats.events_prev_7d || 0);
 const device = (ua: string | null) => !ua ? 'Dispositivo desconocido'
   : /iPhone|iPad/.test(ua) ? 'iPhone o iPad' : /Android/.test(ua) ? 'Android'
@@ -55,6 +60,7 @@ const device = (ua: string | null) => !ua ? 'Dispositivo desconocido'
 const browser = (ua: string | null) => !ua ? '' : /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '';
 ---
 <OpsLayout title="Actividad | Cord Ops"><OpsShell active="activity" title="Actividad" subtitle="Todo lo que hacen las personas, sus clientes y los sistemas dentro de Cord.">
+  <OpsRange slot="actions" current={range.id} url={Astro.url} />
   {error && <div class="ops-inline-error">No se pudo cargar la actividad.</div>}
 
   <section class="ops-card ops-metrics cols-6">
@@ -67,8 +73,8 @@ const browser = (ua: string | null) => !ua ? '' : /Edg\//.test(ua) ? 'Edge' : /C
   </section>
 
   <div class="ops-grid-2 ops-section">
-    <OpsBars title="Eventos por día" hint="Cotizaciones, facturas, pagos, clientes y catálogo · 30 días" series={series.map((row) => ({ day: String(row.day), value: Number(row.events) }))} />
-    <OpsBars title="Cotizaciones creadas por día" hint="30 días" series={series.map((row) => ({ day: String(row.day), value: Number(row.quotes) }))} />
+    <OpsBars title="Eventos por día" hint={`Cotizaciones, facturas, pagos, clientes y catálogo · ${range.label}`} series={pickFrom(periods.current, 'events')} previous={pickFrom(periods.previous, 'events')} />
+    <OpsBars title="Cotizaciones creadas por día" hint={range.label} series={pickFrom(periods.current, 'quotes')} previous={pickFrom(periods.previous, 'quotes')} />
   </div>
 
   <div class="ops-grid-2 ops-section">

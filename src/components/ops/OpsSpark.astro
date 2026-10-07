@@ -1,0 +1,24 @@
+---
+// Sparkline de un KPI: solo la forma de la serie, sin ejes. El número exacto
+// ya lo dice la métrica de al lado, así que es decorativa para lectores de
+// pantalla (aria-hidden) y no depende de hover (regla 16).
+interface Props {
+  values: number[];
+}
+
+const { values } = Astro.props;
+const n = values.length;
+const max = Math.max(1, ...values);
+const W = 100;
+const H = 26;
+const x = (i: number) => (n <= 1 ? W : (i / (n - 1)) * W);
+const y = (v: number) => H - 2 - (v / max) * (H - 4);
+const line = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`).join(' ');
+const area = n ? `${line} L${W} ${H} L0 ${H} Z` : '';
+---
+{n > 1 && (
+  <svg class="ops-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+    <path class="area" d={area} />
+    <path class="line" d={line} />
+  </svg>
+)}

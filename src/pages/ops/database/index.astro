@@ -38,7 +38,7 @@ import { iconInner } from '../../../lib/icons';
 ---
 <OpsLayout title="Base de datos | Cord Ops">
   <OpsShell active="database" title="Base de datos" subtitle="Exploración segura de toda la información de Cord.">
-    <label slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input id="table-search" type="search" placeholder="Buscar tabla" /></label>
+    <label slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input id="table-search" type="search" placeholder="Buscar tabla" aria-label="Buscar tabla" /></label>
     {error && <div class="ops-inline-error">No se pudo leer el catálogo. El acceso permanece cerrado.</div>}
     <section class="ops-card ops-summary"><div class="ops-summary-main"><span class="ops-state-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('database')}></svg></span><div><h2>{tables.length} tablas · {size(tables.reduce((sum, t) => sum + Number(t.bytes || 0), 0))} en total</h2><p>Consulta registros, relaciones y estados. Credenciales, hashes, tokens y material criptográfico permanecen redactados por diseño; cada consulta queda en la auditoría.</p></div></div></section>
     {[...groups.entries()].map(([category, items]) => (

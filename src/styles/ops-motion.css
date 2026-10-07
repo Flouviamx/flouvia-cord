@@ -1,11 +1,27 @@
-.ops-app-main{animation:ops-page-in .36s cubic-bezier(.2,.75,.25,1) both}.ops-page-header{animation:ops-rise .4s cubic-bezier(.2,.75,.25,1) both}.ops-app-main>.ops-card,.ops-app-main>.ops-section,.ops-app-main>.ops-grid-2,.ops-app-main>.ops-grid-3{animation:ops-rise .44s cubic-bezier(.2,.75,.25,1) both}.ops-app-main>:nth-child(3){animation-delay:40ms}.ops-app-main>:nth-child(4){animation-delay:80ms}.ops-app-main>:nth-child(5){animation-delay:120ms}
-.ops-link-card,.ops-table-card{transition:transform .22s cubic-bezier(.2,.75,.25,1),box-shadow .22s ease,border-color .22s ease}.ops-link-card:hover,.ops-table-card:hover{transform:translateY(-2px);border-color:rgba(0,102,204,.12);box-shadow:0 2px 4px rgba(0,0,0,.025),0 18px 45px rgba(0,0,0,.07)}
-.ops-search{transition:box-shadow .18s ease,background .18s ease,border-color .18s ease}.ops-search:focus-within{border-color:rgba(10,25,47,.18);box-shadow:0 0 0 4px rgba(10,25,47,.05)}
-.ops-toast{animation:ops-toast-in .26s cubic-bezier(.2,.8,.25,1) both}
-.ops-bars>span{transform-origin:bottom;animation:ops-bar-in .6s cubic-bezier(.2,.75,.25,1) both}.ops-dist-row>i>u{transform-origin:left;animation:ops-progress-in .7s cubic-bezier(.2,.75,.25,1) both}
-.ops-cost-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.ops-cost-card{padding:18px 20px}.ops-cost-card header{display:flex;justify-content:space-between;align-items:center;gap:10px}.ops-cost-card h3{margin:0;font-size:13px;font-weight:600}.ops-cost-card strong{display:block;margin-top:16px;font-size:22px;font-weight:650;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ops-cost-card p{margin:5px 0 0;color:#86868b;font-size:11.5px;line-height:1.45}
-.ops-progress{height:6px;margin-top:9px;border-radius:999px;background:#ededf0;overflow:hidden}.ops-progress>span{display:block;height:100%;border-radius:inherit;background:#34c759;transform-origin:left;animation:ops-progress-in .7s cubic-bezier(.2,.75,.25,1) both}.ops-progress.amber>span{background:#ff9f0a}.ops-progress.red>span{background:#ff3b30}.ops-usage-name{min-width:220px}.ops-usage-name a{font-weight:600}.ops-usage-cell{min-width:140px}.ops-usage-cell strong{font-weight:600;font-variant-numeric:tabular-nums}
-.ops-alert-list{display:grid}.ops-alert{display:grid;grid-template-columns:8px 1fr auto;gap:14px;align-items:center;padding:13px 20px;border-bottom:1px solid var(--ops-line)}.ops-alert:last-child{border:0}.ops-alert>span:first-child{width:8px;height:8px;border-radius:50%;background:#ff9f0a}.ops-alert.red>span:first-child{background:#ff3b30}.ops-alert strong{font-size:13px;font-weight:600}.ops-alert p{margin:3px 0 0;color:#86868b;font-size:12px}.ops-alert a{font-size:12px;font-weight:560;color:#0066cc;text-decoration:none}
-@keyframes ops-page-in{from{opacity:0}to{opacity:1}}@keyframes ops-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes ops-toast-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}@keyframes ops-progress-in{from{transform:scaleX(0)}to{transform:scaleX(1)}}@keyframes ops-bar-in{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-@media(max-width:1100px){.ops-cost-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.ops-cost-grid{grid-template-columns:minmax(0,1fr)}.ops-alert{grid-template-columns:8px 1fr}.ops-alert a{grid-column:2}}
-@media(prefers-reduced-motion:reduce){.ops-app-main,.ops-page-header,.ops-app-main>*,.ops-toast,.ops-progress>span,.ops-bars>span,.ops-dist-row>i>u{animation:none!important}.ops-link-card,.ops-table-card,.ops-table tbody tr,.ops-search,.ops-button,.ops-app-nav a{transition:none!important}}
+/* Cord Ops — movimiento. Solo animaciones; los componentes viven en ops.css.
+   Breve y sobrio, y todo se apaga con prefers-reduced-motion. */
+.ops-app-content { animation: ops-page-in 0.32s var(--ops-ease) both; }
+.ops-page-header { animation: ops-rise 0.38s var(--ops-ease) both; }
+.ops-app-content > .ops-card, .ops-app-content > .ops-section, .ops-app-content > .ops-grid-2, .ops-app-content > .ops-grid-3 { animation: ops-rise 0.42s var(--ops-ease) both; }
+.ops-app-content > :nth-child(3) { animation-delay: 40ms; }
+.ops-app-content > :nth-child(4) { animation-delay: 80ms; }
+.ops-app-content > :nth-child(5) { animation-delay: 120ms; }
+.ops-link-card, .ops-table-card { transition: transform 0.22s var(--ops-ease), box-shadow 0.22s ease; }
+.ops-link-card:hover, a.ops-table-card[href]:hover { transform: translateY(-2px); box-shadow: var(--ops-shadow-lg); }
+.ops-search { transition: box-shadow 0.18s ease, border-color 0.18s ease; }
+.ops-search:focus-within { border-color: var(--ops-line-strong); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
+.ops-toast { animation: ops-toast-in 0.26s var(--ops-ease) both; }
+.ops-plot .bar { transform-box: fill-box; transform-origin: bottom; animation: ops-bar-in 0.6s var(--ops-ease) both; }
+.ops-dist-row > i > u, .ops-progress > span { transform-origin: left; animation: ops-progress-in 0.7s var(--ops-ease) both; }
+.ops-uptime-strip > i { animation: ops-page-in 0.5s ease both; }
+@keyframes ops-page-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ops-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ops-toast-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ops-progress-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ops-bar-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ops-pulse { 0% { opacity: 0.5; transform: scale(0.92); } 70%, 100% { opacity: 0; transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) {
+  .ops-app-content, .ops-page-header, .ops-app-content > *, .ops-toast, .ops-progress > span, .ops-plot .bar,
+  .ops-dist-row > i > u, .ops-uptime-strip > i, .ops-pulse::after { animation: none !important; }
+  .ops-link-card, .ops-table-card, .ops-table tbody tr, .ops-search, .ops-button, .ops-app-nav a, .ops-app-sidebar, .ops-drawer-backdrop { transition: none !important; }
+}

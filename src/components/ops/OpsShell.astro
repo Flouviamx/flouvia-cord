@@ -1,4 +1,7 @@
 ---
+import { iconInner, type IconName } from '../../lib/icons';
+import OpsActionDialog from './OpsActionDialog.astro';
+
 type OpsSection =
   | 'overview' | 'activity' | 'organizations' | 'users' | 'invoices' | 'workflows'
   | 'integrations' | 'usage' | 'status' | 'security' | 'database';
@@ -13,57 +16,58 @@ interface Props {
 const { active, eyebrow = 'Cord Ops', title, subtitle } = Astro.props;
 const operator = Astro.locals.opsOperator;
 
-// Iconos Glass Duotone (regla 9): trazo 1.5 + relleno al 13 %.
-const icons: Record<OpsSection, string> = {
-  overview: '<rect x="3.5" y="3.5" width="7" height="7" rx="2" fill="currentColor" fill-opacity=".13"/><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor" fill-opacity=".13"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
-  activity: '<path d="M3.5 12h3.6l2.4-6 5 12 2.4-6h3.6"/><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13" stroke="none"/>',
-  organizations: '<path d="M4.5 20.5v-13l7-3.5 7 3.5v13" fill="currentColor" fill-opacity=".13"/><path d="M4.5 20.5v-13l7-3.5 7 3.5v13M3 20.5h18M9 10h.01M14 10h.01M9 14h.01M14 14h.01M10 20.5v-3h3v3"/>',
-  users: '<circle cx="12" cy="8.5" r="3.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
-  invoices: '<path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8z" fill="currentColor" fill-opacity=".13"/><path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8zM9 8.5h6M9 12h6M9 15.5h3.5"/>',
-  workflows: '<rect x="3.5" y="4" width="6" height="5" rx="1.5" fill="currentColor" fill-opacity=".13"/><rect x="3.5" y="4" width="6" height="5" rx="1.5"/><rect x="14.5" y="15" width="6" height="5" rx="1.5" fill="currentColor" fill-opacity=".13"/><rect x="14.5" y="15" width="6" height="5" rx="1.5"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2h6"/>',
-  integrations: '<path d="M9 7.5V4M15 7.5V4M7 7.5h10v4a5 5 0 0 1-10 0z" fill="currentColor" fill-opacity=".13"/><path d="M9 7.5V4M15 7.5V4M7 7.5h10v4a5 5 0 0 1-10 0zM12 16.5v3.5"/>',
-  usage: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><rect x="8.5" y="4" width="3" height="16" fill="currentColor" fill-opacity=".13" stroke="none"/>',
-  status: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".13"/><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.3 4.6-5"/>',
-  security: '<path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6z" fill="currentColor" fill-opacity=".13"/><path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6z"/>',
-  database: '<ellipse cx="12" cy="6" rx="7" ry="2.5" fill="currentColor" fill-opacity=".13"/><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
-};
-
-const groups: { label: string; items: { id: OpsSection; href: string; label: string }[] }[] = [
+// Iconos del registro único "Cord Glass" (regla 9): la gramática la impone
+// iconInner(), no cada icono.
+const groups: { label: string; items: { id: OpsSection; href: string; label: string; icon: IconName }[] }[] = [
   { label: 'General', items: [
-    { id: 'overview', href: '/ops', label: 'Resumen' },
-    { id: 'activity', href: '/ops/activity', label: 'Actividad' },
+    { id: 'overview', href: '/ops', label: 'Resumen', icon: 'overview' },
+    { id: 'activity', href: '/ops/activity', label: 'Actividad', icon: 'pulse' },
   ] },
   { label: 'Negocio', items: [
-    { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones' },
-    { id: 'users', href: '/ops/users', label: 'Usuarios' },
-    { id: 'invoices', href: '/ops/invoices', label: 'Facturas' },
-    { id: 'workflows', href: '/ops/workflows', label: 'Workflows' },
-    { id: 'integrations', href: '/ops/integrations', label: 'Integraciones' },
+    { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones', icon: 'building' },
+    { id: 'users', href: '/ops/users', label: 'Usuarios', icon: 'user' },
+    { id: 'invoices', href: '/ops/invoices', label: 'Facturas', icon: 'invoice' },
+    { id: 'workflows', href: '/ops/workflows', label: 'Workflows', icon: 'workflow' },
+    { id: 'integrations', href: '/ops/integrations', label: 'Integraciones', icon: 'plug' },
   ] },
   { label: 'Plataforma', items: [
-    { id: 'usage', href: '/ops/usage', label: 'Uso y costos' },
-    { id: 'status', href: '/ops/status', label: 'Disponibilidad' },
-    { id: 'security', href: '/ops/security', label: 'Seguridad' },
-    { id: 'database', href: '/ops/database', label: 'Base de datos' },
+    { id: 'usage', href: '/ops/usage', label: 'Uso y costos', icon: 'chart' },
+    { id: 'status', href: '/ops/status', label: 'Disponibilidad', icon: 'check-circle' },
+    { id: 'security', href: '/ops/security', label: 'Seguridad', icon: 'shield' },
+    { id: 'database', href: '/ops/database', label: 'Base de datos', icon: 'database' },
   ] },
 ];
-const method = operator?.authMethod === 'passkey' ? 'Clave de acceso'
+const section = groups.flatMap((g) => g.items).find((item) => item.id === active)!;
+const isDetail = title !== section.label;
+
+const method = operator?.authMethod === 'passkey' ? 'Passkey de Ops'
   : operator?.authMethod === 'local_session_password' ? 'Sesión local' : 'Contraseña y TOTP';
+const initial = (operator?.email || '?').charAt(0).toUpperCase();
+
+// Tiempo restante del tope absoluto de 8 h. La inactividad (30 min) la aplica
+// el servidor; aquí se avisa antes de que la sesión caiga a media tarea.
+const ABSOLUTE_MS = 8 * 60 * 60 * 1000;
+const remainingMs = operator ? Math.max(0, operator.authenticatedAt.getTime() + ABSOLUTE_MS - Date.now()) : 0;
+const remainingLabel = remainingMs >= 3_600_000
+  ? `${Math.floor(remainingMs / 3_600_000)} h ${Math.floor((remainingMs % 3_600_000) / 60_000)} min`
+  : `${Math.max(1, Math.floor(remainingMs / 60_000))} min`;
+const svg = (name: IconName) => iconInner(name);
 ---
 
-<div class="ops-app-shell">
-  <aside class="ops-app-sidebar">
-    <a class="ops-app-brand" href="/ops" aria-label="Cord Ops">
-      <span>CORD</span><i></i><small>Ops</small>
+<a class="ops-skip" href="#ops-content">Saltar al contenido</a>
+<div class="ops-app-shell" data-ops-shell>
+  <aside class="ops-app-sidebar" id="ops-sidebar" aria-label="Navegación de Ops">
+    <a class="ops-app-brand" href="/ops" aria-label="Cord Ops, resumen">
+      <span>CORD</span><i></i><small>Ops</small><b title="Consola interna con acceso privilegiado">Interno</b>
     </a>
 
-    <nav class="ops-app-nav" aria-label="Navegación de Ops">
+    <nav class="ops-app-nav" aria-label="Secciones">
       {groups.map((group) => (
         <Fragment>
           <div class="ops-nav-group" aria-hidden="true">{group.label}</div>
           {group.items.map((item) => (
             <a href={item.href} aria-current={active === item.id ? 'page' : undefined}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[item.id]} />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg(item.icon)} />
               {item.label}
             </a>
           ))}
@@ -73,23 +77,107 @@ const method = operator?.authMethod === 'passkey' ? 'Clave de acceso'
 
     <div class="ops-app-sidebar-bottom">
       <div class="ops-operator-card">
+        <span class="ops-avatar" aria-hidden="true">{initial}</span>
         <strong>{operator?.email}</strong>
         <small class="ops-operator-role">{operator?.role === 'admin' ? 'Administrador' : 'Solo lectura'} · {method}</small>
-        <button id="ops-shell-logout" type="button">Cerrar sesión</button>
+        <div class="ops-operator-actions">
+          <button id="ops-shell-logout" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('logout')} />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </div>
   </aside>
+  <div class="ops-drawer-backdrop" data-ops-drawer-close aria-hidden="true"></div>
 
-  <main class="ops-app-main">
-    <header class="ops-page-header">
-      <div><p>{eyebrow}</p><h1>{title}</h1>{subtitle && <span>{subtitle}</span>}</div>
-      <div class="ops-page-actions"><slot name="actions" /></div>
+  <div class="ops-app-main">
+    <header class="ops-topbar">
+      <button class="ops-icon-button ops-menu-button" type="button" aria-controls="ops-sidebar" aria-expanded="false" aria-label="Abrir navegación" data-ops-drawer-toggle>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('menu')} />
+      </button>
+      <nav class="ops-crumbs" aria-label="Ubicación">
+        <a href="/ops">Ops</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('chevron-right')} />
+        {isDetail ? (
+          <Fragment>
+            <a href={section.href}>{section.label}</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('chevron-right')} />
+            <span aria-current="page">{title}</span>
+          </Fragment>
+        ) : <span aria-current="page">{section.label}</span>}
+      </nav>
+      <div class="ops-topbar-end">
+        <span class:list={['ops-session-pill', remainingMs < 30 * 60_000 && 'warn']} title={`Sesión privilegiada · ${method}. Se cierra tras 30 min sin uso o al cumplir 8 h.`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('lock')} />
+          <span>Sesión · </span>{remainingLabel}
+        </span>
+        <button class="ops-icon-button ops-theme-button" type="button" data-ops-theme data-mode="system" aria-label="Tema: según el sistema. Cambiar tema">
+          <svg data-theme-icon="system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('contrast')} />
+          <svg data-theme-icon="light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('sun')} />
+          <svg data-theme-icon="dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('moon')} />
+        </button>
+      </div>
     </header>
-    <slot />
-  </main>
+
+    <main class="ops-app-content" id="ops-content" tabindex="-1">
+      <header class="ops-page-header">
+        <div><p>{eyebrow}</p><h1>{title}</h1>{subtitle && <span>{subtitle}</span>}</div>
+        <div class="ops-page-actions"><slot name="actions" /></div>
+      </header>
+      <slot />
+    </main>
+  </div>
 </div>
+<OpsActionDialog />
 
 <script>
+  const shell = document.querySelector<HTMLElement>('[data-ops-shell]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-ops-drawer-toggle]');
+  const sidebar = document.getElementById('ops-sidebar');
+
+  // Cajón de navegación (< 880 px). Esc y tocar fuera lo cierran; al cerrar,
+  // el foco vuelve al botón que lo abrió.
+  function setDrawer(open: boolean) {
+    if (!shell || !toggle) return;
+    shell.classList.toggle('drawer-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Cerrar navegación' : 'Abrir navegación');
+    if (open) sidebar?.querySelector<HTMLElement>('a[aria-current="page"], a')?.focus();
+    else toggle.focus();
+  }
+  toggle?.addEventListener('click', () => setDrawer(!shell?.classList.contains('drawer-open')));
+  document.querySelectorAll('[data-ops-drawer-close]').forEach((el) => el.addEventListener('click', () => setDrawer(false)));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && shell?.classList.contains('drawer-open')) setDrawer(false);
+  });
+
+  // Tema: sistema → claro → oscuro. Se guarda en cookie para que el servidor
+  // pinte el siguiente documento ya con el tema correcto.
+  const themeButton = document.querySelector<HTMLButtonElement>('[data-ops-theme]');
+  const LABELS: Record<string, string> = { system: 'según el sistema', light: 'claro', dark: 'oscuro' };
+  const current = document.documentElement.dataset.theme;
+  let mode = current === 'light' || current === 'dark' ? current : 'system';
+  function paintTheme() {
+    if (!themeButton) return;
+    themeButton.dataset.mode = mode;
+    themeButton.setAttribute('aria-label', `Tema: ${LABELS[mode]}. Cambiar tema`);
+  }
+  paintTheme();
+  themeButton?.addEventListener('click', () => {
+    mode = mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system';
+    const secure = window.location.protocol === 'https:' ? '; secure' : '';
+    if (mode === 'system') {
+      delete document.documentElement.dataset.theme;
+      document.cookie = `cord_ops_theme=; path=/; max-age=0; samesite=strict${secure}`;
+    } else {
+      document.documentElement.dataset.theme = mode;
+      document.cookie = `cord_ops_theme=${mode}; path=/; max-age=31536000; samesite=strict${secure}`;
+    }
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', mode === 'system' ? 'light dark' : mode);
+    paintTheme();
+  });
+
   document.getElementById('ops-shell-logout')?.addEventListener('click', async (event) => {
     const button = event.currentTarget as HTMLButtonElement;
     button.disabled = true;

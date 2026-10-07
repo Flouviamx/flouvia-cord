@@ -69,6 +69,8 @@ export interface OpsOperator {
     sessionId: string;
     /** Momento de la autenticación fuerte que creó la sesión. */
     authenticatedAt: Date;
+    /** Passkey de Ops con la que se abrió la sesión, si fue con passkey. */
+    credentialId: string | null;
 }
 
 export interface OpsAuditEvent {
@@ -422,6 +424,7 @@ export async function validateOpsSession(
             authMethod: row.auth_method as OpsAuthMethod,
             sessionId: tokenHash,
             authenticatedAt: createdAt,
+            credentialId: row.credential_id ?? null,
         };
     } catch (error) {
         // Fail closed: caída o drift de schema jamás convierte Ops en público.

@@ -54,7 +54,7 @@ const search = new URLSearchParams({ ...(estado ? { estado } : {}), ...(query ? 
 import { iconInner } from '../../lib/icons';
 ---
 <OpsLayout title="Workflows | Cord Ops"><OpsShell active="workflows" title="Workflows" subtitle="Automatizaciones de las organizaciones: qué las dispara, cuántas corren y cuáles fallan.">
-  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input name="q" value={query} placeholder="Workflow u organización" />{estado && <input type="hidden" name="estado" value={estado} />}</form>
+  <form slot="actions" class="ops-search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg><input aria-label="Workflow u organización" name="q" value={query} placeholder="Workflow u organización" />{estado && <input type="hidden" name="estado" value={estado} />}</form>
   {error && <div class="ops-inline-error">No se pudieron cargar los workflows.</div>}
 
   <section class="ops-card ops-metrics cols-6">
