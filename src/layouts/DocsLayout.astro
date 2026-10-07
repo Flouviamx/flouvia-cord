@@ -243,7 +243,7 @@ import { iconInner } from '../lib/icons';
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/dashboard')) ? 'active' : ''}><a href={getUrl('/docs/pagos/dashboard')}>{lang === 'es' ? 'Dashboard de cobros' : 'Payments dashboard'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/reembolsos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/reembolsos')}>{lang === 'es' ? 'Reembolsos' : 'Refunds'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/disputas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/disputas')}>{lang === 'es' ? 'Disputas y contracargos' : 'Disputes and chargebacks'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturacion')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturacion')}>{lang === 'es' ? 'Facturación (CFDI 4.0)' : 'Invoicing (CFDI 4.0)'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturacion')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturacion')}>{lang === 'es' ? 'Facturación por país' : 'Invoicing by country'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturas-emitidas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturas-emitidas')}>{lang === 'es' ? 'Facturas' : 'Invoices'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturas-recurrentes')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturas-recurrentes')}>{lang === 'es' ? 'Facturas recurrentes' : 'Recurring invoices'}</a></li>
                     </ul>
@@ -391,7 +391,7 @@ import { iconInner } from '../lib/icons';
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/productos')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/productos')}>{lang === 'es' ? 'Productos y descuentos' : 'Products and discounts'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/opciones')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/opciones')}>{lang === 'es' ? 'Opciones avanzadas' : 'Advanced options'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/envio')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/envio')}>{lang === 'es' ? 'Vista previa y envío' : 'Preview and sending'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/timbrado')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/timbrado')}>{lang === 'es' ? 'Aprobación y timbrado' : 'Approval and stamping'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cotizacion/timbrado')) ? 'active' : ''}><a href={getUrl('/docs/cotizacion/timbrado')}>{lang === 'es' ? 'Aprobación y facturación' : 'Approval and invoicing'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -410,7 +410,7 @@ import { iconInner } from '../lib/icons';
                       {lang === 'es' ? 'Gestión de ventas' : 'Sales management'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname === getUrl('/docs/gestion/dashboard') || Astro.url.pathname === getUrl('/docs/gestion/dashboard/') ? 'active' : ''}><a href={getUrl('/docs/gestion/dashboard')}>{lang === 'es' ? 'Dashboard y vistas' : 'Dashboard and views'}</a></li>
+                      <li class={Astro.url.pathname === getUrl('/docs/gestion/dashboard') || Astro.url.pathname === getUrl('/docs/gestion/dashboard/') ? 'active' : ''}><a href={getUrl('/docs/gestion/dashboard')}>{lang === 'es' ? 'Inicio y vistas' : 'Home and views'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/cotizaciones')) ? 'active' : ''}><a href={getUrl('/docs/gestion/cotizaciones')}>{lang === 'es' ? 'Gestión de cotizaciones' : 'Quote management'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/clientes')) ? 'active' : ''}><a href={getUrl('/docs/gestion/clientes')}>{lang === 'es' ? 'Clientes y estado de cuenta' : 'Clients and statements'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/tareas')) ? 'active' : ''}><a href={getUrl('/docs/gestion/tareas')}>{lang === 'es' ? 'Tareas y seguimiento' : 'Tasks and follow-up'}</a></li>
