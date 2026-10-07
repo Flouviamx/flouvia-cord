@@ -1,47 +1,109 @@
 ---
 title: "Aceptar un pago"
-description: "Cómo se ve el checkout de Cord Payments desde la perspectiva del cliente: elegir método, pagar con tarjeta o SPEI, y qué pasa con anticipos y saldos."
+seoTitle: "Aceptar un pago desde el link de la cotización o la factura"
+description: "Qué ve tu cliente al pagar desde el link: cuándo aparece el botón de pago, cómo elige método, cómo paga con tarjeta, SPEI o Mercado Pago, qué pasa con anticipos, cuotas, crédito y abonos parciales, y cómo se confirma el pago."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
-appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments activa o Mercado Pago conectado", "Al menos un método de cobro en línea activado", "Cotización aprobada o factura emitida con saldo"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Aceptar un pago</h1>
-  <p class="page-subtitle">Ofrece a tus clientes una experiencia de pago nativa, sin salir de la cotización.</p>
+  <p class="page-subtitle">Tu cliente paga dentro del mismo link de la cotización o de la factura, con tu marca y sin salir del documento.</p>
 </header>
 
-## El checkout integrado
+## Qué es
 
-Una vez que el cliente aprueba la cotización (y firma electrónicamente), el link de la cotización se transforma. En lugar del botón de aprobar, aparece el **checkout de pago** — una pantalla incrustada directamente en el documento, con tu marca y colores.
+El link público de una cotización o de una factura incluye el **checkout de pago**: una pantalla con tu logo y tus colores donde tu cliente paga con los métodos que tengas activos. No hay un segundo link de pago que enviar: el mismo link sirve para revisar, aprobar, pagar y consultar lo que falta.
 
-Si activaste más de un método (ver [Métodos de cobro](/docs/pagos/metodos)), el cliente primero **elige explícitamente** cómo quiere pagar — Tarjeta o SPEI — antes de ver ningún formulario. Si solo activaste uno, se muestra directo.
+## Requisitos
 
-### Pagar con tarjeta
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes. |
+| Riel de cobro | [Cord Payments](/docs/pagos/onboarding) activo (MX, US, CA, BR, ES, GB, DE, FR) o [Mercado Pago](/docs/pagos/mercado-pago) conectado (MX, BR, CO, AR, CL, PE). |
+| Métodos | Al menos uno activado en **Ajustes › Cobros**. Ver [Métodos de cobro](/docs/pagos/metodos). |
+| Documento | Cotización aprobada (y firmada, si la pediste) o factura emitida con saldo. Un documento de prueba no se puede pagar en línea. |
+| Divisa | La de venta del documento. SPEI solo en MXN. |
 
-- Formulario nativo dentro del documento, sin redirecciones a ningún sitio externo.
-- Acepta las tarjetas de crédito y débito que admite tu cuenta de cobros.
-- En cuanto se confirma el pago, la cotización pasa a "Pagada" y los fondos se depositan en tu cuenta bancaria según la frecuencia de depósito que elegiste en **Ajustes › Cobros**.
-- Es el único método compatible con [igualas recurrentes](/docs/pagos/igualas).
+Sin riel de cobro en línea, el link muestra tus datos para transferencia manual (si los configuraste) y tú registras el pago al verificarlo.
 
-### Pagar con SPEI
+## Cuándo aparece el botón de pago
 
-**SPEI es un riel exclusivamente mexicano:** solo aparece como opción cuando la cotización está denominada en pesos (MXN). Si el negocio cotiza en otra moneda, el cliente paga con tarjeta aunque el vendedor tenga SPEI activado.
+| Situación | Qué ve tu cliente |
+|---|---|
+| Cotización de **contado** aprobada | El botón de pago, desde la aprobación. |
+| Cotización con **término de crédito** (Net 30 o Net 60) | "Pedido confirmado con crédito Net 30 — vence el [fecha]". El pago en línea se habilita en esa fecha. Ver [Términos de crédito](/docs/pagos/credito). |
+| Cotización con **anticipo** | Desde la aprobación, el monto del anticipo. El saldo se habilita según el término. Ver [Anticipo y saldo](/docs/pagos/anticipos). |
+| Cotización con **plan de cuotas** | La siguiente cuota que ya venció. Ver [Planes de pago en cuotas](/docs/pagos/cuotas). |
+| Cotización **recurrente** | La autorización de la tarjeta para la iguala mensual. Ver [Igualas recurrentes](/docs/pagos/igualas). |
+| **Factura** emitida | El saldo completo, con la opción **Pagar otra cantidad** para abonar una parte. |
+| Documento pagado | El estado **Pagada** y el historial de pagos. |
 
-- Al elegir "Transferencia SPEI", Cord Payments genera una **CLABE interbancaria única**, asociada exclusivamente a ese cobro, y la muestra en una pantalla de instrucciones — el cliente nunca sale del link de la cotización ni ve un formulario de terceros.
-- El cliente transfiere desde su banca en línea a esa CLABE.
-- **Conciliación automática:** en cuanto el dinero llega, Cord detecta el depósito, cambia el estado de la cotización a "Pagada" y notifica a ambas partes — no hace falta cruzar comprobantes a mano.
+## Cómo paga tu cliente
+
+<Steps>
+1. Abre el link y, si es una cotización, la aprueba.
+2. Pulsa el botón de pago. Si tienes activos tarjeta y SPEI, primero **elige cómo pagar**; si solo tienes uno, ve el formulario directo.
+3. Paga con tarjeta dentro del documento, sigue las instrucciones SPEI o pulsa **Pagar con Mercado Pago**.
+4. Al confirmarse, el link muestra el pago y el documento cambia de estado.
+</Steps>
+
+{/* MOCKUP: página de pago de una cotización en MXN: encabezado "Volver a la cotización", monto "Anticipo a pagar $5,000.00 MXN del total de $10,000.00 MXN", selector de método con "Tarjeta" y "Transferencia SPEI", formulario de tarjeta y botón "Pagar $5,000.00 MXN" con el color de la marca; abajo, separador y botón "Pagar con Mercado Pago". */}
+
+### Con tarjeta
+
+- El formulario vive dentro del documento, sin redirecciones a otro sitio.
+- Acepta las tarjetas de crédito y débito que admite tu cuenta de cobros. El banco de tu cliente puede pedirle una verificación adicional.
+- Si el pago falla, tu cliente ve un mensaje claro con una referencia que puede compartirte; no ve errores técnicos.
+- En cuanto se confirma, el documento pasa a **Pagado** (o el cobro de esa parte, si es un anticipo, una cuota o un abono).
+
+### Con SPEI
+
+Solo en cotizaciones en **MXN** de negocios en México.
+
+- Cord genera instrucciones con una **CLABE asociada a ese cobro**, banco, beneficiario, referencia y monto, con botones para copiar.
+- Tu cliente puede **Imprimir o guardar PDF** o pulsar **Enviar a mi correo** para recibirlas en el correo registrado en la cotización.
+- Transfiere desde su banca en línea. Cuando el dinero llega, Cord lo concilia solo y cambia el estado: no hace falta cruzar comprobantes.
+
+La confirmación de un SPEI depende del aviso del banco y no siempre es instantánea. Ver [SPEI](/docs/pagos/metodos#spei-automático).
+
+### Con Mercado Pago
+
+Tu cliente va al checkout de Mercado Pago, paga con los métodos disponibles en su país y regresa a tu link. El pago se marca cuando Cord lee el pago aprobado en tu cuenta de Mercado Pago.
+
+## Después del pago
+
+- **Tu cliente** ve el pago reflejado en el link. Si regresa de un pago todavía en confirmación, el link espera unos segundos a que llegue el aviso y le permite actualizar.
+- **Tú** ves el cobro en [Mi dinero › Cobros](/docs/pagos/dashboard), en la línea de tiempo del documento y, si configuraste avisos, en tus [notificaciones](/docs/gestion/notificaciones).
+- **Tus integraciones** reciben el evento de pago. Un pago parcial (anticipo, cuota o abono) no dispara el evento de cotización pagada: ese solo sale cuando ya no queda saldo.
+- **El dinero** entra al saldo de tu cuenta de cobros y llega a tu banco con tu [frecuencia de depósito](/docs/pagos/depositos).
 
 <Callout type="info">
-La tarjeta y el SPEI tienen tarifas distintas (ver el detalle completo en [Tarifas y ventajas](/docs/pagos/condiciones)); esa tabla es la vigente para cobros en pesos mexicanos.
+Las tarifas dependen del método y de la divisa. En cobros en MXN, cada parte cobrada (anticipo, saldo, cuota o abono) lleva su propia comisión. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones).
 </Callout>
 
-## Pagos parciales y anticipos
+## Casos límite
 
-¿Qué pasa si configuraste un **anticipo del 50%** en la cotización?
+- **El importe de la cotización cambió después de abrir el link.** Si todavía no hay pagos, tu cliente ve un aviso para pedirte que revises el desglose antes de pagar.
+- **Tu cliente cambió de método a mitad del pago.** Cord revisa el intento anterior antes de abrir otro y no lo sustituye si ya recibió dinero. Ver [Cambiar entre SPEI y tarjeta](/docs/pagos/metodos#cambiar-entre-spei-y-tarjeta).
+- **El mismo cobro se pagó por Cord Payments y por Mercado Pago.** Cord lo anota en el historial para que decidas si reembolsas uno.
+- **El saldo de la factura cambió mientras tu cliente pagaba.** Cord le pide actualizar la factura antes de continuar.
 
-1. El checkout inicial muestra únicamente el monto del anticipo.
-2. Una vez que el cliente lo paga, Cord registra el anticipo como cobrado y el saldo queda pendiente según tus términos (contado o crédito).
-3. Para pagar el saldo, el cliente vuelve al **mismo link** de la cotización y el checkout le muestra el monto restante; no hace falta un segundo link de pago. Con términos de crédito, el saldo se habilita al llegar su fecha de vencimiento. En los días previos al vencimiento, Cord envía al cliente un recordatorio automático por correo con el link de la cotización.
+## Problemas comunes
 
-Ver el detalle completo en [Anticipo y saldo](/docs/pagos/anticipos).
+**Mi cliente no ve el botón de pago.** Revisa que tu cuenta esté activa, que haya un método activado y que el pago ya esté habilitado según el término de crédito.
+
+**Mi cliente pagó, pero el documento sigue pendiente.** Si fue SPEI, espera la confirmación del banco. Si fue tarjeta, revisa **Cobros recientes** en el dashboard antes de registrar nada a mano.
+
+**El link dice que el documento es de prueba.** Ese documento no tiene emisión fiscal válida y no se puede pagar en línea. Ver [Facturación por país](/docs/pagos/facturacion).
+
+## Relacionadas
+
+- [Métodos de cobro](/docs/pagos/metodos)
+- [Anticipo y saldo](/docs/pagos/anticipos)
+- [Términos de crédito](/docs/pagos/credito)
+- [Planes de pago en cuotas](/docs/pagos/cuotas)
+- [Recordatorios automáticos de cobro](/docs/pagos/recordatorios)

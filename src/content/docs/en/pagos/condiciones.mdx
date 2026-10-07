@@ -1,38 +1,58 @@
 ---
 title: "Cord Payments fees"
-description: "The real per-method fee schedule for Cord Payments, how VAT is calculated, the SPEI cap, and what happens to the fee if you refund a payment."
+seoTitle: "Cord Payments fees by method and by currency"
+description: "How much Cord charges to process a payment, which currencies carry a platform fee, how VAT is calculated, the SPEI cap, how the fee is activated, and what happens to the fee on refunds and disputes."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
-appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Connected Cord Payments account", "Payment settings permission to accept the fee"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord Payments fees</h1>
-  <p class="page-subtitle">How much Cord charges to process a payment, how it's calculated, and the rules that apply to refunds and disputes.</p>
+  <p class="page-subtitle">How much Cord charges to process a payment, in which currencies it applies, and the rules for refunds and disputes.</p>
 </header>
 
-## The fee by method
+## What it is
 
-Cord Payments charges a per-transaction fee that **already includes** the cost of processing — there's no second, hidden fee from a third party added on top later. The fee depends on the collection method.
+The Cord Payments fee is the per-transaction fee Cord deducts from each online payment processed through your payments account. **It already includes the processing cost**: there's no second third-party fee added later. It's separate from your [Cord subscription](/en/docs/cuenta/suscripcion): it applies the same on every plan.
+
+## Fee by currency
+
+The fee depends on the **currency the payment is collected in**, not on the country or the plan.
+
+| Payment currency | Cord platform fee today |
+|---|---|
+| **MXN** (Mexican pesos) | Yes: the per-method table below. |
+| **USD** (US dollars) | Doesn't apply. |
+| **EUR** (euros) | Doesn't apply. |
+| **GBP** (pounds sterling) | Doesn't apply. |
+| **CAD** (Canadian dollars) | Doesn't apply. |
+| **BRL** (Brazilian reais) | Doesn't apply. |
+
+In currencies without a platform fee you only pay your payments account's processing cost and your Cord subscription. **Settings › Payments** tells you so, with your account's currency. If a fee is ever activated in another currency, it will be published here and you'll have to accept it before it applies.
 
 <Callout type="info">
-**This table is the current fee schedule for payments in Mexican pesos (MXN)** — today the only rail where Cord Payments has a published, active fee schedule. If you charge in any other currency (USD, EUR, GBP, CAD, BRL), **Cord applies no platform fee at all on that payment today**: you pay only your processor's cost and your Cord subscription. Settings › Payments says the same thing there, in your account's currency.
+Payments through [Mercado Pago](/en/docs/pagos/mercado-pago) carry no Cord fee: you pay your Mercado Pago account's fee, under your terms with them. Manual transfer carries no fee from anyone.
 </Callout>
+
+## Fee table in MXN
 
 | Method | Total fee | Example on a $10,000.00 MXN payment |
 |---|---|---|
 | **Card** (credit/debit) | 4% + $3.00 MXN + VAT | $467.48 MXN |
-| **SPEI** (automatic bank transfer) | 1% + $7.00 MXN + VAT, up to a **maximum of $588.12 MXN** per payment | $124.12 MXN |
-| **Retainers** (monthly recurring charge) | 4% + $3.00 MXN + VAT per monthly charge | — |
-| **Manual transfer** | $0.00 MXN — doesn't go through Cord Payments | $0.00 MXN |
+| **SPEI** (automatic transfer) | 1% + $7.00 MXN + VAT, with a **maximum of $588.12 MXN** per payment | $124.12 MXN |
+| **Retainers** (monthly recurring card charge) | 4% + $3.00 MXN + VAT on each monthly charge | $467.48 MXN per charge |
+| **Manual transfer** | $0.00 MXN: doesn't go through Cord Payments | $0.00 MXN |
 
 <Callout type="info">
-VAT (Mexican IVA, 16%) is calculated over the fee (its percentage component plus its fixed component), never over the total payment amount. The examples already include it: by card, (4% of $10,000.00 + $3.00) × 1.16 = $467.48 MXN; by SPEI, (1% of $10,000.00 + $7.00) × 1.16 = $124.12 MXN.
+VAT (16%, Mexico's IVA) is calculated on the fee (the percentage component plus the fixed one), never on the full payment amount. By card: (4% of $10,000.00 MXN + $3.00 MXN) × 1.16 = $467.48 MXN. By SPEI: (1% of $10,000.00 MXN + $7.00 MXN) × 1.16 = $124.12 MXN.
 </Callout>
 
-### Why SPEI has a cap and cards don't
+### Why SPEI has a cap and card doesn't
 
-The cost of processing a SPEI transfer is nearly the same regardless of the amount. That's why the percentage part of the SPEI fee (the 1%) is capped at **$500.00 MXN** before VAT, a cap reached on a **$50,000.00 MXN** payment. From that amount on, the total fee for a SPEI payment stops growing and stays at **$588.12 MXN**: ($500.00 + the $7.00 fixed component) × 1.16 VAT, no matter how large the payment gets:
+Processing a SPEI costs practically the same regardless of the amount. That's why the percentage part of the SPEI fee (the 1%) is capped at **$500.00 MXN** before VAT, reached on a **$50,000.00 MXN** payment. From there, a SPEI's total fee stays at **$588.12 MXN**: ($500.00 MXN + $7.00 MXN) × 1.16.
 
 | Payment amount | Total card fee | Total SPEI fee |
 |---|---|---|
@@ -40,52 +60,78 @@ The cost of processing a SPEI transfer is nearly the same regardless of the amou
 | $100,000.00 MXN | $4,643.48 MXN (4.64%) | **$588.12 MXN** (0.59% effective) |
 | $500,000.00 MXN | $23,203.48 MXN (4.64%) | **$588.12 MXN** (0.12% effective) |
 
-For large payments in pesos, this makes SPEI by far the cheapest online method in Cord Payments.
+For large payments in pesos, SPEI is by far the cheapest online method.
 
-### Retainers and recurring charges
+### Split payments
 
-A retainer (monthly recurring quote) is always charged by card — it's the only way for the charge to go out automatically each month without the customer having to do anything. The fee is the **same as a regular card payment**: 4% + $3.00 MXN + VAT, applied to each individual monthly charge. There is no special reduced rate for retainers: the cost of processing a card is the same whether it's charged once or twelve times.
+Each part of a quote is a separate transaction: the [deposit and the balance](/en/docs/pagos/anticipos), each [installment](/en/docs/pagos/cuotas), and each partial payment of an invoice carries its own fee, calculated with the same table.
 
-### Manual transfer — still free
+### Retainers
 
-If you'd rather share your bank details directly and have the customer transfer outside Cord Payments (uploading proof of payment for you to mark the charge by hand), that option still carries no Cord fee. It doesn't go through Cord Payments, so it doesn't generate any fee — but it also doesn't have automatic reconciliation or chargeback protection.
+A [retainer](/en/docs/pagos/igualas) is always charged by card, because it's the only way for the charge to go out on its own every month. The fee is the same as a regular card payment, applied to each monthly charge.
 
-## How your fee schedule gets activated
+## How your fee schedule is activated
 
-Cord Payments requires you to explicitly accept the current fee schedule before you can start charging. This happens in **Settings › Payments**:
+Cord's fee doesn't apply until you **explicitly accept the current version** of the schedule:
 
-- **New account:** acceptance is the last step of the connection wizard (see [Connect your account](/en/docs/pagos/onboarding), the "Terms" step) — you can't finish connecting your account without checking the box that accepts the current fee schedule.
-- **Already-connected account, or if the schedule changes:** go to **Settings › Payments** (you need the *Configure payments* permission), review the current fee schedule and check the acceptance box.
+<Steps>
+1. Connect your payments account. See [Connect your account](/en/docs/pagos/onboarding).
+2. Open **Settings › Payments** with the **Payment settings** permission. If there's a version you haven't accepted, the **Cord Payments fee** section appears with the notice "The current version isn't accepted yet. Until you accept it, Cord won't add its fee".
+3. Review the fees that apply to you. If your account collects in a currency without a platform fee, the section says so instead of showing the Mexican table.
+4. Check the box accepting the Cord Payments fee terms.
+5. Click **Activate current fee** and confirm your identity when Cord asks.
+</Steps>
 
-Until you accept, your account can stay connected and keep receiving manual payments, but it **cannot process card or SPEI** through Cord Payments.
+The acceptance is recorded in the audit log with the terms version, date, and IP address. If we change the schedule, the change is **not retroactive**: the section appears again and the new version doesn't apply until you accept it.
 
-<Callout type="warning">
-**Accounts from before Cord Payments launched:** if your business was already accepting payments online before this fee schedule existed, your existing payments stay protected at **0% commission** until you, voluntarily, accept the current schedule in Settings › Payments. Nobody changes your rate without you confirming it first.
+<Callout type="warning" title="Until you accept, there's no fee">
+A connected account that hasn't accepted the current version keeps collecting by card and SPEI, and Cord doesn't add its fee to those payments. This protects accounts that were collecting before this schedule existed: nobody changes your fee without your confirmation. Accepting the fee also turns on the payment screen where your customer first chooses between card and SPEI.
 </Callout>
 
-If we ever change the fee schedule, it does not apply retroactively to an already-given acceptance — you'll need to accept the new version again before it charges you differently. The full legal text lives in [Terms and Conditions, Cord Payments section](https://cordhq.app/en/terminos#cord-pagos).
+The full legal text is in the [Terms and conditions, Cord Payments section](https://cordhq.app/terminos#cord-pagos).
 
-## What happens to the fee if you refund a payment
+## What happens to the fee if you refund
 
-If you refund a customer from **My Payments › Refund**, the refunded amount is deducted from your net revenue in the reports — but **the processing fee on the original payment is not refunded**. It's a cost already incurred at the moment the card or SPEI transfer was processed, whether the payment stays or you refund it later.
+If you return money to a customer from the [payments dashboard](/en/docs/pagos/reembolsos), the refunded amount is deducted from your net revenue, but **the original payment's fee isn't returned**: it's a cost incurred when the payment was processed.
 
-## What happens to the fee in a dispute (chargeback)
+## What happens to the fee in a dispute
 
-If a customer disputes a charge with their bank (a chargeback), you'll see the case in **My Payments › Disputes**. While the dispute is open, the amount is held; if you lose it, that money (plus a dispute fee) comes out of your balance — the original Cord Payments fee is not refunded in this case either. See [Disputes and chargebacks](/en/docs/pagos/disputas) for the full defense process.
+If a customer disputes the charge with their bank (chargeback), the amount is held while it's resolved. If you lose the dispute, that money leaves your balance along with a processor dispute fee, and Cord's original fee isn't returned either. See [Disputes and chargebacks](/en/docs/pagos/disputas).
 
 ## Advantages of collecting with Cord Payments
 
-1. **100% automatic reconciliation.** Every payment gets tied to its cotización and the status flips to paid in real time — no more chasing bank deposits.
-2. **The money is yours, straight to your account.** Cord Payments never holds your funds or acts as a middleman for the money — you're the merchant of record for every payment.
-3. **Checkout with your brand.** Your customer pays on a screen embedded in the document, with your name and colors — no redirects to external sites, no third-party logos.
-4. **Down payments, balances, and retainers.** The same system collects a down payment today and the balance later (Net 30/60), or a monthly retainer automatically, without you having to chase the payment by hand.
+1. **Automatic reconciliation.** Each payment is tied to its quote or invoice and the status changes to paid as soon as it's confirmed.
+2. **The money is yours, straight to your account.** Cord doesn't hold your funds or act as a middleman for the money: you're the merchant of record of every payment.
+3. **Checkout with your branding.** Your customer pays inside the document, with your name and colors.
+4. **Split payments without double work.** Deposit and balance, installments, partial payments, and retainers all come from the same link.
 
-## Things to consider before activating
+## Before you activate
 
-1. **Payout timing.** Money doesn't land in your bank instantly. Each payment first goes to the balance of your payments account and is paid out at the frequency you choose in **Settings › Payments** (daily, weekly, monthly, or manual). While your account's verification has pending requirements, payouts may be paused; that same screen tells you so.
-2. **Identity verification (KYC).** Activating Cord Payments requires you to pass a verification with your business's tax identifier, the details of the people who control it, and their identity document. Exactly what is requested depends on your country and entity type. It's a regulatory requirement, not a Cord decision. See [Connect your account](/en/docs/pagos/onboarding).
-3. **Chargebacks.** If a customer disputes a charge, the money can be held while the dispute is resolved. Cord gives you the tools to defend yourself with evidence, but responsibility for the chargeback belongs to the business that collected the payment.
+1. **Payout timing.** Money doesn't reach your bank instantly: it first lands in your payments account balance and is paid out at the [frequency you choose](/en/docs/pagos/depositos).
+2. **Identity verification.** To activate Cord Payments you go through a regulatory verification of the business and the people who control it. See [Connect your account](/en/docs/pagos/onboarding).
+3. **Chargebacks.** If a customer disputes a card charge, the business that collected is responsible. Cord gives you the tools to defend yourself with evidence.
 
 <Callout type="info">
-**Recommendation:** for very large cotizaciones where the SPEI cap no longer offers a clear advantage, Manual Transfer (0% fee) remains the cheapest option — in exchange for losing automatic reconciliation and dispute protection.
+**Tip:** on very large quotes in pesos, manual transfer is still the no-cost option, at the price of losing automatic reconciliation and verifying each deposit by hand.
 </Callout>
+
+## Limits
+
+- The platform fee only applies to MXN payments today.
+- The fee isn't returned on refunds or disputes.
+- The fee can't be negotiated per account from the app.
+
+## Common problems
+
+**I don't see the section to accept the fee.** You already accepted the current version, you don't have the **Payment settings** permission, or your payments account isn't connected yet.
+
+**My USD payment shows no Cord fee.** That's expected: there's no platform fee outside MXN today.
+
+**Net deposited doesn't match what I collected.** Check the **Where every peso goes** widget on the [payments dashboard](/en/docs/pagos/dashboard): it separates fees, refunds, and disputes.
+
+## Related
+
+- [Payment methods](/en/docs/pagos/metodos)
+- [Payouts to your bank](/en/docs/pagos/depositos)
+- [Invoicing by country](/en/docs/pagos/facturacion) (tax receipt for the fee in Mexico)
+- [Subscription](/en/docs/cuenta/suscripcion)

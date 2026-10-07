@@ -1,87 +1,160 @@
 ---
-title: "Fiscal invoicing by country"
-description: "How Cord issues CFDI 4.0 in Mexico and commercial invoices in other available markets, including Verifactu's operating status in Spain."
+title: "Invoicing by country"
+seoTitle: "Invoicing by country in Cord: CFDI, Spain, and commercial invoices"
+description: "Which document Cord issues by country and plan: CFDI 4.0 in Mexico, proformas in Spain while tax registration is enabled, commercial invoices in other markets, monthly quotas per plan, and the tax receipt for Cord's fee in Mexico."
 lastUpdated: "2026-10-07"
-reviewedBy: "Cord Product and Fiscal Operations"
+reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Complete the business tax identity", "In Mexico, upload a valid CSD", "In Spain, Verifactu depends on regulatory activation and a valid certificate"]
+prerequisites: ["Complete business tax identity in Settings › Tax details (Tax profile outside Mexico)", "In Mexico, Starter or higher and a valid CSD to issue CFDI", "Collections permission to issue invoices"]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Fiscal invoicing by country</h1>
-  <p class="page-subtitle">One invoicing engine, a different receipt depending on where your business operates.</p>
+  <h1 class="page-title">Invoicing by country</h1>
+  <p class="page-subtitle">One invoicing engine, a different document depending on where your business operates and which plan you have.</p>
 </header>
 
-## Documents and plans
+## What it is
 
-Free includes 10 commercial invoices per month, separately from quote sends; from Starter they are unlimited. Tax-compliant invoices have their own monthly included allowance: 30 on Starter, 200 on Pro, 500 on Scale, and 1,000 on Developer; Free doesn't include fiscal issuance. If you go over your plan's allowance, additional fiscal invoices are billed as overage usage (see [Subscription](/en/docs/cuenta/suscripcion)). Pro formas do not replace tax invoices. A paid plan does not itself activate a fiscal integration.
+Cord doesn't treat an invoice as a generic PDF with a number. The **document type** issued depends on your business country, your plan, and the tax setup you have ready. Once issued, a document keeps its type even if you later change plan or setup: a proforma doesn't become a CFDI or vice versa.
 
-## Document types by country
+For the full life of an invoice (draft, issue, delivery, payment, credit notes, and voiding), see [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas).
 
-Cord doesn't treat an invoice as a generic PDF with a number: the type of receipt it issues depends on your business's country. Today there are three rails:
+## Which document is issued
 
-- **Mexico:** pro forma in Free; CFDI 4.0 from Starter with fiscal configuration. Paid plans may also choose a pro forma.
-- **Spain:** pro forma in the commercial option; integrated fiscal issuance from Starter where enabled. The Verifactu rail creates chained records only when the account has a valid certificate and Cord's regulatory integration is enabled.
-- **Other supported markets:** a commercial invoice with its own numbering and taxes and withholdings configured by the business, without automatic filing with a tax authority.
+| Country | Free plan | Starter or higher |
+|---|---|---|
+| **Mexico** | Proforma (number with the `PRO` series) | **CFDI 4.0** stamped with the SAT, with your CSD uploaded. You can also choose a proforma. |
+| **Spain** | Proforma (`PRO` series) | Proforma today. Spanish tax registration will be enabled later; see [Spain](#spain-verifactu). |
+| **United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru** | Commercial invoice | Commercial invoice |
 
-In all three cases, tax is calculated **per line**, not per document: you can mix a taxed item with an exempt one on the same invoice, and each one prints the rate and the name of the tax that applies in your country (VAT in the UK, GST in Canada, state-by-state sales tax in the US, IVA in Mexico and Spain, and so on, based on your account's fiscal profile).
+- **Proforma:** a commercial document that explicitly states it doesn't replace a tax invoice. It's for collecting and for your customer to process payment, not for tax deductions.
+- **Commercial invoice:** an invoice with a sequential number, per-line taxes and withholdings, and both parties' tax details. Cord doesn't file it with any authority.
+- **CFDI 4.0:** Mexico's digital tax receipt, stamped with the SAT using your business's certificate.
 
-## Mexico: Nominative CFDI 4.0
+In all three cases, tax is calculated **per line**: you can mix a taxed item with an exempt one, and each prints your country's tax name (IVA in Mexico and Spain, VAT in the United Kingdom, GST in Canada, Sales tax per state in the United States).
 
-For eligible accounts in Mexico on Starter or above, Cord stamps invoices with SAT through a certified electronic
-invoicing provider. You must first upload and validate the issuer's current Digital
-Seal Certificate (CSD) in Cord; after that, the day-to-day flow doesn't require a
-separate portal or reattaching the certificate to every invoice.
+<Callout type="info" title="Test documents">
+If a document shows as a **Test document**, no tax provider issued it: it has no validity with the authority, the link warns your customer, and it can't be paid online. A test issue doesn't become valid by changing the setup.
+</Callout>
 
-### Pulling data from the catalog
+## Quotas per plan
 
-Cord pulls the recipient's fiscal data directly from the client's record:
+Invoices have their own monthly quotas, separate from quote sends:
 
-- **Tax Regime:** the one assigned to that client's profile.
-- **CFDI Use:** the one set on the client's profile; if there isn't one, your account's default use, and if that doesn't exist either, G03 (general expenses).
-- **Zip code:** the one on the client's profile, which must match their tax status certificate.
+| Plan | Commercial invoices and proformas per month | Tax documents (CFDI) included per month |
+|---|---|---|
+| Free | 10 | No tax issuing |
+| Starter | Unlimited | 30 |
+| Pro | Unlimited | 200 |
+| Scale | Unlimited | 500 |
+| Developer | Unlimited | 1,000 |
 
-The client's tax regime, CFDI use, and zip code are optional on their profile. If they're missing, Cord applies default values — and without an RFC, it issues to "General Public" — which may not match your client's tax certificate. Fill them in before issuing so the CFDI is useful to whoever receives it.
+- Beyond the included tax quota, from Starter up, additional documents are billed as usage overage on your subscription. See [Subscription](/en/docs/cuenta/suscripcion).
+- On Free, after 10 commercial documents in a month, issuing stops until the next month or until you change plans.
+- Drafts and test documents don't consume quota.
+- Running out of quota or downgrading does **not** block downloading, sending, or collecting documents already issued.
 
-### Issuance, taxes and confirmation
+Subscribing to a plan doesn't turn on tax issuing by itself: in Mexico you also need your CSD uploaded.
 
-In the issuance flow, Cord builds the document from the issuer, recipient and
-reviewed line items. It preserves per-line taxes, withholdings and exempt items
-instead of flattening them into one rate. Issuance must be confirmed before the
-document is presented as a valid CFDI.
+## Mexico: CFDI 4.0
 
-A confirmed payment and an issued invoice are different states. Check fiscal and
-delivery status: do not assume paying always creates, stamps and emails a new
-invoice. If only email delivery fails, resend the existing document.
+With Starter or higher, Cord stamps with the SAT through a certified provider, **under your business's RFC and Digital Seal Certificate (CSD)**. You upload the CSD once in **Settings › Tax details** and never attach it again. See [Digital Seal Certificate](/en/docs/cuenta/csd).
 
-Credit notes issued from a Mexican invoice use an expense CFDI related to its
-UUID. A cancellation request does not void the invoice until confirmed. See
-[invoices and balances](/en/docs/pagos/facturas-emitidas).
+### Recipient details
+
+Cord takes the recipient's tax details from the customer record:
+
+| Item | Source | If missing |
+|---|---|---|
+| RFC | Customer record | Issued to "Público en General" (general public). |
+| Tax regime | Customer record | 601 (General corporate regime) if the customer has an RFC; 616 (No tax obligations) when issued to the general public. |
+| CFDI use | Customer record, or your account's default use | G03 (General expenses). |
+| Tax postal code | Customer record | There's no value that can safely replace it: CFDI 4.0 requires the postal code on the recipient's tax certificate, and stamping may be rejected. |
+
+The defaults may not match your customer's tax certificate (constancia de situación fiscal). Cord doesn't invent them from other data: complete them in the record before issuing so the CFDI is useful to whoever receives it.
+
+### Taxes and issuing
+
+Cord sends each item's taxes as you entered them: 16% IVA, 8% IVA, or exempt, plus IVA and ISR withholdings. It doesn't collapse them into a single rate. If the quote is in a currency different from your accounting currency, the CFDI declares the exchange rate locked at quoting time.
+
+A confirmed payment and an issued invoice are different states. Paying doesn't create, stamp, or send an invoice by itself; check each document's tax and delivery status. If stamping succeeds and the email fails, the number is kept and you can resend from the detail page.
+
+Credit notes for a Mexican invoice are an expense CFDI (egreso) related to the original UUID. A cancellation request doesn't void the CFDI until the SAT confirms it; meanwhile you can click **Check cancellation status** on the detail page.
+
+### What Cord doesn't do in Mexico today
+
+- **Payment receipt complement (REP).** Cord stamps with the PUE payment method (single payment) and doesn't issue payment complements. If you invoice on credit with PPD and need the REP for each payment, you must do it outside Cord today.
+- **Cancellation with replacement (reason 01).** Not available.
 
 ## Spain: Verifactu
 
-The Verifactu module is built, but its operational availability depends on two boundaries: the organization must have a valid electronic certificate, and Cord must have its software-system identity and regulatory rail enabled. Only when both conditions are met does each invoice create a **SHA-256 record chained** to the previous record for that organization.
+Verifactu is the invoicing system required by Spanish law: each invoice generates a record chained to the previous one and sent to the Spanish Tax Agency.
+
+### What Cord does today
+
+- **It issues proformas.** While Cord completes its enablement as an invoicing system with the Tax Agency, accounts in Spain issue **proformas** with the `PRO` series, even with a paid plan and a certificate uploaded.
+- **It doesn't register or send anything to the Tax Agency.** A proforma has no fingerprint or verification QR, and its PDF states it doesn't replace a tax invoice.
+- **It doesn't fake tax issuing.** If you explicitly request a tax invoice, Cord replies that integrated tax issuing isn't enabled yet for your account and country, instead of issuing a document that pretends to have a record.
+
+Meanwhile, if your business must issue registered invoices, use your current invoicing system for the tax document and Cord to quote, collect, and follow up.
+
+### What you can prepare now
+
+In **Settings › Tax profile** (Spain accounts only) you can upload your **electronic certificate** (`.p12` or `.pfx`) with its password. Cord validates the password, reads the expiry date, and stores the certificate encrypted. Also make sure your NIF is in your tax details.
+
+### What will change once enabled
+
+When enablement is complete, on accounts with Starter or higher and a valid certificate:
+
+- Each invoice will generate a **chained record** with a digital fingerprint that links it to your business's previous invoice.
+- The PDF will include the Tax Agency's **verification QR code**, the **VERI\*FACTU** legend, and the fingerprint.
+- The record will be sent to the Tax Agency after issuing. Issuing doesn't wait for that response: check the submission status on the document.
+- A registered invoice isn't edited: it's corrected with a new correction or cancellation record.
+
+We'll announce it in [what's new in payments and invoicing](/en/docs/pagos/mejoras-confiabilidad).
+
+## Other markets: commercial invoice
+
+In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord issues a **commercial invoice** with a sequential number per organization, per-line taxes and withholdings, and both parties' tax details. Cord doesn't file it with the local tax authority. Whether you must issue, report, or complement that document depends on your country and regime; confirm with your tax advisor.
+
+## The tax receipt for Cord's fee (Mexico)
+
+Besides the CFDIs you issue to your customers, in Mexico Cord issues its **own income CFDI** for the fee it charges on your MXN Cord Payments payments (see [Fees](/en/docs/pagos/condiciones)). It's the receipt for the processing service Cord provides you, not for your sale.
+
+- **It's monthly and consolidated:** one CFDI per month with the sum of that month's fees, not one per payment.
+- **Cord reviews it before stamping:** at the start of each month the previous month's draft is prepared and recipient, base, IVA, and total are checked before issuing.
+- **It's issued to your tax details:** RFC, tax regime, and postal code from **Settings › Tax details**, with your account's CFDI use or G03 if there's none, and the PUE payment method.
+- **Mexico only.** Outside Mexico, the payment receipt is your document.
+
+The CFDI for your Cord **subscription** is requested separately, from your subscription billing, for each payment already settled. See [Subscription](/en/docs/cuenta/suscripcion).
 
 <Callout type="warning">
-Spanish fiscal activation and integrated validation remain pending. The commercial option issues a pro forma without a VERI*FACTU record; an explicit fiscal request fails if the integration is unavailable. This is not a compliant NO VERI*FACTU implementation. Creating a chained record does not by itself confirm receipt by AEAT.
+If your RFC, tax regime, or postal code aren't complete in **Settings › Tax details**, the fee CFDI can't be issued. If you didn't receive it or need a month's XML and PDF, write to us.
 </Callout>
 
-## Other supported markets: commercial invoice
+## Limits
 
-In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord can issue a **commercial invoice** with a sequential number, per-line taxes and withholdings configured by the business, and the captured tax details of both parties. Cord does not automatically file it with the local tax authority. Whether the business must issue, report, or supplement that document depends on its country and tax regime; confirm that obligation with a tax adviser.
+- CFDI: Mexico only, from Starter, with a CSD uploaded.
+- Spain: proformas only today.
+- Other markets: commercial invoice not filed with the authority.
+- Free: 10 commercial documents per month and no tax issuing.
+- No payment complement (REP) in Mexico.
 
-## What Cord doesn't do today
+## Common problems
 
-- **Payment Receipt Complement (REP).** In Mexico, Cord stamps the income CFDI with the PUE payment method (single payment) and does not issue payment complements. If your operation requires invoicing on credit with the PPD method and issuing a REP for each payment, you'll need to do that outside Cord for now.
-- **Automatic filing outside Mexico and Spain.** In other markets, the commercial invoice isn't sent to any tax authority.
+**My invoice came out as a proforma and I expected a CFDI.** Check your plan (Starter or higher), that your CSD is uploaded and valid, and that you didn't choose the commercial option when issuing.
 
-## The receipt for Cord Payments' own fee (Mexico)
+**My customer says their CFDI is unusable.** Check their tax regime, postal code, and CFDI use in their record; if they were missing, Cord used defaults.
 
-In addition to the CFDI you stamp for your own customers, in Mexico Cord issues its **own income CFDI** for the fee it charges on every Cord Payments transaction (see [Fees and advantages](/en/docs/pagos/condiciones)) — this is the tax receipt for the payment-processing service Cord provides you, not for your own sale.
+**I'm in Spain and uploaded my certificate, but I still issue proformas.** That's expected while Cord completes its enablement with the Tax Agency.
 
-This receipt is issued **consolidated, in periodic batches** (not one per individual transaction) against the RFC and fiscal data registered on your account.
+**I hit the document limit on Free.** Issuing resumes next month or when you change plans. Your issued documents remain available.
 
-<Callout type="warning">
-If your RFC, tax regime, or zip code aren't up to date on your profile, Cord's commission CFDI cannot be issued. Keep that information current in **Settings › Fiscal**.
-</Callout>
+## Related
+
+- [Create, issue, and collect invoices](/en/docs/pagos/facturas-emitidas)
+- [Recurring invoices](/en/docs/pagos/facturas-recurrentes)
+- [Digital Seal Certificate](/en/docs/cuenta/csd)
+- [Stamping from the quote](/en/docs/cotizacion/timbrado)
+- [Subscription](/en/docs/cuenta/suscripcion)

@@ -1,75 +1,104 @@
 ---
 title: "Dashboard de cobros"
-description: "Recorrido completo por los 12 widgets de Mis cobros: saldo, depósitos, estado de la cuenta, comisión, disputas y cobros recientes."
+seoTitle: "Dashboard de cobros de Cord: saldo, depósitos, comisiones y disputas"
+description: "Recorrido por Mi dinero › Cobros: quién puede verlo, qué mide cada uno de sus 12 widgets, de dónde salen los datos, cómo se personaliza y cómo reembolsar desde la tabla de cobros recientes."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Cobranza", "Cuenta de Cord Payments conectada para ver saldo, depósitos, neto y disputas"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Dashboard de cobros</h1>
-  <p class="page-subtitle">Todo lo que entra por Cord Payments, en un solo lugar — personalizable como el resto de los reportes de Cord.</p>
+  <p class="page-subtitle">Lo que entra por Cord Payments, en un solo lugar: cuánto cobraste, cuánto es neto, cuándo llega a tu banco y qué necesita atención.</p>
 </header>
 
-**Mis cobros** (`/app/cobros`, sidebar › Mi dinero) es el panel donde ves el dinero que entra por Cord Payments: cuánto has cobrado, cuánto es tuyo neto de comisión, cuándo te llega el próximo depósito, y el estado de salud de tu cuenta conectada. Es distinto de **Ajustes › Cobros**, que es donde *configuras* Cord Payments (conectar tu cuenta, métodos activos, tarifas) — este dashboard es solo para *ver* lo que ya pasó.
+## Qué es
 
-Como el resto de los reportes de Cord, el dashboard es **personalizable**: con el botón "Personalizar" puedes ocultar, reordenar o cambiar el tamaño de cualquier widget; "Restablecer" regresa al diseño original. Tu configuración se guarda por usuario.
+**Cobros** (barra lateral › **Mi dinero**) es el panel para **ver** el dinero que ya entró: cobrado, neto de comisión, depósitos, disputas y la salud de tu cuenta de cobros. Es distinto de **Ajustes › Cobros**, donde **configuras** Cord Payments (verificación, métodos, tarifa y depósitos).
+
+{/* MOCKUP: Mi dinero › Cobros con la zona "Tu dinero hoy" (Saldo disponible $48,210.00 MXN, Depósitos con dos filas "Depositado" y "En camino", Estado de la cuenta con tres indicadores en verde), la zona "Indicadores clave" (Cobrado, Neto depositado, Igualas activas, Disputas abiertas) y la gráfica "Evolución del cobro". */}
+
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes. |
+| Permiso | **Cobranza**. Sin él, la página muestra "Sin acceso". |
+| Reembolsar | Además, el permiso **Reembolsos**, que el dueño concede de forma explícita. |
+| Cuenta de cobros | Necesaria para Saldo disponible, Depósitos, Neto depositado, Disputas abiertas y A dónde va cada peso. Sin ella, esos widgets no aparecen y el resto funciona con tus cobros registrados. |
+
+## Rango de fechas y personalización
+
+- **Rango de fechas:** el selector de arriba aplica a todos los widgets de periodo (hasta un año hacia atrás). Cambiarlo actualiza todo el panel a la vez. Saldo, Depósitos y Estado de la cuenta muestran siempre el estado actual.
+- **Personalizar:** oculta, reordena o cambia el tamaño de cualquier widget; **Restablecer** regresa al diseño original. La configuración se guarda por usuario. En el teléfono, los widgets se ordenan con botones de subir y bajar.
+- **Biblioteca:** además de los 12 widgets, puedes agregar **Contratos recurrentes** (ingreso recurrente actual de tus igualas).
 
 ## Los widgets
 
-### Saldo disponible
+### Tu dinero hoy
 
-Cuánto dinero tienes disponible para depósito en este momento, más lo que sigue "en camino" (cobrado pero todavía no liberado para depositar) y lo que está en reserva. Solo aparece si ya conectaste tu cuenta.
+**Saldo disponible.** Cuánto tienes disponible para depósito, cuánto sigue **en camino** (cobrado, pero todavía no liberado) y cuánto está **en reserva**.
 
-### Depósitos
+**Depósitos.** Las transferencias a tu cuenta bancaria con fecha de llegada, monto, divisa y estado: **Programado**, **En camino**, **Depositado**, **Falló** o **Cancelado**. El historial se guarda en Cord y se conserva aunque cambies de frecuencia. Si todavía no hay ninguno, el widget lo dice. Ver [Depósitos a tu banco](/docs/pagos/depositos).
 
-Las transferencias que Cord Payments ha hecho o hará a tu cuenta bancaria: fecha de llegada, monto y estado (Depositado / En camino / Programado / Falló). El historial se guarda en Cord conforme ocurre cada depósito, así que carga con la página en vez de esperar a una consulta externa, y se conserva aunque cambies de frecuencia. Si aún no has recibido ningún depósito, el widget lo indica explícitamente en vez de mostrarse vacío sin explicación.
+**Estado de la cuenta.** Tres indicadores independientes:
 
-El **ritmo** de esos depósitos lo eliges tú en Ajustes › Cobros: diario, semanal, mensual o manual, con los días de retraso que prefieras. Cambiarlo pide confirmar tu identidad, porque decide a qué velocidad sale tu dinero.
+| Indicador | Qué dice |
+|---|---|
+| **Cobros** | Si tu cuenta puede procesar tarjeta y SPEI ahora (Activos / Inactivos). |
+| **Depósitos** | Si puede transferir a tu banco, y a qué cuenta ("Depósitos a [banco] ••••1234"). |
+| **Verificación** | Si está completa, cuántos requisitos faltan, cuántos están en revisión y su fecha límite. |
 
-### Estado de la cuenta
+Con algo pendiente aparece **Administrar**, que te lleva a completarlo en Ajustes › Cobros. Si todavía no activas Cord Payments, el widget lo explica: puedes cotizar y registrar pagos manuales, pero no cobrar con tarjeta ni SPEI.
 
-El semáforo de salud de tu cuenta conectada, con tres indicadores independientes:
+### Indicadores clave
 
-- **Cobros** — si tu cuenta puede procesar tarjeta y SPEI ahora mismo (Activos / Inactivos).
-- **Depósitos** — si Cord Payments puede transferir a tu cuenta bancaria.
-- **Verificación** — si tu KYC está completo o si falta algún requisito pendiente (con fecha límite, si aplica).
+**Cobrado.** El monto cobrado en el periodo, el número de operaciones, la variación contra el periodo anterior y una mini gráfica diaria. Incluye los pagos registrados a mano.
 
-Si algo está incompleto, el widget muestra exactamente cuántos requisitos faltan y un botón "Administrar" que te lleva directo a completarlos en Ajustes › Cobros. Si todavía no activaste Cord Payments, el widget lo dice claramente y explica que puedes seguir cotizando y registrando pagos manuales mientras tanto.
+**Neto depositado.** Lo cobrado **después de la comisión de Cord Payments**, con la comisión del periodo y la tarifa efectiva (que varía según tu mezcla de tarjeta y SPEI). Si el periodo tiene más de 1,000 movimientos, avisa que es una muestra parcial.
 
-### Cobrado
+**Igualas activas.** Cuántos contratos de [cobro recurrente](/docs/pagos/igualas) están activos y cuántos tienen un cobro fallido que atender.
 
-El monto total que cobraste en el periodo seleccionado (con el mismo selector de fechas que usa el resto de los reportes de Cord), el número de operaciones, y la comparación en porcentaje contra el periodo anterior — con una mini-gráfica de la tendencia diaria.
+**Disputas abiertas.** Cuántos contracargos hay en el periodo y el monto en juego, con la fecha límite para responder cada uno. Cada disputa abre su [página de evidencia](/docs/pagos/disputas). Sin disputas, lo dice.
 
-### Neto depositado
+### Movimiento y conciliación
 
-Lo mismo que "Cobrado", pero **después de restar la comisión de Cord Payments**: es el número real que te queda. Muestra la tarifa efectiva del periodo (el porcentaje real que se llevó Cord, que varía según tu mezcla de tarjeta/SPEI) junto al monto neto.
+**Evolución del cobro.** El dinero que entró día a día, contra el mismo número de días del periodo anterior (en un tono más tenue).
 
-### Igualas activas
+**Volumen mensual.** Lo cobrado mes a mes dentro del periodo.
 
-Cuántos contratos de [cobro recurrente mensual](/docs/pagos/igualas) tienes activos ahora mismo, y si alguno tiene un cargo mensual que falló y necesita atención.
+**A dónde va cada peso.** Del bruto cobrado: cuánto llega neto a tu banco, cuánto fue comisión, cuánto se descontó por reembolsos y cuánto está atado a disputas.
 
-### Disputas abiertas
+**Desglose por método.** Cuánto cobraste con tarjeta, SPEI y transferencia manual, con el número de transacciones. Puedes tocar un método para filtrar la tabla de cobros recientes.
 
-Cuántas disputas (contracargos) tienes abiertas en el periodo y el monto total en juego. Si no hay ninguna, lo dice explícitamente — es una buena señal, no un vacío. Cada disputa te lleva a su [página de evidencia](/docs/pagos/disputas) dedicada.
+**Cobros recientes.** Folio, cliente, método, fecha y monto de los últimos cobros. Con el permiso **Reembolsos**, cada cobro conciliado tiene el botón **Reembolsar**. Ver [Reembolsos](/docs/pagos/reembolsos).
 
-### Evolución del cobro
+## De dónde salen los datos
 
-La gráfica principal: cuánto dinero entró día a día en el periodo, comparado contra el mismo número de días del periodo anterior (la serie de comparación se muestra más tenue, para que la línea de este periodo sea la que domina visualmente).
+- **Cobrado, Igualas, Volumen mensual, Desglose por método y Cobros recientes** salen de los cobros registrados en Cord, así que cargan con la página.
+- **Saldo, Depósitos, Neto, A dónde va cada peso y Disputas** se completan unos segundos después con la información de tu cuenta de cobros. Si esa consulta falla, verás "No se pudo actualizar el dashboard" en lugar de cifras inventadas.
+- Los cobros con Mercado Pago se registran como cobros, pero su saldo y sus depósitos viven en tu cuenta de Mercado Pago.
 
-### Volumen mensual
+## Límites
 
-Comparativa mes a mes de cuánto has cobrado — útil para ver la tendencia de varios meses de un vistazo, más que el detalle diario de "Evolución del cobro".
+- El dashboard no muestra qué cobros componen cada depósito.
+- No incluye las facturas pendientes de cobro: para lo que te deben, usa [Cobranza](/docs/pagos/cartera-cobranza).
+- No lee los contracargos de Mercado Pago.
 
-### A dónde va cada peso
+## Problemas comunes
 
-El desglose de tu bruto cobrado en el periodo: cuánto llega neto a tu banco, cuánto se fue en comisión de Cord, cuánto se descontó por reembolsos y cuánto está atado a disputas abiertas. Es la forma más directa de ver el costo real de aceptar pagos en línea.
+**No aparecen Saldo ni Depósitos.** Tu cuenta de cobros no está conectada todavía.
 
-### Desglose por método
+**Neto depositado dice "No pudimos conciliar las comisiones".** La consulta a tu cuenta de cobros falló. Recarga más tarde.
 
-Cuánto cobraste por cada método — tarjeta, SPEI, transferencia manual — con el número de transacciones de cada uno.
+**No veo el botón Reembolsar.** Necesitas el permiso **Reembolsos**, y el cobro debe estar conciliado por Cord Payments.
 
-### Cobros recientes
+## Relacionadas
 
-La tabla de los cobros más recientes: folio de la cotización, cliente, método, fecha y monto. Es la vista que más se consulta día a día. Si tienes el permiso de *Reembolsos*, cada fila con un pago conciliado tiene un botón **Reembolsar** — ver [Reembolsos](/docs/pagos/reembolsos) para el flujo completo.
-
-<Callout type="info">
-Todos los widgets se calculan sobre el mismo rango de fechas seleccionado arriba del panel — cambiar el rango actualiza todo el dashboard a la vez.
-</Callout>
+- [Depósitos a tu banco](/docs/pagos/depositos)
+- [Reembolsos](/docs/pagos/reembolsos)
+- [Disputas y contracargos](/docs/pagos/disputas)
+- [Tarifas de Cord Payments](/docs/pagos/condiciones)
+- [Informes y desempeño](/docs/gestion/informes)

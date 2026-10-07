@@ -1,75 +1,104 @@
 ---
 title: "Payments dashboard"
-description: "A full tour of the 12 widgets in My Payments: balance, deposits, account status, fees, disputes, and recent payments."
+seoTitle: "Cord payments dashboard: balance, payouts, fees, and disputes"
+description: "A tour of My money › Payments: who can see it, what each of its 12 widgets measures, where the data comes from, how to customize it, and how to refund from the recent payments table."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Collections permission", "Connected Cord Payments account to see balance, payouts, net, and disputes"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Payments dashboard</h1>
-  <p class="page-subtitle">Everything coming in through Cord Payments, in one place — customizable like the rest of Cord's reports.</p>
+  <p class="page-subtitle">Everything that comes in through Cord Payments, in one place: what you collected, what's net, when it reaches your bank, and what needs attention.</p>
 </header>
 
-**My Payments** (`/app/cobros`, sidebar › My money) is the panel where you see the money coming in through Cord Payments: how much you've collected, how much is yours net of fees, when your next deposit lands, and the health status of your connected account. It's different from **Settings › Payments**, which is where you *configure* Cord Payments (connect your account, active methods, fees) — this dashboard is only for *viewing* what already happened.
+## What it is
 
-Like the rest of Cord's reports, the dashboard is **customizable**: use the "Customize" button to hide, reorder, or resize any widget; "Reset" returns to the original layout. Your configuration is saved per user.
+**Payments** (sidebar › **My money**) is the dashboard to **see** money that already came in: collected, net of fees, payouts, disputes, and the health of your payments account. It's different from **Settings › Payments**, where you **configure** Cord Payments (verification, methods, fee, and payouts).
+
+{/* MOCKUP: My money › Payments with the "Your money today" zone (Available balance $48,210.00 MXN, Deposits with two rows "Deposited" and "In transit", Account status with three green indicators), the "Key indicators" zone (Collected, Net deposited, Active retainers, Open disputes), and the "Collection over time" chart. */}
+
+## Requirements
+
+| Requirement | Detail |
+|---|---|
+| Plan | All plans. |
+| Permission | **Collections**. Without it, the page shows "No access". |
+| Refunds | Also the **Refunds** permission, which the owner grants explicitly. |
+| Payments account | Needed for Available balance, Deposits, Net deposited, Open disputes, and Where every peso goes. Without it, those widgets don't appear and the rest works with your recorded payments. |
+
+## Date range and customization
+
+- **Date range:** the selector at the top applies to every period widget (up to one year back). Changing it updates the whole dashboard at once. Balance, Deposits, and Account status always show the current state.
+- **Customize:** hide, reorder, or resize any widget; **Reset** restores the original layout. The configuration is saved per user. On a phone, widgets are reordered with up and down buttons.
+- **Library:** besides the 12 widgets, you can add **Recurring contracts** (current recurring revenue from your retainers).
 
 ## The widgets
 
-### Available balance
+### Your money today
 
-How much money you have available for deposit right now, plus what's still "in transit" (collected but not yet released for deposit) and what's held in reserve. Only appears once you've connected your account.
+**Available balance.** How much is available for payout, how much is still **on the way** (collected but not released yet), and how much is **reserved**.
 
-### Deposits
+**Deposits.** Transfers to your bank account with arrival date, amount, currency, and status: **Scheduled**, **In transit**, **Deposited**, **Failed**, or **Canceled**. The history is stored in Cord and survives frequency changes. If there are none yet, the widget says so. See [Payouts to your bank](/en/docs/pagos/depositos).
 
-The transfers Cord Payments has made or will make to your bank account: arrival date, amount, and status (Deposited / In transit / Scheduled / Failed). The history is stored in Cord as each payout happens, so it loads with the page instead of waiting on an external lookup, and it survives a change of frequency. If you haven't received any deposit yet, the widget says so explicitly instead of showing up empty with no explanation.
+**Account status.** Three independent indicators:
 
-The **pace** of those payouts is yours to choose in Settings › Payments: daily, weekly, monthly or manual, with the delay days you prefer. Changing it asks you to confirm your identity, because it decides how fast your money leaves.
+| Indicator | What it says |
+|---|---|
+| **Payments** | Whether your account can process card and SPEI right now (Active / Inactive). |
+| **Payouts** | Whether it can transfer to your bank, and to which account ("Payouts to [bank] ••••1234"). |
+| **Verification** | Whether it's complete, how many requirements are missing, how many are under review, and their deadline. |
 
-### Account status
+When something is pending, **Manage** appears and takes you to complete it in Settings › Payments. If you haven't activated Cord Payments yet, the widget explains it: you can quote and record manual payments, but not charge cards or SPEI.
 
-The health status of your connected account, with three independent indicators:
+### Key indicators
 
-- **Payments** — whether your account can process card and SPEI right now (Active / Inactive).
-- **Deposits** — whether Cord Payments can transfer to your bank account.
-- **Verification** — whether your KYC is complete or if a requirement is still pending (with a deadline, if applicable).
+**Collected.** The amount collected in the period, the number of transactions, the change versus the previous period, and a daily mini chart. It includes manually recorded payments.
 
-If anything is incomplete, the widget shows exactly how many requirements are missing, plus a "Manage" button that takes you straight to completing them in Settings › Payments. If you haven't activated Cord Payments yet, the widget says so clearly and explains you can keep quoting and recording manual payments in the meantime.
+**Net deposited.** What you collected **after the Cord Payments fee**, with the period's fee and the effective rate (which varies with your card and SPEI mix). If the period has more than 1,000 transactions, it warns that it's a partial sample.
 
-### Collected
+**Active retainers.** How many [recurring payment](/en/docs/pagos/igualas) contracts are active and how many have a failed charge that needs attention.
 
-The total amount you collected in the selected period (using the same date range picker as the rest of Cord's reports), the number of transactions, and the percentage comparison against the previous period — with a mini-trend chart of the daily figures.
+**Open disputes.** How many chargebacks there are in the period and the amount at stake, with the response deadline for each. Each dispute opens its [evidence page](/en/docs/pagos/disputas). With no disputes, it says so.
 
-### Net deposited
+### Movement and reconciliation
 
-The same as "Collected", but **after subtracting Cord Payments' fee**: it's the real number that stays with you. It shows the period's effective rate (the real percentage Cord took, which varies with your card/SPEI mix) next to the net amount.
+**Collection over time.** Money that came in day by day, against the same number of days in the previous period (in a lighter tone).
 
-### Active retainers
+**Monthly volume.** What you collected month by month within the period.
 
-How many [recurring monthly billing](/en/docs/pagos/igualas) contracts you currently have active, and whether any of them has a monthly charge that failed and needs attention.
+**Where every peso goes.** From the gross collected: how much lands net in your bank, how much went to fees, how much was deducted for refunds, and how much is tied up in disputes.
 
-### Open disputes
+**Breakdown by method.** How much you collected by card, SPEI, and manual transfer, with the number of transactions. Tap a method to filter the recent payments table.
 
-How many disputes (chargebacks) you have open in the period, and the total amount at stake. If there are none, it says so explicitly — that's a good sign, not an empty state. Each dispute takes you to its dedicated [evidence page](/en/docs/pagos/disputas).
+**Recent payments.** Number, customer, method, date, and amount of the latest payments. With the **Refunds** permission, every reconciled payment has a **Refund** button. See [Refunds](/en/docs/pagos/reembolsos).
 
-### Collection over time
+## Where the data comes from
 
-The main chart: how much money came in day by day over the period, compared to the same number of days in the previous period (the comparison series is shown dimmer, so this period's line is what stands out visually).
+- **Collected, Retainers, Monthly volume, Breakdown by method, and Recent payments** come from payments recorded in Cord, so they load with the page.
+- **Balance, Deposits, Net, Where every peso goes, and Disputes** fill in a few seconds later with your payments account's information. If that request fails, you'll see "Could not refresh the dashboard" instead of made-up numbers.
+- Mercado Pago payments are recorded as payments, but their balance and payouts live in your Mercado Pago account.
 
-### Monthly volume
+## Limits
 
-A month-over-month comparison of how much you've collected — useful for seeing several months of trend at a glance, more so than the daily detail of "Collection over time".
+- The dashboard doesn't show which payments make up each payout.
+- It doesn't include invoices pending collection: for what you're owed, use [Collections](/en/docs/pagos/cartera-cobranza).
+- It doesn't read Mercado Pago chargebacks.
 
-### Where every peso goes
+## Common problems
 
-The breakdown of your gross collected amount in the period: how much lands net in your bank, how much went to Cord's fee, how much was deducted for refunds, and how much is tied up in open disputes. It's the most direct way to see the real cost of accepting payments online.
+**Balance and Deposits don't appear.** Your payments account isn't connected yet.
 
-### Breakdown by method
+**Net deposited says "We couldn't reconcile the fees".** The request to your payments account failed. Reload later.
 
-How much you collected through each method — card, SPEI, manual transfer — with the number of transactions for each.
+**I don't see the Refund button.** You need the **Refunds** permission, and the payment must have been reconciled through Cord Payments.
 
-### Recent payments
+## Related
 
-The table of your most recent payments: cotización folio, customer, method, date, and amount. It's the view you'll check day to day the most. If you have the *Refunds* permission, every row with a reconciled payment has a **Refund** button — see [Refunds](/en/docs/pagos/reembolsos) for the full flow.
-
-<Callout type="info">
-All widgets are calculated over the same date range selected at the top of the panel — changing the range updates the whole dashboard at once.
-</Callout>
+- [Payouts to your bank](/en/docs/pagos/depositos)
+- [Refunds](/en/docs/pagos/reembolsos)
+- [Disputes and chargebacks](/en/docs/pagos/disputas)
+- [Cord Payments fees](/en/docs/pagos/condiciones)
+- [Reports and performance](/en/docs/gestion/informes)

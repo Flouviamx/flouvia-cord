@@ -1,108 +1,134 @@
 ---
 title: "Cartera y cobranza operativa"
-description: "Cómo priorizar cuentas por cobrar, registrar promesas, enviar recordatorios, marcar pagos manuales y distinguir la operación diaria del informe de cobranza."
-lastUpdated: "2026-08-29"
+seoTitle: "Cartera y cobranza en Cord: qué cobrar hoy y cómo dar seguimiento"
+description: "Cómo funciona Cobranza: qué entra a la lista, qué mide cada widget, cómo registrar promesas de pago, recordar por WhatsApp y registrar un pago manual, y cómo se relaciona con la vista unificada de cuentas por cobrar."
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Pro, Scale, Developer]
-prerequisites: ["Permiso Cobranza", "Cotizaciones aprobadas o facturas abiertas con saldo"]
+prerequisites: ["Plan Pro o superior", "Permiso Cobranza", "Cotizaciones aprobadas pendientes de pago"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cartera y cobranza operativa</h1>
-  <p class="page-subtitle">Qué cobrar hoy, a quién contactar y cómo registrar el acuerdo sin duplicar saldos.</p>
+  <p class="page-subtitle">Qué cobrar hoy, a quién contactar y cómo registrar el acuerdo, sin perder el hilo de lo que te deben.</p>
 </header>
 
-**Cobranza** (`/app/cobranza`) es una lista operativa al día de hoy. No tiene selector
-histórico porque responde “¿qué necesita acción ahora?”. El análisis de aging, DSO y
-comportamiento vive en **Informes > Cobranza y cartera**.
+## Qué es
 
-El módulo requiere Pro o superior y el permiso **Cobranza**.
+**Cobranza** (barra lateral › **Mi dinero**) es una lista operativa **al día de hoy**. No tiene selector de fechas porque responde una sola pregunta: ¿qué necesita acción ahora? El análisis histórico (antigüedad completa, días de cobro, comportamiento de pago) vive en **Informes › Cobranza y cartera**. Ver [Informes y desempeño](/docs/gestion/informes).
 
-## Qué entra a cuentas por cobrar
+## Requisitos
 
-Cord unifica dos orígenes:
+| Requisito | Detalle |
+|---|---|
+| Plan | Pro, Scale o Developer. En Gratis y Starter, la página muestra la invitación a cambiar de plan. |
+| Permiso | **Cobranza**. |
+| Cobranza con IA | Scale o Developer. Ver [Cobranza con IA](/docs/pagos/cobranza-ia). |
 
-- cotizaciones aprobadas con saldo pendiente;
-- facturas abiertas con saldo pendiente.
+## Qué entra a la lista
 
-Cuando una cotización ya tiene una factura abierta, la cartera muestra la factura y
-no duplica la misma operación como cotización. El saldo considera pagos parciales e
-interés moratorio registrado.
+La lista de Cobranza incluye las **cotizaciones aprobadas o facturadas que todavía no están pagadas por completo**:
+
+- con su **total**, su término de pago y su fecha de vencimiento (aprobación más los días del término);
+- excepto las [igualas recurrentes](/docs/pagos/igualas), que se cobran solas cada mes y nunca se tratan como cartera vencida.
+
+<Callout type="info" title="Facturas y saldos parciales">
+La lista muestra el **total** de cada cotización, no el saldo después de anticipos o abonos, y hoy no incluye las facturas emitidas sin cotización. Para el **saldo real** de un cliente, con cotizaciones y facturas juntas, abre su ficha: el **estado de cuenta** usa la vista unificada de cuentas por cobrar. Las facturas vencidas también se ven en **Facturas**.
+</Callout>
+
+### La vista unificada de cuentas por cobrar
+
+Cord mantiene una vista única que une cotizaciones y facturas con una forma común: origen, folio, divisa, total, pagado, **saldo** y días de atraso. Reglas de esa vista:
+
+- Una cotización con una **factura abierta** aparece solo como factura, porque la factura lleva el saldo real; contarla dos veces duplicaría la cartera.
+- El saldo de una factura ya descuenta abonos parciales y notas de crédito.
+- Las igualas recurrentes no entran.
+
+La usan el [agente de cobranza con IA](/docs/pagos/cobranza-ia), el **estado de cuenta** de cada cliente y las consultas de cartera de [Workflows](/docs/automatizacion/workflows/consultas).
 
 ## Resumen de hoy
 
-Los widgets destacan:
+{/* MOCKUP: Cobranza con los cuatro indicadores arriba (VENCIDO $184,300.00 MXN · 7 cuentas, VENCE ESTA SEMANA, PROMESAS POR VENCER, VENCIDO SIN GESTIÓN), el widget "Atiende primero" con tres filas ordenadas por monto y días, y la barra "Antigüedad de la cartera" en cuatro tramos. */}
 
-- total vencido y número de cuentas;
-- documentos que vencen en los próximos siete días;
-- promesas cuya fecha ya llegó;
-- vencidos sin una promesa registrada;
-- prioridad por combinación de monto y días vencidos;
-- clientes que superan su límite de crédito;
-- distribución compacta de antigüedad.
+| Widget | Qué muestra |
+|---|---|
+| **Vencido** | Total vencido y número de cuentas. Tócalo para filtrar la tabla. |
+| **Vence esta semana** | Cuentas que vencen en los próximos 7 días. |
+| **Promesas por vencer** | Promesas comprometidas para hoy o antes, con el porcentaje histórico de cumplimiento. |
+| **Vencido sin gestión** | Cuentas vencidas sin promesa de pago. Tócalo para filtrar la tabla. |
+| **Atiende primero** | Prioridad por monto y días de atraso: lo que más pesa, arriba. |
+| **Promesas de pago** | Las promesas pendientes, con fecha y monto. |
+| **Cumplimiento de promesas** | Cumplidas contra incumplidas. |
+| **Crédito excedido** | Clientes con saldo abierto por encima de su límite de crédito configurado. |
+| **Antigüedad de la cartera** | Por vencer, 1–30 días, 31–60 días y más de 60 días. |
+| **Cuentas por cobrar** | La tabla accionable. |
 
-Puedes ocultar, ordenar o redimensionar widgets. Esa preferencia es personal y no
-cambia el cálculo de la cartera.
+Puedes ocultar, ordenar o cambiar el tamaño de los widgets. Esa preferencia es personal y no cambia ningún cálculo.
 
-## Filtros y tabla accionable
+## La tabla y sus acciones
 
-La tabla permite ver todas, vencidas, con promesa o sin gestión. Cada fila muestra
-cliente, folio, términos, vencimiento, estado y saldo. Las acciones principales son:
+La tabla filtra por **todas**, **vencidas**, **con promesa** o **sin gestión**. Cada fila muestra cliente, folio, términos, vencimiento, estado y monto, con estas acciones:
 
-- registrar o editar una promesa de pago;
-- preparar un recordatorio por WhatsApp;
-- marcar manualmente como cobrada una operación;
-- abrir el documento de origen.
+### Registrar una promesa de pago
+
+<Steps>
+1. En la fila, abre la promesa de pago.
+2. Captura la **fecha** en que el cliente se comprometió a pagar, el **monto** (opcional) y una **nota** de hasta 400 caracteres.
+3. Guarda. La promesa aparece en los widgets y la cuenta deja de contar como "sin gestión".
+4. Cuando llegue la fecha, márcala **cumplida** o déjala vencer como incumplida. Si la capturaste por error, elimínala.
+</Steps>
+
+Una promesa sirve para ordenar el seguimiento y medir cumplimiento. **No** baja el saldo, no extiende el vencimiento, no ejecuta un cobro y no saca la cuenta de las vencidas. Si editas una promesa vigente, la nueva sustituye a la anterior.
+
+### Recordar por WhatsApp
+
+**Recordar por WhatsApp** abre WhatsApp con un mensaje ya escrito: cliente, folio, total, vencimiento y link del documento. Si la ficha del cliente tiene teléfono, se abre la conversación con ese número; si no, eliges el contacto. Revisa el texto antes de enviarlo: la entrega ocurre en WhatsApp, no en Cord.
+
+### Registrar un pago manual
+
+**Registrar pago** marca la cotización como pagada por su total, después de una confirmación ("¿Registrar el pago de [folio] por [total]?").
 
 <Callout type="warning">
-**Marcar cobrada** es un registro manual. No crea un cargo, no confirma un depósito del proveedor
-y no debe usarse para simular ingreso procesado. Verifica el pago externo antes
-de confirmar.
+Registrar un pago es un registro manual: no crea un cargo ni confirma un depósito. Úsalo solo después de verificar la transferencia en tu banco, y nunca para simular un ingreso.
 </Callout>
 
-## Promesas de pago
+## Recordatorios automáticos
 
-Una promesa guarda fecha, monto opcional y una nota de hasta 400 caracteres. Su estado
-puede ser pendiente, cumplida o incumplida.
-
-La promesa sirve para ordenar seguimiento y medir cumplimiento. No modifica el saldo,
-no extiende automáticamente el vencimiento, no ejecuta un cobro y no evita que la
-cuenta siga apareciendo vencida.
-
-Al editar una promesa vigente, Cord sustituye el registro operativo actual. Puedes
-marcarla cumplida desde la lista o eliminarla si fue capturada por error.
-
-## Recordatorio por WhatsApp
-
-Cord prepara un mensaje con cliente, folio, saldo, vencimiento y enlace del documento.
-La entrega ocurre en WhatsApp y depende del número guardado en la ficha del cliente.
-Revisa destinatario, texto y enlace antes de enviarlo.
+Además de lo que haces desde esta página, Cord envía solo los [recordatorios automáticos de cobro](/docs/pagos/recordatorios): una escalera antes y después del vencimiento de cada factura, y un aviso en los días previos al vencimiento de cada cotización.
 
 ## Interés moratorio
 
-La aplicación automática está suspendida mientras concluye la revisión jurídica por
-país. Una tasa guardada anteriormente permanece como dato histórico, pero el proceso
-mensual no genera cargos nuevos. Los intereses ya registrados siguen apareciendo
-separados para conservar la trazabilidad del saldo.
+La aplicación automática de interés moratorio está **suspendida** mientras concluye la revisión jurídica por país: hoy no se pueden configurar tasas nuevas y el proceso mensual no genera cargos. Los intereses registrados antes siguen apareciendo separados para conservar la trazabilidad del saldo.
 
-## Cobranza manual e IA
+## Cobranza manual y con IA
 
-- **Pro:** cartera, prioridades, promesas y seguimiento manual.
-- **Scale y Developer:** además pueden activar el [Agente de cobranza con IA](/docs/pagos/cobranza-ia).
+| Plan | Qué incluye |
+|---|---|
+| Pro | Cartera, prioridades, promesas, WhatsApp y registro de pagos. |
+| Scale y Developer | Todo lo anterior y el [agente de cobranza con IA](/docs/pagos/cobranza-ia), con planes de [pago en cuotas](/docs/pagos/cuotas). |
 
-El modo de aprobación del agente conserva revisión humana antes del envío. El modo
-automático amplía su autoridad según la configuración; revisa exclusiones y límites
-antes de activarlo.
+## Límites
 
-## Problemas frecuentes
+- La lista muestra totales de cotización, no saldos parciales.
+- Las facturas sin cotización no aparecen en la lista; sí en Facturas, en el estado de cuenta del cliente y en el agente de IA.
+- Una promesa no modifica el saldo.
+- **Registrar pago** registra el total de la cotización: para pagos parciales, regístralos en el documento.
 
-**Una operación aparece dos veces.** Comprueba si realmente son documentos distintos;
-la vista unificada debe ocultar la cotización cuando existe factura abierta asociada.
+## Problemas comunes
+
+**No aparece Cobranza.** Revisa que tu plan sea Pro o superior y que tengas el permiso **Cobranza**.
+
+**Un cliente pagó el anticipo y la lista muestra el total.** Es lo esperado en esta lista. Revisa el saldo real en el estado de cuenta del cliente o en el link de la cotización.
+
+**No veo una factura vencida.** Si se emitió sin cotización, búscala en **Facturas** o en el estado de cuenta del cliente.
 
 **Una promesa no bajó el saldo.** Es intencional: solo un pago registrado lo reduce.
 
-**No aparece Cobranza.** Revisa plan Pro o superior y permiso Cobranza.
+## Relacionadas
 
-**El saldo no coincide con el total original.** Revisa pagos parciales, notas de crédito,
-reembolsos e intereses sobre saldo.
+- [Recordatorios automáticos de cobro](/docs/pagos/recordatorios)
+- [Cobranza con IA](/docs/pagos/cobranza-ia)
+- [Planes de pago en cuotas](/docs/pagos/cuotas)
+- [Clientes y estado de cuenta](/docs/gestion/clientes)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)

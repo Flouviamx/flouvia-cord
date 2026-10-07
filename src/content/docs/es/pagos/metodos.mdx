@@ -1,75 +1,147 @@
 ---
 title: "Métodos de cobro"
-description: "Tarjeta, SPEI, Mercado Pago, transferencia manual y estados de confirmación."
+seoTitle: "Métodos de cobro en Cord: tarjeta, SPEI, Mercado Pago y transferencia"
+description: "Qué métodos de cobro ofrece Cord por país y divisa, cómo se activan, cómo se confirma cada uno, qué acepta la cotización y qué acepta la factura, y cómo cambiar entre SPEI y tarjeta sin cobrar dos veces."
 lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments activa o Mercado Pago conectado para cobrar en línea", "Permiso Configurar cobros para activar métodos"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Métodos de cobro</h1>
-  <p class="page-subtitle">Tarjeta, SPEI, Mercado Pago, transferencia manual y estados de confirmación.</p>
+  <p class="page-subtitle">Tarjeta, SPEI, Mercado Pago y transferencia manual: dónde aplica cada uno, cómo se confirma y qué ve tu cliente.</p>
 </header>
 
-## Elegir cómo pagar
+## Qué es
 
-El enlace de cotización ofrece los métodos habilitados por el negocio. Cord tiene
-dos rieles de cobro en línea:
+Cord tiene **dos rieles de cobro en línea** y una opción manual:
 
-- **Cord Payments:** tarjeta y, en México, transferencia SPEI automática. Requiere
-  una [cuenta de cobros](/docs/pagos/onboarding) verificada y activa.
-- **[Mercado Pago](/docs/pagos/mercado-pago):** el cliente paga con tu propia cuenta
-  de Mercado Pago. Se ofrece en México, Brasil, Colombia, Argentina, Chile y Perú;
-  donde también tienes Cord Payments, aparece como alternativa en la misma página.
+- **Cord Payments:** tarjeta y, en México, transferencia SPEI automática. El dinero entra a tu propia [cuenta de cobros](/docs/pagos/onboarding) y de ahí a tu banco con la [frecuencia de depósito](/docs/pagos/depositos) que elijas.
+- **[Mercado Pago](/docs/pagos/mercado-pago):** tu cliente paga con tu propia cuenta de Mercado Pago, con los métodos que Mercado Pago tenga habilitados en tu país.
+- **Transferencia manual:** compartes tus datos bancarios y registras el pago tú mismo cuando lo verificas.
 
-La factura pública acepta tarjeta por Cord Payments y, si lo conectaste, Mercado
-Pago; no ofrece SPEI. No supongas que ofrece todos los métodos de la cotización.
+## Método por país y divisa
 
-### Tarjeta
+| Método | Países | Divisa del cobro | Cotización | Factura | Iguala |
+|---|---|---|---|---|---|
+| **Tarjeta** (Cord Payments) | MX, US, CA, BR, ES, GB, DE, FR | La divisa de venta del documento, si el procesador la admite | Sí | Sí | Sí |
+| **SPEI automático** (Cord Payments) | Solo MX | Solo MXN | Sí | No | No |
+| **Mercado Pago** | MX, BR, CO, AR, CL, PE | La que Mercado Pago admita en tu cuenta | Sí | Sí | No |
+| **Transferencia manual** | Los 12 países de Cord | Cualquiera | Sí | Sí (registro manual) | No |
 
-El cliente revisa el importe y completa los campos de pago. Su banco puede pedir
-verificación adicional. El cobro se refleja cuando llega la confirmación; cerrar
-la pantalla o regresar al enlace no prueba que se haya pagado.
+<Callout type="info">
+En México y Brasil conviven los dos rieles: Cord Payments es el principal y Mercado Pago aparece como alternativa en la misma página. En Colombia, Argentina, Chile y Perú, Mercado Pago es la forma de cobrar en línea. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones) para el costo de cada método.
+</Callout>
 
-### SPEI
+## Activar los métodos
 
-SPEI automático está disponible para cobros en MXN de negocios elegibles en México.
-Las instrucciones muestran CLABE, banco, referencia e importe pendiente. Usa las
-instrucciones vigentes del cobro y no una captura guardada de otro documento.
+<Steps>
+1. Abre **Ajustes › Cobros** con el permiso **Configurar cobros**.
+2. En **Métodos de pago**, enciende **Tarjeta** y, si tu negocio está en México, **SPEI**. Los dos se habilitan cuando tu cuenta de cobros está **Activa**; antes aparecen bloqueados.
+3. Si la pantalla te muestra la tabla de tarifas vigente con una casilla de aceptación, revísala y acéptala. Ver [Tarifas de Cord Payments](/docs/pagos/condiciones#cómo-se-activa-tu-tabla-de-tarifas).
+4. Si quieres ofrecer transferencia manual, enciéndela y captura **banco**, la cuenta en el formato de tu país y el **beneficiario**.
+5. Para Mercado Pago, pulsa **Conectar Mercado Pago** en su tarjeta. Ver [Mercado Pago](/docs/pagos/mercado-pago).
+</Steps>
 
-Cada cobro conserva una referencia de cliente bancario para reconocer sus fondos.
-La conciliación depende de la confirmación recibida; no se garantiza que sea
-instantánea. Si ya transferiste, consulta el estado antes de intentar tarjeta.
-Una CLABE anterior no debe considerarse inutilizable solo porque cambiaste de
-pantalla o de método. Contacta al vendedor si enviaste dinero a instrucciones anteriores.
+## Tarjeta
 
-### Transferencia manual
+Tu cliente revisa el importe y completa los datos de su tarjeta en un formulario dentro del link, sin salir a otra página. Su banco puede pedirle una verificación adicional. El cobro se refleja cuando llega la confirmación; cerrar la pantalla o volver al link no prueba que se haya pagado.
 
-Cuando el negocio ofrece datos bancarios propios, el vendedor verifica el ingreso
-y registra el pago en Cord. Un comprobante adjunto no sustituye esa verificación.
-La devolución de una transferencia manual se gestiona con el negocio.
+La tarjeta es el único método para [igualas recurrentes](/docs/pagos/igualas), porque es el único que puede cobrarse solo cada mes.
+
+## SPEI automático
+
+SPEI es la transferencia interbancaria de México y solo liquida en pesos. Aparece únicamente en cobros en **MXN** de negocios en México con SPEI activado; si la cotización está en otra divisa, tu cliente paga con tarjeta aunque tengas SPEI encendido.
+
+Al elegir **Transferencia SPEI**, tu cliente ve las **Instrucciones SPEI**:
+
+| Dato | Detalle |
+|---|---|
+| Monto | El importe pendiente de ese cobro, con su divisa. |
+| CLABE | Una CLABE asociada a ese cobro, con botón **Copiar**. |
+| Banco | El banco receptor. |
+| Beneficiario | El nombre de tu negocio. |
+| Referencia | La referencia del cobro, con botón **Copiar**. |
+| Vigencia | Si las instrucciones tienen fecha límite, aparece aquí. |
+
+Desde esa pantalla puede **Imprimir o guardar PDF**, o pulsar **Enviar a mi correo**.
+
+### Instrucciones SPEI por correo
+
+**Enviar a mi correo** manda las mismas instrucciones (monto, CLABE, banco, beneficiario y referencia), con la marca de tu negocio, al **correo del cliente registrado en la cotización**. No se puede escribir otro destinatario: si tu cliente necesita recibirlas en otra dirección, actualiza su ficha. Si la cotización no tiene correo del cliente, el botón responde con un error y tu cliente puede imprimir o guardar el PDF. Por seguridad, el envío se limita a tres correos cada diez minutos por link.
+
+### Cómo se confirma
+
+Cada cobro conserva su propia referencia bancaria, así que Cord reconoce los fondos sin que nadie cruce comprobantes. Cuando el dinero llega, el cobro pasa a pagado y la cotización cambia de estado. La confirmación depende del aviso del banco y **no siempre es instantánea**: si tu cliente ya transfirió, que consulte el estado antes de intentar con tarjeta.
+
+## Mercado Pago
+
+En la página de pago de la cotización y en el link de la factura aparece **Pagar con Mercado Pago**. Tu cliente va al checkout de Mercado Pago y regresa a tu link al terminar. Cord marca el cobro como pagado solo cuando **lee el pago aprobado** en tu cuenta de Mercado Pago. Detalle en [Mercado Pago](/docs/pagos/mercado-pago).
+
+## Transferencia manual
+
+Tu cliente ve tus datos bancarios y transfiere desde su banco. Cuando verificas el depósito en tu banco, registras el pago en Cord: en la cotización, en la factura o con **Registrar pago** desde la [cartera](/docs/pagos/cartera-cobranza). Un comprobante enviado por el cliente no sustituye esa verificación. La devolución de una transferencia manual se gestiona directamente con tu cliente.
+
+## Qué acepta la cotización y qué acepta la factura
+
+| | Link de la cotización | Link de la factura |
+|---|---|---|
+| Tarjeta | Sí | Sí, si tienes **Tarjeta** activada |
+| SPEI automático | Sí, en MXN | No |
+| Mercado Pago | Sí | Sí |
+| Pago parcial | Por partes definidas: anticipo, saldo o cuotas | Abono libre: tu cliente elige cuánto pagar |
+| Igualas | Sí, con tarjeta | No |
+
+### Pago parcial de una factura
+
+En el link de la factura, tu cliente puede pagar el saldo completo o pulsar **Pagar otra cantidad** y escribir cuánto quiere abonar, con tarjeta o con Mercado Pago:
+
+- Cord **acota el abono al saldo real**: si escribe más de lo que debe, se cobra solo el saldo.
+- Hay un **mínimo cobrable en línea**: 0.50 en la divisa de la factura (por ejemplo, 0.50 USD o 0.50 EUR), o 50 unidades en divisas sin decimales. Si el abono es menor, Cord pide pagar un poco más o liquidar el saldo.
+- Cada abono se registra en el historial de pagos de la factura y el saldo se recalcula. La factura queda **Pagada** cuando el saldo llega a cero.
+- Si el saldo cambia mientras tu cliente paga (por ejemplo, porque registraste otro pago), Cord le pide actualizar la página antes de continuar.
+
+Ver [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
 
 ## Cambiar entre SPEI y tarjeta
 
-Antes de ofrecer otro método, Cord revisa el intento de pago anterior. Si ese
-intento ya recibió dinero o tiene un pago en proceso —por ejemplo, una transferencia
-SPEI parcial o una tarjeta autorizada—, no se sustituye: el cliente ve que hay un
-pago pendiente de confirmar. Un reintento simultáneo reutiliza el mismo intento en
-lugar de crear otro. Así se evitan cobros duplicados por cambiar de método o por
-una respuesta perdida.
+Tu cliente puede elegir otro método en la misma página. Antes de ofrecerle el nuevo, Cord revisa el intento anterior:
 
-Mientras un pago esté pendiente de aclarar, no repitas la transferencia ni abras
-otro método para probar. Actualiza el enlace o contacta al negocio. Cord no devuelve
-automáticamente una transferencia que llegue tarde a instrucciones anteriores; ese
-caso se resuelve con el negocio.
+- Si el intento anterior **no recibió dinero**, se cancela y se abre el nuevo método.
+- Si **ya recibió dinero o tiene un pago en proceso** —una transferencia SPEI parcial o una tarjeta en autorización—, no se sustituye: tu cliente ve que hay un pago pendiente de confirmar.
+- Si dos intentos llegan al mismo tiempo, se reutiliza el mismo en lugar de crear otro.
+- Si Cord no puede confirmar el estado del intento anterior, **no abre otro**: prefiere pedir una revisión antes que arriesgar un cobro doble.
 
-Consulta [las tarifas por método](/docs/pagos/condiciones). La moneda de venta es
-distinta de [la moneda de tu suscripción a Cord](/docs/cuenta/suscripcion).
+Mientras un pago esté pendiente de aclarar, tu cliente no debe repetir la transferencia ni probar otro método: debe actualizar el link o contactarte. Cord no devuelve automáticamente una transferencia que llegue tarde a instrucciones anteriores; ese caso lo resuelves con tu cliente.
+
+## Límites
+
+- SPEI: solo México, solo MXN, solo cotizaciones.
+- La factura no ofrece SPEI ni igualas.
+- Mercado Pago no hace cobros recurrentes y Cord no lee hoy sus contracargos.
+- En Colombia, Argentina, Chile y Perú no hay Cord Payments: el cobro en línea es con Mercado Pago.
+- Un documento de prueba (sin emisión fiscal válida) no se puede pagar en línea.
+
+## Problemas comunes
+
+**Mi cliente no ve la opción SPEI.** La cotización no está en MXN, SPEI está apagado en **Ajustes › Cobros** o tu cuenta no está activa.
+
+**Mi cliente no ve botón de pago en la factura.** Tu cuenta de cobros no está activa, **Tarjeta** está apagada y no tienes Mercado Pago conectado, o la factura es un documento de prueba.
+
+**"Enviar a mi correo" falla.** La cotización no tiene correo del cliente registrado o se alcanzó el límite de envíos. Tu cliente puede **Imprimir o guardar PDF**.
+
+**Mi cliente transfirió a una CLABE de otro cobro.** Cada cobro tiene su referencia. Contacta a tu cliente y revisa los cobros de la cotización antes de registrar nada a mano.
 
 ## Integraciones que usan el checkout anterior
 
-Si una integración todavía solicita el checkout anterior de una cotización, recibe
-un enlace a la pantalla de pago actual de Cord, con el mismo registro de intentos y
-el saldo que corresponde pagar. La respuesta conserva el campo `url` y no cambia
-las tarifas aceptadas.
+Si una integración todavía solicita el checkout anterior de una cotización, recibe un enlace a la pantalla de pago actual de Cord, con el mismo registro de intentos y el saldo que corresponde pagar. La respuesta conserva el campo `url` y no cambia las tarifas aceptadas.
+
+## Relacionadas
+
+- [Aceptar un pago](/docs/pagos/aceptar)
+- [Tarifas de Cord Payments](/docs/pagos/condiciones)
+- [Mercado Pago](/docs/pagos/mercado-pago)
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [La moneda de tu suscripción a Cord](/docs/cuenta/suscripcion)

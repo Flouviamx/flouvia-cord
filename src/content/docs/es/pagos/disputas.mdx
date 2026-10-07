@@ -1,55 +1,128 @@
 ---
 title: "Disputas y contracargos"
-description: "Qué hacer cuando un cliente desconoce un cargo: cómo Cord arma tu evidencia automáticamente y cómo enviarla antes de que venza el plazo."
+seoTitle: "Disputas y contracargos en Cord Payments: evidencia y plazos"
+description: "Qué hacer cuando un cliente desconoce un cargo con tarjeta: dónde aparece la disputa, quién puede responder, qué evidencia arma Cord con tus datos, cómo se envía antes de la fecha límite y qué pasa con el dinero y la comisión."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cuenta de Cord Payments activa", "Permiso Cobranza o Configurar cobros"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Disputas y contracargos</h1>
-  <p class="page-subtitle">Cuando un cliente desconoce un cargo con su banco, así es como te defiendes desde Cord.</p>
+  <p class="page-subtitle">Cuando un cliente desconoce un cargo con su banco, así te defiendes desde Cord, antes de la fecha límite.</p>
 </header>
 
 ## Qué es una disputa
 
-Una disputa (o contracargo/chargeback) ocurre cuando el titular de una tarjeta le pide a su banco que revierta un cargo — porque no lo reconoce, dice que no recibió el producto o servicio, o por cualquier otro motivo. El banco retiene el monto mientras se resuelve, y tú tienes una ventana de tiempo limitada para presentar evidencia de que el cargo era legítimo.
+Una disputa (contracargo) ocurre cuando el titular de una tarjeta le pide a su banco que revierta un cargo: porque no lo reconoce, porque dice que no recibió lo que pagó o por otro motivo. El banco retiene el monto mientras se resuelve, y tú tienes un plazo limitado para presentar evidencia de que el cargo era legítimo.
 
-Cuando esto pasa con un cobro procesado por Cord Payments, verás el caso en el widget **Disputas abiertas** del [dashboard de cobros](/docs/pagos/dashboard), y podrás entrar a su página de detalle en **Mis cobros › Disputas**.
+Aplica a cobros con **tarjeta** procesados por Cord Payments. Un SPEI o una transferencia manual no tienen contracargo de tarjeta, y los contracargos de [Mercado Pago](/docs/pagos/mercado-pago) se atienden desde tu cuenta de Mercado Pago: Cord no los lee hoy.
 
-<Callout type="warning">
-Mientras la disputa está abierta, el monto queda retenido. Si la pierdes, ese dinero sale de tu saldo — junto con una cuota de disputa que cobra el procesador. La comisión que Cord cobró en el cobro original tampoco se devuelve. Ver [Tarifas y ventajas](/docs/pagos/condiciones).
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes. |
+| Permiso | **Cobranza** o **Configurar cobros**. Sin ellos, la página de la disputa muestra "Sin acceso". |
+| Envío | Además, confirmar tu identidad con tu contraseña o tu código de verificación en dos pasos. |
+
+## Dónde aparece
+
+<Steps>
+1. Cord registra la disputa en cuanto el procesador la notifica, con monto, divisa, motivo, estado y fecha límite.
+2. En [Mi dinero › Cobros](/docs/pagos/dashboard), el widget **Disputas abiertas** muestra el total en juego y, por cada disputa, "responde antes del [fecha]".
+3. Al abrir una disputa llegas a su página de evidencia, **Prepara una defensa clara**, con el monto, el estado y la **fecha límite** arriba.
+</Steps>
+
+Si usas la API o Workflows, Cord emite **Abren un contracargo** (`dispute.created`) y **Se cierra un contracargo** (`dispute.closed`, con el resultado). Ver [disparadores de Workflows](/docs/automatizacion/workflows/disparadores).
+
+<Callout type="warning" title="La fecha límite manda">
+Si no envías evidencia antes de la fecha límite, normalmente pierdes la disputa. La fecha la fija la red de la tarjeta, no Cord: empieza a trabajar en cuanto la veas.
 </Callout>
 
-## La página de la disputa
+## Estados
 
-Cada disputa tiene su propia página dedicada, con acceso restringido a quien tenga el permiso *Cobranza* o *Configurar cobros*. Ahí armas la evidencia que se envía como tu defensa:
+El estado aparece junto al monto con el nombre que usa el procesador:
 
-- **Datos del cliente:** nombre, correo y la IP desde la que se aprobó la cotización.
-- **Fecha del servicio:** cuándo se entregó o prestó lo que se cotizó.
-- **Descripción del producto o servicio.**
-- **Comunicación con el cliente:** el historial de comentarios sobre la cotización.
-- **Comprobante:** el documento que demuestra que el cliente aprobó y pagó.
-- **Cualquier otro texto de contexto** que fortalezca tu caso.
+| Estado | Qué significa |
+|---|---|
+| `needs response` | Hay que enviar evidencia antes de la fecha límite. |
+| `under review` | Ya enviaste evidencia y el banco del cliente la revisa. |
+| `won` | Ganaste: el dinero retenido regresa a tu saldo. |
+| `lost` | Perdiste: el monto sale de tu saldo. |
+| `warning needs response`, `warning under review`, `warning closed` | Una consulta previa del banco que todavía no es contracargo. Respóndela igual: puede convertirse en uno. |
 
-### Autocompletado desde tus propios datos
+## La evidencia
 
-En vez de armar la evidencia desde cero, hay un botón para **autocompletar** que arma dos documentos automáticamente con datos que Cord ya tiene:
+La página llega **prellenada** con lo que Cord ya sabe de la operación. Revisa y corrige cada campo:
 
-1. **Comprobante de operación:** un PDF con el nombre de tu negocio, el folio de la cotización, el cliente, el monto, el método de pago, la fecha en que se pagó, y — lo más importante para ganar una disputa — **quién firmó la cotización, desde qué dirección IP y en qué fecha exacta**, tomado directamente de la firma electrónica que tu cliente dejó al aprobarla.
-2. **Comunicación con el cliente:** un PDF con el historial completo de comentarios que tu cliente dejó sobre la cotización, si los hay.
+| Campo | Qué propone Cord |
+|---|---|
+| **Nombre del cliente** y **Correo del cliente** | Los de la ficha del cliente de la cotización. |
+| **Fecha del servicio** | La fecha de aprobación de la cotización. Cámbiala por la fecha real de entrega. |
+| **IP de aprobación** | La dirección IP de la firma electrónica de la cotización, si existe. |
+| **Qué compró el cliente** | Los conceptos de la cotización con sus cantidades. |
+| **Comunicación con el cliente** | Vacío: pega aquí los mensajes relevantes (acuses, confirmaciones de entrega). |
+| **Contexto adicional** | Vacío: explica el caso en tus palabras. |
+| **Recibo o comprobante** | Opcional: un PDF, JPG o PNG tuyo. Si no eliges uno, Cord prepara un comprobante automático. |
 
-Ambos se generan y se adjuntan al caso automáticamente — tú solo revisas que la información sea correcta antes de enviar.
+### Lo que Cord arma por ti
 
-## Guardar borrador vs. enviar
+Al enviar, Cord genera dos PDF:
 
-La evidencia se puede **guardar como borrador** cuantas veces quieras mientras la sigues completando — guardar un borrador no compromete nada ni envía información al procesador.
+1. **Comprobante de operación:** tu negocio, el cliente, el monto, el método, la transacción, los conceptos y, si existe, **quién firmó la cotización, en qué fecha y desde qué dirección IP**. Si subiste tu propio recibo, se usa el tuyo.
+2. **Comunicación con el cliente:** un PDF con el texto que pegaste en ese campo.
 
-<Callout type="warning">
-**Enviar la evidencia es irreversible.** Una vez que confirmas el envío, el caso queda cerrado a nuevas ediciones — no puedes agregar ni corregir nada después. Antes de enviar, revisa cada campo con cuidado.
+## Guardar borrador y enviar
+
+<Steps>
+1. Pulsa **Guardar borrador** tantas veces como quieras. El borrador guarda solo el texto en Cord: no sube archivos ni envía nada al procesador.
+2. Cuando esté listo, pulsa **Revisar y enviar evidencia**. Verás una **vista previa** con la lista exacta de lo que se va a transferir.
+3. Pulsa **Confirmar y transferir** y confirma tu identidad cuando Cord te lo pida.
+4. Verás **Evidencia enviada** y regresarás a Cobros.
+</Steps>
+
+<Callout type="warning" title="Enviar es irreversible">
+Una vez enviada, la evidencia no se puede editar ni completar. Revisa cada campo antes de confirmar.
 </Callout>
 
-Enviar la evidencia final es una acción sensible: además del permiso requerido, Cord te pide **volver a confirmar tu identidad** (contraseña o código de 2FA) justo antes de procesar el envío, incluso si tu sesión ya estaba iniciada.
+Guardar, preparar los PDF y enviar quedan registrados en la bitácora de auditoría de tu organización.
 
 ## Qué pasa después
 
-El procesador de pagos revisa la evidencia y el banco del cliente decide el resultado — este proceso puede tardar varias semanas y **no está garantizado**: Cord te da las herramientas para armar el caso lo mejor posible, pero la decisión final es del banco emisor, no de Cord. Verás el estado actualizado (ganada, perdida, o en revisión) en la misma página de la disputa.
+El procesador entrega la evidencia y **el banco del cliente decide**. Puede tardar semanas y el resultado no está garantizado: Cord te ayuda a armar el mejor caso posible, pero no decide. El estado se actualiza solo en la página de la disputa.
 
-Todo el proceso — guardar borrador, autocompletar y enviar — queda registrado en la bitácora de auditoría de tu organización.
+| Si… | Entonces |
+|---|---|
+| Ganas | El monto retenido regresa a tu saldo. |
+| Pierdes | El monto sale de tu saldo, junto con una cuota de disputa del procesador. |
+| En ambos casos | La comisión de Cord del cobro original no se devuelve. Ver [Tarifas](/docs/pagos/condiciones). |
+
+## Cómo prevenir disputas
+
+- Pide **firma electrónica** al aprobar: el nombre, la fecha y la IP de la firma son tu mejor evidencia. Ver [Firma electrónica](/docs/interaccion/firma).
+- Usa descripciones claras en los conceptos y tu nombre comercial reconocible.
+- Responde las preguntas de tus clientes en el chat de la cotización: ese historial también es evidencia.
+
+## Límites
+
+- Solo cobros con tarjeta procesados por Cord Payments.
+- Un solo envío de evidencia por disputa.
+- No hay disputas de Mercado Pago en Cord.
+
+## Problemas comunes
+
+**No encuentro la disputa.** Revisa el rango de fechas del dashboard y que tengas el permiso **Cobranza** o **Configurar cobros**.
+
+**La IP de aprobación está vacía.** La cotización no tenía firma electrónica. Explica en el contexto adicional cómo confirmó tu cliente la compra.
+
+**El envío pide mi contraseña otra vez.** La confirmación de identidad dura unos minutos; si pasó más tiempo, Cord la pide de nuevo.
+
+## Relacionadas
+
+- [Dashboard de cobros](/docs/pagos/dashboard)
+- [Reembolsos](/docs/pagos/reembolsos)
+- [Tarifas de Cord Payments](/docs/pagos/condiciones)
+- [Firma electrónica](/docs/interaccion/firma)

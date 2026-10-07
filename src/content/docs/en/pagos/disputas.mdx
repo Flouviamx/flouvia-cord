@@ -1,55 +1,128 @@
 ---
 title: "Disputes and chargebacks"
-description: "What to do when a customer disputes a charge: how Cord automatically builds your evidence, and how to submit it before the deadline."
+seoTitle: "Disputes and chargebacks in Cord Payments: evidence and deadlines"
+description: "What to do when a customer disputes a card charge: where the dispute appears, who can respond, what evidence Cord builds from your data, how to submit it before the deadline, and what happens to the money and the fee."
+lastUpdated: "2026-10-07"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Active Cord Payments account", "Collections or Payment settings permission"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Disputes and chargebacks</h1>
-  <p class="page-subtitle">When a customer disputes a charge with their bank, here's how you defend yourself from Cord.</p>
+  <p class="page-subtitle">When a customer disputes a charge with their bank, this is how you defend yourself from Cord, before the deadline.</p>
 </header>
 
 ## What a dispute is
 
-A dispute (or chargeback) happens when a cardholder asks their bank to reverse a charge — because they don't recognize it, say they never received the product or service, or for any other reason. The bank holds the amount while it's resolved, and you have a limited window of time to submit evidence that the charge was legitimate.
+A dispute (chargeback) happens when a cardholder asks their bank to reverse a charge: because they don't recognize it, because they say they didn't receive what they paid for, or for another reason. The bank holds the amount while it's resolved, and you have a limited time to present evidence that the charge was legitimate.
 
-When this happens on a payment processed by Cord Payments, you'll see the case in the **Open disputes** widget on the [payments dashboard](/en/docs/pagos/dashboard), and you can open its detail page under **My Payments › Disputes**.
+It applies to **card** payments processed by Cord Payments. SPEI or a manual transfer has no card chargeback, and [Mercado Pago](/en/docs/pagos/mercado-pago) chargebacks are handled from your Mercado Pago account: Cord doesn't read them today.
 
-<Callout type="warning">
-While the dispute is open, the amount is held. If you lose it, that money leaves your balance — along with a dispute fee charged by the processor. Cord's original fee on that payment isn't refunded either. See [Fees and advantages](/en/docs/pagos/condiciones).
+## Requirements
+
+| Requirement | Detail |
+|---|---|
+| Plan | All plans. |
+| Permission | **Collections** or **Payment settings**. Without them, the dispute page shows "No access". |
+| Submission | Also confirming your identity with your password or your two-step verification code. |
+
+## Where it appears
+
+<Steps>
+1. Cord records the dispute as soon as the processor reports it, with amount, currency, reason, status, and deadline.
+2. In [My money › Payments](/en/docs/pagos/dashboard), the **Open disputes** widget shows the total at stake and, for each dispute, "respond before [date]".
+3. Opening a dispute takes you to its evidence page, **Build a clear response**, with the amount, the status, and the **due date** at the top.
+</Steps>
+
+If you use the API or Workflows, Cord emits **A dispute is opened** (`dispute.created`) and **A dispute is closed** (`dispute.closed`, with the outcome). See [Workflow triggers](/en/docs/automatizacion/workflows/disparadores).
+
+<Callout type="warning" title="The deadline rules">
+If you don't submit evidence before the deadline, you normally lose the dispute. The deadline is set by the card network, not by Cord: start working on it as soon as you see it.
 </Callout>
 
-## The dispute page
+## Statuses
 
-Each dispute has its own dedicated page, restricted to whoever holds the *Collections* or *Configure payments* permission. That's where you assemble the evidence submitted as your defense:
+The status appears next to the amount with the processor's name for it:
 
-- **Customer details:** name, email, and the IP address from which the cotización was approved.
-- **Service date:** when what was quoted was delivered or performed.
-- **Product or service description.**
-- **Customer communication:** the comment history on the cotización.
-- **Receipt:** the document proving the customer approved and paid.
-- **Any other context** that strengthens your case.
+| Status | What it means |
+|---|---|
+| `needs response` | Evidence must be submitted before the deadline. |
+| `under review` | You already submitted evidence and the customer's bank is reviewing it. |
+| `won` | You won: the held money returns to your balance. |
+| `lost` | You lost: the amount leaves your balance. |
+| `warning needs response`, `warning under review`, `warning closed` | An early inquiry from the bank that isn't a chargeback yet. Respond anyway: it can become one. |
 
-### Auto-fill from your own data
+## The evidence
 
-Instead of building evidence from scratch, there's a button to **auto-fill** that assembles two documents automatically using data Cord already has:
+The page arrives **prefilled** with what Cord already knows about the transaction. Review and correct each field:
 
-1. **Proof of purchase:** a PDF with your business name, the cotización's folio, the client, the amount, the payment method, the date it was paid, and — most importantly for winning a dispute — **who signed the cotización, from what IP address, and on what exact date**, pulled directly from the electronic signature your customer left when approving it.
-2. **Customer communication:** a PDF with the full history of comments your customer left on the cotización, if any.
+| Field | What Cord proposes |
+|---|---|
+| **Customer name** and **Customer email** | Those on the quote's customer record. |
+| **Service date** | The quote's approval date. Change it to the actual delivery date. |
+| **Approval IP** | The IP address from the quote's electronic signature, if there is one. |
+| **What the customer purchased** | The quote's items with their quantities. |
+| **Customer communication** | Empty: paste the relevant messages here (acknowledgments, delivery confirmations). |
+| **Additional context** | Empty: explain the case in your own words. |
+| **Receipt or supporting file** | Optional: your own PDF, JPG, or PNG. If you don't choose one, Cord prepares an automatic receipt. |
 
-Both get generated and attached to the case automatically — you just review the information is correct before submitting.
+### What Cord builds for you
 
-## Saving a draft vs. submitting
+On submission, Cord generates two PDFs:
 
-Evidence can be **saved as a draft** as many times as you like while you keep working on it — saving a draft doesn't commit anything or send any information to the processor.
+1. **Transaction receipt:** your business, the customer, the amount, the method, the transaction, the items and, when available, **who signed the quote, on what date, and from which IP address**. If you uploaded your own receipt, yours is used.
+2. **Customer communication:** a PDF with the text you pasted in that field.
 
-<Callout type="warning">
-**Submitting evidence is irreversible.** Once you confirm submission, the case is closed to further edits — you can't add or correct anything afterward. Review every field carefully before submitting.
+## Save a draft and submit
+
+<Steps>
+1. Click **Save draft** as many times as you like. The draft stores only text in Cord: it doesn't upload files or send anything to the processor.
+2. When ready, click **Review and submit evidence**. You'll see a **preview** with the exact list of what will be transferred.
+3. Click **Confirm and transfer** and confirm your identity when Cord asks.
+4. You'll see **Evidence submitted** and return to Payments.
+</Steps>
+
+<Callout type="warning" title="Submitting is irreversible">
+Once submitted, the evidence can't be edited or completed. Review every field before confirming.
 </Callout>
 
-Submitting the final evidence is a sensitive action: on top of the required permission, Cord asks you to **re-confirm your identity** (password or 2FA code) right before processing the submission, even if your session was already active.
+Saving, preparing the PDFs, and submitting are recorded in your organization's audit log.
 
-## What happens after
+## What happens next
 
-The payment processor reviews the evidence and the customer's issuing bank decides the outcome — this process can take several weeks and **isn't guaranteed**: Cord gives you the tools to build the best possible case, but the final decision belongs to the issuing bank, not Cord. You'll see the status update (won, lost, or under review) right on the dispute's page.
+The processor delivers the evidence and **the customer's bank decides**. It can take weeks and the outcome isn't guaranteed: Cord helps you build the best possible case, but doesn't decide. The status updates on its own on the dispute page.
 
-The entire process — saving drafts, auto-filling, and submitting — is logged in your organization's audit trail.
+| If… | Then |
+|---|---|
+| You win | The held amount returns to your balance. |
+| You lose | The amount leaves your balance, along with a processor dispute fee. |
+| Either way | Cord's fee on the original payment isn't returned. See [Fees](/en/docs/pagos/condiciones). |
+
+## How to prevent disputes
+
+- Require an **electronic signature** on approval: the signature's name, date, and IP are your best evidence. See [Electronic signature](/en/docs/interaccion/firma).
+- Use clear item descriptions and a recognizable business name.
+- Answer your customers' questions in the quote chat: that history is evidence too.
+
+## Limits
+
+- Card payments processed by Cord Payments only.
+- A single evidence submission per dispute.
+- No Mercado Pago disputes in Cord.
+
+## Common problems
+
+**I can't find the dispute.** Check the dashboard's date range and that you have the **Collections** or **Payment settings** permission.
+
+**The approval IP is empty.** The quote had no electronic signature. Explain in the additional context how your customer confirmed the purchase.
+
+**Submitting asks for my password again.** Identity confirmation lasts a few minutes; if more time passed, Cord asks again.
+
+## Related
+
+- [Payments dashboard](/en/docs/pagos/dashboard)
+- [Refunds](/en/docs/pagos/reembolsos)
+- [Cord Payments fees](/en/docs/pagos/condiciones)
+- [Electronic signature](/en/docs/interaccion/firma)

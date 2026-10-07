@@ -1,0 +1,129 @@
+---
+title: "Recordatorios automáticos de cobro"
+seoTitle: "Recordatorios automáticos de facturas y cotizaciones en Cord"
+description: "Qué recordatorios de pago manda Cord por su cuenta: la escalera de facturas antes y después del vencimiento, el aviso de cotizaciones por vencer, qué recibe tu cliente, cuándo no se manda y cómo se evita un correo duplicado."
+lastUpdated: "2026-10-07"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Cliente con correo registrado", "Factura emitida con fecha de vencimiento o cotización aprobada con saldo"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Recordatorios automáticos de cobro</h1>
+  <p class="page-subtitle">Cord le recuerda a tu cliente lo que vence y lo que ya venció, una vez por etapa, sin que tengas que programarlo.</p>
+</header>
+
+## Qué son
+
+Los recordatorios automáticos son correos que Cord le envía a tu cliente cuando un documento está por vencer o ya venció. Funcionan en todos los planes y no hay que activarlos: corren una vez al día para cada factura abierta y cada cotización aprobada que cumplan las condiciones de esta página.
+
+Son distintos de dos herramientas que también ayudan a cobrar:
+
+- **La [cobranza con IA](/docs/pagos/cobranza-ia)** (Scale y Developer) redacta correos personalizados para cuentas vencidas y puede negociar un plan de pagos.
+- **El recordatorio por WhatsApp** de la [cartera](/docs/pagos/cartera-cobranza) lo preparas y lo envías tú, cuando quieras.
+
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes. |
+| Permiso | Ninguno: Cord los envía solo. |
+| Cliente | Debe tener un correo registrado en su ficha. Sin correo no hay recordatorio. |
+| Factura | Emitida (no borrador), abierta, con fecha de vencimiento y saldo pendiente. |
+| Cotización | Aprobada o facturada, sin pagar por completo y que no sea una iguala recurrente. |
+| Cuenta | No aplica a cuentas de prueba ni a la cuenta de demostración. |
+
+## Facturas: la escalera de recordatorios
+
+Cada factura abierta recorre una escalera de **seis etapas**, medidas en días respecto a su fecha de vencimiento:
+
+| Etapa | Cuándo | Qué recibe tu cliente |
+|---|---|---|
+| 7 días antes | Una semana antes de vencer | **Tu factura [número] está por vencer** |
+| 1 día antes | La víspera del vencimiento | **Tu factura [número] está por vencer** |
+| 3 días después | Tres días vencida | **Factura vencida [número]** |
+| 7 días después | Una semana vencida | **Factura vencida [número]** |
+| 14 días después | Dos semanas vencida | **Factura vencida [número]** |
+| 30 días después | Un mes vencida | **Factura vencida [número]** |
+
+Después de la etapa de 30 días, Cord deja de enviar recordatorios automáticos de esa factura.
+
+### Qué recibe tu cliente
+
+{/* MOCKUP: correo de recordatorio de factura vencida con el logo y color del negocio: saludo con el nombre del cliente, texto "La factura F-0042 de Estudio Norte está vencida...", tabla con Factura, Vence y Saldo pendiente $12,400.00 MXN, botón "Pagar factura". */}
+
+- **Asunto:** el aviso correspondiente seguido del nombre de tu negocio.
+- **Cuerpo:** el número de factura, la fecha de vencimiento y el **saldo pendiente con su divisa**. El saldo ya descuenta abonos parciales y notas de crédito, así que nunca le recuerdas a tu cliente dinero que ya pagó.
+- **Botón Pagar factura:** abre el link de la factura, donde puede pagar el saldo completo o abonar una parte. Ver [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas).
+- **Marca:** el correo usa tu logo y tu color. Si conectaste el [Gmail de tu negocio](/docs/automatizacion/integraciones/gmail), sale desde tu cuenta de Gmail; si no, sale de Cord con el nombre de tu negocio.
+
+Cada recordatorio enviado queda en la **línea de tiempo de la factura** como "Aviso de vencimiento (7 días antes)" o "Recordatorio de cobro (3 días vencida)", y en la bitácora de auditoría.
+
+### Una etapa, un solo correo
+
+Cord registra la etapa **antes** de enviar el correo, y cada etapa solo puede registrarse una vez por factura. En la práctica:
+
+- **No hay duplicados.** Aunque el proceso diario corra dos veces el mismo día, tu cliente recibe un solo correo por etapa.
+- **Si el envío falla, se reintenta.** La etapa se libera y se vuelve a intentar al día siguiente.
+- **No hay ráfagas.** Si una factura entra tarde a la escalera (por ejemplo, la emitiste ya vencida hace 20 días), Cord envía solo la etapa más reciente que corresponde, no todas las anteriores de golpe.
+- **No se repite el mismo dinero.** Si la factura viene de una cotización que ese mismo día recibió su propio recordatorio, la factura espera al día siguiente.
+
+### El evento "Vence una factura"
+
+El día siguiente al vencimiento de una factura con saldo, Cord emite una sola vez el evento **Vence una factura** (`invoice.overdue`). Llega a tus [webhooks](/docs/desarrolladores/herramientas/webhooks) y puede disparar un [workflow](/docs/automatizacion/workflows/disparadores), por ejemplo para avisar a tu equipo en Slack o crear una tarea de seguimiento.
+
+## Cotizaciones: aviso de vencimiento
+
+Las cotizaciones aprobadas con saldo pendiente reciben un aviso más simple: un correo **una vez al día durante los tres días previos a su vencimiento y el día en que vencen**. El vencimiento se calcula desde la aprobación más los días del término de pago:
+
+| Término | Vence |
+|---|---|
+| Contado | El día de la aprobación |
+| Net 30 | 30 días después de la aprobación |
+| Net 60 | 60 días después de la aprobación |
+
+El correo, con tu logo y tu color, dice el folio, el importe total de la cotización con su divisa y la fecha de vencimiento, con el botón **Ver y pagar** que abre el link de la cotización. El asunto es **Recordatorio de pago — [folio]**.
+
+<Callout type="info">
+Con **Contado**, el vencimiento coincide con la aprobación, así que el aviso puede llegar el mismo día en que tu cliente aprueba. En una cotización con anticipo ya pagado, el correo menciona el total de la cotización; el link sí muestra el saldo exacto que falta.
+</Callout>
+
+## Cuándo no se manda un recordatorio
+
+- El cliente no tiene correo registrado.
+- La factura ya está pagada, anulada, marcada como incobrable o sigue en borrador.
+- La factura no tiene fecha de vencimiento o su saldo es cero.
+- La factura lleva más de 30 días vencida y ya pasó por todas las etapas.
+- La cotización ya se pagó por completo, no está aprobada, o es una [iguala recurrente](/docs/pagos/igualas): las igualas se cobran solas cada mes y nunca se tratan como cartera vencida.
+- La cuenta es una cuenta de prueba o la cuenta de demostración.
+
+## ¿Puedo cambiar la cadencia?
+
+Hoy no desde la app. Cord guarda la escalera por organización, pero todavía no hay una pantalla para editarla ni para apagar los recordatorios: todas las cuentas usan la escalera de 7 días antes, 1 día antes y 3, 7, 14 y 30 días después.
+
+Si necesitas otro ritmo o un mensaje propio, crea un [workflow](/docs/automatizacion/workflows) con el disparador **Vence una factura** y una [espera](/docs/automatizacion/workflows/esperas) antes de enviar el correo. El contenido propio de **Ajustes › Correo** se usa al enviar cotizaciones y facturas, no en los recordatorios: estos conservan su mensaje.
+
+## Límites
+
+- Un recordatorio de factura por etapa, seis etapas como máximo.
+- La cadencia y el texto no se editan desde la app.
+- Los recordatorios salen en español aunque tu cuenta esté configurada en inglés. Si tus clientes necesitan otro idioma, usa un workflow con tu propio mensaje.
+- Los recordatorios no adjuntan el PDF; el cliente lo descarga desde el link de la factura.
+- El aviso de cotizaciones no tiene escalera posterior al vencimiento. Para perseguir cotizaciones vencidas usa la [cartera](/docs/pagos/cartera-cobranza) o la [cobranza con IA](/docs/pagos/cobranza-ia).
+
+## Problemas comunes
+
+**Mi cliente dice que no recibió el recordatorio.** Revisa que su ficha tenga correo y busca el evento en la línea de tiempo de la factura. Si no aparece, el envío falló y se reintenta al día siguiente.
+
+**Le llegó un recordatorio de una factura que ya pagó por transferencia.** El recordatorio sale mientras la factura tenga saldo. Registra el pago en la factura en cuanto lo verifiques.
+
+**Quiero que no le lleguen recordatorios a un cliente.** No hay exclusión para los recordatorios automáticos hoy. La lista **No escribir a** de la cobranza con IA solo aplica al agente.
+
+## Relacionadas
+
+- [Crear, emitir y cobrar facturas](/docs/pagos/facturas-emitidas)
+- [Cartera y cobranza operativa](/docs/pagos/cartera-cobranza)
+- [Cobranza con IA](/docs/pagos/cobranza-ia)
+- [Términos de crédito](/docs/pagos/credito)
+- [Notificaciones](/docs/gestion/notificaciones)

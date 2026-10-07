@@ -1,125 +1,219 @@
 ---
 title: "Connect your account"
-description: "The 8 steps to verify your identity, connect your bank account, and activate Cord Payments — all inside Cord, with no redirects."
+seoTitle: "Connect your Cord Payments account: verification and identity"
+description: "The 8 steps to verify your business and activate Cord Payments inside Cord: identity documents by country, people and beneficial owners, phone capture, photo quality, payout account, and account statuses."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Payment settings permission", "Correct business country and currency in Settings › General", "Valid government ID for each person who controls the business", "Bank account in the name of the business or its representative"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Connect your account</h1>
-  <p class="page-subtitle">Verify your identity and connect your bank account to start accepting payments online, without leaving Cord.</p>
+  <p class="page-subtitle">Verify your identity and connect your bank account to start collecting online, without leaving Cord.</p>
 </header>
 
-## Everything inside Cord
+## What it is
 
-Unlike traditional payment checkouts that take you to another page or force you to use an external dashboard, Cord Payments lives **100% inside the app** — the connection wizard, identity verification, and managing your bank account are all native Cord screens, with your own look and feel, not a third-party form.
+To collect by card or SPEI from a quote or invoice link you need a verified **payments account** in your business's name. Financial regulations require knowing who you are, who controls the business, and where the money goes (KYC, *Know Your Customer*). Cord runs the whole process **inside the app**: the wizard, the camera, and the bank account are Cord screens, with no redirects to a third-party form.
 
-On payments in Mexican pesos (MXN), Cord charges a fee for every payment you process; on payments in any other currency it applies no platform fee today (see the full detail in [Cord Payments fees](/en/docs/pagos/condiciones)). This document only covers the connection process, not what it costs to use it.
+On payments in Mexican pesos (MXN), Cord charges a fee per payment; in any other currency there's no platform fee today. See [Cord Payments fees](/en/docs/pagos/condiciones).
 
-### How to get started
+## Requirements
 
-<Callout type="warning">
-**Before you start, check your business's country** in Settings › General. The payments
-account is opened in that country and with your business currency, and **neither can be
-changed later** — regulatory verification requires it. If the country is wrong, fix it
-before starting verification.
+| Requirement | Detail |
+|---|---|
+| Plan | All plans. |
+| Permission | **Payment settings**. |
+| Country | Mexico, United States, Canada, Brazil, Spain, United Kingdom, Germany, and France. |
+| Documents | A valid, color government ID for each person you declare. |
+| Bank account | In the name of the business or its legal representative, in your country's banking format. |
+
+<Callout type="warning" title="Check the country before you start">
+The payments account is opened in your business country (**Settings › General**) and in that country's currency, and **neither can be changed later**: regulatory verification requires it. Cord blocks country changes once the account exists. If the country is wrong, fix it before you start.
 </Callout>
 
 ### Where it's available
 
-Cord Payments — card payments inside the link — is available today in **Mexico, the
-United States, Canada, Brazil, Spain, the United Kingdom, Germany and France**.
+Cord Payments works today in **Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France**.
 
-In **Colombia, Argentina, Chile and Peru** you can open your Cord account and use
-everything else — quoting, invoicing, chasing collections and recording the payments you
-receive by bank transfer — but online payments don't operate there yet. Settings ›
-Payments tells you so instead of letting you start a verification that can't complete.
+In **Colombia, Argentina, Chile, and Peru** you can use everything else (quote, invoice, follow up on collections, and record payments received by transfer) and collect online with [Mercado Pago](/en/docs/pagos/mercado-pago). **Settings › Payments** tells you Cord Payments isn't available before you start a verification that couldn't be completed.
 
-What the wizard asks for comes from your business's country: the tax identifier (RFC in
-Mexico, NIF/CIF in Spain, EIN in the United States), the ID document accepted, and your
-deposit account's format. Cord validates that format **before** sending it, so a
-mistyped digit is caught by Cord rather than bounced by the bank days later.
+## The 8 wizard steps
 
-1. Go to **Settings › Payments** inside the app.
-2. If your account is in "New" status, click **Start verification**.
-3. Complete the 8-step wizard:
+<Steps>
+1. Go to **Settings › Payments**.
+2. If you haven't connected your account yet, the wizard appears on that same screen, at step 1. Move forward with **Continue**.
+3. Complete the steps. Whatever you save is kept: if you leave halfway, you pick up where you left off.
+</Steps>
 
 | Step | What it captures |
 |---|---|
-| **1. Entity type** | Whether your business operates as an individual or a legal entity, and the business category (MCC). |
-| **2. Business details** | Legal name, your country's tax identifier, and the details you invoice under. |
-| **3. Fiscal address** | Your business's registered fiscal address. |
-| **4. Identity** | Personal details of the legal representative or the individual operating the account. The wizard **only asks for what verification requires** for your country and entity type: for example, in the United States the last 4 digits of the SSN are usually requested. If verification in your country doesn't require a personal ID number, the field doesn't appear. |
-| **5. People and control** | The full list of who controls the business: the legal representative and **every person owning 25% or more**, each with their own role and percentage. This is an anti-money-laundering requirement, not a Cord preference — see [People and beneficial owners](#people-and-beneficial-owners) below. |
-| **6. Verification** | Official ID capture for each person — see [LiveCapture](#identity-verification-with-livecapture) below. |
-| **7. Bank account** | The account where you want to receive your deposits, in your country's format: CLABE in Mexico, IBAN in Spain and Germany, routing + account in the United States, sort code in the UK, transit in Canada, bank + branch in Brazil. |
-| **8. Terms** | You accept the handling of your data and **Cord Payments' current fee schedule** — it's the same step where you confirm how much Cord will charge you to process each payment in Mexican pesos (MXN). |
+| **1. Entity type** | Whether you operate as an **Individual** or a **Company**, and your line of business. |
+| **2. Business details** | Legal name, your country's tax ID (RFC in Mexico, NIF/CIF in Spain, EIN in the United States), and contact details. |
+| **3. Registered address** | The business's registered tax address. |
+| **4. Identity** | Personal details of the legal representative or the individual. Only the fields your country's verification requires appear: in the United States, for example, the last 4 digits of the SSN; in Spain, Germany, and the United Kingdom no personal ID number is requested. |
+| **5. People** | Who controls the business, with their role and ownership. An individual skips this step. See [People and beneficial owners](#people-and-beneficial-owners). |
+| **6. Verification** | The photo of each person's ID and, if requested, a proof of address or a company document. |
+| **7. Bank account** | The payout account in your country's format. See [Payouts to your bank](/en/docs/pagos/depositos#your-payout-account). |
+| **8. Terms** | You accept the processing of your data, the Cord Payments terms, and your payments account agreement. The acceptance is recorded with date, IP address, and terms version. The Cord fee is activated separately, in **Settings › Payments** (see [Fees](/en/docs/pagos/condiciones#how-your-fee-schedule-is-activated)). |
 
-The wizard picks up exactly where you left off if you leave halfway through — you won't have to recapture what you already saved. If Cord detects a specific missing requirement (say, a photo that came out blurry), it sends you straight to that particular step instead of restarting the whole process.
+If verification finds something specific missing (a blurry photo, a detail that doesn't match), the wizard takes you straight to that step instead of starting over.
 
-### People and beneficial owners
+## Verification decides what's requested
 
-In the European Union, the United Kingdom and Canada, declaring **beneficial owners** (people holding 25% or more) is a legal obligation, not an optional formality. Step 5 is a list, not a checkbox:
+Cord has no fixed list of fields per country. The data, documents, and declarations you see come from what your account's verification reports as pending, and the country only decides **what each item is called** (RFC, NIF, EIN; INE, DNI, Personalausweis). That's why two businesses in the same country can see different steps: a company with several partners declares more people than an individual, and a new requirement appears as soon as verification asks for it.
 
-- **You add each person** with their details, role and percentage.
-- **One person can hold several roles at once** — legal representative, owner, director, executive — and each is ticked separately. If your legal representative is a hired director with no shares, that's what gets declared: they aren't credited with ownership they don't have.
-- **Each person carries their own identity verification**, with its status visible in the list.
-- The final declaration that the list is complete appears **after** you've built it, and only when your country's verification requires it.
+## People and beneficial owners
 
-A company with three shareholders at 30% each declares all three. If you could only declare one, the account would never activate: the verification system would keep asking for the ones missing.
+In the European Union, the United Kingdom, and Canada, declaring **beneficial owners** (people with 25% or more ownership) is a legal obligation. The **People** step is a list you build:
 
-<Callout type="info">
-**What Cord does NOT store.** Identification numbers, dates of birth, personal addresses and document images go straight to the financial verification system. Cord keeps only each person's name and role, so it can show you the list. Your deposit account is stored, encrypted at rest.
+- **Add each person** with their details, ownership, and roles.
+- **A person can have several roles**, each marked separately:
+
+| Role | When to mark it |
+|---|---|
+| **Legal representative** | Operates the account and signs for the business. |
+| **Owner** | Owns 25% or more of the business. Their percentage is captured. |
+| **Director** | Is a director, administrator, or board member. |
+| **Executive** | Holds an executive management role. Their job title is captured. |
+
+- **The total percentage is informational.** Cord shows "Declared: N% ownership", but doesn't force you to reach 100%: there are legitimate structures where the named owners don't add up to the total.
+- **Each person has their own verification**, with a visible status: **Details captured**, **Under review**, **Verified**, or **Action required**.
+- **Adding, editing, or removing a person requires confirming your identity**, just like changing the payout account.
+
+A partnership with three partners at 30% each declares all three. If it declared only one, the account wouldn't activate: verification would keep asking for the missing ones.
+
+### Declarations
+
+When your country's verification requires it, a declaration appears at the end of the list, for example: "I confirm I've added every owner with ≥25%". It's a **legal declaration under your responsibility** and is sent as is. It only appears **after** you've built the list, and Cord records on its server the date, IP address, and browser from which you accepted it.
+
+<Callout type="info" title="What Cord does NOT keep">
+ID numbers, dates of birth, home addresses, and document images go straight to the financial verification system. Cord keeps each person's name and roles to show you the list. That's why, when you edit a person, the date of birth, ID, and address are entered again; if you leave them blank, the ones already on file are kept.
 </Callout>
 
-### Identity verification with LiveCapture
+## Identity documents by country
 
-For financial regulatory reasons, verifying your identity and the legitimacy of your business (KYC — Know Your Customer) is mandatory. Cord uses a native system called **LiveCapture** that does this in seconds, directly from your browser or your phone:
+Before taking the photo, you choose which document you'll use. That choice adjusts the shape of the camera frame (a card or a passport page) and decides whether you'll be asked for the back.
 
-- **You pick which document you'll use first.** The list is your country's: INE in Mexico, DNI in Spain, Personalausweis in Germany, CNH in Brazil, state licence in the United States. That choice sets the shape of the camera frame and decides whether you'll be asked for the back — a passport doesn't have one, so that step is skipped automatically.
-- The system asks for permission to access your camera and you capture the document.
-- If verification asks for it, you also capture **proof of address**: a recent utility bill or bank statement in that person's name. It has to be a **different** document from the ID.
-- All of this happens without uploading files or opening third-party pages — the camera lives right inside the same Cord screen. If you'd rather use your phone's camera app, or you already have the photo, the button to choose a file is always available.
+| Country | Suggested documents | Back side |
+|---|---|---|
+| Mexico | Voter ID (INE), passport, driving licence | INE and licence yes; passport no |
+| United States | State driving licence, state ID card, passport | Licence and ID yes; passport no |
+| Canada | Passport, provincial driving licence, provincial ID card | Licence and ID yes; passport no |
+| Brazil | CNH, RG, passport | CNH and RG yes; passport no |
+| Spain | DNI, NIE / TIE, passport, driving licence | DNI, NIE / TIE, and licence yes; passport no |
+| United Kingdom | Passport, photocard driving licence, biometric residence permit | Licence and permit yes; passport no |
+| Germany | *Personalausweis*, passport, electronic residence permit | Yes, except the passport |
+| France | *Carte nationale d'identité*, passport, *titre de séjour* | Yes, except the passport |
 
-<Callout type="info">
-**If you live in a different country from the business, only a passport is accepted.** That's a rule of the verification system, not Cord's, and Cord tells you before you take the photo rather than letting the document be rejected days later.
+This list translates the three categories verification accepts (passport, driving licence, and government-issued photo ID) into the name you recognize your document by. It's not a guarantee of acceptance: if verification rejects a document, Cord tells you why.
+
+<Callout type="warning" title="If you live in another country, passport only">
+If a person's country of residence differs from the payments account's country, verification **only accepts a passport**. Cord detects this and tells you before you take the photo, so you don't wait days for a certain rejection.
 </Callout>
 
-### Cord checks the photo before sending it
+### Proof of address and company documents
 
-The most common cause of a rejection isn't an invalid document: it's a photo that can't be read. Before sending anything, Cord measures the image and tells you what to fix — it's blurry, there isn't enough light, a glare is covering a field, the document blends into the background.
+If verification asks for it, a **proof of address** is added: a recent utility bill or bank statement in the person's name. It must be a **different** document from the ID: one document can't cover two requirements. If a **company document** is requested, it's uploaded in the same step.
 
-Those are **advice, not blocks**: if you think the photo is fine, you send it anyway. Only two things are stopped outright, because the verification system always rejects them and waiting for that rejection would cost you days:
+| File | Formats | Maximum size |
+|---|---|---|
+| ID (front and back) | JPG or PNG, in color | 10 MB |
+| Proof of address or company document, from the computer | JPG, PNG, or PDF | 10 MB |
+| Any photo from the phone | JPG or PNG | 10 MB |
 
-- **A black-and-white photo** of a photo ID. It has to be in colour.
-- **A very low-resolution photo**, where the document can't be read.
+## Continue on your phone
 
-Identity documents are sent as JPG or PNG. A PDF only works for proof of address and company documents.
+A phone camera almost always gives better light and focus than a webcam or a scan. In the **Verification** step, the **With your phone** option is marked as recommended.
 
-### The "continue on your phone" link is single-use
+<Steps>
+1. On your computer, in the **Verification** step, choose **With your phone** and click **Generate QR code**. You can also copy the link with **Copy** and open it on your phone.
+2. Scan the code with your phone's camera. **Verify your identity** opens with the steps you'll need; tap **Start**.
+3. Choose which document you'll use. If your address is in another country, the screen tells you only a passport is accepted.
+4. Take the photo of the **front**. If you prefer the camera app or already have the photo, use **Choose a photo instead**.
+5. Take the photo of the **back**, if your document has one. With a passport, tap **Skip — it's a passport**.
+6. If requested, take the photo of the **proof of address**. You can skip it when it wasn't requested.
+7. When you finish you'll see **Done**. Go back to your computer: the screen, which says "Waiting for you to finish on your phone…", continues on its own.
+</Steps>
 
-When you generate the QR code from your computer, the link it creates:
+{/* MOCKUP: phone screen "Verify your identity" with the document selector set to "Voter ID (INE)", the landscape camera frame over the card, the hint "There's a glare on the document. Tilt it slightly to remove it.", and the buttons "Take photo of the front" and "Choose a photo instead". */}
 
-- **Is bound to the first phone that opens it.** If someone else intercepts it and opens it on another device, it stops working.
-- **Lives for 30 minutes**, and only 15 from the moment you first open it.
-- **Has an attempt limit.** Using it up closes the link; you generate a new one from your computer in one click.
-- **Won't accept the same photo twice.** If a document was rejected, you need to take a new photo: re-sending the same file fails automatically.
+### Link rules
 
-### If a document is rejected, we tell you why
+The QR code link is a single-use credential and is treated as one:
 
-When the verification system rejects a photo, Cord shows you **the exact reason** on that person's card: the image isn't readable, the document has expired, the name doesn't match what you entered, the back is missing. Without that reason, the only option was to upload the same photo again and hope for a different outcome.
+| Rule | Detail |
+|---|---|
+| Validity | 30 minutes from when you generate it, and 15 minutes from the first photo you upload. Whichever comes first. |
+| One device | It's tied to the first phone that uploads a photo. You can move from a messaging app's browser to the same phone's browser, but if it's used on more devices it's blocked with "For security this link is tied to the first phone that opened it". |
+| Attempts | It allows up to 12 uploads and is blocked after 6 failures in a row. When exhausted it says the link's attempts ran out. |
+| Same photo | The same photo isn't accepted twice: if a document was rejected, take a new photo. The same photo isn't accepted for front and back either. |
+| Privacy | The link page records no analytics and isn't stored in the browser cache. |
 
-<Callout type="info">
-**Your photos are not stored by Cord.** Images are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Before transmitting them, Cord **strips their metadata** — including the GPS location many phones write inside the photo.
+If the link expires or is blocked, generate a new one from your computer with **Generate a new one**. What you already uploaded is kept.
 
-What Cord does keep is a **compliance record** of each submission: which part of the document was sent, when, from which IP address, and what the verification system replied. Never the image, nor the document number, nor a thumbnail. That record is kept for five years, the period anti-money-laundering regulation requires.
+## Photo quality
+
+The most common cause of a rejection isn't an invalid document: it's a photo that can't be read. Before sending, Cord measures the image. Almost everything it detects is **advice**: you can send the photo anyway if you think it's fine. Only two things stop the upload, because verification always rejects them:
+
+| What Cord detects | What it does | What it suggests |
+|---|---|---|
+| Very low resolution | **Blocks** | Move closer to the document, or use **Choose a photo** to take it with the camera app. |
+| ID in black and white | **Blocks** | Take it again in color. |
+| Photo too dark | Warns | Move near a window or turn on a light. |
+| Too much light | Warns | Move away from the lamp or direct sunlight. |
+| Glare on the document | Warns | Tilt it slightly to remove it. |
+| The document blends into the background | Warns | Place it on a differently colored surface. |
+| Blurry photo | Warns | Rest it on a flat surface and wait for it to focus. |
+| Readable, but could be better | Warns | Move closer and let it focus. |
+
+A black-and-white proof of address is accepted: the color rule applies only to photo IDs.
+
+## If a document is rejected
+
+When verification rejects a photo, Cord shows **the reason** on that person's card: the image can't be read, the document is expired, the name doesn't match the one entered, or the back is missing. Fix that specific issue and take a new photo.
+
+<Callout type="info" title="Your photos aren't stored in Cord">
+Images are transmitted encrypted to the financial verification system and Cord doesn't store them. Before sending them, Cord **strips their metadata**, including the GPS location many phones save inside the photo, and keeps only the orientation so the photo doesn't arrive rotated.
+
+Cord does keep a **compliance record** of each upload: which side of the document was sent, when, from which IP address, the photo's quality measurements, and what verification answered. Never the image, the document number, or a thumbnail. That record is kept for five years, the period required by anti-money-laundering rules.
 </Callout>
 
-## Your account's status
+## Account statuses
 
-Depending on your progress, your payments account shows different statuses:
+| Status | What you see in Settings › Payments | What you can do |
+|---|---|---|
+| **New** | The wizard at step 1. | Quote, invoice, and record manual payments. Card and SPEI are locked. |
+| **Pending** | **Verification pending**: verification is in progress or a requirement is missing. The screen refreshes on its own during review. | Complete what's pending. Card and SPEI stay locked. |
+| **Active** | **All set, you can accept payments now!**: identity and bank account confirmed. | Collect with the methods you turn on and [receive payouts](/en/docs/pagos/depositos). |
 
-- **New:** you haven't started the process yet. No automatic method is available.
-- **Pending:** you started the process but verification is still in progress, or a requirement is missing (for example, re-capturing a photo). Card and SPEI are still blocked.
-- **Active:** everything is ready — your identity and your bank account are confirmed. You can now charge, and the money flows automatically into your account with every deposit.
+An active account can ask for information again later, for example when a document expires or requirements change. The **Account status** widget on [My money › Payments](/en/docs/pagos/dashboard) shows how many requirements are missing and their deadline.
+
+## Limits
+
+- Cord Payments is available in eight countries; the account's country and currency don't change later.
+- Cord doesn't run liveness checks or selfies: document authenticity is checked by the verification system on the photo you upload.
+- The phone link lasts at most 30 minutes and allows 12 uploads.
+- IDs are uploaded as JPG or PNG, in color, up to 10 MB.
+
+## Common problems
+
+**The wizard asks for something another account didn't.** What's requested depends on your country, entity type, and verification status. That's normal.
+
+**The camera won't start on my phone.** Check that the browser has camera permission. If you opened the link inside a messaging app, open it in the phone's browser. You can always use **Choose a photo instead**.
+
+**It says the link is tied to another phone.** Generate a new link from your computer and open it only on the phone you'll use.
+
+**The same photo was rejected again.** Resending the same file fails again. Take a new photo fixing the reason shown.
+
+**I can't change the business country.** That's intentional once the payments account exists: the account's country can't be modified.
+
+## Related
+
+- [Payouts to your bank](/en/docs/pagos/depositos)
+- [Cord Payments fees](/en/docs/pagos/condiciones)
+- [Payment methods](/en/docs/pagos/metodos)
+- [Mercado Pago](/en/docs/pagos/mercado-pago)
+- [Team and security](/en/docs/cuenta/equipo-seguridad)

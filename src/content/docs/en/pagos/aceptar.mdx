@@ -1,47 +1,109 @@
 ---
 title: "Accepting a payment"
-description: "What the Cord Payments checkout looks like from the customer's side: picking a method, paying by card or SPEI, and how down payments and balances work."
+seoTitle: "Accept a payment from the quote or invoice link"
+description: "What your customer sees when paying from the link: when the pay button appears, how they choose a method, how they pay by card, SPEI, or Mercado Pago, what happens with deposits, installments, credit, and partial payments, and how payment is confirmed."
 lastUpdated: "2026-10-07"
 reviewedBy: "Cord product and operations"
-appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR]
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Active Cord Payments account or connected Mercado Pago", "At least one online payment method turned on", "Approved quote or issued invoice with a balance"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Accepting a payment</h1>
-  <p class="page-subtitle">Offer your customers a native payment experience, without leaving the cotización.</p>
+  <p class="page-subtitle">Your customer pays inside the same quote or invoice link, with your branding and without leaving the document.</p>
 </header>
 
-## The embedded checkout
+## What it is
 
-Once the customer approves the cotización (and signs electronically), the cotización link transforms. Instead of the approve button, the **payment checkout** appears — a screen embedded directly into the document, with your brand and colors.
+The public link of a quote or invoice includes the **payment checkout**: a screen with your logo and colors where your customer pays with the methods you have active. There's no second payment link to send: the same link is used to review, approve, pay, and check what's left.
 
-If you activated more than one method (see [Payment methods](/en/docs/pagos/metodos)), the customer first **explicitly picks** how they want to pay — Card or SPEI — before seeing any form. If you only activated one, it shows directly.
+## Requirements
 
-### Paying by card
+| Requirement | Detail |
+|---|---|
+| Plan | All plans. |
+| Payment rail | [Cord Payments](/en/docs/pagos/onboarding) active (MX, US, CA, BR, ES, GB, DE, FR) or [Mercado Pago](/en/docs/pagos/mercado-pago) connected (MX, BR, CO, AR, CL, PE). |
+| Methods | At least one turned on in **Settings › Payments**. See [Payment methods](/en/docs/pagos/metodos). |
+| Document | An approved quote (and signed, if you required it) or an issued invoice with a balance. A test document can't be paid online. |
+| Currency | The document's sale currency. SPEI only in MXN. |
 
-- Native form embedded in the document, no redirects to any external site.
-- Accepts the credit and debit cards your payments account supports.
-- As soon as the payment is confirmed, the cotización flips to "Paid" and funds are paid out to your bank account at the payout frequency you chose in **Settings › Payments**.
-- The only method compatible with [recurring retainers](/en/docs/pagos/igualas).
+Without an online payment rail, the link shows your manual transfer details (if you set them up) and you record the payment once you verify it.
 
-### Paying by SPEI
+## When the pay button appears
 
-**SPEI is a Mexico-only rail:** it only shows up as an option when the cotización is denominated in Mexican pesos (MXN). If the business quotes in another currency, the customer pays by card even if the seller has SPEI enabled.
+| Situation | What your customer sees |
+|---|---|
+| Approved **upfront** quote | The pay button, from approval onward. |
+| Quote with a **credit term** (Net 30 or Net 60) | A confirmation that the order is on credit with its due date. Online payment opens on that date. See [Credit terms](/en/docs/pagos/credito). |
+| Quote with a **deposit** | From approval, the deposit amount. The balance opens according to the term. See [Upfront and balance](/en/docs/pagos/anticipos). |
+| Quote with an **installment plan** | The next installment that's already due. See [Installment payment plans](/en/docs/pagos/cuotas). |
+| **Recurring** quote | The card authorization for the monthly retainer. See [Monthly retainers](/en/docs/pagos/igualas). |
+| Issued **invoice** | The full balance, with the **Pay another amount** option to pay part of it. |
+| Paid document | The **Paid** status and the payment history. |
 
-- When the customer picks "SPEI Transfer", Cord Payments generates a **unique interbank CLABE**, tied exclusively to that payment, and shows it on an instructions screen — the customer never leaves the cotización link or sees a third-party form.
-- The customer transfers from their online banking to that CLABE.
-- **Automatic reconciliation:** as soon as the money arrives, Cord detects the deposit, flips the cotización to "Paid", and notifies both parties — no need to cross-reference receipts by hand.
+## How your customer pays
+
+<Steps>
+1. Opens the link and, if it's a quote, approves it.
+2. Clicks the pay button. If you have both card and SPEI active, they first **choose how to pay**; with only one, they see the form directly.
+3. Pays by card inside the document, follows the SPEI instructions, or clicks **Pay with Mercado Pago**.
+4. Once confirmed, the link shows the payment and the document changes status.
+</Steps>
+
+{/* MOCKUP: payment page of an MXN quote: "Back to the quote" header, amount "Deposit due $5,000.00 MXN of a $10,000.00 MXN total", method selector with "Card" and "SPEI transfer", card form and a "Pay $5,000.00 MXN" button in the brand color; below, a separator and a "Pay with Mercado Pago" button. */}
+
+### By card
+
+- The form lives inside the document, with no redirects to another site.
+- It accepts the credit and debit cards your payments account supports. Your customer's bank may ask for additional verification.
+- If the payment fails, your customer sees a clear message with a reference they can share with you; they never see technical errors.
+- Once confirmed, the document moves to **Paid** (or that part's charge does, if it's a deposit, an installment, or a partial payment).
+
+### By SPEI
+
+Only on **MXN** quotes from businesses in Mexico.
+
+- Cord generates instructions with a **CLABE tied to that charge**, bank, beneficiary, reference, and amount, with copy buttons.
+- Your customer can **Print or save PDF** or click **Email these to me** to receive them at the email registered on the quote.
+- They transfer from their online banking. When the money arrives, Cord reconciles it on its own and changes the status: no receipts to cross-check.
+
+SPEI confirmation depends on the bank's notice and isn't always instant. See [SPEI](/en/docs/pagos/metodos#automatic-spei).
+
+### With Mercado Pago
+
+Your customer goes to Mercado Pago's checkout, pays with the methods available in their country, and returns to your link. The payment is marked once Cord reads the approved payment in your Mercado Pago account.
+
+## After payment
+
+- **Your customer** sees the payment reflected on the link. If they return from a payment still being confirmed, the link waits a few seconds for the notice and lets them refresh.
+- **You** see the payment in [My money › Payments](/en/docs/pagos/dashboard), on the document timeline, and, if you set up alerts, in your [notifications](/en/docs/gestion/notificaciones).
+- **Your integrations** receive the payment event. A partial payment (deposit, installment, or partial invoice payment) doesn't trigger the quote-paid event: that one only goes out when no balance is left.
+- **The money** lands in your payments account balance and reaches your bank at your [payout frequency](/en/docs/pagos/depositos).
 
 <Callout type="info">
-Card and SPEI have different fees (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)); that table is the current schedule for payments in Mexican pesos.
+Fees depend on the method and the currency. On MXN payments, each collected part (deposit, balance, installment, or partial payment) carries its own fee. See [Cord Payments fees](/en/docs/pagos/condiciones).
 </Callout>
 
-## Partial payments and down payments
+## Edge cases
 
-What happens if you configured a **50% down payment** on the cotización?
+- **The quote amount changed after the link was opened.** If there are no payments yet, your customer sees a notice asking you to review the breakdown before paying.
+- **Your customer switched methods mid-payment.** Cord checks the previous attempt before opening another and doesn't replace it if it already received money. See [Switch between SPEI and card](/en/docs/pagos/metodos#switch-between-spei-and-card).
+- **The same charge was paid through Cord Payments and Mercado Pago.** Cord notes it in the history so you can decide whether to refund one.
+- **The invoice balance changed while your customer was paying.** Cord asks them to refresh the invoice before continuing.
 
-1. The initial checkout shows only the down payment amount.
-2. Once the customer pays it, Cord records the down payment as collected and the balance is pending according to your terms (cash or credit).
-3. To pay the balance, the customer returns to the **same link** of the cotización and the checkout shows the remaining amount; no second payment link is needed. With credit terms, the balance is enabled when its due date arrives. In the days before the due date, Cord sends the customer an automatic email reminder with the cotización link.
+## Common problems
 
-See the full detail in [Upfront and balance](/en/docs/pagos/anticipos).
+**My customer doesn't see the pay button.** Check that your account is active, that a method is turned on, and that payment is already open according to the credit term.
+
+**My customer paid, but the document is still pending.** If it was SPEI, wait for the bank's confirmation. If it was a card, check **Recent payments** on the dashboard before recording anything by hand.
+
+**The link says the document is a test.** That document has no valid fiscal issue and can't be paid online. See [Invoicing by country](/en/docs/pagos/facturacion).
+
+## Related
+
+- [Payment methods](/en/docs/pagos/metodos)
+- [Upfront and balance](/en/docs/pagos/anticipos)
+- [Credit terms](/en/docs/pagos/credito)
+- [Installment payment plans](/en/docs/pagos/cuotas)
+- [Automatic payment reminders](/en/docs/pagos/recordatorios)
