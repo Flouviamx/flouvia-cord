@@ -137,6 +137,14 @@ existe pero es ajeno ya es filtrar entre negocios.
                    (cord.report.<id>.v1). Gate: memberCan('analitica') + ReportDef.perm.
                    Los informes 'snapshot' NO renderizan el selector de fechas — muestran
                    un chip "Al día de hoy" (así no hay control que ignorar).
+                   Divisa y zona (oct 2026): toda la analítica (dashboard, Informes,
+                   Cobranza, MCP) suma en orgs.moneda y corta los días en
+                   orgs.zona_horaria vía src/lib/report-scope.ts (quoteFx/documentFx,
+                   dayStart/dayEnd). Tasa congelada primero, la publicada hoy después;
+                   sin tasa el importe queda fuera y MonedaNota.astro lo dice. La cartera
+                   (Cobranza y Flujo) sale de la vista cuentas_por_cobrar: facturas y
+                   abonos parciales incluidos. Lo verifica test/analitica-moneda-db.test.ts.
+                   "Todo" en el selector significa los últimos 12 meses y así se rotula.
 /app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
