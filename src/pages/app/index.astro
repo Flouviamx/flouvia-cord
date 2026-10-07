@@ -6,6 +6,7 @@ import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import MonedaNota from '../../components/app/MonedaNota.astro';
 import MetricWidget from '../../components/app/widgets/MetricWidget.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
@@ -89,12 +90,6 @@ const pipelineSegments = (['draft', 'sent', 'viewed', 'approved', 'paid'] as con
 // Nota: la tendencia mensual se deriva 100% en el cliente de la MISMA serie diaria de
 // 365 días del hero (agregada por día/semana/mes según el ancho del rango elegido).
 
-// ── Estado "Todo" (default) del embudo/rankings: exactamente lo que ANALYTICS ya trae,
-// embebido para que el rango por defecto no dispare ningún fetch al cargar la página. ──
-const rangoTodoFunnel = ANALYTICS.funnel;
-const rangoTodoClientes = ANALYTICS.clientes;
-const rangoTodoProductos = ANALYTICS.productos;
-
 // ── Onboarding / Aha-moment Tour ──
 const isDemo = dash.totalQuotes === 1 && String(COTIZACIONES[0]?.notas || '').includes('"is_demo": true');
 const demoToken = isDemo ? COTIZACIONES[0].token : null;
@@ -146,7 +141,7 @@ import { iconInner } from '../../lib/icons';
                     <button type="button" class="hero-metric-pill" data-metric="cotizado">{t(L, 'dash.hero_metric_cotizado')}</button>
                 </div>
                 <div class="hero-rev-row">
-                    <span class="editorial hero-rev-num" id="heroNum" data-countup={heroTotal.toFixed(2)}>{money(heroTotal)}</span>
+                    <span class="editorial hero-rev-num" id="heroNum">{money(heroTotal)}</span>
                     <span class="hero-rev-delta" id="heroDelta" hidden>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
                         <span id="heroDeltaVal">0%</span>
@@ -158,12 +153,10 @@ import { iconInner } from '../../lib/icons';
             <DateRangePicker minISO={diasSerie[0]?.fecha ?? new Date().toISOString().slice(0, 10)} maxISO={diasSerie[diasSerie.length - 1]?.fecha ?? new Date().toISOString().slice(0, 10)} initialKey="30" storageKey="cord.dash.range.v1" syncUrl={false} />
         </div>
         <p class="hero-rev-nota">{t(L, 'dash.rango_nota')}</p>
+        <MonedaNota nota={SERIE.moneda} />
         <div class="hero-rev-chart" id="heroChart"
             data-empty-msg={t(L, 'dash.sin_datos_rango')}
             data-points={JSON.stringify(diasSerie)}
-            data-funnel-todo={JSON.stringify(rangoTodoFunnel)}
-            data-clientes-todo={JSON.stringify(rangoTodoClientes)}
-            data-productos-todo={JSON.stringify(rangoTodoProductos)}
         ></div>
     </section>
 
@@ -204,7 +197,7 @@ import { iconInner } from '../../lib/icons';
             <div class="dash-card kpi-card kpi-card-gauge">
                 <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
                 <div class="kpi-gauge" id="kpiTasaGauge" data-value={tasaCierre} data-tone={tasaCierre >= 40 ? 'ok' : tasaCierre >= 20 ? 'warn' : 'danger'}></div>
-                <span class="kpi-sub">{t(L, 'dash.kpi_ultimos_90d')}</span>
+                <span class="kpi-sub">{t(L, 'dash.kpi_historica')}</span>
             </div>
         </article>
 
@@ -252,10 +245,10 @@ import { iconInner } from '../../lib/icons';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
+        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCollections}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')}</h2></div>
-                <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: a.label, value: a.monto, color: a.color })))}></div>
+                <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: t(L, `cob.aging_${a.key}` as any), value: a.monto, color: a.color })))}></div>
             </div>
         </article>
 
@@ -412,7 +405,7 @@ import { iconInner } from '../../lib/icons';
                                 {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
                             </div>
                             {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
-                            <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}>×</button>
+                            <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button>
                         </div>
                     ))}
                     <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
@@ -422,7 +415,7 @@ import { iconInner } from '../../lib/icons';
 
         {canAnalytics && <MetricWidget id="opcional-conversion-pago" optional title={L === 'en' ? 'Sent to paid' : 'De enviada a pagada'} group={t(L, 'widgets.grupo_kpis')}
             value={ANALYTICS.funnel.enviadas ? Math.round(ANALYTICS.funnel.pagadas / ANALYTICS.funnel.enviadas * 100) : '—'} suffix={ANALYTICS.funnel.enviadas ? '%' : ''}
-            description={L === 'en' ? 'Conversion in the selected range' : 'Conversión en el rango seleccionado'}
+            description={t(L, 'dash.kpi_historica_desc')}
             details={[{label:L === 'en' ? 'Sent' : 'Enviadas',value:ANALYTICS.funnel.enviadas},{label:L === 'en' ? 'Paid' : 'Pagadas',value:ANALYTICS.funnel.pagadas}]} />}
         {canCfo && <MetricWidget id="opcional-ponderado" optional title={L === 'en' ? 'Expected pipeline' : 'Pipeline esperado'} group={t(L, 'widgets.grupo_kpis')}
             value={money(ingresoEsperado,0)} description={L === 'en' ? 'Probability-weighted open pipeline today' : 'Pipeline abierto ponderado por probabilidad, hoy'}
@@ -432,7 +425,7 @@ import { iconInner } from '../../lib/icons';
     {showTour && (
         <div id="demoTour" class="demo-tour-popover">
             <div class="demo-tour-inner">
-                <span class="demo-tour-ico">✨</span>
+                <span class="demo-tour-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('rocket')}></svg></span>
                 <div class="demo-tour-text">
                     <strong>{t(L, 'dash.tour_titulo')}</strong>
                     <p id="demoTourMsg">{t(L, 'dash.tour_msg_inicial')}</p>
@@ -793,12 +786,14 @@ import { iconInner } from '../../lib/icons';
         const total = main.reduce((s, p) => s + p.y, 0);
         const prevTotal = cmp.reduce((s, p) => s + p.y, 0);
         if (numEl) numEl.textContent = moneyFmtFull(total);
-        const hasCompare = !!cmpRange && (total > 0 || prevTotal > 0);
+        // Sin base en el periodo anterior no hay variación que mostrar: un "+100%" contra
+        // cero no significa nada.
+        const hasCompare = !!cmpRange && prevTotal > 0;
         if (deltaEl) {
             if (!hasCompare) { deltaEl.hidden = true; }
             else {
                 deltaEl.hidden = false;
-                const delta = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : 100;
+                const delta = Math.round(((total - prevTotal) / prevTotal) * 100);
                 deltaEl.classList.toggle('is-down', delta < 0);
                 const svgPath = deltaEl.querySelector('svg path');
                 if (svgPath) svgPath.setAttribute('d', delta >= 0 ? 'M12 19V5M5 12l7-7 7 7' : 'M12 5v14M19 12l-7 7-7-7');
@@ -823,19 +818,15 @@ import { iconInner } from '../../lib/icons';
         });
     }
 
-    // ── Embudo + rankings — "Todo" usa los datos ya embebidos (cero fetch); cualquier otro
-    // rango llama a /api/dashboard/rango una sola vez y remonta los 3 charts. ──
+    // ── Embudo + rankings — cada rango (incluido "12 meses") llama a /api/dashboard/rango
+    // una sola vez y remonta los 3 charts: así embudo y hero miden la MISMA ventana. ──
     const funnelEl = document.getElementById('funnelChart');
     const rankClientesEl = document.getElementById('rankClientesChart');
     const rankProductosEl = document.getElementById('rankProductosChart');
     let funnelHandle: ChartHandle | null = null, rankClientesHandle: ChartHandle | null = null, rankProductosHandle: ChartHandle | null = null;
     const funnelLabels = (() => { try { return JSON.parse(funnelEl?.dataset.labels || '{}'); } catch { return {}; } })();
-    const todoData = {
-        funnel: (() => { try { return JSON.parse(heroEl?.dataset.funnelTodo || '{}'); } catch { return {}; } })(),
-        clientes: (() => { try { return JSON.parse(heroEl?.dataset.clientesTodo || '[]'); } catch { return []; } })(),
-        productos: (() => { try { return JSON.parse(heroEl?.dataset.productosTodo || '[]'); } catch { return []; } })(),
-    };
-    const rangoCache = new Map<string, typeof todoData>();
+    type RangoData = { funnel: any; clientes: any[]; productos: any[] };
+    const rangoCache = new Map<string, RangoData>();
 
     function buildFunnelSteps(funnel: any) {
         // Mismo mapeo que el SSR (ver funnelSteps en el frontmatter): las pills de
@@ -847,7 +838,7 @@ import { iconInner } from '../../lib/icons';
             { label: funnelLabels.pagadas || 'Pagadas', value: funnel.pagadas || 0, href: '/app/cotizaciones?f=paid' },
         ];
     }
-    function applyRangoData(data: typeof todoData) {
+    function applyRangoData(data: RangoData) {
         if (funnelEl) {
             funnelHandle?.destroy();
             funnelHandle = mountFunnel(funnelEl, { steps: buildFunnelSteps(data.funnel), formatY: (v) => new Intl.NumberFormat(localeIntl).format(v), emptyMessage: emptyMsg });
@@ -865,7 +856,6 @@ import { iconInner } from '../../lib/icons';
         }
     }
     async function refreshRango(r: Range) {
-        if (r.key === 'todo') { applyRangoData(todoData); return; }
         const cacheKey = `${r.desde}:${r.hasta}`;
         const cached = rangoCache.get(cacheKey);
         if (cached) { applyRangoData(cached); return; }

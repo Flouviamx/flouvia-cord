@@ -15,6 +15,8 @@ import { INCLUDED } from './billing';
 import { checkEntitlement, getEntitlementContext } from './org-entitlements';
 import { planIncludes, resourceLimit } from './entitlements';
 import { cached, invalidate } from './cache';
+import { addDaysISO } from './rango';
+import { getReportScope, quoteFx, documentFx, currencyFx, dayStart, dayEnd, localDate, scopeNote, todayInZone } from './report-scope';
 import { after } from './after';
 import { trackServer } from './posthog-server';
 import { emitSetupSteps } from './setup-analytics';
@@ -2269,40 +2271,49 @@ export async function getAnalytics() {
 }
 async function getAnalyticsUncached() {
     const orgId = await getActiveOrgId();
-    const advanced = (await checkEntitlement(orgId, 'advanced_forecast')).ok;
+    const [advanced, S] = await Promise.all([
+        checkEntitlement(orgId, 'advanced_forecast').then((r) => r.ok),
+        getReportScope(orgId),
+    ]);
+    // Importes en la divisa del negocio; meses en su zona horaria (report-scope.ts).
+    const fx = quoteFx(S);
 
     const [kRows, meses, margRows, clientes, productos, plRows] = await withOrgTx(orgId,
         sql`select
-                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
-                count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
-                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
-                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas,
-                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado_total,
-                coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
-                         filter (where status = any(${STATUS_GANADA}) and approved_at is not null),0) as dias_cierre
-            from cotizaciones where org_id = ${orgId}`,
-        sql`select to_char(date_trunc('month', created_at),'YYYY-MM') as ym,
-                   coalesce(sum(total),0) as cotizado,
-                   coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado
-            from cotizaciones
-            where org_id = ${orgId} and created_at >= date_trunc('month', now()) - interval '5 months'
+                count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                count(*) filter (where c.status = any(${STATUS_SALIO}) and (
+                    c.status in ('viewed','approved','paid','invoiced')
+                    or exists (select 1 from eventos e where e.cotizacion_id = c.id and e.tipo = 'viewed'))) as vistas,
+                count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where c.status = 'paid' or c.paid_at is not null) as pagadas,
+                coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado_total,
+                count(*) filter (where c.status = any(${STATUS_GANADA}) and ${fx} is not null) as cerrado_n,
+                coalesce(avg(extract(epoch from (c.approved_at - c.created_at))/86400)
+                         filter (where c.status = any(${STATUS_GANADA}) and c.approved_at is not null),0) as dias_cierre
+            from cotizaciones c where c.org_id = ${orgId}`,
+        sql`select to_char(date_trunc('month', c.created_at at time zone ${S.tz}),'YYYY-MM') as ym,
+                   coalesce(sum(c.total * ${fx}),0) as cotizado,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado
+            from cotizaciones c
+            where c.org_id = ${orgId}
+              and c.created_at >= ((date_trunc('month', now() at time zone ${S.tz}) - interval '5 months') at time zone ${S.tz})
             group by 1 order by 1`,
-        sql`select coalesce(sum(it.precio_unitario * it.cantidad),0) as lista_total,
-                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as nego_total
+        sql`select coalesce(sum(it.precio_unitario * it.cantidad * ${fx}),0) as lista_total,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}),0) as nego_total
             from cotizacion_items it
             join cotizaciones c on c.id = it.cotizacion_id
             where c.org_id = ${orgId} and c.status <> 'draft'`,
-        sql`select cl.empresa,
-                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
+        sql`select cl.id, cl.empresa,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
                    count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
                    count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas
             from cotizaciones c join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId}
-            group by cl.empresa
+            group by cl.id, cl.empresa
             order by cerrado desc, cotizaciones desc limit 6`,
         sql`select coalesce(p.nombre, it.descripcion) as nombre,
                    coalesce(sum(it.cantidad),0) as cantidad,
-                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as importe,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}),0) as importe,
                    count(distinct c.id) as cotizaciones
             from cotizacion_items it
             join cotizaciones c on c.id = it.cotizacion_id
@@ -2310,18 +2321,20 @@ async function getAnalyticsUncached() {
             where c.org_id = ${orgId} and c.status <> 'draft'
             group by coalesce(p.nombre, it.descripcion)
             order by importe desc limit 6`,
-        sql`select coalesce(sum(total) filter (where status = 'sent'),0)   as sent_total,
-                   coalesce(sum(total) filter (where status = 'viewed'),0) as viewed_total
-            from cotizaciones where org_id = ${orgId}`,
+        sql`select coalesce(sum(c.total * ${fx}) filter (where c.status = 'sent'),0)   as sent_total,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status = 'viewed'),0) as viewed_total
+            from cotizaciones c where c.org_id = ${orgId}`,
     );
 
     const k = kRows[0]; const marg = margRows[0]; const pl = plRows[0];
     const enviadas = num(k.enviadas), aprobadas = num(k.aprobadas);
     const listaTotal = num(marg.lista_total), negoTotal = num(marg.nego_total);
-    const cerradoN = aprobadas;
+    // El ticket divide entre las ganadas que sí entraron a la suma (con tasa disponible).
+    const cerradoN = num(k.cerrado_n);
     const sentTotal = num(pl.sent_total), viewedTotal = num(pl.viewed_total);
 
     return {
+        moneda: scopeNote(S),
         funnel: { enviadas, vistas: num(k.vistas), aprobadas, pagadas: num(k.pagadas) },
         kpis: {
             cerradoTotal: num(k.cerrado_total),
@@ -2340,6 +2353,7 @@ async function getAnalyticsUncached() {
             ? { sentTotal, viewedTotal, ponderado: sentTotal * 0.3 + viewedTotal * 0.5 }
             : { sentTotal: 0, viewedTotal: 0, ponderado: 0 },
         clientes: clientes.map(c => ({
+            id: c.id as string,
             empresa: c.empresa as string,
             cerrado: num(c.cerrado),
             cotizaciones: num(c.cotizaciones),
@@ -2376,39 +2390,45 @@ export async function getSerieDiaria() {
 }
 async function getSerieDiariaUncached() {
     const orgId = await getActiveOrgId();
+    const S = await getReportScope(orgId);
+    // Días LOCALES del negocio y montos en su divisa (report-scope.ts). El primer
+    // día de la ventana es hoy-364 en su zona, no en la de Postgres.
+    const fx = quoteFx(S);
+    const desdeISO = addDaysISO(S.hoy, -(SERIE_DIARIA_DIAS - 1));
+    const ini = dayStart(S, desdeISO);
     const [cotizadoRows, cerradoRows, cobradoRows, recurrenteRows] = await withOrgTx(orgId,
-        sql`select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(total),0) as monto
-            from cotizaciones
-            where org_id = ${orgId}
-              and status <> 'draft'
-              and created_at >= current_date - interval '364 days'
+        sql`select to_char(${localDate(S, 'c.created_at')}, 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(c.total * ${fx}),0) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId}
+              and c.status <> 'draft'
+              and c.created_at >= ${ini}
             group by 1 order by 1`,
-        sql`select to_char(date_trunc('day', coalesce(approved_at, created_at)), 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(total),0) as monto
-            from cotizaciones
-            where org_id = ${orgId}
-              and status = any(${STATUS_GANADA})
-              and coalesce(approved_at, created_at) >= current_date - interval '364 days'
+        sql`select to_char((coalesce(c.approved_at, c.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(c.total * ${fx}),0) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId}
+              and c.status = any(${STATUS_GANADA})
+              and coalesce(c.approved_at, c.created_at) >= ${ini}
             group by 1 order by 1`,
-        sql`select to_char(date_trunc('day', coalesce(c.paid_at, c.approved_at, c.created_at)), 'YYYY-MM-DD') as fecha,
+        sql`select to_char((coalesce(c.paid_at, c.approved_at, c.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
                    coalesce(sum(greatest(0, c.total - coalesce((
                        select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
                        where cc.cotizacion_id = c.id
-                   ), 0))),0) as monto
+                   ), 0)) * ${fx}),0) as monto
             from cotizaciones c
             where c.org_id = ${orgId}
               and (c.status = 'paid' or c.paid_at is not null)
-              and coalesce(c.paid_at, c.approved_at, c.created_at) >= current_date - interval '364 days'
+              and coalesce(c.paid_at, c.approved_at, c.created_at) >= ${ini}
             group by 1 order by 1`,
-        sql`select to_char(date_trunc('day', coalesce(co.paid_at, co.created_at)), 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)),0) as monto
+        sql`select to_char((coalesce(co.paid_at, co.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0) * ${fx}),0) as monto
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             where co.org_id = ${orgId}
               and co.status = 'pagado'
               and c.es_recurrente is true
-              and coalesce(co.paid_at, co.created_at) >= current_date - interval '364 days'
+              and coalesce(co.paid_at, co.created_at) >= ${ini}
             group by 1 order by 1`,
     );
     const toMap = (rows: any[]) => {
@@ -2422,14 +2442,11 @@ async function getSerieDiariaUncached() {
         cobradoM.set(fecha, (cobradoM.get(fecha) ?? 0) + num(r.monto));
     }
 
-    // Relleno de huecos, 365 puntos exactos, en UTC (date_trunc de Postgres corre
-    // en GMT; toISOString fuerza UTC sin importar el TZ del proceso Node).
+    // Relleno de huecos, 365 puntos exactos, contados desde HOY en la zona del negocio
+    // (la misma con la que Postgres agrupó arriba).
     const dias: { fecha: string; cotizado: number; cerrado: number; cobrado: number }[] = [];
-    const today = new Date();
     for (let i = SERIE_DIARIA_DIAS - 1; i >= 0; i--) {
-        const d = new Date(today);
-        d.setUTCDate(d.getUTCDate() - i);
-        const fecha = d.toISOString().slice(0, 10);
+        const fecha = addDaysISO(S.hoy, -i);
         dias.push({
             fecha,
             cotizado: cotizadoM.get(fecha) ?? 0,
@@ -2437,7 +2454,7 @@ async function getSerieDiariaUncached() {
             cobrado: cobradoM.get(fecha) ?? 0,
         });
     }
-    return { dias };
+    return { dias, moneda: scopeNote(S) };
 }
 
 // ── Embudo + rankings acotados a un rango de fechas (picker custom del dashboard) ──
@@ -2464,34 +2481,45 @@ export async function getAnalyticsDiagnosis(desde: string, hasta: string) {
 }
 
 async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta: string) {
-    const advanced = (await checkEntitlement(orgId, 'advanced_forecast')).ok;
+    const [advanced, S] = await Promise.all([
+        checkEntitlement(orgId, 'advanced_forecast').then((r) => r.ok),
+        getReportScope(orgId),
+    ]);
+    // Importes en la divisa del negocio y límites del día en su zona: ver report-scope.ts.
+    const fx = quoteFx(S);
+    const ini = dayStart(S, desde), fin = dayEnd(S, hasta);
     const [summaryRows, seriesRows, stageRows, stalledRows, lossRows, discountRows, clientRows] = await withOrgTx(orgId,
+        // "Vista" se mide por evento y no por el estado actual: una cotización que el
+        // cliente abrió y luego rechazó o venció también pasó por esa etapa.
         sql`select
-                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
-                count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
-                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
-                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas,
-                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})), 0) as cerrado,
-                coalesce(avg(extract(epoch from (approved_at - created_at)) / 86400)
-                    filter (where status = any(${STATUS_GANADA}) and approved_at is not null), 0) as dias_cierre
-            from cotizaciones
-            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')`,
+                count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                count(*) filter (where c.status = any(${STATUS_SALIO}) and (
+                    c.status in ('viewed','approved','paid','invoiced')
+                    or exists (select 1 from eventos e where e.cotizacion_id = c.id and e.tipo = 'viewed'))) as vistas,
+                count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where c.status = 'paid' or c.paid_at is not null) as pagadas,
+                coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado,
+                coalesce(avg(extract(epoch from (c.approved_at - c.created_at)) / 86400)
+                    filter (where c.status = any(${STATUS_GANADA}) and c.approved_at is not null), 0) as dias_cierre
+            from cotizaciones c
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}`,
         sql`select to_char(day, 'YYYY-MM-DD') as fecha,
-                coalesce(sum(c.total) filter (where c.status = any(${STATUS_SALIO})), 0) as cotizado,
-                coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado,
-                coalesce(sum(c.total) filter (where c.status = 'paid' or c.paid_at is not null), 0) as cobrado
+                coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_SALIO})), 0) as cotizado,
+                coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado,
+                coalesce(sum(c.total * ${fx}) filter (where c.status = 'paid' or c.paid_at is not null), 0) as cobrado
             from generate_series(${desde}::date, ${hasta}::date, interval '1 day') day
             left join cotizaciones c on c.org_id = ${orgId}
-                and c.created_at >= day and c.created_at < day + interval '1 day'
+                and c.created_at >= ${ini} and c.created_at < ${fin}
+                and ${localDate(S, 'c.created_at')} = day::date
             group by day order by day`,
         // Pipeline vivo: es una fotografía deliberada para priorizar trabajo hoy.
-        sql`select status, count(*) as n, coalesce(sum(total), 0) as monto
-            from cotizaciones
-            where org_id = ${orgId} and status = any(${[...STATUS_ABIERTA, ...STATUS_GANADA]})
-            group by status`,
+        sql`select c.status, count(*) as n, coalesce(sum(c.total * ${fx}), 0) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId} and c.status = any(${[...STATUS_ABIERTA, ...STATUS_GANADA]})
+            group by c.status`,
         // Se considera detenido si no hubo actividad en siete días. La vigencia
         // próxima se separa para que no compita con el seguimiento general.
-        sql`select c.id, c.folio, c.total, c.status, c.vigencia,
+        sql`select c.id, c.folio, c.total * ${fx} as total, c.status, c.vigencia,
                 coalesce(cl.empresa, 'Sin cliente') as empresa,
                 coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as ultima_actividad,
                 floor(extract(epoch from (now() - coalesce(c.viewer_last_seen, c.sent_at, c.created_at))) / 86400) as dias_sin_movimiento
@@ -2499,33 +2527,33 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.status in ('sent','viewed')
               and coalesce(c.viewer_last_seen, c.sent_at, c.created_at) < now() - interval '7 days'
-            order by c.total desc, ultima_actividad asc limit 5`,
-        sql`select status, count(*) as n, coalesce(sum(total), 0) as monto
-            from cotizaciones
-            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')
-              and status = any(${STATUS_PERDIDA})
-            group by status`,
+            order by (c.total * ${fx}) desc nulls last, ultima_actividad asc limit 5`,
+        sql`select c.status, count(*) as n, coalesce(sum(c.total * ${fx}), 0) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
+              and c.status = any(${STATUS_PERDIDA})
+            group by c.status`,
         sql`select coalesce(p.nombre, it.descripcion) as nombre,
-                coalesce(sum(it.precio_unitario * it.cantidad), 0) as lista,
-                coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad), 0) as negociado,
+                coalesce(sum(it.precio_unitario * it.cantidad * ${fx}), 0) as lista,
+                coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}), 0) as negociado,
                 count(distinct c.id) as cotizaciones
             from cotizacion_items it
             join cotizaciones c on c.id = it.cotizacion_id
             left join productos p on p.id = it.producto_id
-            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
               and c.status <> 'draft'
             group by coalesce(p.nombre, it.descripcion)
             having sum(it.precio_unitario * it.cantidad) > sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
-            order by (sum(it.precio_unitario * it.cantidad) - sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)) desc limit 5`,
-        sql`select coalesce(cl.empresa, 'Sin cliente') as empresa,
+            order by (coalesce(sum(it.precio_unitario * it.cantidad * ${fx}), 0) - coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}), 0)) desc limit 5`,
+        sql`select cl.id, coalesce(cl.empresa, 'Sin cliente') as empresa,
                 count(*) filter (where c.status in ('sent','viewed')) as abiertas,
-                coalesce(sum(c.total) filter (where c.status in ('sent','viewed')), 0) as pipeline,
+                coalesce(sum(c.total * ${fx}) filter (where c.status in ('sent','viewed')), 0) as pipeline,
                 count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
                 count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
-            group by coalesce(cl.empresa, 'Sin cliente')
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
+            group by cl.id, coalesce(cl.empresa, 'Sin cliente')
             having count(*) filter (where c.status = any(${STATUS_SALIO})) > 0
             order by pipeline desc, abiertas desc limit 5`,
     );
@@ -2536,6 +2564,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
     const sent = num(s.enviadas), views = num(s.vistas), approved = num(s.aprobadas), paid = num(s.pagadas);
 
     return {
+        moneda: scopeNote(S),
         summary: { sent, views, approved, paid, cerrado: num(s.cerrado), diasCierre: Math.round(num(s.dias_cierre) * 10) / 10 },
         series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
         funnel: { sent, views, approved, paid },
@@ -2548,43 +2577,51 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         }),
         clients: clientRows.map((r: any) => {
             const enviadas = num(r.enviadas), aprobadas = num(r.aprobadas);
-            return { empresa: r.empresa as string, abiertas: num(r.abiertas), pipeline: num(r.pipeline), tasa: enviadas ? Math.round((aprobadas / enviadas) * 100) : 0 };
+            return { id: (r.id as string) || null, empresa: r.empresa as string, abiertas: num(r.abiertas), pipeline: num(r.pipeline), tasa: enviadas ? Math.round((aprobadas / enviadas) * 100) : 0 };
         }),
     };
 }
 async function getAnalyticsRangoUncached(orgId: string, desde: string, hasta: string) {
+    const S = await getReportScope(orgId);
+    const fx = quoteFx(S);
+    const ini = dayStart(S, desde), fin = dayEnd(S, hasta);
     const [kRows, clientes, productos] = await withOrgTx(orgId,
         sql`select
-                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
-                count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
-                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
-                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas
-            from cotizaciones
-            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')`,
-        sql`select cl.empresa,
-                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
+                count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                count(*) filter (where c.status = any(${STATUS_SALIO}) and (
+                    c.status in ('viewed','approved','paid','invoiced')
+                    or exists (select 1 from eventos e where e.cotizacion_id = c.id and e.tipo = 'viewed'))) as vistas,
+                count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where c.status = 'paid' or c.paid_at is not null) as pagadas
+            from cotizaciones c
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}`,
+        // Se agrupa por cliente (id), no por nombre: dos clientes homónimos no se funden.
+        sql`select cl.id, cl.empresa,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
                    count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
                    count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas
             from cotizaciones c join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
-            group by cl.empresa
+            where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
+            group by cl.id, cl.empresa
             order by cerrado desc, cotizaciones desc limit 6`,
         sql`select coalesce(p.nombre, it.descripcion) as nombre,
                    coalesce(sum(it.cantidad),0) as cantidad,
-                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as importe,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}),0) as importe,
                    count(distinct c.id) as cotizaciones
             from cotizacion_items it
             join cotizaciones c on c.id = it.cotizacion_id
             left join productos p on p.id = it.producto_id
             where c.org_id = ${orgId} and c.status <> 'draft'
-              and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+              and c.created_at >= ${ini} and c.created_at < ${fin}
             group by coalesce(p.nombre, it.descripcion)
             order by importe desc limit 6`,
     );
     const k = kRows[0];
     return {
+        moneda: scopeNote(S),
         funnel: { enviadas: num(k.enviadas), vistas: num(k.vistas), aprobadas: num(k.aprobadas), pagadas: num(k.pagadas) },
         clientes: clientes.map(c => ({
+            id: c.id as string,
             empresa: c.empresa as string,
             cerrado: num(c.cerrado),
             cotizaciones: num(c.cotizaciones),
@@ -2604,6 +2641,7 @@ async function getAnalyticsRangoUncached(orgId: string, desde: string, hasta: st
 export async function getCommercialStageTiming(desde: string, hasta: string) {
     const orgId = await getActiveOrgId();
     return cached(`report-stage-timing:${orgId}:${desde}:${hasta}`, 60, async () => {
+        const S = await getReportScope(orgId);
         const [rows] = await withOrgTx(orgId, sql`
             with stamps as (
                 select c.id, c.created_at,
@@ -2614,7 +2652,7 @@ export async function getCommercialStageTiming(desde: string, hasta: string) {
                 from cotizaciones c
                 left join eventos e on e.cotizacion_id = c.id and e.org_id = ${orgId}
                 where c.org_id = ${orgId}
-                  and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+                  and c.created_at >= ${dayStart(S, desde)} and c.created_at < ${dayEnd(S, hasta)}
                 group by c.id, c.created_at
             )
             select
@@ -2628,11 +2666,12 @@ export async function getCommercialStageTiming(desde: string, hasta: string) {
                     filter (where paid_at is not null and approved_at is not null) as aprobada_pagada
             from stamps`);
         const row = rows[0] ?? {};
+        // La etiqueta la pone la superficie con su idioma (`inf.etapa.<key>`); aquí solo la clave.
         return [
-            { key: 'created_sent', label: 'Creada → enviada', dias: Math.max(0, num(row.creada_enviada)) },
-            { key: 'sent_viewed', label: 'Enviada → vista', dias: Math.max(0, num(row.enviada_vista)) },
-            { key: 'viewed_approved', label: 'Vista → aprobada', dias: Math.max(0, num(row.vista_aprobada)) },
-            { key: 'approved_paid', label: 'Aprobada → pagada', dias: Math.max(0, num(row.aprobada_pagada)) },
+            { key: 'created_sent', dias: Math.max(0, num(row.creada_enviada)) },
+            { key: 'sent_viewed', dias: Math.max(0, num(row.enviada_vista)) },
+            { key: 'viewed_approved', dias: Math.max(0, num(row.vista_aprobada)) },
+            { key: 'approved_paid', dias: Math.max(0, num(row.aprobada_pagada)) },
         ];
     });
 }
@@ -2640,31 +2679,32 @@ export async function getCommercialStageTiming(desde: string, hasta: string) {
 export async function getClientReportInsights(desde: string, hasta: string) {
     const orgId = await getActiveOrgId();
     return cached(`report-clients:${orgId}:${desde}:${hasta}`, 60, async () => {
-        const payBehavior = await getPayBehavior();
+        const [payBehavior, S] = await Promise.all([getPayBehavior(), getReportScope(orgId)]);
+        const fx = quoteFx(S);
+        const ini = dayStart(S, desde), fin = dayEnd(S, hasta);
         const [cohortRows, riskRows, levelRows] = await withOrgTx(orgId,
             sql`with first_quote as (
                     select cliente_id, min(created_at) as first_at
                     from cotizaciones where org_id = ${orgId} and cliente_id is not null group by cliente_id
                 )
-                select case when f.first_at >= ${desde}::date then 'nuevo' else 'recurrente' end as tipo,
+                select case when f.first_at >= ${ini} then 'nuevo' else 'recurrente' end as tipo,
                        count(distinct c.cliente_id) as clientes,
                        count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
                        count(*) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
-                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                       coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
                 from cotizaciones c join first_quote f on f.cliente_id = c.cliente_id
-                where c.org_id = ${orgId} and c.created_at >= ${desde}
-                  and c.created_at < (${hasta}::date + interval '1 day')
+                where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
                 group by 1`,
             sql`select cl.id, cl.empresa, cl.nivel, max(c.created_at) as ultima_actividad,
                        count(*) filter (where c.status <> 'draft') as cotizaciones,
-                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                       coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
                 from clientes cl join cotizaciones c on c.cliente_id = cl.id
                 where cl.org_id = ${orgId}
                 group by cl.id, cl.empresa, cl.nivel
                 having max(c.created_at) < now() - interval '90 days'
                 order by cerrado desc limit 10`,
             sql`select cl.id, coalesce(cl.nivel, 'Sin nivel') as nivel,
-                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                       coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
                 from clientes cl
                 left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
                 where cl.org_id = ${orgId}
@@ -2691,17 +2731,18 @@ export async function getClientReportInsights(desde: string, hasta: string) {
 export async function getProductReportInsights(desde: string, hasta: string) {
     const orgId = await getActiveOrgId();
     return cached(`report-products:${orgId}:${desde}:${hasta}`, 60, async () => {
+        const S = await getReportScope(orgId);
         const [rows] = await withOrgTx(orgId, sql`
             select coalesce(p.nombre, it.descripcion) as nombre,
                    count(distinct c.id) filter (where c.status = any(${STATUS_SALIO})) as decididas,
                    count(distinct c.id) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
-                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${quoteFx(S)})
                        filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
             from cotizacion_items it
             join cotizaciones c on c.id = it.cotizacion_id
             left join productos p on p.id = it.producto_id
-            where c.org_id = ${orgId} and c.created_at >= ${desde}
-              and c.created_at < (${hasta}::date + interval '1 day')
+            where c.org_id = ${orgId} and c.created_at >= ${dayStart(S, desde)}
+              and c.created_at < ${dayEnd(S, hasta)}
             group by coalesce(p.nombre, it.descripcion)
             having count(distinct c.id) filter (where c.status = any(${STATUS_SALIO})) > 0
             order by cerrado desc limit 12`);
@@ -2715,16 +2756,22 @@ export async function getProductReportInsights(desde: string, hasta: string) {
 export async function getFinanceLevelInsights() {
     const orgId = await getActiveOrgId();
     return cached(`report-finance-levels:${orgId}`, 60, async () => {
+        const S = await getReportScope(orgId);
+        // El descuento se promedia POR CLIENTE (CTE aparte), no por fila del join:
+        // un cliente con veinte cotizaciones no pesa veinte veces en el promedio.
         const [rows] = await withOrgTx(orgId, sql`
-            select coalesce(cl.nivel, 'Sin nivel') as nivel,
-                   coalesce(avg(cl.descuento_pct), 0) as descuento,
-                   count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
-                   count(*) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
-                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
-            from clientes cl
+            with niveles as (
+                select coalesce(nivel, 'Sin nivel') as nivel, avg(descuento_pct) as descuento
+                from clientes where org_id = ${orgId} group by 1
+            )
+            select n.nivel, coalesce(n.descuento, 0) as descuento,
+                   count(c.id) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                   count(c.id) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
+                   coalesce(sum(c.total * ${quoteFx(S)}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+            from niveles n
+            left join clientes cl on cl.org_id = ${orgId} and coalesce(cl.nivel, 'Sin nivel') = n.nivel
             left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
-            where cl.org_id = ${orgId}
-            group by coalesce(cl.nivel, 'Sin nivel')
+            group by n.nivel, n.descuento
             order by cerrado desc`);
         return rows.map((row) => ({
             nivel: row.nivel as string, descuento: num(row.descuento), enviadas: num(row.enviadas),
@@ -2834,29 +2881,34 @@ export async function getCobranza() {
     const result = await cached(`cobranza:${orgId}`, 30, getCobranzaUncached);
     // Resolve origin after the financial cache: disconnect/downgrade must take effect immediately.
     return { ...result, items: await Promise.all(result.items.map(async item => ({
-        ...item, publicUrl: await publicDocumentUrl(orgId, 'q', item.token),
+        ...item, publicUrl: await publicDocumentUrl(orgId, item.origen === 'factura' ? 'i' : 'q', item.token),
     }))) };
 }
 async function getCobranzaUncached() {
     const orgId = await getActiveOrgId();
-    const payBehavior = await getPayBehavior();
+    const [payBehavior, S] = await Promise.all([getPayBehavior(), getReportScope(orgId)]);
 
     const [[org]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
     const rate = num(org?.interes_moratorio_pct);
 
     // Tres queries de datos en un solo batch.
     const [rows, promRows, promStatsRows] = await withOrgTx(orgId,
-        // Las igualas recurrentes (es_recurrente) se EXCLUYEN: su status se queda
-        // en 'approved' para siempre pero se cobran solas cada mes vía Stripe
-        // Subscription — no son cartera vencida ni acumulan aging.
-        sql`select c.id, c.folio, c.total, c.cliente_id, coalesce(c.terminos, cl.terminos_default) as terminos, c.status, c.public_token,
+        // Cartera de los DOS rieles (regla 25) desde la vista `cuentas_por_cobrar`:
+        // cotizaciones aprobadas sin factura abierta y facturas abiertas, cada una por
+        // su SALDO (descuenta abonos parciales), reexpresado en la divisa del negocio.
+        // Las igualas recurrentes ya las excluye la vista: se cobran solas cada mes.
+        sql`select r.origen, r.ref_id as id, r.folio, r.cliente_id, r.token, r.vence,
+                   r.saldo * (case when r.origen = 'cotizacion' then ${quoteFx(S, 'c')} else ${documentFx(S, 'd')} end) as total,
+                   coalesce(c.terminos, cl.terminos_default) as terminos,
+                   coalesce(c.status, 'invoiced') as status,
                    coalesce(c.approved_at, c.created_at) as base_date,
                    cl.empresa, cl.limite_credito, cl.telefono
-            from cotizaciones c
-            left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId} and c.status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
-              and c.es_recurrente is not true
-            order by coalesce(c.approved_at, c.created_at) asc`,
+            from cuentas_por_cobrar r
+            left join clientes cl on cl.id = r.cliente_id
+            left join cotizaciones c on r.origen = 'cotizacion' and c.id = r.ref_id and c.org_id = ${orgId}
+            left join documentos_fiscales d on r.origen = 'factura' and d.id = r.ref_id and d.org_id = ${orgId}
+            where r.org_id = ${orgId} and r.saldo > 0
+            order by r.vence asc nulls last`,
         // Promesas de pago vigentes (pendientes) — la más reciente por cotización.
         sql`select cotizacion_id, id, fecha_promesa, monto, nota
             from promesas_pago
@@ -2864,7 +2916,7 @@ async function getCobranzaUncached() {
             order by created_at desc`,
         sql`select count(*) filter (where estado = 'cumplida') as cumplidas,
                    count(*) filter (where estado = 'incumplida') as incumplidas,
-                   count(*) filter (where estado = 'pendiente' and fecha_promesa < current_date) as pendientes_vencidas,
+                   count(*) filter (where estado = 'pendiente' and fecha_promesa < ${S.hoy}::date) as pendientes_vencidas,
                    count(*) as total
             from promesas_pago where org_id = ${orgId}`,
     );
@@ -2874,12 +2926,19 @@ async function getCobranzaUncached() {
     for (const p of promRows) { if (!promMap.has(p.cotizacion_id as string)) promMap.set(p.cotizacion_id as string, p); }
 
     const avgDelay = payBehavior.avgDiasRetraso;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    // "Hoy" es el del negocio, no el del servidor (regla 24).
+    const today = new Date(`${S.hoy}T00:00:00`);
     const MS = 86400000;
+    const isoOf = (v: unknown) => (typeof v === 'string' ? v : new Date(v as Date).toISOString()).slice(0, 10);
 
-    const items = await Promise.all(rows.map(async (r) => {
+    // Una venta sin tasa disponible (total null) no se suma en otra moneda: queda fuera.
+    const items = await Promise.all(rows.filter((r) => r.total !== null && r.total !== undefined).map(async (r) => {
+        const origen = r.origen === 'factura' ? 'factura' as const : 'cotizacion' as const;
         const tot = num(r.total);
-        const due = dueDateFor(r.base_date as string, r.terminos as string);
+        // Una factura trae su vencimiento; una cotización lo deriva de sus términos.
+        const due = origen === 'factura' && r.vence
+            ? new Date(`${isoOf(r.vence)}T00:00:00`)
+            : dueDateFor(r.base_date as string, r.terminos as string);
         const diff = Math.floor((today.getTime() - due.getTime()) / MS);
         const overdue = diff > 0;
         const bucket = !overdue ? 'vigente' : diff <= 30 ? 'd30' : diff <= 60 ? 'd60' : 'd60p';
@@ -2888,16 +2947,18 @@ async function getCobranzaUncached() {
         const clientDelay = clientBehavior?.avgDiasRetraso ?? avgDelay;
         const expected = new Date(due); expected.setDate(expected.getDate() + clientDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
-        const prom = promMap.get(r.id as string);
+        const prom = origen === 'cotizacion' ? promMap.get(r.id as string) : undefined;
         const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
         return {
-            id: r.id as string, folio: r.folio as string,
+            id: r.id as string, folio: (r.folio as string) || '—',
+            origen,
+            href: origen === 'factura' ? `/app/facturas/${r.id}` : `/app/cotizaciones/${r.id}`,
             empresa: (r.empresa as string) ?? 'Sin cliente',
             inicial: initials((r.empresa as string) ?? '—'),
-            total: tot, terminos: termLabel(r.terminos as string),
+            total: tot, terminos: origen === 'factura' ? '' : termLabel(r.terminos as string),
             clienteId: (r.cliente_id as string) ?? null,
-            status: r.status as string, token: r.public_token as string,
-            publicUrl: await publicDocumentUrl(orgId, 'q', r.public_token as string),
+            status: r.status as string, token: r.token as string,
+            publicUrl: await publicDocumentUrl(orgId, origen === 'factura' ? 'i' : 'q', r.token as string),
             telefono: (r.telefono as string) ?? '',
             vence: fmtDate(due), overdue,
             diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
@@ -2928,12 +2989,15 @@ async function getCobranzaUncached() {
         { key: 'd60p', label: '+60 días', monto: sumBy((i) => i.bucket === 'd60p'), n: items.filter(i => i.bucket === 'd60p').length, color: '#ef4444' },
     ];
 
+    // Por cliente (id), no por nombre: dos clientes homónimos no comparten límite.
     const byCliente = new Map<string, { empresa: string; saldo: number; limite: number; n: number }>();
     for (const r of rows) {
+        if (r.total === null || r.total === undefined) continue;
         const empresa = (r.empresa as string) ?? 'Sin cliente';
-        const cur = byCliente.get(empresa) ?? { empresa, saldo: 0, limite: num(r.limite_credito), n: 0 };
+        const key = (r.cliente_id as string) || `sin:${empresa}`;
+        const cur = byCliente.get(key) ?? { empresa, saldo: 0, limite: num(r.limite_credito), n: 0 };
         cur.saldo += num(r.total); cur.n += 1;
-        byCliente.set(empresa, cur);
+        byCliente.set(key, cur);
     }
     const clientes = [...byCliente.values()]
         .map((c) => ({ ...c, excede: c.limite > 0 && c.saldo > c.limite, uso: c.limite > 0 ? Math.round((c.saldo / c.limite) * 100) : 0 }))
@@ -2941,6 +3005,7 @@ async function getCobranzaUncached() {
 
     const promStats = promStatsRows[0] ?? {};
     return {
+        moneda: scopeNote(S),
         items: items.sort((a, b) => b.diasVencido - a.diasVencido || a.diasParaVencer - b.diasParaVencer),
         resumen: {
             totalPorCobrar, totalVencido, totalVigente: totalPorCobrar - totalVencido,
@@ -2978,16 +3043,19 @@ export async function getCFO() {
 }
 async function getCFOUncached() {
     const orgId = await getActiveOrgId();
-    const payBehavior = await getPayBehavior();
+    const [payBehavior, S] = await Promise.all([getPayBehavior(), getReportScope(orgId)]);
+    // Importes en la divisa del negocio (report-scope.ts). Una venta sin tasa
+    // disponible queda fuera del pronóstico en vez de sumarse en otra moneda.
+    const fx = quoteFx(S);
 
     const [activos, histRows, pagoRows, carteraRows, susRows] = await withOrgTx(orgId,
         // Pipeline abierto.
-        sql`select c.id, c.folio, c.total, c.status, c.cliente_id,
+        sql`select c.id, c.folio, c.total * ${fx} as total, c.status, c.cliente_id,
                    coalesce(cl.empresa, 'Sin cliente') as empresa,
                    coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as last_act
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId} and c.status in ('sent','viewed')`,
+            where c.org_id = ${orgId} and c.status in ('sent','viewed') and ${fx} is not null`,
         // Historial por cliente: tasa de cierre + días a cierre.
         sql`select c.cliente_id,
                    count(*) filter (where c.status = any(${STATUS_SALIO})) as total_hist,
@@ -3005,22 +3073,27 @@ async function getCFOUncached() {
               on e.cotizacion_id = c.id
             where c.org_id = ${orgId} and c.status = 'paid'
             group by c.cliente_id`,
-        // Cartera cierta. Se mantiene separada del pipeline: solo comparte timing.
-        sql`select c.id, c.total, c.cliente_id,
+        // Cartera cierta, de los DOS rieles (regla 25): la vista une cotizaciones
+        // aprobadas y facturas abiertas, descuenta abonos parciales y no cuenta dos
+        // veces una cotización que ya tiene factura. Se mantiene separada del
+        // pipeline: solo comparte timing.
+        sql`select r.origen, r.ref_id as id, r.cliente_id, r.vence,
+                   r.saldo * (case when r.origen = 'cotizacion' then ${quoteFx(S, 'c')} else ${documentFx(S, 'd')} end) as total,
                    coalesce(cl.empresa, 'Sin cliente') as empresa,
                    coalesce(c.approved_at, c.created_at) as base_date,
                    coalesce(c.terminos, cl.terminos_default) as terminos
-            from cotizaciones c
-            left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId}
-              and c.status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
-              and c.es_recurrente is not true`,
+            from cuentas_por_cobrar r
+            left join clientes cl on cl.id = r.cliente_id
+            left join cotizaciones c on r.origen = 'cotizacion' and c.id = r.ref_id and c.org_id = ${orgId}
+            left join documentos_fiscales d on r.origen = 'factura' and d.id = r.ref_id and d.org_id = ${orgId}
+            where r.org_id = ${orgId} and r.saldo > 0`,
         // MRR contratado: tres ocurrencias mensuales entran al horizonte/invariante.
-        sql`select s.id, s.monto, s.estado, s.current_period_end, s.cancel_at_period_end,
+        sql`select s.id, s.monto * ${currencyFx(S, 's.moneda')} as monto, s.estado, s.current_period_end, s.cancel_at_period_end,
                    coalesce(cl.empresa, 'Sin cliente') as empresa
             from cotizacion_suscripciones s
             left join clientes cl on cl.id = s.cliente_id
-            where s.org_id = ${orgId} and s.estado in ('active','trialing','past_due')`,
+            where s.org_id = ${orgId} and s.estado in ('active','trialing','past_due')
+              and ${currencyFx(S, 's.moneda')} is not null`,
     );
 
     type Hist = { totalHist: number; aprobHist: number; avgCierre: number; avgPago: number };
@@ -3147,7 +3220,11 @@ async function getCFOUncached() {
     let totalCartera = 0;
     for (const row of carteraRows) {
         const amount = num(row.total);
-        const due = dueDateFor(row.base_date as string, row.terminos as string);
+        if (!amount) continue;
+        // Una factura trae su vencimiento; una cotización lo deriva de sus términos.
+        const due = row.origen === 'factura' && row.vence
+            ? new Date(`${(typeof row.vence === 'string' ? row.vence : new Date(row.vence as Date).toISOString()).slice(0, 10)}T00:00:00`)
+            : dueDateFor(row.base_date as string, row.terminos as string);
         const behavior = row.cliente_id ? payBehavior.clientes[row.cliente_id as string] : undefined;
         due.setDate(due.getDate() + (behavior?.avgDiasRetraso ?? payBehavior.avgDiasRetraso));
         const offset = daysFromToday(due);
@@ -3228,6 +3305,7 @@ async function getCFOUncached() {
     const sourceTotal = totalCartera + totalEsperado + totalRecurrente90;
 
     return {
+        moneda: scopeNote(S),
         items,
         kpis: {
             totalPipeline, totalEsperado, totalCartera, totalRecurrente90,
@@ -3279,17 +3357,19 @@ export async function getAuditLog() {
 // ── DASHBOARD KPIs ────────────────────────────────────────────────────────────
 export async function getDashboard() {
     const orgId = await getActiveOrgId();
+    const S = await getReportScope(orgId);
+    const fx = quoteFx(S);
     const [summaryRows, statusRows, recentRows, eventos] = await withOrgTx(orgId,
         sql`select count(*) as total_quotes,
-                   coalesce(sum(total) filter (where status in ('sent','viewed')), 0) as por_cerrar,
-                   coalesce(sum(total) filter (where status = any(${STATUS_GANADA})), 0) as cerrado,
-                   count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
-                   count(*) filter (where status <> 'draft') as salieron,
-                   count(*) filter (where status in ('sent','viewed')) as abiertas,
-                   count(*) filter (where status = 'viewed') as seguimiento
-            from cotizaciones where org_id = ${orgId}`,
-        sql`select status, count(*) as n, coalesce(sum(total), 0) as total
-            from cotizaciones where org_id = ${orgId} group by status`,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status in ('sent','viewed')), 0) as por_cerrar,
+                   coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
+                   count(*) filter (where c.status <> 'draft') as salieron,
+                   count(*) filter (where c.status in ('sent','viewed')) as abiertas,
+                   count(*) filter (where c.status = 'viewed') as seguimiento
+            from cotizaciones c where c.org_id = ${orgId}`,
+        sql`select c.status, count(*) as n, coalesce(sum(c.total * ${fx}), 0) as total
+            from cotizaciones c where c.org_id = ${orgId} group by c.status`,
         sql`select c.*, cl.empresa, cl.terminos_default,
                    coalesce(c.terminos, cl.terminos_default) as terminos
             from cotizaciones c
@@ -3306,6 +3386,7 @@ export async function getDashboard() {
     const salieron = num(summary.salieron);
 
     return {
+        moneda: scopeNote(S),
         quotes,
         totalQuotes: num(summary.total_quotes),
         porCerrar: num(summary.por_cerrar),

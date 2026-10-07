@@ -3,6 +3,8 @@ import { REPORT_BY_ID, REPORT_IDS, type ReportId } from '../../../lib/informes';
 import { loadReport } from '../../../lib/informes-data';
 import { requirePerm } from '../../../lib/queries';
 import { addDaysISO, parseRangoParams } from '../../../lib/rango';
+import { todayInZone } from '../../../lib/report-scope';
+import { currentTimeZone } from '../../../lib/context';
 import { getActiveOrgId } from '../../../lib/db';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 
@@ -27,7 +29,8 @@ export const GET: APIRoute = async ({ params, url }) => {
         const subscriptionDenied = await requireEntitlement(orgId, premiumFeature);
         if (subscriptionDenied) return subscriptionDenied;
     }
-    const todayISO = new Date().toISOString().slice(0, 10);
+    // "Hoy" del negocio (orgs.zona_horaria), no el del servidor: regla 24.
+    const todayISO = todayInZone(currentTimeZone());
     const range = parseRangoParams(url.searchParams, {
         minISO: addDaysISO(todayISO, -364), maxISO: todayISO, anchorISO: todayISO, fallback: '30',
     });

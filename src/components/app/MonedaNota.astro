@@ -1,0 +1,36 @@
+---
+// Dice en pantalla cómo se sumaron los importes cuando el negocio vende en más de
+// una divisa (reglas 21 y 22): todo se reexpresa en la divisa del negocio y, si una
+// divisa no tiene tipo de cambio disponible, se dice que quedó fuera. Con una sola
+// divisa no se dibuja nada. La aritmética vive en src/lib/report-scope.ts.
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+import { iconInner } from '../../lib/icons';
+
+interface Props {
+    nota?: { moneda: string; convertidas: string[]; sinTasa: string[] } | null;
+}
+const { nota } = Astro.props;
+const L = currentLocale();
+const lista = (codes: string[]) => new Intl.ListFormat(L === 'en' ? 'en' : 'es', { type: 'conjunction' }).format(codes);
+const convertidas = nota?.convertidas ?? [];
+const sinTasa = nota?.sinTasa ?? [];
+---
+{nota && (convertidas.length > 0 || sinTasa.length > 0) && (
+    <p class="moneda-nota" role="note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('info')}></svg>
+        <span>
+            {convertidas.length > 0 && t(L, 'moneda.nota').replace('{moneda}', nota.moneda).replace('{lista}', lista(convertidas))}
+            {sinTasa.length > 0 && ` ${t(L, 'moneda.sin_tasa').replace('{lista}', lista(sinTasa))}`}
+        </span>
+    </p>
+)}
+<style>
+    .moneda-nota {
+        display: flex; align-items: flex-start; gap: .5rem;
+        margin: .25rem 0 0; padding: .7rem .9rem;
+        border-radius: 14px; background: var(--color-bg-soft);
+        color: var(--color-text-muted); font-size: .76rem; line-height: 1.45;
+    }
+    .moneda-nota svg { flex: 0 0 auto; margin-top: 1px; }
+</style>
