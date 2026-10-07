@@ -78,7 +78,7 @@ export const ElementsConfig = open({
         etiqueta: z.string(),
         opciones: z.array(open({ id: z.string().nullable(), label: z.string(), rate: z.number(), kind: z.enum(['consumo', 'retencion', 'exento']) })),
         tasa_default: z.number(),
-        retenciones: z.array(open({ nombre: z.string(), tasa: z.number(), base: z.enum(['subtotal', 'impuesto']) })),
+        retenciones: z.array(open({ nombre: z.string(), tasa: z.number(), base: z.enum(['subtotal', 'impuesto', 'gravado']) })),
         precios_incluyen_impuesto: z.boolean(),
     }),
     terminos: z.array(z.enum(['contado', 'net30', 'net60'])),

@@ -32,6 +32,7 @@ import { validateFiscalReceptor } from '../../packages/elements/src/fiscal/recep
 import { sanitizeAppearance } from '../../packages/elements/src/appearance';
 import { WEBHOOK_EVENT_TYPES, isWebhookEventType } from '../../packages/elements/src/contract/webhook-events';
 import { loadDocsIndex, searchDocs } from './docs-search';
+import { isISODate } from './rango';
 
 // ── Texto de TERCEROS que viaja al modelo ───────────────────────────────────
 // `eventos.detalle` de tipo comment/counter es texto LIBRE que escribe cualquier
@@ -452,7 +453,7 @@ export const MCP_TOOLS: McpToolDef[] = [
             if (!items.length) throw new McpToolError('La factura necesita al menos un concepto con cantidad.');
 
             const vence = typeof args?.vence === 'string' ? args.vence.trim() : '';
-            if (vence && !/^\d{4}-\d{2}-\d{2}$/.test(vence)) {
+            if (vence && !isISODate(vence)) {
                 throw new McpToolError('La fecha de vencimiento debe ser YYYY-MM-DD.');
             }
 

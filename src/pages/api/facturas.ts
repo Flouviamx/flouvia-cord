@@ -14,6 +14,7 @@ import { createInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../
 import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { invoicingFeatureFor } from '../../lib/fiscal/gate';
+import { isISODate } from '../../lib/rango';
 
 export const GET: APIRoute = async ({ url }) => {
     const denied = await requirePerm('cobranza'); if (denied) return denied;
@@ -48,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!items.length) return json({ error: 'Cada concepto necesita descripción y cantidad.' }, 400);
 
     const dueDate = String(body.due_date ?? '').trim();
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    if (dueDate && !isISODate(dueDate)) {
         return json({ error: 'La fecha de vencimiento no es válida.' }, 400);
     }
 

@@ -20,6 +20,7 @@ import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { currentUserId } from '../../../lib/context';
 import { after } from '../../../lib/after';
 import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
+import { isISODate } from '../../../lib/rango';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -104,7 +105,7 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
     if (!items.length) return json({ error: 'Cada concepto necesita descripción y cantidad.' }, 400);
 
     const dueDate = String(body.due_date ?? '').trim();
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    if (dueDate && !isISODate(dueDate)) {
         return json({ error: 'La fecha de vencimiento no es válida.' }, 400);
     }
 
@@ -238,7 +239,7 @@ async function duplicate(orgId: string, id: string, request: Request) {
             descripcion: linea.descripcion,
             cantidad: linea.cantidad,
             precioUnitario: linea.precioUnitario,
-            taxRate: linea.subtotal > 0 ? linea.impuesto / linea.subtotal : 0,
+            taxRate: linea.taxRate,
         })),
     });
     if (!result.ok) return json({ error: result.error || 'No se pudo duplicar la factura.' }, 400);

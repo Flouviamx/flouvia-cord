@@ -113,7 +113,22 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     // `?? null` y no `|| null`: una línea exenta manda 0, y con `||` ese 0
     // caería al default de la org gravando lo que no debe gravarse.
     taxRate: numOrNull(i?.tax_rate),
-  })).filter((i) => i.descripcion && i.cantidad > 0);
+    // Solo se descartan los renglones vacíos (cantidad 0 o en blanco). Una
+    // cantidad negativa ya no se tira en silencio: llega a la validación y se
+    // rechaza con un motivo (ver negativeLineError).
+  })).filter((i) => i.descripcion && i.cantidad !== 0);
+}
+
+/**
+ * Un concepto con cantidad o precio negativo. El motor convierte un negativo
+ * en 0 (`num()`), así que una línea "Descuento −500" se guardaba a $0 y el
+ * total salía 500 más alto de lo que el negocio escribió, sin aviso. Un
+ * descuento se expresa bajando el precio del concepto (precio negociado).
+ */
+export function negativeLineError(items: Array<{ cantidad?: unknown; precioUnitario?: unknown; precioNegociado?: unknown }>): string | null {
+  const negative = items.some((i) => Number(i.cantidad) < 0 || Number(i.precioUnitario) < 0
+    || (i.precioNegociado !== null && i.precioNegociado !== undefined && Number(i.precioNegociado) < 0));
+  return negative ? 'Un concepto no puede tener cantidad ni precio negativos. Para un descuento, baja el precio del concepto.' : null;
 }
 
 export interface DraftResult {
@@ -252,6 +267,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   const items = (input.items || []).filter((i) => i && String(i.descripcion || '').trim());
   if (!items.length) return { ok: false, error: 'La factura necesita al menos un concepto.' };
   if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
+  const negative = negativeLineError(items);
+  if (negative) return { ok: false, error: negative };
 
   const [headRows] = await withOrgTx(orgId, sql`
     select o.nombre as org_nombre, o.razon_social as org_razon_social, o.rfc as org_tax_id,
@@ -361,6 +378,8 @@ export async function updateInvoiceDraft(
   const items = (input.items || []).filter((i) => i && String(i.descripcion || '').trim());
   if (!items.length) return { ok: false, error: 'La factura necesita al menos un concepto.' };
   if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
+  const negative = negativeLineError(items);
+  if (negative) return { ok: false, error: negative };
 
   const [docRows] = await withOrgTx(orgId, sql`
     select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data

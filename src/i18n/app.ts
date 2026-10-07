@@ -671,6 +671,7 @@ export const appStrings = {
         "set.imp.ret_impuesto_mx": "Impuesto retenido en el CFDI",
         "set.imp.ret_sobre": "Se calcula sobre",
         "set.imp.ret_sobre_subtotal": "El subtotal",
+        "set.imp.ret_sobre_gravado": "El subtotal gravado (sin conceptos exentos)",
         "set.imp.ret_sobre_impuesto": "El impuesto trasladado",
         "set.imp.predeterminado_tipo": "Predeterminado para este tipo",
         "set.imp.cancelar": "Cancelar",
@@ -723,6 +724,9 @@ export const appStrings = {
 
         // Ajustes › Datos fiscales
         "set.fiscal.intro": "Necesarios para timbrar CFDI 4.0 ante el SAT. Se usan tal cual en el comprobante; sube tu CSD abajo para emitir bajo tu RFC.",
+        "set.fiscal.franquicia_fr": "Franquicia en base de TVA (art. 293 B du CGI)",
+        "set.fiscal.franquicia_de": "Kleinunternehmer (§ 19 UStG)",
+        "set.fiscal.franquicia_hint": "Tus facturas sin impuesto llevarán la mención legal que lo explica. Si una factura cobra impuesto, la mención no se imprime.",
         "set.fiscal.identificacion": "Identificación fiscal",
         "set.fiscal.rfc": "RFC",
         "set.fiscal.razon_social": "Razón social",
@@ -4226,6 +4230,7 @@ export const appStrings = {
         "set.imp.ret_impuesto_mx": "Tax withheld on the CFDI",
         "set.imp.ret_sobre": "Calculated on",
         "set.imp.ret_sobre_subtotal": "The subtotal",
+        "set.imp.ret_sobre_gravado": "The taxable subtotal (excluding exempt lines)",
         "set.imp.ret_sobre_impuesto": "The tax charged",
         "set.imp.predeterminado_tipo": "Default for this type",
         "set.imp.cancelar": "Cancel",
@@ -4280,6 +4285,9 @@ export const appStrings = {
 
         // Settings › Tax details
         "set.fiscal.intro": "Needed to stamp CFDI 4.0 with the SAT. Used as-is on the receipt; upload your CSD below to issue under your RFC.",
+        "set.fiscal.franquicia_fr": "VAT small-business exemption (art. 293 B du CGI)",
+        "set.fiscal.franquicia_de": "Small business (§ 19 UStG)",
+        "set.fiscal.franquicia_hint": "Your tax-free invoices will carry the legal notice that explains it. If an invoice charges tax, the notice is not printed.",
         "set.fiscal.identificacion": "Tax identification",
         "set.fiscal.rfc": "Tax ID (RFC)",
         "set.fiscal.razon_social": "Legal name",

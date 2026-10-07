@@ -19,6 +19,10 @@ const FM = ORG.fiscalMetadata || {};
 // "INV-000001" fijo. España numera por serie Y ejercicio (regla 29), así que
 // el año va pegado al prefijo, igual que lo arma la emisión.
 const FOLIO_EJEMPLO = `${FM.invoice_prefix || PROFILE.invoicePrefix}${isEs ? new Date().getFullYear() : ''}-000001`;
+// Franquicia de IVA de pequeñas empresas: Francia (art. 293 B du CGI) y
+// Alemania (§ 19 UStG). La factura DEBE decir que no se repercute el impuesto
+// y por qué; sin el dato, Cord no tenía cómo imprimir esa mención.
+const SMALL_BUSINESS = ORG.countryCode === 'FR' || ORG.countryCode === 'DE';
 import { iconInner } from '../../../lib/icons';
 ---
 
@@ -95,6 +99,16 @@ import { iconInner } from '../../../lib/icons';
                         <span class="s-hint">{(L === 'en' ? 'Example: ' : 'Ejemplo: ') + FOLIO_EJEMPLO}</span>
                     </div>
                 </div>
+                {SMALL_BUSINESS && (
+                    <div class="s-field">
+                        <label class="s-toggle" style="margin-bottom:0.3rem">
+                            <input type="checkbox" id="fSmallBusiness" data-field="fiscal_small_business" checked={FM.vat_regime === 'small_business'} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                            <span class="s-toggle-text">{ORG.countryCode === 'FR' ? t(L, 'set.fiscal.franquicia_fr') : t(L, 'set.fiscal.franquicia_de')}</span>
+                        </label>
+                        <span class="s-hint">{t(L, 'set.fiscal.franquicia_hint')}</span>
+                    </div>
+                )}
                 <a class="fact-link" href="/app/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
             </div>
         </SettingsSection>

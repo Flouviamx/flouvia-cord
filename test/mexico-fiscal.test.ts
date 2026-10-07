@@ -47,6 +47,21 @@ describe('CFDI con snapshots fiscales explícitos', () => {
     expect(sent().items[0].product.taxes[1].rate).toBe(.08);
     expect(sent().items[1].product.taxes).toHaveLength(1);
   });
+  it('la retención de IVA sobre lo gravado no alcanza al concepto exento', async () => {
+    // LIVA art. 1-A: se retiene el IVA que se traslada. Un concepto exento no
+    // traslada IVA, así que no lleva retención aunque viaje en la misma factura.
+    const req = fixture(); req.lines.push(line(0)); req.totals = { subtotal: 200, taxes: 16, total: 205.33, currency: 'MXN', retencionTotal: 10.67,
+      retenciones: [{ nombre: 'IVA', tipo: 'ret_iva', tasa: .106667, base: 100, baseTipo: 'gravado', monto: 10.67 }] };
+    expect((await (await provider()).issueDocument(req)).success).toBe(true);
+    expect(sent().items[0].product.taxes[1]).toEqual({ type: 'IVA', rate: .106667, withholding: true, factor: 'Tasa' });
+    expect(sent().items[1].product.taxes).toEqual([{ type: 'IVA', rate: 0, factor: 'Exento' }]);
+  });
+  it('rechaza una base gravada que no coincide con los conceptos gravados', async () => {
+    const req = fixture(); req.lines.push(line(0)); req.totals = { subtotal: 200, taxes: 16, total: 194.67, currency: 'MXN', retencionTotal: 21.33,
+      retenciones: [{ nombre: 'IVA', tipo: 'ret_iva', tasa: .106667, base: 200, baseTipo: 'gravado', monto: 21.33 }] };
+    expect((await (await provider()).issueDocument(req)).success).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it('recupera precisión unitaria del snapshot de base', async () => {
     const req = fixture(); req.lines = [{ ...line(), quantity: 3, unitPrice: 33.33 }];
     expect((await (await provider()).issueDocument(req)).success).toBe(true);
@@ -131,5 +146,13 @@ describe('prorrateo de notas de crédito', () => {
   });
   it('rechaza un importe parcial que no cuadra a centavos', () => {
     expect(() => creditNoteBreakdown(original(), .01)).toThrow('redondear');
+  });
+  it('prorratea una retención sobre lo gravado sin incluir el concepto exento', () => {
+    const doc = { total: 206, subtotal: 200, tax_total: 16, retencion_total: 10,
+      line_items_snapshot: [line(.16), line(0)],
+      retenciones_snapshot: [{ nombre: 'IVA', tipo: 'ret_iva', tasa: .1, base: 100, baseTipo: 'gravado', monto: 10 }] };
+    const result = creditNoteBreakdown(doc, 103);
+    expect(result).toMatchObject({ subtotal: 100, taxes: 8, retencionTotal: 5 });
+    expect(result.retenciones[0]).toMatchObject({ base: 50, monto: 5, baseTipo: 'gravado' });
   });
 });

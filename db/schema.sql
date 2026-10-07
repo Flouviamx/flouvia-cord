@@ -3924,7 +3924,21 @@ alter table clientes add column if not exists region text; -- estado/provincia/s
 alter table impuestos add column if not exists retencion_base text not null default 'subtotal';
 alter table impuestos drop constraint if exists chk_impuestos_retencion_base;
 alter table impuestos add constraint chk_impuestos_retencion_base
-    check (retencion_base in ('subtotal', 'impuesto'));
+    check (retencion_base in ('subtotal', 'impuesto', 'gravado'));
+
+-- 'gravado' (oct 2026): la Retención de IVA mexicana se calcula sobre los
+-- conceptos que TRASLADAN IVA (LIVA art. 1-A), no sobre el subtotal completo:
+-- con un concepto exento en la factura se retenía IVA que nunca se cobró. Solo
+-- cambia el catálogo; cada documento ya capturado conserva la base congelada
+-- en su `retenciones_snapshot` (regla 23). Mismo cambio para la tasa sembrada
+-- 10.667, que no es 2/3 del 16% (10.6667): sobre $100,000 retenía 33 centavos
+-- de más. Solo la fila intacta del preset; una tasa capturada a mano no se toca.
+update impuestos i set retencion_base = 'gravado'
+  from orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, 'MX')) = 'MX'
+   and i.tipo = 'ret_iva' and i.kind = 'retencion' and i.retencion_base = 'subtotal';
+update impuestos set nombre = 'Retención IVA 10.6667%', tasa = 10.6667
+ where tipo = 'ret_iva' and nombre = 'Retención IVA 10.667%' and tasa = 10.667;
 
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con

@@ -5006,7 +5006,8 @@
                                     "type": "string",
                                     "enum": [
                                       "subtotal",
-                                      "impuesto"
+                                      "impuesto",
+                                      "gravado"
                                     ],
                                     "description": "Sobre qué se calcula la retención: el subtotal o el impuesto trasladado."
                                   }

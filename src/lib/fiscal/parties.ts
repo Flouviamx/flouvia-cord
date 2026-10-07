@@ -33,6 +33,8 @@ export function partiesFrom(head: any, issuerCountry: string): { issuer: FiscalP
       legalName: fiscalMetadata.legal_name || String(head.org_razon_social || head.org_nombre || 'Emisor'),
       taxId: fiscalMetadata.tax_id || (head.org_tax_id ? String(head.org_tax_id) : undefined),
       taxSystem: head.org_tax_system ? String(head.org_tax_system) : undefined,
+      ...((issuerCountry === 'FR' || issuerCountry === 'DE') && fiscalMetadata.vat_regime === 'small_business'
+        ? { vatRegime: 'small_business' as const } : {}),
       email: head.org_email ? String(head.org_email) : undefined,
       address: {
         countryCode: issuerCountry,

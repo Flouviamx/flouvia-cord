@@ -26,7 +26,7 @@ import { resolveViewer } from '../../../lib/public-viewer';
 import { recordHeartbeat, recordHito } from '../../../lib/atencion';
 import { markViewed } from '../../../lib/queries';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
-import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+import { calculateDocumentTotals, retencionBase } from '../../../../packages/elements/src/engine';
 import { money as roundMoney } from '../../../lib/fiscal/emit';
 
 // Los eventos que escribe el link público (firma parcial, contrapropuesta) los
@@ -177,7 +177,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
                         ivaIncluido: !!c.iva_incluido,
                         retenciones: retencionesSnapshot.map((r: any) => ({
                             nombre: String(r.nombre ?? ''), tasa: Number(r.tasa) || 0, tipo: String(r.tipo ?? 'ret_iva'),
-                            base: r.baseTipo === 'impuesto' ? 'impuesto' as const : 'subtotal' as const,
+                            base: retencionBase(r.baseTipo),
                         })),
                         roundLines: currencyDecimals(quoteCurrency),
                     },

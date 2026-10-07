@@ -15,6 +15,7 @@ import { createInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../
 import { ok, fail, invoiceListItem, readJsonBody } from '../../../lib/apiv1';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
+import { isISODate } from '../../../lib/rango';
 
 export const GET = withApiAuth('read', async ({ url }) => {
     // Keyset, no offset: con offset una factura nueva desplaza la página y
@@ -52,7 +53,7 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     if (!items.length) return fail('Cada concepto necesita descripcion y cantidad', 'invalid_request', 400);
 
     const dueDate = String(body.due_date ?? '').trim();
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    if (dueDate && !isISODate(dueDate)) {
         return fail('due_date debe ser YYYY-MM-DD', 'invalid_request', 400);
     }
 

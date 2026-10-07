@@ -6,6 +6,7 @@
 
 import { sql, withOrgTx } from './db';
 import { taxPresetsFor, usStateTaxPresets, isUsState } from './countries';
+import { retencionBase } from '../../packages/elements/src/engine';
 
 /**
  * Un catálogo genuinamente vacío (org nueva, sin sembrar aún) es distinto de
@@ -98,7 +99,7 @@ export async function taxCatalogFor(orgId: string) {
         .filter((r) => r.kind === 'retencion' && r.es_default && Number(r.tasa) > 0)
         .map((r) => ({
             nombre: String(r.nombre), tipo: String(r.tipo || 'ret_iva'), tasa: Number(r.tasa) / 100,
-            base: (r.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal') as 'subtotal' | 'impuesto',
+            base: retencionBase(r.retencion_base),
         }));
 
     return {

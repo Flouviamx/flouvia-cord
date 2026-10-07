@@ -6,6 +6,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requirePerm } from '../../../lib/queries';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
+import { isISODate } from '../../../lib/rango';
 
 const MAX_ROWS = 10_000;
 
@@ -22,7 +23,8 @@ export const GET: APIRoute = async ({ url }) => {
         ? clienteRaw : null;
     const dateParam = (name: string) => {
         const value = String(url.searchParams.get(name) || '');
-        return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+        // Calendario real: "2026-02-31" pasaba la regex y reventaba el ::date.
+        return isISODate(value) ? value : null;
     };
     const desde = dateParam('desde');
     const hasta = dateParam('hasta');
@@ -31,7 +33,8 @@ export const GET: APIRoute = async ({ url }) => {
 
     const [allRows] = await withOrgTx(orgId, sql`
         select d.invoice_number, coalesce(cl.empresa, cq.empresa) as empresa,
-               d.lifecycle, d.status, d.created_at, d.due_date, d.currency,
+               d.lifecycle, d.status, d.created_at, d.due_date::text as due_day, d.currency,
+               (select zona_horaria from orgs where id = ${orgId}) as zona_horaria,
                d.total, d.amount_paid, d.amount_remaining
           from documentos_fiscales d
           left join cotizaciones c on c.id = d.cotizacion_id
@@ -56,23 +59,38 @@ export const GET: APIRoute = async ({ url }) => {
     const rows = allRows.slice(0, MAX_ROWS);
 
     const header = ['folio', 'cliente', 'estado', 'estado_fiscal', 'creada', 'vence', 'divisa', 'total', 'pagado', 'saldo'];
+    // El driver devuelve `timestamptz` como Date: `String(date).slice(0, 10)`
+    // escribía "Wed Oct 07" en la columna. La fecha de alta se expresa en la
+    // zona de la organización (regla 24) y el vencimiento, que es un DATE,
+    // viaja como texto desde Postgres para que ninguna zona lo corra un día.
+    const zone = validZone(rows[0]?.zona_horaria as string | undefined);
+    const day = (value: unknown) => {
+        const date = value instanceof Date ? value : new Date(String(value ?? ''));
+        if (!Number.isFinite(date.getTime())) return '';
+        return new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+    };
     const body = rows.map((f) => [
         f.invoice_number || '', f.empresa || '', f.lifecycle, f.status,
-        String(f.created_at || '').slice(0, 10), f.due_date ? String(f.due_date).slice(0, 10) : '', f.currency || '',
+        day(f.created_at), (f.due_day as string) || '', f.currency || '',
         Number(f.total || 0), Number(f.amount_paid || 0), Number(f.amount_remaining ?? f.total ?? 0),
     ]);
     const csv = [header, ...body].map((row) => row.map(csvCell).join(',')).join('\r\n');
-    const day = new Date().toISOString().slice(0, 10);
+    const today = day(new Date());
 
     return new Response(`\uFEFF${csv}`, {
         headers: {
             'Content-Type': 'text/csv; charset=utf-8',
-            'Content-Disposition': `attachment; filename="facturas-${day}.csv"`,
+            'Content-Disposition': `attachment; filename="facturas-${today}.csv"`,
             'Cache-Control': 'private, no-store',
             ...(hasMore ? { 'X-Cord-Export-Truncated': 'true' } : {}),
         },
     });
 };
+
+function validZone(zone: string | undefined): string {
+    if (!zone) return 'UTC';
+    try { new Intl.DateTimeFormat('en', { timeZone: zone }); return zone; } catch { return 'UTC'; }
+}
 
 function csvCell(value: unknown) {
     const raw = String(value ?? '');

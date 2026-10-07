@@ -6,7 +6,7 @@ import { after } from '../after';
 import { cancelUsage, reserveUsage } from '../billing';
 import { requireEntitlement } from '../org-entitlements';
 import { emitFiscalDocument } from '../fiscal/emit';
-import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg } from '../cotizaciones';
+import { MAX_ITEMS, NEGATIVE_LINE_ERROR, QuoteError, assertClienteDeOrg, hasNegativeLine, productosDeOrg } from '../cotizaciones';
 import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
@@ -138,6 +138,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
 
     if (['resend', 'update_draft', 'send'].includes(input.action) && Array.isArray(input.items)) {
         if (input.items.length > MAX_ITEMS) return done(400, { error: `Demasiadas líneas (máximo ${MAX_ITEMS}).` });
+        if (hasNegativeLine(input.items)) return done(400, { error: NEGATIVE_LINE_ERROR, code: 'invalid_request' });
         const rawItems = input.items;
         const iva_incluido = Boolean(input.iva_incluido);
 

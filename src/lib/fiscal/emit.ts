@@ -11,7 +11,7 @@ import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
-import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+import { calculateDocumentTotals, retencionBase } from '../../../packages/elements/src/engine';
 import { after } from '../after';
 import { log } from '../log';
 import type {
@@ -394,7 +394,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         // (en aprobación parcial, un subconjunto de las cotizadas).
         retenciones: retencionesSnapshot.map((r: any) => ({
           nombre: String(r.nombre ?? ''), tasa: Number(r.tasa) || 0, tipo: String(r.tipo ?? 'ret_iva'),
-          base: r.baseTipo === 'impuesto' ? 'impuesto' as const : 'subtotal' as const,
+          base: retencionBase(r.baseTipo),
         })),
         // Cada concepto redondeado y los totales como su suma: es lo que el CFDI
         // valida (subtotal = Σ importes) y lo que Verifactu desglosa por línea.

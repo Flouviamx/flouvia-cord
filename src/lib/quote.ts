@@ -3,7 +3,7 @@
 // público y la API v1. Aquí viven también su vocabulario de estados y sus
 // totales, calculados con el MISMO motor que los escribe en la base.
 
-import { calculateDocumentTotals } from '../../packages/elements/src/engine';
+import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
 import { currencyDecimals } from './currency';
 
 export type QuoteStatus =
@@ -66,7 +66,7 @@ export interface Quote {
      */
     taxRateFallback?: number;
     /** Retenciones congeladas al crear el documento. Se restan del total. */
-    retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number; baseTipo?: 'subtotal' | 'impuesto' }[];
+    retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number; baseTipo?: RetencionBase }[];
 }
 
 export const STATUS_META: Record<QuoteStatus, { label: string; color: string; bg: string }> = {
@@ -107,7 +107,7 @@ const documentTotals = (q: Quote) => {
     // cliente aprobar solo un subconjunto de líneas. El `base`/`monto` del
     // snapshot se descarta a propósito: mezclarlos con la tasa aquí sería
     // aplicar una retención vieja sobre un subtotal nuevo.
-    const retenciones = (q.retenciones ?? []).map((r) => ({ nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: r.baseTipo ?? 'subtotal' as const }));
+    const retenciones = (q.retenciones ?? []).map((r) => ({ nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: retencionBase(r.baseTipo) }));
     return calculateDocumentTotals(
         q.items.filter((it) => it.aprobado !== false).map((it) => ({
             descripcion: it.descripcion,

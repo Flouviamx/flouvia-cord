@@ -24,7 +24,7 @@ import { currencyDecimals, normalizeCurrency } from './currency';
 import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
-import { calculateDocumentTotals } from '../../packages/elements/src/engine';
+import { calculateDocumentTotals, retencionBase, type RetencionBase } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
 import {
@@ -687,8 +687,8 @@ export interface ImpuestoRow {
     rate: number;        // fracción 0–1, lista para el motor
     esDefault: boolean;
     activo: boolean;
-    /** Solo para kind:'retencion'. Ver RetencionInput en engine.ts. */
-    retencionBase: 'subtotal' | 'impuesto';
+    /** Solo para kind:'retencion'. Ver RetencionBase en engine.ts. */
+    retencionBase: RetencionBase;
 }
 
 const normalizeKind = (value: unknown, tipo: string): TaxKind => {
@@ -732,7 +732,7 @@ export function mapImpuestoRow(i: any, locale: 'es' | 'en', paisCode: string): I
         rate: tasa / 100,
         esDefault: !!i.es_default,
         activo: !!i.activo,
-        retencionBase: i.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal',
+        retencionBase: retencionBase(i.retencion_base),
     };
 }
 
@@ -1872,6 +1872,9 @@ export async function getFacturaDetalle(id: string) {
             precioUnitario: num(l.unitPrice),
             subtotal: num(l.subtotal),
             impuesto: num(l.taxAmount),
+            // Tasa congelada del concepto: dividir impuesto / subtotal ya
+            // redondeados no la reproduce (5.33 / 33.33 no es 0.16).
+            taxRate: num(l.taxRate),
             total: num(l.total),
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
@@ -2200,11 +2203,11 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
             {
                 ivaIncluido: Boolean(c.iva_incluido),
                 // El snapshot trae `base` como MONTO (número); el motor espera
-                // `base` como TIPO ('subtotal'|'impuesto') en el input — de ahí
+                // `base` como TIPO ('subtotal'|'impuesto'|'gravado') en el input — de ahí
                 // `baseTipo`, no `base`, para no perder la ReteIVA colombiana
                 // (15% DEL IVA) al recalcularla en vivo desde su propio snapshot.
                 retenciones: retencionesGuardadas.map((r: any) => ({
-                    nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: r.baseTipo ?? 'subtotal',
+                    nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: retencionBase(r.baseTipo),
                 })),
                 roundLines: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
             },

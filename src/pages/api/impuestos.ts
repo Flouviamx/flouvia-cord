@@ -17,6 +17,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { seedTaxCatalog } from '../../lib/impuestos-db';
+import { retencionBase } from '../../../packages/elements/src/engine';
 
 const TIPOS = new Set(['iva', 'ieps', 'ret_iva', 'ret_isr', 'exento']);
 const KINDS = new Set(['consumo', 'retencion', 'exento']);
@@ -104,8 +105,9 @@ export const POST: APIRoute = async ({ request }) => {
     const esDefault = !!body.es_default;
     // Solo aplica a retenciones (regla del motor, engine.ts): sobre qué base
     // se calcula. 'subtotal' es el default correcto para la enorme mayoría de
-    // países; 'impuesto' es el caso Colombia (ReteIVA = 15% DEL IVA).
-    const retencionBase = body.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal';
+    // países; 'impuesto' es el caso Colombia (ReteIVA = 15% DEL IVA) y
+    // 'gravado' el de México (la Retención de IVA no alcanza lo exento).
+    const retBase = retencionBase(body.retencion_base);
 
     const orgId = await getActiveOrgId();
     let row: any;
@@ -116,7 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (esDefault) await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and kind = ${kind}`);
         [[row]] = await withOrgTx(orgId, sql`
             insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base)
-            values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault}, ${retencionBase})
+            values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault}, ${retBase})
             returning id`);
     } catch {
         // Regla 14: el dueño del negocio no corre migraciones.
@@ -151,7 +153,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         await withOrgTx(orgId, sql`update impuestos set tasa = ${tasa} where id = ${id} and org_id = ${orgId}`);
     }
     if (body.retencion_base !== undefined && kind === 'retencion') {
-        const base = body.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal';
+        const base = retencionBase(body.retencion_base);
         await withOrgTx(orgId, sql`update impuestos set retencion_base = ${base} where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.activo === 'boolean') {

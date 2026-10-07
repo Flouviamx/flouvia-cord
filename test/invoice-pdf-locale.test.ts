@@ -96,4 +96,41 @@ describe('idioma y menciones legales del PDF de factura', () => {
         expect(text).toContain('Due on receipt');
         expect(text).not.toContain('Contado');
     });
+
+    it('la franquicia imprime su mención solo si el documento no cobra impuesto', () => {
+        const fr = { legalName: 'Atelier Lumière', taxId: '303265045', vatRegime: 'small_business' as const, address: { countryCode: 'FR' } };
+        const domestic = { legalName: 'Client SARL', address: { countryCode: 'FR' } };
+        const exempt = pdfText(createInvoicePdf(base({ issuer: fr, recipient: domestic })));
+        expect(exempt).toContain('293 B du CGI');
+        const taxed = pdfText(createInvoicePdf(base({
+            issuer: fr, recipient: domestic, taxTotal: 200, total: 1200,
+            lines: [{ description: 'Conseil', quantity: 1, unitPrice: 1000, taxRate: 0.2, subtotal: 1000, taxAmount: 200, total: 1200 }],
+        })));
+        expect(taxed).not.toContain('293 B du CGI');
+        const de = pdfText(createInvoicePdf(base({
+            countryCode: 'DE',
+            issuer: { legalName: 'Studio Berg', vatRegime: 'small_business', address: { countryCode: 'DE' } },
+            recipient: { legalName: 'Kunde', address: { countryCode: 'DE' } },
+        })));
+        expect(de).toContain('19 UStG');
+    });
+
+    it('imprime las notas del documento y, en una nota de crédito, como motivo', () => {
+        const invoice = pdfText(createInvoicePdf(base({ documentNotes: 'Pedido 4471', notes: 'Paiement par virement' })));
+        expect(invoice).toContain('Pedido 4471');
+        expect(invoice).toContain('CONDITIONS G');
+        const credit = pdfText(createInvoicePdf(base({ creditNoteOfNumber: 'F-2026-0001', documentNotes: 'Remise commerciale' })));
+        expect(credit).toContain('MOTIF');
+        expect(credit).toContain('Remise commerciale');
+    });
+
+    it('en divisa extranjera declara también el impuesto en la moneda nacional (UE)', () => {
+        const text = pdfText(createInvoicePdf(base({
+            currency: 'USD', ledgerCurrency: 'EUR', fxRate: 0.9, ledgerTotal: 1080,
+            recipient: { legalName: 'Client SARL', address: { countryCode: 'FR' } },
+            taxTotal: 200, total: 1200,
+            lines: [{ description: 'Conseil', quantity: 1, unitPrice: 1000, taxRate: 0.2, subtotal: 1000, taxAmount: 200, total: 1200 }],
+        })));
+        expect(text).toMatch(/TVA EUR: 180,00/);
+    });
 });

@@ -4,6 +4,7 @@ import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { promiseEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, isUuid } from './outcome';
+import { isISODate } from '../rango';
 
 const ESTADOS = new Set(['pendiente', 'cumplida', 'incumplida']);
 const EVENTO_POR_ESTADO = { cumplida: 'promise.kept', incumplida: 'promise.broken' } as const;
@@ -13,7 +14,7 @@ export async function createPromise(ctx: ActionContext, input: Record<string, an
     const cotizacionId = String(input.cotizacion_id ?? '').trim();
     const fecha = String(input.fecha_promesa ?? '').trim();
     if (!cotizacionId) return done(400, { error: 'Falta la cotización', code: 'invalid_request' });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return done(400, { error: 'Elige la fecha en que el cliente promete pagar', code: 'invalid_request' });
+    if (!isISODate(fecha)) return done(400, { error: 'Elige la fecha en que el cliente promete pagar', code: 'invalid_request' });
     const monto = input.monto != null && input.monto !== '' ? Math.max(0, Number(input.monto) || 0) : null;
     const nota = String(input.nota ?? '').trim().slice(0, 400) || null;
 

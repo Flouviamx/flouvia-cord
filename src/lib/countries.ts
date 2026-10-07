@@ -214,10 +214,11 @@ export interface TaxPreset {
     esDefault?: boolean;
     /**
      * Solo para `kind: 'retencion'`. Sobre qué se calcula: `'subtotal'`
-     * (default, correcto para México) o `'impuesto'` (Colombia: la ReteIVA es
-     * 15% DEL IVA, no del subtotal). Ver RetencionInput en engine.ts.
+     * (default), `'impuesto'` (Colombia: la ReteIVA es 15% DEL IVA, no del
+     * subtotal) o `'gravado'` (México: la Retención de IVA solo alcanza a los
+     * conceptos que trasladan IVA). Ver RetencionBase en engine.ts.
      */
-    base?: 'subtotal' | 'impuesto';
+    base?: 'subtotal' | 'impuesto' | 'gravado';
 }
 
 export type TaxKind = 'consumo' | 'retencion' | 'exento';
@@ -241,12 +242,16 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         std('IVA 16%', 16),
         red('IVA 8% región fronteriza', 8),
         EXENTO,
-        { nombre: 'Retención IVA 10.667%', kind: 'retencion', tipo: 'ret_iva', tasa: 10.667 },
+        // Dos terceras partes del IVA del 16% = 10.6667% (RLIVA art. 3, fr. I).
+        // El preset decía 10.667: sobre $100,000 retenía 33 centavos de más.
+        // Base `gravado`: se retiene el IVA que se traslada (LIVA art. 1-A), así
+        // que un concepto exento no entra en la base de la retención.
+        { nombre: 'Retención IVA 10.6667%', kind: 'retencion', tipo: 'ret_iva', tasa: 10.6667, base: 'gravado' },
         { nombre: 'Retención ISR 1.25%', kind: 'retencion', tipo: 'ret_isr', tasa: 1.25 },
         // Art. 1-A LIVA: fracción IV (autotransporte de carga federal) y
         // fracción II inciso a) (servicios de personal / outsourcing).
-        { nombre: 'Retención IVA 4% (autotransporte)', kind: 'retencion', tipo: 'ret_iva', tasa: 4 },
-        { nombre: 'Retención IVA 6% (servicios de personal)', kind: 'retencion', tipo: 'ret_iva', tasa: 6 },
+        { nombre: 'Retención IVA 4% (autotransporte)', kind: 'retencion', tipo: 'ret_iva', tasa: 4, base: 'gravado' },
+        { nombre: 'Retención IVA 6% (servicios de personal)', kind: 'retencion', tipo: 'ret_iva', tasa: 6, base: 'gravado' },
     ],
     // GST/HST son federales. QST/PST/RST son IMPUESTOS PROVINCIALES aparte —en
     // QC/BC/SK/MB se cobran junto al 5% de GST, no en su lugar— y aquí se

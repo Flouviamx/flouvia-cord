@@ -29,7 +29,9 @@ export function creditNoteBreakdown(doc: Record<string, unknown>, amount: number
     const baseTipo = r.baseTipo || (Math.abs(r.base - Number(doc.subtotal)) < tolerance ? 'subtotal'
       : Math.abs(r.base - Number(doc.tax_total)) < tolerance ? 'impuesto' : undefined);
     if (!baseTipo || !Number.isFinite(r.tasa) || r.tasa < 0 || r.tasa > 1) throw new Error('No se puede identificar la base original de la retención.');
-    const base = baseTipo === 'impuesto' ? taxes : subtotal;
+    const base = baseTipo === 'impuesto' ? taxes
+      : baseTipo === 'gravado' ? money(lines.reduce((sum, line) => sum + (line.taxRate > 0 ? line.subtotal : 0), 0))
+      : subtotal;
     return { ...r, baseTipo, base, monto: money(base * r.tasa) };
   });
   if (money(sourceRetentions.reduce((sum, r) => sum + Number(r.monto), 0)) !== money(Number(doc.retencion_total || 0))) {

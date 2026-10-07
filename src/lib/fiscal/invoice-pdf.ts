@@ -35,6 +35,8 @@ export interface InvoicePdfInput {
   recipient: FiscalParty;
   lines: FiscalLineItem[];
   simulated?: boolean;
+  /** La factura se anuló: el PDF lo dice arriba, para que no circule como vigente. */
+  voided?: boolean;
   /** Retenciones del documento — se RESTAN de subtotal+impuestos para llegar a `total`. */
   retenciones?: FiscalRetencion[] | null;
   /** Divisa contable del emisor, si difiere de `currency`. */
@@ -73,8 +75,13 @@ export interface InvoicePdfInput {
   verifactu?: { qrUrl: string; huella: string; leyenda: string; leyendaCorta: string } | null;
   /** Instrucciones de pago (link, banco). Se imprime tal cual. */
   paymentInstructions?: string | null;
-  /** Nota libre al pie. */
+  /** Condiciones generales del negocio (orgs.pdf_condiciones), iguales en cada documento. */
   notes?: string | null;
+  /**
+   * Notas de ESTE documento. En una nota de crédito es el motivo de la
+   * rectificación, que la ley pide que conste (no solo en el historial).
+   */
+  documentNotes?: string | null;
 }
 
 const INK: RGB = [17, 24, 39];
@@ -163,6 +170,8 @@ const PDF_TEXT = {
   invoice: P('FACTURA', 'INVOICE', 'FACTURE', 'RECHNUNG', 'FATURA'),
   testDoc: P('DOCUMENTO DE PRUEBA — SIN VALIDEZ FISCAL', 'TEST DOCUMENT — NOT VALID FOR TAX PURPOSES',
     'DOCUMENT DE TEST — SANS VALEUR FISCALE', 'TESTDOKUMENT — STEUERLICH UNGÜLTIG', 'DOCUMENTO DE TESTE — SEM VALIDADE FISCAL'),
+  voided: P('FACTURA ANULADA — SIN VALOR DE COBRO', 'VOIDED INVOICE — NOT PAYABLE', 'FACTURE ANNULÉE — NON EXIGIBLE',
+    'STORNIERTE RECHNUNG — NICHT ZAHLBAR', 'FATURA ANULADA — SEM VALOR DE COBRANÇA'),
   from: P('DE', 'FROM', 'ÉMETTEUR', 'VON', 'EMITENTE'),
   billTo: P('PARA', 'BILL TO', 'CLIENT', 'AN', 'CLIENTE'),
   corrects: P('Rectifica a', 'Corrects invoice', 'Rectifie la facture', 'Berichtigt Rechnung', 'Retifica a fatura'),
@@ -182,6 +191,8 @@ const PDF_TEXT = {
   howToPay: P('Cómo pagar', 'How to pay', 'Comment payer', 'Zahlung', 'Como pagar'),
   legalNotice: P('Mención legal', 'Legal notice', 'Mention légale', 'Rechtlicher Hinweis', 'Menção legal'),
   notes: P('Notas', 'Notes', 'Notes', 'Hinweise', 'Observações'),
+  conditions: P('Términos y condiciones', 'Terms and conditions', 'Conditions générales', 'Allgemeine Bedingungen', 'Termos e condições'),
+  reason: P('Motivo', 'Reason', 'Motif', 'Grund', 'Motivo'),
   disclaimerProforma: P(
     'Documento comercial proforma. No sustituye una factura fiscal ni acredita envío a una autoridad tributaria.',
     'Pro forma commercial document. It does not replace a tax invoice or certify submission to a tax authority.',
@@ -245,6 +256,18 @@ export function reverseChargeNotice(issuerCountry: string, lang: DocLang): strin
  * importe sea correcto. La tasa que se imprime es la SUPLETORIA de la ley (BCE
  * + 10 puntos), que es la que aplica cuando el contrato no fija otra.
  */
+/**
+ * Franquicia de IVA de pequeñas empresas. La mención es obligatoria en la
+ * factura (FR: CGI art. 242 nonies A; DE: § 19 UStG) y va en el idioma de la
+ * ley, no en el del documento: es lo que la autoridad y el cliente buscan.
+ */
+export function smallBusinessNotice(issuerCountry: string): string | null {
+  const cc = issuerCountry.toUpperCase();
+  if (cc === 'FR') return 'TVA non applicable, art. 293 B du CGI.';
+  if (cc === 'DE') return 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.';
+  return null;
+}
+
 const FR_B2B_NOTICE = "En cas de retard de paiement, pénalités au taux d'intérêt de la BCE majoré de 10 points et indemnité forfaitaire pour frais de recouvrement de 40 € (art. L441-10 du Code de commerce). Pas d'escompte pour paiement anticipé.";
 
 /**
@@ -356,6 +379,17 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     doc.rect(MARGIN, y, contentW, 26, { fill: WARN_BG, radius: 5 });
     doc.text(
       tx('testDoc'),
+      MARGIN, y + 17, { size: 8.5, font: 'bold', color: WARN, align: 'center', width: contentW, tracking: 0.8 },
+    );
+    y += 40;
+  }
+  // Una factura anulada se sigue pudiendo descargar desde la app (es parte del
+  // historial), pero antes salía idéntica a una vigente: el mismo PDF podía
+  // reenviarse y cobrarse.
+  if (input.voided) {
+    doc.rect(MARGIN, y, contentW, 26, { fill: WARN_BG, radius: 5 });
+    doc.text(
+      tx('voided'),
       MARGIN, y + 17, { size: 8.5, font: 'bold', color: WARN, align: 'center', width: contentW, tracking: 0.8 },
     );
     y += 40;
@@ -493,7 +527,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const fxRate = Number(input.fxRate);
   const ledger = normalizeCurrency(input.ledgerCurrency ?? '', '');
   const hasFx = !!ledger && ledger !== currency && Number.isFinite(fxRate) && fxRate > 0;
-  const totalsH = 16 + (taxRows.length || 1) * 16 + retenciones.length * 16 + 42 + (hasFx ? 26 : 0);
+  // Directiva de IVA, art. 230: en una factura en divisa extranjera, el
+  // impuesto se expresa TAMBIÉN en la moneda nacional del emisor. El total
+  // convertido no basta: es la cuota la que se declara.
+  const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
+  const taxInLedger = hasFx && isEuCountry(issuerCountry) && Number(input.taxTotal) > 0;
+  const totalsH = 16 + (taxRows.length || 1) * 16 + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -544,6 +583,17 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       doc.text(`${tx('totalIn')} ${ledger}: ${ledgerTotal}`,
         totalsX, ty + 19, { size: 7.6, color: MUTED, align: 'right', width: totalsW });
     }
+    if (taxInLedger) {
+      const decimals = currencyDecimals(ledger);
+      const factor = 10 ** decimals;
+      const taxLedger = Math.round((Number(input.taxTotal) * fxRate + Number.EPSILON) * factor) / factor;
+      const text = new Intl.NumberFormat(profile.locale, {
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: 'always',
+      }).format(taxLedger);
+      doc.text(`${profile.taxLabel} ${ledger}: ${text}`,
+        totalsX, ty + 30, { size: 7.6, color: MUTED, align: 'right', width: totalsW });
+      ty += 11;
+    }
     ty += 26;
   }
 
@@ -556,7 +606,6 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // no siempre responde, y bloquear la factura por eso sería peor que no
   // validar): solo verifica que ambas partes declaren tax id y country code
   // en países distintos de la UE.
-  const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   const recipientCountry = String(input.recipient.address?.countryCode || '').toUpperCase();
   const isIntraCommunity = isEuCountry(issuerCountry) && isEuCountry(recipientCountry)
     && issuerCountry !== recipientCountry && !!input.issuer.taxId && !!input.recipient.taxId
@@ -585,22 +634,34 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     by += qrSize + 14;
   }
 
+  // Franquicia: solo si el emisor estaba en el régimen al emitir (snapshot) y
+  // el documento de verdad no cobra impuesto. Imprimirla junto a un IVA
+  // repercutido sería contradecir el propio documento.
+  const smallBusiness = input.issuer.vatRegime === 'small_business' && !(Number(input.taxTotal) > 0)
+    ? smallBusinessNotice(issuerCountry) : null;
+  const isCreditNote = !!input.creditNoteOfNumber || input.documentType === 'cfdi_egreso';
+
   // ── Cómo pagar y notas, a la izquierda de los totales ──────────────────────
   const blocks = [
     input.paymentInstructions ? { title: tx('howToPay'), body: input.paymentInstructions } : null,
+    smallBusiness ? { title: tx('legalNotice'), body: smallBusiness } : null,
     isIntraCommunity ? { title: tx('legalNotice'), body: reverseChargeNotice(issuerCountry, lang) } : null,
     frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
-    input.notes ? { title: tx('notes'), body: input.notes } : null,
+    input.documentNotes ? { title: isCreditNote ? tx('reason') : tx('notes'), body: input.documentNotes } : null,
+    input.notes ? { title: tx('conditions'), body: input.notes } : null,
   ].filter(Boolean) as { title: string; body: string }[];
 
   if (blocks.length) {
     const blockW = contentW - totalsW - 28;
+    // Sin espacio se sigue en otra página, nunca se corta: una mención legal
+    // (franquicia, inversión del sujeto pasivo) que no se imprime invalida la
+    // factura, y antes el bucle simplemente se detenía.
     for (const block of blocks) {
-      if (by + 40 > BOTTOM_LIMIT) break;
+      if (by + 40 > BOTTOM_LIMIT) { doc.addPage(); by = MARGIN + 8; }
       doc.text(block.title.toUpperCase(), MARGIN, by, { size: 6.8, font: 'bold', color: MUTED, tracking: 1 });
       by += 13;
       for (const line of wrapText(block.body, blockW, 8.5)) {
-        if (by > BOTTOM_LIMIT) break;
+        if (by > BOTTOM_LIMIT) { doc.addPage(); by = MARGIN + 8; }
         doc.text(line, MARGIN, by, { size: 8.5, color: INK });
         by += 11.5;
       }

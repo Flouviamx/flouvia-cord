@@ -5,6 +5,7 @@ import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { taskEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, done, isUuid } from './outcome';
+import { isISODate } from '../rango';
 
 export const TASK_PERMISSIONS = ['cotizar', 'cobranza', 'clientes'] as const;
 
@@ -14,7 +15,7 @@ export async function createTask(ctx: ActionContext, input: Record<string, any>)
     const titulo = String(input.titulo ?? '').trim();
     if (!titulo) return done(400, { error: t(currentLocale(), 'err.tarea.vacia'), code: 'invalid_request' });
     const due = input.due_date ? String(input.due_date) : null;
-    if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) return done(400, { error: t(currentLocale(), 'err.tarea.fecha'), code: 'invalid_request' });
+    if (due && !isISODate(due)) return done(400, { error: t(currentLocale(), 'err.tarea.fecha'), code: 'invalid_request' });
     const cotizacionId = input.cotizacion_id ? String(input.cotizacion_id) : null;
     if (cotizacionId) {
         const [own] = isUuid(cotizacionId)

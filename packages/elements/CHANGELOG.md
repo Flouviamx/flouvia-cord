@@ -8,6 +8,7 @@ Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
 - **`validateTaxId(country, value, { locale?, persona? })`** y **`TAX_ID_COUNTRIES`** en `@flouviahq/elements/headless`: validan el identificador fiscal de los doce mercados (RFC, NIF/NIE/CIF, EIN, SIREN/SIRET/TVA, USt-IdNr./Steuernummer, VAT/UTR, Business Number/GST/HST, CPF/CNPJ —incluido el CNPJ alfanumérico de julio de 2026—, NIT, CUIT, RUT y RUC) con su dígito verificador. Devuelven el valor normalizado y el tipo detectado, o un motivo en español o inglés que nombra el dato local. Un país sin validador nunca bloquea.
 - **`calculateDocumentTotals(lines, { roundLines })`**: con `roundLines` (los decimales de la divisa del documento: 2 en MXN o EUR, 0 en JPY o CLP) cada línea se redondea antes de sumar —base e impuesto— y los totales son la suma de importes ya redondeados. Es lo que exige un comprobante fiscal: el CFDI 4.0 rechaza un `Total` que no sea la suma de sus conceptos, y una factura en JPY o CLP no puede llevar decimales. Sin la opción, el motor se comporta igual que antes.
+- **Retención sobre la base gravada (`base: 'gravado'`)** y el tipo `RetencionBase`: la retención se calcula solo sobre los conceptos que llevan impuesto. Es la Retención de IVA mexicana (LIVA art. 1-A), que no alcanza a un concepto exento; `CordElementsConfig.impuestos.retenciones[].base` puede traer este valor. Las bases `subtotal` e `impuesto` no cambian.
 
 ### Fixed
 

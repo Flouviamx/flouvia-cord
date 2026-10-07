@@ -13,7 +13,8 @@ export interface CordTaxOption {
 export interface CordRetencion {
     nombre: string;
     tasa: number;
-    base: 'subtotal' | 'impuesto';
+    /** `gravado`: solo los conceptos que llevan impuesto (Retención de IVA en México). */
+    base: 'subtotal' | 'impuesto' | 'gravado';
 }
 
 export type CordTerminos = 'contado' | 'net30' | 'net60';

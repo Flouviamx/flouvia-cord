@@ -1,3 +1,5 @@
+import type { RetencionBase } from '../../../packages/elements/src/engine';
+
 export interface FiscalAddress {
   line1?: string;
   line2?: string;
@@ -11,6 +13,12 @@ export interface FiscalParty {
   legalName: string;
   taxId?: string;
   taxSystem?: string;
+  /**
+   * Solo emisor. `small_business`: franquicia de IVA (FR art. 293 B CGI, DE
+   * § 19 UStG). Se congela en el snapshot del documento: la mención legal que
+   * imprime describe el régimen del día en que se emitió, no el de hoy.
+   */
+  vatRegime?: 'small_business';
   email?: string;
   contactName?: string;
   address?: FiscalAddress;
@@ -37,7 +45,7 @@ export interface FiscalRetencion {
   /** Fracción, no porcentaje: 0.10667, nunca 10.667. */
   tasa: number;
   base: number;
-  baseTipo?: 'subtotal' | 'impuesto';
+  baseTipo?: RetencionBase;
   monto: number;
 }
 

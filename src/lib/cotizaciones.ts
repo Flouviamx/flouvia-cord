@@ -19,6 +19,7 @@ import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from './cu
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
+import { validateTaxId } from './tax-id';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -40,6 +41,15 @@ const money0 = (n: number, currency: string) => {
 // Máximo de líneas por cotización — evita que un POST con miles de items dispare
 // miles de INSERT secuenciales (DoS + latencia).
 export const MAX_ITEMS = 200;
+
+// sanitizeItem convierte un negativo en 0 (o una cantidad negativa en 1): una
+// línea de "Descuento −500" se guardaba a $0 sin aviso y el total salía 500
+// más alto de lo que el vendedor escribió. Se rechaza con un motivo.
+export const NEGATIVE_LINE_ERROR = 'Una línea no puede tener cantidad ni precio negativos. Para un descuento, baja el precio de la línea.';
+export function hasNegativeLine(items: unknown[]): boolean {
+    const negativo = (v: unknown) => v !== null && v !== undefined && v !== '' && Number(v) < 0;
+    return items.some((it: any) => negativo(it?.cantidad) || negativo(it?.precio_unitario) || negativo(it?.precio_negociado));
+}
 
 
 export interface NewQuoteItem {
@@ -185,6 +195,16 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
     const existing = existingRows[0];
     if (existing) return existing.id as string;
 
+    // Un identificador suelto (sin bloque fiscal, que ya se validó completo)
+    // se valida con el país de la organización: es el que hereda un cliente
+    // sin `country_code` y contra el que se emitirá su factura.
+    if (nuevo.rfc && !nuevo.fiscal) {
+        const [[org]] = await withOrgTx(orgId, sql`select country_code from orgs where id = ${orgId}`);
+        const checked = validateTaxId(String(org?.country_code || ''), nuevo.rfc);
+        if (!checked.ok) throw new QuoteError(checked.reason, 400, 'invalid_tax_id');
+        nuevo.rfc = checked.normalized;
+    }
+
     try {
         await assertResourceCapacity(orgId, 'clients');
     } catch (error) {
@@ -217,7 +237,7 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
 export async function createCotizacion(
     orgId: string,
     input: NewQuoteInput,
-    opts: { origin: string; ip: string; actor?: string },
+    opts: { origin: string; ip: string; actor?: string; duplicateOf?: { id: string; folio: string } },
 ): Promise<CreateQuoteResult> {
     try {
         await assertResourceCapacity(orgId, 'active_quotes');
@@ -228,6 +248,7 @@ export async function createCotizacion(
     const rawItems = Array.isArray(input.items) ? input.items : [];
     if (!rawItems.length) throw new QuoteError('Agrega al menos un producto', 400);
     if (rawItems.length > MAX_ITEMS) throw new QuoteError(`Demasiadas líneas (máximo ${MAX_ITEMS} por cotización).`, 400);
+    if (hasNegativeLine(rawItems)) throw new QuoteError(NEGATIVE_LINE_ERROR, 400, 'invalid_request');
     // Saneado una sola vez → todo lo de abajo opera sobre montos finitos y no-negativos.
     const items = rawItems.map(sanitizeItem);
 
@@ -276,12 +297,6 @@ export async function createCotizacion(
     if (!ofrecidas.includes(baseCurrency) || !ofrecidas.includes(fiscalCurrency)) {
         throw new QuoteError('Esa divisa no está disponible para cotizar.', 400, 'unsupported_currency');
     }
-
-    const [maxRows] = await withOrgTx(orgId, sql`
-        select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
-        from cotizaciones where org_id = ${orgId}`);
-    const { maxn } = maxRows[0];
-    const folio = `${org.quote_prefix}-${String(Number(maxn) + 1).padStart(4, '0')}`;
 
     // Flujo de aprobación: ¿el descuento, monto o margen rebasan los topes?
     let maxDescPct = 0;
@@ -367,24 +382,34 @@ export async function createCotizacion(
     // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
     const creadoPor = currentUserId();
 
+    // El folio se calcula DENTRO del insert, con un candado de transacción por
+    // organización: antes salía de un `select max(...)` en una llamada aparte y
+    // dos altas simultáneas (doble clic, la API en paralelo) recibían el mismo
+    // número. Y se lee solo el número final del folio: extraer TODOS los
+    // dígitos sumaba los del prefijo ("F26-0001" → 260001) y la numeración se
+    // disparaba con cada alta.
+    const prefix = String(org.quote_prefix || 'COT');
     let cot: any;
     try {
-        [[cot]] = await withOrgTx(orgId, sql`
+        [, [cot]] = await withOrgTx(orgId, sql`select pg_advisory_xact_lock(hashtextextended(${'quote-folio:' + orgId}, 0))`, sql`
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
                  retencion_total, retenciones_snapshot)
             values
-                (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
+                (${orgId}, ${clienteId}, (select ${prefix} || '-' || case when n < 10000 then lpad(n::text, 4, '0') else n::text end
+                   from (select coalesce(max(substring(folio from '(\\d+)$')::numeric), 0) + 1 as n
+                           from cotizaciones where org_id = ${orgId}) s), ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
                  ${retencionTotal}, ${retencionesSnapshot}::jsonb)
-            returning id, public_token`);
+            returning id, public_token, folio`);
     } catch (error) {
         const limit = parsedResourceLimit(error);
         if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} cotizaciones activas. Cierra una o sube de plan para continuar.`, 402);
         throw error;
     }
+    const folio = String(cot.folio);
 
     const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
     let orden = 0;
@@ -407,7 +432,7 @@ export async function createCotizacion(
             (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`);
 
     await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`);
+              values (${orgId}, ${cot.id}, 'created', ${opts.duplicateOf ? 'Duplicada de ' + opts.duplicateOf.folio : 'Borrador creado'})`);
     if (input.send && !needsApproval) {
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${orgId}, ${cot.id}, 'sent', 'Cotización enviada — link generado')`);
@@ -442,7 +467,8 @@ export async function createCotizacion(
         quote_id: cot.id,
         total,
         currency: baseCurrency,
-        source,
+        source: opts.duplicateOf ? 'duplicate' : source,
+        ...(opts.duplicateOf ? { source_quote_id: opts.duplicateOf.id } : {}),
         status,
         item_count: items.length,
         sent_on_create: !!input.send && !needsApproval,

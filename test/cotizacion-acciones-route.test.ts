@@ -44,6 +44,8 @@ vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: m.entitlemen
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: m.emit }));
 vi.mock('../src/lib/cotizaciones', () => ({
     MAX_ITEMS: 200,
+    NEGATIVE_LINE_ERROR: 'negativo',
+    hasNegativeLine: () => false,
     QuoteError: class extends Error { status = 400; },
     assertClienteDeOrg: async () => {},
     productosDeOrg: async () => new Set<string>(),

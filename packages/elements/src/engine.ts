@@ -276,7 +276,23 @@ export interface RetencionInput {
      * espera 15% de 190 = 28.50). Cord no reimplementa el régimen especial de
      * cada país — esto es la única bifurcación que necesita para no mentir.
      */
-    base?: 'subtotal' | 'impuesto';
+    base?: RetencionBase;
+}
+
+/**
+ * Base de una retención:
+ * - `'subtotal'`: todas las bases del documento.
+ * - `'impuesto'`: el impuesto trasladado (ReteIVA colombiana, 15% DEL IVA).
+ * - `'gravado'`: solo las bases de los conceptos que SÍ llevan impuesto. Es la
+ *   Retención de IVA mexicana (LIVA art. 1-A): se retiene el IVA que se
+ *   traslada, así que un concepto exento o a tasa 0 no entra en la base.
+ *   Calcularla sobre el subtotal completo retenía IVA que nunca se cobró.
+ */
+export type RetencionBase = 'subtotal' | 'impuesto' | 'gravado';
+
+/** Normaliza un valor guardado (columna, snapshot, JSON) a una base conocida. */
+export function retencionBase(value: unknown): RetencionBase {
+    return value === 'impuesto' || value === 'gravado' ? value : 'subtotal';
 }
 
 export interface RetencionApplied {
@@ -294,7 +310,7 @@ export interface RetencionApplied {
      * ReteIVA colombiana desde su propio snapshot volvía a calcularla sobre el
      * subtotal por default.
      */
-    baseTipo: 'subtotal' | 'impuesto';
+    baseTipo: RetencionBase;
 }
 
 export interface DocumentTotals extends InvoiceTotals {
@@ -327,8 +343,10 @@ export function calculateDocumentTotals(
         if (!Number.isFinite(tasa) || tasa < 0 || tasa > 1) {
             throw new RangeError(`calculateDocumentTotals: la tasa de retención debe estar entre 0 y 1 (recibido: ${r.tasa}).`);
         }
-        const baseTipo: 'subtotal' | 'impuesto' = r.base === 'impuesto' ? 'impuesto' : 'subtotal';
-        const baseAmount = baseTipo === 'impuesto' ? base.impuestos : base.subtotal;
+        const baseTipo = retencionBase(r.base);
+        const baseAmount = baseTipo === 'impuesto' ? base.impuestos
+            : baseTipo === 'gravado' ? rnd(base.lineas.reduce((sum, l) => sum + (l.tax_rate > 0 ? l.base : 0), 0))
+            : base.subtotal;
         return {
             nombre: String(r.nombre ?? '').slice(0, 80),
             tipo: String(r.tipo ?? 'ret_iva'),

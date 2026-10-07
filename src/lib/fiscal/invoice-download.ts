@@ -26,7 +26,7 @@ export async function loadInvoiceDocumentRow(orgId: string, id: string, publicTo
            d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
            d.issuer_snapshot,
            d.recipient_snapshot, d.line_items_snapshot, d.provider_data,
-           d.status, d.issued_at, d.cotizacion_id,
+           d.status, d.lifecycle, d.issued_at, d.cotizacion_id, d.notes as document_notes,
            d.public_token as invoice_token, d.due_date as invoice_due,
            orig.invoice_number as credit_note_of_number,
            o.facturapi_live_key, o.facturapi_live_key_enc,
@@ -142,6 +142,7 @@ export async function renderInvoicePdf(orgId: string, doc: any, simulated: boole
     fxRate: doc.fx_rate !== null && doc.fx_rate !== undefined ? Number(doc.fx_rate) : null,
     ledgerTotal: doc.ledger_total !== null && doc.ledger_total !== undefined ? Number(doc.ledger_total) : null,
     simulated,
+    voided: doc.lifecycle === 'void',
     logo: logoBytes ? `data:image/png;base64,${logoBytes.toString('base64')}` : null,
     brandColor: (doc.color_marca as string) || null,
     // El vencimiento propio de la factura manda; derivarlo de los términos de
@@ -159,10 +160,13 @@ export async function renderInvoicePdf(orgId: string, doc: any, simulated: boole
     // este documento. El link de la cotización queda como respaldo para los
     // documentos emitidos antes de que la factura tuviera token propio; una
     // factura standalone nunca tuvo uno.
-    paymentInstructions: doc.invoice_token
+    // Ni una factura anulada ni una nota de crédito se pagan: no llevan link.
+    paymentInstructions: doc.lifecycle === 'void' || doc.credit_note_of_number ? null
+      : doc.invoice_token
       ? await publicDocumentUrl(orgId, 'i', doc.invoice_token)
       : (doc.public_token ? await publicDocumentUrl(orgId, 'q', doc.public_token) : null),
     notes: (doc.pdf_condiciones as string) || null,
+    documentNotes: (doc.document_notes as string) || null,
   });
   return pdf;
 }

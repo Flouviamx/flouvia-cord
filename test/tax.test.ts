@@ -13,6 +13,7 @@ import { describe, it, expect } from 'vitest';
 import {
     calculateDocumentTotals,
     calculateInvoiceTotals,
+    retencionBase,
 } from '../packages/elements/src/engine';
 import {
     TAX_PRESETS,
@@ -121,6 +122,35 @@ describe('retenciones', () => {
         })).toThrow(RangeError);
     });
 
+    describe('base: "gravado" — la Retención de IVA mexicana', () => {
+        // LIVA art. 1-A: se retiene el IVA que se TRASLADA. Un concepto exento
+        // en la misma factura no traslada IVA y no entra en la base.
+        const RET_IVA_MX = { nombre: 'Retención IVA 10.6667%', tipo: 'ret_iva', tasa: 0.106667, base: 'gravado' as const };
+
+        it('excluye los conceptos exentos y a tasa 0 de la base', () => {
+            const r = calculateDocumentTotals([linea(1, 1000, 0.16), linea(2, 250, 0)], { retenciones: [RET_IVA_MX], roundLines: 2 });
+            expect(r.subtotal).toBe(1500);
+            expect(r.retenciones[0].base).toBe(1000);
+            expect(r.retenciones[0].baseTipo).toBe('gravado');
+            expect(r.retenciones[0].monto).toBe(106.67);
+            expect(r.total).toBe(1500 + 160 - 106.67);
+        });
+
+        it('sin conceptos exentos coincide con la base subtotal', () => {
+            const items = [linea(1, 1000, 0.16), linea(1, 500, 0.08)];
+            const gravado = calculateDocumentTotals(items, { retenciones: [RET_IVA_MX] });
+            const subtotal = calculateDocumentTotals(items, { retenciones: [{ ...RET_IVA_MX, base: 'subtotal' as const }] });
+            expect(gravado.retencionTotal).toBeCloseTo(subtotal.retencionTotal, 9);
+        });
+
+        it('una base desconocida cae a subtotal, nunca a gravado', () => {
+            expect(retencionBase('gravado')).toBe('gravado');
+            expect(retencionBase('impuesto')).toBe('impuesto');
+            expect(retencionBase('otra')).toBe('subtotal');
+            expect(retencionBase(undefined)).toBe('subtotal');
+        });
+    });
+
     describe('base: "impuesto" — el caso Colombia', () => {
         // La ReteIVA colombiana es 15% DEL IVA, no del subtotal. Modelarla
         // como 'subtotal' (el default, correcto para México) calculaba
@@ -178,10 +208,10 @@ describe('presets e identidad fiscal por país', () => {
         const mx = taxPresetsFor('MX');
         expect(mx.find((p) => p.esDefault)?.tasa).toBe(16);
         const ret = mx.filter((p) => p.kind === 'retencion');
-        // 10.667% (general) + 1.25% ISR + 4% (autotransporte) + 6% (servicios
+        // 10.6667% (general) + 1.25% ISR + 4% (autotransporte) + 6% (servicios
         // de personal) — art. 1-A LIVA.
         expect(ret.map((r) => r.tipo).sort()).toEqual(['ret_isr', 'ret_iva', 'ret_iva', 'ret_iva']);
-        expect(ret.map((r) => r.tasa).sort((a, b) => a - b)).toEqual([1.25, 4, 6, 10.667]);
+        expect(ret.map((r) => r.tasa).sort((a, b) => a - b)).toEqual([1.25, 4, 6, 10.6667]);
         expect(defaultCountryTaxPct('MX')).toBe(16);
     });
 

@@ -222,6 +222,13 @@ export const PATCH: APIRoute = async ({ request }) => {
     fiscalField('fiscal_invoice_prefix', 'invoice_prefix', 12, (value) => value
         ? value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12) || null
         : null);
+    // Franquicia de IVA (FR art. 293 B CGI, DE § 19 UStG). Solo existe en esos
+    // dos países; el valor se guarda como texto porque partiesFrom() solo lee
+    // cadenas de fiscal_metadata.
+    if (body.fiscal_small_business !== undefined) {
+        if (body.fiscal_small_business === true) currentFiscalMetadata.vat_regime = 'small_business';
+        else delete currentFiscalMetadata.vat_regime;
+    }
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
     const termDef = body.terminos_default !== undefined ? (TERMS.has(String(body.terminos_default)) ? String(body.terminos_default) : 'contado') : actual.terminos_default;
@@ -302,6 +309,9 @@ export const PATCH: APIRoute = async ({ request }) => {
         if (!checked.ok) return json({ error: checked.reason, code: 'invalid_tax_id', field: 'fiscal_tax_id' }, 400);
         currentFiscalMetadata.tax_id = checked.normalized;
     }
+    // La franquicia es un régimen de Francia y Alemania: al salir de esos
+    // países (o en cualquier otro) no puede seguir imprimiendo su mención.
+    if (countryCode !== 'FR' && countryCode !== 'DE') delete currentFiscalMetadata.vat_regime;
 
     // ── El país de una cuenta de cobros es INMUTABLE ────────────────────────
     //

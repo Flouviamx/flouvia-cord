@@ -144,7 +144,9 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
         <!-- Solo retenciones. En México el CFDI necesita saber QUÉ impuesto se
              retiene: sin este selector toda retención capturada a mano nacía
              como de IVA y una "Retención ISR" se timbraba como retención de IVA.
-             La base es el caso Colombia (ReteIVA = 15% DEL IVA, no del subtotal). -->
+             La base: "impuesto" es el caso Colombia (ReteIVA = 15% DEL IVA) y
+             "gravado" el de México (la Retención de IVA no alcanza conceptos
+             exentos, que no trasladan IVA). -->
         <div class="s-row" id="iRetRow" style="margin-bottom:1rem" hidden>
             {PAIS === 'MX' && (
                 <div class="s-field">
@@ -158,7 +160,8 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
             <div class="s-field">
                 <label for="iRetBase">{t(L, 'set.imp.ret_sobre')}</label>
                 <select class="s-input" id="iRetBase">
-                    <option value="subtotal">{t(L, 'set.imp.ret_sobre_subtotal')}</option>
+                    <option value="subtotal" selected={PAIS !== 'MX'}>{t(L, 'set.imp.ret_sobre_subtotal')}</option>
+                    <option value="gravado" selected={PAIS === 'MX'}>{t(L, 'set.imp.ret_sobre_gravado')}</option>
                     <option value="impuesto">{t(L, 'set.imp.ret_sobre_impuesto')}</option>
                 </select>
             </div>
@@ -239,6 +242,13 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
             if (kindSel.value === 'exento') tasaInput.value = '0';
         };
         kindSel.addEventListener('change', syncKind);
+        // México: la retención de IVA se calcula sobre lo gravado y la de ISR
+        // sobre el subtotal completo (los honorarios exentos de IVA sí causan ISR).
+        const retTipo = document.getElementById('iRetTipo') as HTMLSelectElement | null;
+        const retBaseSel = document.getElementById('iRetBase') as HTMLSelectElement | null;
+        retTipo?.addEventListener('change', () => {
+            if (retBaseSel) retBaseSel.value = retTipo.value === 'ret_isr' ? 'subtotal' : 'gravado';
+        });
 
         newBtn.addEventListener('click', () => {
             (document.getElementById('iNombre') as HTMLInputElement).value = '';
