@@ -10,10 +10,6 @@ import Sidebar from '../components/app/Sidebar.astro';
 import TopbarApps from '../components/app/TopbarApps.astro';
 import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
-import CordDynamicBg from '../components/CordDynamicBg.jsx';
-// Shader estándar de Cord — paleta oceánica del Centro de Ayuda
-// (navy casi negro + teal profundo + cobalto).
-const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 // Autenticación propia (Custom Auth Fase 2+)
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
@@ -332,26 +328,30 @@ import { iconInner } from '../lib/icons';
             </div>
         </div>
 
-        <!-- Drawer de Ayuda (se abre con el icono ? de la topbar) -->
+        <!-- Drawer de Ayuda (icono ? de la topbar). Dos vistas dentro del mismo
+             panel: INICIO (buscador, accesos, artículos, FAQ y la tarjeta de Cord AI)
+             y CHAT. El paso entre ellas es una View Transition: la tarjeta se expande
+             hasta convertirse en el chat (ver `setView()` en initHelp). Sin shader:
+             en la app un WebGL detrás de una tarjeta de 140px era peso puro. -->
         <div class="help-drawer" id="helpDrawer" hidden>
             <div class="help-backdrop" id="helpBackdrop"></div>
-            <aside class="help-panel" role="dialog" aria-modal="true" aria-label={t(L, 'layout.help.titulo')}>
-                <header class="help-head">
-                    <strong>{t(L, 'layout.help.titulo')}</strong>
-                    <button id="helpClose" class="help-x" type="button" aria-label={t(L, 'layout.help.cerrar')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
-                    </button>
-                </header>
-                <div class="help-regular">
+            <aside class="help-panel" id="helpPanel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+                <div class="help-home" id="helpHome">
+                    <header class="help-head">
+                        <h2 class="help-title" id="helpTitle">{t(L, 'layout.help.titulo')}</h2>
+                        <button class="help-x" data-help-close type="button" aria-label={t(L, 'layout.help.cerrar')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                        </button>
+                    </header>
                     <div class="help-search-wrap">
-                        <div class="help-search">
+                        <label class="help-search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                            <input id="helpSearch" type="search" placeholder={t(L, 'layout.help.buscar')} autocomplete="off" spellcheck="false" />
-                        </div>
+                            <input id="helpSearch" type="search" placeholder={t(L, 'layout.help.buscar')} aria-label={t(L, 'layout.help.buscar')} autocomplete="off" spellcheck="false" />
+                        </label>
                     </div>
-                    <div class="help-body">
-                        <nav class="help-grid">
-                            <button type="button" class="help-grid-btn" data-help-action="shortcuts">
+                    <div class="help-body" id="helpBody">
+                        <nav class="help-grid" id="helpGrid">
+                            <button type="button" class="help-grid-btn help-desk-only" data-help-action="shortcuts">
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('command')}></svg></span>
                                 <span>{t(L, 'layout.help.atajos')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
@@ -361,53 +361,63 @@ import { iconInner } from '../lib/icons';
                                 <span>{t(L, 'layout.help.guia_uso')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </button>
-                            <a class="help-grid-btn" href="/soporte">
+                            <a class="help-grid-btn" href={L === 'en' ? '/en/support' : '/soporte'}>
                                 <span class="help-grid-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg></span>
                                 <span>{t(L, 'layout.help.contactar_soporte')}</span>
                                 <svg class="help-grid-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-right')}></svg>
                             </a>
                         </nav>
-                        <div class="help-faq-head">{t(L, 'layout.help.faq_titulo')}</div>
-                        <div class="help-inset-group help-faq" id="helpFaq"></div>
-                        <div class="help-empty" id="helpEmpty" hidden>{t(L, 'layout.help.sin_resultados')}</div>
-                    </div>
-</div>
-<style is:global>
-.ai-flare { position: absolute; inset: -50%; background: radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0) 70%); opacity: 0; transform: scale(0.5); pointer-events: none; z-index: 10; transition: all 0.7s cubic-bezier(0.2, 1, 0.3, 1); }
-.help-panel.ai-active .ai-flare { opacity: 1; transform: scale(1.5); }
-html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
-</style>
-<footer class="help-ai">
-                    <div class="help-ai-box" id="helpAiBox" aria-disabled="false" onclick="window.openCordAi && window.openCordAi()">
-                        <div class="help-ai-bg" aria-hidden="true">
-                            <CordDynamicBg client:only="react" colors={SUPPORT_PAL} grain={false} />
-                            <div class="ai-flare"></div>
+                        <section class="help-sec" id="helpArticles" hidden>
+                            <h3 class="help-sec-head">{t(L, 'layout.help.articulos')}</h3>
+                            <div class="help-group" id="helpArticleList"></div>
+                        </section>
+                        <section class="help-sec" id="helpFaqSec">
+                            <h3 class="help-sec-head">{t(L, 'layout.help.faq_titulo')}</h3>
+                            <div class="help-group help-faq" id="helpFaq"></div>
+                        </section>
+                        <div class="help-empty" id="helpEmpty" hidden>
+                            <p>{t(L, 'layout.help.sin_resultados')}</p>
+                            <button type="button" class="help-empty-ai" id="helpEmptyAi">{t(L, 'layout.help.preguntar_ia')}</button>
                         </div>
-                        <div class="help-ai-content">
-                            <button type="button" class="help-ai-back" id="helpAiBack" aria-label={t(L, 'layout.help.volver_menu')} onclick="window.closeCordAi && window.closeCordAi(event)">
-                                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
-                                {t(L, 'layout.help.atras')}
-                            </button>
-                            <span class="help-ai-badge">
-                                <svg style="width:10px;height:10px;margin-right:2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
-                                {t(L, 'layout.help.ia_badge')}
+                    </div>
+                    <footer class="help-ai-dock">
+                        <button type="button" class="help-ai-card" id="helpAiOpen">
+                            <span class="help-ai-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>{t(L, 'layout.help.ia_badge')}</span>
+                            <span class="help-ai-card-title">{t(L, 'layout.help.ia_titulo')}</span>
+                            <span class="help-ai-card-sub">{t(L, 'layout.help.ia_sub')}</span>
+                            <span class="help-ai-fake-input">
+                                <span>{t(L, 'layout.help.ia_placeholder')}</span>
+                                <span class="help-ai-fake-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg></span>
                             </span>
-                            <p class="help-ai-title">{t(L, 'layout.help.ia_titulo')}</p>
-                            <div class="help-ai-chat" id="helpAiChat">
-                                <div class="chat-history" id="chatHistory">
-                                    <div class="chat-bubble bot">{RT.chatGreeting}</div>
-                                </div>
-                                <div class="chat-quick" id="chatQuick"></div>
-                                <div class="chat-input-row">
-                                    <input type="text" class="chat-real-input" id="chatRealInput" placeholder={t(L, 'layout.help.ia_placeholder')} autocomplete="off" onfocus="window.openCordAi && window.openCordAi()" onclick="window.openCordAi && window.openCordAi()" ontouchstart="window.openCordAi && window.openCordAi()">
-                                    <button type="button" class="chat-send" id="chatSendBtn" aria-label={t(L, 'layout.help.enviar_mensaje')}>
-                                        <svg style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+                        </button>
+                    </footer>
+                </div>
+
+                <section class="help-chat" id="helpChat" hidden aria-labelledby="helpChatTitle">
+                    <header class="help-chat-head">
+                        <button type="button" class="help-chat-back" id="helpAiBack" aria-label={t(L, 'layout.help.volver_menu')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-left')}></svg>
+                            <span>{t(L, 'layout.help.atras')}</span>
+                        </button>
+                        <span class="help-chat-title" id="helpChatTitle">
+                            <span class="help-chat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg></span>
+                            {t(L, 'layout.help.ia_titulo')}
+                        </span>
+                        <button class="help-x" data-help-close type="button" aria-label={t(L, 'layout.help.cerrar')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                        </button>
+                    </header>
+                    {/* Vacío a propósito: el saludo lo pinta addMsg() en initHelp, el
+                        mismo constructor que el resto de los mensajes (regla 20). */}
+                    <div class="chat-history" id="chatHistory" role="log" aria-live="polite"></div>
+                    <div class="chat-quick" id="chatQuick"></div>
+                    <form class="chat-input-row" id="chatForm">
+                        <input type="text" class="chat-real-input" id="chatRealInput" placeholder={t(L, 'layout.help.ia_placeholder')} aria-label={t(L, 'layout.help.ia_placeholder')} autocomplete="off" enterkeyhint="send" />
+                        <button type="submit" class="chat-send" id="chatSendBtn" aria-label={t(L, 'layout.help.enviar_mensaje')} disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
+                        </button>
+                    </form>
+                </section>
             </aside>
         </div>
 
@@ -1168,7 +1178,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     @media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
 
     /* ════════ Overlay de atajos de teclado ════════ */
-    .kbd-help { position: fixed; inset: 0; z-index: 700; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .kbd-help { position: fixed; inset: 0; z-index: 870; display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .kbd-help[hidden] { display: none; }
     .kbd-help-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.35); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: cmdk-fade 0.2s ease; }
     .kbd-help-panel { position: relative; width: min(440px, 100%); background: var(--surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 40px 100px -24px rgba(10,25,47,0.5); overflow: hidden; animation: cmdk-pop 0.22s var(--ease-spring); }
@@ -1181,265 +1191,309 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     .kbd-row > span:last-child { display: inline-flex; gap: 4px; align-items: center; color: var(--color-text-muted); }
 
     /* ════════ Drawer de Ayuda ════════ */
-    .help-drawer { position: fixed; inset: 0; z-index: 710; }
+    /* z-index por ENCIMA del Workbench (820) y del widget de onboarding (850):
+       los dos viven abajo a la derecha y tapaban el pie del panel. Debajo de los
+       toasts (900), que deben seguir viéndose. */
+    .help-drawer { position: fixed; inset: 0; z-index: 870; }
     .help-drawer[hidden] { display: none; }
-    .help-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.15); animation: cmdk-fade 0.25s ease; }
-    
+    .help-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.18); animation: help-fade 0.3s var(--ease-ios); }
+    @keyframes help-fade { from { opacity: 0; } }
+
+    /* Hoja flotante, el mismo lenguaje que el sidebar y la topbar: separada del
+       borde, radio amplio y sombra compuesta. Superficie SÓLIDA (#f5f5f7, regla 4):
+       el vidrio translúcido de antes dejaba ver la app detrás del texto. */
     .help-panel {
-        position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%);
+        --help-surface: #f5f5f7;
+        --help-card: #ffffff;
+        --help-line: rgba(10,25,47,0.08);
+        --help-fill: rgba(118,118,128,0.12);
+        position: absolute; top: 12px; right: 12px; bottom: 12px;
+        width: min(420px, calc(100vw - 24px));
         display: flex; flex-direction: column; overflow: hidden;
-        /* Subido de 0.85 a 0.97 (ago 2026): a 0.85 se transparentaba el
-           contenido de la app detrás del texto del drawer — se veía sucio/
-           difícil de leer. Se conserva blur+saturate para el efecto vidrio. */
-        background: rgba(242,242,247, 0.97);
-        backdrop-filter: blur(45px) saturate(190%);
-        -webkit-backdrop-filter: blur(45px) saturate(190%);
-        box-shadow: -10px 0 60px -10px rgba(0,0,0,0.12), inset 1px 0 0 0 rgba(255,255,255,0.5);
-        border: none;
-        border-top-left-radius: 20px;
-        border-bottom-left-radius: 20px;
-        animation: help-slide 0.36s var(--ease-spring);
+        background: var(--help-surface);
+        border-radius: 24px;
+        box-shadow:
+            0 40px 90px -30px rgba(10,25,47,0.45),
+            0 12px 30px -12px rgba(10,25,47,0.22),
+            inset 0 0 0 1px rgba(255,255,255,0.7);
+        color: var(--color-text);
+        animation: help-in 0.5s var(--ease-spring);
     }
     html[data-theme="dark"] .help-panel {
-        background: rgba(28,28,30, 0.97);
-        box-shadow: -10px 0 60px -10px rgba(0,0,0,0.6), inset 1px 0 0 0 rgba(255,255,255,0.1);
+        --help-surface: #1c1c1e;
+        --help-card: #2a2a2d;
+        --help-line: rgba(255,255,255,0.08);
+        --help-fill: rgba(118,118,128,0.24);
+        box-shadow: 0 40px 90px -30px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08);
     }
-    /* Al activar el chat con IA: el panel crece y pasa a superficie blanca sólida
-       (antes se quedaba con el fondo gris translúcido + el shader invertido, se
-       veía lavado/gris — ver fix de .help-ai-bg más abajo). */
-    .help-panel.ai-active { width: min(560px, 96vw); background: #ffffff; }
-    html[data-theme="dark"] .help-panel.ai-active { background: #14161c; }
-    @media (max-width: 620px) { .help-panel.ai-active { width: 100%; } }
-    @keyframes help-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    @media (prefers-reduced-motion: reduce) { .help-panel, .help-backdrop { animation: none; } }
-    @media (max-width: 560px) { .help-panel { width: 100%; border-radius: 0; } }
+    /* En el chat el panel crece: una conversación necesita ancho de lectura. */
+    .help-panel.ai-active { width: min(520px, calc(100vw - 24px)); --help-surface: #ffffff; }
+    html[data-theme="dark"] .help-panel.ai-active { --help-surface: #161618; }
 
-    .help-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 14px; flex-shrink: 0; overflow: hidden; transition: all 0.4s var(--ease-spring); }
-    .help-panel.ai-active .help-head { opacity: 0; transform: translateY(-10px) scale(0.98); pointer-events: none; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; border: none; }
-    .help-head strong { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
-    .help-x { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; background: rgba(118, 118, 128, 0.12); border-radius: 50%; color: var(--color-text-muted); cursor: pointer; transition: transform 0.2s var(--ease-spring), background 0.2s ease, color 0.2s ease; }
-    html[data-theme="dark"] .help-x { background: rgba(118, 118, 128, 0.24); color: rgba(255,255,255,0.8); }
+    @keyframes help-in { from { transform: translateX(calc(100% + 24px)); } }
+    @keyframes help-out { to { transform: translateX(calc(100% + 24px)); } }
+    @keyframes help-fade-out { to { opacity: 0; } }
+    .help-drawer.is-closing .help-panel { animation: help-out 0.32s cubic-bezier(0.4, 0, 1, 1) forwards; }
+    .help-drawer.is-closing .help-backdrop { animation: help-fade-out 0.32s ease forwards; }
+    @media (prefers-reduced-motion: reduce) {
+        .help-panel, .help-backdrop, .help-drawer.is-closing .help-panel, .help-drawer.is-closing .help-backdrop { animation: none; }
+    }
+
+    /* ── Vista INICIO ── */
+    .help-home { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .help-home[hidden] { display: none; }
+    .help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 22px 14px; flex-shrink: 0; }
+    .help-title { margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: #050505; }
+    html[data-theme="dark"] .help-title { color: #f5f5f7; }
+    .help-x {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border: none; border-radius: 50%;
+        background: var(--help-fill); color: var(--color-text-muted); cursor: pointer;
+        transition: transform 0.2s var(--ease-spring), background 0.2s ease, color 0.2s ease;
+    }
     .help-x svg { width: 14px; height: 14px; }
-    .help-x:hover { background: rgba(118, 118, 128, 0.2); color: var(--color-text); }
-    html[data-theme="dark"] .help-x:hover { background: rgba(118, 118, 128, 0.35); }
+    .help-x:hover { background: rgba(118,118,128,0.2); color: var(--color-text); }
     .help-x:active { transform: scale(0.9); }
+    .help-x:focus-visible, .help-chat-back:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; }
 
-    .help-search-wrap { padding: 4px 20px 16px; flex-shrink: 0; }
-    .help-search { 
-        display: flex; align-items: center; gap: 10px; padding: 12px 16px; 
-        border-radius: 14px; background: rgba(118, 118, 128, 0.12); 
-        transition: background 0.25s, box-shadow 0.25s;
+    .help-search-wrap { padding: 0 22px 16px; flex-shrink: 0; }
+    .help-search {
+        display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px;
+        border-radius: 14px; background: var(--help-card); cursor: text;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px var(--help-line);
+        transition: box-shadow 0.2s ease;
     }
-    html[data-theme="dark"] .help-search { background: rgba(118, 118, 128, 0.24); }
-    .help-search:focus-within { background: rgba(118, 118, 128, 0.16); box-shadow: 0 0 0 2px rgba(10,25,47,0.1); }
-    html[data-theme="dark"] .help-search:focus-within { background: rgba(118, 118, 128, 0.32); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+    .help-search:focus-within { box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px rgba(10,25,47,0.15), 0 0 0 4px rgba(10,25,47,0.06); }
+    html[data-theme="dark"] .help-search:focus-within { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 0 0 4px rgba(255,255,255,0.06); }
     .help-search svg { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
-    .help-search input { flex: 1; border: none; background: none; outline: none; font-family: var(--font-sans); font-size: 1.05rem; color: var(--color-text); }
-    .help-search input::placeholder { color: var(--color-text-muted); font-size: 1.05rem; }
+    .help-search input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-text); }
+    .help-search input::placeholder { color: var(--color-text-muted); }
+    .help-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 
-    .help-body { 
-        flex: 1 1 0; overflow-y: auto; padding: 4px 20px 0; 
-        display: flex; flex-direction: column; gap: 24px; min-height: 0; 
-        -webkit-overflow-scrolling: touch;
+    .help-body {
+        flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        padding: 2px 22px 22px;
+        display: flex; flex-direction: column; gap: 22px;
+        scrollbar-width: none;
+        /* El FAQ se desvanece al pasar bajo la tarjeta de Cord AI en vez de cortarse. */
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
     }
-    .help-body::after { content: ''; display: block; height: 24px; flex-shrink: 0; }
     .help-body::-webkit-scrollbar { display: none; }
-    .help-body { scrollbar-width: none; }
+    /* Sin esto los grupos (overflow:hidden → min-height 0) se ENCOGEN dentro del
+       cuerpo con scroll y la última fila queda recortada en vez de desplazarse. */
+    .help-body > * { flex-shrink: 0; }
 
-    .help-inset-group { 
-        background: var(--surface);
-        border-radius: 12px; overflow: hidden;
-        border: none;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.04);
+    /* Grupos tipo Ajustes de iOS: una sola tarjeta con divisores hairline, no tres
+       cajas sueltas (regla 3). */
+    .help-grid, .help-group {
         display: flex; flex-direction: column;
+        background: var(--help-card); border-radius: 16px; overflow: hidden;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.04), inset 0 0 0 1px var(--help-line);
     }
-    html[data-theme="dark"] .help-inset-group { background: rgba(28,28,30, 0.6); box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06); }
-
-    .help-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
-    .help-grid-btn {
-        display: flex; flex-direction: row; align-items: center; gap: 14px;
-        background: rgba(255,255,255, 0.6);
-        border: none; border-radius: 14px; padding: 12px 14px;
-        cursor: pointer; text-decoration: none; text-align: left;
-        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.01);
-        transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+    .help-grid-btn, .help-row {
+        position: relative;
+        display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box;
+        min-height: 52px; padding: 10px 14px;
+        border: none; background: transparent; cursor: pointer; text-decoration: none; text-align: left;
         color: var(--color-text); font-family: var(--font-sans); font-size: 0.92rem; font-weight: 500;
+        transition: background 0.15s ease;
     }
-    html[data-theme="dark"] .help-grid-btn { background: rgba(255,255,255, 0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
-    .help-grid-btn:hover { transform: scale(0.98); background: rgba(255,255,255, 0.9); }
-    html[data-theme="dark"] .help-grid-btn:hover { background: rgba(255,255,255, 0.08); }
-    .help-grid-btn:active { transform: scale(0.96); background: #fff; }
-    html[data-theme="dark"] .help-grid-btn:active { background: rgba(255,255,255,0.1); }
-    
+    .help-grid-btn + .help-grid-btn::before, .help-row + .help-row::before {
+        content: ''; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: var(--help-line);
+    }
+    .help-row + .help-row::before { left: 14px; }
+    .help-grid-btn:hover, .help-row:hover { background: rgba(10,25,47,0.035); }
+    html[data-theme="dark"] .help-grid-btn:hover, html[data-theme="dark"] .help-row:hover { background: rgba(255,255,255,0.05); }
+    .help-grid-btn:active, .help-row:active { background: rgba(10,25,47,0.07); }
+    .help-grid-btn:focus-visible, .help-row:focus-visible, .faq-q:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(10,25,47,0.25); }
     .help-grid-ico {
-        display: flex; align-items: center; justify-content: center;
-        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        background: var(--color-bg-soft); color: var(--color-text-muted);
-        box-shadow: inset 0 0 0 1px var(--color-border); transition: color 0.2s;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 9px;
+        background: var(--color-bg-soft); color: var(--color-text);
+        box-shadow: inset 0 0 0 1px var(--help-line);
     }
-    html[data-theme="dark"] .help-grid-ico {
-        background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-    }
-    .help-grid-btn:hover .help-grid-ico { color: var(--color-text); }
-    .help-grid-ico svg { width: 18px; height: 18px; }
+    html[data-theme="dark"] .help-grid-ico { background: rgba(255,255,255,0.06); }
+    .help-grid-ico svg { width: 17px; height: 17px; }
+    .help-grid-chev { margin-left: auto; width: 15px; height: 15px; color: var(--color-text-muted); opacity: 0.5; flex-shrink: 0; transition: transform 0.25s var(--ease-spring), opacity 0.2s; }
+    .help-grid-btn:hover .help-grid-chev, .help-row:hover .help-grid-chev { opacity: 0.9; transform: translateX(2px); }
+    .help-grid[hidden], .help-sec[hidden] { display: none; }
+    /* Atajos de teclado no existen en táctil (regla 16). */
+    @media (max-width: 880px) { .help-desk-only { display: none; } .help-grid-btn.help-desk-only + .help-grid-btn::before { display: none; } }
 
-    .help-grid-chev { margin-left: auto; width: 16px; height: 16px; color: var(--color-text-muted); opacity: 0.4; transition: opacity 0.2s, transform 0.2s var(--ease-spring); flex-shrink: 0; }
-    .help-grid-btn:hover .help-grid-chev { opacity: 0.8; transform: translateX(2px); }
+    .help-row-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .help-row-txt b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .help-row-txt i { font-style: normal; font-size: 0.76rem; color: var(--color-text-muted); }
 
-    .help-faq-head { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: var(--color-text-muted); margin: 0 16px -14px; }
-    
-    .help-faq { display: flex; flex-direction: column; gap: 0; margin-bottom: -10px; }
+    .help-sec { display: flex; flex-direction: column; gap: 8px; }
+    .help-sec-head { margin: 0 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+
     .faq-item { position: relative; }
     .faq-item[hidden] { display: none; }
-    .faq-item::after {
-        content: ''; position: absolute; bottom: 0; left: 16px; right: 0; height: 0.5px;
-        background: rgba(0,0,0,0.1);
+    .faq-item + .faq-item::before { content: ''; position: absolute; top: 0; left: 14px; right: 0; height: 1px; background: var(--help-line); }
+    .faq-q {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+        min-height: 50px; padding: 12px 14px; border: none; background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.92rem; font-weight: 500; line-height: 1.35; color: var(--color-text); text-align: left;
+        transition: background 0.15s ease;
     }
-    html[data-theme="dark"] .faq-item::after { background: rgba(255,255,255,0.1); }
-    .faq-item:last-child::after { display: none; }
-    
-    .faq-q { 
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; 
-        padding: 14px 16px; border: none; background: transparent; cursor: pointer; 
-        font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500; color: var(--color-text); text-align: left; 
+    .faq-q:hover { background: rgba(10,25,47,0.035); }
+    html[data-theme="dark"] .faq-q:hover { background: rgba(255,255,255,0.05); }
+    .faq-q .faq-chev { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); opacity: 0.7; transition: transform 0.4s var(--ease-spring); }
+    .faq-item.open .faq-chev { transform: rotate(180deg); }
+    .faq-a { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.35s var(--ease-spring), opacity 0.2s ease; }
+    .faq-item.open .faq-a { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.4s var(--ease-spring), opacity 0.35s ease 0.05s; }
+    .faq-a > div { overflow: hidden; }
+    .faq-a p { margin: 0; padding: 0 14px 14px; font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    .help-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1.6rem 1rem; text-align: center; }
+    .help-empty[hidden] { display: none; }
+    .help-empty p { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+    .help-empty-ai {
+        border: none; border-radius: 999px; padding: 9px 16px; cursor: pointer;
+        background: #0a192f; color: #fff; font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
+        transition: transform 0.2s var(--ease-spring);
+    }
+    .help-empty-ai:hover { transform: scale(1.03); }
+    .help-empty-ai:active { transform: scale(0.97); }
+
+    /* ── Tarjeta de Cord AI (pie de la vista inicio) ──
+       Navy de Cord con dos luces estáticas en CSS. Antes había un shader WebGL
+       (CordDynamicBg) montado como isla de React en TODAS las páginas de la app
+       solo para pintar este fondo. */
+    .help-ai-dock { flex-shrink: 0; padding: 0 22px 22px; }
+    .help-ai-card {
+        position: relative; isolation: isolate; overflow: hidden;
+        display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%;
+        padding: 16px 16px 14px; border: none; border-radius: 20px; cursor: pointer; text-align: left;
+        font-family: var(--font-sans); color: #fff;
+        background:
+            radial-gradient(120% 140% at 100% 0%, rgba(47,109,240,0.38) 0%, rgba(47,109,240,0) 55%),
+            radial-gradient(90% 120% at 0% 100%, rgba(13,148,136,0.28) 0%, rgba(13,148,136,0) 60%),
+            #0a1324;
+        box-shadow: 0 18px 40px -18px rgba(10,25,47,0.7), inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring);
+    }
+    .help-ai-card:hover { transform: translateY(-2px); box-shadow: 0 24px 50px -18px rgba(10,25,47,0.75), inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .help-ai-card:active { transform: scale(0.985); }
+    .help-ai-card:focus-visible { outline: 2px solid #6b9bf2; outline-offset: 3px; }
+    .help-ai-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9cbcf5; }
+    .help-ai-badge svg { width: 12px; height: 12px; }
+    .help-ai-card-title { margin-top: 4px; font-size: 1.02rem; font-weight: 650; letter-spacing: -0.02em; }
+    .help-ai-card-sub { font-size: 0.8rem; line-height: 1.4; color: rgba(255,255,255,0.62); }
+    .help-ai-fake-input {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+        margin-top: 10px; padding: 0 6px 0 14px; height: 42px; border-radius: 999px;
+        background: rgba(255,255,255,0.07); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+        font-size: 0.86rem; color: rgba(255,255,255,0.55);
+        transition: background 0.2s ease;
+    }
+    .help-ai-fake-input > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .help-ai-card:hover .help-ai-fake-input { background: rgba(255,255,255,0.1); }
+    .help-ai-fake-send {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #0a1324;
+    }
+    .help-ai-fake-send svg { width: 15px; height: 15px; }
+
+    /* ── Vista CHAT ── */
+    .help-chat { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .help-chat[hidden] { display: none; }
+    .help-chat-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 14px 14px 12px 10px; flex-shrink: 0; border-bottom: 1px solid var(--help-line); }
+    .help-chat-head .help-x { justify-self: end; }
+    .help-chat-back {
+        justify-self: start; display: inline-flex; align-items: center; gap: 4px;
+        height: 32px; padding: 0 10px 0 6px; border: none; border-radius: 999px; background: none; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted);
         transition: background 0.15s ease, color 0.15s ease;
     }
-    .faq-q:active { background: rgba(10,25,47,0.06); }
-    html[data-theme="dark"] .faq-q:active { background: rgba(255,255,255,0.08); }
-    
-    .faq-item.open .faq-q { color: var(--color-text); }
-    .faq-q .faq-chev { width: 16px; height: 16px; flex-shrink: 0; color: #99a2af; transition: transform 0.4s var(--ease-spring); }
-    .faq-item.open .faq-chev { transform: rotate(180deg); }
-    
-    .faq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s cubic-bezier(0.2, 1, 0.3, 1); opacity: 0; }
-    .faq-item.open .faq-a { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.5s ease; }
-    .faq-a > div { overflow: hidden; }
-    .faq-a p { padding: 0 16px 16px; margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--color-text-muted); transform: translateY(-4px); transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1); }
-    .faq-item.open .faq-a p { transform: translateY(0); }
-
-    .help-empty { padding: 2rem 1rem; text-align: center; font-size: 0.95rem; color: var(--color-text-muted); }
-    .help-empty[hidden] { display: none; }
-
-    /* -- AI TRANSITION -- */
-    .help-panel { transition: width 0.35s var(--ease-spring); }
-    
-    .help-regular { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-height: 1000px; overflow: hidden; transition: opacity 0.3s ease, transform 0.4s var(--ease-spring), flex 0.4s var(--ease-spring), max-height 0.4s var(--ease-spring), padding 0.4s var(--ease-spring), margin 0.4s var(--ease-spring); }
-    .help-panel.ai-active .help-regular { opacity: 0; transform: translateY(-10px) scale(0.98); pointer-events: none; flex: 0 0 0px; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
-    
-    .help-ai { padding: 20px; flex-shrink: 0; background: transparent; transition: all 0.4s var(--ease-spring); display: flex; flex-direction: column; }
-    .help-panel.ai-active .help-ai { padding: 20px; flex: 1 1 0; }
-    
-    .help-ai-box { 
-        position: relative; border-radius: 16px; padding: 18px; 
-        background: #020610;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
-        overflow: hidden;
-        transition: all 0.4s var(--ease-spring);
-        display: flex; flex-direction: column;
+    .help-chat-back svg { width: 16px; height: 16px; }
+    .help-chat-back:hover { background: var(--help-fill); color: var(--color-text); }
+    .help-chat-title { display: inline-flex; align-items: center; gap: 8px; font-size: 0.92rem; font-weight: 650; letter-spacing: -0.01em; }
+    .help-chat-ico {
+        display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px;
+        background: radial-gradient(120% 120% at 100% 0%, rgba(47,109,240,0.55), rgba(47,109,240,0) 60%), #0a1324; color: #cfe0ff;
     }
-    html[data-theme="dark"] .help-ai-box { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05); }
+    .help-chat-ico svg { width: 14px; height: 14px; }
 
-    .help-panel.ai-active .help-ai-box {
-        border-radius: 0; border: none; box-shadow: none; background: transparent;
-        flex: 1 1 0; padding: 0;
+    .chat-history {
+        flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 8px;
+        scrollbar-width: none;
     }
-    html[data-theme="dark"] .help-panel.ai-active .help-ai-box { background: transparent; box-shadow: none; }
-
-    .help-ai-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.2, 1, 0.3, 1); transform-origin: top center; }
-    /* Al expandir el chat el shader se desvanece por completo — deja la superficie
-       blanca sólida del panel (.help-panel.ai-active), nada de invertir/desaturar. */
-    .help-panel.ai-active .help-ai-bg { opacity: 0; }
-    
-    .help-ai-content { position: relative; z-index: 1; flex: 1 1 0; display: flex; flex-direction: column; transition: transform 0.4s var(--ease-spring); }
-    
-    .help-ai-back { display: none; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; transition: color 0.2s; }
-    .help-ai-back:hover { color: var(--color-text); }
-    .help-panel.ai-active .help-ai-back { display: inline-flex; }
-
-    .help-ai-badge, .help-ai-title { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); overflow: hidden; max-height: 40px; margin-bottom: 12px; }
-    .help-panel.ai-active .help-ai-badge, .help-panel.ai-active .help-ai-title { opacity: 0; transform: translateY(-10px); max-height: 0; margin-bottom: 0; pointer-events: none; }
-    
-    .help-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(148, 187, 233, 0.9); margin-bottom: 12px; }
-    .help-ai-title { margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; color: #ffffff; letter-spacing: -0.2px; }
-    
-    
-    
-    .help-panel:not(.ai-active) .help-ai-chat { display: flex; flex-direction: column; }
-    .help-panel.ai-active .help-ai-chat { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
-    .help-panel.ai-active .help-ai-chat { display: flex; animation: help-fadein 0.4s 0.1s both; }
-    @keyframes help-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .chat-history { flex: 1 1 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
-    .help-panel:not(.ai-active) .chat-history { display: none; }
     .chat-history::-webkit-scrollbar { display: none; }
-    .chat-history { scrollbar-width: none; }
-
-    /* Preguntas rápidas prefabricadas (estilo Stripe): respuesta instantánea sin
-       llamar a la IA — ahorra tokens en las dudas más comunes. */
-    .chat-quick { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 14px; flex-shrink: 0; transition: opacity 0.25s ease, max-height 0.3s ease; }
-    .help-panel:not(.ai-active) .chat-quick { display: none; }
-    .chat-quick[hidden] { display: none; }
-    .chat-quick-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); margin: 0 2px 2px; }
-    .chat-quick-btn {
-        display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        text-align: left; width: 100%; padding: 11px 14px; border-radius: 14px;
-        border: none; background: rgba(118, 118, 128, 0.1); color: var(--color-text);
-        font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500; line-height: 1.35;
-        cursor: pointer; transition: background 0.2s ease, transform 0.2s var(--ease-spring);
+    /* Regla 20: toda burbuja lleva su autor — dos mensajes seguidos del mismo lado
+       no se distinguen por posición ni color. Un solo constructor (addMsg). */
+    .chat-msg { display: flex; flex-direction: column; gap: 4px; max-width: 86%; animation: chat-in 0.35s var(--ease-spring); }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+    @keyframes chat-in { from { opacity: 0; transform: translateY(6px); } }
+    .chat-author { font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); padding: 0 4px; }
+    .chat-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.5; font-family: var(--font-sans); overflow-wrap: anywhere; }
+    .chat-msg.bot .chat-bubble { background: var(--help-fill); color: var(--color-text); border-top-left-radius: 6px; }
+    .chat-msg.user .chat-bubble { background: #0a192f; color: #fff; border-top-right-radius: 6px; }
+    html[data-theme="dark"] .chat-msg.user .chat-bubble { background: #e8eef8; color: #0a192f; }
+    .chat-links { display: flex; flex-direction: column; margin-top: 8px; border-top: 1px solid var(--help-line); }
+    .chat-links a {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 0 0; font-size: 0.84rem; font-weight: 600; color: var(--color-text); text-decoration: none;
     }
-    .chat-quick-btn:hover { background: rgba(118, 118, 128, 0.18); transform: translateY(-1px); }
-    .chat-quick-btn:active { transform: scale(0.98); }
-    html[data-theme="dark"] .chat-quick-btn { background: rgba(255,255,255,0.06); }
-    html[data-theme="dark"] .chat-quick-btn:hover { background: rgba(255,255,255,0.1); }
-    .chat-quick-btn svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--color-text-muted); opacity: 0.6; }
-    
-    .chat-bubble { padding: 12px 16px; border-radius: 14px; font-size: 0.92rem; line-height: 1.5; max-width: 85%; font-family: var(--font-sans); }
-    .chat-bubble.bot { background: rgba(118, 118, 128, 0.12); color: var(--color-text); align-self: flex-start; border-bottom-left-radius: 4px; }
-    html[data-theme="dark"] .chat-bubble.bot { background: rgba(118, 118, 128, 0.24); }
-    
-    .chat-bubble.user { background: var(--color-text); color: var(--color-bg); align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(10,25,47,0.15); }
-    html[data-theme="dark"] .chat-bubble.user { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-
+    .chat-links a + a { padding-top: 6px; }
+    .chat-links a:hover { text-decoration: underline; }
+    .chat-links svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; }
     .typing-dots { display: inline-flex; gap: 4px; padding: 4px 2px; align-items: center; }
-    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--color-text-muted); animation: help-typing 1.4s infinite both; }
-    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-muted); animation: help-typing 1.4s infinite both; }
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes help-typing { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
-    
-    .help-panel:not(.ai-active) .help-ai-box { cursor: pointer; transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }
-    .help-panel:not(.ai-active) .help-ai-box:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.4); }
-    .help-panel:not(.ai-active) .help-ai-input { cursor: pointer; }
-    
-    .chat-input-row { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
-        .help-panel:not(.ai-active) .chat-real-input {
-        font-size: 0.95rem; color: rgba(255,255,255,1); background: rgba(255,255,255,0.06); 
-        border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 14px; 
-        cursor: text; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
-        transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); outline: none; flex: 1; width: 100%; font-family: var(--font-sans);
-    }
-    .help-panel:not(.ai-active) .chat-real-input::placeholder { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
-    html[data-theme="dark"] .help-panel:not(.ai-active) .chat-real-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.05); }
+    @media (prefers-reduced-motion: reduce) { .chat-msg { animation: none; } .typing-dots span { animation: none; } }
 
-    .help-panel.ai-active .chat-real-input {
-        flex: 1; width: 100%; padding: 12px 16px; border-radius: 20px; border: none; 
-        background: rgba(118, 118, 128, 0.12); font-family: var(--font-sans); 
-        font-size: 0.95rem; color: var(--color-text); outline: none; 
-        transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); box-shadow: none;
+    /* Preguntas sugeridas: respuesta instantánea desde el FAQ. */
+    .chat-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 18px 12px; flex-shrink: 0; }
+    .chat-quick[hidden] { display: none; }
+    .chat-quick-btn {
+        border: none; border-radius: 999px; padding: 8px 13px; cursor: pointer; text-align: left;
+        background: var(--help-card); color: var(--color-text);
+        box-shadow: inset 0 0 0 1px var(--help-line);
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; line-height: 1.3;
+        transition: background 0.15s ease, transform 0.2s var(--ease-spring);
     }
-    html[data-theme="dark"] .help-panel.ai-active .chat-real-input { background: rgba(118, 118, 128, 0.24); }
-    .help-panel.ai-active .chat-real-input:focus { background: rgba(118, 118, 128, 0.16); box-shadow: 0 0 0 2px rgba(10,25,47,0.1); }
-    html[data-theme="dark"] .help-panel.ai-active .chat-real-input:focus { background: rgba(118, 118, 128, 0.32); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
-    .help-panel.ai-active .chat-real-input::placeholder { color: var(--color-text-muted); font-size: 0.95rem; }
-    
-    .help-panel:not(.ai-active) .chat-send { display: none; }
-    .chat-send { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-text); color: var(--color-bg); border: none; cursor: pointer; flex-shrink: 0; transition: transform 0.2s var(--ease-spring), opacity 0.2s; opacity: 0.5; }
-    .chat-send.active { opacity: 1; }
-    .chat-send:active { transform: scale(0.9); }
+    .help-panel.ai-active .chat-quick-btn { background: #f5f5f7; box-shadow: none; }
+    html[data-theme="dark"] .help-panel.ai-active .chat-quick-btn { background: rgba(255,255,255,0.07); }
+    .chat-quick-btn:hover { background: #ececf0; }
+    html[data-theme="dark"] .help-panel.ai-active .chat-quick-btn:hover { background: rgba(255,255,255,0.12); }
+    .chat-quick-btn:active { transform: scale(0.97); }
 
-    @media (max-width: 560px) { .help-panel { width: 100%; } }
+    .chat-input-row { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px 14px; flex-shrink: 0; border-top: 1px solid var(--help-line); }
+    .chat-real-input {
+        flex: 1; min-width: 0; height: 44px; padding: 0 16px; border: none; border-radius: 999px;
+        background: #f5f5f7; font-family: var(--font-sans); font-size: 0.92rem; color: var(--color-text); outline: none;
+        transition: box-shadow 0.2s ease, background 0.2s ease;
+    }
+    html[data-theme="dark"] .chat-real-input { background: rgba(255,255,255,0.07); }
+    .chat-real-input:focus { box-shadow: 0 0 0 1px rgba(10,25,47,0.15), 0 0 0 4px rgba(10,25,47,0.06); background: #fff; }
+    html[data-theme="dark"] .chat-real-input:focus { background: rgba(255,255,255,0.1); box-shadow: 0 0 0 1px rgba(255,255,255,0.2); }
+    .chat-real-input::placeholder { color: var(--color-text-muted); }
+    .chat-send {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+        background: #0a192f; color: #fff;
+        transition: transform 0.2s var(--ease-spring), opacity 0.2s ease;
+    }
+    html[data-theme="dark"] .chat-send { background: #e8eef8; color: #0a192f; }
+    .chat-send svg { width: 17px; height: 17px; }
+    .chat-send:disabled { opacity: 0.3; cursor: default; }
+    .chat-send:not(:disabled):hover { transform: scale(1.06); }
+    .chat-send:not(:disabled):active { transform: scale(0.92); }
+
+    /* ── Transición inicio ⇄ chat ──
+       El chat se monta ENCIMA de la vista inicio (que sigue visible debajo) y se
+       revela con un clip-path que parte de la caja exacta de la tarjeta de Cord AI
+       hasta cubrir el panel, mientras el panel anima su ancho: la tarjeta "se abre"
+       y se convierte en el chat. Sin capturas ni escalados, el texto nunca se
+       estira. La coreografía vive en morph() (initHelp); aquí solo el andamiaje. */
+    .help-chat.is-morphing { position: absolute; inset: 0; z-index: 3; will-change: clip-path; }
+    .help-home.is-pinned { position: absolute; top: 0; right: 0; bottom: 0; }
 
     /* ──────────────────────────────────────────────────────────────
        PULIDO MÓVIL GLOBAL (is:global → alcanza inputs de las páginas hijas)
@@ -2137,18 +2191,6 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
     // ── Utilidades Globales ──
 
-    // Helpers para IA Chat
-    window.openCordAi = function(e) {
-        const panel = document.querySelector('#helpDrawer .help-panel');
-        if (!panel || panel.classList.contains('ai-active')) return;
-        panel.classList.add('ai-active');
-    };
-    window.closeCordAi = function(e) {
-        if (e) e.stopPropagation();
-        const panel = document.querySelector('#helpDrawer .help-panel');
-        if (panel) panel.classList.remove('ai-active');
-    };
-
     function initNotifs() {
         const btn = document.getElementById('notifBtn');
         const panel = document.getElementById('notifPanel');
@@ -2244,178 +2286,393 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     }
 
     // ── Drawer de Ayuda (icono ? de la topbar) ──
+    // Dos vistas en el mismo panel (inicio y chat). El chat NO es un modelo: responde
+    // desde el FAQ y los artículos del Centro de ayuda, y cuando no encuentra nada lo
+    // dice y manda a soporte. Nunca ejecuta acciones ni lee datos de la cuenta.
     function initHelp() {
         const btn = document.getElementById('helpBtn');
-        const drawer = document.getElementById('helpDrawer');
-        const backdrop = document.getElementById('helpBackdrop');
-        const closeBtn = document.getElementById('helpClose');
+        const drawer = document.getElementById('helpDrawer') as HTMLElement | null;
+        const panel = document.getElementById('helpPanel') as HTMLElement | null;
+        const home = document.getElementById('helpHome') as HTMLElement | null;
+        const chat = document.getElementById('helpChat') as HTMLElement | null;
         const search = document.getElementById('helpSearch') as HTMLInputElement | null;
+        const grid = document.getElementById('helpGrid') as HTMLElement | null;
         const faqWrap = document.getElementById('helpFaq');
-        const empty = document.getElementById('helpEmpty');
-        if (!btn || !drawer || !faqWrap) return;
+        const faqSec = document.getElementById('helpFaqSec') as HTMLElement | null;
+        const artSec = document.getElementById('helpArticles') as HTMLElement | null;
+        const artList = document.getElementById('helpArticleList');
+        const empty = document.getElementById('helpEmpty') as HTMLElement | null;
+        const history = document.getElementById('chatHistory');
+        const quick = document.getElementById('chatQuick') as HTMLElement | null;
+        const form = document.getElementById('chatForm') as HTMLFormElement | null;
+        const input = document.getElementById('chatRealInput') as HTMLInputElement | null;
+        const send = document.getElementById('chatSendBtn') as HTMLButtonElement | null;
+        if (!btn || !drawer || !panel || !home || !chat || !faqWrap || !history || !form || !input || !send) return;
 
-        const FAQ = ((window as any).CORD_I18N?.faq) || [];
+        const I18N = (window as any).CORD_I18N || {};
+        const FAQ: { q: string; a: string }[] = I18N.faq || [];
+        const isEn = document.documentElement.lang === 'en';
+        const AI_NAME = chat.querySelector('#helpChatTitle')?.textContent?.trim() || 'Cord AI';
+        const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const esc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 
-        // Render del acordeón
-        faqWrap.innerHTML = FAQ.map((f: any, i: number) => `
-            <div class="faq-item" data-faq>
+        // ── Búsqueda: texto normalizado (sin acentos) y por palabras, no por frase ──
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const STOP = new Set(('como cómo que qué para por con los las del una uno unos unas mis mi tu sus hay puedo puede hago hacer the and for how can what does with your you this that are '
+            + 'de la el en y o a es se me lo le al un no si mas más ya').split(' ').map(norm));
+        const tokens = (s: string) => norm(s).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2 && !STOP.has(w));
+        // Puntaje = fracción de palabras de la consulta presentes (el título pesa doble).
+        const score = (q: string[], title: string, body: string) => {
+            if (!q.length) return 0;
+            const T = norm(title), B = norm(body);
+            let s = 0;
+            for (const w of q) s += T.includes(w) ? 2 : B.includes(w) ? 1 : 0;
+            return s / (q.length * 2);
+        };
+
+        // Artículos del Centro de ayuda: índice estático, cargado al abrir por primera vez.
+        type Art = { title: string; description: string; category: string; keywords?: string; url: string };
+        let arts: Art[] = [];
+        let artsReq: Promise<void> | null = null;
+        const loadArts = () => artsReq ??= fetch('/api/support-search.json')
+            .then((r) => (r.ok ? r.json() : []))
+            .then((list: any[]) => {
+                const lang = isEn ? 'en' : 'es';
+                arts = list.filter((a) => a.lang === lang && a.url)
+                    .map((a) => ({ title: a.title, description: a.description || '', category: a.category || '', keywords: a.keywords || '', url: a.url }));
+            })
+            .catch(() => { artsReq = null; });
+        const findArts = (q: string, min = 0.5, n = 4) => {
+            const tk = tokens(q);
+            return arts.map((a) => ({ a, s: score(tk, a.title, `${a.description} ${a.category} ${a.keywords}`) }))
+                .filter((x) => x.s >= min).sort((x, y) => y.s - x.s).slice(0, n).map((x) => x.a);
+        };
+
+        // ── FAQ (acordeón) ──
+        faqWrap.innerHTML = FAQ.map((f) => `
+            <div class="faq-item">
                 <button type="button" class="faq-q" aria-expanded="false">
-                    <span>${f.q}</span>
-                    ${iconSvg('chevron-down', 'faq-chev', 2.2)}
+                    <span>${esc(f.q)}</span>
+                    ${iconSvg('chevron-down', 'faq-chev', 2)}
                 </button>
-                <div class="faq-a"><div><p>${f.a}</p></div></div>
+                <div class="faq-a"><div><p>${esc(f.a)}</p></div></div>
             </div>`).join('');
-
-        faqWrap.querySelectorAll('.faq-q').forEach((q) => {
-            q.addEventListener('click', () => {
-                const item = q.closest('.faq-item') as HTMLElement;
-                const wasOpen = item.classList.contains('open');
-                faqWrap.querySelectorAll('.faq-item.open').forEach((el) => {
-                    el.classList.remove('open');
-                    el.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
-                });
-                if (!wasOpen) { 
-                    item.classList.add('open'); 
-                    q.setAttribute('aria-expanded', 'true'); 
-                    setTimeout(() => {
-                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }, 300);
-                }
+        faqWrap.addEventListener('click', (e) => {
+            const q = (e.target as HTMLElement).closest('.faq-q');
+            if (!q) return;
+            const item = q.closest('.faq-item') as HTMLElement;
+            const wasOpen = item.classList.contains('open');
+            faqWrap.querySelectorAll('.faq-item.open').forEach((el) => {
+                el.classList.remove('open');
+                el.querySelector('.faq-q')?.setAttribute('aria-expanded', 'false');
             });
+            if (wasOpen) return;
+            item.classList.add('open');
+            q.setAttribute('aria-expanded', 'true');
+            setTimeout(() => item.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'nearest' }), 280);
         });
 
-        // Buscador
-        search?.addEventListener('input', () => {
-            const term = search.value.trim().toLowerCase();
-            let visible = 0;
-            FAQ.forEach((f: any, i: number) => {
-                const item = faqWrap.children[i] as HTMLElement;
+        // ── Buscador: filtra el FAQ y propone artículos ──
+        const runSearch = () => {
+            const term = search?.value.trim() || '';
+            const searching = term.length > 0;
+            if (grid) grid.hidden = searching;
+            const tk = tokens(term);
+            let visibleFaq = 0;
+            FAQ.forEach((f, i) => {
+                const item = faqWrap.children[i] as HTMLElement | undefined;
                 if (!item) return;
-                const match = !term || (f.q + ' ' + f.a).toLowerCase().includes(term);
-                item.hidden = !match;
-                if (match) visible++;
+                const ok = !searching || norm(f.q + ' ' + f.a).includes(norm(term)) || (tk.length > 0 && score(tk, f.q, f.a) >= 0.5);
+                item.hidden = !ok;
+                if (ok) visibleFaq++;
             });
-            if (empty) (empty as HTMLElement).hidden = visible > 0;
-        });
-
-        const open = () => { (drawer as HTMLElement).hidden = false; btn.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; setTimeout(() => search?.focus(), 60); };
-        const close = () => {
-            (drawer as HTMLElement).hidden = true; btn.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
-            setTimeout(() => {
-                const p = drawer.querySelector('.help-panel');
-                if (p) p.classList.remove('ai-active');
-                resetChat();
-            }, 350);
+            if (faqSec) faqSec.hidden = visibleFaq === 0;
+            const found = searching && term.length > 1 ? findArts(term, 0.5, 5) : [];
+            if (artSec && artList) {
+                artSec.hidden = found.length === 0;
+                artList.innerHTML = found.map((a) => `
+                    <a class="help-row" href="${esc(a.url)}" target="_blank" rel="noopener">
+                        <span class="help-row-txt"><b>${esc(a.title)}</b><i>${esc(a.category)}</i></span>
+                        ${iconSvg('external', 'help-grid-chev')}
+                    </a>`).join('');
+            }
+            if (empty) empty.hidden = !searching || visibleFaq > 0 || found.length > 0;
         };
+        search?.addEventListener('input', () => { loadArts().then(runSearch); runSearch(); });
 
-        btn.addEventListener('click', () => { (drawer as HTMLElement).hidden ? open() : close(); });
-        closeBtn?.addEventListener('click', close);
-        backdrop?.addEventListener('click', close);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !(drawer as HTMLElement).hidden) close(); });
-
-        // AI Chat UI Logic
-        const aiChatInput = document.getElementById('chatRealInput');
-        const aiChatSend = document.getElementById('chatSendBtn');
-        const chatHistory = document.getElementById('chatHistory');
-        const chatQuick = document.getElementById('chatQuick');
-
-        aiChatInput?.addEventListener('input', () => {
-            if ((aiChatInput as HTMLInputElement).value.trim()) aiChatSend?.classList.add('active');
-            else aiChatSend?.classList.remove('active');
-        });
-
-        const appendUserMsg = (text: string) => {
-            if (!chatHistory) return;
-            const b = document.createElement('div');
-            b.className = 'chat-bubble user';
-            b.textContent = text;
-            chatHistory.appendChild(b);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        };
-
-        const appendBotMsg = (text: string) => {
-            if (!chatHistory) return;
-            const b = document.createElement('div');
-            b.className = 'chat-bubble bot';
-            chatHistory.appendChild(b);
+        // ── Chat ──
+        // Constructor ÚNICO de mensajes (regla 20: cada burbuja lleva su autor).
+        let typing: number | null = null;
+        const addMsg = (role: 'bot' | 'user', text: string, links: Art[] = [], animate = false) => {
+            const msg = document.createElement('div');
+            msg.className = `chat-msg ${role}`;
+            const who = document.createElement('span');
+            who.className = 'chat-author';
+            who.textContent = role === 'user' ? (I18N.chatYou || (isEn ? 'You' : 'Tú')) : AI_NAME;
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            const p = document.createElement('div');
+            bubble.appendChild(p);
+            msg.append(who, bubble);
+            history.appendChild(msg);
+            const addLinks = () => {
+                if (!links.length) return;
+                const box = document.createElement('div');
+                box.className = 'chat-links';
+                box.innerHTML = links.map((a) => `<a href="${esc(a.url)}" target="_blank" rel="noopener"><span>${esc(a.title)}</span>${iconSvg('external')}</a>`).join('');
+                bubble.appendChild(box);
+            };
+            const toBottom = () => { history.scrollTop = history.scrollHeight; };
+            if (!animate || reduced()) { p.textContent = text; addLinks(); toBottom(); return; }
+            // Escritura progresiva por palabras (no por letra: 3x más rápida y se
+            // lee mejor). Un mensaje nuevo cancela la escritura del anterior.
+            if (typing) clearInterval(typing);
+            const words = text.split(/(\s+)/);
             let i = 0;
-            const typeWriter = setInterval(() => {
-                b.textContent += text.charAt(i);
-                i++;
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-                if (i >= text.length) clearInterval(typeWriter);
-            }, 14);
+            typing = window.setInterval(() => {
+                p.textContent += words.slice(i, i + 2).join('');
+                i += 2;
+                toBottom();
+                if (i >= words.length) { clearInterval(typing!); typing = null; addLinks(); toBottom(); }
+            }, 28);
+        };
+        const showTyping = () => {
+            const msg = document.createElement('div');
+            msg.className = 'chat-msg bot';
+            msg.innerHTML = `<span class="chat-author">${esc(AI_NAME)}</span><div class="chat-bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>`;
+            history.appendChild(msg);
+            history.scrollTop = history.scrollHeight;
+            return msg;
         };
 
-        const hideQuick = () => { if (chatQuick) (chatQuick as HTMLElement).hidden = true; };
-
-        const CHAT_GREETING = (window as any).CORD_I18N?.chatGreeting || 'Hola, soy Cord AI. Estoy aquí para resolver tus dudas sobre cómo usar la plataforma — cotizaciones, cobranza, facturación y más. ¿En qué te ayudo?';
-        // El chat NO persiste entre sesiones ni acciones: es solo consulta/ayuda,
-        // no ejecuta nada dentro de la app. Se reinicia cada vez que se cierra el drawer.
-        const resetChat = () => {
-            if (chatHistory) chatHistory.innerHTML = `<div class="chat-bubble bot">${CHAT_GREETING}</div>`;
-            if (chatQuick) (chatQuick as HTMLElement).hidden = false;
-            if (aiChatInput) (aiChatInput as HTMLInputElement).value = '';
-            aiChatSend?.classList.remove('active');
+        const answer = (q: string): { text: string; links: Art[] } => {
+            const tk = tokens(q);
+            const best = FAQ.map((f) => ({ f, s: score(tk, f.q, f.a) })).sort((x, y) => y.s - x.s)[0];
+            // Con respuesta del FAQ, solo artículos MUY relevantes como "más sobre esto";
+            // sin ella, los artículos son la respuesta y basta una coincidencia media.
+            if (best && best.s >= 0.5) return { text: best.f.a, links: findArts(q, 0.75, 2) };
+            const links = findArts(q, 0.5, 3);
+            if (links.length) return { text: I18N.chatArticlesIntro || '', links };
+            return { text: I18N.chatNoMatch || '', links: [{ title: I18N.chatSupportLink || 'Soporte', url: isEn ? '/en/support' : '/soporte', description: '', category: '' }] };
         };
 
-        const sendAiMessage = () => {
-            const input = aiChatInput as HTMLInputElement;
-            const text = input.value.trim();
-            if (!text || !chatHistory) return;
-            hideQuick();
-            appendUserMsg(text);
-
+        let pending: number | null = null;
+        const ask = (text: string) => {
+            const q = text.trim();
+            if (!q) return;
+            if (quick) quick.hidden = true;
+            addMsg('user', q);
             input.value = '';
-            aiChatSend?.classList.remove('active');
-
-            // Mostrar estado "pensando..."
-            const thinkingB = document.createElement('div');
-            thinkingB.className = 'chat-bubble bot thinking';
-            thinkingB.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-            chatHistory.appendChild(thinkingB);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-
-            setTimeout(() => {
-                thinkingB.remove();
-                const reply = (window as any).CORD_I18N?.chatFallbackReply || "Buena pregunta. En este entorno de demostración Cord AI todavía no puede responder dudas específicas fuera de las preguntas frecuentes — pero es solo para resolver consultas, nunca ejecuta acciones dentro de tu cuenta. Si no encuentras tu respuesta arriba, escríbenos desde el Centro de ayuda.";
-                appendBotMsg(reply);
-            }, 1200);
+            send.disabled = true;
+            if (pending) clearTimeout(pending);
+            const dots = showTyping();
+            // La búsqueda es local; la pausa breve solo evita que la respuesta
+            // aparezca antes de que se lea la pregunta.
+            loadArts().then(() => {
+                pending = window.setTimeout(() => {
+                    dots.remove();
+                    const r = answer(q);
+                    addMsg('bot', r.text, r.links, true);
+                    pending = null;
+                }, reduced() ? 0 : 450);
+            });
         };
 
-        aiChatInput?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); }
-        });
-        aiChatSend?.addEventListener('click', sendAiMessage);
+        const resetChat = () => {
+            if (typing) { clearInterval(typing); typing = null; }
+            if (pending) { clearTimeout(pending); pending = null; }
+            history.innerHTML = '';
+            addMsg('bot', I18N.chatGreeting || '');
+            if (quick) quick.hidden = false;
+            input.value = '';
+            send.disabled = true;
+        };
 
-        // Preguntas rápidas prefabricadas (respuesta instantánea, sin llamar a la IA —
-        // reutiliza el mismo FAQ que alimenta el buscador de ayuda de arriba).
-        if (chatQuick) {
-            chatQuick.innerHTML = FAQ.map((f: any, i: number) => `
-                <button type="button" class="chat-quick-btn" data-quick="${i}">
-                    <span>${f.q}</span>
-                    ${iconSvg('chevron-right')}
-                </button>`).join('');
-            chatQuick.querySelectorAll<HTMLButtonElement>('[data-quick]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const f = FAQ[Number(btn.dataset.quick)];
-                    if (!f) return;
-                    hideQuick();
-                    appendUserMsg(f.q);
-                    setTimeout(() => appendBotMsg(f.a), 260);
-                });
+        if (quick) {
+            quick.innerHTML = FAQ.slice(0, 4).map((f, i) => `<button type="button" class="chat-quick-btn" data-quick="${i}">${esc(f.q)}</button>`).join('');
+            quick.addEventListener('click', (e) => {
+                const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-quick]');
+                const f = b && FAQ[Number(b.dataset.quick)];
+                if (!f) return;
+                quick.hidden = true;
+                addMsg('user', f.q);
+                window.setTimeout(() => addMsg('bot', f.a, findArts(f.q, 0.5, 2), true), reduced() ? 0 : 260);
             });
         }
+        input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
+        form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); });
+        resetChat();
 
-        // Enlaces rápidos
-        drawer.querySelectorAll('[data-help-action]').forEach((el) => {
+        // ── Vistas inicio ⇄ chat ──
+        // morph(): el chat se monta encima de la vista inicio y se revela con un
+        // clip-path que parte de la caja de la tarjeta de Cord AI, mientras el panel
+        // anima su ancho (anclado a la derecha). La vista inicio queda fija a su
+        // ancho original debajo, así no se re-acomoda mientras la tapa el chat. De
+        // regreso es la misma coreografía al revés. Sin Web Animations o con
+        // movimiento reducido, el cambio es directo.
+        const card = document.getElementById('helpAiOpen') as HTMLElement | null;
+        let view: 'home' | 'chat' = 'home';
+        let morphing: Animation[] = [];
+        const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+        const applyView = (v: 'home' | 'chat') => {
+            view = v;
+            panel.classList.toggle('ai-active', v === 'chat');
+            home.hidden = v === 'chat';
+            chat.hidden = v === 'home';
+        };
+        const cleanup = () => {
+            morphing.forEach((a) => a.cancel());
+            morphing = [];
+            chat.classList.remove('is-morphing');
+            home.classList.remove('is-pinned');
+            home.style.width = '';
+            home.style.background = '';
+            panel.style.backgroundColor = '';
+        };
+        const setView = (v: 'home' | 'chat', after?: () => void) => {
+            if (v === view && !morphing.length) { after?.(); return; }
+            cleanup();
+            if (!card || !('animate' in chat) || reduced() || drawer.hidden) {
+                applyView(v);
+                after?.();
+                return;
+            }
+            const toChat = v === 'chat';
+            // Medir con la vista inicio visible: la tarjeta da el rectángulo de origen.
+            if (!toChat) { home.hidden = false; }
+            const p0 = panel.getBoundingClientRect();
+            const c = card.getBoundingClientRect();
+            const homeW = home.getBoundingClientRect().width;
+            const surfaceOf = () => getComputedStyle(panel).getPropertyValue('--help-surface').trim();
+            const s0 = surfaceOf();
+            panel.classList.toggle('ai-active', toChat);
+            const p1 = panel.getBoundingClientRect();
+            const s1 = surfaceOf();
+            // El panel cambia de superficie al instante (gris ⇄ blanco); la vista
+            // inicio conserva la suya mientras se ve debajo del chat.
+            const homeSurface = (toChat ? s0 : s1) || '#f5f5f7';
+            const surface = (toChat ? s1 : s0) || '#ffffff';
+            view = v;
+            // Inicio fijo a su ancho y anclado a la derecha mientras dura el cambio.
+            home.hidden = false;
+            home.classList.add('is-pinned');
+            home.style.width = homeW + 'px';
+            home.style.background = homeSurface;
+            // Mientras el panel se ensancha, la franja que todavía no cubre el chat
+            // conserva el gris de inicio (si no, asoma el blanco del chat).
+            panel.style.backgroundColor = homeSurface;
+            chat.hidden = false;
+            chat.classList.add('is-morphing');
+            const radius = getComputedStyle(card).borderRadius || '20px';
+            // Recorte medido contra el panel de partida: el borde derecho es
+            // invariante (panel anclado a la derecha), el izquierdo converge a 0.
+            const cardClip = `inset(${c.top - p0.top}px ${p0.right - c.right}px ${p0.bottom - c.bottom}px ${c.left - p0.left}px round ${radius})`;
+            const fullClip = 'inset(0px 0px 0px 0px round 0px)';
+            const dur = 520;
+            const content = Array.from(chat.children) as HTMLElement[];
+            const navy = '#0a1324';
+            // Tres capas: la caja (clip) crece en navy; la superficie del chat entra
+            // cuando la caja ya casi llena el panel; el contenido llega al final. De
+            // regreso, el orden se invierte y todo es más corto (salir pesa menos).
+            const clipKF = toChat ? [{ clipPath: cardClip }, { clipPath: fullClip }] : [{ clipPath: fullClip }, { clipPath: cardClip }];
+            const bgKF = toChat ? [{ backgroundColor: navy }, { backgroundColor: surface }] : [{ backgroundColor: surface }, { backgroundColor: navy }];
+            morphing = [
+                panel.animate([{ width: p0.width + 'px' }, { width: p1.width + 'px' }], { duration: dur, easing: EASE }),
+                chat.animate(clipKF, { duration: dur, easing: EASE, fill: 'both' }),
+                chat.animate(bgKF, toChat
+                    ? { duration: 260, delay: 160, easing: 'ease-out', fill: 'both' }
+                    : { duration: 200, delay: 60, easing: 'ease-in', fill: 'both' }),
+                ...content.map((el) => el.animate(
+                    toChat ? [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }]
+                           : [{ opacity: 1 }, { opacity: 0 }],
+                    toChat ? { duration: 300, delay: 220, easing: 'ease-out', fill: 'both' }
+                           : { duration: 140, easing: 'ease-in', fill: 'both' },
+                )),
+            ];
+            const done = morphing[1];
+            done.finished.then(() => {
+                cleanup();
+                applyView(v);
+                after?.();
+            }).catch(() => {});
+        };
+        const openChat = (prefill?: string) => setView('chat', () => {
+            input.focus({ preventScroll: true });
+            if (prefill) ask(prefill);
+        });
+        document.getElementById('helpAiOpen')?.addEventListener('click', () => openChat());
+        document.getElementById('helpAiBack')?.addEventListener('click', () => setView('home', () => document.getElementById('helpAiOpen')?.focus()));
+        document.getElementById('helpEmptyAi')?.addEventListener('click', () => openChat(search?.value || ''));
+
+        // ── Abrir / cerrar ──
+        let closing: number | null = null;
+        const open = () => {
+            if (closing) { clearTimeout(closing); closing = null; }
+            drawer.classList.remove('is-closing');
+            drawer.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+            loadArts();
+            setTimeout(() => (view === 'chat' ? input : search)?.focus({ preventScroll: true }), 60);
+        };
+        const close = () => {
+            if (drawer.hidden || closing) return;
+            btn.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+            const finish = () => {
+                closing = null;
+                drawer.hidden = true;
+                drawer.classList.remove('is-closing');
+                cleanup();
+                // El chat no persiste: es consulta, no historial. Se reinicia al cerrar.
+                applyView('home');
+                resetChat();
+                if (search) { search.value = ''; runSearch(); }
+                (btn as HTMLElement).focus({ preventScroll: true });
+            };
+            if (reduced()) { finish(); return; }
+            drawer.classList.add('is-closing');
+            closing = window.setTimeout(finish, 320);
+        };
+
+        btn.addEventListener('click', () => (drawer.hidden ? open() : close()));
+        drawer.querySelectorAll('[data-help-close]').forEach((b) => b.addEventListener('click', close));
+        document.getElementById('helpBackdrop')?.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => {
+            if (drawer.hidden) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                if (view === 'chat') setView('home', () => document.getElementById('helpAiOpen')?.focus());
+                else close();
+                return;
+            }
+            // Foco atrapado dentro del diálogo (aria-modal): Tab no se escapa a la app.
+            if (e.key !== 'Tab') return;
+            const items = Array.from(panel.querySelectorAll<HTMLElement>('button, a[href], input'))
+                .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+            if (!items.length) return;
+            const first = items[0], last = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+
+        // ── Accesos rápidos ──
+        drawer.querySelectorAll<HTMLElement>('[data-help-action]').forEach((el) => {
             el.addEventListener('click', () => {
-                const action = (el as HTMLElement).dataset.helpAction;
+                const action = el.dataset.helpAction;
                 if (action === 'shortcuts') {
                     if (mobileUi()) return;
-                    close(); const h = document.getElementById('kbdHelp'); if (h) (h as HTMLElement).hidden = false;
+                    close();
+                    const h = document.getElementById('kbdHelp');
+                    if (h) h.hidden = false;
+                } else if (action === 'guide') {
+                    close();
+                    // La guía de configuración solo existe mientras el onboarding está
+                    // incompleto; si ya no está montada, la guía es el Centro de ayuda.
+                    const onb = (window as any).__cordOnb;
+                    if (onb && document.getElementById('onbCard')) onb.set({ view: 'card', dismissed: false });
+                    else window.location.href = isEn ? '/en/support' : '/soporte';
                 }
-                else if (action === 'guide') { close(); document.getElementById('onbPill')?.click(); }
             });
         });
     }
