@@ -594,17 +594,17 @@ import { iconInner } from '../lib/icons';
        fuera de todo selector (el `:root` de arriba cerraba antes) y el parser CSS
        las descartaba junto con la regla `html.sb-collapsed` que venía después. */
     :root {
-        --sb-bg: linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.6) 100%);
-        --sb-border: rgba(255,255,255,0.6);
+        /* Material de vidrio del shell: lo leen `.sidebar` (Sidebar.astro) y
+           `.topbar`, así que las dos pills no pueden divergir. `--sb-bg` va al 72%
+           y DEPENDE del blur; `--sb-bg-solid` es el respaldo de `@supports not`. */
+        --sb-bg: rgba(255, 255, 255, 0.72);
+        --sb-bg-solid: #ffffff;
         --sb-shadow:
-            inset 0 1px 1px rgba(255,255,255,0.95),
-            inset 0 0 0 0.5px rgba(255,255,255,0.5),
-            inset 0 -6px 14px rgba(255,255,255,0.18),
-            0 12px 36px -8px rgba(10,25,47,0.14),
-            0 2px 6px rgba(10,25,47,0.06);
-        /* Sin sheen oscuro: el sidebar usa EXACTAMENTE el mismo material glass que la
-           pill de la topbar (mismo --sb-bg + blur + borde + --sb-shadow). El brillo
-           superior lo da el inset highlight de --sb-shadow, igual que la topbar. */
+            0 8px 32px -8px rgba(0,0,0,0.06),
+            0 4px 12px -2px rgba(0,0,0,0.03),
+            inset 0 0 0 1px rgba(255,255,255,0.5),
+            inset 0 1px 1px rgba(255,255,255,0.9);
+        /* Sin sheen: el brillo superior lo da el inset highlight de --sb-shadow. */
         --sb-sheen: transparent;
         --sb-text: var(--color-text-muted);
         --sb-text-strong: var(--color-text);
@@ -677,13 +677,13 @@ import { iconInner } from '../lib/icons';
         --card-shadow-hover: 0 1px 0 rgba(255,255,255,0.05) inset, 0 26px 56px -20px rgba(0,0,0,0.65);
 
         /* Sidebar en oscuro → vidrio navy rico (el look anterior, ahora vía variables) */
-        --sb-bg: linear-gradient(180deg, rgba(22,30,44,0.85) 0%, rgba(13,19,29,0.72) 100%);
-        --sb-border: rgba(255,255,255,0.1);
+        --sb-bg: rgba(24, 30, 40, 0.75);
+        --sb-bg-solid: #181e28;
         --sb-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.12),
-            inset 0 0 0 0.5px rgba(255,255,255,0.05),
-            inset 0 -6px 14px rgba(0,0,0,0.2),
-            0 16px 44px -10px rgba(0,0,0,0.55);
+            0 16px 44px -10px rgba(0,0,0,0.55),
+            0 4px 12px -2px rgba(0,0,0,0.25),
+            inset 0 0 0 1px rgba(255,255,255,0.1),
+            inset 0 1px 1px rgba(255,255,255,0.15);
         /* Igual que la topbar oscura: sin sheen extra, solo el material glass compartido. */
         --sb-sheen: transparent;
         --sb-text: rgba(255,255,255,0.55);
@@ -716,21 +716,6 @@ import { iconInner } from '../lib/icons';
         --sb-avatar-text: #ffffff;
     }
     html[data-theme="dark"] body { background: #0b1018; }
-    /* Topbar: en oscuro, vidrio navy translúcido (en claro es blanco) */
-    html[data-theme="dark"] .topbar {
-        background: rgba(24, 30, 40, 0.75);
-        border: none;
-        box-shadow:
-            0 16px 44px -10px rgba(0,0,0,0.55),
-            0 4px 12px -2px rgba(0,0,0,0.25),
-            inset 0 0 0 1px rgba(255,255,255,0.1),
-            inset 0 1px 1px rgba(255,255,255,0.15);
-    }
-    /* Mismo respaldo que en claro: este fondo está al 75% y hereda el
-       backdrop-filter de la regla scopeada, así que sin blur se transparenta. */
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        html[data-theme="dark"] .topbar { background: #181e28; }
-    }
     /* Buscador y kbd de la topbar */
     html[data-theme="dark"] .tb-kbd, html[data-theme="dark"] .cmdk-esc { background: rgba(255,255,255,0.06); color: var(--color-text-muted); }
     /* Menú "Crear" → vidrio oscuro */
@@ -1527,15 +1512,12 @@ import { iconInner } from '../lib/icons';
         margin: 1rem 1rem 0;
         padding: 0.5rem 0.6rem 0.5rem 0.85rem;
         border-radius: 22px; /* iOS Squircle */
-        background: rgba(255, 255, 255, 0.72);
+        /* Mismo material que la sidebar: tokens --sb-* (claro y oscuro). */
+        background: var(--sb-bg);
         backdrop-filter: blur(40px) saturate(1.8);
         -webkit-backdrop-filter: blur(40px) saturate(1.8);
         border: none;
-        box-shadow:
-            0 8px 32px -8px rgba(0,0,0,0.06),
-            0 4px 12px -2px rgba(0,0,0,0.03),
-            inset 0 0 0 1px rgba(255,255,255,0.5),
-            inset 0 1px 1px rgba(255,255,255,0.9);
+        box-shadow: var(--sb-shadow);
         position: sticky; top: 1rem; z-index: 50;
     }
     /* El fondo de arriba está al 72%: DEPENDE del blur para verse sólido.
@@ -1545,7 +1527,7 @@ import { iconInner } from '../lib/icons';
        `not (backdrop-filter: …)` a secas no dispara en un navegador que
        soporta la estándar pero recibió sólo la prefijada. */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        .topbar { background: #fff; }
+        .topbar { background: var(--sb-bg-solid); }
     }
     .tb-demo {
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1.2px;

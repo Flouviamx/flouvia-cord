@@ -66,7 +66,7 @@ const NAV_GROUPS = [
         <CustomOrgSwitcher client:load orgLogoUrl={orgLogoUrl} user={userProfile} activeOrg={ORG} locale={L} />
     </div>
 
-    <!-- Acciones móviles (solo en drawer) — crear / ayuda / config -->
+    <!-- Acciones móviles (solo en drawer) — ayuda / config -->
     <div class="sb-mobile-actions">
 
         <button class="sb-action-row" id="sbHelp" type="button" data-id="ayuda">
@@ -79,21 +79,21 @@ const NAV_GROUPS = [
         </a>
     </div>
 
-    <nav class="sb-nav">
+    <nav class="sb-nav" aria-label={t(L, 'sidebar.aria.nav')}>
         <div class="sb-indicator" id="sbIndicator" aria-hidden="true"></div>
         <div class="sb-group sb-pins" id="sbPins" data-label={t(L, 'sidebar.grupo.fijados')} data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')} data-pin-remove={t(L, 'sidebar.pin.quitar')} data-pin-toast-on={t(L, 'sidebar.pin.toast_on')} data-pin-toast-off={t(L, 'sidebar.pin.toast_off')} hidden></div>
-        {NAV_GROUPS.map((group) => (
+        {NAV_GROUPS.map((group, gi) => (
             <div class:list={['sb-group', { 'sb-group-flat': !group.label }]}>
                 {group.label && (
-                    <button type="button" class="sb-group-label" aria-expanded="true">
+                    <button type="button" class="sb-group-label" aria-expanded="true" aria-controls={`sbGroup${gi}`}>
                         <span>{group.label}</span>
                         <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                     </button>
                 )}
-                <div class="sb-group-content">
+                <div class="sb-group-content" id={`sbGroup${gi}`}>
                     <div class="sb-group-inner">
                         {group.items.map((item) => (
-                            <a href={item.href} data-id={item.id} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
+                            <a href={item.href} data-id={item.id} class:list={['sb-item', { active: page === item.id }]} aria-current={page === item.id ? 'page' : undefined} title={item.label}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon}></svg>
                                 <span class="sb-item-label">{item.label}</span>
                                 {!!(item as any).shortcut && (
@@ -110,10 +110,6 @@ const NAV_GROUPS = [
         ))}
     </nav>
 
-    <div class="sb-user" style="padding: 1rem; padding-bottom: 0;">
-        <!-- Org Switcher and User config are now handled centrally -->
-    </div>
-
     <div class="sb-footer">
         <img class="sb-foot-logo sb-foot-logo-navy" src="/imgs/logo-cord-navy.png" alt="Cord" />
         <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
@@ -129,16 +125,12 @@ const NAV_GROUPS = [
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        /* Pill flotante de VIDRIO — idéntica a la topbar */
-        background: rgba(255, 255, 255, 0.72);
+        /* Pill flotante de VIDRIO — mismo material que la topbar vía --sb-* */
+        background: var(--sb-bg);
         backdrop-filter: blur(40px) saturate(1.8);
         -webkit-backdrop-filter: blur(40px) saturate(1.8);
         border: none;
-        box-shadow:
-            0 8px 32px -8px rgba(0,0,0,0.06),
-            0 4px 12px -2px rgba(0,0,0,0.03),
-            inset 0 0 0 1px rgba(255,255,255,0.5),
-            inset 0 1px 1px rgba(255,255,255,0.9);
+        box-shadow: var(--sb-shadow);
         border-radius: 22px !important;
         margin: 1rem !important;
         height: calc(100vh - 2rem);
@@ -149,15 +141,6 @@ const NAV_GROUPS = [
         z-index: 130;
         transition: width 0.28s var(--ease-spring), padding 0.28s var(--ease-spring);
     }
-    :global(html[data-theme="dark"]) .sidebar {
-        background: rgba(24, 30, 40, 0.75);
-        border: none;
-        box-shadow:
-            0 16px 44px -10px rgba(0,0,0,0.55),
-            0 4px 12px -2px rgba(0,0,0,0.25),
-            inset 0 0 0 1px rgba(255,255,255,0.1),
-            inset 0 1px 1px rgba(255,255,255,0.15);
-    }
     /* Los dos fondos de arriba (72% claro, 75% oscuro) DEPENDEN del blur para
        verse sólidos. Sin él —GPU sin composición, "Reducir transparencia" del
        SO, navegador viejo— el sidebar se transparenta y el contenido se ve por
@@ -165,8 +148,7 @@ const NAV_GROUPS = [
        …)` a secas no dispara en un navegador que soporta la estándar pero
        recibió sólo la prefijada. */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        .sidebar { background: #fff; }
-        :global(html[data-theme="dark"]) .sidebar { background: #181e28; }
+        .sidebar { background: var(--sb-bg-solid); }
     }
     /* Sheen superior (specular highlight tipo liquid glass) — detrás del contenido */
     .sidebar::before {
@@ -243,6 +225,10 @@ const NAV_GROUPS = [
     }
     /* Hover/active: el color cambia; el realce de "pill" lo da .sb-indicator (vidrio) */
     .sb-item:hover { color: var(--sb-text-strong); }
+    /* Foco de teclado visible (regla 5). Contorno interior: .sb-item recorta con overflow. */
+    .sb-item:focus-visible,
+    .sb-group-label:focus-visible,
+    .sb-action-row:focus-visible { outline: 2px solid var(--sb-text-active); outline-offset: -2px; }
     
     /* ── Apple Style Hover ── */
     .sb-item { position: relative; overflow: hidden; }
@@ -301,84 +287,8 @@ const NAV_GROUPS = [
         position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
         background: linear-gradient(to right, transparent, var(--sb-divider) 25%, var(--sb-divider) 75%, transparent);
     }
-    .sb-org-switch {
-        width: 100%; display: flex; align-items: center; gap: 10px;
-        padding: 8px 9px; border-radius: 11px; cursor: pointer;
-        background: none; border: none;
-        font-family: var(--font-sans); text-align: left;
-        transition: background 0.22s var(--ease-ios);
-    }
-    .sb-org-switch:hover { background: rgba(255,255,255,0.06); }
-    .sb-org-switch[aria-expanded="true"] { background: rgba(255,255,255,0.1); }
-    .sb-org-avatar {
-        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)); color: #fff;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.76rem; font-weight: 800;
-    }
-    .sb-org-info {
-        display: flex; flex-direction: column; min-width: 0; flex: 1;
-        transition: opacity 0.2s var(--ease-ios);
-    }
-    .sb-org-name { font-size: 0.84rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-plan { font-size: 0.68rem; color: rgba(255,255,255,0.42); margin-top: 1px; }
-    .sb-org-caret {
-        width: 15px; height: 15px; flex-shrink: 0; color: rgba(255,255,255,0.45);
-        transition: transform 0.25s var(--ease-spring), opacity 0.2s var(--ease-ios);
-    }
-    .sb-org-switch[aria-expanded="true"] .sb-org-caret { transform: rotate(180deg); }
-
-    /* Dropdown — abre hacia ABAJO (la cuenta está arriba) */
-    .sb-org-menu {
-        position: absolute; top: calc(100% + 4px); bottom: auto; left: 0; right: 0; z-index: 60;
-        background: #11233f; border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
-        animation: sb-menu-in 0.18s var(--ease-spring);
-    }
-    .sb-org-menu[hidden] { display: none; }
-    @keyframes sb-menu-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .sb-org-menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 9px 9px; }
-    .sb-org-menu-id { display: flex; flex-direction: column; min-width: 0; }
-    .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-menu-id span { font-size: 0.66rem; color: rgba(255,255,255,0.42); }
-    .sb-menu-sep { height: 1px; background: var(--sb-divider); margin: 5px 4px; }
-    .sb-menu-item {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 9px 10px; border-radius: 9px; cursor: pointer;
-        background: none; border: none; text-align: left; text-decoration: none;
-        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 500;
-        color: var(--sb-menu-text); transition: background 0.18s, color 0.18s;
-    }
-    .sb-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; color: var(--sb-menu-muted); }
-    .sb-menu-item:hover { background: var(--sb-menu-hover); color: var(--sb-text-active); }
-    .sb-menu-item:hover svg { color: var(--sb-text-active); }
-    .sb-menu-danger { color: var(--color-danger); }
-    .sb-menu-danger:hover { background: rgba(239,68,68,0.12); color: var(--color-danger); }
-
-    /* ── Acciones móviles del drawer (crear / ayuda / config) — solo móvil ── */
+    /* ── Acciones móviles del drawer (ayuda / config) — solo móvil ── */
     .sb-mobile-actions { display: none; }
-    .sb-create-wrap { position: relative; }
-    .sb-create {
-        display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-        padding: 11px 14px; border: none; border-radius: 11px; cursor: pointer;
-        background: #2563eb; color: #fff;
-        font-family: var(--font-sans); font-size: 0.9rem; font-weight: 650;
-        box-shadow: 0 8px 22px -10px rgba(37,99,235,0.8);
-        transition: transform 0.2s var(--ease-spring), background 0.2s;
-    }
-    .sb-create svg { width: 18px; height: 18px; }
-    .sb-create:active { transform: scale(0.98); }
-    .sb-create-menu {
-        position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
-        background: var(--sb-menu-bg);
-        backdrop-filter: blur(44px) saturate(1.9);
-        -webkit-backdrop-filter: blur(44px) saturate(1.9);
-        border: 1px solid var(--sb-menu-border);
-        border-radius: 13px; padding: 6px;
-        box-shadow: var(--sb-menu-shadow);
-        animation: sb-menu-in 0.18s var(--ease-spring);
-    }
-    .sb-create-menu[hidden] { display: none; }
     .sb-action-row {
         position: relative; overflow: hidden;
         display: flex; align-items: center; gap: 11px; width: 100%;
@@ -414,11 +324,6 @@ const NAV_GROUPS = [
     .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sb-text-active); }
     
     .sb-toggle-ico { width: 18px; height: 18px; transition: transform 0.4s var(--ease-spring); }
-    
-    /* Relleno interno animado por GSAP */
-    .sb-toggle-fill {
-        opacity: 1;
-    }
     :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
 
     @media (min-width: 881px) {
@@ -438,14 +343,9 @@ const NAV_GROUPS = [
     :global(.sb-collapsed) .sb-group-label { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; pointer-events: none; border: none; }
     :global(.sb-collapsed) .sb-group-content { grid-template-rows: 1fr !important; }
     :global(.sb-collapsed) .sb-group-inner { overflow: visible !important; }
-    :global(.sb-collapsed) .sb-org-info,
-    :global(.sb-collapsed) .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
     :global(.sb-collapsed) .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
-    :global(.sb-collapsed) .sb-collapse { display: none; }
     :global(.sb-collapsed) .sb-account { padding: 0; padding-bottom: 0.4rem; margin-bottom: 0.4rem; }
     :global(.sb-collapsed) .sb-account::after { display: none; }
-    :global(.sb-collapsed) .sb-org-switch { justify-content: center; padding: 6px; }
-    :global(.sb-collapsed) .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
     /* Ítems = cuadros uniformes grandes, perfectamente centrados en el rail */
     :global(.sb-collapsed) .sb-item { justify-content: center; gap: 0; padding: 0; width: 42px; height: 42px; border-radius: 12px; margin: 0 auto; transition: transform 0.25s var(--ease-spring), filter 0.25s, color 0.2s; }
     :global(.sb-collapsed) .sb-item svg { width: 20px; height: 20px; opacity: 0.7; transition: transform 0.4s var(--ease-spring), opacity 0.25s, filter 0.25s; }
@@ -456,9 +356,6 @@ const NAV_GROUPS = [
     /* Active icon gets a super clean iOS-style selection */
     :global(.sb-collapsed) .sb-item.active { background: transparent; }
     :global(.sb-collapsed) .sb-item.active svg { opacity: 1; }
-    
-    /* Center the Account Avatar perfectly */
-    :global(.sb-collapsed) .sb-org-avatar { width: 42px; height: 42px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     
     /* Indicador de vidrio → cuadrado perfecto detrás del ícono activo (estilo iPadOS Dock) */
     :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 42px; margin-left: -21px; border-radius: 12px; background: var(--sb-active-bg); box-shadow: none; }
@@ -471,7 +368,6 @@ const NAV_GROUPS = [
         padding: 0; font-size: 0; border: 1.5px solid var(--surface);
     }
     :global(.sb-collapsed) .sb-badge.danger { box-shadow: 0 0 6px var(--color-danger); }
-    :global(.sb-collapsed) .sb-expand { display: inline-flex; }
     
     /* Toggle circular abajo */
     :global(.sb-collapsed) .sb-footer { display: flex; justify-content: center; padding-left: 0; padding-bottom: 0.5rem; }
@@ -525,8 +421,6 @@ const NAV_GROUPS = [
         :global(.sb-collapsed) .sidebar { width: min(88vw, 360px); }
         :global(.sb-collapsed) .sb-item { width: auto; height: auto; justify-content: flex-start; }
         :global(.sb-collapsed) .sb-item-label,
-        :global(.sb-collapsed) .sb-org-info,
-        :global(.sb-collapsed) .sb-org-caret,
         :global(.sb-collapsed) .sb-foot-logo {
             opacity: 1; width: auto; overflow: visible; pointer-events: auto;
         }
@@ -546,9 +440,7 @@ const NAV_GROUPS = [
             opacity: 0; visibility: hidden; transition: opacity 0.3s var(--ease-ios), visibility 0s 0.3s;
         }
         :global(.app-shell.nav-open) .sb-backdrop { opacity: 1; visibility: visible; transition: opacity 0.3s var(--ease-ios); }
-        /* En el drawer móvil no aplica colapsar (es ancho fijo) */
-        .sb-collapse { display: none; }
-        /* Acciones del drawer (crear / ayuda / config) — visibles solo en móvil */
+        /* Acciones del drawer (ayuda / config) — visibles solo en móvil */
         .sb-mobile-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
         .sb-action-row { padding: 14px 14px; font-size: 0.95rem; gap: 14px; border-radius: 14px; }
         .sb-action-row svg { width: 20px; height: 20px; }
@@ -565,7 +457,6 @@ const NAV_GROUPS = [
 <script>
     import { iconInner, iconSvg } from '../../lib/icons';
     import { LEGACY_ROUTES } from '../../lib/informes';
-    import { gsap } from 'gsap';
 
     // ── Drawer de la sidebar (móvil) ──
     function initDrawer() {
@@ -692,7 +583,8 @@ const NAV_GROUPS = [
             let html = `<span class="sb-group-label">${eH(pinsLabel)}</span>`;
             pins.forEach((p, idx) => {
                 const active = hrefKey(p.href) === currentHref() ? ' active' : '';
-                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}">" + iconSvg('x', '', 2.2) + "</button></div>`;
+                const ariaCur = active ? ' aria-current="page"' : '';
+                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}"${ariaCur} title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button type="button" class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}">${iconSvg('x', '', 2.2)}</button></div>`;
             });
             mount.innerHTML = html;
             
@@ -759,8 +651,8 @@ const NAV_GROUPS = [
         const toastOn = (mount as HTMLElement)?.dataset.pinToastOn || '';
         const toastOff = (mount as HTMLElement)?.dataset.pinToastOff || '';
         const toggle = () => {
-            const c = current(); const pins = getPins(); const has = pins.some((p) => p.href === c.href);
-            if (has) { setPins(pins.filter((p) => p.href !== c.href)); if (toastOn) (window as any).cordToast?.(toastOn); }
+            const c = current(); const pins = getPins(); const has = pins.some((p) => hrefKey(p.href) === c.href);
+            if (has) { setPins(pins.filter((p) => hrefKey(p.href) !== c.href)); if (toastOn) (window as any).cordToast?.(toastOn); }
             else { pins.push(c); setPins(pins); if (toastOff) (window as any).cordToast?.(toastOff, 'ok'); }
             renderMount(); syncBtn();
         };
@@ -769,26 +661,7 @@ const NAV_GROUPS = [
         renderMount(); syncBtn();
     }
 
-    // ── Menú "Crear" genérico (botón + popover) — reusado por móvil y desktop ──
-    function initCreateMenu(btnId: string, menuId: string) {
-        const btn = document.getElementById(btnId);
-        const menu = document.getElementById(menuId);
-        if (!btn || !menu) return;
-        const m = menu as HTMLElement;
-        const closeMenu = () => { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const willOpen = m.hidden;
-            m.hidden = !willOpen;
-            btn.setAttribute('aria-expanded', String(willOpen));
-        });
-        document.addEventListener('click', (e) => {
-            if (!m.hidden && !menu.contains(e.target as Node) && !btn.contains(e.target as Node)) closeMenu();
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
-    }
-
-    // ── Acciones móviles del drawer (botón "+" + Ayuda) ──
+    // ── Acciones móviles del drawer (Ayuda) ──
     function initMobileActions() {
 
         // Ayuda: cierra el drawer y abre el panel de ayuda (reusa #helpBtn)
@@ -813,43 +686,6 @@ const NAV_GROUPS = [
         });
     }
 
-    // ── Animación súper pro del Toggle con GSAP ──
-    function initToggleAnimation() {
-        const toggle = document.getElementById('sbToggleFloating');
-        const fill = document.querySelector('.sb-toggle-fill');
-        if (!toggle || !fill) return;
-
-        // Estados del cuadrito relleno
-        // Open: Sidebar expandido (cuadrito chiquito, al centro tipo "tab")
-        // Closed: Sidebar colapsado (cuadrito grande, ocupando todo el alto)
-        const states = {
-            open: { attr: { x: 3.5, y: 8, width: 5.5, height: 8, rx: 1.5 }, opacity: 1, ease: "back.out(2.5)", duration: 0.5 },
-            openHover: { attr: { x: 3.5, y: 7.5, width: 6.5, height: 9, rx: 1.8 }, opacity: 1, ease: "power2.out", duration: 0.2 },
-            closed: { attr: { x: 3.5, y: 5, width: 8, height: 14, rx: 2.5 }, opacity: 1, ease: "back.out(1.5)", duration: 0.5 },
-            closedHover: { attr: { x: 3.5, y: 5, width: 9.5, height: 14, rx: 2.5 }, opacity: 1, ease: "power2.out", duration: 0.2 },
-        };
-
-        const updateState = (isHover) => {
-            const isCollapsed = document.documentElement.classList.contains('sb-collapsed');
-            const state = isCollapsed ? (isHover ? states.closedHover : states.closed) : (isHover ? states.openHover : states.open);
-            gsap.to(fill, state);
-        };
-
-        toggle.addEventListener('mouseenter', () => updateState(true));
-        toggle.addEventListener('mouseleave', () => updateState(false));
-
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((m) => {
-                if (m.attributeName === 'class') updateState(toggle.matches(':hover'));
-            });
-        });
-        observer.observe(document.documentElement, { attributes: true });
-
-        // Estado inicial sin animación
-        const isCollapsed = document.documentElement.classList.contains('sb-collapsed');
-        gsap.set(fill, isCollapsed ? states.closed : states.open);
-    }
-
     function initSidebarComponent() {
         initDrawer();
         initSidebar();
@@ -857,7 +693,6 @@ const NAV_GROUPS = [
         initPins();
         initMobileActions();
         initGroupAccordions();
-        initToggleAnimation();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSidebarComponent);

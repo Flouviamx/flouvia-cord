@@ -104,6 +104,7 @@ export const appStrings = {
         "sidebar.grupo.dinero": "Mi dinero",
         "sidebar.grupo.inteligencia": "Inteligencia",
         "sidebar.grupo.fijados": "Fijados",
+        "sidebar.aria.nav": "Navegación principal",
         // Sidebar — items
         "sidebar.item.inicio": "Inicio",
         "sidebar.item.cotizaciones": "Cotizaciones",
@@ -3654,6 +3655,7 @@ export const appStrings = {
         "sidebar.grupo.dinero": "My money",
         "sidebar.grupo.inteligencia": "Intelligence",
         "sidebar.grupo.fijados": "Pinned",
+        "sidebar.aria.nav": "Main navigation",
         // Sidebar — items
         "sidebar.item.inicio": "Home",
         "sidebar.item.cotizaciones": "Quotes",

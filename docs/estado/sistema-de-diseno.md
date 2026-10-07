@@ -167,8 +167,8 @@ hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la a
 - **Heroes navy = navy PLANO, sin degradado:** el navy de marca (`var(--color-blue-deep)`) se
   permite como acento de hero, pero **sin `linear-gradient`** (el degradado es lo que lee
   "no-Stripe"). Aplica a heroes de Ajustes/SSO/equipo, el hero "Armar con IA" del editor, etc.
-- **Glass del shell calmado:** `.topbar` y `.sidebar` usan `blur(24px) saturate(1.4)` (sin
-  `brightness`) — cristal "quieto" tipo macOS, no espejo. `.card` usa `--radius-card` (16px).
+- **Glass del shell:** `.topbar` y `.sidebar` usan `blur(40px) saturate(1.8)` (sin
+  `brightness`) sobre `--sb-bg`. `.card` usa `--radius-card` (16px).
 
 ### Sidebar Navigation (AppLayout)
 El componente `Sidebar.astro` es el menú principal de la app y presenta un diseño "Linear-style" / "macOS Dock".
@@ -177,7 +177,7 @@ El componente `Sidebar.astro` es el menú principal de la app y presenta un dise
 - **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos.
 - **Selección estilo iOS Settings (jul 2026):** el `.sb-indicator` de ítem activo es un **relleno tintado** `var(--sb-active-bg)` (radius 10px, sombra mínima, **sin `backdrop-filter`**) — dejó de ser la "pastilla de cristal" con blur. Se posiciona en JS con `getBoundingClientRect()` (evita bugs de offsetTop en anidamientos). Las filas (`.sb-item`) son radius 10px con `padding: 9px 11px`.
 - **Microinteracciones:** Las tooltips en modo colapsado usan `transform-origin: left center` para brotar elásticamente desde el ícono.
-- **MISMO material glass que la pill de la topbar (regla, jul 2026):** la sidebar y la `.topbar` comparten fondo (`--sb-bg`), `blur(24px) saturate(1.4)`, borde y sombra (`--sb-shadow` == box-shadow de la topbar, `0 12px 36px -8px rgba(10,25,47,0.14)`), y el mismo radio (17px). El brillo superior lo da SOLO el inset highlight de `--sb-shadow` (compartido). ⚠️ `--sb-sheen` está en `transparent` a propósito — **no re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el material debe quedar idéntico al de la topbar en light y dark.
+- **MISMO material glass que la pill de la topbar (regla, jul 2026; tokens oct 2026):** la sidebar y la `.topbar` leen los MISMOS tokens: `--sb-bg` (blanco al 72% en claro, navy al 75% en oscuro), `--sb-shadow` y `--sb-bg-solid` (respaldo del `@supports not` cuando no hay blur), con `blur(40px) saturate(1.8)` y radio 22px. Antes cada una repetía los valores a mano y los tokens `--sb-bg`/`--sb-shadow` existían sin consumidor, con valores que ya no eran los reales. Un cambio de material se hace en el token, no en una de las dos pills. ⚠️ `--sb-sheen` está en `transparent` a propósito — **no re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar).
 
 ### Base mobile-first de la app (ago 2026)
 
