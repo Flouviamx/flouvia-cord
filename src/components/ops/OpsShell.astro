@@ -141,6 +141,8 @@ const svg = (name: IconName) => iconInner(name);
   function setDrawer(open: boolean) {
     if (!shell || !toggle) return;
     shell.classList.toggle('drawer-open', open);
+    // Con el cajón abierto, el contenido de atrás no recibe foco ni toques.
+    shell.querySelector('.ops-app-main')?.toggleAttribute('inert', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Cerrar navegación' : 'Abrir navegación');
     if (open) sidebar?.querySelector<HTMLElement>('a[aria-current="page"], a')?.focus();

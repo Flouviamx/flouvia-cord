@@ -6,10 +6,10 @@
 .ops-app-content > :nth-child(3) { animation-delay: 40ms; }
 .ops-app-content > :nth-child(4) { animation-delay: 80ms; }
 .ops-app-content > :nth-child(5) { animation-delay: 120ms; }
-.ops-link-card, .ops-table-card { transition: transform 0.22s var(--ops-ease), box-shadow 0.22s ease; }
-.ops-link-card:hover, a.ops-table-card[href]:hover { transform: translateY(-2px); box-shadow: var(--ops-shadow-lg); }
+.ops-table-card { transition: transform 0.22s var(--ops-ease), box-shadow 0.22s ease; }
+a.ops-table-card[href]:hover { transform: translateY(-2px); box-shadow: var(--ops-shadow-lg); }
 .ops-search { transition: box-shadow 0.18s ease, border-color 0.18s ease; }
-.ops-search:focus-within { border-color: var(--ops-line-strong); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
+.ops-search:focus-within { border-color: var(--ops-focus); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
 .ops-toast { animation: ops-toast-in 0.26s var(--ops-ease) both; }
 .ops-plot .bar { transform-box: fill-box; transform-origin: bottom; animation: ops-bar-in 0.6s var(--ops-ease) both; }
 .ops-dist-row > i > u, .ops-progress > span { transform-origin: left; animation: ops-progress-in 0.7s var(--ops-ease) both; }
@@ -23,5 +23,5 @@
 @media (prefers-reduced-motion: reduce) {
   .ops-app-content, .ops-page-header, .ops-app-content > *, .ops-toast, .ops-progress > span, .ops-plot .bar,
   .ops-dist-row > i > u, .ops-uptime-strip > i, .ops-pulse::after { animation: none !important; }
-  .ops-link-card, .ops-table-card, .ops-table tbody tr, .ops-search, .ops-button, .ops-app-nav a, .ops-app-sidebar, .ops-drawer-backdrop { transition: none !important; }
+  .ops-table-card, .ops-table tbody tr, .ops-search, .ops-button, .ops-app-nav a, .ops-app-sidebar, .ops-drawer-backdrop { transition: none !important; }
 }

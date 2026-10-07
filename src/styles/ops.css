@@ -42,6 +42,7 @@
   --ops-red-bg: #fff0f0;
   --ops-red-dot: #f0453a;
   --ops-danger: #c9343b;
+  --ops-on-danger: #ffffff;
   --ops-violet: #6534c0;
   --ops-violet-bg: #f4eeff;
 
@@ -167,6 +168,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
 a { color: inherit; }
 ::selection { background: var(--ops-blue-bg); }
 :focus-visible { outline: 2px solid var(--ops-focus); outline-offset: 2px; }
+/* Las tarjetas recortan su contenido: el foco de una fila-enlace va por dentro. */
+.ops-card a:focus-visible, .ops-card button:focus-visible, .ops-card [tabindex]:focus-visible { outline-offset: -2px; }
 .ops-num { font-variant-numeric: tabular-nums; }
 .ops-sr-only {
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
@@ -465,7 +468,7 @@ a.ops-metric-link:hover { background: var(--ops-surface-2); }
 .ops-button.secondary:hover { background: var(--ops-surface-2); }
 .ops-button.ghost { background: transparent; color: var(--ops-muted); }
 .ops-button.ghost:hover { background: var(--ops-fill); color: var(--ops-text); }
-.ops-button.danger { background: var(--ops-danger); color: #ffffff; }
+.ops-button.danger { background: var(--ops-danger); color: var(--ops-on-danger); }
 .ops-button.danger-soft { background: var(--ops-red-bg); color: var(--ops-red); }
 .ops-button.sm { min-height: 30px; padding: 0 12px; font-size: 12px; }
 .ops-button:disabled, .ops-button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -503,7 +506,7 @@ a.ops-metric-link:hover { background: var(--ops-surface-2); }
 }
 .ops-input:focus, .ops-select:focus, .ops-textarea:focus {
   background: var(--ops-surface);
-  border-color: var(--ops-line-strong);
+  border-color: var(--ops-focus);
   box-shadow: 0 0 0 4px var(--ops-blue-bg);
 }
 .ops-textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
@@ -731,12 +734,15 @@ a.ops-list-row:hover { background: var(--ops-surface-2); }
 .ops-uptime-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 64px; gap: 14px; align-items: center; padding: 6px 0; }
 .ops-uptime-row > span { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ops-uptime-row > b { font-size: 12px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.ops-uptime-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 26px; }
+.ops-uptime-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 26px; touch-action: pan-y; cursor: crosshair; }
 .ops-uptime-strip > i { border-radius: 2px; background: var(--ops-fill-2); }
 .ops-uptime-strip > i.ok { background: var(--ops-green-dot); }
 .ops-uptime-strip > i.warn { background: var(--ops-amber-dot); }
 .ops-uptime-strip > i.bad { background: var(--ops-red-dot); }
 .ops-uptime-strip > i:hover { opacity: 0.7; }
+.ops-uptime-strip:focus-visible { outline-offset: 3px; border-radius: 4px; }
+.ops-uptime-strip > i.active { outline: 2px solid var(--ops-ink); outline-offset: 1px; }
+.ops-uptime-detail { min-height: 18px; margin: 2px 0 0; color: var(--ops-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .ops-uptime-axis { display: flex; justify-content: space-between; margin-left: 184px; margin-right: 78px; font-size: 10.5px; color: var(--ops-faint); }
 
 /* Pendientes que requieren atención. */
@@ -900,7 +906,7 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   font-size: 13.5px;
   outline: 0;
 }
-.ops-dialog input:focus, .ops-dialog textarea:focus { background: var(--ops-surface); border-color: var(--ops-line-strong); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
+.ops-dialog input:focus, .ops-dialog textarea:focus { background: var(--ops-surface); border-color: var(--ops-focus); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
 .ops-dialog textarea { min-height: 86px; resize: vertical; }
 .ops-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
 .ops-inline-error {
@@ -932,8 +938,8 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   box-shadow: var(--ops-shadow-lg);
 }
 .ops-toast::before { content: ""; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--ops-green-dot); }
-.ops-toast.error { background: var(--ops-danger); color: #ffffff; }
-.ops-toast.error::before { background: #ffffff; }
+.ops-toast.error { background: var(--ops-danger); color: var(--ops-on-danger); }
+.ops-toast.error::before { background: var(--ops-on-danger); }
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 1180px) {
@@ -970,7 +976,10 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   .ops-drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 35; background: var(--ops-backdrop); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
   .ops-app-shell.drawer-open .ops-drawer-backdrop { opacity: 1; pointer-events: auto; }
   .ops-app-nav a { min-height: 44px; font-size: 14px; }
-  .ops-operator-actions button { min-height: 40px; }
+  .ops-operator-actions button { min-height: 44px; }
+  .ops-dialog-close { width: 44px; height: 44px; right: 10px; top: 10px; }
+  .ops-back, .ops-link, .ops-section-header > a { min-height: 44px; display: inline-flex; align-items: center; }
+  .ops-input, .ops-select, .ops-textarea { min-height: 46px; }
   .ops-menu-button { display: inline-grid; margin-left: -6px; }
   .ops-icon-button { width: 44px; height: 44px; }
   .ops-app-main { margin-left: 0; }
@@ -981,10 +990,10 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   .ops-page-actions { width: 100%; justify-content: flex-start; }
   .ops-search { min-width: 0; width: 100%; height: 44px; }
   .ops-button { min-height: 44px; }
-  .ops-button.sm { min-height: 40px; }
-  .ops-chip { min-height: 40px; }
-  .ops-range a { min-height: 38px; }
-  .ops-select.sm { min-height: 40px; }
+  .ops-button.sm { min-height: 44px; }
+  .ops-chip { min-height: 44px; }
+  .ops-range a { min-height: 44px; }
+  .ops-select.sm { min-height: 44px; }
   .ops-plot { height: 128px; }
   .ops-uptime-row { grid-template-columns: minmax(0, 1fr) 56px; gap: 6px 10px; }
   .ops-uptime-strip { grid-column: 1 / -1; grid-row: 2; height: 22px; gap: 1px; }
@@ -996,7 +1005,7 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
   .ops-metrics .ops-metric:nth-child(2n) { border-right: 0; }
   .ops-metrics .ops-metric:nth-child(3n) { border-right: 1px solid var(--ops-line); }
   .ops-metrics .ops-metric:nth-child(2n):nth-child(3n) { border-right: 0; }
-  .ops-metric strong { font-size: 22px; }
+  .ops-metric strong, .ops-cost-card strong { font-size: clamp(18px, 5.4vw, 22px); text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
   .ops-summary { flex-direction: column; align-items: flex-start; }
   .ops-database-grid { grid-template-columns: minmax(0, 1fr); }
   .ops-cost-grid { grid-template-columns: minmax(0, 1fr); }
@@ -1028,7 +1037,6 @@ a.ops-attention-row:hover { background: var(--ops-surface-2); }
     overflow-y: auto;
   }
   .ops-dialog form { padding: 24px 18px calc(18px + env(safe-area-inset-bottom)); }
-  .ops-dialog-close { width: 44px; height: 44px; right: 10px; top: 10px; }
   .ops-dialog footer { display: grid; grid-template-columns: 1fr 1fr; }
   .ops-toast { right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; max-width: none; }
 }

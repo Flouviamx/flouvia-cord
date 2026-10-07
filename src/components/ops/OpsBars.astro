@@ -110,6 +110,8 @@ const label = `${title}: ${opsNumber(sum)} en ${series.length} días${delta !== 
 
     plot.addEventListener('pointermove', (event) => {
       if (event.pointerType === 'mouse' && !pinned) show(indexAt(event.clientX));
+      // En 90 días cada barra mide pocos píxeles: con el dedo se arrastra.
+      else if (event.pointerType !== 'mouse' && pinned) show(indexAt(event.clientX));
     });
     plot.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'mouse' && !pinned) hide();

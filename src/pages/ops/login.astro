@@ -280,7 +280,7 @@ import { iconInner } from '../../lib/icons';
     }
     .ops-auth { width: 100%; max-width: 380px; min-width: 0; animation: ops-fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
     .ops-heading { text-align: center; margin-bottom: 2rem; }
-    h1 { margin: 0 0 0.4rem; color: var(--ops-ink); font-size: 1.5rem; font-weight: 650; letter-spacing: -0.03em; }
+    h1 { margin: 0 0 0.4rem; color: var(--ops-ink); font-size: 1.5rem; font-weight: 650; line-height: 1.1; letter-spacing: -0.04em; }
     .ops-heading > p:last-child { margin: 0; color: var(--ops-faint); font-size: 0.9rem; line-height: 1.5; }
     .ops-form { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
     /* `display: contents` deja que los campos hereden el gap del formulario:
@@ -300,7 +300,7 @@ import { iconInner } from '../../lib/icons';
       outline: none;
       transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
-    input:focus { background: var(--ops-surface); border-color: var(--ops-line-strong); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
+    input:focus { background: var(--ops-surface); border-color: var(--ops-focus); box-shadow: 0 0 0 4px var(--ops-blue-bg); }
     input:read-only { color: var(--ops-faint); }
     .totp-fields input { letter-spacing: 0.22em; font-variant-numeric: tabular-nums; }
     .totp-fields p { margin: 0; color: var(--ops-faint); font-size: 0.75rem; line-height: 1.5; }
