@@ -195,6 +195,9 @@
    se quedan visibles a la vez — es justo lo que le faltaba a cobranza/agente. */
 .widget-edit-btn[hidden] { display: none; }
 
+/* Anuncios del editor de widgets para lectores de pantalla (movido, agregado, oculto). */
+.widget-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
 .widget-edit-btn:hover { background: var(--row-hover); }
 .widget-edit-btn:active { transform: scale(0.97); }
 .widget-edit-btn.is-done {

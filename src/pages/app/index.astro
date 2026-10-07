@@ -82,7 +82,8 @@ const funnelSteps = [
     { label: t(L, 'dash.funnel_pagadas'), value: ANALYTICS.funnel.pagadas, href: '/app/cotizaciones?f=paid' },
 ];
 const PIPELINE_FILTER: Record<string, string> = { draft: 'open', sent: 'open', viewed: 'open', approved: 'approved', paid: 'paid' };
-const pipelineSegments = (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
+// Sin el permiso `analitica` el widget no se dibuja y su dato tampoco viaja en el HTML.
+const pipelineSegments = !canAnalytics ? [] : (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
     const stat = dash.statusStats.find((row) => row.status === st);
     return { key: st, label: `${STATUS_META[st].label} · ${stat?.n ?? 0}`, value: stat?.total ?? 0, color: STATUS_META[st].color, href: `/app/cotizaciones?f=${PIPELINE_FILTER[st]}` };
 });

@@ -41,8 +41,14 @@ const {
     data-library-no-results={libraryNoResults}
     data-library-add-label={libraryAddLabel}
     data-library-visible-label={t(L, 'widgets.en_pantalla')}
+    data-library-filter-all={t(L, 'widgets.filtro_todos')}
+    data-library-filter-available={t(L, 'widgets.filtro_agregar')}
+    data-announce-moved={t(L, 'widgets.anuncio_movido')}
+    data-announce-added={t(L, 'widgets.anuncio_agregado')}
+    data-announce-hidden={t(L, 'widgets.anuncio_oculto')}
 >
     <slot />
+    <p class="widget-live" data-widget-live aria-live="polite"></p>
     <section class="dash-card widget-tray" data-widget-tray hidden>
         <p class="widget-tray-title">{t(L, 'widgets.biblioteca')}</p>
         <div class="widget-tray-list" data-widget-tray-list></div>
@@ -69,7 +75,9 @@ const {
             if (server && (Number(server.at) || 0) > (Number(local.at) || 0)) {
                 raw = server;
                 try { localStorage.setItem(host.dataset.storageKey, JSON.stringify(server)); } catch (e) {}
-            } else if (server) {
+            } else if (server && (Number(local.at) || 0) > (Number(server.at) || 0)) {
+                // Solo si local es MÁS nuevo. Con el mismo reloj ya están en sync: marcarlo
+                // dirty mandaba un PUT idéntico en cada carga de cada página con widgets.
                 host.dataset.prefsDirty = '1';
             }
             var order = Array.isArray(raw.order) ? raw.order : [];
@@ -79,9 +87,14 @@ const {
             var byId = {};
             widgets.forEach(function (w) {
                 byId[w.dataset.widget] = w;
+                // Oculto desde el servidor y no opcional = bloqueado por permiso, plan o
+                // conexión. La biblioteca nunca lo ofrece: "agregarlo" mostraría un widget
+                // al que esta persona no tiene derecho (o vacío).
+                if (w.hidden && w.dataset.widgetOptional !== '1') w.dataset.widgetLocked = '1';
                 if (w.dataset.widgetOptional === '1') w.hidden = hidden.indexOf(w.dataset.widget) !== -1 || order.indexOf(w.dataset.widget) === -1;
-                // A metric without a chart or detailed view has one honest size.
-                if (w.dataset.sizeSm === '1' && !w.querySelector('[data-chart], .kpi-spark, .kpi-gauge, [data-widget-detail]')) {
+                // A metric without a chart or detailed view has one honest size — salvo que
+                // el autor le haya dado un tamaño inicial mayor (data-span), que se respeta.
+                if (w.dataset.sizeSm === '1' && w.dataset.span === w.dataset.sizeSm && !w.querySelector('[data-chart], .kpi-spark, .kpi-gauge, [data-widget-detail], .report-list, table, ul, ol')) {
                     w.dataset.sizeLg = w.dataset.sizeSm;
                     w.dataset.span = w.dataset.sizeSm;
                 }
@@ -97,6 +110,8 @@ const {
                     .forEach(function (w) { parent.insertBefore(w, parent === host ? host.querySelector('[data-widget-tray]') : null); });
             });
             hidden.forEach(function (widgetId) { if (byId[widgetId]) byId[widgetId].hidden = true; });
+            // Un widget bloqueado sigue oculto aunque un layout viejo lo tuviera visible.
+            widgets.forEach(function (w) { if (w.dataset.widgetLocked === '1') w.hidden = true; });
             Object.keys(sizes).forEach(function (widgetId) {
                 var w = byId[widgetId]; if (!w) return;
                 var span = sizes[widgetId] === 'lg' ? w.dataset.sizeLg : w.dataset.sizeSm;
@@ -216,21 +231,28 @@ const {
         // gráficas — mountAll() nunca ve el clon porque no se le pasa como root).
         // Nunca es un <dialog>: Regla 12, AppLayout no carga modal.css en estas páginas.
         let librarySearch = '';
+        let searchInput: HTMLInputElement | null = null;
+        const live = host.querySelector<HTMLElement>('[data-widget-live]');
+        const announce = (template: string | undefined, w: HTMLElement | undefined) => {
+            if (!live || !template || !w) return;
+            live.textContent = '';
+            requestAnimationFrame(() => { live.textContent = template.replace('{titulo}', w.dataset.title || w.dataset.widget || ''); });
+        };
         let libraryFilter: 'all' | 'available' = 'all';
         function renderTray() {
             if (!tray || !trayList) return;
             const prefs = getPrefs();
-            const available = widgets().filter((w) => !w.hidden || w.dataset.widgetOptional === '1' || prefs.hidden.includes(w.dataset.widget!));
+            const available = widgets().filter((w) => w.dataset.widgetLocked !== '1'
+                && (!w.hidden || w.dataset.widgetOptional === '1' || prefs.hidden.includes(w.dataset.widget!)));
             tray.hidden = !libraryOpen; trayList.innerHTML = '';
             if (!libraryOpen) return;
 
             tray.classList.add('wx-library');
             const filters = document.createElement('div'); filters.className = 'wx-lib-filters';
-            const en = document.documentElement.lang.startsWith('en');
             for (const mode of ['all', 'available'] as const) {
                 const button = document.createElement('button'); button.type = 'button';
                 const count = mode === 'all' ? available.length : available.filter(w => w.hidden).length;
-                button.textContent = `${mode === 'all' ? (en ? 'All widgets' : 'Todos') : (en ? 'To add' : 'Para agregar')} · ${count}`;
+                button.textContent = `${mode === 'all' ? host.dataset.libraryFilterAll : host.dataset.libraryFilterAvailable} · ${count}`;
                 button.setAttribute('aria-pressed', String(libraryFilter === mode));
                 button.addEventListener('click', () => { libraryFilter = mode; renderTray(); });
                 filters.appendChild(button);
@@ -249,6 +271,7 @@ const {
                 input.addEventListener('input', () => { librarySearch = input.value; renderRows(); });
                 search.appendChild(input);
                 trayList.appendChild(search);
+                searchInput = input;
             }
 
             const rowsHost = document.createElement('div');
@@ -326,7 +349,7 @@ const {
             add.textContent = w.hidden ? host.dataset.libraryAddLabel || '+' : host.dataset.libraryVisibleLabel || '';
             add.disabled = !w.hidden;
             add.setAttribute('aria-label', `${add.textContent} ${strong.textContent}`);
-            add.addEventListener('click', () => setHidden(w.dataset.widget!, false));
+            add.addEventListener('click', () => { setHidden(w.dataset.widget!, false); announce(host.dataset.announceAdded, w); });
             row.append(preview, info, add);
             return row;
         }
@@ -344,10 +367,25 @@ const {
         }
         function enterEdit() { host.dataset.editing = '1'; setContentInert(true); if (libraryButton) libraryButton.hidden = false; renderTray(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
         function exitEdit() { if (dragging) end(); delete host.dataset.editing; setContentInert(false); libraryOpen = false; if (libraryButton) { libraryButton.hidden = true; libraryButton.setAttribute('aria-expanded', 'false'); } if (tray) tray.hidden = true; if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
-        libraryButton?.addEventListener('click', () => { libraryOpen = !libraryOpen; libraryButton.setAttribute('aria-expanded', String(libraryOpen)); renderTray(); });
-        editButton?.addEventListener('click', enterEdit); doneButton?.addEventListener('click', exitEdit);
+        function setLibrary(open: boolean) {
+            libraryOpen = open; libraryButton?.setAttribute('aria-expanded', String(open)); renderTray();
+            if (open) {
+                // Puede abrirse con la página desplazada: se lleva a la vista y el foco
+                // entra al buscador, para que el teclado no se quede atrás.
+                tray?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+                searchInput?.focus({ preventScroll: true });
+            }
+        }
+        libraryButton?.addEventListener('click', () => setLibrary(!libraryOpen));
+        editButton?.addEventListener('click', enterEdit);
+        doneButton?.addEventListener('click', () => { exitEdit(); editButton?.focus(); });
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && host.dataset.editing === '1') { if (dragging) end(false); else exitEdit(); }
+            if (event.key !== 'Escape' || host.dataset.editing !== '1') return;
+            if (dragging) { end(false); return; }
+            // Escape dentro de la biblioteca cierra SOLO la biblioteca (y regresa el foco a
+            // su botón); fuera de ella, sale del modo edición.
+            if (libraryOpen && tray?.contains(document.activeElement)) { setLibrary(false); libraryButton?.focus(); return; }
+            exitEdit(); editButton?.focus();
         });
         resetButton?.addEventListener('click', async () => {
             const confirmFn = (window as any).cordConfirm;
@@ -357,9 +395,11 @@ const {
 
         widgets().forEach((widget) => {
             const id = widget.dataset.widget!;
-            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const previous = siblings[siblings.indexOf(widget) - 1]; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { widget.parentElement?.insertBefore(widget, previous); persistOrder(); }); });
-            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const next = siblings[siblings.indexOf(widget) + 1]; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); });
-            widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); });
+            // Subir mueve al VECINO de arriba debajo de este widget (no al revés): mover el
+            // nodo enfocado lo saca del DOM y el foco de teclado se pierde.
+            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const previous = siblings[siblings.indexOf(widget) - 1]; if (previous instanceof HTMLElement && previous.dataset.widget) { flip(() => { widget.parentElement?.insertBefore(previous, widget.nextSibling); persistOrder(); }); announce(host.dataset.announceMoved, widget); } });
+            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const siblings = widgets().filter((w) => !w.hidden && w.parentElement === widget.parentElement); const next = siblings[siblings.indexOf(widget) + 1]; if (next instanceof HTMLElement && next.dataset.widget) { flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); announce(host.dataset.announceMoved, widget); } });
+            widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); announce(host.dataset.announceHidden, widget); });
             const sizeControls = widget.querySelector<HTMLElement>('.we-sizes');
             const syncSize = () => {
                 widget.dataset.widgetSize = widget.dataset.span === widget.dataset.sizeLg && widget.dataset.sizeLg !== widget.dataset.sizeSm ? 'lg' : 'sm';
@@ -401,7 +441,9 @@ const {
             ghost.classList.add('widget-drag-ghost'); ghost.setAttribute('inert', '');
             ghost.setAttribute('aria-hidden', 'true');
             Object.assign(ghost.style, { width: `${rect.width}px`, height: `${rect.height}px` });
-            widget.parentElement!.appendChild(ghost);
+            // Al grid, no al padre directo: en Cobros el padre es una zona con
+            // overflow:hidden que recortaba la copia al salir de ella.
+            host.appendChild(ghost);
             widget.classList.add('is-dragging');
             move(x, y);
             const autoScroll = () => {
