@@ -67,14 +67,15 @@ const CADENCIA_LABEL: Record<string, string> = {
     {hasPerm && !hasAccess && gate && (
         <PlanGate
             id="recPlanModal"
-            title={t(L, 'rec.titulo')}
+            title={t(L, 'rec.plan_titulo')}
             desc={tf('fact.plan_desc', {
                 plan: planLabel(gate.requiredPlan),
                 current: planLabel(gate.plan),
             })}
             requiredPlan={gate.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/facturas" />
+            preview="facturas"
+            feature="recurrentes" />
     )}
 
     {hasPerm && hasAccess && (

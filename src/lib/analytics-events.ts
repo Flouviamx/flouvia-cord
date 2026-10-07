@@ -473,6 +473,24 @@ export const ANALYTICS_EVENTS = {
     description: 'El vendedor insertó un kit de productos en una cotización.',
     since: 2,
   },
+  // El embudo de la suscripción empieza ANTES del checkout: sin estos dos, una
+  // función bloqueada que nadie abre se lee igual que un paywall que no convence.
+  paywall_viewed: {
+    rail: 'adoption', surface: 'client', scope: 'org', revenue: false,
+    insertIdFrom: null,
+    required: { paywall_id: 'string', required_plan: 'string', surface: ['page', 'contextual'] },
+    optional: {},
+    description: 'Se mostró un bloqueo por plan: una página bloqueada o un upsell contextual.',
+    since: 2,
+  },
+  paywall_cta_clicked: {
+    rail: 'adoption', surface: 'client', scope: 'org', revenue: false,
+    insertIdFrom: null,
+    required: { paywall_id: 'string', required_plan: 'string', plan: 'string', cycle: ['mensual', 'anual', 'ventas'] },
+    optional: {},
+    description: 'Desde un bloqueo por plan se eligió un plan (checkout) o hablar con ventas.',
+    since: 2,
+  },
   cobranza_ia_activated: {
     rail: 'adoption', surface: 'server', scope: 'org', revenue: false,
     insertIdFrom: null,

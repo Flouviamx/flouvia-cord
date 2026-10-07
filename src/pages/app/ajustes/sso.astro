@@ -45,7 +45,7 @@ import { iconInner } from '../../../lib/icons';
             desc={t(L, 'set.sso.upsell_desc').replace('{plan}', planLabel(org.plan_raw))}
             requiredPlan={requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/ajustes" />
+            preview="ajustes" />
     )}
 
     {hasPlan && connections.length === 0 && (

@@ -42,7 +42,7 @@ const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
                 .replace('{current}', planLabel(entitlementCheck.plan))}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/ajustes"
+            preview="ajustes"
         />
     )}
 </SettingsShell>

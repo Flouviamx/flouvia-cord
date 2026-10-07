@@ -22,7 +22,7 @@ import PlanGate from '../../../components/app/PlanGate.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
 import { getCobranzaIA, getMyMembership, getOrg, money } from '../../../lib/queries';
-import { memberCan, planLabel } from '../../../lib/permissions';
+import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { getActiveOrgId } from '../../../lib/db';
@@ -114,12 +114,11 @@ import { iconInner } from '../../../lib/icons';
         <PlanGate
             id="ciaPlanModal"
             title={t(L, 'cia.plan_titulo')}
-            desc={t(L, 'cia.plan_desc')
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            desc={t(L, 'cia.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/cobranza" />
+            preview="agente"
+            feature="cobranza_ia" />
     )}
 
     {hasAccess && D && (
