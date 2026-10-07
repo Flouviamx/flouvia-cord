@@ -18,13 +18,15 @@ import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { iconInner } from '../../lib/icons';
 import { SIDEBAR_NAV, sanitizeSidebarPrefs, sidebarIconFor, type SidebarBadge, type SidebarNavItem } from '../../lib/sidebar-nav';
+import { INCLUDED } from '../../lib/billing';
 
 interface Props {
     page: string;     // id de la página activa (ver SIDEBAR_NAV)
     prefs?: unknown;  // org_members.widget_prefs['cord.sidebar.v1'], sin validar
+    canInvite?: boolean; // permiso `equipo` del miembro
 }
 
-const { page, prefs } = Astro.props;
+const { page, prefs, canInvite = false } = Astro.props;
 const L = currentLocale();
 
 const [badges, ORG, userProfile, usage] = await Promise.all([
@@ -65,6 +67,11 @@ const here = pinKey(Astro.url.pathname + Astro.url.search);
 const pins = (saved.pins ?? []).map((p) => ({ ...p, icon: sidebarIconFor(p.href), active: pinKey(p.href) === here }));
 
 const showPlan = !!usage && !usage.ilimitado;
+// "Invitar al equipo" solo donde de verdad invita: con permiso de Equipo y en un
+// plan con más de un asiento. En Gratis y Starter (un asiento) terminaría en
+// "mejora tu plan", y ese aviso ya lo da el medidor.
+const seatsIncluded = usage ? INCLUDED[usage.plan as keyof typeof INCLUDED]?.usuarios : 1;
+const showInvite = canInvite && !!usage && (seatsIncluded === null || (seatsIncluded ?? 1) > 1);
 const toggleLabel = t(L, 'sidebar.alternar_menu');
 ---
 
@@ -101,7 +108,7 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             <div class="sb-pin-list" id="sbPinList">
                 {pins.map((p) => (
                     <div class="sb-pin-row" draggable="true" data-href={p.href}>
-                        <a href={p.href} class:list={['sb-item', { active: p.active }]} aria-current={p.active ? 'page' : undefined} data-tip={p.label}>
+                        <a href={p.href} class:list={['sb-item', { active: p.active }]} aria-current={p.active ? 'page' : undefined} data-tip={p.label} data-astro-prefetch>
                             <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(p.icon)}></svg>
                             <span class="sb-item-label">{p.label}</span>
                         </a>
@@ -113,7 +120,7 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             </div>
             <template id="sbPinTpl">
                 <div class="sb-pin-row" draggable="true">
-                    <a href="/app" class="sb-item">
+                    <a href="/app" class="sb-item" data-astro-prefetch>
                         <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
                         <span class="sb-item-label"></span>
                     </a>
@@ -143,7 +150,7 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
                                 return (
                                     <Fragment>
                                         <a
-                                            href={it.href} data-id={it.id} data-key={it.key}
+                                            href={it.href} data-id={it.id} data-key={it.key} data-astro-prefetch
                                             data-tip={label} data-tip-sub={b?.tip}
                                             class:list={['sb-item', { active: page === it.id, 'is-section': inSection && page !== it.id }]}
                                             aria-current={page === it.id ? 'page' : undefined}
@@ -164,7 +171,7 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
                                             <div class="sb-sub">
                                                 {it.children.map((c) => (
                                                     <a
-                                                        href={c.href} data-id={c.id} data-tip={`${label} · ${t(L, c.label)}`}
+                                                        href={c.href} data-id={c.id} data-tip={`${label} · ${t(L, c.label)}`} data-astro-prefetch
                                                         class:list={['sb-item', { active: page === c.id }]}
                                                         aria-current={page === c.id ? 'page' : undefined}
                                                     >
@@ -183,6 +190,9 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             );
         })}
     </nav>
+    <!-- Cada navegación es una carga completa: sin esto el menú volvía arriba en
+         cada clic. Inline y justo después del nav para restaurar antes de pintar. -->
+    <script is:inline>try{var n=document.querySelector('.sb-nav'),y=sessionStorage.getItem('cord.sb.scroll');if(n&&y)n.scrollTop=+y}catch(e){}</script>
 
     <div class="sb-footer">
         {showPlan && usage && (
@@ -196,8 +206,27 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             </a>
         )}
         <div class="sb-footer-row">
+            {showInvite && (
+                <a class="sb-invite" href="/app/ajustes/equipo?invitar=1" title={t(L, 'sidebar.invitar')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-plus')}></svg>
+                    <span>{t(L, 'sidebar.invitar')}</span>
+                </a>
+            )}
             <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label={toggleLabel} aria-controls="sidebar" title={`${toggleLabel}  [`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
+                {/* Icono animado: no pasa por el registro de icons.ts (como los checks
+                    animados), pero respeta su gramática Glass Duotone: trazo 1.5 y
+                    relleno currentColor al 14 %. El panel izquierdo se encoge o se
+                    abre como vista previa de lo que va a hacer el clic, y el chevron
+                    indica la dirección; tras el clic, gira para confirmar. */}
+                <svg class="sb-tgl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <defs><clipPath id="sbTglClip"><rect x="3.5" y="4.5" width="17" height="15" rx="3.2" /></clipPath></defs>
+                    <g clip-path="url(#sbTglClip)">
+                        <rect class="sb-tgl-pane" x="3.5" y="4.5" width="6" height="15" fill="currentColor" fill-opacity="0.14" stroke="none" />
+                    </g>
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="3.2" />
+                    <path class="sb-tgl-div" d="M9.5 4.5v15" />
+                    <path class="sb-tgl-chev" d="M16.6 9.6 14.2 12l2.4 2.4" />
+                </svg>
             </button>
         </div>
     </div>
@@ -378,14 +407,62 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
     .sb-plan.full .sb-plan-bar > span { background: var(--color-danger); }
     .sb-plan-cta { font-size: 0.74rem; font-weight: 600; color: var(--sb-text-active); }
 
+    /* Invitar al equipo */
+    .sb-invite {
+        flex: 1; min-width: 0;
+        display: flex; align-items: center; gap: 8px;
+        height: 28px; padding: 0 8px; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
+        transition: background-color 0.12s, color 0.12s;
+    }
+    .sb-invite svg { width: 15px; height: 15px; flex-shrink: 0; opacity: var(--sb-icon-op); }
+    .sb-invite span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-invite:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
+    .sb-invite:hover svg { opacity: 1; }
+    .sb-invite:focus-visible { outline: 2px solid var(--sb-text-active); outline-offset: -2px; }
+
+    /* ── Botón de colapsar: icono animado ──
+       Estado base = cómo está la sidebar (panel ancho / angosto). Hover = vista
+       previa de lo que hará el clic, con rebote de resorte; el chevron entra
+       señalando la dirección. Tras el clic (`.just-toggled`) no se muestra la
+       vista previa contraria hasta salir: el chevron gira para confirmar. */
     .sb-toggle {
+        --tgl-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        flex-shrink: 0; margin-left: auto;
         width: 28px; height: 28px; border-radius: 8px;
         display: inline-flex; align-items: center; justify-content: center;
         background: none; border: none; cursor: pointer; color: var(--sb-text);
         transition: background-color 0.12s, color 0.12s;
     }
     .sb-toggle:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
-    .sb-toggle svg { width: 16px; height: 16px; }
+    .sb-tgl { width: 18px; height: 18px; overflow: visible; transition: transform 0.18s var(--tgl-spring); }
+    .sb-toggle:active .sb-tgl { transform: scale(0.86); transition-duration: 0.08s; }
+    .sb-tgl-pane { transform-box: fill-box; transform-origin: left center; transition: transform 0.5s var(--tgl-spring); }
+    .sb-tgl-div { transition: transform 0.5s var(--tgl-spring); }
+    .sb-tgl-chev {
+        transform-box: fill-box; transform-origin: center;
+        opacity: 0; transform: translateX(2.5px);
+        transition: opacity 0.16s ease-out, transform 0.45s var(--tgl-spring);
+    }
+    /* Expandida + hover: el panel se encoge (eso hará el clic) y el chevron apunta a la izquierda. */
+    .sb-toggle:not(.just-toggled):hover .sb-tgl-pane,
+    .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-pane { transform: scaleX(0.5); }
+    .sb-toggle:not(.just-toggled):hover .sb-tgl-div,
+    .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-div { transform: translateX(-3px); }
+    .sb-toggle:hover .sb-tgl-chev,
+    .sb-toggle:focus-visible .sb-tgl-chev { opacity: 1; transform: none; }
+    /* Recién expandida: el chevron señala a la derecha y da un impulso en esa dirección. */
+    .sb-toggle.just-toggled .sb-tgl-chev { opacity: 1; transform: rotate(180deg); animation: sb-tgl-dash-r 0.42s var(--tgl-spring); }
+    @keyframes sb-tgl-dash-r {
+        0% { transform: rotate(180deg); }
+        35% { transform: translateX(3px) rotate(180deg); }
+        100% { transform: rotate(180deg); }
+    }
+    @keyframes sb-tgl-dash-l {
+        0% { transform: none; }
+        35% { transform: translateX(-3px); }
+        100% { transform: none; }
+    }
 
     /* ── Tooltip del modo colapsado (lo posiciona el script) ── */
     .sb-tip {
@@ -440,11 +517,30 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             box-shadow: 0 0 0 2px var(--sb-bg-solid);
         }
         :global(.sb-collapsed) .sb-badge.danger { background: var(--color-danger); }
-        :global(.sb-collapsed) .sb-footer-row { justify-content: center; }
+        :global(.sb-collapsed) .sb-footer-row { flex-direction: column; align-items: center; gap: 4px; }
+        :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
+        :global(.sb-collapsed) .sb-invite { flex: none; width: 36px; height: 32px; padding: 0; justify-content: center; }
+        :global(.sb-collapsed) .sb-invite span { display: none; }
+        /* Colapsada: panel angosto; hover lo abre (eso hará el clic) y el chevron apunta a la derecha. */
+        :global(.sb-collapsed) .sb-tgl-pane { transform: scaleX(0.5); }
+        :global(.sb-collapsed) .sb-tgl-div { transform: translateX(-3px); }
+        :global(.sb-collapsed) .sb-tgl-chev { transform: translateX(-2.5px) rotate(180deg); }
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):hover .sb-tgl-pane,
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-pane { transform: scaleX(1.5); }
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):hover .sb-tgl-div,
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-div { transform: translateX(3px); }
+        :global(.sb-collapsed) .sb-toggle:hover .sb-tgl-chev,
+        :global(.sb-collapsed) .sb-toggle:focus-visible .sb-tgl-chev { transform: rotate(180deg); }
+        /* Recién colapsada: el chevron señala a la izquierda e impulsa hacia allá. */
+        :global(.sb-collapsed) .sb-toggle.just-toggled .sb-tgl-chev { transform: none; animation-name: sb-tgl-dash-l; }
         /* Cuenta en el rail: mismo aire arriba (padding del aside) que abajo, y la
            línea corta y centrada como la de los grupos, no a todo lo ancho. */
         :global(.sb-collapsed) .sb-account { display: flex; justify-content: center; padding-bottom: 0.9rem; margin-bottom: 0.5rem; }
         :global(.sb-collapsed) .sb-account::after { left: 50%; right: auto; width: 16px; margin-left: -8px; background: var(--sb-divider); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sb-tgl, .sb-tgl-pane, .sb-tgl-div, .sb-tgl-chev { transition: opacity 0.12s; animation: none !important; }
     }
 
     .sb-backdrop { display: none; }
@@ -508,6 +604,8 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         .sb-pin-row .sb-item { padding-right: 52px; }
         .sb-pin-x { opacity: 1; width: 44px; height: 44px; right: 0; }
         .sb-toggle { display: none; }
+        .sb-invite { height: 44px; padding: 0 14px; gap: 14px; font-size: 0.95rem; border-radius: 12px; }
+        .sb-invite svg { width: 20px; height: 20px; }
     }
 </style>
 
@@ -565,12 +663,33 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
     function initCollapse() {
         const btn = document.getElementById('sbToggleFloating');
         const sync = () => btn?.setAttribute('aria-expanded', String(!root.classList.contains('sb-collapsed')));
+        // Confirmación del icono (chevron con impulso). Dura su animación aunque el
+        // cursor ya no esté encima: al colapsar, el botón se mueve al centro del
+        // rail y el cursor queda fuera. Si sigue encima, espera a que salga para no
+        // saltar en seco a la vista previa contraria.
+        let flashTimer = 0;
+        let flashing = false;
+        const flash = () => {
+            if (!btn) return;
+            btn.classList.remove('just-toggled');
+            void btn.getBoundingClientRect(); // reinicia la animación si se repite
+            btn.classList.add('just-toggled');
+            flashing = true;
+            clearTimeout(flashTimer);
+            flashTimer = window.setTimeout(() => {
+                flashing = false;
+                if (!btn.matches(':hover')) btn.classList.remove('just-toggled');
+            }, 750);
+        };
+        // Pasada la confirmación, salir del botón devuelve la vista previa normal.
+        btn?.addEventListener('mouseleave', () => { if (!flashing) btn.classList.remove('just-toggled'); });
         const toggle = () => {
             const v = !root.classList.contains('sb-collapsed');
             root.classList.toggle('sb-collapsed', v);
             try { localStorage.setItem('cord.sb.collapsed', v ? '1' : '0'); } catch (e) {}
             hideTip();
             sync();
+            flash();
         };
         btn?.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
         // Lo invoca el atajo `[` de AppLayout.
@@ -754,7 +873,15 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
         syncBtn();
     }
 
+    // Scroll del menú entre páginas (lo restaura el script inline tras el <nav>).
+    function initScrollMemory() {
+        addEventListener('pagehide', () => {
+            try { if (nav) sessionStorage.setItem('cord.sb.scroll', String(nav.scrollTop)); } catch (e) {}
+        });
+    }
+
     function init() {
+        initScrollMemory();
         initDrawer();
         initCollapse();
         initGroups();

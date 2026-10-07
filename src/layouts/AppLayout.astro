@@ -25,6 +25,7 @@ import '../styles/daterange.css';
 import '../styles/widgets.css';
 import '../styles/report-widgets.css';
 import '../styles/mobile-app.css';
+import '../styles/view-transitions.css';
 
 
 const L = currentLocale();
@@ -189,7 +190,7 @@ import { iconInner } from '../lib/icons';
     <body data-currency={ORG.moneda || 'MXN'}>
         <div class="app-shell">
             <!-- ── SIDEBAR (componente independiente) ── -->
-            <Sidebar page={page} prefs={ME.widgetPrefs?.[SIDEBAR_PREFS_KEY]} />
+            <Sidebar page={page} prefs={ME.widgetPrefs?.[SIDEBAR_PREFS_KEY]} canInvite={memberCan(ME, 'equipo')} />
 
             <!-- ── MAIN ── -->
             <div class="app-main">

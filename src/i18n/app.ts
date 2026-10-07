@@ -110,6 +110,7 @@ export const appStrings = {
         "sidebar.badge.vencida": "cuenta vencida",
         "sidebar.badge.vencidas": "cuentas vencidas",
         "sidebar.plan.mejorar": "Mejorar plan",
+        "sidebar.invitar": "Invitar al equipo",
         "layout.kbd.ir_a": "Ir a {x}",
         "sidebar.aria.nav": "Navegación principal",
         // Sidebar — items
@@ -3659,6 +3660,7 @@ export const appStrings = {
         "sidebar.badge.vencida": "overdue receivable",
         "sidebar.badge.vencidas": "overdue receivables",
         "sidebar.plan.mejorar": "Upgrade plan",
+        "sidebar.invitar": "Invite people",
         "layout.kbd.ir_a": "Go to {x}",
         "sidebar.aria.nav": "Main navigation",
         // Sidebar — items

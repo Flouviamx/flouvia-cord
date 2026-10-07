@@ -709,7 +709,9 @@ pública (`src/lib/demo-quote.ts`).
 menú, atajos `G` + letra y panel de atajos): lista plana (Inicio, Cotizaciones, Clientes,
 Productos) → Ingresos (Facturas, Cobros, Cobranza › Agente IA) → Análisis (Informes,
 Desempeño) → Automatización (Workflows). Org-switcher arriba, "Fijados" antes de los grupos,
-pie con medidor de cotizaciones activas (solo planes con tope) y botón de colapsar (`[`).
+pie con medidor de cotizaciones activas (solo planes con tope), "Invitar al equipo" (permiso
+`equipo`, planes con más de un asiento; abre `/app/ajustes/equipo?invitar=1`) y botón de colapsar (`[`).
+Entre páginas de /app: transiciones nativas + prefetch al pasar el cursor (sin `ClientRouter`).
 Fijados y grupos plegados son preferencias por miembro: `org_members.widget_prefs['cord.sidebar.v1']`
 vía `PUT /api/app/sidebar-prefs` (antes localStorage; se migran solos la primera vez). El `<OnboardingWidget>` y su píldora
 (`#onbPill` en `.tb-right`) se montan aquí, gated por `!setup.complete`.

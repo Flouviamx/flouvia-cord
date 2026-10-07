@@ -1,5 +1,19 @@
 # Historial — App interna: features y UX
 
+## 2026-10-07 — Navegación sin parpadeo, invitar al equipo y toggle animado
+
+- Se evaluó `<ClientRouter />` para mantener viva la sidebar y se descartó por ahora: con
+  navegación SPA los scripts de cada página corren una sola vez, así que había que migrar
+  73 scripts de 44 páginas, 26 componentes y 77 inicializaciones a `astro:page-load`
+  (incluidos el editor, KYC y pagos). En su lugar: View Transitions entre documentos +
+  prefetch de Astro solo en la sidebar. La sidebar no se funde y el scroll del menú se
+  conserva. Verificado en Chromium (`pagereveal` con `viewTransition`).
+- "Invitar al equipo" en el pie, solo donde de verdad invita (permiso `equipo`, planes con
+  más de un asiento); abre el modal existente vía `?invitar=1`.
+- Botón de colapsar con icono animado (vista previa con resorte + chevron que confirma).
+- El avatar de la cuenta quedaba pegado a la línea en el rail colapsado por una regla
+  `padding: 0 !important` vieja en AppLayout; se retiró.
+
 ## 2026-10-07 — Sidebar con densidad de herramienta (Linear / Stripe)
 
 - Estructura en `src/lib/sidebar-nav.ts`, fuente única del menú, los atajos `G` + letra

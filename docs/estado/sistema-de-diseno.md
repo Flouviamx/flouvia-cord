@@ -194,6 +194,20 @@ hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la a
   global de fijados y las reglas `!important` del modo colapsado en `AppLayout` se retiraron.
 - **Móvil:** drawer sólido (`--sb-bg-solid`) con un solo scroll, filas de 44 px, la X de los
   fijados siempre visible y sin atajos ni tooltips.
+- **Navegación sin parpadeo (oct 2026):** transiciones nativas entre documentos
+  (`src/styles/view-transitions.css`, solo la importa AppLayout) y prefetch al pasar el cursor
+  en los enlaces con `data-astro-prefetch`. La sidebar es su propio grupo de transición
+  (`cord-sidebar`) y no se funde: se queda quieta mientras el contenido cambia en 140 ms. El
+  scroll del menú se conserva entre páginas (`sessionStorage`, restaurado por un script inline
+  antes de pintar). **No se usa `<ClientRouter />`:** convertir /app en SPA exigía migrar ~100
+  scripts a `astro:page-load`; si algún día se hace, es un proyecto propio por fases.
+- **Botón de colapsar animado:** icono propio con la gramática Glass Duotone. El hover es una
+  vista previa de lo que hará el clic (el panel izquierdo se encoge o se abre con resorte y
+  entra un chevron con la dirección); tras el clic el chevron confirma con un impulso
+  (`.just-toggled`, 750 ms) aunque el cursor ya no esté encima. Respeta
+  `prefers-reduced-motion`.
+- **Invitar al equipo:** en el pie, solo con permiso `equipo` y en planes con más de un
+  asiento (`INCLUDED[plan].usuarios`). Abre el modal de Ajustes › Equipo con `?invitar=1`.
 - **MISMO material glass que la pill de la topbar (regla, jul 2026; tokens oct 2026):** la sidebar y la `.topbar` leen los MISMOS tokens: `--sb-bg` (blanco al 72% en claro, navy al 75% en oscuro), `--sb-shadow` y `--sb-bg-solid` (respaldo del `@supports not` cuando no hay blur), con `blur(40px) saturate(1.8)` y radio 22px. Antes cada una repetía los valores a mano y los tokens `--sb-bg`/`--sb-shadow` existían sin consumidor, con valores que ya no eran los reales. Un cambio de material se hace en el token, no en una de las dos pills. ⚠️ **No re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el token `--sb-sheen` se retiró en oct 2026 porque ya solo valía `transparent`.
 
 ### Base mobile-first de la app (ago 2026)

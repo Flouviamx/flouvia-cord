@@ -607,6 +607,12 @@ import { iconInner } from '../../../lib/icons';
             emailInput?.focus();
         }
         document.getElementById('eqInvite')?.addEventListener('click', () => openInvite());
+        // Enlace directo desde "Invitar al equipo" de la sidebar. Solo abre si el
+        // botón existe: sin asientos, la página ya muestra por qué no se puede.
+        if (new URLSearchParams(location.search).has('invitar')) {
+            history.replaceState(null, '', location.pathname);
+            if (document.getElementById('eqInvite')) openInvite();
+        }
 
         // ── Exportar (el botón llevaba desde siempre sin listener) ──
         document.getElementById('eqExport')?.addEventListener('click', () => {
