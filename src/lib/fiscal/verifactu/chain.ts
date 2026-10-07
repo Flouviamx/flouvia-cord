@@ -87,7 +87,7 @@ export interface ChainedRegistro {
     envioEstado: EnvioEstado;
 }
 
-const MAX_ATTEMPTS = 8;
+const MAX_ATTEMPTS = 10;
 
 function toChained(row: Record<string, any>): ChainedRegistro {
     const payload = (row.payload ?? {}) as Record<string, unknown>;
@@ -205,6 +205,10 @@ async function insertLink(
         if (raced) return raced;
         // Otra emisión de la org tomó este `seq` primero: reintenta con el
         // eslabón que dejó escrito, en vez de fallar la factura por contención.
+        // Con espera creciente y aleatoria: sin ella, una ráfaga de emisiones
+        // simultáneas (la API en paralelo) volvía a chocar en el mismo `seq` y
+        // agotaba los intentos.
+        await new Promise((resolve) => setTimeout(resolve, Math.min(400, 15 * 2 ** attempt) * (0.5 + Math.random())));
     }
     throw new Error(
         'No se pudo encadenar el registro Verifactu: demasiada contención en la secuencia de la organización.',

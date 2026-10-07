@@ -920,7 +920,18 @@ export async function voidInvoice(
     // una factura vigente.
     if (regulatory && country === 'ES' && !simulated) {
       try { await reactivarAltaVerifactu(orgId, documentId); }
-      catch (e) { log.error('verifactu: no se pudo reactivar el alta', { route: 'fiscal/invoices', orgId, documentId, err: e }); }
+      catch (e) {
+        // No se puede reactivar todavía (p. ej. el alta aún no tiene respuesta
+        // de la AEAT). No basta con el log: la factura queda vigente con una
+        // anulación registrada, y eso lo tiene que ver el negocio y soporte.
+        log.error('verifactu: no se pudo reactivar el alta', { route: 'fiscal/invoices', orgId, documentId, err: e });
+        await withOrgTx(orgId, sql`
+          update documentos_fiscales
+             set provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ verifactu_reactivacion_pendiente: true })}::jsonb,
+                 updated_at = now()
+           where id = ${documentId} and org_id = ${orgId}`);
+        await logInvoiceEvent(orgId, documentId, 'void', 'La anulación quedó registrada ante la AEAT, pero la factura sigue vigente por un pago: hay que volver a darla de alta. Escríbenos a soporte@flouvia.com.');
+      }
     }
     await withOrgTx(orgId, sql`
       update documentos_fiscales

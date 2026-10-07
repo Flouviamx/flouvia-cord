@@ -41,6 +41,12 @@ const MAX_ENVIOS_POR_LLAMADA = 25;
 const MARGEN_ENVIO_MS = 12_000;
 /** Espera tras un fallo de cabecera/certificado: no tiene sentido insistir cada minuto. */
 const ESPERA_FALLO_CABECERA_S = 15 * 60;
+/**
+ * Sin otro registro con qué contrastarlo, un registro que hace fallar el
+ * mensaje solo se aparca tras este número de intentos (cada ejecución horaria
+ * suma uno): antes de eso puede ser un fallo general pasajero.
+ */
+const INTENTOS_PARA_APARCAR_SOLO = 6;
 
 export interface SubmitOrgResult {
     orgId: string;
@@ -70,6 +76,9 @@ const vacio = (orgId: string): SubmitOrgResult => ({
 
 const dormir = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Dos fallos aislables son el mismo si traen el mismo código (o ninguno de los dos trae). */
+const mismoFallo = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
+
 /**
  * Organizaciones españolas que pueden tener envíos pendientes. Barrido de
  * SISTEMA solo sobre `orgs` (cuya política acepta el carril de sistema): el
@@ -91,13 +100,21 @@ async function contarPendientes(orgId: string): Promise<number> {
     return Number(rows[0]?.n || 0);
 }
 
+/**
+ * `esperaS` es el TiempoEsperaEnvio de la AEAT: fija el próximo envío y se
+ * recuerda como la espera entre envíos. `pausaS` solo aplaza el próximo envío
+ * de la organización (certificado, fallo de cabecera): antes se guardaba como
+ * si fuera la espera de la AEAT y los envíos siguientes esperaban 15 minutos
+ * entre lote y lote.
+ */
 async function actualizarEstado(orgId: string, campos: {
-    esperaS?: number; lote?: number; error?: string | null; enviado?: boolean;
+    esperaS?: number; pausaS?: number; lote?: number; error?: string | null; enviado?: boolean;
 }): Promise<void> {
+    const proximoS = campos.pausaS ?? campos.esperaS ?? null;
     await withOrgTx(orgId, sql`
         update verifactu_envio_estado
-           set proximo_envio_at = case when ${campos.esperaS ?? null}::int is null then proximo_envio_at
-                                       else now() + make_interval(secs => ${campos.esperaS ?? 0}::int) end,
+           set proximo_envio_at = case when ${proximoS}::int is null then proximo_envio_at
+                                       else now() + make_interval(secs => ${proximoS ?? 0}::int) end,
                tiempo_espera_s = coalesce(${campos.esperaS ?? null}::int, tiempo_espera_s),
                lote_maximo = coalesce(${campos.lote ?? null}::int, lote_maximo),
                ultimo_error = case when ${campos.error === undefined} then ultimo_error else ${campos.error ?? null} end,
@@ -188,12 +205,18 @@ export async function submitPendingForOrg(orgId: string, options: SubmitOptions 
         const password = decryptSecret(org.verifactu_cert_pass_enc as string);
         if (!p12b64 || !password) {
             result.error = 'Certificado Verifactu no disponible (no se pudo descifrar o no está cargado).';
-            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            await actualizarEstado(orgId, { error: result.error, pausaS: ESPERA_FALLO_CABECERA_S });
             return result;
         }
-        if (org.verifactu_cert_caduca && new Date(org.verifactu_cert_caduca as string).getTime() <= Date.now()) {
+        // `verifactu_cert_caduca` es un día: el certificado vale TODO ese día.
+        // Comparar contra la medianoche UTC lo daba por caducado desde las
+        // 00:00 de su último día válido.
+        const caduca = org.verifactu_cert_caduca instanceof Date
+            ? org.verifactu_cert_caduca.toISOString().slice(0, 10)
+            : String(org.verifactu_cert_caduca || '').slice(0, 10);
+        if (caduca && caduca < new Date().toISOString().slice(0, 10)) {
             result.error = `El certificado Verifactu caducó el ${org.verifactu_cert_caduca}.`;
-            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            await actualizarEstado(orgId, { error: result.error, pausaS: ESPERA_FALLO_CABECERA_S });
             await logVerifactuEvento(orgId, 'incidencia', { motivo: 'certificado caducado' });
             return result;
         }
@@ -202,16 +225,42 @@ export async function submitPendingForOrg(orgId: string, options: SubmitOptions 
             credenciales = credencialesTls(Buffer.from(p12b64, 'base64'), password);
         } catch (error) {
             result.error = error instanceof InvalidCertificateError ? error.message : 'El certificado Verifactu no se pudo cargar.';
-            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            await actualizarEstado(orgId, { error: result.error, pausaS: ESPERA_FALLO_CABECERA_S });
             return result;
         }
 
+        // Un registro que, SOLO, hace fallar el mensaje es SOSPECHOSO, no
+        // culpable: el mismo fallo puede ser de todos (un cambio de esquema en la
+        // AEAT, la identidad del software). Se marca (en `aeat_respuesta`, que
+        // sobrevive entre ejecuciones), se aparta y se sigue con los demás.
+        // - Si otro registro pasa, se vuelve a probar el sospechoso solo: si
+        //   falla otra vez, ahora sí es suyo y se aparca.
+        // - Si otro registro falla solo con el MISMO código, el fallo es
+        //   sistemático: se quitan las marcas, se pausa la organización y no se
+        //   aparca a nadie.
+        // - Si no queda nadie con qué contrastar, se aparca tras
+        //   INTENTOS_PARA_APARCAR_SOLO intentos.
+        // Antes cada registro aislado se aparcaba de inmediato y un fallo
+        // general dejaba la cola entera en `bloqueado`, que no tiene vuelta atrás.
+        let huboExito = false;
+
         for (let envio = 0; envio < MAX_ENVIOS_POR_LLAMADA; envio++) {
-            const [pendRows] = await withOrgTx(orgId, sql`
-                select id, tipo, seq, payload from verifactu_registros
-                 where org_id = ${orgId} and envio_estado = 'pendiente'
-                 order by seq asc
-                 limit ${lote}`);
+            const [limpiosRows, sospechososRows] = await withOrgTx(orgId,
+                sql`select id, tipo, seq, payload, envio_intentos from verifactu_registros
+                     where org_id = ${orgId} and envio_estado = 'pendiente'
+                       and coalesce(aeat_respuesta->>'sospechoso', '') <> 'true'
+                     order by seq asc
+                     limit ${lote}`,
+                sql`select id, tipo, seq, payload, envio_intentos, aeat_respuesta from verifactu_registros
+                     where org_id = ${orgId} and envio_estado = 'pendiente'
+                       and aeat_respuesta->>'sospechoso' = 'true'
+                     order by seq asc
+                     limit 1`,
+            );
+            // Tras un envío que pasó, el sospechoso se contrasta YA; si no hay
+            // limpios, también se reintenta (es lo único que queda).
+            const probando = sospechososRows.length > 0 && (huboExito || !limpiosRows.length);
+            const pendRows = probando ? sospechososRows : limpiosRows;
             const pendientes: FilaPendiente[] = pendRows.map((r) => ({
                 id: String(r.id), tipo: r.tipo === 'anulacion' ? 'anulacion' : 'alta', seq: Number(r.seq), payload: r.payload,
             }));
@@ -256,24 +305,69 @@ export async function submitPendingForOrg(orgId: string, options: SubmitOptions 
                 const clase = clasificarFallo(error);
                 const mensaje = error instanceof Error ? error.message : String(error);
                 log.error('verifactu: fallo al enviar a la AEAT', { route: 'verifactu-submit', orgId, clase, registros: ids.length, err: error });
-                if (clase === 'aislable') {
-                    if (grupo.filas.length > 1) {
-                        // El culpable está en el lote: el siguiente envío lleva la
-                        // mitad. Convergencia en log2(n) envíos sin aparcar a nadie
-                        // por error.
-                        lote = loteTrasFallo(grupo.filas.length);
-                        await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
-                    } else {
-                        await aparcar(orgId, grupo.filas[0], mensaje, { fault: (error as any)?.faultstring, codigo: (error as any)?.codigo });
+                if (clase === 'aislable' && grupo.filas.length > 1) {
+                    // El culpable está en el lote: el siguiente envío lleva la
+                    // mitad. Convergencia en log2(n) envíos sin aparcar a nadie
+                    // por error.
+                    lote = loteTrasFallo(grupo.filas.length);
+                    await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
+                } else if (clase === 'aislable' && probando) {
+                    // El sospechoso vuelve a fallar solo. Es suyo si otro envío
+                    // pasó entretanto o si ya agotó sus intentos.
+                    const fila = grupo.filas[0];
+                    const intentos = (Number(sospechososRows[0]?.envio_intentos) || 0) + 1;
+                    const detalle = { fault: (error as any)?.faultstring, codigo: (error as any)?.codigo };
+                    // Contraste entre ejecuciones: ¿la AEAT procesó otro registro
+                    // de esta organización después de marcarlo?
+                    const marcadoAt = String((sospechososRows[0]?.aeat_respuesta as any)?.marcado_at || '');
+                    let procesadoDespues = false;
+                    if (!huboExito && marcadoAt) {
+                        const [[r]] = await withOrgTx(orgId, sql`
+                            select exists (select 1 from verifactu_registros
+                                            where org_id = ${orgId} and id <> ${fila.id}
+                                              and envio_estado in ('aceptado', 'aceptado_con_errores', 'rechazado')
+                                              and envio_at > ${marcadoAt}::timestamptz) as hay`);
+                        procesadoDespues = r?.hay === true;
+                    }
+                    if (huboExito || procesadoDespues || intentos >= INTENTOS_PARA_APARCAR_SOLO) {
+                        await aparcar(orgId, fila, mensaje, detalle);
                         result.bloqueados++;
-                        // Culpable aislado: el resto de la cola vuelve a lotes completos.
                         lote = 1000;
                         await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
+                    } else {
+                        result.error = mensaje;
+                        await actualizarEstado(orgId, { pausaS: ESPERA_FALLO_CABECERA_S, error: mensaje, enviado: true });
+                        break;
                     }
+                } else if (clase === 'aislable') {
+                    const fila = grupo.filas[0];
+                    const codigo = (error as any)?.codigo;
+                    const marcado = sospechososRows[0]?.aeat_respuesta as Record<string, unknown> | undefined;
+                    if (marcado && mismoFallo(marcado.codigo, codigo)) {
+                        // Otro registro distinto falla solo con el MISMO fallo: no es
+                        // de un registro. Se quitan las marcas, se pausa la
+                        // organización como un fallo de cabecera y no se aparca a nadie.
+                        await withOrgTx(orgId, sql`
+                            update verifactu_registros set aeat_respuesta = null
+                             where org_id = ${orgId} and envio_estado = 'pendiente' and aeat_respuesta->>'sospechoso' = 'true'`);
+                        result.error = mensaje;
+                        await actualizarEstado(orgId, { lote: 1000, pausaS: ESPERA_FALLO_CABECERA_S, error: mensaje, enviado: true });
+                        await logVerifactuEvento(orgId, 'incidencia', { motivo: 'fallo sistemático del envío: ningún registro se aparcó', detalle: mensaje.slice(0, 500) });
+                        break;
+                    }
+                    // Registro que falla solo: se marca sospechoso y se sigue con
+                    // los demás en lotes completos.
+                    await withOrgTx(orgId, sql`
+                        update verifactu_registros
+                           set envio_error = ${mensaje.slice(0, 1000)},
+                               aeat_respuesta = ${JSON.stringify({ sospechoso: true, codigo: codigo ?? null, fault: (error as any)?.faultstring ?? null, marcado_at: new Date().toISOString() })}::jsonb
+                         where id = ${fila.id} and org_id = ${orgId} and envio_estado = 'pendiente'`);
+                    lote = 1000;
+                    await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
                 } else {
                     result.error = mensaje;
                     await actualizarEstado(orgId, {
-                        esperaS: clase === 'cabecera' ? ESPERA_FALLO_CABECERA_S : esperaS,
+                        ...(clase === 'cabecera' ? { pausaS: ESPERA_FALLO_CABECERA_S } : { esperaS }),
                         error: mensaje,
                         enviado: true,
                     });
@@ -286,6 +380,7 @@ export async function submitPendingForOrg(orgId: string, options: SubmitOptions 
             }
 
             result.enviados += grupo.filas.length;
+            huboExito = true;
             const resoluciones = resolverRespuesta(grupo, respuesta);
             const filas = resoluciones.map((r) => ({
                 id: r.fila.id,

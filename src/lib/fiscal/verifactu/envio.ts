@@ -121,6 +121,11 @@ export function resolverRespuesta(grupo: GrupoEnvio, respuesta: RespuestaEnvio):
         if (linea.estado === 'AceptadoConErrores') return { fila, estado: 'aceptado_con_errores' as const, linea, motivo: linea.descripcionError };
         if (linea.codigoError === 3000) {
             const dup = linea.registroDuplicado?.estado;
+            // Un ALTA cuyo duplicado la AEAT guarda como anulado no está vigente
+            // allí: darla por aceptada escondía que la factura consta anulada.
+            if (fila.tipo === 'alta' && dup === 'Anulada') {
+                return { fila, estado: 'rechazado' as const, linea, motivo: 'La AEAT tiene esta factura registrada como anulada; hay que volver a darla de alta.' };
+            }
             const estado = dup === 'AceptadaConErrores' ? 'aceptado_con_errores' as const : 'aceptado' as const;
             return { fila, estado, linea, motivo: 'La AEAT ya tenía este registro (duplicado).' };
         }

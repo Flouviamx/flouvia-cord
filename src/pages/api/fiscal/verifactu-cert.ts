@@ -28,6 +28,7 @@ import { logVerifactuEvento } from '../../../lib/fiscal/verifactu/chain';
 import { ejercicioAEAT } from '../../../lib/fiscal/verifactu/huella';
 import { requireSifIdentity, SifNotConfiguredError, verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
 import { nifEsValido, normalizarNifEs } from '../../../lib/fiscal/verifactu/validacion';
+import { programarEnvioInmediato } from '../../../lib/fiscal/verifactu/submit';
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -114,7 +115,18 @@ export const POST: APIRoute = async ({ request }) => {
             verifactu_cert_caduca = ${parsed.expiresAt.toISOString().slice(0, 10)},
             verifactu_cert_subido_at = now(),
             verifactu_modo = 'verifactu'
-        where id = ${orgId}`);
+        where id = ${orgId}`,
+        // Un certificado nuevo levanta la pausa que dejó el anterior (caducado,
+        // ilegible o rechazado): sin esto, la cola esperaba hasta 15 minutos
+        // más aunque el problema ya estuviera resuelto.
+        sql`
+        update verifactu_envio_estado
+           set proximo_envio_at = null, ultimo_error = null, updated_at = now()
+         where org_id = ${orgId}`);
+
+    // Lo que quedó pendiente con el certificado anterior sale ya, no en la
+    // siguiente ejecución horaria.
+    if (verifactuEnvioConfig().habilitado) programarEnvioInmediato(orgId);
 
     await logVerifactuEvento(orgId, reemplazo ? 'cambio_config' : 'arranque', {
         motivo: reemplazo ? 'certificado reemplazado' : 'certificado subido',

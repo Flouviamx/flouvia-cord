@@ -343,27 +343,64 @@ describe('outbox de envío', () => {
         expect(m.aeat).not.toHaveBeenCalled();
     });
 
-    it('SoapFault aislable: se parte el lote y el culpable termina aparcado sin bloquear la cola', async () => {
+    it('SoapFault aislable: se parte el lote, el culpable queda sospechoso y se aparca solo tras contrastarlo', async () => {
         await limpiarPendientes();
         const a = await nuevoDocumento(); await provider.issueDocument(request(a));
         const b = await nuevoDocumento(); await provider.issueDocument(request(b));
         const fault = new AeatFaultError('Client', 'Codigo[4102].El XML no cumple el esquema.');
+        const siguiente = () => m.db.exec(`update verifactu_envio_estado set proximo_envio_at = null`);
         m.aeat.mockRejectedValueOnce(fault);
         await submitPendingForOrg(ORG, { deadline: Date.now() + 60_000 });
         expect((await m.db.query(`select lote_maximo from verifactu_envio_estado where org_id = $1`, [ORG])).rows[0].lote_maximo).toBe(1);
         expect((await registros(a))[0].envio_estado).toBe('pendiente');
 
-        await m.db.exec(`update verifactu_envio_estado set proximo_envio_at = null`);
+        // Solo, `a` vuelve a fallar: queda SOSPECHOSO, no aparcado.
+        await siguiente();
         m.aeat.mockRejectedValueOnce(fault);
         const res = await submitPendingForOrg(ORG, { deadline: Date.now() + 60_000 });
         expect(m.aeat.mock.calls[1][1]).toHaveLength(1);
-        expect(res.bloqueados).toBe(1);
-        expect((await registros(a))[0].envio_estado).toBe('bloqueado');
+        expect(res.bloqueados).toBe(0);
+        expect((await registros(a))[0]).toMatchObject({ envio_estado: 'pendiente' });
+        const marca = (await m.db.query(`select aeat_respuesta from verifactu_registros where documento_id = $1`, [a])).rows[0].aeat_respuesta;
+        expect(marca).toMatchObject({ sospechoso: true, codigo: 4102 });
 
-        await m.db.exec(`update verifactu_envio_estado set proximo_envio_at = null`);
+        // `b` pasa sin `a`: el fallo era de `a`.
+        await siguiente();
         m.aeat.mockResolvedValueOnce(respuestaAeat([{ num: `F2026-${b.slice(-6)}`, estado: 'Correcto' }]));
         await submitPendingForOrg(ORG, { deadline: Date.now() + 60_000 });
+        expect(m.aeat.mock.calls[2][1]).toHaveLength(1);
         expect((await registros(b))[0].envio_estado).toBe('aceptado');
+
+        // Contrastado: `a` falla otra vez solo y ahora sí se aparca.
+        await siguiente();
+        m.aeat.mockRejectedValueOnce(fault);
+        const fin = await submitPendingForOrg(ORG, { deadline: Date.now() + 60_000 });
+        expect(fin.bloqueados).toBe(1);
+        expect((await registros(a))[0].envio_estado).toBe('bloqueado');
+    });
+
+    it('un SoapFault que falla igual en dos registros distintos es sistemático: no aparca a nadie', async () => {
+        await limpiarPendientes();
+        const a = await nuevoDocumento(); await provider.issueDocument(request(a));
+        const b = await nuevoDocumento(); await provider.issueDocument(request(b));
+        const fault = new AeatFaultError('Client', 'Codigo[4102].El XML no cumple el esquema.');
+        m.aeat.mockRejectedValue(fault);
+        // Lote [a, b] → se parte; [a] solo → sospechoso; [b] solo con el mismo
+        // código → sistemático.
+        try {
+            for (let i = 0; i < 3; i++) {
+                await m.db.exec(`update verifactu_envio_estado set proximo_envio_at = null`);
+                await submitPendingForOrg(ORG, { deadline: Date.now() + 60_000 });
+            }
+        } finally { m.aeat.mockReset(); }
+        for (const doc of [a, b]) {
+            const r = (await m.db.query(`select envio_estado, aeat_respuesta from verifactu_registros where documento_id = $1`, [doc])).rows[0];
+            expect(r.envio_estado).toBe('pendiente');
+            expect(r.aeat_respuesta?.sospechoso).not.toBe(true);
+        }
+        // La organización queda pausada como un fallo de cabecera.
+        const estado = (await m.db.query(`select proximo_envio_at > now() + interval '10 minutes' as pausada from verifactu_envio_estado where org_id = $1`, [ORG])).rows[0];
+        expect(estado.pausada).toBe(true);
     });
 
     it('fallo de cabecera o certificado: no se aparca ningún registro', async () => {
