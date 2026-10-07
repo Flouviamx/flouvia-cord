@@ -16,6 +16,7 @@ import { checkEntitlement, getEntitlementContext } from './org-entitlements';
 import { planIncludes, resourceLimit } from './entitlements';
 import { cached, invalidate } from './cache';
 import { addDaysISO } from './rango';
+import { pagosSql } from './informes-tabla';
 import { getReportScope, quoteFx, documentFx, currencyFx, dayStart, dayEnd, localDate, scopeNote, todayInZone } from './report-scope';
 import { after } from './after';
 import { trackServer } from './posthog-server';
@@ -2414,7 +2415,7 @@ async function getSerieDiariaUncached() {
     const fx = quoteFx(S);
     const desdeISO = addDaysISO(S.hoy, -(SERIE_DIARIA_DIAS - 1));
     const ini = dayStart(S, desdeISO);
-    const [cotizadoRows, cerradoRows, cobradoRows, recurrenteRows] = await withOrgTx(orgId,
+    const [cotizadoRows, cerradoRows, cobradoRows] = await withOrgTx(orgId,
         // Por día de CREACIÓN: monto cotizado y la cohorte (cuántas salieron y cuántas
         // de esas ya se ganaron) — de ahí sale la tasa de cierre de cualquier rango.
         sql`select to_char(${localDate(S, 'c.created_at')}, 'YYYY-MM-DD') as fecha,
@@ -2436,25 +2437,12 @@ async function getSerieDiariaUncached() {
               and c.status = any(${STATUS_GANADA})
               and coalesce(c.approved_at, c.created_at) >= ${ini}
             group by 1 order by 1`,
-        sql`select to_char((coalesce(c.paid_at, c.approved_at, c.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(greatest(0, c.total - coalesce((
-                       select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
-                       where cc.cotizacion_id = c.id
-                   ), 0)) * ${fx}),0) as monto
-            from cotizaciones c
-            where c.org_id = ${orgId}
-              and (c.status = 'paid' or c.paid_at is not null)
-              and coalesce(c.paid_at, c.approved_at, c.created_at) >= ${ini}
-            group by 1 order by 1`,
-        sql`select to_char((coalesce(co.paid_at, co.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0) * ${fx}),0) as monto
-            from cotizacion_cobros co
-            join cotizaciones c on c.id = co.cotizacion_id
-            where co.org_id = ${orgId}
-              and co.status = 'pagado'
-              and c.es_recurrente is true
-              and coalesce(co.paid_at, co.created_at) >= ${ini}
-            group by 1 order by 1`,
+        // Cobrado = dinero que ENTRÓ, de los dos rieles y por fecha de pago, neto de
+        // reembolsos: la MISMA definición que el informe "Pagos recibidos" (pagosSql).
+        sql`select to_char((p.fecha at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(p.monto - p.reembolsado), 0) as monto
+              from ${pagosSql(S, orgId, ini, dayEnd(S, S.hoy))} p
+             group by 1 order by 1`,
     );
     const toMap = (rows: any[], col = 'monto') => {
         const m = new Map<string, number>();
@@ -2464,10 +2452,6 @@ async function getSerieDiariaUncached() {
     const cotizadoM = toMap(cotizadoRows), cerradoM = toMap(cerradoRows), cobradoM = toMap(cobradoRows);
     const enviadasM = toMap(cotizadoRows, 'enviadas'), ganadasCreadasM = toMap(cotizadoRows, 'ganadas_creadas');
     const ganadasM = toMap(cerradoRows, 'ganadas');
-    for (const r of recurrenteRows) {
-        const fecha = r.fecha as string;
-        cobradoM.set(fecha, (cobradoM.get(fecha) ?? 0) + num(r.monto));
-    }
 
     // Relleno de huecos, 365 puntos exactos, contados desde HOY en la zona del negocio
     // (la misma con la que Postgres agrupó arriba).

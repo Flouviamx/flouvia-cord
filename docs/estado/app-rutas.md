@@ -145,6 +145,17 @@ existe pero es ajeno ya es filtrar entre negocios.
                    (Cobranza y Flujo) sale de la vista cuentas_por_cobrar: facturas y
                    abonos parciales incluidos. Lo verifica test/analitica-moneda-db.test.ts.
                    "Todo" en el selector significa los últimos 12 meses y así se rotula.
+                   Informes tabla (oct 2026, estilo Shopify): ventas, ventas-cliente,
+                   ventas-producto, pagos, impuestos, recompra y vendedores
+                   (ReportDef.kind = 'tabla'). KPIs contra el periodo anterior + gráfica +
+                   tabla ordenable con totales; datos en src/lib/informes-tabla.ts, vista en
+                   components/app/informes/TablaReport.astro. Exportan CSV en
+                   /api/informes/<id>?format=csv (importes como número, divisa en su
+                   columna). Un rango nuevo recarga la página (la tabla se arma en
+                   servidor). "Cobrado" en todas partes = pagosSql: pagos de cotización y de
+                   factura (cobro_id null), netos de reembolsos. Categorías del selector:
+                   resumen, ventas, clientes, productos, finanzas, equipo.
+                   Lo verifica test/informes-tabla-db.test.ts.
 /app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía

@@ -723,6 +723,10 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
         svg.appendChild(gridG);
 
         const bars: SVGRectElement[] = [];
+        // Etiquetas del eje que no caben se ralean (una de cada `labelStep`), en vez de
+        // encimarse: con 14 días en un teléfono el eje era una mancha ilegible.
+        const longest = Math.max(1, ...opts.items.map((it) => String(it.label ?? '').length));
+        const labelStep = Math.max(1, Math.ceil((longest * 6 + 10) / Math.max(1, colW)));
         opts.items.forEach((it, i) => {
             const cx = PAD.left + colW * (i + 0.5);
             const barH = it.value > 0 ? Math.max(3, (it.value / scale.max) * plotH) : 0;
@@ -734,9 +738,11 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
             bars.push(rect);
             svg.appendChild(rect);
 
-            const label = svgEl('text', { x: String(cx), y: String(h - 6), 'text-anchor': 'middle', class: 'chx-axis-label' });
-            label.textContent = it.label;
-            svg.appendChild(label);
+            if (i % labelStep === 0) {
+                const label = svgEl('text', { x: String(cx), y: String(h - 6), 'text-anchor': 'middle', class: 'chx-axis-label' });
+                label.textContent = it.label;
+                svg.appendChild(label);
+            }
         });
 
         const dim = makeDimGroup(bars);

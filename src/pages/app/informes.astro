@@ -15,9 +15,10 @@ import FlujoReport from '../../components/app/informes/FlujoReport.astro';
 import CobranzaReport from '../../components/app/informes/CobranzaReport.astro';
 import ClientesReport from '../../components/app/informes/ClientesReport.astro';
 import ProductosReport from '../../components/app/informes/ProductosReport.astro';
+import TablaReport from '../../components/app/informes/TablaReport.astro';
 import { getMyMembership } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
-import { REPORTS, REPORT_BY_ID, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
+import { REPORTS, REPORT_BY_ID, parseGranularity, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
 import { loadReport } from '../../lib/informes-data';
 import { addDaysISO, parseRangoParams } from '../../lib/rango';
 import { todayInZone } from '../../lib/report-scope';
@@ -53,8 +54,20 @@ const allowed = hasAnalytics
 const todayISO = todayInZone(currentTimeZone());
 const minISO = addDaysISO(todayISO, -364);
 const rango = parseRangoParams(Astro.url.searchParams, { minISO, maxISO: todayISO, anchorISO: todayISO, fallback: '30' });
-const payload = hasReportAccess ? await loadReport(reportId, rango) : null;
-const data = payload ? (payload as any)[reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
+const granularity = parseGranularity(Astro.url.searchParams.get('g'));
+const payload = hasReportAccess ? await loadReport(reportId, rango, { g: granularity }) : null;
+const isTabla = report.kind === 'tabla';
+const data = payload ? (payload as any)[isTabla ? 'tabla' : reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
+// Parámetros del rango en la URL (export CSV y selector de granularidad): el rango
+// que se pintó, no el que el navegador tenga guardado.
+const rangeQuery = (extra: Record<string, string> = {}) => {
+    const q = new URLSearchParams();
+    if (rango.key === 'custom') { q.set('desde', rango.desde); q.set('hasta', rango.hasta); } else q.set('rango', String(rango.key));
+    for (const [k, v] of Object.entries(extra)) q.set(k, v);
+    return q.toString();
+};
+const csvHref = `/api/informes/${reportId}?${rangeQuery({ format: 'csv', ...(granularity ? { g: granularity } : {}) })}`;
+const granHref = reportId === 'ventas' ? (g: string) => `/app/informes?r=${reportId}&${rangeQuery({ g })}` : undefined;
 const heading = reportLabel(report, L);
 const widgetLabels = {
     drag: es ? 'Arrastrar widget' : 'Drag widget', up: es ? 'Subir widget' : 'Move widget up',
@@ -77,7 +90,7 @@ import { iconInner } from '../../lib/icons';
                     {es ? `Al día de hoy · ${dateFull(todayISO, L)}` : `As of today · ${dateFull(todayISO, L)}`}
                 </span>
             )}
-            {hasReportAccess && <WidgetCustomizeButtons editId="reportEditBtn" resetId="reportResetBtn" doneId="reportDoneBtn" />}
+            {hasReportAccess && !isTabla && <WidgetCustomizeButtons editId="reportEditBtn" resetId="reportResetBtn" doneId="reportDoneBtn" />}
         </div>
     </Fragment>
 
@@ -96,7 +109,14 @@ import { iconInner } from '../../lib/icons';
             returnHref="/app/informes" />
     )}
 
-    {hasReportAccess && data && (
+    {hasReportAccess && data && isTabla && (
+        <div data-report-shell data-report-kind="tabla" data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}>
+            <TablaReport data={data} L={L} reportId={reportId} csvHref={csvHref} granHref={granHref as any} />
+            <MonedaNota nota={data.moneda} />
+        </div>
+    )}
+
+    {hasReportAccess && data && !isTabla && (
         <div data-report-shell data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}
             data-labels={JSON.stringify({
                 status: Object.fromEntries(['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((k) => [k, t(L, `cot.col.${k}` as any)])),
@@ -220,6 +240,9 @@ import { iconInner } from '../../lib/icons';
         // servidor. Si resolvió otro (rango guardado en este navegador, o un link sin
         // ?rango=), los números tienen que seguir a la etiqueta, no al revés.
         if (detail?.initial && detail.desde === shell?.dataset.desde && detail.hasta === shell?.dataset.hasta) return;
+        // Los informes tabla se arman en el servidor (tabla completa, totales, CSV): un
+        // rango nuevo es una carga nueva. El picker ya escribió el rango en la URL.
+        if (shell?.dataset.reportKind === 'tabla') { location.assign(location.href); return; }
         request?.abort(); request = new AbortController();
         shell?.setAttribute('aria-busy', 'true');
         try {

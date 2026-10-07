@@ -69,14 +69,16 @@ beforeAll(async () => {
             folio text, status text, total numeric, base_currency text not null default 'MXN', fiscal_currency text not null default 'MXN',
             fx_rate numeric not null default 1, created_at timestamptz default now(), sent_at timestamptz, approved_at timestamptz,
             paid_at timestamptz, viewer_last_seen timestamptz, vigencia date, terminos text, es_recurrente boolean,
-            public_token text default gen_random_uuid()::text, creado_por uuid);
+            public_token text default gen_random_uuid()::text, creado_por uuid, payment_method text);
         create table org_members(org_id uuid, user_id uuid, nombre text, email text, rol text, estado text);
         create table cotizacion_items(id uuid primary key default gen_random_uuid(), cotizacion_id uuid, producto_id uuid,
             descripcion text, cantidad numeric, precio_unitario numeric, precio_negociado numeric);
         create table eventos(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid, tipo text,
             detalle text, created_at timestamptz default now());
         create table cotizacion_cobros(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid,
-            monto numeric, status text, paid_at timestamptz, created_at timestamptz default now(), reembolsado_cents bigint);
+            monto numeric, status text, paid_at timestamptz, created_at timestamptz default now(), reembolsado_cents bigint, payment_method text);
+        create table documento_pagos(id uuid primary key default gen_random_uuid(), org_id uuid, documento_id uuid, cobro_id uuid,
+            monto numeric, currency text, metodo text default 'manual', aplicado_at timestamptz default now());
         create table cotizacion_suscripciones(id uuid primary key default gen_random_uuid(), org_id uuid, cliente_id uuid,
             monto numeric, moneda text, estado text, current_period_end timestamptz, cancel_at_period_end boolean default false);
         create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid,
@@ -98,7 +100,7 @@ beforeEach(async () => {
     m.org = ORG;
     m.rates = { USD: 20 };
     await m.db.exec(`delete from orgs; delete from clientes; delete from cotizaciones; delete from cotizacion_items; delete from eventos;
-        delete from cotizacion_cobros; delete from cotizacion_suscripciones; delete from org_members; delete from promesas_pago; delete from documentos_fiscales;`);
+        delete from cotizacion_cobros; delete from cotizacion_suscripciones; delete from org_members; delete from documento_pagos; delete from promesas_pago; delete from documentos_fiscales;`);
     await m.db.query(`insert into orgs values ($1, 'MXN', 'America/Mexico_City', 'MX', 0)`, [ORG]);
     await m.db.query(`insert into clientes(id, org_id, empresa, nivel, descuento_pct) values ($1, $3, 'Acme', 'A', 10), ($2, $3, 'Acme', 'A', 30)`, [CL1, CL2, ORG]);
 });

@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
-import { REPORT_BY_ID, REPORT_IDS, type ReportId } from '../../../lib/informes';
+import { REPORT_BY_ID, REPORT_IDS, parseGranularity, type ReportId } from '../../../lib/informes';
+import { tablaToCsv } from '../../../lib/informes-csv';
 import { loadReport } from '../../../lib/informes-data';
 import { requirePerm } from '../../../lib/queries';
 import { addDaysISO, parseRangoParams } from '../../../lib/rango';
 import { todayInZone } from '../../../lib/report-scope';
-import { currentTimeZone } from '../../../lib/context';
+import { currentLocale, currentTimeZone } from '../../../lib/context';
 import { getActiveOrgId } from '../../../lib/db';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 
@@ -34,7 +35,18 @@ export const GET: APIRoute = async ({ params, url }) => {
     const range = parseRangoParams(url.searchParams, {
         minISO: addDaysISO(todayISO, -364), maxISO: todayISO, anchorISO: todayISO, fallback: '30',
     });
-    const data = await loadReport(id, range);
+    const data = await loadReport(id, range, { g: parseGranularity(url.searchParams.get('g')) });
+    // Exportación (informes tabla): importes como número y la divisa en su columna.
+    if (url.searchParams.get('format') === 'csv' && data && 'tabla' in data && data.tabla) {
+        const name = `cord-${id}-${report.scope === 'snapshot' ? todayISO : `${range.desde}_${range.hasta}`}.csv`;
+        return new Response(tablaToCsv(data.tabla, currentLocale()), {
+            headers: {
+                'Content-Type': 'text/csv; charset=utf-8',
+                'Content-Disposition': `attachment; filename="${name}"`,
+                'Cache-Control': 'private, no-store',
+            },
+        });
+    }
     return new Response(JSON.stringify({ report: id, range, data }), {
         headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' },
     });
