@@ -119,11 +119,16 @@ describe('cuota real con SQL', () => {
     expect((await meterInvoiceEmission(org, id, emitter)).emitted).toBe(false);
     expect(emitter).not.toHaveBeenCalled(); expect(await usage()).toBe(1); expect(m.flush).not.toHaveBeenCalled();
   });
-  it('una interrupción conserva la reserva para revisión', async () => {
+  it('una interrupción queda reintentable: libera la cuota y el reintento emite una sola vez', async () => {
     const id = await draft();
-    await expect(meterInvoiceEmission(org, id, async () => { throw new Error('interrupción'); })).rejects.toThrow();
+    // Antes la interrupción conservaba claim y reserva para siempre y el
+    // documento no se podía reintentar, anular ni borrar. La llave de
+    // idempotencia del proveedor es estable, así que repetir no duplica.
+    expect(await meterInvoiceEmission(org, id, async () => { throw new Error('interrupción'); }))
+      .toMatchObject({ emitted: false, httpStatus: 503 });
+    expect(await usage()).toBe(0);
+    expect((await meterInvoiceEmission(org, id, () => issue(id))).emitted).toBe(true);
     expect(await usage()).toBe(1);
-    expect((await meterInvoiceEmission(org, id, () => issue(id))).emitted).toBe(false);
   });
   it.each([{ simulado: true }, { livemode: false }])('un documento de prueba no consume cuota: %j', async data => {
     const id = await draft(); await meterInvoiceEmission(org, id, () => issue(id, data));

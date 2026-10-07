@@ -32,6 +32,8 @@ import { partiesFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
+import { log } from '../log';
+import { satFormFor as satPaymentForm } from './payment-complement';
 import {
   cleanPrefix,
   documentTypeFor,
@@ -589,6 +591,17 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     return { emitted: false, status: 'error', error: 'No se pudo reservar el folio fiscal.' };
   }
 
+  // ── Método y forma de pago del CFDI ───────────────────────────────────
+  // Antes TODO CFDI salía "PUE / 03": pagado en una sola exhibición por
+  // transferencia, aunque la factura fuera a 30 días o se cobrara con tarjeta.
+  // El SAT exige PUE solo cuando el pago se recibió al emitir, con la forma
+  // REAL; si no, PPD con forma 99 y un complemento de pago por cada cobro.
+  const recipientRfc = String((head.recipient_snapshot as FiscalParty | null)?.taxId || '').toUpperCase().trim();
+  const cfdiPayment = country === 'MX' && !head.credit_note_of
+    ? await cfdiPaymentTerms(orgId, documentId, head.cotizacion_id ? String(head.cotizacion_id) : null, Number(head.total) || 0,
+      !recipientRfc || recipientRfc === 'XAXX010101000')
+    : { paymentMethod: 'PUE', paymentForm: '03' };
+
   const request: FiscalDocumentRequest = {
     documentId,
     invoiceNumber,
@@ -619,8 +632,8 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
       || undefined,
     cfdi: {
       use: String(head.cliente_uso || head.org_uso || 'G03'),
-      paymentForm: '03',
-      paymentMethod: 'PUE',
+      paymentForm: cfdiPayment.paymentForm,
+      paymentMethod: cfdiPayment.paymentMethod,
     },
   };
 
@@ -632,12 +645,23 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     try {
       response = await FiscalFactory.getProvider(country, regulatory && country === 'ES' ? (head.credit_note_of ? 'verifactu_credit_note' : 'verifactu_invoice') : docType).issueDocument(request);
     } catch (error: unknown) {
+      // Solo México habla con un tercero dentro de esta llamada (el PAC): ahí
+      // una excepción puede significar "se timbró y no alcanzamos a leerlo".
+      // La factura comercial y Verifactu (que encadena en la base de forma
+      // idempotente por documento y envía después) fallan ANTES de que exista
+      // nada fuera de Cord: marcarlas inciertas bloqueaba el reintento, la
+      // anulación y el borrado para siempre, con el folio quemado.
+      const uncertain = country === 'MX';
+      // El detalle crudo queda en el log; al vendedor le llega el estado (regla 14).
+      log.error('el proveedor fiscal lanzó al emitir', { route: 'fiscal/invoices', err: error, orgId, documentId });
       response = {
         success: false,
         provider: country === 'MX' ? 'facturapi' : 'cord',
         documentId,
-        error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
-        rawProviderData: { delivery_uncertain: true },
+        error: uncertain
+          ? 'No pudimos confirmar la emisión con la autoridad fiscal. Reintenta en unos minutos: no se duplicará.'
+          : (error instanceof Error && error.message ? error.message : 'No se pudo emitir el documento.'),
+        rawProviderData: uncertain ? { delivery_uncertain: true, retry_safe: true } : {},
       };
     }
   }
@@ -655,7 +679,11 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            provider = ${response.provider},
            provider_document_id = ${response.documentId || null},
            fiscal_id = ${response.fiscalId ?? null},
-           provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify(providerData)}::jsonb,
+           -- Un reintento exitoso limpia las marcas del intento incierto anterior:
+           -- el documento ya no tiene nada pendiente de confirmar.
+           provider_data = case when ${response.success}
+               then coalesce(provider_data, '{}'::jsonb) - 'delivery_uncertain' - 'retry_safe' - 'error'
+               else coalesce(provider_data, '{}'::jsonb) end || ${JSON.stringify(providerData)}::jsonb,
            pdf_url = ${response.pdfUrl ?? null},
            xml_url = ${response.xmlUrl ?? null},
            amount_remaining = case when credit_note_of is not null then 0 else coalesce(total, 0) - coalesce(amount_paid, 0) end,
@@ -682,6 +710,42 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     status: response.success ? 'issued' : 'error',
     error: response.error,
   };
+}
+
+
+/**
+ * PUE con la forma real si al emitir ya está pagado el total (la cotización se
+ * cobró en su link, o hay abonos que lo cubren); PPD / 99 en cualquier otro
+ * caso. Con PUE el SAT no admite la forma 99, así que se toma la del cobro de
+ * mayor importe — la que el comprobante declara como "la" forma del pago.
+ */
+async function cfdiPaymentTerms(orgId: string, documentId: string, cotizacionId: string | null, total: number, publicoGeneral = false) {
+  const [rows] = await withOrgTx(orgId, sql`
+    with pagos as (
+      select cc.monto, cc.payment_method as metodo
+        from cotizacion_cobros cc
+       where ${cotizacionId}::uuid is not null and cc.cotizacion_id = ${cotizacionId}::uuid
+         and cc.org_id = ${orgId} and cc.status = 'pagado'
+      union all
+      select p.monto, p.metodo from documento_pagos p
+       where p.documento_id = ${documentId} and p.org_id = ${orgId}
+    )
+    select coalesce(sum(monto), 0) as pagado,
+           (select metodo from pagos order by monto desc limit 1) as metodo
+      from pagos`);
+  const pagado = Number(rows[0]?.pagado) || 0;
+  if (total > 0 && pagado >= total - 0.005) {
+    const form = satPaymentForm(rows[0]?.metodo);
+    if (form !== '99') return { paymentMethod: 'PUE', paymentForm: form };
+  }
+  // "Público en general" (RFC genérico) no admite complemento de pago: el
+  // comprobante se emite PUE, con la forma del cobro si ya existe o
+  // transferencia, que era el comportamiento previo.
+  if (publicoGeneral) {
+    const form = satPaymentForm(rows[0]?.metodo);
+    return { paymentMethod: 'PUE', paymentForm: form === '99' ? '03' : form };
+  }
+  return { paymentMethod: 'PPD', paymentForm: '99' };
 }
 
 export interface VoidResult {

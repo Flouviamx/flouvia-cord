@@ -185,6 +185,10 @@ export async function applyPayment(
   }
   if (!duplicate) {
     await logInvoiceEvent(orgId, documentoId, 'payment', `Abono de ${money(monto)} ${String(doc.currency || '')}`.trim());
+    // CFDI emitido PPD: cada cobro lleva su complemento de pago (no hace nada
+    // fuera de México ni en un PUE).
+    const pagoId = inserted[0]?.id ? String(inserted[0].id) : '';
+    if (pagoId) after(import('./payment-complement').then((m) => m.emitPaymentComplement(orgId, documentoId, pagoId)));
     if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
     // Un abono que no liquida no emite evento de dominio, pero cambia pagado y saldo en la hoja.
     else after(import('../integraciones/hojas/service').then((m) => m.onAbonoFactura(orgId, documentoId)));
@@ -275,6 +279,9 @@ export async function carryQuotePayments(orgId: string, cotizacionId: string): P
     if (!inserted.length) continue;
     await logInvoiceEvent(orgId, documentoId, 'payment',
       `${inserted.length} pago(s) recibido(s) en la cotización aplicado(s) a la factura`);
+    for (const pago of inserted) {
+      after(import('./payment-complement').then((m) => m.emitPaymentComplement(orgId, documentoId, String(pago.id))));
+    }
     if (row && row.lifecycle === 'paid' && row.previous_lifecycle !== 'paid') {
       saldados.push(documentoId);
       await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado con los pagos de la cotización');

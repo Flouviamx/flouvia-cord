@@ -7,6 +7,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { log } from '../../../lib/log';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { facturapiConfigured, createOrganization, updateLegal, uploadCertificate, getLiveKey } from '../../../lib/fiscal/facturapi';
@@ -49,7 +50,11 @@ export const POST: APIRoute = async ({ request }) => {
     let fapiOrgId = String(o?.facturapi_org_id ?? '').trim();
     if (!fapiOrgId) {
         const r = await createOrganization(razon);
-        if (!r.ok || !r.data?.id) return json({ error: `No se pudo crear la organización en Facturapi: ${r.error}` }, 502);
+        // Regla 14: el detalle del proveedor va al log, no a la pantalla.
+        if (!r.ok || !r.data?.id) {
+            log.error('no se creó la organización de timbrado', { route: 'fiscal/csd', orgId, err: r.error });
+            return json({ error: 'No pudimos preparar tu cuenta de timbrado. Intenta de nuevo en unos minutos.' }, 502);
+        }
         fapiOrgId = r.data.id as string;
         await withOrgTx(orgId, sql`update orgs set facturapi_org_id = ${fapiOrgId} where id = ${orgId}`);
     }
@@ -63,7 +68,10 @@ export const POST: APIRoute = async ({ request }) => {
         phone: (o?.telefono as string) || undefined,
         website: (o?.sitio_web as string) || undefined,
     });
-    if (!legal.ok) return json({ error: `No se pudieron guardar los datos fiscales en Facturapi: ${legal.error}` }, 502);
+    if (!legal.ok) {
+        log.error('no se guardaron los datos legales de timbrado', { route: 'fiscal/csd', orgId, err: legal.error });
+        return json({ error: 'No pudimos guardar tus datos fiscales para timbrar. Revisa razón social, régimen y código postal e intenta de nuevo.' }, 502);
+    }
 
     // 3. Subir el CSD (cer + key + contraseña).
     const up = await uploadCertificate(
@@ -72,7 +80,13 @@ export const POST: APIRoute = async ({ request }) => {
         { name: key.name, bytes: await key.arrayBuffer() },
         password,
     );
-    if (!up.ok) return json({ error: `Facturapi rechazó el CSD: ${up.error}` }, 422);
+    // El motivo del rechazo (contraseña, certificado vencido, RFC distinto) sí es
+    // accionable; se conserva sin el nombre del proveedor.
+    if (!up.ok) {
+        log.error('certificado de sello rechazado', { route: 'fiscal/csd', orgId, err: up.error });
+        const motivo = String(up.error || '').replace(/facturapi/gi, '').trim();
+        return json({ error: `El certificado de sello digital no se pudo validar${motivo ? `: ${motivo}` : '.'}` }, 422);
+    }
 
     // 4. Obtener y guardar la llave LIVE de la organización (timbra bajo su RFC).
     const lk = await getLiveKey(fapiOrgId);

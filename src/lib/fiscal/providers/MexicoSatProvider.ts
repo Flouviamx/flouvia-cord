@@ -23,7 +23,106 @@ function authHeader(key: string): string {
   return 'Basic ' + Buffer.from(`${key}:`).toString('base64');
 }
 
+/** Receptor en el formato de Facturapi; el mismo para el ingreso y su complemento de pago. */
+function facturapiCustomer(c: FiscalDocumentRequest['recipient']) {
+  const rfc = String(c.taxId || '').toUpperCase().trim();
+  // RFC genérico = "público en general" (sin RFC real del cliente).
+  const generico = !rfc || rfc === 'XAXX010101000';
+  const customer = {
+    legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
+    tax_id: generico ? 'XAXX010101000' : rfc,
+    // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
+    tax_system: c.taxSystem || (generico ? '616' : '601'),
+    address: { zip: String(c.address?.postalCode || '00000') },
+    ...(c.email ? { email: String(c.email) } : {}),
+  };
+  return { customer, generico };
+}
+
+export interface PaymentComplementRequest {
+  /** Id del CFDI de ingreso EN FACTURAPI (no el UUID del SAT). */
+  facturapiInvoiceId: string;
+  providerApiKey?: string;
+  recipient: FiscalDocumentRequest['recipient'];
+  /** Importe del pago en la divisa de la factura. */
+  amount: number;
+  /** Forma de pago del catálogo c_FormaPago (03, 04, 28…). */
+  paymentForm: string;
+  /** Cuándo se recibió el dinero (ISO). */
+  paidAt: string;
+  reference?: string | null;
+  idempotencyKey: string;
+  externalId: string;
+}
+
 export class MexicoSatProvider implements FiscalProvider {
+  /**
+   * Timbra el complemento de pago (CFDI tipo P, Pagos 2.0) de un cobro sobre un
+   * CFDI emitido como PPD. El documento relacionado —parcialidad, saldo
+   * anterior e impuestos prorrateados al importe— lo calcula el propio PAC con
+   * `GET /invoices/{id}/payment-summary`, que la especificación de Facturapi
+   * declara "listo para usarse" como elemento de `related_documents`: calcular
+   * aquí la proporción de cada impuesto sería otra aritmética que diverge.
+   */
+  async issuePaymentComplement(input: PaymentComplementRequest): Promise<FiscalDocumentResponse> {
+    const apiKey = input.providerApiKey || FACTURAPI_KEY;
+    if (!apiKey) {
+      return { success: false, provider: 'facturapi', documentId: input.externalId,
+        error: 'No hay una credencial de timbrado configurada para emitir el complemento de pago.' };
+    }
+    const headers = { 'Content-Type': 'application/json', Authorization: authHeader(apiKey) };
+    try {
+      const summaryRes = await fetch(
+        `${FACTURAPI_BASE}/invoices/${encodeURIComponent(input.facturapiInvoiceId)}/payment-summary?amount=${encodeURIComponent(String(input.amount))}`,
+        { headers, signal: AbortSignal.timeout(25000) },
+      );
+      const summary: any = await summaryRes.json().catch(() => null);
+      if (!summaryRes.ok || !summary?.uuid) {
+        return { success: false, provider: 'facturapi', documentId: input.externalId,
+          error: summaryRes.status >= 500
+            ? 'El servicio de timbrado no respondió. El complemento de pago se reintentará.'
+            : (typeof summary?.message === 'string' ? summary.message.replace(/facturapi/gi, 'el servicio de timbrado') : 'No se pudo preparar el complemento de pago.'),
+          rawProviderData: { http_status: summaryRes.status, stage: 'payment_summary', retry_safe: true } };
+      }
+      // `date` solo cuando el pago es anterior a la emisión del complemento, y
+      // nunca en el futuro (la especificación rechaza fechas futuras).
+      const paidAt = new Date(input.paidAt);
+      const sendDate = Number.isFinite(paidAt.getTime()) && paidAt.getTime() < Date.now() - 60_000;
+      const body = {
+        type: 'P',
+        customer: facturapiCustomer(input.recipient).customer,
+        complements: [{
+          type: 'pago',
+          data: [{
+            payment_form: input.paymentForm,
+            ...(sendDate ? { date: paidAt.toISOString() } : {}),
+            ...(input.reference ? { numOperacion: String(input.reference).slice(0, 100) } : {}),
+            related_documents: [summary],
+          }],
+        }],
+        idempotency_key: input.idempotencyKey,
+        external_id: input.externalId,
+      };
+      const res = await fetch(`${FACTURAPI_BASE}/invoices`, {
+        method: 'POST', headers, body: JSON.stringify(body), signal: AbortSignal.timeout(25000),
+      });
+      const data: any = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { success: false, provider: 'facturapi', documentId: input.externalId,
+          error: res.status >= 500
+            ? 'El servicio de timbrado no respondió. El complemento de pago se reintentará.'
+            : (typeof data?.message === 'string' ? data.message.replace(/facturapi/gi, 'el servicio de timbrado') : 'El SAT rechazó el complemento de pago.'),
+          rawProviderData: { http_status: res.status, delivery_uncertain: res.status >= 500, retry_safe: true } };
+      }
+      return { success: true, provider: 'facturapi', documentId: data.id, fiscalId: data.uuid,
+        rawProviderData: { facturapi_id: data.id, uuid: data.uuid, livemode: data.livemode, installment: summary.installment, last_balance: summary.last_balance } };
+    } catch (err: any) {
+      return { success: false, provider: 'facturapi', documentId: input.externalId,
+        error: 'No pudimos comunicarnos con el servicio de timbrado. El complemento de pago se reintentará.',
+        rawProviderData: { delivery_uncertain: true, retry_safe: true, error_kind: err?.name === 'TimeoutError' ? 'timeout' : 'network' } };
+    }
+  }
+
   supports(countryCode: string): boolean {
     return countryCode.toUpperCase() === 'MX';
   }
@@ -43,25 +142,13 @@ export class MexicoSatProvider implements FiscalProvider {
         pdfUrl: `/api/fiscal/documents/${request.documentId}/pdf`,
         rawProviderData: {
           simulado: true,
-          motivo: 'Facturapi no configurado (falta CSD del cliente y FACTURAPI_API_KEY global)',
+          motivo: 'Sin credencial de timbrado configurada',
           idempotency_key: request.idempotencyKey,
         },
       };
     }
 
-    const c = request.recipient;
-    const rfc = String(c.taxId || '').toUpperCase().trim();
-    // RFC genérico = "público en general" (sin RFC real del cliente).
-    const generico = !rfc || rfc === 'XAXX010101000';
-
-    const customer = {
-      legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
-      tax_id: generico ? 'XAXX010101000' : rfc,
-      // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
-      tax_system: c.taxSystem || (generico ? '616' : '601'),
-      address: { zip: String(c.address?.postalCode || '00000') },
-      ...(c.email ? { email: String(c.email) } : {}),
-    };
+    const { customer, generico } = facturapiCustomer(request.recipient);
 
     const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
     if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
@@ -128,7 +215,14 @@ export class MexicoSatProvider implements FiscalProvider {
           success: false,
           provider: 'facturapi',
           documentId: 'err_mx_' + request.quoteId,
-          error: data?.message || `Facturapi ${res.status}`,
+          // El mensaje de validación del SAT (RFC no inscrito, régimen que no
+          // corresponde…) es accionable para el vendedor y se conserva; lo que
+          // nunca llega a la pantalla es el nombre del proveedor (regla 14).
+          error: res.status >= 500
+            ? 'El servicio de timbrado no respondió. Reintenta en unos minutos: no se duplicará.'
+            : (typeof data?.message === 'string' && data.message.trim()
+              ? data.message.replace(/facturapi/gi, 'el servicio de timbrado')
+              : 'El SAT rechazó el comprobante. Revisa los datos fiscales del cliente y del negocio.'),
           rawProviderData: {
             ...providerPayload,
             // Un 5xx puede ocurrir después de que el PAC aceptó el documento.
@@ -159,6 +253,10 @@ export class MexicoSatProvider implements FiscalProvider {
           livemode: data.livemode,
           idempotency_key: request.idempotencyKey,
           credential_scope: request.providerApiKey ? 'organization' : 'platform',
+          // Lo leen el complemento de pago (solo un PPD lo necesita) y la
+          // conciliación: es lo que el comprobante declaró ante el SAT.
+          payment_method: body.payment_method,
+          payment_form: body.payment_form,
         },
       };
     } catch (err: any) {
@@ -166,7 +264,8 @@ export class MexicoSatProvider implements FiscalProvider {
         success: false,
         provider: 'facturapi',
         documentId: 'err_mx_' + request.quoteId,
-        error: err?.message || 'fallo de red con Facturapi',
+        // Regla 14: el estado, no el proveedor ni el error de red crudo.
+        error: 'No pudimos comunicarnos con el servicio de timbrado. Reintenta en unos minutos: no se duplicará.',
         // La petición pudo haber llegado al PAC aunque Cord no recibiera la
         // respuesta. El siguiente intento conserva la misma llave oficial de
         // idempotencia, por lo que no crea otro CFDI.

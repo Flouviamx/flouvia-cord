@@ -25,7 +25,11 @@ export async function meterInvoiceEmission(
            jsonb_build_object('cord_issuance', jsonb_build_object('claim_id', ${claimId}::text)), updated_at = now()
      where id = ${documentId} and org_id = ${orgId} and lifecycle = 'draft' and status in ('pending', 'error')
        and provider_data->'cord_issuance' is null
-       and coalesce(provider_data->>'delivery_uncertain', 'false') <> 'true'
+       -- Un intento incierto solo se reintenta si el proveedor lo declaró
+       -- seguro (misma llave de idempotencia: el PAC devuelve el MISMO CFDI si
+       -- ya lo había timbrado, no uno nuevo).
+       and (coalesce(provider_data->>'delivery_uncertain', 'false') <> 'true'
+            or provider_data->>'retry_safe' = 'true')
      returning id`);
   if (!claimed) return fail('La emisión está en proceso o necesita confirmar su resultado. Consulta el documento antes de reintentar.');
 
@@ -43,14 +47,30 @@ export async function meterInvoiceEmission(
     update documentos_fiscales set provider_data = jsonb_set(provider_data, '{cord_issuance,usage_id}', to_jsonb(${usage.id}::text))
      where id = ${documentId} and org_id = ${orgId} and provider_data->'cord_issuance'->>'claim_id' = ${claimId}`);
 
-  // Si emit() lanza, conservamos claim y reserva: puede haber un documento real
-  // en el proveedor cuyo resultado local no se alcanzó a guardar.
-  const result = await emit();
+  // Si emit() lanza (un fallo de base antes o después del proveedor), el
+  // documento queda marcado incierto pero REINTENTABLE: la llave de
+  // idempotencia es estable, así que repetir nunca duplica. Antes se
+  // conservaban claim y reserva para siempre y la factura quedaba sin salida.
+  let result: EmitResult;
+  try {
+    result = await emit();
+  } catch {
+    await withOrgTx(orgId, sql`
+      update documentos_fiscales
+         set provider_data = coalesce(provider_data, '{}'::jsonb)
+               || jsonb_build_object('delivery_uncertain', true, 'retry_safe', true), updated_at = now()
+       where id = ${documentId} and org_id = ${orgId} and status <> 'issued'`);
+    result = { emitted: false, status: 'error', documentId, httpStatus: 503,
+      error: 'No pudimos confirmar la emisión. Reintenta en unos minutos: no se duplicará.' };
+  }
   const [[doc]] = await withOrgTx(orgId, sql`
     select provider_data from documentos_fiscales where id = ${documentId} and org_id = ${orgId} limit 1`);
   const data = doc?.provider_data || {};
   if (!result.emitted || result.reused || data.simulado === true || data.livemode === false) {
-    if (data.delivery_uncertain !== true && await cancelUsage(orgId, usage.id)) await release();
+    // Un intento incierto pero seguro de repetir libera su reserva: el
+    // reintento reserva de nuevo y solo se cobra lo que de verdad se timbró.
+    const releasable = data.delivery_uncertain !== true || data.retry_safe === true;
+    if (releasable && await cancelUsage(orgId, usage.id)) await release();
     return result;
   }
   if (!fiscal) return result;

@@ -1,5 +1,5 @@
 // /api/facturas/[id] — ciclo de vida de una factura.
-//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' }
+//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' | 'retry_complements' }
 //   DELETE                                     → { ok }  (solo borradores)
 //
 // Cada acción es explícita y unidireccional. En particular `void` NO cae a
@@ -32,7 +32,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * por el total y sacarla de la cartera sin permiso de cobranza.
  */
 export function invoiceActionPermission(action: string): 'cobranza' | 'cotizar' {
-    return ['payment', 'uncollectible', 'void', 'cancellation_status', 'credit_note'].includes(action)
+    return ['payment', 'uncollectible', 'void', 'cancellation_status', 'credit_note', 'retry_complements'].includes(action)
         ? 'cobranza'
         : 'cotizar';
 }
@@ -74,6 +74,16 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         case 'cancellation_status': return voidIt(orgId, id, body, request);
         case 'credit_note': return creditNote(orgId, id, body, request);
         case 'uncollectible': return uncollectible(orgId, id, doc, request);
+        case 'retry_complements': {
+            // México: vuelve a pedir los complementos de pago que no salieron.
+            const { retryPaymentComplements } = await import('../../../lib/fiscal/payment-complement');
+            const result = await retryPaymentComplements(orgId, id);
+            await logAudit(orgId, {
+                accion: 'factura.complementos_reintentados', entidad: 'factura', entidad_id: id,
+                detalle: `${result.emitidos}/${result.intentados}`, ip: reqIp(request),
+            });
+            return json({ ok: true, ...result });
+        }
         default: return json({ error: 'Acción no reconocida' }, 400);
     }
 };
