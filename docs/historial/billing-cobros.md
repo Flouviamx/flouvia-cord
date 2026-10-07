@@ -1601,3 +1601,16 @@ recurrentes); y `paywall_viewed` / `paywall_cta_clicked`. El contenido vive en
 `PlanUpsell.astro` y lo comparten `PlanGate` (página) y `PlanPaywallModal`
 (upsell contextual de asientos, llaves de API y webhooks), que ya no se abre solo
 ni redirige al cerrar.
+
+## 2026-10-07 — Cobranza con IA baja de Scale a Profesional
+
+Decisión de André: el agente de cobranza con IA (`collections_ai`) se incluye
+desde Profesional, junto al módulo de cobranza. Además de `FEATURE_MIN_PLAN`
+hubo que cambiar el filtro del cron (`orgsConCobranzaActiva()` en
+`src/lib/agents/cobranza-run.ts` tenía `('scale', 'developer')` escrito en SQL):
+sin eso, una cuenta Pro habría visto la pantalla del agente y el agente nunca
+habría corrido. Pro paga el agente con su cuota de IA (50 al mes, con excedente
+medido). Intereses moratorios (`late_interest`) se queda en Scale y sigue
+suspendido; la viñeta de Scale pasa a "Aprobaciones de descuento y margen".
+Se actualizaron precios, comparativa, FAQ, página de producto, caso de uso de
+agencias, blog y la documentación pública ES/EN.

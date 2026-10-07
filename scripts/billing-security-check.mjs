@@ -24,7 +24,7 @@ const expectedFeatures = {
   team: 'pro', roles: 'pro', live_presence: 'pro', quote_attention: 'pro',
   cfo_dashboard: 'pro',
   audit_log: 'pro', webhook_replay: 'pro', collections: 'pro', cashflow_90: 'pro',
-  approvals: 'scale', collections_ai: 'scale', late_interest: 'scale',
+  approvals: 'scale', collections_ai: 'pro', late_interest: 'scale',
   smtp: 'scale', sso: 'scale', agent_governance: 'scale',
 };
 check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La matriz de features cambió sin actualizar la prueba contractual.');
@@ -34,7 +34,7 @@ check(normalizePlan('admin') === 'free' && normalizePlan('') === 'free', 'Un pla
 check(!planIncludes('free', 'cfdi') && planIncludes('starter', 'cfdi'), 'La emisión fiscal integrada requiere Starter.');
 check(planIncludes('free', 'international_invoicing'), 'Los documentos comerciales deben estar disponibles en Gratis.');
 check(!planIncludes('starter', 'collections') && planIncludes('pro', 'collections'), 'Cobranza debe iniciar en Pro.');
-check(!planIncludes('pro', 'collections_ai') && planIncludes('scale', 'collections_ai'), 'Cobranza autónoma con IA debe iniciar en Scale.');
+check(!planIncludes('starter', 'collections_ai') && planIncludes('pro', 'collections_ai'), 'Cobranza con IA debe iniciar en Profesional.');
 check(!planIncludes('pro', 'approvals') && planIncludes('scale', 'approvals'), 'Aprobaciones deben iniciar en Scale.');
 check(!planIncludes('starter', 'quote_attention') && planIncludes('pro', 'quote_attention'), 'La atención del cliente debe iniciar en Pro, en paridad con la presencia en vivo.');
 // El link público del cliente NUNCA se gatea por plan: lo que se cobra es el

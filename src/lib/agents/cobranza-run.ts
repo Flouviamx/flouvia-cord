@@ -416,7 +416,7 @@ export async function orgsConCobranzaActiva(): Promise<string[]> {
     const [rows] = await withSystemTx(sql`
         select id from orgs
         where ai_cobranza_activa = true
-          and cord_effective_plan(id) in ('scale', 'developer')
+          and cord_effective_plan(id) in ('pro', 'scale', 'developer')
           and sandbox_of is null
           and is_demo is not true
           and owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
