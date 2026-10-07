@@ -25,11 +25,19 @@ import { t, type AppStringKey } from '../../i18n/app';
 
 /** Funciones con su propio "lo que desbloqueas". Sin `feature`, el bloque no
  *  se dibuja: mejor ninguna lista que una genérica que no habla de la función. */
-export type PaywallFeature = 'cobranza' | 'cobranza_ia' | 'recurrentes';
+export type PaywallFeature =
+    | 'cobranza' | 'cobranza_ia' | 'recurrentes' | 'sso' | 'auditoria' | 'agentes'
+    | 'informe_finanzas' | 'informe_flujo' | 'informe_cobranza';
 const FEATURE_ICONS: Record<PaywallFeature, IconName[]> = {
     cobranza: ['checklist', 'calendar-check', 'chat'],
     cobranza_ia: ['mail', 'calendar-clock', 'chart-line'],
     recurrentes: ['refresh', 'send', 'calendar'],
+    sso: ['key', 'user-check', 'shield'],
+    auditoria: ['history', 'lock', 'undo'],
+    agentes: ['plug', 'sliders', 'key'],
+    informe_finanzas: ['chart-line', 'refresh', 'percent'],
+    informe_flujo: ['calendar', 'trending-up', 'alert-circle'],
+    informe_cobranza: ['clock', 'calendar-check', 'chart'],
 };
 
 interface Props {

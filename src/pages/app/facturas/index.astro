@@ -16,7 +16,7 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
 import PlanGate from '../../../components/app/PlanGate.astro';
 import { getFacturas, getFacturasResumen, getMyMembership, money } from '../../../lib/queries';
-import { memberCan, planLabel } from '../../../lib/permissions';
+import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
@@ -26,11 +26,6 @@ import { t } from '../../../i18n/app';
 export const prerender = false;
 
 const L = currentLocale();
-const tf = (key: string, vars: Record<string, string> = {}) => {
-    let s = t(L, key as any);
-    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
-    return s;
-};
 
 const ME = await getMyMembership();
 const hasPerm = memberCan(ME, 'cobranza');
@@ -121,10 +116,7 @@ import { iconInner } from '../../../lib/icons';
         <PlanGate
             id="facturasPlanModal"
             title={t(L, 'fact.plan_titulo')}
-            desc={tf('fact.plan_desc', {
-                plan: planLabel(entitlementCheck.requiredPlan),
-                current: planLabel(entitlementCheck.plan),
-            })}
+            desc={t(L, 'fact.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
             preview="facturas" />

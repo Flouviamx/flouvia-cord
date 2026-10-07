@@ -13,7 +13,7 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
 import PlanGate from '../../../components/app/PlanGate.astro';
 import { getMyMembership } from '../../../lib/queries';
-import { memberCan, planLabel } from '../../../lib/permissions';
+import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
 import { currentLocale } from '../../../lib/context';
@@ -68,10 +68,7 @@ const CADENCIA_LABEL: Record<string, string> = {
         <PlanGate
             id="recPlanModal"
             title={t(L, 'rec.plan_titulo')}
-            desc={tf('fact.plan_desc', {
-                plan: planLabel(gate.requiredPlan),
-                current: planLabel(gate.plan),
-            })}
+            desc={t(L, 'rec.plan_desc')}
             requiredPlan={gate.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
             preview="facturas"

@@ -20,7 +20,6 @@ import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { listMcpServers } from '../../../lib/agents/governance';
 import { getCobranzaConfig } from '../../../lib/agents/cobranza-run';
 import { checkEntitlement } from '../../../lib/org-entitlements';
-import { planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -61,12 +60,11 @@ import { iconInner } from '../../../lib/icons';
             id="agentesPlanModal"
             class="is-inset"
             title={t(L, 'set.ag.plan_titulo')}
-            desc={t(L, 'set.ag.plan_desc')
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            desc={t(L, 'set.ag.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            preview="ajustes" />
+            preview="ajustes"
+            feature="agentes" />
     ) : <Fragment>
 
     <!-- ── Cobranza con IA: tarjeta de estado, NO un segundo interruptor ── -->
