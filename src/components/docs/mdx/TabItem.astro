@@ -1,5 +1,7 @@
 ---
 // src/components/docs/mdx/TabItem.astro
+// Tabs.astro numera cada panel en servidor (id, aria-labelledby, hidden) a
+// partir de la marca `data-cord-tab`; por eso el panel no lleva role aquí.
 export interface Props {
   label: string;
 }
@@ -7,6 +9,6 @@ export interface Props {
 const { label } = Astro.props;
 ---
 
-<div class="tab-panel" data-label={label} role="tabpanel">
+<div class="tab-panel" data-cord-tab data-label={label}>
   <slot />
 </div>

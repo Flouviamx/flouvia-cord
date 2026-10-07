@@ -1,15 +1,16 @@
 ---
 import DocsLayout from '../../../../layouts/DocsLayout.astro';
 import ApiReference from '../../../../components/docs/ApiReference.astro';
-import { groupedOperations } from '../../../../lib/api-reference';
+import { groupedOperations, API_REFERENCE_PAGE } from '../../../../lib/api-reference';
 
 const headings = groupedOperations().map(([tag]) => ({ depth: 2, slug: tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'), text: tag }));
-const alternates = { es: '/docs/desarrolladores/referencia', en: '/en/docs/desarrolladores/referencia' };
+const page = API_REFERENCE_PAGE.en;
+const alternates = { es: API_REFERENCE_PAGE.es.url, en: API_REFERENCE_PAGE.en.url };
 ---
 
-<DocsLayout title="API Reference" lang="en" description="Every Cord API v1 operation with its fields and examples in curl and Node, generated from the API contract." headings={headings} alternates={alternates}>
+<DocsLayout slug="desarrolladores/referencia" title={page.title} lang="en" description={page.description} headings={headings} alternates={alternates}>
   <header class="content-header">
-    <h1 class="page-title">API Reference</h1>
+    <h1 class="page-title">{page.title}</h1>
   </header>
   <ApiReference lang="en" />
 </DocsLayout>

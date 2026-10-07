@@ -1,0 +1,210 @@
+---
+// Sidebar de docs.cordhq.app. Recorre la sección de DOCS_NAV a la que pertenece
+// la página; el árbol vive en src/lib/docs-nav.ts, no aquí.
+//
+// - Activo: `item.slug === slug`, un solo criterio (antes había tres).
+// - Grupos colapsables con <button aria-expanded aria-controls>. Por defecto solo
+//   se abre el grupo que contiene la página actual; lo que la persona abra o
+//   cierre se recuerda en sessionStorage por sección, pero el grupo de la página
+//   actual siempre se muestra abierto para que el activo sea visible.
+import { DOCS_NAV, docHref, sectionFor, type DocsLang, type NavItem } from '../../lib/docs-nav';
+import { iconInner } from '../../lib/icons';
+
+interface Props {
+  slug: string;
+  lang: DocsLang;
+}
+
+const { slug, lang } = Astro.props;
+const section = sectionFor(slug) ?? DOCS_NAV[0];
+
+const containsSlug = (items: NavItem[]): boolean =>
+  items.some((item) => item.slug === slug || (item.children ? containsSlug(item.children) : false));
+
+const groups = section.groups.map((group, index) => {
+  const id = `dn-${section.id}-${index}`;
+  const current = containsSlug(group.items);
+  return { ...group, id, current, open: Boolean(group.collapsible) && current };
+});
+
+const href = (s: string) => docHref(s, lang);
+---
+
+<nav
+  class="sidebar-nav dn-nav"
+  aria-label={lang === 'es' ? `Navegación: ${section.tab.es}` : `Navigation: ${section.tab.en}`}
+  data-dn-section={section.id}
+>
+  <p class="dn-section-title">{section.tab[lang]}</p>
+  {groups.map((group) =>
+    group.collapsible ? (
+      <ul class="sidebar-menu dn-block dn-block-group">
+        <li class:list={['sidebar-dropdown', 'dn-group', { open: group.open }]} data-dn-group={group.id} data-dn-current={group.current ? '' : undefined}>
+          <button type="button" class="dn-toggle" aria-expanded={group.open ? 'true' : 'false'} aria-controls={`${group.id}-list`}>
+            <svg width="12" height="12" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
+            <span>{group.heading?.[lang]}</span>
+          </button>
+          <ul class="sidebar-submenu" id={`${group.id}-list`}>
+            {group.items.map((item) => (
+              <li class:list={[{ active: item.slug === slug }]}>
+                <a href={href(item.slug)} aria-current={item.slug === slug ? 'page' : undefined}>{item.label[lang]}</a>
+                {item.children?.length ? (
+                  <ul class="sidebar-submenu dn-children">
+                    {item.children.map((child) => (
+                      <li class:list={[{ active: child.slug === slug }]}>
+                        <a href={href(child.slug)} aria-current={child.slug === slug ? 'page' : undefined}>{child.label[lang]}</a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </li>
+      </ul>
+    ) : (
+      <div class="dn-block dn-block-flat">
+        {group.heading ? <p class="sidebar-heading">{group.heading[lang]}</p> : null}
+        <ul class="sidebar-menu">
+          {group.items.map((item) => (
+            <li class:list={[{ active: item.slug === slug }]}>
+              <a href={href(item.slug)} aria-current={item.slug === slug ? 'page' : undefined}>{item.label[lang]}</a>
+              {item.children?.length ? (
+                <ul class="sidebar-submenu dn-children">
+                  {item.children.map((child) => (
+                    <li class:list={[{ active: child.slug === slug }]}>
+                      <a href={href(child.slug)} aria-current={child.slug === slug ? 'page' : undefined}>{child.label[lang]}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  )}
+</nav>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('.dn-nav[data-dn-section]');
+  if (nav) {
+    const key = `cord-docs-nav:${nav.dataset.dnSection}`;
+    let saved: Record<string, boolean> = {};
+    try {
+      saved = JSON.parse(sessionStorage.getItem(key) || '{}') || {};
+    } catch {
+      saved = {};
+    }
+
+    const setOpen = (group: HTMLElement, open: boolean) => {
+      group.classList.toggle('open', open);
+      group.querySelector(':scope > .dn-toggle')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    nav.querySelectorAll<HTMLElement>('[data-dn-group]').forEach((group) => {
+      const id = group.dataset.dnGroup as string;
+      // El grupo de la página actual se queda abierto aunque se haya cerrado antes.
+      if (!group.hasAttribute('data-dn-current') && typeof saved[id] === 'boolean') setOpen(group, saved[id]);
+      group.querySelector<HTMLButtonElement>(':scope > .dn-toggle')?.addEventListener('click', () => {
+        const open = !group.classList.contains('open');
+        setOpen(group, open);
+        saved[id] = open;
+        try {
+          sessionStorage.setItem(key, JSON.stringify(saved));
+        } catch {
+          /* almacenamiento bloqueado: el estado vive solo en esta vista */
+        }
+      });
+    });
+
+    // Centra el activo dentro de su contenedor con scroll, sin mover la página:
+    // scrollIntoView() desplazaría también la ventana.
+    const active = nav.querySelector<HTMLElement>('li.active > a');
+    const scroller = (() => {
+      let el: HTMLElement | null = nav;
+      while (el && el !== document.body) {
+        const overflowY = getComputedStyle(el).overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return el;
+        el = el.parentElement;
+      }
+      return null;
+    })();
+    if (active && scroller) {
+      const a = active.getBoundingClientRect();
+      const s = scroller.getBoundingClientRect();
+      scroller.scrollTop += a.top - s.top - (scroller.clientHeight - a.height) / 2;
+    }
+
+    // En móvil los tabs del header se desplazan en horizontal: muestra el activo.
+    const tabs = document.querySelector<HTMLElement>('.header-bottom');
+    const activeTab = tabs?.querySelector<HTMLElement>('.nav-links li.active');
+    if (tabs && activeTab && tabs.scrollWidth > tabs.clientWidth) {
+      tabs.scrollLeft = Math.max(0, activeTab.offsetLeft - 16);
+    }
+  }
+</script>
+
+<style>
+  .dn-section-title {
+    margin: 0 0 12px 28px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--docs-text-3, #5e6677);
+  }
+  .dn-block + .dn-block-flat,
+  .dn-block-flat + .dn-block {
+    margin-top: 24px;
+  }
+  .dn-block-flat .sidebar-heading {
+    margin-bottom: 8px;
+  }
+  .dn-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f566b;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .dn-toggle:hover {
+    color: #050505;
+    background: rgba(0, 0, 0, 0.03);
+  }
+  .dn-toggle:focus-visible {
+    outline: 3px solid rgba(0, 113, 227, 0.45);
+    outline-offset: 3px;
+  }
+  .dn-toggle .chevron {
+    flex-shrink: 0;
+  }
+  .dn-children {
+    display: block;
+    margin: 0;
+  }
+  @media (max-width: 880px) {
+    .dn-toggle {
+      min-height: 44px;
+    }
+    .dn-nav .sidebar-menu a {
+      min-height: 44px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dn-toggle,
+    .dn-toggle .chevron {
+      transition: none;
+    }
+  }
+</style>
