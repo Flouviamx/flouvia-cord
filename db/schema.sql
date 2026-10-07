@@ -5884,3 +5884,15 @@ do $$ begin
   end if;
 end $$;
 -- END cli-logins
+
+-- ── Impuesto predeterminado por producto (oct 2026) ─────────────────────────
+-- Un negocio que vende servicios gravados y productos exentos (o a tasa
+-- reducida) tenía que corregir el impuesto de cada línea a mano en cada
+-- cotización: al agregar un producto la línea nacía con la tasa default de la
+-- organización. `tax_rate` es la tasa SUGERIDA al agregarlo (fracción, como
+-- `cotizacion_items.tax_rate`); la línea sigue tomando su propio snapshot al
+-- capturar (regla 23), así que editar el producto no reescribe documentos ya
+-- enviados. `null` = la tasa predeterminada de la organización. El servidor la
+-- valida contra el catálogo `impuestos` al guardar (actions/products.ts).
+alter table productos add column if not exists tax_rate numeric
+  check (tax_rate is null or (tax_rate >= 0 and tax_rate <= 1));

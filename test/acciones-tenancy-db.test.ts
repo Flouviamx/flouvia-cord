@@ -42,8 +42,11 @@ beforeAll(async () => {
             telefono text, rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text,
             uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
-            descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb);
+            descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric);
         create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
+        create table orgs(id uuid primary key, iva_pct numeric);
+        create table impuestos(id uuid primary key default gen_random_uuid(), org_id uuid not null, tasa numeric, kind text, tipo text,
+            nombre text, es_default boolean, activo boolean, retencion_base text);
         create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, titulo text, due_date date, done boolean default false);
         create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, fecha_promesa date, monto numeric, nota text, estado text default 'pendiente');`);
 });
@@ -52,6 +55,11 @@ beforeEach(async () => {
     vi.clearAllMocks();
     await m.db.exec(`
         delete from clientes; delete from productos; delete from cotizaciones; delete from tareas; delete from promesas_pago;
+        delete from orgs; delete from impuestos;
+        insert into orgs(id, iva_pct) values ('${A}', 16), ('${B}', 16);
+        insert into impuestos(org_id, tasa, kind, nombre, es_default, activo) values
+            ('${A}', 16, 'consumo', 'IVA 16%', true, true), ('${A}', 8, 'consumo', 'IVA 8%', false, true),
+            ('${B}', 5, 'consumo', 'IVA 5%', true, true);
         insert into clientes(id, org_id, empresa) values ('${CLIENTE_B}', '${B}', 'Cliente de B');
         insert into productos(id, org_id, nombre, precio_lista) values ('${PRODUCTO_B}', '${B}', 'Producto de B', 10);
         insert into cotizaciones(id, org_id) values ('${COT_B}', '${B}');
@@ -125,6 +133,19 @@ describe('eventos del camino normal', () => {
             expect(Object.values(call[2])).not.toContain(70);
         }
         expect(m.event.mock.calls.map((c) => c[1])).toEqual(['product.created', 'product.updated']);
+    });
+
+    it('producto: el impuesto sugerido se valida contra el catálogo de SU organización', async () => {
+        const ok = await products.createProduct(ctxA, { nombre: 'Frontera', precio: 10, tax_rate: 0.08 });
+        expect(ok.status).toBe(200);
+        const exento = await products.createProduct(ctxA, { nombre: 'Exento', precio: 10, tax_rate: 0 });
+        expect(exento.status).toBe(200);
+        // 5 % existe, pero en el catálogo de OTRA organización.
+        const ajena = await products.createProduct(ctxA, { nombre: 'Ajena', precio: 10, tax_rate: 0.05 });
+        expect(ajena.status).toBe(400);
+        expect((await products.updateProduct(ctxA, ok.body.id as string, { nombre: 'Frontera', precio: 10, tax_rate: 'abc' })).status).toBe(400);
+        const rows = (await m.db.query(`select nombre, tax_rate::float as tax_rate from productos where org_id = '${A}' order by nombre`)).rows;
+        expect(rows).toEqual([{ nombre: 'Exento', tax_rate: 0 }, { nombre: 'Frontera', tax_rate: 0.08 }]);
     });
 
     it('tarea: completar dos veces emite task.completed una sola vez', async () => {

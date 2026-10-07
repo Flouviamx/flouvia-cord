@@ -46,6 +46,7 @@ export const Product = open({
     activo: z.boolean(), createdAt: date,
     preciosVolumen: z.array(open({ min: z.number(), precio: money })),
     existencias: z.number().nullable(),
+    taxRate: z.number().nullable(),
 });
 
 export const Invoice = open({
@@ -332,6 +333,7 @@ export const FIELD_DOCS: Record<string, string> = {
     tasa: 'Porcentaje (16 = 16 %).',
     tasa_default: 'Tasa por defecto como fracción 0–1.',
     tax_id: 'Identificador fiscal: RFC en México, NIF/NIE/CIF en España, EIN en EE. UU.',
+    taxRate: 'Impuesto que se sugiere al agregar el producto a una línea, como fracción 0–1; null = el predeterminado de la organización.',
     telefono: 'Teléfono con lada internacional.',
     terminos: 'Términos de pago: contado, net30 o net60.',
     terminosCode: 'Código de términos de pago: contado, net30 o net60.',

@@ -135,6 +135,7 @@ const BOOT = {
         id: p.id, nombre: p.nombre, sku: p.sku ?? null, unidad: p.unidad ?? 'pieza',
         precio: Number(p.precio) || 0,
         volumen: p.preciosVolumen ?? null,
+        taxRate: p.taxRate ?? null,
     })),
     kits: kits.map((k: any) => ({
         id: k.id, nombre: k.nombre, precioCombo: Number(k.precioCombo) || 0,
@@ -725,6 +726,14 @@ import { iconInner } from '../../../lib/icons';
         const abrirDrop = () => { pintarDrop(); $drop.hidden = false; $prod.setAttribute('aria-expanded', 'true'); };
         const cerrarDrop = () => { $drop.hidden = true; $prod.setAttribute('aria-expanded', 'false'); };
 
+        // El impuesto que el producto sugiere, si sigue en el catálogo de la org; si
+        // no (la tasa se dio de baja), el default. La línea toma su propio snapshot.
+        const catTax = new Map<string, number | null>((BOOT.catalogo || []).map((p: any) => [p.id, p.taxRate ?? null]));
+        const productTax = (id: string | null | undefined): number => {
+            const r = id ? catTax.get(id) : null;
+            return r !== null && r !== undefined && (BOOT.taxOptions || []).some((o: any) => Math.abs(Number(o.rate) - Number(r)) < 1e-9)
+                ? Number(r) : BOOT.defaultTaxRate;
+        };
         const agregarProducto = (p: any) => {
             const desc = currentDesc();
             lines.push({
@@ -732,7 +741,7 @@ import { iconInner } from '../../../lib/icons';
                 baseLista: p.precio,
                 lista: desc > 0 ? Math.round(p.precio * (1 - desc / 100) * 100) / 100 : p.precio,
                 negociado: null, cantidad: 1,
-                taxRate: BOOT.defaultTaxRate, negoTouched: false, volumen: p.volumen,
+                taxRate: productTax(p.id), negoTouched: false, volumen: p.volumen,
             });
             render();
             // Flash sobre la fila nueva: el feedback de "ya se agregó" que
@@ -808,7 +817,7 @@ import { iconInner } from '../../../lib/icons';
                         negociado: ratio !== 1 && it.productoId ? Math.round(lista * ratio * 100) / 100 : null,
                         negoTouched: ratio !== 1,
                         cantidad: it.cantidad * mult,
-                        taxRate: BOOT.defaultTaxRate,
+                        taxRate: productTax(it.productoId),
                     });
                 }
                 render();

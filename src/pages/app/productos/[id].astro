@@ -34,6 +34,7 @@ import { iconInner } from '../../../lib/icons';
                 data-id={p.id} data-nombre={p.nombre} data-sku={p.sku} data-unidad={p.unidad}
                 data-descripcion={p.descripcion} data-precio={String(p.precio)} data-costo={String(p.costo)}
                 data-activo={p.activo ? '1' : ''} data-volumen={JSON.stringify(p.preciosVolumen)}
+                data-tax={p.taxRate === null ? '' : String(p.taxRate)}
             >{t(L, 'pdet.editar')}</button>
         )}
         <a class="dp-btn-primary" href="/app/cotizaciones/nueva">{t(L, 'pdet.cotizar')}</a>

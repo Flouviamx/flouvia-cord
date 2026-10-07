@@ -347,6 +347,10 @@ import { iconInner } from '../../../lib/icons';
     // catálogo de la org, no una constante.
     const DEFAULT_TAX = Number(BOOT.defaultTaxRate) || 0;
     const TAX_OPTIONS = BOOT.taxOptions || [];
+    // El impuesto que el producto sugiere, si sigue en el catálogo de la org; si
+    // no (la tasa se dio de baja), el default. La línea toma su propio snapshot.
+    const productTax = (p) => (p && p.taxRate !== null && p.taxRate !== undefined
+        && TAX_OPTIONS.some((o) => Math.abs(Number(o.rate) - Number(p.taxRate)) < 1e-9)) ? Number(p.taxRate) : DEFAULT_TAX;
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
     const volUnit = (l) => {
@@ -655,7 +659,7 @@ import { iconInner } from '../../../lib/icons';
 
     function addProduct(p) {
         const b2b = precioB2B(p.id);
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: b2b ?? applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX, existencias: p.existencias ?? null, b2b: b2b !== null });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: b2b ?? applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: productTax(p), existencias: p.existencias ?? null, b2b: b2b !== null });
         render();
         // Micro-feedback: la fila nueva parpadea suave para ubicarla.
         const rows = $lines.querySelectorAll('.line-row');
@@ -795,7 +799,7 @@ import { iconInner } from '../../../lib/icons';
             const qty = (Number(it.cantidad) || 1) * mult;
             const p = it.productoId ? catMap[it.productoId] : null;
             if (p) {
-                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false, taxRate: DEFAULT_TAX });
+                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false, taxRate: productTax(p) });
                 catalogIdxs.push(lines.length - 1);
                 sumaListaOne += (Number(it.cantidad) || 1) * p.precio;
             } else {

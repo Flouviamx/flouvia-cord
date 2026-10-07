@@ -825,6 +825,8 @@ function mapProducto(p: DbRow) {
         preciosVolumen: normVolumen(p.precios_volumen),
         // null = no controla inventario (producto propio o sin seguimiento en la tienda).
         existencias: p.existencias === null || p.existencias === undefined ? null : num(p.existencias),
+        // Impuesto sugerido al agregarlo a una línea (fracción); null = el default de la org.
+        taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
     };
 }
 
@@ -929,6 +931,7 @@ export async function getProducto(id: string) {
         activo: p.activo as boolean,
         createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
         preciosVolumen: normVolumen(p.precios_volumen),
+        taxRate: p.tax_rate === null || p.tax_rate === undefined ? null : num(p.tax_rate),
         metricas: {
             cotizaciones, cerradas,
             tasaCierre: cotizaciones ? Math.round((cerradas / cotizaciones) * 100) : 0,

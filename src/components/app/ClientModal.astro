@@ -10,11 +10,23 @@
 // (recargar, insertar un <option>, quitar una fila…). Así un <script> bundleado
 // (este componente) y un <script is:inline> (el editor de cotizaciones) pueden coexistir
 // sin compartir módulo — CustomEvent no sabe de límites de bundling.
+//
+// El PAÍS DEL CLIENTE manda en todo lo que depende de país: cómo se llama su
+// identificador fiscal y qué forma tiene, su lada, cómo se llama su código postal y
+// su subdivisión (con catálogo donde existe), y si aplican los datos del CFDI. El
+// país del NEGOCIO solo decide el valor inicial y si existe el bloque CFDI (es el
+// emisor quien timbra, no el receptor).
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { getOrg } from '../../lib/queries';
-import { COUNTRY_CODES, countryName, getCountryProfile } from '../../lib/countries';
+import {
+    COUNTRY_CODES, EU_COUNTRIES, SUPPORTED_COUNTRIES, countryName, getCountryProfile, subdivisionsFor,
+} from '../../lib/countries';
+import { STRIPE_MX_STATES } from '../../lib/stripe-catalogs';
+import { CALLING_CODES } from '../../lib/party-format';
+import { flagSrc } from '../../lib/flags';
+import Icon from '../Icon.astro';
 
 interface Props {
     showDelete?: boolean;
@@ -23,27 +35,51 @@ interface Props {
 const { showDelete = true, saveLabel } = Astro.props;
 const L = currentLocale();
 const ORG = await getOrg();
-const COUNTRY = getCountryProfile(ORG.countryCode, L);
-const isMx = ORG.countryCode === 'MX';
+const ORG_COUNTRY = String(ORG.countryCode || 'MX').toUpperCase();
+const ORG_CURRENCY = String(ORG.moneda || getCountryProfile(ORG_COUNTRY, L).currency).toUpperCase();
+const orgIsMx = ORG_COUNTRY === 'MX';
 
 // El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
 // darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
-// ofrecido). Lista completa ISO, ordenada por nombre en el idioma del usuario.
-const COUNTRY_OPTIONS = COUNTRY_CODES
+// ofrecido). Los mercados frecuentes van primero para no recorrer 249 nombres.
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, L);
+const FREQUENT = Array.from(new Set([ORG_COUNTRY, ...SUPPORTED_COUNTRIES]));
+const FREQUENT_OPTIONS = FREQUENT.map((code) => ({ code, name: countryName(code, L) }));
+const ALL_OPTIONS = COUNTRY_CODES
+    .filter((code) => !FREQUENT.includes(code))
     .map((code) => ({ code, name: countryName(code, L) }))
-    .sort((a, b) => a.name.localeCompare(b.name, L));
+    .sort(byName);
+const PHONE_OPTIONS = COUNTRY_CODES
+    .filter((code) => CALLING_CODES[code])
+    .map((code) => ({ code, name: countryName(code, L), dial: CALLING_CODES[code] }))
+    .sort(byName);
 
 // El label del tax id depende del país DEL CLIENTE, no del emisor — un
 // cliente francés de una empresa española no es "NIF / CIF". Se resuelve del
-// lado del cliente porque el país del cliente es un <select> que el usuario
-// cambia en vivo; este mapa se embebe una sola vez.
+// lado del cliente porque el país es un <select> que el usuario cambia en vivo.
 const TAX_ID_LABELS: Record<string, string> = Object.fromEntries(
     COUNTRY_CODES.map((code) => [code, getCountryProfile(code, L).taxIdLabel]),
 );
+// Subdivisiones con catálogo. EE.UU., Canadá y Brasil se escriben con su
+// abreviatura oficial en una dirección (TX, ON, SP); México y España, por nombre.
+const SUBDIVISIONS: Record<string, { v: string; l: string }[]> = {
+    MX: STRIPE_MX_STATES.map((s) => ({ v: s.nombre, l: s.nombre })),
+};
+for (const code of ['US', 'CA', 'BR', 'ES']) {
+    const list = subdivisionsFor(code) ?? [];
+    SUBDIVISIONS[code] = list.map((s) => (code === 'ES' ? { v: s.name, l: s.name } : { v: s.code, l: `${s.name} (${s.code})` }));
+}
+const CONFIG = {
+    orgCountry: ORG_COUNTRY,
+    locale: L,
+    eu: [...EU_COUNTRIES],
+    taxIdLabels: TAX_ID_LABELS,
+    subdivisions: SUBDIVISIONS,
+};
 const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 ---
 
-<dialog class="modal" id="clientModal"
+<dialog class="modal modal-lg cm" id="clientModal"
     data-i18n-nuevo={t(L, 'cmod.nuevo_titulo')} data-i18n-editar={t(L, 'cmod.editar_titulo')}
     data-i18n-sin-descuento={t(L, 'cmod.sin_descuento')}
     data-i18n-no-pudo-guardar={t(L, 'cmod.no_pudo_guardar')}
@@ -51,133 +87,181 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     data-i18n-eliminar={t(L, 'cmod.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'cmod.no_pudo_eliminar')}
     data-i18n-empresa-obligatoria={t(L, 'cmod.empresa_obligatoria')}
     data-i18n-creando={t(L, 'cmod.creando')} data-i18n-guardando={t(L, 'cmod.guardando')}
+    data-i18n-taxid-ok={t(L, 'cmod.taxid_ok')} data-i18n-taxid-revisa={t(L, 'cmod.taxid_revisa')}
+    data-i18n-region-elige={t(L, 'cmod.region_elige')}
     data-show-delete={showDelete ? '1' : ''}
-    data-org-country={ORG.countryCode}
-    data-rfc-default-label={COUNTRY.taxIdLabel}
 >
-    <script type="application/json" id="cmTaxIdLabels" is:inline set:html={JSON.stringify(TAX_ID_LABELS)} />
-    <form method="dialog" class="m-form" id="clientForm">
+    <script type="application/json" id="cmConfig" is:inline set:html={JSON.stringify(CONFIG)} />
+    <form method="dialog" class="m-form" id="clientForm" novalidate>
         <div class="m-head">
-            <h2 id="cmTitle">{t(L, 'cmod.nuevo_titulo')}</h2>
-            <button type="button" class="m-close" id="cmClose" aria-label={t(L, 'cmod.cerrar')}>✕</button>
+            <div class="cm-headline">
+                <span class="cm-avatar" id="cmAvatar" aria-hidden="true"><Icon name="clients" size={18} /></span>
+                <div class="cm-titles">
+                    <h2 id="cmTitle">{t(L, 'cmod.nuevo_titulo')}</h2>
+                    <p class="cm-sub">{t(L, 'cmod.sub')}</p>
+                </div>
+            </div>
+            <button type="button" class="m-close" id="cmClose" aria-label={t(L, 'cmod.cerrar')}><Icon name="x" size={15} /></button>
         </div>
 
         <div class="m-body">
-            <div class="m-field">
-                <label for="cmEmpresa">{t(L, 'cmod.empresa')}</label>
-                <input class="m-input" id="cmEmpresa" name="empresa" required placeholder={t(L, 'cmod.empresa_ph')} />
-            </div>
-            <div class="m-row">
+            <section class="cm-sec" aria-labelledby="cmSecId">
+                <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="id" size={15} /></span><h3 id="cmSecId">{t(L, 'cmod.sec_identidad')}</h3></header>
                 <div class="m-field">
-                    <label for="cmContacto">{t(L, 'cmod.contacto')}</label>
-                    <input class="m-input" id="cmContacto" name="contacto" placeholder={t(L, 'cmod.contacto_ph')} />
+                    <label for="cmEmpresa">{t(L, 'cmod.empresa')}</label>
+                    <input class="m-input" id="cmEmpresa" name="empresa" required maxlength="200" autocomplete="organization" placeholder={t(L, 'cmod.empresa_ph')} />
                 </div>
-                <div class="m-field">
-                    <label for="cmEmail">{t(L, 'cmod.correo')}</label>
-                    <input class="m-input" id="cmEmail" name="email" type="email" placeholder={t(L, 'cmod.correo_ph')} />
-                </div>
-            </div>
-            <div class="m-row">
-                <div class="m-field">
-                    <label for="cmTelefono">{t(L, 'cmod.telefono')}</label>
-                    <input class="m-input" id="cmTelefono" name="telefono" type="tel" placeholder={t(L, 'cmod.telefono_ph')} />
-                </div>
-                <div class="m-field">
-                    <label for="cmRfc" id="cmRfcLabel">{isMx ? t(L, 'cmod.rfc') : COUNTRY.taxIdLabel}</label>
-                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX1' : COUNTRY.taxIdLabel} maxlength={64} />
-                </div>
-            </div>
-            <div class="m-field">
-                <label for="cmLimite">{t(L, 'cmod.limite_credito')}</label>
-                <input class="m-input" id="cmLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
-            </div>
-            <div class="m-field">
-                <label>{t(L, 'cmod.nivel_precio')}</label>
-                <div class="m-chips m-tiers" id="cmTiers">
-                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'cmod.nivel_estandar')}</button>
-                    <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'cmod.nivel_plata')}</button>
-                    <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'cmod.nivel_oro')}</button>
-                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'cmod.nivel_distribuidor')}</button>
-                </div>
-                <input type="hidden" id="cmNivel" value="estandar" />
-            </div>
-            <div class="m-field">
-                <label for="cmDescuento">{t(L, 'cmod.descuento_auto')}</label>
-                <div class="disc-row">
-                    <div class="disc-input">
-                        <input class="m-input" id="cmDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
-                        <span class="disc-suffix">%</span>
-                    </div>
-                    <span class="disc-preview" id="cmDiscPreview">{t(L, 'cmod.sin_descuento')}</span>
-                </div>
-                <span class="m-hint" set:html={t(L, 'cmod.descuento_hint')} />
-            </div>
-            <div class="m-field">
-                <label>{t(L, 'cmod.terminos_pago')}</label>
-                <div class="m-chips" id="cmTerminos">
-                    <button type="button" class="chip active" data-v="contado">{t(L, 'cmod.term_contado')}</button>
-                    <button type="button" class="chip" data-v="net30">{t(L, 'cmod.term_net30')}</button>
-                    <button type="button" class="chip" data-v="net60">{t(L, 'cmod.term_net60')}</button>
-                </div>
-            </div>
-
-            <details class="m-fiscal" id="cmDireccion" open>
-                <summary>{t(L, 'cmod.direccion_summary')}</summary>
                 <div class="m-row">
                     <div class="m-field">
                         <label for="cmCountry">{t(L, 'cmod.pais')}</label>
-                        <select class="m-input" id="cmCountry">
-                            <option value="">{t(L, 'cmod.pais_hereda')}</option>
-                            {COUNTRY_OPTIONS.map((c) => <option value={c.code}>{c.name}</option>)}
-                        </select>
+                        <div class="cm-flagsel">
+                            <img class="cm-flag" id="cmFlag" src={flagSrc(ORG_COUNTRY)} alt="" width="18" height="18" loading="lazy" />
+                            <select class="m-input" id="cmCountry" autocomplete="country">
+                                <optgroup label={t(L, 'cmod.paises_frecuentes')}>
+                                    {FREQUENT_OPTIONS.map((c) => <option value={c.code}>{c.name}</option>)}
+                                </optgroup>
+                                <optgroup label={t(L, 'cmod.paises_todos')}>
+                                    {ALL_OPTIONS.map((c) => <option value={c.code}>{c.name}</option>)}
+                                </optgroup>
+                            </select>
+                        </div>
+                        <span class="m-hint">{t(L, 'cmod.pais_hint')}</span>
                     </div>
                     <div class="m-field">
-                        <label for="cmCp">{t(L, 'cmod.cp')}</label>
-                        <input class="m-input" id="cmCp" maxlength="20" placeholder="06600" />
+                        <label for="cmRfc" id="cmRfcLabel">{TAX_ID_LABELS[ORG_COUNTRY]}</label>
+                        <input class="m-input cm-mono" id="cmRfc" name="rfc" maxlength={64} autocomplete="off" spellcheck="false" />
+                        <span class="cm-check" id="cmTaxCheck" aria-live="polite"></span>
+                    </div>
+                </div>
+                <p class="cm-note" id="cmIntracom" hidden>
+                    <Icon name="info" size={14} /><span>{t(L, 'cmod.intracom_hint')}</span>
+                </p>
+            </section>
+
+            <section class="cm-sec" aria-labelledby="cmSecContacto">
+                <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="user" size={15} /></span><h3 id="cmSecContacto">{t(L, 'cmod.sec_contacto')}</h3></header>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="cmContacto">{t(L, 'cmod.contacto')}</label>
+                        <input class="m-input" id="cmContacto" name="contacto" maxlength="200" autocomplete="name" placeholder={t(L, 'cmod.contacto_ph')} />
+                    </div>
+                    <div class="m-field">
+                        <label for="cmEmail">{t(L, 'cmod.correo')}</label>
+                        <input class="m-input" id="cmEmail" name="email" type="email" maxlength="254" autocomplete="email" placeholder={t(L, 'cmod.correo_ph')} />
                     </div>
                 </div>
                 <div class="m-field">
+                    <label for="cmTelefono">{t(L, 'cmod.telefono')}</label>
+                    <div class="cm-phone">
+                        <div class="cm-cc">
+                            <span id="cmCcLabel">+{CALLING_CODES[ORG_COUNTRY] ?? ''}</span>
+                            <Icon name="chevron-down" size={13} />
+                            <select id="cmPhoneCc" aria-label={t(L, 'cmod.lada')}>
+                                {PHONE_OPTIONS.map((c) => <option value={c.code}>{c.name} (+{c.dial})</option>)}
+                            </select>
+                        </div>
+                        <input class="m-input" id="cmTelefono" name="telefono" type="tel" maxlength="40" autocomplete="tel-national" inputmode="tel" placeholder={t(L, 'cmod.telefono_ph')} />
+                    </div>
+                    <span class="m-hint">{t(L, 'cmod.telefono_hint')}</span>
+                </div>
+            </section>
+
+            <section class="cm-sec" aria-labelledby="cmSecDir">
+                <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="map" size={15} /></span><h3 id="cmSecDir">{t(L, 'cmod.direccion_summary')}</h3></header>
+                <div class="m-field">
                     <label for="cmDireccion1">{t(L, 'cmod.direccion1')}</label>
-                    <input class="m-input" id="cmDireccion1" maxlength="200" placeholder={t(L, 'cmod.direccion1_ph')} />
+                    <input class="m-input" id="cmDireccion1" maxlength="200" autocomplete="address-line1" placeholder={t(L, 'cmod.direccion1_ph')} />
                 </div>
                 <div class="m-field">
                     <label for="cmDireccion2">{t(L, 'cmod.direccion2')}</label>
-                    <input class="m-input" id="cmDireccion2" maxlength="200" placeholder={t(L, 'cmod.direccion2_ph')} />
+                    <input class="m-input" id="cmDireccion2" maxlength="200" autocomplete="address-line2" placeholder={t(L, 'cmod.direccion2_ph')} />
                 </div>
-                <div class="m-row">
+                <div class="cm-row3">
                     <div class="m-field">
                         <label for="cmCiudad">{t(L, 'cmod.ciudad')}</label>
-                        <input class="m-input" id="cmCiudad" maxlength="100" />
+                        <input class="m-input" id="cmCiudad" maxlength="100" autocomplete="address-level2" />
                     </div>
                     <div class="m-field">
-                        <label for="cmRegion">{t(L, 'cmod.region')}</label>
-                        <input class="m-input" id="cmRegion" maxlength="100" />
+                        <label for="cmRegion" id="cmRegionLabel"></label>
+                        <select class="m-input" id="cmRegionSel" hidden></select>
+                        <input class="m-input" id="cmRegion" maxlength="100" autocomplete="address-level1" />
+                    </div>
+                    <div class="m-field">
+                        <label for="cmCp" id="cmCpLabel"></label>
+                        <input class="m-input" id="cmCp" maxlength="20" autocomplete="postal-code" />
                     </div>
                 </div>
-            </details>
+            </section>
 
-            <details class="m-fiscal" id="cmFiscal">
-                <summary>{t(L, 'cmod.fiscal_summary')}</summary>
-                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
-                <div class="m-field">
-                    <label for="cmRegimen">{t(L, 'cmod.regimen_fiscal')}</label>
-                    <select class="m-input" id="cmRegimen">
-                        <option value="">{t(L, 'cmod.sin_especificar')}</option>
-                        {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
-                    </select>
+            <section class="cm-sec" aria-labelledby="cmSecCom">
+                <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="wallet" size={15} /></span><h3 id="cmSecCom">{t(L, 'cmod.sec_comercial')}</h3></header>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label>{t(L, 'cmod.terminos_pago')}</label>
+                        <div class="m-chips" id="cmTerminos" role="group">
+                            <button type="button" class="chip active" data-v="contado">{t(L, 'cmod.term_contado')}</button>
+                            <button type="button" class="chip" data-v="net30">{t(L, 'cmod.term_net30')}</button>
+                            <button type="button" class="chip" data-v="net60">{t(L, 'cmod.term_net60')}</button>
+                        </div>
+                    </div>
+                    <div class="m-field">
+                        <label for="cmLimite">{t(L, 'cmod.limite_credito')} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
+                        <div class="cm-affix">
+                            <input class="m-input" id="cmLimite" name="limite" type="number" min="0" step="any" inputmode="decimal" placeholder="0" />
+                            <span class="cm-affix-t">{ORG_CURRENCY}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="m-field">
-                    <label for="cmUso">{t(L, 'cmod.uso_cfdi')}</label>
-                    <select class="m-input" id="cmUso">
-                        <option value="">{t(L, 'cmod.sin_especificar_g03')}</option>
-                        {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
-                    </select>
+                    <label>{t(L, 'cmod.nivel_precio')}</label>
+                    <div class="m-chips m-tiers" id="cmTiers" role="group">
+                        <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'cmod.nivel_estandar')}</button>
+                        <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'cmod.nivel_plata')}</button>
+                        <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'cmod.nivel_oro')}</button>
+                        <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'cmod.nivel_distribuidor')}</button>
+                    </div>
+                    <input type="hidden" id="cmNivel" value="estandar" />
                 </div>
-            </details>
+                <div class="m-field">
+                    <label for="cmDescuento">{t(L, 'cmod.descuento_auto')}</label>
+                    <div class="disc-row">
+                        <div class="disc-input">
+                            <input class="m-input" id="cmDescuento" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="0" />
+                            <span class="disc-suffix">%</span>
+                        </div>
+                        <span class="disc-preview" id="cmDiscPreview">{t(L, 'cmod.sin_descuento')}</span>
+                    </div>
+                    <span class="m-hint">{t(L, 'cmod.descuento_hint')}</span>
+                </div>
+            </section>
+
+            {orgIsMx && (
+                <section class="cm-sec" id="cmFiscal" aria-labelledby="cmSecFiscal">
+                    <header class="cm-sec-h"><span class="cm-sec-i"><Icon name="document" size={15} /></span><h3 id="cmSecFiscal">{t(L, 'cmod.fiscal_summary')}</h3></header>
+                    <p class="m-hint">{t(L, 'cmod.fiscal_hint')}</p>
+                    <div class="m-row">
+                        <div class="m-field">
+                            <label for="cmRegimen">{t(L, 'cmod.regimen_fiscal')}</label>
+                            <select class="m-input" id="cmRegimen">
+                                <option value="">{t(L, 'cmod.sin_especificar')}</option>
+                                {REGIMENES_FISCALES.map((r) => <option value={r.codigo} data-personas={r.personas.join(' ')}>{r.nombre}</option>)}
+                            </select>
+                        </div>
+                        <div class="m-field">
+                            <label for="cmUso">{t(L, 'cmod.uso_cfdi')}</label>
+                            <select class="m-input" id="cmUso">
+                                <option value="">{t(L, 'cmod.sin_especificar_g03')}</option>
+                                {USOS_CFDI.map((u) => <option value={u.codigo} data-personas={u.personas.join(' ')}>{u.nombre}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <p class="m-hint">{t(L, 'cmod.fiscal_cp_hint')}</p>
+                </section>
+            )}
         </div>
 
         <div class="m-foot">
-            <p class="m-error" id="cmError"></p>
+            <p class="m-error" id="cmError" role="alert"></p>
             <div class="m-actions">
                 {showDelete && <button type="button" class="m-delete" id="cmDelete" hidden>{t(L, 'cmod.eliminar')}</button>}
                 <span class="m-spacer"></span>
@@ -188,7 +272,94 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     </form>
 </dialog>
 
+<style>
+    .cm-headline { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+    .cm-avatar {
+        flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
+        font-size: 0.86rem; font-weight: 700; letter-spacing: -0.02em;
+        transition: background 0.25s var(--ease-ios), color 0.25s var(--ease-ios);
+    }
+    .cm-avatar[data-filled="1"] { background: var(--color-blue-deep); color: #fff; }
+    .cm-titles { min-width: 0; }
+    .cm-sub { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.4; }
+
+    .cm-sec { display: flex; flex-direction: column; gap: 0.95rem; padding-top: 1.15rem; border-top: 1px solid var(--color-border); }
+    .cm-sec:first-child { border-top: none; padding-top: 0.35rem; }
+    .cm-sec[hidden], .m-input[hidden] { display: none; }
+    .cm-sec-h { display: flex; align-items: center; gap: 0.5rem; }
+    .cm-sec-h h3 { margin: 0; font-size: 0.86rem; font-weight: 700; letter-spacing: -0.01em; color: var(--color-text); }
+    .cm-sec-i {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 8px;
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
+    }
+
+    /* minmax(0, …): sin él, un <select> con una opción larga (los regímenes del SAT)
+       ensancha su columna más allá del modal. */
+    .cm .m-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .cm-row3 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr); gap: 0.95rem; }
+    .cm .m-input { width: 100%; min-width: 0; box-sizing: border-box; }
+    .cm select.m-input { text-overflow: ellipsis; }
+
+    .cm-flagsel { position: relative; }
+    .cm-flagsel .m-input { width: 100%; padding-left: 38px; }
+    .cm-flag {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        width: 18px; height: 18px; border-radius: 50%; pointer-events: none;
+        box-shadow: 0 0 0 0.5px rgba(10,25,47,0.12);
+    }
+
+    .cm-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+    .cm-check { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; line-height: 1.4; min-height: 1em; }
+    .cm-check:empty { display: none; }
+    .cm-check[data-state="valid"] { color: #059669; }
+    .cm-check[data-state="invalid"] { color: var(--color-warn); }
+
+    .cm-note {
+        display: flex; align-items: flex-start; gap: 0.5rem; margin: 0;
+        font-size: 0.74rem; line-height: 1.5; color: var(--color-text-muted);
+        background: var(--color-bg-soft); border-radius: 10px; padding: 0.6rem 0.75rem;
+    }
+    .cm-note[hidden] { display: none; }
+    .cm-note :global(svg) { flex: 0 0 auto; margin-top: 2px; color: var(--color-blue-deep); }
+
+    .cm-phone { display: flex; gap: 0.5rem; }
+    .cm-phone .m-input { flex: 1 1 auto; min-width: 0; }
+    .cm-cc {
+        position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.3rem;
+        min-width: 78px; padding: 0 0.7rem; border-radius: 10px; cursor: pointer;
+        background: var(--color-bg-soft); border: 1.5px solid transparent;
+        font-size: 0.88rem; font-weight: 600; color: var(--color-text); font-variant-numeric: tabular-nums;
+        transition: border-color 0.3s var(--ease-ios), background 0.2s;
+    }
+    .cm-cc:hover { background: var(--row-hover); }
+    .cm-cc:focus-within { border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .cm-cc :global(svg) { color: var(--color-text-muted); }
+    .cm-cc select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+
+    .cm-affix { position: relative; }
+    .cm-affix .m-input { width: 100%; padding-right: 54px; }
+    .cm-affix-t {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-text-muted); pointer-events: none;
+    }
+
+    @media (max-width: 600px) {
+        .cm .m-row, .cm-row3 { grid-template-columns: minmax(0, 1fr); }
+        .cm-sub { display: none; }
+    }
+</style>
+
 <script>
+    import {
+        checkTaxId, callingCode, joinPhone, postalLabel, postalPlaceholder, regionLabel, splitPhone, taxIdPlaceholder,
+    } from '../../lib/party-format';
+    import { flagSrc } from '../../lib/flags';
+    import { createMoney } from '../../lib/money-client';
+    import { iconSvg } from '../../lib/icons';
+
     // CRUD de clientes contra /api/clientes, disparado por 'clientmodal:open' y
     // notificando 'clientmodal:saved'/'clientmodal:deleted' — la página anfitriona decide
     // qué hacer con eso (recargar, insertar un <option>, quitar una fila…).
@@ -198,10 +369,14 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const dlg: HTMLDialogElement = dlgEl;
         const I = dlg.dataset;
         const canDelete = I.showDelete === '1';
-        const orgCountry = I.orgCountry || 'MX';
-        const rfcDefaultLabel = I.rfcDefaultLabel || 'Tax ID';
-        let taxIdLabels: Record<string, string> = {};
-        try { taxIdLabels = JSON.parse(document.getElementById('cmTaxIdLabels')?.textContent || '{}'); } catch { /* deja {} */ }
+        type Config = {
+            orgCountry: string; locale: 'es' | 'en'; eu: string[];
+            taxIdLabels: Record<string, string>; subdivisions: Record<string, { v: string; l: string }[]>;
+        };
+        let cfg: Config = { orgCountry: 'MX', locale: 'es', eu: [], taxIdLabels: {}, subdivisions: {} };
+        try { cfg = { ...cfg, ...JSON.parse(document.getElementById('cmConfig')?.textContent || '{}') }; } catch { /* conserva el default */ }
+
+        const isEu = (c: string) => cfg.eu.includes(c);
         const form = document.getElementById('clientForm') as HTMLFormElement;
         const title = document.getElementById('cmTitle')!;
         const errorEl = document.getElementById('cmError')!;
@@ -209,74 +384,197 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const btnSave = document.getElementById('cmSave') as HTMLButtonElement;
         const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTerminos .chip'));
         const tierChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTiers .chip'));
+        const avatar = document.getElementById('cmAvatar')!;
+        const avatarIcon = avatar.innerHTML;
+        const flag = document.getElementById('cmFlag') as HTMLImageElement;
         const rfcLabel = document.getElementById('cmRfcLabel')!;
-        const fiscalDetails = document.getElementById('cmFiscal') as HTMLDetailsElement | null;
+        const taxCheck = document.getElementById('cmTaxCheck')!;
+        const intracom = document.getElementById('cmIntracom')!;
+        const ccLabel = document.getElementById('cmCcLabel')!;
+        const regionSel = document.getElementById('cmRegionSel') as HTMLSelectElement;
+        const regionLabelEl = document.getElementById('cmRegionLabel')!;
+        const cpLabel = document.getElementById('cmCpLabel')!;
+        const fiscal = document.getElementById('cmFiscal');
+        const input = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const select = (id: string) => document.getElementById(id) as HTMLSelectElement | null;
 
         let editId: string | null = null;
         let terminos = 'contado';
+        // La lada sigue al país del cliente mientras la persona no la elija a mano:
+        // un cliente en Madrid con el celular de su gerente en México es normal.
+        let ccTouched = false;
+        let regionPending = '';
+        const money = createMoney();
 
-        const input = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const country = () => (select('cmCountry')?.value || cfg.orgCountry).toUpperCase();
 
-        // El país RESUELTO del cliente: el suyo si lo eligió, si no el del negocio.
-        // De ahí sale el label del tax id y si se muestra el bloque de CFDI mexicano
-        // — un cliente francés de una empresa española no es "NIF / CIF" ni tiene RFC.
-        const syncCountryDependent = () => {
-            const chosen = input('cmCountry').value.toUpperCase();
-            const resolved = chosen || orgCountry;
-            rfcLabel.textContent = taxIdLabels[resolved] || rfcDefaultLabel;
-            input('cmRfc').placeholder = rfcLabel.textContent || '';
-            if (fiscalDetails) fiscalDetails.style.display = resolved === 'MX' ? '' : 'none';
+        const syncAvatar = () => {
+            const words = input('cmEmpresa').value.trim().split(/\s+/).filter(Boolean);
+            const initials = words.slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+            if (initials) { avatar.textContent = initials; avatar.dataset.filled = '1'; }
+            else { avatar.innerHTML = avatarIcon; avatar.dataset.filled = ''; }
         };
-        input('cmCountry').addEventListener('change', syncCountryDependent);
+
+        const setCc = (code: string) => {
+            const sel = select('cmPhoneCc')!;
+            if (callingCode(code)) sel.value = code;
+            ccLabel.textContent = callingCode(sel.value) ? `+${callingCode(sel.value)}` : '+';
+        };
+
+        const syncTaxCheck = () => {
+            const c = country();
+            const state = checkTaxId(c, input('cmRfc').value);
+            taxCheck.dataset.state = state;
+            if (state === 'valid') taxCheck.innerHTML = `${iconSvg('check-circle', '', 1.5, 13)}<span>${I.i18nTaxidOk || ''}</span>`;
+            else if (state === 'invalid') {
+                const label = cfg.taxIdLabels[c] || rfcLabel.textContent || '';
+                taxCheck.innerHTML = `${iconSvg('alert-circle', '', 1.5, 13)}<span></span>`;
+                taxCheck.querySelector('span')!.textContent = (I.i18nTaxidRevisa || '').replace('{label}', label);
+            } else taxCheck.innerHTML = '';
+            syncPersona();
+            syncIntracom();
+        };
+
+        // CFDI 4.0: el régimen y el uso deben corresponder al tipo de RFC (12 = moral,
+        // 13 = física). Se esconden las claves que el SAT rechazaría al timbrar, pero
+        // la ya elegida nunca se borra: mientras se teclea el RFC pasa por 12
+        // caracteres camino a 13, y perder el régimen ahí sería borrar un dato bueno.
+        const syncPersona = () => {
+            if (!fiscal) return;
+            const rfc = input('cmRfc').value.replace(/[\s-]/g, '');
+            const persona = rfc.length === 12 ? 'moral' : rfc.length === 13 ? 'fisica' : '';
+            for (const id of ['cmRegimen', 'cmUso']) {
+                const sel = select(id);
+                if (!sel) continue;
+                for (const opt of Array.from(sel.options)) {
+                    if (!opt.value) continue;
+                    const fits = !persona || opt.value === sel.value || (opt.dataset.personas || '').split(' ').includes(persona);
+                    opt.hidden = !fits;
+                    opt.disabled = !fits;
+                }
+            }
+        };
+
+        const syncIntracom = () => {
+            const c = country();
+            // Mismo criterio que la mención legal de invoice-pdf.ts: dos países distintos de la UE con tax id.
+            intracom.hidden = !(isEu(cfg.orgCountry) && isEu(c) && c !== cfg.orgCountry && input('cmRfc').value.trim().length > 0);
+        };
+
+        const fillRegion = (c: string, current: string) => {
+            const list = cfg.subdivisions[c];
+            const free = input('cmRegion');
+            regionLabelEl.textContent = regionLabel(c, cfg.locale);
+            if (!list) {
+                regionSel.hidden = true;
+                free.hidden = false;
+                free.value = current;
+                regionLabelEl.setAttribute('for', 'cmRegion');
+                return;
+            }
+            const norm = current.trim().toLowerCase();
+            const match = list.find((s) => s.v.toLowerCase() === norm || s.l.toLowerCase() === norm);
+            const opts = [`<option value="">${I.i18nRegionElige || ''}</option>`];
+            // Un valor guardado que no está en el catálogo se conserva (regla 28): abrir y
+            // guardar el cliente no puede borrarle el estado en silencio.
+            const keep = current.trim() && !match ? current.trim() : '';
+            regionSel.innerHTML = '';
+            regionSel.insertAdjacentHTML('beforeend', opts.join(''));
+            if (keep) regionSel.add(new Option(keep, keep));
+            for (const s of list) regionSel.add(new Option(s.l, s.v));
+            regionSel.value = match ? match.v : keep;
+            regionSel.hidden = false;
+            free.hidden = true;
+            regionLabelEl.setAttribute('for', 'cmRegionSel');
+        };
+
+        const regionValue = () => (regionSel.hidden ? input('cmRegion').value : regionSel.value);
+
+        const syncCountry = (opts: { keepRegion?: boolean } = {}) => {
+            const c = country();
+            flag.src = flagSrc(c);
+            rfcLabel.textContent = cfg.taxIdLabels[c] || 'Tax ID';
+            input('cmRfc').placeholder = taxIdPlaceholder(c);
+            cpLabel.textContent = postalLabel(c, cfg.locale);
+            input('cmCp').placeholder = postalPlaceholder(c);
+            fillRegion(c, opts.keepRegion ? regionPending : '');
+            if (!ccTouched) setCc(c);
+            if (fiscal) fiscal.hidden = c !== 'MX';
+            syncTaxCheck();
+        };
+
         const setTerm = (v: string) => {
             terminos = v;
-            chips.forEach((c) => c.classList.toggle('active', c.dataset.v === v));
+            chips.forEach((c) => { c.classList.toggle('active', c.dataset.v === v); c.setAttribute('aria-pressed', String(c.dataset.v === v)); });
         };
 
         const updateDiscPreview = () => {
-            const d = parseFloat(input('cmDescuento').value) || 0;
+            const d = Math.min(100, Math.max(0, parseFloat(input('cmDescuento').value) || 0));
             const el = document.getElementById('cmDiscPreview');
             if (!el) return;
-            if (d <= 0) { el.innerHTML = I.sinDescuento || 'Sin descuento'; el.classList.remove('on'); }
-            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX')}</b>`; el.classList.add('on'); }
+            if (d <= 0) { el.textContent = I.i18nSinDescuento || ''; el.classList.remove('on'); return; }
+            el.innerHTML = `${money(1000)} → <b></b>`;
+            el.querySelector('b')!.textContent = money(1000 * (1 - d / 100));
+            el.classList.add('on');
         };
         const setNivel = (v: string, applySuggested = false) => {
             input('cmNivel').value = v;
-            tierChips.forEach((c) => c.classList.toggle('active', c.dataset.v === v));
+            tierChips.forEach((c) => { c.classList.toggle('active', c.dataset.v === v); c.setAttribute('aria-pressed', String(c.dataset.v === v)); });
             if (applySuggested) {
                 const chip = tierChips.find((c) => c.dataset.v === v);
                 input('cmDescuento').value = chip && chip.dataset.sug && chip.dataset.sug !== '0' ? chip.dataset.sug : '';
             }
             updateDiscPreview();
         };
+
         tierChips.forEach((c) => c.addEventListener('click', () => setNivel(c.dataset.v!, true)));
-        input('cmDescuento').addEventListener('input', updateDiscPreview);
         chips.forEach((c) => c.addEventListener('click', () => setTerm(c.dataset.v!)));
+        input('cmDescuento').addEventListener('input', updateDiscPreview);
+        input('cmEmpresa').addEventListener('input', syncAvatar);
+        input('cmRfc').addEventListener('input', syncTaxCheck);
+        select('cmCountry')?.addEventListener('change', () => syncCountry());
+        select('cmPhoneCc')?.addEventListener('change', () => { ccTouched = true; setCc(select('cmPhoneCc')!.value); });
+        // Si pegan el número completo con +lada, el selector se ajusta solo.
+        input('cmTelefono').addEventListener('change', () => {
+            const v = input('cmTelefono').value.trim();
+            if (!v.startsWith('+') && !v.startsWith('00')) return;
+            const parts = splitPhone(v, select('cmPhoneCc')!.value);
+            if (callingCode(parts.country)) { ccTouched = true; setCc(parts.country); input('cmTelefono').value = parts.national; }
+        });
 
         function openModal(data?: DOMStringMap) {
             errorEl.textContent = '';
             editId = data?.id ?? null;
-            title.textContent = editId ? (I.editar || 'Editar cliente') : (I.nuevo || 'Nuevo cliente');
+            title.textContent = editId ? (I.i18nEditar || '') : (I.i18nNuevo || '');
             if (btnDelete) btnDelete.hidden = !(editId && canDelete);
+            btnSave.disabled = false;
             input('cmEmpresa').value = data?.empresa ?? '';
             input('cmContacto').value = data?.contacto ?? '';
             input('cmEmail').value = data?.email ?? '';
-            input('cmTelefono').value = data?.telefono ?? '';
             input('cmRfc').value = data?.rfc ?? '';
             input('cmLimite').value = data?.limite ?? '';
             input('cmDescuento').value = data?.descuento ?? '';
-            input('cmRegimen').value = data?.regimen ?? '';
-            input('cmUso').value = data?.uso ?? '';
+            if (select('cmRegimen')) select('cmRegimen')!.value = data?.regimen ?? '';
+            if (select('cmUso')) select('cmUso')!.value = data?.uso ?? '';
             input('cmCp').value = data?.cp ?? '';
-            input('cmCountry').value = data?.country ?? '';
             input('cmDireccion1').value = data?.direccion1 ?? '';
             input('cmDireccion2').value = data?.direccion2 ?? '';
             input('cmCiudad').value = data?.ciudad ?? '';
-            input('cmRegion').value = data?.region ?? '';
+            // Sin país guardado, el cliente hereda el del negocio: se muestra ese,
+            // que es el que ya usan sus facturas.
+            const c = String(data?.country || cfg.orgCountry).toUpperCase();
+            const countrySel = select('cmCountry')!;
+            countrySel.value = c;
+            if (countrySel.value !== c) countrySel.value = cfg.orgCountry;
+            regionPending = data?.region ?? '';
+            const phone = splitPhone(data?.telefono ?? '', countrySel.value);
+            ccTouched = Boolean(data?.telefono) && phone.country !== countrySel.value;
+            setCc(phone.country);
+            input('cmTelefono').value = phone.national;
             setNivel(data?.nivel ?? 'estandar', false);
             setTerm(data?.terminos ?? 'contado');
-            if (fiscalDetails) fiscalDetails.open = false;
-            syncCountryDependent();
+            syncCountry({ keepRegion: true });
+            syncAvatar();
             dlg.showModal();
             (window as any).cordWireModal?.(dlg);
             if (!editId) setTimeout(() => input('cmEmpresa').focus(), 60);
@@ -292,33 +590,40 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             e.preventDefault();
             const empresa = input('cmEmpresa').value.trim();
             if (!empresa) {
-                errorEl.textContent = I.empresaObligatoria || 'El nombre de la empresa es obligatorio.';
+                errorEl.textContent = I.i18nEmpresaObligatoria || '';
                 input('cmEmpresa').focus();
+                return;
+            }
+            const emailEl = input('cmEmail');
+            if (emailEl.value.trim() && !emailEl.checkValidity()) {
+                errorEl.textContent = emailEl.validationMessage;
+                emailEl.focus();
                 return;
             }
             btnSave.disabled = true;
             errorEl.textContent = '';
             const prevLabel = btnSave.textContent;
-            btnSave.textContent = editId ? (I.guardando || 'Guardando…') : (I.creando || 'Creando…');
+            btnSave.textContent = editId ? (I.i18nGuardando || '') : (I.i18nCreando || '');
             const payload = {
                 id: editId ?? undefined,
                 empresa,
                 contacto: input('cmContacto').value,
-                email: input('cmEmail').value,
-                telefono: input('cmTelefono').value,
+                email: emailEl.value.trim(),
+                telefono: joinPhone(select('cmPhoneCc')!.value, input('cmTelefono').value),
                 rfc: input('cmRfc').value,
                 terminos,
                 limite: input('cmLimite').value,
                 nivel: input('cmNivel').value,
                 descuento_pct: input('cmDescuento').value,
-                regimen_fiscal: input('cmRegimen').value,
-                uso_cfdi: input('cmUso').value,
+                // Régimen y uso del CFDI solo existen para un receptor mexicano.
+                regimen_fiscal: fiscal && !fiscal.hidden ? select('cmRegimen')!.value : '',
+                uso_cfdi: fiscal && !fiscal.hidden ? select('cmUso')!.value : '',
                 cp_fiscal: input('cmCp').value,
-                country_code: input('cmCountry').value,
+                country_code: country(),
                 direccion_line1: input('cmDireccion1').value,
                 direccion_line2: input('cmDireccion2').value,
                 ciudad: input('cmCiudad').value,
-                region: input('cmRegion').value,
+                region: regionValue(),
             };
             try {
                 const res = await fetch('/api/clientes', {
@@ -327,7 +632,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || I.noPudoGuardar);
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoGuardar);
                 document.dispatchEvent(new CustomEvent('clientmodal:saved', {
                     detail: { id: editId || data.id, mode: editId ? 'edit' : 'create', cliente: { ...payload, id: editId || data.id } },
                 }));
@@ -335,13 +640,14 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             } catch (err: any) {
                 errorEl.textContent = err.message;
                 btnSave.disabled = false;
+            } finally {
                 btnSave.textContent = prevLabel;
             }
         });
 
         btnDelete?.addEventListener('click', async () => {
             if (!editId) return;
-            if (!(await (window as any).cordConfirm({ title: I.eliminarTitulo, body: I.eliminarBody, danger: true, confirmText: I.eliminar }))) return;
+            if (!(await (window as any).cordConfirm({ title: I.i18nEliminarTitulo, body: I.i18nEliminarBody, danger: true, confirmText: I.i18nEliminar }))) return;
             const delId = editId;
             const res = await fetch('/api/clientes', {
                 method: 'DELETE',
@@ -352,7 +658,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 document.dispatchEvent(new CustomEvent('clientmodal:deleted', { detail: { id: delId } }));
                 closeModal();
             } else {
-                errorEl.textContent = (await res.json()).error || I.noPudoEliminar;
+                errorEl.textContent = (await res.json()).error || I.i18nNoPudoEliminar;
             }
         });
     })();

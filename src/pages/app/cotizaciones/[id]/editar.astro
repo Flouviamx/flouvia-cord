@@ -173,6 +173,10 @@ import { iconInner } from '../../../../lib/icons';
     const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
     const DEFAULT_TAX = Number(BOOT.defaultTaxRate) || 0;
     const TAX_OPTIONS = BOOT.taxOptions || [];
+    // El impuesto que el producto sugiere, si sigue en el catálogo de la org; si
+    // no (la tasa se dio de baja), el default. La línea toma su propio snapshot.
+    const productTax = (p) => (p && p.taxRate !== null && p.taxRate !== undefined
+        && TAX_OPTIONS.some((o) => Math.abs(Number(o.rate) - Number(p.taxRate)) < 1e-9)) ? Number(p.taxRate) : DEFAULT_TAX;
     const escapeHtml = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
     const lines = [...qItems].map(it => ({
@@ -307,7 +311,7 @@ import { iconInner } from '../../../../lib/icons';
     $select.addEventListener('change', () => {
         const p = catMap[$select.value];
         if (!p) return;
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1, taxRate: DEFAULT_TAX });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1, taxRate: productTax(p) });
         $select.selectedIndex = 0;
         render();
     });

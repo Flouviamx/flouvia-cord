@@ -2,90 +2,168 @@
 // Modal de alta/edición de producto — COMPARTIDO entre /app/productos (catálogo) y
 // /app/productos/[id] (detalle). Mismo contrato por CustomEvent que ClientModal.astro:
 // 'prodmodal:open' { data? } → 'prodmodal:saved' { id, mode, producto } / 'prodmodal:deleted'.
+//
+// Sirve para cualquier cosa que un negocio venda: un bien físico, un servicio por
+// hora o por proyecto, o una suscripción/licencia. El "tipo" NO se guarda: solo
+// propone unidades y se deduce de la unidad al editar. Lo que sí se guarda y tiene
+// consumidor es el impuesto sugerido (`productos.tax_rate`): los editores de
+// cotización y factura lo toman al agregar el producto a una línea.
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { getImpuestos, getOrg } from '../../lib/queries';
+import { getCountryProfile } from '../../lib/countries';
+import { buildTaxOptions, defaultTaxRate } from '../../lib/impuestos';
+import Icon from '../Icon.astro';
 
 interface Props {
     showDelete?: boolean;
 }
 const { showDelete = true } = Astro.props;
 const L = currentLocale();
-import { iconInner } from '../../lib/icons';
+const [ORG, IMPUESTOS] = await Promise.all([getOrg(), getImpuestos()]);
+const PAIS = String(ORG.countryCode || 'MX').toUpperCase();
+const PROFILE = getCountryProfile(PAIS, L);
+const CURRENCY = String(ORG.moneda || PROFILE.currency).toUpperCase();
+const orgTaxRate = Number(ORG.ivaPct) || 0;
+const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: PAIS, orgTaxRate });
+const DEFAULT_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
+const DEFAULT_TAX_LABEL = TAX_OPTIONS.find((o) => Math.abs(o.rate - DEFAULT_RATE) < 1e-9)?.label
+    ?? `${PROFILE.taxLabel} ${Math.round(DEFAULT_RATE * 10000) / 100}%`;
+// Con una sola opción no hay nada que elegir: el campo no se dibuja (mismo
+// criterio que `MULTI_TAX` en el editor de cotizaciones).
+const MULTI_TAX = TAX_OPTIONS.length > 1;
+
+// Unidades sugeridas por tipo de venta. Son sugerencias de un <datalist>: la
+// unidad sigue siendo texto libre, porque ningún catálogo cubre todos los giros.
+const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
+    ? {
+        bien: ['unit', 'box', 'pack', 'set', 'pair', 'dozen', 'kg', 'g', 'lb', 'ton', 'L', 'mL', 'gal', 'm', 'ft', 'm²', 'm³', 'roll', 'bag', 'pallet'],
+        servicio: ['service', 'hour', 'day', 'week', 'project', 'visit', 'session', 'trip', 'km'],
+        suscripcion: ['month', 'year', 'license', 'user', 'seat'],
+    }
+    : {
+        bien: ['pieza', 'caja', 'paquete', 'juego', 'par', 'docena', 'kg', 'g', 'lb', 'tonelada', 'L', 'mL', 'galón', 'm', 'pie', 'm²', 'm³', 'rollo', 'saco', 'tarima'],
+        servicio: ['servicio', 'hora', 'día', 'semana', 'proyecto', 'visita', 'sesión', 'viaje', 'km'],
+        suscripcion: ['mes', 'año', 'licencia', 'usuario', 'asiento'],
+    };
 ---
 
-<dialog class="modal" id="prodModal"
+<dialog class="modal modal-lg pm" id="prodModal"
     data-i18n-nuevo={t(L, 'pmod.nuevo_titulo')} data-i18n-editar={t(L, 'pmod.editar_titulo')}
     data-i18n-no-pudo-guardar={t(L, 'pmod.no_pudo_guardar')}
     data-i18n-eliminar-titulo={t(L, 'pmod.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'pmod.eliminar_body')}
     data-i18n-eliminar={t(L, 'pmod.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'pmod.no_pudo_eliminar')}
     data-i18n-gana-tpl={t(L, 'pmod.gana_por_unidad')} data-i18n-pierde-tpl={t(L, 'pmod.pierde_por_unidad')}
-    data-i18n-vol-desde={t(L, 'pmod.vol_desde')} data-i18n-vol-pz={t(L, 'pmod.vol_pz')} data-i18n-vol-quitar={t(L, 'pmod.vol_quitar')}
+    data-i18n-vol-desde={t(L, 'pmod.vol_desde')} data-i18n-vol-pz={t(L, 'pmod.vol_unidades')} data-i18n-vol-quitar={t(L, 'pmod.vol_quitar')}
     data-i18n-nombre-obligatorio={t(L, 'pmod.nombre_obligatorio')}
+    data-i18n-precio-obligatorio={t(L, 'pmod.precio_obligatorio')}
     data-i18n-creando={t(L, 'pmod.creando')} data-i18n-guardando={t(L, 'pmod.guardando')}
-    data-i18n-locale={L} data-show-delete={showDelete ? '1' : ''}
+    data-show-delete={showDelete ? '1' : ''}
 >
-    <form method="dialog" class="m-form" id="prodForm">
+    <script type="application/json" id="pmUnits" is:inline set:html={JSON.stringify(UNITS)} />
+    <form method="dialog" class="m-form" id="prodForm" novalidate>
         <div class="m-head">
-            <h2 id="pmTitle">{t(L, 'pmod.nuevo_titulo')}</h2>
-            <button type="button" class="m-close" id="pmClose" aria-label={t(L, 'pmod.cerrar')}>✕</button>
+            <div class="pm-headline">
+                <span class="pm-avatar" aria-hidden="true"><Icon name="products" size={18} /></span>
+                <div>
+                    <h2 id="pmTitle">{t(L, 'pmod.nuevo_titulo')}</h2>
+                    <p class="pm-sub">{t(L, 'pmod.sub')}</p>
+                </div>
+            </div>
+            <button type="button" class="m-close" id="pmClose" aria-label={t(L, 'pmod.cerrar')}><Icon name="x" size={15} /></button>
         </div>
 
         <div class="m-body">
-            <div class="m-field">
-                <label for="pmNombre">{t(L, 'pmod.nombre')}</label>
-                <input class="m-input" id="pmNombre" required placeholder={t(L, 'pmod.nombre_ph')} />
-            </div>
-            <div class="m-row">
-                <div class="m-field">
-                    <label for="pmSku">{t(L, 'pmod.sku')}</label>
-                    <input class="m-input" id="pmSku" placeholder={t(L, 'pmod.sku_ph')} maxlength="24" />
+            <section class="pm-sec" aria-labelledby="pmSecQue">
+                <header class="pm-sec-h"><span class="pm-sec-i"><Icon name="tag" size={15} /></span><h3 id="pmSecQue">{t(L, 'pmod.sec_que')}</h3></header>
+                <div class="m-chips pm-kinds" id="pmKind" role="group" aria-label={t(L, 'pmod.tipo_label')}>
+                    <button type="button" class="chip active" data-v="bien"><Icon name="products" size={14} />{t(L, 'pmod.tipo_bien')}</button>
+                    <button type="button" class="chip" data-v="servicio"><Icon name="clock" size={14} />{t(L, 'pmod.tipo_servicio')}</button>
+                    <button type="button" class="chip" data-v="suscripcion"><Icon name="refresh" size={14} />{t(L, 'pmod.tipo_suscripcion')}</button>
                 </div>
                 <div class="m-field">
-                    <label for="pmUnidad">{t(L, 'pmod.unidad')}</label>
-                    <input class="m-input" id="pmUnidad" placeholder={t(L, 'pmod.unidad_ph')} />
+                    <label for="pmNombre">{t(L, 'pmod.nombre')}</label>
+                    <input class="m-input" id="pmNombre" required maxlength="200" placeholder={t(L, 'pmod.nombre_ph')} />
                 </div>
-            </div>
-            <div class="m-field">
-                <label for="pmDescripcion">{t(L, 'pmod.descripcion')}</label>
-                <input class="m-input" id="pmDescripcion" placeholder={t(L, 'pmod.descripcion_ph')} maxlength="500" />
-            </div>
-            <div class="m-row">
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="pmSku">{t(L, 'pmod.sku')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                        <input class="m-input pm-mono" id="pmSku" placeholder={t(L, 'pmod.sku_ph')} maxlength="64" autocomplete="off" spellcheck="false" />
+                    </div>
+                    <div class="m-field">
+                        <label for="pmUnidad">{t(L, 'pmod.unidad')}</label>
+                        <input class="m-input" id="pmUnidad" list="pmUnidades" maxlength="40" autocomplete="off" placeholder={UNITS.bien[0]} />
+                        <datalist id="pmUnidades"></datalist>
+                    </div>
+                </div>
                 <div class="m-field">
-                    <label for="pmPrecio">{t(L, 'pmod.precio_venta')}</label>
-                    <input class="m-input" id="pmPrecio" type="number" min="0" step="0.01" required placeholder="198.00" />
+                    <label for="pmDescripcion">{t(L, 'pmod.descripcion')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                    <textarea class="m-input pm-textarea" id="pmDescripcion" rows="3" maxlength="500" placeholder={t(L, 'pmod.descripcion_ph')}></textarea>
                 </div>
-                <div class="m-field">
-                    <label for="pmCosto">{t(L, 'pmod.costo_pregunta')}</label>
-                    <input class="m-input" id="pmCosto" type="number" min="0" step="0.01" placeholder="0.00" />
-                    <span class="m-hint">{t(L, 'pmod.costo_hint')}</span>
-                </div>
-            </div>
-            <div class="margin-strip" id="pmMarginStrip" hidden>
-                <div class="ms-bar"><span class="ms-fill" id="pmMsFill"></span></div>
-                <div class="ms-text" id="pmMsText"></div>
-            </div>
+            </section>
 
-            <div class="m-field vol-field">
-                <label>{t(L, 'pmod.vol_titulo')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+            <section class="pm-sec" aria-labelledby="pmSecPrecio">
+                <header class="pm-sec-h"><span class="pm-sec-i"><Icon name="coin" size={15} /></span><h3 id="pmSecPrecio">{t(L, 'pmod.sec_precio')}</h3></header>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="pmPrecio">{t(L, 'pmod.precio_venta')} <span class="pm-per" data-per></span></label>
+                        <div class="pm-affix">
+                            <input class="m-input" id="pmPrecio" type="number" min="0" step="any" inputmode="decimal" required placeholder="0" />
+                            <span class="pm-affix-t">{CURRENCY}</span>
+                        </div>
+                    </div>
+                    <div class="m-field">
+                        <label for="pmCosto">{t(L, 'pmod.costo_pregunta')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                        <div class="pm-affix">
+                            <input class="m-input" id="pmCosto" type="number" min="0" step="any" inputmode="decimal" placeholder="0" />
+                            <span class="pm-affix-t">{CURRENCY}</span>
+                        </div>
+                    </div>
+                </div>
+                <span class="m-hint">{t(L, 'pmod.costo_hint')}</span>
+                <div class="margin-strip" id="pmMarginStrip" hidden>
+                    <div class="ms-bar"><span class="ms-fill" id="pmMsFill"></span></div>
+                    <div class="ms-text" id="pmMsText"></div>
+                </div>
+                {MULTI_TAX && (
+                    <div class="m-field">
+                        <label for="pmTax">{t(L, 'pmod.impuesto')}</label>
+                        <select class="m-input" id="pmTax">
+                            <option value="">{t(L, 'pmod.impuesto_default').replace('{tasa}', DEFAULT_TAX_LABEL)}</option>
+                            {TAX_OPTIONS.map((o) => <option value={String(o.rate)}>{o.label}</option>)}
+                        </select>
+                        <span class="m-hint">{t(L, 'pmod.impuesto_hint')}</span>
+                    </div>
+                )}
+            </section>
+
+            <section class="pm-sec" aria-labelledby="pmSecVol">
+                <header class="pm-sec-h">
+                    <span class="pm-sec-i"><Icon name="chart" size={15} /></span>
+                    <h3 id="pmSecVol">{t(L, 'pmod.vol_titulo')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></h3>
+                </header>
                 <span class="m-hint">{t(L, 'pmod.vol_hint')}</span>
                 <div class="vol-list" id="pmVolList"></div>
                 <button type="button" class="vol-add" id="pmVolAdd">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" set:html={iconInner('plus')}></svg>
+                    <Icon name="plus" size={13} />
                     {t(L, 'pmod.vol_agregar')}
                 </button>
-            </div>
+            </section>
 
-            <div class="m-field" style="flex:0 0 auto">
-                <label>{t(L, 'pmod.estado_label')}</label>
-                <div class="m-chips" id="pmActivo">
+            <section class="pm-sec pm-sec-row" aria-labelledby="pmSecEstado">
+                <div>
+                    <h3 class="pm-inline-h" id="pmSecEstado">{t(L, 'pmod.estado_label')}</h3>
+                    <span class="m-hint">{t(L, 'pmod.estado_hint')}</span>
+                </div>
+                <div class="m-chips" id="pmActivo" role="group" aria-labelledby="pmSecEstado">
                     <button type="button" class="chip active" data-v="1">{t(L, 'pmod.activo')}</button>
                     <button type="button" class="chip" data-v="">{t(L, 'pmod.inactivo')}</button>
                 </div>
-            </div>
+            </section>
         </div>
 
         <div class="m-foot">
-            <p class="m-error" id="pmError"></p>
+            <p class="m-error" id="pmError" role="alert"></p>
             <div class="m-actions">
                 {showDelete && <button type="button" class="m-delete" id="pmDelete" hidden>{t(L, 'pmod.eliminar')}</button>}
                 <span class="m-spacer"></span>
@@ -96,9 +174,53 @@ import { iconInner } from '../../lib/icons';
     </form>
 </dialog>
 
+<style>
+    .pm-headline { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+    .pm-avatar {
+        flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
+    }
+    .pm-sub { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.4; }
+
+    .pm-sec { display: flex; flex-direction: column; gap: 0.95rem; padding-top: 1.15rem; border-top: 1px solid var(--color-border); }
+    .pm-sec:first-child { border-top: none; padding-top: 0.35rem; }
+    .pm-sec-h { display: flex; align-items: center; gap: 0.5rem; }
+    .pm-sec-h h3, .pm-inline-h { margin: 0; font-size: 0.86rem; font-weight: 700; letter-spacing: -0.01em; color: var(--color-text); }
+    .pm-sec-i {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 8px;
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
+    }
+    .pm-sec-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }
+    .pm-sec-row .m-hint { display: block; margin-top: 0.2rem; }
+
+    .pm .m-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .pm .m-input { width: 100%; min-width: 0; box-sizing: border-box; }
+    .pm-kinds { flex-wrap: wrap; }
+    .pm-kinds .chip { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+    .pm-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; text-transform: uppercase; }
+    .pm-textarea { resize: vertical; min-height: 76px; line-height: 1.5; font-family: var(--font-sans); }
+    .pm-per { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--color-text-muted); }
+
+    .pm-affix { position: relative; }
+    .pm-affix .m-input { width: 100%; padding-right: 54px; }
+    .pm-affix-t {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-text-muted); pointer-events: none;
+    }
+
+    @media (max-width: 600px) {
+        .pm .m-row { grid-template-columns: minmax(0, 1fr); }
+        .pm-sub { display: none; }
+        .pm-sec-row { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
 <script>
     import { iconSvg } from '../../lib/icons';
-    import { createMoney } from '../../lib/money-client';
+    import { createMoney, documentCurrency, documentLocale } from '../../lib/money-client';
     // CRUD de productos contra /api/productos, disparado por 'prodmodal:open' y
     // notificando 'prodmodal:saved'/'prodmodal:deleted'.
     (function () {
@@ -107,21 +229,65 @@ import { iconInner } from '../../lib/icons';
         const dlg: HTMLDialogElement = dlgEl;
         const I = dlg.dataset;
         const canDelete = I.showDelete === '1';
-        const isEn = I.locale === 'en';
         const form = document.getElementById('prodForm') as HTMLFormElement;
         const title = document.getElementById('pmTitle')!;
         const errorEl = document.getElementById('pmError')!;
         const btnDelete = document.getElementById('pmDelete') as HTMLButtonElement | null;
         const btnSave = document.getElementById('pmSave') as HTMLButtonElement;
         const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#pmActivo .chip'));
+        const kindChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#pmKind .chip'));
+        const datalist = document.getElementById('pmUnidades') as HTMLDataListElement;
+        const taxSel = document.getElementById('pmTax') as HTMLSelectElement | null;
+        type Kind = 'bien' | 'servicio' | 'suscripcion';
+        let units: Record<Kind, string[]> = { bien: [], servicio: [], suscripcion: [] };
+        try { units = { ...units, ...JSON.parse(document.getElementById('pmUnits')?.textContent || '{}') }; } catch { /* sin sugerencias */ }
 
         let editId: string | null = null;
         let activo = true;
+        let kind: Kind = 'bien';
 
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
         const setActivo = (v: boolean) => {
             activo = v;
-            chips.forEach((c) => c.classList.toggle('active', Boolean(c.dataset.v) === v));
+            chips.forEach((c) => { c.classList.toggle('active', Boolean(c.dataset.v) === v); c.setAttribute('aria-pressed', String(Boolean(c.dataset.v) === v)); });
+        };
+
+        // El símbolo de la divisa del negocio para los niveles de volumen ("$", "€", "R$"…),
+        // nunca un "$" fijo: un negocio en euros veía dólares en su propio catálogo.
+        const currencySymbol = (() => {
+            try {
+                return new Intl.NumberFormat(documentLocale(), { style: 'currency', currency: documentCurrency() })
+                    .formatToParts(0).find((p) => p.type === 'currency')?.value || documentCurrency();
+            } catch { return documentCurrency(); }
+        })();
+        const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+        const unitText = () => input('pmUnidad').value.trim() || input('pmUnidad').placeholder || I.i18nVolPz || '';
+
+        const kindOf = (unit: string): Kind => {
+            const u = unit.trim().toLowerCase();
+            if (units.servicio.some((x) => x.toLowerCase() === u)) return 'servicio';
+            if (units.suscripcion.some((x) => x.toLowerCase() === u)) return 'suscripcion';
+            return 'bien';
+        };
+        const setKind = (k: Kind, applyUnit: boolean) => {
+            kind = k;
+            kindChips.forEach((c) => { c.classList.toggle('active', c.dataset.v === k); c.setAttribute('aria-pressed', String(c.dataset.v === k)); });
+            datalist.innerHTML = '';
+            for (const u of [...units[k], ...(Object.keys(units) as Kind[]).filter((x) => x !== k).flatMap((x) => units[x])]) {
+                datalist.appendChild(new Option(u));
+            }
+            const unidad = input('pmUnidad');
+            unidad.placeholder = units[k][0] || '';
+            // Cambiar de tipo solo reemplaza una unidad que vino de una sugerencia:
+            // una unidad propia ("tarima de 40 sacos") no se toca.
+            const all = Object.values(units).flat().map((x) => x.toLowerCase());
+            if (applyUnit && (!unidad.value.trim() || all.includes(unidad.value.trim().toLowerCase()))) unidad.value = units[k][0] || '';
+            syncPer();
+            renderVol();
+        };
+        const syncPer = () => {
+            const per = document.querySelector<HTMLElement>('#prodModal [data-per]');
+            if (per) per.textContent = `/ ${unitText()}`;
         };
 
         const moneyFmt = createMoney();
@@ -141,8 +307,8 @@ import { iconInner } from '../../lib/icons';
             fill.className = 'ms-fill ' + cls;
             text.className = 'ms-text ' + cls;
             text.innerHTML = ganancia < 0
-                ? tpl(I.pierdeTpl || 'Pierdes <b>{monto}</b> por unidad — tu costo supera el precio', { monto: moneyFmt(Math.abs(ganancia)) })
-                : tpl(I.ganaTpl || 'Ganas <b>{monto}</b> por unidad · margen <b>{pct}%</b>', { monto: moneyFmt(ganancia), pct: String(Math.round(m)) });
+                ? tpl(I.i18nPierdeTpl || '', { monto: moneyFmt(Math.abs(ganancia)) })
+                : tpl(I.i18nGanaTpl || '', { monto: moneyFmt(ganancia), pct: String(Math.round(m)) });
         };
         input('pmPrecio').addEventListener('input', updateMargin);
         input('pmCosto').addEventListener('input', updateMargin);
@@ -151,12 +317,13 @@ import { iconInner } from '../../lib/icons';
         const volList = document.getElementById('pmVolList')!;
         let volTiers: { min: number | string; precio: number | string }[] = [];
         const renderVol = () => {
+            const unit = esc(unitText());
             volList.innerHTML = volTiers.map((tr, i) => `
                 <div class="vol-row" data-i="${i}">
-                    <div class="vol-cell"><span class="vc-pre">${I.volDesde || 'Desde'}</span><input type="number" min="1" step="1" data-vk="min" value="${tr.min ?? ''}" placeholder="500" /><span class="vc-pre">${I.volPz || 'pz'}</span></div>
+                    <div class="vol-cell"><span class="vc-pre">${esc(I.i18nVolDesde || '')}</span><input type="number" min="1" step="1" inputmode="numeric" data-vk="min" value="${esc(String(tr.min ?? ''))}" placeholder="10" /><span class="vc-pre">${unit}</span></div>
                     <span class="vol-arrow">→</span>
-                    <div class="vol-cell"><span class="vc-pre">$</span><input type="number" min="0" step="0.01" data-vk="precio" value="${tr.precio ?? ''}" placeholder="90.00" /></div>
-                    <button type="button" class="vol-del" data-vdel="${i}" aria-label="${I.volQuitar || 'Quitar nivel'}">
+                    <div class="vol-cell"><span class="vc-pre">${esc(currencySymbol)}</span><input type="number" min="0" step="any" inputmode="decimal" data-vk="precio" value="${esc(String(tr.precio ?? ''))}" placeholder="0" /></div>
+                    <button type="button" class="vol-del" data-vdel="${i}" aria-label="${esc(I.i18nVolQuitar || '')}">
                         ${iconSvg('x', '', 1.5, 13)}
                     </button>
                 </div>`).join('');
@@ -178,22 +345,35 @@ import { iconInner } from '../../lib/icons';
             renderVol();
             (volList.querySelector('.vol-row:last-child input') as HTMLInputElement)?.focus();
         });
+        input('pmUnidad').addEventListener('input', () => {
+            syncPer();
+            // Los niveles muestran la unidad: se repintan sin perder lo capturado.
+            volList.querySelectorAll<HTMLElement>('.vol-cell:first-child .vc-pre:last-child').forEach((el) => { el.textContent = unitText(); });
+        });
+        input('pmUnidad').addEventListener('change', () => setKind(kindOf(input('pmUnidad').value), false));
+        kindChips.forEach((c) => c.addEventListener('click', () => setKind(c.dataset.v as Kind, true)));
 
         function openModal(data?: DOMStringMap) {
             errorEl.textContent = '';
             editId = data?.id ?? null;
-            title.textContent = editId ? (I.editar || 'Editar producto') : (I.nuevo || 'Nuevo producto');
+            title.textContent = editId ? (I.i18nEditar || '') : (I.i18nNuevo || '');
             if (btnDelete) btnDelete.hidden = !(editId && canDelete);
+            btnSave.disabled = false;
             input('pmNombre').value = data?.nombre ?? '';
             input('pmSku').value = data?.sku ?? '';
             input('pmUnidad').value = data?.unidad ?? '';
-            input('pmDescripcion').value = data?.descripcion ?? '';
+            (document.getElementById('pmDescripcion') as HTMLTextAreaElement).value = data?.descripcion ?? '';
             input('pmPrecio').value = data?.precio ?? '';
             input('pmCosto').value = data?.costo && data.costo !== '0' ? data.costo : '';
+            if (taxSel) {
+                const rate = data?.tax ?? '';
+                const match = Array.from(taxSel.options).find((o) => o.value !== '' && rate !== '' && Math.abs(Number(o.value) - Number(rate)) < 1e-9);
+                taxSel.value = match ? match.value : '';
+            }
             setActivo(data ? Boolean(data.activo) : true);
             try { volTiers = JSON.parse(data?.volumen || '[]'); } catch { volTiers = []; }
             if (!Array.isArray(volTiers)) volTiers = [];
-            renderVol();
+            setKind(kindOf(data?.unidad ?? ''), !editId);
             updateMargin();
             dlg.showModal();
             (window as any).cordWireModal?.(dlg);
@@ -211,23 +391,29 @@ import { iconInner } from '../../lib/icons';
             e.preventDefault();
             const nombre = input('pmNombre').value.trim();
             if (!nombre) {
-                errorEl.textContent = I.nombreObligatorio || 'El nombre del producto es obligatorio.';
+                errorEl.textContent = I.i18nNombreObligatorio || '';
                 input('pmNombre').focus();
+                return;
+            }
+            if (input('pmPrecio').value.trim() === '') {
+                errorEl.textContent = I.i18nPrecioObligatorio || '';
+                input('pmPrecio').focus();
                 return;
             }
             btnSave.disabled = true;
             errorEl.textContent = '';
             const prevLabel = btnSave.textContent;
-            btnSave.textContent = editId ? (I.guardando || 'Guardando…') : (I.creando || 'Creando…');
+            btnSave.textContent = editId ? (I.i18nGuardando || '') : (I.i18nCreando || '');
             const payload = {
                 id: editId ?? undefined,
                 nombre,
                 sku: input('pmSku').value,
-                unidad: input('pmUnidad').value,
-                descripcion: input('pmDescripcion').value,
+                unidad: input('pmUnidad').value.trim() || input('pmUnidad').placeholder,
+                descripcion: (document.getElementById('pmDescripcion') as HTMLTextAreaElement).value,
                 precio: input('pmPrecio').value,
                 costo: input('pmCosto').value || '0',
                 activo,
+                tax_rate: taxSel && taxSel.value !== '' ? Number(taxSel.value) : null,
                 precios_volumen: volTiers
                     .map((t2) => ({ min: Math.floor(Number(t2.min) || 0), precio: Math.max(0, Number(t2.precio) || 0) }))
                     .filter((t2) => t2.min > 0 && t2.precio > 0)
@@ -240,7 +426,7 @@ import { iconInner } from '../../lib/icons';
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || I.noPudoGuardar);
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoGuardar);
                 document.dispatchEvent(new CustomEvent('prodmodal:saved', {
                     detail: { id: editId || data.id, mode: editId ? 'edit' : 'create', producto: { ...payload, id: editId || data.id } },
                 }));
@@ -248,13 +434,14 @@ import { iconInner } from '../../lib/icons';
             } catch (err: any) {
                 errorEl.textContent = err.message;
                 btnSave.disabled = false;
+            } finally {
                 btnSave.textContent = prevLabel;
             }
         });
 
         btnDelete?.addEventListener('click', async () => {
             if (!editId) return;
-            if (!(await (window as any).cordConfirm({ title: I.eliminarTitulo, body: I.eliminarBody, danger: true, confirmText: I.eliminar }))) return;
+            if (!(await (window as any).cordConfirm({ title: I.i18nEliminarTitulo, body: I.i18nEliminarBody, danger: true, confirmText: I.i18nEliminar }))) return;
             const delId = editId;
             const res = await fetch('/api/productos', {
                 method: 'DELETE',
@@ -265,7 +452,7 @@ import { iconInner } from '../../lib/icons';
                 document.dispatchEvent(new CustomEvent('prodmodal:deleted', { detail: { id: delId } }));
                 closeModal();
             } else {
-                errorEl.textContent = (await res.json()).error || I.noPudoEliminar;
+                errorEl.textContent = (await res.json()).error || I.i18nNoPudoEliminar;
             }
         });
     })();

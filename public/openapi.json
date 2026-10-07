@@ -2520,6 +2520,17 @@
                               }
                             ],
                             "description": "Unidades disponibles; null si no se lleva inventario."
+                          },
+                          "taxRate": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Impuesto que se sugiere al agregar el producto a una línea, como fracción 0–1; null = el predeterminado de la organización."
                           }
                         },
                         "required": [
@@ -2532,7 +2543,8 @@
                           "activo",
                           "createdAt",
                           "preciosVolumen",
-                          "existencias"
+                          "existencias",
+                          "taxRate"
                         ],
                         "additionalProperties": {}
                       },
