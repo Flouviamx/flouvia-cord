@@ -1,6 +1,7 @@
 ---
 title: "Gestión de Cotizaciones"
-description: "Aprende a manejar el ciclo de vida de tus cotizaciones: borradores, duplicados y actualizaciones."
+description: "Aprende a manejar el ciclo de vida de tus cotizaciones: borradores, duplicados y versiones."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -13,28 +14,38 @@ description: "Aprende a manejar el ciclo de vida de tus cotizaciones: borradores
 No todas las cotizaciones se terminan en 5 minutos. A veces necesitas consultar precios con proveedores o esperar la aprobación de tu gerente antes de enviarla.
 
 ### 1. Guardar como Borrador
-- Mientras creas una cotización, puedes hacer clic en **"Guardar borrador"**, en el panel de resumen a la derecha.
-- Esto guardará todo tu progreso (cliente, productos, descuentos) de manera segura.
-- La cotización aparecerá en tu Kanban bajo la columna "Borradores" con una etiqueta gris.
+- Mientras creas una cotización, puedes hacer clic en **Guardar borrador**, en el panel **Revisa y envía** a la derecha.
+- Esto guarda tu progreso (cliente, términos, partidas y precios negociados).
+- La cotización aparece en **Cotizaciones** (filtro *Abiertas*) y, en la vista de tablero, en la columna **Borrador**.
 
 ### 2. Continuar Editando
 Para retomar un borrador:
-1. Ve al Dashboard.
-2. Haz clic sobre la tarjeta del borrador que deseas continuar.
-3. Se abrirá la vista de detalles. Haz clic en **"Continuar editando"**.
-4. Serás redirigido al cotizador exactamente donde lo dejaste. Al terminar, puedes enviarla y su estado cambiará a *Enviada*.
+1. Ve a **Cotizaciones** en el menú principal.
+2. Haz clic sobre la fila (o la tarjeta del tablero) del borrador que deseas continuar.
+3. Se abrirá la vista de detalles. Haz clic en **Continuar editando**.
+4. Serás redirigido al cotizador con lo que dejaste guardado. Al terminar, usa **Guardar y enviar** y su estado cambiará a *Enviada*. Si ya no lo necesitas, **Eliminar borrador** lo borra.
 
 ## Duplicar Cotizaciones (Ahorro de tiempo)
 
-Si tienes un servicio estandarizado o quieres venderle exactamente lo mismo a un cliente distinto, no tienes que empezar desde cero.
+Si tienes un servicio estandarizado o quieres venderle lo mismo a otro cliente, no tienes que empezar desde cero.
 
 **Cómo duplicar en la app:**
 1. Ve a la vista de detalles de cualquier cotización (sin importar su estado — pagada, rechazada o en borrador).
-2. En el panel de acciones, haz clic en el botón **"Duplicar cotización"**.
-3. Cord creará un borrador nuevo con el mismo cliente, las mismas partidas y una vigencia fresca de 30 días. Solo necesitas cambiar el cliente (si aplica) y ajustar los precios si es necesario.
+2. En el panel de acciones, haz clic en **Duplicar cotización**.
+3. Cord crea un borrador nuevo, con folio propio y una vigencia fresca de 30 días, que copia el cliente, los términos de pago, las notas y las partidas (descripción, cantidad, precio de lista y precio negociado).
+
+<Callout type="warning">
+**Lo que el duplicado no copia:** la divisa de venta (el borrador nuevo queda en MXN), el tipo de cambio, el anticipo, la iguala mensual, la opción de precios con impuesto incluido y la tasa de impuesto elegida en cada línea (vuelve a la predeterminada de tu catálogo). Abre el duplicado con **Continuar editando** y revisa esos campos antes de enviarlo.
+</Callout>
 
 ## Control de Versiones
 
-Si ya enviaste una cotización, pero el cliente te pide un cambio mayor, no edites la misma cotización (ya que podría haber confusión legal si el cliente aprueba mientras tú editas).
-- Lo correcto es **Duplicar** la cotización, hacer los ajustes, y enviar el nuevo enlace.
-- Luego, en la cotización original (mientras siga en estado Enviada o Vista), usa el botón **"Marcar rechazada"** para sacarla del pipeline activo. Cord no tiene un estado de "Cancelada" separado: rechazada es el estado que indica que ese enlace ya no sigue vigente.
+Si ya enviaste una cotización y el cliente te pide ajustar partidas o precios, no necesitas crear otra: mientras esté *Enviada*, *Vista* o *Vencida*, el detalle muestra el botón **Modificar y reenviar (V2)** (el número indica la versión que vas a crear).
+
+- Abre un editor con las partidas actuales: puedes cambiar productos, cantidades, precios negociados e impuestos. El cliente y los términos de pago no se pueden cambiar desde aquí.
+- Al reenviar, Cord guarda la versión nueva, conserva el **mismo link**, vuelve a mandarle el correo al cliente (si tiene correo capturado) y la cotización regresa a *Enviada*.
+- Si el cliente tenía el link abierto, ve los cambios en vivo y debe revisarlos antes de poder aprobar (ver [Chat y negociación](/docs/interaccion/chat)).
+- En el detalle, la sección **Historial de versiones** lista cada versión con su fecha y su total.
+- En una cotización *Vencida*, reenviar no extiende su fecha de vigencia. Para volver a proponerla con una vigencia nueva, duplícala.
+
+Si necesitas cambiar algo que **Modificar y reenviar** no permite (el cliente, la divisa o los términos), duplica la cotización, ajústala y envía el nuevo link. Luego, en la original (mientras siga *Enviada* o *Vista*), usa **Marcar rechazada** para sacarla del pipeline activo. Cord no tiene un estado de "Cancelada" separado: rechazada es el estado que indica que ese link ya no sigue vigente.

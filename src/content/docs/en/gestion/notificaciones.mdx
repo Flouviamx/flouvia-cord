@@ -1,11 +1,12 @@
 ---
 title: "Notifications"
 description: "Decide which events notify you and how: email to the account owner, Slack or Microsoft Teams."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Notifications</h1>
-  <p class="page-subtitle">Find out the moment your client makes a decision, by email, Slack or Teams, without having to keep checking the dashboard.</p>
+  <p class="page-subtitle">Find out the moment your client makes a decision, by email, Slack or Teams, without having to keep checking the app.</p>
 </header>
 
 ## How it works
@@ -16,7 +17,7 @@ Under **Settings › Notifications** there's a matrix of 7 events by 3 channels 
 |---|---|
 | Quote viewed | The client opened the public link |
 | Quote approved | The client accepted the proposal |
-| Quote rejected | The client rejected or countered |
+| Quote rejected | The client rejected the quote from the link |
 | Payment received | An online payment was recorded |
 | Quote about to expire | 3 days before the validity date |
 | Overdue payment | A receivable passed its due date |
@@ -26,13 +27,17 @@ Under **Settings › Notifications** there's a matrix of 7 events by 3 channels 
 **Before you save your matrix for the first time**, Cord already emails you when a quote is approved, rejected, or paid — the three highest-value events, on by default. As soon as you save the screen once, your selection takes over: you can turn any of the three off or turn the rest on.
 </Callout>
 
+<Callout type="info">
+**Messages and counteroffers don't trigger alerts.** When the client writes in the chat, comments on a line item, or sends a counteroffer, Cord records it in the quote's conversation, but doesn't alert you through these channels. If you want to know, create a [workflow](/en/docs/automatizacion/workflows) with the **A message is posted on a quote** trigger (see [Chat and negotiation](/en/docs/interaccion/chat)).
+</Callout>
+
 ## Email
 
 Email always goes to the business owner's account (`Settings › Your account`). It's never sent to the whole team — if several people need to know, use Slack or Teams.
 
 ## Slack
 
-Connect an **Incoming Webhook** from Slack on the same screen (`Settings › Integrations`) and check the Slack column for the events you want posted to your channel. The message includes the folio, the client, the total, and a direct link to the quote.
+Paste the URL of a **Slack incoming webhook** in the **Slack channel** section of the same screen (`Settings › Notifications`) and check the Slack column for the events you want posted to your channel. The message includes the folio, the client, the total, and a direct link to the quote.
 
 <Callout type="warning">
 **"Someone joined the team" has no Slack or Teams version.** That alert isn't tied to any quote (no folio, no amount to show in the channel), so it can only be received by email.
@@ -40,4 +45,4 @@ Connect an **Incoming Webhook** from Slack on the same screen (`Settings › Int
 
 ## Microsoft Teams
 
-Connect Teams in `Settings › Integrations`, with **Connect with Microsoft** (you pick the channel, nothing to copy) or with the URL of a Teams Workflows flow, and check the Teams column for the events you want. It's a separate channel from Slack: you can have both connected and choose where each alert goes. The card carries the same folio, client, total and link.
+Connect Teams with **Connect with Microsoft** in `Settings › Integrations` (you pick the channel, nothing to copy), or paste the URL of a Teams Power Automate flow in `Settings › Notifications`, and check the Teams column for the events you want. It's a separate channel from Slack: you can have both connected and choose where each alert goes. The card carries the same folio, client, total and link.

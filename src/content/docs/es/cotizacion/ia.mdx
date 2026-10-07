@@ -1,64 +1,70 @@
 ---
 title: "Cord AI: cotizaciones automáticas"
-description: "Genera cotizaciones enteras pegando un texto, una foto o un PDF gracias a Cord AI, el motor de inteligencia artificial de Cord."
+description: "Arma una cotización pegando un texto, una foto o un PDF gracias a Cord AI, el motor de inteligencia artificial de Cord."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Cord AI: cotizaciones automáticas</h1>
-  <p class="page-subtitle">Deja que la inteligencia artificial construya tus cotizaciones. Sube un correo, un PDF o una foto de una servilleta y nosotros hacemos el resto.</p>
+  <p class="page-subtitle">Deja que la inteligencia artificial arme tus cotizaciones. Pega un correo o sube un PDF o una foto de una servilleta y Cord llena las partidas por ti.</p>
 </header>
 
-Cord AI es el motor de inteligencia artificial integrado en Cord que genera un borrador de cotización a partir de texto, un archivo PDF o una imagen. El sistema extrae productos y cantidades y los cruza contra tu catálogo real de Cord, en vez de que captures cada partida a mano.
+Cord AI es el motor de inteligencia artificial integrado en Cord que llena las partidas de una cotización a partir de texto, un archivo PDF o una imagen. El sistema extrae productos y cantidades y los cruza contra tu catálogo real de Cord, en vez de que captures cada partida a mano.
 
-*Última actualización: agosto 2026*
+*Última actualización: octubre 2026*
 
 ## El fin de la captura manual
 
 Muchas ventas empiezan de forma caótica: un cliente te envía un mensaje larguísimo por WhatsApp pidiendo 15 productos, o te reenvía un PDF escaneado con una lista de materiales, o te manda una foto de notas escritas a mano.
 
-Tradicionalmente, tendrías que abrir ese archivo y ponerte a teclear producto por producto en el sistema, buscando los precios uno por uno. **Cord AI elimina esa captura: lee el archivo y te entrega un borrador ya armado con tu catálogo.**
+Tradicionalmente, tendrías que abrir ese archivo y ponerte a teclear producto por producto en el sistema, buscando los precios uno por uno. **Cord AI elimina esa captura: lee el pedido y te entrega las partidas ya armadas con tu catálogo.**
 
 ## ¿Cómo funciona Cord AI?
 
-En la pantalla principal de tu Dashboard, junto al botón de "Nueva cotización", encontrarás el botón de **Generar con IA**.
+Cord AI vive dentro del editor de **Nueva cotización**: el primer bloque, **Arma la cotización con IA**, está arriba del paso de cliente. También puedes llegar ahí desde la paleta de comandos con **Armar con IA**.
 
-Al hacer clic, se abre un asistente donde puedes dar la información de entrada de tres formas distintas:
+Pega el pedido en el cuadro de texto, adjunta un archivo con el clip, o ambas cosas, y haz clic en **Armar cotización con IA**. La entrada puede llegar de tres formas:
 
 ### 1. Pegar texto (mensajes o correos)
-Si un cliente te manda un correo pidiendo: *"Hola, necesito 5 licencias de su software anual, 2 laptops de gama alta y 10 horas de capacitación"*, simplemente copia y pega ese texto en Cord AI.
+Si un cliente te manda un correo pidiendo: *"Hola, necesito 5 licencias de su software anual, 2 laptops de gama alta y 10 horas de capacitación"*, simplemente copia y pega ese texto. El texto admite hasta **2,000 caracteres**.
 - La IA lee el texto y busca en **tu catálogo de Cord** las coincidencias (licencias, laptops, capacitación).
-- Extrae las cantidades solicitadas y aplica los precios base de tu catálogo automáticamente.
+- Extrae las cantidades y toma el precio de lista de tu catálogo. Si el cliente menciona un precio menor al de lista, se propone como precio negociado.
+- Lo que no encuentra en tu catálogo entra como línea libre, para que decidas qué hacer con ello.
 
 ### 2. Subir un archivo PDF
 Si participas en licitaciones o el cliente te manda una orden de compra o requisición escaneada:
-- Sube el archivo PDF (puede tener varias páginas).
-- Cord AI lo lee con el mismo modelo de visión con el que lee una foto — sin un motor de OCR aparte —, mapea los conceptos con tus SKUs y pre-llena las partidas.
+- Sube el archivo PDF (puede tener varias páginas, hasta **3 MB**).
+- Cord AI lo lee con el mismo modelo de visión con el que lee una foto — sin un motor de OCR aparte —, mapea los conceptos con tus productos y llena las partidas.
 
 ### 3. Imágenes (visión IA)
 ¿Te mandaron una foto de un inventario físico o notas de una servilleta tras una comida de negocios?
-- Sube la foto directamente (JPG, PNG, WEBP o GIF).
-- El mismo modelo lee la imagen y arma el borrador de la propuesta por ti.
+- Sube la foto directamente (JPG, PNG o WEBP). Cord la comprime automáticamente antes de enviarla, así que una foto de celular pesada no es problema.
+- El mismo modelo lee la imagen y arma las partidas de la propuesta por ti.
+
+## Cuota mensual
+
+Cada armado con IA que identifica productos consume una unidad de la cuota mensual de tu plan: **3** en Gratis, **20** en Starter, **50** en Pro y **500** en Scale; Developer no tiene tope. En Gratis la cuota es un tope; en los planes de pago el excedente se factura. Si la IA no identifica ningún producto, no se consume cuota. Puedes ver tu consumo en **Ajustes › Planes y suscripción › Suscripción**.
 
 ## Revisión humana
 
 Cord AI está diseñado para ser tu copiloto, no tu reemplazo.
 
-Una vez que procesa tu input, no envía nada al cliente automáticamente. En su lugar, te genera un **borrador de cotización** ya estructurado con tu catálogo. Tú tienes la oportunidad de:
+Una vez que procesa tu pedido, no guarda ni envía nada automáticamente: agrega las partidas al editor de la cotización que estás armando. Tú tienes la oportunidad de:
 
 - Revisar que los productos seleccionados sean correctos.
 - Ajustar las cantidades si hubo algún error de interpretación.
-- Aplicar descuentos y definir la vigencia antes de enviar el link.
+- Elegir el cliente, ajustar precios negociados y definir la vigencia antes de guardar o enviar el link.
 
 ## Preguntas frecuentes
 
 **¿Cord AI reemplaza al vendedor?**
-No. Cord AI genera un borrador que siempre requiere revisión humana antes de enviarse. El vendedor mantiene el control total sobre precios, descuentos y condiciones comerciales.
+No. Cord AI llena un borrador que siempre requiere revisión humana antes de enviarse. El vendedor mantiene el control total sobre precios, descuentos y condiciones comerciales.
 
 **¿Qué tipo de archivos puede procesar Cord AI?**
-Texto plano (copiado de correos o mensajes), un archivo PDF, y fotografías en formato JPG, PNG, WEBP o GIF. Hojas de cálculo no se procesan con este asistente.
+Texto plano (copiado de correos o mensajes, hasta 2,000 caracteres), un archivo PDF de hasta 3 MB y fotografías en formato JPG, PNG o WEBP. Hojas de cálculo no se procesan con este asistente.
 
 **¿Cord AI funciona con cualquier idioma?**
 Sí. El modelo puede interpretar solicitudes en español, inglés y otros idiomas, mapeándolas a los productos de tu catálogo sin importar el idioma de entrada.
 
 **¿Qué tan preciso es Cord AI?**
-Depende de qué tan bien estructurado esté tu catálogo: con nombres claros y SKUs definidos, la IA mapea los productos con más confianza que sobre un catálogo desordenado o con nombres ambiguos. El borrador siempre pasa por tu revisión antes de enviarse, precisamente porque ningún mapeo automático es infalible.
+Depende de qué tan bien estructurado esté tu catálogo: con nombres claros y SKUs definidos, la IA mapea los productos con más confianza que sobre un catálogo desordenado o con nombres ambiguos. El resultado siempre pasa por tu revisión antes de enviarse, precisamente porque ningún mapeo automático es infalible.

@@ -1,16 +1,17 @@
 ---
 title: "Tasks and Follow-up"
-description: "Create tasks and reminders to ensure you close your sales."
+description: "Create tasks with due dates to ensure you close your sales."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tasks and Follow-up</h1>
-  <p class="page-subtitle">Sales don't close themselves. Create reminders with due dates to follow up punctually with each prospect.</p>
+  <p class="page-subtitle">Sales don't close themselves. Create to-dos with due dates to follow up punctually with each prospect.</p>
 </header>
 
 ## Don't let your leads go cold
 
-Timely follow-up is the difference between a closed sale and a lost one. Cord includes a lightweight **Tasks and reminders** system: an account-wide to-do list, always visible in the widget of the same name on your Dashboard.
+Timely follow-up is the difference between a closed sale and a lost one. Cord includes a lightweight **Tasks and reminders** system: an organization-wide to-do list, visible in the **Tasks** widget on your Home.
 
 Although it's a small feature, it's useful to ensure no deal slips through the cracks due to a lack of follow-up.
 
@@ -19,16 +20,16 @@ Although it's a small feature, it's useful to ensure no deal slips through the c
 There are two paths, and both land in the same place:
 
 1. **From any screen in the app:** click the **"Create"** button in the top bar and select **"Task"**. A quick form opens over whatever you were viewing.
-2. **From the Dashboard:** in the **"Tasks and reminders"** widget, use the text field and date picker at the top of the list.
+2. **From Home:** in the **"Tasks and reminders"** widget, use the text field and date picker at the top of the list.
 
 Either way, fill in:
 - **Description:** for example, *"Call Luis to ask if he has reviewed the quote"*.
 - **Due date** (optional): pick the day on the calendar.
 
-Click **Add** (or **Create**, depending on where you opened it from), and the task appears immediately in your Dashboard's task widget, alongside the rest of your pending items.
+Click **Add** (or **Create**, depending on where you opened it from), and the task appears immediately in the task widget on your Home, alongside the rest of your pending items.
 
 <Callout type="info">
-**A task belongs to your account, not to a specific quote.** From the interface it is created as general follow-up for your operation. Tasks created by a [workflow](/en/docs/automatizacion/workflows) or the API can be linked to the quote that originated them.
+**A task belongs to your whole organization.** It isn't assigned to a person: every member with access to Home sees the same list. From the interface it is created as general follow-up for your operation; tasks created by a [workflow](/en/docs/automatizacion/workflows) or the API can be linked to the quote that originated them.
 </Callout>
 
 ### Visual tracking
@@ -37,6 +38,17 @@ Click **Add** (or **Create**, depending on where you opened it from), and the ta
 - Once the due date has passed, the task gets a red **"Overdue"** tag so it stands out.
 - Check the box next to a task to mark it done — it disappears from the pending list. The **×** button deletes it entirely.
 
+<Callout type="warning">
+**Cord doesn't send task reminders.** When the due date arrives you don't get an email or alert: the task is only marked as overdue in the widget. To keep it in sight, check your Home often.
+</Callout>
+
+### Tasks Cord creates for you
+
+Besides your own, Cord adds tasks automatically when a payment operation needs your attention:
+
+- **Chargebacks:** when a client disputes a card charge, a task to respond to the chargeback appears with the amount and, as its due date, the deadline to submit evidence (see [Disputes](/en/docs/pagos/disputas)).
+- **SPEI refunds:** when you request a refund of a SPEI payment, which is transferred outside Cord, a task to transfer the SPEI refund appears with the amount, linked to the quote (see [Refunds](/en/docs/pagos/reembolsos)).
+
 <Callout type="info">
-**Pro tip:** create a *"Follow-up call"* task right after sending the Magic Link, with a due date 48 hours after sending.
+**Pro tip:** create a *"Follow-up call"* task right after sending the link, with a due date 48 hours after sending.
 </Callout>

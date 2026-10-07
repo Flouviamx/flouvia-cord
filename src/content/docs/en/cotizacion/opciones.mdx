@@ -1,6 +1,7 @@
 ---
 title: "Advanced options"
 description: "Configure validities, currency, credit terms, advances, and recurring payments."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -10,28 +11,30 @@ description: "Configure validities, currency, credit terms, advances, and recurr
 
 ## Control the commercial and financial context
 
-A quote in Cord is not just a document; it's a **smart collection engine**. In the right side panel of the quoter, you will find advanced options where you decide exactly *how* and *when* your client pays you.
+A quote in Cord is not just a document; it's a **collection engine**. Payment terms are chosen next to the client, in the **Who are you quoting?** step; the rest of the options live in the **Review and send** panel, on the right side of the quoter, where you decide exactly *how* and *when* your client pays you.
 
 ### 1. Payment Terms and Advances
 
-Unlike static quoters, Cord understands the reality of B2B where 100% upfront is rarely charged:
+Unlike static quoters, Cord understands the reality of business-to-business sales, where 100% upfront is rarely charged:
 
-- **Cash (Advance + Balance):** You can request a percentage as an advance (e.g., *50%*). Upon quote approval, the system automatically splits the charge: the client will see a button to immediately pay the advance amount, and the remaining balance will be pending based on the agreed date.
-- **Credit (Net 30 / Net 60):** If you grant corporate credit, the immediate payment button will be hidden. The client will see a message confirming their order with 30 or 60-day credit. Payment will be automatically enabled when the due date is reached.
+- **Deposit (%):** You can request a percentage as an advance (e.g., *50%*). Upon quote approval, the system automatically splits the charge into deposit and balance: the client sees their payment plan and a button to immediately pay the deposit, and the balance stays pending with its due date based on the payment terms.
+- **Cash:** Payment is available as soon as the client approves.
+- **Credit (Net 30 / Net 60):** The immediate payment button is hidden. The client sees a message confirming their order with 30 or 60-day credit, counted from approval. Online payment is enabled automatically once the due date is reached.
 
-### 2. Recurring Payments (Subscriptions / Retainers)
+### 2. Recurring Payments (Retainers)
 
-If you are an agency, consultancy, or sell continuous services, you can turn any quote into an **Automatic Monthly Retainer**.
-- By activating the "Monthly recurring charge" option, the quote turns into a real Cord Payments subscription (see [Monthly retainers](/en/docs/pagos/igualas)).
-- The client will authorize their credit/debit card **only once** from the public link when approving the proposal.
-- From that moment on, the system will automatically charge the total amount every month and the money will drop directly into your bank account friction-free, automatically generating that cycle's invoice (CFDI 4.0 in Mexico; whichever document applies in your country elsewhere).
+If you are an agency, consultancy, or sell continuous services, you can turn a quote into a **Monthly retainer**.
+- Turn on **Monthly recurring charge** in the summary panel. The retainer is only available with **Cash** terms and is mutually exclusive with a deposit: when you turn it on, the deposit field is hidden; if you pick Net 30 or Net 60, the retainer option disappears.
+- The quote turns into a real Cord Payments subscription (see [Monthly retainers](/en/docs/pagos/igualas)). The client authorizes their credit/debit card **only once** from the public link when approving the proposal, pays the first month at that moment, and from then on is charged the same amount automatically every month until it's canceled.
+- Each monthly charge is recorded in the quote's activity. The retainer doesn't issue an invoice per cycle on its own: if you need to invoice automatically every month, use [recurring invoices](/en/docs/pagos/facturas-recurrentes).
 
 ### 3. Currencies and Exchange Rate Coverage (FX Lock)
 
-- **Sales currency vs. accounting currency:** In B2B, it's common to quote in one currency (e.g. USD or EUR) to protect against devaluation, but keep your books in your country's currency (e.g. MXN, COP, BRL). Cord solves this natively whenever the two differ.
-- **FX Lock (Frozen rate for 30 days):** When you create a quote in a currency other than your business's accounting currency, Cord fetches a real, dated exchange rate from an external provider (never a made-up rate — if no source responds, the quote isn't created in that currency). You can apply a coverage *buffer* percentage on top of that spot rate to protect your margins. Once the quote is sent, Cord **freezes the applied rate (FX Lock) for up to 30 days**: if the exchange rate moves tomorrow, the accounting total keeps using the rate that was locked, protecting the commercial relationship and your profits.
-- **Validity:** Set the commercial validity days. If the quote expires, the Magic Link will block approval.
+- **Sales currency vs. accounting currency:** In business-to-business sales it's common to quote in one currency (e.g. USD or EUR) to protect against devaluation, but keep your books in your country's currency (e.g. MXN, COP, BRL). Cord handles this natively whenever the two differ: you pick the currency in **What currency are you quoting in?**, and your accounting currency is your business's.
+- **Locked rate:** When the sales currency differs from your accounting currency, Cord fetches a real, dated exchange rate from an external provider (never a made-up rate — if no source responds, the quote isn't saved in that currency). On top of today's rate you apply a coverage cushion with the **Slightly** (+1%), **Normal** (+2%), or **Cautious** (+5%) options; the server doesn't accept coverage above 25%. The resulting rate is set when you save the quote (or when you change the currency pair on a draft) and isn't recalculated afterward: if the exchange rate moves tomorrow, the accounting total and the invoice keep using the rate that was locked. The editor labels it "Rate locked for 30 days"; today that period is informational, because the saved rate is kept for as long as you don't change the pair.
+- **Validity:** Set the commercial validity days. A daily process marks sent or viewed quotes whose validity date has passed as expired; from that point on, the link no longer accepts approval. To propose it again, use **Duplicate quote**: the copy starts as a draft with a fresh 30-day validity.
 
-### 4. Notes and Legal Terms
+### 4. Notes and Commercial Terms
 
-- **Terms and Conditions:** Space for cancellation policies, delivery times, or warranties. This text accompanies the client in both the interactive web view and the final PDF.
+- **Notes for the client:** each quote has an optional notes field (e.g., *on-site delivery included*). It appears both on the link and in the PDF.
+- **Commercial terms:** cancellation policies, delivery times, or warranties belong to your organization, not to each quote. They're set in **Settings › Quotes › PDF document** (one term per line) and are printed only on the quote's PDF; they don't appear in the link's web view.

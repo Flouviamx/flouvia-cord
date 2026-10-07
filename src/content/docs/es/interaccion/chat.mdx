@@ -1,6 +1,7 @@
 ---
 title: "Chat y Negociación"
 description: "Comunícate con tu cliente directamente dentro de la cotización."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -10,29 +11,40 @@ description: "Comunícate con tu cliente directamente dentro de la cotización."
 
 ## La cotización como espacio de trabajo
 
-En el modelo tradicional B2B, si un cliente quiere cambiar una cantidad o pedir un descuento diferente, responde por correo, el vendedor edita el Excel, genera un PDF nuevo (Cotización_v2_final.pdf) y lo vuelve a enviar.
+En el modelo tradicional de ventas entre empresas, si un cliente quiere cambiar una cantidad o pedir un descuento diferente, responde por correo, el vendedor edita el Excel, genera un PDF nuevo (Cotización_v2_final.pdf) y lo vuelve a enviar.
 
-En Cord, **el Enlace Mágico es interactivo y colaborativo.**
+En Cord, **el link de la cotización es interactivo.**
 
 ### Chat General
 
-En la parte inferior de la vista web, tanto tú como tu cliente tendrán acceso a un **Panel de Chat**.
+Debajo de la cotización, en la vista web, está la sección **Conversación**.
 - El cliente puede escribir preguntas generales como: *"¿Podemos ajustar el tiempo de entrega a 15 días?"*
-- El vendedor recibe una notificación instantánea y puede responder directamente en la plataforma.
-- Toda la conversación queda registrada permanentemente en el historial de esa cotización, dando visibilidad total a los gerentes de ventas sin tener que escarbar en correos personales.
+- Tú lo ves en el panel **Conversación** del detalle de la cotización y respondes desde ahí; tu respuesta aparece en el link del cliente (si lo tiene abierto, al instante). La respuesta no se le manda por correo.
+- Cada mensaje lleva quién lo escribió: **Tú** para los propios y el nombre de la otra parte para los suyos.
+- Toda la conversación queda registrada en el historial de esa cotización, dando visibilidad a los gerentes de ventas sin tener que escarbar en correos personales.
+
+<Callout type="info">
+**Cómo te enteras de un mensaje:** Cord no te manda correo ni aviso por cada mensaje del cliente. En los planes Pro, Scale y Developer, el detalle de la cotización se actualiza en vivo mientras lo tienes abierto; en los demás planes, recarga el detalle para ver mensajes nuevos. Si quieres un aviso, crea un [workflow](/docs/automatizacion/workflows) con el disparador **Llega un mensaje en una cotización**.
+</Callout>
+
+### Contraoferta
+
+Junto al cuadro de mensaje, el cliente puede escribir un monto en el campo de propuesta y enviarlo con **Contraoferta**. La contraoferta aparece en la conversación con un estilo distinto, con el monto propuesto y el mensaje, y no cambia el estado de la cotización: si la aceptas, ajusta los precios con **Modificar y reenviar** desde el detalle. Como los mensajes, la contraoferta no genera un aviso por correo.
 
 ### Comentarios por Partida (Producto)
 
 Si la cotización es muy extensa (ej. 40 artículos diferentes) y el cliente tiene dudas sobre un producto en específico, no necesita escribir *"Sobre la partida 14, el servidor modelo X..."*.
 
 Cord permite **comentarios a nivel de partida**.
-1. El cliente pasa el mouse sobre un producto específico en la cotización web.
-2. Hace clic en el icono de comentario que aparece al lado del precio.
+1. Junto al nombre de cada producto hay un botón de comentario, siempre visible (también en móvil), con un contador del número de mensajes de esa línea.
+2. El cliente hace clic en el botón de la línea que le interesa.
 3. Deja su duda: *"¿Me puedes cambiar este modelo por el de 16GB de RAM?"*
-4. El vendedor recibe la alerta exacta de qué partida necesita modificarse; el icono de esa línea muestra un contador con el número de mensajes.
+4. Tú ves el comentario en esa misma línea en el detalle de la cotización (**Comentarios de esta línea**) y respondes ahí.
+
+El chat y los comentarios por partida se cierran cuando la cotización se aprueba o se rechaza. Si no quieres ofrecerlos, apágalos en **Ajustes › Marca y apariencia › Portal del cliente**, con la opción **Comentarios y contrapropuestas**.
 
 ### Actualización en vivo
 
-Cuando el vendedor ajusta una cantidad, cambia un producto o aplica un nuevo descuento tras la negociación en el chat, **el cliente no necesita un enlace nuevo**. 
+Cuando ajustas una cantidad, cambias un producto o bajas un precio tras la negociación, usa **Modificar y reenviar** desde el detalle: se crea una versión nueva y **el cliente no necesita un link nuevo**.
 
-Simplemente ve cómo la cotización web se actualiza en tiempo real frente a sus ojos, lista para ser aprobada.
+Si tiene el link abierto, ve los cambios aplicados sin recargar y un aviso de **Se actualizó la propuesta** con el botón **Ver cambios**. El botón de aprobar se bloquea hasta que revisa los cambios, para que nunca firme una versión que ya no es la vigente.

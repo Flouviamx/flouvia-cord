@@ -1,6 +1,7 @@
 ---
 title: "Chat and Negotiation"
 description: "Communicate with your client directly inside the quote."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -10,29 +11,40 @@ description: "Communicate with your client directly inside the quote."
 
 ## The quote as a workspace
 
-In the traditional B2B model, if a client wants to change a quantity or ask for a different discount, they reply by email, the sales rep edits the Excel file, generates a new PDF (Quote_v2_final.pdf), and sends it back.
+In the traditional business-to-business sales model, if a client wants to change a quantity or ask for a different discount, they reply by email, the sales rep edits the Excel file, generates a new PDF (Quote_v2_final.pdf), and sends it back.
 
-In Cord, **the Magic Link is interactive and collaborative.**
+In Cord, **the quote's link is interactive.**
 
 ### General Chat
 
-At the bottom of the web view, both you and your client will have access to a **Chat Panel**.
+Below the quote, in the web view, there's the **Conversation** section.
 - The client can write general questions like: *"Can we adjust the delivery time to 15 days?"*
-- The sales rep receives an instant notification and can reply directly on the platform.
-- The entire conversation is permanently logged in the history of that quote, giving total visibility to sales managers without having to dig through personal emails.
+- You see it in the **Conversation** panel of the quote's details and reply from there; your reply shows up on the client's link (instantly, if they have it open). The reply isn't emailed to them.
+- Each message shows who wrote it: **You** for your own and the other party's name for theirs.
+- The entire conversation is logged in the history of that quote, giving sales managers visibility without having to dig through personal emails.
+
+<Callout type="info">
+**How you find out about a message:** Cord doesn't email or alert you for each client message. On the Pro, Scale, and Developer plans, the quote's details update live while you have them open; on other plans, reload the details to see new messages. If you want an alert, create a [workflow](/en/docs/automatizacion/workflows) with the **A message is posted on a quote** trigger.
+</Callout>
+
+### Counteroffer
+
+Next to the message box, the client can enter an amount in the proposal field and send it with **Counteroffer**. The counteroffer shows up in the conversation with a distinct style, with the proposed amount and the message, and doesn't change the quote's status: if you accept it, adjust the prices with **Modify and resend** from the details. Like messages, a counteroffer doesn't trigger an email alert.
 
 ### Line-Item Comments (Product)
 
 If the quote is very extensive (e.g., 40 different items) and the client has doubts about a specific product, they don't need to write *"Regarding line item 14, the X model server..."*.
 
 Cord allows **line-item level comments**.
-1. The client hovers over a specific product in the web quote.
-2. Clicks the comment icon that appears next to the price.
+1. Next to each product's name there's a comment button, always visible (on mobile too), with a counter of that line's messages.
+2. The client clicks the button on the line they care about.
 3. Leaves their question: *"Can you swap this model for the 16GB RAM one?"*
-4. The sales rep receives the exact alert of which item needs modification; that line's icon shows a counter with the number of messages.
+4. You see the comment on that same line in the quote's details (**Comments on this line**) and reply there.
+
+Chat and line-item comments close once the quote is approved or rejected. If you don't want to offer them, turn them off in **Settings › Brand appearance › Client portal**, with the **Comments and counteroffers** option.
 
 ### Live Update
 
-When the sales rep adjusts a quantity, changes a product, or applies a new discount after the chat negotiation, **the client doesn't need a new link**.
+When you adjust a quantity, change a product, or lower a price after the negotiation, use **Modify and resend** from the details: a new version is created and **the client doesn't need a new link**.
 
-They simply watch the web quote update in real-time in front of their eyes, ready to be approved.
+If they have the link open, they see the changes applied without reloading, plus a **The proposal was updated** notice with a **See changes** button. The approve button is locked until they review the changes, so they never sign a version that's no longer current.

@@ -1,33 +1,42 @@
 ---
-title: "Dashboard and Views"
-description: "Organize your sales pipeline with List and Kanban views in Cord."
+title: "Home and quote views"
+description: "What Cord's Home shows and how to organize your pipeline with the List and Board views in Quotes."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Dashboard and Views</h1>
-  <p class="page-subtitle">Get total visibility of your revenue pipeline. Learn to navigate your quotes using our dynamic views.</p>
+  <h1 class="page-title">Home and quote views</h1>
+  <p class="page-subtitle">Get total visibility of your revenue pipeline. Learn to read your Home and navigate your quotes with the List and Board views.</p>
 </header>
+
+## Home
+
+When you log into your account you land on **Home**: a widget dashboard with a snapshot of your sales operation. At the top is **Closed this month**, with its comparison against the previous period, and below it the widgets: indicators (to close, close rate, needing follow-up), conversion funnel, pipeline, monthly trend, receivables aging, expected cash flow, pipeline health, client and product rankings, quotes that need follow-up, recent quotes, activity, and your **Tasks**.
+
+With **Customize** you can reorder and hide widgets. Some depend on your role's permissions: for example, the analytics widgets only appear if your role has access to analytics.
 
 ## Your Sales Pipeline
 
-Cord isn't just a document generator, it's a mini-CRM focused on closing deals. When you log into your account, the main page shows all your quotes organized by status.
+The full list of your quotes lives in **Quotes**, in the main menu. At the top you'll see the total value of your open quotes, the value already approved, and, if applicable, how many are waiting on your internal approval — a quick snapshot of your pipeline without adding anything up by hand.
 
 ### 1. List View
-By default, you will see the List View: a dense, spreadsheet-style table with your most recent quotes first, ideal if you handle a high volume and need to scan folio, client, terms, expiration, amount, and status at a glance.
+By default, you'll see the **List** view: a dense, spreadsheet-style table, ideal if you handle a high volume and need to scan folio, client, terms, validity, total, and status at a glance.
 - Use the filter pills above the table to narrow by pipeline stage: All, Open, Needs approval, Approved, Paid, or Closed (rejected/expired).
 - Click any row to open that quote's full details.
 
-### 2. Kanban View (Board)
-Click the **Board** icon next to the List icon to switch views. This view organizes your quotes into columns based on their status, allowing you to quickly understand the health of your sales pipeline.
-- **Drafts:** Half-finished quotes.
+### 2. Board View
+Click **Board**, next to **List**, to switch views. This view organizes your quotes into columns based on their status, allowing you to quickly understand the health of your sales pipeline.
+- **Draft:** Half-finished quotes.
 - **Sent:** Waiting for the client to open them.
 - **Viewed:** The client has opened the link (perfect time to call!).
 - **Approved:** The client accepted the terms.
-- **Paid / Invoiced:** Closed and collected deals (share a column).
+- **Paid:** Collected deals; invoiced quotes share this column.
 
-**How to use it:** Drag and drop a card into the next column of the pipeline to force that status change (for example, from Sent to Approved). The board only accepts forward moves along the normal sales flow — you can't drag a card back to an earlier status. Cord automates most of these changes when the client interacts with the link, so drag-and-drop is for the cases where you need to force it yourself.
+**How to use it:** drag a card into the next column to move its status forward. The board only accepts three moves — from Draft to Sent, from Sent or Viewed to Approved, and from Approved to Paid —; any other move (including dragging a card back) is rejected. Cord automates most of these changes when the client interacts with the link, so dragging is for the cases where you need to do it yourself.
 
-<Callout type="info">
-**Summary above the table:** before the filter pills, you'll see the total value of your open quotes, the value already approved, and, if applicable, how many are waiting on your internal approval — a quick snapshot of your pipeline without adding anything up by hand.
-
+<Callout type="warning">
+**Dragging runs the real action, it doesn't just change the label:**
+- **To Sent:** sends the quote just like **Send to client** — it generates the link, emails the client if they have an email on file and, on the Free plan, uses one of your monthly sends.
+- **To Approved:** marks it approved on the client's behalf, just like **Mark approved**: it enables payment and, if you requested a deposit, creates the payment plan. No client signature is recorded.
+- **To Paid:** records the payment manually, just like **Record payment**, and cancels any online charges still pending.
 </Callout>

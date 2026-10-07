@@ -1,38 +1,48 @@
 ---
 title: "Preview and sending"
 description: "Review the client experience, share your quote, and receive online payments."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Preview and sending</h1>
-  <p class="page-subtitle">Make sure everything is perfect before sending the magic link to your client and surprise them with a native payment experience.</p>
+  <p class="page-subtitle">Make sure everything is perfect before sending the link to your client, and offer them a payment experience right inside the quote.</p>
 </header>
 
-## The client experience (The Magic Link)
+## The client experience (the link)
 
-One of Cord's biggest advantages is that you don't send a dead file (PDF) attached to an email. You send a **Magic Link** to a dynamic, custom branded web experience (your colors and logo) where the client can interact, approve, and pay.
+One of Cord's biggest advantages is that you don't send a dead file (PDF) attached to an email. You send a **link** to a dynamic web experience with your brand (your colors and logo) where the client can interact, approve, and pay.
 
-Before sending, click **Preview** to review:
+Before sending, open the draft's details and click **Preview** to review the link exactly as your client will see it. While you're signed in, Cord shows you a preview notice and your visit isn't counted as a client view. Check:
 - A clean and responsive design (mobile-optimized).
-- The detailed breakdown of what the client pays today (if an advance was requested) and when the balance is due.
-- The clear and prominent button to **Approve Quote**.
+- The breakdown of what the client will pay (if you requested a deposit, the deposit amount and the balance).
+- The **Approve quote** button.
 
-## Pay from the Link (In-House Checkout)
+## Pay from the link
 
-Once the client clicks "Approve", the quote immediately turns into an active checkout point.
+Once the client approves, the quote turns into an active checkout point, as long as your account has an active online payment rail.
 
-Cord integrates an **Apple-level native checkout** within the same link. Without redirecting to confusing external gateways or losing your brand context. The client can pay the total (or the agreed advance) using:
+The client can pay the total (or the agreed deposit) with:
 
-1. **Credit / Debit Card:** Secure, in-house processing via Cord Payments (see [Payment methods](/en/docs/pagos/metodos)).
-2. **Bank Transfer (Dynamic SPEI):** The system will generate a unique interbank CLABE exclusively for that quote. As soon as the client makes the transfer from their banking app, Cord detects the deposit, marks the quote as paid, and notifies you in real-time.
+1. **Credit / Debit Card:** processed via Cord Payments, inside the same link (see [Payment methods](/en/docs/pagos/metodos)).
+2. **SPEI bank transfer (Mexico, MXN only):** the system generates a dedicated interbank CLABE for that charge. When the client makes the transfer from their banking app, Cord detects the deposit, marks the charge as paid, and alerts you according to your [notifications](/en/docs/gestion/notificaciones). On quotes in another currency, SPEI isn't offered.
+3. **Mercado Pago:** in Mexico, Brazil, Colombia, Argentina, Chile, and Peru, if you connected your Mercado Pago account, the client can pay through that rail; the payment is completed in Mercado Pago's checkout (see [Mercado Pago](/en/docs/pagos/mercado-pago)). Where you also have Cord Payments, Cord Payments is the primary rail and Mercado Pago is the alternative.
 
 <Callout type="info">
-**Money straight to your account:** with direct charges to your connected bank account, card or SPEI funds never pass through a Cord account. Cord Payments charges a single per-transaction fee, calculated transparently and shown before you charge — no hidden fees or surprises (see [Fees and terms](/en/docs/pagos/condiciones)).
+**Money straight to your account:** with direct charges to your connected bank account, card or SPEI funds never pass through a Cord account. Today Cord charges a platform fee only on payments in MXN, calculated transparently and shown before you charge; in other currencies Cord charges no fee of its own (see [Fees and terms](/en/docs/pagos/condiciones)).
 </Callout>
 
-## Sending Methods
+## Sending methods
 
-Once the quote is saved, you have two ways to deliver the Magic Link:
+**Send to client** (on the draft's details) or **Create and send** / **Save and send** (in the editor) change the quote's status to *Sent*, generate the public link and, if the client has an email on file, automatically send them an email with the link and record the send in the activity. If the client has no email, the quote is still marked as sent and you share the link yourself.
 
-1. **Manual sending (Copy Link):** Copy and paste it into WhatsApp, Slack, or your personal email. Ideal for quick sales or real-time conversations.
-2. **Email sending (Cord Mail):** Send it from the platform. The system will dispatch an impeccable transactional email and keep a record of the send.
+Once it's sent, the details' actions panel gives you more ways to deliver it:
+
+1. **Copy link:** paste it into Slack, your personal email, or wherever you talk to your client.
+2. **WhatsApp:** opens WhatsApp with a ready-made message that includes the link.
+3. **PDF:** download or print the PDF version of the quote.
+4. **Open link:** opens the public view so you can review it.
+
+<Callout type="info">
+**Limits and customization:** the Free plan includes 5 quote sends per month. From the Starter plan you can customize the sender name, reply-to address, introduction, and signature of the email in **Settings › Notifications › Email**. If your organization has internal approval rules (Scale plan) and a new quote exceeds them when you use **Create and send**, it stays as a draft waiting for a manager to approve it.
+</Callout>

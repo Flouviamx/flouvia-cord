@@ -1,7 +1,7 @@
 ---
 title: "Aprobación y evidencia técnica"
 description: "Cómo Cord registra una aprobación con identidad declarada, IP, fecha, hora y huella del documento aceptado."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y seguridad de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -9,7 +9,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 <header class="content-header">
   <h1 class="page-title">Aprobación y evidencia técnica</h1>
-  <p class="page-subtitle">Cord conserva un registro verificable de quién aprobó, cuándo lo hizo y qué versión del documento aceptó.</p>
+  <p class="page-subtitle">Cord conserva un registro verificable de quién aprobó, cuándo lo hizo y qué partidas y montos aceptó.</p>
 </header>
 
 ## El problema del "OK" por correo
@@ -20,30 +20,43 @@ Cord agrega una capa de **aprobación electrónica y evidencia técnica** justo 
 
 ## El proceso de aprobación
 
-Cuando tu cliente hace clic en **Aprobar Cotización** dentro del enlace, Cord muestra un modal de confirmación antes de cambiar el estado.
+Cuando tu cliente hace clic en **Aprobar cotización** dentro del link, la misma tarjeta de la cotización pasa al paso **Firma digital** (no es una ventana aparte), con un resumen del folio y el total que está aprobando.
 
 Para proceder, el cliente debe:
-1. **Ingresar su Nombre Completo.**
-2. **Ingresar su Correo Electrónico Corporativo.**
-3. **Marcar una casilla de confirmación** declarando que tiene autoridad para aceptar los términos y la obligación comercial descrita en la cotización.
+1. **Escribir su nombre completo** en *Nombre completo del firmante* (al menos dos caracteres).
+2. **Marcar la casilla** *"He revisado esta cotización y acepto los términos y condiciones indicados"*.
+
+El campo *Correo electrónico (opcional)* puede quedar vacío. El botón **Confirmar y firmar** se habilita en cuanto hay nombre y la casilla está marcada.
+
+Si cambiaste la propuesta mientras el cliente la revisaba, Cord no acepta la firma sobre la versión anterior: le pide revisar los cambios antes de aprobar.
+
+### Aprobación parcial
+
+Antes de aprobar, el cliente puede desmarcar las partidas que no quiere incluir (cada línea tiene su casilla *Incluir esta línea en tu aprobación*). La firma cubre solo las líneas incluidas: Cord recalcula subtotal, impuestos y total con esas líneas, y las demás quedan marcadas como **No incluida**.
+
+### Rechazo con motivo
+
+Si el cliente no está de acuerdo, puede usar **Rechazar**, escribir un *Motivo (opcional)* y **Confirmar rechazo**. El motivo aparece en la actividad de la cotización y el rechazo dispara la notificación correspondiente (ver [Notificaciones](/docs/gestion/notificaciones)).
 
 ### Datos del rastro de auditoría
 
 Al confirmar, Cord conserva un **rastro de auditoría técnico**:
-- **Dirección IP pública** desde la cual se hizo la aprobación.
-- **Marca de tiempo (Timestamp) exacta** sincronizada con servidores seguros.
-- **Huella criptográfica** de la versión y del alcance aprobado, para detectar cambios posteriores en los datos cubiertos por la aprobación.
+- **Nombre del firmante** y, si lo escribió, su correo.
+- **Dirección IP** desde la cual se hizo la aprobación y el navegador utilizado.
+- **Fecha y hora** de la firma, registradas por la base de datos de Cord en el momento de guardarla.
+- **Huella criptográfica (SHA-256)** calculada sobre la cotización, el tipo de aprobación (total o parcial), el nombre del firmante, la IP y las líneas aprobadas (descripción, cantidad, precios y tasa de impuesto), para detectar cambios posteriores en los datos cubiertos por la aprobación.
 
 ## El Sello de Auditoría
 
-Una vez aprobada, el estado de la cotización cambia visualmente. En la parte inferior del documento (tanto en la vista web como en el PDF descargable que se genera posteriormente), se incrusta permanentemente un **Sello de Auditoría**.
+Una vez aprobada, el link de la cotización muestra un **sello de auditoría** en la vista web, con este contenido:
 
-Este sello muestra de manera clara:
-> *"Aprobado digitalmente por [Nombre del Cliente] ([Correo del cliente]) el [Fecha y Hora] desde la dirección IP [192.168.x.x]."*
+> **Documento verificado** — **Firmante:** [Nombre del firmante] (IP: [dirección IP]) — **Fecha:** [fecha y hora] — **Sello:** [huella SHA-256]
+
+El correo del firmante no aparece en el sello. El PDF de la cotización que descargas desde Cord no incluye el sello; en el detalle de la cotización, la actividad registra quién firmó, desde qué IP y, en una aprobación parcial, cuántas líneas y qué monto aceptó.
 
 ### Para qué sirve
 - **Preparar una disputa:** si el cliente desconoce un cargo, el registro puede formar parte de la evidencia que envías. El banco emisor decide el resultado y Cord no garantiza que la disputa se gane.
-- **Aprobación parcial, también firmada:** si tu cliente solo quiere aceptar algunas partidas de una cotización extensa, puede aprobarlas de forma parcial — el mismo sello de auditoría cubre exactamente las líneas y el monto que aceptó, no el total original.
+- **Aprobación parcial, también firmada:** la huella cubre exactamente las líneas que el cliente aceptó, no el total original.
 - **Contexto para cobranza:** el equipo puede consultar quién aceptó, cuándo y qué monto, sin depender únicamente de un "sí" verbal o un correo aislado.
 - **Conectar el flujo comercial:** la versión aprobada puede usarse para iniciar el cobro y preparar la factura disponible para el mercado de la cuenta.
 

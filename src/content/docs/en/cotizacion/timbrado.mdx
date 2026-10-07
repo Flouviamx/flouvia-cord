@@ -1,6 +1,7 @@
 ---
 title: "Approval and invoicing"
 description: "Turn an approved quote into the fiscal document that matches your country, and follow up on your overdue accounts."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -10,27 +11,33 @@ description: "Turn an approved quote into the fiscal document that matches your 
 
 ## Digital Approval
 
-When the client reviews the Magic Link and clicks **Approve Quote**, several things happen:
-1. The status changes from *Sent* to *Approved*.
-2. The web link is commercially frozen (prices can no longer be changed).
-3. If you configured an advance or cash payment, the **online checkout is automatically enabled**.
+When the client reviews the link and clicks **Approve quote** (see [Approval and technical evidence](/en/docs/interaccion/firma)), several things happen:
+1. The status changes from *Sent* or *Viewed* to *Approved*.
+2. The quote is commercially frozen: it can no longer be modified or resent.
+3. If you configured a deposit or cash payment and your account collects online, **payment on the link is enabled** automatically.
+
+If the client approved through another channel, you can use **Mark approved** from the quote's details.
 
 ## Invoicing: a different document depending on your country
 
-Cord doesn't issue the same kind of receipt everywhere — your business's country decides the rail:
+Cord doesn't issue the same kind of receipt everywhere — your business's country and your plan decide the rail. The button appears in the actions panel of an *Approved* or *Paid* quote:
 
-- **Mexico:** CFDI 4.0 stamped with the SAT, through a certified electronic-invoicing provider.
-- **Spain:** a commercial invoice. A chained Verifactu record is created only when the organization's certificate and Cord's regulatory rail are active; otherwise the status is `commercial_only`.
-- **Other supported markets** (United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru): a commercial invoice with sequential numbering and taxes configured by the business, without automatic filing with the local tax authority.
+- **Mexico:** on the Starter plan or higher, the button is **Stamp CFDI 4.0** and it stamps with the SAT through a certified electronic-invoicing provider. On the Free plan the button is **Issue pro forma**: a numbered pro forma that does not replace a tax invoice.
+- **Spain:** on the Starter plan or higher, with your organization's certificate uploaded and the Verifactu integration enabled, Cord issues the invoice with its chained Verifactu record. Until those conditions are met, the button is **Issue pro forma**: a numbered pro forma that does not replace a tax invoice.
+- **Other supported markets** (United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru): the button is **Issue invoice** and it creates a commercial invoice with sequential numbering and taxes configured by the business, without automatic filing with the local tax authority.
 
 See the full country-by-country detail in [Fiscal invoicing by country](/en/docs/pagos/facturacion).
 
-### One-click CFDI 4.0 stamping (Mexico)
+### CFDI 4.0 stamping (Mexico)
 
-1. Go to the approved quote in your dashboard and click **Issue Invoice (Stamp)**.
-2. The system will validate that the client has their RFC, Legal Name, CFDI Usage, and Zip Code correctly captured. If the fiscal zip code is missing, it will ask for it in a quick modal without taking you away from the screen.
-3. Upon confirmation, the system generates the SAT UUID in real-time.
-4. The client automatically receives an email attaching the **XML** and the printed **PDF** representation (with your branding).
+1. Go to the approved (or paid) quote and click **Stamp CFDI 4.0**. Cord asks you to confirm before issuing.
+2. Cord builds the CFDI with the data the client already has: the name entered under **Company**, their RFC, tax regime, postal code, and CFDI use. There's no extra step to fill them in: if the client has no RFC on file, the CFDI is issued to **"general public"** (público en general), so review their data on their profile before stamping (see [Client data](/en/docs/cotizacion/cliente)).
+3. If the client approved only some line items, only the approved lines are invoiced.
+4. When it's done, the receipt appears in the **Tax documents** section of the details, with its number, its UUID, and links to download the **PDF** and the **XML**, and the quote moves to *Invoiced*. Cord doesn't email the receipt to the client automatically from this step: download it and share it, or email it from **Invoices**.
+
+<Callout type="info">
+**Active stamping:** to stamp on behalf of your business you need the Starter plan or higher and your CSD uploaded (see [CSD](/en/docs/cuenta/csd)). If tax stamping isn't active on your account yet, the document is marked as **Simulated** or **Tax test mode**: it's recorded for audit purposes, but it is not a valid CFDI before the SAT.
+</Callout>
 
 ## Collections and Treasury
 
@@ -43,7 +50,7 @@ completed. Saved rates do not generate new charges during this period.
 
 ### Autonomous Collections Agent (AI)
 
-Also available from the **Scale** plan, Cord's AI Agent monitors your overdue portfolio and, depending on the mode you choose (Approval or Automatic), drafts personalized collection emails and can negotiate a monthly installment plan with the debtor. The full behavior lives in [Autonomous Collections (AI)](/en/docs/pagos/cobranza-ia).
+Available from the **Scale** plan, Cord's AI Agent monitors your overdue portfolio and, depending on the mode you choose (Approval or Automatic), drafts personalized collection emails and can negotiate a monthly installment plan with the debtor. The full behavior lives in [Autonomous Collections (AI)](/en/docs/pagos/cobranza-ia).
 
 ### Predictive Treasury
 

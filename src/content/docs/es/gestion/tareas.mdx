@@ -1,16 +1,17 @@
 ---
 title: "Tareas y Seguimiento"
-description: "Crea tareas y recordatorios para asegurar el cierre de tus ventas."
+description: "Crea tareas con fecha límite para asegurar el cierre de tus ventas."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tareas y Seguimiento</h1>
-  <p class="page-subtitle">Las ventas no se cierran solas. Crea recordatorios con fecha límite para dar seguimiento puntual a cada prospecto.</p>
+  <p class="page-subtitle">Las ventas no se cierran solas. Crea pendientes con fecha límite para dar seguimiento puntual a cada prospecto.</p>
 </header>
 
 ## No dejes enfriar a tus clientes
 
-El seguimiento oportuno es la diferencia entre una venta cerrada y una perdida. Cord incluye un sistema ligero de **Tareas y recordatorios**: una lista de pendientes de tu cuenta, siempre visible en el widget del mismo nombre en tu Dashboard.
+El seguimiento oportuno es la diferencia entre una venta cerrada y una perdida. Cord incluye un sistema ligero de **Tareas y recordatorios**: una lista de pendientes de tu organización, visible en el widget **Tareas** de tu Inicio.
 
 Aunque es una función pequeña, es útil para asegurar que ningún trato se escape por falta de seguimiento.
 
@@ -19,16 +20,16 @@ Aunque es una función pequeña, es útil para asegurar que ningún trato se esc
 Tienes dos caminos, y ambos llevan al mismo lugar:
 
 1. **Desde cualquier pantalla de la app:** haz clic en el botón **"Crear"** de la barra superior y selecciona **"Tarea"**. Se abre un formulario rápido encima de lo que estabas viendo.
-2. **Desde el Dashboard:** en el widget **"Tareas y recordatorios"**, usa el campo de texto y la fecha al inicio de la lista.
+2. **Desde el Inicio:** en el widget **"Tareas y recordatorios"**, usa el campo de texto y la fecha al inicio de la lista.
 
 En cualquiera de los dos, completa:
 - **Descripción:** por ejemplo, *"Llamar a Luis para preguntar si ya revisó la cotización"*.
 - **Fecha límite** (opcional): selecciona el día en el calendario.
 
-Haz clic en **Agregar** (o **Crear**, según de dónde la abriste) y la tarea aparece de inmediato en el widget de tu Dashboard, junto con el resto de tus pendientes.
+Haz clic en **Agregar** (o **Crear**, según de dónde la abriste) y la tarea aparece de inmediato en el widget de tu Inicio, junto con el resto de tus pendientes.
 
 <Callout type="info">
-**Una tarea es de tu cuenta, no de una cotización en particular.** Desde la interfaz se crea como seguimiento general de tu operación. Las tareas que crea un [workflow](/docs/automatizacion/workflows) o la API sí pueden quedar ligadas a la cotización que las originó.
+**Una tarea es de toda tu organización.** No se asigna a una persona: todos los miembros con acceso al Inicio ven la misma lista. Desde la interfaz se crea como seguimiento general de tu operación; las tareas que crea un [workflow](/docs/automatizacion/workflows) o la API sí pueden quedar ligadas a la cotización que las originó.
 </Callout>
 
 ### Seguimiento visual
@@ -37,6 +38,17 @@ Haz clic en **Agregar** (o **Crear**, según de dónde la abriste) y la tarea ap
 - En cuanto la fecha límite ya pasó, la tarea se marca con la etiqueta **"Vencida"** en rojo, para que salte a la vista.
 - Marca la casilla junto a la tarea para darla por completada — desaparece de la lista de pendientes. El botón **×** la elimina por completo.
 
+<Callout type="warning">
+**Cord no envía recordatorios de tareas.** Cuando llega la fecha límite no recibes correo ni aviso: la tarea solo se marca como vencida en el widget. Para no perderla de vista, revisa tu Inicio con frecuencia.
+</Callout>
+
+### Tareas que Cord crea por ti
+
+Además de las tuyas, Cord agrega tareas automáticamente cuando una operación de cobro necesita tu intervención:
+
+- **Contracargos:** cuando un cliente disputa un cargo con tarjeta, aparece la tarea *"Responder contracargo"* con el monto y, como fecha límite, el plazo para enviar evidencia (ver [Disputas](/docs/pagos/disputas)).
+- **Reembolsos por SPEI:** cuando solicitas un reembolso de un cobro por SPEI, que se transfiere por fuera, aparece la tarea *"Transferir reembolso SPEI"* con el monto, ligada a la cotización (ver [Reembolsos](/docs/pagos/reembolsos)).
+
 <Callout type="info">
-**Consejo pro:** crea una tarea de *"Llamada de seguimiento"* inmediatamente después de enviar el Enlace Mágico, con fecha límite 48 horas después del envío.
+**Consejo pro:** crea una tarea de *"Llamada de seguimiento"* inmediatamente después de enviar el link, con fecha límite 48 horas después del envío.
 </Callout>

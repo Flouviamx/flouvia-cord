@@ -1,33 +1,42 @@
 ---
-title: "Dashboard y Vistas"
-description: "Organiza tu pipeline de ventas con las vistas de Lista y Kanban en Cord."
+title: "Inicio y vistas de cotizaciones"
+description: "Qué muestra el Inicio de Cord y cómo organizar tu pipeline con las vistas de Lista y Tablero en Cotizaciones."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Dashboard y Vistas</h1>
-  <p class="page-subtitle">Ten visibilidad total de tu flujo de ingresos. Aprende a navegar por tus cotizaciones usando nuestras vistas dinámicas.</p>
+  <h1 class="page-title">Inicio y vistas de cotizaciones</h1>
+  <p class="page-subtitle">Ten visibilidad total de tu flujo de ingresos. Aprende a leer tu Inicio y a navegar por tus cotizaciones con las vistas de Lista y Tablero.</p>
 </header>
+
+## El Inicio
+
+Cuando entras a tu cuenta llegas al **Inicio**: un tablero de widgets con la foto de tu operación comercial. Arriba está lo **Cerrado este mes**, con su comparación contra el periodo anterior, y debajo los widgets: indicadores (por cerrar, tasa de cierre, por dar seguimiento), embudo de conversión, pipeline, tendencia mensual, antigüedad de cartera, flujo esperado, salud del pipeline, rankings de clientes y productos, cotizaciones que necesitan seguimiento, cotizaciones recientes, actividad y tus **Tareas**.
+
+Con **Personalizar** puedes reordenar y ocultar widgets. Algunos dependen de los permisos de tu rol: por ejemplo, los de analítica solo aparecen si tu rol tiene acceso a ella.
 
 ## Tu Pipeline de Ventas
 
-Cord no es solo un generador de documentos, es un mini-CRM enfocado en cerrar tratos. Cuando entras a tu cuenta, la página principal te muestra todas tus cotizaciones organizadas por estado.
+La lista completa de tus cotizaciones vive en **Cotizaciones**, en el menú principal. Arriba verás el valor total de tus cotizaciones abiertas, el valor ya aprobado y, si aplica, cuántas están esperando tu aprobación interna — la foto rápida de tu pipeline sin tener que sumar nada a mano.
 
 ### 1. Vista de Lista
-Por defecto, verás la Vista de Lista: una tabla densa, estilo hoja de cálculo con las cotizaciones más recientes primero, ideal si manejas un volumen alto y necesitas escanear rápido folio, cliente, términos, vigencia, monto y estado de un vistazo.
+Por defecto, verás la vista **Lista**: una tabla densa, estilo hoja de cálculo, ideal si manejas un volumen alto y necesitas escanear rápido folio, cliente, términos, vigencia, total y estado de un vistazo.
 - Usa las píldoras de filtro sobre la tabla para acotar por etapa del pipeline: Todas, Abiertas, Por aprobar, Aprobadas, Pagadas o Cerradas (rechazadas/vencidas).
 - Haz clic en cualquier fila para abrir el detalle completo de esa cotización.
 
-### 2. Vista de Kanban (Tablero)
-Haz clic en el ícono de **Tablero** junto al de Lista para cambiar de vista. Esta vista organiza tus cotizaciones en columnas según su estado, permitiéndote entender rápidamente la salud de tu flujo de ventas.
-- **Borradores:** Cotizaciones a medio terminar.
-- **Enviadas:** Esperando que el cliente las abra.
-- **Vistas:** El cliente ya abrió el enlace (¡momento ideal para llamarlo!).
-- **Aprobadas:** El cliente aceptó los términos.
-- **Pagadas / Facturadas:** Tratos cerrados y cobrados (comparten columna).
+### 2. Vista de Tablero
+Haz clic en **Tablero**, junto a **Lista**, para cambiar de vista. Esta vista organiza tus cotizaciones en columnas según su estado, permitiéndote entender rápidamente la salud de tu flujo de ventas.
+- **Borrador:** Cotizaciones a medio terminar.
+- **Enviada:** Esperando que el cliente las abra.
+- **Vista:** El cliente ya abrió el link (¡momento ideal para llamarlo!).
+- **Aprobada:** El cliente aceptó los términos.
+- **Pagada:** Tratos cobrados; las facturadas comparten esta columna.
 
-**Cómo usarla:** Arrastra y suelta (drag-and-drop) una tarjeta a la siguiente columna del pipeline para forzar ese avance de estado (por ejemplo, de Enviada a Aprobada). El tablero solo acepta movimientos hacia adelante en el flujo normal de venta — no puedes regresar una tarjeta a un estado anterior arrastrándola. Cord automatiza la mayoría de estos cambios cuando el cliente interactúa con el enlace, así que el drag-and-drop es para los casos en que necesitas forzarlo tú mismo.
+**Cómo usarla:** arrastra una tarjeta a la siguiente columna para avanzar su estado. El tablero solo acepta tres movimientos — de Borrador a Enviada, de Enviada o Vista a Aprobada, y de Aprobada a Pagada —; cualquier otro (incluido regresar una tarjeta) se rechaza. Cord automatiza la mayoría de estos cambios cuando el cliente interactúa con el link, así que arrastrar es para los casos en que necesitas hacerlo tú.
 
-<Callout type="info">
-**Resumen arriba de la tabla:** antes de la lista de filtros verás el valor total de tus cotizaciones abiertas, el valor ya aprobado y, si aplica, cuántas están esperando tu aprobación interna — la foto rápida de tu pipeline sin tener que sumar nada a mano.
-
+<Callout type="warning">
+**Arrastrar ejecuta la acción real, no solo cambia la etiqueta:**
+- **A Enviada:** envía la cotización igual que **Enviar al cliente** — genera el link, le manda el correo al cliente si tiene uno capturado y, en el plan Gratis, consume uno de tus envíos del mes.
+- **A Aprobada:** la marca como aprobada en nombre del cliente, igual que **Marcar aprobada**: habilita el cobro y, si pediste anticipo, genera el plan de pagos. No queda firma del cliente.
+- **A Pagada:** registra el pago manualmente, igual que **Registrar pago**, y cancela los cobros en línea que siguieran pendientes.
 </Callout>

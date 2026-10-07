@@ -1,6 +1,7 @@
 ---
 title: "Quote Management"
-description: "Learn how to manage the lifecycle of your quotes: drafts, duplicates, and updates."
+description: "Learn how to manage the lifecycle of your quotes: drafts, duplicates, and versions."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -13,28 +14,38 @@ description: "Learn how to manage the lifecycle of your quotes: drafts, duplicat
 Not all quotes are finished in 5 minutes. Sometimes you need to check prices with suppliers or wait for your manager's approval before sending it.
 
 ### 1. Save as Draft
-- While creating a quote, you can click **"Save draft"**, in the summary panel on the right.
-- This will securely save all your progress (client, products, discounts).
-- The quote will appear on your Kanban board under the "Drafts" column with a gray tag.
+- While creating a quote, you can click **Save draft**, in the **Review and send** panel on the right.
+- This saves your progress (client, terms, line items, and negotiated prices).
+- The quote appears in **Quotes** (*Open* filter) and, in the board view, in the **Draft** column.
 
 ### 2. Continue Editing
 To resume a draft:
-1. Go to the Dashboard.
-2. Click on the draft card you want to continue.
-3. The details view will open. Click on **"Continue editing"**.
-4. You will be redirected to the quoter exactly where you left off. When finished, you can send it, and its status will change to *Sent*.
+1. Go to **Quotes** in the main menu.
+2. Click the row (or the board card) of the draft you want to continue.
+3. The details view will open. Click **Continue editing**.
+4. You'll be taken to the quoter with what you saved. When finished, use **Save and send** and its status will change to *Sent*. If you no longer need it, **Delete draft** removes it.
 
 ## Duplicating Quotes (Time-saver)
 
-If you have a standardized service or want to sell exactly the same thing to a different client, you don't have to start from scratch.
+If you have a standardized service or want to sell the same thing to another client, you don't have to start from scratch.
 
 **How to duplicate in the app:**
 1. Go to the details view of any quote, regardless of its status — paid, rejected, or a draft.
-2. In the actions panel, click the **"Duplicate quote"** button.
-3. Cord will create a new draft with the same client, the same line items, and a fresh 30-day validity period. You just need to change the client (if applicable) and adjust prices if necessary.
+2. In the actions panel, click **Duplicate quote**.
+3. Cord creates a new draft, with its own number and a fresh 30-day validity period, that copies the client, payment terms, notes, and line items (description, quantity, list price, and negotiated price).
+
+<Callout type="warning">
+**What the copy doesn't carry over:** the sales currency (the new draft is set to MXN), the exchange rate, the deposit, the monthly retainer, the prices-include-tax option, and the tax rate chosen on each line (it goes back to your catalog's default). Open the copy with **Continue editing** and review those fields before sending it.
+</Callout>
 
 ## Version Control
 
-If you have already sent a quote, but the client asks for a major change, do not edit the same quote (as there could be legal confusion if the client approves while you edit).
-- The correct workflow is to **Duplicate** the quote, make the adjustments, and send the new link.
-- Then, on the original quote (while it's still Sent or Viewed), use the **"Mark rejected"** button to take it out of your active pipeline. Cord doesn't have a separate "Canceled" status: rejected is the status that marks a link as no longer active.
+If you've already sent a quote and the client asks you to adjust line items or prices, you don't need to create another one: while it's *Sent*, *Viewed*, or *Expired*, the details show the **Modify and resend (V2)** button (the number is the version you're about to create).
+
+- It opens an editor with the current line items: you can change products, quantities, negotiated prices, and taxes. The client and the payment terms can't be changed here.
+- When you resend, Cord saves the new version, keeps the **same link**, emails the client again (if they have an email on file), and the quote goes back to *Sent*.
+- If the client had the link open, they see the changes live and must review them before they can approve (see [Chat and negotiation](/en/docs/interaccion/chat)).
+- In the details, the **Version history** section lists each version with its date and total.
+- On an *Expired* quote, resending doesn't extend its validity date. To propose it again with a new validity period, duplicate it.
+
+If you need to change something **Modify and resend** doesn't allow (the client, the currency, or the terms), duplicate the quote, adjust it, and send the new link. Then, on the original (while it's still *Sent* or *Viewed*), use **Mark rejected** to take it out of your active pipeline. Cord doesn't have a separate "Canceled" status: rejected is the status that marks a link as no longer active.
