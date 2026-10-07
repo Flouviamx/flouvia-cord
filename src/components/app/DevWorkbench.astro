@@ -146,9 +146,12 @@ const WBI18N = {
 import { iconInner } from '../../lib/icons';
 ---
 
-<!-- El PANEL va primero y la BARRA al final: `.wb-dock` es fixed bottom:0, así que
-     el orden del DOM es el orden visual → la barra queda pegada al borde inferior
-     de la pantalla y el panel se expande por encima (patrón del Workbench de Stripe). -->
+<!-- Colapsado, el dock es una PÍLDORA flotante en la esquina inferior derecha —
+     el mismo lenguaje de vidrio que el sidebar y la topbar. Antes era una barra de
+     ancho completo pegada al borde: tapaba el pie del sidebar (logo y botón de
+     colapsar) y una franja entera del contenido. Abierto, el panel flota como una
+     hoja alineada a la columna de contenido (`--wb-left` lo mide el script desde
+     el sidebar) y la píldora se oculta: el panel ya trae grabber y ✕ para cerrar. -->
 <div class="wb-dock" id="wbDock">
     <div class="wb-panel" id="wbPanel" role="region" aria-label={t(L, 'wb.titulo')} hidden>
         <div class="wb-drag" id="wbDrag" role="separator" aria-orientation="horizontal" aria-label={t(L, 'wb.resize')} tabindex="0">
@@ -214,13 +217,13 @@ import { iconInner } from '../../lib/icons';
         </div>
     </div>
 
-    <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel">
-        <span class="wb-bar-left">
-            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('terminal')}></svg>
-            <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
+    <button type="button" class="wb-bar" id="wbBarToggle" aria-expanded="false" aria-controls="wbPanel" aria-keyshortcuts="W">
+        <span class="wb-bar-tile" aria-hidden="true">
+            <svg class="wb-bar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('terminal')}></svg>
         </span>
-        <span class="wb-bar-dot" id="wbBarDot" hidden aria-hidden="true"></span>
-        <svg class="wb-bar-chevron" id="wbBarChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-up')}></svg>
+        <span class="wb-bar-label">{t(L, 'wb.titulo')}</span>
+        <kbd class="wb-bar-kbd" aria-hidden="true">W</kbd>
+        <svg class="wb-bar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-up')}></svg>
     </button>
 </div>
 
@@ -510,10 +513,35 @@ import { iconInner } from '../../lib/icons';
         const toast = (m: string, k = 'error') => (window as any).cordToast?.(m, k);
         const confirmar = (o: any) => (window as any).cordConfirm?.(o) ?? Promise.resolve(false);
 
-        // La barra mide 46px, pero en móvil crece con env(safe-area-inset-bottom).
-        // Se mide en vez de asumir, o el panel quedaría desalineado del borde.
-        let barH = 46;
-        const measureBar = () => { barH = Math.round(bar.getBoundingClientRect().height) || 46; };
+        // Reserva de la píldora: su alto MÁS su separación del borde inferior (que
+        // en móvil crece con env(safe-area-inset-bottom)). Se mide en vez de asumir.
+        // Solo se mide con el dock cerrado: abierto, la píldora se desvanece en
+        // posición absoluta (en móvil, pegada al borde de la hoja) y su rect ya no
+        // es la reserva real. Con el modo dev apagado el rect vale 0 → se conserva
+        // la última medición.
+        let barH = 56;       // = 40px de píldora + 16px de separación (ver AppLayout)
+        let dockGap = 16;    // separación del panel abierto respecto al borde
+        const measureBar = () => {
+            if (isOpen) return;
+            const r = bar.getBoundingClientRect();
+            if (!r.height) return;
+            barH = Math.round(window.innerHeight - r.top);
+            dockGap = Math.max(0, Math.round(window.innerHeight - r.bottom));
+        };
+
+        // El panel abierto se alinea a la columna de contenido: empieza donde
+        // termina el sidebar (que es una píldora sticky de ancho variable). En
+        // móvil el sidebar es un drawer fixed fuera de pantalla → sin offset, el
+        // CSS decide. Un ResizeObserver sigue la transición de colapsar el sidebar.
+        const sidebarEl = document.querySelector<HTMLElement>('.sidebar');
+        const measureLeft = () => {
+            if (!sidebarEl || getComputedStyle(sidebarEl).position === 'fixed') {
+                dock!.style.removeProperty('--wb-left');
+                return;
+            }
+            dock!.style.setProperty('--wb-left', Math.round(sidebarEl.getBoundingClientRect().right + 16) + 'px');
+        };
+        if (sidebarEl && 'ResizeObserver' in window) new ResizeObserver(measureLeft).observe(sidebarEl);
 
         // Altura del panel acotada al viewport: nunca puede taparse contra la topbar
         // (el bug original era un 62vh fijo que en ventanas cortas cubría todo).
@@ -590,7 +618,7 @@ import { iconInner } from '../../lib/icons';
             // En modo maximizado el dock cubre todo, así que --wb-h se queda en el
             // alto de la barra: mover los toasts al tope de la pantalla no aporta y
             // el z-index (900 > 820) ya los deja por encima.
-            const visual = !on ? '0px' : isOpen && !isMax ? (panelH + barH) + 'px' : barH + 'px';
+            const visual = !on ? '0px' : isOpen && !isMax ? (panelH + dockGap) + 'px' : barH + 'px';
             document.documentElement.style.setProperty('--wb-h', visual);
             document.documentElement.style.setProperty('--wb-bar-h', on ? barH + 'px' : '0px');
         }
@@ -671,9 +699,17 @@ import { iconInner } from '../../lib/icons';
         }
 
         function openDock(tabId?: string) {
+            // La píldora se oculta al abrir: si tenía el foco, se pasa a la pestaña
+            // activa para que el teclado no se quede en un elemento invisible.
+            const hadFocus = document.activeElement === bar;
+            measureBar();
+            measureLeft();
             isOpen = true;
             panel!.hidden = false;
-            measureBar();
+            // Abierta, la píldora sigue renderizada (opacity 0) para no romper el
+            // pointer capture del gesto "arrastrar hacia arriba para abrir"; solo
+            // sale del orden de tabulación.
+            bar!.tabIndex = -1;
             if (isMax) applyMax(); else applyPanelH();
             bar!.setAttribute('aria-expanded', 'true');
             dock!.classList.add('is-open');
@@ -681,6 +717,7 @@ import { iconInner } from '../../lib/icons';
             const ck = target === 'resumen' ? `${target}|${currentRange}` : target;
             if (target !== currentTab || !cache.has(ck)) loadTab(target);
             else setActiveTabUI(target);
+            if (hadFocus) tabs.find((b) => b.dataset.wbTab === target)?.focus();
             writeState();
         }
         function closeDock() {
@@ -692,19 +729,22 @@ import { iconInner } from '../../lib/icons';
             // <html> con overflow:hidden. Bug reportado: "se quita hasta la barra
             // fija y no puedo clickear nada".
             if (isMax) isMax = false;
+            const hadFocus = panel!.contains(document.activeElement);
             panel!.hidden = true;
             bar!.setAttribute('aria-expanded', 'false');
             dock!.classList.remove('is-open', 'is-max');
             document.documentElement.classList.remove('wb-maxed');
             document.getElementById('wbMax')?.setAttribute('aria-pressed', 'false');
             panel!.style.height = '';
+            bar!.tabIndex = 0;
+            if (hadFocus) bar!.focus();
             updateWbH();
             writeState();
         }
 
         closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeDock(); });
         tabs.forEach((b) => b.addEventListener('click', () => loadTab(b.dataset.wbTab!)));
-        window.addEventListener('resize', () => { measureBar(); moveIndicator(currentTab); if (isOpen) applyPanelH(panelH); });
+        window.addEventListener('resize', () => { measureBar(); measureLeft(); moveIndicator(currentTab); if (isOpen) applyPanelH(panelH); });
 
         // ── Arrastre ────────────────────────────────────────────────────────────
         // Desde el grabber del panel (bajar = achicar, y por debajo del umbral
@@ -1392,6 +1432,9 @@ import { iconInner } from '../../lib/icons';
 
         window.addEventListener('cord:devmode_changed', (e: any) => {
             if (!e.detail?.on) closeDock();
+            // Recién encendido, el dock pasa de display:none a visible: la reserva
+            // y el borde izquierdo se miden ahora, no con el rect vacío del arranque.
+            requestAnimationFrame(() => { measureBar(); measureLeft(); updateWbH(); });
             updateWbH();
         });
 
@@ -1414,6 +1457,7 @@ import { iconInner } from '../../lib/icons';
         if (utcInput) utcInput.checked = utc;
         if (st.h) panelH = Math.min(maxH(), Math.max(MIN_H, st.h));
         measureBar();
+        measureLeft();
         setActiveTabUI(currentTab);
         applyMax();
         updateWbH();

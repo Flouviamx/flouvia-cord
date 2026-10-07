@@ -47,39 +47,87 @@
 }
 
 /* ── Dock ─────────────────────────────────────────────────────────────────── */
+/* Contenedor fijo que va de la columna de contenido (`--wb-left`, medido por el
+   script desde el borde derecho del sidebar) al borde derecho. Columna con la
+   píldora alineada a la derecha: cerrado solo existe la píldora; abierto, el
+   panel ocupa todo el ancho y la píldora se desvanece. */
 .wb-dock {
     display: none;
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    left: var(--wb-left, 16px); right: 16px; bottom: 16px;
     z-index: 820;
+    flex-direction: column; align-items: flex-end;
     color: var(--color-text);
+    transition: left 0.28s var(--ease-spring);
 }
-html.cord-dev .wb-dock { display: block; }
+html.cord-dev .wb-dock { display: flex; }
 
-/* ── Barra (pegada al borde inferior; el panel se expande POR ENCIMA) ─────── */
+/* ── Píldora (estado colapsado) ───────────────────────────────────────────── */
+/* Mismo lenguaje que el sidebar y la topbar: pieza flotante, radio completo y
+   sombra compuesta. Navy SÓLIDO (sin backdrop-filter): sobre contenido claro un
+   vidrio translúcido bajaría el contraste del texto y obligaría a un @supports
+   de respaldo (regla 31) sin aportar nada visible a 40px de alto. */
 .wb-bar {
-    width: 100%;
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0 1.15rem;
-    height: 46px;
-    background: var(--wb-bg);
+    position: relative;
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    height: 40px;
+    padding: 0 0.85rem 0 0.3rem;
     border: none;
-    border-top: 1px solid var(--wb-line);
-    box-shadow: 0 -10px 30px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #13243d 0%, var(--wb-bg) 100%);
+    box-shadow:
+        0 18px 40px -14px rgba(10,25,47,0.55),
+        0 6px 14px -6px rgba(10,25,47,0.35),
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.12);
     color: var(--color-text);
     cursor: pointer;
     font: inherit;
+    white-space: nowrap;
     touch-action: none;
-    transition: background 0.2s var(--ease-ios);
+    transition:
+        transform 0.32s var(--ease-spring),
+        box-shadow 0.32s var(--ease-spring),
+        opacity 0.2s var(--ease-ios);
 }
-.wb-bar:hover { background: #0d1c2f; }
-.wb-dock.is-open .wb-bar { box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
-.wb-bar-left { display: flex; align-items: center; gap: 0.6rem; }
-.wb-bar-ico { width: 16px; height: 16px; color: var(--color-blue-deep); flex-shrink: 0; }
-.wb-bar-label { font-size: 0.8rem; font-weight: 600; letter-spacing: -0.01em; }
-.wb-bar-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); flex-shrink: 0; }
-.wb-bar-chevron { width: 15px; height: 15px; color: rgba(255,255,255,0.4); margin-left: auto; flex-shrink: 0; transition: transform 0.3s var(--ease-ios); }
-.wb-dock.is-open .wb-bar-chevron { transform: rotate(180deg); }
+.wb-bar:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 24px 48px -14px rgba(10,25,47,0.6),
+        0 8px 18px -6px rgba(10,25,47,0.4),
+        inset 0 0 0 1px rgba(255,255,255,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.wb-bar:active { transform: translateY(0) scale(0.97); }
+.wb-bar:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+.wb-bar-tile {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: rgba(107,155,242,0.16);
+    box-shadow: inset 0 0 0 1px rgba(107,155,242,0.22);
+    color: var(--color-blue-deep);
+}
+.wb-bar-ico { width: 16px; height: 16px; }
+.wb-bar-label { font-size: 0.8rem; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+.wb-bar-kbd {
+    font-family: var(--font-sans); font-size: 0.64rem; font-weight: 600; line-height: 1;
+    color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.08);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    border-radius: 5px; padding: 3px 6px;
+}
+.wb-bar-chevron { width: 14px; height: 14px; color: rgba(255,255,255,0.45); flex-shrink: 0; margin-left: -0.15rem; transition: transform 0.3s var(--ease-ios); }
+.wb-bar:hover .wb-bar-chevron { transform: translateY(-1px); color: rgba(255,255,255,0.75); }
+
+/* Abierta, la píldora NO sale del render (display:none soltaría el pointer
+   capture del gesto "arrastrar hacia arriba para abrir"): sale del flujo, se
+   desvanece y deja de recibir clics salvo durante ese mismo arrastre. */
+.wb-dock.is-open .wb-bar {
+    position: absolute; right: 0; bottom: 0;
+    opacity: 0; transform: scale(0.94);
+}
+.wb-dock.is-open:not(.is-dragging) .wb-bar { pointer-events: none; }
 
 /* ── Panel ────────────────────────────────────────────────────────────────── */
 /* ⚠️ `[hidden]` explícito: el atributo HTML `hidden` se anula cuando el CSS del
@@ -89,23 +137,46 @@ html.cord-dev .wb-dock { display: block; }
    del proyecto — aplica a todo elemento con display propio + toggle por hidden. */
 .wb-panel[hidden] { display: none; }
 .wb-panel {
+    align-self: stretch;
     height: 42vh;
     min-height: 60px;
     display: flex;
     flex-direction: column;
     background: var(--wb-bg);
-    border-top: 1px solid var(--wb-line);
-    border-radius: 18px 18px 0 0;
+    border-radius: 22px;
     overflow: hidden;
-    box-shadow: 0 -20px 60px -24px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.07);
-    animation: wb-panel-in 0.3s var(--ease-spring);
+    box-shadow:
+        0 32px 80px -24px rgba(10,25,47,0.6),
+        0 12px 28px -12px rgba(10,25,47,0.4),
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    transform-origin: 100% 100%;
+    animation: wb-panel-in 0.34s var(--ease-spring);
 }
-@keyframes wb-panel-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+/* Crece desde la esquina de la píldora: se lee como "esto se abrió de ahí". */
+@keyframes wb-panel-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
 /* Durante el arrastre la animación de entrada estorbaría, y por debajo del umbral
    de colapso el panel se atenúa para anticipar que soltar ahí lo cierra. */
 .wb-dock.is-dragging .wb-panel { animation: none; transition: none; }
 .wb-dock.will-collapse .wb-panel { opacity: 0.55; }
-@media (prefers-reduced-motion: reduce) { .wb-panel { animation: none; } }
+/* Móvil (mismo corte que el resto de la app, regla 16): la píldora respeta el
+   gutter y la zona segura, crece a 44px de alto táctil y pierde el atajo de
+   teclado; abierto, el panel es una hoja de borde a borde pegada abajo. */
+@media (max-width: 880px) {
+    .wb-dock {
+        left: var(--mobile-gutter, 16px); right: var(--mobile-gutter, 16px);
+        bottom: calc(var(--mobile-gutter, 16px) + env(safe-area-inset-bottom));
+    }
+    .wb-dock.is-open { left: 0; right: 0; bottom: 0; }
+    .wb-dock.is-open .wb-panel { border-radius: 22px 22px 0 0; }
+    .wb-bar { height: 44px; padding-right: 1rem; }
+    .wb-bar-kbd { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wb-panel { animation: none; }
+    .wb-bar, .wb-dock { transition: none; }
+    .wb-bar:hover { transform: none; }
+}
 
 /* Grabber tipo hoja de iOS: arrastrar abajo achica/colapsa, arriba expande. */
 .wb-drag {
@@ -215,14 +286,14 @@ html.wb-maxed { overflow: hidden; }
    toda la pantalla con el panel oculto — un div invisible que se come todos los
    clics de la app. Con esta pareja de clases, un dock cerrado nunca puede
    bloquear la pantalla aunque el JS se quede a medias. */
-.wb-dock.is-max.is-open { top: 0; z-index: 855; }
+.wb-dock.is-max.is-open { top: 0; left: 0; right: 0; bottom: 0; z-index: 855; }
 /* Y por si acaso: un dock sin panel visible jamás intercepta el puntero. */
 .wb-dock:not(.is-open) { pointer-events: none; }
 .wb-dock:not(.is-open) .wb-bar { pointer-events: auto; }
 .wb-dock.is-max .wb-panel {
     height: 100dvh !important;
     border-radius: 0;
-    border-top: none;
+    box-shadow: none;
 }
 /* En maximizado el panel ya ocupa todo: el grabber y la barra sobran. */
 .wb-dock.is-max .wb-drag,
@@ -687,7 +758,6 @@ html.wb-modal-open { overflow: hidden; }
 @media (max-width: 640px) {
     .wb-tab { padding: 0 0.6rem; font-size: 0.74rem; }
     .wb-body { padding: 1.1rem 1rem 1.6rem; padding-bottom: calc(1.6rem + env(safe-area-inset-bottom)); }
-    .wb-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(46px + env(safe-area-inset-bottom)); }
     .wb-panel { height: min(72dvh, 680px); }
     .wb-tabs { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
     .wb-tabs::-webkit-scrollbar { display: none; }
