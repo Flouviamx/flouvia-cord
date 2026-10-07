@@ -4,9 +4,10 @@ import {
     getAnalyticsDiagnosis, getAnalyticsRango, getCFO, getCobranza,
     getClientReportInsights, getCommercialStageTiming, getFinanceLevelInsights, getPricingSuggestion, getProductReportInsights,
 } from './queries';
+import { getExplorer, DEFAULT_CONFIG, type ExplorerConfig } from './informes-explorar';
 import { getImpuestos, getPagosRecibidos, getRecompra, getVentasCliente, getVentasProducto, getVentasTiempo, getVentasVendedor } from './informes-tabla';
 
-export async function loadReport(id: ReportId, rango: Rango, opts: { g?: 'day' | 'week' | 'month' } = {}) {
+export async function loadReport(id: ReportId, rango: Rango, opts: { g?: 'day' | 'week' | 'month'; x?: ExplorerConfig } = {}) {
     switch (id) {
         case 'resumen':
             return { kind: id, diagnosis: await getAnalyticsDiagnosis(rango.desde, rango.hasta) } as const;
@@ -37,6 +38,7 @@ export async function loadReport(id: ReportId, rango: Rango, opts: { g?: 'day' |
         case 'impuestos': return { kind: id, tabla: await getImpuestos(rango) } as const;
         case 'recompra': return { kind: id, tabla: await getRecompra() } as const;
         case 'vendedores': return { kind: id, tabla: await getVentasVendedor(rango) } as const;
+        case 'explorar': return { kind: id, tabla: await getExplorer(rango, opts.x ?? DEFAULT_CONFIG) } as const;
         case 'productos': {
             const [analytics, cierre, pricing] = await Promise.all([
                 getAnalyticsRango(rango.desde, rango.hasta), getProductReportInsights(rango.desde, rango.hasta),
