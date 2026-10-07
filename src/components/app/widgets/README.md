@@ -12,6 +12,8 @@ Punto de entrada para construir widgets de la app. En VS Code: ⌘P y escribir
 | `ChartWidget.astro` | Encabezado, datos declarativos, gráfica y estado vacío | Informes; líneas, barras, rankings, embudo y segmentos |
 | `ListWidget.astro` | Filas, enlaces, detalles y estado vacío | Volumen de productos |
 | `WidgetHeader.astro` | Título y descripción uniformes | Gráficas y listas |
+| `TrendKpi.astro` | KPI que sigue al rango: cifra, variación contra el periodo anterior y sparkline (o barra para tasas). El cálculo vive en `src/lib/dash-kpis.ts` y lo comparten SSR y cliente | Inicio (tasa, ticket, cobrado) |
+| `ScopeTag.astro` | Pastilla Hoy / Rango / Histórico: qué ventana mide el widget | Inicio e Informes |
 
 ```astro
 ---
@@ -71,8 +73,9 @@ sorpresa en layouts guardados y Restablecer lo devuelve a la biblioteca. No hay
 cambio en el formato del endpoint de preferencias. Contrato: `widget-defaults.ts`
 y `test/widget-defaults.test.ts`; la fase prepaint refleja la misma regla.
 
-Catálogo opcional (13 widgets):
-- Inicio: conversión enviada a pagada, pipeline ponderado.
+Catálogo opcional (17 widgets):
+- Inicio: conversión enviada a pagada, pipeline ponderado, cobrado del rango, días a cierre,
+  facturas vencidas y ranking de vendedores.
 - Equipo: ticket por cotización ganada de miembros activos.
 - Resumen: cotizaciones decididas de la cohorte.
 - Comercial: seguimientos detenidos.

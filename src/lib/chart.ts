@@ -1176,6 +1176,8 @@ export interface SparklineOptions {
     values: number[];
     height?: number;
     color?: string;
+    /** Relleno suave bajo la línea (KPIs del dashboard). */
+    area?: boolean;
 }
 
 export function mountSparkline(container: HTMLElement, opts: SparklineOptions): ChartHandle {
@@ -1197,7 +1199,9 @@ export function mountSparkline(container: HTMLElement, opts: SparklineOptions): 
         const usableH = h - pad * 2;
         const xs = vals.map((_, i) => (n <= 1 ? w / 2 : (i / (n - 1)) * w));
         const ys = vals.map((v) => pad + usableH - (v / max) * usableH);
-        svg.appendChild(svgEl('path', { d: smoothPath(xs, ys), fill: 'none', stroke: color, 'stroke-width': '1.75', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+        const line = smoothPath(xs, ys);
+        if (opts.area) svg.appendChild(svgEl('path', { d: `${line} L${w} ${h} L0 ${h} Z`, fill: color, 'fill-opacity': '0.12' }));
+        svg.appendChild(svgEl('path', { d: line, fill: 'none', stroke: color, 'stroke-width': '1.75', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
         container.appendChild(svg);
     }
     const disconnect = observeSize(container, draw);

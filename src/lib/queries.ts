@@ -1657,25 +1657,43 @@ export async function getFacturas(filters: FacturaFilters = {}) {
 /** Totales de cabecera de la bandeja: por cobrar, vencido y cobrado del mes. */
 export async function getFacturasResumen() {
     const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
+    const S = await getReportScope(orgId);
+    // Saldos en la divisa del negocio (report-scope.ts) y "vencida" contra el HOY del
+    // negocio, no el de Postgres.
+    const fx = documentFx(S, 'd');
+    const [rows, topRows] = await withOrgTx(orgId, sql`
         select
-          coalesce(sum(amount_remaining) filter (where lifecycle = 'open'), 0) as por_cobrar,
-          coalesce(sum(amount_remaining) filter (
-            where lifecycle = 'open' and due_date is not null and due_date < current_date), 0) as vencido,
-          coalesce(sum(amount_paid) filter (
-            where date_trunc('month', updated_at) = date_trunc('month', current_date)), 0) as cobrado_mes,
-          count(*) filter (where lifecycle = 'draft') as borradores,
+          coalesce(sum(d.amount_remaining * ${fx}) filter (where d.lifecycle = 'open'), 0) as por_cobrar,
+          coalesce(sum(d.amount_remaining * ${fx}) filter (
+            where d.lifecycle = 'open' and d.due_date is not null and d.due_date < ${S.hoy}::date), 0) as vencido,
+          coalesce(sum(d.amount_paid * ${fx}) filter (
+            where date_trunc('month', d.updated_at at time zone ${S.tz}) = date_trunc('month', ${S.hoy}::date)), 0) as cobrado_mes,
+          count(*) filter (where d.lifecycle = 'draft') as borradores,
           count(*) filter (
-            where lifecycle = 'open' and due_date is not null and due_date < current_date) as vencidas
-        from documentos_fiscales
-       where org_id = ${orgId}`);
+            where d.lifecycle = 'open' and d.due_date is not null and d.due_date < ${S.hoy}::date) as vencidas
+        from documentos_fiscales d
+       where d.org_id = ${orgId}`,
+        // Las que más pesan: mayor saldo vencido primero, para cobrar donde importa.
+        sql`select d.id, d.invoice_number as folio, coalesce(cl.empresa, 'Sin cliente') as empresa,
+                   d.amount_remaining * ${fx} as saldo, (${S.hoy}::date - d.due_date) as dias
+            from documentos_fiscales d
+            left join clientes cl on cl.id = d.cliente_id
+           where d.org_id = ${orgId} and d.lifecycle = 'open' and d.due_date is not null
+             and d.due_date < ${S.hoy}::date and coalesce(d.amount_remaining, 0) > 0
+           order by (d.amount_remaining * ${fx}) desc nulls last, d.due_date asc
+           limit 5`);
     const r = rows[0] || {};
     return {
+        moneda: scopeNote(S),
         porCobrar: num(r.por_cobrar),
         vencido: num(r.vencido),
         cobradoMes: num(r.cobrado_mes),
         borradores: Number(r.borradores || 0),
         vencidas: Number(r.vencidas || 0),
+        topVencidas: topRows.map((t) => ({
+            id: t.id as string, folio: (t.folio as string) || '—', empresa: t.empresa as string,
+            saldo: num(t.saldo), dias: num(t.dias),
+        })),
     };
 }
 
@@ -2397,15 +2415,22 @@ async function getSerieDiariaUncached() {
     const desdeISO = addDaysISO(S.hoy, -(SERIE_DIARIA_DIAS - 1));
     const ini = dayStart(S, desdeISO);
     const [cotizadoRows, cerradoRows, cobradoRows, recurrenteRows] = await withOrgTx(orgId,
+        // Por día de CREACIÓN: monto cotizado y la cohorte (cuántas salieron y cuántas
+        // de esas ya se ganaron) — de ahí sale la tasa de cierre de cualquier rango.
         sql`select to_char(${localDate(S, 'c.created_at')}, 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(c.total * ${fx}),0) as monto
+                   coalesce(sum(c.total * ${fx}),0) as monto,
+                   count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as ganadas_creadas
             from cotizaciones c
             where c.org_id = ${orgId}
               and c.status <> 'draft'
               and c.created_at >= ${ini}
             group by 1 order by 1`,
+        // Por día de CIERRE: monto ganado y cuántas ventas lo forman (solo las que
+        // entraron a la suma, para que el ticket promedio no divida de más).
         sql`select to_char((coalesce(c.approved_at, c.created_at) at time zone ${S.tz})::date, 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(c.total * ${fx}),0) as monto
+                   coalesce(sum(c.total * ${fx}),0) as monto,
+                   count(*) filter (where ${fx} is not null) as ganadas
             from cotizaciones c
             where c.org_id = ${orgId}
               and c.status = any(${STATUS_GANADA})
@@ -2431,12 +2456,14 @@ async function getSerieDiariaUncached() {
               and coalesce(co.paid_at, co.created_at) >= ${ini}
             group by 1 order by 1`,
     );
-    const toMap = (rows: any[]) => {
+    const toMap = (rows: any[], col = 'monto') => {
         const m = new Map<string, number>();
-        for (const r of rows) m.set(r.fecha as string, num(r.monto));
+        for (const r of rows) m.set(r.fecha as string, num(r[col]));
         return m;
     };
     const cotizadoM = toMap(cotizadoRows), cerradoM = toMap(cerradoRows), cobradoM = toMap(cobradoRows);
+    const enviadasM = toMap(cotizadoRows, 'enviadas'), ganadasCreadasM = toMap(cotizadoRows, 'ganadas_creadas');
+    const ganadasM = toMap(cerradoRows, 'ganadas');
     for (const r of recurrenteRows) {
         const fecha = r.fecha as string;
         cobradoM.set(fecha, (cobradoM.get(fecha) ?? 0) + num(r.monto));
@@ -2444,7 +2471,7 @@ async function getSerieDiariaUncached() {
 
     // Relleno de huecos, 365 puntos exactos, contados desde HOY en la zona del negocio
     // (la misma con la que Postgres agrupó arriba).
-    const dias: { fecha: string; cotizado: number; cerrado: number; cobrado: number }[] = [];
+    const dias: { fecha: string; cotizado: number; cerrado: number; cobrado: number; enviadas: number; ganadas: number; ganadasCreadas: number }[] = [];
     for (let i = SERIE_DIARIA_DIAS - 1; i >= 0; i--) {
         const fecha = addDaysISO(S.hoy, -i);
         dias.push({
@@ -2452,6 +2479,9 @@ async function getSerieDiariaUncached() {
             cotizado: cotizadoM.get(fecha) ?? 0,
             cerrado: cerradoM.get(fecha) ?? 0,
             cobrado: cobradoM.get(fecha) ?? 0,
+            enviadas: enviadasM.get(fecha) ?? 0,
+            ganadas: ganadasM.get(fecha) ?? 0,
+            ganadasCreadas: ganadasCreadasM.get(fecha) ?? 0,
         });
     }
     return { dias, moneda: scopeNote(S) };
@@ -3802,6 +3832,10 @@ export interface VendedorDesempeno {
 export async function getDesempeno() {
     const orgId = await getActiveOrgId();
     const me = currentUserId();
+    // Importes en la divisa del negocio (report-scope.ts): sin esto un vendedor en USD
+    // y otro en MXN se comparaban en números de monedas distintas.
+    const S = await getReportScope(orgId);
+    const fx = quoteFx(S, 'cotizaciones');
 
     const [members, cierreRows, cobradoRows, recRows, sinCreadorRows] = await withOrgTx(orgId,
         sql`select user_id, coalesce(nombre, email, 'Sin nombre') as nombre, rol
@@ -3812,7 +3846,7 @@ export async function getDesempeno() {
                 count(*) filter (where status <> 'draft') as creadas,
                 count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
                 count(*) filter (where status = any(${STATUS_GANADA})) as cerradas,
-                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado_total,
+                coalesce(sum(total * ${fx}) filter (where status = any(${STATUS_GANADA})),0) as cerrado_total,
                 coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
                          filter (where status = any(${STATUS_GANADA}) and approved_at is not null),0) as dias_cierre
             from cotizaciones
@@ -3823,20 +3857,20 @@ export async function getDesempeno() {
                     select sum(cc.reembolsado_cents) / 100.0
                     from cotizacion_cobros cc
                     where cc.org_id = ${orgId} and cc.cotizacion_id = cotizaciones.id
-                ), 0))),0) as cobrado
+                ), 0)) * ${fx}),0) as cobrado
             from cotizaciones
             where org_id = ${orgId} and creado_por is not null and (status = 'paid' or paid_at is not null)
             group by creado_por`,
         // Cobrado de igualas recurrentes — nunca marca la cotización 'paid' (ver
         // getCobros()), así que se suma aparte desde cotizacion_cobros.
         sql`select c.creado_por,
-                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)),0) as cobrado
+                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0) * ${quoteFx(S, 'c')}),0) as cobrado
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true and c.creado_por is not null
             group by c.creado_por`,
         // Cerrado sin vendedor asignado (creado antes de este campo, o vía API key).
-        sql`select coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as sin_creador
+        sql`select coalesce(sum(total * ${fx}) filter (where status = any(${STATUS_GANADA})),0) as sin_creador
             from cotizaciones where org_id = ${orgId} and creado_por is null and status <> 'draft'`,
     );
 

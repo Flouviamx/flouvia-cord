@@ -498,3 +498,69 @@
     .wlib, .wlib-card, .wlib-add, .wlib-close { transition: none; }
     .wlib-card.is-added .wlib-add, [data-widget].wlib-arrived > :is(.dash-card, .surface-card), .widget-edit-btn.is-pulse { animation: none; }
 }
+
+/* ══ Fase 3 — KPIs con variación, alcance de cada widget y estados de carga ══
+   Global: TrendKpi/ScopeTag son componentes y la página no les estampa su cid
+   (regla 11). `.snapshot-tag` de Informes comparte la misma pastilla. */
+.wx-scope, .snapshot-tag {
+    display: inline-flex; align-items: center; flex: 0 0 auto;
+    margin-left: 0.45rem; padding: 2px 7px; border-radius: 999px;
+    font: 650 0.6rem/1.35 var(--font-sans); letter-spacing: 0.02em; text-transform: none;
+    vertical-align: 0.12em; white-space: nowrap;
+    background: var(--color-bg-soft); color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+}
+.wx-scope[data-scope="rango"] { color: #3157a6; background: rgba(66, 108, 197, 0.09); box-shadow: none; }
+html[data-theme="dark"] .wx-scope[data-scope="rango"] { color: #9dbcf7; background: rgba(107, 155, 242, 0.14); }
+
+.wx-kpi { gap: 0.45rem; }
+.wx-kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-width: 0; }
+.wx-kpi-head .kpi-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-kpi-head .wx-scope { margin-left: 0; }
+.wx-kpi .kpi-num { letter-spacing: -0.035em; }
+.wx-kpi-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.35rem 0.6rem; }
+.wx-kpi .kpi-sub { line-height: 1.4; }
+.wx-kpi .kpi-spark { margin-top: auto; }
+.wx-kpi .wx-kpi-spark { height: 34px; }
+
+.wx-delta {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px 2px 5px; border-radius: 999px;
+    font: 700 0.72rem/1.3 var(--font-sans); font-variant-numeric: tabular-nums;
+    background: var(--color-bg-soft); color: var(--color-text-muted);
+}
+.wx-delta[hidden] { display: none; }
+.wx-delta svg { transition: transform 0.2s var(--ease-ios); }
+.wx-delta[data-dir="up"] { background: rgba(16, 185, 129, 0.12); color: #0f8a5f; }
+.wx-delta[data-dir="down"] { background: rgba(239, 68, 68, 0.1); color: #c53030; }
+.wx-delta[data-dir="down"] svg { transform: rotate(180deg); }
+.wx-delta[data-dir="flat"] svg { transform: rotate(90deg); }
+html[data-theme="dark"] .wx-delta[data-dir="up"] { color: #6ee7b7; background: rgba(16, 185, 129, 0.16); }
+html[data-theme="dark"] .wx-delta[data-dir="down"] { color: #fca5a5; background: rgba(239, 68, 68, 0.16); }
+
+.wx-progress { height: 6px !important; border-radius: 99px; overflow: hidden; background: var(--chart-track-strong, var(--color-border)); }
+.wx-progress > span { display: block; height: 100%; border-radius: 99px; background: var(--widget-accent, var(--color-blue-deep)); transition: width 0.5s var(--ease-ios); }
+
+.wx-kpi .wx-split.kpi-spark { height: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.wx-split-bar { display: flex; gap: 2px; height: 8px; border-radius: 99px; overflow: hidden; }
+.wx-split-bar > span { flex-basis: 0; min-width: 4px; }
+.wx-split-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; font-size: 0.7rem; color: var(--color-text-muted); }
+.wx-split-legend > span { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.wx-split-legend i { width: 7px; height: 7px; border-radius: 50%; }
+.wx-split-legend b { color: var(--color-text); font-weight: 650; }
+
+.wx-list-total { margin: -0.35rem 0 0.6rem; font-size: 0.76rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+/* Esqueleto mientras llega un rango nuevo: la gráfica anterior se atenúa bajo un
+   brillo, en vez de seguir mostrando números de otro periodo como si fueran estos. */
+.dash-card[aria-busy="true"] .chart-host { position: relative; }
+.dash-card[aria-busy="true"] .chart-host > * { opacity: 0.32; transition: opacity 0.2s ease; }
+.dash-card[aria-busy="true"] .chart-host::after {
+    content: ''; position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, var(--row-hover) 50%, transparent 70%);
+    background-size: 200% 100%; animation: wx-shimmer 1.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .dash-card[aria-busy="true"] .chart-host::after { animation: none; }
+    .wx-progress > span, .wx-delta svg { transition: none; }
+}

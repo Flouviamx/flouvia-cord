@@ -1,0 +1,49 @@
+---
+// KPI que sigue al rango de fechas: cifra, variación contra el periodo anterior y
+// una mini gráfica (o barra de avance para tasas). El primer render sale del
+// servidor; el script del dashboard lo repinta con cada cambio de rango usando
+// src/lib/dash-kpis.ts, el mismo cálculo.
+import ScopeTag from './ScopeTag.astro';
+import { iconInner } from '../../../lib/icons';
+
+interface Props {
+    id: string;
+    title: string;
+    group?: string;
+    tone?: 'finance' | 'commercial' | 'team' | 'activity';
+    description?: string;
+    label: string;
+    /** Qué métrica repinta el cliente: ver refreshKpis() en src/pages/app/index.astro. */
+    kind: 'tasa' | 'ticket' | 'cobrado';
+    value: string;
+    sub: string;
+    /** Variación inicial (null = sin base para comparar). */
+    delta: number | null;
+    deltaMode?: 'pct' | 'pts';
+    /** Valores de la sparkline; para `tasa` se dibuja una barra de avance. */
+    spark?: number[];
+    progress?: number | null;
+    optional?: boolean;
+    hidden?: boolean;
+}
+const { id, title, group, tone, description, label, kind, value, sub, delta, deltaMode = 'pct', spark = [], progress = null, optional = false, hidden = false } = Astro.props;
+const dir = delta === null ? 'flat' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+---
+<article class="dash-widget" data-widget={id} data-title={title} data-group={group} data-desc={description}
+    data-widget-tone={tone} data-widget-optional={optional && !hidden ? '1' : undefined}
+    data-span="1" data-size-sm="1" data-size-lg="2" hidden={hidden || optional}>
+    <div class="dash-card kpi-card wx-kpi" data-kpi={kind} data-delta-mode={deltaMode}>
+        <div class="wx-kpi-head"><span class="kpi-label">{label}</span><ScopeTag scope="rango" /></div>
+        <div class="wx-kpi-row">
+            <span class="editorial kpi-num" data-kpi-value>{value}</span>
+            <span class="wx-delta" data-kpi-delta data-dir={dir} hidden={delta === null}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>
+                <span data-kpi-delta-val>{delta === null ? '' : deltaMode === 'pts' ? `${Math.abs(delta)} pts` : `${Math.abs(delta)}%`}</span>
+            </span>
+        </div>
+        <span class="kpi-sub" data-kpi-sub>{sub}</span>
+        {kind === 'tasa'
+            ? <div class="wx-progress kpi-spark" data-kpi-progress role="presentation"><span style={`width:${Math.max(0, Math.min(100, progress ?? 0))}%`}></span></div>
+            : <div class="kpi-spark wx-kpi-spark" data-kpi-spark data-values={JSON.stringify(spark)}></div>}
+    </div>
+</article>

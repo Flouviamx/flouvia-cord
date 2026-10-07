@@ -69,7 +69,8 @@ beforeAll(async () => {
             folio text, status text, total numeric, base_currency text not null default 'MXN', fiscal_currency text not null default 'MXN',
             fx_rate numeric not null default 1, created_at timestamptz default now(), sent_at timestamptz, approved_at timestamptz,
             paid_at timestamptz, viewer_last_seen timestamptz, vigencia date, terminos text, es_recurrente boolean,
-            public_token text default gen_random_uuid()::text);
+            public_token text default gen_random_uuid()::text, creado_por uuid);
+        create table org_members(org_id uuid, user_id uuid, nombre text, email text, rol text, estado text);
         create table cotizacion_items(id uuid primary key default gen_random_uuid(), cotizacion_id uuid, producto_id uuid,
             descripcion text, cantidad numeric, precio_unitario numeric, precio_negociado numeric);
         create table eventos(id uuid primary key default gen_random_uuid(), org_id uuid, cotizacion_id uuid, tipo text,
@@ -82,7 +83,7 @@ beforeAll(async () => {
             fecha_promesa date, monto numeric, nota text, estado text default 'pendiente', created_at timestamptz default now());
         create table documentos_fiscales(id uuid primary key default gen_random_uuid(), org_id uuid, cliente_id uuid,
             invoice_number text, currency text, total numeric, amount_paid numeric, amount_remaining numeric, due_date date,
-            public_token text, cotizacion_id uuid, lifecycle text, ledger_currency text, fx_rate numeric);
+            public_token text, cotizacion_id uuid, lifecycle text, ledger_currency text, fx_rate numeric, updated_at timestamptz default now());
     `);
     const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
     const start = schema.indexOf('create or replace view cuentas_por_cobrar as');
@@ -97,7 +98,7 @@ beforeEach(async () => {
     m.org = ORG;
     m.rates = { USD: 20 };
     await m.db.exec(`delete from orgs; delete from clientes; delete from cotizaciones; delete from cotizacion_items; delete from eventos;
-        delete from cotizacion_cobros; delete from cotizacion_suscripciones; delete from promesas_pago; delete from documentos_fiscales;`);
+        delete from cotizacion_cobros; delete from cotizacion_suscripciones; delete from org_members; delete from promesas_pago; delete from documentos_fiscales;`);
     await m.db.query(`insert into orgs values ($1, 'MXN', 'America/Mexico_City', 'MX', 0)`, [ORG]);
     await m.db.query(`insert into clientes(id, org_id, empresa, nivel, descuento_pct) values ($1, $3, 'Acme', 'A', 10), ($2, $3, 'Acme', 'A', 30)`, [CL1, CL2, ORG]);
 });
@@ -161,6 +162,18 @@ describe('días en la zona horaria del negocio', () => {
         expect(dias[dias.length - 1].fecha).toBe(hoy);
     });
 
+    it('la serie diaria cuenta la cohorte del día y las ventas por día de cierre', async () => {
+        const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
+        await quote({ status: 'approved', total: 100, approved_at: new Date().toISOString() });
+        await quote({ status: 'sent', total: 50 });
+        await quote({ status: 'approved', total: 10, base_currency: 'EUR', fiscal_currency: 'EUR', approved_at: new Date().toISOString() });
+        const { dias } = await Q.getSerieDiaria();
+        const d = dias.find((x) => x.fecha === hoy)!;
+        expect(d).toMatchObject({ enviadas: 3, ganadasCreadas: 2, cerrado: 100 });
+        // La venta en EUR (sin tasa en esta prueba) no entra al ticket: 100 / 1.
+        expect(d.ganadas).toBe(1);
+    });
+
     it('el embudo cuenta como vista una cotización abierta que después se rechazó', async () => {
         const id = await quote({ status: 'rejected', total: 10 });
         await m.db.query(`insert into eventos(org_id, cotizacion_id, tipo) values ($1, $2, 'viewed')`, [ORG, id]);
@@ -194,6 +207,33 @@ describe('cobranza de los dos rieles', () => {
         const cfo = await Q.getCFO();
         expect(cfo.kpis.totalCartera).toBe(1300);
         expect(cfo.mrr.activo).toBe(200);
+    });
+});
+
+describe('desempeño por vendedor', () => {
+    it('compara vendedores en la divisa del negocio', async () => {
+        const ANA = 'e1000000-0000-4000-8000-000000000001', LUIS = 'e2000000-0000-4000-8000-000000000002';
+        await m.db.query(`insert into org_members values ($1, $2, 'Ana', 'ana@x', 'owner', 'activo'), ($1, $3, 'Luis', 'luis@x', 'member', 'activo')`, [ORG, ANA, LUIS]);
+        await quote({ status: 'approved', total: 1000, creado_por: ANA });
+        await quote({ status: 'approved', total: 100, base_currency: 'USD', fiscal_currency: 'USD', creado_por: LUIS });
+        const d = await Q.getDesempeno();
+        expect(d.vendedores.map((v) => [v.nombre, v.cerradoTotal])).toEqual([['Luis', 2000], ['Ana', 1000]]);
+    });
+});
+
+describe('facturas vencidas', () => {
+    it('suma saldos en la divisa del negocio y lista primero lo que más pesa', async () => {
+        await m.db.query(`insert into documentos_fiscales(org_id, cliente_id, invoice_number, currency, total, amount_paid, amount_remaining,
+            due_date, public_token, lifecycle) values
+            ($1, $2, 'F-9', 'USD', 100, 0, 100, '2020-01-01', 'a', 'open'),
+            ($1, $2, 'F-8', 'MXN', 500, 0, 500, '2020-02-01', 'b', 'open'),
+            ($1, $2, 'F-7', 'MXN', 900, 0, 900, '2099-01-01', 'c', 'open')`, [ORG, CL1]);
+        const r = await Q.getFacturasResumen();
+        expect(r.vencido).toBe(100 * 20 + 500);
+        expect(r.vencidas).toBe(2);
+        expect(r.porCobrar).toBe(2000 + 500 + 900);
+        expect(r.topVencidas.map((f) => f.folio)).toEqual(['F-9', 'F-8']);
+        expect(r.topVencidas[0].dias).toBeGreaterThan(365);
     });
 });
 
