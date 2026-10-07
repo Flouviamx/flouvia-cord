@@ -1,5 +1,70 @@
 # Historial — App interna: features y UX
 
+## 2026-10-07 — Topbar: campana como bandeja, ⌘K más útil, tema en tres modos
+
+- `eventos.actor` (`vendedor` | `externo` | null histórico) lo decide un DEFAULT con el
+  `app.user_id` que withOrgTx ya fija: ninguna inserción cambió y el código se puede desplegar
+  antes o después de la migración (la lectura usa `to_jsonb(e)->>'actor'`). Dos sentencias
+  para no rellenar el historial como "externo". Sin la columna, la campana solo muestra
+  vistas, contraofertas y pagos; con ella, también aprobaciones, rechazos y comentarios del
+  cliente. Lo prueba `test/notificaciones-db.test.ts` con la sección real del schema.
+- Campana: cotizaciones y facturas juntas, contador en el SSR (ya no se pedía la lista en cada
+  carga), "visto hasta" por miembro en el servidor (migra el de localStorage).
+- Topbar sin animaciones de juguete; ⌘K con facturas, contexto y atajos; Crear con teclas
+  C/F/L/P/T; tema claro/oscuro/sistema.
+
+## 2026-10-07 — Topbar: bugs de ⌘K, menús, tema móvil y barra de progreso
+
+- ⌘K: borrar letras dejaba que una respuesta atrasada pintara resultados de la consulta
+  anterior; cada mousemove redibujaba la lista y la desplazaba; clientes y productos
+  llevaban a la lista general en vez de su ficha; el foco se escapaba con Tab y no volvía al
+  cerrar. Ahora: debounce de 140 ms, descarte por secuencia, selección sin redibujar,
+  combobox/listbox y foco atrapado.
+- Crear, Notificaciones y Apps podían quedar abiertos a la vez; ahora comparten
+  `src/lib/topbar-menu.ts` (uno a la vez y teclado de menú).
+- La barra de progreso se quedaba al 90 % si un "¿salir sin guardar?" se cancelaba; ahora
+  arranca solo en `beforeunload` no cancelado, con respaldo de 10 s.
+- En móvil no había forma de cambiar el tema ni de reabrir la guía minimizada.
+- Detalles: ⌘K decía ⌘ en Windows/Linux, aro blanco del punto de la campana en oscuro,
+  "Ver toda la actividad" iba al tope del Inicio, `href` de notificaciones sin escapar.
+- La campana con acciones del propio vendedor y sin facturas se resolvió el mismo día con
+  `eventos.actor` (entrada de arriba), sin depender del orden entre migración y despliegue.
+
+## 2026-10-07 — Navegación sin parpadeo, invitar al equipo y toggle animado
+
+- Se evaluó `<ClientRouter />` para mantener viva la sidebar y se descartó por ahora: con
+  navegación SPA los scripts de cada página corren una sola vez, así que había que migrar
+  73 scripts de 44 páginas, 26 componentes y 77 inicializaciones a `astro:page-load`
+  (incluidos el editor, KYC y pagos). En su lugar: View Transitions entre documentos +
+  prefetch de Astro solo en la sidebar. La sidebar no se funde y el scroll del menú se
+  conserva. Verificado en Chromium (`pagereveal` con `viewTransition`).
+- "Invitar al equipo" en el pie, solo donde de verdad invita (permiso `equipo`, planes con
+  más de un asiento); abre el modal existente vía `?invitar=1`.
+- Botón de colapsar con icono animado (vista previa con resorte + chevron que confirma).
+- El avatar de la cuenta quedaba pegado a la línea en el rail colapsado por una regla
+  `padding: 0 !important` vieja en AppLayout; se retiró.
+
+## 2026-10-07 — Sidebar con densidad de herramienta (Linear / Stripe)
+
+- Estructura en `src/lib/sidebar-nav.ts`, fuente única del menú, los atajos `G` + letra
+  (antes un mapa aparte en AppLayout que la sidebar no mostraba) y el panel de atajos.
+- Grupos renombrados: "Mi dinero" → Ingresos; "Inteligencia" se parte en Análisis y
+  Automatización; "Equipo" (apuntaba a `/app/desempeno`, y chocaba con Ajustes › Equipo)
+  → Desempeño; "Cobranza con IA" pasa a sub-página de Cobranza (Agente IA).
+- El hover ya no mueve el indicador del activo; se retiran el indicador por JS, su sondeo
+  cada 20 ms y la animación de entrada que corría en cada navegación. Filas de 30 px.
+- Contadores: Cotizaciones = vistas sin responder (antes todo lo enviado o visto);
+  vencidas en tinte, no rojo sólido.
+- Fijados y grupos plegados pasan de localStorage a `org_members.widget_prefs` vía
+  `PUT /api/app/sidebar-prefs`, se pintan en el SSR (antes empujaban el menú en cada carga),
+  heredan el icono de su sección y se migran solos desde el navegador.
+- Pie: el logo de Cord sale; entra un medidor de cotizaciones activas con "Mejorar plan"
+  (solo planes con tope, `getPlanUsage()`, el mismo de Ajustes › Plan). `[` colapsa.
+- Rail colapsado con tooltip propio (etiqueta · contador · atajo) en vez del `title` nativo.
+- Móvil: drawer sólido con un solo scroll; la X de los fijados siempre visible.
+- Verificado renderizando el componente real con el Container API de Astro y el CSS/JS
+  compilados en Chromium (claro, oscuro, colapsado, inglés y móvil).
+
 ## 2026-10-04 — Ajustes con tarjetas compartidas
 
 - Se reemplaza, a petición de André, el formato plano de Ajustes por un sistema

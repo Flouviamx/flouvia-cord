@@ -1,0 +1,35 @@
+/* Transiciones nativas entre páginas de /app (View Transitions entre documentos).
+ *
+ * Solo AppLayout importa esta hoja, así que solo /app → /app se anima: el
+ * navegador exige que las DOS páginas lo declaren. Cada navegación sigue siendo
+ * una carga completa (los scripts de cada página corren como siempre); lo que
+ * cambia es que el navegador conserva la página anterior pintada hasta que la
+ * nueva está lista y funde solo el contenido. Sin parpadeo en blanco.
+ *
+ * Se eligió esto en vez de <ClientRouter /> (oct 2026): la SPA exigía migrar
+ * ~100 scripts de /app a `astro:page-load` y volverlos re-ejecutables, incluidos
+ * flujos de dinero; esto da el mismo efecto visual sin tocarlos. Chrome, Edge y
+ * Safari 18.2+; donde no hay soporte, se navega como antes.
+ */
+@view-transition {
+    navigation: auto;
+}
+
+/* La sidebar es su propio grupo: no se funde con el contenido, se queda quieta.
+ * (Solo la sidebar: un nombre de transición vuelve al elemento raíz de backdrop
+ * para sus descendientes, y los menús de la topbar sí dependen del blur.) */
+.sidebar { view-transition-name: cord-sidebar; }
+::view-transition-group(cord-sidebar),
+::view-transition-old(cord-sidebar),
+::view-transition-new(cord-sidebar) { animation: none; }
+::view-transition-old(cord-sidebar) { display: none; }
+
+/* El contenido: un fundido corto, de herramienta, no de presentación. */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 140ms; animation-timing-function: ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) { animation: none !important; }
+}

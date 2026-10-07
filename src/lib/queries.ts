@@ -4116,26 +4116,27 @@ export async function getSetupProgress() {
 }
 
 // ── BADGES DE LA SIDEBAR ──────────────────────────────────────────────────────
+// Contadores de la sidebar: solo lo ACCIONABLE, con la misma definición que la
+// pantalla a la que llevan.
+// - `seguimiento`: cotizaciones que el cliente abrió y no ha respondido — el KPI
+//   "Por dar seguimiento" del dashboard. Antes contaba todo lo enviado o visto,
+//   un número que solo crecía y no decía qué hacer.
+// - `vencidas`: se lee de `cuentas_por_cobrar` (regla 25), la misma vista que la
+//   cobranza y el agente; contar solo `cotizaciones` dejaba fuera las facturas.
 export async function getSidebarBadges() {
-    const zero = { seguimiento: 0, vencidas: 0, porAprobar: 0 };
+    const zero = { seguimiento: 0, vencidas: 0 };
     try {
         const orgId = await getActiveOrgId();
-        const [[r], [a]] = await withOrgTx(orgId,
+        const [[r]] = await withOrgTx(orgId,
             sql`select
-                    count(*) filter (where status in ('sent','viewed')) as seguimiento,
-                    count(*) filter (where status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
-                        and es_recurrente is not true
-                        and (coalesce(approved_at, created_at)
-                            + make_interval(days => case terminos
-                                when 'net30' then 30 when 'net60' then 60 else 0 end)) < now()) as vencidas
-                from cotizaciones where org_id = ${orgId}`,
-            sql`select count(*)::int as n from cotizaciones
-                where org_id = ${orgId} and aprob_estado = 'pendiente'`,
+                    (select count(*) from cotizaciones
+                      where org_id = ${orgId} and status = 'viewed')::int as seguimiento,
+                    (select count(*) from cuentas_por_cobrar
+                      where org_id = ${orgId} and dias_vencido > 0)::int as vencidas`,
         );
         return {
             seguimiento: Number(r?.seguimiento ?? 0),
             vencidas: Number(r?.vencidas ?? 0),
-            porAprobar: Number(a?.n ?? 0),
         };
     } catch { return zero; }
 }

@@ -512,7 +512,10 @@ APIs de cobros (ago 2026)
                    el token; el crudo original no es recuperable, solo su hash).
 
 # API Pública (REST + MCP)
-/api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
+/api/notificaciones  → GET bandeja de la campana: solo acciones del cliente o pagos, cotizaciones y
+                       facturas juntas (`src/lib/notificaciones.ts`, filtra por `eventos.actor`). El
+                       contador sin leer lo pinta AppLayout en el SSR.
+/api/app/notif-seen  → PUT "visto hasta" por miembro en `org_members.widget_prefs['cord.notif.v1']`.
 /api/q/[token]   → acciones del CLIENTE (sin auth). approve | reject | comment |
                    counter | item_comment | ping | hito.
                    `ping` es el latido del documento vivo: marca la vista (una sola
@@ -724,8 +727,15 @@ los importan desde `lib/queries`, que los re-exporta. Los datos mock en memoria
 pública (`src/lib/demo-quote.ts`).
 
 **AppLayout (`src/layouts/AppLayout.astro`):** sidebar de vidrio sticky **temada con `--sb-*`**
-(blanca en claro / navy en oscuro; logo navy↔blanco según tema, nav con íconos, org-switcher
-arriba, "Fijados" antes de los grupos nav, footer con logo). El `<OnboardingWidget>` y su píldora
+(blanca en claro / navy en oscuro). Estructura en `src/lib/sidebar-nav.ts` (fuente única de
+menú, atajos `G` + letra y panel de atajos): lista plana (Inicio, Cotizaciones, Clientes,
+Productos) → Ingresos (Facturas, Cobros, Cobranza › Agente IA) → Análisis (Informes,
+Desempeño) → Automatización (Workflows). Org-switcher arriba, "Fijados" antes de los grupos,
+pie con medidor de cotizaciones activas (solo planes con tope), "Invitar al equipo" (permiso
+`equipo`, planes con más de un asiento; abre `/app/ajustes/equipo?invitar=1`) y botón de colapsar (`[`).
+Entre páginas de /app: transiciones nativas + prefetch al pasar el cursor (sin `ClientRouter`).
+Fijados y grupos plegados son preferencias por miembro: `org_members.widget_prefs['cord.sidebar.v1']`
+vía `PUT /api/app/sidebar-prefs` (antes localStorage; se migran solos la primera vez). El `<OnboardingWidget>` y su píldora
 (`#onbPill` en `.tb-right`) se montan aquí, gated por `!setup.complete`.
 Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-actions`
 (botones del page-header, derecha), `page-sub` (subtítulo opcional bajo el título),

@@ -1,77 +1,103 @@
 ---
-// Sidebar — componente lateral de navegación de la app Cord (estilo Linear).
-// Extraído de AppLayout.astro para mantener la separación de responsabilidades.
-// Recibe `page` para marcar el ítem activo en la navegación.
+// Sidebar — navegación principal de la app (estilo Linear / Stripe).
+//
+// - La estructura sale de `src/lib/sidebar-nav.ts`: el mismo dato arma el menú,
+//   los atajos `G` + letra, sus filas en el panel de atajos y el icono que hereda
+//   cada fijado.
+// - El marco es ESTÁTICO: sin animación de entrada ni indicador posicionado por
+//   JS. Cada navegación recarga la página, así que cualquier animación del marco
+//   corría en cada clic y hacía sentir la app más lenta. El activo es un fondo
+//   fijo; el hover es otro tinte, más tenue, y nunca le roba el lugar.
+// - Fijados y grupos plegados son preferencias por miembro
+//   (org_members.widget_prefs) y se pintan aquí en el SSR: pintarlos desde JS
+//   empujaba todo el menú hacia abajo en cada carga.
 
-import { getSidebarBadges, getOrg, getUserProfile } from '../../lib/queries';
+import { getSidebarBadges, getOrg, getUserProfile, getPlanUsage } from '../../lib/queries';
 import CustomOrgSwitcher from './CustomOrgSwitcher';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { iconInner } from '../../lib/icons';
-
-// Contadores en vivo de la sidebar (estilo Linear): seguimiento + cartera vencida.
-const badges = await getSidebarBadges();
-const ORG = await getOrg();
-const userProfile = await getUserProfile();
-const orgLogoUrl = ORG.logoUrl || '';
-const L = currentLocale();
+import { SIDEBAR_NAV, sanitizeSidebarPrefs, sidebarIconFor, type SidebarBadge, type SidebarNavItem } from '../../lib/sidebar-nav';
+import { INCLUDED } from '../../lib/billing';
 
 interface Props {
-    page: string;         // id de la página activa en el sidebar
+    page: string;     // id de la página activa (ver SIDEBAR_NAV)
+    prefs?: unknown;  // org_members.widget_prefs['cord.sidebar.v1'], sin validar
+    canInvite?: boolean; // permiso `equipo` del miembro
 }
 
-const { page } = Astro.props;
+const { page, prefs, canInvite = false } = Astro.props;
+const L = currentLocale();
 
-// Nav agrupada por secciones (estilo Stripe: una lista plana de accesos diarios
-// arriba, SIN encabezado — `label: null` — y solo las áreas que de verdad son
-// su propia categoría van en un grupo con título/acordeón debajo). `badge` =
-// clave de getSidebarBadges(); `tone` colorea el contador (neutral / danger).
-// Ajustes vive en el engrane de la topbar.
-const NAV_GROUPS = [
-    {
-        label: null,
-        items: [
-            { id: 'dashboard',    href: '/app',              label: t(L, 'sidebar.item.inicio'),       icon: iconInner('overview') },
-            { id: 'cotizaciones', href: '/app/cotizaciones', label: t(L, 'sidebar.item.cotizaciones'), icon: iconInner('quote'), badge: badges.seguimiento, tone: 'neutral' },
-            { id: 'clientes',  href: '/app/clientes',  label: t(L, 'sidebar.item.clientes'),  icon: iconInner('clients') },
-            { id: 'productos', href: '/app/productos', label: t(L, 'sidebar.item.productos'), icon: iconInner('products') },
-        ],
+const [badges, ORG, userProfile, usage] = await Promise.all([
+    getSidebarBadges(),
+    getOrg(),
+    getUserProfile(),
+    // El medidor es informativo: si el plan no se puede leer, la sidebar sigue.
+    getPlanUsage().catch(() => null),
+]);
+const orgLogoUrl = ORG.logoUrl || '';
+
+const BADGES: Record<SidebarBadge, { n: number; tone: 'neutral' | 'danger'; tip: string }> = {
+    seguimiento: {
+        n: badges.seguimiento, tone: 'neutral',
+        tip: `${badges.seguimiento} ${t(L, badges.seguimiento === 1 ? 'dash.kpi_vista_singular' : 'dash.kpi_vista_plural')}`,
     },
-    {
-        label: t(L, 'sidebar.grupo.dinero'),
-        items: [
-            { id: 'facturas', href: '/app/facturas',           label: t(L, 'sidebar.item.facturas'),       icon: iconInner('invoice') },
-            { id: 'cobros',   href: '/app/cobros',             label: t(L, 'sidebar.item.cobros'),         icon: iconInner('coin') },
-            { id: 'cobranza', href: '/app/cobranza',           label: t(L, 'sidebar.item.cobranza'),       icon: iconInner('tray'), badge: badges.vencidas, tone: 'danger' },
-            { id: 'ai-ar',    href: '/app/cobranza/agente', label: t(L, 'sidebar.item.cobranza_ia'), icon: iconInner('cpu') },
-        ],
+    vencidas: {
+        n: badges.vencidas, tone: 'danger',
+        tip: `${badges.vencidas} ${t(L, badges.vencidas === 1 ? 'sidebar.badge.vencida' : 'sidebar.badge.vencidas')}`,
     },
-    {
-        label: t(L, 'sidebar.grupo.inteligencia'),
-        items: [
-            { id: 'informes', href: '/app/informes', label: t(L, 'sidebar.item.analitica'), icon: iconInner('chart') },
-            { id: 'desempeno', href: '/app/desempeno', label: t(L, 'sidebar.item.equipo'),    icon: iconInner('pulse') },
-            { id: 'workflows', href: '/app/workflows', label: t(L, 'sidebar.item.workflows'), icon: iconInner('workflow') },
-        ],
-    },
-];
+};
+const badgeOf = (it: SidebarNavItem) => {
+    const b = it.badge ? BADGES[it.badge] : null;
+    return b && b.n > 0 ? b : null;
+};
+
+const saved = sanitizeSidebarPrefs(prefs);
+const collapsedGroups = new Set(saved.collapsed);
+const sectionActive = (it: SidebarNavItem) => page === it.id || !!it.children?.some((c) => c.id === page);
+
+// Misma llave que usa el script para comparar fijados: la ruta, salvo Informes,
+// donde cada reporte (?r=) es una página distinta.
+const pinKey = (href: string) => {
+    const u = new URL(href, 'http://cord.local');
+    return u.pathname === '/app/informes' ? `${u.pathname}?r=${u.searchParams.get('r') || 'resumen'}` : u.pathname;
+};
+const here = pinKey(Astro.url.pathname + Astro.url.search);
+const pins = (saved.pins ?? []).map((p) => ({ ...p, icon: sidebarIconFor(p.href), active: pinKey(p.href) === here }));
+
+const showPlan = !!usage && !usage.ilimitado;
+// "Invitar al equipo" solo donde de verdad invita: con permiso de Equipo y en un
+// plan con más de un asiento. En Gratis y Starter (un asiento) terminaría en
+// "mejora tu plan", y ese aviso ya lo da el medidor.
+const seatsIncluded = usage ? INCLUDED[usage.plan as keyof typeof INCLUDED]?.usuarios : 1;
+const showInvite = canInvite && !!usage && (seatsIncluded === null || (seatsIncluded ?? 1) > 1);
+const toggleLabel = t(L, 'sidebar.alternar_menu');
 ---
 
 <div class="sb-backdrop" id="sbBackdrop" aria-hidden="true"></div>
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar">
-    <!-- Cuenta — arriba -->
+<aside class="sidebar" id="sidebar">
     <div class="sb-account">
-        <!-- Custom Org Switcher (full custom B2B motor) -->
         <CustomOrgSwitcher client:load orgLogoUrl={orgLogoUrl} user={userProfile} activeOrg={ORG} locale={L} />
     </div>
 
-    <!-- Acciones móviles (solo en drawer) — crear / ayuda / config -->
+    <!-- Acciones del drawer — solo móvil (en escritorio viven en la topbar) -->
     <div class="sb-mobile-actions">
-
         <button class="sb-action-row" id="sbHelp" type="button" data-id="ayuda">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('help')}></svg>
             <span>{t(L, 'sidebar.ayuda')}</span>
+        </button>
+        <!-- Tema: en móvil el botón de la topbar está oculto; sin esta fila no había
+             forma de cambiarlo desde el celular. Lo cablea initTheme() de AppLayout. -->
+        <button class="sb-action-row sb-theme" id="sbTheme" type="button">
+            <svg class="th-ico th-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg>
+            <svg class="th-ico th-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('moon')}></svg>
+            <svg class="th-ico th-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('monitor')}></svg>
+            <span>{t(L, 'layout.tema')}</span>
+            {/* El modo lo decide el CSS con data-theme-mode (lo fija el <head> antes de pintar). */}
+            <span class="sb-theme-mode th-light">{t(L, 'layout.tema.claro')}</span>
+            <span class="sb-theme-mode th-dark">{t(L, 'layout.tema.oscuro')}</span>
+            <span class="sb-theme-mode th-system">{t(L, 'layout.tema.sistema')}</span>
         </button>
         <a href="/app/ajustes" class="sb-action-row" data-id="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg>
@@ -79,430 +105,461 @@ const NAV_GROUPS = [
         </a>
     </div>
 
-    <nav class="sb-nav">
-        <div class="sb-indicator" id="sbIndicator" aria-hidden="true"></div>
-        <div class="sb-group sb-pins" id="sbPins" data-label={t(L, 'sidebar.grupo.fijados')} data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')} data-pin-remove={t(L, 'sidebar.pin.quitar')} data-pin-toast-on={t(L, 'sidebar.pin.toast_on')} data-pin-toast-off={t(L, 'sidebar.pin.toast_off')} hidden></div>
-        {NAV_GROUPS.map((group) => (
-            <div class:list={['sb-group', { 'sb-group-flat': !group.label }]}>
-                {group.label && (
-                    <button type="button" class="sb-group-label" aria-expanded="true">
-                        <span>{group.label}</span>
-                        <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
+    <nav class="sb-nav" aria-label={t(L, 'sidebar.aria.nav')}>
+        <!-- Fijados: SSR desde las preferencias del miembro; el script los vuelve a
+             pintar clonando #sbPinTpl, así hay un solo markup de fila. -->
+        <div
+            class="sb-group sb-pins" id="sbPins" hidden={!pins.length}
+            data-pins={JSON.stringify(saved.pins ?? [])}
+            data-pins-saved={saved.pins ? '1' : '0'}
+            data-collapsed={JSON.stringify(saved.collapsed)}
+            data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')}
+            data-pin-toast-on={t(L, 'sidebar.pin.toast_on')} data-pin-toast-off={t(L, 'sidebar.pin.toast_off')}
+        >
+            <div class="sb-group-head">{t(L, 'sidebar.grupo.fijados')}</div>
+            <div class="sb-pin-list" id="sbPinList">
+                {pins.map((p) => (
+                    <div class="sb-pin-row" draggable="true" data-href={p.href}>
+                        <a href={p.href} class:list={['sb-item', { active: p.active }]} aria-current={p.active ? 'page' : undefined} data-tip={p.label} data-astro-prefetch>
+                            <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(p.icon)}></svg>
+                            <span class="sb-item-label">{p.label}</span>
+                        </a>
+                        <button type="button" class="sb-pin-x" aria-label={t(L, 'sidebar.pin.quitar')}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                        </button>
+                    </div>
+                ))}
+            </div>
+            <template id="sbPinTpl">
+                <div class="sb-pin-row" draggable="true">
+                    <a href="/app" class="sb-item" data-astro-prefetch>
+                        <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+                        <span class="sb-item-label"></span>
+                    </a>
+                    <button type="button" class="sb-pin-x" aria-label={t(L, 'sidebar.pin.quitar')}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
                     </button>
-                )}
-                <div class="sb-group-content">
-                    <div class="sb-group-inner">
-                        {group.items.map((item) => (
-                            <a href={item.href} data-id={item.id} class:list={['sb-item', { active: page === item.id }]} title={item.label}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon}></svg>
-                                <span class="sb-item-label">{item.label}</span>
-                                {!!(item as any).shortcut && (
-                                    <kbd class="sb-shortcut">{(item as any).shortcut}</kbd>
-                                )}
-                                {!!item.badge && item.badge > 0 && (
-                                    <span class:list={['sb-badge', { danger: item.tone === 'danger' }]}>{item.badge > 99 ? '99+' : item.badge}</span>
-                                )}
-                            </a>
-                        ))}
+                </div>
+            </template>
+        </div>
+
+        {SIDEBAR_NAV.map((group) => {
+            const open = !group.label || !collapsedGroups.has(group.id) || group.items.some(sectionActive);
+            return (
+                <div class:list={['sb-group', { 'sb-group-flat': !group.label }]} data-group={group.id}>
+                    {group.label && (
+                        <button type="button" class="sb-group-label" aria-expanded={open ? 'true' : 'false'} aria-controls={`sbGroup-${group.id}`}>
+                            <span>{t(L, group.label)}</span>
+                            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
+                        </button>
+                    )}
+                    <div class="sb-group-content" id={`sbGroup-${group.id}`}>
+                        <div class="sb-group-inner">
+                            {group.items.map((it) => {
+                                const b = badgeOf(it);
+                                const label = t(L, it.label);
+                                const inSection = sectionActive(it);
+                                return (
+                                    <Fragment>
+                                        <a
+                                            href={it.href} data-id={it.id} data-key={it.key} data-astro-prefetch
+                                            data-tip={label} data-tip-sub={b?.tip}
+                                            class:list={['sb-item', { active: page === it.id, 'is-section': inSection && page !== it.id }]}
+                                            aria-current={page === it.id ? 'page' : undefined}
+                                        >
+                                            <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(it.icon)}></svg>
+                                            <span class="sb-item-label">{label}</span>
+                                            {b && (
+                                                <span class:list={['sb-badge', b.tone]} title={b.tip}>
+                                                    <span aria-hidden="true">{b.n > 99 ? '99+' : b.n}</span>
+                                                    <span class="sb-sr">{b.tip}</span>
+                                                </span>
+                                            )}
+                                            {it.key && !b && (
+                                                <span class="sb-shortcut" aria-hidden="true"><kbd>G</kbd><kbd>{it.key.toUpperCase()}</kbd></span>
+                                            )}
+                                        </a>
+                                        {it.children && inSection && (
+                                            <div class="sb-sub">
+                                                {it.children.map((c) => (
+                                                    <a
+                                                        href={c.href} data-id={c.id} data-tip={`${label} · ${t(L, c.label)}`} data-astro-prefetch
+                                                        class:list={['sb-item', { active: page === c.id }]}
+                                                        aria-current={page === c.id ? 'page' : undefined}
+                                                    >
+                                                        <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner(c.icon)}></svg>
+                                                        <span class="sb-item-label">{t(L, c.label)}</span>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Fragment>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ))}
+            );
+        })}
     </nav>
-
-    <div class="sb-user" style="padding: 1rem; padding-bottom: 0;">
-        <!-- Org Switcher and User config are now handled centrally -->
-    </div>
+    <!-- Cada navegación es una carga completa: sin esto el menú volvía arriba en
+         cada clic. Inline y justo después del nav para restaurar antes de pintar. -->
+    <script is:inline>try{var n=document.querySelector('.sb-nav'),y=sessionStorage.getItem('cord.sb.scroll');if(n&&y)n.scrollTop=+y}catch(e){}</script>
 
     <div class="sb-footer">
-        <img class="sb-foot-logo sb-foot-logo-navy" src="/imgs/logo-cord-navy.png" alt="Cord" />
-        <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
-        <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
-        <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label={t(L, 'sidebar.alternar_menu')}>
-            <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
-        </button>
+        {showPlan && usage && (
+            <a class:list={['sb-plan', { warn: usage.pct >= 80 && !usage.excedido, full: usage.excedido }]} href="/app/ajustes/plan">
+                <span class="sb-plan-top">
+                    <span>{t(L, 'set.plan.cotizaciones_activas')}</span>
+                    <span class="sb-plan-count">{usage.usadas} / {usage.limite}</span>
+                </span>
+                <span class="sb-plan-bar" aria-hidden="true"><span style={`width:${usage.pct}%`}></span></span>
+                <span class="sb-plan-cta">{t(L, 'sidebar.plan.mejorar')}</span>
+            </a>
+        )}
+        <div class="sb-footer-row">
+            {showInvite && (
+                <a class="sb-invite" href="/app/ajustes/equipo?invitar=1" title={t(L, 'sidebar.invitar')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user-plus')}></svg>
+                    <span>{t(L, 'sidebar.invitar')}</span>
+                </a>
+            )}
+            <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label={toggleLabel} aria-controls="sidebar" title={`${toggleLabel}  [`}>
+                {/* Icono animado: no pasa por el registro de icons.ts (como los checks
+                    animados), pero respeta su gramática Glass Duotone: trazo 1.5 y
+                    relleno currentColor al 14 %. El panel izquierdo se encoge o se
+                    abre como vista previa de lo que va a hacer el clic, y el chevron
+                    indica la dirección; tras el clic, gira para confirmar. */}
+                <svg class="sb-tgl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <defs><clipPath id="sbTglClip"><rect x="3.5" y="4.5" width="17" height="15" rx="3.2" /></clipPath></defs>
+                    <g clip-path="url(#sbTglClip)">
+                        <rect class="sb-tgl-pane" x="3.5" y="4.5" width="6" height="15" fill="currentColor" fill-opacity="0.14" stroke="none" />
+                    </g>
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="3.2" />
+                    <path class="sb-tgl-div" d="M9.5 4.5v15" />
+                    <path class="sb-tgl-chev" d="M16.6 9.6 14.2 12l2.4 2.4" />
+                </svg>
+            </button>
+        </div>
     </div>
 </aside>
+<!-- Tooltip del modo colapsado. Fuera del <aside> a propósito: el backdrop-filter
+     del aside lo vuelve bloque contenedor de todo `position: fixed` interno, y el
+     overflow del nav recortaría un tooltip absoluto. -->
+<div class="sb-tip" id="sbTip" aria-hidden="true"></div>
 
 <style>
-    /* ── SIDEBAR ── */
+    /* ── Marco ── */
     .sidebar {
         width: var(--sidebar-w);
         flex-shrink: 0;
-        /* Pill flotante de VIDRIO — idéntica a la topbar */
-        background: rgba(255, 255, 255, 0.72);
+        /* Pill flotante de vidrio — mismo material que la topbar vía --sb-* */
+        background: var(--sb-bg);
         backdrop-filter: blur(40px) saturate(1.8);
         -webkit-backdrop-filter: blur(40px) saturate(1.8);
         border: none;
-        box-shadow:
-            0 8px 32px -8px rgba(0,0,0,0.06),
-            0 4px 12px -2px rgba(0,0,0,0.03),
-            inset 0 0 0 1px rgba(255,255,255,0.5),
-            inset 0 1px 1px rgba(255,255,255,0.9);
-        border-radius: 22px !important;
-        margin: 1rem !important;
+        box-shadow: var(--sb-shadow);
+        border-radius: 22px;
+        margin: 1rem;
         height: calc(100vh - 2rem);
-        /* Fin Estilo Pill */
         display: flex; flex-direction: column;
-        padding: 1.2rem 0.7rem 1rem;
+        padding: 0.9rem 0.6rem 0.7rem;
         position: sticky; top: 1rem;
-        z-index: 130;
-        transition: width 0.28s var(--ease-spring), padding 0.28s var(--ease-spring);
+        z-index: 800;
+        transition: width 0.24s var(--ease-spring), padding 0.24s var(--ease-spring);
     }
-    :global(html[data-theme="dark"]) .sidebar {
-        background: rgba(24, 30, 40, 0.75);
-        border: none;
-        box-shadow:
-            0 16px 44px -10px rgba(0,0,0,0.55),
-            0 4px 12px -2px rgba(0,0,0,0.25),
-            inset 0 0 0 1px rgba(255,255,255,0.1),
-            inset 0 1px 1px rgba(255,255,255,0.15);
-    }
-    /* Los dos fondos de arriba (72% claro, 75% oscuro) DEPENDEN del blur para
-       verse sólidos. Sin él —GPU sin composición, "Reducir transparencia" del
-       SO, navegador viejo— el sidebar se transparenta y el contenido se ve por
-       debajo. El test cubre las DOS formas con `or`: un `not (backdrop-filter:
-       …)` a secas no dispara en un navegador que soporta la estándar pero
-       recibió sólo la prefijada. */
+    /* Los fondos de --sb-bg (72% claro, 75% oscuro) DEPENDEN del blur para verse
+       sólidos. Sin él —GPU sin composición, "Reducir transparencia" del SO,
+       navegador viejo— la sidebar se transparenta. El test cubre las DOS formas
+       con `or`: un `not (backdrop-filter: …)` a secas no dispara en un navegador
+       que soporta la estándar pero recibió sólo la prefijada. */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        .sidebar { background: #fff; }
-        :global(html[data-theme="dark"]) .sidebar { background: #181e28; }
-    }
-    /* Sheen superior (specular highlight tipo liquid glass) — detrás del contenido */
-    .sidebar::before {
-        content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
-        background: var(--sb-sheen);
-    }
-    .sidebar > * { position: relative; z-index: 1; }
-
-    /* ── Nav agrupada ── */
-    .sb-nav {
-        position: relative;
-        display: flex; flex-direction: column; gap: 1rem;
-        overflow-y: auto; flex: 1;
-        /* Ocultar barra de scroll para evitar que empuje los elementos y rompa el centrado */
-        scrollbar-width: none;
+        .sidebar { background: var(--sb-bg-solid); }
     }
 
-    .sb-nav::-webkit-scrollbar { display: none; }
-    /* Indicador deslizante (segmented control) — ahora con backdrop-filter vidrio */
-    .sb-indicator {
-        position: absolute; left: 0; right: 0; top: 0; height: 0;
-        border-radius: 10px; opacity: 0; pointer-events: none; z-index: 0;
-        background: var(--sb-active-bg);
-        /* Apple style: solid tint without drop shadows for selection */
-        transition: top 0.42s var(--ease-spring), height 0.42s var(--ease-spring), opacity 0.3s var(--ease-ios);
-        will-change: top, height;
-    }
-    .sb-group { display: flex; flex-direction: column; gap: 2px; }
-    .sb-group-label {
-        display: flex; align-items: center; justify-content: space-between; width: 100%;
-        background: none; border: none; cursor: pointer; text-align: left;
-        font-size: 0.82rem; font-weight: 600; /* iOS Apple Settings style */
-        color: var(--sb-label); padding: 14px 11px 6px;
-        transition: opacity 0.2s var(--ease-ios), color 0.25s var(--ease-ios);
-    }
-    .sb-group-label:hover { color: var(--sb-text-strong); }
-    .sb-group-chevron { width: 14px; height: 14px; transition: transform 0.35s var(--ease-spring); opacity: 0.6; }
-    .sb-group-label[aria-expanded="false"] .sb-group-chevron { transform: rotate(-90deg); }
-    
-    .sb-group-content { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.35s var(--ease-spring); }
-    .sb-group-label[aria-expanded="false"] + .sb-group-content { grid-template-rows: 0fr; }
-    .sb-group-inner { overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
-    @keyframes sb-slide-in {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .sb-item {
-        position: relative; z-index: 1;
-        display: flex; align-items: center; gap: 11px;
-        padding: 9px 11px; border-radius: 10px;
-        font-size: 0.9rem; font-weight: 500; /* iOS feel: slightly larger, clean weight */
-        color: var(--sb-text); text-decoration: none;
-        transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios), box-shadow 0.25s var(--ease-ios), transform 0.2s var(--ease-ios);
-        animation: sb-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-    }
-    .sb-group:nth-child(1) .sb-item { animation-delay: 0.05s; }
-    .sb-group:nth-child(2) .sb-item { animation-delay: 0.1s; }
-    .sb-group:nth-child(3) .sb-item { animation-delay: 0.15s; }
-    .sb-group:nth-child(4) .sb-item { animation-delay: 0.2s; }
-    
-    .sb-item svg { width: 16px; height: 16px; opacity: var(--sb-icon-op, 0.8); flex-shrink: 0; transition: opacity 0.2s var(--ease-ios), transform 0.2s var(--ease-ios); }
-    .sb-item:hover svg { opacity: 1; }
-    
-    /* Apple Style Active (Press) State: Scale the whole row, not just the icon */
-    .sb-item:active { transform: scale(0.97); }
-    
-    /* Active Item */
-    .sb-item.active svg { opacity: 1; }
-    .sb-item.active { color: var(--sb-text-active); font-weight: 600; }
-    
-    .sb-item-label {
-        flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        transition: opacity 0.2s var(--ease-ios);
-    }
-    /* Hover/active: el color cambia; el realce de "pill" lo da .sb-indicator (vidrio) */
-    .sb-item:hover { color: var(--sb-text-strong); }
-    
-    /* ── Apple Style Hover ── */
-    .sb-item { position: relative; overflow: hidden; }
-    .sb-item::before, .sb-action-row::before {
-        content: ''; position: absolute; inset: 0; border-radius: inherit;
-        background: var(--sb-hover-bg, rgba(0,0,0,0.04));
-        opacity: 0; transition: opacity 0.15s ease-out; z-index: 0; pointer-events: none;
-    }
-    html[data-theme="dark"] .sb-item::before, html[data-theme="dark"] .sb-action-row::before {
-        background: rgba(255,255,255,0.06);
-    }
-    .sb-item:hover::before, .sb-action-row:hover::before { opacity: 1; }
-
-    /* Antes de que el indicador de vidrio se posicione (pre-JS): pill sutil en el activo */
-    .sb-nav:not(.sb-ind-ready) .sb-item.active { background: var(--sb-active-bg); box-shadow: 0 2px 4px rgba(10,25,47,0.03); }
-    
-    /* Drag & Drop Feedback para Fijados */
-    .sb-pin-row { position: relative; transition: opacity 0.2s; }
-    .sb-pin-row.dragging { opacity: 0.4; }
-    .sb-pin-row.drag-over-top::before, .sb-pin-row.drag-over-bottom::after {
-        content: ''; position: absolute; left: 0; right: 0; height: 2px;
-        background: var(--color-blue-deep, #2563eb); border-radius: 2px; z-index: 10;
-        pointer-events: none;
-    }
-    .sb-pin-row.drag-over-top::before { top: -2px; }
-    .sb-pin-row.drag-over-bottom::after { bottom: -2px; }
-
-    .sb-badge {
-        flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.64rem; font-weight: 700; letter-spacing: -0.01em;
-        color: var(--sb-badge-text); background: var(--sb-badge-bg);
-    }
-    .sb-badge.danger { color: #fff; background: var(--color-danger); }
-    .sb-shortcut {
-        font-family: var(--font-mono, monospace);
-        font-size: 0.65rem; font-weight: 600;
-        color: var(--sb-label);
-        background: var(--sb-badge-bg);
-        padding: 2px 6px;
-        border-radius: 5px;
-        box-shadow: var(--sb-indicator-shadow);
-        transition: opacity 0.2s var(--ease-ios), color 0.2s var(--ease-ios), background 0.2s var(--ease-ios);
-    }
-    .sb-item:hover .sb-shortcut { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
-
-    /* ── Cuenta — arriba, sin card por defecto ── */
-    .sb-account {
-        position: relative;
-        padding-bottom: 0.5rem;
-        margin-bottom: 0.3rem;
-    }
-    /* Separador con degradado debajo de la cuenta */
+    .sb-account { position: relative; padding-bottom: 0.55rem; margin-bottom: 0.45rem; }
     .sb-account::after {
-        content: '';
-        position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+        content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
         background: linear-gradient(to right, transparent, var(--sb-divider) 25%, var(--sb-divider) 75%, transparent);
     }
-    .sb-org-switch {
-        width: 100%; display: flex; align-items: center; gap: 10px;
-        padding: 8px 9px; border-radius: 11px; cursor: pointer;
-        background: none; border: none;
-        font-family: var(--font-sans); text-align: left;
-        transition: background 0.22s var(--ease-ios);
-    }
-    .sb-org-switch:hover { background: rgba(255,255,255,0.06); }
-    .sb-org-switch[aria-expanded="true"] { background: rgba(255,255,255,0.1); }
-    .sb-org-avatar {
-        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)); color: #fff;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.76rem; font-weight: 800;
-    }
-    .sb-org-info {
-        display: flex; flex-direction: column; min-width: 0; flex: 1;
-        transition: opacity 0.2s var(--ease-ios);
-    }
-    .sb-org-name { font-size: 0.84rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-plan { font-size: 0.68rem; color: rgba(255,255,255,0.42); margin-top: 1px; }
-    .sb-org-caret {
-        width: 15px; height: 15px; flex-shrink: 0; color: rgba(255,255,255,0.45);
-        transition: transform 0.25s var(--ease-spring), opacity 0.2s var(--ease-ios);
-    }
-    .sb-org-switch[aria-expanded="true"] .sb-org-caret { transform: rotate(180deg); }
 
-    /* Dropdown — abre hacia ABAJO (la cuenta está arriba) */
-    .sb-org-menu {
-        position: absolute; top: calc(100% + 4px); bottom: auto; left: 0; right: 0; z-index: 60;
-        background: #11233f; border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -18px rgba(0,0,0,0.7), inset 0 0 0 0.5px rgba(255,255,255,0.1);
-        animation: sb-menu-in 0.18s var(--ease-spring);
+    /* ── Nav ── */
+    .sb-nav {
+        display: flex; flex-direction: column;
+        overflow-y: auto; flex: 1; min-height: 0;
+        scrollbar-width: none;
     }
-    .sb-org-menu[hidden] { display: none; }
-    @keyframes sb-menu-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .sb-org-menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 9px 9px; }
-    .sb-org-menu-id { display: flex; flex-direction: column; min-width: 0; }
-    .sb-org-menu-id strong { font-size: 0.82rem; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-org-menu-id span { font-size: 0.66rem; color: rgba(255,255,255,0.42); }
-    .sb-menu-sep { height: 1px; background: var(--sb-divider); margin: 5px 4px; }
-    .sb-menu-item {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 9px 10px; border-radius: 9px; cursor: pointer;
-        background: none; border: none; text-align: left; text-decoration: none;
-        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 500;
-        color: var(--sb-menu-text); transition: background 0.18s, color 0.18s;
-    }
-    .sb-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; color: var(--sb-menu-muted); }
-    .sb-menu-item:hover { background: var(--sb-menu-hover); color: var(--sb-text-active); }
-    .sb-menu-item:hover svg { color: var(--sb-text-active); }
-    .sb-menu-danger { color: var(--color-danger); }
-    .sb-menu-danger:hover { background: rgba(239,68,68,0.12); color: var(--color-danger); }
+    .sb-nav::-webkit-scrollbar { display: none; }
+    .sb-group { display: flex; flex-direction: column; }
+    .sb-group + .sb-group { margin-top: 0.7rem; }
 
-    /* ── Acciones móviles del drawer (crear / ayuda / config) — solo móvil ── */
-    .sb-mobile-actions { display: none; }
-    .sb-create-wrap { position: relative; }
-    .sb-create {
-        display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-        padding: 11px 14px; border: none; border-radius: 11px; cursor: pointer;
-        background: #2563eb; color: #fff;
-        font-family: var(--font-sans); font-size: 0.9rem; font-weight: 650;
-        box-shadow: 0 8px 22px -10px rgba(37,99,235,0.8);
-        transition: transform 0.2s var(--ease-spring), background 0.2s;
+    .sb-group-label, .sb-group-head {
+        display: flex; align-items: center; gap: 4px;
+        padding: 4px 10px 4px; margin-bottom: 1px;
+        font-family: inherit; font-size: 0.72rem; font-weight: 500; letter-spacing: 0;
+        color: var(--sb-label);
     }
-    .sb-create svg { width: 18px; height: 18px; }
-    .sb-create:active { transform: scale(0.98); }
-    .sb-create-menu {
-        position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
-        background: var(--sb-menu-bg);
-        backdrop-filter: blur(44px) saturate(1.9);
-        -webkit-backdrop-filter: blur(44px) saturate(1.9);
-        border: 1px solid var(--sb-menu-border);
-        border-radius: 13px; padding: 6px;
-        box-shadow: var(--sb-menu-shadow);
-        animation: sb-menu-in 0.18s var(--ease-spring);
+    .sb-group-label {
+        width: fit-content; max-width: 100%;
+        background: none; border: none; border-radius: 6px; cursor: pointer; text-align: left;
+        transition: color 0.12s;
     }
-    .sb-create-menu[hidden] { display: none; }
-    .sb-action-row {
-        position: relative; overflow: hidden;
-        display: flex; align-items: center; gap: 11px; width: 100%;
-        padding: 11px 12px; border-radius: 11px; cursor: pointer;
-        background: var(--sb-hover-bg); border: none; text-align: left; text-decoration: none;
-        font-family: var(--font-sans); font-size: 0.86rem; font-weight: 500;
-        color: var(--sb-text-strong); transition: background 0.18s, color 0.18s;
-    }
-    .sb-action-row svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; position: relative; z-index: 1; }
-    .sb-action-row span { position: relative; z-index: 1; }
-    .sb-action-row:hover, .sb-action-row:active { background: var(--sb-active-bg); color: var(--sb-text-active); }
+    .sb-group-label:hover { color: var(--sb-text-strong); }
+    .sb-group-chevron { width: 11px; height: 11px; opacity: 0; transition: opacity 0.12s, transform 0.2s var(--ease-ios); }
+    .sb-group-label:hover .sb-group-chevron,
+    .sb-group-label:focus-visible .sb-group-chevron,
+    .sb-group-label[aria-expanded="false"] .sb-group-chevron { opacity: 0.8; }
+    .sb-group-label[aria-expanded="false"] .sb-group-chevron { transform: rotate(-90deg); }
 
-    /* ── Footer (logo + toggle de panel) ── */
-    .sb-footer { padding-top: 0.7rem; display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem; gap: 0.4rem; }
-    .sb-foot-logo { height: 15px; width: auto; opacity: 0.55; transition: opacity 0.2s var(--ease-ios); }
-    /* Logo: navy sobre vidrio claro, white sobre vidrio navy (oscuro) */
-    .sb-foot-logo-white { display: none; }
-    html[data-theme="dark"] .sb-foot-logo-navy { display: none; }
-    html[data-theme="dark"] .sb-foot-logo-white { display: inline-block; opacity: 0.5; }
+    .sb-group-content { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.22s var(--ease-ios); }
+    .sb-group-inner { display: flex; flex-direction: column; gap: 1px; min-height: 0; overflow: hidden; }
+    .sb-group-label[aria-expanded="false"] + .sb-group-content { grid-template-rows: 0fr; }
+    /* Plegado también fuera del orden de tabulación, no solo fuera de la vista. */
+    .sb-group-label[aria-expanded="false"] + .sb-group-content .sb-group-inner { visibility: hidden; transition: visibility 0s 0.22s; }
 
-    /* ── Toggle estilo panel (Linear) ── */
-    .sb-toggle {
-        margin-left: auto; flex-shrink: 0;
-        width: 30px; height: 30px; border-radius: 9px;
+    /* ── Ítem: fila de 30px. El activo es un fondo fijo; el hover, otro más tenue. ── */
+    .sb-item {
+        position: relative;
+        display: flex; align-items: center; gap: 10px;
+        height: 30px; padding: 0 8px 0 10px; border-radius: 8px;
+        font-size: 0.84rem; font-weight: 500; letter-spacing: -0.005em;
+        color: var(--sb-text); text-decoration: none;
+        transition: background-color 0.12s, color 0.12s;
+    }
+    .sb-ico { width: 16px; height: 16px; flex-shrink: 0; opacity: var(--sb-icon-op); transition: opacity 0.12s; }
+    .sb-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-item:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
+    .sb-item:hover .sb-ico { opacity: 0.9; }
+    .sb-item.is-section { color: var(--sb-text-strong); }
+    .sb-item.active { background: var(--sb-active-bg); color: var(--sb-text-active); }
+    .sb-item.active .sb-ico, .sb-item.is-section .sb-ico { opacity: 1; }
+
+    /* Foco de teclado visible (regla 5). */
+    .sb-item:focus-visible,
+    .sb-group-label:focus-visible,
+    .sb-action-row:focus-visible,
+    .sb-pin-x:focus-visible,
+    .sb-plan:focus-visible,
+    .sb-toggle:focus-visible { outline: 2px solid var(--sb-text-active); outline-offset: -2px; }
+
+    /* Sub-páginas de una sección (Cobranza → Agente IA): con sangría y una guía. */
+    .sb-sub { position: relative; display: flex; flex-direction: column; gap: 1px; padding-left: 23px; }
+    .sb-sub::before {
+        content: ''; position: absolute; left: 17px; top: 3px; bottom: 3px; width: 1px;
+        background: var(--sb-divider);
+    }
+    .sb-sub .sb-item { padding-left: 12px; }
+    .sb-sub .sb-ico { display: none; }
+
+    /* ── Contador: solo lo accionable. Neutro gris; vencidas en tinte, no rojo sólido. ── */
+    .sb-badge {
+        flex-shrink: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 6px;
         display: inline-flex; align-items: center; justify-content: center;
-        background: var(--sb-toggle-bg); border: none; cursor: pointer;
-        box-shadow: var(--sb-toggle-shadow);
-        color: var(--sb-text);
-        transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios), box-shadow 0.22s var(--ease-ios), transform 0.2s var(--ease-spring);
+        font-size: 0.68rem; font-weight: 600; font-variant-numeric: tabular-nums;
+        color: var(--sb-badge-text); background: var(--sb-badge-bg);
     }
-    .sb-toggle:hover { background: var(--sb-toggle-hover-bg, rgba(0,0,0,0.05)); color: var(--sb-text-strong); }
-    .sb-toggle:active { transform: scale(0.92); }
-    .sb-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sb-text-active); }
-    
-    .sb-toggle-ico { width: 18px; height: 18px; transition: transform 0.4s var(--ease-spring); }
-    
-    /* Relleno interno animado por GSAP */
-    .sb-toggle-fill {
-        opacity: 1;
+    .sb-badge.danger { color: var(--sb-danger-text); background: var(--sb-danger-bg); }
+    .sb-sr {
+        position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
     }
-    :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
 
+    /* Atajo `G` + letra: aparece al detenerse sobre el ítem, no al pasar de largo. */
+    .sb-shortcut { display: inline-flex; gap: 2px; opacity: 0; transition: opacity 0.12s; }
+    .sb-item:hover .sb-shortcut { opacity: 1; transition-delay: 0.45s; }
+    .sb-shortcut kbd, .sb-tip :global(kbd) {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 16px; height: 16px; padding: 0 3px; border-radius: 4px;
+        font-family: inherit; font-size: 0.62rem; font-weight: 600; line-height: 1;
+        color: var(--sb-label); background: var(--sb-badge-bg);
+    }
+
+    /* ── Fijados ── */
+    .sb-pins[hidden] { display: none; }
+    .sb-pins + .sb-group { margin-top: 0.7rem; }
+    .sb-pin-list { display: flex; flex-direction: column; gap: 1px; }
+    .sb-pin-row { position: relative; display: flex; }
+    .sb-pin-row .sb-item { flex: 1; min-width: 0; }
+    .sb-pin-row:hover .sb-item { padding-right: 32px; }
+    .sb-pin-x {
+        position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+        width: 22px; height: 22px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: none; background: none; cursor: pointer; color: var(--sb-label);
+        opacity: 0; transition: opacity 0.12s, color 0.12s, background-color 0.12s;
+    }
+    .sb-pin-x svg { width: 12px; height: 12px; }
+    .sb-pin-row:hover .sb-pin-x, .sb-pin-x:focus-visible { opacity: 1; }
+    .sb-pin-x:hover { color: var(--sb-text-strong); background: var(--sb-hover-bg); }
+    .sb-pin-row.dragging { opacity: 0.4; }
+    .sb-pin-row.drop-before::before, .sb-pin-row.drop-after::after {
+        content: ''; position: absolute; left: 8px; right: 8px; height: 2px; border-radius: 2px;
+        background: var(--sb-text-active); pointer-events: none;
+    }
+    .sb-pin-row.drop-before::before { top: -1px; }
+    .sb-pin-row.drop-after::after { bottom: -1px; }
+    .sb-pin-row.is-new { animation: sb-pin-in 0.2s var(--ease-ios); }
+    @keyframes sb-pin-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+
+    /* ── Pie: medidor del plan + colapsar ── */
+    .sb-footer { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.6rem; }
+    .sb-footer-row { display: flex; justify-content: flex-end; }
+    .sb-plan {
+        display: flex; flex-direction: column; gap: 6px;
+        padding: 9px 10px; border-radius: 10px;
+        text-decoration: none; background: var(--sb-hover-bg);
+        transition: background-color 0.12s;
+    }
+    .sb-plan:hover { background: var(--sb-active-bg); }
+    .sb-plan-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.74rem; color: var(--sb-text); }
+    .sb-plan-count { color: var(--sb-text-strong); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .sb-plan-bar { height: 4px; border-radius: 2px; background: var(--sb-badge-bg); overflow: hidden; }
+    .sb-plan-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--sb-text-active); }
+    .sb-plan.warn .sb-plan-bar > span { background: #d97706; }
+    .sb-plan.full .sb-plan-bar > span { background: var(--color-danger); }
+    .sb-plan-cta { font-size: 0.74rem; font-weight: 600; color: var(--sb-text-active); }
+
+    /* Invitar al equipo */
+    .sb-invite {
+        flex: 1; min-width: 0;
+        display: flex; align-items: center; gap: 8px;
+        height: 28px; padding: 0 8px; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 500; color: var(--sb-text); text-decoration: none;
+        transition: background-color 0.12s, color 0.12s;
+    }
+    .sb-invite svg { width: 15px; height: 15px; flex-shrink: 0; opacity: var(--sb-icon-op); }
+    .sb-invite span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-invite:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
+    .sb-invite:hover svg { opacity: 1; }
+    .sb-invite:focus-visible { outline: 2px solid var(--sb-text-active); outline-offset: -2px; }
+
+    /* ── Botón de colapsar: icono animado ──
+       Estado base = cómo está la sidebar (panel ancho / angosto). Hover = vista
+       previa de lo que hará el clic, con rebote de resorte; el chevron entra
+       señalando la dirección. Tras el clic (`.just-toggled`) no se muestra la
+       vista previa contraria hasta salir: el chevron gira para confirmar. */
+    .sb-toggle {
+        --tgl-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        flex-shrink: 0; margin-left: auto;
+        width: 28px; height: 28px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: none; border: none; cursor: pointer; color: var(--sb-text);
+        transition: background-color 0.12s, color 0.12s;
+    }
+    .sb-toggle:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
+    .sb-tgl { width: 18px; height: 18px; overflow: visible; transition: transform 0.18s var(--tgl-spring); }
+    .sb-toggle:active .sb-tgl { transform: scale(0.86); transition-duration: 0.08s; }
+    .sb-tgl-pane { transform-box: fill-box; transform-origin: left center; transition: transform 0.5s var(--tgl-spring); }
+    .sb-tgl-div { transition: transform 0.5s var(--tgl-spring); }
+    .sb-tgl-chev {
+        transform-box: fill-box; transform-origin: center;
+        opacity: 0; transform: translateX(2.5px);
+        transition: opacity 0.16s ease-out, transform 0.45s var(--tgl-spring);
+    }
+    /* Expandida + hover: el panel se encoge (eso hará el clic) y el chevron apunta a la izquierda. */
+    .sb-toggle:not(.just-toggled):hover .sb-tgl-pane,
+    .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-pane { transform: scaleX(0.5); }
+    .sb-toggle:not(.just-toggled):hover .sb-tgl-div,
+    .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-div { transform: translateX(-3px); }
+    .sb-toggle:hover .sb-tgl-chev,
+    .sb-toggle:focus-visible .sb-tgl-chev { opacity: 1; transform: none; }
+    /* Recién expandida: el chevron señala a la derecha y da un impulso en esa dirección. */
+    .sb-toggle.just-toggled .sb-tgl-chev { opacity: 1; transform: rotate(180deg); animation: sb-tgl-dash-r 0.42s var(--tgl-spring); }
+    @keyframes sb-tgl-dash-r {
+        0% { transform: rotate(180deg); }
+        35% { transform: translateX(3px) rotate(180deg); }
+        100% { transform: rotate(180deg); }
+    }
+    @keyframes sb-tgl-dash-l {
+        0% { transform: none; }
+        35% { transform: translateX(-3px); }
+        100% { transform: none; }
+    }
+
+    /* ── Tooltip del modo colapsado (lo posiciona el script) ── */
+    .sb-tip {
+        position: fixed; left: 0; top: 0; z-index: 900;
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 8px 6px 10px; border-radius: 8px;
+        background: #0f1a2b; color: #fff;
+        font-size: 0.76rem; font-weight: 500; white-space: nowrap;
+        box-shadow: 0 10px 28px -10px rgba(0,0,0,0.5), inset 0 0 0 0.5px rgba(255,255,255,0.08);
+        pointer-events: none; opacity: 0; transform: translateX(-3px);
+        transition: opacity 0.1s, transform 0.1s;
+    }
+    .sb-tip.show { opacity: 1; transform: none; }
+    .sb-tip :global(.sb-tip-sub) { color: rgba(255,255,255,0.6); }
+    .sb-tip :global(kbd) { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.14); }
+    .sb-tip :global(.sb-tip-keys) { display: inline-flex; gap: 2px; }
+
+    /* ── Rail colapsado (solo escritorio) ── */
     @media (min-width: 881px) {
-    :global(.sb-collapsed) .sidebar { padding-left: 0; padding-right: 0; align-items: stretch; }
-    :global(.sb-collapsed) .sb-nav { gap: 0.9rem; align-items: center; }
-    :global(.sb-collapsed) .sb-group { width: 100%; align-items: center; gap: 5px; }
-    /* Líneas divisorias de grupos en modo colapsado -> Tiny dot */
-    :global(.sb-collapsed) .sb-group + .sb-group { position: relative; margin-top: 10px; padding-top: 10px; }
-    :global(.sb-collapsed) .sb-group + .sb-group::before {
-        content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%;
-        background: var(--sb-divider); opacity: 0.5;
-    }
-    /* Fade-out de labels — no display:none para que la transition funcione.
-       Los group-labels SÍ colapsan en alto/padding (si no, dejan huecos vacíos). */
-    :global(.sb-collapsed) .sb-item-label,
-    :global(.sb-collapsed) .sb-shortcut { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-    :global(.sb-collapsed) .sb-group-label { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; pointer-events: none; border: none; }
-    :global(.sb-collapsed) .sb-group-content { grid-template-rows: 1fr !important; }
-    :global(.sb-collapsed) .sb-group-inner { overflow: visible !important; }
-    :global(.sb-collapsed) .sb-org-info,
-    :global(.sb-collapsed) .sb-org-caret { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-    :global(.sb-collapsed) .sb-foot-logo { opacity: 0; width: 0; overflow: hidden; }
-    :global(.sb-collapsed) .sb-collapse { display: none; }
-    :global(.sb-collapsed) .sb-account { padding: 0; padding-bottom: 0.4rem; margin-bottom: 0.4rem; }
-    :global(.sb-collapsed) .sb-account::after { display: none; }
-    :global(.sb-collapsed) .sb-org-switch { justify-content: center; padding: 6px; }
-    :global(.sb-collapsed) .sb-org-menu { left: 0; right: auto; width: 210px; top: calc(100% + 4px); bottom: auto; }
-    /* Ítems = cuadros uniformes grandes, perfectamente centrados en el rail */
-    :global(.sb-collapsed) .sb-item { justify-content: center; gap: 0; padding: 0; width: 42px; height: 42px; border-radius: 12px; margin: 0 auto; transition: transform 0.25s var(--ease-spring), filter 0.25s, color 0.2s; }
-    :global(.sb-collapsed) .sb-item svg { width: 20px; height: 20px; opacity: 0.7; transition: transform 0.4s var(--ease-spring), opacity 0.25s, filter 0.25s; }
-    
-    /* Hover state for icons */
-    :global(.sb-collapsed) .sb-item:hover svg { opacity: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-    
-    /* Active icon gets a super clean iOS-style selection */
-    :global(.sb-collapsed) .sb-item.active { background: transparent; }
-    :global(.sb-collapsed) .sb-item.active svg { opacity: 1; }
-    
-    /* Center the Account Avatar perfectly */
-    :global(.sb-collapsed) .sb-org-avatar { width: 42px; height: 42px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    
-    /* Indicador de vidrio → cuadrado perfecto detrás del ícono activo (estilo iPadOS Dock) */
-    :global(.sb-collapsed) .sb-indicator { left: 50%; right: auto; width: 42px; margin-left: -21px; border-radius: 12px; background: var(--sb-active-bg); box-shadow: none; }
-    
-    :global(.sb-collapsed) .sb-pin-row { justify-content: center; }
-    :global(.sb-collapsed) .sb-pin-row .sb-item { width: 42px; height: 42px; border-radius: 12px; }
-    /* Badge → punto cuando está colapsado (con resplandor) */
-    :global(.sb-collapsed) .sb-badge {
-        position: absolute; top: 6px; right: 8px; min-width: 0; width: 8px; height: 8px;
-        padding: 0; font-size: 0; border: 1.5px solid var(--surface);
-    }
-    :global(.sb-collapsed) .sb-badge.danger { box-shadow: 0 0 6px var(--color-danger); }
-    :global(.sb-collapsed) .sb-expand { display: inline-flex; }
-    
-    /* Toggle circular abajo */
-    :global(.sb-collapsed) .sb-footer { display: flex; justify-content: center; padding-left: 0; padding-bottom: 0.5rem; }
-    :global(.sb-collapsed) .sb-toggle { margin: 0 auto; width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    
-    /* Tooltip Premium al hover en modo colapsado - Elastic Spring */
-    :global(.sb-collapsed) .sb-item::after {
-        content: attr(title); position: absolute; left: calc(100% + 14px); top: 50%; 
-        transform-origin: left center;
-        transform: translate(0, -50%) scale(0.6);
-        background: rgba(17, 35, 63, 0.85);
-        backdrop-filter: blur(12px) saturate(1.5);
-        -webkit-backdrop-filter: blur(12px) saturate(1.5);
-        color: #fff; font-size: 0.78rem; font-weight: 650; white-space: nowrap;
-        padding: 7px 12px; border-radius: 10px; pointer-events: none; opacity: 0; z-index: 70;
-        box-shadow: 0 12px 34px -8px rgba(0,0,0,0.6), inset 0 0 0 0.5px rgba(255,255,255,0.15);
-        transition: opacity 0.15s var(--ease-ios), transform 0.2s var(--ease-ios);
-    }
-    :global(.sb-collapsed) .sb-item:hover::after { 
-        opacity: 1; 
-        transform: translate(0, -50%) scale(1); 
-        transition: opacity 0.2s var(--ease-ios) 0.05s, transform 0.4s var(--ease-spring) 0.05s; 
-    }
+        :global(.sb-collapsed) .sidebar { padding-left: 0; padding-right: 0; }
+        :global(.sb-collapsed) .sb-nav { align-items: center; }
+        :global(.sb-collapsed) .sb-group { width: 100%; align-items: center; }
+        :global(.sb-collapsed) .sb-group + .sb-group,
+        :global(.sb-collapsed) .sb-pins + .sb-group { position: relative; margin-top: 8px; padding-top: 8px; }
+        :global(.sb-collapsed) .sb-group + .sb-group::before,
+        :global(.sb-collapsed) .sb-pins + .sb-group::before {
+            content: ''; position: absolute; top: 0; left: 50%; width: 16px; margin-left: -8px; height: 1px;
+            background: var(--sb-divider);
+        }
+        :global(.sb-collapsed) .sb-group-label,
+        :global(.sb-collapsed) .sb-group-head { display: none; }
+        /* En el rail se ven todos los ítems: plegar un grupo es cosa del menú ancho. */
+        :global(.sb-collapsed) .sb-group-label + .sb-group-content { grid-template-rows: 1fr; }
+        :global(.sb-collapsed) .sb-group-label + .sb-group-content .sb-group-inner { visibility: visible; }
+        :global(.sb-collapsed) .sb-group-inner { align-items: center; }
+        :global(.sb-collapsed) .sb-item { width: 40px; height: 36px; padding: 0; gap: 0; justify-content: center; border-radius: 10px; }
+        :global(.sb-collapsed) .sb-ico { width: 18px; height: 18px; }
+        :global(.sb-collapsed) .sb-item-label,
+        :global(.sb-collapsed) .sb-shortcut,
+        :global(.sb-collapsed) .sb-pin-x,
+        :global(.sb-collapsed) .sb-plan { display: none; }
+        :global(.sb-collapsed) .sb-pin-row:hover .sb-item { padding-right: 0; }
+        :global(.sb-collapsed) .sb-sub { padding-left: 0; }
+        :global(.sb-collapsed) .sb-sub .sb-item { padding: 0; }
+        :global(.sb-collapsed) .sb-sub::before { display: none; }
+        :global(.sb-collapsed) .sb-sub .sb-ico { display: block; }
+        /* Contador → punto */
+        :global(.sb-collapsed) .sb-badge {
+            position: absolute; top: 6px; right: 7px;
+            min-width: 0; width: 7px; height: 7px; padding: 0; border-radius: 50%;
+            font-size: 0; background: var(--sb-text);
+            box-shadow: 0 0 0 2px var(--sb-bg-solid);
+        }
+        :global(.sb-collapsed) .sb-badge.danger { background: var(--color-danger); }
+        :global(.sb-collapsed) .sb-footer-row { flex-direction: column; align-items: center; gap: 4px; }
+        :global(.sb-collapsed) .sb-toggle { margin-left: 0; }
+        :global(.sb-collapsed) .sb-invite { flex: none; width: 36px; height: 32px; padding: 0; justify-content: center; }
+        :global(.sb-collapsed) .sb-invite span { display: none; }
+        /* Colapsada: panel angosto; hover lo abre (eso hará el clic) y el chevron apunta a la derecha. */
+        :global(.sb-collapsed) .sb-tgl-pane { transform: scaleX(0.5); }
+        :global(.sb-collapsed) .sb-tgl-div { transform: translateX(-3px); }
+        :global(.sb-collapsed) .sb-tgl-chev { transform: translateX(-2.5px) rotate(180deg); }
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):hover .sb-tgl-pane,
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-pane { transform: scaleX(1.5); }
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):hover .sb-tgl-div,
+        :global(.sb-collapsed) .sb-toggle:not(.just-toggled):focus-visible .sb-tgl-div { transform: translateX(3px); }
+        :global(.sb-collapsed) .sb-toggle:hover .sb-tgl-chev,
+        :global(.sb-collapsed) .sb-toggle:focus-visible .sb-tgl-chev { transform: rotate(180deg); }
+        /* Recién colapsada: el chevron señala a la izquierda e impulsa hacia allá. */
+        :global(.sb-collapsed) .sb-toggle.just-toggled .sb-tgl-chev { transform: none; animation-name: sb-tgl-dash-l; }
+        /* Cuenta en el rail: mismo aire arriba (padding del aside) que abajo, y la
+           línea corta y centrada como la de los grupos, no a todo lo ancho. */
+        :global(.sb-collapsed) .sb-account { display: flex; justify-content: center; padding-bottom: 0.9rem; margin-bottom: 0.5rem; }
+        :global(.sb-collapsed) .sb-account::after { left: 50%; right: auto; width: 16px; margin-left: -8px; background: var(--sb-divider); }
     }
 
-    /* Hamburguesa + backdrop del drawer (solo móvil) */
+    @media (prefers-reduced-motion: reduce) {
+        .sb-tgl, .sb-tgl-pane, .sb-tgl-div, .sb-tgl-chev { transition: opacity 0.12s; animation: none !important; }
+    }
+
     .sb-backdrop { display: none; }
+    .sb-mobile-actions { display: none; }
 
-    /* ── MOBILE ── */
+    /* ── Móvil: drawer táctil (regla 16) ── */
     @media (max-width: 880px) {
-        /* Sidebar como drawer desplegable (se abre con la hamburguesa) */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100dvh; width: min(88vw, 360px); z-index: 300;
             transform: translate3d(calc(-100% - 1px), 0, 0);
@@ -510,30 +567,18 @@ const NAV_GROUPS = [
             pointer-events: none;
             transition: transform 0.34s var(--ease-spring), visibility 0s linear 0.34s;
             box-shadow: 0 0 60px rgba(0,0,0,0.4);
-            margin: 0 !important; border-radius: 0 22px 22px 0 !important;
-            /* El drawer SIEMPRE es ancho fijo, aunque el estado "colapsado" siga
-               persistido desde escritorio. */
-            align-items: stretch;
+            margin: 0; border-radius: 0 22px 22px 0;
             padding-left: 0.7rem; padding-right: 0.7rem;
             /* Respeta el notch arriba y la barra de inicio abajo (iPhone) */
             padding-top: calc(1.2rem + env(safe-area-inset-top));
             padding-bottom: calc(1rem + env(safe-area-inset-bottom));
             overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+            /* Sobre el fondo oscurecido el vidrio se veía gris: el drawer es sólido. */
+            background: var(--sb-bg-solid);
         }
-        /* En móvil el drawer ignora por completo el modo colapsado: restaura ancho,
-           ítems y TODO lo que el colapso esconde (labels, grupos, org, logo). */
-        :global(.sb-collapsed) .sidebar { width: min(88vw, 360px); }
-        :global(.sb-collapsed) .sb-item { width: auto; height: auto; justify-content: flex-start; }
-        :global(.sb-collapsed) .sb-item-label,
-        :global(.sb-collapsed) .sb-org-info,
-        :global(.sb-collapsed) .sb-org-caret,
-        :global(.sb-collapsed) .sb-foot-logo {
-            opacity: 1; width: auto; overflow: visible; pointer-events: auto;
-        }
-        .sb-shortcut { display: none !important; }
-        :global(.sb-collapsed) .sb-group-label {
-            opacity: 1; height: auto; overflow: visible; pointer-events: auto;
-        }
+        /* Un solo scroll (el del drawer): el nav anidado escondía los últimos grupos. */
+        .sb-nav { flex: none; overflow: visible; }
+        .sb-footer { margin-top: auto; }
         :global(.app-shell.nav-open) .sidebar {
             transform: translate3d(0, 0, 0);
             visibility: visible;
@@ -546,28 +591,70 @@ const NAV_GROUPS = [
             opacity: 0; visibility: hidden; transition: opacity 0.3s var(--ease-ios), visibility 0s 0.3s;
         }
         :global(.app-shell.nav-open) .sb-backdrop { opacity: 1; visibility: visible; transition: opacity 0.3s var(--ease-ios); }
-        /* En el drawer móvil no aplica colapsar (es ancho fijo) */
-        .sb-collapse { display: none; }
-        /* Acciones del drawer (crear / ayuda / config) — visibles solo en móvil */
-        .sb-mobile-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
-        .sb-action-row { padding: 14px 14px; font-size: 0.95rem; gap: 14px; border-radius: 14px; }
-        .sb-action-row svg { width: 20px; height: 20px; }
-        
-        /* Native app tap-targets & spacing */
-        .sb-item { padding: 12px 14px; font-size: 0.95rem; gap: 14px; border-radius: 14px; }
-        .sb-item svg { width: 20px; height: 20px; }
-        :global(.sb-collapsed) .sb-item { padding: 12px 14px !important; }
-        .sb-group-label { padding: 16px 11px 10px; font-size: 0.9rem; }
-        .sb-nav { gap: 1.5rem; }
+
+        .sb-mobile-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.2rem; }
+        .sb-action-row {
+            display: flex; align-items: center; gap: 14px; width: 100%;
+            min-height: 48px; padding: 0 14px; border-radius: 14px; cursor: pointer;
+            background: var(--sb-hover-bg); border: none; text-align: left; text-decoration: none;
+            font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500;
+            color: var(--sb-text-strong);
+        }
+        .sb-action-row svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.85; }
+        .sb-action-row:active { background: var(--sb-active-bg); }
+        .sb-theme .th-light, .sb-theme .th-dark, .sb-theme .th-system { display: none; }
+        :global(html:not([data-theme-mode="dark"]):not([data-theme-mode="system"])) .sb-theme .th-light,
+        :global(html[data-theme-mode="dark"]) .sb-theme .th-dark,
+        :global(html[data-theme-mode="system"]) .sb-theme .th-system { display: block; }
+        .sb-theme-mode { margin-left: auto; font-size: 0.85rem; color: var(--sb-text); }
+
+        /* Objetivos táctiles de 44px; sin atajos, sin tooltips, sin hover. */
+        .sb-item { height: 44px; padding: 0 14px; gap: 14px; border-radius: 12px; font-size: 0.95rem; }
+        .sb-ico { width: 20px; height: 20px; }
+        .sb-sub { padding-left: 29px; }
+        .sb-sub::before { left: 23px; }
+        .sb-group-label, .sb-group-head { padding: 10px 14px 6px; font-size: 0.8rem; }
+        .sb-group-chevron { opacity: 0.8; }
+        .sb-group + .sb-group { margin-top: 1rem; }
+        .sb-shortcut, .sb-tip { display: none; }
+        /* Sin hover no hay forma de descubrir la X: en el drawer siempre se ve. */
+        .sb-pin-row .sb-item { padding-right: 52px; }
+        .sb-pin-x { opacity: 1; width: 44px; height: 44px; right: 0; }
+        .sb-toggle { display: none; }
+        .sb-invite { height: 44px; padding: 0 14px; gap: 14px; font-size: 0.95rem; border-radius: 12px; }
+        .sb-invite svg { width: 20px; height: 20px; }
     }
 </style>
 
 <script>
-    import { iconInner, iconSvg } from '../../lib/icons';
+    import { iconInner } from '../../lib/icons';
     import { LEGACY_ROUTES } from '../../lib/informes';
-    import { gsap } from 'gsap';
 
-    // ── Drawer de la sidebar (móvil) ──
+    const mobileUi = () => window.matchMedia('(max-width: 880px)').matches;
+    const root = document.documentElement;
+    const nav = document.querySelector('.sb-nav') as HTMLElement | null;
+    const pinsEl = document.getElementById('sbPins') as HTMLElement | null;
+
+    // ── Preferencias del miembro (fijados + grupos plegados) → servidor ──
+    const PREFS_URL = '/api/app/sidebar-prefs';
+    const parse = <T,>(raw: string | undefined, fallback: T): T => { try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } };
+    type Pin = { href: string; label: string };
+    let pins: Pin[] = parse<Pin[]>(pinsEl?.dataset.pins, []);
+    let collapsed: string[] = parse<string[]>(pinsEl?.dataset.collapsed, []);
+    let saveTimer = 0;
+    const save = () => {
+        clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => {
+            fetch(PREFS_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pins, collapsed }),
+                keepalive: true,
+            }).catch(() => {}); // sin red: la UI ya refleja el cambio; se reintenta en el siguiente
+        }, 250);
+    };
+
+    // ── Drawer (móvil) ──
     function initDrawer() {
         const shell = document.querySelector('.app-shell');
         const burger = document.getElementById('navBurger');
@@ -579,287 +666,246 @@ const NAV_GROUPS = [
             document.body.style.overflow = open ? 'hidden' : '';
         });
         backdrop?.addEventListener('click', close);
-        shell.querySelectorAll('.sidebar a').forEach((a) => a.addEventListener('click', close));
+        document.querySelector('.sidebar')?.addEventListener('click', (e) => {
+            if ((e.target as HTMLElement).closest('a')) close();
+        });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    }
-
-    // ── Colapsar sidebar ──
-    function initSidebar() {
-        const root = document.documentElement;
-        // Colapsar / expandir (persistente).
-        const setCollapsed = (v: boolean) => {
-            root.classList.toggle('sb-collapsed', v);
-            try { localStorage.setItem('cord.sb.collapsed', v ? '1' : '0'); } catch (e) {}
-        };
-        document.getElementById('sbToggleFloating')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setCollapsed(!root.classList.contains('sb-collapsed'));
-        });
-    }
-
-    // ── Indicador deslizante del sidebar (segmented control tipo iOS) ──
-    function initSidebarIndicator() {
-        const nav = document.querySelector('.sb-nav');
-        const ind = document.getElementById('sbIndicator');
-        if (!nav || !ind) return;
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const el = ind as HTMLElement;
-        const activeItem = () => nav.querySelector('.sb-item.active') as HTMLElement | null;
-        const moveTo = (it: HTMLElement | null, animate = true) => {
-            if (!it) { el.style.opacity = '0'; return; }
-            if (!animate || reduce) el.style.transition = 'none';
-            
-            // Usamos getBoundingClientRect para ser 100% precisos sin importar los contenedores con position:relative (acordeones)
-            const navRect = nav.getBoundingClientRect();
-            const itRect = it.getBoundingClientRect();
-            const relativeTop = itRect.top - navRect.top + nav.scrollTop;
-            
-            el.style.top = relativeTop + 'px';
-            el.style.height = itRect.height + 'px';
-            el.style.opacity = '1';
-            
-            if (!animate || reduce) { void el.offsetHeight; el.style.transition = ''; }
-        };
-        const settle = () => moveTo(activeItem(), false);
-        // Delegación: cubre también los "Fijados" inyectados después.
-        let isHovering = false;
-        nav.addEventListener('mouseover', (e) => {
-            const it = (e.target as HTMLElement).closest('.sb-item') as HTMLElement | null;
-            if (it && nav.contains(it)) {
-                isHovering = true;
-                moveTo(it);
-            }
-        });
-        nav.addEventListener('mouseleave', () => {
-            isHovering = false;
-            moveTo(activeItem());
-        });
-        window.addEventListener('resize', settle);
-        document.getElementById('sbToggleFloating')?.addEventListener('click', () => setTimeout(settle, 320));
-        
-        // El acordeón también necesita reposicionar el indicador al animar
-        document.querySelectorAll('.sb-group-label').forEach(btn => {
-            btn.addEventListener('click', () => {
-                let ticks = 0;
-                const int = setInterval(() => { if (!isHovering) settle(); if (++ticks > 20) clearInterval(int); }, 20); // 400ms tracking
-            });
-        });
-
-        // ResizeObserver para atrapar cambios de layout (fuentes, expansiones, etc)
-        if (typeof ResizeObserver !== 'undefined') {
-            const obs = new ResizeObserver(() => { if (!isHovering) settle(); });
-            obs.observe(nav);
-        }
-
-        // Posición inicial: poll de alta frecuencia durante 800ms para trackear la animación de entrada (sb-slide-in)
-        nav.classList.add('sb-ind-ready');
-        let initialTicks = 0;
-        const initialInt = setInterval(() => {
-            if (!isHovering) settle();
-            if (++initialTicks > 40) clearInterval(initialInt); // 40 * 20ms = 800ms
-        }, 20);
-    }
-
-    // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
-    function initPins() {
-        const PIN_KEY = 'cord.pins.v1';
-        const PIN_ICON = iconInner('pin');
-        const mount = document.getElementById('sbPins');
-        const pinBtn = document.getElementById('phPin');
-        const eA = (s: string) => String(s).replace(/"/g, '&quot;');
-        const eH = (s: string) => String(s).replace(/</g, '&lt;');
-        const getPins = (): any[] => { try { return JSON.parse(localStorage.getItem(PIN_KEY) || '[]'); } catch { return []; } };
-        const setPins = (p: any[]) => { try { localStorage.setItem(PIN_KEY, JSON.stringify(p)); } catch (e) {} };
-        const migrated = getPins().map((pin) => ({ ...pin, href: LEGACY_ROUTES[pin.href as keyof typeof LEGACY_ROUTES] || pin.href }));
-        if (JSON.stringify(migrated) !== JSON.stringify(getPins())) setPins(migrated);
-        const hrefKey = (href: string) => {
-            const url = new URL(href, location.origin);
-            return url.pathname === '/app/informes' ? `${url.pathname}?r=${url.searchParams.get('r') || 'resumen'}` : url.pathname;
-        };
-        const currentHref = () => hrefKey(location.href);
-        const current = () => ({ href: currentHref(), label: (document.querySelector('.ph-title')?.textContent || document.title).trim() });
-        const isPinned = () => getPins().some((p) => hrefKey(p.href) === currentHref());
-        const pinLabelOn = (mount as HTMLElement)?.dataset.pinOn || 'Quitar del menú';
-        const pinLabelOff = (mount as HTMLElement)?.dataset.pinOff || 'Fijar en el menú';
-        const pinLabelRemove = (mount as HTMLElement)?.dataset.pinRemove || 'Quitar';
-        const syncBtn = () => { if (pinBtn) { const on = isPinned(); pinBtn.classList.toggle('pinned', on); pinBtn.setAttribute('title', on ? pinLabelOn : pinLabelOff); } };
-        const renderMount = () => {
-            if (!mount) return;
-            let pins = getPins();
-            if (!pins.length) { (mount as HTMLElement).hidden = true; mount.innerHTML = ''; return; }
-            (mount as HTMLElement).hidden = false;
-            const pinsLabel = (mount as HTMLElement).dataset.label || 'Pinned';
-            let html = `<span class="sb-group-label">${eH(pinsLabel)}</span>`;
-            pins.forEach((p, idx) => {
-                const active = hrefKey(p.href) === currentHref() ? ' active' : '';
-                html += `<div class="sb-pin-row" draggable="true" data-idx="${idx}"><a href="${eA(p.href)}" class="sb-item${active}" title="${eA(p.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PIN_ICON}</svg><span class="sb-item-label">${eH(p.label)}</span></a><button class="sb-pin-x" data-href="${eA(p.href)}" aria-label="${eA(pinLabelRemove)}">" + iconSvg('x', '', 2.2) + "</button></div>`;
-            });
-            mount.innerHTML = html;
-            
-            // Lógica de eliminación
-            mount.querySelectorAll('.sb-pin-x').forEach((b) => b.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                const href = (b as HTMLElement).dataset.href;
-                setPins(getPins().filter((x) => x.href !== href)); renderMount(); syncBtn();
-            }));
-
-            // Drag & Drop nativo de HTML5
-            let dragSrcEl: HTMLElement | null = null;
-            mount.querySelectorAll('.sb-pin-row').forEach((row: Element) => {
-                const el = row as HTMLElement;
-                el.addEventListener('dragstart', (e) => {
-                    dragSrcEl = el;
-                    e.dataTransfer!.effectAllowed = 'move';
-                    el.classList.add('dragging');
-                });
-                el.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer!.dropEffect = 'move';
-                    if (dragSrcEl === el) return;
-                    const rect = el.getBoundingClientRect();
-                    const mid = rect.top + rect.height / 2;
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                    el.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
-                });
-                el.addEventListener('dragleave', () => {
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                });
-                el.addEventListener('drop', (e) => {
-                    e.stopPropagation();
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
-                    if (dragSrcEl !== el && dragSrcEl) {
-                        const srcIdx = parseInt(dragSrcEl.dataset.idx || '0');
-                        const tgtIdx = parseInt(el.dataset.idx || '0');
-                        const rect = el.getBoundingClientRect();
-                        const isTop = e.clientY < (rect.top + rect.height / 2);
-                        
-                        let newPins = [...pins];
-                        const [movedItem] = newPins.splice(srcIdx, 1);
-                        
-                        // Ajustar índice de destino para no off-by-one
-                        let finalIdx = tgtIdx;
-                        if (srcIdx < tgtIdx && isTop) finalIdx--;
-                        if (srcIdx > tgtIdx && !isTop) finalIdx++;
-                        
-                        newPins.splice(finalIdx, 0, movedItem);
-                        setPins(newPins);
-                        renderMount();
-                        syncBtn();
-                    }
-                });
-                el.addEventListener('dragend', () => {
-                    el.classList.remove('dragging');
-                    mount.querySelectorAll('.sb-pin-row').forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
-                });
-            });
-        };
-        // Los textos salen del mismo mount que ya trae los demás (data-* servidos
-        // por t()), no de literales: este toast se dispara con la tecla X en
-        // cualquier página de /app y era el último español del sidebar.
-        const toastOn = (mount as HTMLElement)?.dataset.pinToastOn || '';
-        const toastOff = (mount as HTMLElement)?.dataset.pinToastOff || '';
-        const toggle = () => {
-            const c = current(); const pins = getPins(); const has = pins.some((p) => p.href === c.href);
-            if (has) { setPins(pins.filter((p) => p.href !== c.href)); if (toastOn) (window as any).cordToast?.(toastOn); }
-            else { pins.push(c); setPins(pins); if (toastOff) (window as any).cordToast?.(toastOff, 'ok'); }
-            renderMount(); syncBtn();
-        };
-        pinBtn?.addEventListener('click', toggle);
-        (window as any).__cordTogglePin = toggle;
-        renderMount(); syncBtn();
-    }
-
-    // ── Menú "Crear" genérico (botón + popover) — reusado por móvil y desktop ──
-    function initCreateMenu(btnId: string, menuId: string) {
-        const btn = document.getElementById(btnId);
-        const menu = document.getElementById(menuId);
-        if (!btn || !menu) return;
-        const m = menu as HTMLElement;
-        const closeMenu = () => { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const willOpen = m.hidden;
-            m.hidden = !willOpen;
-            btn.setAttribute('aria-expanded', String(willOpen));
-        });
-        document.addEventListener('click', (e) => {
-            if (!m.hidden && !menu.contains(e.target as Node) && !btn.contains(e.target as Node)) closeMenu();
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
-    }
-
-    // ── Acciones móviles del drawer (botón "+" + Ayuda) ──
-    function initMobileActions() {
-
-        // Ayuda: cierra el drawer y abre el panel de ayuda (reusa #helpBtn)
         document.getElementById('sbHelp')?.addEventListener('click', () => {
-            const shell = document.querySelector('.app-shell');
-            shell?.classList.remove('nav-open');
-            document.body.style.overflow = '';
+            close();
             document.getElementById('helpBtn')?.click();
         });
     }
 
-    // ── Acordeones de Grupos ──
-    function initGroupAccordions() {
-        document.querySelectorAll('.sb-group-label').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (document.documentElement.classList.contains('sb-collapsed')) return;
-                const expanded = btn.getAttribute('aria-expanded') === 'true';
-                btn.setAttribute('aria-expanded', String(!expanded));
-                setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 350);
+    // ── Colapsar (persistente por dispositivo: es una preferencia de pantalla) ──
+    function initCollapse() {
+        const btn = document.getElementById('sbToggleFloating');
+        const sync = () => btn?.setAttribute('aria-expanded', String(!root.classList.contains('sb-collapsed')));
+        // Confirmación del icono (chevron con impulso). Dura su animación aunque el
+        // cursor ya no esté encima: al colapsar, el botón se mueve al centro del
+        // rail y el cursor queda fuera. Si sigue encima, espera a que salga para no
+        // saltar en seco a la vista previa contraria.
+        let flashTimer = 0;
+        let flashing = false;
+        const flash = () => {
+            if (!btn) return;
+            btn.classList.remove('just-toggled');
+            void btn.getBoundingClientRect(); // reinicia la animación si se repite
+            btn.classList.add('just-toggled');
+            flashing = true;
+            clearTimeout(flashTimer);
+            flashTimer = window.setTimeout(() => {
+                flashing = false;
+                if (!btn.matches(':hover')) btn.classList.remove('just-toggled');
+            }, 750);
+        };
+        // Pasada la confirmación, salir del botón devuelve la vista previa normal.
+        btn?.addEventListener('mouseleave', () => { if (!flashing) btn.classList.remove('just-toggled'); });
+        const toggle = () => {
+            const v = !root.classList.contains('sb-collapsed');
+            root.classList.toggle('sb-collapsed', v);
+            try { localStorage.setItem('cord.sb.collapsed', v ? '1' : '0'); } catch (e) {}
+            hideTip();
+            sync();
+            flash();
+        };
+        btn?.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+        // Lo invoca el atajo `[` de AppLayout.
+        (window as any).__cordToggleSidebar = () => { if (!mobileUi()) toggle(); };
+        sync();
+    }
+
+    // ── Grupos plegables ──
+    function initGroups() {
+        document.querySelectorAll<HTMLButtonElement>('.sb-group-label').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (root.classList.contains('sb-collapsed') && !mobileUi()) return;
+                const open = btn.getAttribute('aria-expanded') !== 'true';
+                btn.setAttribute('aria-expanded', String(open));
+                const id = (btn.closest('.sb-group') as HTMLElement | null)?.dataset.group;
+                if (!id) return;
+                collapsed = open ? collapsed.filter((g) => g !== id) : [...new Set([...collapsed, id])];
+                save();
             });
         });
     }
 
-    // ── Animación súper pro del Toggle con GSAP ──
-    function initToggleAnimation() {
-        const toggle = document.getElementById('sbToggleFloating');
-        const fill = document.querySelector('.sb-toggle-fill');
-        if (!toggle || !fill) return;
-
-        // Estados del cuadrito relleno
-        // Open: Sidebar expandido (cuadrito chiquito, al centro tipo "tab")
-        // Closed: Sidebar colapsado (cuadrito grande, ocupando todo el alto)
-        const states = {
-            open: { attr: { x: 3.5, y: 8, width: 5.5, height: 8, rx: 1.5 }, opacity: 1, ease: "back.out(2.5)", duration: 0.5 },
-            openHover: { attr: { x: 3.5, y: 7.5, width: 6.5, height: 9, rx: 1.8 }, opacity: 1, ease: "power2.out", duration: 0.2 },
-            closed: { attr: { x: 3.5, y: 5, width: 8, height: 14, rx: 2.5 }, opacity: 1, ease: "back.out(1.5)", duration: 0.5 },
-            closedHover: { attr: { x: 3.5, y: 5, width: 9.5, height: 14, rx: 2.5 }, opacity: 1, ease: "power2.out", duration: 0.2 },
+    // ── Tooltip del rail colapsado: etiqueta · contador · atajo ──
+    const tip = document.getElementById('sbTip');
+    function hideTip() { tip?.classList.remove('show'); }
+    function initTooltip() {
+        if (!nav || !tip) return;
+        const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+        const show = (item: HTMLElement) => {
+            if (!root.classList.contains('sb-collapsed') || mobileUi()) return;
+            const { tip: label = '', tipSub: sub, key } = item.dataset;
+            tip.innerHTML = `<span>${esc(label)}</span>`
+                + (sub ? `<span class="sb-tip-sub">${esc(sub)}</span>` : '')
+                + (key ? `<span class="sb-tip-keys"><kbd>G</kbd><kbd>${esc(key.toUpperCase())}</kbd></span>` : '');
+            const r = item.getBoundingClientRect();
+            tip.style.left = `${Math.round(r.right + 10)}px`;
+            tip.style.top = `${Math.round(r.top + r.height / 2 - tip.offsetHeight / 2)}px`;
+            tip.classList.add('show');
         };
-
-        const updateState = (isHover) => {
-            const isCollapsed = document.documentElement.classList.contains('sb-collapsed');
-            const state = isCollapsed ? (isHover ? states.closedHover : states.closed) : (isHover ? states.openHover : states.open);
-            gsap.to(fill, state);
-        };
-
-        toggle.addEventListener('mouseenter', () => updateState(true));
-        toggle.addEventListener('mouseleave', () => updateState(false));
-
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((m) => {
-                if (m.attributeName === 'class') updateState(toggle.matches(':hover'));
-            });
-        });
-        observer.observe(document.documentElement, { attributes: true });
-
-        // Estado inicial sin animación
-        const isCollapsed = document.documentElement.classList.contains('sb-collapsed');
-        gsap.set(fill, isCollapsed ? states.closed : states.open);
+        const target = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('.sb-item[data-tip]');
+        nav.addEventListener('mouseover', (e) => { const it = target(e); if (it) show(it); });
+        nav.addEventListener('mouseleave', hideTip);
+        nav.addEventListener('focusin', (e) => { const it = target(e); if (it) show(it); });
+        nav.addEventListener('focusout', hideTip);
+        nav.addEventListener('scroll', hideTip, { passive: true });
     }
 
-    function initSidebarComponent() {
+    // ── Fijados ──
+    function initPins() {
+        const list = document.getElementById('sbPinList');
+        const tpl = document.getElementById('sbPinTpl') as HTMLTemplateElement | null;
+        const pinBtn = document.getElementById('phPin');
+        if (!pinsEl || !list || !tpl) return;
+        const d = pinsEl.dataset;
+
+        const hrefKey = (href: string) => {
+            const url = new URL(href, location.origin);
+            return url.pathname === '/app/informes' ? `${url.pathname}?r=${url.searchParams.get('r') || 'resumen'}` : url.pathname;
+        };
+        const here = () => hrefKey(location.href);
+        const isPinned = () => pins.some((p) => hrefKey(p.href) === here());
+
+        // Icono heredado de la sección: el mismo criterio que sidebarIconFor()
+        // (prefijo más largo), leído del menú ya pintado para no duplicar la tabla.
+        const navItems = [...document.querySelectorAll<HTMLAnchorElement>('.sb-group[data-group] .sb-item')];
+        const iconFor = (href: string) => {
+            const path = new URL(href, location.origin).pathname.replace(/\/+$/, '') || '/app';
+            let best: HTMLAnchorElement | null = null;
+            for (const a of navItems) {
+                const h = a.getAttribute('href') || '';
+                const hit = h === '/app' ? path === '/app' : path === h || path.startsWith(h + '/');
+                if (hit && (!best || h.length > (best.getAttribute('href') || '').length)) best = a;
+            }
+            return best?.querySelector('svg')?.innerHTML || iconInner('pin');
+        };
+
+        const render = (fresh?: string) => {
+            list.replaceChildren(...pins.map((p) => {
+                const row = (tpl.content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+                const a = row.querySelector('a') as HTMLAnchorElement;
+                const active = hrefKey(p.href) === here();
+                row.dataset.href = p.href;
+                a.setAttribute('href', p.href);
+                a.dataset.tip = p.label;
+                a.classList.toggle('active', active);
+                if (active) a.setAttribute('aria-current', 'page');
+                (a.querySelector('.sb-item-label') as HTMLElement).textContent = p.label;
+                (a.querySelector('svg') as SVGElement).innerHTML = iconFor(p.href);
+                if (fresh && p.href === fresh) row.classList.add('is-new');
+                return row;
+            }));
+            pinsEl.hidden = !pins.length;
+        };
+        const syncBtn = () => {
+            if (!pinBtn) return;
+            const on = isPinned();
+            pinBtn.classList.toggle('pinned', on);
+            pinBtn.setAttribute('title', on ? (d.pinOn || '') : (d.pinOff || ''));
+        };
+        const commit = (fresh?: string) => { render(fresh); syncBtn(); save(); };
+
+        // Migración única: los fijados vivían en localStorage. Si el servidor
+        // nunca guardó fijados, se adoptan los locales y se suben.
+        try {
+            const LEGACY_KEY = 'cord.pins.v1';
+            const local = JSON.parse(localStorage.getItem(LEGACY_KEY) || '[]');
+            if (d.pinsSaved !== '1' && Array.isArray(local) && local.length) {
+                pins = local
+                    .filter((p: any) => p && typeof p.href === 'string' && typeof p.label === 'string')
+                    .map((p: any) => ({ href: LEGACY_ROUTES[p.href as keyof typeof LEGACY_ROUTES] || p.href, label: p.label }));
+                commit();
+            }
+            if (local.length) localStorage.removeItem(LEGACY_KEY);
+        } catch (e) {}
+
+        // Quitar
+        list.addEventListener('click', (e) => {
+            const x = (e.target as HTMLElement).closest('.sb-pin-x');
+            if (!x) return;
+            e.preventDefault(); e.stopPropagation();
+            const href = (x.closest('.sb-pin-row') as HTMLElement | null)?.dataset.href;
+            pins = pins.filter((p) => p.href !== href);
+            commit();
+        });
+
+        // Reordenar arrastrando (solo escritorio, regla 16)
+        let dragHref: string | null = null;
+        const clearDrop = () => list.querySelectorAll('.drop-before, .drop-after').forEach((r) => r.classList.remove('drop-before', 'drop-after'));
+        list.addEventListener('dragstart', (e) => {
+            const row = (e.target as HTMLElement).closest<HTMLElement>('.sb-pin-row');
+            if (!row || mobileUi()) { e.preventDefault(); return; }
+            dragHref = row.dataset.href || null;
+            e.dataTransfer!.effectAllowed = 'move';
+            row.classList.add('dragging');
+            hideTip();
+        });
+        list.addEventListener('dragover', (e) => {
+            const row = (e.target as HTMLElement).closest<HTMLElement>('.sb-pin-row');
+            if (!row || !dragHref) return;
+            e.preventDefault();
+            clearDrop();
+            if (row.dataset.href === dragHref) return;
+            const r = row.getBoundingClientRect();
+            row.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+        });
+        list.addEventListener('drop', (e) => {
+            const row = (e.target as HTMLElement).closest<HTMLElement>('.sb-pin-row');
+            if (!row || !dragHref || row.dataset.href === dragHref) return;
+            e.preventDefault();
+            const before = row.classList.contains('drop-before');
+            const moved = pins.find((p) => p.href === dragHref);
+            if (!moved) return;
+            const rest = pins.filter((p) => p.href !== dragHref);
+            const at = rest.findIndex((p) => p.href === row.dataset.href);
+            rest.splice(before ? at : at + 1, 0, moved);
+            pins = rest;
+            commit();
+        });
+        list.addEventListener('dragend', () => {
+            dragHref = null;
+            clearDrop();
+            list.querySelectorAll('.dragging').forEach((r) => r.classList.remove('dragging'));
+        });
+
+        // Fijar / quitar la página actual (botón del page-head y tecla X)
+        const toggle = () => {
+            const key = here();
+            if (isPinned()) {
+                pins = pins.filter((p) => hrefKey(p.href) !== key);
+                if (d.pinToastOn) (window as any).cordToast?.(d.pinToastOn);
+                commit();
+            } else {
+                const label = (document.querySelector('.ph-title')?.textContent || document.title).replace(/\s+/g, ' ').trim().slice(0, 80);
+                pins = [...pins, { href: key, label }].slice(-12);
+                if (d.pinToastOff) (window as any).cordToast?.(d.pinToastOff, 'ok');
+                commit(key);
+            }
+        };
+        pinBtn?.addEventListener('click', toggle);
+        (window as any).__cordTogglePin = toggle;
+        syncBtn();
+    }
+
+    // Scroll del menú entre páginas (lo restaura el script inline tras el <nav>).
+    function initScrollMemory() {
+        addEventListener('pagehide', () => {
+            try { if (nav) sessionStorage.setItem('cord.sb.scroll', String(nav.scrollTop)); } catch (e) {}
+        });
+    }
+
+    function init() {
+        initScrollMemory();
         initDrawer();
-        initSidebar();
-        initSidebarIndicator();
+        initCollapse();
+        initGroups();
+        initTooltip();
         initPins();
-        initMobileActions();
-        initGroupAccordions();
-        initToggleAnimation();
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSidebarComponent);
-    else initSidebarComponent();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
 </script>

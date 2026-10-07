@@ -111,7 +111,15 @@ export function fmtNumber(n: number, maximumFractionDigits = 0): string {
  * defecto manda la divisa: JPY/CLP/COP nunca llevan decimales.
  */
 export function money(n: number, dec?: number): string {
-    const currency = currentCurrency();
+    return moneyIn(n, currentCurrency(), dec);
+}
+
+/**
+ * Igual que money(), pero con la divisa del DOCUMENTO en vez de la del request.
+ * Para listas que mezclan documentos de varias divisas (el buscador ⌘K): una
+ * cotización en USD dentro de un negocio en MXN se muestra en USD (regla 21).
+ */
+export function moneyIn(n: number, currency: string, dec?: number): string {
     const decimals = dec ?? currencyDecimals(currency);
     const locale = currentLocale() === 'en' ? 'en-US' : 'es-MX';
     const digits = { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
