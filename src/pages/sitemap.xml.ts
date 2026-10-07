@@ -11,6 +11,8 @@ import { roadmapData } from '../lib/roadmap-data';
 import { INTEGRATION_PAGES } from '../lib/integraciones-landing';
 import { SUPPORT_CATEGORIES } from '../lib/support-categories';
 import { DEV_SITE, DOCS_SITE, SITE } from '../lib/seo/entities';
+import { docsPath } from '../lib/docs-search';
+import { API_REFERENCE_PAGE } from '../lib/api-reference';
 
 type Entry = { es?: string; en?: string; lastmod?: string };
 
@@ -121,13 +123,15 @@ async function docsEntries(): Promise<Entry[]> {
     for (const doc of docs) {
         const [lang, ...rest] = doc.id.split('/');
         const slug = rest.join('/');
-        const path = slug === 'resumen' ? '/docs' : `/docs/${slug}`;
         const slot = bySlug.get(slug) ?? { dates: [] };
-        slot[lang as 'es' | 'en'] = lang === 'en' ? `${DOCS_SITE}/en${path}` : `${DOCS_SITE}${path}`;
+        slot[lang as 'es' | 'en'] = `${DOCS_SITE}${docsPath(lang as 'es' | 'en', slug)}`;
         slot.dates.push(isoDay(doc.data.lastUpdated));
         bySlug.set(slug, slot);
     }
-    return [...bySlug.values()].map((s) => ({ es: s.es, en: s.en, lastmod: newest(...s.dates) }));
+    // La referencia de la API es una página propia (no está en la colección) y se
+    // genera del contrato: sin fecha editorial, así que no declara lastmod.
+    const reference = { es: `${DOCS_SITE}${API_REFERENCE_PAGE.es.url}`, en: `${DOCS_SITE}${API_REFERENCE_PAGE.en.url}` };
+    return [...[...bySlug.values()].map((s) => ({ es: s.es, en: s.en, lastmod: newest(...s.dates) })), reference];
 }
 
 async function devEntries(): Promise<Entry[]> {

@@ -45,4 +45,4 @@ force the balance to zero.
 These changes do not silently recalculate every historical document. Older cases
 that do not match require individual review.
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

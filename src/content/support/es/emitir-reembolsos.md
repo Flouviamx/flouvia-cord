@@ -39,4 +39,4 @@ otra vez. Puede llegar antes que el registro del pago y quedar pendiente de esa
 vinculación. La nota de crédito reduce el importe del documento y el reembolso
 devuelve dinero: son acciones separadas. Revisa [el cálculo de saldo](https://docs.cordhq.app/docs/pagos/facturas-emitidas).
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

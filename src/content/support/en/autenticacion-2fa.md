@@ -19,7 +19,7 @@ If a sensitive action asks you to verify your identity again, complete it before
 retrying. Team permissions still apply; enabling 2FA does not grant refund or
 business administration permissions.
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
 
 ## Idle sign-out: implementation under validation
 

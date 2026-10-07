@@ -120,30 +120,32 @@ for prices, currencies and included usage.
 
 ## Documentation links
 
-- [Product documentation](https://docs.cordhq.app/docs)
-- [Complete app map](https://docs.cordhq.app/docs/operacion/mapa-de-la-app)
-- [Complete Settings map](https://docs.cordhq.app/docs/cuenta/mapa-de-ajustes)
-- [Clients and account statements](https://docs.cordhq.app/docs/gestion/clientes)
-- [Reports and performance](https://docs.cordhq.app/docs/gestion/informes)
-- [Payments overview](https://docs.cordhq.app/docs/pagos/resumen)
-- [Receivables and follow-up](https://docs.cordhq.app/docs/pagos/cartera-cobranza)
-- [Recurring invoices](https://docs.cordhq.app/docs/pagos/facturas-recurrentes)
-- [Fiscal invoicing by country](https://docs.cordhq.app/docs/pagos/facturacion)
-- [Quotes overview](https://docs.cordhq.app/docs/cotizacion/resumen)
-- [Approval and technical evidence](https://docs.cordhq.app/docs/interaccion/firma)
-- [Cord Workflows guide](https://docs.cordhq.app/docs/automatizacion/workflows)
-- [Integrations guide](https://docs.cordhq.app/docs/automatizacion/integraciones)
-- [Mercado Pago guide](https://docs.cordhq.app/docs/pagos/mercado-pago)
-- [Developer overview](https://docs.cordhq.app/docs/desarrolladores/empezar/resumen)
-- [API authentication](https://docs.cordhq.app/docs/desarrolladores/esenciales/autenticacion)
-- [Webhooks](https://docs.cordhq.app/docs/desarrolladores/herramientas/webhooks)
-- [MCP server](https://docs.cordhq.app/docs/desarrolladores/herramientas/mcp)
-- [Cord Elements](https://docs.cordhq.app/docs/desarrolladores/herramientas/elements/resumen)
-- [API reference](https://docs.cordhq.app/docs/desarrolladores/referencia)
-- [API versions (Cord-Version header)](https://docs.cordhq.app/docs/desarrolladores/esenciales/versiones)
-- [Security controls, retention and vulnerability reporting](https://docs.cordhq.app/docs/desarrolladores/esenciales/seguridad); contact in https://cordhq.app/.well-known/security.txt
-- [Test mode and simulators](https://docs.cordhq.app/docs/desarrolladores/empezar/pruebas)
-- [Cord CLI](https://docs.cordhq.app/docs/desarrolladores/herramientas/cli): `npx @flouviahq/cli` (interactive wizard), `cord login` (browser device flow, restricted test key), `cord setup` (AI-proposed account setup that a human approves), `cord init`, `cord listen`
+English pages live under https://docs.cordhq.app/en/docs/; the Spanish originals use the same paths under https://docs.cordhq.app/docs/.
+
+- [Product documentation](https://docs.cordhq.app/en/docs)
+- [Complete app map](https://docs.cordhq.app/en/docs/operacion/mapa-de-la-app)
+- [Complete Settings map](https://docs.cordhq.app/en/docs/cuenta/mapa-de-ajustes)
+- [Clients and account statements](https://docs.cordhq.app/en/docs/gestion/clientes)
+- [Reports and performance](https://docs.cordhq.app/en/docs/gestion/informes)
+- [Payments overview](https://docs.cordhq.app/en/docs/pagos/resumen)
+- [Receivables and follow-up](https://docs.cordhq.app/en/docs/pagos/cartera-cobranza)
+- [Recurring invoices](https://docs.cordhq.app/en/docs/pagos/facturas-recurrentes)
+- [Fiscal invoicing by country](https://docs.cordhq.app/en/docs/pagos/facturacion)
+- [Quotes overview](https://docs.cordhq.app/en/docs/cotizacion/resumen)
+- [Approval and technical evidence](https://docs.cordhq.app/en/docs/interaccion/firma)
+- [Cord Workflows guide](https://docs.cordhq.app/en/docs/automatizacion/workflows)
+- [Integrations guide](https://docs.cordhq.app/en/docs/automatizacion/integraciones)
+- [Mercado Pago guide](https://docs.cordhq.app/en/docs/pagos/mercado-pago)
+- [Developer overview](https://docs.cordhq.app/en/docs/desarrolladores/empezar/resumen)
+- [API authentication](https://docs.cordhq.app/en/docs/desarrolladores/esenciales/autenticacion)
+- [Webhooks](https://docs.cordhq.app/en/docs/desarrolladores/herramientas/webhooks)
+- [MCP server](https://docs.cordhq.app/en/docs/desarrolladores/herramientas/mcp)
+- [Cord Elements](https://docs.cordhq.app/en/docs/desarrolladores/herramientas/elements/resumen)
+- [API reference](https://docs.cordhq.app/en/docs/desarrolladores/referencia)
+- [API versions (Cord-Version header)](https://docs.cordhq.app/en/docs/desarrolladores/esenciales/versiones)
+- [Security controls, retention and vulnerability reporting](https://docs.cordhq.app/en/docs/desarrolladores/esenciales/seguridad); contact in https://cordhq.app/.well-known/security.txt
+- [Test mode and simulators](https://docs.cordhq.app/en/docs/desarrolladores/empezar/pruebas)
+- [Cord CLI](https://docs.cordhq.app/en/docs/desarrolladores/herramientas/cli): `npx @flouviahq/cli` (interactive wizard), `cord login` (browser device flow, restricted test key), `cord setup` (AI-proposed account setup that a human approves), `cord init`, `cord listen`
 - [OpenAPI 3.1 specification](https://cordhq.app/openapi.json) (also at /openapi.yaml)
 - SDKs: `@flouviahq/node` (server), `@flouviahq/elements` (browser), `@flouviahq/cli`. Python and PHP are not published yet: use the REST API and the OpenAPI spec.
 - [Machine-readable pricing](https://cordhq.app/pricing.md)

@@ -32,7 +32,7 @@ vi.mock('../src/lib/sandbox-sim', () => ({ triggerTestEvent: m.trigger, NotSandb
 
 const { MCP_TOOLS, findTool, McpToolError } = await import('../src/lib/mcp');
 const { handle } = await import('../src/lib/mcp/rpc');
-const { searchDocs, plainText } = await import('../src/lib/docs-search');
+const { searchDocs, plainText, docsPath, docsSection } = await import('../src/lib/docs-search');
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const ctx = (over: Record<string, unknown> = {}) => ({ ip: '10.0.0.1', keyId: 'key-1', orgId: 'org-a', scope: 'write' as const, mode: 'test' as const, origin: 'https://cordhq.app', ...over });
@@ -140,5 +140,41 @@ describe('buscar_documentacion', () => {
         expect(r[0].extracto).not.toContain('<Card>');
         expect(searchDocs(docs, 'estado de cuenta', 'es')[0].titulo).toBe('Clientes');
         expect(searchDocs(docs, '  ', 'es')).toEqual([]);
+    });
+});
+
+describe('índice de la documentación', () => {
+    it('plainText quita imports, JSX y atributos, y conserva encabezados y código', () => {
+        const mdx = [
+            '---', 'title: x', '---',
+            "import Callout from '../Callout.astro';",
+            '<section class="docs-section split" style="a > b">',
+            '  <h2>Crea una cuenta</h2>',
+            '  <svg viewBox="0 0 24 24"><path d="M1 1"/></svg>',
+            '</section>',
+            '## Firma &rarr; webhook',
+            'Usa `<cord-cotizador>` y [la guía](/docs/x).',
+            '```ts',
+            "import { Cord } from '@flouviahq/node';",
+            '<CordProvider publishableKey="pk_test">',
+            '```',
+        ].join('\n');
+        const t = plainText(mdx);
+        expect(t).toContain('Crea una cuenta');
+        expect(t).toContain('Firma → webhook');
+        expect(t).toContain('<cord-cotizador>');
+        expect(t).toContain('la guía');
+        expect(t).toContain("import { Cord } from '@flouviahq/node';");
+        expect(t).toContain('<CordProvider publishableKey="pk_test">');
+        expect(t).not.toMatch(/class=|style=|viewBox|Callout|title: x|##|\/docs\/x/);
+    });
+
+    it('la portada vive en la raíz y la sección es legible', () => {
+        expect(docsPath('es', 'resumen')).toBe('/docs');
+        expect(docsPath('en', 'resumen')).toBe('/en/docs');
+        expect(docsPath('en', 'pagos/aceptar')).toBe('/en/docs/pagos/aceptar');
+        expect(docsSection('cuenta/csd', 'es')).toBe('Cuenta');
+        expect(docsSection('pagos/aceptar', 'en')).toBe('Payments');
+        expect(docsSection('resumen', 'es')).toBe('Empezar');
     });
 });

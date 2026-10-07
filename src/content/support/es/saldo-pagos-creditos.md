@@ -47,4 +47,4 @@ un segundo pago manual para forzar el saldo a cero.
 Estas mejoras no recalculan silenciosamente todos los documentos históricos.
 Los casos anteriores que no coincidan requieren revisión individual.
 
-> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

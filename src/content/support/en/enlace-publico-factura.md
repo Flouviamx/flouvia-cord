@@ -30,4 +30,4 @@ open invoice. Test documents are identified and cannot receive a real payment.
 The payment button depends on document state, balance and the seller's payment
 account.
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

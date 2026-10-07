@@ -120,3 +120,30 @@ export function groupedOperations(): Array<[string, Operation[]]> {
     for (const op of OPERATIONS) groups.set(op.tag, [...(groups.get(op.tag) ?? []), op]);
     return [...groups];
 }
+
+// Metadatos de la página de referencia (src/pages/{,en/}docs/desarrolladores/referencia.astro).
+// No es una entrada de la colección docs: el índice de búsqueda, el sitemap y
+// llms-full la leen de aquí para no repetir título y descripción.
+export const API_REFERENCE_PAGE = {
+    es: {
+        title: 'Referencia de la API',
+        description: 'Todas las operaciones de la API v1 de Cord con sus campos y ejemplos en curl y Node, generadas del contrato de la API.',
+        url: '/docs/desarrolladores/referencia',
+    },
+    en: {
+        title: 'API Reference',
+        description: 'Every Cord API v1 operation with its fields and examples in curl and Node, generated from the API contract.',
+        url: '/en/docs/desarrolladores/referencia',
+    },
+} as const;
+
+/** Texto buscable de la referencia: cada grupo con sus operaciones y campos. */
+export function referenceSearchText(): string {
+    return groupedOperations().map(([tag, ops]) => [
+        tag,
+        ...ops.map((op) => {
+            const fields = fieldsOf(op.body).map((f) => f.name);
+            return `${op.method} /api/v1${op.path} ${op.summary}${fields.length ? ` (${fields.join(', ')})` : ''}`;
+        }),
+    ].join('. ')).join('. ');
+}

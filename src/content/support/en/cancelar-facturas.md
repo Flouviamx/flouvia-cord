@@ -41,4 +41,4 @@ Cord uses the available country rail and retains document history. Locally voidi
 a commercial invoice does not prove a tax authority has received or accepted a
 cancellation.
 
-> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
