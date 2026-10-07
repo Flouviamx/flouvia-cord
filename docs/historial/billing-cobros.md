@@ -1574,3 +1574,43 @@ Auditoría de precios con André. Sustituye las cuotas del 2026-09-09.
 
 Columna `uso_periodo.docs` verificada en la base configurada (integer, default 0). Sin cambios en
 Stripe: precios base, tarifas medidas y monedas se conservan.
+
+## 2026-10-07 — Bloqueo por plan rediseñado
+
+Auditoría del paywall de `/app/cobranza` y de las otras nueve páginas con
+`PlanGate`. Lo que se encontró en el modal de dos tarjetas:
+
+- **La página detrás estaba vacía** y el backdrop tapaba también el menú lateral:
+  no se veía nada de lo que se iba a comprar, y cerrar con ✕ hacía
+  `location.replace()` a otra ruta — salir o pagar, sin una tercera opción.
+- **Dos CTA navy idénticos** repartían la atención entre el plan que desbloquea
+  la función y uno que la super-incluye.
+- **El título describía la restricción** ("es una función de plan superior") y
+  los bullets eran los genéricos del plan, no los de la función bloqueada.
+- **El anual no decía que el cobro es anual**: el interruptor cambiaba $590 por
+  $492 "/ mes" sin mencionar los $5,900 de un solo cobro.
+- **Sin medición**: no había ningún evento antes del checkout, así que una función
+  bloqueada que nadie abre se leía igual que un paywall que no convence.
+
+Ahora: `PlanGate` dibuja la página desenfocada con datos de ejemplo
+(`PlanGatePreview`, `inert` + `aria-hidden`, rotulada "vista previa con datos de
+ejemplo") y el panel flota encima con la navegación viva; un plan recomendado con
+un solo CTA primario y el siguiente peldaño como fila secundaria; precio anual con
+su total; "lo que desbloqueas" por función (cobranza, cobranza con IA,
+recurrentes); y `paywall_viewed` / `paywall_cta_clicked`. El contenido vive en
+`PlanUpsell.astro` y lo comparten `PlanGate` (página) y `PlanPaywallModal`
+(upsell contextual de asientos, llaves de API y webhooks), que ya no se abre solo
+ni redirige al cerrar.
+
+## 2026-10-07 — Cobranza con IA baja de Scale a Profesional
+
+Decisión de André: el agente de cobranza con IA (`collections_ai`) se incluye
+desde Profesional, junto al módulo de cobranza. Además de `FEATURE_MIN_PLAN`
+hubo que cambiar el filtro del cron (`orgsConCobranzaActiva()` en
+`src/lib/agents/cobranza-run.ts` tenía `('scale', 'developer')` escrito en SQL):
+sin eso, una cuenta Pro habría visto la pantalla del agente y el agente nunca
+habría corrido. Pro paga el agente con su cuota de IA (50 al mes, con excedente
+medido). Intereses moratorios (`late_interest`) se queda en Scale y sigue
+suspendido; la viñeta de Scale pasa a "Aprobaciones de descuento y margen".
+Se actualizaron precios, comparativa, FAQ, página de producto, caso de uso de
+agencias, blog y la documentación pública ES/EN.

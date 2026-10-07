@@ -1,0 +1,398 @@
+---
+// PlanGatePreview — lo que hay detrás de un bloqueo por plan: la página como se
+// vería con el plan, con datos de EJEMPLO. PlanGate la monta desenfocada,
+// `inert` y `aria-hidden`; el panel encima la declara "vista previa con datos de
+// ejemplo", así que nadie la confunde con su cartera real.
+//
+// Regla 17: aquí no se materializa NI UN dato premium de la organización. Los
+// nombres y montos son fijos; lo único que viene del request es la divisa y la
+// zona horaria, para que la vista previa se parezca a SU página (regla 21: un
+// negocio en Madrid no debe ver pesos ni en un ejemplo).
+//
+// Usa las clases globales de los widgets (`.dash-card`, `.report-kpi`,
+// `.report-list`, `.sec-head`) para verse idéntica a la página real; lo propio
+// de la vista previa va con prefijo `gp-`.
+import { money, fmtDate } from '../../lib/fmt-server';
+import { t } from '../../i18n/app';
+
+export type GatePreview = 'cobranza' | 'agente' | 'facturas' | 'informe' | 'ajustes';
+
+interface Props {
+    variant: GatePreview;
+    locale?: 'es' | 'en';
+}
+const { variant, locale = 'es' } = Astro.props;
+const L = locale;
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+
+const DAY = 86_400_000;
+const now = Date.now();
+const dateIn = (days: number) => fmtDate(new Date(now + days * DAY));
+const initial = (s: string) => s.trim().charAt(0).toUpperCase();
+
+// Cartera de ejemplo. Los KPIs se DERIVAN de estas filas, igual que en la
+// página real: un ejemplo cuyos números no cuadran entre sí se nota.
+const CARTERA = [
+    { empresa: 'Grupo Andina', folio: 'COT-1042', terminos: 'Net 30', dias: -18, total: 48_600, promesa: null },
+    { empresa: 'Lumen Arquitectos', folio: 'COT-1038', terminos: 'Net 60', dias: -9, total: 32_150, promesa: 2 },
+    { empresa: 'Ferretera del Norte', folio: 'COT-1031', terminos: 'Net 30', dias: -34, total: 27_400, promesa: null },
+    { empresa: 'Nube Clara Studio', folio: 'COT-1047', terminos: 'Net 15', dias: 3, total: 18_900, promesa: null },
+    { empresa: 'Café Altura', folio: 'COT-1050', terminos: 'Net 30', dias: 6, total: 12_750, promesa: 0 },
+    { empresa: 'Taller Ríos', folio: 'COT-1029', terminos: 'Net 60', dias: -68, total: 9_800, promesa: null },
+] as const;
+const vencidas = CARTERA.filter((c) => c.dias < 0);
+const semana = CARTERA.filter((c) => c.dias >= 0 && c.dias <= 7);
+const conPromesa = CARTERA.filter((c) => c.promesa !== null);
+const promesasHoy = conPromesa.filter((c) => (c.promesa ?? 1) <= 0);
+const sinGestion = vencidas.filter((c) => c.promesa === null);
+const sum = (xs: readonly { total: number }[]) => xs.reduce((s, c) => s + c.total, 0);
+const prioridad = [...vencidas].sort((a, b) => b.total * -b.dias - a.total * -a.dias).slice(0, 4);
+const aging = [
+    { label: t(L, 'cob.aging_vigente'), value: sum(semana), color: '#10b981' },
+    { label: t(L, 'cob.aging_d30'), value: sum(vencidas.filter((c) => c.dias >= -30)), color: '#f59e0b' },
+    { label: t(L, 'cob.aging_d60'), value: sum(vencidas.filter((c) => c.dias < -30 && c.dias >= -60)), color: '#f97316' },
+    { label: t(L, 'cob.aging_d60p'), value: sum(vencidas.filter((c) => c.dias < -60)), color: '#ef4444' },
+];
+const agingTotal = aging.reduce((s, a) => s + a.value, 0);
+
+const FACTURAS = [
+    { cliente: 'Grupo Andina', folio: 'F-2081', dias: 12, total: 48_600, saldo: 48_600, st: 'open' },
+    { cliente: 'Lumen Arquitectos', folio: 'F-2080', dias: -4, total: 32_150, saldo: 0, st: 'paid' },
+    { cliente: 'Nube Clara Studio', folio: 'F-2079', dias: 21, total: 18_900, saldo: 9_450, st: 'open' },
+    { cliente: 'Café Altura', folio: 'F-2078', dias: 30, total: 12_750, saldo: 12_750, st: 'draft' },
+    { cliente: 'Ferretera del Norte', folio: 'F-2077', dias: -15, total: 27_400, saldo: 0, st: 'paid' },
+    { cliente: 'Taller Ríos', folio: 'F-2076', dias: 8, total: 9_800, saldo: 9_800, st: 'open' },
+] as const;
+const ST_LABEL = { open: t(L, 'fact.st_open'), paid: t(L, 'fact.st_paid'), draft: t(L, 'fact.st_draft') };
+
+const BORRADORES = [
+    { empresa: 'Grupo Andina', w: ['92%', '74%'] },
+    { empresa: 'Ferretera del Norte', w: ['86%', '58%'] },
+    { empresa: 'Taller Ríos', w: ['90%', '66%'] },
+];
+
+// Serie del informe: una curva suave y plausible, no aleatoria (el render
+// debe ser idéntico en cada carga).
+const SERIE = [32, 38, 35, 44, 41, 52, 49, 58, 55, 63, 61, 72];
+const chartPath = (() => {
+    const w = 600, h = 180, max = 80;
+    const pts = SERIE.map((v, i) => [(i / (SERIE.length - 1)) * w, h - (v / max) * h]);
+    const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+    return { line, area: `${line} L${w} ${h} L0 ${h} Z` };
+})();
+---
+
+<div class:list={['gp', `gp-${variant}`]}>
+    {variant === 'cobranza' && (
+        <div class="gp-grid">
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cob.k_vencido')}</span>
+                <strong class="editorial report-kpi-value is-danger">{money(sum(vencidas), 0)}</strong>
+                <small>{tpl(t(L, 'cob.k_vencido_sub'), { n: String(vencidas.length) })}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cob.k_semana')}</span>
+                <strong class="editorial report-kpi-value">{money(sum(semana), 0)}</strong>
+                <small>{tpl(t(L, 'cob.k_semana_sub'), { n: String(semana.length) })}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cob.k_promesas')}</span>
+                <strong class="editorial report-kpi-value is-warn">{promesasHoy.length}</strong>
+                <small>{tpl(t(L, 'cob.k_promesas_sub'), { n: String(promesasHoy.length) })}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cob.k_singestion')}</span>
+                <strong class="editorial report-kpi-value is-danger">{money(sum(sinGestion), 0)}</strong>
+                <small>{tpl(t(L, 'cob.k_singestion_sub'), { n: String(sinGestion.length) })}</small>
+            </article>
+
+            <article class="dash-card gp-span-2">
+                <div class="sec-head"><div><h3 class="sec-title">{t(L, 'cob.prioridad')}</h3><p>{t(L, 'cob.prioridad_sub')}</p></div></div>
+                <div class="report-list">
+                    {prioridad.map((c) => (
+                        <div>
+                            <span><strong>{c.empresa}</strong><small>{c.folio} · {tpl(t(L, 'cob.vencida_dias'), { n: String(-c.dias) })}</small></span>
+                            <b class="editorial">{money(c.total, 0)}</b>
+                        </div>
+                    ))}
+                </div>
+            </article>
+            <article class="dash-card gp-span-2">
+                <div class="sec-head"><div><h3 class="sec-title">{t(L, 'cob.promesas_titulo')}</h3><p>{t(L, 'cob.promesas_sub')}</p></div></div>
+                <div class="report-list">
+                    {conPromesa.map((c) => (
+                        <div>
+                            <span><strong>{c.empresa}</strong><small>{c.folio} · {tpl(t(L, 'cob.promete'), { fecha: dateIn(c.promesa ?? 0) })}</small></span>
+                            <b class="editorial">{money(c.total, 0)}</b>
+                        </div>
+                    ))}
+                </div>
+            </article>
+
+            <article class="dash-card gp-span-4">
+                <div class="sec-head">
+                    <div><h3 class="sec-title">{t(L, 'cob.aging_titulo')}</h3><p>{t(L, 'cob.aging_sub')}</p></div>
+                    <strong class="editorial report-kpi-value">{money(agingTotal, 0)}</strong>
+                </div>
+                <div class="gp-segbar">
+                    {aging.map((a) => <i style={`flex:${a.value};background:${a.color}`}></i>)}
+                </div>
+                <div class="gp-legend">
+                    {aging.map((a) => <span><i style={`background:${a.color}`}></i>{a.label} <b class="editorial">{money(a.value, 0)}</b></span>)}
+                </div>
+            </article>
+
+            <article class="dash-card gp-span-4">
+                <div class="sec-head">
+                    <div><h3 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h3></div>
+                    <div class="gp-chips">
+                        <span class="is-on">{t(L, 'cob.f_todas')}</span><span>{t(L, 'cob.f_vencidas')}</span><span>{t(L, 'cob.f_promesa')}</span>
+                    </div>
+                </div>
+                <div class="gp-table gp-table-cob">
+                    <div class="gp-th">
+                        <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span class="gp-hide-sm">{t(L, 'cob.th_terminos')}</span>
+                        <span class="gp-hide-sm">{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="gp-r">{t(L, 'cob.th_saldo')}</span>
+                    </div>
+                    {CARTERA.map((c) => (
+                        <div class="gp-tr">
+                            <span class="gp-client"><i class="gp-avatar">{initial(c.empresa)}</i>{c.empresa}</span>
+                            <span class="gp-muted">{c.folio}</span>
+                            <span class="gp-muted gp-hide-sm">{c.terminos}</span>
+                            <span class="gp-muted gp-hide-sm">{dateIn(c.dias)}</span>
+                            <span>
+                                {c.dias < 0
+                                    ? <em class="gp-pill is-over">{tpl(t(L, 'cob.vencida_dias'), { n: String(-c.dias) })}</em>
+                                    : <em class="gp-pill is-due">{tpl(t(L, 'cob.vence_en'), { n: String(c.dias) })}</em>}
+                            </span>
+                            <span class="gp-r editorial">{money(c.total, 0)}</span>
+                        </div>
+                    ))}
+                </div>
+            </article>
+        </div>
+    )}
+
+    {variant === 'agente' && (
+        <div class="gp-grid">
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cia.k_recuperado')}</span>
+                <strong class="editorial report-kpi-value is-ok">{money(86_400, 0)}</strong>
+                <small>{tpl(t(L, 'cia.k_recuperado_sub'), { n: '5' })}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cia.k_pendientes')}</span>
+                <strong class="editorial report-kpi-value is-warn">{BORRADORES.length}</strong>
+                <small>{t(L, 'cia.k_pendientes_sub')}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cia.k_planes')}</span>
+                <strong class="editorial report-kpi-value">2</strong>
+                <small>{tpl(t(L, 'cia.k_planes_sub'), { monto: money(41_200, 0) })}</small>
+            </article>
+            <article class="dash-card report-kpi">
+                <span class="kpi-label">{t(L, 'cia.k_correos')}</span>
+                <strong class="editorial report-kpi-value">24</strong>
+                <small>{tpl(t(L, 'cia.k_correos_sub'), { pct: '38' })}</small>
+            </article>
+            <article class="dash-card gp-span-4">
+                <div class="sec-head"><div><h3 class="sec-title">{t(L, 'cia.k_pendientes')}</h3><p>{t(L, 'cia.k_pendientes_sub')}</p></div></div>
+                <div class="gp-drafts">
+                    {BORRADORES.map((d) => (
+                        <div class="gp-draft">
+                            <i class="gp-avatar">{initial(d.empresa)}</i>
+                            <div class="gp-draft-body">
+                                <strong>{d.empresa}</strong>
+                                <i class="gp-bar" style={`--w:${d.w[0]}`}></i>
+                                <i class="gp-bar" style={`--w:${d.w[1]}`}></i>
+                            </div>
+                            <div class="gp-draft-actions">
+                                <span class="gp-btn">{t(L, 'cia.descartar')}</span>
+                                <span class="gp-btn is-primary">{t(L, 'cia.aprobar_enviar')}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </article>
+        </div>
+    )}
+
+    {variant === 'facturas' && (
+        <div class="gp-grid">
+            <article class="dash-card gp-span-4">
+                <div class="gp-toolbar"><i class="gp-bar" style="--w:220px"></i><span class="gp-chips"><span class="is-on">&nbsp;</span><span>&nbsp;</span><span>&nbsp;</span></span></div>
+                <div class="gp-table gp-table-fac">
+                    <div class="gp-th">
+                        <span>{t(L, 'fact.th_cliente')}</span><span class="gp-hide-sm">{t(L, 'fact.th_vence')}</span><span>{t(L, 'fact.th_estado')}</span>
+                        <span class="gp-r gp-hide-sm">{t(L, 'fact.th_total')}</span><span class="gp-r">{t(L, 'fact.th_saldo')}</span>
+                    </div>
+                    {FACTURAS.map((f) => (
+                        <div class="gp-tr">
+                            <span class="gp-client"><i class="gp-avatar">{initial(f.cliente)}</i><span>{f.cliente}<small>{f.folio}</small></span></span>
+                            <span class="gp-muted gp-hide-sm">{dateIn(f.dias)}</span>
+                            <span><em class:list={['gp-pill', { 'is-ok': f.st === 'paid', 'is-due': f.st === 'open' }]}>{ST_LABEL[f.st]}</em></span>
+                            <span class="gp-r editorial gp-hide-sm">{money(f.total, 0)}</span>
+                            <span class="gp-r editorial">{money(f.saldo, 0)}</span>
+                        </div>
+                    ))}
+                </div>
+            </article>
+        </div>
+    )}
+
+    {variant === 'informe' && (
+        <div class="gp-grid">
+            {[412_800, 128_350, 37, 64].map((v, i) => (
+                <article class="dash-card report-kpi">
+                    <i class="gp-bar" style="--w:55%"></i>
+                    <strong class="editorial report-kpi-value">{i < 2 ? money(v, 0) : `${v}%`}</strong>
+                    <i class="gp-bar is-soft" style="--w:75%"></i>
+                </article>
+            ))}
+            <article class="dash-card gp-span-4">
+                <div class="gp-toolbar"><i class="gp-bar" style="--w:160px"></i></div>
+                <svg class="gp-chart" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="gpArea" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0" stop-color="currentColor" stop-opacity="0.18" />
+                            <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+                        </linearGradient>
+                    </defs>
+                    <path d={chartPath.area} fill="url(#gpArea)" />
+                    <path d={chartPath.line} fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
+                </svg>
+            </article>
+            <article class="dash-card gp-span-2">
+                <div class="gp-toolbar"><i class="gp-bar" style="--w:120px"></i></div>
+                <div class="gp-hbars">
+                    {[92, 74, 61, 43, 28].map((w) => <span><i class="gp-bar is-soft" style="--w:30%"></i><i class="gp-fill" style={`--w:${w}%`}></i></span>)}
+                </div>
+            </article>
+            <article class="dash-card gp-span-2">
+                <div class="gp-toolbar"><i class="gp-bar" style="--w:140px"></i></div>
+                <div class="gp-cols">
+                    {[40, 62, 55, 78, 70, 88, 64].map((h) => <i style={`--h:${h}%`}></i>)}
+                </div>
+            </article>
+        </div>
+    )}
+
+    {variant === 'ajustes' && (
+        <div class="gp-settings">
+            {[0, 1].map((block) => (
+                <article class="dash-card">
+                    <i class="gp-bar is-title" style={`--w:${block ? '38%' : '46%'}`}></i>
+                    <i class="gp-bar is-soft" style="--w:72%"></i>
+                    {[0, 1, 2].map((row) => (
+                        <div class="gp-setting-row">
+                            <span><i class="gp-bar" style={`--w:${[58, 44, 52][row]}%`}></i><i class="gp-bar is-soft" style={`--w:${[80, 66, 74][row]}%`}></i></span>
+                            {(row + block) % 2 === 0 ? <i class="gp-toggle"></i> : <i class="gp-field"></i>}
+                        </div>
+                    ))}
+                </article>
+            ))}
+        </div>
+    )}
+</div>
+
+<style>
+    .gp { width: 100%; }
+    .gp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.1rem; }
+    .gp-span-2 { grid-column: span 2; }
+    .gp-span-4 { grid-column: span 4; }
+    .gp .sec-head { margin-bottom: 0.6rem; }
+    .gp .report-list b { font-size: 0.86rem; }
+
+    .gp-segbar { display: flex; gap: 3px; height: 12px; border-radius: 999px; overflow: hidden; margin-top: 0.4rem; }
+    .gp-segbar i { display: block; min-width: 6px; }
+    .gp-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin-top: 0.9rem; font-size: 0.74rem; color: var(--color-text-muted); }
+    .gp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .gp-legend span > i { width: 8px; height: 8px; border-radius: 3px; }
+    .gp-legend b { color: var(--color-text); font-weight: 600; }
+
+    .gp-chips { display: inline-flex; gap: 6px; }
+    .gp-chips span {
+        font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+        padding: 5px 11px; border-radius: 999px; background: var(--color-bg-soft);
+        box-shadow: inset 0 0 0 1px var(--color-border); min-width: 54px; text-align: center;
+    }
+    .gp-chips span.is-on { color: var(--color-text); background: var(--surface); box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+
+    .gp-table { display: flex; flex-direction: column; font-size: 0.8rem; }
+    .gp-th, .gp-tr { display: grid; align-items: center; gap: 1rem; padding: 0.75rem 0.25rem; }
+    .gp-table-cob .gp-th, .gp-table-cob .gp-tr { grid-template-columns: 1.6fr 0.9fr 0.8fr 0.9fr 1.1fr 0.9fr; }
+    .gp-table-fac .gp-th, .gp-table-fac .gp-tr { grid-template-columns: 1.8fr 1fr 0.9fr 1fr 1fr; }
+    .gp-th {
+        font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
+    }
+    .gp-tr { border-bottom: 1px solid var(--color-border); color: var(--color-text); }
+    .gp-tr:last-child { border-bottom: 0; }
+    .gp-r { text-align: right; }
+    .gp-muted { color: var(--color-text-muted); }
+    .gp-client { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; min-width: 0; }
+    .gp-client > span { display: flex; flex-direction: column; }
+    .gp-client small { font-weight: 500; font-size: 0.7rem; color: var(--color-text-muted); }
+    .gp-avatar {
+        width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; font-style: normal;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.72rem; font-weight: 700; color: var(--color-blue-deep);
+        background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .gp-pill {
+        display: inline-flex; font-style: normal; font-size: 0.68rem; font-weight: 650;
+        padding: 3px 9px; border-radius: 999px;
+        color: var(--color-text-muted); background: var(--color-bg-soft);
+    }
+    .gp-pill.is-over { color: #b91c1c; background: rgba(239,68,68,0.1); }
+    .gp-pill.is-due { color: #b45309; background: rgba(245,158,11,0.12); }
+    .gp-pill.is-ok { color: #047857; background: rgba(16,185,129,0.12); }
+
+    .gp-bar {
+        display: block; height: 9px; width: var(--w, 60%); max-width: 100%;
+        border-radius: 999px; background: var(--color-border);
+    }
+    .gp-bar.is-soft { opacity: 0.55; }
+    .gp-bar.is-title { height: 13px; margin-bottom: 0.6rem; }
+    .gp-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+
+    .gp-drafts { display: flex; flex-direction: column; }
+    .gp-draft { display: flex; align-items: center; gap: 0.9rem; padding: 0.95rem 0; border-top: 1px solid var(--color-border); }
+    .gp-draft:first-child { border-top: 0; }
+    .gp-draft-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .gp-draft-body strong { font-size: 0.82rem; }
+    .gp-draft-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .gp-btn {
+        font-size: 0.72rem; font-weight: 600; padding: 7px 12px; border-radius: 999px;
+        color: var(--color-text); background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .gp-btn.is-primary { color: #fff; background: var(--color-blue-deep); box-shadow: none; }
+    :global(html[data-theme="dark"]) .gp-btn.is-primary { color: #0b1018; }
+
+    .gp-chart { display: block; width: 100%; height: 200px; color: var(--color-blue-deep); }
+    .gp-hbars { display: flex; flex-direction: column; gap: 0.85rem; }
+    .gp-hbars span { display: grid; grid-template-columns: 30% 1fr; align-items: center; gap: 0.8rem; }
+    .gp-fill { display: block; height: 10px; width: var(--w); border-radius: 999px; background: color-mix(in srgb, var(--color-blue-deep) 70%, transparent); }
+    .gp-cols { display: flex; align-items: flex-end; gap: 10px; height: 150px; }
+    .gp-cols i { flex: 1; height: var(--h); border-radius: 8px 8px 3px 3px; background: color-mix(in srgb, var(--color-blue-deep) 18%, transparent); }
+    .gp-cols i:nth-child(6) { background: var(--color-blue-deep); }
+
+    .gp-settings { display: flex; flex-direction: column; gap: 1rem; }
+    .gp-setting-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+        padding: 1rem 0; border-top: 1px solid var(--color-border);
+    }
+    .gp-setting-row:first-of-type { margin-top: 1rem; }
+    .gp-setting-row > span { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+    .gp-toggle { width: 38px; height: 22px; border-radius: 999px; background: var(--color-blue-deep); opacity: 0.85; flex-shrink: 0; }
+    .gp-field { width: 34%; height: 34px; border-radius: 10px; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); flex-shrink: 0; }
+
+    @media (max-width: 880px) {
+        .gp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+        .gp-span-2, .gp-span-4 { grid-column: span 2; }
+        .gp-hide-sm { display: none; }
+        .gp-table-cob .gp-th, .gp-table-cob .gp-tr { grid-template-columns: 1.5fr 0.9fr 1.1fr 0.9fr; }
+        .gp-table-fac .gp-th, .gp-table-fac .gp-tr { grid-template-columns: 1.6fr 0.9fr 1fr; }
+        .gp-draft-actions { display: none; }
+    }
+</style>

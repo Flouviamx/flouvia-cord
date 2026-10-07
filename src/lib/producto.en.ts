@@ -329,8 +329,8 @@ export const FEATURES_EN: Feature[] = [
         titulo: 'An agent that drafts your collections and waits for your go-ahead.',
         sub: 'Every day, the agent reviews your overdue accounts and writes to each one with its real balance, its days overdue and the link to pay. It can offer an installment plan within your limits, and nothing goes out without your approval until you decide to let it run on its own.',
         metaTitle: 'AI collections: an agent that drafts and negotiates your overdue accounts — Cord',
-        metaDescription: "Cord's collections agent writes to each overdue account with its real balance and payment link, can offer plans of 2 to 6 installments within your limits and waits for your approval before sending. On the Scale plan.",
-        plan: 'AI collections agent on the Scale plan; the collections module (receivables, priorities and payment promises) from Professional',
+        metaDescription: "Cord's collections agent writes to each overdue account with its real balance and payment link, can offer plans of 2 to 6 installments within your limits and waits for your approval before sending. From the Professional plan.",
+        plan: 'AI collections agent and collections module (receivables, priorities and payment promises) from Professional',
         stats: [
             { valor: '1', countup: 1, label: 'daily run over your overdue accounts, plus any you start with "Run now"' },
             { valor: '6', countup: 6, label: 'monthly installments at most in a plan; you set the cap from 2' },
@@ -404,7 +404,7 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'Which plan do I need, and what does it use up?',
-                a: 'The agent is on the Scale plan, and each email it drafts uses one AI action from your plan: Scale includes 500 a month and anything beyond that is billed as overage. The collections module (receivables by age, priorities, payment promises and WhatsApp reminders) is available from Professional.',
+                a: 'The agent is available from the Professional plan, like the collections module (receivables by age, priorities, payment promises and WhatsApp reminders). Each email it drafts uses one AI action from your plan: Professional includes 50 a month and Scale 500; anything beyond that is billed as overage.',
             },
         ],
         cta: { titulo: "Your overdue accounts don't have to wait until you have time.", sub: 'Turn on the agent in approval mode and review its first emails. Available on the Scale plan.' },

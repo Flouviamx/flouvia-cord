@@ -18,7 +18,7 @@ import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButto
 import WidgetEmpty from '../../../components/app/WidgetEmpty.astro';
 import MonedaNota from '../../../components/app/MonedaNota.astro';
 import { getCobranza, getMyMembership, money } from '../../../lib/queries';
-import { memberCan, planLabel } from '../../../lib/permissions';
+import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { dateFull } from '../../../lib/fmt';
@@ -105,12 +105,11 @@ import { iconInner } from '../../../lib/icons';
         <PlanGate
             id="cobranzaPlanModal"
             title={t(L, 'cob.plan_titulo')}
-            desc={t(L, 'cob.plan_desc')
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            desc={t(L, 'cob.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app" />
+            preview="cobranza"
+            feature="cobranza" />
     )}
     {hasAccess && !hay && (
         <section class="empty">

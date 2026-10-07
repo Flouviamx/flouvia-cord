@@ -71,8 +71,8 @@ de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 |------|--------|----------|-------------------|
 | Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **10 facturas comerciales/mes**, "Powered by Cord" |
 | Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA, comerciales ilimitadas + **30 fiscales/mes** donde esté habilitada, tu marca, CSV |
-| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 200 fiscales/mes, recurrentes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
-| Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 500 fiscales/mes, aprobaciones, **cobranza autónoma con IA**, SSO (SMTP próximamente) |
+| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 200 fiscales/mes, recurrentes, **cobranza (con agente de IA) + flujo a 90 días**, seguimiento en vivo, analítica |
+| Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 500 fiscales/mes, aprobaciones, SSO (SMTP próximamente) |
 | Developer | — | **sin autoservicio** | + usuarios/IA ilimitados, 1,000 fiscales + 50,000 API/mes, excedentes al menor costo. Se contrata hablando con ventas (`/contacto/ventas`); `/api/billing/subscribe` rechaza `plan=developer` |
 
 Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
@@ -81,8 +81,10 @@ Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
 se separan por tipo documental: comerciales en Gratis y emisión fiscal
 integrada desde Starter. Cuotas separadas (sep 2026): comerciales 10/mes en
 Free e ilimitadas en pago (`INCLUDED.docs`); fiscales 0/30/200/500/1.000
-(`INCLUDED.cfdi`). `collections_ai`
-(la cobranza *autónoma*) sigue siendo exclusiva de Scale.
+(`INCLUDED.cfdi`). `collections_ai` (el agente de cobranza con IA) baja de
+Scale a Pro (oct 2026, decisión de André): va con el módulo de cobranza. El cron
+del agente (`orgsConCobranzaActiva()`) filtra por plan en SQL y se cambió en el
+mismo commit; cada correo consume IA de la cuota del plan (50 en Pro, 500 en Scale).
 
 ### Qué es "en vivo" en cada plan
 

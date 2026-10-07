@@ -3,6 +3,7 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/modal.css';
 import AccessGate from '../../components/app/AccessGate.astro';
 import PlanGate from '../../components/app/PlanGate.astro';
+import type { PaywallFeature } from '../../components/app/PlanUpsell.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import MonedaNota from '../../components/app/MonedaNota.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
@@ -23,11 +24,10 @@ import { loadReport } from '../../lib/informes-data';
 import { addDaysISO, parseRangoParams } from '../../lib/rango';
 import { todayInZone } from '../../lib/report-scope';
 import { currentLocale, currentTimeZone } from '../../lib/context';
-import { t } from '../../i18n/app';
+import { t, type AppStringKey } from '../../i18n/app';
 import { dateFull } from '../../lib/fmt';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
-import { planLabel } from '../../lib/permissions';
 
 const L = currentLocale();
 const es = L !== 'en';
@@ -99,14 +99,12 @@ import { iconInner } from '../../lib/icons';
     {hasAnalytics && hasPerm && !subscriptionAccess && entitlementCheck && (
         <PlanGate
             id="informesPlanModal"
-            title={t(L, 'an.informe_plan_titulo')}
-            desc={t(L, 'an.informe_plan_desc')
-                .replace('{report}', reportLabel(report, L))
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            title={t(L, `an.plan.${reportId}.titulo` as AppStringKey)}
+            desc={t(L, `an.plan.${reportId}.desc` as AppStringKey)}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/informes" />
+            preview={reportId === 'cobranza' ? 'cobranza' : 'informe'}
+            feature={`informe_${reportId}` as PaywallFeature} />
     )}
 
     {hasReportAccess && data && isTabla && (

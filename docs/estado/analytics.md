@@ -157,6 +157,10 @@ invoice_created → invoice_finalized → invoice_sent → invoice_viewed → in
   `casos_uso`, `puesto`, `country_code`, `moneda`, `idioma`; `event_id = orgId`).
 - `ai_draft_used` (editor de cotización y de factura, `surface: quote|invoice`),
   `kit_used`, `cobranza_ia_activated`, `api_key_created`.
+- `paywall_viewed` (`surface: page|contextual`) y `paywall_cta_clicked`
+  (`cycle: mensual|anual|ventas`), ambos con `paywall_id` y `required_plan`.
+  Los emite `PlanUpsell.astro`, el contenido único de todo bloqueo por plan: es
+  el tramo del embudo de la suscripción ANTES del checkout.
 - `team_member_invited`, `team_member_accepted`, `invite_viewed` (`/unirse/[token]`).
 - `sso_login`.
 - PostHog autocaptura `utm_*` en `$pageview` y persiste `$initial_utm_*` tras el

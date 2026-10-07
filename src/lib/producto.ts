@@ -373,8 +373,8 @@ export const FEATURES: Feature[] = [
         titulo: 'Un agente que redacta tu cobranza y espera tu visto bueno.',
         sub: 'Cada día, el agente revisa tu cartera vencida y le escribe a cada cuenta con su saldo real, sus días de atraso y el link para pagar. Puede ofrecer un plan en cuotas dentro de tus límites, y nada sale sin tu aprobación hasta que decidas dejarlo en automático.',
         metaTitle: 'Cobranza con IA: un agente que redacta y negocia tu cartera vencida — Cord',
-        metaDescription: 'El agente de cobranza de Cord le escribe a cada cuenta vencida con su saldo real y el link de pago, puede ofrecer planes de 2 a 6 cuotas dentro de tus límites y espera tu aprobación antes de enviar. Desde el plan Scale.',
-        plan: 'Agente de cobranza con IA en el plan Scale; el módulo de cobranza —cartera, prioridades y promesas de pago— desde Profesional',
+        metaDescription: 'El agente de cobranza de Cord le escribe a cada cuenta vencida con su saldo real y el link de pago, puede ofrecer planes de 2 a 6 cuotas dentro de tus límites y espera tu aprobación antes de enviar. Desde el plan Profesional.',
+        plan: 'Agente de cobranza con IA y módulo de cobranza —cartera, prioridades y promesas de pago— desde Profesional',
         stats: [
             { valor: '1', countup: 1, label: 'corrida diaria sobre tu cartera vencida, además de las que lances con "Correr ahora"' },
             { valor: '6', countup: 6, label: 'cuotas mensuales como máximo en un plan; tú eliges el tope desde 2' },
@@ -448,7 +448,7 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿Qué plan necesito y cuánto consume?',
-                a: 'El agente vive en el plan Scale, y cada correo que redacta usa una acción de IA de tu plan: Scale incluye 500 al mes y lo que pase de ahí se cobra como excedente. El módulo de cobranza —cartera por antigüedad, prioridades, promesas de pago y recordatorio por WhatsApp— está desde Profesional.',
+                a: 'El agente está desde el plan Profesional, igual que el módulo de cobranza —cartera por antigüedad, prioridades, promesas de pago y recordatorio por WhatsApp—. Cada correo que redacta usa una acción de IA de tu plan: Profesional incluye 50 al mes y Scale 500; lo que pase de ahí se cobra como excedente.',
             },
         ],
         cta: { titulo: 'Tu cartera vencida no tiene que esperar a que tengas tiempo.', sub: 'Enciende el agente en modo de aprobación y revisa sus primeros correos. Disponible en el plan Scale.' },

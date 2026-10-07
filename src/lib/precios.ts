@@ -6,8 +6,8 @@
 // Matriz ago 2026 (delimitación de planes): 5 niveles. Pro es el plan ANCLA (el
 // que se empuja). Free = gancho, con tope de envíos además de activas · Starter
 // = freelance, con CFDI en México y factura comercial en los demás mercados · Pro =
-// equipos (DESTACADO), ahora también cobranza y flujo de caja a 90 días ·
-// Scale = automatización (aprobaciones, cobranza autónoma con IA, SSO) ·
+// equipos (DESTACADO), ahora también cobranza (con su agente de IA desde oct
+// 2026) y flujo de caja a 90 días · Scale = automatización (aprobaciones, SSO) ·
 // Developer = sin precio de autoservicio — capacidad y condiciones a medida,
 // "Hablar con ventas" (ver `custom` abajo). Precios base SIN cambios: los price
 // ID de Stripe LIVE ya tienen suscripciones activas.
@@ -97,7 +97,7 @@ export const PLANES: Plan[] = [
             'Cotizaciones ilimitadas',
             '5 usuarios incluidos',
             '200 facturas fiscales + 50 armados con IA al mes',
-            'Cobranza, facturas recurrentes y flujo a 90 días',
+            'Cobranza con IA, facturas recurrentes y flujo a 90 días',
             'Seguimiento en vivo y dominio propio para tus links',
         ],
     },
@@ -113,7 +113,7 @@ export const PLANES: Plan[] = [
             'Todo lo de Profesional',
             '15 usuarios incluidos',
             '500 facturas fiscales + 500 armados con IA al mes',
-            'Cobranza autónoma con IA y aprobaciones',
+            'Aprobaciones de descuento y margen',
             'SSO empresarial y gobernanza de agentes IA',
         ],
     },
@@ -209,7 +209,7 @@ export const COMPARATIVA: CompareGroup[] = [
         titulo: 'Inteligencia artificial',
         rows: [
             { label: 'Armar cotización desde texto con IA', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Cobranza autónoma con IA (negocia cuotas)', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Cobranza autónoma con IA (negocia cuotas)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'CFO con IA (insight de flujo de caja)', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
@@ -332,7 +332,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cuándo me conviene pagar por Cord?',
-        a: 'Elige Starter si necesitas facturas con validez fiscal donde Cord está habilitado, envíos sin límite o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza, facturas recurrentes y flujo de caja a 90 días. Scale suma aprobaciones, cobranza autónoma con IA y SSO. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
+        a: 'Elige Starter si necesitas facturas con validez fiscal donde Cord está habilitado, envíos sin límite o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza con IA, facturas recurrentes y flujo de caja a 90 días. Scale suma aprobaciones y SSO. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
     },
     {
         q: '¿Puedo quitar la marca de Cord y usar mi dominio?',

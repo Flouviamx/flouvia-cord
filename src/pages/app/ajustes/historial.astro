@@ -28,7 +28,7 @@ const format=(v:unknown)=>v===null||v===''?say('Vacío','Empty'):typeof v==='boo
  {!!changes.length&&<details><summary>{say('Ver cambios y recuperar','Review and restore')}</summary><div class="settings-history-values">{changes.map(([field,c])=><div><b>{settingsFieldLabel(field,en)}</b><span><small>{say('Antes','Before')}</small>{format(c.before)}</span><span><small>{say('Guardado','Saved')}</small>{format(c.after)}</span></div>)}</div><p class="s-hint">{say('Se recuperarán juntos estos valores anteriores. Esta acción quedará registrada y no cambiará otros ajustes.','These previous values will be restored together. The action is recorded and other settings remain unchanged.')}</p><button type="button" data-restore-revision={r.id}>{say('Restaurar valores anteriores','Restore previous values')}</button></details>}
  </article>})}
  <p id="historyStatus" role="status" aria-live="polite"/>
- </SettingsSection>:<PlanGate id="settingsHistoryGate" class="is-inset" title={say('Historial de configuración','Settings history')} desc={say('El historial utiliza el acceso de auditoría de tu plan.','History uses your plan’s audit access.')} requiredPlan={gate.requiredPlan} locale={L} returnHref="/app/ajustes"/>}
+ </SettingsSection>:<PlanGate id="settingsHistoryGate" class="is-inset" title={say('Ve quién cambió tus ajustes y cuándo','See who changed your settings and when')} desc={say('Revisa cada cambio de tu equipo en la configuración y recupera la apariencia y los textos anteriores.','Review every settings change your team makes and restore previous appearance and copy.')} requiredPlan={gate.requiredPlan} locale={L} preview="ajustes" feature="auditoria"/>}
 </SettingsShell>
 <script>
  const status=document.getElementById('historyStatus');
