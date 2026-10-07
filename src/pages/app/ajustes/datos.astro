@@ -242,7 +242,10 @@ import { iconInner } from '../../../lib/icons';
                     ? (dlg.dataset.errConfirmacion || 'No pudimos confirmar tu identidad.')
                     : data.error === 'name_mismatch'
                         ? (dlg.dataset.errNombre || 'El nombre no coincide.')
-                        : (dlg.dataset.errGenerico || 'Algo salió mal. Intenta de nuevo.');
+                        // 409 con motivo propio (registros que la ley obliga a conservar).
+                        : res.status === 409 && typeof data.error === 'string' && data.code === 'retention_required'
+                            ? data.error
+                            : (dlg.dataset.errGenerico || 'Algo salió mal. Intenta de nuevo.');
                 if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
             } catch {
                 if (errBox) { errBox.textContent = dlg.dataset.errGenerico || 'Algo salió mal. Intenta de nuevo.'; errBox.style.display = 'block'; }

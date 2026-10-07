@@ -12,6 +12,7 @@ import { resolveBrandProfile, onBrandColor } from '../brand-profile';
 // autorizado por ninguna autoridad fiscal (reglas 10 y 14).
 
 import QRCode from 'qrcode';
+import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
 import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import {
@@ -72,7 +73,7 @@ export interface InvoicePdfInput {
   /** Folio de la factura ORIGINAL, si este documento es su nota de crédito/rectificativa. */
   creditNoteOfNumber?: string | null;
   /** Registro Verifactu (España) ya encadenado — `provider_data.verifactu` de SpainVerifactuProvider. */
-  verifactu?: { qrUrl: string; huella: string; leyenda: string; leyendaCorta: string } | null;
+  verifactu?: { qrUrl: string; huella: string; leyenda: string; leyendaCorta: string; etiquetaQr?: string } | null;
   /** Instrucciones de pago (link, banco). Se imprime tal cual. */
   paymentInstructions?: string | null;
   /** Condiciones generales del negocio (orgs.pdf_condiciones), iguales en cada documento. */
@@ -120,7 +121,9 @@ function tint(rgb: RGB, amount: number): RGB {
 function drawQr(doc: PdfDocument, url: string, x: number, top: number, size: number): void {
   const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
   const modules = qr.modules;
-  const quiet = 2;
+  // `size` es el CÓDIGO (lo que la norma mide: 30–40 mm). La zona de silencio
+  // va por fuera, como espacio en blanco alrededor, no restada del código.
+  const quiet = 0;
   const cell = size / (modules.size + quiet * 2);
   doc.rect(x, top, size, size, { fill: WHITE });
   for (let row = 0; row < modules.size; row++) {
@@ -186,6 +189,8 @@ const PDF_TEXT = {
   subtotal: P('Subtotal', 'Subtotal', 'Total HT', 'Zwischensumme', 'Subtotal'),
   base: P('base', 'base', 'base', 'Basis', 'base'),
   total: P('TOTAL', 'TOTAL', 'TOTAL TTC', 'GESAMT', 'TOTAL'),
+  invoiceTotal: P('Importe total factura', 'Invoice total', 'Total facture TTC', 'Rechnungsbetrag', 'Total da fatura'),
+  totalDue: P('TOTAL A PAGAR', 'TOTAL DUE', 'NET À PAYER', 'ZAHLBETRAG', 'TOTAL A PAGAR'),
   exchangeRate: P('Tipo de cambio', 'Exchange rate', 'Taux de change', 'Wechselkurs', 'Taxa de câmbio'),
   totalIn: P('Total en', 'Total in', 'Total en', 'Gesamt in', 'Total em'),
   howToPay: P('Cómo pagar', 'How to pay', 'Comment payer', 'Zahlung', 'Como pagar'),
@@ -395,6 +400,28 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     y += 40;
   }
 
+  // ── Verifactu: QR tributario al principio de la primera página ─────────────
+  // Orden HAC/1177/2024 y especificación del QR de la AEAT: el código mide
+  // entre 30 y 40 mm, lleva "QR tributario:" encima y la leyenda debajo, en un
+  // cuerpo no menor que el del documento, y va al principio de la factura y
+  // solo en la primera página. Antes medía 64 pt (≈ 23 mm) y vivía junto a
+  // los totales. Margen blanco alrededor: 6 mm, el recomendado.
+  if (input.verifactu?.qrUrl) {
+    const qrSize = mmAPuntos(32);
+    const clear = mmAPuntos(VERIFACTU_QR_PRESENTACION.margenRecomendadoMm);
+    const blockW = Math.max(qrSize, 190);
+    const label = input.verifactu.etiquetaQr || VERIFACTU_QR_PRESENTACION.etiquetaSuperior;
+    doc.text(label, MARGIN, y + 2, { size: 9, font: 'bold', color: INK, align: 'center', width: blockW });
+    const qrTop = y + 12 + clear / 2;
+    drawQr(doc, input.verifactu.qrUrl, MARGIN + (blockW - qrSize) / 2, qrTop, qrSize);
+    let ly = qrTop + qrSize + clear / 2 + 10;
+    for (const line of wrapText(input.verifactu.leyenda || VERIFACTU_QR_PRESENTACION.leyendaInferior, blockW, 9)) {
+      doc.text(line, MARGIN, ly, { size: 9, color: INK, align: 'center', width: blockW });
+      ly += 11.5;
+    }
+    y = ly + clear;
+  }
+
   // ── Emisor y cliente, en dos columnas ──────────────────────────────────────
   const colW = (contentW - 28) / 2;
   const colRight = MARGIN + colW + 28;
@@ -532,7 +559,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // convertido no basta: es la cuota la que se declara.
   const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
   const taxInLedger = hasFx && isEuCountry(issuerCountry) && Number(input.taxTotal) > 0;
-  const totalsH = 16 + (taxRows.length || 1) * 16 + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
+  const totalsH = 16 + (taxRows.length || 1) * 16 + (retenciones.length ? 16 : 0) + retenciones.length * 16 + 42 + (hasFx ? 26 : 0) + (taxInLedger ? 11 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -558,6 +585,12 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // Una retención se RESTA: va junto a los impuestos pero con el signo a la
   // vista, porque apunta en dirección contraria (regla 20 de estándares
   // aplicada a dinero — la posición sola no distingue suma de resta).
+  // Con retenciones, el "importe total de la factura" (base + impuestos, el que
+  // declara Verifactu y lleva el QR) y lo que se paga son números distintos, y
+  // la factura los muestra por separado (FAQ de desarrolladores de la AEAT).
+  if (retenciones.length) {
+    totalRow(tx('invoiceTotal'), `${money(Number(input.subtotal) + Number(input.taxTotal))} ${currency}`);
+  }
   for (const r of retenciones) {
     totalRow(r.nombre, `−${money(r.monto)} ${currency}`, true);
   }
@@ -565,7 +598,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // El total va en el color de la marca: es el número que todos buscan primero.
   const TOTAL_H = 36;
   doc.rect(totalsX, ty - 6, totalsW, TOTAL_H, { fill: brand, radius: corner });
-  doc.text(tx('total'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
+  doc.text(retenciones.length ? tx('totalDue') : tx('total'), totalsX + 13, ty + 16, { size: 8, font: 'bold', color: onBrand, tracking: 1.3 });
   doc.text(`${money(input.total)} ${currency}`, totalsX, ty + 16, {
     size: 13, font: 'bold', color: onBrand, align: 'right', width: totalsW - 13,
   });
@@ -614,25 +647,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // señal de B2B que tiene el documento.
   const frenchB2b = issuerCountry === 'FR' && !!input.recipient.taxId && input.documentType !== 'proforma';
 
-  // ── Verifactu: QR + huella, la evidencia de que este registro se encadenó ──
-  // Va ANTES de "Cómo pagar" porque la ley exige que el QR y su leyenda sean
-  // tan legibles como el resto de la factura — no un pie de página diminuto.
   let by = totalsTop;
-  if (input.verifactu?.qrUrl) {
-    const qrSize = 64;
-    if (by + qrSize > BOTTOM_LIMIT) { doc.addPage(); by = MARGIN + 8; }
-    drawQr(doc, input.verifactu.qrUrl, MARGIN, by, qrSize);
-    const textX = MARGIN + qrSize + 12;
-    const textW = contentW - totalsW - 28 - qrSize - 12;
-    doc.text(input.verifactu.leyendaCorta, textX, by + 2, { size: 8, font: 'bold', color: INK, tracking: 0.6 });
-    const leyendaLines = wrapText(input.verifactu.leyenda, textW, 7.4);
-    leyendaLines.forEach((line, i) => {
-      doc.text(line, textX, by + 15 + i * 9.5, { size: 7.4, color: MUTED });
-    });
-    const huellaY = by + 15 + leyendaLines.length * 9.5 + 6;
-    doc.text(`Huella: ${input.verifactu.huella}`, textX, huellaY, { size: 6.4, color: MUTED });
-    by += qrSize + 14;
-  }
 
   // Franquicia: solo si el emisor estaba en el régimen al emitir (snapshot) y
   // el documento de verdad no cobra impuesto. Imprimirla junto a un IVA

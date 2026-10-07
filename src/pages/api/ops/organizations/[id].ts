@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql, withOpsTx } from '../../../../lib/db';
 import { trustedIp } from '../../../../lib/ip';
 import { OPS_ALLOWED_EMAILS, opsAuditQuery } from '../../../../lib/ops-auth';
+import { orgTieneRegistrosVerifactu, VERIFACTU_CONSERVACION_MSG } from '../../../../lib/fiscal/verifactu/chain';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -81,6 +82,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
         if (body?.confirmation !== target.nombre) {
             return json({ error: 'La confirmación no coincide con la organización' }, 400);
         }
+        // Registros Verifactu: la ley obliga a conservarlos y el trigger de
+        // `orgs` bloquea el borrado; se dice antes en vez de devolver un 500.
+        // (La política de verifactu_registros es por organización: se consulta en
+        // el carril de la organización objetivo, no en el de Ops.)
+        if (await orgTieneRegistrosVerifactu(targetId)) return json({ error: VERIFACTU_CONSERVACION_MSG }, 409);
         await withOpsTx(
             sql`delete from orgs where id = ${targetId}`,
             opsAuditQuery({ ...auditBase, action: 'ops.organization_deleted', metadata: { organization: target.nombre } }),

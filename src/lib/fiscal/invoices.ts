@@ -34,6 +34,9 @@ import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './rec
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { log } from '../log';
 import { satFormFor as satPaymentForm } from './payment-complement';
+import { prepararAnulacionVerifactu, reactivarAltaVerifactu, VerifactuCorreccionError } from './verifactu/correcciones';
+import { VerifactuDatosError } from './verifactu/validacion';
+import { SifNotConfiguredError } from './verifactu/sif';
 import {
   cleanPrefix,
   documentTypeFor,
@@ -689,6 +692,11 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     ...(response.rawProviderData ?? {}),
     ...(!response.success ? { error: response.error || 'fallo del proveedor fiscal' } : {}),
   };
+  // Un reintento que encuentra el registro Verifactu ya encadenado se fecha con
+  // el del registro: la fecha de expedición que viajó a la AEAT (y que imprime
+  // el QR) no puede diferir de la del documento.
+  const registradaAt = (response.rawProviderData as any)?.verifactu?.emitidaAt;
+  const issuedAtFinal = typeof registradaAt === 'string' && Number.isFinite(Date.parse(registradaAt)) ? registradaAt : issuedAt;
   await withOrgTx(orgId,
     ...(head.credit_note_of ? [invoiceBalanceLock(orgId, String(head.credit_note_of))] : []),
     sql`
@@ -706,7 +714,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
            pdf_url = ${response.pdfUrl ?? null},
            xml_url = ${response.xmlUrl ?? null},
            amount_remaining = case when credit_note_of is not null then 0 else coalesce(total, 0) - coalesce(amount_paid, 0) end,
-           issued_at = ${response.success ? new Date(issuedAt) : null},
+           issued_at = ${response.success ? new Date(issuedAtFinal) : null},
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId}`,
     ...(response.success && head.credit_note_of ? [invoiceBalanceQuery(orgId, String(head.credit_note_of))] : []),
@@ -844,6 +852,19 @@ export async function voidInvoice(
   // `applyPayment` lo rechazaba y el webhook fallaba para siempre sin que nadie
   // devolviera ese dinero. Falla cerrada: si no se puede confirmar que el cobro
   // quedó cerrado, la factura NO se anula.
+  // España: la anulación se valida ANTES de soltar los cobros en vuelo y de
+  // tocar la cadena. Si no se puede registrar (sin alta, datos que la AEAT
+  // rechazaría), la factura sigue vigente y con su link de pago intacto.
+  const simulatedDoc = doc.sandbox_of || doc.provider_data?.simulado === true;
+  if (!checkOnly && regulatory && country === 'ES' && !simulatedDoc) {
+    try { await prepararAnulacionVerifactu(orgId, documentId); }
+    catch (e) {
+      const seguro = e instanceof VerifactuCorreccionError || e instanceof VerifactuDatosError || e instanceof SifNotConfiguredError;
+      if (!seguro) log.error('verifactu: no se pudo preparar la anulación', { route: 'fiscal/invoices', orgId, documentId, err: e });
+      return { ok: false, error: seguro ? (e as Error).message : 'No se pudo preparar la anulación ante la AEAT. Intenta de nuevo en un momento.' };
+    }
+  }
+
   if (!checkOnly) {
     const released = await releaseInvoicePaymentAttempts(orgId, doc);
     if (!released.ok) return { ok: false, error: released.error };
@@ -894,6 +915,13 @@ export async function voidInvoice(
   );
   const voided = voidResult[doc.credit_note_of ? 2 : 1] as any[];
   if (!voided?.length) {
+    // La anulación ya está en la cadena Verifactu pero la factura sigue viva en
+    // Cord: se reactiva el alta para que la AEAT no conserve una anulación de
+    // una factura vigente.
+    if (regulatory && country === 'ES' && !simulated) {
+      try { await reactivarAltaVerifactu(orgId, documentId); }
+      catch (e) { log.error('verifactu: no se pudo reactivar el alta', { route: 'fiscal/invoices', orgId, documentId, err: e }); }
+    }
     await withOrgTx(orgId, sql`
       update documentos_fiscales
          set provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: 'accepted', requiere_revision: true } })}::jsonb,

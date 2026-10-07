@@ -9,6 +9,22 @@ import { sql, withOrgTx } from './db';
 import { stripe } from './billing';
 
 import { log } from './log';
+import { orgTieneRegistrosVerifactu, VERIFACTU_CONSERVACION_MSG } from './fiscal/verifactu/chain';
+
+/**
+ * La organización tiene registros que la ley obliga a conservar (Verifactu:
+ * cadena append-only, conservación de 4 años). El trigger de `orgs` ya impide
+ * el borrado; esto lo detecta ANTES de cancelar la suscripción, que no tiene
+ * vuelta atrás. Los llamadores lo responden como 409.
+ */
+export class OrgConservacionError extends Error {
+    constructor() { super(VERIFACTU_CONSERVACION_MSG); this.name = 'OrgConservacionError'; }
+}
+
+export async function assertOrgDeletable(orgId: string): Promise<void> {
+    if (await orgTieneRegistrosVerifactu(orgId)) throw new OrgConservacionError();
+}
+
 interface OrgToDelete {
     id: string;
     nombre: string;
@@ -17,6 +33,7 @@ interface OrgToDelete {
 }
 
 export async function deleteOrgCascade(org: OrgToDelete): Promise<void> {
+    await assertOrgDeletable(org.id);
     if (org.stripe_subscription_id) {
         try {
             await stripe(`/v1/subscriptions/${org.stripe_subscription_id}`, {}, 'DELETE');

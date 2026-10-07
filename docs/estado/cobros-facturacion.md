@@ -100,54 +100,95 @@ no hace falta una app por país.
 - Los adapters regulatorios futuros deben implementar `FiscalProvider` y registrarse antes
   de `CommercialInvoiceProvider`; no deben sustituir el documento canónico de Cord.
 
-## Verifactu (España) — ago 2026
+## Verifactu (España) — ago 2026, reescrito oct 2026
 
 Sistema de facturación certificado que exige el RD 1007/2023 (Orden HAC/1177/2024):
 cada factura genera un registro de "alta" encadenado por hash SHA-256 al registro
-ANTERIOR de la misma org, y ese registro se remite en tiempo real a la AEAT — no es
-una integración discrecional, es la obligación legal misma.
+ANTERIOR de la misma org, y ese registro se remite a la AEAT. Obligatorio desde el
+1 de enero de 2027 para contribuyentes del Impuesto sobre Sociedades y desde el 1 de
+julio de 2027 para el resto (RD-ley 15/2025); a la fecha no hay otra prórroga en el
+BOE.
 
+- **Un solo interruptor.** `verifactuEnvioConfig()` (`src/lib/fiscal/verifactu/sif.ts`)
+  decide a la vez si se encadena, a qué entorno se envía y a qué host apunta el QR
+  (`VERIFACTU_AEAT_ENABLED`, `VERIFACTU_AEAT_SANDBOX`; pruebas por defecto). Con el
+  envío apagado NO se encadena nada: el documento sale `commercial_only`, sin QR ni
+  leyenda, y un tipo `verifactu_*` se rechaza con un motivo. Antes se encadenaban
+  registros con el envío apagado y se imprimía un QR que la AEAT nunca iba a
+  conocer. `document-kind.ts` usa el mismo interruptor para ofrecer el tipo fiscal.
 - **Encadenamiento síncrono, envío asíncrono.** `SpainVerifactuProvider` (registrado
-  en `FiscalFactory` ANTES de `CommercialInvoiceProvider`, el orden decide qué
-  provider gana) genera y persiste el registro al emitir — sin red, sin depender de
-  la disponibilidad de la AEAT. El ENVÍO real corre en `/api/cron/verifactu-submit`
-  (diario — el plan de Vercel de Cord no permite crons más frecuentes; VERI*FACTU
-  exige remisión inmediata por ley, así que hay que subir la frecuencia en
-  `vercel.json` en cuanto el plan lo permita), como el outbox de consumo de
-  Stripe: una caída de la AEAT nunca bloquea la emisión de una factura.
-- **Cadena append-only de verdad.** `verifactu_registros` tiene `force row level
-  security` MÁS un trigger que bloquea `UPDATE`/`DELETE` sobre `huella`,
-  `huella_anterior`, `payload`, `seq` y `tipo` — ni siquiera el rol de aplicación
-  puede editar un registro ya firmado. La serialización de `seq` es por
-  `unique(org_id, seq)` + reintento, no por advisory lock: el driver HTTP de Neon
-  (`neon()`, sin sesiones interactivas) no sostendría un lock entre dos llamadas.
-- **Fallo cerrado real.** Sin `orgs.rfc` (NIF) o sin la identidad del propio SIF de
-  Cord (`VERIFACTU_SIF_NIF`/`VERIFACTU_SIF_NOMBRE`/`VERIFACTU_SIF_ID`, variables de
-  entorno — Cord es el DESARROLLADOR del software ante la AEAT, no el titular de
-  cada factura), `issueDocument()` lanza y la factura NO se marca emitida. Encadenar
-  un registro con ese bloque inventado sería peor que no encadenarlo: la cadena es
-  append-only para siempre.
-- **Certificado por org, en Ajustes › Fiscal (solo España).** Sube un `.p12`/`.pfx`,
-  parseado con `node-forge` (puro JS — el runtime de Vercel no garantiza un binario
-  `openssl`) para validar la contraseña y extraer la caducidad real antes de
-  aceptarlo. Se cifra con el mismo `encryptRequiredSecret()` que el CSD de
-  Facturapi. Subir un certificado válido es lo ÚNICO que enciende
-  `orgs.verifactu_modo='verifactu'`; mientras esté apagado, `SpainVerifactuProvider`
-  degrada al mismo contrato honesto que `CommercialInvoiceProvider`
-  (`regulatory_status: 'commercial_only'`).
-- **Huella, QR y estructura del SOAP verificados contra fuente primaria**, no una
-  reconstrucción de memoria: los 3 ejemplos oficiales de "Detalle de las
-  especificaciones técnicas para la generación de la huella" (AEAT v0.1.2) coinciden
-  SHA-256 byte a byte; el endpoint, namespaces y el XML de
-  `RegFactuSistemaFacturacion` salen del WSDL/XSD reales descargados de la AEAT
-  (`SistemaFacturacion.wsdl`, `SuministroInformacion.xsd`, `SuministroLR.xsd`,
-  `RespuestaSuministro.xsd`) y del ejemplo completo §9.1.1.1 de "Descripción de los
-  servicios web" (v1.0.3). Lo que NO se pudo verificar en esta sesión: el
-  comportamiento real del servicio de la AEAT ante un envío real — no había
-  certificado de una empresa española disponible. Confirmar contra preproducción
-  (`VERIFACTU_AEAT_SANDBOX=true`) antes de depender de esto en producción.
-- **Retenciones (IRPF)** viajan por el mismo motor que México (`calculateDocumentTotals`,
-  ver "Impuestos por línea" abajo) y se restan en el desglose del registro AEAT.
+  en `FiscalFactory` ANTES de `CommercialInvoiceProvider`) genera y persiste el
+  registro al emitir, sin red. El envío corre en `/api/cron/verifactu-submit`, cada
+  hora desde el workflow de crons de GitHub (dos pasadas; `vercel.json` queda
+  diario como respaldo) y además se programa inmediatamente después de emitir o
+  anular. Cada envío toma un **lease por organización**, respeta el tiempo de
+  espera que devuelve la AEAT y agrupa hasta 1,000 registros por mismo NIF y
+  entorno.
+- **Estados de envío.** `pendiente`, `aceptado`, `aceptado_con_errores`,
+  `rechazado` y `bloqueado`. Un registro sin línea de respuesta sigue `pendiente`;
+  uno que rompe el esquema se aparca como `bloqueado` sin enviarse; un rechazo del
+  mensaje completo parte el lote a la mitad hasta aislar al culpable. Un fallo de
+  cabecera o de certificado nunca aparca registros. 3000 (duplicado) toma el estado
+  que la AEAT ya tiene; 3001 en una anulación cuenta como aceptado.
+- **Cadena append-only de verdad.** `force row level security` más un trigger que
+  bloquea `UPDATE`/`DELETE` de lo firmado. Una corrección es un registro NUEVO:
+  `subsana_de`, `subsanacion`, `rechazo_previo`, `sin_registro_previo`; la
+  unicidad por factura es un índice parcial sobre los registros originales y cada
+  registro admite una corrección directa. `crearSubsanacionVerifactu()`
+  (`correcciones.ts`) elige la subsanación correcta según el anexo de la AEAT; aún
+  no tiene UI. La serialización de `seq` es `on conflict do nothing` + reintento,
+  no un advisory lock (el driver HTTP de Neon no lo sostendría).
+- **Qué se registra.** `ImporteTotal` = bases + cuotas del desglose (sin restar
+  IRPF; el QR usa el mismo valor). Nota de crédito: R1 por diferencias (`I`), con
+  `FacturasRectificadas` del registro original (R5 si el original fue F2). Cliente
+  sin identificador: F2 con `FacturaSinIdentifDestinatarioArt61d`. Línea al 0 %:
+  cliente empresarial de la UE con NIF-IVA → N2; fuera de la UE → N2; cliente
+  español o consumidor de la UE → E6; una causa explícita en la línea siempre gana.
+  Factura en otra divisa: se convierte línea a línea con el tipo de cambio del
+  documento solo si la divisa contable es EUR; si no, falla con un motivo. IGIC,
+  IPSI y recargo de equivalencia se rechazan al emitir.
+- **Validación antes de encadenar.** NIF español normalizado y validado, NIF-IVA de
+  la UE por país (Grecia usa `EL`), `IDOtro` contra la lista del XSD, longitudes y
+  caracteres del número de serie. `scripts/verifactu-check.mjs` valida cada
+  variante de registro contra los XSD oficiales (`scripts/fixtures/aeat/`) con
+  `xmllint`, con control negativo.
+- **Identidad del software (`SistemaInformatico`).** `VERIFACTU_SIF_*`. Cord puede
+  identificarse sin NIF español vía `VERIFACTU_SIF_ID_OTRO_PAIS/_TIPO/_ID` (p. ej.
+  MX + RFC). `VERIFACTU_SIF_ID` son exactamente 2 caracteres `[A-Z0-9]`. El número
+  de instalación es por organización (prefijo `VERIFACTU_SIF_INSTALACION`) y una org
+  con registros conserva el suyo. Sin identidad configurada, emitir y subir
+  certificado fallan cerrados con un mensaje que no nombra variables.
+- **Certificado por org (Ajustes › Fiscal).** `.p12`/`.pfx` validado con el TLS real
+  de Node (los exportados RC2 antiguos caen a PEM en memoria), exige el plan con
+  `cfdi` y la identidad del software. Si el titular no coincide con el NIF del
+  negocio se acepta con un `aviso` (puede ser un representante). Con el envío
+  apagado, la pantalla dice "Certificado guardado, registro aún no activo", no
+  "activo". Desconectar responde 409 mientras haya registros sin enviar o del
+  ejercicio en curso.
+- **Anulación.** `voidInvoice` valida la anulación (`prepararAnulacionVerifactu`)
+  ANTES de soltar los cobros en vuelo; si llega un pago entre la anulación
+  encadenada y la local, `reactivarAltaVerifactu` vuelve a dar de alta la factura.
+  Un alta que nunca llegó a la AEAT se anula "sin registro previo".
+- **Conservación.** Un trigger `before delete` en `orgs` impide borrar una
+  organización con registros; `deleteOrgCascade`, la baja de cuenta y Ops lo
+  comprueban ANTES de cancelar la suscripción y responden 409.
+- **Fuente primaria.** Huella contra los 3 vectores oficiales; SOAP y XML contra el
+  WSDL/XSD descargados de la AEAT. NO verificado: un envío real (no había
+  certificado). Confirmar contra el portal de pruebas antes de producción.
+
+**Pendiente para encenderlo (trámite, no código):** configurar la identidad del
+software (`VERIFACTU_SIF_ID_OTRO_PAIS=MX`, `_TIPO=04`, `_ID=<RFC de Flouvia>`, nombre
+y versión), incluir la declaración responsable en el propio software, conseguir un
+certificado cualificado de una empresa española de prueba y validar en el entorno
+de pruebas con `VERIFACTU_AEAT_ENABLED=true` antes de pasar a producción. Para que
+Cord envíe **en nombre** de sus clientes con su propio certificado haría falta NIF
+español y adhesión al convenio de colaboración social; con el certificado de cada
+negocio (el modelo actual) no.
+
+**Despliegue:** `npm run db:migrate` ANTES de desplegar. Los registros encadenados
+con el código anterior que rompan el esquema (NIF con prefijo `ES`, R1 viejos, F1
+sin cliente, `ImporteTotal` con IRPF restado) se aparcarán o necesitarán
+subsanación.
 
 ## Documento de factura — ago 2026
 
@@ -173,11 +214,21 @@ que se trata como pieza de marca del negocio emisor, no como un volcado de datos
   aclara que la validez la determina el CFDI timbrado y su XML; fuera, que es un
   documento comercial no presentado ante ninguna autoridad (reglas 10 y 14).
 - Cuando el documento SÍ tiene registro Verifactu (`provider_data.verifactu`), el PDF
-  dibuja el QR de cotejo de la AEAT como una cuadrícula de rectángulos vectoriales
-  (`QRCode.create()`, síncrono y puro — coherente con que todo el documento sea
-  vectorial, sin incrustar un PNG), la leyenda "VERI*FACTU" y la huella completa,
-  antes del bloque de "Cómo pagar". Un documento sin registro (`commercial_only`)
-  no dibuja nada de esto — no hay nada que enseñar.
+  dibuja el QR de cotejo de la AEAT como una cuadrícula vectorial
+  (`QRCode.create()`) **al principio de la primera página**: 32 mm de código
+  (la norma pide 30–40 mm), 6 mm de blanco alrededor, "QR tributario:" encima y
+  la leyenda debajo a 9 pt. Antes medía ≈ 23 mm y vivía junto a los totales. Con
+  retenciones, "Importe total factura" (el del QR) y "Total a pagar" van por
+  separado. Un documento sin registro no dibuja nada de esto.
+- Menciones legales que el PDF imprime solo: autoliquidación intracomunitaria,
+  condiciones B2B de Francia, **franquicia de IVA** (FR art. 293 B CGI y DE § 19
+  UStG, desde `fiscal_metadata.vat_regime` congelado en el emisor, y solo si el
+  documento no cobra impuesto) y, en divisa extranjera de un emisor de la UE, la
+  cuota también en la moneda nacional (Directiva de IVA, art. 230). Si no caben,
+  siguen en otra página: antes se cortaban.
+- Imprime las notas de la factura (en una nota de crédito, como "Motivo"); las
+  condiciones del negocio van aparte. Una factura anulada lleva el aviso arriba y
+  ni ella ni una nota de crédito llevan link de pago.
 
 Marca y condiciones se leen **en vivo** al descargar; los importes y las partes
 salen del snapshot inmutable de `documentos_fiscales`. Cambiar el logo actualiza
@@ -592,10 +643,12 @@ organización), `0` = exenta por decisión del vendedor.
 
 Las retenciones se **restan** del total y salen de los perfiles predeterminados
 del catálogo. La base sobre la que se calculan **no es siempre el subtotal**:
-`impuestos.retencion_base` (`'subtotal' | 'impuesto'`) lo declara por perfil —
-la mayoría de retenciones son sobre subtotal, pero la ReteIVA de Colombia es
-15% **del IVA**, no del subtotal (calcularla sobre subtotal sobrefacturaba la
-retención ~5.26×). `RetencionApplied.baseTipo` viaja en el snapshot para que
+`impuestos.retencion_base` (`'subtotal' | 'impuesto' | 'gravado'`) lo declara por
+perfil — la mayoría de retenciones son sobre subtotal, pero la ReteIVA de Colombia
+es 15% **del IVA** (calcularla sobre subtotal sobrefacturaba la retención ~5.26×),
+y la Retención de IVA de México es sobre lo **gravado**: un concepto exento no
+traslada IVA y no entra en la base (LIVA art. 1-A). La tasa sembrada es 10.6667 %
+(2/3 del 16 %), no 10.667. `RetencionApplied.baseTipo` viaja en el snapshot para que
 reconstruir el cálculo después no pierda esa base. Se persisten en
 `cotizaciones.retencion_total` / `retenciones_snapshot` y sus equivalentes en
 `documentos_fiscales`.
@@ -797,6 +850,40 @@ sólo avisan y por eso existe la tabla de evidencia.
 Verificación: `test/upload-guard.test.ts`, `test/capture-quality.test.ts`,
 `test/identity-documents.test.ts` y el recorrido a mano del QR en un teléfono
 real, que es lo único que decide si la cámara arranca.
+
+## Auditoría de facturación e impuestos por país — oct 2026
+
+Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
+
+- **Vocabulario del país.** Toda palabra fiscal sale del perfil del país de la
+  organización (`getCountryProfile`, `taxKindLabel`, `taxIdLabel`): una cuenta en
+  Francia lee TVA y SIREN / N° TVA, nunca IVA, RFC ni CFDI. El PDF se escribe en la
+  lengua del emisor (es/en/fr/de/pt) y en su zona horaria.
+- **Catálogo de arranque por país y territorio.** Exentas con su nombre local;
+  España por territorio (Canarias siembra IGIC, Ceuta y Melilla solo exentas);
+  tasas estatales de EE.UU. corregidas. Cambiar país o región resiembra un catálogo
+  intacto y archiva los datos SAT al salir de México.
+- **Identificador fiscal validado** con su dígito verificador en los 12 países
+  (`validateTaxId`, en `@flouviahq/elements`): organización, clientes, importación,
+  API, MCP, configuración asistida y cliente nuevo desde una cotización.
+- **Redondeo por línea** en la divisa del documento (`roundLines`): los totales son
+  la suma de importes ya redondeados, que es lo que el CFDI y Verifactu validan.
+- **México.** PUE con la forma real cuando la factura nace pagada, PPD/99 si no; el
+  complemento de pago (CFDI tipo P) se emite solo al registrar cada pago, con su
+  estado en `provider_data.reps` y reintento desde la factura. Una emisión cuyo
+  resultado no se supo queda reintentable en vez de atorada.
+- **Cobros entre cotización y factura.** Lo cobrado en la cotización se traslada a
+  la factura (`carryQuotePayments`, idempotente por cobro) y la cartera no cuenta
+  dos veces una cotización con factura viva.
+- **Anular con un cobro en vuelo** cancela el PaymentIntent y expira la preferencia
+  de Mercado Pago antes de anular; si hay dinero en camino, no anula.
+- **Duplicar** una cotización pasa por `createCotizacion` (conserva tasa por línea,
+  divisa, precio con impuesto e anticipo; respeta permiso y tope del plan) y una
+  factura usa la tasa congelada del concepto. El folio de cotización se calcula
+  dentro del insert con un candado por organización.
+- **Entradas inválidas se rechazan, no se corrigen en silencio:** líneas con
+  cantidad o precio negativo, fechas que no existen (2026-02-31), tasas fuera de
+  0–100, subtipos del SAT fuera de México.
 
 ## Seguimiento de confiabilidad
 

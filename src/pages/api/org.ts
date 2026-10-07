@@ -16,7 +16,7 @@ import { t } from '../../i18n/app';
 import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
-import { deleteOrgCascade } from '../../lib/org-delete';
+import { deleteOrgCascade, OrgConservacionError } from '../../lib/org-delete';
 import { decryptSecret, encryptRequiredSecret } from '../../lib/crypto-secret';
 import { requireFreshAuth } from '../../lib/step-up';
 import { requireEntitlement } from '../../lib/org-entitlements';
@@ -640,12 +640,17 @@ export const DELETE: APIRoute = async ({ request }) => {
         ip: reqIp(request),
     });
 
-    await deleteOrgCascade({
-        id: orgId,
-        nombre: org.nombre as string,
-        stripe_subscription_id: org.stripe_subscription_id as string | null,
-        stripe_account_id: org.stripe_account_id as string | null,
-    });
+    try {
+        await deleteOrgCascade({
+            id: orgId,
+            nombre: org.nombre as string,
+            stripe_subscription_id: org.stripe_subscription_id as string | null,
+            stripe_account_id: org.stripe_account_id as string | null,
+        });
+    } catch (error) {
+        if (error instanceof OrgConservacionError) return json({ error: error.message, code: 'retention_required' }, 409);
+        throw error;
+    }
 
     return json({ ok: true });
 };

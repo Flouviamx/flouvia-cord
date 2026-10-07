@@ -3989,16 +3989,47 @@ create table if not exists verifactu_registros (
   huella          text        not null,                -- SHA-256 hex MAYÚSCULAS, 64 chars
   payload         jsonb       not null,                -- el registro tal como se firmó
   generado_at     timestamptz not null default now(),
-  envio_estado    text        not null default 'pendiente', -- pendiente|aceptado|aceptado_con_errores|rechazado
+  envio_estado    text        not null default 'pendiente', -- pendiente|aceptado|aceptado_con_errores|rechazado|bloqueado
   envio_at        timestamptz,
   aeat_respuesta  jsonb,
   created_at      timestamptz not null default now(),
   unique (org_id, seq),
-  unique (documento_id, tipo),
   check (tipo in ('alta', 'anulacion')),
-  check (huella ~ '^[0-9A-F]{64}$'),
-  check (envio_estado in ('pendiente', 'aceptado', 'aceptado_con_errores', 'rechazado'))
+  check (huella ~ '^[0-9A-F]{64}$')
 );
+
+-- Correcciones (oct 2026). Un registro firmado no se edita: se corrige con
+-- OTRO registro de la misma factura (subsanación, anexo 6 de Validaciones y
+-- errores de la AEAT). `subsana_de` apunta al registro corregido y las otras
+-- tres columnas repiten, consultables, la operativa que el payload firmado ya
+-- declara. Por eso la unicidad por factura deja de ser unique(documento_id,
+-- tipo) y pasa a un índice parcial sobre los registros ORIGINALES; cada
+-- registro admite como mucho UNA corrección directa.
+alter table verifactu_registros add column if not exists subsana_de uuid references verifactu_registros(id) on delete restrict;
+alter table verifactu_registros add column if not exists subsanacion boolean not null default false;
+alter table verifactu_registros add column if not exists rechazo_previo text;
+alter table verifactu_registros add column if not exists sin_registro_previo boolean not null default false;
+-- Intentos de envío y último error: un registro sin respuesta de la AEAT sigue
+-- pendiente (no rechazado) y se reintenta; el contador dice cuántas veces.
+alter table verifactu_registros add column if not exists envio_intentos int not null default 0;
+alter table verifactu_registros add column if not exists envio_error text;
+create unique index if not exists uq_verifactu_registros_original
+  on verifactu_registros (documento_id, tipo) where subsana_de is null;
+create unique index if not exists uq_verifactu_registros_subsana
+  on verifactu_registros (subsana_de) where subsana_de is not null;
+create index if not exists idx_verifactu_registros_pendientes
+  on verifactu_registros (org_id, seq) where envio_estado = 'pendiente';
+alter table verifactu_registros drop constraint if exists verifactu_registros_documento_id_tipo_key;
+alter table verifactu_registros drop constraint if exists chk_verifactu_rechazo_previo;
+alter table verifactu_registros add constraint chk_verifactu_rechazo_previo
+  check (rechazo_previo is null or rechazo_previo in ('S', 'X'));
+-- `bloqueado` = aparcado: rompe el esquema (o la AEAT rechazó el mensaje
+-- entero solo por su culpa) y no se vuelve a mandar tal cual. Sin este estado,
+-- un registro inválido hacía fallar todos los envíos de su organización.
+alter table verifactu_registros drop constraint if exists verifactu_registros_envio_estado_check;
+alter table verifactu_registros drop constraint if exists chk_verifactu_envio_estado;
+alter table verifactu_registros add constraint chk_verifactu_envio_estado
+  check (envio_estado in ('pendiente', 'aceptado', 'aceptado_con_errores', 'rechazado', 'bloqueado'));
 
 alter table verifactu_registros enable row level security;
 drop policy if exists "rls_verifactu_registros" on verifactu_registros;
@@ -4010,20 +4041,41 @@ alter table verifactu_registros force row level security;
 -- El candado real: ni siquiera el rol de aplicación puede tocar lo ya
 -- firmado. `force row level security` protege el AISLAMIENTO entre orgs,
 -- pero no impide que la propia org edite su fila — este trigger sí.
+--
+-- Borrar una ORGANIZACIÓN con registros también se bloquea (oct 2026): la FK
+-- org_id es on delete cascade, la cascada llega aquí y se detiene. Es a
+-- propósito: los registros de facturación se conservan durante el plazo de
+-- prescripción (RD 1007/2023), y debilitar el append-only para permitir la
+-- cascada borraría justo lo que la ley obliga a guardar. La cascada se
+-- distingue por la profundidad del trigger (la dispara el trigger de la FK) y
+-- devuelve un mensaje para el usuario. Quien borra una org pregunta antes con
+-- orgTieneRegistrosVerifactu() de src/lib/fiscal/verifactu/chain.ts, para no
+-- cancelar la suscripción de una org que después no se puede borrar.
 create or replace function cord_verifactu_registro_inmutable()
 returns trigger
 language plpgsql
 as $$
 begin
   if TG_OP = 'DELETE' then
-    raise exception 'verifactu_registros es append-only: no se puede borrar un registro ya firmado';
+    if pg_trigger_depth() > 1 then
+      raise exception 'Esta organización tiene registros de facturación Verifactu que la ley obliga a conservar, así que no se puede eliminar.'
+        using errcode = 'restrict_violation', hint = 'verifactu_conservacion';
+    end if;
+    raise exception 'verifactu_registros es append-only: no se puede borrar un registro ya firmado'
+      using errcode = 'restrict_violation', hint = 'verifactu_conservacion';
   end if;
   if new.huella is distinct from old.huella
      or new.huella_anterior is distinct from old.huella_anterior
      or new.payload is distinct from old.payload
      or new.seq is distinct from old.seq
      or new.tipo is distinct from old.tipo
-     or new.documento_id is distinct from old.documento_id then
+     or new.org_id is distinct from old.org_id
+     or new.documento_id is distinct from old.documento_id
+     or new.subsana_de is distinct from old.subsana_de
+     or new.subsanacion is distinct from old.subsanacion
+     or new.rechazo_previo is distinct from old.rechazo_previo
+     or new.sin_registro_previo is distinct from old.sin_registro_previo
+     or new.generado_at is distinct from old.generado_at then
     raise exception 'verifactu_registros es append-only: huella/payload/seq/tipo no se pueden modificar';
   end if;
   return new;
@@ -4034,6 +4086,61 @@ drop trigger if exists trg_verifactu_registro_inmutable on verifactu_registros;
 create trigger trg_verifactu_registro_inmutable
   before update or delete on verifactu_registros
   for each row execute function cord_verifactu_registro_inmutable();
+
+-- Lo mismo, ANTES de que empiece la cascada: el orden en que Postgres ejecuta
+-- las cascadas de orgs depende del orden de creación de las FK, y si la de
+-- documentos_fiscales corre primero el error visible sería una violación de FK
+-- (documento_id es on delete restrict) en vez de este mensaje. Este trigger
+-- hace el bloqueo determinista y legible. Bajo un carril que no ve
+-- verifactu_registros por RLS, el bloqueo lo sigue garantizando la cascada.
+create or replace function cord_orgs_verifactu_conservacion()
+returns trigger
+language plpgsql
+as $$
+begin
+  if exists (select 1 from verifactu_registros r where r.org_id = old.id) then
+    raise exception 'Esta organización tiene registros de facturación Verifactu que la ley obliga a conservar, así que no se puede eliminar.'
+      using errcode = 'restrict_violation', hint = 'verifactu_conservacion';
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_orgs_verifactu_conservacion on orgs;
+create trigger trg_orgs_verifactu_conservacion
+  before delete on orgs
+  for each row execute function cord_orgs_verifactu_conservacion();
+
+-- Estado del ENVÍO por organización (oct 2026): control de flujo y lease.
+--   proximo_envio_at  la AEAT devuelve TiempoEsperaEnvio en cada respuesta y
+--                     exige esperarlo antes del siguiente envío (art. 16.2 de
+--                     la Orden HAC/1177/2024), salvo que haya 1000 registros.
+--   lote_maximo       se parte a la mitad cada vez que un SoapFault aislable
+--                     rechaza el mensaje entero, hasta dejar solo al culpable.
+--   lease_hasta/token un solo envío en vuelo por organización: el cron horario,
+--                     el de respaldo y el envío inmediato tras emitir no pueden
+--                     mandar el mismo lote dos veces.
+create table if not exists verifactu_envio_estado (
+  org_id            uuid        primary key references orgs(id) on delete cascade,
+  proximo_envio_at  timestamptz,
+  tiempo_espera_s   int         not null default 60,
+  lote_maximo       int         not null default 1000,
+  lease_hasta       timestamptz,
+  lease_token       text,
+  ultimo_envio_at   timestamptz,
+  ultimo_error      text,
+  updated_at        timestamptz not null default now(),
+  check (lote_maximo between 1 and 1000),
+  check (tiempo_espera_s between 0 and 86400)
+);
+
+alter table verifactu_envio_estado enable row level security;
+drop policy if exists "rls_verifactu_envio_estado" on verifactu_envio_estado;
+create policy "rls_verifactu_envio_estado" on verifactu_envio_estado
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table verifactu_envio_estado force row level security;
+
 
 -- Registro de eventos del sistema de facturación (RD 1007/2023): arranque,
 -- parada, exportación, incidencia, cambio de configuración. Es la evidencia
@@ -4069,6 +4176,40 @@ alter table orgs add column if not exists verifactu_cert_subido_at timestamptz;
 alter table orgs add column if not exists verifactu_modo text not null default 'no_verifactu';
 alter table orgs drop constraint if exists chk_orgs_verifactu_modo;
 alter table orgs add constraint chk_orgs_verifactu_modo check (verifactu_modo in ('no_verifactu', 'verifactu'));
+
+-- IndicadorMultiplesOT del bloque SistemaInformatico (FAQ de desarrolladores
+-- de la AEAT, apartado 4): en un SIF SaaS se calcula POR USUARIO, S si ese
+-- usuario lleva más de una facturación en el SaaS. En Cord, el usuario es el
+-- DUEÑO de la organización y cada organización con Verifactu activado (o con
+-- registros, aunque después lo desactivara) es una facturación. Las otras
+-- organizaciones del dueño no son visibles bajo el carril de esta (regla 30):
+-- función estrecha que solo responde por la organización en contexto y solo
+-- devuelve un booleano.
+create or replace function cord_verifactu_multiples_ot(p_org uuid)
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select count(*) > 1
+    from orgs o
+   where p_org = nullif(current_setting('app.org_id', true), '')::uuid
+     and o.owner_id is not null
+     and o.owner_id = (select owner_id from orgs where id = p_org)
+     and o.sandbox_of is null
+     and o.is_demo is not true
+     and (o.verifactu_cert_subido_at is not null
+          or exists (select 1 from verifactu_registros r where r.org_id = o.id))
+$$;
+revoke all on function cord_verifactu_multiples_ot(uuid) from public;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant execute on function cord_verifactu_multiples_ot(uuid) to cord_app;
+    grant select, insert, update on verifactu_envio_estado to cord_app;
+  end if;
+end
+$$;
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Carril de OPS (ago 2026) — lectura cross-org declarada, no heredada

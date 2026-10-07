@@ -24,7 +24,7 @@ import { currentUserId } from '../../../lib/context';
 import { reauthenticate, clearSessionCookies } from '../../../lib/auth';
 import { emailSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { deleteOrgCascade } from '../../../lib/org-delete';
+import { assertOrgDeletable, deleteOrgCascade, OrgConservacionError } from '../../../lib/org-delete';
 
 const schema = z.object({
     confirmEmail: emailSchema,
@@ -74,8 +74,22 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
         return json({ error: 'blocking_orgs', orgs: blocking.map((o) => ({ id: o.id, nombre: o.nombre })) }, 409);
     }
 
-    // 2) Dueño ÚNICO (nadie más activo) — se borran con la cuenta.
+    // 2) Dueño ÚNICO (nadie más activo) — se borran con la cuenta. Antes de
+    // borrar NINGUNA se comprueba que todas se puedan borrar: una con registros
+    // Verifactu que conservar dejaba la baja a medias (unas orgs borradas, la
+    // cuenta viva).
     const soleOwned = owned.filter((o) => o.tiene_otros_miembros !== true);
+    const retenidas: { id: string; nombre: string }[] = [];
+    for (const org of soleOwned) {
+        try { await assertOrgDeletable(org.id as string); }
+        catch (error) {
+            if (!(error instanceof OrgConservacionError)) throw error;
+            retenidas.push({ id: org.id as string, nombre: org.nombre as string });
+        }
+    }
+    if (retenidas.length) {
+        return json({ error: 'retention_required', message: new OrgConservacionError().message, orgs: retenidas }, 409);
+    }
     for (const org of soleOwned) {
         await deleteOrgCascade({
             id: org.id as string,

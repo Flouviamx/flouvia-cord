@@ -138,12 +138,13 @@ assert.ok(!validSpainTaxId('no-es-un-nif'));
 assert.ok(validRfc('XAXX010101000'), 'RFC genérico mexicano sigue viviendo en tax-id.ts');
 
 // ── Verifactu: orden de providers, fallo cerrado y encadenamiento ──────────
-const [factory, spainProvider, chain, huella, invoicesSrc] = await Promise.all([
+const [factory, spainProvider, chain, huella, invoicesSrc, registro] = await Promise.all([
     readFile(new URL('../src/lib/fiscal/FiscalFactory.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/providers/SpainVerifactuProvider.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/verifactu/chain.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/verifactu/huella.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/invoices.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/fiscal/verifactu/registro.ts', import.meta.url), 'utf8'),
 ]);
 
 // El orden del array de FiscalFactory decide qué provider gana: gana el
@@ -159,6 +160,9 @@ const [factory, spainProvider, chain, huella, invoicesSrc] = await Promise.all([
 // el provider comercial — nunca aparenta un registro que no se generó.
 assert.match(spainProvider, /regulatory_status: 'commercial_only'/);
 assert.match(spainProvider, /authority_submission: false/);
+// Un solo interruptor: sin envío activo no se encadena nada (un registro que
+// nunca llegará a la AEAT no puede imprimir su QR).
+assert.match(spainProvider, /verifactuEnvioConfig\(\)/);
 // Sin NIF del emisor la función debe LANZAR (fallo cerrado): el llamador
 // (emit.ts/invoices.ts) trata una excepción del provider como emisión
 // fallida y no marca el documento como emitido.
@@ -171,20 +175,25 @@ assert.match(spainProvider, /await appendVerifactuAnulacion\(/);
 // esto una rectificativa española se firmaría como F1 en vez de R1.
 assert.match(emit, /documentTypeForOrg/);
 assert.match(invoicesSrc, /documentType: regulatory/);
-assert.match(spainProvider, /isRectificativa \? 'R1' : 'F1'/);
+// La rectificativa se reconoce por la factura que corrige (credit_note_of) y
+// va como R1 por diferencias (TipoRectificativa I).
+assert.match(spainProvider, /credit_note_of/);
+assert.match(registro, /tipoRectificativa: 'I'/);
 
 // El driver HTTP de Neon (ver src/lib/db.ts) no sostiene una transacción
 // interactiva entre dos llamadas, así que un advisory lock tomado en una
 // llamada YA se liberó cuando la siguiente empieza: la cadena se serializa
 // con el unique(org_id, seq) + reintento, no con pg_advisory_xact_lock.
-assert.match(chain, /on conflict \(org_id, seq\) do nothing/);
-assert.match(chain, /existingLink\(orgId, documentoId, tipo\)/, 'debe haber un replay idempotente antes de intentar encadenar de nuevo');
+assert.match(chain, /on conflict do nothing/);
+assert.match(chain, /registroOriginal\(orgId, documentoId, tipo\)/, 'debe haber un replay idempotente antes de intentar encadenar de nuevo');
 assert.ok(!/sql`[^`]*pg_advisory_xact_lock/s.test(chain), 'un advisory lock no serializa nada entre dos llamadas HTTP separadas — sería falsa seguridad');
 
 // ── Schema: la cadena es append-only de verdad, no solo por convención ─────
 assert.match(schema, /create table if not exists verifactu_registros/);
 assert.match(schema, /unique \(org_id, seq\)/);
-assert.match(schema, /unique \(documento_id, tipo\)/);
+// Un registro original por factura y tipo; las subsanaciones apuntan a él.
+assert.match(schema, /create unique index if not exists uq_verifactu_registros_original\s+on verifactu_registros \(documento_id, tipo\) where subsana_de is null/);
+assert.match(schema, /create trigger trg_orgs_verifactu_conservacion/);
 assert.match(schema, /alter table verifactu_registros force row level security/);
 assert.match(schema, /create trigger trg_verifactu_registro_inmutable/);
 assert.match(schema, /before update or delete on verifactu_registros/);

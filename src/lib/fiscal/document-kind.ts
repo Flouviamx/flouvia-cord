@@ -1,6 +1,7 @@
 import { getEffectivePlan } from '../org-entitlements';
 import { sql, withOrgTx } from '../db';
 import { planIncludes, type PlanId } from '../entitlements';
+import { verifactuEnvioConfig } from './verifactu/sif';
 
 export type InvoiceMode = 'commercial' | 'fiscal';
 
@@ -30,7 +31,8 @@ export async function documentTypeForOrg(orgId: string, country: string, mode?: 
   let ready = false;
   if (country === 'ES' && planIncludes(plan, 'cfdi')) {
     const [[org]] = await withOrgTx(orgId, sql`select verifactu_modo from orgs where id = ${orgId} limit 1`);
-    ready = org?.verifactu_modo === 'verifactu' && process.env.VERIFACTU_AEAT_ENABLED === 'true';
+    // El mismo interruptor que decide si el provider encadena (sif.ts).
+    ready = org?.verifactu_modo === 'verifactu' && verifactuEnvioConfig().habilitado;
   }
   return selectDocumentType(country, plan, mode, ready);
 }

@@ -5,6 +5,7 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 import { getCountryProfile, US_STATES } from '../../../lib/countries';
+import { verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -13,6 +14,9 @@ const isMx = ORG.countryCode === 'MX';
 const isUs = ORG.countryCode === 'US';
 const isEs = ORG.countryCode === 'ES';
 const verifactuOn = ORG.verifactuModo === 'verifactu';
+// Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
+// apagado no se encadena nada, y la pantalla no puede decir "activo".
+const verifactuRegistrando = verifactuOn && verifactuEnvioConfig().habilitado;
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
 // El ejemplo sale del prefijo real (el guardado o el del país), no de un
@@ -213,9 +217,11 @@ import { iconInner } from '../../../lib/icons';
                 <span class="csd-state-dot"></span>
                 <span class="csd-state-info">
                     <span class="csd-state-title" id="vfStateTitle">
-                        {verifactuOn
+                        {verifactuRegistrando
                             ? (L === 'en' ? 'Verifactu active' : 'Verifactu activo')
-                            : (L === 'en' ? 'Verifactu not connected' : 'Verifactu sin conectar')}
+                            : verifactuOn
+                                ? (L === 'en' ? 'Certificate saved, registration not active yet' : 'Certificado guardado, registro aún no activo')
+                                : (L === 'en' ? 'Verifactu not connected' : 'Verifactu sin conectar')}
                     </span>
                     <span class="csd-state-sub" id="vfName">
                         {verifactuOn
@@ -396,10 +402,10 @@ import { iconInner } from '../../../lib/icons';
         const isEn = document.documentElement.lang === 'en';
         if (!file || !passIn || !upBtn || !msg || !state) return;
 
-        const flash = (text: string, ok: boolean) => {
+        const flash = (text: string, ok: boolean, sticky = false) => {
             msg.textContent = text;
             msg.className = 'csd-msg ' + (ok ? 'ok' : 'err');
-            if (ok) setTimeout(() => { msg.textContent = ''; msg.className = 'csd-msg'; }, 5000);
+            if (ok && !sticky) setTimeout(() => { msg.textContent = ''; msg.className = 'csd-msg'; }, 5000);
         };
 
         file.addEventListener('change', () => {
@@ -427,12 +433,19 @@ import { iconInner } from '../../../lib/icons';
                 state.setAttribute('data-on', '1');
                 const title = document.getElementById('vfStateTitle');
                 const sub = document.getElementById('vfName');
-                if (title) title.textContent = isEn ? 'Verifactu active' : 'Verifactu activo';
+                if (title) title.textContent = d.registrando === false
+                    ? (isEn ? 'Certificate saved, registration not active yet' : 'Certificado guardado, registro aún no activo')
+                    : (isEn ? 'Verifactu active' : 'Verifactu activo');
                 if (sub) sub.textContent = d.caduca
                     ? (isEn ? `Certificate valid until ${d.caduca}` : `Certificado vigente hasta ${d.caduca}`)
                     : (isEn ? 'Certificate active' : 'Certificado activo');
                 if (rmBtn) rmBtn.style.display = '';
-                flash(isEn ? 'Certificate uploaded. Invoices now chain into the Verifactu registry.' : 'Certificado cargado. Las facturas ya se encadenan al registro de Verifactu.', true);
+                const okMsg = d.registrando === false
+                    ? (isEn ? 'Certificate saved. Cord will start registering your invoices with the AEAT as soon as Verifactu is enabled; we will let you know.' : 'Certificado guardado. Cord empezará a registrar tus facturas ante la AEAT en cuanto Verifactu esté activo; te avisaremos.')
+                    : (isEn ? 'Certificate uploaded. Invoices now chain into the Verifactu registry.' : 'Certificado cargado. Las facturas ya se encadenan al registro de Verifactu.');
+                // El titular del certificado no coincide con el NIF del negocio: se
+                // acepta (puede ser un representante autorizado), pero se avisa.
+                flash(d.aviso ? `${okMsg} ${d.aviso}` : okMsg, true, !!d.aviso);
                 (window as any).cordToast?.(isEn ? 'Verifactu connected' : 'Verifactu conectado', 'ok');
             } catch (err: any) {
                 flash(err.message || (isEn ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
@@ -452,7 +465,12 @@ import { iconInner } from '../../../lib/icons';
             rmBtn.disabled = true;
             try {
                 const res = await fetch('/api/fiscal/verifactu-cert', { method: 'DELETE' });
-                if (!res.ok) throw new Error();
+                // 409: hay registros por enviar o del ejercicio en curso; el
+                // servidor explica por qué no se puede desconectar todavía.
+                if (!res.ok) {
+                    const d = await res.json().catch(() => ({}));
+                    throw new Error(res.status === 409 && typeof d.error === 'string' ? d.error : '');
+                }
                 state.setAttribute('data-on', '0');
                 const title = document.getElementById('vfStateTitle');
                 const sub = document.getElementById('vfName');
@@ -460,7 +478,7 @@ import { iconInner } from '../../../lib/icons';
                 if (sub) sub.textContent = isEn ? 'Upload your .p12/.pfx certificate to start' : 'Sube tu certificado .p12/.pfx para empezar';
                 rmBtn.style.display = 'none';
                 flash(isEn ? 'Verifactu disconnected.' : 'Verifactu desconectado.', true);
-            } catch { flash(isEn ? 'Could not disconnect Verifactu' : 'No se pudo desconectar Verifactu', false); } finally { rmBtn.disabled = false; }
+            } catch (err: any) { flash(err?.message || (isEn ? 'Could not disconnect Verifactu' : 'No se pudo desconectar Verifactu'), false); } finally { rmBtn.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initVerifactu);

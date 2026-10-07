@@ -133,4 +133,23 @@ describe('idioma y menciones legales del PDF de factura', () => {
         })));
         expect(text).toMatch(/TVA EUR: 180,00/);
     });
+
+    it('factura española con Verifactu: QR tributario arriba y total de factura separado del total a pagar', () => {
+        const text = pdfText(createInvoicePdf(base({
+            countryCode: 'ES', invoiceNumber: 'F2026-000001',
+            issuer: { legalName: 'Estudio Sol SL', taxId: 'B12345674', address: { countryCode: 'ES' } },
+            recipient: { legalName: 'Cliente SA', taxId: 'A58818501', address: { countryCode: 'ES' } },
+            lines: [{ description: 'Diseño', quantity: 1, unitPrice: 1000, taxRate: 0.21, subtotal: 1000, taxAmount: 210, total: 1210 }],
+            subtotal: 1000, taxTotal: 210, total: 1060,
+            retenciones: [{ nombre: 'IRPF 15%', tipo: 'ret_isr', tasa: 0.15, base: 1000, monto: 150 }],
+            verifactu: { qrUrl: 'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR?nif=B12345674&numserie=F2026-000001&fecha=07-10-2026&importe=1210.00',
+                huella: 'A'.repeat(64), leyenda: 'Factura verificable en la sede electrónica de la AEAT', leyendaCorta: 'VERI*FACTU' },
+        })));
+        expect(text).toContain('QR tributario:');
+        expect(text).toContain('Factura verificable en la sede');
+        expect(text).toContain('Importe total factura');
+        expect(text).toContain('TOTAL A PAGAR');
+        // El QR va antes que las partes (el emisor ya sale en la cabecera).
+        expect(text.indexOf('QR tributario:')).toBeLessThan(text.indexOf('Cliente SA'));
+    });
 });

@@ -431,6 +431,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       const data = await res.json().catch(() => ({}));
       if (res.ok) { window.location.href = data.redirect || '/'; return; }
       if (data.error === 'blocking_orgs') setDeleteBlockingOrgs(data.orgs || []);
+      else if (data.error === 'retention_required') setDeleteErr(String(data.message || '') + (Array.isArray(data.orgs) && data.orgs.length ? ` (${data.orgs.map((o: any) => o.nombre).join(', ')})` : ''));
       else if (data.error === 'confirmation_required') setDeleteErr(locale === 'en' ? "We couldn't confirm your identity." : 'No pudimos confirmar tu identidad.');
       else if (data.error === 'email_mismatch') setDeleteErr(locale === 'en' ? "The email doesn't match." : 'El correo no coincide.');
       else setDeleteErr(locale === 'en' ? 'Something went wrong. Please try again.' : 'Algo salió mal. Intenta de nuevo.');

@@ -107,6 +107,18 @@ export function fechaExpedicionAEAT(date: Date): string {
 }
 
 /**
+ * Año natural EN MADRID del instante dado — el ejercicio de la serie de una
+ * factura española. Sale del mismo formateo que `fechaExpedicionAEAT`, así que
+ * el año de la serie y el de FechaExpedicionFactura nunca pueden discrepar:
+ * con el año UTC, una factura expedida a las 00:30 del 1 de enero en Madrid se
+ * numeraba en la serie del año anterior mientras el registro decía el nuevo.
+ */
+export function ejercicioAEAT(date: Date): number {
+    const year = Number(fechaExpedicionAEAT(date).slice(6));
+    return Number.isFinite(year) && year > 0 ? year : date.getUTCFullYear();
+}
+
+/**
  * ISO 8601 con offset explícito de Madrid (+01:00 invierno, +02:00 verano) —
  * la huella se rompe si aquí se manda "Z" (UTC) en vez del huso real, porque
  * el campo se llama literalmente FechaHoraHuso**GenRegistro**.
@@ -115,7 +127,11 @@ export function fechaHoraHusoAEAT(date: Date): string {
     const parts = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Europe/Madrid',
         year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+        // `hourCycle: 'h23'`, no `hour12: false`: con este último varias
+        // versiones de ICU formatean la medianoche como "24", y
+        // "2026-01-01T24:00:00" no es un dateTime válido — el registro se
+        // rechazaría y, peor, la huella ya firmada llevaría esa hora.
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
     }).formatToParts(date);
     const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
     // El offset se deriva comparando la hora de Madrid contra UTC en el mismo

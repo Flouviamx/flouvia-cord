@@ -1,21 +1,46 @@
 // Envío asíncrono a la AEAT de los registros Verifactu ya encadenados — el
 // outbox de Verifactu, mismo patrón que el outbox de consumo de Stripe
 // (billing-reconcile.ts): el registro se genera y encadena de forma SÍNCRONA
-// al emitir (SpainVerifactuProvider), y el ENVÍO va por un cron con reintentos
-// para no bloquear la emisión de la factura con la latencia/disponibilidad de
-// un servicio de terceros.
+// al emitir (SpainVerifactuProvider), y el ENVÍO va aparte para no bloquear la
+// emisión de la factura con la latencia o la disponibilidad de la AEAT.
+//
+// Quién llama aquí:
+//   - el propio proveedor, justo después de encadenar (`after()`): la remisión
+//     es "inmediata" en la medida en que el control de flujo lo permite;
+//   - /api/cron/verifactu-submit, cada hora, para lo que no salió entonces.
+//
+// Garantías de esta versión (antes no existían):
+//   - Un solo envío en vuelo por organización (lease en verifactu_envio_estado):
+//     el cron horario, el de respaldo y el envío tras emitir no duplican lotes.
+//   - Control de flujo de la Orden (art. 16.2): se respeta el TiempoEsperaEnvio
+//     que devuelve la AEAT, salvo con 1000 registros acumulados.
+//   - Un registro que rompe el esquema no bloquea la cola: se detecta antes de
+//     mandarlo, o se aísla partiendo el lote tras un SoapFault, y se APARCA
+//     (`bloqueado`) para corregirlo con una subsanación.
+//   - El ObligadoEmision de la cabecera sale del propio registro (antes salía
+//     de `orgs.rfc`, vacío en organizaciones fuera de México: su NIF vive en
+//     fiscal_metadata.tax_id).
+import { randomUUID } from 'node:crypto';
 import { sql, withOrgTx, withSystemTx } from '../../db';
+import { after } from '../../after';
 import { decryptSecret } from '../../crypto-secret';
-import { submitToAeat, type BatchRegistro, type RegistroIdentity } from './aeat';
-import { logVerifactuEvento } from './chain';
 import { log } from '../../log';
+import { submitToAeat, type RegistroIdentity, type RespuestaEnvio } from './aeat';
+import { logVerifactuEvento } from './chain';
+import { credencialesTls, InvalidCertificateError } from './cert';
+import {
+    clasificarFallo, identidadDeRegistro, loteTrasFallo, primerGrupo, resolverRespuesta, segundosDeEspera,
+    type FilaPendiente,
+} from './envio';
+import { problemasEsquemaAlta, problemasEsquemaAnulacion } from './registro';
+import { verifactuEnvioConfig } from './sif';
 
-const AEAT_ENABLED = String(import.meta.env?.VERIFACTU_AEAT_ENABLED ?? process.env.VERIFACTU_AEAT_ENABLED ?? '').toLowerCase() === 'true';
-const AEAT_SANDBOX = String(import.meta.env?.VERIFACTU_AEAT_SANDBOX ?? process.env.VERIFACTU_AEAT_SANDBOX ?? 'true').toLowerCase() !== 'false';
-// Un envío no puede tardar más que la ventana del propio cron. 100 registros
-// por lote: bien por debajo del límite de 1000 del esquema, con margen para
-// varias corridas si una org tiene un backlog grande.
-const BATCH_SIZE = 100;
+/** Máximo de envíos por organización en una sola llamada (cinturón contra bucles). */
+const MAX_ENVIOS_POR_LLAMADA = 25;
+/** Margen para no empezar un envío que no alcanza a terminar antes del plazo. */
+const MARGEN_ENVIO_MS = 12_000;
+/** Espera tras un fallo de cabecera/certificado: no tiene sentido insistir cada minuto. */
+const ESPERA_FALLO_CABECERA_S = 15 * 60;
 
 export interface SubmitOrgResult {
     orgId: string;
@@ -23,120 +48,306 @@ export interface SubmitOrgResult {
     aceptados: number;
     aceptadosConErrores: number;
     rechazados: number;
+    bloqueados: number;
+    sinRespuesta: number;
+    /** Quedan registros pendientes al terminar (para la segunda pasada del cron). */
+    quedanPendientes: boolean;
+    /** No se intentó: envío apagado, otra llamada en curso o esperando el control de flujo. */
+    omitido?: string;
     error?: string;
 }
 
-/** Orgs españolas con Verifactu activado — candidatas a tener envíos pendientes. */
+export interface SubmitOptions {
+    /** Instante (ms) a partir del cual no se empieza otro envío. */
+    deadline?: number;
+    /** Esperar el TiempoEsperaEnvio dentro de esta llamada si el plazo lo permite. */
+    permitirEspera?: boolean;
+}
+
+const vacio = (orgId: string): SubmitOrgResult => ({
+    orgId, enviados: 0, aceptados: 0, aceptadosConErrores: 0, rechazados: 0, bloqueados: 0, sinRespuesta: 0, quedanPendientes: false,
+});
+
+const dormir = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Organizaciones españolas que pueden tener envíos pendientes. Barrido de
+ * SISTEMA solo sobre `orgs` (cuya política acepta el carril de sistema): el
+ * trabajo de cada una vuelve a `withOrgTx` dentro de `submitPendingForOrg`.
+ */
 export async function orgsConVerifactuActivo(): Promise<string[]> {
     const [rows] = await withSystemTx(sql`
         select id from orgs
-        where verifactu_modo = 'verifactu' and sandbox_of is null and is_demo is not true`);
+         where (verifactu_modo = 'verifactu' or verifactu_cert_enc is not null)
+           and sandbox_of is null and is_demo is not true
+         order by id`);
     return rows.map((r: any) => r.id as string);
+}
+
+async function contarPendientes(orgId: string): Promise<number> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select count(*)::int as n from verifactu_registros
+         where org_id = ${orgId} and envio_estado = 'pendiente'`);
+    return Number(rows[0]?.n || 0);
+}
+
+async function actualizarEstado(orgId: string, campos: {
+    esperaS?: number; lote?: number; error?: string | null; enviado?: boolean;
+}): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update verifactu_envio_estado
+           set proximo_envio_at = case when ${campos.esperaS ?? null}::int is null then proximo_envio_at
+                                       else now() + make_interval(secs => ${campos.esperaS ?? 0}::int) end,
+               tiempo_espera_s = coalesce(${campos.esperaS ?? null}::int, tiempo_espera_s),
+               lote_maximo = coalesce(${campos.lote ?? null}::int, lote_maximo),
+               ultimo_error = case when ${campos.error === undefined} then ultimo_error else ${campos.error ?? null} end,
+               ultimo_envio_at = case when ${campos.enviado === true} then now() else ultimo_envio_at end,
+               updated_at = now()
+         where org_id = ${orgId}`);
+}
+
+async function aparcar(orgId: string, fila: FilaPendiente, motivo: string, detalle: Record<string, unknown>): Promise<void> {
+    await withOrgTx(orgId, sql`
+        update verifactu_registros
+           set envio_estado = 'bloqueado', envio_at = now(), envio_error = ${motivo.slice(0, 1000)},
+               aeat_respuesta = ${JSON.stringify({ aparcado: true, motivo, ...detalle })}::jsonb
+         where id = ${fila.id} and org_id = ${orgId} and envio_estado = 'pendiente'`);
+    await logVerifactuEvento(orgId, 'incidencia', { motivo: 'registro aparcado', registro: fila.id, seq: fila.seq, detalle: motivo });
+}
+
+async function identidadPrevia(orgId: string, seq: number): Promise<RegistroIdentity | null> {
+    if (seq <= 1) return null;
+    const [rows] = await withOrgTx(orgId, sql`
+        select tipo, payload from verifactu_registros
+         where org_id = ${orgId} and seq = ${seq - 1} limit 1`);
+    const prior = rows[0];
+    return prior ? identidadDeRegistro(prior.tipo, prior.payload) : null;
 }
 
 /**
  * Envía el backlog pendiente de UNA org. Aislado por diseño: el fallo de una
- * org (certificado caducado, red caída) no puede tumbar el envío de las demás
- * — cada una se marca y se reintenta en la corrida siguiente del cron.
+ * org (certificado caducado, red caída) no puede tumbar el envío de las demás.
+ * Nunca lanza por un fallo de la AEAT: lo devuelve en `error` y lo deja
+ * anotado en verifactu_envio_estado.
  */
-export async function submitPendingForOrg(orgId: string): Promise<SubmitOrgResult> {
-    const result: SubmitOrgResult = { orgId, enviados: 0, aceptados: 0, aceptadosConErrores: 0, rechazados: 0 };
+export async function submitPendingForOrg(orgId: string, options: SubmitOptions = {}): Promise<SubmitOrgResult> {
+    const result = vacio(orgId);
+    const config = verifactuEnvioConfig();
+    if (!config.habilitado) {
+        // Interruptor apagado: el backlog queda pendiente y no se toca la red.
+        result.omitido = 'envio_deshabilitado';
+        return result;
+    }
+    const deadline = options.deadline ?? Date.now() + 40_000;
 
     const [orgRows] = await withOrgTx(orgId, sql`
-        select rfc, razon_social, nombre, verifactu_modo, verifactu_cert_enc, verifactu_cert_pass_enc, verifactu_cert_caduca
+        select razon_social, nombre, verifactu_cert_enc, verifactu_cert_pass_enc, verifactu_cert_caduca,
+               sandbox_of, is_demo
           from orgs where id = ${orgId} limit 1`);
     const org = orgRows[0];
-    if (!org || org.verifactu_modo !== 'verifactu') return result;
-
-    const [pendingRows] = await withOrgTx(orgId, sql`
-        select id, documento_id, tipo, seq, payload
-          from verifactu_registros
-         where org_id = ${orgId} and envio_estado = 'pendiente'
-         order by seq asc
-         limit ${BATCH_SIZE}`);
-    if (!pendingRows.length) return result;
-
-    if (!AEAT_ENABLED) {
-        // Interruptor explícito apagado: se deja el backlog en pendiente y se
-        // sale sin tocar la red — así se puede probar el encadenamiento en
-        // producción sin remitir nunca contra el servicio real de la AEAT.
+    if (!org || org.sandbox_of || org.is_demo) {
+        result.omitido = 'org_no_aplica';
         return result;
     }
 
-    const p12b64 = decryptSecret(org.verifactu_cert_enc as string);
-    const password = decryptSecret(org.verifactu_cert_pass_enc as string);
-    if (!p12b64 || !password) {
-        result.error = 'Certificado Verifactu no disponible (no se pudo descifrar).';
+    // Esperar el control de flujo dentro de esta llamada, si se pidió y cabe.
+    if (options.permitirEspera) {
+        const [estadoRows] = await withOrgTx(orgId, sql`
+            select extract(epoch from (proximo_envio_at - now())) as faltan
+              from verifactu_envio_estado where org_id = ${orgId} limit 1`);
+        const faltanMs = Math.max(0, Number(estadoRows[0]?.faltan || 0) * 1000);
+        if (faltanMs > 0 && Date.now() + faltanMs + MARGEN_ENVIO_MS < deadline) await dormir(faltanMs + 250);
+    }
+
+    // Lease: un solo envío en vuelo por organización. Solo se toma si hay
+    // pendientes y ya pasó el tiempo de espera (o hay 1000 acumulados).
+    const token = randomUUID();
+    const leaseS = Math.max(60, Math.ceil((deadline - Date.now()) / 1000) + 60);
+    const [, leaseRows] = await withOrgTx(orgId,
+        sql`insert into verifactu_envio_estado (org_id) values (${orgId}) on conflict (org_id) do nothing`,
+        sql`update verifactu_envio_estado e
+               set lease_hasta = now() + make_interval(secs => ${leaseS}::int), lease_token = ${token}, updated_at = now()
+             where e.org_id = ${orgId}
+               and (e.lease_hasta is null or e.lease_hasta < now())
+               and exists (select 1 from verifactu_registros r where r.org_id = ${orgId} and r.envio_estado = 'pendiente')
+               and (e.proximo_envio_at is null or e.proximo_envio_at <= now()
+                    or (select count(*) from verifactu_registros r
+                         where r.org_id = ${orgId} and r.envio_estado = 'pendiente') >= 1000)
+         returning lote_maximo, tiempo_espera_s`,
+    );
+    if (!leaseRows[0]) {
+        result.omitido = 'sin_pendientes_en_espera_o_en_curso';
+        result.quedanPendientes = (await contarPendientes(orgId)) > 0;
         return result;
     }
-    if (org.verifactu_cert_caduca && new Date(org.verifactu_cert_caduca as string).getTime() <= Date.now()) {
-        result.error = `El certificado Verifactu caducó el ${org.verifactu_cert_caduca}.`;
-        return result;
-    }
+    let lote = Math.max(1, Math.min(1000, Number(leaseRows[0].lote_maximo) || 1000));
+    let esperaS = Number(leaseRows[0].tiempo_espera_s) || 60;
 
-    // Resuelve `previous` para cada fila del lote: la identidad (NIF+serie+
-    // fecha) del registro `seq - 1`. Como el lote es contiguo por `seq`, el
-    // anterior de la fila N es la fila N-1 dentro del propio lote, EXCEPTO la
-    // primera fila del lote, cuyo anterior hay que releerlo aparte (pudo
-    // quedar fuera si un lote previo ya se envió).
-    const firstSeq = Number(pendingRows[0].seq);
-    let priorIdentity: RegistroIdentity | null = null;
-    if (firstSeq > 1) {
-        const [priorRows] = await withOrgTx(orgId, sql`
-            select tipo, payload from verifactu_registros
-             where org_id = ${orgId} and seq = ${firstSeq - 1} limit 1`);
-        const prior = priorRows[0];
-        if (prior) priorIdentity = identityFromPayload(prior.tipo, prior.payload);
-    }
-
-    const batch: BatchRegistro[] = [];
-    let previous = priorIdentity;
-    for (const row of pendingRows) {
-        batch.push({ tipo: row.tipo, payload: row.payload, previous });
-        previous = identityFromPayload(row.tipo, row.payload);
-    }
-
-    const emisor = { nombreRazon: String(org.razon_social || org.nombre || ''), nif: String(org.rfc || '').toUpperCase() };
-    let respuesta;
     try {
-        respuesta = await submitToAeat(emisor, batch, {
-            sandbox: AEAT_SANDBOX,
-            p12: Buffer.from(p12b64, 'base64'),
-            p12Password: password,
-        });
-    } catch (error) {
-        result.error = error instanceof Error ? error.message : 'fallo desconocido al enviar a la AEAT';
-        log.error('verifactu: fallo al enviar a la AEAT', { route: 'verifactu-submit', orgId, err: error });
-        return result;
-    }
+        const p12b64 = decryptSecret(org.verifactu_cert_enc as string);
+        const password = decryptSecret(org.verifactu_cert_pass_enc as string);
+        if (!p12b64 || !password) {
+            result.error = 'Certificado Verifactu no disponible (no se pudo descifrar o no está cargado).';
+            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            return result;
+        }
+        if (org.verifactu_cert_caduca && new Date(org.verifactu_cert_caduca as string).getTime() <= Date.now()) {
+            result.error = `El certificado Verifactu caducó el ${org.verifactu_cert_caduca}.`;
+            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            await logVerifactuEvento(orgId, 'incidencia', { motivo: 'certificado caducado' });
+            return result;
+        }
+        let credenciales;
+        try {
+            credenciales = credencialesTls(Buffer.from(p12b64, 'base64'), password);
+        } catch (error) {
+            result.error = error instanceof InvalidCertificateError ? error.message : 'El certificado Verifactu no se pudo cargar.';
+            await actualizarEstado(orgId, { error: result.error, esperaS: ESPERA_FALLO_CABECERA_S });
+            return result;
+        }
 
-    result.enviados = pendingRows.length;
-    const porNumSerie = new Map(respuesta.lineas.map((l) => [l.numSerieFactura, l]));
-    for (const row of pendingRows) {
-        const numSerie = row.tipo === 'alta' ? row.payload.numSerieFactura : row.payload.numSerieFacturaAnulada;
-        const linea = porNumSerie.get(numSerie);
-        const estado = linea?.estado === 'Correcto' ? 'aceptado'
-            : linea?.estado === 'AceptadoConErrores' ? 'aceptado_con_errores'
-            : 'rechazado';
-        if (estado === 'aceptado') result.aceptados++;
-        else if (estado === 'aceptado_con_errores') result.aceptadosConErrores++;
-        else result.rechazados++;
+        for (let envio = 0; envio < MAX_ENVIOS_POR_LLAMADA; envio++) {
+            const [pendRows] = await withOrgTx(orgId, sql`
+                select id, tipo, seq, payload from verifactu_registros
+                 where org_id = ${orgId} and envio_estado = 'pendiente'
+                 order by seq asc
+                 limit ${lote}`);
+            const pendientes: FilaPendiente[] = pendRows.map((r) => ({
+                id: String(r.id), tipo: r.tipo === 'anulacion' ? 'anulacion' : 'alta', seq: Number(r.seq), payload: r.payload,
+            }));
+            if (!pendientes.length) break;
+
+            // 1) Lo que rompe el esquema no se manda: rechazaría el mensaje
+            //    entero. Se aparca y se sigue con el resto.
+            let aparcados = 0;
+            for (const fila of pendientes) {
+                const problemas = fila.tipo === 'alta' ? problemasEsquemaAlta(fila.payload) : problemasEsquemaAnulacion(fila.payload);
+                if (problemas.length) {
+                    await aparcar(orgId, fila, `No cumple el esquema de la AEAT: ${problemas.join('; ')}`, { problemas });
+                    aparcados++;
+                }
+            }
+            if (aparcados) {
+                result.bloqueados += aparcados;
+                continue;
+            }
+
+            if (deadline - Date.now() < MARGEN_ENVIO_MS) break;
+
+            const grupo = primerGrupo(pendientes, await identidadPrevia(orgId, pendientes[0].seq), {
+                max: lote,
+                entornoPorDefecto: config.entorno,
+                nombrePorDefecto: String(org.razon_social || org.nombre || ''),
+            });
+            if (!grupo) break;
+            const ids = grupo.filas.map((f) => f.id);
+            await withOrgTx(orgId, sql`
+                update verifactu_registros set envio_intentos = envio_intentos + 1
+                 where org_id = ${orgId} and id = any(${ids}::uuid[])`);
+
+            let respuesta: RespuestaEnvio;
+            try {
+                respuesta = await submitToAeat(grupo.emisor, grupo.registros, {
+                    entorno: grupo.entorno,
+                    credenciales,
+                    timeoutMs: Math.max(5_000, Math.min(30_000, deadline - Date.now() - 2_000)),
+                });
+            } catch (error) {
+                const clase = clasificarFallo(error);
+                const mensaje = error instanceof Error ? error.message : String(error);
+                log.error('verifactu: fallo al enviar a la AEAT', { route: 'verifactu-submit', orgId, clase, registros: ids.length, err: error });
+                if (clase === 'aislable') {
+                    if (grupo.filas.length > 1) {
+                        // El culpable está en el lote: el siguiente envío lleva la
+                        // mitad. Convergencia en log2(n) envíos sin aparcar a nadie
+                        // por error.
+                        lote = loteTrasFallo(grupo.filas.length);
+                        await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
+                    } else {
+                        await aparcar(orgId, grupo.filas[0], mensaje, { fault: (error as any)?.faultstring, codigo: (error as any)?.codigo });
+                        result.bloqueados++;
+                        // Culpable aislado: el resto de la cola vuelve a lotes completos.
+                        lote = 1000;
+                        await actualizarEstado(orgId, { lote, esperaS, error: mensaje, enviado: true });
+                    }
+                } else {
+                    result.error = mensaje;
+                    await actualizarEstado(orgId, {
+                        esperaS: clase === 'cabecera' ? ESPERA_FALLO_CABECERA_S : esperaS,
+                        error: mensaje,
+                        enviado: true,
+                    });
+                    if (clase === 'cabecera') await logVerifactuEvento(orgId, 'incidencia', { motivo: 'envío rechazado por la AEAT', detalle: mensaje.slice(0, 500) });
+                    break;
+                }
+                if (!options.permitirEspera || Date.now() + esperaS * 1000 + MARGEN_ENVIO_MS >= deadline) break;
+                await dormir(esperaS * 1000);
+                continue;
+            }
+
+            result.enviados += grupo.filas.length;
+            const resoluciones = resolverRespuesta(grupo, respuesta);
+            const filas = resoluciones.map((r) => ({
+                id: r.fila.id,
+                estado: r.estado,
+                error: r.estado === 'aceptado' ? null : (r.motivo ?? null),
+                respuesta: { estadoEnvio: respuesta.estadoEnvio, csv: respuesta.csv ?? null, linea: r.linea, motivo: r.motivo ?? null },
+            }));
+            await withOrgTx(orgId, sql`
+                update verifactu_registros r
+                   set envio_estado = x.estado,
+                       envio_at = case when x.estado = 'pendiente' then r.envio_at else now() end,
+                       envio_error = x.error,
+                       aeat_respuesta = x.respuesta
+                  from jsonb_to_recordset(${JSON.stringify(filas)}::jsonb) as x(id uuid, estado text, error text, respuesta jsonb)
+                 where r.id = x.id and r.org_id = ${orgId} and r.envio_estado = 'pendiente'`);
+            for (const r of resoluciones) {
+                if (r.estado === 'aceptado') result.aceptados++;
+                else if (r.estado === 'aceptado_con_errores') result.aceptadosConErrores++;
+                else if (r.estado === 'rechazado') result.rechazados++;
+                else result.sinRespuesta++;
+            }
+            esperaS = segundosDeEspera(respuesta);
+            lote = Math.min(1000, lote * 2);
+            await actualizarEstado(orgId, { esperaS, lote, error: null, enviado: true });
+            const incidencias = resoluciones.filter((r) => r.estado === 'rechazado' || r.estado === 'aceptado_con_errores');
+            if (incidencias.length) {
+                await logVerifactuEvento(orgId, 'incidencia', {
+                    motivo: 'registros rechazados o aceptados con errores por la AEAT',
+                    csv: respuesta.csv ?? null,
+                    registros: incidencias.slice(0, 50).map((r) => ({
+                        id: r.fila.id, seq: r.fila.seq, estado: r.estado, codigo: r.linea?.codigoError ?? null,
+                        numSerie: identidadDeRegistro(r.fila.tipo, r.fila.payload).numSerieFactura,
+                    })),
+                });
+            }
+
+            // Control de flujo: con 1000 acumulados se puede seguir ya; si no,
+            // hay que esperar TiempoEsperaEnvio desde este envío.
+            const quedan = await contarPendientes(orgId);
+            if (!quedan) break;
+            if (quedan >= 1000) continue;
+            if (!options.permitirEspera || Date.now() + esperaS * 1000 + MARGEN_ENVIO_MS >= deadline) break;
+            await dormir(esperaS * 1000);
+        }
+    } finally {
         await withOrgTx(orgId, sql`
-            update verifactu_registros
-               set envio_estado = ${estado}, envio_at = now(),
-                   aeat_respuesta = ${JSON.stringify({ estadoEnvio: respuesta.estadoEnvio, csv: respuesta.csv, linea: linea ?? null })}::jsonb
-             where id = ${row.id} and org_id = ${orgId}`);
-    }
-    if (result.rechazados > 0) {
-        await logVerifactuEvento(orgId, 'incidencia', {
-            motivo: 'registros rechazados por la AEAT', rechazados: result.rechazados, csv: respuesta.csv,
+            update verifactu_envio_estado
+               set lease_hasta = null, lease_token = null, updated_at = now()
+             where org_id = ${orgId} and lease_token = ${token}`).catch((error) => {
+            log.error('verifactu: no se pudo liberar el lease de envío', { route: 'verifactu-submit', orgId, err: error });
         });
     }
+    result.quedanPendientes = (await contarPendientes(orgId)) > 0;
     return result;
 }
 
-function identityFromPayload(tipo: 'alta' | 'anulacion', payload: any): RegistroIdentity {
-    return tipo === 'alta'
-        ? { idEmisorFactura: payload.idEmisorFactura, numSerieFactura: payload.numSerieFactura, fechaExpedicionFactura: payload.fechaExpedicionFactura }
-        : { idEmisorFactura: payload.idEmisorFacturaAnulada, numSerieFactura: payload.numSerieFacturaAnulada, fechaExpedicionFactura: payload.fechaExpedicionFacturaAnulada };
+/**
+ * Intento de envío INMEDIATO tras encadenar (lo llama el proveedor al emitir o
+ * anular): en segundo plano, sin añadir latencia a la emisión y sin esperar el
+ * control de flujo — si la AEAT pidió esperar, lo recoge el cron horario.
+ */
+export function programarEnvioInmediato(orgId: string): void {
+    after(submitPendingForOrg(orgId, { deadline: Date.now() + 40_000 })
+        .catch((error) => log.error('verifactu: el envío inmediato falló', { route: 'fiscal/verifactu', orgId, err: error })));
 }

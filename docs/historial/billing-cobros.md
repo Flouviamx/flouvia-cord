@@ -1574,3 +1574,38 @@ Auditoría de precios con André. Sustituye las cuotas del 2026-09-09.
 
 Columna `uso_periodo.docs` verificada en la base configurada (integer, default 0). Sin cambios en
 Stripe: precios base, tarifas medidas y monedas se conservan.
+
+## 2026-10-07 — Auditoría de Cord Invoicing, impuestos por país y Verifactu
+
+Auditoría completa de facturación en los 12 mercados. Lo que se encontró y cambió:
+
+- **Vocabulario.** Una organización de Francia leía "IVA", "RFC" y "CFDI" en
+  Ajustes, el link público y Cobros; el PDF salía solo en español o inglés. Ahora
+  todo sale del perfil del país y el PDF se escribe en la lengua del emisor.
+- **Catálogo por país.** Presets con exentas locales, IGIC en Canarias, Ceuta y
+  Melilla solo exentas, tasas de LA/UT/VA corregidas, retención de IVA mexicana a
+  10.6667 % y sobre lo gravado (base nueva `gravado`; migración en `schema.sql`).
+- **Identificador fiscal** validado con dígito verificador en los 12 países
+  (`@flouviahq/elements` 2.1.0, sin publicar).
+- **Dinero.** Redondeo por línea en la divisa del documento (el CFDI rechazaba
+  totales con un centavo de diferencia); lo cobrado en la cotización pasa a la
+  factura; anular cancela los cobros en vuelo; pagos tardíos sobre una anulada
+  quedan como saldo por devolver.
+- **México.** PUE/PPD según si la factura nace pagada y complemento de pago
+  automático por cada abono (`provider_data.reps`); emisiones con resultado
+  incierto ya no se atoran.
+- **Seguridad.** Datos serializados a `<script>` escapados (`jsonForScript`),
+  permisos por acción en facturas, límites de frecuencia en envío y descargas,
+  validación de UUID y fechas reales.
+- **PDF.** Notas de la factura, motivo de la nota de crédito, franquicia de IVA
+  (FR art. 293 B, DE § 19), cuota en moneda nacional en divisa extranjera, aviso
+  de anulada y QR de Verifactu con el tamaño y la posición legales.
+- **Verifactu** reescrito: un solo interruptor, `ImporteTotal` sin IRPF, R1/F2
+  correctos, E6/N2 por defecto, subsanaciones, estado `bloqueado`, envío cada
+  hora con lease por organización, validación contra los XSD oficiales y bloqueo
+  de borrado de organizaciones con registros. Sigue sin probarse contra la AEAT
+  real: falta un certificado de prueba.
+
+Requiere `npm run db:migrate` antes de desplegar (vista `cuentas_por_cobrar`,
+base `gravado`, columnas e índices de `verifactu_registros`, trigger de
+conservación en `orgs`).
