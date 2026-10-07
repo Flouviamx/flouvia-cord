@@ -1,7 +1,7 @@
 ---
 title: "Complete application map"
 description: "What every Cord section does, how quotes, clients, invoices, payments, collections, reports, and settings connect, and where to perform each task."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord Product and Operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -29,7 +29,7 @@ and money movements.
 6. Cord records an online payment or a manually marked payment.
 7. The operation appears under **Invoices** and **Collections** according to its
    document, outstanding balance, and due date.
-8. **Reports** and **Performance** aggregate those results without creating another
+8. **Reports** and **Team** aggregate those results without creating another
    copy of the operation.
 
 ## Where each task lives
@@ -42,15 +42,29 @@ and money movements.
 | Products | `/app/productos` | Catalog, prices, taxes, volume pricing, import, and export. |
 | Kits | `/app/productos/kits` | Bundles of line items inserted together into a quote. |
 | Collections | `/app/cobranza` | Receivables, overdue balances, aging, client exposure, and follow-up. |
-| Collections agent | `/app/cobranza/agente` | Configure and supervise AI collections when included in the plan. |
-| My money | `/app/cobros` | Payments, payouts, balances, refunds, and dispute access. |
+| AI Collections | `/app/cobranza/agente` | Configure and supervise AI collections when included in the plan. |
+| Payments | `/app/cobros` | Payments, payouts, balances, refunds, and dispute access. |
 | Invoices | `/app/facturas` | Issue, inspect, export, and follow up on fiscal or commercial documents. |
 | Recurring invoices | `/app/facturas/recurrentes` | Schedule repeated issues; requires Pro or above. |
 | Reports | `/app/informes` | Overview, commercial diagnosis, finance, cash flow, collections, clients, and products. |
-| Performance | `/app/desempeno` | Results attributed to the person who created or duplicated each quote. |
+| Team | `/app/desempeno` | Team performance: results attributed to the person who created or duplicated each quote. |
 | Workflows | `/app/workflows` | "When this happens, do this" automations, ready-made ideas, and run history. |
-| Integrations | `/app/ajustes/integraciones` | Apps directory (HubSpot, Slack, Make, Zapier) with a page per app. |
+| Integrations | `/app/ajustes/integraciones` | Directory of 13 apps (including HubSpot, Shopify, QuickBooks Online, Slack, Make, and Zapier) with a page per app. |
 | Settings | `/app/ajustes` | Account, business, branding, fiscal, payments, team, security, integrations, and plan. |
+| Set up with AI | `/app/setup` | A setup proposal built from your website and price list that you review before applying. Requires the Settings permission. |
+
+In the sidebar, **Invoices**, **Payments**, **Collections**, and **AI Collections** are
+grouped under **My money**; **Reports**, **Team**, and **Workflows** under
+**Intelligence**.
+
+### Top bar shortcuts
+
+- **Search (⌘K or Ctrl+K):** opens the palette to search quotes, clients, products,
+  Settings tabs, or run a command. On small screens, open it with the search button.
+- **Create:** menu to create a quote, invoice, client, product, or task.
+- **Workbench:** developer panel with overview, API keys, webhooks, logs, events, and
+  integration health. It appears when you turn on **Developer mode** and requires the
+  Settings permission.
 
 <Callout type="info">
 Visible options depend on **permissions**, the **effective plan**, the **country of
@@ -96,8 +110,10 @@ setup required by that capability.
 
 - Signup is available in 12 markets: Mexico, the United States, Canada, Brazil,
   Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru.
-- Online payments are available in the first eight. The last four can quote, issue
-  commercial invoices, and manage collections, but can't activate Cord Payments yet.
+- Cord Payments is available in the first eight. Colombia, Argentina, Chile, and Peru
+  can't activate Cord Payments, but online payments work with
+  [Mercado Pago](/en/docs/pagos/mercado-pago), which Mexico and Brazil also offer as
+  an alternative.
 - Dynamic SPEI is Mexico-only.
 - Mexico can issue CFDI 4.0 with a valid CSD.
 - Outside Mexico, Cord issues a commercial invoice. Spain uses the Verifactu rail

@@ -1,7 +1,7 @@
 ---
 title: "Equipo, permisos y seguridad"
 description: "Cómo invitar miembros, asignar permisos, exigir 2FA, limitar dominios, gestionar sesiones, passkeys, OAuth y acceso SSO en Cord."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y seguridad de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -12,10 +12,6 @@ prerequisites: ["Permiso Equipo para administrar miembros", "Permiso Ajustes par
   <h1 class="page-title">Equipo, permisos y seguridad</h1>
   <p class="page-subtitle">Separa la seguridad personal de cada usuario de las reglas compartidas por toda la organización.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 Cord tiene tres capas distintas de acceso:
 
@@ -91,10 +87,19 @@ En **Ajustes > Seguridad**, activa **Exigir 2FA** para la organización. Un miem
 que todavía no tenga TOTP configurado será dirigido a **Ajustes > Tu cuenta** para
 terminar la activación antes de continuar usando las secciones protegidas.
 
-La activación personal muestra un código QR para una app autenticadora y genera códigos
-de respaldo. Guarda esos códigos fuera de Cord. Regenerarlos invalida el conjunto
-anterior. Para desactivar 2FA se exige contraseña actual o código autenticador, según
-el tipo de cuenta.
+La activación personal se hace en **Ajustes > Tu cuenta**: escanea el código QR con
+tu app autenticadora, confirma el código y guarda los diez códigos de respaldo de un
+solo uso que se muestran al activarlo. Guarda esos códigos fuera de Cord. Regenerarlos
+invalida el conjunto anterior. Para desactivar 2FA se exige contraseña actual o código
+autenticador, según el tipo de cuenta.
+
+Cuando la organización exige 2FA, la protección aplica también a las solicitudes del
+panel, no solo a la pantalla visible. Se conservan las acciones necesarias para
+configurar 2FA, confirmar tu identidad o cerrar sesión.
+
+Si una acción sensible pide verificar tu identidad de nuevo, complétala antes de
+reintentar. Los permisos del equipo siguen siendo necesarios; tener 2FA no concede
+permiso para reembolsar o administrar el negocio.
 
 ## Passkeys y contraseña
 
@@ -113,8 +118,17 @@ el último método útil, confirma que conservas otra forma de acceso.
 La lista de sesiones muestra dispositivo, IP conocida, última actividad y cuál es la
 sesión actual. Puedes cerrar una sesión individual o todas las demás.
 
-La organización también puede configurar cierre por inactividad: sin límite, 1, 4,
-8 o 24 horas. Esta regla es distinta de cerrar manualmente sesiones personales.
+La organización también puede configurar cierre por inactividad en **Ajustes >
+Seguridad**: sin límite, 1, 4, 8 o 24 horas. Esta regla es distinta de cerrar
+manualmente sesiones personales.
+
+El plazo se comprueba al entrar a la aplicación, a facturación y a las API internas
+protegidas, y también al registrar una passkey. Cuando vence, la operación se detiene
+y debes iniciar sesión otra vez. La actividad se mide por solicitudes autenticadas a
+esas superficies, no por mover el mouse; las consultas automáticas de la app también
+pueden contar. Visitar una página pública o usar las rutas de recuperación de 2FA no
+reinicia el plazo. "Sin límite" desactiva el cierre por inactividad, pero conserva la
+expiración máxima de la sesión, las revocaciones y la suspensión de cuenta.
 
 ## SSO empresarial
 
@@ -145,35 +159,3 @@ el nombre del rol.
 
 **La organización exige 2FA.** La persona debe completar TOTP en su propia cuenta; un
 administrador no puede generar los códigos por ella.
-
-## Verificación en dos pasos y acceso
-
-Activa 2FA desde **Ajustes > Tu cuenta**: escanea el QR con tu app autenticadora,
-confirma el código y guarda los diez códigos de respaldo de un solo uso que se
-muestran al activarlo.
-
-Cuando la organización exige 2FA y todavía no lo configuraste, debes completarlo
-antes de continuar. La protección aplica también a las solicitudes del panel,
-no solo a la pantalla visible. Se conservan las acciones necesarias para configurar
-2FA, confirmar tu identidad o cerrar sesión.
-
-Si una acción sensible pide verificar tu identidad de nuevo, complétala antes de
-reintentar. Los permisos del equipo siguen siendo necesarios; tener 2FA no concede
-permiso para reembolsar o administrar el negocio.
-
-## Cierre por inactividad: implementación en validación
-
-El plazo que el negocio configura en **Ajustes › Seguridad** se comprueba al
-entrar a la aplicación, a facturación y a las API internas protegidas. Cuando
-vence, la operación se detiene y debes iniciar sesión otra vez. También se
-comprueba al registrar una passkey.
-
-Visitar una página pública o usar las rutas de recuperación de 2FA no reinicia
-ese plazo. La actividad se mide por solicitudes autenticadas a las superficies
-protegidas, no por mover el mouse; las consultas automáticas de la app también
-pueden contar. El valor cero desactiva el límite de inactividad, pero conserva
-la expiración máxima, las revocaciones y la suspensión de cuenta.
-
-La comprobación y renovación ocurren juntas para impedir que solicitudes
-simultáneas renueven una sesión ya vencida. Este refuerzo tiene pruebas locales;
-falta verificar su publicación y el recorrido integrado de inicio de sesión.

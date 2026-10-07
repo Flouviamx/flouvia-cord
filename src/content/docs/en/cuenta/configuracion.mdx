@@ -1,6 +1,7 @@
 ---
 title: "Configure your account"
 description: "Enter your company's general information and manage your team."
+lastUpdated: "2026-10-07"
 ---
 
 <header class="content-header">
@@ -21,7 +22,7 @@ The first step is to register your company in Cord. Go to **Settings > General**
 - **Language:** applies to the app, your public links, and the emails Cord sends on your behalf.
 
 The tax details used for invoicing (Legal name, your tax ID, fiscal address) are
-captured separately, under **Settings > Invoicing / Tax details**. That form changes
+captured separately, under **Settings › Invoicing › Tax details**. That form changes
 based on your country: in Mexico it asks for **RFC** and **Tax Regime** and enables the
 CSD for CFDI 4.0 (see [Add tax information](/en/docs/cuenta/csd)); outside Mexico it
 asks for your legal name, your local tax ID (NIF/CIF in Spain, EIN/Tax ID in the US...),
@@ -32,28 +33,28 @@ Verifactu requires a valid certificate and an enabled Cord regulatory rail; see
 
 ## 2. Invite your sales team
 
-The B2B sales process is collaborative. Cord lets you invite as many team members as your plan allows (you'll see your seat usage and limit right on the screen). Go to **Settings > Team** and select **Add member**.
+Selling is usually a team effort. From the **Pro** plan, Cord lets you invite as many team members as your plan allows (you'll see your seat usage and limit right on the screen). Go to **Settings > Team and permissions** and select **Add member**. See [Team, permissions, and security](/en/docs/cuenta/equipo-seguridad).
 
 ### Roles and permissions
 
 Every invite starts from a permission **preset** you can use as-is or customize
 field by field:
-- **Admin:** full access to settings, billing, catalog, and exports.
-- **Sales rep:** creates and sends quotes, but doesn't manage account settings.
-- **Read-only:** view-only access, for audits.
+- **Admin:** almost all control, including the team; the Refunds permission isn't enabled by default.
+- **Sales rep:** quotes, clients, products, and analytics; doesn't manage settings or approve.
+- **Read only:** can enter the app without modification permissions, useful for audits.
 - **Custom:** toggle individual permissions (quoting, catalog, clients, collections,
   settings...) when none of the three presets fits.
 
 From each member's profile you can see their effective role, last session, recent
 activity, edit their permissions, resend the invitation, revoke access, or re-invite
 them if already revoked. If you restricted invitations to your company's email domains
-(`Settings > Team`), an invite to an address outside those domains is rejected before
+(`Settings > Security`), an invite to an address outside those domains is rejected before
 it sends. A member who signs in through SSO has permissions managed by your identity
 provider and isn't edited here.
 
 ## 3. Quote defaults
 
-If your business model operates under corporate B2B terms (where you don't charge cash upfront, but on 30 or 60-day terms), you don't have to configure it manually on every quote.
+If your business sells on credit (you don't charge upfront, but on 30 or 60-day terms), you don't have to configure it manually on every quote.
 
 Go to **Settings > Quotes** to set the values every new quote starts with:
 - **Default validity (days).**

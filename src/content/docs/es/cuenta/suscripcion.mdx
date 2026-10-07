@@ -1,7 +1,7 @@
 ---
 title: "Tu suscripción a Cord"
 description: "Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu contrato."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-10-07"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
@@ -9,10 +9,6 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <h1 class="page-title">Tu suscripción a Cord</h1>
   <p class="page-subtitle">Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu contrato.</p>
 </header>
-
-<Callout type="info">
-Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Divisa y precio base
 
@@ -43,18 +39,30 @@ La selección anual se conserva durante el registro y el checkout.
 
 ## Cuotas y excedentes
 
-| Plan | IA al mes | Facturas al mes | Solicitudes API al mes | Usuarios incluidos |
-| --- | --- | --- | --- | --- |
-| Gratis | 3 | 5 | 100 | 1 |
-| Starter | 20 | 20 | 1.000 | 1 |
-| Profesional | 50 | 500 | 5.000 | 5 |
-| Scale | 500 | 100 | 10.000 | 15 |
-| Developer | Sin cuota numérica | 1.000 | 50.000 | Sin cuota numérica |
+| Plan | IA al mes | Facturas fiscales al mes | Documentos comerciales al mes | Solicitudes API al mes | Usuarios incluidos |
+| --- | --- | --- | --- | --- | --- |
+| Gratis | 3 | No incluidas | 10 | 100 | 1 |
+| Starter | 20 | 30 | Ilimitados | 1.000 | 1 |
+| Profesional | 50 | 200 | Ilimitados | 5.000 | 5 |
+| Scale | 500 | 500 | Ilimitados | 10.000 | 15 |
+| Developer | Sin cuota numérica | 1.000 | Ilimitados | 50.000 | Sin cuota numérica |
 
 Gratis tiene topes duros. Starter permite excedentes de IA, facturas y API, pero
 mantiene un solo usuario. Profesional y Scale también permiten usuarios extra.
 Los envíos de cotizaciones de Gratis tienen un tope de cinco por mes; no se cobra
 un excedente para saltarlo. Revisa uso y límites en **Ajustes > Planes y suscripción**.
+
+## Límites de capacidad
+
+Además de las cuotas mensuales, Gratis y Starter tienen un tope de recursos que
+existen al mismo tiempo. No se pagan como excedente: para pasar el tope hay que
+subir de plan. Desde Profesional no hay tope en estos recursos.
+
+| Plan | Cotizaciones activas | Productos | Clientes | Workflows activos |
+| --- | --- | --- | --- | --- |
+| Gratis | 5 | 50 | 50 | 1 |
+| Starter | 50 | 500 | 500 | 5 |
+| Profesional, Scale y Developer | Sin tope | Sin tope | Sin tope | Sin tope |
 
 Para contratos EUR, estas son las tarifas sobre la cuota incluida:
 
@@ -101,8 +109,6 @@ contables en cada país.
 
 Gratis incluye **10 facturas comerciales por mes natural (UTC)**, independientes de sus cinco envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez fiscal empiezan en Starter: **30/200/500** al mes en Starter/Profesional/Scale; Developer conserva 1.000. Cada tipo tiene su propia cuota.
 
-La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, emisor configurado e integración habilitada. La activación fiscal española y su aceptación integrada siguen pendientes: pagar el plan no las activa. Los demás mercados admitidos conservan facturas comerciales, sin promesa de integración ante su autoridad fiscal local.
+La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, emisor configurado e integración habilitada. El registro de facturas ante la AEAT (Verifactu) todavía no está activo en España: pagar el plan no lo activa. Los demás mercados admitidos conservan facturas comerciales, sin promesa de integración ante su autoridad fiscal local.
 
 Crear borradores, descargar y reenviar no consume otro documento. Una emisión comercial exitosa consume una unidad, igual que la fiscal; los documentos de prueba no consumen. Una emisión incierta conserva su reserva hasta revisar el resultado. Alcanzar el límite no desactiva las descargas ni los pagos de documentos existentes. Cambiar de plan no transforma documentos emitidos. Una nueva emisión fiscal después de bajar de plan requiere recuperar un plan elegible.
-
-Implementación local; publicación pendiente. Los precios base y las tarifas publicadas de excedentes se conservan.

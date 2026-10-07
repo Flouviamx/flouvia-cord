@@ -1,11 +1,11 @@
 ---
 title: "Agrega la información fiscal (CSD)"
 description: "Sube tu Certificado de Sello Digital para habilitar la facturación CFDI 4.0."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Operaciones fiscales y seguridad de Cord"
 appliesToMarkets: [MX]
-availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["RFC del emisor", "Archivos .cer y .key del CSD", "Contraseña de la llave privada", "CSD vigente emitido por el SAT"]
+availablePlans: [Starter, Pro, Scale, Developer]
+prerequisites: ["Plan Starter o superior", "Permiso Ajustes", "RFC, razón social, régimen fiscal y CP de expedición capturados", "Archivos .cer y .key del CSD", "Contraseña de la llave privada", "CSD vigente emitido por el SAT"]
 ---
 
 <header class="content-header">
@@ -16,28 +16,35 @@ prerequisites: ["RFC del emisor", "Archivos .cer y .key del CSD", "Contraseña d
 <Callout type="info">
 **Este artículo aplica a cuentas con País de operación = México.** El CSD y el
 CFDI 4.0 son un requisito exclusivamente mexicano. Si tu negocio opera en otro país,
-tu pantalla de **Ajustes > Facturación** no muestra el CSD: captura ahí tu identidad
+tu pantalla de **Ajustes › Facturación › Datos fiscales** no muestra el CSD: captura ahí tu identidad
 de facturación local en su lugar (razón social, tu identificador fiscal — NIF/CIF,
 EIN/Tax ID, según tu país — y domicilio) y Cord emite tu factura con folio, copia
 inmutable y PDF. En España, el registro encadenado de Verifactu solo se genera
 cuando el certificado de la empresa y el carril regulatorio de Cord están activos;
-en otro caso la emisión permanece como `commercial_only`.
+en otro caso la factura se emite como documento comercial, sin registro ante la AEAT.
 </Callout>
 
 ## ¿Qué es el CSD y por qué lo necesitas?
 
 El **Certificado de Sello Digital (CSD)** es un documento electrónico emitido por el SAT que te permite firmar (timbrar) digitalmente tus facturas electrónicas. A diferencia de la FIEL (e.firma), el CSD es exclusivo para la expedición de comprobantes fiscales.
 
-Para que Cord pueda convertir tus cotizaciones aprobadas o pedidos directamente en una factura oficial ante el SAT sin que tengas que recapturar datos en otro portal, **es obligatorio** subir tu CSD.
+Para que Cord pueda convertir tus cotizaciones aprobadas o pedidos directamente en una factura oficial ante el SAT sin que tengas que recapturar datos en otro portal, **es obligatorio** subir tu CSD. La emisión de CFDI requiere plan **Starter o superior**; consulta las cuotas de facturas fiscales en [Tu suscripción](/docs/cuenta/suscripcion?lang=es).
+
+## Antes de empezar
+
+- **Plan Starter o superior.** En Gratis no se puede subir el CSD.
+- **Permiso Ajustes** en tu rol dentro de la organización.
+- **Datos fiscales completos:** RFC, razón social, régimen fiscal y CP de expedición, capturados en la misma pantalla. Sin ellos Cord rechaza la subida y te pide completarlos primero.
+- **Sesión reciente:** como es una acción sensible, Cord puede pedirte confirmar tu identidad otra vez antes de aceptar los archivos.
 
 ## Pasos para subir tu CSD en Cord
 
-1. Dirígete a **Ajustes > Facturación / SAT** en el panel de navegación izquierdo.
-2. Haz clic en el botón **Subir CSD**.
-3. Se te solicitarán tres elementos esenciales:
+1. Dirígete a **Ajustes › Facturación › Datos fiscales**.
+2. En la sección **Certificado de Sello Digital (CSD)**, elige tus archivos y escribe la contraseña:
    - **Archivo `.cer`**: El certificado público.
    - **Archivo `.key`**: Tu llave privada.
-   - **Contraseña de la Llave Privada**: La clave que elegiste al tramitar tu CSD en el SAT (Ojo: esta suele ser distinta a la contraseña de tu FIEL).
+   - **Contraseña de la llave**: La clave que elegiste al tramitar tu CSD en el SAT (Ojo: esta suele ser distinta a la contraseña de tu FIEL). Solo se usa para descifrar tu `.key` y no se almacena en Cord.
+3. Haz clic en **Subir CSD y conectar**.
 
 <Callout type="warning">
 **Advertencia:** el archivo y la contraseña viajan por HTTPS/TLS hasta el servidor y el proveedor fiscal. Cord conserva cifrada en reposo únicamente la referencia secreta necesaria para operar la integración; no presentes esto como cifrado de extremo a extremo. Nunca utilizamos tu FIEL: sube estrictamente el CSD y nunca tu FIEL (e.firma) para facturar.
@@ -45,9 +52,9 @@ Para que Cord pueda convertir tus cotizaciones aprobadas o pedidos directamente 
 
 ## Validaciones y Errores Comunes
 
-Al subir tu CSD, Cord valida automáticamente contra los servidores del SAT:
-- **Vigencia:** Si tu CSD está expirado (duran 4 años), el sistema te pedirá renovarlo en la página del SAT.
-- **Correspondencia RFC:** El CSD debe pertenecer exactamente al RFC configurado en los datos generales de la empresa.
-- **Contraseña incorrecta:** Si la contraseña no logra desencriptar la llave `.key`, recibirás un aviso inmediato.
+Al subir tu CSD, el proveedor fiscal con el que Cord timbra revisa el certificado. Si lo rechaza, verás el motivo en pantalla. Los casos más comunes:
+- **Vigencia:** un CSD expirado (duran 4 años) se rechaza; renuévalo en el portal del SAT y súbelo de nuevo.
+- **RFC:** Cord timbra bajo el RFC del certificado, así que el CSD debe pertenecer al RFC que capturaste en tus datos fiscales.
+- **Contraseña incorrecta:** si la contraseña no abre la llave `.key`, la subida se rechaza.
 
-Una vez validado exitosamente, el indicador de facturación cambiará a "Listo para Timbrar", y cualquier cotización cerrada podrá emitir su CFDI 4.0 con un solo clic.
+Una vez aceptado, la sección muestra **CSD cargado**, y cualquier cotización cerrada podrá emitir su CFDI 4.0 con un solo clic.

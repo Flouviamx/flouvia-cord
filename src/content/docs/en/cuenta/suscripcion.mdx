@@ -1,7 +1,7 @@
 ---
 title: "Your Cord subscription"
 description: "Plans in MXN, USD and EUR, allowances, overage and existing contracts."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-10-07"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
@@ -9,10 +9,6 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <h1 class="page-title">Your Cord subscription</h1>
   <p class="page-subtitle">Plans in MXN, USD and EUR, allowances, overage and existing contracts.</p>
 </header>
-
-<Callout type="info">
-This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
-</Callout>
 
 ## Currency and base price
 
@@ -43,18 +39,30 @@ is preserved through registration and checkout.
 
 ## Included usage and overage
 
-| Plan | AI actions monthly | Invoices monthly | API requests monthly | Included users |
-| --- | --- | --- | --- | --- |
-| Free | 3 | 5 | 100 | 1 |
-| Starter | 20 | 20 | 1,000 | 1 |
-| Professional | 50 | 500 | 5,000 | 5 |
-| Scale | 500 | 100 | 10,000 | 15 |
-| Developer | No numeric quota | 1,000 | 50,000 | No numeric quota |
+| Plan | AI actions monthly | Tax invoices monthly | Commercial documents monthly | API requests monthly | Included users |
+| --- | --- | --- | --- | --- | --- |
+| Free | 3 | Not included | 10 | 100 | 1 |
+| Starter | 20 | 30 | Unlimited | 1,000 | 1 |
+| Professional | 50 | 200 | Unlimited | 5,000 | 5 |
+| Scale | 500 | 500 | Unlimited | 10,000 | 15 |
+| Developer | No numeric quota | 1,000 | Unlimited | 50,000 | No numeric quota |
 
 Free has hard limits. Starter supports AI, invoice and API overage but keeps a
 single user. Professional and Scale also support additional users. Free quote
 sending has a five-per-month cap; it cannot be bypassed by paying overage. Review
 usage and limits under **Settings > Plans and subscription**.
+
+## Capacity limits
+
+Besides monthly allowances, Free and Starter cap how many of these resources can
+exist at the same time. They cannot be bought as overage: going past the cap
+requires upgrading. From Professional there is no cap on these resources.
+
+| Plan | Active quotes | Products | Customers | Active workflows |
+| --- | --- | --- | --- | --- |
+| Free | 5 | 50 | 50 | 1 |
+| Starter | 50 | 500 | 500 | 5 |
+| Professional, Scale and Developer | No cap | No cap | No cap | No cap |
 
 For EUR contracts, rates above the included quota are:
 
@@ -100,8 +108,6 @@ in each country.
 
 Free includes **10 commercial invoices per calendar month (UTC)**, separately from its five quote sends; from Starter they are unlimited. Tax-compliant invoices start on Starter: **30/200/500** per month on Starter/Professional/Scale; Developer keeps 1,000. Each type has its own allowance.
 
-Mexico and Spain use clearly labeled **pro formas** for the commercial option; they do not replace tax invoices. Integrated fiscal issuance requires Starter or above, a configured issuer and an enabled integration. Spanish fiscal activation and integrated acceptance remain pending; paying for a plan does not activate them. Other supported markets retain commercial invoices without a promise of local tax-authority integration.
+Mexico and Spain use clearly labeled **pro formas** for the commercial option; they do not replace tax invoices. Integrated fiscal issuance requires Starter or above, a configured issuer and an enabled integration. Registration of invoices with the Spanish tax authority (Verifactu) is not active yet; paying for a plan does not activate it. Other supported markets retain commercial invoices without a promise of local tax-authority integration.
 
 Drafts, downloads and resends do not consume another document. A successful commercial issuance consumes one unit, just like a fiscal issuance; test documents do not. An uncertain issuance keeps its reservation until its result is reviewed. Reaching the limit does not disable existing document downloads or payments. Changing plans does not convert issued documents. New fiscal issuance after a downgrade requires an eligible plan.
-
-Implementation is local; publication remains pending. Base prices and published overage rates are unchanged.

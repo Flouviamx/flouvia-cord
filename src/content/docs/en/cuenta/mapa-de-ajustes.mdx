@@ -1,7 +1,7 @@
 ---
 title: "Complete Settings map"
 description: "Reference for every Cord Settings section: business, brand, quotes, taxes, invoicing, payments, team, security, integrations, AI, data, and personal account."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Cord Product"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -61,15 +61,21 @@ open documents and tax configuration first.
 taxes, and templates from your website and price list. See
 [Set up your account with AI](/docs/cuenta/configurar-con-ia).
 
-### Branding and client portal
+### Brand appearance
 
-Upload a logo, choose primary and secondary colors, and set the welcome message. The
-client portal settings add a banner, accent color, chat control, and the **Powered by
-Cord** label. Removing Cord branding requires **Starter or higher**.
+The category has three tabs. See [Customize your branding](/en/docs/cuenta/marca).
 
-The portal is the secure link where a client reviews the quote, communicates, and,
-depending on status and configuration, approves or pays. Turning chat off does not
-delete earlier messages.
+- **Identity:** primary logo and on-color variant (PNG, JPG, SVG, or WEBP up to 1 MB),
+  logo size, palette with primary and secondary colors, and typography. The preview
+  shows your brand on the portal, quote, PDF, and email.
+- **Client portal:** header layout, corners and spacing, top announcement, welcome
+  message, comments and counteroffers, and Cord branding. The portal is the secure link
+  where a client reviews the quote, communicates, and, depending on status and
+  configuration, approves or pays. Removing Cord branding requires **Starter or
+  higher**. Turning comments off does not delete earlier messages.
+- **Custom domain:** connect a subdomain of your company to serve your links. Cord
+  shows the DNS records to add and verifies the connection. Requires **Professional or
+  higher**.
 
 ### Team, security, and SSO
 
@@ -83,8 +89,9 @@ or Developer** and the Team permission.
 
 ### Notifications and email
 
-Choose which events notify each available channel: in-app, email, and Slack when it is
-connected. Email settings customize the sender name, reply-to address, introduction,
+Choose which events notify each available channel: email, Slack, and Microsoft Teams.
+Slack and Teams only notify when their channel is connected; check the webhook address
+before enabling them. New team member notices are email only. Email settings customize the sender name, reply-to address, introduction,
 and signature. Send a test quote to verify rendering in your mail provider.
 
 ### Plan and subscription
@@ -102,6 +109,11 @@ confirmation. Export first and preserve documents required by local law separate
 The audit log records relevant actions with actor, time, resource, and available
 context. It requires **Pro or higher** and supports investigations; it does not replace
 access controls or an internal retention policy.
+
+**Settings history** shows who changed settings and when, with previous and saved values
+(latest 50 records). You can restore appearance and copy values when no later edits
+affect them; logos, payments, permissions, and tax details cannot be restored. It
+requires the Settings permission and uses your plan's audit access (**Pro or higher**).
 
 ## Commercial configuration
 
@@ -121,8 +133,10 @@ Set maximum discount and amount thresholds plus minimum margin. Quotes outside a
 enter the applicable internal approval flow. Approval workflows require **Scale or
 Developer**.
 
-Reusable email and WhatsApp templates support the variables shown in Settings. Always
-preview the result because missing source data can leave a message incomplete.
+Message templates store reference text for email, WhatsApp, or notes, with variables
+such as `{cliente}`, `{empresa}`, `{folio}`, `{total}`, `{link}`, and `{vigencia}`.
+Cord doesn't apply these templates when sending a quote yet: the send buttons use their
+own text.
 
 ### Invoicing
 
@@ -140,6 +154,10 @@ payment account.
 The screen displays the applicable fee before acceptance. Deposit account details are
 sensitive, and changing them requires recent authentication.
 
+In Mexico and Brazil you can also connect **Mercado Pago** as an alternative; in
+Colombia, Argentina, Chile, and Peru, where Cord Payments isn't available, Mercado Pago
+is how you collect online. See [Mercado Pago](/en/docs/pagos/mercado-pago).
+
 ## Integrations and developer tools
 
 The developer block stays hidden on the Settings index until you enable **Developer
@@ -147,7 +165,9 @@ mode**. Direct URLs still work when you have access.
 
 ### Integrations and MCP
 
-Apps directory: HubSpot, Slack, Make, and Zapier. Each card shows its status and opens
+Directory of 13 apps: HubSpot, Shopify, Google Sheets, Microsoft Excel, Gmail,
+QuickBooks Online, Xero, Slack, Microsoft Teams, WhatsApp Business, Make, Zapier, and
+n8n. Each card shows its status and opens
 its own page with the connection, settings, and the workflows that use that app. Items
 marked as upcoming do not promise a release date. See the
 [integrations guide](/en/docs/automatizacion/integraciones).

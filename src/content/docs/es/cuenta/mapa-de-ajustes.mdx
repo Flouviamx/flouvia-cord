@@ -1,7 +1,7 @@
 ---
 title: "Mapa completo de Ajustes"
 description: "Referencia de cada sección de Ajustes en Cord: negocio, marca, cotizaciones, impuestos, facturación, cobros, equipo, seguridad, integraciones, IA, datos y cuenta personal."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -64,20 +64,22 @@ los documentos abiertos y la configuración fiscal.
 impuestos y plantillas a partir de tu sitio y tu lista de precios. Ver
 [Configura tu cuenta con IA](/docs/cuenta/configurar-con-ia).
 
-### Branding
+### Marca y apariencia
 
-Sube el logo, elige colores principal y secundario y escribe el mensaje de bienvenida.
-La vista previa muestra cómo aparecerá la marca en el portal del cliente. El logo se
-reutiliza en documentos cuando la plantilla lo permite.
+La categoría tiene tres pestañas. Consulta [Personaliza tu marca](/docs/cuenta/marca).
 
-### Portal del cliente
-
-Configura banner, bienvenida, color de acento, chat y la leyenda **Powered by Cord**.
-El portal es el enlace seguro donde el cliente consulta la cotización, conversa y,
-según el estado y la configuración, aprueba o paga.
-
-Quitar la marca de Cord requiere **Starter o superior**. Desactivar el chat no elimina
-mensajes anteriores; deja de ofrecer ese canal en la experiencia pública.
+- **Identidad:** logo principal y variante sobre color (PNG, JPG, SVG o WEBP de hasta
+  1 MB), tamaño del logo, paleta con color principal y secundario, y tipografía. La
+  vista previa muestra la marca en portal, cotización, PDF y correo.
+- **Portal del cliente:** composición del encabezado, bordes y espaciado, aviso
+  superior, mensaje de bienvenida, comentarios y contrapropuestas, y la marca de Cord.
+  El portal es el enlace seguro donde el cliente consulta la cotización, conversa y,
+  según el estado y la configuración, aprueba o paga. Quitar la marca de Cord requiere
+  **Starter o superior**. Desactivar los comentarios no elimina mensajes anteriores;
+  deja de ofrecer ese canal en la experiencia pública.
+- **Dominio propio:** conecta un subdominio de tu empresa para servir tus enlaces.
+  Cord muestra los registros DNS que debes agregar y verifica la conexión. Requiere
+  **Profesional o superior**.
 
 ### Equipo y roles
 
@@ -97,9 +99,10 @@ verificados, aprovisionamiento JIT y reglas para mapear atributos a roles. Requi
 
 ### Notificaciones
 
-Elige qué eventos avisan por cada canal disponible. La matriz permite configurar correo,
-notificación dentro de Cord y Slack cuando el canal está conectado. Revisa la dirección
-del webhook antes de habilitar Slack.
+Elige qué eventos avisan por cada canal disponible. La matriz permite configurar
+correo, Slack y Microsoft Teams. Slack y Teams solo avisan cuando su canal está
+conectado; revisa la dirección del webhook antes de habilitarlos. El aviso de un nuevo
+miembro en el equipo solo llega por correo.
 
 ### Correo
 
@@ -128,6 +131,13 @@ separado los comprobantes que tu regulación obligue a resguardar.
 Consulta acciones relevantes con actor, fecha, recurso y contexto disponible. El
 registro de auditoría requiere **Pro o superior** y sirve para investigar cambios; no
 reemplaza los controles de acceso ni una política interna de conservación.
+
+### Historial de ajustes
+
+Muestra quién cambió la configuración y cuándo, con los valores anteriores y los
+guardados (últimos 50 registros). Puedes restaurar valores de apariencia y textos si no
+tienen cambios posteriores; no restaura logos, cobros, permisos ni datos fiscales.
+Requiere permiso Ajustes y usa el acceso de auditoría de tu plan (**Pro o superior**).
 
 ## Configuración comercial
 
@@ -161,9 +171,10 @@ nuevos durante este periodo. Consulta [crédito y condiciones](/docs/pagos/credi
 
 ### Plantillas de mensaje
 
-Crea mensajes reutilizables para correo o WhatsApp y utiliza las variables disponibles
-para cliente, negocio, folio, total y enlace. Revisa siempre la vista previa: una
-variable sin dato puede producir un mensaje incompleto.
+Guarda textos de referencia para correo, WhatsApp o notas, con variables como
+`{cliente}`, `{empresa}`, `{folio}`, `{total}`, `{link}` y `{vigencia}`. Por ahora
+Cord no aplica estas plantillas al enviar una cotización: los botones de envío usan su
+propio texto.
 
 ### Facturación
 
@@ -182,6 +193,10 @@ mostrar instrucciones bancarias sin una cuenta de pagos conectada.
 La pantalla también muestra la tarifa aplicable antes de aceptarla. La cuenta de
 depósito es un dato sensible y cambiarla exige autenticación reciente.
 
+En México y Brasil también puedes conectar **Mercado Pago** como alternativa; en
+Colombia, Argentina, Chile y Perú, donde Cord Payments no está disponible, Mercado Pago
+es la forma de cobrar en línea. Consulta [Mercado Pago](/docs/pagos/mercado-pago).
+
 ## Integraciones y desarrolladores
 
 El bloque para desarrolladores permanece oculto en el índice hasta activar **Modo
@@ -189,7 +204,9 @@ desarrollador**. La URL directa sigue funcionando si tienes acceso.
 
 ### Integraciones
 
-Directorio de apps: HubSpot, Slack, Make y Zapier. Cada tarjeta muestra su estado y abre
+Directorio de 13 apps: HubSpot, Shopify, Google Sheets, Microsoft Excel, Gmail,
+QuickBooks Online, Xero, Slack, Microsoft Teams, WhatsApp Business, Make, Zapier y n8n.
+Cada tarjeta muestra su estado y abre
 una página propia con la conexión, la configuración y los workflows que usan esa app.
 Las marcadas como próximas todavía no son una promesa de fecha. Consulta la
 [guía de integraciones](/docs/automatizacion/integraciones).

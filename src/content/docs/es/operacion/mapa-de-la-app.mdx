@@ -1,7 +1,7 @@
 ---
 title: "Mapa completo de la aplicación"
 description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, y dónde realizar cada tarea."
-lastUpdated: "2026-08-28"
+lastUpdated: "2026-10-07"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -30,7 +30,7 @@ mismos clientes, documentos y movimientos.
 6. Cord registra el cobro en línea o el pago marcado manualmente.
 7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el
    saldo y la fecha de vencimiento.
-8. **Informes** y **Desempeño** agregan los resultados sin crear una segunda copia
+8. **Informes** y **Equipo** agregan los resultados sin crear una segunda copia
    de la operación.
 
 ## Dónde se hace cada cosa
@@ -43,15 +43,30 @@ mismos clientes, documentos y movimientos.
 | Productos | `/app/productos` | Catálogo, precios, impuestos, precios por volumen e importación/exportación. |
 | Kits | `/app/productos/kits` | Paquetes de conceptos que se insertan juntos en una cotización. |
 | Cobranza | `/app/cobranza` | Cartera por cobrar, saldos vencidos, aging, exposición por cliente y seguimiento. |
-| Agente de cobranza | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA cuando el plan la incluye. |
-| Mi dinero | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y acceso a disputas. |
+| Cobranza con IA | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA cuando el plan la incluye. |
+| Cobros | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y acceso a disputas. |
 | Facturas | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a documentos fiscales o comerciales. |
 | Facturas recurrentes | `/app/facturas/recurrentes` | Programar emisiones repetidas; requiere Pro o superior. |
 | Informes | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. |
-| Desempeño | `/app/desempeno` | Resultados atribuidos a la persona que creó o duplicó cada cotización. |
+| Equipo | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a la persona que creó o duplicó cada cotización. |
 | Workflows | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", sus ideas listas y el historial de ejecuciones. |
-| Integraciones | `/app/ajustes/integraciones` | Directorio de apps (HubSpot, Slack, Make, Zapier) con una página por app. |
+| Integraciones | `/app/ajustes/integraciones` | Directorio de 13 apps (entre ellas HubSpot, Shopify, QuickBooks Online, Slack, Make y Zapier) con una página por app. |
 | Ajustes | `/app/ajustes` | Cuenta, negocio, marca, fiscal, pagos, equipo, seguridad, integraciones y plan. |
+| Configurar con IA | `/app/setup` | Propuesta de configuración a partir de tu sitio y tu lista de precios, que revisas antes de aplicar. Requiere permiso Ajustes. |
+
+En la barra lateral, **Facturas**, **Cobros**, **Cobranza** y **Cobranza con IA** se
+agrupan bajo **Mi dinero**; **Informes**, **Equipo** y **Workflows**, bajo
+**Inteligencia**.
+
+### Atajos de la barra superior
+
+- **Buscar (⌘K o Ctrl+K):** abre la paleta para buscar cotizaciones, clientes,
+  productos, pestañas de Ajustes o ejecutar un comando. En pantallas pequeñas se abre
+  con el botón de búsqueda.
+- **Crear:** menú para crear una cotización, factura, cliente, producto o tarea.
+- **Workbench:** panel para desarrolladores con resumen, llaves de API, webhooks,
+  registros, eventos y salud de la integración. Aparece cuando activas el **Modo
+  desarrollador** y requiere permiso Ajustes.
 
 <Callout type="info">
 Las opciones visibles dependen de tus **permisos**, tu **plan efectivo**, el **país
@@ -96,7 +111,7 @@ por sección:
 - **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
 - **Cobranza:** consultar y gestionar cuentas por cobrar.
 - **Clientes** y **Productos:** modificar sus directorios.
-- **Analítica:** abrir Informes y Desempeño.
+- **Analítica:** abrir Informes y Equipo (desempeño).
 - **Ajustes:** cambiar la configuración del negocio.
 - **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
 - **Reembolsos:** iniciar devoluciones de cobros conciliados.
@@ -109,9 +124,10 @@ la configuración requerida por esa función.
 
 - El registro está disponible en 12 mercados: México, Estados Unidos, Canadá,
   Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú.
-- El cobro en línea está disponible en los primeros ocho. Colombia, Argentina,
-  Chile y Perú pueden cotizar, emitir factura comercial y gestionar cobranza, pero
-  todavía no activar Cord Payments.
+- Cord Payments está disponible en los primeros ocho. En Colombia, Argentina, Chile
+  y Perú no se puede activar Cord Payments, pero el cobro en línea funciona con
+  [Mercado Pago](/docs/pagos/mercado-pago), que también se ofrece en México y Brasil
+  como alternativa.
 - SPEI dinámico es exclusivo de México.
 - México puede emitir CFDI 4.0 con un CSD válido.
 - Fuera de México, Cord emite factura comercial. España solo usa el carril
