@@ -33,7 +33,10 @@ describe('cotización demo', () => {
         expect(quote.folio).toBe(DEMO_QUOTE_FOLIO);
         expect(quoteTotal(quote)).toBeCloseTo(13_100, 6);
         expect(quote.total).toBe(13_100);
-        expect(quoteSubtotal(quote)).toBeCloseTo(13_100 / 1.16, 6);
+        // Redondeo por línea (RoundingOptions): la base se desagrega por
+        // concepto y se redondea a centavos, así que coincide con 13,100/1.16
+        // al centavo, no a seis decimales — y base + impuesto vuelve exacto.
+        expect(Math.abs(quoteSubtotal(quote) - 13_100 / 1.16)).toBeLessThanOrEqual(0.01);
         const [iva] = quoteTaxBreakdown(quote);
         expect(iva.tasa).toBe(0.16);
         expect(iva.impuesto + quoteSubtotal(quote)).toBeCloseTo(13_100, 6);

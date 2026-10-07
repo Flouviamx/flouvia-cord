@@ -518,6 +518,7 @@ import { iconInner } from '../../../lib/icons';
     import { iconSvg } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+    import { currencyDecimals } from '../../../lib/currency';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
     const bootEl = document.getElementById('edBoot');
@@ -631,7 +632,8 @@ import { iconInner } from '../../../lib/icons';
                     precio_negociado: l.negociado,
                     tax_rate: l.taxRate,
                 })),
-                { ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones },
+                // Mismo redondeo por línea que `buildLines` al guardar.
+                { ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones, roundLines: currencyDecimals(currency) },
             );
             ultimoTotal = totals.total;
 

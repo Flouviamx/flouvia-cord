@@ -15,7 +15,7 @@ import { after } from './after';
 import { trackServer } from './posthog-server';
 
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
-import { listOfferedCurrencies, normalizeCurrency } from './currency';
+import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
@@ -258,6 +258,8 @@ export async function createCotizacion(
     const totals = calculateDocumentTotals(itemsConImpuesto as any[], {
         ivaIncluido: iva_incluido,
         retenciones: catalogo.retenciones,
+        // Redondeo por línea en la divisa de venta (ver RoundingOptions).
+        roundLines: currencyDecimals(normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda))),
     });
     const realSubtotal = totals.subtotal;
     const iva = totals.impuestos;

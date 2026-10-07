@@ -20,7 +20,7 @@ import { trackServer } from './posthog-server';
 import { emitSetupSteps } from './setup-analytics';
 import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
-import { normalizeCurrency } from './currency';
+import { currencyDecimals, normalizeCurrency } from './currency';
 import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
@@ -2161,7 +2161,8 @@ export interface LiveSnapshot {
 export async function getLiveSnapshot(orgId: string, cotizacionId: string): Promise<LiveSnapshot | null> {
     const [cabecera, items, cobros] = await withOrgTx(orgId,
         sql`select c.rev, c.status, c.subtotal, c.iva, c.total, c.vigencia, c.notas,
-                   c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct
+                   c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct,
+                   coalesce(c.base_currency, o.moneda) as quote_currency
               from cotizaciones c join orgs o on o.id = c.org_id
              where c.id = ${cotizacionId} and c.org_id = ${orgId}`,
         // `ci.*` y no una lista de columnas: cotizacion_items NO tiene `unidad`
@@ -2202,6 +2203,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
                 retenciones: retencionesGuardadas.map((r: any) => ({
                     nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: r.baseTipo ?? 'subtotal',
                 })),
+                roundLines: currencyDecimals(normalizeCurrency(c.quote_currency as string)),
             },
         );
     } catch { /* una tasa corrupta no debe tumbar el stream; se manda sin desglose */ }

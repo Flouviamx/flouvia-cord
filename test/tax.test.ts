@@ -218,3 +218,33 @@ describe('presets e identidad fiscal por país', () => {
         expect(() => taxKindLabel('consumo', 'es', 'ZZ')).not.toThrow();
     });
 });
+
+describe('redondeo por línea (RoundingOptions)', () => {
+    it('el subtotal es la suma de los conceptos redondeados, como exige el CFDI', async () => {
+        const { calculateDocumentTotals } = await import('../packages/elements/src/engine');
+        const items = [1, 2, 3].map(() => ({ cantidad: 1.5, precio_unitario: 33.33, tax_rate: 0.16 }));
+        const t = calculateDocumentTotals(items, { roundLines: 2 });
+        expect(t.lineas.map((l) => l.base)).toEqual([50, 50, 50]);
+        expect(t.subtotal).toBe(t.lineas.reduce((s, l) => s + l.base, 0));
+        expect(t.impuestos).toBe(24);
+        expect(t.total).toBe(174);
+        // Sin la opción, la aritmética publicada del paquete no cambia.
+        expect(calculateDocumentTotals(items).subtotal).toBeCloseTo(149.985, 6);
+    });
+    it('con impuesto incluido, el impuesto es base × tasa redondeado por línea', async () => {
+        const { calculateDocumentTotals } = await import('../packages/elements/src/engine');
+        const items = Array.from({ length: 40 }, () => ({ cantidad: 1, precio_unitario: 10, tax_rate: 0.16 }));
+        const t = calculateDocumentTotals(items, { ivaIncluido: true, roundLines: 2 });
+        expect(t.subtotal).toBe(344.8);
+        expect(t.impuestos).toBe(55.2);
+        expect(t.total).toBe(400);
+    });
+    it('respeta divisas sin decimales y redondea retenciones', async () => {
+        const { calculateDocumentTotals } = await import('../packages/elements/src/engine');
+        const t = calculateDocumentTotals([{ cantidad: 1, precio_unitario: 1050, tax_rate: 0.19 }], {
+            roundLines: 0, retenciones: [{ nombre: 'Ret', tasa: 0.1075 }],
+        });
+        expect(t.total).toBe(1250 - 113);
+        expect(Number.isInteger(t.retencionTotal)).toBe(true);
+    });
+});

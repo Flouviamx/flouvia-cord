@@ -4,6 +4,7 @@
 // totales, calculados con el MISMO motor que los escribe en la base.
 
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
+import { currencyDecimals } from './currency';
 
 export type QuoteStatus =
     | 'draft' | 'sent' | 'viewed' | 'approved' | 'rejected' | 'expired' | 'paid' | 'invoiced';
@@ -115,7 +116,9 @@ const documentTotals = (q: Quote) => {
             precio_negociado: it.precioNegociado,
             tax_rate: lineTaxRate(it, q),
         })),
-        { ivaIncluido: !!q.iva_incluido, retenciones },
+        // Redondeo por línea en la divisa de la cotización: el mismo criterio con
+        // el que se guardó y con el que se factura (ver RoundingOptions).
+        { ivaIncluido: !!q.iva_incluido, retenciones, roundLines: currencyDecimals(q.baseCurrency || 'MXN') },
     );
 };
 

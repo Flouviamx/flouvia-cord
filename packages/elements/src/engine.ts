@@ -139,6 +139,30 @@ export interface InvoiceTotals {
 }
 
 /**
+ * Opciones de redondeo del documento.
+ *
+ * `roundLines` = decimales de la divisa (2 para MXN/EUR, 0 para JPY/CLP, 3 para
+ * KWD). Cuando viene, CADA línea se redondea —base e impuesto— y los totales
+ * del documento son la SUMA de los valores ya redondeados. Es la regla de
+ * cualquier documento fiscal: el CFDI exige que el subtotal sea la suma de los
+ * importes de sus conceptos, y la AEAT valida la cuota contra la base por
+ * línea. Sin ella, tres líneas de 1.5 × 33.33 al 16% daban un subtotal de
+ * documento de 149.98 contra 150.00 de las líneas: el timbrado fallaba y una
+ * nota de crédito por el total era imposible de cuadrar.
+ *
+ * Sin la opción el motor conserva la aritmética sin redondeo de siempre: es la
+ * que usan los integradores del paquete publicado y no se cambia por debajo.
+ */
+export interface RoundingOptions {
+    roundLines?: number;
+}
+
+const roundTo = (n: number, decimals: number): number => {
+    const f = 10 ** decimals;
+    return Math.round((n + Number.EPSILON) * f) / f;
+};
+
+/**
  * Totales de una factura con impuesto por línea.
  *
  * `ivaIncluido = true` significa que los precios capturados YA traen el
@@ -148,9 +172,14 @@ export interface InvoiceTotals {
  */
 export function calculateInvoiceTotals(
     items: InvoiceItemInput[],
-    opts: { ivaIncluido?: boolean } = {},
+    opts: { ivaIncluido?: boolean } & RoundingOptions = {},
 ): InvoiceTotals {
     const ivaIncluido = opts.ivaIncluido === true;
+    const decimals = opts.roundLines;
+    if (decimals !== undefined && !(Number.isInteger(decimals) && decimals >= 0 && decimals <= 4)) {
+        throw new RangeError(`calculateInvoiceTotals: roundLines debe ser un entero entre 0 y 4 (recibido: ${decimals}).`);
+    }
+    const r = (n: number) => (decimals === undefined ? n : roundTo(n, decimals));
     const lineas: InvoiceItem[] = items.map((raw) => {
         const it = sanitizeItem(raw);
         const rate = Number(raw.tax_rate ?? 0);
@@ -162,20 +191,32 @@ export function calculateInvoiceTotals(
         }
         const precioFinal = it.precio_negociado ?? it.precio_unitario ?? 0;
         const bruto = precioFinal * it.cantidad;
-        const base = ivaIncluido ? bruto / (1 + rate) : bruto;
-        const impuesto = ivaIncluido ? bruto - base : base * rate;
+        let base: number;
+        let impuesto: number;
+        if (decimals === undefined) {
+            base = ivaIncluido ? bruto / (1 + rate) : bruto;
+            impuesto = ivaIncluido ? bruto - base : base * rate;
+        } else {
+            // Con redondeo, el impuesto SIEMPRE es base × tasa redondeado —
+            // también con precio con impuesto incluido—, que es lo que el PAC y
+            // la AEAT recalculan por su cuenta. Desagregar `bruto − base`
+            // podía dejar el impuesto un centavo distinto del que el proveedor
+            // fiscal calcula para esa misma base.
+            base = ivaIncluido ? r(r(bruto) / (1 + rate)) : r(bruto);
+            impuesto = r(base * rate);
+        }
         return {
             ...it,
             tax_rate: rate,
             precio_final: precioFinal,
             base,
             impuesto,
-            total: base + impuesto,
+            total: r(base + impuesto),
         };
     });
 
-    const subtotal = lineas.reduce((sum, l) => sum + l.base, 0);
-    const impuestos = lineas.reduce((sum, l) => sum + l.impuesto, 0);
+    const subtotal = r(lineas.reduce((sum, l) => sum + l.base, 0));
+    const impuestos = r(lineas.reduce((sum, l) => sum + l.impuesto, 0));
 
     // Agrupado por tasa, en orden ascendente: el exento primero, como se lee en
     // cualquier factura. Se agrupa sobre el número crudo, no sobre el
@@ -191,8 +232,8 @@ export function calculateInvoiceTotals(
     for (const l of lineas) {
         const key = Math.round(l.tax_rate * 1e9) / 1e9;
         const acc = mapa.get(key) ?? { tasa: l.tax_rate, base: 0, impuesto: 0 };
-        acc.base += l.base;
-        acc.impuesto += l.impuesto;
+        acc.base = r(acc.base + l.base);
+        acc.impuesto = r(acc.impuesto + l.impuesto);
         mapa.set(key, acc);
     }
 
@@ -200,7 +241,7 @@ export function calculateInvoiceTotals(
         lineas,
         subtotal,
         impuestos,
-        total: subtotal + impuestos,
+        total: r(subtotal + impuestos),
         porTasa: [...mapa.values()].sort((a, b) => a.tasa - b.tasa),
         ivaIncluido,
     };
@@ -273,9 +314,10 @@ export interface DocumentTotals extends InvoiceTotals {
  */
 export function calculateDocumentTotals(
     items: InvoiceItemInput[],
-    opts: { ivaIncluido?: boolean; retenciones?: RetencionInput[] } = {},
+    opts: { ivaIncluido?: boolean; retenciones?: RetencionInput[] } & RoundingOptions = {},
 ): DocumentTotals {
-    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido });
+    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido, roundLines: opts.roundLines });
+    const rnd = (n: number) => (opts.roundLines === undefined ? n : roundTo(n, opts.roundLines));
 
     const retenciones: RetencionApplied[] = (opts.retenciones ?? []).map((r) => {
         const tasa = Number(r.tasa);
@@ -292,16 +334,16 @@ export function calculateDocumentTotals(
             tipo: String(r.tipo ?? 'ret_iva'),
             tasa,
             base: baseAmount,
-            monto: baseAmount * tasa,
+            monto: rnd(baseAmount * tasa),
             baseTipo,
         };
-    }).filter((r) => r.tasa > 0);
+    }).filter((ret) => ret.tasa > 0);
 
-    const retencionTotal = retenciones.reduce((sum, r) => sum + r.monto, 0);
+    const retencionTotal = rnd(retenciones.reduce((sum, ret) => sum + ret.monto, 0));
 
     return {
         ...base,
-        total: base.total - retencionTotal,
+        total: rnd(base.total - retencionTotal),
         retenciones,
         retencionTotal,
     };

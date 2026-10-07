@@ -11,7 +11,7 @@ import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { trackServer } from '../posthog-server';
-import { normalizeCurrency } from '../currency';
+import { currencyDecimals, normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
@@ -155,6 +155,10 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         const totals = calculateDocumentTotals(items as any[], {
             ivaIncluido: iva_incluido,
             retenciones: catalogo.retenciones,
+            // Redondeo por línea en la divisa de venta: es lo que después
+            // timbra el CFDI y registra Verifactu, así que la cotización y su
+            // factura cuadran al centavo (ver RoundingOptions en engine.ts).
+            roundLines: currencyDecimals(normalizeCurrency(input.base_currency, normalizeCurrency(rows[0].base_currency as string))),
         });
         const realSubtotal = totals.subtotal;
         const iva = totals.impuestos;

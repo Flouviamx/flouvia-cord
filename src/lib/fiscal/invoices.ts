@@ -23,7 +23,7 @@ import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
 import { logInvoiceEvent } from './timeline';
-import { normalizeCurrency } from '../currency';
+import { currencyDecimals, normalizeCurrency } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
@@ -39,6 +39,8 @@ import {
   metadata,
   money,
   newInvoiceToken,
+  roundTo,
+  madridYear,
   type EmitResult,
 } from './emit';
 import type {
@@ -133,6 +135,7 @@ function buildLines(
   defaultTaxRate: number,
   ivaIncluido: boolean,
   retenciones: { nombre: string; tasa: number; tipo?: string }[] = [],
+  decimals = 2,
 ): {
   lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[];
   retenciones: FiscalRetencion[]; retencionTotal: number;
@@ -153,28 +156,33 @@ function buildLines(
       // y con `||` el 0 se caería al default gravando lo que no debe.
       tax_rate: item.taxRate ?? defaultTaxRate,
     })),
-    { ivaIncluido, retenciones },
+    // Cada concepto redondeado a los decimales de la divisa y los totales como
+    // la suma de esos importes: lo que el CFDI valida y lo que Verifactu
+    // desglosa (ver RoundingOptions en engine.ts).
+    { ivaIncluido, retenciones, roundLines: decimals },
   );
+  const round = (value: number) => roundTo(value, decimals);
 
   const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
     // Con impuesto incluido, el documento fiscal declara el precio SIN impuesto:
     // es lo que el rail espera como valor unitario, y `taxAmount` lo acompaña.
-    unitPrice: money(l.cantidad ? l.base / l.cantidad : l.base),
+    // Seis decimales: a centavos, cantidad × unitario no reproducía la base.
+    unitPrice: Math.round((l.cantidad ? l.base / l.cantidad : l.base) * 1e6) / 1e6,
     taxRate: l.tax_rate,
-    subtotal: money(l.base),
-    taxAmount: money(l.impuesto),
-    total: money(l.total),
+    subtotal: round(l.base),
+    taxAmount: round(l.impuesto),
+    total: round(l.total),
   }));
 
   return {
     lines,
-    subtotal: money(totals.subtotal),
-    taxes: money(totals.impuestos),
-    total: money(totals.total),
-    retenciones: totals.retenciones.map((r) => ({ ...r, base: money(r.base), monto: money(r.monto) })),
-    retencionTotal: money(totals.retencionTotal),
+    subtotal: round(totals.subtotal),
+    taxes: round(totals.impuestos),
+    total: round(totals.total),
+    retenciones: totals.retenciones.map((r) => ({ ...r, base: round(r.base), monto: round(r.monto) })),
+    retencionTotal: round(totals.retencionTotal),
     byRate: totals.porTasa,
   };
 }
@@ -194,18 +202,21 @@ async function resolveFxRate(
   currency: string,
   ledgerCurrency: string,
   total: number,
-  bufferPct: number | null | undefined,
   country: string,
   fiscal = true,
 ): Promise<{ rate: number } | { error: string }> {
   let rate = 1;
   if (currency !== ledgerCurrency) {
     try {
+      // Sin colchón: el tipo de cambio de una FACTURA es un dato que el
+      // documento declara (el CFDI lo manda como TipoCambio y el PDF lo
+      // imprime). El colchón es una protección comercial de la COTIZACIÓN; en
+      // la factura convertía un tipo de cambio real en uno inflado.
       const fx = await FXService.getExchangeRate({
         baseCurrency: currency,
         fiscalCurrency: ledgerCurrency,
         amount: total,
-        bufferPct: Number(bufferPct) || 0,
+        bufferPct: 0,
       });
       rate = fx.appliedRate;
     } catch (error: unknown) {
@@ -282,9 +293,11 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     ...it,
     taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
   }));
+  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
+  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency));
   } catch (error: unknown) {
     // RangeError del motor = tasa fuera de [0,1]. Se traduce a un error de
     // captura en vez de dejar que reviente como 500 sin explicación.
@@ -293,10 +306,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   }
   const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
 
-  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
-  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
-
-  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
+  const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
   const fxRate = fx.rate;
 
@@ -316,7 +326,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     ) values (
       ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
       ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
-      ${currency}, ${ledgerCurrency}, ${fxRate}, ${money(total * fxRate)},
+      ${currency}, ${ledgerCurrency}, ${fxRate}, ${roundTo(total * fxRate, currencyDecimals(ledgerCurrency))},
       ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(retenciones)}::jsonb,
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
       ${input.notes || null}, ${input.createdBy || null},
@@ -399,18 +409,18 @@ export async function updateInvoiceDraft(
     ...it,
     taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
   }));
+  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
+  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   let built;
   try {
-    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones, currencyDecimals(currency));
   } catch (error: unknown) {
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
   const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
 
-  const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
-  const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
-  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
+  const fx = await resolveFxRate(currency, ledgerCurrency, total, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
 
   const { issuer, recipient } = partiesFrom(head, country);
@@ -425,7 +435,7 @@ export async function updateInvoiceDraft(
       currency = ${currency},
       ledger_currency = ${ledgerCurrency},
       fx_rate = ${fx.rate},
-      ledger_total = ${money(total * fx.rate)},
+      ledger_total = ${roundTo(total * fx.rate, currencyDecimals(ledgerCurrency))},
       subtotal = ${subtotal},
       tax_total = ${taxes},
       total = ${total},
@@ -536,7 +546,8 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   // las orgs ya existentes, y España reinicia cada año porque el ejercicio es
   // parte del PK de la secuencia.
   const serie = prefix;
-  const ejercicio = country === 'ES' ? new Date(issuedAt).getFullYear() : 0;
+  // Año en España, no el del servidor (UTC): ver madridYear en emit.ts.
+  const ejercicio = country === 'ES' ? madridYear(new Date(issuedAt)) : 0;
   const folioPrefix = ejercicio > 0 ? `${prefix}${ejercicio}` : prefix;
 
   // Mismo advisory lock que el carril de cotización: serializa dos clicks de

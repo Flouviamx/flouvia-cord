@@ -169,6 +169,7 @@ import { iconInner } from '../../../../lib/icons';
     // sin retenciones) mientras el servidor recalculaba con el motor
     // compartido. El vendedor veía un total en pantalla y se guardaba otro.
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
+    import { currencyDecimals } from '../../../../lib/currency';
 
     const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
     const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
@@ -247,7 +248,8 @@ import { iconInner } from '../../../../lib/icons';
                 precio_negociado: l.negociado,
                 tax_rate: l.taxRate ?? DEFAULT_TAX,
             })),
-            { ivaIncluido, retenciones: BOOT.retenciones || [] },
+            // Mismo redondeo por línea que el servidor, en la divisa de la cotización.
+            { ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(quoteCurrency || 'MXN') },
         );
         const realSubtotal = totals.subtotal;
         const total = totals.total;

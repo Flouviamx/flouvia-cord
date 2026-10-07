@@ -1,9 +1,14 @@
 import type { FiscalLineItem, FiscalRetencion } from './index';
-
-const money = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+import { currencyDecimals } from '../currency';
 
 /** Prorratea conceptos sin sustituir sus tasas por una tasa promedio. */
 export function creditNoteBreakdown(doc: Record<string, unknown>, amount: number) {
+  // Decimales de la divisa del documento: a dos decimales fijos, una nota en
+  // CLP o JPY producía importes con centavos que esa divisa no tiene.
+  const decimals = currencyDecimals(String(doc.currency || 'MXN'));
+  const factor = 10 ** decimals;
+  const money = (n: number) => Math.round((n + Number.EPSILON) * factor) / factor;
+  const tolerance = 1.1 / factor;
   const original = Number(doc.total);
   if (!Number.isFinite(amount) || amount <= 0 || amount > original) throw new Error('El importe de la nota de crédito no es válido.');
   const source = doc.line_items_snapshot as FiscalLineItem[];
@@ -21,8 +26,8 @@ export function creditNoteBreakdown(doc: Record<string, unknown>, amount: number
   const sourceRetentions = (doc.retenciones_snapshot || []) as FiscalRetencion[];
   if (!Array.isArray(sourceRetentions)) throw new Error('Falta el desglose original de retenciones.');
   const retenciones = sourceRetentions.map((r) => {
-    const baseTipo = r.baseTipo || (Math.abs(r.base - Number(doc.subtotal)) < 0.011 ? 'subtotal'
-      : Math.abs(r.base - Number(doc.tax_total)) < 0.011 ? 'impuesto' : undefined);
+    const baseTipo = r.baseTipo || (Math.abs(r.base - Number(doc.subtotal)) < tolerance ? 'subtotal'
+      : Math.abs(r.base - Number(doc.tax_total)) < tolerance ? 'impuesto' : undefined);
     if (!baseTipo || !Number.isFinite(r.tasa) || r.tasa < 0 || r.tasa > 1) throw new Error('No se puede identificar la base original de la retención.');
     const base = baseTipo === 'impuesto' ? taxes : subtotal;
     return { ...r, baseTipo, base, monto: money(base * r.tasa) };

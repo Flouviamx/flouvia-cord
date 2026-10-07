@@ -537,7 +537,8 @@ import { iconInner } from '../../../lib/icons';
                 precio_negociado: l.negociado,
                 tax_rate: l.taxRate ?? BOOT.defaultTaxRate,
             })),
-            { ivaIncluido, retenciones: BOOT.retenciones || [] },
+            // Mismo redondeo por línea que el servidor (divisa del selector).
+            { ivaIncluido, retenciones: BOOT.retenciones || [], roundLines: currencyDecimals(editorCurrency()) },
         );
         const realSubtotal = totals.subtotal;
         const total = totals.total;

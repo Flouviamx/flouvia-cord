@@ -7,7 +7,7 @@ import { documentTypeForOrg, documentPrefix } from './document-kind';
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
-import { normalizeCurrency, toMinorUnits } from '../currency';
+import { currencyDecimals, normalizeCurrency, toMinorUnits } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
@@ -35,6 +35,18 @@ export interface EmitResult {
 }
 
 export const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
+/** Redondeo a los decimales de la divisa (0 en CLP/JPY, 3 en KWD). */
+export const roundTo = (value: number, decimals: number) => {
+  const f = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * f) / f;
+};
+
+/** Año calendario en España peninsular, para el ejercicio de la serie. */
+export function madridYear(date: Date): number {
+  const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', year: 'numeric' }).format(date);
+  return Number(year) || date.getUTCFullYear();
+}
 
 export function cleanPrefix(value: unknown, fallback: string): string {
   const cleaned = String(value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12);
@@ -314,6 +326,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
           c.folio as quote_folio, c.subtotal, c.iva, c.total,
           c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
+          coalesce(c.approved_at, c.created_at) as quote_base_date,
           c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
           c.iva_incluido, c.retencion_total, c.retenciones_snapshot,
           o.moneda as org_moneda,
@@ -355,6 +368,13 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // invoices.ts).
   const fallbackRate = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0;
   const retencionesSnapshot = Array.isArray(head.retenciones_snapshot) ? head.retenciones_snapshot : [];
+  // Divisa del comprobante, resuelta ANTES de los totales: los importes se
+  // redondean línea por línea a los decimales de ESTA divisa (0 en CLP/JPY).
+  const saleCurrency = normalizeCurrency(
+    (head.base_currency as string) || (head.org_moneda as string) || profile.currency,
+  );
+  const decimals = currencyDecimals(saleCurrency);
+  const round = (value: number) => roundTo(value, decimals);
 
   let totals;
   try {
@@ -376,6 +396,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
           nombre: String(r.nombre ?? ''), tasa: Number(r.tasa) || 0, tipo: String(r.tipo ?? 'ret_iva'),
           base: r.baseTipo === 'impuesto' ? 'impuesto' as const : 'subtotal' as const,
         })),
+        // Cada concepto redondeado y los totales como su suma: es lo que el CFDI
+        // valida (subtotal = Σ importes) y lo que Verifactu desglosa por línea.
+        roundLines: decimals,
       },
     );
   } catch (error: unknown) {
@@ -388,16 +411,19 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
-    unitPrice: money(l.cantidad ? l.base / l.cantidad : l.base),
+    // Seis decimales, no centavos: con cantidades fraccionarias o precio con
+    // impuesto incluido, un unitario a centavos no reproduce la base
+    // (cantidad × unitario ≠ importe) y la factura repetida derivaba.
+    unitPrice: Math.round((l.cantidad ? l.base / l.cantidad : l.base) * 1e6) / 1e6,
     taxRate: l.tax_rate,
-    subtotal: money(l.base),
-    taxAmount: money(l.impuesto),
-    total: money(l.total),
+    subtotal: round(l.base),
+    taxAmount: round(l.impuesto),
+    total: round(l.total),
   }));
-  const subtotal = money(totals.subtotal);
-  const taxes = money(totals.impuestos);
-  const total = money(totals.total);
-  const retencionTotal = money(totals.retencionTotal);
+  const subtotal = round(totals.subtotal);
+  const taxes = round(totals.impuestos);
+  const total = round(totals.total);
+  const retencionTotal = round(totals.retencionTotal);
 
   const fiscalMetadata = metadata(head.fiscal_metadata);
   const { issuer, recipient } = partiesFrom(head, country);
@@ -410,9 +436,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // Antes se tomaba `fiscal_currency` como etiqueta de importes que seguían en
   // `base_currency` y `fx_rate` no se leía en ningún lado: una venta de USD 1,000
   // se facturaba como "MXN 1,000". Ver docs/historial/billing-cobros.md.
-  const currency = normalizeCurrency(
-    (head.base_currency as string) || (head.org_moneda as string) || profile.currency,
-  );
+  const currency = saleCurrency;
   const ledgerCurrency = normalizeCurrency(
     (head.fiscal_currency as string) || (head.org_moneda as string) || profile.currency,
     currency,
@@ -430,7 +454,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       error: `Esta cotización está en ${currency} y tu contabilidad en ${ledgerCurrency}, pero no tiene un tipo de cambio válido. Vuelve a guardarla para recalcularlo.`,
     };
   }
-  const ledgerTotal = money(total * fxRate);
+  const ledgerTotal = roundTo(total * fxRate, currencyDecimals(ledgerCurrency));
 
   // CFDI: el TipoCambio del SAT es siempre "moneda del comprobante → MXN". Si el
   // comprobante no va en pesos y la contabilidad de la organización tampoco, no
@@ -460,14 +484,19 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // de la secuencia incluye el ejercicio, así que un año nuevo simplemente
   // encuentra una fila que no existía y arranca en 1.
   const serie = prefix;
-  const ejercicio = country === 'ES' ? new Date(issuedAt).getFullYear() : 0;
+  // El ejercicio es el año EN ESPAÑA: con el año UTC, una factura expedida a las
+  // 00:30 del 1 de enero en Madrid se numeraba en la serie del año anterior.
+  const ejercicio = country === 'ES' ? madridYear(new Date(issuedAt)) : 0;
   const folioPrefix = ejercicio > 0 ? `${prefix}${ejercicio}` : prefix;
   // La factura estrena vencimiento PROPIO. Se siembra de los términos de la
   // cotización (contado/net30/net60) porque es el dato que ya pactaron las
   // partes, pero a partir de aquí vive en la factura: el aging y los
   // recordatorios leen `due_date`, no vuelven a derivarlo de la cotización.
+  // Desde la APROBACIÓN (el mismo ancla que la cartera, los recordatorios y
+  // el interés): con la fecha de creación, una cotización creada el 1 de enero,
+  // aprobada el 1 de febrero y a 30 días nacía facturada y ya vencida.
   const dueDate = isoDay(dueDateFor(
-    (head.quote_created as string) || issuedAt,
+    (head.quote_base_date as string) || (head.quote_created as string) || issuedAt,
     (head.quote_terminos as string) || null,
   ));
   const publicToken = newInvoiceToken();
