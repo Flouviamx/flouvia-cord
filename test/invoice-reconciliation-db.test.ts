@@ -35,7 +35,7 @@ beforeAll(async () => {
   await db.exec(`
     create table orgs (id uuid primary key, nombre text, razon_social text, rfc text, regimen_fiscal text, country_code text,
       iva_pct numeric, cp_fiscal text, uso_cfdi text, email_contacto text, direccion text, moneda text, fiscal_metadata jsonb,
-      serie_folio text, facturapi_live_key text, facturapi_live_key_enc text, sandbox_of uuid);
+      serie_folio text, facturapi_live_key text, facturapi_live_key_enc text, sandbox_of uuid, stripe_account_id text);
     create table clientes (id uuid primary key, org_id uuid, uso_cfdi text);
     create table invoice_sequences(org_id uuid, country_code text, document_type text, serie text, ejercicio int, prefix text,
       next_value int, updated_at timestamptz, primary key(org_id,country_code,document_type,serie,ejercicio));
@@ -51,7 +51,8 @@ beforeAll(async () => {
       retencion_total numeric default 0, retenciones_snapshot jsonb default '[]',
       issuer_snapshot jsonb default '{}', recipient_snapshot jsonb default '{}', line_items_snapshot jsonb,
       due_date date, public_token text, provider text, notes text, created_by uuid,
-      schema_version text, provider_data jsonb, updated_at timestamptz default now()
+      schema_version text, provider_data jsonb, updated_at timestamptz default now(),
+      stripe_payment_intent_id text, mp_preference_id text
     );
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,

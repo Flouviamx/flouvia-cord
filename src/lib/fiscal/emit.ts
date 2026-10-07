@@ -12,6 +12,8 @@ import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
 import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+import { after } from '../after';
+import { log } from '../log';
 import type {
   FiscalDocumentRequest,
   FiscalDocumentResponse,
@@ -520,5 +522,23 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // Cotizaciones y facturas independientes comparten cuota, autorización,
   // proveedor y confirmación. El documento guardado conserva tipo y snapshots.
   const { finalizeInvoice } = await import('./invoices');
-  return finalizeInvoice(orgId, String(reserved.id));
+  const result = await finalizeInvoice(orgId, String(reserved.id));
+  // Lo que el cliente ya pagó en el link de la cotización se aplica a la
+  // factura recién emitida: sin esto nacía `open` con el saldo completo y la
+  // cobranza perseguía —y /i/[token] volvía a cobrar— dinero que ya entró.
+  if (result.emitted) {
+    try {
+      const { carryQuotePayments } = await import('./payments');
+      const saldados = await carryQuotePayments(orgId, cotizacionId);
+      if (saldados.length) {
+        const { dispatchInvoiceEvent } = await import('../webhooks');
+        for (const id of saldados) after(dispatchInvoiceEvent(orgId, id, 'invoice.paid'));
+      }
+    } catch (error) {
+      // La emisión ya ocurrió y es irreversible; el traslado se reintenta en el
+      // siguiente cobro que se liquide. Se deja rastro para conciliación.
+      log.error('no se trasladaron los pagos de la cotización a su factura', { route: 'fiscal/emit', err: error });
+    }
+  }
+  return result;
 }

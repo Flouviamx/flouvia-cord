@@ -26,9 +26,14 @@ describe('persistencia de cancelaciones', () => {
     expect(m.tx.mock.calls.every(([org]) => org === 'org-a')).toBe(true);
   });
   it('persiste accepted y el evento solo al confirmar', async () => {
+    // La anulación final devuelve la fila: sin pagos aplicados bajo el lock.
+    m.tx.mockResolvedValue([[{ id: 'doc-a' }], [{ id: 'doc-a' }]]);
     m.tx.mockResolvedValueOnce([[doc()]]); m.cancel.mockResolvedValue({ success: true, status: 'accepted' });
     expect(await voidInvoice('org-a', 'doc-a', undefined, true)).toMatchObject({ ok: true, cancellationStatus: 'accepted' });
-    expect(writes()[0].text).toContain("lifecycle = 'void'");
+    // Primero el lock del saldo; la anulación va condicionada a no tener pagos.
+    expect(writes()[0].text).toContain('for update');
+    expect(writes()[1].text).toContain("lifecycle = 'void'");
+    expect(writes()[1].text).toContain('coalesce(amount_paid, 0) = 0');
     expect(m.cancel).toHaveBeenCalledWith('provider-a', expect.objectContaining({ orgId: 'org-a', checkOnly: true, providerApiKey: 'sk_test_org' }));
     expect(m.event).toHaveBeenCalledWith('org-a', 'doc-a', 'void', 'Anulada');
   });
@@ -59,8 +64,30 @@ describe('persistencia de cancelaciones', () => {
     expect((await voidInvoice('org-a', 'doc-a', undefined, true)).ok).toBe(false); expect(m.cancel).not.toHaveBeenCalled();
   });
   it('la cancelación comercial existente conserva su contrato', async () => {
+    m.tx.mockResolvedValue([[{ id: 'doc-a' }], [{ id: 'doc-a' }]]);
     m.tx.mockResolvedValueOnce([[doc({ country_code: 'US', document_type: 'commercial_invoice' })]]); m.cancel.mockResolvedValue({ success: true });
     expect((await voidInvoice('org-a', 'doc-a')).ok).toBe(true);
+  });
+  it('no anula si llegó un pago mientras el proveedor procesaba la cancelación', async () => {
+    m.tx.mockResolvedValueOnce([[doc({ country_code: 'US', document_type: 'commercial_invoice' })]]); m.cancel.mockResolvedValue({ success: true });
+    // La anulación final no encuentra la fila sin pagos (amount_paid > 0 bajo el lock).
+    expect(await voidInvoice('org-a', 'doc-a')).toMatchObject({ ok: false, requiresCreditNote: true });
+  });
+  it('no anula una factura con un cobro con tarjeta en proceso', async () => {
+    const realFetch = globalThis.fetch;
+    const prev = process.env.STRIPE_SECRET_KEY;
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ id: 'pi_1', status: 'processing' }), { status: 200 })) as any;
+    try {
+      m.tx.mockResolvedValueOnce([[doc({ country_code: 'US', document_type: 'commercial_invoice', stripe_payment_intent_id: 'pi_1', stripe_account_id: 'acct_1' })]]);
+      const result = await voidInvoice('org-a', 'doc-a');
+      // Sin llave de Stripe en el entorno de prueba el cobro no se puede
+      // verificar y la anulación también se detiene (falla cerrada).
+      expect(result.ok).toBe(false);
+      expect(m.cancel).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = realFetch;
+      if (prev === undefined) delete process.env.STRIPE_SECRET_KEY; else process.env.STRIPE_SECRET_KEY = prev;
+    }
   });
 });
 

@@ -50,6 +50,11 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
     if (d.lifecycle === 'paid') return json({ alreadyPaid: true });
     if (d.lifecycle !== 'open') return json({ error: 'Esta factura no está abierta a pago.' }, 409);
+    // Con la cancelación del CFDI en trámite la factura sigue `open`, pero va a
+    // anularse: cobrarla ahora dejaría dinero sobre un documento muerto.
+    if (['pending', 'verifying'].includes(String(d.provider_data?.cancelacion?.status ?? ''))) {
+        return json({ error: 'Esta factura está en proceso de cancelación y no admite pagos.' }, 409);
+    }
     if (d.sandbox_of) {
         return json({ error: 'Esta factura es de prueba. El pago en línea está deshabilitado.' }, 409);
     }

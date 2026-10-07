@@ -88,7 +88,12 @@ export async function applyPayment(
   if (doc.lifecycle === 'draft') {
     return { ok: false, error: 'Esta factura todavía es un borrador. Emítela antes de registrar un pago.' };
   }
-  if (doc.lifecycle === 'void') {
+  // Un pago MANUAL no se registra contra una factura anulada. Uno del PROVEEDOR
+  // (Stripe, Mercado Pago) sí: ese dinero ya llegó a la cuenta del negocio, y
+  // rechazarlo hacía que su webhook fallara para siempre sin que nadie viera
+  // que hay que devolverlo. Se asienta y el saldo lo marca como `refund_due`.
+  const latePaymentOnVoid = doc.lifecycle === 'void';
+  if (latePaymentOnVoid && !input.stripePaymentIntentId && !input.mpPaymentId) {
     return { ok: false, error: 'Esta factura está anulada y no admite pagos.' };
   }
 
@@ -125,8 +130,8 @@ export async function applyPayment(
               ${input.metodo || 'manual'}, ${input.referencia || null}, ${mp},
               ${input.nota || null}, ${input.registradoPor || null}
             from documentos_fiscales d
-            where d.id = ${documentoId} and d.org_id = ${orgId} and d.status = 'issued'
-              and d.lifecycle not in ('draft', 'void') and d.credit_note_of is null
+            where d.id = ${documentoId} and d.org_id = ${orgId} and d.status in ('issued', 'cancelled')
+              and d.lifecycle <> 'draft' and d.credit_note_of is null
               and d.document_type not in ('credit_note', 'cfdi_egreso') and d.currency = ${payCurrency}
             on conflict (documento_id, mp_payment_id) where mp_payment_id is not null
             do nothing
@@ -140,8 +145,10 @@ export async function applyPayment(
               ${input.metodo || 'manual'}, ${input.referencia || null}, ${pi},
               ${input.nota || null}, ${input.registradoPor || null}
             from documentos_fiscales d
-            where d.id = ${documentoId} and d.org_id = ${orgId} and d.status = 'issued'
-              and d.lifecycle not in ('draft', 'void') and d.credit_note_of is null
+            where d.id = ${documentoId} and d.org_id = ${orgId}
+              and d.lifecycle <> 'draft' and d.credit_note_of is null
+              and (d.status = 'issued' and d.lifecycle <> 'void'
+                   or ${pi}::text is not null and d.lifecycle = 'void')
               and d.document_type not in ('credit_note', 'cfdi_egreso') and d.currency = ${payCurrency}
               and (${pi}::text is not null or ${monto} <= d.amount_remaining)
             on conflict (documento_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null
@@ -163,6 +170,19 @@ export async function applyPayment(
 
   const lifecycle = String(row.lifecycle);
   const justPaidNow = !duplicate && lifecycle === 'paid' && row.previous_lifecycle !== 'paid';
+  if (!duplicate && latePaymentOnVoid) {
+    // Sin efectos de cobranza (hoja, contabilidad, invoice.paid): el documento
+    // está anulado. Lo único que importa es que el negocio sepa que debe
+    // devolver ese dinero.
+    await logInvoiceEvent(orgId, documentoId, 'payment',
+      `Pago de ${money(monto)} ${String(doc.currency || '')} recibido DESPUÉS de anular la factura: debe devolverse al cliente`);
+    return {
+      ok: true, duplicate: false,
+      amountPaid: money(Number(row.amount_paid) || 0),
+      amountRemaining: money(Number(row.amount_remaining) || 0),
+      lifecycle, justPaid: false,
+    };
+  }
   if (!duplicate) {
     await logInvoiceEvent(orgId, documentoId, 'payment', `Abono de ${money(monto)} ${String(doc.currency || '')}`.trim());
     if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
@@ -200,4 +220,65 @@ export async function getInvoicePayments(orgId: string, documentoId: string) {
     nota: (r.nota as string) || null,
     aplicadoAt: r.aplicado_at as string,
   }));
+}
+
+/**
+ * Lleva a las facturas vivas de una cotización los cobros que ya se pagaron
+ * en la COTIZACIÓN (link /q: anticipo, saldo, cuotas o total).
+ *
+ * Son dos ledgers —`cotizacion_cobros` y `documento_pagos`— y nada los unía:
+ * facturar una cotización ya pagada creaba una factura `open` con el saldo
+ * completo. La cartera, los recordatorios, el agente de cobranza y los
+ * intereses la perseguían, y `/i/[token]` aceptaba un segundo pago por el mismo
+ * dinero. Se corre en los dos órdenes posibles: al emitir la factura (el cobro
+ * ya estaba pagado) y al liquidarse un cobro (la factura ya existía).
+ *
+ * Idempotente: un cobro se traslada una sola vez por documento (`cobro_id`), y
+ * el saldo se RECALCULA del ledger bajo el lock del documento, como en
+ * `applyPayment`. Devuelve los documentos que con esto quedaron saldados, para
+ * que el llamador dispare `invoice.paid` una sola vez.
+ */
+export async function carryQuotePayments(orgId: string, cotizacionId: string): Promise<string[]> {
+  const [docs] = await withOrgTx(orgId, sql`
+    select id from documentos_fiscales
+     where org_id = ${orgId} and cotizacion_id = ${cotizacionId}
+       and status = 'issued' and lifecycle not in ('draft', 'void')
+       and credit_note_of is null and document_type not in ('credit_note', 'cfdi_egreso')`);
+  const saldados: string[] = [];
+  for (const doc of docs) {
+    const documentoId = String(doc.id);
+    const [, inserted, updated] = await withOrgTx(orgId,
+      invoiceBalanceLock(orgId, documentoId),
+      sql`insert into documento_pagos (
+            org_id, documento_id, cobro_id, monto, currency, metodo, referencia,
+            stripe_payment_intent_id, mp_payment_id, nota
+          )
+          select d.org_id, d.id, cc.id, cc.monto, d.currency,
+                 case when cc.stripe_payment_intent_id is not null then 'stripe'
+                      when cc.mp_payment_id is not null then 'mercadopago'
+                      else coalesce(nullif(cc.payment_method, ''), 'otro') end,
+                 c.folio, cc.stripe_payment_intent_id, cc.mp_payment_id,
+                 'Pagado en la cotización'
+            from documentos_fiscales d
+            join cotizaciones c on c.id = d.cotizacion_id and c.org_id = d.org_id
+            join cotizacion_cobros cc on cc.cotizacion_id = c.id and cc.org_id = d.org_id
+           where d.id = ${documentoId} and d.org_id = ${orgId}
+             and cc.status = 'pagado' and cc.monto > 0
+             and upper(coalesce(c.base_currency, d.currency)) = d.currency
+             and not exists (
+               select 1 from documento_pagos p
+                where p.documento_id = d.id and p.org_id = d.org_id and p.cobro_id = cc.id)
+          on conflict do nothing
+          returning id`,
+      invoiceBalanceQuery(orgId, documentoId));
+    const row = updated[0];
+    if (!inserted.length) continue;
+    await logInvoiceEvent(orgId, documentoId, 'payment',
+      `${inserted.length} pago(s) recibido(s) en la cotización aplicado(s) a la factura`);
+    if (row && row.lifecycle === 'paid' && row.previous_lifecycle !== 'paid') {
+      saldados.push(documentoId);
+      await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado con los pagos de la cotización');
+    }
+  }
+  return saldados;
 }

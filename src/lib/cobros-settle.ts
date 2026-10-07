@@ -20,6 +20,25 @@ import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
 import { trackPaymentReceived } from './posthog-server';
 import { currencyDecimals, normalizeCurrency } from './currency';
+import { carryQuotePayments } from './fiscal/payments';
+import { dispatchInvoiceEvent } from './webhooks';
+import { log } from './log';
+
+/**
+ * Un cobro de la cotización recién liquidado se aplica también a las facturas
+ * ya emitidas de esa cotización: sin esto, pagar en /q después de facturar
+ * dejaba la factura `open` con el saldo completo (y la cotización, `invoiced`
+ * con una factura viva, fuera de la cartera de cotizaciones). Nunca lanza: el
+ * cobro ya quedó registrado y es lo que no se puede perder.
+ */
+export async function syncQuoteInvoices(orgId: string, cotizacionId: string): Promise<void> {
+    try {
+        const saldados = await carryQuotePayments(orgId, cotizacionId);
+        for (const id of saldados) after(dispatchInvoiceEvent(orgId, id, 'invoice.paid'));
+    } catch (err) {
+        log.error('no se aplicó el cobro de la cotización a su factura', { route: 'cobros-settle', err });
+    }
+}
 
 export interface SettleInput {
     cotizacionId: string;
@@ -72,6 +91,8 @@ export async function settleQuoteCobro(orgId: string, input: SettleInput): Promi
         await logAudit(orgId, { accion: 'cotizacion.pago_no_conciliado', entidad: 'cotizacion', entidad_id: cid, detalle: `${input.proveedor} ${input.pagoId}` });
         return 'sin_cobro';
     }
+
+    await syncQuoteInvoices(orgId, cid);
 
     const [[sums]] = await withOrgTx(orgId, sql`
         select (select coalesce(sum(monto), 0) from cotizacion_cobros

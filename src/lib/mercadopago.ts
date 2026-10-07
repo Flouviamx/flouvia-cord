@@ -231,6 +231,30 @@ export async function createMpPreference(orgId: string, input: PreferenceInput):
 }
 
 /**
+ * Cierra una preferencia de pago para que ya no admita pagos nuevos. Se usa al
+ * anular una factura: sin esto, el cliente con la página de Mercado Pago
+ * abierta podía pagar una factura ya anulada. `true` también cuando la cuenta
+ * ya no tiene credenciales: sin ellas el vendedor no recibe ese cobro, y no hay
+ * nada que cerrar desde aquí.
+ */
+export async function expireMpPreference(orgId: string, preferenceId: string): Promise<boolean> {
+    const token = await mpAccessToken(orgId);
+    if (!token) return true;
+    try {
+        const { status } = await mpFetch(`/checkout/preferences/${encodeURIComponent(preferenceId)}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expires: true, expiration_date_to: new Date().toISOString().replace('Z', '+00:00') }),
+        });
+        if (status >= 400) log.error('Mercado Pago no cerró la preferencia', { route: 'mercadopago', orgId, status });
+        return status < 400;
+    } catch (err) {
+        log.error('Mercado Pago no respondió al cerrar la preferencia', { route: 'mercadopago', orgId, err });
+        return false;
+    }
+}
+
+/**
  * Prefijo de `external_reference` cuando quien cobra es una FACTURA. Sin él, el
  * webhook no puede distinguir el id de un cobro de cotización del de un
  * documento fiscal: son dos ledgers distintos y aplicar el dinero al equivocado

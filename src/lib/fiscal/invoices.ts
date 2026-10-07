@@ -701,7 +701,8 @@ export async function voidInvoice(
     select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code, d.credit_note_of,
            exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
            d.provider_document_id, d.provider_data, d.document_type, d.provider,
-           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of
+           d.stripe_payment_intent_id, d.mp_preference_id,
+           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of, o.stripe_account_id
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
      where d.id = ${documentId} and d.org_id = ${orgId}
@@ -742,6 +743,17 @@ export async function voidInvoice(
   const country = String(doc.country_code || 'MX').toUpperCase();
   const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
   if (checkOnly && (country !== 'MX' || !regulatory)) return { ok: false, error: 'La consulta de cancelación solo aplica al CFDI de México.' };
+
+  // Antes de pedir la cancelación al proveedor fiscal, se cierra todo cobro en
+  // vuelo de ESTA factura. Antes no se tocaba: el cliente con /i abierto
+  // confirmaba la tarjeta sobre una factura ya anulada, el dinero se capturaba,
+  // `applyPayment` lo rechazaba y el webhook fallaba para siempre sin que nadie
+  // devolviera ese dinero. Falla cerrada: si no se puede confirmar que el cobro
+  // quedó cerrado, la factura NO se anula.
+  if (!checkOnly) {
+    const released = await releaseInvoicePaymentAttempts(orgId, doc);
+    if (!released.ok) return { ok: false, error: released.error };
+  }
   const orgKey = decryptSecret(doc.facturapi_live_key_enc as string)
     || (doc.facturapi_live_key as string) || undefined;
   const scope = doc.provider_data?.credential_scope;
@@ -771,19 +783,76 @@ export async function voidInvoice(
         : 'La cancelación aún no está confirmada; la factura sigue vigente.') };
   }
 
-  await withOrgTx(orgId,
+  // Bajo el lock del saldo y sin pagos: un abono manual registrado mientras el
+  // proveedor procesaba la cancelación no puede quedar sobre una factura anulada.
+  const voidResult = await withOrgTx(orgId,
     ...(doc.credit_note_of ? [invoiceBalanceLock(orgId, String(doc.credit_note_of))] : []),
+    invoiceBalanceLock(orgId, documentId),
     sql`
     update documentos_fiscales
        set lifecycle = 'void', status = 'cancelled',
            voided_at = now(), void_reason = ${reason || null},
            provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: 'accepted' } })}::jsonb,
            updated_at = now()
-     where id = ${documentId} and org_id = ${orgId}`,
+     where id = ${documentId} and org_id = ${orgId} and coalesce(amount_paid, 0) = 0
+     returning id`,
     ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
   );
+  const voided = voidResult[doc.credit_note_of ? 2 : 1] as any[];
+  if (!voided?.length) {
+    await withOrgTx(orgId, sql`
+      update documentos_fiscales
+         set provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: 'accepted', requiere_revision: true } })}::jsonb,
+             updated_at = now()
+       where id = ${documentId} and org_id = ${orgId}`);
+    await logInvoiceEvent(orgId, documentId, 'void', 'Cancelación aceptada por el proveedor, pero llegó un pago mientras se procesaba: requiere revisión');
+    return {
+      ok: false,
+      requiresCreditNote: true,
+      error: 'Llegó un pago mientras se procesaba la anulación. Revisa la factura: corresponde una nota de crédito o la devolución del pago.',
+    };
+  }
   await logInvoiceEvent(orgId, documentId, 'void', reason ? `Anulada: ${reason}` : 'Anulada');
   return { ok: true, cancellationStatus: 'accepted' };
+}
+
+/**
+ * Cierra los intentos de cobro en vuelo de una factura antes de anularla: el
+ * PaymentIntent de Stripe en la cuenta conectada y la preferencia de Mercado
+ * Pago. Un intento ya en `processing`/`succeeded` NO se puede cerrar — ahí hay
+ * dinero en camino y la factura no se anula: corresponde esperar el asiento y
+ * emitir una nota de crédito.
+ */
+async function releaseInvoicePaymentAttempts(orgId: string, doc: any): Promise<{ ok: true } | { ok: false; error: string }> {
+  const pi = doc.stripe_payment_intent_id ? String(doc.stripe_payment_intent_id) : '';
+  const account = doc.stripe_account_id ? String(doc.stripe_account_id) : '';
+  if (pi && account) {
+    try {
+      const { stripe } = await import('../billing');
+      const intent = await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}`, undefined, 'GET', { stripeAccount: account });
+      const status = String(intent?.status || '');
+      if (['processing', 'requires_capture', 'succeeded'].includes(status)) {
+        return { ok: false, error: 'Hay un pago con tarjeta en proceso para esta factura. Espera a que se confirme y emite una nota de crédito en lugar de anularla.' };
+      }
+      if (status !== 'canceled') {
+        await stripe(`/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, undefined, 'POST', {
+          stripeAccount: account, idempotencyKey: `cord-inv-void-${doc.id}-${pi}`,
+        });
+      }
+    } catch (error: any) {
+      // Un intento que ya no existe en la cuenta no puede cobrar.
+      if (error?.code !== 'resource_missing') {
+        return { ok: false, error: 'No pudimos cerrar el cobro en línea de esta factura. Intenta de nuevo en un momento.' };
+      }
+    }
+  }
+  if (doc.mp_preference_id) {
+    const { expireMpPreference } = await import('../mercadopago');
+    if (!(await expireMpPreference(orgId, String(doc.mp_preference_id)))) {
+      return { ok: false, error: 'No pudimos cerrar el link de pago de esta factura. Intenta de nuevo en un momento.' };
+    }
+  }
+  return { ok: true };
 }
 
 /**

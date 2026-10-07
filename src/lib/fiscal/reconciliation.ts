@@ -29,7 +29,10 @@ export const invoiceBalanceQuery = (orgId: string, id: string) => sql`
   update documentos_fiscales d set
     amount_paid = a.paid, amount_credited = a.credited, amount_refunded = a.refunded,
     amount_remaining = greatest(d.total - a.credited - a.paid + a.refunded, 0),
-    refund_due = greatest(a.paid - a.refunded - greatest(d.total - a.credited, 0), 0),
+    -- Una factura anulada no debe nada: todo lo que le llegó (un pago tardío
+    -- sobre un cobro que ya estaba en vuelo) se devuelve completo.
+    refund_due = case when d.lifecycle = 'void' then greatest(a.paid - a.refunded, 0)
+      else greatest(a.paid - a.refunded - greatest(d.total - a.credited, 0), 0) end,
     lifecycle = case when d.lifecycle in ('void', 'draft') then d.lifecycle
       when d.total - a.credited - a.paid + a.refunded <= 0 then 'paid'
       when d.lifecycle = 'uncollectible' then 'uncollectible' else 'open' end,

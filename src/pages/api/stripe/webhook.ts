@@ -14,6 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
 import { cerrarVeredictoKyc } from '../../../lib/kyc-evidencia';
 import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent, dispatchEvent, type WebhookEvent } from '../../../lib/webhooks';
+import { syncQuoteInvoices } from '../../../lib/cobros-settle';
 import { notifyQuoteEvent } from '../../../lib/notify';
 import { METER_PRICES, PRICE_TO_PLAN, retrieveAccount, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
@@ -953,6 +954,10 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 }
                 return;
             }
+
+            // 1b) Si la cotización ya tiene factura emitida, el cobro se aplica
+            // también a ese documento (ver syncQuoteInvoices).
+            await syncQuoteInvoices(orgId, cid);
 
             // 2) Si lo pagado ya cubre el total (p. ej. se liquidó el saldo
             // original después de que un plan de cuotas lo había reemplazado),

@@ -24,20 +24,22 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
-import { sendEmail, notifyInvoiceReminder } from '../../../lib/email';
+import { sendEmail, notifyInvoiceReminder, siteOrigin } from '../../../lib/email';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
+import { t } from '../../../i18n/app';
+import { log } from '../../../lib/log';
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 // Cada recordatorio se formatea con la divisa de SU cotización: este cron
 // barre la cartera de TODAS las orgs, así que un formateador fijo mezclaba
 // pesos, dólares y euros bajo el mismo "$".
-const money = (n: number, currency?: string) => {
+const money = (n: number, currency?: string, locale = 'es-MX') => {
     const code = normalizeCurrency(currency);
     const decimals = currencyDecimals(code);
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat(locale, {
         style: 'currency', currency: code,
         minimumFractionDigits: decimals, maximumFractionDigits: decimals,
     }).format(n);
@@ -56,11 +58,18 @@ export const GET: APIRoute = async ({ request }) => {
     // Cartera viva de TODAS las orgs reales (una sola query; el volumen es bajo:
     // solo approved/invoiced con email y vencimiento próximo). Las orgs sandbox
     // (entorno de prueba) y la demo quedan fuera.
+    // Solo cotizaciones que siguen siendo la deuda: sin `paid_at`, y sin una
+    // factura viva que ya lleve ese saldo (la escalera de facturas de abajo la
+    // recuerda). Antes una cotización facturada y luego pagada en /i seguía
+    // `invoiced` y aquí se le cobraba otra vez al cliente.
     const [rows] = await withSystemTx(sql`
         select c.id, c.folio, c.total, c.terminos, c.public_token, c.base_currency, o.moneda,
+               c.total - coalesce((select sum(cc.monto) from cotizacion_cobros cc
+                                    where cc.cotizacion_id = c.id and cc.org_id = c.org_id and cc.status = 'pagado'), 0) as saldo,
                coalesce(c.approved_at, c.created_at) as base,
                cl.empresa, cl.email,
                o.id as org_id, o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.idioma, o.zona_horaria,
                o.logo_url, o.color_secundario, o.brand_profile,
                (o.portal_powered = false and cord_effective_plan(o.id) <> 'free') as powered_off
         from cotizaciones c
@@ -68,6 +77,11 @@ export const GET: APIRoute = async ({ request }) => {
         join orgs o on o.id = c.org_id
         where c.status in ('approved', 'invoiced')
           and c.es_recurrente is not true
+          and c.paid_at is null
+          and not exists (
+              select 1 from documentos_fiscales d
+               where d.cotizacion_id = c.id and d.org_id = c.org_id
+                 and d.lifecycle in ('open', 'paid', 'uncollectible'))
           and cl.email is not null and cl.email <> ''
           and o.sandbox_of is null
           and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
@@ -76,9 +90,14 @@ export const GET: APIRoute = async ({ request }) => {
     const MS = 86400000;
     const todas = rows.map((r) => {
         const due = new Date(r.base as string); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
+        // El vencimiento es un DÍA: sin truncar, una cotización aprobada por la
+        // tarde contaba "1 día" cuando vencía hoy.
+        due.setHours(0, 0, 0, 0);
         const dias = Math.round((due.getTime() - today.getTime()) / MS);
         return {
-            id: r.id as string, folio: r.folio as string, total: num(r.total),
+            // Lo que se recuerda es el SALDO: con un anticipo pagado, pedir el
+            // total le cobra al cliente dinero que ya entregó.
+            id: r.id as string, folio: r.folio as string, total: num(r.saldo),
             token: r.public_token as string, empresa: r.empresa as string, email: r.email as string,
             orgId: r.org_id as string, orgNombre: (r.org_nombre as string) || 'Cord',
             color: /^#[0-9a-fA-F]{6}$/.test(r.color as string) ? (r.color as string) : '#0a192f',
@@ -89,10 +108,16 @@ export const GET: APIRoute = async ({ request }) => {
             // y TODO recordatorio se formateaba en pesos — a un cliente que cotizó
             // en euros le llegaba su importe rotulado como MXN (regla 21).
             moneda: normalizeCurrency(r.base_currency ?? r.moneda),
+            // El correo sale en el idioma de la organización, no en español fijo:
+            // un negocio en Austin le escribía "Hola, equipo de…" a su cliente.
+            lang: String(r.idioma || '').toLowerCase().startsWith('en') ? 'en' as const : 'es' as const,
             vence: due, dias,
         };
     });
-    const candidatos = todas.filter((c) => c.dias >= 0 && c.dias <= 3); // vence en los próximos 3 días
+    // Dos avisos por cotización: 3 días antes y el día del vencimiento. Antes
+    // salía uno CADA día de la ventana 0–3 (cuatro correos por la misma deuda)
+    // porque esta cartera no tiene tabla de dedup como la de facturas.
+    const candidatos = todas.filter((c) => c.total > 0 && (c.dias === 3 || c.dias === 0));
     // Owner: aviso de "pago vencido" (evento payment_overdue) exactamente el
     // primer día tras el vencimiento — coincidencia exacta de fecha, el cron
     // corre una vez al día, así se dispara una sola vez por cotización sin
@@ -100,37 +125,56 @@ export const GET: APIRoute = async ({ request }) => {
     const vencidasHoy = todas.filter((c) => c.dias === -1);
 
     let enviados = 0;
+    // Cada fase de cotizaciones va aislada: un fallo aquí no puede dejar sin
+    // correr la escalera de facturas de abajo (ya pasó, con el `origin`).
+    try {
     for (const c of candidatos) {
         const link = await publicDocumentUrl(c.orgId, 'q', c.token);
-        const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
-        const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
-        const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total, c.moneda)}</b> vence el <b>${venceTxt}</b>.</p>
+        const L = c.lang;
+        const tv = (key: string, vars: Record<string, string>) => {
+            let out = t(L, key as any);
+            for (const k in vars) out = out.split(`{${k}}`).join(vars[k]);
+            return out;
+        };
+        const venceTxt = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
+        const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)}${t(L, 'email.enviado_con_cord')}`;
+        const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${tv('rem.q.saludo', { empresa: esc(c.empresa) })}</p>
+                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${tv('rem.q.cuerpo', { folio: esc(c.folio), monto: money(c.total, c.moneda, L === 'en' ? 'en-US' : 'es-MX'), fecha: venceTxt })}</p>
 
                 <div style="margin:40px 0;">
-                    <a href="${link}" style="${emailButtonStyle(c.brand)}">Ver y pagar ${esc(c.folio)}</a>
+                    <a href="${link}" style="${emailButtonStyle(c.brand)}">${tv('rem.q.boton', { folio: esc(c.folio) })}</a>
                 </div>
 
-                <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copia y pega este enlace en tu navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+                <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'rem.q.copiar')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
 
         `, poweredLine);
         const res = await sendEmail({
             orgId: c.orgId,
             operation: 'payment_reminder',
             to: c.email,
-            subject: `Recordatorio de pago — ${c.folio}`,
+            subject: tv('rem.q.asunto', { folio: c.folio }),
             html,
             fromName: c.orgNombre,
         });
         if (res.sent) { enviados++; await logAudit(c.orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: c.id, detalle: `${c.folio} → ${c.email}` }); }
     }
+    } catch (err) {
+        log.error('recordatorios de cotización fallaron', { route: 'cron/recordatorios', err });
+    }
 
+    try {
     for (const c of vencidasHoy) {
         await notify(c.orgId, 'payment_overdue', {
             folio: c.folio, cliente: c.empresa, total: c.total,
             moneda: c.moneda,
-            link: `${origin}/app/cobranza`,
+            // `origin` no existe en Node: era un ReferenceError que tumbaba el
+            // cron justo ANTES de la escalera de facturas, así que ningún
+            // recordatorio de factura ni `invoice.overdue` salía ese día.
+            link: `${siteOrigin()}/app/cobranza`,
         });
+    }
+    } catch (err) {
+        log.error('avisos de vencimiento fallaron', { route: 'cron/recordatorios', err });
     }
 
     // ── Facturas ────────────────────────────────────────────────────────────
@@ -229,7 +273,7 @@ export const GET: APIRoute = async ({ request }) => {
 };
 
 const num = (v: unknown) => Number(v ?? 0);
-const esc = (s: string) => String(s).replace(/</g, '&lt;');
+const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 }

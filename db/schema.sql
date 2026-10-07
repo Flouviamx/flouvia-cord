@@ -3722,11 +3722,15 @@ create or replace view cuentas_por_cobrar as
   where c.status in ('approved', 'invoiced')
     and c.es_recurrente is not true
     and c.paid_at is null
-    -- Si ya se emitió una factura ABIERTA de esta cotización, el saldo real lo
-    -- lleva la factura: contarla en los dos rieles duplicaría la cartera.
+    -- Si ya se emitió una factura VIVA de esta cotización, el saldo real lo
+    -- lleva la factura: contarla en los dos rieles duplicaría la cartera. Viva
+    -- es abierta, pagada o incobrable — no solo abierta: una factura pagada en
+    -- /i deja la cotización `invoiced` sin `paid_at`, y con el filtro anterior
+    -- esa venta ya cobrada reaparecía aquí como deuda.
     and not exists (
       select 1 from documentos_fiscales d2
-       where d2.cotizacion_id = c.id and d2.lifecycle = 'open'
+       where d2.cotizacion_id = c.id and d2.org_id = c.org_id
+         and d2.lifecycle in ('open', 'paid', 'uncollectible')
     );
 
 -- `intereses_moratorios.cotizacion_id` era NOT NULL: literalmente no cabía un
