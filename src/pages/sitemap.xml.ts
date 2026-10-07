@@ -32,7 +32,6 @@ const STATIC_PATHS = [
     '/casos-de-uso/comercializadoras',
     '/casos-de-uso/software-factory',
     '/comparar/facturacion',
-    '/desarrolladores/status',
     '/privacidad',
     '/terminos',
 ];
@@ -159,6 +158,7 @@ export async function GET({ url }: { url: URL }) {
     let entries: Entry[] = [];
     if (host === 'docs.cordhq.app') entries = await docsEntries();
     else if (host === 'dev.cordhq.app') entries = await devEntries();
+    else if (host === 'status.cordhq.app') entries = [{ es: 'https://status.cordhq.app/', en: 'https://status.cordhq.app/en' }];
     else if (host === 'cordhq.app' || host === 'www.cordhq.app' || host === 'localhost' || host === '127.0.0.1') entries = await apexEntries();
 
     const body = `<?xml version="1.0" encoding="UTF-8"?>

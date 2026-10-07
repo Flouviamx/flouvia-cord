@@ -242,7 +242,10 @@ y accesos aireados a producto, precios y soporte.
 
 ## Estado público de la plataforma
 
-`/desarrolladores/status` y `/en/desarrolladores/status` son SSR y reportan solo
+Vive en `status.cordhq.app` (raíz en español, `/en` en inglés): el middleware
+reescribe a `/desarrolladores/status` y `/en/desarrolladores/status`, manda al apex
+cualquier otro path del subdominio (los links del menú y el pie) y redirige con 301
+las rutas viejas del apex. Las páginas son SSR y reportan solo
 mediciones persistidas en `health_checks`. Un cron autenticado ejecuta una vez al
 día tres sondas sintéticas: consulta mínima a Neon, lectura autenticada de la API
 de plataforma de Stripe y render completo de `/q/demo`. La cadencia está ajustada

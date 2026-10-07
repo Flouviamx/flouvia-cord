@@ -172,7 +172,7 @@ import { iconInner } from '../../lib/icons';
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plug')}></svg></span>
                                     <span class="mega-copy"><b>{isEn ? 'Integrations & webhooks' : 'Integraciones y webhooks'}</b><i>{isEn ? 'Connect any ERP/CRM via webhooks' : 'Conecta cualquier ERP/CRM por webhooks'}</i></span>
                                 </a>
-                                <a href={l("/desarrolladores/status")} class="mega-item">
+                                <a href={lang === 'en' ? "https://status.cordhq.app/en" : "https://status.cordhq.app"} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('pulse')}></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.dev.4.title")}</b><i>{t("nav.mega.dev.4.desc")}</i></span>
                                 </a>
@@ -417,7 +417,7 @@ import { iconInner } from '../../lib/icons';
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plug')}></svg></span>
                                 <span class="m-sub-copy"><b>{isEn ? 'Integrations & webhooks' : 'Integraciones y webhooks'}</b><i>{isEn ? 'Connect any ERP/CRM via webhooks' : 'Conecta cualquier ERP/CRM por webhooks'}</i></span>
                             </a>
-                            <a href={l("/desarrolladores/status")} class="m-sub" data-close>
+                            <a href={lang === 'en' ? "https://status.cordhq.app/en" : "https://status.cordhq.app"} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('pulse')}></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.dev.4.title")}</b><i>{t("nav.mega.dev.4.desc")}</i></span>
                             </a>

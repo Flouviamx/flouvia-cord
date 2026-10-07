@@ -77,7 +77,7 @@ correo e IA— y los guarda en `health_checks`. Fiscal, correo e IA se omiten si
 el entorno no tiene su llave: nunca se registra un fallo inventado. El muestreo
 es horario vía `.github/workflows/status-probe.yml` (requiere el secret
 `CRON_SECRET` en GitHub, mismo valor que en Vercel); el cron diario de
-`vercel.json` queda de respaldo. `/desarrolladores/status` pinta 90 días por
+`vercel.json` queda de respaldo. `status.cordhq.app` pinta 90 días por
 componente: un día sin muestras es gris, nunca verde. Crear, editar o cambiar su estado
 exige rol `admin`, no permite borrarlo desde la interfaz y escribe
 `ops_audit_log` en la misma transacción.

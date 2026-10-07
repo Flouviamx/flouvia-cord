@@ -126,6 +126,12 @@ const SUBDOMAINS = [
     { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"], passthrough: ["/robots.txt", "/sitemap.xml"] },
 ];
 
+// status.cordhq.app: una sola página por idioma. La raíz y /en sirven el estado;
+// cualquier otro path (los links del menú y el pie) vuelve al dominio principal.
+const STATUS_HOST = "status.cordhq.app";
+const STATUS_PAGES: Record<string, string> = { "/": "/desarrolladores/status", "/en": "/en/desarrolladores/status" };
+const STATUS_ROUTES = new Set(Object.values(STATUS_PAGES));
+
 function normalizedHostname(value: string): string {
     return value.trim().toLowerCase().replace(/\.$/, '');
 }
@@ -135,6 +141,12 @@ const subdomainRewrite = async (context: any, next: any) => {
     // ops.cordhq.app.ejemplo.com y convertia el Host en una frontera de auth.
     const host = normalizedHostname(context.url.hostname || '');
     const path = context.url.pathname;
+
+    if (host === STATUS_HOST) {
+        if (STATUS_PAGES[path]) return context.rewrite(STATUS_PAGES[path]);
+        if (STATUS_ROUTES.has(path) || path.startsWith("/_") || path === "/404" || path === "/robots.txt" || path === "/sitemap.xml") return next();
+        return context.redirect(`https://cordhq.app${path}${context.url.search}`, 302);
+    }
 
     const sub = SUBDOMAINS.find((s) => host === s.host);
     if (sub) {
@@ -184,6 +196,8 @@ const subdomainRewrite = async (context: any, next: any) => {
     // del árbol de páginas, quede indexable en DOS dominios a la vez). Estas rutas son
     // SSR, así que este middleware sí corre para ellas.
     if (import.meta.env.PROD) {
+        const statusPath = Object.entries(STATUS_PAGES).find(([, route]) => path === route)?.[0];
+        if (statusPath) return context.redirect(`https://${STATUS_HOST}${statusPath === "/" ? "" : statusPath}`, 301);
         for (const s of SUBDOMAINS) {
             for (const p of s.prefixes) {
                 // Solo páginas. Un endpoint no se indexa, y `/api/billing/*`

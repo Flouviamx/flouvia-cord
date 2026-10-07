@@ -15,6 +15,8 @@ interface Props {
     // SUBDOMINIO (docs.cordhq.app) — sin este prop el comportamiento es idéntico
     // al de siempre (landing/blog/producto/soluciones siguen en cordhq.app).
     canonicalOrigin?: string;
+    // Path canónico cuando la URL pública no es la ruta física (status.cordhq.app/ sirve /desarrolladores/status).
+    canonicalPath?: string;
     // Páginas públicas asociadas a workspaces internos (por ejemplo /q de las
     // cuentas Ops) pueden apagar PostHog antes de que exista pageview/replay.
     analyticsDisabled?: boolean;
@@ -45,6 +47,7 @@ const {
     noindex = false,
     ogType = 'website',
     canonicalOrigin,
+    canonicalPath,
     analyticsDisabled = false,
     analyticsOrgId = '',
     analyticsIsSandbox = false,
@@ -53,7 +56,7 @@ const {
 } = Astro.props;
 
 const SITE      = canonicalOrigin ? new URL(canonicalOrigin) : (Astro.site ?? new URL('https://cordhq.app'));
-const canonical = new URL(cleanPathname(Astro.url.pathname), SITE).href;
+const canonical = new URL(canonicalPath ?? cleanPathname(Astro.url.pathname), SITE).href;
 const ogImage   = new URL(image, SITE).href;
 const isDefaultImage = image === '/og-cord.jpg';
 

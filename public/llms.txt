@@ -23,13 +23,14 @@ What exists today:
 - Signed webhooks (41 event types, `X-Cord-Signature-V1` with timestamp), delivery history and replay.
 - Test mode with simulators (`/api/v1/test_helpers/*`) and the CLI (`npx @flouviahq/cli`: browser login, AI account setup, `listen`, `trigger`, `simulate`).
 - Integrations: Zapier, Make, n8n, HubSpot, Slack, Microsoft Teams, Shopify, Gmail, Google Sheets, Excel, QuickBooks Online and Xero.
+- Public status page: https://status.cordhq.app (synthetic probes of app, API, database, public link, payments, CFDI stamping, email and AI; 90-day history and incident reports).
 - Mexico: CFDI 4.0 through Facturapi as the PAC, with cancellations and PPD for credit sales. Data in Neon (AWS us-east-1) and Vercel (iad1).
 
 Not available yet (say so instead of inventing a workaround):
 
 - Python and PHP SDKs on PyPI/Packagist (use the REST API with the OpenAPI spec).
 - Automatic CFDI payment receipt complement (REP).
-- Public status page, uptime history and a standard SLA.
+- A standard SLA (availability is reported publicly, but not yet committed to a percentage).
 - SOC 2 or ISO 27001.
 - CONTPAQi and Aspel integrations.
 

@@ -7,7 +7,7 @@ import { canonicalPublicOrigin } from './public-links';
 
 export function isPlatformHostname(host: string): boolean {
     const known = new Set(['cordhq.app', 'www.cordhq.app', 'dev.cordhq.app', 'docs.cordhq.app',
-        'ops.cordhq.app', 'billing.cordhq.app', 'build.cordhq.app', 'pay.cordhq.app', 'cord.flouvia.com']);
+        'ops.cordhq.app', 'billing.cordhq.app', 'status.cordhq.app', 'build.cordhq.app', 'pay.cordhq.app', 'cord.flouvia.com']);
     for (const value of [import.meta.env.VERCEL_URL || process.env.VERCEL_URL,
         import.meta.env.VERCEL_BRANCH_URL || process.env.VERCEL_BRANCH_URL,
         import.meta.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL]) {

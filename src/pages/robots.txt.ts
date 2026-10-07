@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 export const prerender = false;
 
 const PRIVATE_HOSTS = new Set(['ops.cordhq.app', 'billing.cordhq.app']);
-const PUBLIC_HOSTS = new Set(['cordhq.app', 'www.cordhq.app', 'docs.cordhq.app', 'dev.cordhq.app']);
+const PUBLIC_HOSTS = new Set(['cordhq.app', 'www.cordhq.app', 'docs.cordhq.app', 'dev.cordhq.app', 'status.cordhq.app']);
 
 const PRIVATE_ROBOTS = `User-agent: *
 Disallow: /

@@ -69,7 +69,7 @@ const payload = (incident: any) => JSON.stringify({
 
 <OpsLayout title="Disponibilidad | Cord Ops">
   <OpsShell active="status" title="Disponibilidad" subtitle="Sondas verificables e incidentes publicados en la página pública de estado.">
-    <a slot="actions" class="ops-button secondary" href="/desarrolladores/status" target="_blank" rel="noopener">Ver página pública</a>
+    <a slot="actions" class="ops-button secondary" href="https://status.cordhq.app" target="_blank" rel="noopener">Ver página pública</a>
 
     {unavailable && <div class="ops-inline-warning">La migración de disponibilidad no está aplicada o la base no respondió. La página pública mostrará “sin datos verificables”.</div>}
 

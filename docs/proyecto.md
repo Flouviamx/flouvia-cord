@@ -212,8 +212,9 @@ Neon se recomienda provisionar desde Vercel Marketplace para recibir un
 - Producción: `cordhq.app`; el DNS apunta a Vercel.
 - Subdominios, todos servidos por el MISMO proyecto y ruteados exclusivamente
   desde `SUBDOMAINS` en `src/middleware.ts` (nunca desde `vercel.json`):
-  `dev.` (dev-blog), `docs.` (documentación), `ops.` (Cord Ops) y
-  `billing.` (facturación de la suscripción, ago 2026). Cada uno necesita darse
+  `dev.` (dev-blog), `docs.` (documentación), `ops.` (Cord Ops),
+  `billing.` (facturación de la suscripción, ago 2026) y `status.` (estado
+  público; su raíz y `/en` sirven `/desarrolladores/status`, oct 2026). Cada uno necesita darse
   de alta como dominio del proyecto en Vercel y su CNAME en DNS.
 - `billing.cordhq.app` no comparte la cookie de sesión con el apex: la recibe por
   traspaso de un solo uso. Ver regla 26 de `estandares-ingenieria.md`.
