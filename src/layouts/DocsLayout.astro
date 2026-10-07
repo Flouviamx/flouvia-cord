@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 import Layout from "./Layout.astro";
 
 import type { MarkdownHeading } from "astro";
@@ -137,7 +138,7 @@ import { iconInner } from '../lib/icons';
   <script is:inline define:vars={{ lang }}>
     document.documentElement.lang = lang;
   </script>
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={jsonForScript(jsonLd)} />
   <div class="docs-layout">
     
     <!-- Header -->

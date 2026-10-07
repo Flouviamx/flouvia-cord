@@ -11,7 +11,7 @@
 // ya emitido.
 
 import { sql, withOrgTx, withSystemTx } from '../db';
-import { createInvoiceDraft, finalizeInvoice, type DraftLineInput } from './invoices';
+import { createInvoiceDraft, finalizeInvoice, MAX_INVOICE_ITEMS, type DraftLineInput } from './invoices';
 import { notifyInvoiceIssued } from '../email';
 import { logInvoiceEvent } from './timeline';
 import { checkEntitlement } from '../org-entitlements';
@@ -39,7 +39,25 @@ export async function createRecurrencia(orgId: string, input: RecurrenciaInput, 
     const gate = await checkEntitlement(orgId, 'recurring_invoices');
     if (!gate.ok) return { ok: false as const, error: 'Tu plan no incluye facturas recurrentes.' };
 
-    const lineas = (input.lineas || []).filter((l) => l && String(l.descripcion || '').trim());
+    // Mismo tope y mismo saneo que el editor de facturas: el snapshot se guarda
+    // y se reemite cada periodo, así que un arreglo sin límite o con campos
+    // arbitrarios se arrastraba a cada factura futura.
+    const crudas = Array.isArray(input.lineas) ? input.lineas : [];
+    if (crudas.length > MAX_INVOICE_ITEMS) {
+        return { ok: false as const, error: `Máximo ${MAX_INVOICE_ITEMS} conceptos por recurrencia.` };
+    }
+    const numOrNull = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v));
+    const lineas: DraftLineInput[] = crudas
+        .filter((l) => l && String(l.descripcion || '').trim())
+        .map((l) => ({
+            descripcion: String(l.descripcion).trim().slice(0, 500),
+            cantidad: Number(l.cantidad),
+            precioUnitario: Number(l.precioUnitario),
+            productoId: l.productoId ? String(l.productoId) : null,
+            precioNegociado: numOrNull(l.precioNegociado),
+            costoUnitario: numOrNull(l.costoUnitario),
+            taxRate: numOrNull(l.taxRate),
+        }));
     if (!lineas.length) return { ok: false as const, error: 'La recurrencia necesita al menos un concepto.' };
     if (!input.clienteId) return { ok: false as const, error: 'La recurrencia necesita un cliente.' };
 
@@ -49,9 +67,14 @@ export async function createRecurrencia(orgId: string, input: RecurrenciaInput, 
     try {
         primera = input.primeraEmision ? recurrenceDay(input.primeraEmision) : recurrenceDay(proximaEmision(new Date(), input.cadencia, dia));
         endDate = input.endDate ? recurrenceDay(input.endDate) : null;
+        // Una primera emisión en el pasado no se "pone al corriente": el cron
+        // emitiría un periodo atrasado (y ya vencido) por cada corrida hasta
+        // alcanzar hoy, cada uno con su correo al cliente y su folio fiscal.
+        if (primera < todayUtc()) return { ok: false as const, error: 'La primera emisión no puede ser una fecha pasada.' };
         if (endDate && endDate < primera) return { ok: false as const, error: 'La fecha final no puede ser anterior a la primera emisión.' };
     } catch (error) { return { ok: false as const, error: error instanceof Error ? error.message : 'Fecha inválida.' }; }
-    if (lineas.some(l => !Number.isFinite(l.cantidad) || l.cantidad <= 0 || !Number.isFinite(l.precioUnitario) || l.precioUnitario < 0)) {
+    if (lineas.some(l => !Number.isFinite(l.cantidad) || l.cantidad <= 0 || !Number.isFinite(l.precioUnitario) || l.precioUnitario < 0
+        || (l.taxRate !== null && l.taxRate !== undefined && !(Number.isFinite(l.taxRate) && l.taxRate >= 0 && l.taxRate <= 1)))) {
         return { ok: false as const, error: 'Los conceptos necesitan cantidad y precio válidos.' };
     }
 
@@ -115,7 +138,20 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
         let emissionConfirmed = false;
         try {
             const period = recurrenceDay(venceDia(r.next_run_at));
-            const siguiente = proximaEmision(new Date(`${period}T00:00:00Z`), String(r.cadencia) as Cadencia, Number(r.dia_mes));
+            const cadencia = String(r.cadencia) as Cadencia;
+            // Una recurrencia pausada varios periodos (o con el cron caído unos
+            // días) NO se pone al corriente emitiendo un periodo atrasado por
+            // corrida: reanudar en mayo una pausada desde enero mandaba las
+            // facturas de feb, mar, abr y may en días consecutivos, todas ya
+            // vencidas. Se emite UNA, la del periodo vigente, y la siguiente
+            // fecha salta al primer periodo posterior a hoy.
+            const hoy = todayUtc();
+            let emitPeriod = period;
+            let siguiente = proximaEmision(new Date(`${period}T00:00:00Z`), cadencia, Number(r.dia_mes));
+            while (recurrenceDay(siguiente) <= hoy) {
+                emitPeriod = recurrenceDay(siguiente);
+                siguiente = proximaEmision(siguiente, cadencia, Number(r.dia_mes));
+            }
             // Solo quien cambia esta fecha puede emitir este periodo. Una pausa o
             // edición posterior al barrido invalida el claim y se respeta.
             const [claimed] = await withOrgTx(orgId, sql`
@@ -130,7 +166,7 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
             if (!claimed.length) continue;
             const gate = await checkEntitlement(orgId, 'recurring_invoices');
             if (!gate.ok) throw new Error('Plan sin facturas recurrentes');
-            const vence = new Date(`${period}T00:00:00Z`);
+            const vence = new Date(`${emitPeriod}T00:00:00Z`);
             vence.setUTCDate(vence.getUTCDate() + (Number(r.dias_credito) || 0));
 
             const draft = await createInvoiceDraft(orgId, {
@@ -186,6 +222,11 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
     }
 
     return out;
+}
+
+/** Día de calendario UTC — el mismo `current_date` contra el que barre el cron. */
+function todayUtc(): string {
+    return new Date().toISOString().slice(0, 10);
 }
 
 async function marcarError(orgId: string, recId: string, mensaje: string): Promise<void> {

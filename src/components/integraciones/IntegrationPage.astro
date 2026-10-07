@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../landing/Nav.astro';
 import Footer from '../landing/Footer.astro';
@@ -74,7 +75,7 @@ import { iconInner } from '../../lib/icons';
 ---
 
 <Layout title={c.metaTitle} description={c.metaDescription} imageAlt={`Cord + ${page.nombre}`}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(schema)} />
     <Nav />
     <main class="ig" style={brandVars}>
         <div class="ig-wrap">

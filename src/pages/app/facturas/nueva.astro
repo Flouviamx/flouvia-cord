@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../../lib/escape';
 // Editor de facturas. La contraparte de `/app/cotizaciones/nueva` para el
 // documento que sí se cobra.
 //
@@ -220,7 +221,7 @@ import { iconInner } from '../../../lib/icons';
 
     {hasAccess && (
     <div data-editor="invoice">
-        <script type="application/json" id="edBoot" is:inline set:html={JSON.stringify(BOOT)} />
+        <script type="application/json" id="edBoot" is:inline set:html={jsonForScript(BOOT)} />
 
         <div class="editor-grid">
             <div class="ed-main">
@@ -583,7 +584,7 @@ import { iconInner } from '../../../lib/icons';
         // ── Render ──────────────────────────────────────────────────────────
         const taxSelect = (l: Linea, i: number) => {
             const opts = (BOOT.taxOptions || []).map((o: any) =>
-                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${o.label}</option>`).join('');
+                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
             return `<select class="lr-tax${l.taxRate === 0 ? ' is-exento' : ''}" data-i="${i}" aria-label="${T.concepto}">${opts}</select>`;
         };
 

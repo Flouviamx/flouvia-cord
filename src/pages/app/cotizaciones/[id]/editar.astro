@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../../../lib/escape';
 // Editor de cotizaciones para editar y crear nuevas versiones (V2, V3...).
 import AppLayout from '../../../../layouts/AppLayout.astro';
 import { getProductos, getClientes, getOrg, getCotizacion, getImpuestos } from '../../../../lib/queries';
@@ -154,7 +155,7 @@ import { iconInner } from '../../../../lib/icons';
     </div>
 </AppLayout>
 
-<script type="application/json" id="edvBoot" is:inline set:html={JSON.stringify({
+<script type="application/json" id="edvBoot" is:inline set:html={jsonForScript({
     catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT,
     quoteCurrency: q.baseCurrency || ORG.moneda || 'MXN', quoteFiscalCurrency: q.fiscalCurrency || ORG.moneda || 'MXN',
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
@@ -285,7 +286,7 @@ import { iconInner } from '../../../../lib/icons';
             const row = document.createElement('div');
             row.className = 'line-row';
             
-            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
+            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${escapeHtml(l.nombre)}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
 
             row.innerHTML = `
                 ${nameHtml}
@@ -296,7 +297,7 @@ import { iconInner } from '../../../../lib/icons';
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
-                    ' + iconSvg('x', '', 1.5, 14) + '
+                    ${iconSvg('x', '', 1.5, 14)}
                 </button>
             `;
             $lines.appendChild(row);

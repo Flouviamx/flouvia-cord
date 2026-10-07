@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 // Página de solución (Empresas).
 // Diseño alineado al estilo Cord.
 export const prerender = true;
@@ -61,8 +62,8 @@ import { iconInner } from '../../lib/icons';
     title={solucion.metaTitle ?? `${solucion.nav} — Cord`}
     description={solucion.metaDescription ?? solucion.sub}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav darkHero={solucion.slug === 'empresas'} />
     <main class="stripe-main">
         

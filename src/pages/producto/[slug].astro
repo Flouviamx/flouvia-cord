@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 // Página de producto — una por feature (estilo Stripe: hero + mockup que vende,
 // stats, bloques de detalle alternados, cross-links y CTA). Mismo lenguaje de
 // animación que el index via PageAnims.astro.
@@ -276,26 +277,26 @@ import { iconInner } from '../../lib/icons';
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(faqSchema)}
+        set:html={jsonForScript(faqSchema)}
     />
     <script
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(breadcrumbSchema)}
+        set:html={jsonForScript(breadcrumbSchema)}
     />
     <script
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(appSchema)}
+        set:html={jsonForScript(appSchema)}
     />
     {howtoSchema && (
         <script
             slot="head"
             type="application/ld+json"
             is:inline
-            set:html={JSON.stringify(howtoSchema)}
+            set:html={jsonForScript(howtoSchema)}
         />
     )}
     <Nav />

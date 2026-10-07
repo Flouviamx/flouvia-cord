@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 // QuoteCard — Quiet Luxury edition.
 // Flujo de aprobación en 3 pasos: revisar → firmar digitalmente → confirmado/pagar.
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
@@ -157,7 +158,7 @@ import { iconInner } from '../../lib/icons';
 ---
 
 <div class="q-card" data-brand-surface style={brandStyle(resolveBrandProfile(ORG.brandProfile), ORG.colorMarca, ORG.colorSecundario)} data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined} data-solo-lectura={soloLectura ? '1' : undefined} data-status={q.status}>
-    <script type="application/json" id="qRetenciones" is:inline set:html={JSON.stringify((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
+    <script type="application/json" id="qRetenciones" is:inline set:html={jsonForScript((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
     {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">

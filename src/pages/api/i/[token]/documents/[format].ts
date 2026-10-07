@@ -1,7 +1,8 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { resolvePublicInvoice } from '../../../../../lib/db';
+import { resolvePublicInvoice, reqIp } from '../../../../../lib/db';
+import { strictRateLimit } from '../../../../../lib/ratelimit';
 import { downloadInvoiceDocument } from '../../../../../lib/fiscal/invoice-download';
 
 const privacyHeaders = {
@@ -11,11 +12,21 @@ const privacyHeaders = {
     'X-Content-Type-Options': 'nosniff',
 };
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
     const token = params.token ?? '';
     const format = params.format ?? '';
     if (!['pdf', 'xml'].includes(format)) {
         return new Response('Documento no encontrado', { status: 404, headers: privacyHeaders });
+    }
+    // Cada descarga dibuja un PDF o se va al PAC —a veces con la llave de la
+    // plataforma, compartida entre organizaciones—. Sin techo, quien tenga el
+    // link podía repetirla en bucle y gastar la cuota de todos.
+    const limite = await strictRateLimit(`invoice-doc:${reqIp(request) || 'sin-ip'}:${token.slice(0, 64)}`, 20, 60);
+    if (!limite.ok) {
+        return new Response('Demasiadas descargas. Intenta de nuevo en un momento.', {
+            status: limite.unavailable ? 503 : 429,
+            headers: { ...privacyHeaders, 'Retry-After': String(limite.retryAfter) },
+        });
     }
     try {
         // Un link autoriza únicamente su documento, nunca la organización activa

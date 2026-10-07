@@ -49,9 +49,18 @@ async function syncOrg(orgId: string, tipo: string, kind: string) {
         where org_id = ${orgId} and tipo = ${tipo} and kind = ${kind} and es_default = true and activo = true
         order by created_at asc limit 1`);
     const tasa = d ? Number(d.tasa) : 0;
-    // col viene de un mapa fijo (no del usuario) → seguro interpolar el identificador.
-    await sql.query(`update orgs set ${col} = $1 where id = $2`, [tasa, orgId]);
+    // En el carril de la organización (regla 30), con una sentencia por columna
+    // en vez de `sql.query` con el identificador interpolado: esa forma corría
+    // FUERA de withOrgTx —tenancy-lint solo ve plantillas `sql\``— y, con el rol
+    // `cord_app` activo, la RLS de `orgs` la habría dejado en 0 filas en
+    // silencio: `orgs.iva_pct` se desincronizaba del catálogo y `taxCatalogFor`
+    // lo sigue aceptando como tasa válida.
+    if (col === 'iva_pct') await withOrgTx(orgId, sql`update orgs set iva_pct = ${tasa} where id = ${orgId}`);
+    else if (col === 'retencion_iva_pct') await withOrgTx(orgId, sql`update orgs set retencion_iva_pct = ${tasa} where id = ${orgId}`);
+    else await withOrgTx(orgId, sql`update orgs set retencion_isr_pct = ${tasa} where id = ${orgId}`);
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -88,7 +97,8 @@ export const POST: APIRoute = async ({ request }) => {
             values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault}, ${retencionBase})
             returning id`);
     } catch {
-        return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
+        // Regla 14: el dueño del negocio no corre migraciones.
+        return json({ error: 'No se pudo crear el impuesto. Intenta de nuevo.' }, 500);
     }
     if (esDefault) await syncOrg(orgId, tipo, kind);
     await logAudit(orgId, { accion: 'impuesto.creado', entidad: 'impuesto', entidad_id: row.id as string, detalle: `${nombre} (${tipo} ${tasa}%)`, ip: reqIp(request) });
@@ -100,7 +110,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');
-    if (!id) return json({ error: 'Falta id' }, 400);
+    if (!UUID_RE.test(id)) return json({ error: 'Impuesto no encontrado' }, 404);
 
     const orgId = await getActiveOrgId();
     const [[actual]] = await withOrgTx(orgId, sql`select * from impuestos where id = ${id} and org_id = ${orgId}`);
@@ -133,7 +143,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');
-    if (!id) return json({ error: 'Falta id' }, 400);
+    if (!UUID_RE.test(id)) return json({ error: 'Impuesto no encontrado' }, 404);
 
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`delete from impuestos where id = ${id} and org_id = ${orgId} returning tipo, kind, nombre`);

@@ -44,6 +44,20 @@ export interface ApplyPaymentResult {
 const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 /**
+ * Vocabulario CERRADO de un pago registrado a mano. `stripe` y `mercadopago`
+ * quedan reservados a los webhooks de cada riel: antes el campo era texto libre
+ * y un pago manual podía etiquetarse "stripe" en el ledger que ve el cliente en
+ * la página de la factura, como si el cobro hubiera pasado por el proveedor.
+ */
+export const MANUAL_PAYMENT_METHODS = ['transferencia', 'efectivo', 'cheque', 'tarjeta', 'otro'] as const;
+
+export function manualPaymentMethod(raw: unknown): string {
+  const value = String(raw ?? '').trim().toLowerCase();
+  if (!value || value === 'manual') return 'transferencia';
+  return (MANUAL_PAYMENT_METHODS as readonly string[]).includes(value) ? value : 'otro';
+}
+
+/**
  * Registra un pago contra una factura y recalcula su saldo. Idempotente por
  * `stripe_payment_intent_id`: Stripe reintenta sus webhooks por diseño, y sin
  * esa garantía un reintento cobraría dos veces contra el mismo saldo.

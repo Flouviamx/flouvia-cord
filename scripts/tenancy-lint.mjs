@@ -116,6 +116,12 @@ function tenantTables() {
 // Promise.all([...])) es ejecución sin contexto.
 const LANES = new Set(['withOrgTx', 'withSystemTx', 'withUserTx', 'withCaptureToken', 'withOpsTx']);
 
+// `sql.query('... $1 ...', [params])` también ejecuta, y con el SQL en una cadena
+// o una plantilla SIN la etiqueta `sql`. El caso real que obligó a esto: el
+// `syncOrg` de /api/impuestos actualizaba `orgs` con `sql.query(\`...\`)` fuera
+// de todo carril y el linter no lo veía.
+const SQL_QUERY_RE = /\bsql\.query\(\s*$/;
+
 // Enmascara cuerpos de plantillas, cadenas y comentarios con espacios, para que
 // un paréntesis dentro de un SQL no descuadre el conteo del recorrido inverso.
 function maskAndFindTemplates(src) {
@@ -135,16 +141,21 @@ function maskAndFindTemplates(src) {
         }
         // cadenas simples
         if (c === '"' || c === "'") {
-            const quote = c; i++;
+            const quote = c;
+            const isRawQuery = SQL_QUERY_RE.test(src.slice(Math.max(0, i - 20), i));
+            const bodyStart = i + 1;
+            i++;
             while (i < src.length && src[i] !== quote) {
                 if (src[i] === '\\') { masked[i] = ' '; i++; }
                 masked[i] = ' '; i++;
             }
+            if (isRawQuery) templates.push({ body: src.slice(bodyStart, i), index: bodyStart });
             i++; continue;
         }
         // plantillas
         if (c === '`') {
-            const isSql = /\bsql\s*$/.test(src.slice(Math.max(0, i - 12), i));
+            const before = src.slice(Math.max(0, i - 20), i);
+            const isSql = /\bsql\s*$/.test(before) || SQL_QUERY_RE.test(before);
             const bodyStart = i + 1;
             i++;
             let depth = 0;
@@ -204,7 +215,7 @@ function deferredTarget(masked, calls, stmtStart, index) {
     const push = calls.find((c) => c.endsWith('.push'));
     if (push) return push.slice(0, -'.push'.length);
     // El fragmento termina en el propio `sql\`` — se recorta antes de anclar.
-    const stmt = masked.slice(stmtStart, index).replace(/sql\s*`?\s*$/, '');
+    const stmt = masked.slice(stmtStart, index).replace(/sql(?:\.query\(\s*)?\s*[`'"]?\s*$/, '');
     const decl = stmt.match(/(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*(?::[^=]*)?=\s*\[?\s*$/)
         || stmt.match(/([A-Za-z0-9_$]+)\s*=\s*\[?\s*$/);
     return decl ? decl[1] : null;
@@ -270,7 +281,7 @@ for (const file of walk(join(ROOT, 'src'))) {
     if (PERMANENT.has(rel)) continue;
 
     const src = readFileSync(file, 'utf8');
-    if (!src.includes('sql`')) continue;
+    if (!src.includes('sql`') && !src.includes('sql.query(')) continue;
 
     const hits = [];
     for (const { body, index } of unlanedSqlBodies(src)) {

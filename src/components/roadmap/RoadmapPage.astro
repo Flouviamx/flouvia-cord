@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../landing/Nav.astro';
 import Footer from '../landing/Footer.astro';
@@ -83,7 +84,7 @@ const breadcrumbSchema = {
 ---
 
 <Layout title={copy.title} description={copy.description}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav darkHero={true} />
     <main class="rd-main" data-singular={copy.singular} data-plural={copy.plural}>
         <header class="rd-hero">

@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../../lib/escape';
 // Editor de cotizaciones — LA pantalla crítica. Interactivo, datos reales (Neon):
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
@@ -315,7 +316,7 @@ import { iconInner } from '../../../lib/icons';
     </div>
 </AppLayout>
 
-<script type="application/json" id="edBootQ" is:inline set:html={JSON.stringify({
+<script type="application/json" id="edBootQ" is:inline set:html={jsonForScript({
     catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente,
     T: ET, orgCurrency: ORG.moneda || 'MXN',
     taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
@@ -431,7 +432,7 @@ import { iconInner } from '../../../lib/icons';
     // HTML del sub-texto del nombre (unidad + nota de volumen + precio sugerido).
     const nameNote = (l, idx) => {
         const vm = volMin(l);
-        let html = l.unidad + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
+        let html = escapeHtml(l.unidad) + (vm ? ` · <b class="lr-volnote">${tpl(T.volNoteTpl, { min: vm })}</b>` : '');
         html += pricingNoteHtml(l, idx);
         html += existenciasNote(l);
         if (l.b2b && !l.negoTouched) html += ` · <b class="lr-b2b">${T.precioB2B}</b>`;
@@ -627,8 +628,8 @@ import { iconInner } from '../../../lib/icons';
 
             // Si es línea libre, el nombre es editable.
             const nameHtml = l.id
-                ? `<span class="lr-name">${l.nombre}<small>${nameNote(l, idx)}</small></span>`
-                : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
+                ? `<span class="lr-name">${escapeHtml(l.nombre)}<small>${nameNote(l, idx)}</small></span>`
+                : `<input type="text" class="lr-input lr-desc-input" value="${escapeHtml(l.nombre)}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
 
             row.innerHTML = `
                 ${nameHtml}
@@ -639,7 +640,7 @@ import { iconInner } from '../../../lib/icons';
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
-                    ' + iconSvg('x', '', 1.5, 14) + '
+                    ${iconSvg('x', '', 1.5, 14)}
                 </button>
             `;
             $lines.appendChild(row);
@@ -702,8 +703,8 @@ import { iconInner } from '../../../lib/icons';
         } else {
             $prodDrop.innerHTML = prodResults.map((p, i) => `
                 <button type="button" class="prod-item ${i === prodActive ? 'is-active' : ''}" data-pid="${p.id}" role="option">
-                    <span class="prod-item-name">${p.nombre}${p.sku ? `<small>${p.sku}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock ${p.existencias <= 0 ? 'is-out' : ''}">${p.existencias <= 0 ? T.agotado : tpl(T.enExistenciaTpl, { n: p.existencias })}</small>`}</span>
-                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${p.unidad}</small></span>
+                    <span class="prod-item-name">${escapeHtml(p.nombre)}${p.sku ? `<small>${escapeHtml(p.sku)}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock ${p.existencias <= 0 ? 'is-out' : ''}">${p.existencias <= 0 ? T.agotado : tpl(T.enExistenciaTpl, { n: p.existencias })}</small>`}</span>
+                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${escapeHtml(p.unidad)}</small></span>
                 </button>`).join('');
         }
         $prodDrop.hidden = false;

@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 // /elements — Cord Elements: el SDK para llevar las cotizaciones de Cord al
 // sitio de un tercero. Misma familia visual que /producto y /desarrolladores
 // (hero 100dvh con banda diagonal, bento de tarjetas blancas, FAQ, cross-links de /producto) más lo
@@ -277,10 +278,10 @@ import { iconInner } from '../lib/icons';
 ---
 
 <Layout title={devPage.metaTitle!} description={devPage.metaDescription!}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(sdkSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(howToSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(sdkSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(howToSchema)} />
     <Nav />
     <main>
         <!-- ════════ HERO ════════ -->

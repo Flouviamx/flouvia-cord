@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 // Modal de alta/edición de cliente — COMPARTIDO entre /app/clientes (con eliminar, con
 // modo edición, recarga al guardar) y el editor de cotizaciones (solo alta, sin recargar,
 // inserta y selecciona el cliente recién creado). Antes vivían dos copias con ~90 líneas de
@@ -55,7 +56,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     data-org-country={ORG.countryCode}
     data-rfc-default-label={COUNTRY.taxIdLabel}
 >
-    <script type="application/json" id="cmTaxIdLabels" is:inline set:html={JSON.stringify(TAX_ID_LABELS)} />
+    <script type="application/json" id="cmTaxIdLabels" is:inline set:html={jsonForScript(TAX_ID_LABELS)} />
     <form method="dialog" class="m-form" id="clientForm">
         <div class="m-head">
             <h2 id="cmTitle">{t(L, 'cmod.nuevo_titulo')}</h2>

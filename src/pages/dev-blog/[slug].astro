@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import { DEV_SITE, ORG_ID } from '../../lib/seo/entities';
 import { getEntry, render } from 'astro:content';
 import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
@@ -129,7 +130,7 @@ const articleJsonLd = {
 ---
 
 <DevBlogLayout title={title} description={articleDescription} articleDate={isoDate} articleAuthors={authors} lang={lang}>
-  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+  <script type="application/ld+json" set:html={jsonForScript(articleJsonLd)} />
   
   <!-- Article Hero -->
   <header class="article-hero">

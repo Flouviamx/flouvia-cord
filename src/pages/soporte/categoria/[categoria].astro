@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../../lib/escape';
 import { getCollection } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import Nav from '../../../components/landing/Nav.astro';
@@ -42,7 +43,7 @@ const breadcrumbSchema = {
 ---
 
 <Layout title={`${name} - ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`} description={isEn ? `Help articles about ${name}` : `Artículos de ayuda sobre ${name}`}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
     <main class="cat-page-layout">
         <div class="pr-mesh" aria-hidden="true"></div>

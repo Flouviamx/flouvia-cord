@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 
 export const prerender = true;
 
@@ -62,8 +63,8 @@ import { iconInner } from '../../lib/icons';
 
 
 <Layout title={metaTitle} description={metaDesc}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
 
     <main class="use-case-main">

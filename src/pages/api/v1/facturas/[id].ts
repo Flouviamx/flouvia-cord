@@ -7,18 +7,23 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../../lib/apikey';
-import { getActiveOrgId, logAudit, reqIp } from '../../../../lib/db';
+import { getActiveOrgId, logAudit, reqIp, sql, withOrgTx } from '../../../../lib/db';
 import { getFacturaDetalle } from '../../../../lib/queries';
 import { finalizeInvoice, voidInvoice, createCreditNote } from '../../../../lib/fiscal/invoices';
-import { applyPayment } from '../../../../lib/fiscal/payments';
+import { applyPayment, manualPaymentMethod } from '../../../../lib/fiscal/payments';
 import { notifyInvoiceIssued } from '../../../../lib/email';
 import { ok, fail, invoiceDetail, readJsonBody } from '../../../../lib/apiv1';
 import { requireEntitlement } from '../../../../lib/org-entitlements';
 import { dispatchInvoiceEvent } from '../../../../lib/webhooks';
 import { invoicingFeatureFor } from '../../../../lib/fiscal/gate';
 import { after } from '../../../../lib/after';
+import { logInvoiceEvent } from '../../../../lib/fiscal/timeline';
+import { strictRateLimit } from '../../../../lib/ratelimit';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const GET = withApiAuth('read', async ({ params }) => {
+    if (!UUID_RE.test(String(params.id ?? ''))) return fail('Factura no encontrada', 'not_found', 404);
     const f = await getFacturaDetalle(String(params.id ?? ''));
     if (!f) return fail('Factura no encontrada', 'not_found', 404);
     return ok(invoiceDetail(f));
@@ -26,6 +31,7 @@ export const GET = withApiAuth('read', async ({ params }) => {
 
 export const POST = withApiAuth('write', async ({ params, request }, auth) => {
     const id = String(params.id ?? '');
+    if (!UUID_RE.test(id)) return fail('Factura no encontrada', 'not_found', 404);
     const body = await readJsonBody(request);
     if (body instanceof Response) return body;
     const action = String(body.action ?? '').trim();
@@ -52,9 +58,20 @@ export const POST = withApiAuth('write', async ({ params, request }, auth) => {
 
     if (action === 'send') {
         if (f.estado === 'draft') return fail('Emite la factura antes de enviarla', 'invalid_state', 409);
+        if (f.estado === 'void') return fail('La factura está anulada', 'invalid_state', 409);
         if (!f.clienteEmail) return fail('El cliente no tiene correo registrado', 'invalid_state', 400);
+        // Mismo techo por documento que el panel: sin él, una llave de API
+        // podía reenviar la misma factura sin fin desde el dominio de Cord.
+        const ventana = await strictRateLimit(`factura-send:${orgId}:${id}`, 3, 600);
+        if (!ventana.ok) return fail('Esta factura se envió hace poco. Espera unos minutos para reenviarla.', 'rate_limited', ventana.unavailable ? 503 : 429);
         const sent = await notifyInvoiceIssued(orgId, id);
         if (!sent) return fail('No se pudo enviar el correo', 'send_failed', 502);
+        // Igual que el panel: sin `sent_at` el envío masivo la volvía a mandar
+        // y el historial de la factura no registraba la entrega.
+        await withOrgTx(orgId, sql`
+            update documentos_fiscales set sent_at = now(), updated_at = now()
+             where id = ${id} and org_id = ${orgId}`);
+        await logInvoiceEvent(orgId, id, 'sent', `Enviada a ${f.clienteEmail} (vía API)`);
         after(dispatchInvoiceEvent(orgId, id, 'invoice.sent'));
         return ok({ id, enviada: true });
     }
@@ -63,7 +80,7 @@ export const POST = withApiAuth('write', async ({ params, request }, auth) => {
         const result = await applyPayment(orgId, id, {
             monto: Number(body.monto),
             currency: String(body.moneda ?? body.currency ?? ''),
-            metodo: String(body.metodo ?? 'manual').slice(0, 40),
+            metodo: manualPaymentMethod(body.metodo),
             referencia: String(body.referencia ?? '').slice(0, 120) || null,
         });
         if (!result.ok) return fail(result.error!, 'invalid_request', 400);
@@ -83,10 +100,20 @@ export const POST = withApiAuth('write', async ({ params, request }, auth) => {
             return fail(result.error!, result.requiresCreditNote ? 'credit_note_required' : 'invalid_state', 409);
         }
         await logAudit(orgId, {
-            accion: 'factura.anulada', entidad: 'factura', entidad_id: id,
+            accion: result.pending ? 'factura.cancelacion_pendiente' : 'factura.anulada', entidad: 'factura', entidad_id: id,
             detalle: 'vía API', ip: reqIp(request), actor: `api:${auth.keyId}`,
         });
-        after(dispatchInvoiceEvent(orgId, id, 'invoice.voided'));
+        // Una cancelación de CFDI pendiente de aceptación NO es una anulación:
+        // la factura sigue viva ante el SAT. Antes la API respondía `void` y
+        // disparaba `invoice.voided`, y una contabilidad conectada registraba
+        // una cancelación que no había ocurrido (y la volvía a registrar al
+        // reintentar una ya anulada). Mismo contrato que el panel.
+        if (result.pending) {
+            return new Response(JSON.stringify({ data: { id, estado: f.estado, cancelacion: 'pendiente', cancellation_status: result.cancellationStatus ?? null } }), {
+                status: 202, headers: { 'Content-Type': 'application/json' },
+            });
+        }
+        if (!result.reused) after(dispatchInvoiceEvent(orgId, id, 'invoice.voided'));
         return ok({ id, estado: 'void' });
     }
 

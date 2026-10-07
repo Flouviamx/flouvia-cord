@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
@@ -105,9 +106,9 @@ import { iconInner } from '../../lib/icons';
     ogType="article"
     alternates={alternates}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
-    {faqSchema && <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />}
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(articleSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
+    {faqSchema && <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />}
     <Nav />
     
     <!-- Ruido analógico de lujo -->

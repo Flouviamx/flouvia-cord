@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ tx: vi.fn(), system: vi.fn(), draft: vi.fn(), issue: vi.fn(), email: vi.fn(), gate: vi.fn(), reserve: vi.fn(), cancel: vi.fn(), flush: vi.fn() }));
 vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, withSystemTx: m.system, sql: (s: TemplateStringsArray, ...values: unknown[]) => ({ text: s.join('?'), values }) }));
-vi.mock('../src/lib/fiscal/invoices', () => ({ createInvoiceDraft: m.draft, finalizeInvoice: m.issue }));
+vi.mock('../src/lib/fiscal/invoices', () => ({ createInvoiceDraft: m.draft, finalizeInvoice: m.issue, MAX_INVOICE_ITEMS: 200 }));
 vi.mock('../src/lib/email', () => ({ notifyInvoiceIssued: m.email }));
 vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: vi.fn() }));
 vi.mock('../src/lib/org-entitlements', () => ({ checkEntitlement: m.gate }));
@@ -24,6 +24,10 @@ describe('calendario de recurrencias', () => {
     });
 });
 describe('ejecución de un periodo', () => {
+    // El periodo de la fila (6 sep) es el vigente: sin fijar el reloj, el salto
+    // de periodos atrasados emitiría el de "hoy" en vez del de la fixture.
+    beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-09-06T12:00:00Z')); });
+    afterEach(() => vi.useRealTimers());
     it('conserva microsegundos en la versión de edición usada por el claim', async () => {
         const version = '2026-08-01 00:00:00.123456+00';
         m.system.mockResolvedValue([[row({ updated_at: version })]]);
@@ -70,6 +74,24 @@ describe('ejecución de un periodo', () => {
     it('no emite sin plan o sin reserva disponible', async () => {
         m.issue.mockResolvedValue({ emitted: false, error: 'Límite' }); expect((await runRecurrencias()).fallidas).toBe(1); expect(m.email).not.toHaveBeenCalled();
         m.gate.mockResolvedValue({ ok: false }); m.draft.mockClear(); await runRecurrencias(); expect(m.draft).not.toHaveBeenCalled();
+    });
+    it('una recurrencia atrasada varios periodos emite UNA factura, la del periodo vigente', async () => {
+        vi.setSystemTime(new Date('2026-12-10T12:00:00Z'));
+        await runRecurrencias();
+        expect(m.draft).toHaveBeenCalledTimes(1);
+        // Periodo vigente: 6 dic (no el 6 sep de la fila) + 30 días de crédito.
+        expect(m.draft).toHaveBeenCalledWith('org-a', expect.objectContaining({ dueDate: '2027-01-05' }));
+        const claim = m.tx.mock.calls.find(([, q]) => q.text.includes('returning r.id'))![1];
+        // La siguiente emisión salta al primer periodo posterior a hoy.
+        expect(claim.values).toContain('2027-01-06');
+        expect(claim.values).not.toContain('2026-10-06');
+    });
+    it('no acepta una primera emisión en el pasado ni más conceptos que una factura', async () => {
+        const base = { clienteId: 'client-a', nombre: 'Mensual', lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 100 }], currency: 'MXN', cadencia: 'mensual' as const, diaMes: 6, diasCredito: 30 };
+        expect(await createRecurrencia('org-a', { ...base, primeraEmision: '2026-09-01' })).toMatchObject({ ok: false });
+        const muchas = Array.from({ length: 201 }, () => ({ descripcion: 'X', cantidad: 1, precioUnitario: 1 }));
+        expect(await createRecurrencia('org-a', { ...base, lineas: muchas })).toMatchObject({ ok: false });
+        expect(m.tx).not.toHaveBeenCalled();
     });
     it('rechaza fechas imposibles y finales anteriores sin escribir', async () => {
         const base = { clienteId: 'client-a', nombre: 'Mensual', lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 100 }], currency: 'MXN', cadencia: 'mensual' as const, diaMes: 6, diasCredito: 30 };

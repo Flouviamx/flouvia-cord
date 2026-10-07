@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -51,7 +52,7 @@ import { iconInner } from '../lib/icons';
     title={isEn ? "Blog | Cord" : "Blog de Cord — Ventas, Cobranza y Facturación"}
     description={isEn ? "Articles, guides, and strategies on sales, billing, and how to accelerate your revenue." : "Artículos, guías y estrategias sobre ventas, cobranza, facturación y cómo acelerar tu flujo de ingresos. Para cualquier negocio, en cualquier país."}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
 
     <main class="cord-blog-main">

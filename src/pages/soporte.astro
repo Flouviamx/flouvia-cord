@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 // /src/pages/soporte.astro
 // Página principal del Centro de Ayuda de Cord
 export const prerender = true;
@@ -40,8 +41,8 @@ const breadcrumbSchema = {
     title={isEn ? "Help Center & Support — Cord" : "Centro de Ayuda y Soporte — Cord"}
     description={isEn ? "Find quick answers, guides, and support articles to master Cord. We are here to help." : "Encuentra respuestas rápidas, guías y artículos de soporte para dominar Cord. Estamos aquí para ayudarte."}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav darkHero={true} />
     <main>
         <SupportHero isEn={isEn} />

@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
@@ -97,7 +98,7 @@ import { iconInner } from '../../lib/icons';
 ---
 
 <Layout title={title} description={description}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
 <div class="vs-layout">
 
   <!-- ══════════════════════════════════════════════════

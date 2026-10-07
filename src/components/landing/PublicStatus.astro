@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import Layout from '../../layouts/Layout.astro';
 import Nav from './Nav.astro';
 import Footer from './Footer.astro';
@@ -250,7 +251,7 @@ import { iconInner } from '../../lib/icons';
     canonicalPath={isEn ? '/en' : '/'}
     alternates={{ es: '/', en: '/en' }}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
     <main class:list={['status-page', `is-${snapshot.state}`]}>
         <header class="pp-hero st-hero">

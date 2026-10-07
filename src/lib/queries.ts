@@ -1598,7 +1598,10 @@ function rowToFactura(r: any) {
         pdfUrl: (r.pdf_url as string) || null,
         xmlUrl: (r.xml_url as string) || null,
         creado: fmtDate(r.created_at as string),
-        creadoISO: String(r.created_at),
+        // ISO real: `String(Date)` daba "Wed Oct 07 2026 19:53:00 GMT+0000
+        // (Coordinated Universal Time)", sin milisegundos, y ese texto viajaba
+        // como cursor de paginación.
+        creadoISO: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     };
 }
 
@@ -1610,6 +1613,22 @@ export async function getFacturas(filters: FacturaFilters = {}) {
         ? String(filters.estado)
         : null;
     const busqueda = filters.q ? `%${String(filters.q).trim().slice(0, 80)}%` : null;
+    // Los demás filtros también llegan de la URL (bandeja, /api/v1/facturas y la
+    // herramienta MCP). Pasaban directo a `::uuid`/`::date`/`::timestamptz`: un
+    // valor mal formado reventaba el cast con un 500 en vez de ignorarse.
+    const clienteId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(filters.clienteId ?? ''))
+        ? String(filters.clienteId)
+        : null;
+    const isoDay = (value: unknown) => {
+        const text = String(value ?? '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+        const parsed = new Date(`${text}T00:00:00Z`);
+        return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === text ? text : null;
+    };
+    const desde = isoDay(filters.desde);
+    const hasta = isoDay(filters.hasta);
+    const cursorDate = filters.cursor ? new Date(String(filters.cursor)) : null;
+    const cursor = cursorDate && Number.isFinite(cursorDate.getTime()) ? cursorDate.toISOString() : null;
 
     const [rows] = await withOrgTx(orgId, sql`
         select d.id, d.cotizacion_id, d.cliente_id, d.country_code, d.document_type,
@@ -1631,15 +1650,15 @@ export async function getFacturas(filters: FacturaFilters = {}) {
                 or (${estado}::text = 'overdue'
                     and d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date)
                 or (${estado}::text <> 'overdue' and d.lifecycle = ${estado}))
-           and (${filters.clienteId || null}::uuid is null or d.cliente_id = ${filters.clienteId || null}::uuid)
-           and (${filters.desde || null}::date is null or d.created_at >= ${filters.desde || null}::date)
-           and (${filters.hasta || null}::date is null or d.created_at < (${filters.hasta || null}::date + interval '1 day'))
+           and (${clienteId}::uuid is null or d.cliente_id = ${clienteId}::uuid)
+           and (${desde}::date is null or d.created_at >= ${desde}::date)
+           and (${hasta}::date is null or d.created_at < (${hasta}::date + interval '1 day'))
            and (${busqueda}::text is null
                 or d.invoice_number ilike ${busqueda}
                 or d.fiscal_id ilike ${busqueda}
                 or c.folio ilike ${busqueda}
                 or coalesce(cl.empresa, cq.empresa) ilike ${busqueda})
-           and (${filters.cursor || null}::timestamptz is null or d.created_at < ${filters.cursor || null}::timestamptz)
+           and (${cursor}::timestamptz is null or d.created_at < ${cursor}::timestamptz)
          order by d.created_at desc, d.id desc
          limit ${limit + 1}`);
 

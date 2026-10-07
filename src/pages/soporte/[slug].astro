@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
@@ -92,8 +93,8 @@ const breadcrumbSchema = {
     title={`${entry.data.title} — ${isEn ? 'Cord Help Center' : 'Centro de Ayuda Cord'}`}
     description={entry.data.description}
 >
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(articleSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
     <main class="article-layout">
         

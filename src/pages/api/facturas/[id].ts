@@ -11,7 +11,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
 import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
-import { applyPayment } from '../../../lib/fiscal/payments';
+import { applyPayment, manualPaymentMethod } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notifyInvoiceIssued } from '../../../lib/email';
@@ -19,21 +19,44 @@ import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { currentUserId } from '../../../lib/context';
 import { after } from '../../../lib/after';
+import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Permiso por acción. Emitir, enviar y duplicar son del carril de facturación
+ * (`cotizar`). Todo lo que BAJA lo que se cobra —registrar un pago, marcar
+ * incobrable, anular o acreditar— es una decisión de cobranza: antes `void` y
+ * `credit_note` solo pedían `cotizar`, así que un vendedor podía cancelar un
+ * CFDI ante el SAT (irreversible) o saldar una factura con una nota de crédito
+ * por el total y sacarla de la cartera sin permiso de cobranza.
+ */
+export function invoiceActionPermission(action: string): 'cobranza' | 'cotizar' {
+    return ['payment', 'uncollectible', 'void', 'cancellation_status', 'credit_note'].includes(action)
+        ? 'cobranza'
+        : 'cotizar';
+}
+
+/** Ventana de reenvío del MISMO documento al cliente. */
+const SEND_LIMIT = 3;
+const SEND_WINDOW_SEC = 600;
 
 export const PATCH: APIRoute = async ({ params, request }) => {
     const id = params.id ?? '';
+    // Un id que no es UUID reventaba el cast de Postgres con un 500.
+    if (!UUID_RE.test(id)) return json({ error: 'Factura no encontrada' }, 404);
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const action = String(body.action ?? '').trim();
 
-    // `payment` y `uncollectible` son decisiones de cobranza; el resto son del
-    // carril de facturación.
-    const denied = await requirePerm(
-        action === 'payment' || action === 'uncollectible' ? 'cobranza' : 'cotizar',
-    );
+    const denied = await requirePerm(invoiceActionPermission(action));
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    // Mismo techo que el PATCH de cotizaciones: el contador in-process del
+    // middleware se multiplica por réplica y no acota nada real.
+    const limitado = strictLimitResponse(await strictRateLimit(`factura-patch:${orgId}`, 120, 60));
+    if (limitado) return limitado;
     const [own] = await withOrgTx(orgId, sql`
         select id, lifecycle, status, total, amount_remaining, invoice_number, currency
           from documentos_fiscales where id = ${id} and org_id = ${orgId}`);
@@ -156,6 +179,16 @@ async function send(orgId: string, id: string, request: Request) {
     if (factura.estado === 'draft') {
         return json({ error: 'Emite la factura antes de enviarla.' }, 409);
     }
+    // El correo es "tu factura está lista, págala aquí": mandarlo de una
+    // factura anulada le pide al cliente pagar algo que ya no se debe.
+    if (factura.estado === 'void') {
+        return json({ error: 'Esta factura está anulada y ya no se envía al cliente.' }, 409);
+    }
+    // Sin tope, un mismo documento se podía reenviar sin fin al correo del
+    // cliente desde el dominio de envío de Cord: spam con remitente legítimo y
+    // reputación de entrega de toda la plataforma en juego.
+    const ventana = strictLimitResponse(await strictRateLimit(`factura-send:${orgId}:${id}`, SEND_LIMIT, SEND_WINDOW_SEC));
+    if (ventana) return ventana;
     if (!factura.clienteEmail) {
         return json({ error: 'Este cliente no tiene correo registrado.' }, 400);
     }
@@ -213,7 +246,7 @@ async function payment(orgId: string, id: string, body: any, request: Request) {
     const result = await applyPayment(orgId, id, {
         monto: Number(body.monto),
         currency: String(body.currency ?? ''),
-        metodo: String(body.metodo ?? 'manual').slice(0, 40),
+        metodo: manualPaymentMethod(body.metodo),
         referencia: String(body.referencia ?? '').trim().slice(0, 120) || null,
         nota: String(body.nota ?? '').trim().slice(0, 400) || null,
         registradoPor: currentUserId(),

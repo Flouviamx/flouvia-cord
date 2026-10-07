@@ -4,8 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ resolve: vi.fn(), tx: vi.fn(), active: vi.fn() }));
 vi.mock('../src/lib/db', () => ({
     resolvePublicInvoice: mocks.resolve, withOrgTx: mocks.tx, getActiveOrgId: mocks.active,
+    reqIp: () => '203.0.113.7',
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ text: strings.join('?'), values }),
 }));
+vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true, retryAfter: 0 }) }));
+vi.mock('../src/lib/queries', () => ({ requirePermAny: async () => null }));
 vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: () => null }));
 
 const id = 'af9a9cf1-f55e-4a41-a6b8-a4302c7d5d93';

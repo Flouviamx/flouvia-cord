@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 // Landing de Cord — página de ventas completa.
 // NO es prerender a propósito: en modo `server`, las páginas prerender=true se sirven
 // como HTML estático desde el edge y SALTAN el middleware. La raíz "/" de los subdominios
@@ -164,19 +165,19 @@ const faqSchema = {
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(siteGraph)}
+        set:html={jsonForScript(siteGraph)}
     />
     <script
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(howToSchema)}
+        set:html={jsonForScript(howToSchema)}
     />
     <script
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(faqSchema)}
+        set:html={jsonForScript(faqSchema)}
     />
     <Nav />
     <main>

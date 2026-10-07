@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 interface Props {
   title: string;
   description?: string;
@@ -160,7 +161,7 @@ const jsonLd = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={jsonForScript(jsonLd)} />
 
     <!-- Fonts: JetBrains Mono, Inter, and Pixelify Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

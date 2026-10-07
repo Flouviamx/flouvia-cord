@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../lib/escape';
 // /precios — página dedicada de precios (estilo Stripe): hero + toggle
 // mensual/anual, tarjetas de plan, comparador completo, calculadora de valor
 // y FAQ. Fuente de datos: src/lib/precios.ts (compartida con el home).
@@ -95,8 +96,8 @@ import { iconInner } from '../lib/icons';
 ---
 
 <Layout title={title} description={description}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(productSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(productSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
     <Nav />
     <main>
         <!-- ── HERO ── -->

@@ -5,7 +5,7 @@ vi.mock('../src/lib/db', () => ({
 }));
 vi.mock('../src/lib/queries', () => ({ requirePerm: async () => null, invalidateMoneyCaches: m.invalidate, getFacturaDetalle: vi.fn() }));
 vi.mock('../src/lib/fiscal/invoices', () => ({ voidInvoice: m.cancel }));
-vi.mock('../src/lib/fiscal/payments', () => ({ applyPayment: vi.fn() }));
+vi.mock('../src/lib/fiscal/payments', () => ({ applyPayment: vi.fn(), manualPaymentMethod: (v: unknown) => String(v ?? 'transferencia') }));
 vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: vi.fn() }));
 vi.mock('../src/lib/billing', () => ({ cancelUsage: vi.fn(), flushUsageReservation: vi.fn(), reserveUsage: vi.fn() }));
 vi.mock('../src/lib/webhooks', () => ({ dispatchInvoiceEvent: m.event }));
@@ -14,8 +14,10 @@ vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: vi.fn() }));
 vi.mock('../src/lib/fiscal/gate', () => ({ invoicingFeatureFor: vi.fn(), orgCountry: vi.fn() }));
 vi.mock('../src/lib/context', () => ({ currentUserId: () => 'user-a' }));
 vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
+vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }), strictLimitResponse: () => null }));
 import { PATCH } from '../src/pages/api/facturas/[id]';
-const call = (action = 'void') => PATCH({ params: { id: 'doc-a' }, request: new Request('https://cord.test/api/facturas/doc-a', { method: 'PATCH', body: JSON.stringify({ action }) }) } as any);
+const DOC = '11111111-1111-4111-8111-111111111111';
+const call = (action = 'void') => PATCH({ params: { id: DOC }, request: new Request(`https://cord.test/api/facturas/${DOC}`, { method: 'PATCH', body: JSON.stringify({ action }) }) } as any);
 beforeEach(() => vi.clearAllMocks());
 it('responde 202 pendiente sin publicar invoice.voided', async () => {
   m.cancel.mockResolvedValue({ ok: true, pending: true, cancellationStatus: 'pending' });
@@ -27,8 +29,8 @@ it('responde 202 pendiente sin publicar invoice.voided', async () => {
 it('consulta sin solicitar otro DELETE y publica solo la confirmación', async () => {
   m.cancel.mockResolvedValue({ ok: true, cancellationStatus: 'accepted' });
   expect((await call('cancellation_status')).status).toBe(200);
-  expect(m.cancel).toHaveBeenCalledWith('org-a', 'doc-a', undefined, true);
-  expect(m.event).toHaveBeenCalledWith('org-a', 'doc-a', 'invoice.voided');
+  expect(m.cancel).toHaveBeenCalledWith('org-a', DOC, undefined, true);
+  expect(m.event).toHaveBeenCalledWith('org-a', DOC, 'invoice.voided');
 });
 it('un rechazo actualiza la vista sin publicar anulación', async () => {
   m.cancel.mockResolvedValue({ ok: false, cancellationStatus: 'rejected', error: 'Rechazada' });

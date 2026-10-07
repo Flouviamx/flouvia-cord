@@ -1,4 +1,5 @@
 ---
+import { jsonForScript } from '../../lib/escape';
 // /comparar/facturacion — captura de intención: quien busca "cómo facturar en
 // línea" o "CFDI 4.0 en línea" no está buscando una feature, está comparando su
 // método actual contra algo mejor. Esta página compara honestamente contra el
@@ -112,8 +113,8 @@ const breadcrumbSchema = {
 ---
 
 <Layout title={metaTitle} description={metaDesc}>
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
-    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={jsonForScript(breadcrumbSchema)} />
     <Nav />
 
     <main class="cmp-main">
