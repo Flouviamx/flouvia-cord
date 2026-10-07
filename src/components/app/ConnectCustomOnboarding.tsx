@@ -4,7 +4,7 @@ import { STRIPE_MX_STATES, companyStructuresFor, mccOptions, translateRequiremen
 import { FEE_TERMS_VERSION } from '../../lib/fees';
 import { payoutSpecFor, validatePayout } from '../../lib/payout-fields';
 import { getCountryProfile, personIdLabel, subdivisionsFor } from '../../lib/countries';
-import { validRfc, validSpainTaxId } from '../../lib/tax-id';
+import { validateTaxId } from '../../lib/tax-id';
 import { requiresField } from '../../lib/connect-requirements';
 import ConnectPersonasStep from './ConnectPersonasStep';
 import type { ConnectPersona } from '../../lib/connect-personas';
@@ -129,9 +129,6 @@ const CO_STRINGS = {
     errRepresentanteAntes: 'Primero completa los datos del representante (paso 4 del asistente)',
     errTipoRegistro: 'Selecciona un tipo de registro',
     errFaltanDatos: 'Faltan datos obligatorios',
-    errRfc: 'El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)',
-    errNifEs: 'Ese NIF, NIE o CIF no es válido — revisa la letra de control.',
-    errCapturaTaxId: 'Captura tu {label}',
     errDireccion: 'Completa la dirección fiscal',
     errDatosPersonales: 'Completa los datos personales',
     errSsn: 'Captura los últimos 4 dígitos del SSN',
@@ -284,9 +281,6 @@ const CO_STRINGS = {
     errRepresentanteAntes: 'First complete the representative details (step 4 of the setup)',
     errTipoRegistro: 'Choose a registration type',
     errFaltanDatos: 'Required details are missing',
-    errRfc: 'The RFC format is not valid (12 or 13 characters, official format)',
-    errNifEs: 'That NIF, NIE, or CIF is not valid — check the control letter.',
-    errCapturaTaxId: 'Enter your {label}',
     errDireccion: 'Complete the registered address',
     errDatosPersonales: 'Complete the personal details',
     errSsn: 'Enter the last 4 digits of the SSN',
@@ -712,14 +706,12 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 if (!name || !taxId || !mcc) throw new Error(S.errFaltanDatos);
                 // El checksum se verifica AQUÍ y no se deja para que Stripe lo
                 // rechace con un error que no le dice nada al vendedor (regla
-                // 14) — mismo criterio que la CLABE en payout-fields.ts.
-                if (esMx) {
-                    if (!validRfc(taxId)) throw new Error(S.errRfc);
-                } else if (PAIS === 'ES') {
-                    if (!validSpainTaxId(taxId)) throw new Error(S.errNifEs);
-                } else if (taxId.trim().length < 5) {
-                    throw new Error(S.errCapturaTaxId.replace('{label}', TAX_ID_LABEL));
-                }
+                // 14) — mismo criterio que la CLABE en payout-fields.ts. Antes
+                // solo México y España tenían dígito verificador; el resto
+                // pasaba con cinco caracteres cualesquiera. Una persona física
+                // captura aquí su identificador personal (el SSN en EE. UU.).
+                const taxCheck = validateTaxId(PAIS, taxId, { locale, persona: businessType === 'individual' ? 'fisica' : 'moral' });
+                if (!taxCheck.ok) throw new Error(taxCheck.reason);
 
                 const payload: any = {
                     business_profile: { mcc, url, support_phone: phone, support_email: email },
@@ -1026,7 +1018,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         <div className="s-row">
                             <div className="s-field">
                                 <label>{TAX_ID_LABEL}</label>
-                                <input className="s-input" value={taxId} onChange={e => setTaxId(e.target.value.toUpperCase())} maxLength={13} autoCapitalize="characters" />
+                                <input className="s-input" value={taxId} onChange={e => setTaxId(e.target.value.toUpperCase())} maxLength={20} autoCapitalize="characters" />
                                 <span className="s-hint">{S.taxIdHint}</span>
                             </div>
                             <div className="s-field">

@@ -2,7 +2,19 @@
 
 Todos los cambios notables de `@flouviahq/elements` se documentan aquí.
 
-## [2.0.2] — sin publicar
+## [2.1.0] — sin publicar
+
+### Added
+
+- **`validateTaxId(country, value, { locale?, persona? })`** y **`TAX_ID_COUNTRIES`** en `@flouviahq/elements/headless`: validan el identificador fiscal de los doce mercados (RFC, NIF/NIE/CIF, EIN, SIREN/SIRET/TVA, USt-IdNr./Steuernummer, VAT/UTR, Business Number/GST/HST, CPF/CNPJ —incluido el CNPJ alfanumérico de julio de 2026—, NIT, CUIT, RUT y RUC) con su dígito verificador. Devuelven el valor normalizado y el tipo detectado, o un motivo en español o inglés que nombra el dato local. Un país sin validador nunca bloquea.
+- **`calculateDocumentTotals(lines, { roundLines })`**: con `roundLines` (los decimales de la divisa del documento: 2 en MXN o EUR, 0 en JPY o CLP) cada línea se redondea antes de sumar —base e impuesto— y los totales son la suma de importes ya redondeados. Es lo que exige un comprobante fiscal: el CFDI 4.0 rechaza un `Total` que no sea la suma de sus conceptos, y una factura en JPY o CLP no puede llevar decimales. Sin la opción, el motor se comporta igual que antes.
+
+### Fixed
+
+- **El Fiscal Element valida el identificador de los doce mercados**: fuera de México, España y Estados Unidos solo se comprobaba que el dato existiera; ahora `validateFiscalReceptor` rechaza un dígito verificador que no cuadra y guarda el valor normalizado. `unsupported_country` queda para países fuera de `TAX_ID_COUNTRIES`.
+- **NIF-IVA español**: `validSpainTaxId("ESB12345674")` era falso (leía la E como letra de CIF); el prefijo `ES` se acepta y se quita. Los NIF K, L y M usan la letra del DNI, no el control del CIF, y `validCif` ya no los acepta.
+- **EIN**: `validEin` rechaza los prefijos que el IRS nunca asigna (00, 07–09, 17–19, 28, 29, 49, 69, 70, 78, 79, 89, 96, 97).
+- **Fiscal Element nombra el identificador fiscal de los doce mercados**: además de RFC, NIF/CIF y EIN, ahora etiqueta BN (Canadá), CNPJ/CPF, VAT reg. no./UTR, Steuernummer/USt-IdNr., SIREN/N° de TVA, NIT, CUIT, RUT y RUC en vez de un "Identificador fiscal" genérico.
 
 ### Docs
 

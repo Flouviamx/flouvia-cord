@@ -4,10 +4,23 @@ import type { FiscalField, FiscalIssueCode } from './receptor.js';
 
 export type FiscalLocale = 'es' | 'en';
 
+// Los doce mercados que Cord ofrece (SUPPORTED_COUNTRIES). Solo conocía tres,
+// así que el formulario de un negocio en Lyon o en Bogotá pedía un "Tax ID"
+// genérico en vez del SIREN o el NIT que su cliente sí reconoce. Los nombres
+// van en el vocabulario del país, no traducidos: es lo que imprime la factura.
 const TAX_ID: Record<string, Record<FiscalLocale, string>> = {
     MX: { es: 'RFC', en: 'RFC (Mexican tax ID)' },
-    ES: { es: 'NIF / CIF', en: 'NIF / CIF' },
     US: { es: 'EIN', en: 'EIN / Tax ID' },
+    CA: { es: 'BN / número de GST/HST', en: 'BN / GST/HST number' },
+    BR: { es: 'CNPJ / CPF', en: 'CNPJ / CPF' },
+    ES: { es: 'NIF / CIF', en: 'NIF / CIF' },
+    GB: { es: 'VAT reg. no. / UTR', en: 'VAT reg. no. / UTR' },
+    DE: { es: 'Steuernummer / USt-IdNr.', en: 'Steuernummer / VAT ID (USt-IdNr.)' },
+    FR: { es: 'SIREN / N° de TVA', en: 'SIREN / VAT number (N° TVA)' },
+    CO: { es: 'NIT', en: 'NIT' },
+    AR: { es: 'CUIT', en: 'CUIT' },
+    CL: { es: 'RUT', en: 'RUT' },
+    PE: { es: 'RUC', en: 'RUC' },
 };
 
 const LABELS: Record<FiscalLocale, Record<Exclude<FiscalField, 'tax_id' | 'country'>, string>> = {

@@ -2,7 +2,7 @@
 // Fiscal Element mientras se escribe y el servidor antes de guardar: la misma
 // función, así que lo que el navegador acepta es exactamente lo que el servidor
 // acepta. Solo los países con riel fiscal real tienen reglas propias.
-import { normalizeRfc, rfcPersona, validEin, validSpainTaxId, RFC_GENERICOS } from './tax-id.js';
+import { checkTaxId, normalizeRfc, rfcPersona, RFC_GENERICOS, TAX_ID_COUNTRIES } from './tax-id.js';
 import { regimenesPara, usosCfdiPara } from './sat.js';
 
 export type FiscalField = 'tax_id' | 'legal_name' | 'regimen_fiscal' | 'uso_cfdi' | 'cp_fiscal' | 'country';
@@ -48,7 +48,11 @@ export interface FiscalValidation {
     persona: 'fisica' | 'moral' | 'generico' | null;
 }
 
-/** Países con reglas fiscales propias en este validador. */
+/**
+ * Países con reglas fiscales completas en este validador (código postal,
+ * régimen y uso de CFDI donde aplican). El identificador fiscal se valida
+ * además en todos los de TAX_ID_COUNTRIES.
+ */
 export const FISCAL_COUNTRIES = ['MX', 'ES', 'US'] as const;
 
 const MAX = { tax_id: 20, legal_name: 300 };
@@ -99,18 +103,19 @@ export function validateFiscalReceptor(input: FiscalReceptorInput): FiscalValida
                 warnings.push({ field: 'legal_name', code: 'legal_name_has_regime_suffix' });
             }
         }
-    } else if (country === 'ES') {
-        taxId = taxId.replace(/[\s-]/g, '');
-        if (taxId && !validSpainTaxId(taxId)) errors.push({ field: 'tax_id', code: 'invalid_tax_id' });
-        regimen = uso = null;
-        if (cp && !/^\d{5}$/.test(cp)) errors.push({ field: 'cp_fiscal', code: 'invalid_postal_code' });
-    } else if (country === 'US') {
-        if (taxId && !validEin(taxId)) errors.push({ field: 'tax_id', code: 'invalid_tax_id' });
-        regimen = uso = null;
-        if (cp && !/^\d{5}(-\d{4})?$/.test(cp)) errors.push({ field: 'cp_fiscal', code: 'invalid_postal_code' });
     } else if (country) {
-        warnings.push({ field: 'country', code: 'unsupported_country' });
+        // Fuera de México el identificador sale del validador por país: el
+        // mismo que usan la organización, sus clientes y el alta de cobros.
+        // Se guarda normalizado (sin "ES" en un NIF, con "DE" en una USt-IdNr).
         regimen = uso = null;
+        if (taxId) {
+            const r = checkTaxId(country, taxId);
+            if (r.ok) taxId = r.normalized;
+            else errors.push({ field: 'tax_id', code: 'invalid_tax_id' });
+        }
+        if (country === 'ES' && cp && !/^\d{5}$/.test(cp)) errors.push({ field: 'cp_fiscal', code: 'invalid_postal_code' });
+        if (country === 'US' && cp && !/^\d{5}(-\d{4})?$/.test(cp)) errors.push({ field: 'cp_fiscal', code: 'invalid_postal_code' });
+        if (!TAX_ID_COUNTRIES.includes(country)) warnings.push({ field: 'country', code: 'unsupported_country' });
     }
 
     return {

@@ -75,13 +75,32 @@ describe('validateFiscalReceptor — otros países', () => {
         expect(codes(validateFiscalReceptor({ country: 'ES', tax_id: '12345678A', legal_name: 'X' }))).toContain('tax_id:invalid_tax_id');
     });
 
-    it('Estados Unidos valida EIN', () => {
+    it('España acepta el prefijo de NIF-IVA y lo guarda como NIF', () => {
+        const r = validateFiscalReceptor({ country: 'ES', tax_id: 'ES A28015865', legal_name: 'Telefónica' });
+        expect(r.ok).toBe(true);
+        expect(r.value.tax_id).toBe('A28015865');
+    });
+
+    it('Estados Unidos valida EIN con prefijo asignado por el IRS', () => {
         expect(validateFiscalReceptor({ country: 'US', tax_id: '12-3456789', legal_name: 'Acme Inc' }).ok).toBe(true);
         expect(validateFiscalReceptor({ country: 'US', tax_id: '1234', legal_name: 'Acme Inc' }).ok).toBe(false);
+        expect(codes(validateFiscalReceptor({ country: 'US', tax_id: '07-1234567', legal_name: 'Acme Inc' }))).toContain('tax_id:invalid_tax_id');
+    });
+
+    it('los demás mercados ofrecidos validan su identificador sin avisar "país no soportado"', () => {
+        const nit = validateFiscalReceptor({ country: 'CO', tax_id: '899.999.068-1', legal_name: 'Ecopetrol' });
+        expect(nit.ok).toBe(true);
+        expect(nit.value.tax_id).toBe('899999068-1');
+        expect(nit.warnings).toEqual([]);
+        // Sin DV separado no se puede verificar: pasa tal cual.
+        expect(validateFiscalReceptor({ country: 'CO', tax_id: '900123456', legal_name: 'Andes SAS' }).ok).toBe(true);
+        expect(codes(validateFiscalReceptor({ country: 'CO', tax_id: '899.999.068-2', legal_name: 'X' }))).toContain('tax_id:invalid_tax_id');
+        expect(codes(validateFiscalReceptor({ country: 'BR', tax_id: '16.727.230/0001-98', legal_name: 'X' }))).toContain('tax_id:invalid_tax_id');
+        expect(validateFiscalReceptor({ country: 'DE', tax_id: '136695976', legal_name: 'X' }).value.tax_id).toBe('DE136695976');
     });
 
     it('un país sin reglas propias avisa y no inventa validaciones', () => {
-        const r = validateFiscalReceptor({ country: 'CO', tax_id: '900123456', legal_name: 'Andes SAS' });
+        const r = validateFiscalReceptor({ country: 'JP', tax_id: 'T1234567890123', legal_name: 'Kaisha KK' });
         expect(r.ok).toBe(true);
         expect(r.warnings).toContainEqual({ field: 'country', code: 'unsupported_country' });
     });

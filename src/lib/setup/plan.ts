@@ -4,7 +4,7 @@
 // cada campo que descarta. Lo que sale de aquí es lo único que se muestra y se
 // aplica. Puro y sin DB: lo prueban los tests sin red.
 import { z } from 'zod';
-import { validRfc, validSpainTaxId, validEin } from '../tax-id';
+import { validateTaxId, TAX_ID_COUNTRIES } from '../tax-id';
 
 export const TERMINOS = ['contado', 'net30', 'net60'] as const;
 export const PDF_TEMPLATES = ['clasico', 'minimal', 'detallado'] as const;
@@ -115,13 +115,12 @@ function parrafo(v: unknown, max: number): string {
         .slice(0, max);
 }
 
-function validTaxId(country: string, value: string): boolean {
-    const v = value.toUpperCase().replace(/[\s.-]/g, '');
-    if (country === 'MX') return validRfc(v);
-    if (country === 'ES') return validSpainTaxId(v);
-    if (country === 'US') return validEin(value);
-    // Sin validador para el país: no se propone, se pide capturarlo a mano.
-    return false;
+/** Identificador normalizado si pasa el algoritmo del país; null si no. Fuera
+ * de los países con validador no se propone: se pide capturarlo a mano. */
+function validTaxId(country: string, value: string): string | null {
+    if (!TAX_ID_COUNTRIES.includes(country.toUpperCase())) return null;
+    const r = validateTaxId(country, value);
+    return r.ok ? r.normalized : null;
 }
 
 export function emptyProposal(resumen = ''): SetupProposal {
@@ -144,7 +143,8 @@ export function sanitizeDraft(raw: unknown, ctx: SanitizeContext): { propuesta: 
     if (p.razon_social) { const v = plano(p.razon_social, 200); if (v) out.perfil.razon_social = v; }
     if (p.identificacion_fiscal) {
         const v = plano(p.identificacion_fiscal, 20).toUpperCase();
-        if (validTaxId(ctx.country, v)) out.perfil.rfc = v.replace(/[\s.-]/g, '');
+        const normalizado = validTaxId(ctx.country, v);
+        if (normalizado) out.perfil.rfc = normalizado;
         else drop('perfil.identificacion_fiscal', 'No pasa la validación del país; captúrala a mano en Ajustes.');
     }
     if (p.email_contacto) {

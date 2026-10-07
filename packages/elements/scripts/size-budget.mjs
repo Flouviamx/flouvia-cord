@@ -10,12 +10,16 @@ import path from 'node:path';
 
 const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
+// Oct 2026: el receptor fiscal valida el identificador de los doce mercados
+// ofrecidos con su dígito verificador (validateTaxId), no solo RFC/NIF/EIN.
+// Entra en todo bundle que monta el Fiscal Element (~1.6 KB gzip); headless
+// además exporta los motivos en español e inglés (~0.9 KB más).
 const BUDGET_KB = {
-    'index.mjs': 14,
-    'headless.mjs': 12.5,
-    'react.mjs': 26,
-    'vue.mjs': 13.5,
-    'framer.mjs': 22,
+    'index.mjs': 15.5,
+    'headless.mjs': 14.25,
+    'react.mjs': 26.5,
+    'vue.mjs': 15,
+    'framer.mjs': 23,
     'webflow.mjs': 7,
     'webflow.js': 7,
     'embed.js': 7,

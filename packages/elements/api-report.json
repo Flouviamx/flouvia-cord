@@ -27,6 +27,7 @@
     "INITIAL_QUOTE_VIEW",
     "REGIMENES_FISCALES",
     "RFC_GENERICOS",
+    "TAX_ID_COUNTRIES",
     "USOS_CFDI",
     "appearanceToCss",
     "calculateDocumentTotals",
@@ -51,7 +52,8 @@
     "validRfc",
     "validSpainTaxId",
     "validateFiscalReceptor",
-    "validateQuoteBuilder"
+    "validateQuoteBuilder",
+    "validateTaxId"
   ],
   "./react": [
     "CordBuilder",

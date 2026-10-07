@@ -684,7 +684,7 @@ export const MCP_TOOLS: McpToolDef[] = [
     },
     {
         name: 'validar_datos_fiscales',
-        description: 'Valida los datos fiscales de un cliente ANTES de guardarlos o facturarle, con las mismas reglas que usa Cord al emitir: RFC, régimen, uso de CFDI y código postal en México; NIF/NIE/CIF en España; EIN en Estados Unidos. Devuelve errores (el documento sería rechazado) y avisos (probable rechazo).',
+        description: 'Valida los datos fiscales de un cliente ANTES de guardarlos o facturarle, con las mismas reglas que usa Cord al emitir: RFC, régimen, uso de CFDI y código postal en México; NIF/NIE/CIF en España; EIN en Estados Unidos; y el identificador con su dígito verificador en los demás mercados (SIREN/N° TVA, USt-IdNr./Steuernummer, VAT, BN, CNPJ/CPF, NIT, CUIT, RUT, RUC). Devuelve errores (el documento sería rechazado) y avisos (probable rechazo).',
         inputSchema: obj({
             country: { type: 'string', description: 'País ISO de 2 letras: MX, ES, US…' },
             tax_id: { type: 'string', description: 'Identificador fiscal: RFC, NIF, EIN…' },

@@ -1,6 +1,7 @@
 import { sql, withOrgTx } from '../db';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { isCountryCode } from '../countries';
+import { validateTaxId } from '../tax-id';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { clientEventData, clientPrevData } from '../event-payloads';
@@ -36,9 +37,49 @@ export function cleanClientInput(input: Record<string, any>) {
 const EMPRESA_OBLIGATORIA = done(400, { error: 'El nombre de la empresa es obligatorio', code: 'invalid_request' });
 const NO_ENCONTRADO = done(404, { error: 'Cliente no encontrado', code: 'not_found' });
 
+/** Código del rechazo por identificador fiscal; la API pública lo responde como 422. */
+export const INVALID_TAX_ID = 'invalid_tax_id';
+
+type ClientInput = ReturnType<typeof cleanClientInput>;
+type TaxIdBefore = { rfc?: unknown; country_code?: unknown };
+
+// Compara sin separadores ni mayúsculas: reescribir "B-12345674" como
+// "B12345674" no es cambiar el identificador.
+const compactTaxId = (v: unknown) => String(v ?? '').toUpperCase().replace(/[\s.\-/,]/g, '');
+
+/**
+ * Valida el identificador fiscal con el país del CLIENTE y, sin él, con el de
+ * la organización: `country_code` null significa "hereda el país del emisor"
+ * (db/schema.sql), y así lo lee la factura. Vacío sigue siendo válido (campo
+ * opcional). Con `before`, solo se valida si el identificador o el país
+ * cambiaron: un RFC antiguo mal capturado no puede bloquear que se corrija el
+ * teléfono, ni que una integración sincronice el correo. Deja `c.rfc`
+ * normalizado cuando pasa.
+ */
+async function checkClientTaxId(ctx: ActionContext, c: ClientInput, before?: TaxIdBefore): Promise<ActionOutcome | null> {
+    if (!c.rfc) return null;
+    const sameId = !!before && compactTaxId(before.rfc) === compactTaxId(c.rfc);
+    const beforeCountry = (before?.country_code as string | null | undefined) ?? null;
+    if (sameId && beforeCountry === c.country_code) return null;
+    let orgCountry: string | null = null;
+    if (!c.country_code || (sameId && !beforeCountry)) {
+        const [[org]] = await withOrgTx(ctx.orgId, sql`select country_code from orgs where id = ${ctx.orgId}`);
+        orgCountry = (org?.country_code as string | undefined) ?? null;
+    }
+    const country = c.country_code ?? orgCountry;
+    // Escribir explícito el país que ya heredaba no cambia contra qué se valida.
+    if (sameId && (beforeCountry ?? orgCountry) === country) return null;
+    const v = validateTaxId(country ?? '', c.rfc);
+    if (!v.ok) return done(400, { error: v.reason, code: INVALID_TAX_ID });
+    c.rfc = v.normalized;
+    return null;
+}
+
 export async function createClient(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
+    const taxDenied = await checkClientTaxId(ctx, c);
+    if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'clients');
     if (capacityDenied) return fromResponse(capacityDenied);
     let row: any;
@@ -69,6 +110,16 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
     if (!isUuid(id)) return NO_ENCONTRADO;
+    if (c.rfc) {
+        const [[before]] = await withOrgTx(ctx.orgId, sql`select rfc, country_code from clientes where id = ${id} and org_id = ${ctx.orgId}`);
+        if (!before) return NO_ENCONTRADO;
+        const taxDenied = await checkClientTaxId(ctx, c, before);
+        if (taxDenied) return taxDenied;
+    }
+    return writeClientUpdate(ctx, id, c);
+}
+
+async function writeClientUpdate(ctx: ActionContext, id: string, c: ClientInput): Promise<ActionOutcome> {
     // El "antes" se lee en la MISMA transacción que el update: leerlo fuera
     // dejaría una ventana donde otro cambio se cuela entre las dos.
     const [antes, rows] = await withOrgTx(ctx.orgId,
@@ -97,7 +148,12 @@ export async function patchClientContact(ctx: ActionContext, id: string, input: 
     if (!actual) return NO_ENCONTRADO;
     const changes: Record<string, unknown> = {};
     for (const k of CLIENT_CONTACT_FIELDS) if (input && input[k] !== undefined) changes[k] = input[k];
-    return updateClient(ctx, id, { ...clientRowToInput(actual), ...changes });
+    const c = cleanClientInput({ ...clientRowToInput(actual), ...changes });
+    if (!c.empresa) return EMPRESA_OBLIGATORIA;
+    // `actual` ya es el "antes": no hace falta releerlo para saber si cambió el identificador.
+    const taxDenied = await checkClientTaxId(ctx, c, actual);
+    if (taxDenied) return taxDenied;
+    return writeClientUpdate(ctx, id, c);
 }
 
 function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
