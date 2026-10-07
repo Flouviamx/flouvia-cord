@@ -705,8 +705,13 @@ los importan desde `lib/queries`, que los re-exporta. Los datos mock en memoria
 pública (`src/lib/demo-quote.ts`).
 
 **AppLayout (`src/layouts/AppLayout.astro`):** sidebar de vidrio sticky **temada con `--sb-*`**
-(blanca en claro / navy en oscuro; logo navy↔blanco según tema, nav con íconos, org-switcher
-arriba, "Fijados" antes de los grupos nav, footer con logo). El `<OnboardingWidget>` y su píldora
+(blanca en claro / navy en oscuro). Estructura en `src/lib/sidebar-nav.ts` (fuente única de
+menú, atajos `G` + letra y panel de atajos): lista plana (Inicio, Cotizaciones, Clientes,
+Productos) → Ingresos (Facturas, Cobros, Cobranza › Agente IA) → Análisis (Informes,
+Desempeño) → Automatización (Workflows). Org-switcher arriba, "Fijados" antes de los grupos,
+pie con medidor de cotizaciones activas (solo planes con tope) y botón de colapsar (`[`).
+Fijados y grupos plegados son preferencias por miembro: `org_members.widget_prefs['cord.sidebar.v1']`
+vía `PUT /api/app/sidebar-prefs` (antes localStorage; se migran solos la primera vez). El `<OnboardingWidget>` y su píldora
 (`#onbPill` en `.tb-right`) se montan aquí, gated por `!setup.complete`.
 Props: `title`, `page`, `heading?`, `crumbs?` (breadcrumbs). Slots: `topbar-actions`
 (botones del page-header, derecha), `page-sub` (subtítulo opcional bajo el título),

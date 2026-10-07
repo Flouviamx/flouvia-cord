@@ -1,5 +1,26 @@
 # Historial — App interna: features y UX
 
+## 2026-10-07 — Sidebar con densidad de herramienta (Linear / Stripe)
+
+- Estructura en `src/lib/sidebar-nav.ts`, fuente única del menú, los atajos `G` + letra
+  (antes un mapa aparte en AppLayout que la sidebar no mostraba) y el panel de atajos.
+- Grupos renombrados: "Mi dinero" → Ingresos; "Inteligencia" se parte en Análisis y
+  Automatización; "Equipo" (apuntaba a `/app/desempeno`, y chocaba con Ajustes › Equipo)
+  → Desempeño; "Cobranza con IA" pasa a sub-página de Cobranza (Agente IA).
+- El hover ya no mueve el indicador del activo; se retiran el indicador por JS, su sondeo
+  cada 20 ms y la animación de entrada que corría en cada navegación. Filas de 30 px.
+- Contadores: Cotizaciones = vistas sin responder (antes todo lo enviado o visto);
+  vencidas en tinte, no rojo sólido.
+- Fijados y grupos plegados pasan de localStorage a `org_members.widget_prefs` vía
+  `PUT /api/app/sidebar-prefs`, se pintan en el SSR (antes empujaban el menú en cada carga),
+  heredan el icono de su sección y se migran solos desde el navegador.
+- Pie: el logo de Cord sale; entra un medidor de cotizaciones activas con "Mejorar plan"
+  (solo planes con tope, `getPlanUsage()`, el mismo de Ajustes › Plan). `[` colapsa.
+- Rail colapsado con tooltip propio (etiqueta · contador · atajo) en vez del `title` nativo.
+- Móvil: drawer sólido con un solo scroll; la X de los fijados siempre visible.
+- Verificado renderizando el componente real con el Container API de Astro y el CSS/JS
+  compilados en Chromium (claro, oscuro, colapsado, inglés y móvil).
+
 ## 2026-10-04 — Ajustes con tarjetas compartidas
 
 - Se reemplaza, a petición de André, el formato plano de Ajustes por un sistema

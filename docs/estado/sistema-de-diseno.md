@@ -83,7 +83,7 @@ Regla de oro: **misma alma, distinto cuerpo**. Tokens en `src/layouts/Layout.ast
   y mucho aire. Ejemplo canónico = índice de Ajustes (`/app/ajustes`) e
   integraciones (filas, NO tarjetas), al igual que **todas las FAQs y la página de Soporte**.
 - **Airy Bento:** Cuando se requiera un layout de cuadrícula para navegación rápida (como las Quick Routes), no se deben poner líneas ni fondos divisorios por defecto. Usar `gap` generoso, fondos transparentes, iconos SVG delgados (stroke 1.2 - 1.5) y aplicar efectos de fondo únicamente durante el `:hover`.
-- **Sidebar Ultra-Compacta (Premium Linear-style)**: El sidebar colapsado ahora tiene 56px de ancho absoluto (bypass de Astro optimizer en `AppLayout.astro`) para mantener el "soul" Linear. Los íconos no se centran, sino que mantienen `padding-left` con microinteracciones táctiles de `scale(0.94)` al click (`:active`). El z-index de la sidebar se elevó globalmente a 800 para prevenir overlapping del contenido principal.
+- **Sidebar colapsada**: rail de 68 px (`--sidebar-w` en `html.sb-collapsed`), íconos centrados en cuadros de 40×36 y z-index 800 declarado en el propio componente. Contrato completo en "Sidebar Navigation" más abajo (oct 2026).
 - **Org Switcher Sólido**: El `<CustomOrgSwitcher />` y la cuenta tienen z-index masivo global (9999) y un background blanco/navy absoluto (inyectado via `<style is:inline>`) con sombras agresivas para separarlo físicamente del efecto Liquid Glass de la sidebar. Esto previene ilusiones de translucidez o superposición del dashboard tanto en modo expandido como colapsado.
 - Secciones de la landing: `padding: 9rem` vertical (mucho aire, estilo Stripe/Linear).
 - **Watermarks gigantes: ELIMINADOS del index (jun 2026, petición de André) — NO
@@ -171,13 +171,30 @@ hairline/sin-tarjetas. Reglas permanentes (ver changelog "Refresh visual de la a
   `brightness`) sobre `--sb-bg`. `.card` usa `--radius-card` (16px).
 
 ### Sidebar Navigation (AppLayout)
-El componente `Sidebar.astro` es el menú principal de la app y presenta un diseño "Linear-style" / "macOS Dock".
-- **Acordeones de Grupo:** Las cabeceras de los grupos (ej. "Principal", "Dinero") utilizan `grid-template-rows: 0fr/1fr` para lograr un colapso ultra-fluido impulsado puramente por CSS.
-- **Dock Mode (Collapsed):** El modo colapsado funciona como una "isla flotante" o "Dock de iPad". Los iconos se escalan a cuadrados de 42x42px perfectamente centrados.
-- **Normal Mode (Expanded):** Sigue la misma filosofía limpia que el modo Dock. Utiliza hover elástico sutil (sin físicas excesivas) y textos sólidos.
-- **Selección estilo iOS Settings (jul 2026):** el `.sb-indicator` de ítem activo es un **relleno tintado** `var(--sb-active-bg)` (radius 10px, sombra mínima, **sin `backdrop-filter`**) — dejó de ser la "pastilla de cristal" con blur. Se posiciona en JS con `getBoundingClientRect()` (evita bugs de offsetTop en anidamientos). Las filas (`.sb-item`) son radius 10px con `padding: 9px 11px`.
-- **Microinteracciones:** Las tooltips en modo colapsado usan `transform-origin: left center` para brotar elásticamente desde el ícono.
-- **MISMO material glass que la pill de la topbar (regla, jul 2026; tokens oct 2026):** la sidebar y la `.topbar` leen los MISMOS tokens: `--sb-bg` (blanco al 72% en claro, navy al 75% en oscuro), `--sb-shadow` y `--sb-bg-solid` (respaldo del `@supports not` cuando no hay blur), con `blur(40px) saturate(1.8)` y radio 22px. Antes cada una repetía los valores a mano y los tokens `--sb-bg`/`--sb-shadow` existían sin consumidor, con valores que ya no eran los reales. Un cambio de material se hace en el token, no en una de las dos pills. ⚠️ `--sb-sheen` está en `transparent` a propósito — **no re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar).
+`Sidebar.astro` es el menú principal de la app, con densidad de herramienta de trabajo
+(Linear / Stripe), no de iOS Settings. Contrato vigente (oct 2026):
+- **Marco estático.** Sin animación de entrada ni indicador posicionado por JS: cada
+  navegación recarga la página, así que cualquier animación del marco corría en cada clic.
+- **Activo e hover son dos tintes distintos** (`--sb-active-bg` / `--sb-hover-bg`). El hover
+  nunca mueve ni tapa al activo: siempre se ve dónde estás.
+- **Filas de 30 px**, texto 0.84rem/500, iconos 16 px; encabezados de grupo 0.72rem/500 sin
+  mayúsculas, con chevron que solo aparece al pasar el cursor o con el grupo plegado.
+- **Sub-páginas con sangría** (Cobranza › Agente IA): se despliegan cuando la sección está
+  activa, con una guía vertical y sin icono en el menú ancho.
+- **Contadores solo de lo accionable.** Cotizaciones = vistas sin responder (mismo KPI que el
+  dashboard); Cobranza = cuentas vencidas de `cuentas_por_cobrar`. Vencidas en tinte
+  (`--sb-danger-*`), nunca rojo sólido. En el rail colapsado se vuelven un punto.
+- **Atajos visibles.** `G` + letra aparece al detenerse sobre el ítem y en el tooltip del rail;
+  `[` colapsa. Solo escritorio (regla 16).
+- **Rail colapsado (68 px).** Tooltip propio (`#sbTip`, `position: fixed` fuera del `<aside>`:
+  el `backdrop-filter` del aside vuelve bloque contenedor a todo `fixed` interno) con etiqueta,
+  contador y atajo. Nada de `title` nativo en los ítems: salía un segundo tooltip.
+- **Un solo lugar para su CSS.** Todo vive scopeado en `Sidebar.astro`; los fijados se
+  re-pintan clonando un `<template>` del mismo componente, así que heredan el scope. El bloque
+  global de fijados y las reglas `!important` del modo colapsado en `AppLayout` se retiraron.
+- **Móvil:** drawer sólido (`--sb-bg-solid`) con un solo scroll, filas de 44 px, la X de los
+  fijados siempre visible y sin atajos ni tooltips.
+- **MISMO material glass que la pill de la topbar (regla, jul 2026; tokens oct 2026):** la sidebar y la `.topbar` leen los MISMOS tokens: `--sb-bg` (blanco al 72% en claro, navy al 75% en oscuro), `--sb-shadow` y `--sb-bg-solid` (respaldo del `@supports not` cuando no hay blur), con `blur(40px) saturate(1.8)` y radio 22px. Antes cada una repetía los valores a mano y los tokens `--sb-bg`/`--sb-shadow` existían sin consumidor, con valores que ya no eran los reales. Un cambio de material se hace en el token, no en una de las dos pills. ⚠️ **No re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el token `--sb-sheen` se retiró en oct 2026 porque ya solo valía `transparent`.
 
 ### Base mobile-first de la app (ago 2026)
 

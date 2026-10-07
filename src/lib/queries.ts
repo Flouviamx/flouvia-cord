@@ -4017,9 +4017,13 @@ export async function getSetupProgress() {
 }
 
 // ── BADGES DE LA SIDEBAR ──────────────────────────────────────────────────────
-// `vencidas` se lee de `cuentas_por_cobrar` (regla 25), la misma vista que la
-// cobranza y el agente: contar solo `cotizaciones` dejaba fuera toda factura
-// vencida, y el contador de Cobranza decía 0 con cartera vencida real.
+// Contadores de la sidebar: solo lo ACCIONABLE, con la misma definición que la
+// pantalla a la que llevan.
+// - `seguimiento`: cotizaciones que el cliente abrió y no ha respondido — el KPI
+//   "Por dar seguimiento" del dashboard. Antes contaba todo lo enviado o visto,
+//   un número que solo crecía y no decía qué hacer.
+// - `vencidas`: se lee de `cuentas_por_cobrar` (regla 25), la misma vista que la
+//   cobranza y el agente; contar solo `cotizaciones` dejaba fuera las facturas.
 export async function getSidebarBadges() {
     const zero = { seguimiento: 0, vencidas: 0 };
     try {
@@ -4027,7 +4031,7 @@ export async function getSidebarBadges() {
         const [[r]] = await withOrgTx(orgId,
             sql`select
                     (select count(*) from cotizaciones
-                      where org_id = ${orgId} and status in ('sent','viewed'))::int as seguimiento,
+                      where org_id = ${orgId} and status = 'viewed')::int as seguimiento,
                     (select count(*) from cuentas_por_cobrar
                       where org_id = ${orgId} and dias_vencido > 0)::int as vencidas`,
         );
