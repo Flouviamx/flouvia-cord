@@ -202,11 +202,17 @@ export function onVisible(el: Element, cb: () => void) {
     io.observe(el);
 }
 
+/** Las etiquetas de las gráficas son datos del negocio (empresa del cliente, nombre de
+ *  producto) y llegan a innerHTML: se escapan siempre, aquí y en cada sumidero. */
+function esc(value: unknown): string {
+    return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+}
+
 function tooltipRow(dotColor: string | null, label: string, value: string, dashed = false): string {
     const dot = dotColor
         ? `<span class="cd-tt-dot${dashed ? ' cd-tt-dot-dash' : ''}" style="background:${dotColor}"></span>`
         : '';
-    return `<div class="cd-tt-row">${dot}<span class="cd-tt-lbl">${label}</span><span class="cd-tt-val editorial">${value}</span></div>`;
+    return `<div class="cd-tt-row">${dot}<span class="cd-tt-lbl">${esc(label)}</span><span class="cd-tt-val editorial">${esc(value)}</span></div>`;
 }
 
 /** Fila de "ver detalle" dentro del tooltip — el ÚNICO target que navega en
@@ -216,7 +222,7 @@ function tooltipRow(dotColor: string | null, label: string, value: string, dashe
 function tooltipDrillRow(href: string): string {
     const runtime = (typeof window !== 'undefined' && (window as any).CORD_I18N) || {};
     const label = runtime.chartDrillLabel || 'Ver detalle →';
-    return `<a class="cd-tt-drill" href="${href}">${label}</a>`;
+    return `<a class="cd-tt-drill" href="${esc(href)}">${esc(label)}</a>`;
 }
 
 /** Comportamiento de clic para un segmento/barra: en móvil SIEMPRE muestra el
@@ -445,7 +451,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
         dotMain.setAttribute('cx', String(xs[i])); dotMain.setAttribute('cy', String(y));
         dotMain.style.opacity = '1';
 
-        let html = `<div class="cd-tt-x">${formatX(p.x)}</div>`;
+        let html = `<div class="cd-tt-x">${esc(formatX(p.x))}</div>`;
         html += tooltipRow(color, valueLabel, formatY(p.y));
         const cp = comparePoints[i];
         if (cp) {
@@ -635,7 +641,7 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
         });
 
         function show(i: number, cx: number) {
-            let html = `<div class="cd-tt-x">${opts.labels[i]}</div>`;
+            let html = `<div class="cd-tt-x">${esc(opts.labels[i])}</div>`;
             html += tooltipRow(barColor, opts.barLabel, formatY(opts.barValues[i]));
             html += tooltipRow(lineColor, opts.lineLabel, formatY(opts.lineValues[i]));
             tooltip.innerHTML = html;
@@ -745,7 +751,7 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
             });
             hit.setAttribute('tabindex', '0');
             const show = () => {
-                tooltip.innerHTML = `<div class="cd-tt-x">${it.label}${it.sub ? ` · ${it.sub}` : ''}</div>` + tooltipRow(color, '', formatY(it.value));
+                tooltip.innerHTML = `<div class="cd-tt-x">${esc(it.label)}${it.sub ? ` · ${esc(it.sub)}` : ''}</div>` + tooltipRow(color, '', formatY(it.value));
                 placeTooltip(tooltip, container, cx, PAD.top + plotH - barH);
                 rect.style.fill = 'var(--chart-fill-2)';
                 dim.focus(rect);
@@ -1027,7 +1033,7 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
 
     const center = document.createElement('div');
     center.className = 'chx-donut-center';
-    center.innerHTML = `<span class="chx-donut-total editorial">${formatY(total)}</span>${opts.centerLabel ? `<span class="chx-donut-sub">${opts.centerLabel}</span>` : ''}`;
+    center.innerHTML = `<span class="chx-donut-total editorial">${esc(formatY(total))}</span>${opts.centerLabel ? `<span class="chx-donut-sub">${esc(opts.centerLabel)}</span>` : ''}`;
 
     const stage = document.createElement('div');
     stage.className = 'chx-donut-stage';
@@ -1043,7 +1049,7 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
         item.tabIndex = 0;
         item.dataset.filterKey = sl.key;
         item.dataset.filterLabel = sl.label;
-        item.innerHTML = `<span class="chx-legend-dot" style="background:${sl.color}"></span><span class="chx-legend-label">${sl.label}</span><span class="chx-legend-val editorial">${formatY(sl.value)}</span>`;
+        item.innerHTML = `<span class="chx-legend-dot" style="background:${sl.color}"></span><span class="chx-legend-label">${esc(sl.label)}</span><span class="chx-legend-val editorial">${esc(formatY(sl.value))}</span>`;
         legend.appendChild(item);
         legendItems.push(item);
     });
@@ -1122,7 +1128,7 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
         const item = document.createElement('div');
         item.className = 'chx-legend-item';
         item.tabIndex = 0;
-        item.innerHTML = `<span class="chx-legend-dot" style="background:${sg.color}"></span><span class="chx-legend-label">${sg.label}</span><span class="chx-legend-val editorial">${formatY(sg.value)}</span>`;
+        item.innerHTML = `<span class="chx-legend-dot" style="background:${sg.color}"></span><span class="chx-legend-label">${esc(sg.label)}</span><span class="chx-legend-val editorial">${esc(formatY(sg.value))}</span>`;
         const share = document.createElement('span'); share.className = 'chx-seg-share'; share.textContent = `${new Intl.NumberFormat(document.documentElement.lang || 'es', { maximumFractionDigits: 1 }).format(pct)}%`;
         const track = document.createElement('span'); track.className = 'chx-seg-track';
         const fill = document.createElement('i'); fill.style.width = `${pct}%`; fill.style.background = sg.color;
@@ -1237,7 +1243,7 @@ export function mountGauge(container: HTMLElement, opts: GaugeOptions): ChartHan
     wrap.style.width = size + 'px'; wrap.style.height = size + 'px';
     const center = document.createElement('div');
     center.className = 'chx-gauge-center';
-    center.innerHTML = `<span class="chx-gauge-val editorial">${formatValue(opts.value)}</span>${opts.label ? `<span class="chx-gauge-label">${opts.label}</span>` : ''}`;
+    center.innerHTML = `<span class="chx-gauge-val editorial">${esc(formatValue(opts.value))}</span>${opts.label ? `<span class="chx-gauge-label">${esc(opts.label)}</span>` : ''}`;
     wrap.append(svg, center);
     container.appendChild(wrap);
 
