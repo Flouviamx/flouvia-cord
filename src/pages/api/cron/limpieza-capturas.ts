@@ -5,11 +5,15 @@ import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
 import { RETENCION_ANIOS } from '../../../lib/kyc-evidencia';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    return runCronOnce(request, '/api/cron/limpieza-capturas', cronPeriod('dia'), () => run());
+};
 
+async function run(): Promise<Response> {
     return reqContext.run({ userId: null, cronScope: true }, async () => {
         // `completed_at` NUNCA existió en el schema. Postgres evalúa el WHERE
         // completo, así que este DELETE reventaba con "column does not exist" y
@@ -40,4 +44,4 @@ export const GET: APIRoute = async ({ request }) => {
             evidenciaPurgada: evidencia.length,
         }), { headers: { 'Content-Type': 'application/json' } });
     });
-};
+}

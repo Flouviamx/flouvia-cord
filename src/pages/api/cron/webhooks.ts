@@ -4,14 +4,16 @@
 // el calendario de backoff exponencial (ver src/lib/webhook-delivery.ts). Es
 // la red de seguridad del patrón outbox: la entrega inmediata ya corre inline
 // justo después de encolar (flushNow vía after()) — este cron solo recoge lo
-// que esa entrega inmediata no logró resolver. Corre 1 vez al día (ver
-// vercel.json) — el plan actual de Vercel rechaza CUALQUIER cron con
+// que esa entrega inmediata no logró resolver. Corre 1 vez al día desde
+// vercel.json — el plan actual de Vercel rechaza CUALQUIER cron con
 // frecuencia sub-diaria (se probó "cada minuto" y "cada 5 min", ambos
-// tumbaban el deploy completo antes de crear el deployment; solo pasó al
-// quedar en 1x/día, ver docs/historial/platform-api.md). Esto solo retrasa
-// el REINTENTO de fallas de entrega (la entrega normal sigue siendo
-// inline/instantánea) — subir de plan permitiría volver a una frecuencia
-// más agresiva. Protegido con CRON_SECRET, igual que el resto de crons.
+// tumbaban el deploy completo antes de crear el deployment; ver
+// docs/historial/platform-api.md) — y además en cada corrida de
+// cord-crons.yml (3-4 al día en la práctica). Sin reclamo por periodo a
+// propósito: claimDue() reclama filas con lease y `skip locked`, así que dos
+// barridos simultáneos no entregan el mismo evento. Esto solo retrasa el
+// REINTENTO de fallas de entrega (la entrega normal sigue siendo
+// inline/instantánea). Protegido con CRON_SECRET, igual que el resto de crons.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';

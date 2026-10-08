@@ -22,6 +22,7 @@ import { sql, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
 import { recordDomainEvent } from '../../../lib/domain-events';
 import { log } from '../../../lib/log';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 const MAX_ORGS = 200;
 const MAX_DOCS = 200;
@@ -36,7 +37,10 @@ type Anchor = typeof ANCHORS[number];
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    return runCronOnce(request, '/api/cron/anclas-tiempo', cronPeriod('dia'), () => run());
+};
 
+async function run(): Promise<Response> {
     // Barrido cross-org: solo descubre a quién escuchar (regla 30). El trabajo
     // por organización vuelve a withOrgTx con su propio org_id.
     const escuchan = await reqContext.run({ userId: null, cronScope: true }, async () => {
@@ -77,7 +81,7 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: true, organizaciones: porOrg.size, eventos: emitidos }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
     });
-};
+}
 
 /**
  * La dedup es del DÍA, no del cron: `not exists` contra las últimas 20 horas.

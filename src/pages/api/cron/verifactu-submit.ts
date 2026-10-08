@@ -5,9 +5,9 @@
 //
 // VERI*FACTU exige remisión "inmediata" por definición legal, así que lo
 // ideal sería correr cada pocos minutos — pero el plan de Vercel de Cord solo
-// permite crons diarios (vercel.json: una vez al día). Mientras ese sea el
-// plan, el backlog se acumula hasta la siguiente corrida diaria; sube la
-// frecuencia en vercel.json en cuanto el plan lo permita.
+// permite crons diarios. Corre una vez al día desde vercel.json y en cada
+// corrida de cord-crons.yml (3-4 al día en la práctica); sube la frecuencia en
+// vercel.json en cuanto el plan lo permita.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -15,11 +15,19 @@ import { assertCronAuth } from '../../../lib/cron-auth';
 import { orgsConVerifactuActivo, submitPendingForOrg } from '../../../lib/fiscal/verifactu/submit';
 import { log } from '../../../lib/log';
 import { reqContext } from '../../../lib/context';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    // Reclamo por HORA, no por día: cord-crons.yml lo llama en cada corrida para
+    // acercarse a la remisión inmediata, y el reclamo impide que dos disparos
+    // simultáneos manden el mismo lote a la AEAT (el segundo recibiría un rechazo
+    // por duplicado y lo escribiría sobre el estado aceptado).
+    return runCronOnce(request, '/api/cron/verifactu-submit', cronPeriod('hora'), () => run());
+};
 
+async function run(): Promise<Response> {
     // Carril de SISTEMA: orgsConVerifactuActivo() barre TODAS las organizaciones
     // para encontrar las españolas con Verifactu encendido. El envío de cada una
     // (submitPendingForOrg) vuelve a withOrgTx con su propio org_id.
@@ -54,4 +62,4 @@ export const GET: APIRoute = async ({ request }) => {
         });
     }
     });
-};
+}

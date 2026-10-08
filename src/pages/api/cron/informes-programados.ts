@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { reqContext } from '../../../lib/context';
 import { runInformesProgramados } from '../../../lib/informes-programados';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
@@ -17,12 +18,13 @@ export const GET: APIRoute = async ({ request }) => {
 
     // `withSystemTx` exige este carril: solo el barrido descubre informes de varias
     // organizaciones; cada envío vuelve a withOrgTx con su org_id.
-    const result = await reqContext.run(
-        { userId: null, sessionId: null, activeOrgId: null, cronScope: true },
-        () => runInformesProgramados({ limit: 200 }),
-    );
-
-    return new Response(JSON.stringify(result), {
-        status: 200, headers: { 'Content-Type': 'application/json' },
+    return runCronOnce(request, '/api/cron/informes-programados', cronPeriod('dia'), async () => {
+        const result = await reqContext.run(
+            { userId: null, sessionId: null, activeOrgId: null, cronScope: true },
+            () => runInformesProgramados({ limit: 200 }),
+        );
+        return new Response(JSON.stringify(result), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
+        });
     });
 };

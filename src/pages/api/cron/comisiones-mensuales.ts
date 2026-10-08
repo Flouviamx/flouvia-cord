@@ -5,11 +5,17 @@ import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
 import { sendOpsAlert } from '../../../lib/ops-alert';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
-    return reqContext.run({ userId: null, cronScope: true }, async () => {
+    // Una vez al mes. Si el día 2 no corre, cord-crons.yml lo llama cualquier
+    // otro día del mes: el periodo es siempre el mes ANTERIOR al de la corrida.
+    return runCronOnce(request, '/api/cron/comisiones-mensuales', cronPeriod('mes'), () => run());
+};
+
+async function run(): Promise<Response> {    return reqContext.run({ userId: null, cronScope: true }, async () => {
         const now = new Date();
         const previous = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
         const period = `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -41,7 +47,7 @@ export const GET: APIRoute = async ({ request }) => {
         }
         return json({ ok: true, period, created: inserted.length, feeBaseCents: base, feeIvaCents: iva, totalCents: total });
     });
-};
+}
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });

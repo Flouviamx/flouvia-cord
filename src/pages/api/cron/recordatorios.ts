@@ -30,6 +30,8 @@ import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 import { termDays } from '../../../lib/payment-terms';
+import { log } from '../../../lib/log';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 // Cada recordatorio se formatea con la divisa de SU cotización: este cron
 // barre la cartera de TODAS las orgs, así que un formateador fijo mezclaba
@@ -44,10 +46,14 @@ const money = (n: number, currency?: string) => {
 };
 
 export const GET: APIRoute = async ({ request }) => {
-    // Auth del cron (si está configurado el secreto).
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    // Una vez al día (reclamo en cron_runs) además de la dedup por aviso de
+    // abajo, que se queda como defensa si la bitácora no está disponible.
+    return runCronOnce(request, '/api/cron/recordatorios', cronPeriod('dia'), () => run());
+};
 
+async function run(): Promise<Response> {
     // Carril de SISTEMA para las dos consultas de cartera que cruzan
     // organizaciones; el registro de etapa y el envío de cada documento vuelven
     // a withOrgTx con el org_id de esa factura.
@@ -94,13 +100,12 @@ export const GET: APIRoute = async ({ request }) => {
     });
     const candidatos = todas.filter((c) => c.dias >= 0 && c.dias <= 3); // vence en los próximos 3 días
     // Owner: aviso de "pago vencido" (evento payment_overdue) exactamente el
-    // primer día tras el vencimiento — coincidencia exacta de fecha, el cron
-    // corre una vez al día, así se dispara una sola vez por cotización sin
-    // necesitar una tabla de dedup.
+    // primer día tras el vencimiento — coincidencia exacta de fecha; la dedup
+    // contra un segundo disparo del mismo día es `yaAvisadoHoy` de abajo.
     const vencidasHoy = todas.filter((c) => c.dias === -1);
 
     // Este endpoint lo disparan DOS relojes: el cron de vercel.json (15:00 UTC)
-    // y cord-crons.yml cuando su corrida cae en la hora 15. La escalera de
+    // y cord-crons.yml en cualquier corrida posterior. La escalera de
     // facturas tiene dedup en `documento_recordatorios`; los avisos de abajo no
     // tenían ninguna, así que el mismo día el cliente recibía el recordatorio dos
     // veces y el dueño dos "pago vencido". El registro de auditoría que ya se
@@ -116,43 +121,56 @@ export const GET: APIRoute = async ({ request }) => {
     };
 
     let enviados = 0;
+    // Un aviso que truena (correo, enlace) no aborta la corrida: las demás
+    // cotizaciones, el aviso de vencidas y la escalera de facturas siguen.
+    let fallidos = 0;
     for (const c of candidatos) {
-        if (await yaAvisadoHoy(c.orgId, 'recordatorio.enviado', c.id)) continue;
-        const link = await publicDocumentUrl(c.orgId, 'q', c.token);
-        const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
-        const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
-        const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total, c.moneda)}</b> vence el <b>${venceTxt}</b>.</p>
+        try {
+            if (await yaAvisadoHoy(c.orgId, 'recordatorio.enviado', c.id)) continue;
+            const link = await publicDocumentUrl(c.orgId, 'q', c.token);
+            const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
+            const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
+            const html = brandEmailShell(c.brand, `<p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
+                    <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total, c.moneda)}</b> vence el <b>${venceTxt}</b>.</p>
 
-                <div style="margin:40px 0;">
-                    <a href="${link}" style="${emailButtonStyle(c.brand)}">Ver y pagar ${esc(c.folio)}</a>
-                </div>
+                    <div style="margin:40px 0;">
+                        <a href="${link}" style="${emailButtonStyle(c.brand)}">Ver y pagar ${esc(c.folio)}</a>
+                    </div>
 
-                <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copia y pega este enlace en tu navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+                    <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">O copia y pega este enlace en tu navegador:<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
 
-        `, poweredLine);
-        const res = await sendEmail({
-            orgId: c.orgId,
-            operation: 'payment_reminder',
-            to: c.email,
-            subject: `Recordatorio de pago — ${c.folio}`,
-            html,
-            fromName: c.orgNombre,
-        });
-        if (res.sent) { enviados++; await logAudit(c.orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: c.id, detalle: `${c.folio} → ${c.email}` }); }
+            `, poweredLine);
+            const res = await sendEmail({
+                orgId: c.orgId,
+                operation: 'payment_reminder',
+                to: c.email,
+                subject: `Recordatorio de pago — ${c.folio}`,
+                html,
+                fromName: c.orgNombre,
+            });
+            if (res.sent) { enviados++; await logAudit(c.orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: c.id, detalle: `${c.folio} → ${c.email}` }); }
+        } catch (err) {
+            fallidos++;
+            log.error('no se pudo mandar un recordatorio de cotización', { route: 'cron/recordatorios', orgId: c.orgId, err });
+        }
     }
 
     for (const c of vencidasHoy) {
-        if (await yaAvisadoHoy(c.orgId, 'cobranza.vencida_avisada', c.id)) continue;
-        // `origin` no existía en este archivo: el primer día que una cotización
-        // quedaba vencida, el ReferenceError abortaba la corrida ANTES de la
-        // escalera de facturas y de `invoice.overdue`.
-        await notify(c.orgId, 'payment_overdue', {
-            folio: c.folio, cliente: c.empresa, total: c.total,
-            moneda: c.moneda,
-            link: `${siteOrigin()}/app/cobranza`,
-        });
-        await logAudit(c.orgId, { accion: 'cobranza.vencida_avisada', entidad: 'cotizacion', entidad_id: c.id, detalle: c.folio });
+        try {
+            if (await yaAvisadoHoy(c.orgId, 'cobranza.vencida_avisada', c.id)) continue;
+            // `origin` no existía en este archivo: el primer día que una cotización
+            // quedaba vencida, el ReferenceError abortaba la corrida ANTES de la
+            // escalera de facturas y de `invoice.overdue`.
+            await notify(c.orgId, 'payment_overdue', {
+                folio: c.folio, cliente: c.empresa, total: c.total,
+                moneda: c.moneda,
+                link: `${siteOrigin()}/app/cobranza`,
+            });
+            await logAudit(c.orgId, { accion: 'cobranza.vencida_avisada', entidad: 'cotizacion', entidad_id: c.id, detalle: c.folio });
+        } catch (err) {
+            fallidos++;
+            log.error('no se pudo avisar de una cotización vencida', { route: 'cron/recordatorios', orgId: c.orgId, err });
+        }
     }
 
     // ── Facturas ────────────────────────────────────────────────────────────
@@ -195,12 +213,17 @@ export const GET: APIRoute = async ({ request }) => {
         const docId = f.id as string;
         const orgId = f.org_id as string;
 
-        if (diasVencida === 1 && !(await yaAvisadoHoy(orgId, 'factura.vencida_avisada', docId))) {
-            // Cruzó el vencimiento ayer: el webhook se dispara una sola vez,
-            // también si el endpoint corre dos veces el mismo día.
-            vencidasFactura++;
-            await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
-            await logAudit(orgId, { accion: 'factura.vencida_avisada', entidad: 'factura', entidad_id: docId, detalle: 'invoice.overdue' });
+        try {
+            if (diasVencida === 1 && !(await yaAvisadoHoy(orgId, 'factura.vencida_avisada', docId))) {
+                // Cruzó el vencimiento ayer: el webhook se dispara una sola vez,
+                // también si el endpoint corre dos veces el mismo día.
+                vencidasFactura++;
+                await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
+                await logAudit(orgId, { accion: 'factura.vencida_avisada', entidad: 'factura', entidad_id: docId, detalle: 'invoice.overdue' });
+            }
+        } catch (err) {
+            fallidos++;
+            log.error('no se pudo despachar invoice.overdue', { route: 'cron/recordatorios', orgId, err });
         }
 
         // La etapa que TOCA hoy: la mayor de la cadencia que ya se alcanzó y
@@ -231,7 +254,16 @@ export const GET: APIRoute = async ({ request }) => {
             returning id`);
         if (!marcaRows[0]) continue;   // otra corrida ganó la carrera
 
-        const sent = await notifyInvoiceReminder(orgId, docId, diasVencida > 0);
+        let sent = false;
+        try {
+            sent = await notifyInvoiceReminder(orgId, docId, diasVencida > 0);
+        } catch (err) {
+            // Lanzar no es lo mismo que "no salió", pero se trata igual: la etapa
+            // se libera abajo para reintentarse mañana, en vez de quedar marcada
+            // como enviada sin que el correo saliera.
+            fallidos++;
+            log.error('no se pudo mandar el recordatorio de una factura', { route: 'cron/recordatorios', orgId, err });
+        }
         if (sent) {
             facturasEnviadas++;
             await logAudit(orgId, {
@@ -250,11 +282,11 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     return json({
-        enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length,
+        enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length, fallidos,
         facturas: { enviados: facturasEnviadas, candidatas: facturas.length, vencidasHoy: vencidasFactura },
     });
     });
-};
+}
 
 const num = (v: unknown) => Number(v ?? 0);
 const esc = (s: string) => String(s).replace(/</g, '&lt;');
