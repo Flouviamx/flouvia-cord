@@ -99,6 +99,7 @@ describe('envío', () => {
         expect(m.sent[0].attachments[0].filename).toMatch(/^cord-informe-\d{4}-\d{2}-01_\d{4}-\d{2}-\d{2}\.csv$/);
         expect(new TextDecoder().decode(m.sent[0].attachments[0].content)).toContain('Cliente,Cotizaciones,Vendido,Divisa');
         expect(m.sent[0].html).toContain(`guardado=${id}`);
+        expect(m.sent[0].html).toContain('vs.');
         const r2 = await P.runInformesProgramados();
         expect(r2.enviados).toBe(0);
         expect(m.sent).toHaveLength(1);
@@ -123,5 +124,12 @@ describe('envío', () => {
         expect(new Date(row.ultimo_envio_at).getUTCFullYear()).toBe(2020);
         m.fail = false;
         expect((await P.runInformesProgramados()).enviados).toBe(1);
+    });
+});
+
+describe('comparación del correo', () => {
+    it('el mes anterior completo, no los mismos días hacia atrás', () => {
+        expect(P.previousPeriod('mensual', '2026-09-01')).toEqual({ desde: '2026-08-01', hasta: '2026-08-31' });
+        expect(P.previousPeriod('semanal', '2026-09-28')).toEqual({ desde: '2026-09-21', hasta: '2026-09-27' });
     });
 });

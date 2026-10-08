@@ -22,9 +22,17 @@ const frecuencias = [
     { v: 'semanal', label: t(L, 'inf.x.envio_semanal') },
     { v: 'mensual', label: t(L, 'inf.x.envio_mensual') },
 ];
-const puedeProgramar = !saved || saved.mio;
+// Sin permiso para editar este informe, Guardar crea una copia propia (que sí puede
+// programar) en vez de fallar con un 403.
+// Programar: solo quien lo guardó (el correo le llega a esa persona). Un owner/admin
+// sobre un informe ajeno ve el envío solo para APAGARLO; nunca para encenderlo.
+const guardaCopia = !!saved && !saved.puedeEditar;
+const puedeProgramar = !saved || saved.mio || guardaCopia;
+const puedeApagar = !!saved && !saved.mio && saved.puedeEditar && saved.frecuencia !== 'ninguna';
+const opcionesEnvio = puedeProgramar ? frecuencias : frecuencias.filter((f) => f.v === 'ninguna' || f.v === saved?.frecuencia);
+
 ---
-<div class="xc" data-explorer data-confirm-delete={t(L, 'inf.x.eliminar_confirmar')} data-error-text={t(L, 'inf.x.error')} data-saved={saved ? JSON.stringify({ id: saved.id, nombre: saved.nombre, frecuencia: saved.frecuencia, mio: saved.mio }) : ''}>
+<div class="xc" data-explorer data-confirm-delete={t(L, 'inf.x.eliminar_confirmar')} data-error-text={t(L, 'inf.x.error')} data-saved={saved ? JSON.stringify({ id: saved.id, nombre: saved.nombre, frecuencia: saved.frecuencia, mio: saved.mio, puedeEditar: saved.puedeEditar }) : ''}>
     <form class="xc-form" method="get" action="/app/informes" data-explorer-form>
         <input type="hidden" name="r" value="explorar" />
         {Object.entries(range).map(([k, v]) => <input type="hidden" name={k} value={v} />)}
@@ -79,16 +87,16 @@ const puedeProgramar = !saved || saved.mio;
             <div class="m-body">
                 <div class="m-field">
                     <label for="xcNombre">{t(L, 'inf.x.nombre')}</label>
-                    <input class="m-input" id="xcNombre" name="nombre" maxlength="80" required autocomplete="off" placeholder={t(L, 'inf.x.nombre_ph')} value={saved?.nombre ?? ''} />
+                    <input class="m-input" id="xcNombre" name="nombre" maxlength="80" required autocomplete="off" placeholder={t(L, 'inf.x.nombre_ph')} value={guardaCopia ? '' : saved?.nombre ?? ''} />
                 </div>
                 <div class="m-field">
                     <label for="xcFrecuencia">{t(L, 'inf.x.envio')}</label>
-                    {puedeProgramar ? (
+                    {puedeProgramar || puedeApagar ? (
                         <>
                             <select class="m-input" id="xcFrecuencia" name="frecuencia">
-                                {frecuencias.map((f) => <option value={f.v} selected={(saved?.frecuencia ?? 'ninguna') === f.v}>{f.label}</option>)}
+                                {opcionesEnvio.map((f) => <option value={f.v} selected={(guardaCopia ? 'ninguna' : saved?.frecuencia ?? 'ninguna') === f.v}>{f.label}</option>)}
                             </select>
-                            <p class="m-hint">{t(L, 'inf.x.envio_nota')}</p>
+                            <p class="m-hint">{t(L, puedeProgramar ? 'inf.x.envio_nota' : 'inf.x.envio_apagar')}</p>
                         </>
                     ) : (
                         <p class="m-hint">{t(L, 'inf.x.envio_ajeno')}</p>
@@ -117,7 +125,7 @@ const puedeProgramar = !saved || saved.mio;
         const error = root.querySelector<HTMLElement>('[data-explorer-error]');
         const maxHint = root.querySelector<HTMLElement>('[data-explorer-max]');
         if (!form || !dialog || !saveForm || !error) return;
-        const saved = root.dataset.saved ? JSON.parse(root.dataset.saved) as { id: string; nombre: string; frecuencia: string; mio: boolean } : null;
+        const saved = root.dataset.saved ? JSON.parse(root.dataset.saved) as { id: string; nombre: string; frecuencia: string; mio: boolean; puedeEditar: boolean } : null;
         const metrics = [...form.querySelectorAll<HTMLInputElement>('[data-explorer-metric]')];
 
         // Con JavaScript, cada cambio aplica solo; Aplicar queda para quien no lo tenga.
@@ -167,7 +175,7 @@ const puedeProgramar = !saved || saved.mio;
             if (submitBtn) submitBtn.disabled = true;
             error.textContent = '';
             try {
-                const isNew = asNew || !saved;
+                const isNew = asNew || !saved || !saved.puedeEditar;
                 const out = await send(isNew ? 'POST' : 'PATCH', body);
                 const config = currentConfig();
                 const frecuencia = String(body.frecuencia ?? saved?.frecuencia ?? 'ninguna');

@@ -33,6 +33,12 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
         icon: 'clients',
     },
     {
+        slug: 'informes',
+        es: { name: 'Informes y analítica', desc: 'Personaliza tu Inicio, lee tus KPIs, exporta informes y recíbelos por correo.' },
+        en: { name: 'Reports & Analytics', desc: 'Customize your Home, read your KPIs, export reports, and get them by email.' },
+        icon: 'chart',
+    },
+    {
         slug: 'desarrolladores',
         es: { name: 'Desarrolladores', desc: 'Documentación para APIs, Webhooks y Cord Elements.' },
         en: { name: 'Developers', desc: 'Documentation for APIs, Webhooks, and Cord Elements.' },

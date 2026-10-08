@@ -5,7 +5,7 @@ category: "Account & Team"
 order: 2
 ---
 
-Cord controls access through granular permissions, not just a fixed role: each member gets access to specific sections of the app (quotes, collections, clients, products, analytics, settings, payment configuration, refunds, team).
+Cord controls access through granular permissions, not just a fixed role: each member gets access to specific sections of the app (quotes, collections, clients, products, reports, settings, payment configuration, refunds, team).
 
 ### Inviting your team
 
@@ -22,7 +22,7 @@ Roles are starting points; the owner can fine-tune any member's permissions sect
 
 - **Super admin (Owner):** the account's owner. Unrestricted access, including subscription billing and deleting the organization. There's only one per organization, and their permissions can't be edited.
 - **Admin:** almost full control, including managing the team. It's the only starting role that's **missing** one permission: it cannot request refunds on reconciled payments.
-- **Rep (Vendedor):** quotes and manages clients and products, and sees analytics. Doesn't access Settings, can't approve discounts, and can't see payment configuration.
+- **Rep (Vendedor):** quotes and manages clients and products, and sees reports. Doesn't access Settings, can't approve discounts, and can't see payment configuration.
 - **Read only:** can view the app but can't change anything in any section.
 - **Custom:** when you edit a member's permissions beyond their preset, the role becomes "Custom" and keeps exactly the combination of sections you checked.
 

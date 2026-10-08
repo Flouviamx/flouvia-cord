@@ -153,10 +153,13 @@ function dimLabel(dim: DimKey, raw: string, locale: 'es' | 'en'): string {
     return raw;
 }
 
-export async function getExplorer(r: Rango, config: ExplorerConfig): Promise<TablaReport> {
+/** `compare`: periodo de comparación explícito. Sin él, los días inmediatamente
+ *  anteriores del mismo largo (como el resto de los informes). El correo mensual
+ *  pasa el mes calendario anterior: septiembre contra agosto, no contra el 2–31 ago. */
+export async function getExplorer(r: Rango, config: ExplorerConfig, opts: { compare?: { desde: string; hasta: string } } = {}): Promise<TablaReport> {
     const orgId = await getActiveOrgId();
     const locale = currentLocale();
-    return cached(`inf-explorar:${orgId}:${r.desde}:${r.hasta}:${config.dim}:${config.m.join(',')}:${locale}`, 60, async () => {
+    return cached(`inf-explorar:${orgId}:${r.desde}:${r.hasta}:${config.dim}:${config.m.join(',')}:${locale}:${opts.compare ? `${opts.compare.desde}_${opts.compare.hasta}` : 'auto'}`, 60, async () => {
         const S = await getReportScope(orgId);
         const itemBase = config.dim === 'producto';
         const isTime = !!TIME_UNIT[config.dim];
@@ -168,7 +171,7 @@ export async function getExplorer(r: Rango, config: ExplorerConfig): Promise<Tab
             ${fromSql(orgId, itemBase)}
             ${whereSql(S, orgId, itemBase, r.desde, r.hasta)}
             group by 1, 2 ${order} limit 500`);
-        const cmp = compareRangeFor(r, '0000-01-01');
+        const cmp = opts.compare ?? compareRangeFor(r, '0000-01-01');
         const [cur, prev] = await Promise.all([
             totals(S, orgId, config, r.desde, r.hasta),
             cmp ? totals(S, orgId, config, cmp.desde, cmp.hasta) : Promise.resolve(null),

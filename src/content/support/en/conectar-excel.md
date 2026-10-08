@@ -1,7 +1,7 @@
 ---
 title: "Connect Excel"
 description: "Every quote and every invoice as a row in your Excel workbook, in a real table, kept current on its own."
-category: "Cuenta y Equipo"
+category: "Account & Team"
 order: 26
 ---
 

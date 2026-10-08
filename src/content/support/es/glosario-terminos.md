@@ -1,13 +1,13 @@
 ---
 title: "Glosario FinTech y Contable"
-description: "Diccionario de términos técnicos, financieros y fiscales (SAT) utilizados en la plataforma Cord."
+description: "Diccionario de términos técnicos, financieros, fiscales (SAT) y de informes utilizados en la plataforma Cord."
 category: "Cuenta y Equipo"
 order: 99
 ---
 
-Cord une a dos mundos que hablan idiomas distintos: **Desarrolladores** y **Contadores**. 
+Cord une a mundos que hablan idiomas distintos: **desarrolladores**, **contadores** y quienes leen los **informes** del negocio.
 
-Este glosario resuelve las ambigüedades más comunes para que ambos equipos puedan integrar la plataforma sin fricciones.
+Este glosario resuelve las ambigüedades más comunes para que todos puedan usar la plataforma sin fricciones.
 
 ## Términos de Facturación (SAT)
 
@@ -21,7 +21,7 @@ Se utiliza cuando el cobro de una factura se realiza en el momento exacto de la 
 Se utiliza cuando se emite la factura pero el pago se recibirá en una fecha futura (crédito). Las facturas PPD **siempre** requieren que se emita un REP posteriormente cuando el dinero llega a la cuenta.
 
 ### REP (Recibo Electrónico de Pago)
-También conocido como "Complemento de Recepción de Pagos". Es un comprobante secundario que se emite para "saldar" una factura PPD original. Cord puede automatizar la emisión de REPs cuando detecta la conciliación del depósito bancario.
+También conocido como "Complemento de Recepción de Pagos". Es un comprobante secundario que se emite para "saldar" una factura PPD original. Hoy Cord registra cada abono y actualiza el saldo de la factura, pero **no timbra el REP**: ese comprobante lo generas por tu cuenta mientras su timbrado automático llega (ver [Facturas PPD y Complementos de Pago](/soporte/complementos-de-pago)).
 
 ### CSD (Certificado de Sello Digital)
 Son los archivos criptográficos (`.cer` y `.key`) emitidos por el SAT que permiten a un software firmar digitalmente las facturas a nombre de una empresa. Es distinto a la FIEL (Firma Electrónica Avanzada). En Cord solo debes subir tu CSD.
@@ -50,7 +50,7 @@ Una URL específica de la API de Cord diseñada para ejecutar una acción (Ej. `
 
 ---
 
-## Términos Financieros B2B
+## Términos financieros
 
 ### Net-30 / Términos de Crédito
 Significa que el cliente tiene 30 días naturales a partir de la emisión de la factura (o entrega del producto) para liquidar el saldo total.
@@ -60,3 +60,40 @@ Ocurre cuando un cliente final contacta a su banco para rechazar un cargo proces
 
 ### Conciliación (Reconciliation)
 El proceso de emparejar un movimiento de dinero en la cuenta bancaria corporativa con su respectiva factura o registro contable. Cord automatiza este proceso para los cobros que pasan por Cord Payments (tarjeta y, en México, SPEI); un depósito por transferencia bancaria manual lo confirmas tú mismo.
+
+---
+
+## Términos de informes y analítica
+
+### Rango
+El periodo que eliges en el selector de fechas del Inicio o de un informe (por ejemplo, **Últimos 30 días** o un rango **Personalizado**). Los widgets con la etiqueta **Rango** lo siguen; los que dicen **Hoy** son una foto de este momento y los que dicen **Histórico** suman todo tu historial. [Más información](/soporte/leer-kpis-y-rango).
+
+### Periodo anterior
+El periodo de la misma duración inmediatamente antes del rango elegido: contra él se calcula la variación de cada cifra. **Últimos 30 días** se compara con los 30 días previos, y **Este mes** a día 8 se compara con los 8 días previos, no con todo el mes pasado. Los importes varían en porcentaje y las tasas, en puntos.
+
+### Cobrado
+El dinero que entró, por la fecha del pago: pagos de cotizaciones y de facturas (incluidos los abonos parciales) y cotizaciones marcadas como pagadas a mano, menos lo reembolsado. Significa lo mismo en el Inicio y en todos los informes.
+
+### Tasa de cierre
+De las cotizaciones enviadas en el periodo, qué porcentaje se ganó (aprobada, pagada o facturada). Se mide sobre una **cohorte** para que dos periodos se comparen sin mezclar fechas.
+
+### Cohorte
+Un grupo que se sigue en el tiempo según cuándo empezó. En la **Tasa de cierre** y en el **Informe personalizado**, la cohorte son las cotizaciones creadas en el periodo y lo que pasó con ellas después. En **Recompra por cohorte**, son los clientes que compraron por primera vez en un mismo mes.
+
+### Ticket promedio
+Lo vendido en el periodo entre el número de ventas que lo forman.
+
+### Moneda base
+La moneda de tu negocio (**Ajustes › General**). Todos los importes del Inicio, los informes, los CSV y los correos programados se expresan en ella; las ventas en otras monedas se convierten con el tipo de cambio fijado en la cotización o, si no tiene uno, con el publicado hoy. [Más información](/soporte/importes-en-varias-divisas-informes).
+
+### Informe tabla
+Un informe con cifras clave comparadas contra el periodo anterior, una gráfica y una tabla completa que se ordena por columna y se exporta con **Exportar CSV**. Por ejemplo, **Ventas en el tiempo** o **Pagos recibidos**. [Más información](/soporte/informes-de-cord).
+
+### Informe personalizado
+Un informe tabla que armas tú: eliges **Agrupar por** y hasta seis métricas. Puedes compartirlo con un enlace, guardarlo con nombre para todo el equipo y recibirlo por correo. [Más información](/soporte/informes-personalizados).
+
+### Drill-down (ver detalle)
+Ir de una cifra agregada a lo que la forma: un clic en la barra de un cliente abre su ficha y uno en la barra de un mes abre ese mes con más detalle. En el celular, el primer toque muestra el dato y **Ver detalle** te lleva.
+
+### Widget
+Cada tarjeta del Inicio y de los informes de widgets. Se mueve, cambia de tamaño, se oculta y se agrega desde la biblioteca con **Personalizar**. [Más información](/soporte/personalizar-inicio-widgets).

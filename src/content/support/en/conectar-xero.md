@@ -1,7 +1,7 @@
 ---
 title: "Connect Xero"
 description: "Every final Cord invoice lands in your Xero as a draft, with its contact, its lines and its currency."
-category: "Cuenta y Equipo"
+category: "Account & Team"
 order: 28
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: "Deposit reconciliation"
-description: "Export reports to match deposits with your accounting."
+description: "Export your received payments to match deposits with your accounting."
 category: "Payments & Deposits"
 ---
 
@@ -18,4 +18,4 @@ Cord does not have direct visibility into your bank statement. To reconcile tran
 If your clients pay by card (or by SPEI in Mexico) via the integrated checkout, in any country where Cord Payments is available:
 1. Cord records the payment after receiving a signed confirmation from the network.
 2. Go to **Payments** to relate the quote number, charge, fee, net amount, and bank deposit.
-3. Export the period report and reconcile it with your bank statement.
+3. To reconcile against your bank statement, go to **Reports › Payments received**, pick the period, and click **Export CSV**: it lists every quote and invoice payment with its date, number, client, method, amount, refund, and net. See [Export a report to CSV](/en/support/exportar-informes-csv).

@@ -104,7 +104,9 @@ async function sendOne(orgId: string, id: string): Promise<'enviado' | 'omitido'
     try {
         const periodo = previousPeriod(frecuencia, hoy);
         const config = parseExplorerConfig(g.config as any);
-        const report = await getExplorer({ key: 'custom', ...periodo }, config);
+        // La comparación es el periodo calendario anterior (la semana o el mes previo),
+        // no "los mismos días hacia atrás": septiembre contra agosto completo.
+        const report = await getExplorer({ key: 'custom', ...periodo }, config, { compare: previousPeriod(frecuencia, periodo.desde) });
         const L = currentLocale();
         const rango = formatRange(periodo.desde, periodo.hasta);
         const nombre = String(g.nombre);

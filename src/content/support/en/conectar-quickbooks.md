@@ -1,7 +1,7 @@
 ---
 title: "Connect QuickBooks Online"
 description: "Every final Cord invoice lands in your QuickBooks with its customer, its lines and its currency, without entering it twice."
-category: "Cuenta y Equipo"
+category: "Account & Team"
 order: 27
 ---
 

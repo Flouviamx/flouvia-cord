@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import FaqAccordion from '../landing/FaqAccordion.astro';
 import { iconInner, type IconName } from '../../lib/icons';
 import { SUPPORT_FAQ_ES, SUPPORT_FAQ_EN } from '../../lib/support-faq';
+import { SUPPORT_CATEGORIES } from '../../lib/support-categories';
 
 const { isEn = false } = Astro.props;
 const allSupport = await getCollection('support');
@@ -12,39 +13,14 @@ const allSupport = await getCollection('support');
 const langPrefix = isEn ? 'en/' : 'es/';
 const localSupport = allSupport.filter(a => a.id.startsWith(langPrefix));
 
-const categoryMap = [
-    {
-        name: isEn ? 'Payments & Deposits' : 'Pagos y Depósitos',
-        slug: 'pagos',
-        icon: 'card' as IconName
-    },
-    {
-        name: isEn ? 'Quotes' : 'Cotizaciones',
-        slug: 'cotizaciones',
-        icon: 'quote' as IconName
-    },
-
-    {
-        name: isEn ? 'Invoicing' : 'Facturación',
-        slug: 'facturacion',
-        icon: 'invoice' as IconName
-    },
-    {
-        name: isEn ? 'Account & Team' : 'Cuenta y Equipo',
-        slug: 'cuenta',
-        icon: 'clients' as IconName
-    },
-    {
-        name: isEn ? 'Developers' : 'Desarrolladores',
-        slug: 'desarrolladores',
-        icon: 'code' as IconName
-    },
-    {
-        name: isEn ? 'Security & Privacy' : 'Seguridad y Privacidad',
-        slug: 'seguridad',
-        icon: 'lock' as IconName
-    }
-];
+// Fuente única: src/lib/support-categories.ts. Antes esta lista era una copia a
+// mano y una categoría nueva (Informes y analítica) existía en su página pero no
+// aparecía aquí.
+const categoryMap = SUPPORT_CATEGORIES.map((cat) => ({
+    name: isEn ? cat.en.name : cat.es.name,
+    slug: cat.slug,
+    icon: cat.icon as IconName,
+}));
 
 const categoriesWithArticles = categoryMap.map(cat => {
     const articles = localSupport.filter(a => a.data.category === cat.name);

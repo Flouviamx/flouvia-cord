@@ -1,6 +1,6 @@
 ---
 title: "Conciliación de depósitos"
-description: "Exporta reportes para empatar depósitos con tu contabilidad."
+description: "Exporta tus pagos recibidos para empatar depósitos con tu contabilidad."
 category: "Pagos y Depósitos"
 ---
 
@@ -18,4 +18,4 @@ Cord no tiene visibilidad directa de tu estado de cuenta bancario. Para concilia
 Si tus clientes pagan con tarjeta (o por SPEI en México) vía el checkout integrado, en cualquiera de los países donde Cord Payments está disponible:
 1. Cord registra el pago cuando recibe la confirmación firmada de la red.
 2. Ve a **Cobros** para relacionar el folio, el cargo, la comisión, el neto y el depósito bancario.
-3. Exporta el reporte del periodo para conciliarlo con tu estado de cuenta.
+3. Para conciliar contra tu estado de cuenta, ve a **Informes › Pagos recibidos**, elige el periodo y pulsa **Exportar CSV**: trae cada pago de cotizaciones y de facturas con su fecha, folio, cliente, método, monto, reembolso y neto. Ve [Exportar un informe a CSV](/soporte/exportar-informes-csv).

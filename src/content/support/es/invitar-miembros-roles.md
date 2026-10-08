@@ -5,7 +5,7 @@ category: "Cuenta y Equipo"
 order: 2
 ---
 
-Cord controla el acceso por permisos granulares, no solo por un rol fijo: cada miembro tiene acceso a secciones específicas de la app (cotizaciones, cobranza, clientes, productos, analítica, ajustes, configuración de cobros, reembolsos, equipo).
+Cord controla el acceso por permisos granulares, no solo por un rol fijo: cada miembro tiene acceso a secciones específicas de la app (cotizaciones, cobranza, clientes, productos, informes, ajustes, configuración de cobros, reembolsos, equipo).
 
 ### Invitar a tu equipo
 
@@ -22,7 +22,7 @@ Los roles son puntos de partida; el dueño puede afinar los permisos de cualquie
 
 - **Súper administrador (Owner):** el dueño de la cuenta. Acceso sin restricciones, incluida la facturación de la suscripción y borrar la organización. Solo hay uno por organización y no se le pueden editar sus permisos.
 - **Administrador:** casi todo el control, incluida la gestión del equipo. Es el único rol de partida al que **le falta** un permiso: no puede solicitar reembolsos de pagos conciliados.
-- **Vendedor:** cotiza y gestiona clientes y productos, y ve analítica. No entra a Ajustes, no aprueba descuentos ni ve la configuración de cobros.
+- **Vendedor:** cotiza y gestiona clientes y productos, y ve los informes. No entra a Ajustes, no aprueba descuentos ni ve la configuración de cobros.
 - **Solo lectura:** puede ver la app pero no modifica nada en ninguna sección.
 - **Personalizado:** cuando editas los permisos de un miembro más allá de su preset, el rol pasa a "Personalizado" y queda con exactamente la combinación de secciones que marcaste.
 

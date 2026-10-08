@@ -1,7 +1,7 @@
 ---
 title: "Connect Gmail"
 description: "Your quotes and invoices go out from your Gmail, and inside Gmail you see each quote live and build it with AI from the client's email."
-category: "Cuenta y Equipo"
+category: "Account & Team"
 order: 27
 ---
 
