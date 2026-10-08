@@ -10,12 +10,12 @@ import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg, vigenciaDias
 import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
-import { unknownTaxRate, unknownTaxRateMessage } from '../impuestos';
+import { unknownTaxRate, unknownTaxRateMessage, withStoredRates } from '../impuestos';
 import { trackServer } from '../posthog-server';
 import { normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
 import {
-    approvalMotivo, approvalPolicyFor, evaluateApproval, notWorseThanApproved, totalInPolicyCurrency,
+    approvalMotivo, approvalPolicyFor, evaluateApproval, notWorseThanApproved, totalForPolicy,
 } from '../quote-approval';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
@@ -174,7 +174,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             select ci.precio_unitario, ci.precio_negociado, ci.costo_unitario
               from cotizacion_items ci join cotizaciones c on c.id = ci.cotizacion_id
              where ci.cotizacion_id = ${id} and c.org_id = ${orgId}`);
-        return evaluateApproval(stored, totalInPolicyCurrency(Number(rows[0].total) || 0, policy!.currency, sale), policy);
+        return evaluateApproval(stored, await totalForPolicy(Number(rows[0].total) || 0, policy, sale), policy);
     };
     // El estado se revalida DENTRO de la transacción que reescribe la
     // cotización: entre la lectura de arriba y la escritura, el cliente pudo
@@ -211,7 +211,10 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
 
         let catalogo;
         try {
-            catalogo = await taxCatalogFor(orgId);
+            const [storedRates] = await withOrgTx(orgId, sql`
+                select distinct ci.tax_rate from cotizacion_items ci join cotizaciones c on c.id = ci.cotizacion_id
+                 where ci.cotizacion_id = ${id} and c.org_id = ${orgId} and ci.tax_rate is not null`);
+            catalogo = withStoredRates(await taxCatalogFor(orgId), storedRates.map((r: any) => r.tax_rate));
         } catch (error) {
             if (error instanceof TaxCatalogUnavailableError) return done(503, { error: error.message, code: 'tax_catalog_unavailable' });
             throw error;
@@ -324,7 +327,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             writes.push(sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`);
         }
         if (policy) {
-            const verdict = evaluateApproval(items, totalInPolicyCurrency(total, policy.currency, sale), policy);
+            const verdict = evaluateApproval(items, await totalForPolicy(total, policy, sale), policy);
             if (verdict.needed && input.action === 'send') {
                 // El borrador se guarda con lo que el vendedor capturó y queda
                 // esperando a gerencia, igual que al crear con "Enviar".
@@ -357,6 +360,13 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         if (policy) {
             const verdict = await storedVerdict();
             if (verdict.needed) return requestApproval(approvalMotivo(verdict, policy.currency));
+        }
+        if (aprobEstado === 'pendiente') {
+            // Sin topes vigentes (el plan dejó de incluir aprobaciones o se
+            // pusieron en 0): la solicitud ya no aplica. Si se quedara pendiente,
+            // aprobarla después mandaría un segundo correo al cliente.
+            await withOrgTx(orgId, sql`update cotizaciones set aprob_estado = null, aprob_motivo = null
+                                        where id = ${id} and org_id = ${orgId} and status = 'draft'`);
         }
     }
 

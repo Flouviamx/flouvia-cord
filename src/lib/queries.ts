@@ -28,6 +28,7 @@ import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countrie
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
+import { isRetryableIssuanceError } from './fiscal/retry';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
 import {
@@ -1860,6 +1861,9 @@ export async function getFacturaDetalle(id: string) {
         // volver a resolverla.
         orgId,
         clienteEmail: (r.cliente_email as string) || null,
+        // La emisión falló con certeza de que no existe comprobante: el
+        // borrador conserva su folio y se puede corregir en el editor.
+        corregible: isRetryableIssuanceError(r),
         notas: (r.notes as string) || null,
         ledgerCurrency: (r.ledger_currency as string) || null,
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,

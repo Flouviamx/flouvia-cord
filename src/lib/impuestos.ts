@@ -131,3 +131,28 @@ export function unknownTaxRateMessage(rate: number): string {
     const pct = Number.isFinite(rate) ? `${Math.round(rate * 10000) / 100}%` : String(rate);
     return `La tasa de impuesto ${pct} no está en tu catálogo. Elige una de las tasas configuradas en Ajustes.`;
 }
+
+/**
+ * El catálogo, más las tasas que ESTE documento ya tiene guardadas.
+ *
+ * Editar o reenviar un documento viejo no puede fallar porque el negocio
+ * desactivó después una tasa con la que se capturó: esa tasa es un snapshot
+ * del documento (regla 23), no una propuesta nueva. Lo que se rechaza es una
+ * tasa que ni el catálogo ni el propio documento conocen.
+ */
+export function withStoredRates<C extends { resolve(proposed: unknown, fallback: number): number }>(
+    catalogo: C,
+    stored: unknown[],
+): C {
+    const known = stored.map(Number).filter((n) => Number.isFinite(n) && n >= 0 && n <= 1);
+    return {
+        ...catalogo,
+        resolve(proposed: unknown, fallback: number): number {
+            if (proposed !== null && proposed !== undefined && proposed !== '') {
+                const n = Number(proposed);
+                if (known.some((k) => Math.abs(k - n) < 1e-9)) return n;
+            }
+            return catalogo.resolve(proposed, fallback);
+        },
+    };
+}

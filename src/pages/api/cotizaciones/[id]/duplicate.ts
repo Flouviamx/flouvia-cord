@@ -15,6 +15,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createCotizacion, QuoteError } from '../../../../lib/cotizaciones';
+import { taxCatalogFor, TaxCatalogUnavailableError } from '../../../../lib/impuestos-db';
 
 export const POST: APIRoute = async ({ params, request }) => {
     const denied = await requirePerm('cotizar');
@@ -35,6 +36,21 @@ export const POST: APIRoute = async ({ params, request }) => {
     const src = srcRows[0];
     if (!src) return json({ error: 'Cotización no encontrada' }, 404);
     if (!items.length) return json({ error: 'La cotización no tiene líneas que copiar.' }, 400);
+    // Una copia es un documento NUEVO: si la tasa con la que se capturó la
+    // original ya no está en el catálogo, la copia nace con la predeterminada
+    // (el vendedor la revisa en el borrador) en vez de fallar sin forma de
+    // corregirla desde aquí.
+    let catalogo;
+    try {
+        catalogo = await taxCatalogFor(orgId);
+    } catch (error) {
+        if (error instanceof TaxCatalogUnavailableError) return json({ error: error.message }, 503);
+        throw error;
+    }
+    const tasaVigente = (rate: unknown) => {
+        if (rate === null || rate === undefined) return null;
+        return Number.isNaN(catalogo.resolve(rate, Number.NaN)) ? null : Number(rate);
+    };
 
     try {
         const result = await createCotizacion(orgId, {
@@ -59,7 +75,7 @@ export const POST: APIRoute = async ({ params, request }) => {
                 costo_unitario: it.costo_unitario === null ? null : Number(it.costo_unitario),
                 // `null` = línea anterior al impuesto por línea: el alta cae a la
                 // tasa predeterminada, que es como se calculaba entonces.
-                tax_rate: it.tax_rate === null ? null : Number(it.tax_rate),
+                tax_rate: tasaVigente(it.tax_rate),
             })),
         }, {
             origin: new URL(request.url).origin,

@@ -33,7 +33,7 @@ import { partiesFrom } from './parties';
 import { creditNoteBreakdown } from './credit-note';
 import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
-import { unknownTaxRate, unknownTaxRateMessage } from '../impuestos';
+import { unknownTaxRate, unknownTaxRateMessage, withStoredRates } from '../impuestos';
 import {
   cleanPrefix,
   documentDecimals,
@@ -361,23 +361,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
  *
  * El `public_token` NO se regenera: puede estar ya en manos del cliente.
  */
-/**
- * ¿Falló la emisión con CERTEZA de que no existe comprobante? Solo entonces el
- * borrador con folio reservado se puede corregir y reintentar. Una entrega
- * incierta (timeout, 5xx) pudo haber creado el CFDI del otro lado: ahí se
- * reintenta tal cual, con la misma llave, nunca con otro contenido. Las
- * facturas que nacen de una cotización conservan su llave de idempotencia
- * (`quote:<id>:invoice:v1`) y no se editan por aquí.
- */
-export function isRetryableIssuanceError(doc: {
-  lifecycle?: unknown; status?: unknown; cotizacion_id?: unknown;
-  provider_data?: any; provider_document_id?: unknown;
-}): boolean {
-  if (doc.lifecycle !== 'draft' || doc.status !== 'error' || doc.cotizacion_id) return false;
-  if (doc.provider_data?.delivery_uncertain === true || doc.provider_data?.cord_issuance) return false;
-  const providerId = doc.provider_document_id ? String(doc.provider_document_id) : '';
-  return !providerId || providerId.startsWith('err_');
-}
+export { isRetryableIssuanceError } from './retry';
+import { isRetryableIssuanceError } from './retry';
 
 export async function updateInvoiceDraft(
   orgId: string,
@@ -391,7 +376,7 @@ export async function updateInvoiceDraft(
 
   const [docRows] = await withOrgTx(orgId, sql`
     select id, lifecycle, status, invoice_number, public_token, amount_paid, credit_note_of, cotizacion_id,
-           document_type, country_code, provider_data, provider_document_id, currency
+           document_type, country_code, provider_data, provider_document_id, currency, line_items_snapshot
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
@@ -446,7 +431,8 @@ export async function updateInvoiceDraft(
   }
   let catalogo;
   try {
-    catalogo = await taxCatalogFor(orgId);
+    catalogo = withStoredRates(await taxCatalogFor(orgId),
+      ((doc.line_items_snapshot as FiscalLineItem[]) || []).map((l) => l?.taxRate));
   } catch (error) {
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;

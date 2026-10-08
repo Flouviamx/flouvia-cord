@@ -11,6 +11,7 @@ import { sql, withOrgTx } from './db';
 import { checkEntitlement } from './org-entitlements';
 import { normalizeCurrency } from './currency';
 import { intlLocale } from './fmt-server';
+import { FXService } from './fx/FXService';
 
 export interface ApprovalPolicy {
     descuentoMax: number;
@@ -78,6 +79,32 @@ export function totalInPolicyCurrency(
         return total * sale.fxRate;
     }
     return null;
+}
+
+/**
+ * `totalInPolicyCurrency`, y si la cotización no trae una tasa que llegue a la
+ * divisa del tope (una venta en USD cuya divisa contable también es USD, como
+ * las crea la API), se pide la tasa de hoy. Sin tasa se devuelve `null` y la
+ * evaluación pide aprobación: fallar cerrado, pero solo cuando de verdad no
+ * hay con qué comparar.
+ */
+export async function totalForPolicy(
+    total: number,
+    policy: ApprovalPolicy | null,
+    sale: { baseCurrency: string; fiscalCurrency: string; fxRate: number },
+): Promise<number | null> {
+    if (!policy) return null;
+    const direct = totalInPolicyCurrency(total, policy.currency, sale);
+    if (direct !== null || policy.montoMax <= 0) return direct;
+    try {
+        const fx = await FXService.getExchangeRate({
+            baseCurrency: normalizeCurrency(sale.baseCurrency), fiscalCurrency: policy.currency, amount: total, bufferPct: 0,
+        });
+        const rate = Number(fx?.appliedRate);
+        return Number.isFinite(rate) && rate > 0 ? total * rate : null;
+    } catch {
+        return null;
+    }
 }
 
 export function evaluateApproval(

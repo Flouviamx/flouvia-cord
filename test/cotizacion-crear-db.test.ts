@@ -164,3 +164,20 @@ describe('duplicar es un alta completa', () => {
         expect(ev.detalle).toBe(`Duplicada de ${original.folio}`);
     });
 });
+
+describe('correcciones de la revisión', () => {
+    it('el folio 10000 no se trunca', async () => {
+        await m.db.exec(`insert into cotizaciones (org_id, folio, status) values ('${ORG}', 'COT-9999', 'draft')`);
+        const r = await createCotizacion(ORG, { items: [linea()] }, opts);
+        expect(r.folio).toBe('COT-10000');
+    });
+
+    it('una venta en otra divisa sin tasa propia se convierte con la de hoy antes de comparar el tope', async () => {
+        await m.db.exec('update orgs set aprob_monto_max = 50000');
+        const { FXService } = await import('../src/lib/fx/FXService');
+        (FXService.getExchangeRate as any).mockResolvedValue({ appliedRate: 18, source: 'spot', lockedUntil: null });
+        // USD 1,000 + IVA = USD 1,160 ≈ MXN 20,880: no rebasa el tope.
+        const r = await createCotizacion(ORG, { send: true, base_currency: 'USD', fiscal_currency: 'USD', items: [linea(1000)] }, opts);
+        expect(r.needsApproval).toBe(false);
+    });
+});

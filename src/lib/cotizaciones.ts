@@ -18,7 +18,7 @@ import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/s
 import { listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { unknownTaxRate, unknownTaxRateMessage } from './impuestos';
-import { approvalMotivo, evaluateApproval, policyFromOrg, totalInPolicyCurrency } from './quote-approval';
+import { approvalMotivo, evaluateApproval, policyFromOrg, totalForPolicy } from './quote-approval';
 import { cancelUsage, reserveUsage } from './billing';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
 
@@ -319,7 +319,7 @@ export async function createCotizacion(
     const policy = approvalsEnabled ? policyFromOrg(org) : null;
     const verdict = evaluateApproval(
         items,
-        policy ? totalInPolicyCurrency(total, policy.currency, { baseCurrency, fiscalCurrency, fxRate }) : null,
+        await totalForPolicy(total, policy, { baseCurrency, fiscalCurrency, fxRate }),
         policy,
     );
     const needsApproval = !!input.send && verdict.needed;
@@ -332,6 +332,10 @@ export async function createCotizacion(
     const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
     const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
     const sendNow = !!input.send && !needsApproval;
+
+    // Antes de reservar el envío: si esta lectura falla, no queda un envío
+    // consumido sin cotización.
+    const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
 
     // Regla 17: un envío consume el medidor ANTES del efecto. Crear con
     // "Enviar" no lo reservaba (solo lo hacía la acción `send`), así que el plan
@@ -353,7 +357,6 @@ export async function createCotizacion(
     // Quién la creó (user_id de la sesión) — null en creación vía API key
     // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
     const creadoPor = currentUserId();
-    const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
     const cotId = crypto.randomUUID();
     const prefix = String(org.quote_prefix || 'COT');
 
@@ -376,10 +379,9 @@ export async function createCotizacion(
                  retencion_total, retenciones_snapshot)
             values
                 (${cotId}, ${orgId}, ${clienteId},
-                 ${prefix} || '-' || lpad((
-                     select coalesce(max(substring(folio from '-([0-9]{1,9})$')::bigint), 0) + 1
-                       from cotizaciones where org_id = ${orgId}
-                 )::text, 4, '0'),
+                 (select ${prefix} || '-' || lpad(s.n::text, greatest(4, length(s.n::text)), '0')
+                    from (select coalesce(max(substring(folio from '-([0-9]{1,9})$')::bigint), 0) + 1 as n
+                            from cotizaciones where org_id = ${orgId}) s),
                  ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},

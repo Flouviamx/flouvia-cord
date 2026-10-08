@@ -56,7 +56,9 @@ let draft = null;
 if (hasAccess && draftId) {
     draft = await getFacturaDetalle(draftId);
     if (!draft) return Astro.redirect('/app/facturas/nueva');
-    if (draft.estado !== 'draft' || draft.invoiceNumber) return Astro.redirect(`/app/facturas/${draftId}`);
+    // Con folio solo se edita una emisión que falló con CERTEZA (rechazo local o
+    // del PAC): no existe comprobante y se reintenta con el mismo folio.
+    if (draft.estado !== 'draft' || (draft.invoiceNumber && !draft.corregible)) return Astro.redirect(`/app/facturas/${draftId}`);
 }
 const preselectCliente = !draft ? (Astro.url.searchParams.get('cliente') || null) : null;
 
