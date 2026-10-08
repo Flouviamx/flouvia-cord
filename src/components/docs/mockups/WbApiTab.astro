@@ -1,0 +1,145 @@
+---
+// Pieza interna (no es un mockup registrado): el contenido de la pestaña API del
+// Workbench — tarjeta "Claves de API" con el selector Prueba/Vivo, el límite del
+// plan, "+ Generar clave" y la tabla de llaves. Calca de la rama `tab === 'api'`
+// de src/pages/app/wb/[tab].astro (clases .dev-card / .key-table de
+// developers.css, en su versión navy de workbench.css). La usan DmApiKeys y
+// DmTestKeyCreated.
+//
+// El token sigue el formato real de /api/keys: prefijo de 16 caracteres
+// (`sk_live_` + 8 hex), puntos y los últimos 4. La app pinta 20 puntos y la
+// columna los recorta; aquí van menos para que los últimos 4 se lean.
+import { dmT, tpl, type DmLang } from './format';
+
+export interface WbKeyRow {
+    nombre: string;
+    mode: 'test' | 'live';
+    type: 'secret' | 'restricted' | 'publishable' | 'oauth';
+    prefix?: string;
+    last4?: string;
+    /** 'read' | 'write' para sk_/pk_; número de recursos para rk_. */
+    scope: 'read' | 'write' | number;
+    ips?: number;
+    vence?: string;
+    ultimoUso: string | null;
+    creada: string;
+    revocada?: boolean;
+    nueva?: boolean;
+}
+interface Props {
+    lang: DmLang;
+    rows: WbKeyRow[];
+    /** Modo del selector Prueba/Vivo. */
+    mode: 'test' | 'live';
+    plan: string;
+    limite: number;
+}
+const { lang, rows, mode, plan, limite } = Astro.props;
+const strip = (s: string) => s.replace(/<[^>]+>/g, '');
+const activas = rows.filter((r) => !r.revocada && r.type !== 'oauth').length;
+---
+<div class="wbapi">
+    <div class="wbapi-head">
+        <div class="wbapi-titles">
+            <span class="wbapi-title">{dmT(lang, 'set.api.claves_titulo')}</span>
+            <span class="wbapi-sub">{strip(dmT(lang, 'set.api.claves_sub'))}</span>
+        </div>
+        <div class="wbapi-actions">
+            <span class="wbm-seg"><span class:list={{ 'is-on': mode === 'test' }}>{dmT(lang, 'set.api.prueba')}</span><span class:list={{ 'is-on': mode === 'live' }}>{dmT(lang, 'set.api.vivo')}</span></span>
+            <span class="wbapi-limit">{tpl(dmT(lang, 'set.api.plan_limite'), { plan })} <b>{activas}/{limite}</b></span>
+            <span class="wbm-btn wbm-btn-solid">{dmT(lang, 'set.api.generar_clave')}</span>
+        </div>
+    </div>
+
+    <div class="wbapi-table">
+        <div class="wbapi-tr wbapi-th">
+            <span>{dmT(lang, 'set.api.th_nombre')}</span>
+            <span>{dmT(lang, 'set.api.th_token')}</span>
+            <span>{dmT(lang, 'set.api.th_permisos')}</span>
+            <span>{dmT(lang, 'set.api.th_ultimo_uso')}</span>
+            <span>{dmT(lang, 'set.api.th_creacion')}</span>
+            <span></span>
+        </div>
+        {rows.map((k) => (
+            <div class:list={['wbapi-tr', { 'is-revoked': k.revocada, 'is-new': k.nueva }]}>
+                <span class="wbapi-name">
+                    <span class="wbapi-nm">{k.nombre}</span>
+                    <span class="wbapi-tags">
+                        {k.type === 'oauth'
+                            ? <span class="wbm-pill sec">{dmT(lang, 'set.api.oauth_tag')}</span>
+                            : <span class:list={['wbm-pill', k.mode]}>{k.mode === 'test' ? dmT(lang, 'set.api.prueba') : dmT(lang, 'set.api.vivo')}</span>}
+                        {k.type === 'restricted' && <span class="wbm-pill res">{dmT(lang, 'set.api.restringida')}</span>}
+                        {k.type === 'secret' && <span class="wbm-pill sec">{dmT(lang, 'set.api.secreta')}</span>}
+                        {k.type === 'publishable' && <span class="wbm-pill pub">{dmT(lang, 'set.api.publica')}</span>}
+                        {k.ips ? <span class="wbm-pill sec">{tpl(dmT(lang, 'set.api.ips_tag'), { n: k.ips })}</span> : null}
+                    </span>
+                    {k.vence && !k.revocada && <span class="wbapi-expiry">{tpl(dmT(lang, 'set.api.vence_el'), { fecha: k.vence })}</span>}
+                </span>
+                {k.type === 'oauth'
+                    ? <span class="wbapi-muted">{dmT(lang, 'set.api.oauth_conexion')}</span>
+                    : <span class="wbapi-token wbm-mono"><span class="wbapi-pre">{k.prefix}</span><span class="wbapi-dots">••••</span><span class="wbapi-l4">{k.last4}</span></span>}
+                {typeof k.scope === 'number'
+                    ? <span class="wbm-pill write">{tpl(dmT(lang, 'set.api.recursos'), { n: k.scope })}</span>
+                    : <span class:list={['wbm-pill', k.scope]}>{k.scope === 'write' ? dmT(lang, 'set.api.escritura') : dmT(lang, 'set.api.lectura')}</span>}
+                <span class="wbapi-muted">{k.ultimoUso ?? dmT(lang, 'set.api.sin_uso')}</span>
+                <span class="wbapi-muted">{k.creada}</span>
+                <span class="wbapi-act">
+                    {k.revocada
+                        ? <span class="wbapi-revoked">{dmT(lang, 'set.api.revocada')}</span>
+                        : <>
+                            {k.type !== 'oauth' && <span class="wbapi-btn wbapi-opt">{dmT(lang, 'set.api.editar')}</span>}
+                            {k.type !== 'oauth' && <span class="wbapi-btn wbapi-opt">{dmT(lang, 'set.api.rotar')}</span>}
+                            <span class="wbapi-btn">{dmT(lang, 'set.api.revocar')}</span>
+                        </>}
+                </span>
+            </div>
+        ))}
+    </div>
+</div>
+
+<style is:global>
+    .wbapi { background: var(--wbm-surface); border: 1px solid var(--wbm-border); border-radius: 12px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+    .wbapi-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--wbm-border); }
+    .wbapi-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 46ch; }
+    .wbapi-title { font-size: 15px; font-weight: 600; color: var(--wbm-text); letter-spacing: -0.01em; }
+    .wbapi-sub { font-size: 10.5px; line-height: 1.5; color: var(--wbm-muted); }
+    .wbapi-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+    .wbapi-limit { font-size: 10.5px; color: var(--wbm-muted); white-space: nowrap; }
+    .wbapi-limit b { color: var(--wbm-text); font-variant-numeric: tabular-nums; }
+    .wbapi-table { border: 1px solid var(--wbm-border); border-radius: 10px; overflow: hidden; }
+    .wbapi-tr { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(150px, 1.4fr) 76px minmax(0, 0.75fr) minmax(0, 0.7fr) auto; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--wbm-border); font-size: 11.5px; min-width: 0; }
+    .wbapi-tr:last-child { border-bottom: 0; }
+    .wbapi-tr > * { min-width: 0; }
+    .wbapi-th { font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.38); background: var(--wbm-surface-2); padding-top: 8px; padding-bottom: 8px; }
+    .wbapi-tr.is-revoked { opacity: 0.5; }
+    .wbapi-tr.is-new { background: rgba(107, 155, 242, 0.08); box-shadow: inset 2px 0 0 var(--wbm-blue); }
+    .wbapi-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-weight: 600; color: var(--wbm-text); }
+    .wbapi-nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .wbapi-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .wbapi-expiry { flex-basis: 100%; font-size: 10px; font-weight: 500; color: rgba(255, 255, 255, 0.5); white-space: nowrap; }
+    .wbapi-token { display: flex; font-size: 10px; color: var(--wbm-muted); white-space: nowrap; }
+    .wbapi-pre { min-width: 0; overflow: hidden; text-overflow: clip; }
+    .wbapi-l4 { flex-shrink: 0; color: var(--wbm-text); }
+    .wbapi-dots { flex-shrink: 0; letter-spacing: -0.06em; opacity: 0.6; margin: 0 1px; }
+    .wbapi-muted { font-size: 10.5px; color: rgba(255, 255, 255, 0.42); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wbapi-tr > .wbm-pill { justify-self: start; }
+    .wbapi-act { display: flex; justify-content: flex-end; gap: 5px; }
+    .wbapi-btn { font-size: 10.5px; font-weight: 600; color: var(--wbm-muted); border: 1px solid var(--wbm-border); border-radius: 7px; padding: 4px 9px; white-space: nowrap; }
+    .wbapi-revoked { font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #f87171; background: rgba(239, 68, 68, 0.12); padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+
+    @container dm (max-width: 760px) {
+        .wbapi-opt { display: none; }
+    }
+    /* Angosto: igual que developers.css (@media 600px) — sin encabezado, cada
+       llave en dos filas: nombre + acción arriba, token y metadatos abajo. */
+    @container dm (max-width: 600px) {
+        .wbapi-head { flex-direction: column; align-items: stretch; }
+        .wbapi-actions { justify-content: flex-start; }
+        .wbapi-th { display: none; }
+        .wbapi-tr { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 11px 12px; }
+        .wbapi-name { grid-column: 1; grid-row: 1; }
+        .wbapi-act { grid-column: 2; grid-row: 1; }
+        .wbapi-token, .wbapi-tr > .wbapi-muted:nth-child(2) { grid-column: 1 / -1; }
+        .wbapi-tr > .wbapi-muted:nth-child(5) { display: none; }
+    }
+</style>

@@ -15,18 +15,20 @@ interface Props {
     lang: DmLang;
     /** Pestaña activa: resumen · webhooks · eventos · api · registros · salud. */
     tab: 'resumen' | 'webhooks' | 'eventos' | 'api' | 'registros' | 'salud';
+    /** Pantalla completa (⤢): sin grabber y con el icono de contraer. */
+    max?: boolean;
     class?: string;
 }
-const { lang, tab, class: cls } = Astro.props;
+const { lang, tab, max = false, class: cls } = Astro.props;
 const TABS = ['resumen', 'webhooks', 'eventos', 'api', 'registros', 'salud'] as const;
 ---
-<div class:list={['wbm', cls]}>
-    <div class="wbm-grab"><span></span></div>
+<div class:list={['wbm', { 'is-max': max }, cls]}>
+    {!max && <div class="wbm-grab"><span></span></div>}
     <div class="wbm-tabs">
         <span class="wbm-tablist">{TABS.map((id) => <span class:list={['wbm-tab', { 'is-on': id === tab }]}>{dmT(lang, `wb.tab.${id}`)}</span>)}</span>
         <span class="wbm-chrome">
             <span class="wbm-ico"><DmIcon name="more" /></span>
-            <span class="wbm-ico dm-hide-narrow"><DmIcon name="expand" /></span>
+            <span class="wbm-ico dm-hide-narrow"><DmIcon name={max ? 'shrink' : 'expand'} /></span>
             <span class="wbm-ico"><DmIcon name="x" /></span>
         </span>
     </div>
@@ -62,6 +64,8 @@ const TABS = ['resumen', 'webhooks', 'eventos', 'api', 'registros', 'salud'] as 
             inset 0 0 0 1px rgba(255, 255, 255, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
+    .wbm.is-max { border-radius: 0; box-shadow: none; flex: 1 0 auto; }
+    .wbm.is-max .wbm-tabs { height: 42px; }
     .wbm-grab { display: flex; justify-content: center; align-items: center; height: 13px; flex-shrink: 0; }
     .wbm-grab span { width: 30px; height: 4px; border-radius: 100px; background: rgba(255, 255, 255, 0.16); }
     .wbm-tabs { display: flex; align-items: center; height: 36px; padding: 0 10px; border-bottom: 1px solid var(--wbm-line); flex-shrink: 0; min-width: 0; }

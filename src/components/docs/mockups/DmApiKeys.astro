@@ -1,0 +1,62 @@
+---
+// Mockup: la pestaña API del Workbench en pantalla completa (⤢), con la lista
+// de llaves de una cuenta en plan Profesional. Calca de la rama `tab === 'api'`
+// de src/pages/app/wb/[tab].astro: cada fila lleva modo (Prueba/Vivo), tipo
+// (Secreta, Restringida, Pública, OAuth), token enmascarado con los últimos 4,
+// permisos, último uso, creación y, si aplica, IPs y vencimiento. El límite de
+// 20 llaves activas es el de API_KEY_LIMITS.pro (src/lib/entitlements.ts).
+import DocsMockup from './DocsMockup.astro';
+import WbPanel from './WbPanel.astro';
+import WbApiTab, { type WbKeyRow } from './WbApiTab.astro';
+import { pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const DATA: { es: { caption: string; rows: WbKeyRow[] }; en: { caption: string; rows: WbKeyRow[] } } = {
+    es: {
+        caption: 'La pestaña API del Workbench en pantalla completa: llaves secretas, restringida y pública en modo vivo y prueba, cada una con su token enmascarado y sus últimos 4 caracteres, permisos, último uso, creación y vencimiento, más una conexión OAuth y una llave revocada.',
+        rows: [
+            { nombre: 'Producción — ERP', mode: 'live', type: 'secret', prefix: 'sk_live_9f3c2a71', last4: 'a4d2', scope: 'write', ultimoUso: 'hoy, 11:42', creada: '12 mar 2026' },
+            { nombre: 'Proxy de Elements', mode: 'live', type: 'restricted', prefix: 'rk_live_4be81d0c', last4: '7f19', scope: 4, ips: 1, vence: '6 ene 2027', ultimoUso: 'hoy, 11:39', creada: '8 oct 2026' },
+            { nombre: 'Sitio web', mode: 'live', type: 'publishable', prefix: 'pk_live_02d6e9b4', last4: 'c81e', scope: 'read', ultimoUso: 'ayer, 18:20', creada: '2 jun 2026' },
+            { nombre: 'Pruebas', mode: 'test', type: 'secret', prefix: 'sk_test_7a90f3e2', last4: '05bd', scope: 'write', ultimoUso: 'hoy, 09:15', creada: '20 feb 2026' },
+            { nombre: 'Zapier', mode: 'live', type: 'oauth', scope: 'write', ultimoUso: 'hoy, 10:58', creada: '14 abr 2026' },
+            { nombre: 'Integración anterior', mode: 'live', type: 'secret', prefix: 'sk_live_1c4d77a0', last4: '9e33', scope: 'read', ultimoUso: '3 ago 2026', creada: '9 ene 2026', revocada: true },
+        ],
+    },
+    en: {
+        caption: 'The Workbench API tab in full screen: secret, restricted and publishable keys in live and test mode, each with its masked token and last 4 characters, permissions, last use, creation and expiration date, plus an OAuth connection and a revoked key.',
+        rows: [
+            { nombre: 'Production — ERP', mode: 'live', type: 'secret', prefix: 'sk_live_9f3c2a71', last4: 'a4d2', scope: 'write', ultimoUso: 'today, 11:42', creada: 'Mar 12, 2026' },
+            { nombre: 'Elements proxy', mode: 'live', type: 'restricted', prefix: 'rk_live_4be81d0c', last4: '7f19', scope: 4, ips: 1, vence: 'Jan 6, 2027', ultimoUso: 'today, 11:39', creada: 'Oct 8, 2026' },
+            { nombre: 'Website', mode: 'live', type: 'publishable', prefix: 'pk_live_02d6e9b4', last4: 'c81e', scope: 'read', ultimoUso: 'yesterday, 18:20', creada: 'Jun 2, 2026' },
+            { nombre: 'Testing', mode: 'test', type: 'secret', prefix: 'sk_test_7a90f3e2', last4: '05bd', scope: 'write', ultimoUso: 'today, 09:15', creada: 'Feb 20, 2026' },
+            { nombre: 'Zapier', mode: 'live', type: 'oauth', scope: 'write', ultimoUso: 'today, 10:58', creada: 'Apr 14, 2026' },
+            { nombre: 'Previous integration', mode: 'live', type: 'secret', prefix: 'sk_live_1c4d77a0', last4: '9e33', scope: 'read', ultimoUso: 'Aug 3, 2026', creada: 'Jan 9, 2026', revocada: true },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="none" caption={caption} class="dm-wbfull-figure">
+    <WbPanel lang={lang} tab="api" max>
+        <WbApiTab lang={lang} rows={d.rows} mode="live" plan={lang === 'en' ? 'Professional' : 'Profesional'} limite={20} />
+    </WbPanel>
+</DocsMockup>
+
+<style is:global>
+    /* Pantalla completa: la hoja navy ES la ventana. */
+    .dm-wbfull-figure .dm-window { background: #0a1524; }
+    .dm-wbfull-figure .dm-content { padding: 0; display: flex; flex-direction: column; }
+    .dm-wbfull-figure .dm-app, .dm-wbfull-figure .dm-main { flex: 1 0 auto; }
+    .dm-wbfull-figure .wbm-body { padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-wbfull-figure .wbm-tabs { padding-right: calc(10px + var(--dm-bleed)); }
+    @container dm (max-width: 520px) {
+        .dm-wbfull-figure .wbm-body { padding-right: calc(12px + var(--dm-bleed)); }
+    }
+</style>
