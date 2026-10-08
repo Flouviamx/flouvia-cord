@@ -50,7 +50,7 @@ Hay 41 tipos. La columna **Objeto** es el valor de `object` en el historial y de
 | `product.created` | `product` | Se crea un producto. |
 | `product.updated` | `product` | Se edita un producto. |
 | `product.deleted` | `product` | Se elimina un producto. |
-| `task.created` | `task` | Se crea una tarea desde la app, la API, el MCP o un workflow. Las que Cord crea sola (contracargo, reembolso SPEI) no lo emiten. |
+| `task.created` | `task` | Se crea una tarea desde la app, la API, el MCP o un workflow, o la crea Cord sola (contracargo, reembolso SPEI). Trae `cotizacion_id` y `factura_id` (o `null`). |
 | `task.completed` | `task` | Se marca una tarea como hecha. |
 | `promise.created` | `promise` | Se registra una promesa de pago. |
 | `promise.kept` | `promise` | La promesa se cumple. |

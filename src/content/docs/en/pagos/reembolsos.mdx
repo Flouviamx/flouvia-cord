@@ -46,8 +46,12 @@ The refund is processed **automatically** as soon as you confirm it — no manua
 In Cord, the SPEI refund flow requires a manual transfer by the business. Requesting it in the dashboard does not itself return the money:
 
 1. Gets recorded in Cord as "pending, manual refund".
-2. Cord automatically creates in [Tasks](/en/docs/gestion/tareas) a task titled "Transferir reembolso SPEI" with the amount: high priority, linked to the quote, and assigned to whoever requested the refund.
+2. Cord automatically creates in [Tasks](/en/docs/gestion/tareas) a task titled "Send the [amount] SPEI refund" (in your account's language): high priority, linked to the quote, and assigned to whoever requested the refund. It emits **A task is created** (`task.created`) like any task.
 3. You make the transfer yourself through your normal bank account, and mark the task as completed.
+
+<Callout type="warning">
+Completing the task closes your to-do, but **doesn't record the refund as paid**: in Cord it stays "pending, manual" and **A refund succeeds** (`refund.succeeded`) isn't emitted. The amount stays set aside, so it can't be refunded again. Keep the transfer receipt on your side.
+</Callout>
 
 ## What happens to your money
 

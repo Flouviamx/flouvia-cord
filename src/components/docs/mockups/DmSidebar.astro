@@ -4,15 +4,19 @@
 // copian a mano. La usa DocsMockup con chrome="full".
 import { SIDEBAR_NAV } from '../../../lib/sidebar-nav';
 import DmIcon from './DmIcon.astro';
-import { dmT, DEMO, type DmLang } from './format';
+import { dmT, DEMO, type DmLang, type DmSidebarBadges } from './format';
 
 interface Props {
     lang: DmLang;
     /** id de SIDEBAR_NAV activo: dashboard, cotizaciones, clientes, productos, facturas, cobros, cobranza, ai-ar, informes, desempeno, workflows. */
     active?: string;
     org?: string;
-    /** Contadores accionables, como en la app: cotizaciones vistas sin responder y cuentas vencidas. */
-    badges?: { seguimiento?: number; vencidas?: number };
+    /**
+     * Contadores accionables, como en la app: cotizaciones vistas sin responder,
+     * cuentas vencidas y tareas tuyas o sin dueño para hoy (`tareasVencidas` > 0
+     * lo pinta en rojo, igual que Sidebar.astro).
+     */
+    badges?: DmSidebarBadges;
     /** Rail colapsado (68 px en la app): solo iconos; los contadores se vuelven un punto. */
     rail?: boolean;
 }
@@ -34,12 +38,13 @@ const inSection = (it: (typeof SIDEBAR_NAV)[number]['items'][number]) => it.id =
             {group.label && <div class="dm-sb-label">{dmT(lang, group.label)}</div>}
             {group.items.map((it) => {
                 const n = it.badge ? badges[it.badge] ?? 0 : 0;
+                const danger = it.badge === 'vencidas' || (it.badge === 'tareas' && (badges.tareasVencidas ?? 0) > 0);
                 return (
                     <Fragment>
                         <div class:list={['dm-sb-item', { 'is-active': it.id === active }]}>
                             <DmIcon name={it.icon} />
                             <span class="dm-sb-item-label">{dmT(lang, it.label)}</span>
-                            {n > 0 && <span class:list={['dm-sb-badge', { 'is-danger': it.badge === 'vencidas' }]}>{n}</span>}
+                            {n > 0 && <span class:list={['dm-sb-badge', { 'is-danger': danger }]}>{n}</span>}
                         </div>
                         {it.children && inSection(it) && (
                             <div class="dm-sb-sub">

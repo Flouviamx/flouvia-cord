@@ -18,7 +18,7 @@ prerequisites: ["Settings permission","Slack, Teams, WhatsApp or HubSpot connect
 
 | Action | What it does | Needs |
 |---|---|---|
-| **Create a task** | Adds a follow-up task in **Tasks**, linked to the quote when the event has one. | Nothing |
+| **Create a task** | Adds a follow-up task in **Tasks**, linked to the event's quote or invoice. | Nothing |
 | **Email the team** | Emails the account owner or the whole team. | Nothing |
 | **Send a Slack message** | Posts a message to your Slack channel. | Slack connected |
 | **Add a note in HubSpot** | Adds a note to the quote's Deal or the client's Company. | HubSpot connected |
@@ -48,7 +48,8 @@ Adds a task for your team in **Tasks**, just as if you had created it by hand.
 - If the trigger is about a quote (sent, approved, paid, partial payment, invoiced, etc.), the task is linked to that quote: in **Tasks** it shows the quote number and client as a link to the quote.
 - If the event carries a related quote, the task is also linked to it: a dispute or refund on a quote, an invoice created from a quote, a payment promise, or a task linked to a quote.
 - On **A draft is deleted** it is not linked, because the quote no longer exists.
-- In every other case (clients, products, payouts, scheduled triggers, invoices without a quote, standalone tasks) the task is standalone. It is never linked to the invoice itself.
+- If the trigger is about an invoice (issued, sent, paid, payment fails, about to be due, overdue, past due for days, voided, or marked uncollectible), the task is linked to that invoice: in **Tasks** it shows the invoice number and client as a link to the invoice. If the invoice came from a quote, it's linked to both.
+- In every other case (clients, products, payouts, scheduled triggers, standalone tasks) the task is standalone.
 
 **Assignee:** the task is created unassigned with normal priority; assign it or raise its priority from **Tasks**. While it has no assignee, the [email reminder](/en/docs/gestion/tareas#email-reminder) goes to the account owner.
 
@@ -56,7 +57,7 @@ Adds a task for your team in **Tasks**, just as if you had created it by hand.
 
 - "The task title came out empty.": the title only had event data and all of it arrived empty. Add fixed text, for example "Follow-up: `{{cliente}}`".
 - "Workflows reached their hourly limit of tasks.": your workflows created 120 tasks in the last hour. See [Limits](/en/docs/automatizacion/workflows/limites).
-- "The task could not be created.": Cord rejected the task, for example because the quote it was going to be linked to no longer exists.
+- "The task could not be created.": Cord rejected the task, for example because the quote or invoice it was going to be linked to no longer exists.
 
 <Callout type="info">
 Creating a task is also an event. If you have a workflow with the **A task is created** trigger, it will react to tasks created by your other workflows. Use the condition "Who caused it is not Another workflow" if you do not want that.

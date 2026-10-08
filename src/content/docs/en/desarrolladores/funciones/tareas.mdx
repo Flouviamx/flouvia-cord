@@ -26,6 +26,7 @@ The Tasks API has a single method: `POST /api/v1/tareas`, to create a task. Ther
 | `titulo` | Yes | Task text. The first 200 characters are stored; the rest is dropped without an error. |
 | `due_date` | No | Due date formatted as `YYYY-MM-DD`. |
 | `cotizacion_id` | No | UUID of a quote from your organization to link the task to. |
+| `factura_id` | No | UUID of an invoice from your organization (the `id` from [`/api/v1/facturas`](/en/docs/desarrolladores/funciones/facturas)) to link the task to. It can go together with `cotizacion_id`. |
 
 Any other field in the body (for example `asignado_a`, `prioridad`, or `notas`) is ignored without an error: assignee, priority, and notes can't be set through the API.
 
@@ -49,14 +50,14 @@ The task is created **unassigned** with normal priority. In the app, its assigne
 
 With a test key (`sk_test_`) the task is created in test mode, which doesn't send reminders.
 
-Every new task emits the `task.created` event. When someone marks it done in the app, `task.completed` is emitted.
+Every new task emits the `task.created` event, with `cotizacion_id` and `factura_id` (or `null`). Tasks Cord creates on its own (chargeback and SPEI refund) emit it too. When someone marks it done in the app, `task.completed` is emitted.
 
 ## Possible errors
 
 | Code | When |
 |---|---|
 | `invalid_request` (400) | `titulo` is missing (or empty), or `due_date` isn't a real date formatted as `YYYY-MM-DD` (for example, `2026-02-30` is rejected). |
-| `not_found` (404) | `cotizacion_id` isn't a UUID or isn't a quote from your organization. |
+| `not_found` (404) | `cotizacion_id` or `factura_id` isn't a UUID, or isn't a quote or invoice from your organization. The message is in your account's language. |
 | `invalid_json` (400) | The body isn't valid JSON. |
 | `insufficient_scope` / `insufficient_permissions` (403) | The key is read-only, or it's a restricted key without `write` on `tareas`. |
 

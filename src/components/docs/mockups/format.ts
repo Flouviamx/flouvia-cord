@@ -77,3 +77,6 @@ export const DEMO = {
     total: 196469.2,
     currency: 'MXN',
 } as const;
+
+/** Contadores de la sidebar de un mockup; mismas llaves que SidebarBadge de src/lib/sidebar-nav.ts. */
+export interface DmSidebarBadges { seguimiento?: number; vencidas?: number; tareas?: number; tareasVencidas?: number }

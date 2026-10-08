@@ -185,10 +185,19 @@ existe pero es ajeno ya es filtrar entre negocios.
                    el SSR y el fragmento /app/tareas/lista (`partial = true`), que el
                    navegador pide después de cada cambio en vez de recargar la página.
                    Leer: todos los miembros. Escribir: Cotizaciones, Cobranza o Clientes
-                   (TASK_PERMISSIONS). Sidebar: G T, badge con lo tuyo o sin dueño que
-                   vence hoy o antes (rojo solo si hay vencidas). Read-model en
-                   src/lib/tasks-db.ts; reglas de fecha (día civil del negocio) en
-                   src/lib/tasks.ts.
+                   (TASK_PERMISSIONS en src/lib/tasks.ts; memberCanWriteTasks() es el
+                   criterio del endpoint, del menú Crear › Tarea y del tablero). Sidebar:
+                   G T, badge con lo tuyo o sin dueño que vence hoy o antes (rojo solo si
+                   hay vencidas). Read-model en src/lib/tasks-db.ts; reglas de fecha (día
+                   civil del negocio) en src/lib/tasks.ts. Pinta 200 por vista y dice
+                   "Se muestran N de M" con "Mostrar más" (de 200 en 200, ?limit= en la
+                   URL, tope TASK_LIST_MAX = 1000). Una tarea liga cotización
+                   (`cotizacion_id`) y/o factura (`documento_id`; API/MCP `factura_id`),
+                   las dos verificadas contra la org. Las automáticas (contracargo,
+                   reembolso SPEI) van por systemTaskInsert() dentro de la transacción
+                   del dinero y emiten task.created con emitTaskCreated(). Recordatorio:
+                   src/pages/api/cron/tareas.ts, a lo sumo un correo por persona y día
+                   (`org_members.tareas_avisadas_el` + `tareas.recordada_el`).
 /app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
                    del plan. Permiso `ajustes`.
 /app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos

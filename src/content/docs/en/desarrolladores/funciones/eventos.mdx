@@ -50,7 +50,7 @@ There are 41 types. The **Object** column is the value of `object` in the histor
 | `product.created` | `product` | A product is created. |
 | `product.updated` | `product` | A product is edited. |
 | `product.deleted` | `product` | A product is deleted. |
-| `task.created` | `task` | A task is created from the app, the API, MCP, or a workflow. Tasks Cord creates on its own (chargeback, SPEI refund) don't emit it. |
+| `task.created` | `task` | A task is created from the app, the API, MCP, or a workflow, or by Cord on its own (chargeback, SPEI refund). Carries `cotizacion_id` and `factura_id` (or `null`). |
 | `task.completed` | `task` | A task is marked done. |
 | `promise.created` | `promise` | A payment promise is recorded. |
 | `promise.kept` | `promise` | The promise is kept. |
