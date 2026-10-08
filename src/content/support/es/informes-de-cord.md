@@ -101,7 +101,7 @@ En el Inicio y en todos los informes, **Cobrado** es el dinero que entró por la
 
 **Acabo de registrar algo y no aparece.** Los informes se recalculan cada minuto (**Recompra por cohorte**, cada cinco). Espera un momento y recarga.
 
-**Una persona del equipo no aparece en Ventas por vendedor.** El informe lista a los miembros activos. Si alguien dejó el equipo, sus ventas siguen sumando en el total, pero ya no tiene fila propia.
+**Una persona del equipo no aparece en Ventas por vendedor.** El informe lista a los miembros activos. Si alguien dejó el equipo, sus ventas pasan a la fila **Exmiembros del equipo**, que suma junto con las demás en el total.
 
 **Las cifras están en una divisa que no es la mía.** Todos los importes se expresan en la moneda base de tu negocio. Ve [Importes en varias divisas y zona horaria](/soporte/importes-en-varias-divisas-informes).
 

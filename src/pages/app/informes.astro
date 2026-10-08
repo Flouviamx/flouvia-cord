@@ -253,14 +253,14 @@ import { iconInner } from '../../lib/icons';
             setChart('comercial-descuento', { items: D.discounts.map((row: any) => ({ label: row.nombre, value: row.cedido, sub: `${Math.round(row.pct)}%` })) });
             setChart('comercial-tiempo-etapa', { items: D.stageTiming.map((row: any) => ({ label: labels.etapa?.[row.key] ?? row.key, value: row.dias, sub: es ? 'días' : 'days' })) });
             clearAndRows(widget('comercial-detenidas')?.querySelector<HTMLElement>('.report-list'), D.stalled, (row) => [row.empresa, `${row.folio} · ${row.dias}d`, formatMoney(row.total, locale), `/app/cotizaciones/${row.id}`]);
-            paintMetric('comercial-opcional-atencion', D.stalled.length);
+            paintMetric('comercial-opcional-atencion', D.stalledTotal ?? D.stalled.length);
         } else if (reportId === 'clientes') {
             const D = wrapped.analytics;
             setChart('clientes-ranking', { items: D.clientes.map((row: any) => ({ label: row.empresa, value: row.cerrado, sub: `${row.tasa}%` })) });
             clearAndRows(widget('clientes-tabla')?.querySelector<HTMLElement>('.report-list'), D.clientes, (row) => [row.empresa, `${row.aprobadas} / ${row.cotizaciones} · ${row.tasa}%`, formatMoney(row.cerrado, locale), row.id ? `/app/clientes/${row.id}` : undefined]);
             setChart('clientes-cohortes', { items: D.cohortes.map((row: any) => ({ label: row.tipo === 'nuevo' ? (es ? 'Nuevos' : 'New') : (es ? 'Recurrentes' : 'Returning'), value: row.cerrado, sub: String(row.clientes) })) });
             clearAndRows(widget('clientes-riesgo')?.querySelector<HTMLElement>('.report-list'), D.enRiesgo, (row) => [row.empresa, `${row.nivel} · ${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, formatMoney(row.cerrado, locale), `/app/clientes/${row.id}`]);
-            paintMetric('clientes-opcional-riesgo', D.enRiesgo.length);
+            paintMetric('clientes-opcional-riesgo', D.enRiesgoTotal ?? D.enRiesgo.length);
         } else if (reportId === 'productos') {
             const D = wrapped.analytics;
             setChart('productos-importe', { items: D.productos.map((row: any) => ({ label: row.nombre, value: row.importe, sub: String(row.cotizaciones) })) });

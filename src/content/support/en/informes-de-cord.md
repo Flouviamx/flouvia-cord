@@ -101,7 +101,7 @@ On Home and in every report, **Collected** is the money that came in, by payment
 
 **I just recorded something and it doesn't show.** Reports are recalculated every minute (**Repeat purchase by cohort**, every five). Wait a moment and reload.
 
-**A team member doesn't appear in Sales by team member.** The report lists active members. If someone left the team, their sales still count in the total, but they no longer have their own row.
+**A team member doesn't appear in Sales by team member.** The report lists active members. If someone left the team, their sales move to the **Former team members** row, which adds into the total with the rest.
 
 **The figures are in a currency that isn't mine.** All amounts are expressed in your business's base currency. See [Amounts in multiple currencies and time zone](/en/support/importes-en-varias-divisas-informes).
 

@@ -309,7 +309,7 @@ import { iconInner } from '../../lib/icons';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCfo}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.flujo_titulo')} <ScopeTag scope="hoy" /></h2>
@@ -321,7 +321,7 @@ import { iconInner } from '../../lib/icons';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-widget-tone="finance" data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canCfo}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.salud_titulo')} <ScopeTag scope="hoy" /></h2>
@@ -370,7 +370,7 @@ import { iconInner } from '../../lib/icons';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="2">
+        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCfo}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')} <ScopeTag scope="hoy" /></h2>

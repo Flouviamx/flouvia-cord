@@ -1693,7 +1693,7 @@ export async function getFacturasResumen() {
         from documentos_fiscales d
        where d.org_id = ${orgId}`,
         // Las que más pesan: mayor saldo vencido primero, para cobrar donde importa.
-        sql`select d.id, d.invoice_number as folio, coalesce(cl.empresa, 'Sin cliente') as empresa,
+        sql`select d.id, d.invoice_number as folio, coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa,
                    d.amount_remaining * ${fx} as saldo, (${S.hoy}::date - d.due_date) as dias
             from documentos_fiscales d
             left join clientes cl on cl.id = d.cliente_id
@@ -2563,14 +2563,16 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
             group by c.status`,
         // Se considera detenido si no hubo actividad en siete días. La vigencia
         // próxima se separa para que no compita con el seguimiento general.
-        sql`select c.id, c.folio, c.total * ${fx} as total, c.status, c.vigencia,
-                coalesce(cl.empresa, 'Sin cliente') as empresa,
+        sql`select c.id, c.folio, c.total * ${fx} as total, c.status, c.vigencia, count(*) over () as total_detenidas,
+                coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa,
                 coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as ultima_actividad,
                 floor(extract(epoch from (now() - coalesce(c.viewer_last_seen, c.sent_at, c.created_at))) / 86400) as dias_sin_movimiento
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.status in ('sent','viewed')
               and coalesce(c.viewer_last_seen, c.sent_at, c.created_at) < now() - interval '7 days'
+            -- total_detenidas: el conteo REAL (la ventana corre antes del limit); el
+            -- widget "Seguimientos detenidos" lo muestra en vez del largo de esta lista.
             order by (c.total * ${fx}) desc nulls last, ultima_actividad asc limit 5`,
         sql`select c.status, count(*) as n, coalesce(sum(c.total * ${fx}), 0) as monto
             from cotizaciones c
@@ -2589,7 +2591,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
             group by coalesce(p.nombre, it.descripcion)
             having sum(it.precio_unitario * it.cantidad) > sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
             order by (coalesce(sum(it.precio_unitario * it.cantidad * ${fx}), 0) - coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad * ${fx}), 0)) desc limit 5`,
-        sql`select cl.id, coalesce(cl.empresa, 'Sin cliente') as empresa,
+        sql`select cl.id, coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa,
                 count(*) filter (where c.status in ('sent','viewed')) as abiertas,
                 coalesce(sum(c.total * ${fx}) filter (where c.status in ('sent','viewed')), 0) as pipeline,
                 count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
@@ -2597,7 +2599,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
-            group by cl.id, coalesce(cl.empresa, 'Sin cliente')
+            group by cl.id, cl.empresa
             having count(*) filter (where c.status = any(${STATUS_SALIO})) > 0
             order by pipeline desc, abiertas desc limit 5`,
     );
@@ -2613,6 +2615,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
         funnel: { sent, views, approved, paid },
         pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
+        stalledTotal: num(stalledRows[0]?.total_detenidas ?? 0),
         stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? dateOnly(r.vigencia) || null : null, dias: num(r.dias_sin_movimiento) })),
         losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
         discounts: (advanced ? discountRows : []).map((r: any) => {
@@ -2739,7 +2742,7 @@ export async function getClientReportInsights(desde: string, hasta: string) {
                 from cotizaciones c join first_quote f on f.cliente_id = c.cliente_id
                 where c.org_id = ${orgId} and c.created_at >= ${ini} and c.created_at < ${fin}
                 group by 1`,
-            sql`select cl.id, cl.empresa, cl.nivel, max(c.created_at) as ultima_actividad,
+            sql`select cl.id, cl.empresa, cl.nivel, max(c.created_at) as ultima_actividad, count(*) over () as total_riesgo,
                        count(*) filter (where c.status <> 'draft') as cotizaciones,
                        coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
                 from clientes cl join cotizaciones c on c.cliente_id = cl.id
@@ -2747,12 +2750,12 @@ export async function getClientReportInsights(desde: string, hasta: string) {
                 group by cl.id, cl.empresa, cl.nivel
                 having max(c.created_at) < now() - interval '90 days'
                 order by cerrado desc limit 10`,
-            sql`select cl.id, coalesce(cl.nivel, 'Sin nivel') as nivel,
+            sql`select cl.id, coalesce(cl.nivel, ${i18nT(currentLocale(), 'inf.x.sin_nivel')}) as nivel,
                        coalesce(sum(c.total * ${fx}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
                 from clientes cl
                 left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
                 where cl.org_id = ${orgId}
-                group by cl.id, coalesce(cl.nivel, 'Sin nivel')`,
+                group by cl.id, cl.nivel`,
         );
         const matrixMap = new Map<string, { nivel: string; comportamiento: string; clientes: number; cerrado: number }>();
         for (const row of levelRows) {
@@ -2766,6 +2769,8 @@ export async function getClientReportInsights(desde: string, hasta: string) {
         }
         return {
             cohortes: cohortRows.map((row) => ({ tipo: row.tipo as string, clientes: num(row.clientes), cotizaciones: num(row.cotizaciones), ganadas: num(row.ganadas), cerrado: num(row.cerrado) })),
+            // Conteo real: la lista se corta en 10, el widget de reactivar no.
+            enRiesgoTotal: num(riskRows[0]?.total_riesgo ?? 0),
             enRiesgo: riskRows.map((row) => ({ id: row.id as string, empresa: row.empresa as string, nivel: (row.nivel as string) || '—', cotizaciones: num(row.cotizaciones), cerrado: num(row.cerrado), ultimaActividad: String(row.ultima_actividad).slice(0, 10) })),
             matriz: [...matrixMap.values()].sort((a, b) => b.cerrado - a.cerrado),
         };
@@ -2805,7 +2810,7 @@ export async function getFinanceLevelInsights() {
         // un cliente con veinte cotizaciones no pesa veinte veces en el promedio.
         const [rows] = await withOrgTx(orgId, sql`
             with niveles as (
-                select coalesce(nivel, 'Sin nivel') as nivel, avg(descuento_pct) as descuento
+                select coalesce(nivel, '') as nivel, avg(descuento_pct) as descuento
                 from clientes where org_id = ${orgId} group by 1
             )
             select n.nivel, coalesce(n.descuento, 0) as descuento,
@@ -2813,12 +2818,12 @@ export async function getFinanceLevelInsights() {
                    count(c.id) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
                    coalesce(sum(c.total * ${quoteFx(S)}) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
             from niveles n
-            left join clientes cl on cl.org_id = ${orgId} and coalesce(cl.nivel, 'Sin nivel') = n.nivel
+            left join clientes cl on cl.org_id = ${orgId} and coalesce(cl.nivel, '') = n.nivel
             left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
             group by n.nivel, n.descuento
             order by cerrado desc`);
         return rows.map((row) => ({
-            nivel: row.nivel as string, descuento: num(row.descuento), enviadas: num(row.enviadas),
+            nivel: (row.nivel as string) || i18nT(currentLocale(), 'inf.x.sin_nivel'), descuento: num(row.descuento), enviadas: num(row.enviadas),
             ganadas: num(row.ganadas), cerrado: num(row.cerrado),
             tasa: num(row.enviadas) ? Math.round(num(row.ganadas) / num(row.enviadas) * 100) : 0,
         }));
@@ -2995,7 +3000,7 @@ async function getCobranzaUncached() {
             id: r.id as string, folio: (r.folio as string) || '—',
             origen,
             href: origen === 'factura' ? `/app/facturas/${r.id}` : `/app/cotizaciones/${r.id}`,
-            empresa: (r.empresa as string) ?? 'Sin cliente',
+            empresa: (r.empresa as string) ?? i18nT(currentLocale(), 'inf.x.sin_cliente'),
             inicial: initials((r.empresa as string) ?? '—'),
             total: tot, terminos: origen === 'factura' ? '' : termLabel(r.terminos as string),
             clienteId: (r.cliente_id as string) ?? null,
@@ -3035,7 +3040,7 @@ async function getCobranzaUncached() {
     const byCliente = new Map<string, { empresa: string; saldo: number; limite: number; n: number }>();
     for (const r of rows) {
         if (r.total === null || r.total === undefined) continue;
-        const empresa = (r.empresa as string) ?? 'Sin cliente';
+        const empresa = (r.empresa as string) ?? i18nT(currentLocale(), 'inf.x.sin_cliente');
         const key = (r.cliente_id as string) || `sin:${empresa}`;
         const cur = byCliente.get(key) ?? { empresa, saldo: 0, limite: num(r.limite_credito), n: 0 };
         cur.saldo += num(r.total); cur.n += 1;
@@ -3093,7 +3098,7 @@ async function getCFOUncached() {
     const [activos, histRows, pagoRows, carteraRows, susRows] = await withOrgTx(orgId,
         // Pipeline abierto.
         sql`select c.id, c.folio, c.total * ${fx} as total, c.status, c.cliente_id,
-                   coalesce(cl.empresa, 'Sin cliente') as empresa,
+                   coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa,
                    coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as last_act
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
@@ -3121,7 +3126,7 @@ async function getCFOUncached() {
         // pipeline: solo comparte timing.
         sql`select r.origen, r.ref_id as id, r.cliente_id, r.vence,
                    r.saldo * (case when r.origen = 'cotizacion' then ${quoteFx(S, 'c')} else ${documentFx(S, 'd')} end) as total,
-                   coalesce(cl.empresa, 'Sin cliente') as empresa,
+                   coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa,
                    coalesce(c.approved_at, c.created_at) as base_date,
                    coalesce(c.terminos, cl.terminos_default) as terminos
             from cuentas_por_cobrar r
@@ -3131,7 +3136,7 @@ async function getCFOUncached() {
             where r.org_id = ${orgId} and r.saldo > 0`,
         // MRR contratado: tres ocurrencias mensuales entran al horizonte/invariante.
         sql`select s.id, s.monto * ${currencyFx(S, 's.moneda')} as monto, s.estado, s.current_period_end, s.cancel_at_period_end,
-                   coalesce(cl.empresa, 'Sin cliente') as empresa
+                   coalesce(cl.empresa, ${i18nT(currentLocale(), 'inf.x.sin_cliente')}) as empresa
             from cotizacion_suscripciones s
             left join clientes cl on cl.id = s.cliente_id
             where s.org_id = ${orgId} and s.estado in ('active','trialing','past_due')
@@ -3755,13 +3760,13 @@ async function getCobrosUncached(orgId: string, rango?: { desde: string; hasta: 
     const recentMerged = [
         ...recent.map((r: any) => ({
             id: r.id as string, cobroId: (r.cobro_id as string) || null, folio: r.folio as string,
-            empresa: (r.empresa as string) || 'Sin cliente',
+            empresa: (r.empresa as string) || i18nT(currentLocale(), 'inf.x.sin_cliente'),
             total: Number(r.total), method: r.payment_method as string,
             paidAtRaw: r.paid_at,
         })),
         ...recRows.map((r: any) => ({
             id: r.quote_id as string, cobroId: r.id as string, folio: `${r.folio} · iguala`,
-            empresa: (r.empresa as string) || 'Sin cliente',
+            empresa: (r.empresa as string) || i18nT(currentLocale(), 'inf.x.sin_cliente'),
             total: Number(r.monto), method: r.payment_method as string,
             paidAtRaw: r.paid_at,
         })),
@@ -3832,7 +3837,7 @@ export async function getDesempeno() {
     const fx = quoteFx(S, 'cotizaciones');
 
     const [members, cierreRows, cobradoRows, recRows, sinCreadorRows] = await withOrgTx(orgId,
-        sql`select user_id, coalesce(nombre, email, 'Sin nombre') as nombre, rol
+        sql`select user_id, coalesce(nombre, email, ${i18nT(currentLocale(), 'inf.x.sin_nombre')}) as nombre, rol
             from org_members where org_id = ${orgId} and estado = 'activo' and user_id is not null
             order by case when rol = 'owner' then 0 else 1 end`,
         // Creadas / enviadas / cerradas + tiempo a cierre, por vendedor.

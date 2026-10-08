@@ -99,7 +99,7 @@ El mismo botón **Personalizar** existe en **Cobros**, **Cobranza**, **Agente de
 
 **No encuentro un widget en la biblioteca.** Tu permiso o tu plan no lo incluyen. Los widgets de análisis piden el permiso **Informes**; **Antigüedad de cartera** pide además el permiso **Cobranza** y el plan Profesional o superior; **Facturas vencidas** pide **Cobranza** y un plan con facturación; **Pipeline esperado**, el plan Profesional o superior. Si tu rol cambia, el widget aparece en cuanto recargas.
 
-**Flujo esperado, Salud del pipeline o Necesitan seguimiento se ven vacíos.** Se calculan con las métricas financieras que se incluyen desde el plan Profesional. En los planes anteriores el widget aparece, pero sin datos.
+**No veo Flujo esperado, Salud del pipeline ni Necesitan seguimiento.** Se calculan con las métricas financieras que se incluyen desde el plan Profesional, igual que Antigüedad de cartera. En Gratis y Starter no aparecen en el Inicio ni en la biblioteca; al subir de plan vuelven solos. También desaparecen si tu rol no tiene el permiso **Informes**.
 
 **Mi diseño volvió a uno anterior.** Probablemente lo cambiaste después en otro dispositivo: se queda el diseño completo más reciente, no una mezcla de los dos.
 

@@ -175,3 +175,15 @@ describe('clientes y equipo', () => {
         expect(r.rows[0]).toMatchObject({ vendedor: 'Ana', enviadas: 2, ventas: 1, vendido: 900, tasa: 50, ticket: 900, dias: 3 });
     });
 });
+
+describe('vendedores y exmiembros', () => {
+    it('lo que creó alguien que ya no está activo va en su propia fila y la tabla cuadra con los KPIs', async () => {
+        const EX = 'e9000000-0000-4000-8000-000000000009';
+        await m.db.query(`insert into org_members(org_id, user_id, nombre, email, rol, estado) values ($1, $2, 'Ana', 'ana@x', 'owner', 'activo'), ($1, $3, 'Beto', 'beto@x', 'vendedor', 'revocado')`, [ORG, ANA, EX]);
+        await quote({ status: 'approved', total: 900, creado_por: ANA, created_at: '2026-09-02T18:00:00Z', approved_at: '2026-09-05T18:00:00Z' });
+        await quote({ status: 'approved', total: 300, creado_por: EX, created_at: '2026-09-02T18:00:00Z', approved_at: '2026-09-06T18:00:00Z' });
+        const r = await T.getVentasVendedor(R('2026-09-01', '2026-09-30'));
+        expect(r.rows.map((x) => [x.vendedor, x.vendido])).toEqual([['Ana', 900], ['Exmiembros del equipo', 300]]);
+        expect(r.totals!.vendido).toBe(r.kpis.find((k) => k.key === 'vendido')!.value);
+    });
+});

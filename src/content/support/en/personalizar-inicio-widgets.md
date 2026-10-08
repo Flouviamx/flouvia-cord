@@ -99,7 +99,7 @@ The same **Customize** button exists in **Payments**, **Collections**, **Collect
 
 **I can't find a widget in the library.** Your permissions or plan don't include it. Analytics widgets require the **Reports** permission; **Receivables aging** also requires the **Collections** permission and the Professional plan or higher; **Overdue invoices** requires **Collections** and a plan with invoicing; **Expected pipeline**, the Professional plan or higher. If your role changes, the widget appears as soon as you reload.
 
-**Expected cash flow, Pipeline health, or Needs follow-up look empty.** They're calculated with the financial metrics included from the Professional plan. On earlier plans the widget appears, but without data.
+**I don't see Expected cash flow, Pipeline health, or Needs follow-up.** They're calculated with the financial metrics included from the Professional plan, like Receivables aging. On Free and Starter they don't appear on Home or in the library; once you upgrade they come back on their own. They also disappear if your role lacks the **Reports** permission.
 
 **My layout went back to an older one.** You probably changed it later on another device: the most recent complete layout stays, not a mix of both.
 

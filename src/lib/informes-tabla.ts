@@ -7,6 +7,8 @@
 // de datos devuelve CLAVES de i18n (`inf.t.*`); la superficie las traduce.
 import { sql, withOrgTx, getActiveOrgId } from './db';
 import { cached } from './cache';
+import { currentLocale } from './context';
+import { t } from '../i18n/app';
 import { STATUS_GANADA, STATUS_SALIO } from './metrics';
 import { compareRangeFor, type Rango } from './rango';
 import { getReportScope, quoteFx, documentFx, currencyFx, dayStart, dayEnd, scopeNote, type ReportScope } from './report-scope';
@@ -45,10 +47,14 @@ const iso = (v: unknown) => (v ? (typeof v === 'string' ? v : new Date(v as Date
  *      (cobro registrado a mano).
  * Se usa en Pagos recibidos, Ventas en el tiempo y el "cobrado" del dashboard.
  */
+/** Etiquetas de respaldo en el idioma de la cuenta (antes iban fijas en español). */
+const sinCliente = () => t(currentLocale(), 'inf.x.sin_cliente');
+const sinNombre = () => t(currentLocale(), 'inf.x.sin_nombre');
+
 export function pagosSql(S: ReportScope, orgId: string, ini: unknown, fin: unknown) {
     const fxc = quoteFx(S, 'c');
     return sql`(
-        select co.paid_at as fecha, c.folio, coalesce(cl.empresa, 'Sin cliente') as empresa,
+        select co.paid_at as fecha, c.folio, coalesce(cl.empresa, ${sinCliente()}) as empresa,
                coalesce(co.payment_method, 'tarjeta') as metodo,
                co.monto * ${fxc} as monto,
                coalesce(co.reembolsado_cents, 0) / 100.0 * ${fxc} as reembolsado,
@@ -59,7 +65,7 @@ export function pagosSql(S: ReportScope, orgId: string, ini: unknown, fin: unkno
          where co.org_id = ${orgId} and co.status = 'pagado'
            and co.paid_at >= ${ini} and co.paid_at < ${fin}
         union all
-        select dp.aplicado_at, d.invoice_number, coalesce(cl.empresa, 'Sin cliente'),
+        select dp.aplicado_at, d.invoice_number, coalesce(cl.empresa, ${sinCliente()}),
                dp.metodo, dp.monto * ${currencyFx(S, 'dp.currency')}, 0::numeric,
                'factura', d.id
           from documento_pagos dp
@@ -68,7 +74,7 @@ export function pagosSql(S: ReportScope, orgId: string, ini: unknown, fin: unkno
          where dp.org_id = ${orgId} and dp.cobro_id is null
            and dp.aplicado_at >= ${ini} and dp.aplicado_at < ${fin}
         union all
-        select c.paid_at, c.folio, coalesce(cl.empresa, 'Sin cliente'),
+        select c.paid_at, c.folio, coalesce(cl.empresa, ${sinCliente()}),
                coalesce(c.payment_method, 'manual'), c.total * ${fxc}, 0::numeric,
                'cotizacion', c.id
           from cotizaciones c
@@ -585,8 +591,8 @@ export async function getVentasVendedor(r: Rango): Promise<TablaReport> {
         const ini = dayStart(S, r.desde), fin = dayEnd(S, r.hasta);
         const ganada = sql`c.status = any(${STATUS_GANADA}) and coalesce(c.approved_at, c.created_at) >= ${ini} and coalesce(c.approved_at, c.created_at) < ${fin}`;
         const creada = sql`c.status = any(${STATUS_SALIO}) and c.created_at >= ${ini} and c.created_at < ${fin}`;
-        const [rows] = await withOrgTx(orgId, sql`
-            select m.user_id, coalesce(m.nombre, m.email, 'Sin nombre') as nombre,
+        const [rows, [ex]] = await withOrgTx(orgId, sql`
+            select m.user_id, coalesce(m.nombre, m.email, ${sinNombre()}) as nombre,
                    count(c.id) filter (where ${creada}) as enviadas,
                    count(c.id) filter (where ${creada} and c.status = any(${STATUS_GANADA})) as ganadas_cohorte,
                    count(c.id) filter (where ${ganada} and ${fx} is not null) as ventas,
@@ -595,13 +601,25 @@ export async function getVentasVendedor(r: Rango): Promise<TablaReport> {
               from org_members m
               left join cotizaciones c on c.creado_por = m.user_id::text and c.org_id = ${orgId}
              where m.org_id = ${orgId} and m.estado = 'activo' and m.user_id is not null
-             group by m.user_id, coalesce(m.nombre, m.email, 'Sin nombre')
-             order by vendido desc, enviadas desc`);
+             group by m.user_id, m.nombre, m.email
+             order by vendido desc, enviadas desc`,
+            // Lo que crearon personas que ya no están activas en el equipo: va en una
+            // fila propia para que la tabla cuadre con los KPIs, que sí lo cuentan.
+            sql`
+            select count(c.id) filter (where ${creada}) as enviadas,
+                   count(c.id) filter (where ${creada} and c.status = any(${STATUS_GANADA})) as ganadas_cohorte,
+                   count(c.id) filter (where ${ganada} and ${fx} is not null) as ventas,
+                   coalesce(sum(c.total * ${fx}) filter (where ${ganada}), 0) as vendido,
+                   avg(extract(epoch from (c.approved_at - c.created_at)) / 86400) filter (where ${ganada} and c.approved_at is not null) as dias
+              from cotizaciones c
+             where c.org_id = ${orgId} and c.creado_por is not null
+               and not exists (select 1 from org_members m where m.org_id = ${orgId} and m.estado = 'activo' and m.user_id::text = c.creado_por)`);
         const [cur, prev] = await Promise.all([
             vendedorTotals(S, orgId, r.desde, r.hasta),
             rango.compare ? vendedorTotals(S, orgId, rango.compare.desde, rango.compare.hasta) : Promise.resolve(null),
         ]);
-        const out: TablaRow[] = rows.map((row) => {
+        const exRow = ex && (num(ex.enviadas) > 0 || num(ex.ventas) > 0) ? [{ ...ex, nombre: t(currentLocale(), 'inf.x.ex_miembros') }] : [];
+        const out: TablaRow[] = [...rows, ...exRow].map((row) => {
             const enviadas = num(row.enviadas), ventas = num(row.ventas), vendido = num(row.vendido);
             return {
                 vendedor: row.nombre as string, enviadas, ventas, vendido,
