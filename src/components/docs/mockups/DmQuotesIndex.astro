@@ -1,0 +1,222 @@
+---
+// Mockup: Cotizaciones (/app/cotizaciones) en sus dos vistas. Calca de
+// src/pages/app/cotizaciones/index.astro: resumen hairline (en pipeline · aprobado ·
+// esperan tu aprobación), píldoras de filtro con conteo, interruptor Lista | Tablero.
+//
+//   view="list":  tabla Cotización · Cliente · Términos · Vigencia · Total · Estado.
+//   view="board": tablero de cinco columnas (Borrador, Enviada, Vista, Aprobada,
+//                 Pagada) con conteo y total; COT-0149 se arrastra de Vista a Aprobada
+//                 y la columna destino se pinta en verde (.drop-ok), como en la app.
+// Montos sin decimales y con divisa, igual que money(x, 0) de la lista real.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmStatus from './DmStatus.astro';
+import { STATUS_META } from '../../../lib/quote';
+import { dmT, pick, tpl, type DmLang } from './format';
+import { PIPELINE, COUNTS, BOARD_TOTALS, OPEN_VALUE, money0, money0Parts, dmDate, type DmQuoteRow } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    view?: 'list' | 'board';
+    caption?: string;
+}
+const { lang, view = 'list' } = Astro.props;
+const isBoard = view === 'board';
+
+const FILTERS = [
+    { key: 'all', n: COUNTS.all },
+    { key: 'open', n: COUNTS.open },
+    { key: 'approval', n: COUNTS.approval },
+    { key: 'approved', n: COUNTS.approved },
+    { key: 'paid', n: COUNTS.paid },
+    { key: 'closed', n: COUNTS.closed },
+] as const;
+const COLS = ['draft', 'sent', 'viewed', 'approved', 'paid'] as const;
+const DRAG = 'COT-0149';
+const colCards = (k: (typeof COLS)[number]) =>
+    PIPELINE.filter((q) => (k === 'paid' ? q.status === 'paid' || q.status === 'invoiced' : q.status === k));
+const dragged = PIPELINE.find((q) => q.folio === DRAG) as DmQuoteRow;
+const ROWS = PIPELINE.slice(0, 7);
+const initial = (s: string) => s.trim().charAt(0).toUpperCase();
+
+const DATA = {
+    es: {
+        captionList: `Lista de Cotizaciones: ${money0(OPEN_VALUE, 'MXN', 'es')} en pipeline en 9 abiertas, ${money0(BOARD_TOTALS.approved.total, 'MXN', 'es')} aprobado por cobrar y 2 que esperan tu aprobación; las píldoras Todas 34, Abiertas 9, Por aprobar 2, Aprobadas 5, Pagadas 14 y Cerradas 6, el interruptor Lista y Tablero, y las cotizaciones más recientes con folio, cliente, términos, vigencia, total y estado.`,
+        captionBoard: `Vista de Tablero con las cinco columnas y su conteo y total (Enviada · 4 · ${money0(BOARD_TOTALS.sent.total, 'MXN', 'es')}); la tarjeta de ${DRAG} se arrastra de Vista a Aprobada, que se resalta en verde porque el movimiento es válido.`,
+        nueva: 'Nueva cotización',
+    },
+    en: {
+        captionList: `Quotes list: ${money0(OPEN_VALUE, 'MXN', 'en')} in pipeline across 9 open quotes, ${money0(BOARD_TOTALS.approved.total, 'MXN', 'en')} approved to be collected and 2 awaiting your approval; the pills All 34, Open 9, Needs approval 2, Approved 5, Paid 14 and Closed 6, the List and Board toggle, and the most recent quotes with number, client, terms, valid until, total and status.`,
+        captionBoard: `Board view with the five columns and their count and total (Sent · 4 · ${money0(BOARD_TOTALS.sent.total, 'MXN', 'en')}); the ${DRAG} card is dragged from Viewed to Approved, which turns green because the move is valid.`,
+        nueva: 'New quote',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? (isBoard ? d.captionBoard : d.captionList);
+const hint = dmT(lang, 'cot.board_hint').replace(/^\S+\s/, '');
+const M = (n: number) => money0Parts(n, 'MXN', lang);
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={dmT(lang, 'cot.heading')} badges={{ seguimiento: 2 }} height={isBoard ? 640 : 610} caption={caption} class:list={['dm-qx-figure', isBoard ? 'dm-qx-is-board' : 'dm-qx-is-list']}>
+    <span slot="actions" class="dm-btn dm-btn-primary dm-btn-rect"><DmIcon name="plus" stroke={2.2} />{d.nueva}</span>
+
+    <div class="dm-qx-summary">
+        <div class="dm-qx-cs">
+            <span class="dm-qx-cs-val dm-money">{M(OPEN_VALUE).value}<span class="dm-cur">MXN</span></span>
+            <span class="dm-qx-cs-lbl">{tpl(dmT(lang, 'cot.cs_abiertas'), { n: COUNTS.open })}</span>
+        </div>
+        <div class="dm-qx-cs">
+            <span class="dm-qx-cs-val dm-money">{M(BOARD_TOTALS.approved.total).value}<span class="dm-cur">MXN</span></span>
+            <span class="dm-qx-cs-lbl">{dmT(lang, 'cot.cs_aprobado')}</span>
+        </div>
+        <div class="dm-qx-cs is-warn">
+            <span class="dm-qx-cs-val dm-editorial">{COUNTS.approval}</span>
+            <span class="dm-qx-cs-lbl">{dmT(lang, 'cot.cs_esperan')}</span>
+        </div>
+    </div>
+
+    <div class="dm-qx-viewrow">
+        <div class="dm-qx-filters">
+            {FILTERS.map((f, i) => (
+                <span class:list={['dm-qx-pill', { 'is-on': i === 0 }]}>{dmT(lang, `cot.filter.${f.key}`)}<b>{f.n}</b></span>
+            ))}
+        </div>
+        <div class="dm-qx-toggle">
+            <span class:list={{ 'is-on': !isBoard }}><DmIcon name="list" />{dmT(lang, 'cot.lista')}</span>
+            <span class:list={{ 'is-on': isBoard }}><DmIcon name="kanban" />{dmT(lang, 'cot.tablero')}</span>
+        </div>
+    </div>
+
+    {!isBoard && (
+        <div class="dm-qx-table">
+            <div class="dm-qx-tr dm-qx-th">
+                <span>{dmT(lang, 'cot.th_cotizacion')}</span>
+                <span>{dmT(lang, 'cot.th_cliente')}</span>
+                <span class="dm-qx-opt">{dmT(lang, 'cot.th_terminos')}</span>
+                <span class="dm-qx-opt">{dmT(lang, 'cot.th_vigencia')}</span>
+                <span class="dm-qx-r">{dmT(lang, 'cot.th_total')}</span>
+                <span>{dmT(lang, 'cot.th_estado')}</span>
+            </div>
+            {ROWS.map((q, i) => (
+                <div class:list={['dm-qx-tr', { 'is-fade': i === ROWS.length - 1 }]}>
+                    <span class="dm-qx-folio">{q.folio}</span>
+                    <span class="dm-qx-client"><span class="dm-qx-av">{initial(q.cliente)}</span><span class="dm-ellipsis">{q.cliente}</span></span>
+                    <span class="dm-qx-muted dm-qx-opt">{q.terminos[lang]}</span>
+                    <span class="dm-qx-muted dm-qx-opt">{dmDate(q.vigencia, lang)}</span>
+                    <span class="dm-qx-r dm-qx-amt dm-money">{M(q.total).value}<span class="dm-cur">MXN</span></span>
+                    <span><DmStatus status={q.status} lang={lang} /></span>
+                </div>
+            ))}
+        </div>
+    )}
+
+    {isBoard && (
+        <Fragment>
+            <div class="dm-qx-hint"><DmIcon name="swap" />{hint}</div>
+            <div class="dm-qx-board">
+                {COLS.map((k) => {
+                    const cards = colCards(k);
+                    return (
+                        <div class="dm-qx-col">
+                            <div class="dm-qx-colhead">
+                                <i style={`background:${STATUS_META[k].color}`}></i>
+                                <span>{dmT(lang, `cot.col.${k}`)}</span>
+                                <b>{BOARD_TOTALS[k].n}</b>
+                            </div>
+                            <div class="dm-qx-coltotal dm-money">{M(BOARD_TOTALS[k].total).value}<span class="dm-cur">MXN</span></div>
+                            <div class:list={['dm-qx-cards', { 'is-drop': k === 'approved' }]}>
+                                {cards.map((q) => (
+                                    <div class:list={['dm-qx-card', { 'is-dragging': q.folio === DRAG }]}>
+                                        <span class="dm-qx-card-top"><b>{q.folio}</b><span class="dm-money">{M(q.total).value}<span class="dm-cur">MXN</span></span></span>
+                                        <span class="dm-qx-card-client"><span class="dm-qx-av is-sm">{initial(q.cliente)}</span><span class="dm-ellipsis">{q.cliente}</span></span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+                <div class="dm-qx-ghost">
+                    <span class="dm-qx-card-top"><b>{dragged.folio}</b><span class="dm-money">{M(dragged.total).value}<span class="dm-cur">MXN</span></span></span>
+                    <span class="dm-qx-card-client"><span class="dm-qx-av is-sm">{initial(dragged.cliente)}</span><span class="dm-ellipsis">{dragged.cliente}</span></span>
+                    <svg class="dm-qx-cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7.5-6.2 1.6L9.9 18 5 3z" fill="#0a192f" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+                </div>
+            </div>
+        </Fragment>
+    )}
+</DocsMockup>
+
+<style is:global>
+    /* El sangrado de la ventana no debe tapar la acción ni la columna de estado. */
+    .dm-qx-figure .dm-page-head, .dm-qx-is-list .dm-content { padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-qx-summary { display: flex; flex-wrap: wrap; gap: 14px 30px; padding-bottom: 13px; margin-bottom: 13px; border-bottom: 1px solid var(--dm-border); }
+    .dm-qx-cs { display: flex; flex-direction: column; gap: 4px; }
+    .dm-qx-cs-val { font-size: 21px; line-height: 1; color: var(--dm-navy); letter-spacing: -0.03em; }
+    .dm-qx-cs-val .dm-cur { font-size: 10.5px; }
+    .dm-qx-cs.is-warn .dm-qx-cs-val { color: var(--dm-warn); }
+    .dm-qx-cs-lbl { font-size: 10.5px; color: var(--dm-muted); }
+
+    .dm-qx-viewrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .dm-qx-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dm-qx-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px 0 11px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 10.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-qx-pill b { min-width: 16px; height: 15px; padding: 0 4px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; background: var(--dm-soft); color: var(--dm-muted); box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-qx-pill.is-on { background: var(--dm-navy); color: #fff; box-shadow: 0 4px 14px -6px rgba(10, 25, 47, 0.45); }
+    .dm-qx-pill.is-on b { background: rgba(255, 255, 255, 0.22); color: #fff; box-shadow: none; }
+    .dm-qx-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); flex-shrink: 0; }
+    .dm-qx-toggle span { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 11px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-qx-toggle span.is-on { background: var(--dm-navy); color: #fff; }
+    .dm-qx-toggle .dm-ico { width: 12px; height: 12px; }
+
+    .dm-qx-table { display: flex; flex-direction: column; }
+    .dm-qx-tr { display: grid; grid-template-columns: 66px minmax(0, 1.6fr) minmax(0, 0.75fr) minmax(0, 0.85fr) minmax(0, 0.95fr) 74px; gap: 11px; align-items: center; min-height: 44px; padding: 0 8px; border-bottom: 1px solid var(--dm-border); font-size: 11.5px; }
+    .dm-qx-tr:last-child { border-bottom: 0; }
+    .dm-qx-tr.is-fade { opacity: 0.4; }
+    .dm-qx-th { min-height: 26px; padding-bottom: 6px; align-items: end; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-qx-folio { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dm-qx-client { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 500; }
+    .dm-qx-av { width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 9px; font-weight: 800; }
+    .dm-qx-av.is-sm { width: 17px; height: 17px; border-radius: 5px; font-size: 7.5px; }
+    .dm-qx-muted { color: var(--dm-muted); font-size: 11px; white-space: nowrap; }
+    .dm-qx-r { text-align: right; justify-self: end; }
+    .dm-qx-amt { font-size: 12.5px; color: var(--dm-navy); }
+
+    .dm-qx-hint { display: flex; align-items: center; gap: 6px; margin: -2px 0 12px; font-size: 11px; color: var(--dm-muted); }
+    .dm-qx-hint .dm-ico { width: 13px; height: 13px; }
+    .dm-qx-board { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 8px; align-items: start; }
+    .dm-qx-col { padding: 0 3px 0 9px; border-left: 1px solid var(--dm-border); min-width: 0; }
+    .dm-qx-col:first-child { border-left: 0; padding-left: 0; }
+    .dm-qx-colhead { display: flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .dm-qx-colhead i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dm-qx-colhead b { margin-left: auto; font-size: 9.5px; color: var(--dm-muted); }
+    .dm-qx-coltotal { margin: 4px 0 10px; font-size: 13.5px; color: var(--dm-navy); }
+    .dm-qx-coltotal .dm-cur { font-size: 9px; }
+    .dm-qx-cards { display: flex; flex-direction: column; min-height: 44px; border-radius: 9px; }
+    .dm-qx-cards.is-drop { background: rgba(16, 185, 129, 0.08); box-shadow: inset 0 0 0 1.5px rgba(16, 185, 129, 0.4); padding-bottom: 46px; }
+    .dm-qx-card { display: flex; flex-direction: column; gap: 5px; padding: 8px 7px; border-radius: 8px; min-width: 0; }
+    .dm-qx-card + .dm-qx-card { border-top: 1px solid var(--dm-border); border-radius: 0 0 8px 8px; }
+    .dm-qx-card.is-dragging { opacity: 0.4; background: rgba(10, 25, 47, 0.04); }
+    .dm-qx-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
+    .dm-qx-card-top b { font-size: 10.5px; font-weight: 700; }
+    .dm-qx-card-top .dm-money { font-size: 11px; color: var(--dm-navy); }
+    .dm-qx-card-top .dm-cur { font-size: 8px; }
+    .dm-qx-card-client { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 10px; color: var(--dm-muted); }
+    /* La tarjeta en vuelo: misma fila, levantada sobre la columna destino. */
+    .dm-qx-ghost { position: absolute; left: calc(3 * 140px + 4px); top: 92px; width: 126px; display: flex; flex-direction: column; gap: 5px; padding: 8px 7px; border-radius: 9px; background: #fff; box-shadow: 0 2px 4px rgba(10, 25, 47, 0.06), 0 18px 36px -12px rgba(10, 25, 47, 0.35); transform: rotate(-2deg); z-index: 2; }
+    .dm-qx-cursor { position: absolute; right: 18px; bottom: -14px; width: 20px; height: 20px; filter: drop-shadow(0 2px 3px rgba(10, 25, 47, 0.35)); }
+
+    @container dm (max-width: 640px) {
+        .dm-qx-opt { display: none; }
+        .dm-qx-tr { grid-template-columns: 62px minmax(0, 1fr) auto; }
+        .dm-qx-tr > span:last-child { display: none; }
+    }
+    @container dm (max-width: 520px) {
+        .dm-qx-figure .dm-stage { height: auto; max-height: 720px; }
+        .dm-qx-tr { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; padding: 7px 4px; }
+        .dm-qx-th { display: none; }
+        .dm-qx-folio { grid-column: 1; }
+        .dm-qx-client { grid-column: 1; grid-row: 2; }
+        .dm-qx-amt { grid-column: 2; grid-row: 1; }
+        .dm-qx-tr > span:last-child { display: block; grid-column: 2; grid-row: 2; justify-self: end; }
+        /* El tablero se desplaza en horizontal, como en la app: se ve de Vista a Pagada. */
+        .dm-qx-board { grid-auto-columns: 128px; margin-left: calc(-2 * 136px); }
+        .dm-qx-ghost { left: calc(3 * 136px + 4px); }
+    }
+</style>

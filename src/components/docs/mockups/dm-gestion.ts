@@ -82,7 +82,7 @@ const NET60 = { es: 'Net 60', en: 'Net 60' };
 export const PIPELINE: DmQuoteRow[] = [
     { folio: 'COT-0155', cliente: 'Desarrollos Sierra Madre', status: 'draft', total: 38600, terminos: NET30, vigencia: '2026-10-23' },
     { folio: 'COT-0154', cliente: 'Grupo Edificador Norte', status: 'sent', total: 52300, terminos: NET30, vigencia: '2026-10-21' },
-    { folio: 'COT-0153', cliente: 'Ferretera Industrial del Bajío', status: 'sent', total: 37120, terminos: CONTADO, vigencia: '2026-10-20' },
+    { folio: 'COT-0153', cliente: 'Ferretera Industrial del Bajío', status: 'paid', total: 37120, terminos: CONTADO, vigencia: '2026-10-20' },
     { folio: 'COT-0152', cliente: 'Acabados Monterrey', status: 'approved', total: 10000, terminos: CONTADO, vigencia: '2026-10-16' },
     { folio: 'COT-0151', cliente: 'Constructora GAMA', status: 'sent', total: 61480, terminos: NET60, vigencia: '2026-10-17' },
     { folio: 'COT-0150', cliente: 'Inmobiliaria Altavista', status: 'draft', total: 19850, terminos: CONTADO, vigencia: '2026-10-22' },
@@ -97,7 +97,8 @@ export const PIPELINE: DmQuoteRow[] = [
     { folio: 'COT-0141', cliente: 'Ferretera Industrial del Bajío', status: 'approved', total: 52000, terminos: CONTADO, vigencia: '2026-10-04' },
     { folio: 'COT-0140', cliente: 'Constructora Apex', status: 'paid', total: 74215.5, terminos: CONTADO, vigencia: '2026-09-24' },
     { folio: 'COT-0139', cliente: 'Constructora GAMA', status: 'approved', total: 20000, terminos: NET60, vigencia: '2026-10-02' },
-    { folio: 'COT-0138', cliente: 'Grupo Edificador Norte', status: 'draft', total: 12800, terminos: NET30, vigencia: '2026-10-19' },
+    { folio: 'COT-0138', cliente: 'Grupo Edificador Norte', status: 'sent', total: 37120, terminos: NET30, vigencia: '2026-10-11' },
+    { folio: 'COT-0137', cliente: 'Acabados Monterrey', status: 'draft', total: 12800, terminos: CONTADO, vigencia: '2026-10-19' },
 ];
 
 /** Conteos de la organización completa (34 cotizaciones; la lista solo pinta las primeras filas). */
