@@ -4,8 +4,13 @@ import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsFeed from '../../../components/ops/OpsFeed.astro';
 import OpsDist from '../../../components/ops/OpsDist.astro';
 import { sql, withOpsTx } from '../../../lib/db';
-import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS, OPS_LIFECYCLE_LABELS, OPS_PROVIDER_LABELS, OPS_QUOTE_STATUS, opsSubscription } from '../../../lib/ops-format';
-import { opsCollectedByCurrency, opsEventFeed, opsIntegrationPage, opsInvoicePage, opsOrgClosedByCurrency, opsOrgCommerce, opsWorkflowPage } from '../../../lib/ops-insights';
+import { opsAgo, opsDate, opsMoney, opsNumber, opsPct, OPS_AUDIT_LABELS, OPS_LIFECYCLE_LABELS, OPS_PROVIDER_LABELS, OPS_QUOTE_STATUS, opsDay, opsDisputeReason, opsMoneyStatus, opsSubscription } from '../../../lib/ops-format';
+import { opsCollectedByCurrency, opsEventFeed, opsIntegrationPage, opsInvoicePage, opsOrgClosedByCurrency, opsOrgCommerce, opsWorkflowFailures, opsWorkflowPage } from '../../../lib/ops-insights';
+import { opsConnectRequirements, opsMinor, opsOrgBilling, opsOrgDisputes, opsOrgPayouts, opsOrgRefunds, opsOrgSubscriptionInvoices, stripeDashboardUrl } from '../../../lib/ops-billing';
+import { opsDeliveryPage } from '../../../lib/ops-webhooks';
+import { mergeOpsLog, OPS_NOTE_MAX, opsOrgNotes, opsOrgTags } from '../../../lib/ops-notes';
+import { iconInner } from '../../../lib/icons';
+import { PLANES } from '../../../lib/precios';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const id = String(Astro.params.id || '');
@@ -42,8 +47,18 @@ const r = await withOpsTx(
   opsCollectedByCurrency(90, id),
   opsOrgCommerce(id),
   opsOrgClosedByCurrency(id),
+  opsOrgBilling(id),
+  opsOrgPayouts(id),
+  opsOrgRefunds(id),
+  opsOrgDisputes(id),
+  opsOrgSubscriptionInvoices(id),
+  opsOrgNotes(id),
+  opsOrgTags(id),
+  opsWorkflowFailures(8, id),
+  opsDeliveryPage('failed', id, 8, 0),
 );
-const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed] = r as any[];
+const [orgRows, members, quotes, clients, products, keys, webhooks, sso, audit, feed, invoices, workflows, integrations, collected, commerceRows, closed,
+  billingRows, payouts, refunds, disputes, subInvoices, notes, tags, failedRuns, failedDeliveries] = r as any[];
 if (!orgRows.length) return Astro.redirect('/ops/organizations');
 const org: any = orgRows[0];
 const commerce: any = commerceRows[0] || {};
@@ -51,13 +66,36 @@ const endpoint = `/api/ops/organizations/${id}`;
 const isAdmin = Astro.locals.opsOperator?.role === 'admin';
 const plan = org.plan || 'free';
 const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Invitación pendiente';
+const billing: any = billingRows[0] || {};
+const requirements = opsConnectRequirements(billing.stripe_requirements);
+const effectivePlan = String(billing.effective_plan || 'free');
+// El plan guardado es una proyección; el pagado es el que autoriza (regla 17).
+const planMismatch = effectivePlan !== String(billing.plan || 'free');
+const stripeLinks = [
+  ['Cliente', stripeDashboardUrl('customer', billing.stripe_customer_id)],
+  ['Suscripción', stripeDashboardUrl('subscription', billing.stripe_subscription_id)],
+  ['Última factura', stripeDashboardUrl('invoice', billing.billing_last_invoice_id)],
+].filter(([, href]) => href) as [string, string][];
+const accountUrl = stripeDashboardUrl('account', billing.stripe_account_id);
+const log = mergeOpsLog(notes, audit);
+const operatorId = Astro.locals.opsOperator?.userId;
+const openDisputes = disputes.filter((d: any) => !['won', 'lost', 'charge_refunded', 'warning_closed'].includes(d.status));
+const planName = (id: unknown) => PLANES.find((p) => p.id === String(id || 'free'))?.nombre ?? String(id || 'free');
+// Mismo día civil: "renueva el 26" y "pagado hasta el 26" dicen lo mismo.
+const sameDay = (a: unknown, b: unknown) => !!a && !!b && Math.abs(new Date(String(a)).getTime() - new Date(String(b)).getTime()) < 86_400_000;
+const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.lifecycle !== 'void';
 ---
 <OpsLayout title={`${org.nombre} | Cord Ops`}><OpsShell active="organizations" eyebrow="Organización" title={org.nombre} subtitle={`${org.owner_email || 'Sin propietario'} · ${org.country_code} · ${org.moneda}`}>
   <div class="ops-links"><a class="ops-back" href="/ops/organizations">Organizaciones</a><a class="ops-link" href={`/ops/activity?org=${org.id}`}>Toda su actividad</a><a class="ops-link" href={`/ops/usage?org=${org.id}`}>Uso y costos</a></div>
 
   <section class="ops-card">
     <div class="ops-detail-hero">
-      <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p></div></div>
+      <div class="ops-detail-identity"><span class="ops-avatar square">{org.nombre.charAt(0).toUpperCase()}</span><div><h2>{org.nombre}</h2><p>Plan {plan} · {opsSubscription(org.subscription_status).toLowerCase()} · {org.sandbox_of ? 'Sandbox' : org.is_demo ? 'Demo' : 'Producción'} · última actividad {opsAgo(org.last_event, 'nunca').toLowerCase()}</p>
+        <div class="ops-tags" aria-label="Etiquetas internas">
+          {tags.map((t: any) => <span class="ops-tag">{t.tag}<button type="button" class="ops-tag-remove" data-ops-tag-remove={t.tag} aria-label={`Quitar etiqueta ${t.tag}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button></span>)}
+          <form class="ops-tag-form" data-ops-tag-form><label class="ops-sr-only" for="ops-tag-input">Nueva etiqueta</label><input id="ops-tag-input" name="tag" maxlength="24" autocomplete="off" placeholder="Etiqueta" pattern="[a-zA-Z0-9][a-zA-Z0-9 \-]{0,23}" /><button type="submit" class="ops-button ghost sm">Agregar</button></form>
+        </div>
+      </div></div>
       {isAdmin && <div class="ops-detail-actions">
         <button class="ops-button secondary sm" data-ops-action="revoke_api_keys" data-endpoint={endpoint} data-confirm={org.nombre} data-danger="true" data-title="Revocar llaves API" data-description={`Revocará ${org.active_api_keys} llaves activas. No se puede deshacer: el negocio tendrá que crear llaves nuevas.`}>Revocar llaves API</button>
         <button class="ops-button secondary sm" data-ops-action="disable_webhooks" data-endpoint={endpoint} data-confirm={org.nombre} data-title="Desactivar webhooks" data-description={`Desactivará ${org.active_webhooks} endpoints activos.`}>Desactivar webhooks</button>
@@ -95,6 +133,82 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
     </section>
   </div>
 
+  <div class="ops-grid-2 even ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Suscripción de Cord</h2><p>Lo que paga y lo que eso le da.</p></div></header>
+      <div class="ops-card ops-card-pad"><dl class="ops-key-value">
+        <div><dt>Plan pagado</dt><dd><strong>{planName(effectivePlan)}</strong>{planMismatch && <span class="ops-badge amber">Guardado: {planName(billing.plan)}</span>}</dd></div>
+        <div><dt>Estado</dt><dd>{opsSubscription(billing.subscription_status)}{billing.billing_cycle && ` · ${billing.billing_cycle}`}{billing.cancel_at_period_end && <span class="ops-badge red">Cancela al cierre del periodo</span>}</dd></div>
+        <div><dt>{billing.cancel_at_period_end ? 'Termina' : 'Renueva'}</dt><dd>{opsDate(billing.current_period_end, '—')}{billing.billing_paid_through && !sameDay(billing.billing_paid_through, billing.current_period_end) && ` · pagado hasta ${opsDate(billing.billing_paid_through)}`}</dd></div>
+        <div><dt>Último cobro</dt><dd>{billing.billing_last_paid_at
+          ? <>{opsMoney(opsMinor(billing.billing_last_amount_paid, billing.billing_currency), billing.billing_currency)} · {opsDate(billing.billing_last_paid_at)}</>
+          : 'Ninguno registrado'}</dd></div>
+        <div><dt>Divisa de cobro</dt><dd>{billing.billing_currency || 'Sin factura todavía'}</dd></div>
+        <div><dt>En el procesador</dt><dd>{stripeLinks.length
+          ? <span class="ops-ext-links">{stripeLinks.map(([label, href]) => <a class="ops-link" href={href} target="_blank" rel="noopener noreferrer">{label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up-right')}></svg></a>)}</span>
+          : 'Sin cliente en el procesador'}</dd></div>
+      </dl></div>
+      {subInvoices.length > 0 && <div class="ops-card ops-list wrap-sub ops-stack">
+        <div class="ops-list-caption">Comprobantes de los cobros de Cord</div>
+        {subInvoices.map((f: any) => <div class="ops-list-row two"><div><strong>{opsMoney(opsMinor(f.total_cents, f.currency), f.currency)}</strong><span class="ops-sub">{f.invoice_number ? `CFDI ${f.invoice_number}` : 'Comprobante del cobro'}{f.invoice_error && ` · ${f.invoice_error}`}</span></div><span class:list={['ops-badge', f.status === 'issued' ? 'green' : f.status === 'error' ? 'red' : '']}>{f.status === 'issued' ? 'Timbrada' : f.status === 'error' ? 'Error' : 'Pendiente'}</span></div>)}
+      </div>}
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Cuenta de cobros</h2><p>Qué le falta para cobrar y depositar.</p></div>{accountUrl && <a href={accountUrl} target="_blank" rel="noopener noreferrer">Abrir en el procesador</a>}</header>
+      <div class="ops-card ops-card-pad">
+        {!billing.stripe_account_id ? <div class="ops-empty compact">No ha iniciado el alta de cobros en línea.</div> : <dl class="ops-key-value">
+          <div><dt>Cobros</dt><dd><span class:list={['ops-badge', billing.stripe_charges_enabled ? 'green' : 'red']}>{billing.stripe_charges_enabled ? 'Habilitados' : 'Detenidos'}</span></dd></div>
+          <div><dt>Depósitos</dt><dd><span class:list={['ops-badge', billing.stripe_payouts_enabled ? 'green' : 'red']}>{billing.stripe_payouts_enabled ? 'Habilitados' : 'Detenidos'}</span>{!billing.stripe_details_submitted && <span class="ops-sub">El alta no se ha enviado completa.</span>}</dd></div>
+          <div><dt>Restricción</dt><dd>{billing.stripe_disabled_reason ? <span class="ops-code">{billing.stripe_disabled_reason}</span> : 'Ninguna'}</dd></div>
+          <div><dt>Vencidos</dt><dd>{requirements.pastDue.length ? <span class="ops-fields red">{requirements.pastDue.map((f) => <code>{f}</code>)}</span> : 'Ninguno'}</dd></div>
+          <div><dt>Pendientes</dt><dd>{requirements.currentlyDue.length ? <span class="ops-fields">{requirements.currentlyDue.map((f) => <code>{f}</code>)}</span> : 'Ninguno'}{requirements.deadline && <span class="ops-sub">Fecha límite {opsDate(requirements.deadline)}</span>}</dd></div>
+          <div><dt>En verificación</dt><dd>{requirements.pendingVerification.length ? <span class="ops-fields">{requirements.pendingVerification.map((f) => <code>{f}</code>)}</span> : 'Nada en revisión'}</dd></div>
+        </dl>}
+      </div>
+    </section>
+  </div>
+
+  {billing.stripe_account_id && <div class="ops-grid-3 ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Depósitos</h2><p>Los más recientes.</p></div></header>
+      <div class="ops-card ops-list wrap-sub">
+        {payouts.map((p: any) => { const [label, tone] = opsMoneyStatus(p.status); return <div class="ops-list-row two"><div><strong>{opsMoney(opsMinor(p.amount_cents, p.currency), p.currency)}</strong><span class="ops-sub">{p.arrival_date ? `${p.status === 'paid' ? 'Llegó' : 'Llega'} el ${opsDay(p.arrival_date)}` : opsDate(p.created_at)}{p.destino_last4 && ` · cuenta …${p.destino_last4}`}{p.failure_message && ` · ${p.failure_message}`}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {payouts.length === 0 && <div class="ops-empty">Sin depósitos.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Reembolsos</h2><p>Devoluciones a sus clientes.</p></div></header>
+      <div class="ops-card ops-list wrap-sub">
+        {refunds.map((f: any) => { const [label, tone] = opsMoneyStatus(f.status); return <div class="ops-list-row two"><div><strong>{opsMoney(opsMinor(f.amount_cents, f.currency), f.currency)}</strong><span class="ops-sub">{f.manual ? 'Registrado a mano' : 'En línea'} · {opsAgo(f.created_at).toLowerCase()}{f.failure_reason && ` · ${f.failure_reason}`}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {refunds.length === 0 && <div class="ops-empty">Sin reembolsos.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Disputas</h2><p>{openDisputes.length === 1 ? 'Una abierta.' : openDisputes.length ? `${opsNumber(openDisputes.length)} abiertas.` : 'Contracargos de sus clientes.'}</p></div></header>
+      <div class="ops-card ops-list wrap-sub">
+        {disputes.map((d: any) => { const [label, tone] = opsMoneyStatus(d.status); return <div class="ops-list-row two"><div><strong>{opsMoney(opsMinor(d.amount_cents, d.currency), d.currency)}</strong><span class="ops-sub">{opsDisputeReason(d.reason)}{d.evidence_due_at && !d.evidence_submitted_at && ` · evidencia antes del ${opsDate(d.evidence_due_at)}`}{d.evidence_submitted_at && ' · evidencia enviada'}</span></div><span class:list={['ops-badge', tone]}>{label}</span></div>; })}
+        {disputes.length === 0 && <div class="ops-empty">Sin disputas.</div>}
+      </div>
+    </section>
+  </div>}
+
+  {(failedRuns.length > 0 || failedDeliveries.length > 0) && <div class="ops-grid-2 even ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Workflows fallidos</h2><p>{isAdmin ? 'Reintentar los vuelve a poner en cola desde el inicio.' : 'Solo un admin puede reintentarlos.'}</p></div></header>
+      <div class="ops-card ops-list wrap-sub">
+        {failedRuns.map((f: any) => <div class="ops-list-row two"><div><strong>{f.workflow}</strong><span class="ops-sub">{f.error || 'Sin detalle'} · {opsNumber(f.attempts)} {Number(f.attempts) === 1 ? 'intento' : 'intentos'} · {opsAgo(f.created_at).toLowerCase()}</span></div>{isAdmin ? <button class="ops-button secondary sm" data-ops-action="retry_workflow_run" data-endpoint="/api/ops/recovery" data-target-id={f.id} data-title="Reintentar ejecución" data-description={`Volverá a ejecutar "${f.workflow}" desde el inicio, con el mismo evento que lo disparó. Si el workflow manda correos o mensajes, saldrán de nuevo.`}>Reintentar</button> : <time>{opsAgo(f.created_at)}</time>}</div>)}
+        {failedRuns.length === 0 && <div class="ops-empty">Ningún workflow ha fallado.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Entregas de webhook fallidas</h2><p>Los intentos más recientes que su endpoint rechazó.</p></div><a href={`/ops/webhooks?org=${org.id}`}>Ver todas</a></header>
+      <div class="ops-card ops-list wrap-sub">
+        {failedDeliveries.map((d: any) => <div class="ops-list-row two"><div><strong>{d.evento}</strong><span class="ops-sub ops-data-value">{d.error || (d.status ? `Respondió ${d.status}` : 'Sin respuesta')} · {d.url}</span></div>{isAdmin && d.replayable ? <button class="ops-button secondary sm" data-ops-action="redeliver_webhook" data-endpoint="/api/ops/recovery" data-target-id={d.id} data-title="Re-entregar webhook" data-description={`Volverá a mandar el mismo evento ${d.evento}, firmado de nuevo, a ${d.url}. El receptor debe ser idempotente: es el mismo id de evento.`}>Re-entregar</button> : <time>{opsAgo(d.created_at)}</time>}</div>)}
+        {failedDeliveries.length === 0 && <div class="ops-empty">Ninguna entrega ha fallado.</div>}
+      </div>
+    </section>
+  </div>}
+
   <div class="ops-grid-2 ops-section">
     <section>
       <header class="ops-section-header"><div><h2>Actividad reciente</h2><p>Lo que hicieron el equipo, sus clientes y los sistemas.</p></div><a href={`/ops/activity?org=${org.id}`}>Ver todo</a></header>
@@ -109,13 +223,10 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
         </div>
       </section>
       <section class="ops-section">
-        <header class="ops-section-header"><div><h2>Configuración y cobros</h2><p>Estado operativo del workspace.</p></div></header>
+        <header class="ops-section-header"><div><h2>Configuración</h2><p>Estado operativo del workspace.</p></div></header>
         <div class="ops-card ops-card-pad"><dl class="ops-key-value">
           <div><dt>ID</dt><dd class="ops-code">{org.id}</dd></div>
           <div><dt>Onboarding</dt><dd>{opsDate(org.onboarded_at, 'Pendiente')}</dd></div>
-          <div><dt>Suscripción</dt><dd>{opsSubscription(org.subscription_status)}{org.billing_cycle && ` · ${org.billing_cycle}`}{org.current_period_end && ` · renueva ${opsDate(org.current_period_end)}`}</dd></div>
-          <div><dt>Cobros en línea</dt><dd>{org.stripe_charges_enabled ? 'Habilitados' : 'No habilitados'} · depósitos {org.stripe_payouts_enabled ? 'habilitados' : 'no habilitados'}</dd></div>
-          <div><dt>Restricción del procesador</dt><dd>{org.stripe_disabled_reason || 'Ninguna'}</dd></div>
           <div><dt>Seguridad</dt><dd>2FA {org.require_2fa ? 'obligatorio' : 'opcional'} · SSO {org.require_sso ? 'obligatorio' : 'opcional'} · sesión de {org.session_timeout_min || 'duración estándar'}{org.session_timeout_min ? ' min' : ''}</dd></div>
           <div><dt>Cobranza autónoma</dt><dd>{org.ai_cobranza_activa ? 'Activa' : 'Inactiva'}</dd></div>
         </dl></div>
@@ -133,9 +244,9 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
 
   <section class="ops-section">
     <header class="ops-section-header"><div><h2>Facturas</h2><p>{opsNumber(invoices[0]?.total_count || 0)} en total; últimas 10.</p></div><a href="/ops/invoices">Todas las facturas</a></header>
-    <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Factura</th><th>Cliente</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th><th>Vista</th></tr></thead><tbody>
-      {invoices.map((d: any) => { const [label, tone] = OPS_LIFECYCLE_LABELS[d.lifecycle] ?? [d.lifecycle, '']; return <tr><td><strong>{d.invoice_number || 'Sin folio'}</strong><span class="ops-sub">{opsDate(d.issued_at || d.created_at)}</span></td><td>{d.cliente || 'Sin cliente'}</td><td><span class:list={['ops-badge', d.overdue ? 'red' : tone]}>{d.overdue ? 'Vencida' : label}</span>{d.status === 'error' && <span class="ops-badge red">Error fiscal</span>}</td><td class="num">{opsMoney(d.total, d.currency)}</td><td class="num">{Number(d.amount_remaining) > 0 ? opsMoney(d.amount_remaining, d.currency) : '—'}</td><td>{d.first_viewed_at ? opsAgo(d.first_viewed_at) : <span class="ops-muted">Aún no</span>}</td></tr>; })}
-      {invoices.length === 0 && <tr><td colspan="6" class="ops-empty">Sin facturas.</td></tr>}
+    <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Factura</th><th>Cliente</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th><th>Vista</th>{isAdmin && <th><span class="ops-sr-only">Acciones</span></th>}</tr></thead><tbody>
+      {invoices.map((d: any) => { const [label, tone] = OPS_LIFECYCLE_LABELS[d.lifecycle] ?? [d.lifecycle, '']; return <tr><td><strong>{d.invoice_number || 'Sin folio'}</strong><span class="ops-sub">{opsDate(d.issued_at || d.created_at)}</span></td><td>{d.cliente || 'Sin cliente'}</td><td><span class:list={['ops-badge', d.overdue ? 'red' : tone]}>{d.overdue ? 'Vencida' : label}</span>{d.status === 'error' && <span class="ops-badge red">Error fiscal</span>}</td><td class="num">{opsMoney(d.total, d.currency)}</td><td class="num">{Number(d.amount_remaining) > 0 ? opsMoney(d.amount_remaining, d.currency) : '—'}</td><td>{d.first_viewed_at ? opsAgo(d.first_viewed_at) : <span class="ops-muted">Aún no</span>}</td>{isAdmin && <td class="num">{resendable(d) && <button class="ops-button ghost sm" data-ops-action="resend_invoice" data-endpoint="/api/ops/recovery" data-target-id={d.id} data-confirm={d.invoice_number} data-title="Reenviar factura al cliente" data-description={`Mandará otra vez la factura ${d.invoice_number} a ${d.cliente || 'su cliente'}, con su PDF y su link de pago, en el idioma del negocio. El negocio verá en su historial que la reenvió Soporte de Cord.`}>Reenviar</button>}</td>}</tr>; })}
+      {invoices.length === 0 && <tr><td colspan={isAdmin ? 7 : 6} class="ops-empty">Sin facturas.</td></tr>}
     </tbody></table></div>
   </section>
 
@@ -167,8 +278,63 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
     <section><header class="ops-section-header"><div><h2>SSO</h2><p>{opsNumber(org.sso_count)} conexiones.</p></div></header><div class="ops-card ops-list">{sso.map((s: any) => <div class="ops-list-row two"><div><strong>{s.nombre}</strong><span class="ops-sub">{s.proveedor} · último acceso {opsAgo(s.last_login_at, 'nunca').toLowerCase()}</span></div><span class:list={['ops-badge', s.enabled ? 'green' : '']}>{s.enabled ? 'Activa' : 'Inactiva'}</span></div>)}{sso.length === 0 && <div class="ops-empty">Sin SSO.</div>}</div></section>
   </div>
 
-  <section class="ops-section">
-    <header class="ops-section-header"><div><h2>Historial administrativo</h2><p>Acciones de Ops sobre este workspace.</p></div></header>
-    <div class="ops-card">{audit.map((e: any) => <div class="ops-audit-row"><span class:list={['ops-audit-dot', e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action] || e.action}</strong><span class="ops-sub">{e.actor_email || 'Sistema'}</span></div><span>{e.ip || 'IP no disponible'}</span><time title={opsDate(e.created_at)}>{opsAgo(e.created_at)}</time></div>)}{audit.length === 0 && <div class="ops-empty">Sin acciones administrativas.</div>}</div>
+  <section class="ops-section" id="bitacora">
+    <header class="ops-section-header"><div><h2>Bitácora interna</h2><p>Notas del equipo y acciones de Ops sobre este workspace. El negocio no la ve.</p></div></header>
+    <div class="ops-card">
+      <form class="ops-note-form" data-ops-note-form data-endpoint={`/api/ops/organizations/${org.id}/notes`}>
+        <label class="ops-sr-only" for="ops-note-body">Nota interna</label>
+        <textarea id="ops-note-body" class="ops-textarea" name="body" maxlength={OPS_NOTE_MAX} required placeholder="Contexto para el siguiente que abra esta ficha: qué pidió, qué se le prometió, qué vigilar."></textarea>
+        <div class="ops-note-form-foot"><span class="ops-inline-error" data-ops-note-error hidden></span><button type="submit" class="ops-button sm">Guardar nota</button></div>
+      </form>
+      {log.map((e) => e.kind === 'note'
+        ? <article class="ops-log-row note"><span class="ops-log-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chat')}></svg></span><div><p class="ops-log-body">{e.body}</p><span class="ops-sub">{e.author} · <time title={opsDate(e.at)}>{opsAgo(e.at).toLowerCase()}</time></span></div>{(isAdmin || e.authorId === operatorId) && <button type="button" class="ops-icon-button" data-ops-note-delete={e.id} aria-label="Borrar nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('trash')}></svg></button>}</article>
+        : <div class="ops-log-row"><span class:list={['ops-audit-dot', e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action] || e.action}</strong><span class="ops-sub">{e.author}{e.ip && ` · ${e.ip}`}</span></div><time title={opsDate(e.at)}>{opsAgo(e.at)}</time></div>)}
+      {log.length === 0 && <div class="ops-empty">Sin notas ni acciones administrativas.</div>}
+    </div>
   </section>
+<script>
+  // Notas y etiquetas: fetch y recarga. El texto lo pinta el servidor (Astro
+  // escapa); aquí no se escribe HTML con datos de nadie.
+  const noteForm = document.querySelector<HTMLFormElement>('[data-ops-note-form]');
+  const endpoint = noteForm?.dataset.endpoint || '';
+  const send = async (method: 'POST' | 'DELETE', body: Record<string, string>) => {
+    const res = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'No se pudo guardar.');
+  };
+  const noteError = document.querySelector<HTMLElement>('[data-ops-note-error]');
+  noteForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = noteForm.querySelector('button')!;
+    button.disabled = true;
+    try {
+      await send('POST', { kind: 'note', body: String(new FormData(noteForm).get('body') || '') });
+      location.reload();
+    } catch (error: any) {
+      if (noteError) { noteError.textContent = error.message; noteError.hidden = false; }
+      button.disabled = false;
+    }
+  });
+  const tagForm = document.querySelector<HTMLFormElement>('[data-ops-tag-form]');
+  tagForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const input = tagForm.querySelector('input')!;
+    try { await send('POST', { kind: 'tag', tag: input.value }); location.reload(); }
+    catch (error: any) { input.setCustomValidity(error.message); input.reportValidity(); }
+  });
+  tagForm?.querySelector('input')?.addEventListener('input', (event) => (event.target as HTMLInputElement).setCustomValidity(''));
+  document.addEventListener('click', async (event) => {
+    const target = event.target as HTMLElement;
+    const tag = target.closest<HTMLButtonElement>('[data-ops-tag-remove]');
+    const note = target.closest<HTMLButtonElement>('[data-ops-note-delete]');
+    if (!tag && !note) return;
+    const button = (tag || note)!;
+    if (note && !window.confirm('¿Borrar esta nota? Queda registrado en la bitácora quién la borró.')) return;
+    button.disabled = true;
+    try {
+      await send('DELETE', tag ? { kind: 'tag', tag: tag.dataset.opsTagRemove || '' } : { kind: 'note', id: note!.dataset.opsNoteDelete || '' });
+      location.reload();
+    } catch (error: any) { button.disabled = false; window.alert(error.message); }
+  });
+</script>
 </OpsShell></OpsLayout>

@@ -4,8 +4,8 @@ import OpsActionDialog from './OpsActionDialog.astro';
 import OpsCommand from './OpsCommand.astro';
 
 type OpsSection =
-  | 'overview' | 'activity' | 'organizations' | 'users' | 'invoices' | 'workflows'
-  | 'integrations' | 'usage' | 'status' | 'security' | 'database';
+  | 'overview' | 'activity' | 'organizations' | 'users' | 'revenue' | 'invoices' | 'workflows'
+  | 'integrations' | 'webhooks' | 'usage' | 'status' | 'security' | 'database';
 
 interface Props {
   active: OpsSection;
@@ -27,9 +27,11 @@ const groups: { label: string; items: { id: OpsSection; href: string; label: str
   { label: 'Negocio', items: [
     { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones', icon: 'building', key: 'o' },
     { id: 'users', href: '/ops/users', label: 'Usuarios', icon: 'user', key: 'u' },
+    { id: 'revenue', href: '/ops/revenue', label: 'Ingresos', icon: 'trending-up', key: 'm' },
     { id: 'invoices', href: '/ops/invoices', label: 'Facturas', icon: 'invoice', key: 'f' },
     { id: 'workflows', href: '/ops/workflows', label: 'Workflows', icon: 'workflow', key: 'w' },
     { id: 'integrations', href: '/ops/integrations', label: 'Integraciones', icon: 'plug', key: 'i' },
+    { id: 'webhooks', href: '/ops/webhooks', label: 'Webhooks', icon: 'send', key: 'h' },
   ] },
   { label: 'Plataforma', items: [
     { id: 'usage', href: '/ops/usage', label: 'Uso y costos', icon: 'chart', key: 'c' },

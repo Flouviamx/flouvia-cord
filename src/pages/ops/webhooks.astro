@@ -1,0 +1,114 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import { sql, withOpsTx } from '../../lib/db';
+import { opsAgo, opsDate, opsNumber, opsPct } from '../../lib/ops-format';
+import { OPS_DELIVERY_FILTERS, opsDeliveryPage, opsFailingEndpoints, opsOutboxFailed, opsStripeEvents, opsWebhookStats, parseDeliveryFilter } from '../../lib/ops-webhooks';
+import { stripeDashboardUrl } from '../../lib/ops-billing';
+import { FAIL_DISABLE_THRESHOLD } from '../../lib/webhook-delivery';
+import { OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const isAdmin = Astro.locals.opsOperator.role === 'admin';
+const params = Astro.url.searchParams;
+const filter = parseDeliveryFilter(params.get('estado'));
+const orgParam = params.get('org') || '';
+const orgId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgParam) ? orgParam.toLowerCase() : null;
+const page = parseOpsPage(params.get('page'));
+
+let stats: any = {};
+let endpoints: any[] = [];
+let deliveries: any[] = [];
+let outbox: any[] = [];
+let stripe: any[] = [];
+let orgName: string | null = null;
+let error = false;
+try {
+  const r = await withOpsTx(
+    opsWebhookStats(),
+    opsFailingEndpoints(12),
+    opsDeliveryPage(filter, orgId, OPS_PAGE_SIZE, opsPageOffset(page)),
+    opsOutboxFailed(10, orgId),
+    opsStripeEvents(12),
+    sql`select nombre from orgs where id = ${orgId}::uuid`,
+  );
+  [stats] = r[0] as any[];
+  [, endpoints, deliveries, outbox, stripe] = r as any[];
+  orgName = (r[5] as any[])[0]?.nombre ?? null;
+} catch (cause) { error = true; console.error('[ops/webhooks]', cause); }
+
+const total = Number(deliveries[0]?.total_count || 0);
+const okRate = Number(stats.deliveries_24h) > 0 ? 100 - opsPct(stats.failed_24h, stats.deliveries_24h) : null;
+const qs = (extra: Record<string, string>) => {
+  const q = new URLSearchParams({ ...(orgId ? { org: orgId } : {}), ...extra }).toString();
+  return `/ops/webhooks${q ? `?${q}` : ''}`;
+};
+const search = new URLSearchParams({ ...(orgId ? { org: orgId } : {}), ...(filter !== 'failed' ? { estado: filter } : {}) }).toString();
+const shortError = (value: unknown) => String(value || '').slice(0, 140);
+// "HTTP 500" junto a un badge que ya dice 500 es ruido: solo se muestra un error con más información.
+const extraError = (d: any) => d.error && d.error !== `HTTP ${d.status}` ? shortError(d.error) : null;
+const plural = (n: unknown, one: string, many: string) => `${opsNumber(n)} ${Number(n) === 1 ? one : many}`;
+---
+<OpsLayout title="Webhooks | Cord Ops"><OpsShell active="webhooks" title="Webhooks" subtitle="Lo que Cord entrega a los endpoints de los negocios y lo que recibe del procesador de pagos.">
+  {error && <div class="ops-inline-error">No se pudieron cargar los webhooks.</div>}
+  {orgId && <div class="ops-links"><a class="ops-back" href={`/ops/organizations/${orgId}`}>{orgName || 'Organización'}</a><a class="ops-link" href="/ops/webhooks">Ver todas las organizaciones</a></div>}
+
+  <section class="ops-card ops-metrics cols-6">
+    <div class="ops-metric"><span>Entregas 24 h</span><strong>{opsNumber(stats.deliveries_24h)}</strong><small>Sin contar las de prueba</small></div>
+    <div class="ops-metric"><span>Aceptadas</span><strong>{okRate === null ? '—' : `${okRate}%`}</strong><small>{plural(stats.failed_24h, 'rechazada o sin respuesta', 'rechazadas o sin respuesta')}</small></div>
+    <div class="ops-metric"><span>p95 de respuesta</span><strong>{stats.p95_ms == null ? '—' : `${opsNumber(stats.p95_ms)} ms`}</strong><small>Del endpoint receptor</small></div>
+    <div class="ops-metric"><span>En cola</span><strong>{opsNumber(stats.outbox_pending)}</strong><small>{plural(stats.outbox_failed_7d, 'agotó', 'agotaron')} sus reintentos en 7 días</small></div>
+    <div class="ops-metric"><span>Endpoints</span><strong>{opsNumber(stats.endpoints_active)}</strong><small>{plural(stats.endpoints_disabled, 'apagado', 'apagados')} por fallas</small></div>
+    <div class="ops-metric"><span>Procesador</span><strong>{opsNumber(stats.stripe_stuck)}</strong><small>Sin procesar · {opsNumber(stats.stripe_errors_7d)} con error en 7 días</small></div>
+  </section>
+
+  <div class="ops-grid-2 even ops-section">
+    <section>
+      <header class="ops-section-header"><div><h2>Endpoints con fallas</h2><p>Racha de eventos sin entregar; con {FAIL_DISABLE_THRESHOLD} seguidos Cord apaga el endpoint y avisa al negocio.</p></div></header>
+      <div class="ops-card ops-list">
+        {endpoints.map((w) => <a class="ops-list-row two" href={qs({ org: w.org_id })}><div><strong class="ops-data-value">{w.url}</strong><span class="ops-sub">{w.org_nombre} · {shortError(w.last_error) || (w.last_status ? `Respondió ${w.last_status}` : 'Sin respuesta')} · {opsAgo(w.last_delivery_at, 'nunca').toLowerCase()}</span></div><span class:list={['ops-badge', w.activo ? 'amber' : 'red']}>{w.activo ? `${opsNumber(w.fallos_consecutivos)} seguidos` : `Apagado ${opsAgo(w.deshabilitado_at).toLowerCase()}`}</span></a>)}
+        {endpoints.length === 0 && <div class="ops-empty">Todos los endpoints responden.</div>}
+      </div>
+    </section>
+    <section>
+      <header class="ops-section-header"><div><h2>Eventos del procesador</h2><p>Avisos que Cord recibió y no terminó de procesar, o que fallaron.</p></div></header>
+      <div class="ops-card ops-list">
+        {stripe.map((e) => { const href = stripeDashboardUrl('event', e.id); const Row = href ? 'a' : 'div'; return <Row class="ops-list-row two" href={href || undefined} target={href ? '_blank' : undefined} rel={href ? 'noopener noreferrer' : undefined}><div><strong class="ops-code">{e.type || 'sin tipo'}</strong><span class="ops-sub">{shortError(e.last_error) || 'Sin procesar todavía'} · {opsNumber(e.attempt_count)} {Number(e.attempt_count) === 1 ? 'intento' : 'intentos'}</span></div><span class:list={['ops-badge', e.processed_at ? 'amber' : 'red']}>{e.processed_at ? 'Procesado con error previo' : `Atorado ${opsAgo(e.received_at).toLowerCase()}`}</span></Row>; })}
+        {stripe.length === 0 && <div class="ops-empty">El procesador está al día.</div>}
+      </div>
+    </section>
+  </div>
+
+  {outbox.length > 0 && <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Agotaron sus reintentos</h2><p>Eventos que Cord dejó de reintentar esta semana. Se re-entregan desde el intento más reciente de abajo.</p></div></header>
+    <div class="ops-card ops-list">
+      {outbox.map((e) => <a class="ops-list-row" href={qs({ org: e.org_id })}><strong>{e.evento}</strong><span class="ops-data-value">{e.org_nombre} · {e.url} · {shortError(e.last_error) || (e.last_status ? `Respondió ${e.last_status}` : 'Sin respuesta')}</span><time title={opsDate(e.updated_at)}>{opsNumber(e.intentos)} intentos</time></a>)}
+    </div>
+  </section>}
+
+  <section class="ops-section">
+    <header class="ops-section-header"><div><h2>Intentos de entrega</h2><p>{opsNumber(total)} con este filtro{orgName ? ` en ${orgName}` : ''}. {isAdmin ? 'Re-entregar manda el mismo evento, firmado de nuevo.' : 'Solo un admin puede re-entregar.'}</p></div></header>
+    <nav class="ops-chips" aria-label="Resultado de la entrega">
+      {OPS_DELIVERY_FILTERS.map((f) => <a class="ops-chip" href={qs(f.id === 'failed' ? {} : { estado: f.id })} aria-current={filter === f.id ? 'true' : undefined}>{f.label}</a>)}
+    </nav>
+    <div class="ops-card ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Evento</th><th>Organización</th><th>Endpoint</th><th>Resultado</th><th class="num">Tiempo</th><th>Cuándo</th>{isAdmin && <th><span class="ops-sr-only">Acciones</span></th>}</tr></thead>
+        <tbody>
+          {deliveries.map((d) => <tr>
+            <td><strong class="ops-code">{d.evento}</strong><span class="ops-sub">Intento {opsNumber(d.intento)}{d.es_prueba && ' · prueba'}</span></td>
+            <td><a href={`/ops/organizations/${d.org_id}`}>{d.org_nombre}</a></td>
+            <td class="ops-url-cell"><span class="ops-data-value">{d.url}</span></td>
+            <td>{d.ok ? <span class="ops-badge green">{d.status}</span> : <span class="ops-badge red">{d.status || 'Sin respuesta'}</span>}{!d.ok && extraError(d) && <span class="ops-sub">{extraError(d)}</span>}</td>
+            <td class="num">{d.duracion_ms == null ? '—' : `${opsNumber(d.duracion_ms)} ms`}</td>
+            <td><span title={opsDate(d.created_at)}>{opsAgo(d.created_at)}</span></td>
+            {isAdmin && <td class="num">{!d.ok && !d.replayable && <span class="ops-muted">Payload vencido</span>}{!d.ok && d.replayable && <button class="ops-button ghost sm" data-ops-action="redeliver_webhook" data-endpoint="/api/ops/recovery" data-target-id={d.id} data-title="Re-entregar webhook" data-description={`Volverá a mandar el evento ${d.evento} de ${d.org_nombre}, firmado de nuevo, a ${d.url}. Es el mismo id de evento: el receptor lo puede deduplicar.`}>Re-entregar</button>}</td>}
+          </tr>)}
+          {deliveries.length === 0 && <tr><td colspan={isAdmin ? 7 : 6} class="ops-empty">{filter === 'failed' ? 'Ninguna entrega ha fallado.' : 'Sin entregas con este filtro.'}</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    {!error && total > 0 && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/webhooks" search={search} />}
+  </section>
+</OpsShell></OpsLayout>
