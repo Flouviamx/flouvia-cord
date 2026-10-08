@@ -336,7 +336,7 @@ import { iconInner } from '../../../lib/icons';
     // sobreviva el bundle — este bloque ya rompió una vez por un `as any`.
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
-    import { taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
+    import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
@@ -378,7 +378,7 @@ import { iconInner } from '../../../lib/icons';
                 negociado: it.precioNegociado,
                 cantidad: it.cantidad,
                 negoTouched: it.precioNegociado !== null,
-                taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+                taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
                 exemptionReason: it.exemptionReason ?? null,
             };
             if (l.id) l.lista = volUnit(l);
@@ -1343,7 +1343,7 @@ import { iconInner } from '../../../lib/icons';
                         negociado: it.negociado,
                         cantidad: it.cantidad || 1,
                         negoTouched: it.negociado != null,
-                        taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+                        taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
                         exemptionReason: it.exemptionReason ?? null,
                     };
                     // Ajusta el precio de lista al nivel de volumen de su cantidad.

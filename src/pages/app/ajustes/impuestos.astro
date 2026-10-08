@@ -41,7 +41,11 @@ const KINDS: { id: TaxKind; label: string }[] = (['consumo', 'retencion', 'exent
 // siembra el catálogo), no un 16/21 fijo: "TVA 21%" no existe en Francia y
 // "Sales tax 21%" no existe en ningún estado. Sin tasa nacional que sugerir
 // (Brasil, o EE.UU. sin estado declarado) el campo de tasa no sugiere nada.
-const PRESETS = isUs && usState ? usStateTaxPresets(usState) : taxPresetsFor(PAIS);
+// En Canadá y España el territorio decide qué se siembra (la combinada de la
+// provincia, el IGIC de Canarias): el ejemplo sale del mismo catálogo.
+const PRESETS = isUs && usState
+    ? usStateTaxPresets(usState)
+    : taxPresetsFor(PAIS, ['CA', 'ES'].includes(PAIS) ? String((ORG.fiscalMetadata as any)?.region || '') || null : null);
 const PRESET_DEFAULT = PRESETS.find((p) => p.esDefault);
 const NOMBRE_PLACEHOLDER = PRESET_DEFAULT ? `${PRESET_DEFAULT.nombre}…` : `${PROFILE.taxLabel}…`;
 const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';

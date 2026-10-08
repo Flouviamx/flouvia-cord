@@ -7,6 +7,7 @@
 import { sql, withOrgTx } from './db';
 import { taxPresetsFor, usStateTaxPresets, isUsState } from './countries';
 import { retencionBase } from '../../packages/elements/src/engine';
+import { canonicalTaxRate } from './tax-components';
 
 /**
  * Un catálogo genuinamente vacío (org nueva, sin sembrar aún) es distinto de
@@ -112,7 +113,9 @@ export async function taxCatalogFor(orgId: string) {
         /** Tasa validada, o el fallback si la propuesta no está en el catálogo. */
         resolve(proposed: unknown, fallback: number): number {
             if (proposed === null || proposed === undefined || proposed === '') return fallback;
-            const rate = Number(proposed);
+            // Canadá: una tasa provincial suelta congelada antes (QST 9.975 %)
+            // se lee como la combinada con GST que hoy está en el catálogo.
+            const rate = canonicalTaxRate(country, Number(proposed));
             if (!Number.isFinite(rate) || rate < 0 || rate > 1) return fallback;
             for (const allowed of permitidas) {
                 if (Math.abs(allowed - rate) < 1e-9) return rate;

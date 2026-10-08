@@ -583,13 +583,22 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // impuestos (GST + QST) que el cliente recupera por separado, y la factura
   // los muestra así (src/lib/tax-components.ts). El resto de países conserva el
   // renglón por tasa con la etiqueta del país.
-  const taxDisplay = taxRows.flatMap(([rate, bucket]) => {
+  const taxDisplay: { label: string; base: number; amount: number }[] = [];
+  for (const [rate, bucket] of taxRows) {
     const partes = splitTaxBucket(input.countryCode, rate * 100, bucket.base, bucket.amount, {
       region: input.issuer.address?.region, lang, decimals,
     });
-    if (!partes) return [{ label: `${profile.taxLabel} ${taxLabel(rate)}`, base: bucket.base, amount: bucket.amount }];
-    return partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, base: bucket.base, amount: p.impuesto }));
-  });
+    const filas = partes
+      ? partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, base: bucket.base, amount: p.impuesto }))
+      : [{ label: `${profile.taxLabel} ${taxLabel(rate)}`, base: bucket.base, amount: bucket.amount }];
+    // El GST del 5 % solo y el del 14.975 % son el MISMO impuesto: un renglón
+    // con la base y la cuota sumadas, no dos "GST 5%" seguidos.
+    for (const f of filas) {
+      const previa = taxDisplay.find((t) => t.label === f.label);
+      if (previa) { previa.base += f.base; previa.amount = Math.round((previa.amount + f.amount) * 1e6) / 1e6; }
+      else taxDisplay.push({ ...f });
+    }
+  }
   const retenciones = (input.retenciones ?? []).filter((r) => Number(r.monto) > 0);
   const fxRate = Number(input.fxRate);
   const ledger = normalizeCurrency(input.ledgerCurrency ?? '', '');

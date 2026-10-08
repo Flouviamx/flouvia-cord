@@ -74,6 +74,24 @@ export function taxComponents(
     return null;
 }
 
+/**
+ * Canadá: las tasas provinciales SUELTAS que el catálogo sembraba antes
+ * (QST 9.975 %, PST/RST 7 %, PST 6 %) se cobran siempre junto al GST. Un
+ * borrador, una recurrencia o un concepto que todavía las trae congeladas se
+ * lee como la combinada equivalente — la intención del vendedor era "el
+ * impuesto de Quebec", no "Quebec sin GST" — en vez de caer en silencio a la
+ * predeterminada (GST 5 % solo). Fracción in, fracción out; fuera de Canadá
+ * devuelve la misma tasa.
+ */
+export function canonicalTaxRate(country: string, rate: number): number {
+    if (String(country || '').toUpperCase() !== 'CA') return rate;
+    const pct = Math.round(Number(rate) * 1e6) / 1e4;
+    if (near(pct, 9.975)) return 0.14975;
+    if (near(pct, 7)) return 0.12;
+    if (near(pct, 6)) return 0.11;
+    return rate;
+}
+
 const redondear = (n: number, decimals: number) => {
     const f = 10 ** decimals;
     return Math.round((n + Number.EPSILON * Math.sign(n)) * f) / f;
@@ -119,7 +137,7 @@ export const fmtTaxPct = (tasa: number) => `${Math.round(tasa * 1000) / 1000}%`;
 export function taxDisplayRows(
     lines: { subtotal: number; impuesto: number; taxRate?: number | null }[],
     country: string,
-    opts: { region?: string | null; lang?: string; decimals?: number } = {},
+    opts: { region?: string | null; lang?: string; decimals?: number; taxLabel?: string } = {},
 ): TaxComponentAmount[] | null {
     if (!taxComponents(country, 5, opts)) return null;
     const buckets = new Map<number, { base: number; impuesto: number }>();
@@ -137,7 +155,10 @@ export function taxDisplayRows(
         if (!(Math.abs(v.impuesto) > 0)) continue;
         const partes = splitTaxBucket(country, tasa, v.base, v.impuesto, opts);
         if (partes) filas.push(...partes);
-        else filas.push({ nombre: '', tasa, impuesto: v.impuesto });
+        // Una tasa que no se compone (una factura vieja al 8 %) conserva la
+        // etiqueta del país: un renglón sin nombre en un documento legal no
+        // dice qué impuesto se cobró.
+        else filas.push({ nombre: opts.taxLabel || '', tasa, impuesto: v.impuesto });
     }
     // El mismo impuesto en dos renglones (GST del 5% solo y GST del 14.975%)
     // se suma: el cliente recupera "el GST", no "el GST de cada tasa".
@@ -175,7 +196,17 @@ export function taxBreakdownRows(
             filas.push({ tasa: t.tasa, label, impuesto: t.impuesto });
         }
     }
-    return filas;
+    // El mismo impuesto que sale de dos tasas (el GST del 5 % solo y el del
+    // 14.975 %) es UN renglón: el cliente recupera "el GST", y dos filas
+    // "GST 5%" seguidas se leen como un cobro duplicado. Las etiquetas vacías
+    // (parche en vivo) no se agrupan: cada una es una tasa distinta.
+    const agrupadas: { tasa: number; label: string; impuesto: number }[] = [];
+    for (const f of filas) {
+        const previa = f.label ? agrupadas.find((g) => g.label === f.label) : undefined;
+        if (previa) previa.impuesto = Math.round((previa.impuesto + f.impuesto) * 1e6) / 1e6;
+        else agrupadas.push({ ...f });
+    }
+    return agrupadas;
 }
 
 /**

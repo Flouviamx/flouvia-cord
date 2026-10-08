@@ -317,8 +317,10 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         // selector elige por tasa y dos iguales se pisaban.
         red('GST 5% + PST/RST 7% (BC/MB)', 12),
         red('GST 5% + PST 6% (SK)', 11),
+        // Un solo renglón al 0 %: "Exempt" y "Zero-rated" pesan distinto en la
+        // declaración del negocio, pero Cord guarda la tasa, no el régimen, y
+        // dos opciones iguales se pisaban en el selector.
         ZERO_RATED,
-        exempt('Exempt'),
     ],
 
     // Latinoamérica
@@ -743,7 +745,7 @@ export function canadaTaxPresets(region?: string | null): TaxPreset[] | null {
     for (const hst of CA_HST) {
         if (!principal || !near(principal.tasa, hst.tasa) || principal.nombre.startsWith('GST')) presets.push(hst);
     }
-    presets.push(ZERO_RATED, exempt('Exempt'));
+    presets.push(ZERO_RATED);
     return presets;
 }
 

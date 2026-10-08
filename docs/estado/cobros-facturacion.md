@@ -984,7 +984,10 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   ellas. La provincia es un selector (código de 2 letras; `caProvinceCode`
   reconoce el texto libre anterior) y un catálogo nacional intacto se resiembra
   al elegirla. El número de QST del emisor (`fiscal_metadata.qst_number`,
-  10 dígitos + TQ + 4) se imprime junto al de GST/HST.
+  10 dígitos + TQ + 4) se imprime junto al de GST/HST. Una tasa provincial
+  SUELTA congelada antes (QST 9.975 %, PST/RST 7 %, PST 6 %) se lee como la
+  combinada (`canonicalTaxRate`), en servidor y en los editores: un borrador o
+  una recurrencia vieja no cae en silencio al GST solo.
 - **Causa de exención por concepto (España).** El perfil exento del catálogo
   lleva su causa (`impuestos.exemption_reason`: E1–E6, N1, N2, S2) y el concepto
   la CONGELA al elegirlo, como la tasa (`cotizacion_items.exemption_reason`;
@@ -996,7 +999,14 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   cliente como antes. Los selectores de los editores eligen por índice
   (`taxOptionIndex`): dos perfiles al 0 % comparten tasa y solo la causa los
   distingue. Las cuentas españolas con IVA reciben Exportación (E2), Entrega
-  intracomunitaria (E5), Exenta art. 20 (E1) e Inversión del sujeto pasivo (S2).
+  intracomunitaria (E5), Exenta art. 20 (E1) e Inversión del sujeto pasivo (S2),
+  una sola vez (`migraciones_datos`): lo que el negocio borre no vuelve.
+- **Migración de despliegue** (`scripts/migrate-facturacion.mjs`, en el
+  `buildCommand` antes del build): espejo de `db/facturacion-oct-2026.sql` más
+  la sección de Verifactu extraída de `db/schema.sql`. Salta lo que ya existe
+  —columna, restricción con la misma definición, política, trigger, RLS— para
+  no tomar candados en cada despliegue. Lo verifica
+  `test/migrate-facturacion.test.ts`.
 - **Columnas `date` en pantalla:** `fmtCalendarDate()` (`fmt-server.ts`), nunca
   `fmtDate()`. El driver entrega un `date` como medianoche del servidor y
   `fmtDate` lo convierte a la zona del negocio: en México el detalle de la

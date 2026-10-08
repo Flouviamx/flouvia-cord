@@ -539,7 +539,7 @@ import { iconInner } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
-    import { taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
+    import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
@@ -561,7 +561,9 @@ import { iconInner } from '../../../lib/icons';
         const lines: Linea[] = (BOOT.lineas || []).map((l: any) => ({
             id: l.id, nombre: l.nombre, unidad: l.unidad,
             baseLista: l.lista, lista: l.lista, negociado: l.negociado,
-            cantidad: l.cantidad, taxRate: l.taxRate, negoTouched: false,
+            // Canadá: una tasa provincial suelta de un borrador viejo se lee
+            // como la combinada con GST, igual que la valida el servidor.
+            cantidad: l.cantidad, taxRate: canonicalTaxRate(BOOT.taxCountry, l.taxRate), negoTouched: false,
             exemptionReason: l.exemptionReason ?? null,
         }));
 

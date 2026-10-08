@@ -4015,6 +4015,10 @@ update impuestos i set nombre = 'GST 5% + RST 7% (MB)', tasa = 12
   from orgs o
  where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
    and i.nombre = 'RST 7% (MB)' and i.kind = 'consumo' and i.tasa = 7;
+-- La tasa plana heredada sigue al catálogo: con 9.975 en orgs.iva_pct el
+-- selector volvía a ofrecer "QST sin GST" como opción sintética.
+update orgs set iva_pct = case iva_pct when 9.975 then 14.975 when 7 then 12 when 6 then 11 end
+ where upper(coalesce(country_code, '')) = 'CA' and iva_pct in (9.975, 7, 6);
 
 -- ── Causa de exención por concepto (España, oct 2026) ──────────────────────
 -- Una línea al 0 % puede ser una exportación (art. 21 LIVA), una entrega
@@ -4033,9 +4037,18 @@ alter table cotizacion_items drop constraint if exists chk_cotizacion_items_exem
 alter table cotizacion_items add constraint chk_cotizacion_items_exemption_reason
   check (exemption_reason is null or exemption_reason in ('E1','E2','E3','E4','E5','E6','N1','N2','S2'));
 
+-- Migraciones de DATOS que corren una sola vez. Las de esquema son idempotentes
+-- por construcción (`if not exists`); una que agrega filas al catálogo de un
+-- negocio no lo es: sin este registro, cada despliegue devolvía los perfiles
+-- que el negocio había borrado a propósito.
+create table if not exists migraciones_datos (
+  id          text        primary key,
+  aplicada_at timestamptz not null default now()
+);
+
 -- Las cuentas de España que cobran IVA reciben las causas habituales como
--- perfiles exentos más (idempotente: una por causa y organización). No cambian
--- nada hasta que un concepto las elige.
+-- perfiles exentos más, UNA vez (migraciones_datos). No cambian nada hasta que
+-- un concepto las elige.
 insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, exemption_reason)
 select o.id, c.nombre, 'exento', 'exento', 0, false, c.causa
   from orgs o
@@ -4046,8 +4059,10 @@ select o.id, c.nombre, 'exento', 'exento', 0, false, c.causa
    ('Inversión del sujeto pasivo', 'S2')
  ) as c(nombre, causa)
  where upper(coalesce(o.country_code, '')) = 'ES'
+   and not exists (select 1 from migraciones_datos m where m.id = 'es-causas-exencion-2026-10')
    and exists (select 1 from impuestos i where i.org_id = o.id and i.kind = 'consumo' and i.nombre like 'IVA %')
    and not exists (select 1 from impuestos i where i.org_id = o.id and i.exemption_reason = c.causa);
+insert into migraciones_datos (id) values ('es-causas-exencion-2026-10') on conflict (id) do nothing;
 
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con

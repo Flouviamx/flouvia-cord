@@ -77,6 +77,10 @@ export const POST: APIRoute = async ({ request }) => {
                 cantidad: Number(l.quantity ?? l.cantidad) || 1,
                 precioUnitario: Number(l.unitPrice ?? l.precioUnitario) || 0,
                 taxRate: l.taxRate ?? l.tax_rate ?? null,
+                // España: la causa de exención congelada del concepto (E2…).
+                // Sin ella cada factura repetida derivaba otra en Verifactu,
+                // y ese registro no se puede editar después.
+                exemptionReason: l.exemptionReason ?? null,
             }));
         if (!nombre) nombre = String(doc.empresa || doc.invoice_number || 'Recurrente').slice(0, 120);
     }

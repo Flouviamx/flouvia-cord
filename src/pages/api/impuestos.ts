@@ -212,7 +212,7 @@ async function seedFromCountry(request: Request) {
     // (Ajustes › Fiscal, ya capturado ahí para la dirección de facturación)
     // no hay tasa que sembrar y se cae al mismo "Exempt" de siempre. En España
     // la provincia decide si es IVA, IGIC (Canarias) o IPSI (Ceuta y Melilla).
-    const region = ['US', 'ES'].includes(pais) ? String((org?.fiscal_metadata as any)?.region || '') || null : null;
+    const region = ['US', 'ES', 'CA'].includes(pais) ? String((org?.fiscal_metadata as any)?.region || '') || null : null;
     // Una cuenta de EE.UU. nace con solo el renglón exento: antes eso contaba
     // como "catálogo con perfiles" y nunca podía sembrar la tasa de su estado.
     const soloExentos = Number(existente?.n ?? 0) > 0 && Number(existente?.gravados ?? 0) === 0;

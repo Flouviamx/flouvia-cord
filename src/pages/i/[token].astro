@@ -42,6 +42,7 @@ const { puedePagar, puedePagarMp } = publicInvoicePayability(f, !!(import.meta.e
 // ante una autoridad distinta. `null` en el resto de países (un solo renglón).
 const impuestosPorNombre = taxDisplayRows(f.lineas, f.pais, {
     region: f.emisor?.address?.region, decimals: currencyDecimals(f.currency || 'MXN'),
+    taxLabel: getCountryProfile(f.pais).taxLabel,
 });
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
 const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);

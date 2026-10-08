@@ -131,7 +131,14 @@ const tasas = [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) 
         return partes
             ? partes.map((p) => ({ label: `${p.nombre} ${fmtTaxPct(p.tasa)}`, impuesto: p.impuesto }))
             : [{ label: `${Math.round(tasa * 10000) / 100}%`, impuesto: v.impuesto }];
-    });
+    })
+    // El mismo impuesto de dos tasas (GST del 5 % y del 14.975 %) es un renglón.
+    .reduce((acc: { label: string; impuesto: number }[], row) => {
+        const previa = acc.find((r) => r.label === row.label);
+        if (previa) previa.impuesto = Math.round((previa.impuesto + row.impuesto) * 1e6) / 1e6;
+        else acc.push({ ...row });
+        return acc;
+    }, []);
 
 const METODOS = [
     { v: 'transferencia', l: t(L, 'fact.d_m_transferencia') },

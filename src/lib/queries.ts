@@ -2241,8 +2241,11 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
     const retencionesGuardadas = Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [];
     let desglose: { porTasa: any[]; retenciones: any[] } = { porTasa: [], retenciones: [] };
     try {
+        // Solo las líneas que el cliente aceptó: tras una aprobación parcial el
+        // subtotal y el total ya excluyen las demás, y el desglose debe cuadrar
+        // con ellos (mismo filtro que `documentTotals` en el SSR).
         desglose = calculateDocumentTotals(
-            items.map((it: any) => ({
+            items.filter((it: any) => it.aprobado !== false).map((it: any) => ({
                 descripcion: (it.descripcion as string) ?? '',
                 cantidad: num(it.cantidad),
                 precio_unitario: num(it.precio_unitario),

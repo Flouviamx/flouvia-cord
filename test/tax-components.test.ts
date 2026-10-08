@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitTaxBucket, taxBreakdownRows, taxComponents, taxDisplayRows } from '../src/lib/tax-components';
+import { canonicalTaxRate, splitTaxBucket, taxBreakdownRows, taxComponents, taxDisplayRows } from '../src/lib/tax-components';
 import { canadaTaxPresets, caProvinceCode } from '../src/lib/countries';
 
 describe('impuestos compuestos (Canadá)', () => {
@@ -51,5 +51,21 @@ describe('impuestos compuestos (Canadá)', () => {
         expect(caProvinceCode('Texas')).toBeNull();
         expect(canadaTaxPresets('Quebec')?.[0].nombre).toBe('GST 5% + QST 9.975%');
         expect(canadaTaxPresets(null)).toBeNull();
+    });
+    it('una tasa provincial suelta de antes se lee como la combinada con GST', () => {
+        expect(canonicalTaxRate('CA', 0.09975)).toBe(0.14975);
+        expect(canonicalTaxRate('CA', 0.07)).toBe(0.12);
+        expect(canonicalTaxRate('CA', 0.06)).toBe(0.11);
+        expect(canonicalTaxRate('CA', 0.13)).toBe(0.13);
+        expect(canonicalTaxRate('ES', 0.07)).toBe(0.07);
+    });
+
+    it('el mismo impuesto de dos tasas es un solo renglón, y una tasa simple conserva la etiqueta del país', () => {
+        const filas = taxBreakdownRows([
+            { tasa: 0.05, base: 100, impuesto: 5 },
+            { tasa: 0.14975, base: 1000, impuesto: 149.75 },
+        ], { country: 'CA', taxLabel: 'GST/HST' });
+        expect(filas.map((f) => `${f.label}=${f.impuesto}`)).toEqual(['GST 5%=55', 'QST 9.975%=99.75']);
+        expect(taxDisplayRows([{ subtotal: 100, impuesto: 8, taxRate: 0.08 }], 'CA', { taxLabel: 'GST/HST' })?.[0].nombre).toBe('GST/HST');
     });
 });

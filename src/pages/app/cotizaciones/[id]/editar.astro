@@ -171,7 +171,7 @@ import { iconInner } from '../../../../lib/icons';
     // compartido. El vendedor veía un total en pantalla y se guardaba otro.
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../../lib/currency';
-    import { taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
+    import { canonicalTaxRate, taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
 
     const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
     const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
@@ -194,7 +194,7 @@ import { iconInner } from '../../../../lib/icons';
         // La tasa viaja con la línea. Sin esto, crear una V2 reseteaba cada
         // concepto a la tasa default y borraba un "Exento" que el vendedor
         // había elegido a propósito en la versión anterior.
-        taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+        taxRate: it.taxRate != null ? canonicalTaxRate(BOOT.taxCountry, Number(it.taxRate)) : DEFAULT_TAX,
         // Y su causa de exención (España), por la misma razón.
         exemptionReason: it.exemptionReason ?? null,
     }));
