@@ -1422,6 +1422,8 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
             taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
             exemptionReason: (it.exemption_reason as string) || null,
+            claveSat: (it.clave_sat as string) || null,
+            claveUnidadSat: (it.clave_unidad_sat as string) || null,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
         })),
@@ -1923,6 +1925,9 @@ export async function getFacturaDetalle(id: string) {
             taxRate: num(l.taxRate),
             exemptionReason: (l.exemptionReason as string) || null,
             total: num(l.total),
+            // Claves SAT CONGELADAS con las que se timbró (o se timbrará) el concepto.
+            productKey: (l.productKey as string) || null,
+            unitKey: (l.unitKey as string) || null,
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,

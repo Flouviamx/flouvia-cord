@@ -12,7 +12,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
-import { requirePerm } from '../../../lib/queries';
+import { requirePermAny } from '../../../lib/queries';
 import { decryptSecret } from '../../../lib/crypto-secret';
 import { rateLimit } from '../../../lib/ratelimit';
 import { isProductKey, isUnitKey } from '../../../lib/fiscal/sat-claves';
@@ -24,7 +24,9 @@ const PLATFORM_KEY = import.meta.env.FACTURAPI_API_KEY || import.meta.env.FACTUR
 const TIPOS = { productos: 'products', unidades: 'units' } as const;
 
 export const GET: APIRoute = async ({ url }) => {
-    const denied = await requirePerm('productos'); if (denied) return denied;
+    // La usan el modal de producto (permiso de catálogo) y la clave SAT por
+    // línea de los editores de cotización y factura (permiso de cotizar).
+    const denied = await requirePermAny(['productos', 'cotizar']); if (denied) return denied;
     const tipo = url.searchParams.get('tipo') as keyof typeof TIPOS;
     if (!tipo || !Object.hasOwn(TIPOS, tipo)) return json({ error: 'tipo debe ser productos o unidades.' }, 400);
     const q = String(url.searchParams.get('q') ?? '').trim().slice(0, 80);

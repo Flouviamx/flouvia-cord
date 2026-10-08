@@ -18,6 +18,7 @@ import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/s
 import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { exemptionReasonFor } from './fiscal/exemption';
+import { lineSatKeyError, lineSatKeysFrom } from './fiscal/sat-claves';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
 import { validateTaxId } from './tax-id';
@@ -65,6 +66,9 @@ export interface NewQuoteItem {
     tax_rate?: number | null;
     /** España: causa de exención del concepto (fiscal/exemption.ts). */
     exemption_reason?: string | null;
+    /** México: claves SAT propias de la línea (ganan sobre las del producto). */
+    clave_sat?: string | null;
+    clave_unidad_sat?: string | null;
 }
 
 export interface NewQuoteInput {
@@ -279,8 +283,13 @@ export async function createCotizacion(
         const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate);
         // La causa de exención solo se conserva en España y en una línea al 0 %.
         const exemption_reason = exemptionReasonFor(catalogo.country, rawItems[i]?.exemption_reason, tax_rate);
-        return { ...it, tax_rate, exemption_reason };
+        // Claves SAT de la línea: solo México timbra CFDI. Fuera se descartan
+        // en vez de guardarse sin consumidor (regla 15).
+        const sat = catalogo.country === 'MX' ? lineSatKeysFrom(rawItems[i]) : { productKey: null, unitKey: null };
+        return { ...it, tax_rate, exemption_reason, clave_sat: sat.productKey, clave_unidad_sat: sat.unitKey };
     });
+    const satError = lineSatKeyError(itemsConImpuesto.map((it) => ({ descripcion: it.descripcion, productKey: it.clave_sat, unitKey: it.clave_unidad_sat })));
+    if (satError) throw new QuoteError(satError, 400, 'invalid_request');
 
     const totals = calculateDocumentTotals(itemsConImpuesto as any[], {
         ivaIncluido: iva_incluido,
@@ -422,13 +431,15 @@ export async function createCotizacion(
     for (const it of itemsConImpuesto) {
         await withOrgTx(orgId, sql`
             insert into cotizacion_items
-                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason)
+                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason,
+                 clave_sat, clave_unidad_sat)
             values
                 (${cot.id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},
-                 ${orden++}, ${it.tax_rate}, ${it.exemption_reason})`);
+                 ${orden++}, ${it.tax_rate}, ${it.exemption_reason},
+                 ${it.clave_sat ?? null}, ${it.clave_unidad_sat ?? null})`);
     }
 
     await withOrgTx(orgId, sql`

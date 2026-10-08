@@ -258,6 +258,11 @@ async function duplicate(orgId: string, id: string, request: Request) {
             cantidad: linea.cantidad,
             precioUnitario: linea.precioUnitario,
             taxRate: linea.taxRate,
+            // Las claves SAT congeladas viajan como claves PROPIAS de la línea:
+            // el snapshot no conserva el producto, y sin ellas la copia se
+            // timbraba como 01010101.
+            productKey: linea.productKey,
+            unitKey: linea.unitKey,
         })),
     });
     if (!result.ok) return json({ error: result.error || 'No se pudo duplicar la factura.' }, 400);

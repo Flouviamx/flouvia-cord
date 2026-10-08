@@ -90,15 +90,26 @@ no hace falta una app por país.
   test compara). La UI usa `<TermPicker>` + `wireTermPicker()`: nunca se lee
   `.chip.active` a mano. Un código guardado que ya no se ofrece sigue venciendo en su
   fecha (`termDays('net120') = 120`) pero no se acepta como nuevo.
-- **Claves SAT por producto:** `productos.clave_sat` (c_ClaveProdServ, 8 dígitos) y
-  `productos.clave_unidad_sat` (c_ClaveUnidad). Sin clave de unidad explícita se deduce
-  de `productos.unidad` (`satUnitForUnit`, `src/lib/fiscal/sat-claves.ts`); sin nada, el
-  CFDI usa 01010101 / H87. Cotización → CFDI: `emit.ts` las lee con un `left join` al
-  timbrar. Factura directa: `invoices.ts` las adjunta al guardar el borrador. En ambos
-  rieles quedan congeladas en `line_items_snapshot`. `mexico-items.ts` rechaza una clave
-  con forma inválida antes del PAC. Búsqueda del catálogo: `GET /api/fiscal/catalogo-sat`
-  (proxy de `/v2/catalogs/products|units` de Facturapi con la llave del negocio o la de
-  plataforma; sin llave responde `disponible: false` y se escribe a mano).
+- **Claves SAT por producto y por línea:** `productos.clave_sat` (c_ClaveProdServ, 8
+  dígitos) y `productos.clave_unidad_sat` (c_ClaveUnidad); desde oct 2026 también por
+  LÍNEA: `cotizacion_items.clave_sat/clave_unidad_sat` y `productKey/unitKey` del
+  `DraftLineInput` de la factura (HTTP: `clave_sat`/`clave_unidad_sat` por concepto en el
+  editor y en `/api/v1`). Precedencia campo por campo (`effectiveLineSatKeys`,
+  `src/lib/fiscal/sat-claves.ts`): la clave explícita de la línea gana, luego la del
+  producto (sin clave de unidad se deduce de `productos.unidad`, `satUnitForUnit`) y, sin
+  nada, el CFDI usa 01010101 / H87. Formato inválido se rechaza al GUARDAR con el concepto
+  nombrado (`lineSatKeyError`), solo en México. Cotización → CFDI: `emit.ts` lee la de la
+  línea y la del producto con un `left join`. Factura directa: `invoices.ts` las resuelve
+  al guardar el borrador. En ambos rieles quedan congeladas en `line_items_snapshot`;
+  duplicar una factura las copia como claves propias de la línea. Los tres editores (MX)
+  pintan una sub-fila por concepto con la clave efectiva, el aviso cuando caería en
+  01010101 y un selector que reutiliza la búsqueda del catálogo
+  (`src/lib/sat-line-picker.ts`); el de facturas cuenta las genéricas antes de emitir. El
+  CSV de productos importa/exporta `clave_sat` y `clave_unidad_sat` (solo MX).
+  `mexico-items.ts` rechaza una clave con forma inválida antes del PAC. Búsqueda del
+  catálogo: `GET /api/fiscal/catalogo-sat` (permiso `productos` o `cotizar`; proxy de
+  `/v2/catalogs/products|units` de Facturapi con la llave del negocio o la de plataforma;
+  sin llave responde `disponible: false` y se escribe a mano).
 - **CFDI a receptor extranjero:** cliente con `country_code` ≠ MX → `customer` sin
   `tax_system`, `address.country` en ISO alfa-3 (`toAlpha3`, `countries.ts`), `tax_id` =
   su identificador fiscal extranjero (NumRegIdTrib, opcional) y uso S01 (también en

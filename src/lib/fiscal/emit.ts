@@ -19,7 +19,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
 } from './index';
-import { resolveLineSatKeys } from './sat-claves';
+import { effectiveLineSatKeys } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
 
@@ -344,9 +344,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         left join clientes cl on cl.id = c.cliente_id
         where c.id = ${cotizacionId} and c.org_id = ${orgId}
         limit 1`,
-    // Las claves SAT son clasificación, no aritmética: se leen del producto al
-    // timbrar y quedan congeladas en `line_items_snapshot` del documento.
+    // Las claves SAT son clasificación, no aritmética: la de la LÍNEA gana y lo
+    // que falte se lee del producto al timbrar; quedan congeladas en
+    // `line_items_snapshot` del documento.
     sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason,
+               ci.clave_sat as linea_clave_sat, ci.clave_unidad_sat as linea_clave_unidad_sat,
                p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
@@ -432,11 +434,14 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
     subtotal: round(l.base),
     taxAmount: round(l.impuesto),
     total: round(l.total),
-    ...(country === 'MX' ? resolveLineSatKeys({
-      claveSat: approvedItems[i]?.clave_sat,
-      claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
-      unidad: approvedItems[i]?.producto_unidad,
-    }) : {}),
+    ...(country === 'MX' ? effectiveLineSatKeys(
+      { productKey: approvedItems[i]?.linea_clave_sat, unitKey: approvedItems[i]?.linea_clave_unidad_sat },
+      {
+        claveSat: approvedItems[i]?.clave_sat,
+        claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
+        unidad: approvedItems[i]?.producto_unidad,
+      },
+    ) : {}),
     ...causaDe(i, l.tax_rate),
   }));
   const subtotal = round(totals.subtotal);

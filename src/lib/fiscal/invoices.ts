@@ -58,7 +58,7 @@ import type {
   FiscalParty,
   FiscalRetencion,
 } from './index';
-import { resolveLineSatKeys } from './sat-claves';
+import { effectiveLineSatKeys, lineSatKeyError, lineSatKeysFrom } from './sat-claves';
 import { exemptionReasonFor } from './exemption';
 
 export interface DraftLineInput {
@@ -78,6 +78,13 @@ export interface DraftLineInput {
   taxRate?: number | null;
   /** España: causa de exención del concepto (E1–E6, N1, N2, S2). Ver fiscal/exemption.ts. */
   exemptionReason?: string | null;
+  /**
+   * México: claves SAT propias de la línea (c_ClaveProdServ / c_ClaveUnidad).
+   * Ganan sobre las del producto del catálogo; sin ellas se usan las del
+   * producto y, sin producto, los defaults del SAT al timbrar.
+   */
+  productKey?: string | null;
+  unitKey?: string | null;
 }
 
 export interface CreateDraftInput {
@@ -146,6 +153,10 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     // caería al default de la org gravando lo que no debe gravarse.
     taxRate: numOrNull(i?.tax_rate),
     exemptionReason: i?.exemption_reason ? String(i.exemption_reason).slice(0, 4) : null,
+    // Claves SAT de la línea (`clave_sat`, `clave_unidad_sat`). La forma se
+    // valida al guardar (lineSatKeyError), no aquí: descartarlas en silencio
+    // timbraría 01010101 sin que el negocio supiera por qué.
+    ...lineSatKeysFrom(i),
     // Solo se descartan los renglones vacíos (cantidad 0 o en blanco). Una
     // cantidad negativa ya no se tira en silencio: llega a la validación y se
     // rechaza con un motivo (ver negativeLineError).
@@ -178,14 +189,19 @@ export interface DraftResult {
  */
 async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[]): Promise<FiscalLineItem[]> {
   const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
-  if (!ids.length) return lines;
-  const [rows] = await withOrgTx(orgId, sql`
-    select id, clave_sat, clave_unidad_sat, unidad from productos
-     where org_id = ${orgId} and id = any(${ids}::uuid[])`);
-  const byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  let byId = new Map<string, any>();
+  if (ids.length) {
+    const [rows] = await withOrgTx(orgId, sql`
+      select id, clave_sat, clave_unidad_sat, unidad from productos
+       where org_id = ${orgId} and id = any(${ids}::uuid[])`);
+    byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  }
+  // La clave EXPLÍCITA de la línea gana sobre la del producto (campo por campo).
   return lines.map((line, i) => {
-    const p: any = items[i]?.productoId ? byId.get(String(items[i].productoId)) : null;
-    return p ? { ...line, ...resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad }) } : line;
+    const item = items[i];
+    const p: any = item?.productoId ? byId.get(String(item.productoId)) : null;
+    const keys = effectiveLineSatKeys(item, p ? { claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad } : null);
+    return Object.keys(keys).length ? { ...line, ...keys } : line;
   });
 }
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -346,6 +362,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  // Claves SAT de la línea: solo México timbra con ellas (fuera no se leen).
+  const satError = country === 'MX' ? lineSatKeyError(items) : null;
+  if (satError) return { ok: false, error: satError };
   let docType: string;
   try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo verificar el tipo de documento.' }; }
@@ -471,6 +490,9 @@ export async function updateInvoiceDraft(
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  // Claves SAT de la línea: solo México timbra con ellas (fuera no se leen).
+  const satError = country === 'MX' ? lineSatKeyError(items) : null;
+  if (satError) return { ok: false, error: satError };
   let docType = String(doc.document_type);
   if (input.documentMode !== undefined) {
     try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }

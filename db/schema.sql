@@ -6264,3 +6264,16 @@ alter table tareas add constraint tareas_prioridad_check check (prioridad in ('n
 create index if not exists idx_tareas_asignado on tareas(org_id, asignado_a, due_date) where done = false;
 create index if not exists idx_tareas_completadas on tareas(org_id, completed_at desc) where done = true;
 -- END tareas-seguimiento
+
+-- ── México: claves SAT por línea, factura global y sustitución (oct 2026) ───
+-- Espejo de db/deploy/2026-10-08-mexico.sql, que corre en cada build antes de
+-- servir (scripts/migrate-facturacion.mjs).
+--
+-- Claves SAT propias de la línea de una cotización. Antes solo un producto del
+-- catálogo podía llevarlas: una línea libre se timbraba siempre 01010101. La
+-- de la línea gana sobre la del producto al timbrar (src/lib/fiscal/sat-claves.ts);
+-- `null` = sin clave propia.
+alter table cotizacion_items add column if not exists clave_sat text
+  check (clave_sat is null or clave_sat ~ '^[0-9]{8}$');
+alter table cotizacion_items add column if not exists clave_unidad_sat text
+  check (clave_unidad_sat is null or clave_unidad_sat ~ '^[A-Z0-9]{1,3}$');

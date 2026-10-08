@@ -21,6 +21,9 @@ export interface QuoteItem {
     taxRate?: number;
     /** España: causa de exención congelada del concepto (fiscal/exemption.ts). */
     exemptionReason?: string | null;
+    /** México: claves SAT propias de la línea; ganan sobre las del producto al timbrar. */
+    claveSat?: string | null;
+    claveUnidadSat?: string | null;
     aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)
     comentarios?: { autor: string; tipo: string; contenido: string; cuando: string; mine?: boolean }[];
 }

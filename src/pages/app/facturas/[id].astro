@@ -25,6 +25,7 @@ import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
 import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
 import { fmtRelative } from '../../../lib/fmt-server';
 import { t } from '../../../i18n/app';
+import { DEFAULT_PRODUCT_KEY, DEFAULT_UNIT_KEY } from '../../../lib/fiscal/sat-claves';
 
 export const prerender = false;
 
@@ -41,6 +42,9 @@ if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe) {
 // SAT, CFDI y "timbre" son vocabulario de México: una factura de Madrid o de
 // Lyon nunca pasa por el SAT, y decírselo es hablarle de un trámite ajeno.
 const esMx = String(f?.pais || '').toUpperCase() === 'MX';
+// Claves SAT con las que se timbró cada concepto: solo un CFDI las lleva. Sin
+// clave en el snapshot, el CFDI salió con los defaults del SAT.
+const muestraClavesSat = esMx && !!f && !['proforma', 'commercial_invoice', 'commercial_credit_note'].includes(f.tipo);
 const cancellationLabels: Record<string, string> = {
     pending: L === 'en' ? 'Awaiting recipient acceptance.' : 'Pendiente de aceptación del receptor.',
     verifying: L === 'en' ? 'The tax authority is verifying the request.' : (esMx ? 'El SAT está verificando la solicitud.' : 'La autoridad fiscal está verificando la solicitud.'),
@@ -267,7 +271,14 @@ import { iconInner } from '../../../lib/icons';
                             </div>
                             {f.lineas.map((linea) => (
                                 <div class="fd-item-row">
-                                    <span class="fd-desc">{linea.descripcion}</span>
+                                    <span class="fd-desc">
+                                        {linea.descripcion}
+                                        {muestraClavesSat && (
+                                            <small class="fd-sat" title={`${t(L, 'pmod.clave_sat')} · ${t(L, 'pmod.clave_unidad')}`}>
+                                                {t(L, 'satl.etiqueta')} {linea.productKey ?? DEFAULT_PRODUCT_KEY} · {linea.unitKey ?? DEFAULT_UNIT_KEY}
+                                            </small>
+                                        )}
+                                    </span>
                                     <span class="fd-qty">{linea.cantidad}</span>
                                     <span class="editorial fd-price">{money(linea.precioUnitario)}</span>
                                     <span class="editorial fd-amount">{money(linea.subtotal)}</span>
@@ -772,6 +783,7 @@ import { iconInner } from '../../../lib/icons';
     .fd-item-row { border-bottom: 1px solid var(--color-border); transition: background 0.2s var(--ease-ios); }
     .fd-item-row:hover { background: var(--color-bg-soft); }
     .fd-desc { color: var(--color-text); font-size: 0.86rem; font-weight: 600; }
+    .fd-sat { display: block; margin-top: 2px; color: var(--color-text-muted); font-size: 0.68rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .fd-qty { color: var(--color-text-muted); font-size: 0.84rem; text-align: right; }
     .fd-price, .fd-amount { color: var(--color-blue-deep); font-size: 0.92rem; text-align: right; }
     .fd-amount { font-size: 0.98rem; }
