@@ -14,7 +14,7 @@ import { brandEmailShell, emailButtonStyle, emailBrandFromRow, type EmailBrand }
 
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { runARAgent } from './ar-agent';
-import { sendEmail } from '../email';
+import { sendEmail, siteOrigin } from '../email';
 import { publicDocumentUrl } from '../public-links';
 import { moneyFull } from '../fmt';
 import { checkEntitlement } from '../org-entitlements';
@@ -403,7 +403,7 @@ export async function runCobranzaOrg(
                 subject: cfg.idioma === 'en'
                     ? `${out.borradores} collection email${out.borradores === 1 ? '' : 's'} awaiting approval`
                     : `${out.borradores} correo${out.borradores === 1 ? '' : 's'} de cobranza esperan tu aprobación`,
-                html: renderDigestEmail(out.borradores, cfg.idioma, origin),
+                html: renderDigestEmail(out.borradores, cfg.idioma, siteOrigin()),
             });
         }
     }

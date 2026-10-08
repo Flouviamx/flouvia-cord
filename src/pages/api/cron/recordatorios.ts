@@ -24,7 +24,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
-import { sendEmail, notifyInvoiceReminder } from '../../../lib/email';
+import { sendEmail, notifyInvoiceReminder, siteOrigin } from '../../../lib/email';
 import { publicDocumentUrl } from '../../../lib/public-links';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
@@ -99,8 +99,25 @@ export const GET: APIRoute = async ({ request }) => {
     // necesitar una tabla de dedup.
     const vencidasHoy = todas.filter((c) => c.dias === -1);
 
+    // Este endpoint lo disparan DOS relojes: el cron de vercel.json (15:00 UTC)
+    // y cord-crons.yml cuando su corrida cae en la hora 15. La escalera de
+    // facturas tiene dedup en `documento_recordatorios`; los avisos de abajo no
+    // tenían ninguna, así que el mismo día el cliente recibía el recordatorio dos
+    // veces y el dueño dos "pago vencido". El registro de auditoría que ya se
+    // escribe por cada aviso es la marca: si hoy ya existe, no se repite. Se lee
+    // por organización (withOrgTx), no en el barrido de sistema (regla 30).
+    const yaAvisadoHoy = async (orgId: string, accion: string, entidadId: string) => {
+        const [r] = await withOrgTx(orgId, sql`
+            select 1 from audit_log
+             where org_id = ${orgId} and accion = ${accion} and entidad_id = ${entidadId}
+               and created_at >= current_date
+             limit 1`);
+        return r.length > 0;
+    };
+
     let enviados = 0;
     for (const c of candidatos) {
+        if (await yaAvisadoHoy(c.orgId, 'recordatorio.enviado', c.id)) continue;
         const link = await publicDocumentUrl(c.orgId, 'q', c.token);
         const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
         const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
@@ -126,11 +143,16 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     for (const c of vencidasHoy) {
+        if (await yaAvisadoHoy(c.orgId, 'cobranza.vencida_avisada', c.id)) continue;
+        // `origin` no existía en este archivo: el primer día que una cotización
+        // quedaba vencida, el ReferenceError abortaba la corrida ANTES de la
+        // escalera de facturas y de `invoice.overdue`.
         await notify(c.orgId, 'payment_overdue', {
             folio: c.folio, cliente: c.empresa, total: c.total,
             moneda: c.moneda,
-            link: `${origin}/app/cobranza`,
+            link: `${siteOrigin()}/app/cobranza`,
         });
+        await logAudit(c.orgId, { accion: 'cobranza.vencida_avisada', entidad: 'cotizacion', entidad_id: c.id, detalle: c.folio });
     }
 
     // ── Facturas ────────────────────────────────────────────────────────────
@@ -173,10 +195,12 @@ export const GET: APIRoute = async ({ request }) => {
         const docId = f.id as string;
         const orgId = f.org_id as string;
 
-        if (diasVencida === 1) {
-            // Cruzó el vencimiento ayer: el webhook se dispara una sola vez.
+        if (diasVencida === 1 && !(await yaAvisadoHoy(orgId, 'factura.vencida_avisada', docId))) {
+            // Cruzó el vencimiento ayer: el webhook se dispara una sola vez,
+            // también si el endpoint corre dos veces el mismo día.
             vencidasFactura++;
             await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
+            await logAudit(orgId, { accion: 'factura.vencida_avisada', entidad: 'factura', entidad_id: docId, detalle: 'invoice.overdue' });
         }
 
         // La etapa que TOCA hoy: la mayor de la cadencia que ya se alcanzó y
@@ -190,6 +214,10 @@ export const GET: APIRoute = async ({ request }) => {
             .sort((a, b) => b - a);
         const etapa = alcanzadas[0];
         if (etapa === undefined) continue;
+        // Una etapa que quedó ATRÁS de otra ya enviada no se manda nunca: una
+        // segunda corrida el mismo día mandaba el "vence en 7 días" de una
+        // factura que ya había recibido el de "vence mañana" o el de vencida.
+        if (enviadas.size && etapa < Math.max(...enviadas)) continue;
 
         if (f.cotizacion_id && yaAvisadas.has(f.cotizacion_id as string)) continue;
 
