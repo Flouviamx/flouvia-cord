@@ -32,17 +32,18 @@ jobs:
       matrix:
         pkg: [elements, node, cli]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: inputs.package == matrix.pkg || inputs.package == 'all'
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: inputs.package == matrix.pkg || inputs.package == 'all'
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-          cache: npm
-          cache-dependency-path: packages/${{ matrix.pkg }}/package-lock.json
+          # Sin caché en el job que publica con id-token: una caché envenenada
+          # entraría al paquete firmado con provenance. `npm ci` usa el lockfile.
+          package-manager-cache: false
       - name: Install, verify and publish
         if: inputs.package == matrix.pkg || inputs.package == 'all'
         working-directory: packages/${{ matrix.pkg }}
@@ -72,10 +73,10 @@ jobs:
       run:
         working-directory: packages/python
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - run: PYTHONPATH=src python -m unittest discover -s tests
