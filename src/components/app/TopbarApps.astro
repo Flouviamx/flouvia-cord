@@ -86,12 +86,12 @@ import { iconInner } from '../../lib/icons';
         width: 36px; height: 36px; padding: 0; margin: 0;
         border: none; border-radius: 9px; background: transparent;
         color: var(--color-text-muted); font: inherit; cursor: pointer;
-        transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease-spring);
+        transition: background-color 0.12s, color 0.12s, box-shadow 0.12s;
         -webkit-appearance: none; appearance: none;
     }
     .tb-apps svg { width: 17px; height: 17px; flex-shrink: 0; }
-    .tb-apps:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); transform: translateY(-1px); }
-    .tb-apps:active { transform: scale(0.96); }
+    /* Quieto como el resto de la topbar: el hover solo cambia el fondo. */
+    .tb-apps:hover { background: var(--sb-hover-bg); color: var(--color-text); }
     .tb-apps:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
     .tb-apps[aria-expanded="true"] { background: var(--color-bg-soft); color: var(--color-blue-deep); }
 
