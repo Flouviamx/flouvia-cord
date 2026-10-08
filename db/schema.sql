@@ -5884,3 +5884,18 @@ do $$ begin
   end if;
 end $$;
 -- END cli-logins
+
+-- ── Tareas con dueño, prioridad y recordatorio real (oct 2026) ──────────────
+-- Espejo de db/tareas-seguimiento.sql, que corre en cada build antes de servir.
+alter table tareas add column if not exists notas text;
+alter table tareas add column if not exists prioridad text not null default 'normal';
+alter table tareas add column if not exists asignado_a uuid references users(id) on delete set null;
+alter table tareas add column if not exists creado_por uuid references users(id) on delete set null;
+alter table tareas add column if not exists completed_at timestamptz;
+alter table tareas add column if not exists completed_by uuid references users(id) on delete set null;
+alter table tareas add column if not exists recordada_el date;
+alter table tareas drop constraint if exists tareas_prioridad_check;
+alter table tareas add constraint tareas_prioridad_check check (prioridad in ('normal', 'alta'));
+create index if not exists idx_tareas_asignado on tareas(org_id, asignado_a, due_date) where done = false;
+create index if not exists idx_tareas_completadas on tareas(org_id, completed_at desc) where done = true;
+-- END tareas-seguimiento
