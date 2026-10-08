@@ -109,7 +109,7 @@ function fixture(type: CordWebhookEventType): Record<string, unknown> {
         },
         client: { id: 'test_client', object: 'client', empresa: 'Cliente de prueba', contacto: null, email: 'compras@ejemplo.com', telefono: null, rfc: null, terminos: 'contado', country_code: 'MX' },
         product: { id: 'test_product', object: 'product', sku: 'SKU-PRUEBA', nombre: 'Producto de prueba', unidad: 'pieza', precio_lista: 100, activo: true },
-        task: { id: 'test_task', object: 'task', titulo: 'Tarea de prueba', due_date: null, done: false, cotizacion_id: 'test_quote' },
+        task: { id: 'test_task', object: 'task', titulo: 'Tarea de prueba', due_date: null, done: false, cotizacion_id: 'test_quote', factura_id: null },
         promise: { id: 'test_promise', object: 'promise', cotizacion_id: 'test_quote', fecha_promesa: null, monto: 5000, moneda: 'MXN', estado: 'pendiente' },
         dispute: { id: 'test_dispute', object: 'dispute', monto: 11600, moneda: 'MXN', motivo: 'fraudulent', estado: 'needs_response', fecha_limite: null, ...ref },
         refund: { object: 'refund', monto: 11600, moneda: 'MXN', motivo: null, ...ref },

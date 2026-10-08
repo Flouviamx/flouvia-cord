@@ -42,8 +42,11 @@ beforeEach(() => {
         const text = strings.join('?');
         if (text.includes('cord_resolve_org_for_connected_account')) return [{ id: 'org-seller' }];
         if (text.includes('stripe_events')) return [{ id: 'evt' }];
+        // La tarea del contracargo: el guard de reentrega es el mismo evento ya emitido.
+        if (text.includes('insert into tareas')) return mocks.state.duplicate ? [] : [{ id: 'tarea-1', titulo: 'Responder contracargo de $200.00 MXN', done: false, cotizacion_id: QUOTE }];
         if (text.includes('from domain_events')) return mocks.state.duplicate ? [{ id: 'evento-previo' }] : [];
         if (text.includes('select id from cotizacion_cobros')) return [{ id: 'cobro-1' }];
+        if (text.includes('select id, cotizacion_id from cotizacion_cobros')) return [{ id: 'cobro-1', cotizacion_id: QUOTE }];
         if (text.includes('from cotizacion_cobros cc')) return [{ id: QUOTE, folio: 'COT-00104', empresa: 'Stark Industries' }];
         if (text.includes('insert into cobro_disputas')) return [{ id: 'disputa-1' }];
         if (text.includes('insert into payouts')) return [{ id: 'deposito-1' }];
@@ -58,9 +61,13 @@ afterEach(() => vi.unstubAllEnvs());
 describe('contracargos', () => {
     const dispute = { id: 'dp_1', charge: 'ch_1', amount: 20000, currency: 'mxn', reason: 'fraudulent', status: 'needs_response', evidence_details: { due_by: 1790000000 } };
 
-    it('abre dispute.created con la cotización ligada', async () => {
+    it('abre dispute.created con la cotización ligada y su tarea emite task.created', async () => {
         expect((await deliver('charge.dispute.created', dispute)).status).toBe(200);
-        expect(emitted()).toEqual([['dispute.created', expect.objectContaining({
+        const tareaSql = mocks.sql.mock.calls.find((c) => (c[0] as TemplateStringsArray).join('?').includes('insert into tareas'))!;
+        // Ligada a la cotización del cobro, con el plazo como día civil y sin repetirse en una reentrega.
+        expect(tareaSql.slice(1)).toEqual(expect.arrayContaining([QUOTE, 'Responder contracargo de $200.00 MXN', 'dispute.created', 'dp_1']));
+        expect(emitted().filter(([t]) => t === 'task.created')).toEqual([['task.created', expect.objectContaining({ id: 'tarea-1', cotizacion_id: QUOTE })]]);
+        expect(emitted().filter(([t]) => t !== 'task.created')).toEqual([['dispute.created', expect.objectContaining({
             id: 'disputa-1', referencia: 'dp_1', monto: 200, moneda: 'MXN', motivo: 'fraudulent',
             cotizacion_id: QUOTE, folio: 'COT-00104', cliente: 'Stark Industries',
         })]]);

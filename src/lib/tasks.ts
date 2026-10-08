@@ -8,6 +8,13 @@
 // servidor)`, así que en la noche de Ciudad de México una tarea de hoy ya salía
 // vencida porque en UTC era mañana.
 
+/**
+ * Quién ESCRIBE tareas (crear, editar, completar, borrar): cualquiera de estos
+ * permisos. Fuente única para el endpoint, el menú Crear y el tablero; leer
+ * tareas lo puede cualquier miembro.
+ */
+export const TASK_PERMISSIONS = ['cotizar', 'cobranza', 'clientes'] as const;
+
 export const TASK_PRIORITIES = ['normal', 'alta'] as const;
 export type TaskPriority = typeof TASK_PRIORITIES[number];
 
@@ -22,6 +29,27 @@ export const TASK_BUCKETS = ['vencidas', 'hoy', 'manana', 'semana', 'despues', '
 export type TaskBucket = typeof TASK_BUCKETS[number];
 
 export const TASK_TITLE_MAX = 200;
+
+/**
+ * Paginación de /app/tareas: se pintan de `TASK_PAGE_STEP` en `TASK_PAGE_STEP`
+ * ("Mostrar 200 más") hasta `TASK_LIST_MAX`. La lista agrupa por urgencia, así
+ * que no se pagina por páginas sueltas: crecer el tope conserva los grupos.
+ * Antes cortaba en 200 sin avisar y lo que quedaba fuera simplemente no existía.
+ */
+export const TASK_PAGE_STEP = 200;
+export const TASK_LIST_MAX = 1000;
+
+/** Tope válido para la lista (1…TASK_LIST_MAX); basura o vacío cae a `fallback`. */
+export function clampTaskLimit(value: unknown, fallback: number): number {
+    const n = Math.floor(Number(value));
+    if (!Number.isFinite(n) || n < 1) return Math.min(TASK_LIST_MAX, Math.max(1, fallback));
+    return Math.min(TASK_LIST_MAX, n);
+}
+
+/** El siguiente tope de "Mostrar más", o null si ya no se puede crecer. */
+export function nextTaskLimit(limit: number): number | null {
+    return limit >= TASK_LIST_MAX ? null : Math.min(TASK_LIST_MAX, limit + TASK_PAGE_STEP);
+}
 export const TASK_NOTES_MAX = 2000;
 
 const ISO_RE = /^(\d{4})-(\d{2})-(\d{2})$/;

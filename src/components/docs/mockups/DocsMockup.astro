@@ -12,7 +12,7 @@ import '../../../styles/docs-mockups.css';
 import DmIcon from './DmIcon.astro';
 import DmSidebar from './DmSidebar.astro';
 import DmTopbar from './DmTopbar.astro';
-import type { DmLang } from './format';
+import type { DmLang, DmSidebarBadges } from './format';
 
 interface Props {
     lang: DmLang;
@@ -37,7 +37,7 @@ interface Props {
     /** variant="app" + chrome="full": sidebar ancha (por defecto) o rail colapsado de solo iconos. */
     sidebar?: 'full' | 'rail';
     /** variant="app" + chrome="full": contadores de la sidebar. */
-    badges?: { seguimiento?: number; vencidas?: number };
+    badges?: DmSidebarBadges;
     /** Nombre del espacio de trabajo en la sidebar. */
     org?: string;
     /** variant="panel": ancho máximo de la tarjeta en px (480 por defecto). */

@@ -379,7 +379,7 @@ export const WORKFLOW_ACTIONS: WorkflowActionDef[] = [
         group: 'equipo',
         brand: 'cord',
         label: { es: 'Crear una tarea', en: 'Create a task' },
-        description: { es: 'Agrega una tarea de seguimiento para el equipo. Si el evento es de una cotización, queda ligada a ella.', en: 'Adds a follow-up task for the team. If the event is about a quote, the task is linked to it.' },
+        description: { es: 'Agrega una tarea de seguimiento para el equipo. Si el evento es de una cotización o de una factura, queda ligada a ella.', en: 'Adds a follow-up task for the team. If the event is about a quote or an invoice, the task is linked to it.' },
         params: [
             { key: 'titulo', label: { es: 'Título de la tarea', en: 'Task title' }, kind: 'template', required: true, max: 200 },
             { key: 'dias', label: { es: 'Vence en (días)', en: 'Due in (days)' }, hint: { es: 'Déjalo vacío para una tarea sin fecha.', en: 'Leave empty for a task without a date.' }, kind: 'days', required: false, max: 365 },

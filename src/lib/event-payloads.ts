@@ -61,6 +61,7 @@ export function taskEventData(t: DbRow) {
         due_date: day(t.due_date),
         done: t.done === true,
         cotizacion_id: str(t.cotizacion_id),
+        factura_id: str(t.documento_id),
     };
 }
 

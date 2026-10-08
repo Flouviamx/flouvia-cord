@@ -11,7 +11,7 @@ import { currentLocale, currentTimeZone, currentUserId } from './context';
 import { intlLocale } from './fmt-server';
 import { todayInZone } from './report-scope';
 import { t, type AppStringKey } from '../i18n/app';
-import { dayDiff, taskBucket, type TaskBucket, type TaskPriority, type TaskScope, type TaskState } from './tasks';
+import { TASK_LIST_MAX, dayDiff, taskBucket, type TaskBucket, type TaskPriority, type TaskScope, type TaskState } from './tasks';
 
 export interface TaskPerson { id: string; nombre: string; inicial: string }
 
@@ -42,7 +42,8 @@ export interface TaskItem {
 
 export interface TaskCounts { vencidas: number; hoy: number; pendientes: number; mias: number; sinAsignar: number }
 
-export interface TaskListResult { items: TaskItem[]; total: number; counts: TaskCounts; today: string }
+/** `total` cuenta lo que hay en la vista (estado + responsable), no sólo lo que cupo en `limit`. */
+export interface TaskListResult { items: TaskItem[]; total: number; limit: number; counts: TaskCounts; today: string }
 
 const initials = (nombre: string) =>
     nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '—';
@@ -88,7 +89,7 @@ export interface ListTasksOptions { estado?: TaskState; scope?: TaskScope; limit
 export async function listTasks(opts: ListTasksOptions = {}): Promise<TaskListResult> {
     const estado = opts.estado ?? 'pendientes';
     const scope = opts.scope ?? 'todas';
-    const limit = Math.max(1, Math.min(200, opts.limit ?? 100));
+    const limit = Math.max(1, Math.min(TASK_LIST_MAX, opts.limit ?? 100));
     const orgId = await getActiveOrgId();
     const me = currentUserId();
     const today = orgToday();
@@ -125,15 +126,16 @@ export async function listTasks(opts: ListTasksOptions = {}): Promise<TaskListRe
         limit ${limit}`,
         sql`
         select
-          count(*) filter (where t.due_date < ${today}::date)::int as vencidas,
-          count(*) filter (where t.due_date = ${today}::date)::int as hoy,
-          count(*)::int as pendientes,
-          count(*) filter (where t.asignado_a = ${me})::int as mias,
-          count(*) filter (where t.asignado_a is null)::int as sin_asignar,
-          count(*) filter (where (not ${mias} or t.asignado_a = ${me})
+          count(*) filter (where not t.done and t.due_date < ${today}::date)::int as vencidas,
+          count(*) filter (where not t.done and t.due_date = ${today}::date)::int as hoy,
+          count(*) filter (where not t.done)::int as pendientes,
+          count(*) filter (where not t.done and t.asignado_a = ${me})::int as mias,
+          count(*) filter (where not t.done and t.asignado_a is null)::int as sin_asignar,
+          count(*) filter (where t.done = ${done}
+                             and (not ${mias} or t.asignado_a = ${me})
                              and (not ${sinAsignar} or t.asignado_a is null))::int as en_vista
         from tareas t
-        where t.org_id = ${orgId} and t.done = false`,
+        where t.org_id = ${orgId}`,
     );
 
     const L = currentLocale();
@@ -178,7 +180,8 @@ export async function listTasks(opts: ListTasksOptions = {}): Promise<TaskListRe
 
     return {
         items,
-        total: done ? items.length : Number(countRow?.en_vista ?? items.length),
+        total: Number(countRow?.en_vista ?? items.length),
+        limit,
         today,
         counts: {
             vencidas: Number(countRow?.vencidas ?? 0),

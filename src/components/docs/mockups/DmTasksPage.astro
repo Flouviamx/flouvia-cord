@@ -37,7 +37,7 @@ const caption = Astro.props.caption ?? d.caption;
 // Con equipo (más de una persona) la página muestra Mías / Sin responsable en lugar de Pendientes.
 const equipo = Object.keys(PEOPLE).length > 1;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="tareas" badges={{ tareas: badge.n } as any} height={1010} caption={caption} class="dm-tp-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="tareas" badges={{ tareas: badge.n, tareasVencidas: badge.vencidas }} height={1010} caption={caption} class="dm-tp-figure">
     <div class="dm-tp-head">
         <div class="dm-h1">{dmT(lang, 'tareas.pagina.heading')}</div>
         <div class="dm-tp-sub">{dmT(lang, 'tareas.pagina.sub')}</div>
@@ -78,9 +78,6 @@ const equipo = Object.keys(PEOPLE).length > 1;
 
 <style is:global>
     .dm-tp-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); padding-top: 18px; }
-    /* El contador de Tareas en la sidebar va en rojo cuando hay vencidas (tone danger). */
-    .dm-tp-figure .dm-sb-item.is-active .dm-sb-badge { color: #c2410c; background: rgba(234, 88, 12, 0.1); }
-    .dm-tp-figure .dm-sidebar.is-rail .dm-sb-item.is-active .dm-sb-badge { background: #ea580c; opacity: 1; }
     .dm-tp-head { margin-bottom: 14px; }
     .dm-tp-sub { margin-top: 3px; font-size: 11.5px; color: var(--dm-muted); }
 

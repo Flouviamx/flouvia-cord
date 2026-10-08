@@ -204,7 +204,7 @@ const i18n = {
 </section>
 
 <script>
-    import { dueShortcut, type DueShortcut } from '../../../lib/tasks';
+    import { TASK_PAGE_STEP as PAGE_STEP, dueShortcut, type DueShortcut } from '../../../lib/tasks';
 
     type Win = Window & {
         cordToast?: (msg: string, type?: string, ms?: number) => HTMLElement | undefined;
@@ -266,9 +266,12 @@ const i18n = {
         }
 
         // ── Filtros ──
+        // Cambiar de vista vuelve al primer tramo: "Mostrar más" era de la vista anterior.
+        const resetLimit = () => { if (root.dataset.variant === 'page') root.dataset.limit = String(PAGE_STEP); };
         root.querySelectorAll<HTMLButtonElement>('[data-set-scope]').forEach((btn) => btn.addEventListener('click', () => {
             if (root.dataset.scope === btn.dataset.setScope) return;
             root.dataset.scope = btn.dataset.setScope!;
+            resetLimit();
             setPressed('[data-set-scope]', btn);
             try { localStorage.setItem(STORE, root.dataset.scope); } catch { /* opcional */ }
             syncUrl(); refresh();
@@ -276,6 +279,7 @@ const i18n = {
         root.querySelectorAll<HTMLButtonElement>('[data-set-estado]').forEach((btn) => btn.addEventListener('click', () => {
             if (root.dataset.estado === btn.dataset.setEstado) return;
             root.dataset.estado = btn.dataset.setEstado!;
+            resetLimit();
             setPressed('[data-set-estado]', btn);
             syncUrl(); refresh();
         }));
@@ -284,6 +288,8 @@ const i18n = {
             const u = new URL(location.href);
             u.searchParams.set('estado', root.dataset.estado || 'pendientes');
             u.searchParams.set('scope', root.dataset.scope || 'todas');
+            if (Number(root.dataset.limit) > PAGE_STEP) u.searchParams.set('limit', root.dataset.limit!);
+            else u.searchParams.delete('limit');
             history.replaceState(null, '', u);
         }
 
@@ -431,6 +437,12 @@ const i18n = {
         }
 
         list.addEventListener('click', (e) => {
+            const more = (e.target as HTMLElement).closest<HTMLElement>('[data-tk-more]');
+            if (more) {
+                root.dataset.limit = more.dataset.tkMore!;
+                syncUrl(); refresh();
+                return;
+            }
             const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
             const row = btn?.closest<HTMLElement>('.tk-row');
             if (!btn || !row) return;
@@ -656,6 +668,10 @@ const i18n = {
     .tk-more:hover, .tk-more[aria-expanded="true"] { background: var(--color-bg-soft); color: var(--color-text); }
     .tk-rest { align-self: flex-start; font-size: 0.78rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; margin-top: 0.35rem; }
     .tk-rest:hover { text-decoration: underline; }
+    .tk-page-more { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-top: 0.75rem; padding-top: 0.85rem; border-top: 1px solid var(--color-border); font-size: 0.8rem; color: var(--color-text-muted); }
+    .tk-page-more-btn { font: inherit; font-weight: 600; color: var(--color-blue-deep); background: var(--color-bg-soft); border: 0; border-radius: 999px; padding: 0.45rem 0.95rem; min-height: 36px; cursor: pointer; }
+    .tk-page-more-btn:hover { background: var(--color-border); }
+    .tk-page-more-btn:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
 
     .tk-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 1.4rem 0.5rem; }
     .tk-empty-ico { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; border-radius: 12px; background: var(--color-bg-soft); color: var(--color-text-muted); margin-bottom: 4px; }

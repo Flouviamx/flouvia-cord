@@ -44,7 +44,8 @@ They show in two places:
 </Steps>
 
 **From any screen:** click **Create** in the top bar and choose **Task** (or press
-<kbd>T</kbd>). **New task** opens, with the title and the due date; click **Add task**. The
+<kbd>T</kbd>); the option shows if you have the Quotes, Collections, or Clients
+permission, even if you can't create anything else. **New task** opens, with the title and the due date; click **Add task**. The
 task is assigned to you with normal priority; priority, notes, and assignee are changed
 later with **Edit**.
 
@@ -61,31 +62,36 @@ characters).
 - **Filters:** on the page, **Open** and **Completed**, and by assignee **Mine**, **All**, and **Unassigned**; the Home widget only has **Mine** and **All**. With a team, both views open on **Mine**. With a single person on the account, the assignee filter doesn't show.
 - **Complete:** click the circle. For a few seconds you can click **Undo**. Under **Completed** you see who completed it and when, and you can **Reopen** it.
 - **Task menu (···):** **Edit** (title, notes, date, priority, and assignee), **Snooze until** tomorrow, Monday, or in a week, **Assign to me**, and **Delete**. Delete asks for confirmation because it can't be undone.
-- **Linked to a quote:** if the task is linked to a quote (for example, a workflow, the API, or a SPEI refund created it), the quote number and the client show as a link to the quote.
+- **Linked to a quote or invoice:** if the task is linked to a quote (for example, a workflow, the API, a chargeback, or a SPEI refund created it), the quote number and the client show as a link to the quote. If it's linked to an invoice (a workflow on an invoice event, the API, or MCP created it), the link goes to the invoice.
+- **Long lists:** the page shows 200 tasks per view and says below how many there are in total ("Showing 200 of 260"); the **Show more** button opens the next ones, 200 at a time (in the example, **Show 60 more**), up to 1,000. Beyond that, filter by assignee or complete the ones you already did.
 - **Notes:** on the page they show below the title; in the widget, an icon tells you the task has notes.
 - In the sidebar, **Tasks** shows how many of yours or unassigned ones are due today or overdue; the number is red when some are overdue.
 
 ## Email reminder
 
 Every morning, from 8:00 in your business's time zone, each assignee gets an email with
-their tasks due today and overdue. An unassigned task goes to whoever created it. If no one on the team
+their tasks due today and overdue, with dates in your account's language and your country's
+format. An unassigned task goes to whoever created it. If no one on the team
 created it (a workflow, the API, MCP, or a chargeback added it) or that person is no longer on
 the team, it goes to the account owner.
 
-- Each task shows up in at most one email a day. If you add a task for today, or move one to today, after the morning email went out, it arrives in a separate email at the next check, which runs every hour.
+- Each person gets at most one email a day per organization. If you add a task for today, or move or assign one to today, after that person got their morning email, no second email goes out: it shows up in tomorrow's, as overdue. If that person hadn't gotten an email that day yet (nothing was due in the morning), it arrives at the next check.
 - If you snooze a task, it reminds again on its new date.
 - An overdue task that isn't completed shows up in each day's email until you complete or snooze it.
 - Tasks without a due date don't trigger a reminder.
 - The **Open my tasks** button in the email opens the **Tasks** page with the **Mine** filter.
 - **Test mode** doesn't send reminders.
-- To turn it off for the whole organization, uncheck **Task reminder** in [Settings › Notifications](/en/docs/gestion/notificaciones).
+- It's turned off for the whole organization, not per person: someone with the Settings permission unchecks **Task reminder** in [Settings › Notifications](/en/docs/gestion/notificaciones). The email footer says so to whoever can turn it off; everyone else is asked to talk to whoever manages the account.
 
 ## Tasks Cord creates for you
 
 When a payment operation needs your attention, Cord adds the task with **high priority**:
 
-- **Chargeback response** (titled "Responder contracargo" with the amount): when a client disputes a card charge, with the deadline to submit evidence as the due date. It's created unassigned (see [Disputes](/en/docs/pagos/disputas)).
-- **SPEI refund transfer** (titled "Transferir reembolso SPEI" with the amount): when you request a refund of a SPEI payment, which is transferred outside Cord, linked to the quote and assigned to whoever requested it (see [Refunds](/en/docs/pagos/reembolsos)).
+- **Respond to the [amount] chargeback:** when a client disputes a card charge, with the day (in your business's time zone) the evidence deadline falls on as the due date. It's linked to the payment's quote and created unassigned (see [Disputes](/en/docs/pagos/disputas)).
+- **Send the [amount] SPEI refund:** when you request a refund of a SPEI payment, which is transferred outside Cord, linked to the quote and assigned to whoever requested it (see [Refunds](/en/docs/pagos/reembolsos)). Completing the task doesn't record the refund as paid: it only closes your to-do.
+
+The title is written in your account's language, and these tasks emit **A task is created**
+like any other.
 
 ## Other ways to create tasks
 
@@ -95,14 +101,16 @@ When a payment operation needs your attention, Cord adds the task with **high pr
 The **Create a task** action in [Workflows](/en/docs/automatizacion/workflows/acciones)
 adds a task with a title (it can use event data, such as the quote number or client)
 and, optionally, **Due in (days)**, up to 365. If the event is about a quote, the task
-is linked to it. Example: "when the client rejects a quote, create a task to call them
+is linked to it; if it's about an invoice (for example **An invoice is paid** or **An
+invoice becomes overdue**), it's linked to that invoice and, if the invoice came from a
+quote, to the quote too. Example: "when the client rejects a quote, create a task to call them
 tomorrow".
 
 </TabItem>
 <TabItem label="API">
 
 `POST /api/v1/tareas` creates a task with `titulo`, an optional `due_date`
-(YYYY-MM-DD), and an optional `cotizacion_id`. It requires a key with write permission.
+(YYYY-MM-DD), an optional `cotizacion_id`, and an optional `factura_id`. It requires a key with write permission.
 The API creates unassigned tasks; assigning, completing, and deleting them is done in the app. See [Tasks
 API](/en/docs/desarrolladores/funciones/tareas).
 
@@ -110,7 +118,7 @@ API](/en/docs/desarrolladores/funciones/tareas).
 <TabItem label="MCP">
 
 The **crear_tarea** tool in the [MCP server](/en/docs/desarrolladores/herramientas/mcp)
-lets an AI assistant create a follow-up task, optionally linked to a quote and with a date.
+lets an AI assistant create a follow-up task, optionally linked to a quote or an invoice and with a date.
 
 </TabItem>
 </Tabs>
@@ -122,11 +130,10 @@ and [webhooks](/en/docs/desarrolladores/herramientas/webhooks):
 
 | Event | When |
 |---|---|
-| **A task is created** | When it's created from the app, a workflow, the API, or MCP. |
+| **A task is created** | When it's created from the app, a workflow, the API, or MCP, and when Cord creates it for you (chargeback or SPEI refund). |
 | **A task is completed** | When it's marked complete. |
 
-Editing, snoozing, reopening, or deleting a task emits no event. The tasks Cord creates for
-you (chargeback and SPEI refund) don't emit **A task is created** either.
+Editing, snoozing, reopening, or deleting a task emits no event.
 
 ## Limits by plan
 
@@ -136,11 +143,11 @@ Tasks have no cap by plan.
 
 **I don't see the tasks widget.** You hid it when customizing Home: bring it back from the **Library**. The **Tasks** page in the sidebar is always available.
 
-**I can't add a task.** Your role doesn't have the Quotes, Collections, or Clients permission.
+**I can't add a task.** Your role doesn't have the Quotes, Collections, or Clients permission. Without them you don't see **Task** in the **Create** menu either.
 
-**A task is missing from the list.** Check the filter: **Mine** only shows yours. The Home widget shows the 8 most urgent; the rest are on the **Tasks** page, which shows up to 200 per view.
+**A task is missing from the list.** Check the filter: **Mine** only shows yours. The Home widget shows the 8 most urgent; the rest are on the **Tasks** page, which shows 200 per view and opens more with **Show more**.
 
-**I didn't get the reminder.** It only arrives if you have tasks with a due date of today or overdue, from 8:00 in your business's time zone. Someone else's task goes to them, not to you. Check that **Task reminder** is still on in Settings › Notifications, and your spam folder.
+**I didn't get the reminder.** It only arrives if you have tasks with a due date of today or overdue, from 8:00 in your business's time zone, and once a day: what becomes due today after your email goes out shows up in tomorrow's. Someone else's task goes to them, not to you. Check that **Task reminder** is still on in Settings › Notifications, and your spam folder.
 
 ## Related
 

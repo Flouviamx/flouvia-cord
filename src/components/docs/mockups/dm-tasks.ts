@@ -65,8 +65,9 @@ const SEEDS: DmTaskSeed[] = [
         asignado: 'ana',
     },
     {
+        // Calca de systemTaskTitle('reembolso_spei'): prioridad alta, a cargo de quien lo pidió.
         titulo: { es: `Transferir reembolso SPEI por ${dmMoney(3500, 'MXN', 'es')}`, en: `Send the ${dmMoney(3500, 'MXN', 'en')} SPEI refund` },
-        prioridad: 'normal',
+        prioridad: 'alta',
         due: '2026-10-08',
         ref: { tipo: 'cotizacion', label: 'COT-0143', cliente: 'Acabados Monterrey' },
         asignado: 'mariana',

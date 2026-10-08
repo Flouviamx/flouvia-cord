@@ -536,18 +536,19 @@ export const MCP_TOOLS: McpToolDef[] = [
     },
     {
         name: 'crear_tarea',
-        description: 'Crea una tarea de seguimiento para el equipo, opcionalmente ligada a una cotización y con fecha.',
+        description: 'Crea una tarea de seguimiento para el equipo, opcionalmente ligada a una cotización o a una factura y con fecha.',
         inputSchema: obj({
             titulo: { type: 'string', description: 'Qué hay que hacer' },
             fecha: { type: 'string', description: 'Fecha límite YYYY-MM-DD (opcional)' },
             cotizacion_id: { type: 'string', description: 'ID de la cotización relacionada (opcional)' },
+            factura_id: { type: 'string', description: 'ID de la factura relacionada (opcional)' },
             ...IDEMPOTENCY_PROP,
         }, ['titulo']),
         outputSchema: out({ id: { type: 'string' } }),
         annotations: { title: 'Crear tarea', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
         scope: 'write',
         handler: async (args, ctx) => idempotentTool(ctx, 'crear_tarea', args, async () =>
-            unwrap(await createTask(actionContext(ctx), { titulo: args?.titulo, due_date: args?.fecha, cotizacion_id: args?.cotizacion_id }))),
+            unwrap(await createTask(actionContext(ctx), { titulo: args?.titulo, due_date: args?.fecha, cotizacion_id: args?.cotizacion_id, documento_id: args?.factura_id }))),
     },
     {
         name: 'registrar_promesa_pago',

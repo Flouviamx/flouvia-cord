@@ -78,7 +78,7 @@ pertenecer a la misma organización que abrió la sesión.
 | `registrar_pago_cotizacion` | Registra que una cotización aprobada se pagó por fuera de Cord y cancela sus cobros en línea pendientes. Acepta `metodo_pago`. | **escritura** |
 | `crear_cliente` | Da de alta un cliente (empresa, contacto, correo, teléfono, identificador fiscal, términos, país). | **escritura** |
 | `actualizar_cliente` | Cambia datos de contacto de un cliente. Solo modifica lo que mandas; nunca toca crédito, nivel ni descuento. | **escritura** |
-| `crear_tarea` | Crea una tarea de seguimiento: `titulo` (obligatorio), `fecha` límite `YYYY-MM-DD` y `cotizacion_id` opcionales. Nace sin responsable y con prioridad normal; eso se cambia en la app. | **escritura** |
+| `crear_tarea` | Crea una tarea de seguimiento: `titulo` (obligatorio), `fecha` límite `YYYY-MM-DD`, `cotizacion_id` y `factura_id` opcionales. Nace sin responsable y con prioridad normal; eso se cambia en la app. | **escritura** |
 | `registrar_promesa_pago` | Registra la fecha en que el cliente prometió pagar una cotización. No cobra nada. | **escritura** |
 | `listar_eventos` | Historial del negocio (cotizaciones, facturas, clientes, tareas, promesas), filtrable por tipo u objeto. Paginado. | lectura |
 | `contexto_cuenta` | Negocio, país, divisa, idioma, zona horaria, plan y si la llave es de prueba o en vivo. Úsala primero. | lectura |

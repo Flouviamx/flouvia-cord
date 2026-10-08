@@ -13,7 +13,7 @@ import TopbarApps from '../components/app/TopbarApps.astro';
 import { estadosPorProveedor } from '../lib/integraciones/conexiones';
 import { connectedOAuthApps } from '../lib/oauth-provider';
 // Autenticación propia (Custom Auth Fase 2+)
-import { memberCan } from '../lib/permissions';
+import { memberCan, memberCanWriteTasks } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
 import CookieConsent from '../components/CookieConsent.astro';
@@ -62,7 +62,12 @@ const notifLabel = t(L, 'topbar.notificaciones');
 const canCotizar = memberCan(ME, 'cotizar');
 const canClientes = memberCan(ME, 'clientes');
 const canProductos = memberCan(ME, 'productos');
-const canCreateAny = canCotizar || canClientes || canProductos;
+// Tarea sigue el MISMO permiso que el POST de /api/tareas (TASK_PERMISSIONS),
+// no "cualquier permiso del menú": antes quien sólo tenía Productos veía la
+// opción y el guardado fallaba, y quien sólo tenía Cobranza podía crear tareas
+// pero no encontraba el menú.
+const canTarea = memberCanWriteTasks(ME);
+const canCreateAny = canCotizar || canClientes || canProductos || canTarea;
 // Cord Workbench (dock de Desarrolladores estilo Stripe) — mismo permiso que
 // el resto de Ajustes; el gate REAL de visibilidad es client-side (clase
 // .cord-dev, toggle "Modo desarrollador"), esto es defensa en profundidad.
@@ -275,10 +280,12 @@ import { iconInner } from '../lib/icons';
                                             <span>{t(L, 'layout.crear.producto')}</span><kbd>P</kbd>
                                         </a>
                                     )}
-                                    <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem" data-key="t">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('checklist')}></svg>
-                                        <span>{t(L, 'layout.crear.tarea')}</span><kbd>T</kbd>
-                                    </button>
+                                    {canTarea && (
+                                        <button type="button" class="tb-create-item" id="tbCreateTarea" role="menuitem" data-key="t">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('checklist')}></svg>
+                                            <span>{t(L, 'layout.crear.tarea')}</span><kbd>T</kbd>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -519,7 +526,7 @@ import { iconInner } from '../lib/icons';
                     {canCotizar && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>}
                     {canClientes && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_cliente')}</span><span><kbd>L</kbd></span></div>}
                     {canProductos && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_producto')}</span><span><kbd>P</kbd></span></div>}
-                    {canCreateAny && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_tarea')}</span><span><kbd>T</kbd></span></div>}
+                    {canTarea && <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_tarea')}</span><span><kbd>T</kbd></span></div>}
                     {/* Navegación: mismas teclas que muestra la sidebar (src/lib/sidebar-nav.ts). */}
                     {sidebarShortcuts().map((it) => (
                         <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_a').replace('{x}', t(L, it.label))}</span><span><kbd>G</kbd> <kbd>{it.key!.toUpperCase()}</kbd></span></div>

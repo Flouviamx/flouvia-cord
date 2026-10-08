@@ -32,6 +32,25 @@ export function localClock(zone: string | null | undefined, now = new Date()): {
     try { return read(zone || 'UTC'); } catch { return read('UTC'); }
 }
 
+/**
+ * Locale de FORMATO del correo: idioma de la organización + región de su país.
+ * El perfil del país da el formato regional (`es-ES`, `en-GB`, `de-DE`), pero
+ * el correo se escribe en `orgs.idioma`: una cuenta de Alemania en inglés debe
+ * leer "9 Oct" y no "9. Okt." dentro de un texto en inglés. Antes era `es-MX` /
+ * `en-US` fijo para todo el mundo.
+ */
+export function digestLocale(lang: 'es' | 'en', countryLocale: string | null | undefined): string {
+    const fallback = lang === 'en' ? 'en-US' : 'es-MX';
+    const value = String(countryLocale ?? '').trim();
+    if (!value) return fallback;
+    const [language, region] = value.split('-');
+    const candidate = language.toLowerCase() === lang ? value : region ? `${lang}-${region}` : '';
+    if (!candidate) return fallback;
+    try {
+        return Intl.DateTimeFormat.supportedLocalesOf([candidate]).length ? candidate : fallback;
+    } catch { return fallback; }
+}
+
 /** A partir de la hora del recordatorio, no exactamente en ella: una corrida retrasada o perdida no se salta el día. */
 export function isReminderTime(zone: string | null | undefined, now = new Date()): boolean {
     return localClock(zone, now).hour >= REMINDER_HOUR;
@@ -61,17 +80,37 @@ function subjectFor(vencidas: number, hoy: number, en: boolean, orgNombre: strin
     return orgNombre ? `${s} · ${orgNombre}` : s;
 }
 
+/** Pie del correo: a lo sumo uno al día, y quién puede apagarlo (para todo el equipo). */
+export function footerText(en: boolean, puedeApagar: boolean): string {
+    if (en) {
+        return 'You get this email, at most once a day, because these tasks are assigned to you. '
+            + (puedeApagar
+                ? 'You can turn it off for the whole team in Settings › Notifications.'
+                : 'To stop it, ask whoever manages the account to turn it off in Settings › Notifications.');
+    }
+    return 'Recibes este correo, a lo sumo uno al día, porque estas tareas están a tu cargo. '
+        + (puedeApagar
+            ? 'Puedes apagarlo para todo el equipo en Ajustes › Notificaciones.'
+            : 'Para dejar de recibirlo, pide a quien administra la cuenta que lo apague en Ajustes › Notificaciones.');
+}
+
 export function renderTaskDigest(input: {
     en: boolean;
-    /** Locale de formato (`es-MX`, `en-GB`…). */
+    /** Locale de formato (`es-MX`, `en-GB`…), de `digestLocale()`. */
     locale: string;
     nombre: string;
     orgNombre: string;
+    /**
+     * ¿Quien lo recibe puede apagarlo? El apagado es de TODA la organización y
+     * pide el permiso de Ajustes: a un responsable sin él, decirle "apágalo tú"
+     * lo manda a una pantalla que no puede abrir.
+     */
+    puedeApagar: boolean;
     today: string;
     link: string;
     tasks: DigestTask[];
 }): { subject: string; html: string } {
-    const { en, locale, nombre, orgNombre, today, link } = input;
+    const { en, locale, nombre, orgNombre, today, link, puedeApagar } = input;
     // Lo vencido primero, de lo más viejo a lo más reciente; lo urgente arriba dentro del día.
     const tasks = [...input.tasks].sort((a, b) =>
         a.due.localeCompare(b.due) || (a.prioridad === b.prioridad ? 0 : a.prioridad === 'alta' ? -1 : 1));
@@ -104,9 +143,7 @@ export function renderTaskDigest(input: {
                 <a href="${esc(link)}" style="display:inline-block;background-color:#0a192f;color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${en ? 'Open my tasks' : 'Abrir mis tareas'}</a>
             </div>
             <div style="margin-top:16px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${esc(orgNombre)} · ${en
-                    ? 'You get this email because these tasks are assigned to you. Turn it off in Settings › Notifications.'
-                    : 'Recibes este correo porque estas tareas están a tu cargo. Puedes apagarlo en Ajustes › Notificaciones.'}</p>
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${esc(orgNombre)} · ${footerText(en, puedeApagar)}</p>
             </div>
         </div>
     </div>`;

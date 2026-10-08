@@ -26,6 +26,7 @@ La API de tareas tiene un solo método: `POST /api/v1/tareas`, para crear una ta
 | `titulo` | Sí | Texto de la tarea. Se guardan los primeros 200 caracteres; el resto se descarta sin error. |
 | `due_date` | No | Fecha límite en formato `YYYY-MM-DD`. |
 | `cotizacion_id` | No | UUID de una cotización de tu organización para ligar la tarea. |
+| `factura_id` | No | UUID de una factura de tu organización (el `id` de [`/api/v1/facturas`](/docs/desarrolladores/funciones/facturas)) para ligar la tarea. Puede ir junto con `cotizacion_id`. |
 
 Cualquier otro campo del cuerpo (por ejemplo `asignado_a`, `prioridad` o `notas`) se ignora sin error: por API no se asignan responsable, prioridad ni notas.
 
@@ -49,14 +50,14 @@ La tarea nace **sin responsable** y con prioridad normal. En la app se le asigna
 
 Con una llave de prueba (`sk_test_`) la tarea se crea en el entorno de prueba, que no manda recordatorios.
 
-Cada tarea nueva emite el evento `task.created`. Cuando alguien la marca como hecha en la app se emite `task.completed`.
+Cada tarea nueva emite el evento `task.created`, con `cotizacion_id` y `factura_id` (o `null`). También lo emiten las tareas que Cord crea solo (contracargo y reembolso SPEI). Cuando alguien la marca como hecha en la app se emite `task.completed`.
 
 ## Errores posibles
 
 | Código | Cuándo |
 |---|---|
 | `invalid_request` (400) | Falta `titulo` (o viene vacío), o `due_date` no es una fecha real en formato `YYYY-MM-DD` (por ejemplo, `2026-02-30` se rechaza). |
-| `not_found` (404) | `cotizacion_id` no es un UUID o no es una cotización de tu organización. |
+| `not_found` (404) | `cotizacion_id` o `factura_id` no es un UUID, o no es una cotización o factura de tu organización. El mensaje sale en el idioma de tu cuenta. |
 | `invalid_json` (400) | El cuerpo no es JSON válido. |
 | `insufficient_scope` / `insufficient_permissions` (403) | La llave es de solo lectura, o es una llave restringida sin `write` en `tareas`. |
 

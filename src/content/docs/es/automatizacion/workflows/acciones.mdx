@@ -18,7 +18,7 @@ prerequisites: ["Permiso Ajustes","Slack, Teams, WhatsApp o HubSpot conectados p
 
 | Acción | Qué hace | Necesita |
 |---|---|---|
-| **Crear una tarea** | Agrega una tarea de seguimiento en **Tareas**, ligada a la cotización cuando el evento tiene una. | Nada |
+| **Crear una tarea** | Agrega una tarea de seguimiento en **Tareas**, ligada a la cotización o a la factura del evento. | Nada |
 | **Avisar al equipo por correo** | Envía un correo al dueño de la cuenta o a todo el equipo. | Nada |
 | **Enviar un mensaje a Slack** | Publica un mensaje en tu canal de Slack. | Slack conectado |
 | **Agregar una nota en HubSpot** | Deja una nota en el Deal de la cotización o en la Empresa del cliente. | HubSpot conectado |
@@ -46,7 +46,8 @@ Agrega una tarea para tu equipo en **Tareas**, igual que si la hubieras creado a
 - Si el disparador es de una cotización (enviada, aprobada, pagada, pago parcial, facturada, etc.), la tarea queda ligada a esa cotización: en **Tareas** muestra su folio y el cliente como enlace a la cotización.
 - Si el evento trae una cotización relacionada, también queda ligada a ella: un contracargo o un reembolso de una cotización, una factura que salió de una cotización, una promesa de pago o una tarea ligada a una cotización.
 - En **Se elimina un borrador** no se liga, porque la cotización ya no existe.
-- En los demás casos (clientes, productos, depósitos, disparadores programados, facturas sin cotización, tareas sueltas) la tarea queda suelta. Nunca se liga a la factura misma.
+- Si el disparador es de una factura (se emite, se envía, se paga, falla el pago, se acerca el vencimiento, vence, lleva días vencida, se anula o se marca incobrable), la tarea queda ligada a esa factura: en **Tareas** muestra su número y el cliente como enlace a la factura. Si la factura salió de una cotización, queda ligada a las dos.
+- En los demás casos (clientes, productos, depósitos, disparadores programados, tareas sueltas) la tarea queda suelta.
 
 **Responsable:** la tarea nace sin responsable y con prioridad normal; asígnala o súbele la prioridad desde **Tareas**. Mientras no tenga responsable, el [recordatorio por correo](/docs/gestion/tareas#recordatorio-por-correo) le llega al dueño de la cuenta.
 
@@ -54,7 +55,7 @@ Agrega una tarea para tu equipo en **Tareas**, igual que si la hubieras creado a
 
 - "El título de la tarea quedó vacío.": el título solo tenía datos del evento y todos llegaron vacíos. Agrega texto fijo, por ejemplo "Seguimiento: `{{cliente}}`".
 - "Se alcanzó el máximo de tareas por hora de los workflows.": tus workflows crearon 120 tareas en la última hora. Ver [Límites](/docs/automatizacion/workflows/limites).
-- "No se pudo crear la tarea.": Cord rechazó la tarea, por ejemplo porque la cotización a la que se iba a ligar ya no existe.
+- "No se pudo crear la tarea.": Cord rechazó la tarea, por ejemplo porque la cotización o la factura a la que se iba a ligar ya no existe.
 
 <Callout type="info">
 Crear una tarea también es un evento. Si tienes un workflow con el disparador **Se crea una tarea**, reaccionará a las tareas que crean tus otros workflows. Usa la condición "Quién lo originó no es Otro workflow" si no quieres que eso pase.

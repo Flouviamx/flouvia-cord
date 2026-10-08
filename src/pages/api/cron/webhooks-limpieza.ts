@@ -23,6 +23,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 const BATCH = 5000;
 const MAX_BATCHES = 20; // techo por categoría por corrida (≤100k filas/día/categoría)
@@ -42,7 +43,10 @@ async function deleteBatched(query: (batch: number) => Promise<any[][]>): Promis
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    return runCronOnce(request, '/api/cron/webhooks-limpieza', cronPeriod('dia'), () => run());
+};
 
+async function run(): Promise<Response> {
     return reqContext.run({ userId: null, cronScope: true }, async () => {
 
     // ── webhook_deliveries: > 30 días ──
@@ -106,7 +110,7 @@ export const GET: APIRoute = async ({ request }) => {
         events_fallidos: eventosFallidos,
     });
     });
-};
+}
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });

@@ -12,6 +12,8 @@ import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 import { lateInterestPolicy } from '../../../lib/late-interest-policy';
+import { log } from '../../../lib/log';
+import { cronPeriod, runCronOnce } from '../../../lib/cron-runs';
 
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@cordhq.app>';
@@ -29,7 +31,12 @@ const money = (n: number, currency?: string) => {
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
+    // Una vez al mes; si el día 1 no corre, cord-crons.yml lo recupera otro día
+    // del mismo mes. El cargo es idempotente por (documento, periodo).
+    return runCronOnce(request, '/api/cron/intereses', cronPeriod('mes'), () => run());
+};
 
+async function run(): Promise<Response> {
     // Carril de SISTEMA solo para descubrir las organizaciones con tasa
     // configurada; el cargo de cada una se calcula y escribe en su propio
     // withOrgTx más abajo.
@@ -52,6 +59,7 @@ export const GET: APIRoute = async ({ request }) => {
     let totalCargos = 0;
     let totalOrgs   = 0;
     let orgsSuspendidas = 0;
+    let orgsFallidas = 0;
 
     for (const org of orgs) {
         const orgId = org.id as string;
@@ -67,14 +75,23 @@ export const GET: APIRoute = async ({ request }) => {
         // interés por más que se venciera. Además cobraba el interés sobre el
         // TOTAL y no sobre el saldo: un cliente que ya había abonado el 80%
         // seguía pagando interés sobre el 100%.
-        const [rows] = await withOrgTx(orgId, sql`
-            select cxc.origen, cxc.ref_id, cxc.folio, cxc.saldo, cxc.dias_vencido,
-                   cl.empresa
-            from cuentas_por_cobrar cxc
-            left join clientes cl on cl.id = cxc.cliente_id
-            where cxc.org_id = ${orgId}
-              and cxc.dias_vencido > 0
-              and cxc.saldo > 0`);
+        let rows: Record<string, unknown>[];
+        try {
+            [rows] = await withOrgTx(orgId, sql`
+                select cxc.origen, cxc.ref_id, cxc.folio, cxc.saldo, cxc.dias_vencido,
+                       cl.empresa
+                from cuentas_por_cobrar cxc
+                left join clientes cl on cl.id = cxc.cliente_id
+                where cxc.org_id = ${orgId}
+                  and cxc.dias_vencido > 0
+                  and cxc.saldo > 0`);
+        } catch (err) {
+            // Una organización cuya cartera no se pudo leer no deja sin cargo
+            // a las demás; la siguiente corrida del mes la vuelve a intentar.
+            orgsFallidas++;
+            log.error('no se pudo leer la cartera para intereses', { route: 'cron/intereses', orgId, err });
+            continue;
+        }
 
         const cargos: { folio: string; empresa: string; monto: number; diasVencido: number }[] = [];
 
@@ -91,22 +108,27 @@ export const GET: APIRoute = async ({ request }) => {
             const refId = r.ref_id as string;
 
             try {
-                // ON CONFLICT DO NOTHING = idempotente, por riel.
-                if (esFactura) {
-                    await withOrgTx(orgId, sql`
+                // ON CONFLICT DO NOTHING = idempotente, por riel. Solo cuenta
+                // como cargo lo que ESTA corrida insertó: antes se contaba
+                // también lo que ya existía, así que una segunda corrida del
+                // mes repetía el registro de auditoría y le mandaba al dueño
+                // otro resumen con cargos que no se volvieron a aplicar.
+                const [inserted] = esFactura
+                    ? await withOrgTx(orgId, sql`
                         insert into intereses_moratorios
                             (org_id, documento_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
                         values
                             (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
-                        on conflict (documento_id, periodo) where documento_id is not null do nothing`);
-                } else {
-                    await withOrgTx(orgId, sql`
+                        on conflict (documento_id, periodo) where documento_id is not null do nothing
+                        returning id`)
+                    : await withOrgTx(orgId, sql`
                         insert into intereses_moratorios
                             (org_id, cotizacion_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
                         values
                             (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
-                        on conflict (cotizacion_id, periodo) do nothing`);
-                }
+                        on conflict (cotizacion_id, periodo) do nothing
+                        returning id`);
+                if (!inserted.length) continue;
 
                 cargos.push({ folio: (r.folio as string) ?? '—', empresa: (r.empresa as string) ?? '—', monto, diasVencido });
             } catch { /* continúa con el resto */ }
@@ -176,9 +198,9 @@ export const GET: APIRoute = async ({ request }) => {
         }
     }
 
-    return json({ periodo, orgs: totalOrgs, cargos: totalCargos, orgsSuspendidas });
+    return json({ periodo, orgs: totalOrgs, cargos: totalCargos, orgsSuspendidas, orgsFallidas });
     });
-};
+}
 
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 function json(data: unknown, status = 200) {

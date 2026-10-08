@@ -46,8 +46,12 @@ El reembolso se procesa **automáticamente** en cuanto lo confirmas — no requi
 En Cord, el flujo de reembolso SPEI requiere una transferencia manual del negocio. Solicitarlo en el panel no devuelve el dinero por sí solo:
 
 1. Se registra en Cord como "reembolso pendiente, manual".
-2. Cord crea automáticamente en [Tareas](/docs/gestion/tareas) la tarea "Transferir reembolso SPEI" con el monto: prioridad alta, ligada a la cotización y a cargo de quien solicitó el reembolso.
+2. Cord crea automáticamente en [Tareas](/docs/gestion/tareas) la tarea "Transferir reembolso SPEI" con el monto (en el idioma de tu cuenta): prioridad alta, ligada a la cotización y a cargo de quien solicitó el reembolso. Emite **Se crea una tarea** (`task.created`) como cualquier tarea.
 3. Tú haces la transferencia por tu cuenta bancaria normal, y marcas la tarea como completada.
+
+<Callout type="warning">
+Completar la tarea cierra tu pendiente, pero **no registra el reembolso como pagado**: en Cord sigue como "pendiente, manual" y no se emite **Se completa un reembolso** (`refund.succeeded`). El monto queda apartado, así que no se puede volver a reembolsar. Guarda el comprobante de la transferencia por tu cuenta.
+</Callout>
 
 ## Qué pasa con tu dinero
 

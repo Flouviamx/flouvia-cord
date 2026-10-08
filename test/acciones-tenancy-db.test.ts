@@ -32,6 +32,7 @@ const PRODUCTO_B = '00000000-0000-4000-8000-0000000000d1';
 const COT_B = '00000000-0000-4000-8000-0000000000e1';
 const TAREA_B = '00000000-0000-4000-8000-0000000000f1';
 const PROMESA_B = '00000000-0000-4000-8000-0000000000f2';
+const FACTURA_B = '00000000-0000-4000-8000-0000000000f3';
 const ctxA = { orgId: A, origin: 'https://cord.test' };
 const count = async (q: string) => (await m.db.query(q)).rows[0].n as number;
 
@@ -48,7 +49,8 @@ beforeAll(async () => {
         create table orgs(id uuid primary key, iva_pct numeric);
         create table impuestos(id uuid primary key default gen_random_uuid(), org_id uuid not null, tasa numeric, kind text, tipo text,
             nombre text, es_default boolean, activo boolean, retencion_base text);
-        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, titulo text, due_date date, done boolean default false,
+        create table documentos_fiscales(id uuid primary key, org_id uuid not null);
+        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, documento_id uuid, titulo text, due_date date, done boolean default false,
             prioridad text not null default 'normal', notas text, asignado_a uuid, creado_por uuid, completed_at timestamptz, completed_by uuid, recordada_el date);
         create table promesas_pago(id uuid primary key default gen_random_uuid(), org_id uuid not null, cotizacion_id uuid, fecha_promesa date, monto numeric, nota text, estado text default 'pendiente');`);
 });
@@ -57,7 +59,8 @@ beforeEach(async () => {
     vi.clearAllMocks();
     await m.db.exec(`
         delete from clientes; delete from productos; delete from cotizaciones; delete from tareas; delete from promesas_pago;
-        delete from orgs; delete from impuestos;
+        delete from orgs; delete from impuestos; delete from documentos_fiscales;
+        insert into documentos_fiscales(id, org_id) values ('${FACTURA_B}', '${B}');
         insert into orgs(id, iva_pct) values ('${A}', 16), ('${B}', 16);
         insert into impuestos(org_id, tasa, kind, nombre, es_default, activo) values
             ('${A}', 16, 'consumo', 'IVA 16%', true, true), ('${A}', 8, 'consumo', 'IVA 8%', false, true),
@@ -97,10 +100,11 @@ describe('una org no alcanza los registros de otra', () => {
         expect((await m.db.query('select nombre from productos')).rows).toEqual([{ nombre: 'Producto de B' }]);
     });
 
-    it('tareas: no completa, no borra y no liga a una cotización ajena', async () => {
+    it('tareas: no completa, no borra y no liga a una cotización ni a una factura ajena', async () => {
         expect((await tasks.setTaskDone(ctxA, TAREA_B, true)).status).toBe(404);
         expect((await tasks.deleteTask(ctxA, TAREA_B)).status).toBe(404);
         expect((await tasks.createTask(ctxA, { titulo: 'x', cotizacion_id: COT_B })).status).toBe(404);
+        expect((await tasks.createTask(ctxA, { titulo: 'x', documento_id: FACTURA_B })).status).toBe(404);
         expect(await count('select count(*)::int n from tareas')).toBe(1);
         expect(await count('select count(*)::int n from tareas where done')).toBe(0);
     });

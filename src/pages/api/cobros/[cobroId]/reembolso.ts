@@ -13,6 +13,7 @@ import { stripe } from '../../../../lib/billing';
 import { merchantError } from '../../../../lib/pay-errors';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../../lib/currency';
 import { log } from '../../../../lib/log';
+import { emitTaskCreated, orgTaskProfile, systemTaskInsert, systemTaskTitle } from '../../../../lib/actions/tasks';
 
 const requestSchema = z.object({
     nonce: z.string().min(24).max(200),
@@ -105,16 +106,23 @@ export const POST: APIRoute = async ({ request, params }) => {
         if (!parsed.data.manual) {
             return json({ error: 'Los reembolsos SPEI requieren una transferencia manual y su registro posterior' }, 422);
         }
-        await withOrgTx(orgId,
+        const { locale } = await orgTaskProfile(orgId);
+        const [, tareaRows] = await withOrgTx(orgId,
             sql`insert into cobro_reembolsos
                   (id, org_id, cobro_id, amount_cents, status, reason, manual, requested_by)
                 values (${nonce.id}, ${orgId}, ${cobroId}, ${parsed.data.amountCents}, 'pending_manual',
                         ${parsed.data.reason || null}, true, ${currentUserId()})`,
             // Dinero que el negocio debe: prioridad alta y a cargo de quien lo pidió.
-            sql`insert into tareas (org_id, cotizacion_id, titulo, prioridad, asignado_a, creado_por)
-                values (${orgId}, ${cobro.cotizacion_id}, ${`Transferir reembolso SPEI por ${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}`},
-                        'alta', ${currentUserId()}, ${currentUserId()})`,
+            // Mismo INSERT que toda tarea automática, título en el idioma de la org.
+            systemTaskInsert(orgId, {
+                titulo: systemTaskTitle('reembolso_spei', locale, fromMinorUnits(parsed.data.amountCents, refundCurrency), refundCurrency),
+                prioridad: 'alta',
+                cotizacion_id: cobro.cotizacion_id as string,
+                asignado_a: currentUserId(),
+                creado_por: currentUserId(),
+            }),
         );
+        if (tareaRows?.[0]) emitTaskCreated(orgId, tareaRows[0]);
         await logAudit(orgId, { accion: 'cord_pagos.reembolso_manual_solicitado', entidad: 'cobro', entidad_id: cobroId, detalle: auditDetail, ip: reqIp(request) });
         return json({ ok: true, status: 'pending_manual' }, 202);
     }

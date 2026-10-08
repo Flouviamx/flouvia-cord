@@ -428,7 +428,9 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
         const due = dias === null ? null : addDays(base, dias);
         const outcome = await createTask(
             { orgId, origin: siteOrigin(), actor: `workflow:${input.workflowId}` },
-            { titulo, due_date: due, cotizacion_id: quoteId },
+            // Sobre un evento de factura (`invoice.*` con objeto factura) la tarea
+            // queda ligada a ESA factura, además de a su cotización si la tiene.
+            { titulo, due_date: due, cotizacion_id: quoteId, documento_id: invoiceId },
         );
         if (outcome.status !== 200) throw new WorkflowStepError(wfError('tarea_fallo'), true);
         return titulo;

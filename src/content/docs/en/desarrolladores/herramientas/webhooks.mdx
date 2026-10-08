@@ -263,7 +263,7 @@ The legacy `X-Cord-Signature` signature holds a single value, so during the wind
 | `quote.comment_added` | The client or the seller writes in the quote conversation. Includes `autor` (`cliente` \| `vendedor`), `mensaje` and, for a line comment, `item_id`; a counteroffer includes `tipo: "contraoferta"` and `propuesta`. |
 | `client.created` / `client.updated` / `client.deleted` | A client is created, edited, or deleted in the directory. |
 | `product.created` / `product.updated` / `product.deleted` | A product is created, edited, or deleted in the catalog. |
-| `task.created` / `task.completed` | A task is created (from the app, the API, MCP, or a workflow) or marked as done. |
+| `task.created` / `task.completed` | A task is created (from the app, the API, MCP, a workflow, or by Cord for a chargeback or SPEI refund) or marked as done. |
 | `promise.created` / `promise.kept` / `promise.broken` | A payment promise is recorded, or marked as kept or broken. |
 | `dispute.created` / `dispute.closed` | A client opens a dispute on a Cord Payments charge, or it closes with its outcome in `estado` (`won` \| `lost` \| `warning_closed`). Includes `monto`, `moneda`, `motivo`, and `fecha_limite` to respond. |
 | `refund.succeeded` / `refund.failed` | A refund succeeds or fails. Includes `monto`, `moneda`, `motivo`, and `motivo_falla` when it fails. |

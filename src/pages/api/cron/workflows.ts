@@ -43,10 +43,18 @@ export const GET: APIRoute = async ({ request }) => {
     });
 
     let procesadas = 0;
+    let fallidas = 0;
     for (const orgId of orgIds) {
-        procesadas += await reqContext.run({ userId: null, orgId }, () => processOrgRuns(orgId, 50));
+        try {
+            procesadas += await reqContext.run({ userId: null, orgId }, () => processOrgRuns(orgId, 50));
+        } catch (err) {
+            // Una organización que falla no puede dejar sin procesar a las que
+            // siguen en la lista: antes la excepción abortaba el barrido entero.
+            fallidas++;
+            log.error('no se pudieron procesar las ejecuciones de una organización', { route: 'cron/workflows', orgId, err });
+        }
     }
-    return new Response(JSON.stringify({ ok: true, organizaciones: orgIds.length, ejecuciones: procesadas, tics }), {
+    return new Response(JSON.stringify({ ok: true, organizaciones: orgIds.length, ejecuciones: procesadas, fallidas, tics }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
     });
 };

@@ -4450,6 +4450,10 @@
                   "cotizacion_id": {
                     "type": "string",
                     "description": "ID de la cotización relacionada."
+                  },
+                  "factura_id": {
+                    "type": "string",
+                    "description": "ID de la factura relacionada (el `id` de /facturas)."
                   }
                 },
                 "required": [

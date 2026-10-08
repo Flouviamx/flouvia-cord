@@ -263,7 +263,7 @@ La firma legacy `X-Cord-Signature` solo admite un valor, así que durante la ven
 | `quote.comment_added` | El cliente o el vendedor escribe en la conversación de la cotización. Trae `autor` (`cliente` \| `vendedor`), `mensaje` y, si es sobre una línea, `item_id`; una contraoferta trae `tipo: "contraoferta"` y `propuesta`. |
 | `client.created` / `client.updated` / `client.deleted` | Se crea, edita o elimina un cliente del directorio. |
 | `product.created` / `product.updated` / `product.deleted` | Se crea, edita o elimina un producto del catálogo. |
-| `task.created` / `task.completed` | Se crea una tarea (desde la app, la API, el MCP o un workflow) o se marca como hecha. |
+| `task.created` / `task.completed` | Se crea una tarea (desde la app, la API, el MCP, un workflow o Cord por un contracargo o reembolso SPEI) o se marca como hecha. |
 | `promise.created` / `promise.kept` / `promise.broken` | Se registra una promesa de pago, o se marca como cumplida o incumplida. |
 | `dispute.created` / `dispute.closed` | Un cliente abre un contracargo sobre un cobro de Cord Payments, o se cierra con su resultado en `estado` (`won` \| `lost` \| `warning_closed`). Trae `monto`, `moneda`, `motivo` y `fecha_limite` para responder. |
 | `refund.succeeded` / `refund.failed` | Un reembolso se completa o falla. Trae `monto`, `moneda`, `motivo` y, si falla, `motivo_falla`. |
