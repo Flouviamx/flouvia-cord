@@ -1,0 +1,162 @@
+---
+// Mockup: la pestaña Webhooks del Workbench en pantalla completa, con el
+// primer endpoint expandido en su log de entregas. Calca de la rama
+// `tab === 'webhooks'` de src/pages/app/wb/[tab].astro (fila .wh-row con
+// secreto enmascarado, "Rotar secreto", número de eventos y la última entrega)
+// y de loadDeliveries() en DevWorkbench.astro: cada intento es una fila con
+// punto de estado, evento (+ "· intento N" o la marca "prueba"), status,
+// duración · fecha y su botón Reintentar.
+//
+// Honestidad: el log de la app NO tiene selección de fila ni panel con el
+// cuerpo de la respuesta de tu servidor; muestra el status (o el error de red)
+// de cada intento. Por eso aquí no se dibuja ese panel.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import WbPanel from './WbPanel.astro';
+import { dmT, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const strip = (s: string) => s.replace(/<[^>]+>/g, '');
+
+const DATA = {
+    es: {
+        caption: 'La pestaña Webhooks del Workbench con el endpoint del ERP expandido: su log de entregas muestra evento, intento, status, duración y fecha de cada envío, con dos intentos de quote.approved que fallaron con 500 y un botón Reintentar en cada fila.',
+        d: (dia: number, h: string) => `${dia} oct, ${h}`,
+    },
+    en: {
+        caption: 'The Workbench Webhooks tab with the ERP endpoint expanded: its delivery log shows the event, attempt, status, duration and date of each send, with two quote.approved attempts that failed with a 500 and a Retry button on every row.',
+        d: (dia: number, h: string) => `Oct ${dia}, ${h}`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const nf = (n: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX').format(n);
+
+const DELIVERIES = [
+    { ok: false, ev: 'quote.approved', intento: 2, status: 500, ms: 1204, when: d.d(8, '06:00') },
+    { ok: true, ev: 'quote.viewed', intento: 1, status: 200, ms: 212, when: d.d(7, '18:02') },
+    { ok: false, ev: 'quote.approved', intento: 1, status: 500, ms: 1342, when: d.d(7, '16:20') },
+    { ok: true, ev: 'quote.sent', intento: 1, status: 200, ms: 184, when: d.d(7, '16:05') },
+    { ok: true, ev: 'payment.partial', intento: 1, status: 200, ms: 231, when: d.d(6, '12:47') },
+    { ok: true, ev: 'ping', intento: 1, status: 200, ms: 96, when: d.d(6, '12:31'), prueba: true },
+];
+const ENDPOINTS = [
+    { url: 'https://erp.materialesdelvalle.mx/webhooks/cord', secret: 'whsec_8Kq2', n: 4, last: d.d(8, '06:00'), status: 500, open: true },
+    { url: 'https://n8n.materialesdelvalle.mx/webhook/cord-pagos', secret: 'whsec_Tz7m', n: 3, last: d.d(8, '09:12'), status: 200, open: false },
+];
+---
+<DocsMockup lang={lang} variant="app" chrome="none" caption={caption} class="dm-wbfull-figure dm-whd-figure">
+    <WbPanel lang={lang} tab="webhooks" max>
+        <div class="whd">
+            <div class="whd-head">
+                <div class="whd-titles">
+                    <span class="whd-title">{dmT(lang, 'set.wh.endpoints_titulo')}</span>
+                    <span class="whd-sub">{strip(dmT(lang, 'set.wh.endpoints_sub'))}</span>
+                </div>
+                <div class="whd-actions">
+                    <span class="whd-limit">{tpl(dmT(lang, 'set.wh.plan'), { plan: lang === 'en' ? 'Professional' : 'Profesional' })} <b>2/16</b></span>
+                    <span class="wbm-btn wbm-btn-solid">{dmT(lang, 'set.wh.agregar_endpoint')}</span>
+                </div>
+            </div>
+
+            {ENDPOINTS.map((w) => (
+                <div class="whd-item">
+                    <div class="whd-row">
+                        <span class:list={['whd-exp', { 'is-open': w.open }]}><DmIcon name="chevron-right" /></span>
+                        <span class="whd-info">
+                            <span class="whd-url">{w.url}</span>
+                            <span class="whd-meta">
+                                <span class="whd-code wbm-mono">{w.secret}••••••••••••••</span>
+                                <span class="whd-rot">{dmT(lang, 'set.wh.rotar')}</span>
+                                <span>{tpl(dmT(lang, 'set.wh.eventos_plural'), { n: w.n })}</span>
+                                <span class:list={['whd-stat', w.status >= 400 ? 'err' : 'ok']}>{dmT(lang, 'set.wh.ultima_pre')} {w.last} ({w.status})</span>
+                            </span>
+                        </span>
+                        <span class="whd-btns">
+                            <span class="whd-ghost">{dmT(lang, 'set.wh.probar')}</span>
+                            <span class="whd-ghost dm-hide-narrow">{dmT(lang, 'set.wh.editar')}</span>
+                            <span class="whd-toggle"></span>
+                            <span class="whd-ghost whd-del">{dmT(lang, 'set.wh.eliminar')}</span>
+                        </span>
+                    </div>
+                    {w.open && (
+                        <div class="whd-log">
+                            {DELIVERIES.map((x) => (
+                                <div class:list={['whd-del-row', { 'is-err': !x.ok }]}>
+                                    <span class:list={['whd-dot', x.ok ? 'ok' : 'err']}></span>
+                                    <span class="whd-ev wbm-mono">
+                                        {x.ev}
+                                        {x.intento > 1 && <span class="whd-try"> {tpl(dmT(lang, 'set.wh.intento'), { n: x.intento })}</span>}
+                                        {x.prueba && <span class="whd-test">{dmT(lang, 'set.wh.prueba_tag')}</span>}
+                                    </span>
+                                    <span class:list={['whd-st', x.ok ? 'ok' : 'err']}>{x.status}</span>
+                                    <span class="whd-dmeta">{nf(x.ms)}ms · {x.when}</span>
+                                    <span class="whd-replay">{dmT(lang, 'set.wh.reintentar')}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    </WbPanel>
+</DocsMockup>
+
+<style is:global>
+    .whd { background: var(--wbm-surface); border: 1px solid var(--wbm-border); border-radius: 12px; padding: 16px 16px 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); min-width: 0; }
+    .whd-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--wbm-border); }
+    .whd-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 50ch; }
+    .whd-title { font-size: 15px; font-weight: 600; color: var(--wbm-text); letter-spacing: -0.01em; }
+    .whd-sub { font-size: 10.5px; line-height: 1.5; color: var(--wbm-muted); }
+    .whd-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+    .whd-limit { font-size: 10.5px; color: var(--wbm-muted); white-space: nowrap; }
+    .whd-limit b { color: var(--wbm-text); font-variant-numeric: tabular-nums; }
+    .whd-item { border-bottom: 1px solid var(--wbm-border); }
+    .whd-item:last-child { border-bottom: 0; }
+    .whd-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 13px 2px; }
+    .whd-exp { display: grid; place-items: center; color: rgba(255, 255, 255, 0.42); }
+    .whd-exp .dm-ico { width: 13px; height: 13px; }
+    .whd-exp.is-open { transform: rotate(90deg); color: var(--wbm-blue); }
+    .whd-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .whd-url { font-size: 12.5px; font-weight: 600; color: var(--wbm-text); overflow-wrap: anywhere; }
+    .whd-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; font-size: 10.5px; color: rgba(255, 255, 255, 0.42); }
+    .whd-code { font-size: 10px; background: rgba(255, 255, 255, 0.08); color: #dbe6f6; padding: 1px 5px; border-radius: 4px; }
+    .whd-rot { text-decoration: underline; text-underline-offset: 2px; }
+    .whd-stat.ok { color: #10b981; }
+    .whd-stat.err { color: #ef4444; }
+    .whd-btns { display: flex; align-items: center; gap: 6px; }
+    .whd-ghost { font-size: 10.5px; font-weight: 600; color: var(--wbm-blue); border: 1px solid var(--wbm-border); border-radius: 7px; padding: 4px 9px; white-space: nowrap; }
+    .whd-del { color: var(--wbm-muted); }
+    .whd-toggle { position: relative; width: 28px; height: 16px; border-radius: 999px; background: var(--wbm-solid); flex-shrink: 0; }
+    .whd-toggle::after { content: ''; position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+    .whd-log { margin: 0 2px 14px 25px; border: 1px solid var(--wbm-border); border-radius: 10px; background: var(--wbm-surface-2); overflow: hidden; }
+    .whd-del-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--wbm-border); font-size: 11px; }
+    .whd-del-row:last-child { border-bottom: 0; }
+    .whd-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .whd-dot.ok { background: #10b981; }
+    .whd-dot.err { background: #ef4444; }
+    .whd-ev { font-size: 10.5px; color: var(--wbm-text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .whd-try { color: rgba(255, 255, 255, 0.42); }
+    .whd-test { margin-left: 5px; font-family: var(--dm-font); font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #fbbf24; }
+    .whd-st { font-family: var(--dm-mono); font-size: 10.5px; font-weight: 700; }
+    .whd-st.ok { color: #10b981; }
+    .whd-st.err { color: #ef4444; }
+    .whd-dmeta { font-size: 10px; color: rgba(255, 255, 255, 0.42); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .whd-replay { font-size: 10px; font-weight: 600; color: var(--wbm-muted); border: 1px solid var(--wbm-border); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+
+    @container dm (max-width: 640px) {
+        .whd-head { flex-direction: column; align-items: stretch; }
+        .whd-actions { justify-content: flex-start; }
+        .whd-row { grid-template-columns: auto minmax(0, 1fr); }
+        .whd-btns { grid-column: 2; flex-wrap: wrap; }
+        .whd-log { margin-left: 0; }
+        .whd-del-row { grid-template-columns: auto minmax(0, 1fr) auto auto; row-gap: 3px; }
+        .whd-dmeta { grid-column: 2 / -1; grid-row: 2; }
+        .whd-replay { grid-column: 4; grid-row: 1; }
+        .whd-ev { white-space: normal; }
+    }
+</style>

@@ -48,15 +48,3 @@ const caption = Astro.props.caption ?? d.caption;
         <WbApiTab lang={lang} rows={d.rows} mode="live" plan={lang === 'en' ? 'Professional' : 'Profesional'} limite={20} />
     </WbPanel>
 </DocsMockup>
-
-<style is:global>
-    /* Pantalla completa: la hoja navy ES la ventana. */
-    .dm-wbfull-figure .dm-window { background: #0a1524; }
-    .dm-wbfull-figure .dm-content { padding: 0; display: flex; flex-direction: column; }
-    .dm-wbfull-figure .dm-app, .dm-wbfull-figure .dm-main { flex: 1 0 auto; }
-    .dm-wbfull-figure .wbm-body { padding-right: calc(18px + var(--dm-bleed)); }
-    .dm-wbfull-figure .wbm-tabs { padding-right: calc(10px + var(--dm-bleed)); }
-    @container dm (max-width: 520px) {
-        .dm-wbfull-figure .wbm-body { padding-right: calc(12px + var(--dm-bleed)); }
-    }
-</style>

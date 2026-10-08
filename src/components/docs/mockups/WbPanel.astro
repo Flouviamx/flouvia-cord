@@ -96,6 +96,16 @@ const TABS = ['resumen', 'webhooks', 'eventos', 'api', 'registros', 'salud'] as 
         .dm-wb-figure .dm-wb-sheet { position: relative; left: auto; right: auto; bottom: auto; height: auto; max-height: var(--wbm-hn, 560px); margin: 0 var(--dm-bleed) 0 0; }
     }
 
+    /* Pantalla completa: la hoja navy ES la ventana. */
+    .dm-wbfull-figure .dm-window { background: #0a1524; }
+    .dm-wbfull-figure .dm-content { padding: 0; display: flex; flex-direction: column; }
+    .dm-wbfull-figure .dm-app, .dm-wbfull-figure .dm-main { flex: 1 0 auto; }
+    .dm-wbfull-figure .wbm-body { padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-wbfull-figure .wbm-tabs { padding-right: calc(10px + var(--dm-bleed)); }
+    @container dm (max-width: 520px) {
+        .dm-wbfull-figure .wbm-body { padding-right: calc(12px + var(--dm-bleed)); }
+    }
+
     /* ── Primitivas del contenido de las pestañas ─────────────────────────── */
     .wbm-card { background: var(--wbm-surface); border: 1px solid var(--wbm-border); border-radius: 12px; padding: 13px 14px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); min-width: 0; }
     .wbm-lbl { display: block; font-size: 10.5px; font-weight: 600; color: var(--wbm-muted); }
