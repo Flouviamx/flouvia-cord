@@ -1,0 +1,102 @@
+---
+// Mockup: página Tareas (/app/tareas). Calca de src/pages/app/tareas/index.astro:
+//   - encabezado "Tareas" con su subtítulo (slot page-sub);
+//   - los contadores de una cuenta con equipo: Vencidas (en rojo si hay), Para hoy,
+//     Mías pendientes y Sin responsable — siempre sobre TODAS las pendientes;
+//   - la tarjeta con TaskBoard variant="page": Pendientes / Completadas, Mías /
+//     Todas / Sin asignar (aquí "Todas", para que se vean los responsables), el
+//     capturador con sus atajos y la lista agrupada por vencimiento.
+// La sidebar (colapsada, para dar ancho a los contadores) marca Tareas con su
+// contador en rojo (hay una tuya vencida), como Sidebar.astro con
+// badges.tareasVencidas > 0.
+// Datos: dm-tasks.ts (los mismos que el widget del Inicio). Textos: diccionario real.
+import DocsMockup from './DocsMockup.astro';
+import TkBoard from './TkBoard.astro';
+import { dmT, pick, type DmLang } from './format';
+import { dmTaskBadge, dmTaskCounts, PEOPLE } from './dm-tasks';
+import { SELLER } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const c = dmTaskCounts();
+const badge = dmTaskBadge();
+
+const DATA = {
+    es: {
+        caption: `Página Tareas con el filtro Todas: los contadores Vencidas ${c.vencidas} (en rojo), Para hoy ${c.hoy}, Mías pendientes ${c.mias} y Sin responsable ${c.sinAsignar}; el capturador con los atajos Hoy, Mañana y Lunes, la fecha, Prioridad alta y el responsable ${SELLER} (yo); y la lista agrupada en Vencidas, Hoy, Mañana, Esta semana y Sin fecha. En la barra lateral, Tareas lleva su contador en rojo. La primera tarea vencida lleva la etiqueta ALTA, "Venció hace 2 días", su folio COT-0153 con el cliente y sus notas; cada fila muestra el avatar del responsable (AT en navy es tuya, el círculo punteado es sin responsable).`,
+    },
+    en: {
+        caption: `Tasks page with the All filter: the counters Overdue ${c.vencidas} (in red), Due today ${c.hoy}, Mine open ${c.mias} and Unassigned ${c.sinAsignar}; the composer with the Today, Tomorrow and Monday shortcuts, the date, High priority and the assignee ${SELLER} (me); and the list grouped into Overdue, Today, Tomorrow, This week and No date. In the sidebar, Tasks carries its counter in red. The first overdue task carries the HIGH tag, "Overdue by 2 days", its folio COT-0153 with the client and its notes; each row shows the assignee's avatar (navy AT is yours, the dashed circle is unassigned).`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+// Con equipo (más de una persona) la página muestra Mías / Sin responsable en lugar de Pendientes.
+const equipo = Object.keys(PEOPLE).length > 1;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="tareas" badges={{ tareas: badge.n } as any} height={1010} caption={caption} class="dm-tp-figure">
+    <div class="dm-tp-head">
+        <div class="dm-h1">{dmT(lang, 'tareas.pagina.heading')}</div>
+        <div class="dm-tp-sub">{dmT(lang, 'tareas.pagina.sub')}</div>
+    </div>
+
+    <div class="dm-tp-stats">
+        <div class:list={['dm-tp-stat', { 'is-danger': c.vencidas > 0 }]}>
+            <span class="dm-tp-stat-label">{dmT(lang, 'tareas.stat.vencidas')}</span>
+            <span class="dm-tp-stat-num">{c.vencidas}</span>
+        </div>
+        <div class="dm-tp-stat">
+            <span class="dm-tp-stat-label">{dmT(lang, 'tareas.stat.hoy')}</span>
+            <span class="dm-tp-stat-num">{c.hoy}</span>
+        </div>
+        {equipo ? (
+            <>
+                <div class="dm-tp-stat">
+                    <span class="dm-tp-stat-label">{dmT(lang, 'tareas.stat.mias')}</span>
+                    <span class="dm-tp-stat-num">{c.mias}</span>
+                </div>
+                <div class="dm-tp-stat">
+                    <span class="dm-tp-stat-label">{dmT(lang, 'tareas.stat.sin_asignar')}</span>
+                    <span class="dm-tp-stat-num">{c.sinAsignar}</span>
+                </div>
+            </>
+        ) : (
+            <div class="dm-tp-stat">
+                <span class="dm-tp-stat-label">{dmT(lang, 'tareas.stat.pendientes')}</span>
+                <span class="dm-tp-stat-num">{c.pendientes}</span>
+            </div>
+        )}
+    </div>
+
+    <div class="dm-surface dm-tp-card">
+        <TkBoard lang={lang} variant="page" scope="todas" />
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-tp-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); padding-top: 18px; }
+    /* El contador de Tareas en la sidebar va en rojo cuando hay vencidas (tone danger). */
+    .dm-tp-figure .dm-sb-item.is-active .dm-sb-badge { color: #c2410c; background: rgba(234, 88, 12, 0.1); }
+    .dm-tp-figure .dm-sidebar.is-rail .dm-sb-item.is-active .dm-sb-badge { background: #ea580c; opacity: 1; }
+    .dm-tp-head { margin-bottom: 14px; }
+    .dm-tp-sub { margin-top: 3px; font-size: 11.5px; color: var(--dm-muted); }
+
+    .dm-tp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .dm-tp-stat { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 12px 14px; border-radius: 14px; background: var(--dm-surface); box-shadow: var(--dm-shadow-card); }
+    .dm-tp-stat-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-tp-stat-num { font-size: 21px; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--dm-text); }
+    .dm-tp-stat.is-danger .dm-tp-stat-num { color: var(--dm-danger); }
+
+    .dm-tp-card { padding: 16px 18px 8px; }
+
+    @container dm (max-width: 640px) {
+        .dm-tp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    }
+    @container dm (max-width: 520px) {
+        .dm-tp-figure .dm-stage { height: auto; max-height: 1240px; }
+        .dm-tp-card { padding: 14px 13px 6px; }
+    }
+</style>

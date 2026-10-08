@@ -91,7 +91,7 @@ const caption = Astro.props.caption ?? d.caption;
 const M = (n: number) => money0Parts(n, 'MXN', lang);
 const heroParts = dmMoneyParts(HERO, 'MXN', lang);
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" title={dmT(lang, 'dash.heading')} badges={{ seguimiento: 2 }} height={1140} caption={caption} class="dm-hm-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" title={dmT(lang, 'dash.heading')} badges={{ seguimiento: 2 }} height={1330} caption={caption} class="dm-hm-figure">
     <span slot="actions" class="dm-btn dm-btn-secondary dm-btn-rect"><DmIcon name="sliders" />{dmT(lang, 'widgets.personalizar')}</span>
 
     <div class="dm-surface dm-hm-hero">
@@ -281,7 +281,7 @@ const heroParts = dmMoneyParts(HERO, 'MXN', lang);
     .dm-hm-tasks { overflow: hidden; }
 
     @container dm (max-width: 640px) {
-        .dm-hm-figure .dm-stage { height: auto; max-height: 1500px; }
+        .dm-hm-figure .dm-stage { height: auto; max-height: 1840px; }
         .dm-hm-grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .dm-hm-grid2 { grid-template-columns: minmax(0, 1fr); }
     }

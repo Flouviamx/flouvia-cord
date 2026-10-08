@@ -1,0 +1,196 @@
+---
+// Tablero de tareas dentro de un mockup: calca de TaskBoard.astro + TaskList.astro
+// (src/components/app/tasks/). Lo comparten DmTasksPage (variant="page") y
+// DmTasksWidget (variant="widget"), igual que en la app un solo constructor de
+// filas sirve al widget del Inicio y a /app/tareas. No es un mockup registrado
+// (index.ts solo toma Dm*.astro).
+//
+// Lo que dibuja, en el orden real:
+//   - encabezado: título + "Ver todas" (solo widget) y los segmentados de Estado
+//     (solo página) y Responsable (Mías / Todas, y Sin asignar en la página);
+//   - capturador: campo con "+", Agregar, atajos Hoy / Mañana / Lunes, el selector
+//     de fecha ("Sin fecha" mientras no se elige), "Prioridad alta" y el responsable;
+//   - lista agrupada por vencimiento (groupTasks): casilla redonda (borde rojo si
+//     es de prioridad alta), etiqueta ALTA, fecha con icono, folio vinculado con
+//     el cliente, icono de notas, avatar del responsable (navy si es tuya,
+//     punteado si no tiene) y el botón "···". En la página, las notas van debajo.
+import DmIcon from './DmIcon.astro';
+import { dmT, type DmLang } from './format';
+import { dmTaskGroups, yoLabel, type DmTaskScope } from './dm-tasks';
+
+interface Props {
+    lang: DmLang;
+    variant: 'widget' | 'page';
+    scope: DmTaskScope;
+    /** Tope de filas del widget (TASK_LIMIT = 8 en el Inicio). */
+    limit?: number;
+}
+const { lang, variant, scope, limit = variant === 'widget' ? 8 : 200 } = Astro.props;
+const page = variant === 'page';
+const { groups: allGroups, total } = dmTaskGroups(lang, scope);
+
+// Recorta a `limit` filas conservando los grupos, como hace la consulta con LIMIT.
+let left = limit;
+const groups = allGroups
+    .map((g) => {
+        const items = g.items.slice(0, Math.max(0, left));
+        left -= items.length;
+        return { ...g, items };
+    })
+    .filter((g) => g.items.length > 0);
+const shown = groups.reduce((n, g) => n + g.items.length, 0);
+const restantes = Math.max(0, total - shown);
+
+const scopes: { id: DmTaskScope; key: 'tareas.filtro.mias' | 'tareas.filtro.todas' | 'tareas.filtro.sin_asignar' }[] = [
+    { id: 'mias', key: 'tareas.filtro.mias' },
+    { id: 'todas', key: 'tareas.filtro.todas' },
+    ...(page ? [{ id: 'sin_asignar' as DmTaskScope, key: 'tareas.filtro.sin_asignar' as const }] : []),
+];
+const sinFecha = lang === 'en' ? 'No date' : 'Sin fecha';
+---
+<div class:list={['dm-tk', `dm-tk--${variant}`]}>
+    <div class="dm-tk-head">
+        {!page && (
+            <div class="dm-tk-head-title">
+                <span class="dm-tk-title-h">{dmT(lang, 'dash.tareas_titulo')}</span>
+                <span class="dm-tk-link">{dmT(lang, 'tareas.ver_todas')}</span>
+            </div>
+        )}
+        <div class="dm-tk-filters">
+            {page && (
+                <span class="dm-tk-seg">
+                    <span class="is-on">{dmT(lang, 'tareas.filtro.pendientes')}</span>
+                    <span>{dmT(lang, 'tareas.filtro.completadas')}</span>
+                </span>
+            )}
+            <span class="dm-tk-seg">
+                {scopes.map((s) => <span class:list={{ 'is-on': s.id === scope }}>{dmT(lang, s.key)}</span>)}
+            </span>
+        </div>
+    </div>
+
+    <div class="dm-tk-add">
+        <div class="dm-tk-add-main">
+            <DmIcon name="plus" class="dm-tk-add-ico" />
+            <span class="dm-tk-add-input">{dmT(lang, 'dash.tarea_ph')}</span>
+            <span class="dm-tk-add-btn">{dmT(lang, 'dash.agregar')}</span>
+        </div>
+        <div class="dm-tk-opts">
+            <span class="dm-tk-chip">{dmT(lang, 'tareas.due.hoy')}</span>
+            <span class="dm-tk-chip">{dmT(lang, 'tareas.due.manana')}</span>
+            <span class="dm-tk-chip">{dmT(lang, 'tareas.atajo.lunes')}</span>
+            <span class="dm-tk-chip dm-tk-date">{sinFecha}<DmIcon name="calendar" /></span>
+            <span class="dm-tk-chip"><DmIcon name="arrow-up" />{dmT(lang, 'tareas.prioridad.alta')}</span>
+            <span class="dm-tk-chip dm-tk-assign"><DmIcon name="user" /><b>{yoLabel(lang)}</b><DmIcon name="chevron-down" class="dm-tk-caret" /></span>
+        </div>
+    </div>
+
+    <div class="dm-tk-list">
+        {groups.map((g) => (
+            <div class="dm-tk-group" data-bucket={g.bucket}>
+                <div class="dm-tk-gtitle"><span>{dmT(lang, `tareas.grupo.${g.bucket}`)}</span><span class="dm-tk-gn">{g.items.length}</span></div>
+                {g.items.map((task) => (
+                    <div class:list={['dm-tk-row', { 'is-alta': task.prioridad === 'alta' }]}>
+                        <span class="dm-tk-check"></span>
+                        <span class="dm-tk-body">
+                            <span class="dm-tk-title">
+                                {task.prioridad === 'alta' && <span class="dm-tk-flag">{dmT(lang, 'tareas.prioridad.alta_corta')}</span>}
+                                <span class="dm-tk-title-text">{task.titulo}</span>
+                            </span>
+                            {(task.due || task.ref || task.notas) && (
+                                <span class="dm-tk-meta">
+                                    {task.due && (
+                                        <span class:list={['dm-tk-due', `dm-tk-due--${task.bucket}`]}>
+                                            <DmIcon name={task.bucket === 'vencidas' ? 'calendar-clock' : 'calendar'} />{task.dueLabel}
+                                        </span>
+                                    )}
+                                    {task.ref && (
+                                        <span class="dm-tk-ref">
+                                            <DmIcon name={task.ref.tipo === 'factura' ? 'invoice' : 'quote'} />
+                                            <span class="dm-tk-ref-txt">{task.ref.label}<span class="dm-tk-ref-cli"> · {task.ref.cliente}</span></span>
+                                        </span>
+                                    )}
+                                    {task.notas && <span class="dm-tk-notes-ico"><DmIcon name="list" /></span>}
+                                </span>
+                            )}
+                            {page && task.notas && <span class="dm-tk-notes">{task.notas}</span>}
+                        </span>
+                        {task.asignado
+                            ? <span class:list={['dm-tk-av', { 'is-me': task.esMia }]}>{task.asignado.inicial}</span>
+                            : <span class="dm-tk-av dm-tk-av--none"></span>}
+                        <span class="dm-tk-more"><DmIcon name="more" /></span>
+                    </div>
+                ))}
+            </div>
+        ))}
+        {!page && restantes > 0 && <span class="dm-tk-rest">{dmT(lang, 'tareas.ver_restantes').replace('{n}', String(restantes))}</span>}
+    </div>
+</div>
+
+<style is:global>
+    /* Calca de los estilos is:global de TaskBoard.astro, a la escala de los mockups. */
+    .dm-tk { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .dm-tk--widget { padding: 15px 16px 10px; }
+
+    .dm-tk-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; flex-wrap: wrap; }
+    .dm-tk--widget .dm-tk-head { padding-bottom: 11px; border-bottom: 1px solid var(--dm-border); }
+    .dm-tk-head-title { display: flex; align-items: baseline; gap: 11px; min-width: 0; }
+    .dm-tk-title-h { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); white-space: nowrap; }
+    .dm-tk-link { font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-tk-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dm-tk-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--dm-canvas); }
+    .dm-tk-seg span { display: inline-flex; align-items: center; height: 23px; padding: 0 10px; border-radius: 7px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-tk-seg span.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 3px rgba(10, 25, 47, 0.1); }
+
+    /* Capturador */
+    .dm-tk-add { display: flex; flex-direction: column; gap: 7px; }
+    .dm-tk-add-main { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 4px 4px 10px; border-radius: 11px; background: var(--dm-canvas); border: 1.5px solid transparent; }
+    .dm-tk-add-ico { width: 14px; height: 14px; color: var(--dm-muted); }
+    .dm-tk-add-input { flex: 1; min-width: 0; padding: 6px 0; font-size: 12px; color: #9aa2ae; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-tk-add-btn { flex-shrink: 0; display: inline-flex; align-items: center; height: 28px; padding: 0 14px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 11px; font-weight: 600; }
+    .dm-tk-opts { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .dm-tk-chip { display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-tk-chip .dm-ico { width: 11px; height: 11px; }
+    .dm-tk-date { gap: 6px; }
+    .dm-tk-assign { min-width: 0; max-width: 100%; padding: 0 6px 0 9px; }
+    .dm-tk-assign b { font-weight: 600; color: var(--dm-text); overflow: hidden; text-overflow: ellipsis; }
+    .dm-tk-assign .dm-tk-caret { width: 10px; height: 10px; color: var(--dm-faint); }
+
+    /* Lista */
+    .dm-tk-list { display: flex; flex-direction: column; gap: 4px; }
+    .dm-tk-group { display: flex; flex-direction: column; }
+    .dm-tk-gtitle { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-tk-group[data-bucket="vencidas"] .dm-tk-gtitle { color: var(--dm-danger); }
+    .dm-tk-gn { font-weight: 700; letter-spacing: 0; opacity: 0.75; }
+    .dm-tk-row { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; }
+    .dm-tk-row + .dm-tk-row { box-shadow: inset 0 1px 0 var(--dm-border); }
+    .dm-tk-check { width: 17px; height: 17px; margin-top: 1px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--dm-border-strong); background: #fff; }
+    .dm-tk-row.is-alta .dm-tk-check { border-color: rgba(239, 68, 68, 0.55); }
+    .dm-tk-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .dm-tk-title { display: flex; align-items: baseline; gap: 5px; font-size: 12px; font-weight: 500; line-height: 1.35; color: var(--dm-text); }
+    .dm-tk-title-text { min-width: 0; overflow-wrap: anywhere; }
+    .dm-tk-flag { flex-shrink: 0; padding: 1px 4px; border-radius: 4px; background: rgba(239, 68, 68, 0.1); color: var(--dm-danger); font-size: 8px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .dm-tk-meta { display: flex; align-items: center; gap: 2px 10px; flex-wrap: wrap; font-size: 10.5px; color: var(--dm-muted); min-width: 0; }
+    .dm-tk-meta .dm-ico { width: 11px; height: 11px; }
+    .dm-tk-due, .dm-tk-ref, .dm-tk-notes-ico { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+    .dm-tk-ref { align-items: flex-start; }
+    .dm-tk-ref .dm-ico { margin-top: 1.5px; }
+    .dm-tk-due { white-space: nowrap; }
+    .dm-tk-due--vencidas { color: var(--dm-danger); font-weight: 600; }
+    .dm-tk-due--hoy { color: var(--dm-navy); font-weight: 600; }
+    .dm-tk-ref { font-weight: 600; }
+    .dm-tk-ref-txt { min-width: 0; }
+    .dm-tk-ref-cli { font-weight: 400; }
+    .dm-tk-notes { margin-top: 1px; font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-tk-av { width: 21px; height: 21px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 8.5px; font-weight: 700; color: var(--dm-text); }
+    .dm-tk-av.is-me { background: var(--dm-navy); border-color: var(--dm-navy); color: #fff; }
+    .dm-tk-av--none { background: transparent; border: 1px dashed var(--dm-border-strong); }
+    .dm-tk-more { width: 22px; height: 22px; margin-top: -1px; flex-shrink: 0; display: grid; place-items: center; color: var(--dm-muted); }
+    .dm-tk-more .dm-ico { width: 14px; height: 14px; }
+    .dm-tk-rest { align-self: flex-start; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--dm-navy); }
+
+    @container dm (max-width: 520px) {
+        .dm-tk--widget { padding: 13px 13px 8px; }
+        .dm-tk-add-input { font-size: 11.5px; }
+    }
+</style>

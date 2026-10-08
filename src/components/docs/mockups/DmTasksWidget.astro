@@ -1,14 +1,20 @@
 ---
 // Mockup: widget "Tareas y recordatorios" del Inicio. Calca del widget `tareas` de
-// src/pages/app/index.astro: campo con el placeholder real, fecha límite, Agregar y
-// la lista con casilla, título, meta "folio · fecha", la etiqueta roja "vencida" y
-// el botón de eliminar.
+// src/pages/app/index.astro, que monta TaskBoard variant="widget": título y "Ver
+// todas", el segmentado Mías / Todas (con equipo, abre en Mías), el capturador con
+// sus atajos, prioridad y responsable, y la lista agrupada por vencimiento con un
+// tope de 8 filas.
+//
+// Las tareas son las de dm-tasks.ts, las MISMAS que DmTasksPage: en "Mías" quedan
+// las cinco de Ana Torres, todas con su avatar navy.
 //
 // Con `bare` dibuja solo el contenido del widget (sin marco) para reutilizarlo
 // dentro de DmHome; sin `bare` es una figura propia (variant="panel").
 import DocsMockup from './DocsMockup.astro';
-import DmIcon from './DmIcon.astro';
-import { dmT, dmMoney, pick, type DmLang } from './format';
+import TkBoard from './TkBoard.astro';
+import { pick, type DmLang } from './format';
+import { dmTaskGroups } from './dm-tasks';
+import { SELLER } from './dm-gestion';
 
 interface Props {
     lang: DmLang;
@@ -16,98 +22,23 @@ interface Props {
     caption?: string;
 }
 const { lang, bare = false } = Astro.props;
+const n = dmTaskGroups(lang, 'mias').total;
 
 const DATA = {
     es: {
-        caption: `Widget Tareas y recordatorios del Inicio: el campo "Ej. Llamar a GAMA para dar seguimiento…", la fecha límite y Agregar; debajo, cuatro tareas: "Llamar a Luis por COT-0149" (COT-0149 · 9 oct), "Responder contracargo de ${dmMoney(1200, 'USD', 'es')}" con la etiqueta vencida, "Transferir reembolso SPEI por ${dmMoney(3500, 'MXN', 'es')}" (COT-0131) y "Enviar catálogo actualizado" sin fecha.`,
-        fecha: 'dd/mm/aaaa',
-        tareas: [
-            { t: 'Llamar a Luis por COT-0149', m: 'COT-0149 · 9 oct', late: false },
-            { t: `Responder contracargo de ${dmMoney(1200, 'USD', 'es')}`, m: '6 oct', late: true },
-            { t: `Transferir reembolso SPEI por ${dmMoney(3500, 'MXN', 'es')}`, m: 'COT-0131 · 10 oct', late: false },
-            { t: 'Enviar catálogo actualizado', m: '', late: false },
-        ],
+        caption: `Widget Tareas y recordatorios del Inicio en el filtro Mías: el capturador "Ej. Llamar a GAMA para dar seguimiento…" con Agregar, los atajos Hoy, Mañana y Lunes, la fecha, Prioridad alta y el responsable ${SELLER} (yo); debajo, las ${n} tareas de ${SELLER} agrupadas en Vencidas (el contracargo de COT-0153 con la etiqueta ALTA), Hoy, Mañana, Esta semana y Sin fecha.`,
     },
     en: {
-        caption: `Home "Tasks and reminders" widget: the "E.g. Call GAMA for a follow-up…" field, the due date and Add; below, four tasks: "Call Luis about COT-0149" (COT-0149 · Oct 9), "Respond to the ${dmMoney(1200, 'USD', 'en')} chargeback" with the overdue label, "Send the ${dmMoney(3500, 'MXN', 'en')} SPEI refund" (COT-0131) and "Send updated catalog" with no date.`,
-        fecha: 'mm/dd/yyyy',
-        tareas: [
-            { t: 'Call Luis about COT-0149', m: 'COT-0149 · Oct 9', late: false },
-            { t: `Respond to the ${dmMoney(1200, 'USD', 'en')} chargeback`, m: 'Oct 6', late: true },
-            { t: `Send the ${dmMoney(3500, 'MXN', 'en')} SPEI refund`, m: 'COT-0131 · Oct 10', late: false },
-            { t: 'Send updated catalog', m: '', late: false },
-        ],
+        caption: `Home "Tasks and reminders" widget on the Mine filter: the "E.g. Call GAMA for a follow-up…" composer with Add, the Today, Tomorrow and Monday shortcuts, the date, High priority and the assignee ${SELLER} (me); below, ${SELLER}'s ${n} tasks grouped into Overdue (the COT-0153 chargeback with the HIGH tag), Today, Tomorrow, This week and No date.`,
     },
 };
 const d = pick(DATA, lang);
 const caption = Astro.props.caption ?? d.caption;
 ---
 {bare ? (
-    <div class="dm-tk">
-        <div class="dm-tk-head">{dmT(lang, 'dash.tareas_titulo')}</div>
-        <div class="dm-tk-add">
-            <span class="dm-tk-input">{dmT(lang, 'dash.tarea_ph')}</span>
-            <span class="dm-tk-date">{d.fecha}<DmIcon name="calendar" /></span>
-            <span class="dm-tk-btn">{dmT(lang, 'dash.agregar')}</span>
-        </div>
-        <div class="dm-tk-list">
-            {d.tareas.map((x) => (
-                <div class="dm-tk-row">
-                    <span class="dm-tk-check"></span>
-                    <span class="dm-tk-body"><span class="dm-tk-title">{x.t}</span>{x.m && <span class="dm-tk-meta">{x.m}</span>}</span>
-                    {x.late && <span class="dm-tk-late">{dmT(lang, 'tareas.due.ayer')}</span>}
-                    <span class="dm-tk-del"><DmIcon name="x" /></span>
-                </div>
-            ))}
-        </div>
-    </div>
+    <TkBoard lang={lang} variant="widget" scope="mias" />
 ) : (
-    <DocsMockup lang={lang} variant="panel" panelWidth={540} caption={caption} class="dm-tk-figure">
-        <div class="dm-tk">
-            <div class="dm-tk-head">{dmT(lang, 'dash.tareas_titulo')}</div>
-            <div class="dm-tk-add">
-                <span class="dm-tk-input">{dmT(lang, 'dash.tarea_ph')}</span>
-                <span class="dm-tk-date">{d.fecha}<DmIcon name="calendar" /></span>
-                <span class="dm-tk-btn">{dmT(lang, 'dash.agregar')}</span>
-            </div>
-            <div class="dm-tk-list">
-                {d.tareas.map((x) => (
-                    <div class="dm-tk-row">
-                        <span class="dm-tk-check"></span>
-                        <span class="dm-tk-body"><span class="dm-tk-title">{x.t}</span>{x.m && <span class="dm-tk-meta">{x.m}</span>}</span>
-                        {x.late && <span class="dm-tk-late">{dmT(lang, 'tareas.due.ayer')}</span>}
-                        <span class="dm-tk-del"><DmIcon name="x" /></span>
-                    </div>
-                ))}
-            </div>
-        </div>
+    <DocsMockup lang={lang} variant="panel" panelWidth={560} caption={caption} class="dm-tw-figure">
+        <TkBoard lang={lang} variant="widget" scope="mias" />
     </DocsMockup>
 )}
-
-<style is:global>
-    .dm-tk { padding: 16px 18px 10px; }
-    .dm-tk-head { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--dm-border); }
-    .dm-tk-add { display: flex; gap: 7px; margin-bottom: 8px; }
-    .dm-tk-input, .dm-tk-date { display: flex; align-items: center; height: 34px; padding: 0 11px; border-radius: 9px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11.5px; color: #8a93a2; white-space: nowrap; overflow: hidden; }
-    .dm-tk-input { flex: 1; min-width: 0; text-overflow: ellipsis; }
-    .dm-tk-date { gap: 8px; flex-shrink: 0; color: var(--dm-text); }
-    .dm-tk-date .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
-    .dm-tk-btn { display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 9px; background: var(--dm-navy); color: #fff; font-size: 11.5px; font-weight: 600; flex-shrink: 0; }
-    .dm-tk-list { display: flex; flex-direction: column; }
-    .dm-tk-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--dm-border); }
-    .dm-tk-row:last-child { border-bottom: 0; }
-    .dm-tk-check { width: 17px; height: 17px; flex-shrink: 0; border-radius: 5.5px; border: 1.6px solid var(--dm-border-strong); background: #fff; }
-    .dm-tk-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-    .dm-tk-title { font-size: 12px; font-weight: 500; color: var(--dm-text); }
-    .dm-tk-meta { font-size: 10px; color: var(--dm-muted); }
-    .dm-tk-late { flex-shrink: 0; font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-danger-ink); background: rgba(239, 68, 68, 0.1); padding: 3px 8px; border-radius: 999px; }
-    .dm-tk-del { flex-shrink: 0; color: #b3bac4; }
-    .dm-tk-del .dm-ico { width: 13px; height: 13px; }
-
-    @container dm (max-width: 520px) {
-        .dm-tk { padding: 14px 14px 8px; }
-        .dm-tk-add { flex-wrap: wrap; }
-        .dm-tk-input { flex: 1 1 100%; }
-        .dm-tk-date { flex: 1; }
-    }
-</style>
