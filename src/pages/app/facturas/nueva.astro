@@ -21,6 +21,7 @@ import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/i
 import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies, normalizeCurrency } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
+import { civilDay } from '../../../lib/fmt-server';
 import { t, getDocumentEditorI18n } from '../../../i18n/app';
 import type { EditorBoot } from '../../../lib/editor/document-editor';
 
@@ -78,15 +79,18 @@ const currencyOptions = listOfferedCurrencies(currency).map((code) => ({
     code, label: `${code} — ${currencyNames.of(code) || code}`, flag: CURRENCY_FLAG[code] || country,
 }));
 
-// Vencimiento: el del borrador; si no, el de los términos de la org. Fecha de
-// calendario local, no un instante: con toISOString() caía al día siguiente
-// de tarde en cualquier huso al oeste de Greenwich.
-const isoLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Vencimiento: el del borrador; si no, el de los términos de la org. Es una
+// fecha de calendario EN LA ZONA DEL NEGOCIO (regla 24): con el reloj del
+// servidor, que corre en UTC, "contado" amanecía en mañana a partir de las
+// 18:00 en México.
+const DAY = 86400000;
+const plusDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 const DIAS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const orgTerm = ORG.terminosDefault || 'contado';
-const dueDate = draft?.venceISO || isoLocal(new Date(Date.now() + (DIAS[orgTerm] ?? 0) * 86400000));
+const today = civilDay(new Date());
+const dueDate = draft?.venceISO || plusDays(today, DIAS[orgTerm] ?? 0);
 // El chip activo es el que corresponde al vencimiento guardado (o ninguno).
-const dueDays = Math.round((new Date(`${dueDate}T12:00:00`).getTime() - new Date(`${isoLocal(new Date())}T12:00:00`).getTime()) / 86400000);
+const dueDays = Math.round((Date.parse(`${dueDate}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / DAY);
 const terms = draft ? (Object.entries(DIAS).find(([, d]) => d === dueDays)?.[0] ?? '') : orgTerm;
 
 const boot: Omit<EditorBoot, 'T'> = {
@@ -102,6 +106,15 @@ const boot: Omit<EditorBoot, 'T'> = {
         id: k.id, nombre: k.nombre, precioCombo: k.precioCombo,
         items: k.items.map((it: any) => ({ productoId: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, precio: it.precio, unidad: it.unidad })),
     })),
+    // La vista previa se arma con la marca del negocio. El logo se sirve por su
+    // ruta y no se incrusta: puede ser un data URL de cientos de KB.
+    brand: {
+        nombre: ORG.nombre,
+        logoUrl: ORG.logoUrl ? `/api/orgs/${ORG.id}/logo` : null,
+        color: ORG.colorMarca,
+        taxIdLabel: profile.taxIdLabel,
+        taxId: ORG.rfc || null,
+    },
     taxOptions: TAX_OPTIONS,
     defaultTaxRate: DEFAULT_TAX_RATE,
     // Las retenciones no se eligen por línea: son una política del negocio y
@@ -151,7 +164,7 @@ const title = draft?.invoiceNumber ? T.titleFixInvoiceTpl.replace('{folio}', dra
     {hasAccess && (
         <DocumentEditor
             boot={boot}
-            clientes={(CLIENTES as any[]).map((c) => ({ id: c.id, empresa: c.empresa, contacto: c.contacto, email: c.email, descuentoPct: c.descuentoPct, terminosCode: c.terminosCode }))}
+            clientes={(CLIENTES as any[]).map((c) => ({ id: c.id, empresa: c.empresa, contacto: c.contacto, email: c.email, rfc: c.rfc, descuentoPct: c.descuentoPct, terminosCode: c.terminosCode }))}
             currencyOptions={currencyOptions}
             currency={currency}
             terms={terms}

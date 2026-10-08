@@ -16,6 +16,8 @@ export interface QuoteItem {
     unidad: string;
     precioLista: number;
     precioNegociado: number | null;
+    /** Snapshot del costo al capturar; el margen y la aprobación lo leen. */
+    costo?: number;
     /** Fracción 0–1. Snapshot de la tasa al capturar, no lectura viva del catálogo. */
     taxRate?: number;
     aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)

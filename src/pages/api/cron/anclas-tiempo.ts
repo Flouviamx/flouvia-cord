@@ -112,7 +112,7 @@ async function emitQuoteExpiring(orgId: string): Promise<number> {
             moneda: (r.base_currency as string) || null,
             status: r.status,
             dias_para_vencer: Number(r.dias),
-            vence: String(r.vigencia).slice(0, 10),
+            vence: dateOnly(r.vigencia),
         }, 'system');
         if (id) n++;
     }

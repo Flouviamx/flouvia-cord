@@ -80,11 +80,6 @@
 [data-editor] .ai-file-chip button:hover { opacity: 1; }
 [data-editor] .ai-file-chip button svg { width: 11px; height: 11px; opacity: 1; }
 
-[data-editor] .ed-or { display: flex; align-items: center; gap: 1rem; margin: 0.3rem 0; color: var(--color-text-muted); }
-[data-editor] .ed-or::before,
-[data-editor] .ed-or::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
-[data-editor] .ed-or span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
-
 /* ── Controles ── */
 [data-editor] .client-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
 [data-editor] .ed-select {
@@ -137,30 +132,33 @@
 [data-editor] .desc-note[hidden] { display: none; }
 
 /* ── Líneas ── */
-/* Columnas: concepto · cant · lista · precio · [impuesto] · importe · [margen] · quitar.
-   El impuesto solo aparece con más de una tasa; el margen solo en cotización
-   (es una métrica de negociación, y una factura ya no se negocia). La rejilla
-   se llavea por `data-cols` en el contenedor, no por el número de hijos. */
+/* Columnas: agarre · concepto · cant · lista · precio · [impuesto] · importe ·
+   [margen] · acciones. El impuesto solo aparece con más de una tasa; el margen
+   solo en cotización (es una métrica de negociación, y una factura ya no se
+   negocia). La rejilla se llavea por `data-cols` en el contenedor, no por el
+   número de hijos. */
 [data-editor] .lines-head,
 [data-editor] .line-row {
     display: grid;
-    --c-name: minmax(150px, 1.8fr);
-    --c-fixed: 76px 92px 112px;
-    grid-template-columns: var(--c-name) var(--c-fixed) minmax(84px, 1fr) 32px;
-    gap: 0.8rem;
+    --c-grip: 14px;
+    --c-name: minmax(140px, 1.8fr);
+    --c-fixed: 72px 88px 108px;
+    --c-act: 60px;
+    grid-template-columns: var(--c-grip) var(--c-name) var(--c-fixed) minmax(84px, 1fr) var(--c-act);
+    gap: 0.7rem;
 }
 [data-editor] [data-cols="tax"] .line-row,
-[data-editor] .lines-head[data-cols="tax"] { grid-template-columns: var(--c-name) var(--c-fixed) 104px minmax(84px, 1fr) 32px; }
+[data-editor] .lines-head[data-cols="tax"] { grid-template-columns: var(--c-grip) var(--c-name) var(--c-fixed) 100px minmax(84px, 1fr) var(--c-act); }
 [data-editor] [data-cols="margin"] .line-row,
-[data-editor] .lines-head[data-cols="margin"] { grid-template-columns: var(--c-name) var(--c-fixed) minmax(84px, 1fr) 58px 32px; }
+[data-editor] .lines-head[data-cols="margin"] { grid-template-columns: var(--c-grip) var(--c-name) var(--c-fixed) minmax(84px, 1fr) 52px var(--c-act); }
 [data-editor] [data-cols="tax margin"] .line-row,
-[data-editor] .lines-head[data-cols="tax margin"] { grid-template-columns: var(--c-name) var(--c-fixed) 104px minmax(84px, 1fr) 58px 32px; }
+[data-editor] .lines-head[data-cols="tax margin"] { grid-template-columns: var(--c-grip) var(--c-name) var(--c-fixed) 100px minmax(84px, 1fr) 52px var(--c-act); }
 [data-editor] .lines-head[hidden] { display: none; }
 [data-editor] .lines-head {
     font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
     padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
 }
-[data-editor] .lh-right { text-align: right; }
+[data-editor] .lh-num { text-align: right; }
 [data-editor] .lh-i {
     display: inline-flex; align-items: center; justify-content: center;
     width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--color-border);
@@ -185,7 +183,7 @@
 [data-editor] .lr-pricing-hint:hover { opacity: 0.7; }
 /* La lista solo se tacha cuando el precio pactado es menor: tacharla siempre
    anunciaba un descuento que no existía. */
-[data-editor] .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+[data-editor] .lr-lista { text-align: right; font-size: 0.82rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
 [data-editor] .lr-lista.is-struck { text-decoration: line-through; }
 [data-editor] .lr-margen {
     font-size: 0.72rem; font-weight: 600; text-align: center; border-radius: 4px; padding: 2px 6px;
@@ -221,13 +219,36 @@
 [data-editor] .lr-tax:hover { background: var(--editor-field-hover); }
 [data-editor] .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: var(--editor-panel); box-shadow: 0 0 0 3px var(--editor-focus-ring); }
 [data-editor] .lr-tax.is-exento { color: var(--color-text-muted); }
-[data-editor] .lr-del {
-    background: none; border: none; cursor: pointer;
+/* Acciones de la fila: discretas hasta que la fila tiene el puntero o el foco.
+   En pantallas táctiles no hay hover, así que se quedan visibles. */
+[data-editor] .lr-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+[data-editor] .lr-act {
+    background: none; border: none; cursor: pointer; width: 28px; height: 28px;
     color: var(--color-text-muted); display: flex; align-items: center; justify-content: center;
-    border-radius: 6px; padding: 4px;
-    transition: color 0.2s, background 0.2s;
+    border-radius: 7px; padding: 0; opacity: 0.45;
+    transition: color 0.2s, background 0.2s, opacity 0.2s;
 }
-[data-editor] .lr-del:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+[data-editor] .line-row:hover .lr-act,
+[data-editor] .line-row:focus-within .lr-act { opacity: 1; }
+[data-editor] .lr-act:hover { color: var(--color-text); background: var(--editor-field); }
+[data-editor] .lr-act.lr-del:hover { color: var(--color-danger); background: rgba(220, 38, 38, 0.1); }
+@media (hover: none) { [data-editor] .lr-act { opacity: 1; } }
+
+/* Agarre para reordenar. Arrastrar es de escritorio (regla 16); con teclado,
+   Alt + flechas mueve la línea desde cualquiera de sus campos. */
+[data-editor] .lr-grip {
+    display: flex; align-items: center; justify-content: center; align-self: stretch;
+    color: var(--color-text-muted); cursor: grab; opacity: 0; border-radius: 4px;
+    transition: opacity 0.2s;
+}
+[data-editor] .line-row:hover .lr-grip { opacity: 0.6; }
+[data-editor] .lr-grip:hover { opacity: 1 !important; }
+[data-editor] .line-row.is-dragging { opacity: 0.4; }
+[data-editor] .line-row.is-dragging .lr-grip { cursor: grabbing; }
+[data-editor] .line-row.drop-before { box-shadow: inset 0 2px 0 var(--color-blue-deep); }
+[data-editor] .line-row.drop-after { box-shadow: inset 0 -2px 0 var(--color-blue-deep); }
+/* En escritorio la etiqueta del campo no ocupa lugar: el input es la celda. */
+[data-editor] .lr-field { display: contents; }
 
 [data-editor] .line-row.line-added { animation: line-added-flash 0.9s var(--ease-ios); }
 @keyframes line-added-flash {
@@ -486,8 +507,227 @@
     color: var(--color-text); font-size: 0.8rem; font-weight: 650;
 }
 
+/* ── IA plegable ──
+   Con líneas capturadas la IA deja de ser la puerta de entrada: queda como
+   una barra de una línea que se abre bajo demanda. */
+[data-editor] .ai-head { display: flex; align-items: flex-start; gap: 0.8rem; }
+[data-editor] .ai-ic { width: 20px; height: 20px; flex-shrink: 0; color: var(--editor-ai-ink); opacity: 0.85; margin-top: 1px; }
+[data-editor] .ai-head-text { flex: 1; min-width: 0; }
+[data-editor] .ai-toggle {
+    display: none; align-items: center; gap: 6px; flex-shrink: 0;
+    font: 600 0.78rem var(--font-sans); color: var(--editor-ai-ink);
+    background: rgba(255, 255, 255, 0.1); border: none; border-radius: 999px;
+    padding: 6px 10px 6px 12px; cursor: pointer; transition: background 0.2s;
+}
+[data-editor] .ai-toggle svg { width: 14px; height: 14px; transition: transform 0.25s var(--ease-ios); }
+[data-editor] .ai-toggle:hover { background: rgba(255, 255, 255, 0.18); }
+[data-editor] .ai-block[data-collapsed] { padding: 0.85rem 1rem 0.85rem 1.1rem; }
+[data-editor] .ai-block[data-collapsed] .ai-head { align-items: center; }
+[data-editor] .ai-block[data-collapsed] .ai-ic { margin-top: 0; }
+[data-editor] .ai-block[data-collapsed] .ai-sub { display: none; }
+[data-editor] .ai-block[data-collapsed] .ai-title { margin: 0; font-size: 0.88rem; }
+[data-editor] .ai-block[data-collapsed] .ai-body { display: none; }
+[data-editor] .ai-block[data-collapsed] .ai-toggle,
+[data-editor] .ai-block[data-expanded-once] .ai-toggle { display: inline-flex; }
+[data-editor] .ai-block:not([data-collapsed]) .ai-toggle-open { display: none; }
+[data-editor] .ai-block:not([data-collapsed]) .ai-toggle { padding: 6px; }
+[data-editor] .ai-block:not([data-collapsed]) .ai-toggle svg { transform: rotate(180deg); }
+[data-editor] .ai-body { margin-top: 0.15rem; }
+
+/* ── Cliente: buscador en lugar del select nativo ── */
+[data-editor] .client-combo { position: relative; flex: 1 1 280px; max-width: 420px; }
+[data-editor] .client-combo-ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #99a2af; pointer-events: none; }
+[data-editor] .client-input {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
+    color: var(--color-text); background: var(--editor-field);
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 14px 10px 36px; width: 100%; text-overflow: ellipsis;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+}
+[data-editor] .client-input:hover { background: var(--editor-field-hover); }
+[data-editor] .client-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px var(--editor-focus-ring); background: var(--editor-panel); }
+[data-editor] .client-input::placeholder { color: #99a2af; font-weight: 400; }
+[data-editor] .client-input:disabled { opacity: 0.6; cursor: not-allowed; }
+[data-editor] .prod-create { border-top: 1px solid var(--color-border); }
+[data-editor] .prod-create .prod-item-name { color: var(--color-blue-deep); font-weight: 600; }
+[data-editor] .client-meta { font-size: 0.76rem; color: var(--color-text-muted); margin: 0.6rem 0 0; line-height: 1.5; }
+[data-editor] .client-meta[hidden] { display: none; }
+[data-editor] .client-meta b { color: var(--color-text); font-weight: 600; }
+
+/* ── Buscador de catálogo: atajo y cantidad pendiente ── */
+[data-editor] .prod-kbd {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;
+    font: 600 0.66rem var(--font-sans); color: var(--color-text-muted);
+    background: var(--editor-panel); border-radius: 5px; padding: 2px 7px;
+    box-shadow: inset 0 0 0 1px var(--color-border);
+}
+[data-editor] .prod-input:focus ~ .prod-kbd,
+[data-editor] .prod-input:not(:placeholder-shown) ~ .prod-kbd { opacity: 0; }
+[data-editor] .prod-item-qty {
+    font-weight: 700; color: var(--color-blue-deep); background: var(--editor-field);
+    border-radius: 5px; padding: 1px 5px; margin-right: 2px; font-size: 0.74rem;
+}
+
+/* ── Paso 3: condiciones ── */
+[data-editor] .cond-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1.1rem 1.25rem; align-items: start; }
+[data-editor] .cond-field { display: flex; flex-direction: column; min-width: 0; }
+[data-editor] .cond-field .ed-select { min-width: 0; width: 100%; }
+[data-editor] .cond-field .field-label { margin-bottom: 0.4rem; }
+[data-editor] .cond-toggle {
+    flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem;
+    align-self: end; min-height: 44px; padding: 0 0.2rem;
+}
+[data-editor] .cond-toggle > label:first-child { font-size: 0.85rem; color: var(--color-text); cursor: pointer; }
+[data-editor] .cond-toggle .field-note { flex-basis: 100%; }
+[data-editor] .cond-field[hidden] { display: none; }
+[data-editor] .field-note { font-size: 0.74rem; color: var(--color-text-muted); margin: 0.45rem 0 0; line-height: 1.45; }
+[data-editor] .field-note.is-warn { color: #b45309; }
+[data-editor] .field-note[hidden] { display: none; }
+[data-editor] .fx-cover { margin-top: 1rem; }
+[data-editor] .fx-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0.9rem; align-items: end; }
+[data-editor] .fx-cushion-wrap { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+
+/* ── Resumen ── */
+[data-editor] .save-state {
+    display: flex; align-items: center; gap: 6px; margin: -0.35rem 0 0;
+    font-size: 0.72rem; color: var(--color-text-muted);
+}
+[data-editor] .save-state[hidden] { display: none; }
+[data-editor] .save-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok, #10b981); flex-shrink: 0; }
+[data-editor] .save-state[data-tone="busy"]::before { background: var(--color-text-muted); animation: de-pulse 1s ease-in-out infinite; }
+[data-editor] .save-state[data-tone="warn"] { color: #b45309; }
+[data-editor] .save-state[data-tone="warn"]::before { background: #d97706; }
+@keyframes de-pulse { 50% { opacity: 0.3; } }
+[data-editor] .sum-terms { font-size: 0.74rem; color: var(--color-text-muted); margin: -0.3rem 0 0; text-align: right; line-height: 1.45; }
+[data-editor] .sum-terms:empty { display: none; }
+[data-editor] .sum-tools { display: flex; justify-content: center; gap: 0.2rem; flex-wrap: wrap; }
+[data-editor] .sum-tools .btn-text { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── Barra móvil: total y acción principal siempre a la vista ── */
+[data-editor] .de-mobilebar { display: none; }
+
+/* ── Deshacer ── */
+[data-editor] .de-undo {
+    position: fixed; left: 50%; bottom: calc(1.5rem + env(safe-area-inset-bottom)); z-index: 80;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 1rem; max-width: calc(100vw - 2rem);
+    padding: 10px 10px 10px 16px; border-radius: 12px;
+    background: #0a192f; color: #fff; font-size: 0.82rem;
+    box-shadow: 0 14px 36px -10px rgba(10, 25, 47, 0.55);
+    animation: de-undo-in 0.25s var(--ease-ios);
+}
+[data-editor] .de-undo[hidden] { display: none; }
+[data-editor] .de-undo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-editor] .de-undo button {
+    flex-shrink: 0; font: 600 0.8rem var(--font-sans); color: #fff; cursor: pointer;
+    background: rgba(255, 255, 255, 0.14); border: none; border-radius: 8px; padding: 7px 12px; min-height: 34px;
+}
+[data-editor] .de-undo button:hover { background: rgba(255, 255, 255, 0.24); }
+@keyframes de-undo-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* ── Vista previa del documento ──
+   Una hoja en blanco con la marca del negocio: es lo que el cliente va a
+   leer, así que se ve como papel aunque la app esté en modo oscuro. */
+.de-preview { width: min(760px, calc(100vw - 2rem)); }
+.de-preview .issue-eyebrow {
+    display: block; margin-bottom: 3px; color: var(--color-text-muted);
+    font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.de-preview .m-body { background: var(--color-bg-soft); }
+.de-preview .field-hint { font-size: 0.74rem; color: var(--color-text-muted); margin: 0.8rem 0 0; text-align: center; }
+.de-doc {
+    --dd-accent: #0a192f;
+    color-scheme: light;
+    background: #fff; color: #111827; border-radius: 12px; padding: 2rem 2.2rem;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 10px 30px -12px rgba(10, 25, 47, 0.2);
+    font-size: 0.84rem; line-height: 1.5;
+}
+.de-doc .dd-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem;
+    padding-bottom: 1.2rem; border-bottom: 2px solid var(--dd-accent);
+}
+.de-doc .dd-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.de-doc .dd-brand > span { display: flex; flex-direction: column; min-width: 0; }
+.de-doc .dd-brand small { font-size: 0.72rem; color: #6b7280; }
+.de-doc .dd-brand b { font-size: 1rem; font-weight: 700; color: #050505; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.de-doc .dd-logo { max-height: 40px; max-width: 140px; object-fit: contain; }
+.de-doc .dd-initial {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--dd-accent); color: #fff; font-weight: 700; font-size: 1rem;
+}
+.de-doc .dd-meta { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex-shrink: 0; }
+.de-doc .dd-meta span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; }
+.de-doc .dd-meta b { font-size: 0.95rem; color: #050505; font-variant-numeric: tabular-nums; }
+.de-doc .dd-meta small { font-size: 0.72rem; color: #6b7280; }
+.de-doc .dd-parties { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.2rem 0; flex-wrap: wrap; }
+.de-doc .dd-parties > div { display: flex; flex-direction: column; min-width: 0; }
+.de-doc .dd-parties small { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; margin-bottom: 2px; }
+.de-doc .dd-parties b { font-weight: 600; color: #050505; overflow-wrap: anywhere; }
+.de-doc .dd-parties span { color: #6b7280; font-size: 0.78rem; overflow-wrap: anywhere; }
+.de-doc .dd-cond { align-items: flex-end; text-align: right; }
+.de-doc .dd-lines { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.de-doc .dd-lines th {
+    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7280;
+    text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid #e5e7eb;
+}
+.de-doc .dd-lines td { padding: 0.65rem 0.4rem; border-bottom: 1px solid #f1f2f4; vertical-align: top; }
+.de-doc .dd-lines td b { display: block; font-weight: 600; color: #111827; overflow-wrap: anywhere; }
+.de-doc .dd-lines td small { color: #9ca3af; font-size: 0.7rem; }
+.de-doc .dd-lines .num { text-align: right; white-space: nowrap; }
+.de-doc .dd-lines s { color: #9ca3af; font-size: 0.76rem; }
+.de-doc .dd-empty { text-align: center; color: #9ca3af; padding: 1.5rem 0.4rem; }
+.de-doc .dd-totals { margin: 1rem 0 0 auto; width: min(300px, 100%); font-variant-numeric: tabular-nums; }
+.de-doc .dd-totals > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.25rem 0; color: #4b5563; }
+.de-doc .dd-totals dt, .de-doc .dd-totals dd { margin: 0; }
+.de-doc .dd-totals .dd-total { border-top: 1px solid #e5e7eb; margin-top: 0.4rem; padding-top: 0.6rem; color: #050505; font-weight: 700; font-size: 1.05rem; }
+.de-doc .dd-totals .dd-total small { font-size: 0.68rem; color: #6b7280; font-weight: 600; }
+.de-doc .dd-notes { margin: 1.4rem 0 0; padding-top: 1rem; border-top: 1px solid #f1f2f4; color: #4b5563; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ── Líneas en una columna angosta ──
+   Se decide por el ancho de la columna de líneas, no de la ventana: entre
+   980 y ~1350 px el resumen lateral deja la columna principal angosta y la
+   fila de siete columnas se encimaba. Ningún dato se oculta: cantidad,
+   precio, impuesto e importe siguen visibles y editables, cada uno con su
+   etiqueta porque la cabecera de columnas ya no se ve. */
+[data-editor] .ed-main { container-type: inline-size; container-name: de-main; }
+@container de-main (max-width: 700px) {
+    [data-editor] .lines-head { display: none !important; }
+    [data-editor] .lines .line-row,
+    [data-editor] [data-cols] .line-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        grid-template-areas:
+            "name name actions"
+            "quantity price price"
+            "list margin amount";
+        gap: 0.6rem 0.75rem;
+        padding: 0.9rem 0;
+    }
+    /* La tasa es información comercial: en una columna angosta se apila, no se esconde. */
+    [data-editor] [data-cols~="tax"] .line-row {
+        grid-template-areas:
+            "name name actions"
+            "quantity price price"
+            "tax tax tax"
+            "list margin amount";
+    }
+    [data-editor] .line-row > .lr-grip { display: none; }
+    [data-editor] .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; align-self: center; }
+    [data-editor] .line-row > .lr-f-qty { grid-area: quantity; }
+    [data-editor] .line-row > .lr-f-price { grid-area: price; }
+    [data-editor] .line-row > .lr-lista { grid-area: list; align-self: center; text-align: left; }
+    [data-editor] .line-row > .lr-tax { grid-area: tax; align-self: center; }
+    [data-editor] .line-row > .lr-margen { grid-area: margin; justify-self: start; align-self: center; }
+    [data-editor] .line-row > .lr-importe { grid-area: amount; justify-self: end; align-self: center; }
+    [data-editor] .line-row > .lr-actions { grid-area: actions; align-self: start; }
+    [data-editor] .lr-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    [data-editor] .lr-field::before {
+        content: attr(data-label); font-size: 0.66rem; font-weight: 600; color: var(--color-text-muted);
+    }
+}
+
 /* ── Foco visible y movimiento reducido ── */
-[data-editor] :is(.ai-attach-btn, .ai-file-chip button, .lr-pricing-hint, .lr-del, .chip, .fx-cush-chip, .btn-free-line, .kit-insert-add, .btn-text):focus-visible,
+[data-editor] :is(.ai-attach-btn, .ai-file-chip button, .ai-toggle, .lr-pricing-hint, .lr-act, .de-undo button, .client-input, .chip, .fx-cush-chip, .btn-free-line, .kit-insert-add, .btn-text):focus-visible,
 [data-editor] .s-toggle input:focus-visible + .s-toggle-track {
     outline: 2px solid var(--color-blue-deep); outline-offset: 2px;
 }
@@ -499,9 +739,27 @@
 @media (max-width: 980px) {
     [data-editor] .editor-grid { grid-template-columns: 1fr; gap: 2rem; }
     [data-editor] .ed-side { position: static; }
+    /* Con el resumen al final de la página, el total y la acción principal
+       viajan pegados abajo. Se retira cuando el resumen ya está a la vista. */
+    [data-editor] .de-mobilebar {
+        position: sticky; z-index: 40;
+        bottom: calc(0.75rem + var(--wb-bar-h, 0px) + env(safe-area-inset-bottom));
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        margin-top: 1.5rem; padding: 10px 10px 10px 18px; border-radius: 18px;
+        background: var(--editor-panel); border: 1px solid var(--color-border);
+        box-shadow: 0 18px 40px -16px rgba(10, 25, 47, 0.35);
+        transition: opacity 0.25s var(--ease-ios), transform 0.25s var(--ease-ios);
+    }
+    [data-editor] .de-mobilebar[data-off] { opacity: 0; transform: translateY(12px); pointer-events: none; }
+    [data-editor] .de-mobilebar-total { display: flex; flex-direction: column; min-width: 0; }
+    [data-editor] .de-mobilebar-total span { font-size: 0.68rem; color: var(--color-text-muted); font-weight: 500; }
+    [data-editor] .de-mobilebar-total strong { font-size: 1.15rem; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    [data-editor] .de-mobilebar .btn-send { margin: 0; flex-shrink: 0; min-height: 46px; padding: 10px 20px; }
+    [data-editor] .de-undo { bottom: calc(6rem + var(--wb-bar-h, 0px) + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 880px) {
     [data-editor] .sum-kbd,
+    [data-editor] .prod-kbd,
     [data-editor] .add-hint { display: none; }
 }
 @media (max-width: 720px) {
@@ -512,6 +770,16 @@
     [data-editor] .ai-attach-btn { top: 3px; right: 3px; width: 44px; height: 44px; }
     [data-editor] .ai-file-chip button { min-width: 44px; min-height: 44px; justify-content: center; align-items: center; }
     [data-editor] .client-row { flex-direction: column; align-items: stretch; }
+    [data-editor] .client-combo { flex: 1 1 auto; max-width: none; }
+    [data-editor] .client-input { min-height: 46px; font-size: 16px; }
+    [data-editor] .cond-grid { grid-template-columns: 1fr; gap: 1rem; }
+    [data-editor] .fx-row { grid-template-columns: 1fr; }
+    [data-editor] .lr-act { width: 44px; height: 44px; }
+    [data-editor] .ai-toggle { min-height: 44px; }
+    .de-doc { padding: 1.2rem 1rem; font-size: 0.8rem; }
+    .de-doc .dd-head { flex-direction: column; gap: 0.8rem; }
+    .de-doc .dd-meta { align-items: flex-start; text-align: left; }
+    .de-doc .dd-cond { align-items: flex-start; text-align: left; }
     [data-editor] .ed-select,
     [data-editor] .ed-input { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
     [data-editor] .term-chips {
@@ -542,34 +810,6 @@
     [data-editor] .btn-send,
     [data-editor] .btn-draft { width: 100%; min-height: 48px; }
 
-    /* La fila se reordena en tres renglones. Ningún dato se oculta: cantidad,
-       precio, impuesto e importe siguen visibles y editables. */
-    [data-editor] .lines .line-row,
-    [data-editor] [data-cols] .line-row {
-        grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
-        grid-template-areas:
-            "name name delete"
-            "quantity price price"
-            "list margin amount";
-        gap: 0.65rem 0.75rem;
-        padding: 1rem 0;
-    }
-    /* La tasa es información comercial: en móvil se apila, no se esconde. */
-    [data-editor] [data-cols~="tax"] .line-row {
-        grid-template-areas:
-            "name name delete"
-            "quantity price price"
-            "tax tax tax"
-            "list margin amount";
-    }
-    [data-editor] .line-row > .lr-margen { grid-area: margin; justify-self: start; align-self: center; }
-    [data-editor] .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
-    [data-editor] .line-row > .lr-qty { grid-area: quantity; }
-    [data-editor] .line-row > .lr-lista { grid-area: list; display: block; align-self: center; }
-    [data-editor] .line-row > .lr-nego { grid-area: price; }
-    [data-editor] .line-row > .lr-tax { grid-area: tax; align-self: center; }
-    [data-editor] .line-row > .lr-importe { grid-area: amount; display: block; justify-self: end; align-self: center; }
-    [data-editor] .line-row > .lr-del { grid-area: delete; width: 44px; height: 44px; padding: 0; justify-self: end; }
     [data-editor] .lr-input,
     [data-editor] .lr-tax { min-height: 44px; font-size: 16px; }
 }

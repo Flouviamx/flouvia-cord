@@ -9,7 +9,7 @@
 import {
     firstInvalidLine, freeLine, lineAmount, lineFromProduct, linesFromKit, margenPct,
     normalizeTiers, parseAmount, payloadItems, repriceForClient, setPrice, setQuantity, summarize,
-    unitPrice, volumePrice, newKey,
+    unitPrice, volumePrice, newKey, autoPrice, parseQuery,
     type CatalogProduct, type KitDef, type Line, type PricingContext,
 } from './core';
 import { createMoney, decimalsFor } from '../money-client';
@@ -27,6 +27,10 @@ export interface BootLine {
     lista: number;
     negociado: number | null;
     taxRate: number | null;
+    /** Costo guardado en el documento. Sin él, reabrir tomaba el del catálogo de
+     *  hoy (o 0 en una línea libre) y el reenvío pisaba el snapshot: con costo 0
+     *  la aprobación por margen mínimo no se evalúa. */
+    costo?: number | null;
 }
 
 export interface EditorBoot {
@@ -43,6 +47,8 @@ export interface EditorBoot {
     taxLabel: string;
     multiTax: boolean;
     aprobMargenMin: number;
+    /** Para la vista previa: cómo se ve el documento con la marca del negocio. */
+    brand?: { nombre: string; logoUrl: string | null; color: string | null; taxIdLabel?: string; taxId?: string | null };
     doc: {
         id: string | null;
         folio: string | null;
@@ -83,10 +89,9 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
 
     // ── Cliente y precio automático ─────────────────────────────────────────
     const $client = $<HTMLSelectElement>('deClient');
-    let lastClient = $client?.value || '';
     const clientOption = () => {
         const o = $client?.selectedOptions[0];
-        return o && o.value && o.value !== '__NEW__' ? o : null;
+        return o && o.value ? o : null;
     };
     const clientDiscount = () => Number(clientOption()?.dataset.desc || 0) || 0;
     let b2bList: { moneda: string; precios: Record<string, number> } | null = null;
@@ -100,25 +105,37 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     const fromBoot = (b: BootLine): Line => {
         const p = b.productoId ? catalogMap.get(b.productoId) : undefined;
         const taxRate = b.taxRate ?? boot.defaultTaxRate;
-        if (!p) {
+        const savedCost = b.costo != null && Number.isFinite(Number(b.costo)) ? Number(b.costo) : null;
+        if (!b.productoId) {
             const l = freeLine(taxRate, { nombre: b.nombre, cantidad: b.cantidad, unidad: b.unidad || 'pieza', precio: b.negociado ?? b.lista });
             l.precioPendiente = false;
+            if (savedCost !== null) l.costo = savedCost;
             return l;
         }
         // La lista GUARDADA manda al reabrir: repreciar con el catálogo de hoy
         // cambiaba en silencio un borrador viejo. El volumen se recalcula solo
-        // si cambia la cantidad.
-        const vol = normalizeTiers(p.preciosVolumen);
+        // si cambia la cantidad. Un producto que ya no está en el catálogo
+        // activo sigue siendo ese producto: convertirlo en línea libre perdía
+        // el vínculo y el descuento mostrado.
+        const vol = p ? normalizeTiers(p.preciosVolumen) : [];
+        // Un precio guardado que coincide con el automático del cliente sigue
+        // siendo automático: si se cambia de cliente, se reprecia. Solo el que
+        // difiere se trató como escrito a mano.
+        const auto = autoPrice({ productoId: b.productoId, lista: b.lista }, ctx()).negociado;
+        const touched = b.negociado !== null && (auto === null || Math.abs(b.negociado - auto) > 1e-9);
         return {
-            key: newKey(), productoId: p.id, nombre: b.nombre || p.nombre, unidad: b.unidad || p.unidad || 'pieza',
-            baseLista: Number(p.precio) || b.lista, lista: b.lista, vol, costo: Number(p.costo) || 0,
-            negociado: b.negociado, negoTouched: b.negociado !== null, cantidad: b.cantidad, taxRate,
-            existencias: p.existencias ?? null,
+            key: newKey(), productoId: b.productoId, nombre: b.nombre || p?.nombre || '', unidad: b.unidad || p?.unidad || 'pieza',
+            baseLista: p ? Number(p.precio) || b.lista : b.lista, lista: b.lista, vol,
+            costo: savedCost ?? (Number(p?.costo) || 0),
+            negociado: b.negociado, negoTouched: touched, cantidad: b.cantidad, taxRate,
+            existencias: p?.existencias ?? null,
         };
     };
     const lines: Line[] = boot.doc.lines.map(fromBoot);
     let dirty = false;
-    const markDirty = () => { dirty = true; };
+    // Cada cambio marca el documento como pendiente y agenda el autoguardado
+    // (borradores ya creados) o la copia local (documentos nuevos).
+    const markDirty = () => { dirty = true; scheduleAutosave(); };
 
     // ── Render de líneas ────────────────────────────────────────────────────
     const $lines = $('deLines')!;
@@ -127,7 +144,12 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
 
     const taxSelect = (l: Line) => {
         if (!boot.multiTax) return '';
-        const opts = boot.taxOptions.map((o) =>
+        const known = boot.taxOptions.some((o) => Math.abs(o.rate - l.taxRate) < 1e-9);
+        // Una tasa guardada que ya no está en el catálogo (documento anterior,
+        // tasa retirada) se muestra como es: si no, el selector enseñaba la
+        // primera opción mientras el total se calculaba con la guardada.
+        const legacy = known ? '' : `<option value="${l.taxRate}" selected>${escapeHtml(boot.taxLabel)} ${Math.round(l.taxRate * 10000) / 100}%</option>`;
+        const opts = legacy + boot.taxOptions.map((o) =>
             `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
         return `<select class="lr-tax${l.taxRate === 0 ? ' is-exento' : ''}" data-f="tax" aria-label="${escapeHtml(T.taxAria)}">${opts}</select>`;
     };
@@ -172,17 +194,23 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         const name = l.productoId
             ? `<span class="lr-name"><span class="lr-name-text">${escapeHtml(l.nombre)}</span><small>${nameNote(l)}</small></span>`
             : `<input type="text" class="lr-input lr-desc-input" data-f="desc" value="${escapeHtml(l.nombre)}" placeholder="${escapeHtml(T.descPlaceholder)}" maxlength="500" />`;
-        const price = l.productoId ? unitPrice(l) : (l.precioPendiente ? null : l.lista);
+        const price = (l.precioPendiente ? null : l.productoId ? unitPrice(l) : l.lista);
         const deal = l.productoId && l.negociado !== null && l.negociado < l.lista;
+        // En móvil la cabecera de columnas se oculta: cada campo lleva su
+        // etiqueta (`data-label`), que en escritorio no ocupa lugar.
         return `
+            <span class="lr-grip" draggable="true" title="${escapeHtml(T.moveLine)}" aria-hidden="true">${iconSvg('grip', '', 1.5, 14)}</span>
             ${name}
-            <input type="text" inputmode="decimal" class="lr-input lr-qty" data-f="qty" value="${numText(l.cantidad, 3)}" aria-label="${escapeHtml(T.qtyAria)}" />
+            <label class="lr-field lr-f-qty" data-label="${escapeHtml(T.thQty)}"><input type="text" inputmode="decimal" class="lr-input lr-qty" data-f="qty" value="${numText(l.cantidad)}" aria-label="${escapeHtml(T.qtyAria)}" /></label>
             <span class="lr-lista${deal ? ' is-struck' : ''}">${l.productoId ? fmt(l.lista) : ''}</span>
-            <input type="text" inputmode="decimal" class="lr-input lr-nego${deal ? ' is-deal' : ''}" data-f="price" value="${numText(price)}" aria-label="${escapeHtml(T.priceAria)}" />
+            <label class="lr-field lr-f-price" data-label="${escapeHtml(T.thPrice)}"><input type="text" inputmode="decimal" class="lr-input lr-nego${deal ? ' is-deal' : ''}" data-f="price" value="${numText(price)}" aria-label="${escapeHtml(T.priceAria)}" /></label>
             ${taxSelect(l)}
             <span class="editorial lr-importe">${fmt(lineAmount(l))}</span>
             ${marginCell(l)}
-            <button type="button" class="lr-del" data-act="remove" aria-label="${escapeHtml(T.removeLine)}">${iconSvg('x', '', 1.5, 14)}</button>`;
+            <span class="lr-actions">
+                <button type="button" class="lr-act" data-act="duplicate" aria-label="${escapeHtml(T.duplicateLine)}" title="${escapeHtml(T.duplicateLine)}">${iconSvg('copy', '', 1.5, 14)}</button>
+                <button type="button" class="lr-act lr-del" data-act="remove" aria-label="${escapeHtml(T.removeLine)}" title="${escapeHtml(T.removeLine)}">${iconSvg('x', '', 1.5, 14)}</button>
+            </span>`;
     };
 
     const rowOf = (key: string) => $lines.querySelector<HTMLElement>(`[data-key="${key}"]`);
@@ -195,7 +223,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         if ($empty) $empty.hidden = lines.length > 0;
         if ($head) $head.hidden = lines.length === 0;
         $lines.innerHTML = lines.map((l) =>
-            `<div class="line-row${flashKeys.includes(l.key) ? ' line-added' : ''}" data-key="${l.key}" role="group">${rowHtml(l)}</div>`).join('');
+            `<div class="line-row${flashKeys.includes(l.key) ? ' line-added' : ''}" data-key="${l.key}" role="listitem">${rowHtml(l)}</div>`).join('');
         recalc();
     }
 
@@ -207,7 +235,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         const deal = l.productoId && l.negociado !== null && l.negociado < l.lista;
         if (lista) { lista.textContent = l.productoId ? fmt(l.lista) : ''; lista.classList.toggle('is-struck', !!deal); }
         const price = row.querySelector<HTMLInputElement>('.lr-nego');
-        if (price && price !== except) price.value = numText(l.productoId ? unitPrice(l) : (l.precioPendiente ? null : l.lista));
+        if (price && price !== except) price.value = numText((l.precioPendiente ? null : l.productoId ? unitPrice(l) : l.lista));
         price?.classList.toggle('is-deal', !!deal);
         const imp = row.querySelector('.lr-importe');
         if (imp) imp.textContent = fmt(lineAmount(l));
@@ -233,6 +261,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         const set = (id: string, v: string) => { const el = $(id); if (el) el.textContent = v; };
         set('deSubtotal', fmt(s.subtotal));
         set('deTotal', fmt(s.total));
+        set('deMobileTotal', fmt(s.total));
         set('deCount', s.lineCount
             ? tpl(T.countTpl, { n: s.lineCount, lineas: s.lineCount === 1 ? T.line : T.lines, p: Math.round(s.pieces * 1000) / 1000, unidades: s.pieces === 1 ? T.unit : T.units })
             : T.addLinesHint);
@@ -250,7 +279,29 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         }
         syncDeposit();
         syncRecurring();
+        syncSumTerms();
         scheduleFx();
+    }
+
+    /** Debajo del total: en qué condiciones se paga, en una línea. */
+    function syncSumTerms() {
+        const el = $('deSumTerms');
+        if (!el) return;
+        const chip = $('deTerms')?.querySelector<HTMLElement>('.chip.active');
+        const term = chip?.textContent?.trim() || '';
+        if (isQuote) {
+            const n = Number($<HTMLSelectElement>('deValidity')?.value) || 30;
+            el.textContent = term ? tpl(T.sumTermsQuoteTpl, { term, n }) : '';
+        } else {
+            el.textContent = term && dueText() ? tpl(T.sumTermsInvoiceTpl, { term, fecha: dueText() }) : '';
+        }
+    }
+    function dueText() {
+        const v = $<HTMLInputElement>('deDueDate')?.value;
+        if (!v) return '';
+        const [y, m, d] = v.split('-').map(Number);
+        try { return new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'short' }).format(new Date(y, m - 1, d)); }
+        catch { return v; }
     }
 
     // ── Edición en la fila ──────────────────────────────────────────────────
@@ -287,7 +338,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         const l = lineOf(el);
         if (!l || (el.dataset.f !== 'qty' && el.dataset.f !== 'price')) return;
         if (el.dataset.f === 'qty') el.value = numText(l.cantidad > 0 ? l.cantidad : null, 3);
-        else el.value = numText(l.productoId ? unitPrice(l) : (l.precioPendiente ? null : l.lista));
+        else el.value = numText((l.precioPendiente ? null : l.productoId ? unitPrice(l) : l.lista));
     });
     $lines.addEventListener('focusin', (e) => {
         const el = e.target as HTMLInputElement;
@@ -299,15 +350,112 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         const l = lineOf(btn);
         if (!l) return;
         if (btn.dataset.act === 'remove') {
-            lines.splice(lines.indexOf(l), 1);
+            removeLine(l);
+        } else if (btn.dataset.act === 'duplicate') {
+            const copy: Line = { ...l, key: newKey(), vol: [...l.vol], pricing: l.pricing ?? null };
+            lines.splice(lines.indexOf(l) + 1, 0, copy);
             markDirty();
-            render();
+            render([copy.key]);
+            rowOf(copy.key)?.querySelector<HTMLInputElement>('.lr-qty')?.focus();
         } else if (btn.dataset.act === 'suggested' && l.pricing?.suggestedPrice != null) {
             setPrice(l, l.pricing.suggestedPrice);
             markDirty();
             refreshRow(l);
             recalc();
         }
+    });
+
+    // ── Quitar con deshacer ─────────────────────────────────────────────────
+    // Quitar una línea es un clic; recuperarla también. Sin esto, un clic de
+    // más obligaba a recapturar la línea completa.
+    const $undo = $('deUndo');
+    let undoTimer = 0;
+    let removed: { line: Line; index: number } | null = null;
+    function removeLine(l: Line) {
+        const index = lines.indexOf(l);
+        if (index < 0) return;
+        lines.splice(index, 1);
+        removed = { line: l, index };
+        markDirty();
+        render();
+        if ($undo) {
+            const text = $('deUndoText');
+            if (text) text.textContent = tpl(T.lineRemovedTpl, { nombre: l.nombre.trim() || T.lineUnnamed });
+            $undo.hidden = false;
+            clearTimeout(undoTimer);
+            undoTimer = window.setTimeout(() => { $undo.hidden = true; removed = null; }, 6000);
+        }
+        // El foco no se pierde en el vacío: pasa a la línea que ocupó su lugar.
+        const next = lines[Math.min(index, lines.length - 1)];
+        (next ? rowOf(next.key)?.querySelector<HTMLElement>('.lr-qty') : $search)?.focus();
+    }
+    $('deUndoBtn')?.addEventListener('click', () => {
+        if (!removed) return;
+        lines.splice(Math.min(removed.index, lines.length), 0, removed.line);
+        const key = removed.line.key;
+        removed = null;
+        if ($undo) $undo.hidden = true;
+        markDirty();
+        render([key]);
+    });
+
+    // ── Reordenar: arrastrar en escritorio, Alt + flechas con teclado ───────
+    function moveLine(l: Line, to: number) {
+        const from = lines.indexOf(l);
+        const dest = Math.max(0, Math.min(lines.length - 1, to));
+        if (from < 0 || from === dest) return;
+        lines.splice(from, 1);
+        lines.splice(dest, 0, l);
+        markDirty();
+        render();
+    }
+    $lines.addEventListener('keydown', (e) => {
+        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        const el = e.target as HTMLElement;
+        const l = lineOf(el);
+        if (!l) return;
+        e.preventDefault();
+        const field = el.dataset.f;
+        moveLine(l, lines.indexOf(l) + (e.key === 'ArrowUp' ? -1 : 1));
+        rowOf(l.key)?.querySelector<HTMLElement>(field ? `[data-f="${field}"]` : '.lr-qty')?.focus();
+    });
+    let dragKey: string | null = null;
+    $lines.addEventListener('dragstart', (e) => {
+        const grip = (e.target as HTMLElement).closest('.lr-grip');
+        const row = grip?.closest<HTMLElement>('.line-row');
+        if (!grip || !row) { e.preventDefault(); return; }
+        dragKey = row.dataset.key || null;
+        row.classList.add('is-dragging');
+        e.dataTransfer?.setData('text/plain', dragKey || '');
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer?.setDragImage(row, 24, 24);
+    });
+    $lines.addEventListener('dragover', (e) => {
+        if (!dragKey) return;
+        e.preventDefault();
+        const row = (e.target as HTMLElement).closest<HTMLElement>('.line-row');
+        $lines.querySelectorAll('.drop-before, .drop-after').forEach((r) => r.classList.remove('drop-before', 'drop-after'));
+        if (!row || row.dataset.key === dragKey) return;
+        const r = row.getBoundingClientRect();
+        row.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+    });
+    $lines.addEventListener('drop', (e) => {
+        if (!dragKey) return;
+        e.preventDefault();
+        const row = (e.target as HTMLElement).closest<HTMLElement>('.line-row');
+        const moving = lines.find((l) => l.key === dragKey);
+        const target = row ? lines.find((l) => l.key === row.dataset.key) : null;
+        if (moving && target && moving !== target) {
+            const r = row!.getBoundingClientRect();
+            const after = e.clientY >= r.top + r.height / 2;
+            const without = lines.filter((l) => l !== moving);
+            const ti = without.indexOf(target) + (after ? 1 : 0);
+            moveLine(moving, ti);
+        }
+    });
+    $lines.addEventListener('dragend', () => {
+        dragKey = null;
+        $lines.querySelectorAll('.is-dragging, .drop-before, .drop-after').forEach((r) => r.classList.remove('is-dragging', 'drop-before', 'drop-after'));
     });
 
     // ── Precio sugerido y existencias (solo enriquecen; nunca bloquean) ─────
@@ -356,10 +504,20 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     const $drop = $('deSearchDrop');
     let results: CatalogProduct[] = [];
     let active = -1;
+    let pendingQty = 1;
     const searchFor = (text: string) => {
-        const n = norm(text.trim());
+        // "40 tubo", "40x tubo" o "tubo x40": la cantidad viaja con la búsqueda.
+        // Si lo escrito tal cual ya nombra un producto ("Foco 100 W", "2 x 4"),
+        // el número es parte del nombre y no una cantidad.
         const pool = boot.catalogo;
-        return (n ? pool.filter((p) => norm(p.nombre).includes(n) || norm(p.sku).includes(n)) : pool).slice(0, 8);
+        const match = (text: string) => {
+            const n = norm(text.trim());
+            return n ? pool.filter((p) => norm(p.nombre).includes(n) || norm(p.sku).includes(n)) : pool;
+        };
+        const { qty, term } = parseQuery(text);
+        const literal = qty !== 1 ? match(text) : [];
+        pendingQty = literal.length ? 1 : qty;
+        return (literal.length ? literal : match(term)).slice(0, 8);
     };
     function paintDrop() {
         if (!$drop || !$search) return;
@@ -370,7 +528,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
             $drop.innerHTML = results.map((p, i) => `
                 <button type="button" class="prod-item${i === active ? ' is-active' : ''}" id="deOpt${i}" role="option" aria-selected="${i === active}" data-pid="${escapeHtml(p.id)}" tabindex="-1">
                     <span class="prod-item-name">${escapeHtml(p.nombre)}${p.sku ? `<small>${escapeHtml(p.sku)}</small>` : ''}${p.existencias === null || p.existencias === undefined ? '' : `<small class="prod-stock${p.existencias <= 0 ? ' is-out' : ''}">${escapeHtml(p.existencias <= 0 ? T.outOfStock : tpl(T.inStockTpl, { n: p.existencias }))}</small>`}</span>
-                    <span class="prod-item-price editorial">${fmt(p.precio)} <small>/ ${escapeHtml(p.unidad)}</small></span>
+                    <span class="prod-item-price editorial">${pendingQty !== 1 ? `<b class="prod-item-qty">×${escapeHtml(pendingQty)}</b> ` : ''}${fmt(p.precio)} <small>/ ${escapeHtml(p.unidad)}</small></span>
                 </button>`).join('');
             if (active >= 0) $search.setAttribute('aria-activedescendant', `deOpt${active}`);
         }
@@ -385,7 +543,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     };
     const pick = (p: CatalogProduct | undefined) => {
         if (!p || !$search) return;
-        addLines([lineFromProduct(p, ctx(), boot.defaultTaxRate)]);
+        addLines([lineFromProduct(p, ctx(), boot.defaultTaxRate, pendingQty)]);
         $search.value = '';
         results = searchFor('');
         active = results.length ? 0 : -1;
@@ -429,6 +587,12 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         $kitBtn.setAttribute('aria-expanded', String(open));
     });
     document.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.kit-insert-wrap')) closeKits(); });
+    $kitDrop?.parentElement?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || $kitDrop.hidden) return;
+        e.preventDefault();
+        closeKits();
+        $kitBtn?.focus();
+    });
     $kitDrop?.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-kit-add]');
         if (!btn) return;
@@ -474,14 +638,10 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     const currentTerm = () => $terms?.querySelector<HTMLElement>('.chip.active')?.dataset.term || 'contado';
 
     $client?.addEventListener('change', () => {
-        if ($client.value === '__NEW__') {
-            $client.value = lastClient; // Se queda el cliente que había; el modal decide.
-            document.dispatchEvent(new CustomEvent('clientmodal:open'));
-            return;
-        }
-        lastClient = $client.value;
-        $client.classList.remove('is-invalid');
-        $client.removeAttribute('aria-invalid');
+        $clientInput?.classList.remove('is-invalid');
+        $clientInput?.removeAttribute('aria-invalid');
+        if ($clientInput) $clientInput.value = clientOption()?.textContent?.trim() || '';
+        reflectClientMeta();
         markDirty();
         repriceForClient(lines, ctx());
         setTerm(clientOption()?.dataset.term);
@@ -500,11 +660,94 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         opt.dataset.desc = String(Number(cliente.descuento_pct) || 0);
         opt.dataset.term = cliente.terminos || 'contado';
         opt.dataset.email = String(cliente.email || '').trim();
-        $client.insertBefore(opt, $client.querySelector('option[value="__NEW__"]'));
+        opt.dataset.rfc = String(cliente.rfc || '').trim();
+        $client.appendChild(opt);
         $client.value = id;
         $client.dispatchEvent(new Event('change'));
         toast(tpl(T.clientCreatedTpl, { empresa: cliente.empresa || '' }), 'ok');
     }) as EventListener);
+
+    // ── Buscador de clientes ────────────────────────────────────────────────
+    // Un <select> nativo con cientos de clientes no se puede usar: no busca, no
+    // muestra el correo y en móvil abre una rueda interminable. El combobox
+    // filtra por empresa, contacto, correo y RFC; el <select> oculto sigue
+    // siendo la fuente de datos (valor, descuento, términos, correo).
+    const $clientInput = $<HTMLInputElement>('deClientInput');
+    const $clientDrop = $('deClientDrop');
+    const $clientMeta = $('deClientMeta');
+    let clientResults: HTMLOptionElement[] = [];
+    let clientActive = -1;
+    function reflectClientMeta() {
+        if (!$clientMeta) return;
+        const o = clientOption();
+        const email = o?.dataset.email || '';
+        const rfc = o?.dataset.rfc ? `${boot.brand?.taxIdLabel || ''} ${o.dataset.rfc}`.trim() : '';
+        $clientMeta.textContent = o ? tpl(T.clientMetaTpl, { email, sep: email && rfc ? ' · ' : '', taxId: rfc }) : '';
+        $clientMeta.hidden = !o || (!email && !rfc);
+    }
+    const clientSearch = (text: string) => {
+        const n = norm(text.trim());
+        const all = [...($client?.options || [])].filter((o) => o.value);
+        if (!n) return all.slice(0, 8);
+        return all.filter((o) => norm(o.textContent).includes(n) || norm(o.dataset.email).includes(n) || norm(o.dataset.rfc).includes(n)).slice(0, 8);
+    };
+    function paintClients() {
+        if (!$clientDrop || !$clientInput) return;
+        const rows = clientResults.map((o, i) => `
+            <button type="button" class="prod-item${i === clientActive ? ' is-active' : ''}" id="deCli${i}" role="option" aria-selected="${i === clientActive}" data-cid="${escapeHtml(o.value)}" tabindex="-1">
+                <span class="prod-item-name">${escapeHtml(o.textContent?.trim())}${o.dataset.email || o.dataset.rfc ? `<small>${escapeHtml([o.dataset.email, o.dataset.rfc].filter(Boolean).join(' · '))}</small>` : ''}</span>
+                ${Number(o.dataset.desc) > 0 ? `<span class="prod-item-price"><small>−${escapeHtml(o.dataset.desc)}%</small></span>` : ''}
+            </button>`).join('');
+        const empty = clientResults.length ? '' : `<div class="prod-empty"><span>${escapeHtml(T.noClientMatches)}</span></div>`;
+        const create = `<button type="button" class="prod-item prod-create${clientActive === clientResults.length ? ' is-active' : ''}" id="deCli${clientResults.length}" role="option" aria-selected="${clientActive === clientResults.length}" data-cid="__NEW__" tabindex="-1">
+                <span class="prod-item-name">${escapeHtml(T.createClient)}</span></button>`;
+        $clientDrop.innerHTML = rows + empty + create;
+        $clientDrop.hidden = false;
+        $clientInput.setAttribute('aria-expanded', 'true');
+        if (clientActive >= 0) $clientInput.setAttribute('aria-activedescendant', `deCli${clientActive}`);
+        else $clientInput.removeAttribute('aria-activedescendant');
+    }
+    const closeClients = () => {
+        if ($clientDrop) $clientDrop.hidden = true;
+        $clientInput?.setAttribute('aria-expanded', 'false');
+        $clientInput?.removeAttribute('aria-activedescendant');
+        // Lo escrito sin elegir no cambia el cliente: el campo vuelve a decir cuál es.
+        if ($clientInput) $clientInput.value = clientOption()?.textContent?.trim() || '';
+    };
+    const chooseClient = (id: string | undefined) => {
+        if (!id || !$client) return;
+        closeClients();
+        if (id === '__NEW__') { document.dispatchEvent(new CustomEvent('clientmodal:open')); return; }
+        if ($client.value !== id) {
+            $client.value = id;
+            $client.dispatchEvent(new Event('change'));
+        }
+        $clientInput?.blur();
+    };
+    if ($clientInput && $clientDrop) {
+        const openClients = (all = false) => {
+            clientResults = clientSearch(all ? '' : $clientInput.value);
+            clientActive = clientResults.length ? 0 : -1;
+            paintClients();
+        };
+        $clientInput.addEventListener('focus', () => { $clientInput.select(); openClients(true); });
+        $clientInput.addEventListener('input', () => openClients());
+        $clientInput.addEventListener('keydown', (e) => {
+            const max = clientResults.length; // la fila "crear" es el índice max
+            if (e.key === 'ArrowDown') { e.preventDefault(); if ($clientDrop.hidden) openClients(); else { clientActive = Math.min(clientActive + 1, max); paintClients(); } }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); clientActive = Math.max(clientActive - 1, 0); paintClients(); }
+            else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (clientActive >= 0) chooseClient(clientActive === max ? '__NEW__' : clientResults[clientActive]?.value);
+            } else if (e.key === 'Escape' || e.key === 'Tab') closeClients();
+        });
+        $clientDrop.addEventListener('mousedown', (e) => e.preventDefault());
+        $clientDrop.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-cid]');
+            if (btn) chooseClient(btn.dataset.cid);
+        });
+        document.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.client-combo') && !$clientDrop.hidden) closeClients(); });
+    }
 
     $terms?.addEventListener('click', (e) => {
         const chip = (e.target as HTMLElement).closest<HTMLElement>('.chip');
@@ -566,7 +809,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     $ivaIncl?.addEventListener('change', () => { markDirty(); recalc(); });
     $docMode?.addEventListener('change', () => { markDirty(); recalc(); });
     root.querySelectorAll<HTMLElement>('#deNotes, #deValidity').forEach((el) => el.addEventListener('input', markDirty));
-    $due?.addEventListener('change', markDirty);
+    $due?.addEventListener('change', () => { markDirty(); syncSumTerms(); });
+    $<HTMLSelectElement>('deValidity')?.addEventListener('change', syncSumTerms);
 
     // ── Divisa y tipo de cambio ─────────────────────────────────────────────
     const $fxCover = $('deFx');
@@ -761,7 +1005,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     };
     function validate(opts: { needClient: boolean }): boolean {
         if (opts.needClient && !clientOption()) {
-            fieldError($client, isQuote ? T.needClientQuote : T.needClientInvoice);
+            fieldError($clientInput, isQuote ? T.needClientQuote : T.needClientInvoice);
             return false;
         }
         if (!lines.length) { fieldError($search, T.needLines); return false; }
@@ -815,6 +1059,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     }
     const goTo = (url: string, msg?: string) => {
         dirty = false;
+        clearTimeout(autosaveTimer);
+        clearLocal();
         if (msg) { try { sessionStorage.setItem('cord.flash', JSON.stringify({ msg, type: 'ok' })); } catch { /* sin flash */ } }
         window.location.href = url;
     };
@@ -823,6 +1069,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         if (busy) return;
         if (!validate({ needClient: send })) return;
         lock(true);
+        clearTimeout(autosaveTimer);
+        await autosaving;
         toast(send ? T.sending : T.saving, 'info', 2500);
         try {
             let res: Response;
@@ -857,6 +1105,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     }
 
     async function persistInvoice(): Promise<string> {
+        clearTimeout(autosaveTimer);
+        await autosaving;
         const res = docId
             ? await fetch(`/api/facturas/${docId}`, {
                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -892,7 +1142,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     function openIssue(sendEmail: boolean) {
         if (busy || $dialog?.open) return;
         if (!validate({ needClient: true })) return;
-        if (sendEmail && !clientEmail()) { fieldError($client, T.needEmail); return; }
+        if (sendEmail && !clientEmail()) { fieldError($clientInput, T.needEmail); return; }
         pendingSend = sendEmail;
         const set = (id: string, v: string) => { const el = $(id); if (el) el.textContent = v; };
         set('deConfirmClient', clientOption()?.textContent?.trim() || '…');
@@ -900,7 +1150,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         let due = T.noDate;
         if ($due?.value) {
             const [y, m, d] = $due.value.split('-').map(Number);
-            due = new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d));
+            try { due = new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d)); }
+            catch { due = $due.value; }
         }
         set('deConfirmDue', due);
         set('deConfirmDelivery', sendEmail ? clientEmail() : T.noDelivery);
@@ -935,13 +1186,202 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         else if (action === 'invoice-draft') saveInvoiceDraft();
     }));
 
-    // ⌘/Ctrl+Enter = la acción principal. Regla 16: en móvil no hay atajos.
+    // Atajos (regla 16: en móvil no hay atajos).
+    //   ⌘/Ctrl+Enter → la acción principal · ⌘/Ctrl+S → guardar borrador
+    //   /            → al buscador del catálogo, si no se está escribiendo
+    const typing = (el: Element | null) => !!el && (el.matches('input, textarea, select') || (el as HTMLElement).isContentEditable);
     document.addEventListener('keydown', (e) => {
-        if (isMobile() || !(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return;
-        if (document.querySelector('dialog[open]')) return;
-        e.preventDefault();
+        // El confirm de la app no es un <dialog>: se mira aparte, o ⌘Enter
+        // enviaba el documento con la pregunta todavía en pantalla.
+        if (isMobile() || document.querySelector('dialog[open]') || document.querySelector('#cordConfirm:not([hidden])')) return;
+        const mod = e.metaKey || e.ctrlKey;
+        if (mod && e.key === 'Enter') {
+            e.preventDefault();
+            root.querySelector<HTMLButtonElement>('[data-save][data-primary]')?.click();
+        } else if (mod && (e.key === 's' || e.key === 'S')) {
+            const draftBtn = root.querySelector<HTMLButtonElement>('[data-save="draft"], [data-save="invoice-draft"]');
+            if (!draftBtn) return;
+            e.preventDefault();
+            draftBtn.click();
+        } else if (e.key === '/' && !mod && !e.altKey && !typing(document.activeElement)) {
+            e.preventDefault();
+            $search?.focus();
+        }
+    });
+
+    // Móvil: la barra fija replica la acción principal.
+    root.querySelector('[data-proxy-primary]')?.addEventListener('click', () => {
         root.querySelector<HTMLButtonElement>('[data-save][data-primary]')?.click();
     });
+    // Se retira cuando el resumen ya está a la vista: dos botones iguales a la
+    // vez se leen como dos acciones distintas.
+    const $mobilebar = root.querySelector<HTMLElement>('.de-mobilebar');
+    const $summary = root.querySelector('.ed-summary');
+    if ($mobilebar && $summary && 'IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => {
+            $mobilebar.toggleAttribute('data-off', entry.isIntersecting);
+        }, { threshold: 0.35 }).observe($summary);
+    }
+
+    // ── IA plegable ─────────────────────────────────────────────────────────
+    const $ai = $('deAi');
+    $('deAiToggle')?.addEventListener('click', () => {
+        if (!$ai) return;
+        const open = $ai.hasAttribute('data-collapsed');
+        $ai.toggleAttribute('data-collapsed', !open);
+        // Una vez abierta a mano, el botón se queda para volver a plegarla.
+        $ai.setAttribute('data-expanded-once', '');
+        $('deAiToggle')?.setAttribute('aria-expanded', String(open));
+        if (open) $aiText?.focus();
+    });
+
+    // ── Vista previa ────────────────────────────────────────────────────────
+    // Lo que verá el cliente, con la marca del negocio, desde el estado actual
+    // (sin guardar nada). El PDF final lo arma el servidor con la plantilla.
+    const $preview = $<HTMLDialogElement>('dePreview');
+    function previewHtml() {
+        const b = boot.brand || { nombre: '', logoUrl: null, color: null };
+        const s = summarize(lines, { ivaIncluido: !!$ivaIncl?.checked, retenciones: boot.retenciones, roundLinesTo: roundLinesTo() });
+        const cliente = clientOption();
+        const today = new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+        const folio = boot.doc.reservedFolio || boot.doc.folio || T.previewDraft;
+        const cond = isQuote
+            ? tpl(T.previewValidTpl, { n: Number($<HTMLSelectElement>('deValidity')?.value) || 30 })
+            : (dueText() ? tpl(T.previewDueTpl, { fecha: dueText() }) : '');
+        const color = /^#[0-9a-f]{3,8}$/i.test(String(b.color || '')) ? String(b.color) : '';
+        const logo = b.logoUrl
+            ? `<img class="dd-logo" src="${escapeHtml(b.logoUrl)}" alt="" />`
+            : `<span class="dd-initial" aria-hidden="true">${escapeHtml((b.nombre || '·').trim().charAt(0).toUpperCase())}</span>`;
+        const rows = lines.map((l) => {
+            const p = unitPrice(l);
+            const struck = l.productoId && l.negociado !== null && l.negociado < l.lista;
+            return `<tr>
+                <td><b>${escapeHtml(l.nombre || T.lineUnnamed)}</b><small>${escapeHtml(l.unidad)}</small></td>
+                <td class="num">${escapeHtml(numText(l.cantidad))}</td>
+                <td class="num">${struck ? `<s>${fmt(l.lista)}</s> ` : ''}${fmt(p)}</td>
+                <td class="num">${fmt(lineAmount(l))}</td>
+            </tr>`;
+        }).join('');
+        const notas = ($<HTMLTextAreaElement>('deNotes')?.value || '').trim();
+        return `
+            <header class="dd-head"${color ? ` style="--dd-accent:${color}"` : ''}>
+                <div class="dd-brand">${logo}<span><b>${escapeHtml(b.nombre)}</b>${b.taxId ? `<small>${escapeHtml(`${b.taxIdLabel || ''} ${b.taxId}`.trim())}</small>` : ''}</span></div>
+                <div class="dd-meta"><span>${escapeHtml(isQuote ? T.docQuote : T.docInvoice)}</span><b>${escapeHtml(folio)}</b><small>${escapeHtml(today)}</small></div>
+            </header>
+            <section class="dd-parties">
+                <div><small>${escapeHtml(T.previewFor)}</small><b>${escapeHtml(cliente?.textContent?.trim() || T.previewNoClient)}</b>${cliente?.dataset.email ? `<span>${escapeHtml(cliente.dataset.email)}</span>` : ''}</div>
+                ${cond ? `<div class="dd-cond"><small>${escapeHtml(isQuote ? T.validity : T.dueDate)}</small><b>${escapeHtml(cond)}</b></div>` : ''}
+            </section>
+            <table class="dd-lines">
+                <thead><tr><th>${escapeHtml(T.thConcept)}</th><th class="num">${escapeHtml(T.thQty)}</th><th class="num">${escapeHtml(T.thPrice)}</th><th class="num">${escapeHtml(T.thAmount)}</th></tr></thead>
+                <tbody>${rows || `<tr><td colspan="4" class="dd-empty">${escapeHtml(T.addLinesHint)}</td></tr>`}</tbody>
+            </table>
+            <dl class="dd-totals">
+                <div><dt>${escapeHtml(T.subtotal)}</dt><dd>${fmt(s.subtotal)}</dd></div>
+                ${s.taxes.map((t) => `<div><dt>${escapeHtml(boot.taxLabel)} ${Math.round(t.tasa * 10000) / 100}%</dt><dd>${fmt(t.impuesto)}</dd></div>`).join('')}
+                ${s.retenciones.map((r) => `<div><dt>${escapeHtml(r.nombre)}</dt><dd>−${fmt(r.monto)}</dd></div>`).join('')}
+                <div class="dd-total"><dt>${escapeHtml(T.total)}</dt><dd>${fmt(s.total)} <small>${escapeHtml(currency)}</small></dd></div>
+            </dl>
+            ${notas ? `<p class="dd-notes">${escapeHtml(notas)}</p>` : ''}`;
+    }
+    $('dePreviewBtn')?.addEventListener('click', () => {
+        const doc = $('dePreviewDoc');
+        if (!doc || !$preview) return;
+        doc.innerHTML = previewHtml();
+        // Sin logo servible (organización de prueba, archivo dañado) queda la inicial.
+        doc.querySelector<HTMLImageElement>('.dd-logo')?.addEventListener('error', (e) => {
+            const img = e.currentTarget as HTMLImageElement;
+            const initial = document.createElement('span');
+            initial.className = 'dd-initial';
+            initial.textContent = (boot.brand?.nombre || '·').trim().charAt(0).toUpperCase();
+            img.replaceWith(initial);
+        }, { once: true });
+        $preview.showModal();
+    });
+    $preview?.addEventListener('click', (e) => {
+        // Cerrar con la X o tocando fuera de la hoja.
+        if ((e.target as HTMLElement).closest('[data-close]') || e.target === $preview) $preview.close();
+    });
+
+    // ── Autoguardado y copia local ──────────────────────────────────────────
+    // Un borrador que ya existe se guarda solo, unos segundos después del
+    // último cambio. Un documento nuevo NO se crea por su cuenta (cada
+    // cotización cuenta contra el límite del plan): se guarda una copia en
+    // este navegador y se ofrece recuperarla si la pestaña se cerró.
+    const $saveState = $('deSaveState');
+    const LOCAL_KEY = `cord.editor.${kind}.new`;
+    let autosaveTimer = 0;
+    let autosaving: Promise<void> | null = null;
+    const setSaveState = (text: string, tone: 'ok' | 'busy' | 'warn' = 'ok') => {
+        if (!$saveState) return;
+        $saveState.textContent = text;
+        $saveState.dataset.tone = tone;
+        $saveState.hidden = !text;
+    };
+    const canAutosave = () => !!docId && mode === 'draft' && !busy && lines.length > 0
+        && !firstInvalidLine(lines) && (isQuote || !!clientOption());
+    function scheduleAutosave() {
+        clearTimeout(autosaveTimer);
+        if (mode === 'new') { autosaveTimer = window.setTimeout(saveLocal, 800); return; }
+        if (mode !== 'draft') return;
+        autosaveTimer = window.setTimeout(() => { autosaving = autosave(); }, 2500);
+    }
+    async function autosave() {
+        if (!canAutosave()) return;
+        setSaveState(T.autosaving, 'busy');
+        try {
+            const res = await fetch(isQuote ? `/api/cotizaciones/${docId}` : `/api/facturas/${docId}`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isQuote ? { ...quotePayload(false), action: 'update_draft' } : { action: 'update_draft', ...invoicePayload() }),
+            });
+            if (!res.ok) throw new Error();
+            dirty = false;
+            setSaveState(tpl(T.autosavedTpl, { hora: new Intl.DateTimeFormat(T.intl, { hour: 'numeric', minute: '2-digit' }).format(new Date()) }));
+        } catch {
+            setSaveState(T.autosaveFailed, 'warn');
+        } finally {
+            autosaving = null;
+        }
+    }
+    const snapshotLines = (): BootLine[] => lines.map((l) => ({
+        productoId: l.productoId, nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad,
+        lista: l.lista, negociado: l.productoId ? l.negociado : null, taxRate: l.taxRate,
+    }));
+    function saveLocal() {
+        try {
+            if (!lines.length) { localStorage.removeItem(LOCAL_KEY); return; }
+            localStorage.setItem(LOCAL_KEY, JSON.stringify({
+                ts: Date.now(), clienteId: clientOption()?.value || null, term: currentTerm(),
+                notas: $<HTMLTextAreaElement>('deNotes')?.value || '', lines: snapshotLines(),
+            }));
+        } catch { /* sin almacenamiento local: no hay copia, nada se rompe */ }
+    }
+    const clearLocal = () => { try { localStorage.removeItem(LOCAL_KEY); } catch { /* nada */ } };
+    async function offerLocalRestore() {
+        if (mode !== 'new' || boot.doc.lines.length) return;
+        let saved: any = null;
+        try { saved = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); } catch { return; }
+        if (!saved || !Array.isArray(saved.lines) || !saved.lines.length) return;
+        if (Date.now() - Number(saved.ts) > 7 * 86400000) { clearLocal(); return; }
+        const fecha = new Intl.DateTimeFormat(T.intl, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(saved.ts));
+        const ok = await (window as any).cordConfirm?.({
+            title: T.restoreTitle,
+            body: tpl(T.restoreBodyTpl, { n: saved.lines.length, lineas: saved.lines.length === 1 ? T.line : T.lines, fecha }),
+            confirmText: T.restore, cancelText: T.discard,
+        });
+        if (!ok) { clearLocal(); return; }
+        if (saved.clienteId && $client && [...$client.options].some((o) => o.value === saved.clienteId)) {
+            $client.value = saved.clienteId;
+            $client.dispatchEvent(new Event('change'));
+        }
+        if (saved.term) setTerm(saved.term);
+        const notes = $<HTMLTextAreaElement>('deNotes');
+        if (notes && saved.notas) notes.value = saved.notas;
+        lines.push(...saved.lines.map(fromBoot));
+        render();
+        lines.forEach(loadPricing);
+        markDirty();
+    }
 
     // Salir con cambios sin guardar pregunta antes (el navegador pone el texto).
     window.addEventListener('beforeunload', (e) => {
@@ -953,11 +1393,11 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     // ── Arranque ────────────────────────────────────────────────────────────
     if (boot.doc.clienteId && $client && [...$client.options].some((o) => o.value === boot.doc.clienteId)) {
         $client.value = boot.doc.clienteId;
-        lastClient = boot.doc.clienteId;
         // B2B sin repreciar: los precios del borrador ya son los que se guardaron.
         loadB2B(boot.doc.clienteId, false);
     }
     reflectDiscount();
+    reflectClientMeta();
     refreshRecipient();
     render();
     syncRecurring();
@@ -968,6 +1408,8 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     // descuento y términos como si se hubiera elegido a mano.
     if (!boot.doc.id && boot.doc.clienteId) $client?.dispatchEvent(new Event('change'));
     dirty = false;
+    clearTimeout(autosaveTimer);
+    offerLocalRestore();
 }
 
 // Pequeño helper para el `<script>` del componente.

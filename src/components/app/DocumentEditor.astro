@@ -8,6 +8,11 @@
 // es este componente: el markup vive aquí, la lógica en
 // src/lib/editor/document-editor.ts (y la aritmética en core.ts), el CSS en
 // src/styles/editor.css. La página solo junta los datos.
+//
+// Jerarquía: el documento se arma en la columna principal en tres pasos
+// (cliente, líneas, condiciones); el resumen lateral solo dice cuánto es y qué
+// sigue. Antes el total quedaba a la mitad de una tarjeta llena de
+// configuración y el botón de enviar se salía de la pantalla en una laptop.
 import ClientModal from './ClientModal.astro';
 import DatePicker from './DatePicker.astro';
 import FlagSelect from '../ui/FlagSelect';
@@ -23,6 +28,7 @@ interface ClienteOpt {
     empresa: string;
     contacto?: string | null;
     email?: string | null;
+    rfc?: string | null;
     descuentoPct?: number | null;
     terminosCode?: string | null;
 }
@@ -66,271 +72,332 @@ const moneyFmt = (n: number) => {
 const cols = [P.boot.multiTax ? 'tax' : '', isQuote ? 'margin' : ''].filter(Boolean).join(' ') || 'base';
 const reserved = P.boot.doc.reservedFolio;
 const boot: EditorBoot = { ...P.boot, T };
+// Con líneas ya capturadas, la IA se pliega a una barra: deja de ser la puerta
+// de entrada y no empuja el documento hacia abajo.
+const aiCollapsed = P.boot.doc.lines.length > 0;
+const selectedClient = P.clientes.find((c) => c.id === P.boot.doc.clienteId);
+const clientText = (c: ClienteOpt) => (c.contacto ? `${c.empresa} — ${c.contacto}` : c.empresa);
+const primaryLabel = isQuote ? (isVersion ? T.sendVersion : mode === 'draft' ? T.sendDraftQuote : T.sendNewQuote) : T.issueSend;
 ---
 
 <div data-editor={kind} data-document-editor data-mode={mode}>
-    <script type="application/json" id="deBoot" is:inline set:html={JSON.stringify(boot)} />
+    <script type="application/json" id="deBoot" is:inline set:html={JSON.stringify(boot).replace(/</g, '\\u003c')} />
     <div class="editor-grid">
-
-    <div class="ed-main">
-        {!isVersion && (
-            <section class="ed-block ai-block" aria-labelledby="deAiTitle">
-                <h2 class="ai-title" id="deAiTitle">{isQuote ? T.aiTitleQuote : T.aiTitleInvoice}</h2>
-                <p class="ai-sub">{T.aiSub}</p>
-                <div class="ai-textarea-wrap">
-                    <textarea id="deAiText" class="ed-textarea ai-textarea" rows="3" placeholder={T.aiPlaceholder} aria-labelledby="deAiTitle"></textarea>
-                    <input type="file" id="deAiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
-                    <button type="button" class="ai-attach-btn" id="deAiAttach" aria-label={T.aiAttach} title={T.aiAttach}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('paperclip')}></svg>
-                    </button>
-                </div>
-                <div class="ai-file-chip" id="deAiChip" hidden>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
-                    <span id="deAiFileName"></span>
-                    <button type="button" id="deAiRemove" aria-label={T.aiRemoveFile}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" set:html={iconInner('x')}></svg>
-                    </button>
-                </div>
-                <div class="ai-actions">
-                    <button type="button" class="ai-btn" id="deAiBtn"><span class="ai-btn-label">{isQuote ? T.aiButtonQuote : T.aiButtonInvoice}</span></button>
-                    <span class="ai-status" id="deAiStatus" role="status" aria-live="polite"></span>
-                </div>
-            </section>
-        )}
-        {!isVersion && <div class="ed-or"><span>{isQuote ? T.orManualQuote : T.orManualInvoice}</span></div>}
-
-        <!-- Paso 1 — Cliente y términos -->
-        <section class="ed-block" aria-labelledby="deStep1">
-            <div class="step-head">
-                <span class="step-num" aria-hidden="true">1</span>
-                <div class="step-text">
-                    <h2 id="deStep1">{isQuote ? T.step1Quote : T.step1Invoice}</h2>
-                    <p class="step-hint">{isVersion ? T.versionLocked : (isQuote ? T.step1HintQuote : T.step1HintInvoiceTpl.replace('{taxId}', P.taxIdLabel || ''))}</p>
-                </div>
-            </div>
-            <div class="client-row">
-                <select class="ed-select" id="deClient" aria-label={T.clientLabel} disabled={locked}>
-                    <option value="">{T.chooseClient}</option>
-                    {P.clientes.map((c) => (
-                        <option value={c.id} data-desc={String(Number(c.descuentoPct) || 0)} data-term={c.terminosCode || 'contado'} data-email={c.email || ''}>
-                            {c.contacto ? `${c.empresa} — ${c.contacto}` : c.empresa}
-                        </option>
-                    ))}
-                    {!locked && <option value="__NEW__" class="opt-action">{T.createClient}</option>}
-                </select>
-                <div class="term-chips" id="deTerms" role="group" aria-label={T.termsLabel}>
-                    {TERM_CODES.map((code) => (
-                        <button type="button" class:list={['chip', { active: code === P.terms }]} data-term={code} aria-pressed={String(code === P.terms)} disabled={locked}>
-                            {termLabel[code]}
+        <div class="ed-main">
+            {!isVersion && (
+                <section class="ed-block ai-block" id="deAi" data-collapsed={aiCollapsed ? '' : undefined} aria-labelledby="deAiTitle">
+                    <div class="ai-head">
+                        <svg class="ai-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('cpu')}></svg>
+                        <div class="ai-head-text">
+                            <h2 class="ai-title" id="deAiTitle">{isQuote ? T.aiTitleQuote : T.aiTitleInvoice}</h2>
+                            <p class="ai-sub">{T.aiSub}</p>
+                        </div>
+                        <button type="button" class="ai-toggle" id="deAiToggle" aria-expanded={aiCollapsed ? 'false' : 'true'} aria-controls="deAiBody">
+                            <span class="ai-toggle-open">{T.aiOpen}</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                         </button>
-                    ))}
-                </div>
-            </div>
-            <p class="desc-note" id="deDescNote" hidden></p>
-        </section>
-
-        <!-- Paso 2 — Líneas -->
-        <section class="ed-block" aria-labelledby="deStep2">
-            <div class="step-head">
-                <span class="step-num" aria-hidden="true">2</span>
-                <div class="step-text">
-                    <h2 id="deStep2">{isQuote ? T.step2Quote : T.step2Invoice}</h2>
-                    <p class="step-hint">{isQuote ? T.step2HintQuote : T.step2HintInvoice}</p>
-                </div>
-            </div>
-
-            <div class="lines-head line-grid" id="deLinesHead" data-cols={cols} hidden>
-                <span>{T.thConcept}</span><span>{T.thQty}</span><span>{T.thList}</span><span>{T.thPrice}</span>
-                {P.boot.multiTax && <span>{P.boot.taxLabel}</span>}
-                <span class="lh-right">{T.thAmount}</span>
-                {isQuote && <span class="lh-margen" title={T.thMarginHelp}>{T.thMargin}</span>}
-                <span></span>
-            </div>
-            <div id="deLines" class="lines" data-cols={cols}></div>
-
-            <div class="lines-empty" id="deLinesEmpty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('archive')}></svg>
-                <p><b>{T.linesEmptyTitle}</b> {T.linesEmptyDesc}</p>
-            </div>
-
-            <div class="add-actions">
-                <div class="prod-search">
-                    <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
-                    <input type="text" class="prod-input" id="deSearch" placeholder={T.searchPlaceholder} autocomplete="off"
-                        role="combobox" aria-expanded="false" aria-controls="deSearchDrop" aria-autocomplete="list" aria-label={T.searchPlaceholder} />
-                    <div class="prod-drop" id="deSearchDrop" role="listbox" hidden></div>
-                </div>
-                <button type="button" class="btn-free-line" id="deFreeLine">{T.freeLine}</button>
-                {P.boot.kits.length > 0 && (
-                    <div class="kit-insert-wrap">
-                        <button type="button" class="btn-free-line" id="deKitBtn" aria-expanded="false" aria-controls="deKitDrop">{T.insertKit}</button>
-                        <div class="kit-insert-drop" id="deKitDrop" hidden>
-                            {P.boot.kits.map((k) => {
-                                const ahorro = k.precioCombo != null ? kitSuma(k) - k.precioCombo : 0;
-                                return (
-                                    <div class="kit-insert-row">
-                                        <span class="kit-insert-name">{k.nombre}
-                                            <small>
-                                                {k.items.length} {k.items.length === 1 ? T.line : T.lines}
-                                                {k.precioCombo != null && ` · ${T.kitCombo} ${moneyFmt(k.precioCombo)}`}
-                                                {ahorro > 0.004 && ` · ${T.kitSavesTpl.replace('{monto}', moneyFmt(ahorro))}`}
-                                            </small>
-                                        </span>
-                                        <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={T.kitTimesTpl.replace('{nombre}', k.nombre)} />
-                                        <button type="button" class="kit-insert-add" data-kit-add={k.id}>{T.add}</button>
-                                    </div>
-                                );
-                            })}
+                    </div>
+                    <div class="ai-body" id="deAiBody">
+                        <div class="ai-textarea-wrap">
+                            <textarea id="deAiText" class="ed-textarea ai-textarea" rows="3" placeholder={T.aiPlaceholder} aria-labelledby="deAiTitle"></textarea>
+                            <input type="file" id="deAiFile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden />
+                            <button type="button" class="ai-attach-btn" id="deAiAttach" aria-label={T.aiAttach} title={T.aiAttach}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('paperclip')}></svg>
+                            </button>
+                        </div>
+                        <div class="ai-file-chip" id="deAiChip" hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('document')}></svg>
+                            <span id="deAiFileName"></span>
+                            <button type="button" id="deAiRemove" aria-label={T.aiRemoveFile}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                            </button>
+                        </div>
+                        <div class="ai-actions">
+                            <button type="button" class="ai-btn" id="deAiBtn"><span class="ai-btn-label">{isQuote ? T.aiButtonQuote : T.aiButtonInvoice}</span></button>
+                            <span class="ai-status" id="deAiStatus" role="status" aria-live="polite"></span>
                         </div>
                     </div>
-                )}
-            </div>
-            <p class="add-hint">{T.addHintPre} <kbd>Enter</kbd> {T.addHintPost}</p>
-        </section>
+                </section>
+            )}
 
-        {!isQuote && P.documentModes && (
-            <section class="ed-block" aria-labelledby="deDocTypeTitle">
-                <div class="section-head"><h2 id="deDocTypeTitle">{T.docTypeTitle}</h2></div>
-                <label class="field-label" for="deDocumentMode">{T.docTypeLabel}</label>
-                <select id="deDocumentMode" class="ed-select" disabled={!!reserved}>
-                    {P.documentModes.map((m) => <option value={m.value} selected={m.selected} disabled={m.disabled}>{m.label}</option>)}
-                </select>
-                <p class="field-hint">{T.docTypeHint}</p>
+            <!-- Paso 1 — Cliente y términos -->
+            <section class="ed-block" aria-labelledby="deStep1">
+                <div class="step-head">
+                    <span class="step-num" aria-hidden="true">1</span>
+                    <div class="step-text">
+                        <h2 id="deStep1">{isQuote ? T.step1Quote : T.step1Invoice}</h2>
+                        <p class="step-hint">{isVersion ? T.versionLocked : (isQuote ? T.step1HintQuote : T.step1HintInvoiceTpl.replace('{taxId}', P.taxIdLabel || ''))}</p>
+                    </div>
+                </div>
+                <div class="client-row">
+                    <!-- El <select> es la fuente de datos (valor, descuento, términos,
+                         correo); el combobox es la superficie. -->
+                    <select id="deClient" hidden aria-hidden="true" tabindex="-1" disabled={locked}>
+                        <option value=""></option>
+                        {P.clientes.map((c) => (
+                            <option value={c.id} selected={c.id === P.boot.doc.clienteId} data-desc={String(Number(c.descuentoPct) || 0)} data-term={c.terminosCode || 'contado'} data-email={c.email || ''} data-rfc={c.rfc || ''}>
+                                {clientText(c)}
+                            </option>
+                        ))}
+                    </select>
+                    <div class="client-combo" id="deClientCombo">
+                        <svg class="client-combo-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('user')}></svg>
+                        <input type="text" id="deClientInput" class="client-input" autocomplete="off" spellcheck="false"
+                            role="combobox" aria-expanded="false" aria-controls="deClientDrop" aria-autocomplete="list"
+                            aria-label={T.clientLabel} placeholder={T.searchClient}
+                            value={selectedClient ? clientText(selectedClient) : ''} disabled={locked} />
+                        <div class="prod-drop client-drop" id="deClientDrop" role="listbox" hidden></div>
+                    </div>
+                    <div class="term-chips" id="deTerms" role="group" aria-label={T.termsLabel}>
+                        {TERM_CODES.map((code) => (
+                            <button type="button" class:list={['chip', { active: code === P.terms }]} data-term={code} aria-pressed={code === P.terms ? 'true' : 'false'} disabled={locked}>
+                                {termLabel[code]}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <p class="client-meta" id="deClientMeta" hidden></p>
+                <p class="desc-note" id="deDescNote" hidden></p>
             </section>
-        )}
 
-        <section class="ed-block">
-            <div class="section-head"><h2><label for="deNotes">{T.notesTitle}</label> <span class="opt">{T.optional}</span></h2></div>
-            <textarea id="deNotes" class="ed-textarea" rows="2" maxlength="1000" disabled={locked}
-                placeholder={isQuote ? T.notesPlaceholderQuote : T.notesPlaceholderInvoice}>{P.notas}</textarea>
-        </section>
+            <!-- Paso 2 — Líneas -->
+            <section class="ed-block" aria-labelledby="deStep2">
+                <div class="step-head">
+                    <span class="step-num" aria-hidden="true">2</span>
+                    <div class="step-text">
+                        <h2 id="deStep2">{isQuote ? T.step2Quote : T.step2Invoice}</h2>
+                        <p class="step-hint">{isQuote ? T.step2HintQuote : T.step2HintInvoice}</p>
+                    </div>
+                </div>
+
+                <div class="lines-head" id="deLinesHead" data-cols={cols} hidden>
+                    <span></span>
+                    <span>{T.thConcept}</span><span class="lh-num">{T.thQty}</span><span class="lh-num">{T.thList}</span><span class="lh-num">{T.thPrice}</span>
+                    {P.boot.multiTax && <span>{P.boot.taxLabel}</span>}
+                    <span class="lh-num">{T.thAmount}</span>
+                    {isQuote && <span class="lh-margen" title={T.thMarginHelp}>{T.thMargin}</span>}
+                    <span></span>
+                </div>
+                <div id="deLines" class="lines" data-cols={cols} role="list"></div>
+
+                <div class="lines-empty" id="deLinesEmpty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('list')}></svg>
+                    <p><b>{T.linesEmptyTitle}</b> {T.linesEmptyDesc}</p>
+                </div>
+
+                <div class="add-actions">
+                    <div class="prod-search">
+                        <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
+                        <input type="text" class="prod-input" id="deSearch" placeholder={T.searchPlaceholder} autocomplete="off"
+                            role="combobox" aria-expanded="false" aria-controls="deSearchDrop" aria-autocomplete="list" aria-label={T.searchPlaceholder} />
+                        <kbd class="prod-kbd" aria-hidden="true">/</kbd>
+                        <div class="prod-drop" id="deSearchDrop" role="listbox" hidden></div>
+                    </div>
+                    <button type="button" class="btn-free-line" id="deFreeLine">{T.freeLine}</button>
+                    {P.boot.kits.length > 0 && (
+                        <div class="kit-insert-wrap">
+                            <button type="button" class="btn-free-line" id="deKitBtn" aria-expanded="false" aria-controls="deKitDrop">{T.insertKit}</button>
+                            <div class="kit-insert-drop" id="deKitDrop" hidden>
+                                {P.boot.kits.map((k) => {
+                                    const ahorro = k.precioCombo != null ? kitSuma(k) - k.precioCombo : 0;
+                                    return (
+                                        <div class="kit-insert-row">
+                                            <span class="kit-insert-name">{k.nombre}
+                                                <small>
+                                                    {k.items.length} {k.items.length === 1 ? T.line : T.lines}
+                                                    {k.precioCombo != null && ` · ${T.kitCombo} ${moneyFmt(k.precioCombo)}`}
+                                                    {ahorro > 0.004 && ` · ${T.kitSavesTpl.replace('{monto}', moneyFmt(ahorro))}`}
+                                                </small>
+                                            </span>
+                                            <input type="number" class="kit-insert-qty" min="1" step="1" value="1" aria-label={T.kitTimesTpl.replace('{nombre}', k.nombre)} />
+                                            <button type="button" class="kit-insert-add" data-kit-add={k.id}>{T.add}</button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <p class="add-hint">{T.addHintQty} <kbd>Enter</kbd> {T.addHintPost}</p>
+            </section>
+
+            <!-- Paso 3 — Condiciones -->
+            <section class="ed-block" aria-labelledby="deStep3">
+                <div class="step-head">
+                    <span class="step-num" aria-hidden="true">3</span>
+                    <div class="step-text">
+                        <h2 id="deStep3">{T.step3Title}</h2>
+                        <p class="step-hint">{isQuote ? T.step3HintQuote : T.step3HintInvoice}</p>
+                    </div>
+                </div>
+                <div class="cond-grid">
+                    {isQuote && (
+                        <div class="cond-field">
+                            <label class="field-label" for="deValidity">{T.validity}</label>
+                            <select class="ed-select" id="deValidity" disabled={locked}>
+                                {(P.vigencias || []).map((n) => <option value={n} selected={n === P.vigencia}>{n} {T.days}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {isQuote && (
+                        <div class="cond-field" id="deDepositField">
+                            <label class="field-label" for="deDeposit">{T.deposit} <span class="opt">{T.optional}</span></label>
+                            <input class="ed-input" id="deDeposit" type="number" inputmode="numeric" min="0" max="99" step="1" placeholder="0" value={P.anticipo || ''} disabled={locked} />
+                            <p class="field-note" id="deDepositNote" hidden></p>
+                        </div>
+                    )}
+                    {!isQuote && (
+                        <div class="cond-field">
+                            <span class="field-label" id="deDueLbl">{T.dueDate}</span>
+                            <DatePicker id="deDueDate" value={P.dueDate} ariaLabel={T.dueDate} />
+                        </div>
+                    )}
+                    {!isQuote && P.documentModes && (
+                        <div class="cond-field">
+                            <label class="field-label" for="deDocumentMode">{T.docTypeTitle}</label>
+                            <select id="deDocumentMode" class="ed-select" disabled={!!reserved}>
+                                {P.documentModes.map((m) => <option value={m.value} selected={m.selected} disabled={m.disabled}>{m.label}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    <div class="cond-field">
+                        <label class="field-label" for="deCurrencyTrigger">{isQuote ? T.currencyQuote : T.currencyInvoice}</label>
+                        <FlagSelect client:load id="deCurrencyTrigger" ariaLabel={isQuote ? T.currencyQuote : T.currencyInvoice}
+                            options={P.currencyOptions} defaultValue={P.currency} nativeId="deCurrency" className="fx-flagselect" disabled={locked} />
+                    </div>
+                    {isQuote && (
+                        <div class="cond-field cond-toggle" id="deRecurringField">
+                            <label for="deRecurring">{T.recurring} <span class="opt">{T.recurringTag}</span></label>
+                            <label class="s-toggle" title={T.recurringTitle}>
+                                <input type="checkbox" id="deRecurring" checked={!!P.recurrente} disabled={locked} />
+                                <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
+                            </label>
+                            <p class="field-note" id="deRecurringNote" hidden></p>
+                        </div>
+                    )}
+                </div>
+                {!isQuote && <p class="field-hint">{T.docTypeHint}</p>}
+                <p class="field-note is-warn" id="deCurrencyNote" role="status" hidden></p>
+
+                <div class="fx-cover" id="deFx" hidden>
+                    <p class="fx-explain" id="deFxExplain"></p>
+                    <div class="fx-row">
+                        <div class="fx-stepper">
+                            <div class="fx-step">
+                                <span class="fx-step-lbl">{T.fxToday}</span>
+                                <span class="fx-step-val editorial" id="deFxSpot">—</span>
+                            </div>
+                            <span class="fx-arrow" aria-hidden="true">→</span>
+                            <div class="fx-step fx-step-on">
+                                <span class="fx-step-lbl">{T.fxProtected} <span id="deFxBufLbl">+{buffer}%</span></span>
+                                <span class="fx-step-val editorial" id="deFxApplied">—</span>
+                            </div>
+                        </div>
+                        <div class="fx-cushion-wrap">
+                            <span class="fx-cushion-lbl" id="deFxCautionLbl">{T.fxCaution}</span>
+                            <div class="fx-cushion" role="group" aria-labelledby="deFxCautionLbl">
+                                {[[1, T.fxLow], [2, T.fxNormal], [5, T.fxHigh]].map(([b, label]) => (
+                                    <button type="button" class:list={['fx-cush-chip', { active: b === buffer }]} data-buf={String(b)} aria-pressed={b === buffer ? 'true' : 'false'} disabled={locked}>
+                                        <b>{label}</b><small>+{b}%</small>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="deFxBuffer" value={String(buffer)} />
+                    <p class="fx-client-sees" id="deFxPreview" aria-live="polite"></p>
+                    <div class="fx-lock-row">
+                        <svg class="fx-lock-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
+                        <span>{isQuote ? T.fxLockQuote : T.fxLockInvoice}</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ed-block">
+                <div class="section-head"><h2><label for="deNotes">{T.notesTitle}</label> <span class="opt">{T.optional}</span></h2></div>
+                <textarea id="deNotes" class="ed-textarea" rows="2" maxlength="1000" disabled={locked}
+                    placeholder={isQuote ? T.notesPlaceholderQuote : T.notesPlaceholderInvoice}>{P.notas}</textarea>
+            </section>
+        </div>
+
+        <!-- Resumen: cuánto es y qué sigue -->
+        <aside class="ed-side">
+            <section class="ed-summary" aria-labelledby="deSumTitle">
+                <div class="section-head">
+                    <h2 id="deSumTitle">{isQuote ? T.reviewQuote : T.reviewInvoice}</h2>
+                    <span class="de-tag">{isVersion ? T.tagVersionTpl.replace('{n}', String((P.boot.doc.version ?? 1) + 1)) : (reserved || T.tagDraft)}</span>
+                </div>
+                <p class="save-state" id="deSaveState" role="status" aria-live="polite" hidden></p>
+                <p class="sum-count" id="deCount">{T.addLinesHint}</p>
+                <div class="sum-line"><span>{T.subtotal}</span><span class="editorial" id="deSubtotal">—</span></div>
+                {isQuote && <div class="sum-line sum-save" id="deSavedLine" hidden><span>{T.discounted}</span><span class="editorial" id="deSaved"></span></div>}
+                <div id="deTaxes"></div>
+                <div class="sum-field sum-field-row">
+                    <label for="deIvaIncluido">{P.taxIncludedLabel}</label>
+                    <label class="s-toggle">
+                        <input type="checkbox" id="deIvaIncluido" checked={P.ivaIncluido} />
+                        <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
+                    </label>
+                </div>
+                <div class="sum-divider"></div>
+                <div class="sum-line sum-total"><span>{T.total}</span><span class="editorial" id="deTotal" aria-live="polite">—</span></div>
+                <p class="sum-terms" id="deSumTerms"></p>
+
+                {!isQuote && (
+                    <div class="invoice-delivery">
+                        <span>{T.delivery}</span>
+                        <strong id="deRecipient">{T.chooseClientDelivery}</strong>
+                        <small>{T.deliveryHint}</small>
+                    </div>
+                )}
+
+                <button type="button" class="btn-send" data-save={isQuote ? 'send' : 'issue'} data-primary>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
+                    <span>{primaryLabel}</span>
+                </button>
+                <div class="issue-secondary-actions">
+                    {isQuote && !isVersion && <button type="button" class="btn-draft" data-save="draft">{mode === 'draft' ? T.saveDraftEdit : T.saveDraftNew}</button>}
+                    {!isQuote && <button type="button" class="btn-draft" data-save="issue-only">{T.issueOnly}</button>}
+                    <div class="sum-tools">
+                        <button type="button" class="btn-text" id="dePreviewBtn">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('eye')}></svg>
+                            {T.preview}
+                        </button>
+                        {!isQuote && <button type="button" class="btn-text" data-save="invoice-draft">{T.saveExit}</button>}
+                    </div>
+                </div>
+                <p class="sum-note">{isQuote ? (isVersion ? T.noteVersion : mode === 'draft' ? T.noteQuoteDraft : T.noteQuoteNew) : (reserved ? T.noteInvoiceFixTpl.replace('{folio}', reserved) : T.noteInvoice)}</p>
+                <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {isQuote ? T.kbdSend : T.kbdIssue}{(isQuote && !isVersion) || !isQuote ? <> · <kbd>⌘</kbd><kbd>S</kbd> {T.kbdSave}</> : null}</p>
+            </section>
+        </aside>
     </div>
 
-    <!-- Resumen -->
-    <aside class="ed-side">
-        <section class="ed-summary" aria-labelledby="deSumTitle">
-            <div class="section-head">
-                <h2 id="deSumTitle">{isQuote ? T.reviewQuote : T.reviewInvoice}</h2>
-                <span class="de-tag">{isVersion ? T.tagVersionTpl.replace('{n}', String((P.boot.doc.version ?? 1) + 1)) : (reserved || T.tagDraft)}</span>
-            </div>
-            <p class="sum-count" id="deCount">{T.addLinesHint}</p>
-            <div class="sum-line"><span>{T.subtotal}</span><span class="editorial" id="deSubtotal">—</span></div>
-            {isQuote && <div class="sum-line sum-save" id="deSavedLine" hidden><span>{T.discounted}</span><span class="editorial" id="deSaved"></span></div>}
-            <div id="deTaxes"></div>
-            <div class="sum-field sum-field-row">
-                <label for="deIvaIncluido">{P.taxIncludedLabel}</label>
-                <label class="s-toggle">
-                    <input type="checkbox" id="deIvaIncluido" checked={P.ivaIncluido} />
-                    <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                </label>
-            </div>
-            <div class="sum-divider"></div>
-            <div class="sum-line sum-total"><span>{T.total}</span><span class="editorial" id="deTotal" aria-live="polite">—</span></div>
-
-            {isQuote && (
-                <>
-                    <div class="sum-field">
-                        <label for="deValidity">{T.validity}</label>
-                        <select class="ed-select" id="deValidity" disabled={locked}>
-                            {(P.vigencias || []).map((n) => <option value={n} selected={n === P.vigencia}>{n} {T.days}</option>)}
-                        </select>
-                    </div>
-                    <div class="sum-field sum-field-row" id="deRecurringField">
-                        <label for="deRecurring">{T.recurring} <span class="opt">{T.recurringTag}</span></label>
-                        <label class="s-toggle" title={T.recurringTitle}>
-                            <input type="checkbox" id="deRecurring" checked={!!P.recurrente} disabled={locked} />
-                            <span class="s-toggle-track" aria-hidden="true"><span class="s-toggle-thumb"></span></span>
-                        </label>
-                    </div>
-                    <p class="sum-note-inline" id="deRecurringNote" hidden></p>
-                    <div class="sum-field" id="deDepositField">
-                        <label for="deDeposit">{T.deposit} <span class="opt">{T.optional}</span></label>
-                        <input class="ed-input" id="deDeposit" type="number" inputmode="numeric" min="0" max="99" step="1" placeholder="0" value={P.anticipo || ''} disabled={locked} />
-                        <p class="sum-note-inline" id="deDepositNote" hidden></p>
-                    </div>
-                </>
-            )}
-
-            {!isQuote && (
-                <div class="sum-field">
-                    <span class="sum-lbl" id="deDueLbl">{T.dueDate}</span>
-                    <DatePicker id="deDueDate" value={P.dueDate} ariaLabel={T.dueDate} />
-                </div>
-            )}
-
-            <div class="sum-field">
-                <label for="deCurrencyTrigger">{isQuote ? T.currencyQuote : T.currencyInvoice}</label>
-                <FlagSelect client:load id="deCurrencyTrigger" ariaLabel={isQuote ? T.currencyQuote : T.currencyInvoice}
-                    options={P.currencyOptions} defaultValue={P.currency} nativeId="deCurrency" className="fx-flagselect" disabled={locked} />
-                <p class="sum-note-inline is-warn" id="deCurrencyNote" role="status" hidden></p>
-            </div>
-
-            <div class="fx-cover" id="deFx" hidden>
-                <p class="fx-explain" id="deFxExplain"></p>
-                <div class="fx-stepper">
-                    <div class="fx-step">
-                        <span class="fx-step-lbl">{T.fxToday}</span>
-                        <span class="fx-step-val editorial" id="deFxSpot">—</span>
-                    </div>
-                    <span class="fx-arrow" aria-hidden="true">→</span>
-                    <div class="fx-step fx-step-on">
-                        <span class="fx-step-lbl">{T.fxProtected} <span id="deFxBufLbl">+{buffer}%</span></span>
-                        <span class="fx-step-val editorial" id="deFxApplied">—</span>
-                    </div>
-                </div>
-                <span class="fx-cushion-lbl" id="deFxCautionLbl">{T.fxCaution}</span>
-                <div class="fx-cushion" role="group" aria-labelledby="deFxCautionLbl">
-                    {[[1, T.fxLow], [2, T.fxNormal], [5, T.fxHigh]].map(([b, label]) => (
-                        <button type="button" class:list={['fx-cush-chip', { active: b === buffer }]} data-buf={String(b)} aria-pressed={String(b === buffer)} disabled={locked}>
-                            <b>{label}</b><small>+{b}%</small>
-                        </button>
-                    ))}
-                </div>
-                <input type="hidden" id="deFxBuffer" value={String(buffer)} />
-                <p class="fx-client-sees" id="deFxPreview" aria-live="polite"></p>
-                <div class="fx-lock-row">
-                    <svg class="fx-lock-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('lock')}></svg>
-                    <span>{isQuote ? T.fxLockQuote : T.fxLockInvoice}</span>
-                </div>
-            </div>
-
-            {!isQuote && (
-                <div class="invoice-delivery">
-                    <span>{T.delivery}</span>
-                    <strong id="deRecipient">{T.chooseClientDelivery}</strong>
-                    <small>{T.deliveryHint}</small>
-                </div>
-            )}
-
-            {isQuote ? (
-                <>
-                    <button type="button" class="btn-send" data-save="send" data-primary>
-                        <span>{isVersion ? T.sendVersion : mode === 'draft' ? T.sendDraftQuote : T.sendNewQuote}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
-                    </button>
-                    {!isVersion && <button type="button" class="btn-draft" data-save="draft">{mode === 'draft' ? T.saveDraftEdit : T.saveDraftNew}</button>}
-                    <p class="sum-note">{isVersion ? T.noteVersion : mode === 'draft' ? T.noteQuoteDraft : T.noteQuoteNew}</p>
-                    <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {T.kbdSend}</p>
-                </>
-            ) : (
-                <>
-                    <button type="button" class="btn-send" data-save="issue" data-primary>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('send')}></svg>
-                        <span>{T.issueSend}</span>
-                    </button>
-                    <div class="issue-secondary-actions">
-                        <button type="button" class="btn-draft" data-save="issue-only">{T.issueOnly}</button>
-                        <button type="button" class="btn-text" data-save="invoice-draft">{T.saveExit}</button>
-                    </div>
-                    <p class="sum-note">{reserved ? T.noteInvoiceFixTpl.replace('{folio}', reserved) : T.noteInvoice}</p>
-                    <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {T.kbdIssue}</p>
-                </>
-            )}
-        </section>
-    </aside>
+    <!-- Móvil: el total y la acción principal siempre a la vista -->
+    <div class="de-mobilebar" aria-hidden="true">
+        <div class="de-mobilebar-total">
+            <span>{T.total}</span>
+            <strong class="editorial" id="deMobileTotal">—</strong>
+        </div>
+        <button type="button" class="btn-send" data-proxy-primary tabindex="-1">{primaryLabel}</button>
     </div>
 
     {!locked && <ClientModal showDelete={false} saveLabel={T.createAndSelect} />}
+
+    <dialog class="modal de-preview" id="dePreview" aria-labelledby="dePreviewTitle">
+        <div class="m-head">
+            <div>
+                <span class="issue-eyebrow">{T.preview}</span>
+                <h2 id="dePreviewTitle">{T.previewTitle}</h2>
+            </div>
+            <button type="button" class="m-close" data-close aria-label={T.close}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+            </button>
+        </div>
+        <div class="m-body">
+            <article class="de-doc" id="dePreviewDoc" aria-live="off"></article>
+            <p class="field-hint">{T.previewNote}</p>
+        </div>
+    </dialog>
 
     {!isQuote && (
         <dialog class="modal issue-confirm" id="deIssueConfirm" aria-labelledby="deIssueTitle">
@@ -363,6 +430,11 @@ const boot: EditorBoot = { ...P.boot, T };
             </form>
         </dialog>
     )}
+
+    <div class="de-undo" id="deUndo" role="status" aria-live="polite" hidden>
+        <span id="deUndoText"></span>
+        <button type="button" id="deUndoBtn">{T.undo}</button>
+    </div>
 </div>
 
 <script>

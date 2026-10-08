@@ -241,6 +241,9 @@ export function setPrice(line: Line, value: number | null): Line {
     line.precioPendiente = false;
     if (line.productoId) {
         line.negociado = value;
+        // Vacío no es "volver a la lista": es un precio que falta, y se marca
+        // igual que en una línea libre en vez de cobrar la lista en silencio.
+        line.precioPendiente = value === null;
     } else {
         // Una línea libre no tiene lista: el precio que se escribe ES su lista.
         line.lista = value ?? 0;
@@ -363,16 +366,37 @@ export function summarize(
 export function parseAmount(raw: string): number | null {
     let s = String(raw ?? '').trim().replace(/\s/g, '');
     if (!s) return null;
-    const lastComma = s.lastIndexOf(',');
-    const lastDot = s.lastIndexOf('.');
-    if (lastComma > -1 && lastDot > -1) {
-        // El último separador es el decimal; el otro, de miles.
-        s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
-    } else if (lastComma > -1) {
-        // Solo comas: decimal si hay a lo más dos dígitos detrás, miles si hay tres.
-        const decimals = s.length - lastComma - 1;
-        s = decimals === 3 && s.indexOf(',') === lastComma ? s.replace(',', '') : s.replace(/,/g, (m, i) => (i === lastComma ? '.' : ''));
+    const commas = s.split(',').length - 1;
+    const dots = s.split('.').length - 1;
+    if (commas && dots) {
+        // Los dos: el último separador es el decimal; el otro, de miles.
+        s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (commas > 1 || dots > 1) {
+        // El mismo separador repetido solo puede ser de miles: 1,234,567 o 1.234.567.
+        if (!/^-?\d{1,3}([.,]\d{3})+$/.test(s)) return null;
+        s = s.replace(/[.,]/g, '');
+    } else if (commas === 1) {
+        // Una sola coma es de miles solo con exactamente tres dígitos detrás y
+        // una parte entera que no sea cero: 1,234 es mil doscientos; 0,125 y
+        // 1,5 son decimales.
+        const [int, frac] = s.split(',');
+        s = frac.length === 3 && /^-?[1-9]\d{0,2}$/.test(int) ? int + frac : `${int}.${frac}`;
     }
     const n = Number(s);
     return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Cantidad escrita junto a la búsqueda: "40 tubo", "40x tubo" o "tubo x40"
+ * agregan 40. Sin número (o con uno que no es positivo), la cantidad es 1 y el
+ * texto se busca tal cual.
+ */
+export function parseQuery(text: string): { qty: number; term: string } {
+    const t = String(text ?? '');
+    const lead = /^\s*(\d+(?:[.,]\d+)?)\s*(?:x|×|\*)?\s+(.+)$/i.exec(t);
+    const tail = /^(.+?)\s+(?:x|×|\*)\s*(\d+(?:[.,]\d+)?)\s*$/i.exec(t);
+    const num = (v: string) => parseAmount(v) ?? 0;
+    if (lead && num(lead[1]) > 0) return { qty: num(lead[1]), term: lead[2] };
+    if (tail && num(tail[2]) > 0) return { qty: num(tail[2]), term: tail[1] };
+    return { qty: 1, term: t };
 }

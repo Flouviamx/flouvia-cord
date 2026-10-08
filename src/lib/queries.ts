@@ -1412,6 +1412,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             unidad: it.unidad ?? 'pieza',
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+            costo: it.costo_unitario != null ? num(it.costo_unitario) : undefined,
             taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
@@ -2603,7 +2604,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
         funnel: { sent, views, approved, paid },
         pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
-        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? String(r.vigencia).slice(0, 10) : null, dias: num(r.dias_sin_movimiento) })),
+        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? dateOnly(r.vigencia) || null : null, dias: num(r.dias_sin_movimiento) })),
         losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
         discounts: (advanced ? discountRows : []).map((r: any) => {
             const lista = num(r.lista), negociado = num(r.negociado);
@@ -2982,7 +2983,7 @@ async function getCobranzaUncached() {
         const expected = new Date(due); expected.setDate(expected.getDate() + clientDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
         const prom = origen === 'cotizacion' ? promMap.get(r.id as string) : undefined;
-        const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
+        const fechaProm = prom ? dateOnly(prom.fecha_promesa) : '';
         return {
             id: r.id as string, folio: (r.folio as string) || '—',
             origen,

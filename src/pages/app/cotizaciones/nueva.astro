@@ -71,6 +71,15 @@ const boot: Omit<EditorBoot, 'T'> = {
         id: k.id, nombre: k.nombre, precioCombo: k.precioCombo,
         items: k.items.map((it) => ({ productoId: it.productoId, descripcion: it.descripcion, cantidad: it.cantidad, precio: it.precio, unidad: it.unidad })),
     })),
+    // La vista previa se arma con la marca del negocio. El logo se sirve por su
+    // ruta y no se incrusta: puede ser un data URL de cientos de KB.
+    brand: {
+        nombre: ORG.nombre,
+        logoUrl: ORG.logoUrl ? `/api/orgs/${ORG.id}/logo` : null,
+        color: ORG.colorMarca,
+        taxIdLabel: getCountryProfile(PAIS, L).taxIdLabel,
+        taxId: ORG.rfc || null,
+    },
     taxOptions: TAX_OPTIONS,
     defaultTaxRate: DEFAULT_TAX_RATE,
     retenciones: retencionesFrom(IMPUESTOS),
@@ -89,6 +98,7 @@ const boot: Omit<EditorBoot, 'T'> = {
             cantidad: it.cantidad,
             lista: it.precioLista,
             negociado: it.precioNegociado,
+            costo: it.costo ?? null,
             // `null` = línea anterior al impuesto por línea: se calculaba con la
             // tasa de la organización de ese momento.
             taxRate: it.taxRate ?? quote?.taxRateFallback ?? null,
@@ -103,7 +113,7 @@ const crumbs = [{ label: T.crumbQuotes, href: '/app/cotizaciones' }, ...(quote ?
 <AppLayout title={title} page="cotizaciones" heading={title} crumbs={crumbs}>
     <DocumentEditor
         boot={boot}
-        clientes={CLIENTES.map((c) => ({ id: c.id, empresa: c.empresa, contacto: c.contacto, email: c.email, descuentoPct: c.descuentoPct, terminosCode: c.terminosCode }))}
+        clientes={CLIENTES.map((c) => ({ id: c.id, empresa: c.empresa, contacto: c.contacto, email: c.email, rfc: c.rfc, descuentoPct: c.descuentoPct, terminosCode: c.terminosCode }))}
         currencyOptions={currencyOptions}
         currency={currency}
         terms={quote?.terminosCode || ORG.terminosDefault || 'contado'}

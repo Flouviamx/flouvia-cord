@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    firstInvalidLine, freeLine, lineFromProduct, linesFromKit, parseAmount, payloadItems,
+    firstInvalidLine, freeLine, lineFromProduct, linesFromKit, parseAmount, parseQuery, payloadItems,
     repriceForClient, setPrice, setQuantity, summarize, volumePrice, type CatalogProduct, type PricingContext,
 } from '../src/lib/editor/core';
 
@@ -127,7 +127,30 @@ describe('resumen', () => {
 describe('parseAmount', () => {
     it.each([
         ['1,5', 1.5], ['1.5', 1.5], ['1,234.50', 1234.5], ['1.234,50', 1234.5], ['1,234', 1234], ['', null], ['abc', null], ['  12 ', 12],
+        // Una coma con parte entera cero es decimal: 0,125 kg no son 125 unidades.
+        ['0,125', 0.125], ['0,250', 0.25],
+        // El mismo separador repetido es de miles, nunca decimal.
+        ['1,234,567', 1234567], ['1.234.567', 1234567], ['1,23,4', null],
     ])('%s → %s', (raw, expected) => {
         expect(parseAmount(raw as string)).toBe(expected);
+    });
+});
+
+describe('parseQuery', () => {
+    it.each([
+        ['40 tubo', 40, 'tubo'], ['40x tubo', 40, 'tubo'], ['40 x tubo', 40, 'tubo'], ['tubo x40', 40, 'tubo'],
+        ['1,5 cemento', 1.5, 'cemento'], ['tubo', 1, 'tubo'], ['0 tubo', 1, '0 tubo'], ['2x4', 1, '2x4'],
+    ])('%s → %s × %s', (raw, qty, term) => {
+        expect(parseQuery(raw as string)).toEqual({ qty, term });
+    });
+});
+
+describe('precio vacío', () => {
+    it('en una línea de catálogo se marca, no cae a la lista', () => {
+        const l = lineFromProduct(tubo, ctx(), 0.16);
+        setPrice(l, null);
+        expect(firstInvalidLine([l])?.problem).toBe('precio');
+        setPrice(l, 95);
+        expect(firstInvalidLine([l])).toBeNull();
     });
 });
