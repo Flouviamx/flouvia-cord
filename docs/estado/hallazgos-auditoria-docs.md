@@ -12,30 +12,31 @@
 
 ## P0 — producción rota, dinero o privacidad
 
-1. **[verificado] El cron de recordatorios truena.** `src/pages/api/cron/recordatorios.ts:132`
-   usa `${origin}`, que no está declarado. En cuanto una cotización cumple un día
-   vencida, `ReferenceError` aborta la corrida **antes** de la escalera de
-   recordatorios de factura y de `invoice.overdue`. Arreglo: `siteOrigin()` de
-   `src/lib/email.ts` (patrón de `cron/expirar-cotizaciones.ts`).
-2. **[verificado] Mismo bug en el agente de cobranza.** `src/lib/agents/cobranza-run.ts`
-   (~406) llama `renderDigestEmail(..., origin)` sin `origin` declarado: el correo
-   resumen del modo aprobación falla después de guardar los borradores.
-3. **[verificado] Fuga de eventos internos al cliente.** Los eventos internos se
+1. **[verificado] Fuga de eventos internos al cliente.** Los eventos internos se
    guardan con `tipo = 'comment'`: "Solicitud de aprobación: …" (puede incluir el
    % de margen, `src/lib/cotizaciones.ts:415`), "Versión N creada" y "Borrador
    actualizado" (`src/lib/actions/quotes.ts:33,247`). La conversación pública los
    lee (`src/lib/queries.ts:1952`) y los pinta como mensajes del cliente (`:2075`);
    la campana los rotula "Nuevo mensaje del cliente". Usar un `tipo` interno
    propio y excluirlo de la conversación.
-4. **Cursor de `/api/v1/facturas` roto.** `next_cursor` es `String(Date)` (no ISO),
+2. **Cursor de `/api/v1/facturas` roto.** `next_cursor` es `String(Date)` (no ISO),
    compara `created_at <` sin desempate por `id` (salta facturas del mismo
    instante) y un cursor inválido no se valida (probable 500). `getFacturas` en
    `src/lib/queries.ts`.
-5. **Approval de borradores de factura del agente.** La aprobación sólo busca en
+3. **Approval de borradores de factura del agente.** La aprobación sólo busca en
    cotizaciones (404 para borradores sobre facturas) y un plan sobre factura
    insertaría un id de documento en una columna de cotización.
-6. **`splitCuotas()` sin divisa** (`src/lib/agents/ar-agent.ts:87`,
+4. **`splitCuotas()` sin divisa** (`src/lib/agents/ar-agent.ts:87`,
    `src/pages/api/cobranza-ia/[id].ts:175`): parte en centavos también CLP/JPY.
+5. **[verificado] Los crons "horarios" no corren cada hora.** `cord-crons.yml`
+   está programado `10 * * * *`, pero GitHub sólo lo ejecutó 3-4 veces al día y a
+   horas variables (corridas del 1 al 8 oct 2026). Los endpoints `*` (workflows,
+   tareas) corren unas 4 veces al día, y los de hora fija sólo cuando la corrida cae
+   en esa hora UTC. Hoy los crons diarios se sostienen por `vercel.json`. Si el
+   negocio depende del horario (workflows "cada lunes a las 9"), mover el disparo
+   a un reloj confiable (plan Pro de Vercel o un cron externo). El recordatorio de
+   tareas no se pierde (manda "a partir de" las 8:00 locales con dedup en
+   `tareas.recordada_el`), pero puede llegar horas tarde.
 
 ## P1 — topes, permisos y contratos que se pueden saltar
 
