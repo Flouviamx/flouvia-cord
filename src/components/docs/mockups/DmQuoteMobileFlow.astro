@@ -1,0 +1,234 @@
+---
+// Mockup: el link de la cotización en el celular, en tres capturas del mismo flujo
+// (src/components/q/QuoteCard.astro en su layout móvil):
+//   1. Revisar  — una línea desmarcada con "Incluir esta línea en tu aprobación" y la
+//                 nota "Aprobarás 2 de 3 líneas · Total a aprobar".
+//   2. Firmar   — el paso "Firma digital" con el resumen, el nombre del firmante, la
+//                 casilla de aceptación y el aviso legal.
+//   3. Pagar    — "Cotización aprobada", A PAGAR AHORA · ANTICIPO con "Pagar de forma
+//                 segura" y el sello "Documento verificado".
+// Mismos datos que DmQuoteLink (COT-0149): al desmarcar el flete, el total aprobado es
+// el de dos líneas y el anticipo del 50 % se calcula sobre él.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+import { Q149, dmNum, lineAmount, q149Total } from './dm-gestion';
+import { getQuoteCardRuntimeI18n } from '../../../i18n/app';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const RT = getQuoteCardRuntimeI18n(lang);
+
+const INCLUDED = [0, 1];
+const aprobado = q149Total(INCLUDED);
+const anticipo = Math.round(aprobado * Q149.anticipoPct) / 100;
+
+const DATA = {
+    es: {
+        caption: `El link en el celular, en tres pasos: el cliente desmarca el flete y aprueba 2 de 3 líneas por ${dmMoney(aprobado, 'MXN', 'es')}; firma como ${Q149.firmante} con la casilla de aceptación marcada; y ve "Cotización aprobada" con el sello "Documento verificado" y el botón Pagar de forma segura para el anticipo de ${dmMoney(anticipo, 'MXN', 'es')}.`,
+        steps: ['Revisar', 'Firmar', 'Pagar'],
+        email: 'maria.garcia@constructoraapex.mx',
+        fecha: '8 oct 2026, 11:42',
+    },
+    en: {
+        caption: `The link on a phone, in three steps: the client unchecks delivery and approves 2 of 3 lines for ${dmMoney(aprobado, 'MXN', 'en')}; signs as ${Q149.firmante} with the acceptance box checked; and sees "Quote approved" with the "Document verified" seal and the Pay securely button for the ${dmMoney(anticipo, 'MXN', 'en')} deposit.`,
+        steps: ['Review', 'Sign', 'Pay'],
+        email: 'maria.garcia@constructoraapex.mx',
+        fecha: 'Oct 8, 2026, 11:42 AM',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const partialCount = RT.lineasDe.replace('{n}', String(INCLUDED.length)).replace('{total}', String(Q149.lines.length));
+const HASH = 'sha256:9f3c1e7a52b0d84c6e19a7f2d5b3c08e41a6f9d27c5e8b13';
+---
+<DocsMockup lang={lang} variant="panel" brand={DEMO.brand} height={520} caption={caption} class="dm-mf-figure">
+    <div class="dm-mf">
+        {/* 1 · Revisar */}
+        <div class="dm-mf-col">
+            <span class="dm-mf-step"><b>1</b>{d.steps[0]}</span>
+            <div class="dm-mf-phone">
+                <div class="dm-mf-screen">
+                    <div class="dm-phone-status dm-mf-status"><span>9:41</span><span class="dm-phone-island"></span><span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span></div>
+                    <div class="dm-mf-body">
+                        <div class="dm-mf-brand">
+                            <span class="dm-mf-logo">{DEMO.orgInitial}</span>
+                            <span class="dm-mf-org">{DEMO.org}</span>
+                            <span class="dm-mf-folio">{Q149.folio}</span>
+                        </div>
+                        <div class="dm-mf-items">
+                            {Q149.lines.map((l, i) => {
+                                const on = INCLUDED.includes(i);
+                                return (
+                                    <div class:list={['dm-mf-item', { 'is-off': !on }]}>
+                                        <span class:list={['dm-mf-pick', { 'is-on': on }]}>{on && <DmIcon name="check" stroke={3.2} />}</span>
+                                        <span class="dm-mf-item-main">
+                                            <span class="dm-mf-item-name">{l[lang]}</span>
+                                            <span class="dm-mf-item-sub">{dmNum(l.qty, lang)} {l.unit[lang]}</span>
+                                        </span>
+                                        <DmMoney amount={lineAmount(l)} lang={lang} class="dm-mf-item-amt" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div class="dm-mf-partial">
+                            {dmT(lang, 'q.partial_aprobaras')} <b>{partialCount}</b> · {dmT(lang, 'q.partial_total')} <DmMoney amount={aprobado} lang={lang} />
+                        </div>
+                        <span class="dm-mf-cta"><DmIcon name="check" stroke={2.6} />{dmT(lang, 'q.aprobar_cotizacion')}</span>
+                        <div class="dm-mf-sec">
+                            <span class="dm-mf-ghost"><DmIcon name="document" />{dmT(lang, 'q.descargar_pdf')}</span>
+                            <span class="dm-mf-ghost is-plain">{dmT(lang, 'q.rechazar')}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* 2 · Firmar */}
+        <div class="dm-mf-col">
+            <span class="dm-mf-step"><b>2</b>{d.steps[1]}</span>
+            <div class="dm-mf-phone">
+                <div class="dm-mf-screen">
+                    <div class="dm-phone-status dm-mf-status"><span>9:42</span><span class="dm-phone-island"></span><span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span></div>
+                    <div class="dm-mf-body">
+                        <div class="dm-mf-stephead"><span class="dm-mf-back"><DmIcon name="chevron-left" stroke={2.4} /></span>{dmT(lang, 'q.firma_digital')}</div>
+                        <div class="dm-mf-summary">
+                            {dmT(lang, 'q.aprobando')} <b>{Q149.folio}</b> {dmT(lang, 'q.por')} <DmMoney amount={aprobado} lang={lang} class="dm-mf-brandtxt" />
+                        </div>
+                        <div class="dm-mf-field">
+                            <span class="dm-mf-label">{dmT(lang, 'q.nombre_firmante')}</span>
+                            <span class="dm-mf-input is-focus">{Q149.firmante}<i class="dm-mf-caret"></i></span>
+                        </div>
+                        <div class="dm-mf-field">
+                            <span class="dm-mf-label">{dmT(lang, 'q.correo_opcional')}</span>
+                            <span class="dm-mf-input">{d.email}</span>
+                        </div>
+                        <div class="dm-mf-check">
+                            <span class="dm-mf-box"><DmIcon name="check" stroke={3.2} /></span>
+                            <span>{dmT(lang, 'q.acepto_terminos')}</span>
+                        </div>
+                        <span class="dm-mf-cta">{dmT(lang, 'q.confirmar_firmar')}<DmIcon name="arrow-right" stroke={2.6} /></span>
+                        <div class="dm-mf-legal"><DmIcon name="shield" /><span>{dmT(lang, 'q.legal_firma')}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* 3 · Pagar */}
+        <div class="dm-mf-col">
+            <span class="dm-mf-step"><b>3</b>{d.steps[2]}</span>
+            <div class="dm-mf-phone">
+                <div class="dm-mf-screen">
+                    <div class="dm-phone-status dm-mf-status"><span>9:42</span><span class="dm-phone-island"></span><span class="dm-phone-sys"><span class="dm-phone-bars"><i></i><i></i><i></i><i></i></span><span class="dm-phone-batt"></span></span></div>
+                    <div class="dm-mf-body dm-mf-done">
+                        <svg class="dm-mf-ring" viewBox="0 0 52 52" aria-hidden="true">
+                            <circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                            <polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                        </svg>
+                        <span class="dm-mf-done-title">{dmT(lang, 'q.cotizacion_aprobada')}</span>
+                        <span class="dm-mf-done-sub">{tpl(dmT(lang, 'q.recibio_confirmacion'), { org: DEMO.org })}</span>
+                        <div class="dm-mf-pay">
+                            <span class="dm-mf-pay-label">{dmT(lang, 'q.a_pagar_ahora')} · {dmT(lang, 'q.tipo_anticipo').toUpperCase()}</span>
+                            <DmMoney amount={anticipo} lang={lang} class="dm-mf-pay-num" />
+                            <span class="dm-mf-cta"><DmIcon name="lock" stroke={2.4} />{dmT(lang, 'q.pagar_seguro')}</span>
+                            <span class="dm-mf-pay-sec"><DmIcon name="lock" />{dmT(lang, 'q.tarjeta_o_spei')}</span>
+                        </div>
+                        <div class="dm-mf-stamp">
+                            <span class="dm-mf-stamp-head"><DmIcon name="shield" />{dmT(lang, 'q.documento_verificado')}</span>
+                            <span><b>{dmT(lang, 'q.firmante')}</b> {Q149.firmante} (IP: 189.203.44.17)</span>
+                            <span><b>{dmT(lang, 'q.fecha')}</b> {d.fecha}</span>
+                            <span><b>{dmT(lang, 'q.sello')}</b> {HASH}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* Tres teléfonos en fila sobre el escenario: el panel deja de ser tarjeta. */
+    .dm-mf-figure .dm-v-panel { padding: 22px 18px 0; justify-content: flex-start; align-items: stretch; }
+    .dm-mf-figure .dm-panel { max-width: none; background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; flex: 1 0 auto; display: flex; }
+    .dm-mf { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+    .dm-mf-col { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+    .dm-mf-step { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 650; color: var(--dm-muted); }
+    .dm-mf-step b { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 10px; font-weight: 700; }
+    .dm-mf-phone { flex: 1 0 auto; width: 100%; max-width: 214px; padding: 7px 7px 0; border-radius: 34px 34px 0 0; background: #10141c; box-shadow: 0 26px 60px -28px rgba(10, 25, 47, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.08); display: flex; }
+    .dm-mf-screen { flex: 1; min-width: 0; border-radius: 27px 27px 0 0; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+    .dm-mf-status { height: 34px; padding: 3px 18px 0 22px; font-size: 10.5px; }
+    .dm-mf-status .dm-phone-island { top: 8px; width: 66px; height: 19px; margin-left: -33px; }
+    .dm-mf-status .dm-phone-batt { width: 19px; height: 9px; }
+    .dm-mf-body { display: flex; flex-direction: column; gap: 9px; padding: 8px 12px 0; color: #111; }
+
+    .dm-mf-brand { display: flex; align-items: center; gap: 7px; padding-bottom: 9px; border-bottom: 1px solid rgba(10, 25, 47, 0.07); }
+    .dm-mf-logo { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 10px; font-weight: 800; flex-shrink: 0; }
+    .dm-mf-org { flex: 1; min-width: 0; font-size: 10.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-mf-folio { font-size: 9.5px; font-weight: 800; flex-shrink: 0; }
+
+    .dm-mf-items { display: flex; flex-direction: column; }
+    .dm-mf-item { display: grid; grid-template-columns: 15px minmax(0, 1fr); column-gap: 8px; row-gap: 3px; padding: 8px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.05); }
+    .dm-mf-pick { width: 15px; height: 15px; border-radius: 4.5px; border: 1.5px solid #cbd5e1; background: #fff; display: grid; place-items: center; color: #fff; margin-top: 1px; }
+    .dm-mf-pick.is-on { background: var(--dm-navy); border-color: var(--dm-navy); }
+    .dm-mf-pick .dm-ico { width: 9px; height: 9px; }
+    .dm-mf-item-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-mf-item-name { font-size: 10.5px; font-weight: 600; line-height: 1.3; }
+    .dm-mf-item-sub { font-size: 9px; color: #6b7280; }
+    .dm-mf-item-amt { grid-column: 2; font-size: 10.5px; }
+    .dm-mf-item.is-off { opacity: 0.5; }
+    .dm-mf-item.is-off .dm-mf-item-name, .dm-mf-item.is-off .dm-mf-item-amt { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, 0.3); }
+    .dm-mf-partial { padding: 8px 9px; border-radius: 9px; background: rgba(10, 25, 47, 0.045); font-size: 9.5px; line-height: 1.5; color: #374151; text-align: center; }
+    .dm-mf-partial b, .dm-mf-partial .dm-money { color: #111; font-weight: 700; }
+
+    .dm-mf-cta { display: flex; align-items: center; justify-content: center; gap: 6px; height: 34px; border-radius: 10px; background: var(--dm-brand); color: #fff; font-size: 11px; font-weight: 600; box-shadow: 0 8px 20px -10px rgba(10, 25, 47, 0.45); flex-shrink: 0; }
+    .dm-mf-cta .dm-ico { width: 12px; height: 12px; }
+    .dm-mf-sec { display: flex; gap: 6px; }
+    .dm-mf-ghost { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; height: 28px; border-radius: 9px; border: 1px solid rgba(10, 25, 47, 0.1); font-size: 9.5px; font-weight: 600; color: #6b7280; white-space: nowrap; }
+    .dm-mf-ghost .dm-ico { width: 11px; height: 11px; }
+    .dm-mf-ghost.is-plain { flex: none; padding: 0 9px; border-color: transparent; }
+
+    .dm-mf-stephead { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; padding-top: 2px; }
+    .dm-mf-back { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: rgba(10, 25, 47, 0.05); color: #374151; }
+    .dm-mf-back .dm-ico { width: 12px; height: 12px; }
+    .dm-mf-summary { padding: 8px 9px; border-radius: 9px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); font-size: 9.5px; line-height: 1.5; color: #6b7280; }
+    .dm-mf-summary b { color: #111; }
+    .dm-mf-brandtxt { color: var(--dm-brand); font-weight: 700; }
+    .dm-mf-field { display: flex; flex-direction: column; gap: 4px; }
+    .dm-mf-label { font-size: 9px; font-weight: 600; color: #6b7280; }
+    .dm-mf-input { display: flex; align-items: center; height: 30px; padding: 0 9px; border-radius: 8px; border: 1.5px solid rgba(10, 25, 47, 0.12); font-size: 10.5px; color: #111; white-space: nowrap; overflow: hidden; }
+    .dm-mf-input.is-focus { border-color: rgba(10, 25, 47, 0.38); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.05); }
+    .dm-mf-caret { display: inline-block; width: 1px; height: 13px; margin-left: 1px; background: var(--dm-navy); }
+    .dm-mf-check { display: flex; align-items: flex-start; gap: 7px; font-size: 9px; line-height: 1.5; color: #6b7280; }
+    .dm-mf-box { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: grid; place-items: center; background: var(--dm-navy); color: #fff; }
+    .dm-mf-box .dm-ico { width: 9px; height: 9px; }
+    .dm-mf-legal { display: flex; gap: 6px; padding: 8px 9px; border-radius: 9px; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); color: #047857; font-size: 8.5px; line-height: 1.5; font-weight: 500; }
+    .dm-mf-legal .dm-ico { width: 11px; height: 11px; margin-top: 1px; }
+
+    .dm-mf-done { align-items: center; text-align: center; gap: 7px; padding-top: 12px; }
+    .dm-mf-ring { width: 40px; height: 40px; color: var(--dm-brand); }
+    .dm-mf-done-title { font-size: 13px; font-weight: 700; }
+    .dm-mf-done-sub { font-size: 9.5px; line-height: 1.5; color: #6b7280; }
+    .dm-mf-pay { align-self: stretch; display: flex; flex-direction: column; gap: 7px; padding: 10px; margin-top: 3px; border-radius: 12px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.06); text-align: left; }
+    .dm-mf-pay-label { font-size: 7.5px; font-weight: 800; letter-spacing: 0.14em; color: #6b7280; }
+    .dm-mf-pay-num { font-size: 19px; line-height: 1; color: var(--dm-brand); }
+    .dm-mf-pay-sec { display: flex; align-items: center; gap: 4px; font-size: 8px; color: #6b7280; }
+    .dm-mf-pay-sec .dm-ico { width: 9px; height: 9px; }
+    .dm-mf-stamp { align-self: stretch; display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border-radius: 10px; border: 1px dashed rgba(10, 25, 47, 0.16); background: #f9fafb; text-align: left; font-family: var(--dm-mono); font-size: 7.5px; line-height: 1.5; color: #6b7280; word-break: break-all; }
+    .dm-mf-stamp b { color: #374151; font-weight: 600; }
+    .dm-mf-stamp-head { display: flex; align-items: center; gap: 5px; font-family: var(--dm-font); font-size: 9.5px; font-weight: 700; color: #047857; word-break: normal; }
+    .dm-mf-stamp-head .dm-ico { width: 11px; height: 11px; }
+
+    /* Angosto: los tres pasos se apilan; cada teléfono es una captura completa. */
+    @container dm (max-width: 560px) {
+        .dm-mf-figure .dm-stage { height: auto; }
+        .dm-mf-figure .dm-v-panel { padding: 18px 14px 18px; }
+        .dm-mf { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+        .dm-mf-phone { flex: none; max-width: 264px; height: 440px; padding-bottom: 7px; border-radius: 36px; }
+        .dm-mf-screen { border-radius: 29px; }
+        .dm-mf-body { padding: 10px 14px 0; gap: 10px; }
+    }
+</style>
