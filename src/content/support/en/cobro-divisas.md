@@ -10,9 +10,9 @@ The currency selector offers the currencies of the 12 countries where Cord opera
 
 ### Create a quote in another currency
 
-When drafting the quote, in the **Global Settings** section (right panel), you will see a Currency selector.
+When drafting the quote, in step 3 of the editor, **Terms**, you will see the **Which currency are you quoting in?** selector.
 1. Change the sale currency to the one you need (for example, from MXN to USD).
-2. The prices of your entered line items are read under that new currency.
+2. The prices of your entered line items are read under that new currency: they aren't converted, so review each price.
 
 ### Online payment
 

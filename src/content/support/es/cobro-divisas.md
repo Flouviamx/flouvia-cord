@@ -10,9 +10,9 @@ El selector de moneda ofrece hoy las divisas de los 12 países donde Cord opera 
 
 ### Crear una cotización en otra divisa
 
-Al redactar la cotización, en la sección de **Configuración Global** (panel derecho) verás el selector de Moneda.
+Al redactar la cotización, en el paso 3 del editor, **Condiciones**, verás el selector **¿En qué moneda le cotizas?**.
 1. Cambia la divisa de venta a la que corresponda (por ejemplo, de MXN a USD).
-2. Los precios de tus conceptos se leen bajo esa nueva divisa.
+2. Los precios de tus conceptos se leen bajo esa nueva divisa: no se convierten, así que revisa cada precio.
 
 ### Cobro en línea
 

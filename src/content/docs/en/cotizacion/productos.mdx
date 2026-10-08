@@ -2,7 +2,7 @@
 title: "Products and discounts"
 seoTitle: "Products, kits, discounts, and margin in a quote"
 description: "Add products, kits, and free lines, negotiate prices, use the price suggested by your history, watch your margin, and understand how taxes and discounts are calculated."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,10 +16,15 @@ prerequisites: ["Quotes permission", "Products permission to create or import th
 
 ## What it is
 
-The **What are you quoting them?** step of the editor is where you add lines. Each line
-keeps its **List** price (from your catalog) and its **Negotiated** price (what the
-client will actually pay). The discount isn't a separate field: it's the difference
-between the two.
+Step 2 of the editor, **What are you quoting?**, is where you add lines. Each line
+keeps its **List** price (from your catalog) and its **Price** (what the client will
+actually pay, which you can lower without touching your list price). The discount isn't
+a separate field: it's the difference between the two. When you create an invoice, the
+same step is called **What are you charging for?** and works the same way, without the
+margin column.
+
+The table has the columns **Item**, **Qty**, **List**, **Price**, the line's tax (only
+if your catalog has more than one rate), **Amount**, and **Margin** (quotes only).
 
 <DmCotLines lang="en" />
 
@@ -46,24 +51,35 @@ tier that matches the quantity entered.
 ## Add lines
 
 <Steps>
-1. **Search the catalog** by name or SKU in the section's search box. Press Enter to add the result and keep typing to add several in a row.
-2. **Insert a kit** with **+ Insert kit**: choose the kit, type how many times to insert it, and click **Add**. Cord adds all its parts multiplying the quantities; if the kit has a combo price, it spreads it across its lines and tells you how much the client saves.
-3. **Add a free line** with **+ Free line** for something that isn't in your catalog: you type the description, quantity, and price.
-4. **Adjust each line:** quantity, **Negotiated** price and, if your catalog has more than one rate, the line's tax.
+1. **Search the catalog** by name or SKU in the "Search your catalog… (name or SKU)" box. On desktop, the `/` key takes you to that box. Press **Enter** to add the result and keep typing to add several in a row.
+2. **Add several units at once** by typing the quantity with the search: "40 pipe", "40x pipe", or "pipe x40" add 40 units of the product, and the results list shows ×40. If what you type is already the name of a product with a number in it (for example "Bulb 100 W"), the number is read as part of the name.
+3. **Insert a kit** with **+ Insert kit**: choose the kit, type how many times to insert it, and click **Add**. Cord adds all its parts multiplying the quantities; if the kit has a bundle price, it spreads it across its lines and tells you how much the client saves.
+4. **Add a free line** with **+ Free line** for something that isn't in your catalog: you type the description, quantity, and price.
+5. **Adjust each line:** quantity, **Price** and, if your catalog has more than one rate, the line's tax.
 </Steps>
 
-Lines don't carry their own notes. For clarifications to the client use **Notes for the
-client** (see [Advanced options](/en/docs/cotizacion/opciones)).
+Lines don't carry their own notes. For clarifications to the client use **Note for your
+client**, at the end of the editor.
+
+## Edit, reorder, and remove lines
+
+- **Decimal quantities and prices:** quantity accepts decimals (1.5 or 0,125 kg) and price accepts a comma or a period as the decimal mark. With both separators, the last one is the decimal (1.234,50 or 1,234.50).
+- **Suggested tax:** if you assigned a tax rate to the product and that rate is still in your tax catalog, the line comes in with it; otherwise, with your default rate. You can change it on the line.
+- **Duplicate:** each row's **Duplicate line** button creates a copy right below it.
+- **Remove with undo:** when you remove a line, a "Removed "…"." bar with an **Undo** button appears for a few seconds.
+- **Reorder:** on desktop, drag the row by its handle on the left. With the keyboard, from any field on the line, use **Alt + Up arrow** or **Alt + Down arrow**. There's no dragging on a phone.
+- **Incomplete lines:** when you save or send, Cord marks in red a line with no description, a quantity of 0, or no price (for example, "Give this line a price (it can be 0)."). A line isn't saved at zero unless you decide so.
+- **Narrow screens:** in a narrow window the row rearranges itself: the list price moves under the name or, narrower still, the fields stack with their labels (Qty, Price). No amount is hidden.
 
 ## How the discount is built
 
-1. **Client tier (automatic):** if the client has a discount on their price tier, Cord lowers the negotiated price of catalog products by that percentage and notes that the client's tier discount was applied to list prices.
-2. **Shopify B2B price list (automatic):** if you connected [Shopify](/en/docs/automatizacion/integraciones/shopify) and the client buys through a company with a B2B price list, that list wins over the tier discount, product by product, and only when the quote is in the list's currency. If you already changed the negotiated price by hand, Cord doesn't overwrite it.
+1. **Client tier (automatic):** if the client has a discount on their price tier, Cord lowers the price of catalog products by that percentage and shows "Client tier: −10% applied to your catalog list prices."
+2. **Shopify B2B price list (automatic):** if you connected [Shopify](/en/docs/automatizacion/integraciones/shopify) and the client buys through a company with a B2B price list, that list wins over the tier discount, product by product, and only when the quote is in the list's currency. If you already changed the price by hand, Cord doesn't overwrite it.
 3. **Volume price (automatic):** if the quantity reaches a tier, the line's list price becomes the tier's.
-4. **Manual negotiated price:** you can lower the negotiated price of any line.
+4. **Manual price:** you can lower the price of any line.
 
-In **Review and send**, **You discounted them** adds up the difference between list and
-negotiated across the whole quote. Cord has no global discount on the subtotal.
+In the **Review and send** summary, **Discount given** adds up the difference between
+list and price across the whole quote. Cord has no global discount on the subtotal.
 
 <Callout type="warning">
 Discounts are always calculated **before** taxes. The editor and the server use the
@@ -78,13 +94,14 @@ into discount bands of 5 points and picks the lowest band that closes at least 6
 the time; if none does, it picks the band with the best close rate.
 
 - Cord looks first at the history of **that product**, then at **that client's**, and finally at **your whole organization's**, and uses the first with at least 3 decided lines.
-- The suggestion appears under the name as "Suggested: … (68% close)". Click it to apply it to the negotiated price.
-- If the negotiated price already matches the suggestion, or there isn't enough history, nothing appears.
+- The suggestion appears under the name as "Suggested: … (68% close)". Click it to apply it to the line's price.
+- If the price already matches the suggestion, or there isn't enough history, nothing appears.
 
 ## Margin
 
-The **Margin** column shows your profit on the negotiated price after cost:
-(negotiated − cost) ÷ negotiated. Lines without a cost show a dash. If your organization
+The **Margin** column shows your profit on the price after cost:
+(price − cost) ÷ price. Lines without a cost show a dash. Each line's cost is kept when
+you reopen a draft or build a new version, so the margin isn't lost. If your organization
 has a minimum margin in [internal approvals](/en/docs/cotizacion/aprobaciones-internas),
 lines below it turn red.
 
@@ -98,10 +115,10 @@ each one. It's a warning: Cord doesn't block the quote.
 
 ## Real-time calculation
 
-The **Review and send** panel updates instantly:
+The **Review and send** summary updates instantly:
 
 - **Subtotal:** the sum of the lines before taxes.
-- **You discounted them:** total difference between list and negotiated (only if there's a discount).
+- **Discount given:** total difference between list and price (only if there's a discount).
 - **Taxes:** one row per rate, with your country's name for it (IVA in Mexico and Spain, VAT in the United Kingdom, GST in Canada, Sales tax by state in the United States).
 - **Withholding:** if your catalog has any, it's subtracted.
 - **Total:** what the client will pay.
@@ -116,13 +133,17 @@ The **Review and send** panel updates instantly:
 
 ## Common problems
 
-**"Suggested" doesn't appear.** You're on Free, the product doesn't have enough history, or the negotiated price is already the suggested one.
+**"Suggested" doesn't appear.** You're on Free, the product doesn't have enough history, or the price is already the suggested one.
 
 **The margin shows a dash.** The product has no cost captured, or it's a free line.
 
 **I don't see the per-line tax column.** Your catalog has a single rate; every line uses it.
 
-**The Shopify list wasn't applied.** The quote is in a different currency from the list's, or you already edited that line's negotiated price.
+**The Shopify list wasn't applied.** The quote is in a different currency from the list's, or you already edited that line's price.
+
+**I removed a line by mistake.** Click **Undo** on the bar that appears at the bottom before it closes. If it already closed, add it again from the search.
+
+**I can't drag lines on my phone.** Dragging is a desktop feature; on a phone lines stay in the order you add them.
 
 ## Related
 

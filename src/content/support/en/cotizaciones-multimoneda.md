@@ -8,9 +8,13 @@ Cord supports issuing commercial proposals in 14 currencies: the currencies of t
 
 ### How to create a quote in another currency?
 
-When drafting the quote, you'll see a **Currency** selector in the totals panel.
+When drafting the quote, in step 3 of the editor, **Terms**, you'll see the **Which currency are you quoting in?** selector (on an invoice it's called **Invoice currency**).
 1. Change from your account's default currency (set under **Settings > General**) to any of the offered currencies.
 2. All line items in that quote are entered and shown in the currency you picked — it's the sale currency, and it's what your client sees on the public link.
+
+Changing the currency **doesn't convert prices**: your lines keep the same numbers, now in the new currency, and the editor reminds you to review each price.
+
+If the sale currency differs from your accounting currency, the editor shows the **Rate today** and **Your protected rate**: you choose how cautious you want to be (Light +1%, Normal +2% or Cautious +5%) and see what your client pays and its approximate equivalent in your books. On a quote the rate is locked for 30 days; on an invoice it's stated on the document.
 
 ### Impact on Billing and Payments
 

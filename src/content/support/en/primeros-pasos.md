@@ -25,9 +25,11 @@ To collect card or automatic SPEI payments from the quote link, activate **Cord 
 4. For named CFDI, add their tax regime, zip code, and CFDI use in the tax details section.
 
 ## Step 4: Send your first quote
-1. Go to **Quotes > New**.
-2. Pick the client, add line items (from your catalog or free lines), and review the total.
-3. When you send it, Cord generates a **public link** and, if email is configured, sends it to the client. They open it, review, approve and, if Cord Payments is active, pay online.
+1. Go to **Quotes > New quote** (or use **Create** in the top bar).
+2. Search for the client (or create them from the same search box) and choose their payment terms, add line items (from your catalog or free lines), set validity, deposit and currency under **Terms**, and review the total. Each line can carry its own tax rate.
+3. When you click **Create and send**, Cord generates a **public link** and, if email is configured, sends it to the client. They open it, review, approve and, if Cord Payments is active, pay online.
+
+The full editor walkthrough is in [Create a quote or an invoice step by step](/en/support/crear-cotizacion-o-factura).
 
 ## Step 5: (For devs) Connect the API
 If you'll use Cord programmatically:

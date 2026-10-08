@@ -2,7 +2,7 @@
 title: "Cord AI: automatic quotes"
 seoTitle: "Cord AI: build a quote from text, a PDF, or a photo"
 description: "Build a quote's lines by pasting text, a photo, or a PDF: Cord AI matches them against your catalog and you review before sending."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,10 +16,10 @@ prerequisites: ["Quotes permission to open the editor", "A product catalog for C
 
 ## What it is
 
-Cord AI is the artificial intelligence engine in the quote editor. It reads an order as
-text, a PDF, or an image, extracts products and quantities, and matches them against
-**your real catalog**. It doesn't save or send anything on its own: it fills the
-editor and you decide.
+Cord AI is the artificial intelligence engine in the quote and invoice editor. It reads
+an order as text, a PDF, or an image, extracts products and quantities, and matches them
+against **your real catalog**. It doesn't save or send anything on its own: it fills the
+editor's lines and you decide.
 
 <DmCotAiBlock lang="en" />
 
@@ -32,11 +32,25 @@ editor and you decide.
 ## How to use it
 
 <Steps>
-1. Open **Quotes › New quote**. The first block is **Build the quote with AI**. You can also get there from the command palette with **Build with AI**.
-2. Paste the order into the text box, attach a file with the clip, or both.
-3. Click **Build quote with AI**.
-4. Review the lines that were added, pick the client, adjust prices and validity, and save or send.
+1. Open **Quotes › New quote**. The first block, above the editor's three steps, is **Build the quote with AI**. You can also get there from the command palette with **Build with AI**.
+2. Paste the order into the text box, attach a file with the clip (**Attach photo or PDF**), or both.
+3. Click **Build quote with AI**. When it finishes, Cord tells you how many lines it built, for example "3 lines ready. Check quantities and prices."
+4. Review the lines that were added, pick the client, adjust prices and terms, and save or send.
 </Steps>
+
+If you'd rather enter lines by hand, you don't need the AI block: go straight to step 1
+and add lines from the catalog search (see [Products and
+discounts](/en/docs/cotizacion/productos)).
+
+## When it shows and when it folds
+
+- **New quote or invoice with no lines:** the block shows open.
+- **A document that already has lines** (for example, a draft you reopen): the block starts folded as a one-line bar with an **Open** button. Open it to use it again.
+- **New version of a sent quote:** the block doesn't appear; in a version you adjust lines by hand.
+- **Invoice:** the same block appears as **Build the invoice with AI**, with the **Build invoice with AI** button, and uses the same monthly allowance.
+
+If the document already has lines when you build with AI, Cord asks "Replace the current
+lines?" and lets you choose **Replace** or **Add at the end**.
 
 ## What it can read
 
@@ -47,7 +61,7 @@ editor and you decide.
 | **Image** (JPG, PNG, or WEBP) | Cord compresses it before uploading | Reads the photo and builds the lines. |
 
 Anything it can't find in your catalog comes in as a **free line** so you decide what
-to do with it. The list price and product data always come from your catalog, not
+to do with it; if the order had no price, the line asks you for one before saving. The list price and product data always come from your catalog, not
 from the text.
 
 ## Human review
@@ -56,7 +70,7 @@ Cord AI is a copilot. You:
 
 - confirm the products are the right ones;
 - adjust quantities if something was misread;
-- choose the client, negotiated prices, and validity before saving or sending.
+- choose the client, prices, and terms before saving or sending.
 
 ## Limits by plan
 
@@ -72,11 +86,13 @@ See your usage in **Settings › Plans & subscription › Subscription**.
 
 ## Common problems
 
-**Cord asks for the order.** You clicked the button with no text and no file: paste the client's order or attach a photo or PDF.
+**"Write the order, paste it or attach a photo or PDF."** You clicked the button with no text and no file.
 
-**"The PDF is over 3MB".** Scan it at a lower resolution or upload a photo instead.
+**"The PDF is over 3 MB."** Scan it at a lower resolution or upload a photo instead.
 
-**Unsupported format.** Upload a photo (JPG, PNG, or WEBP) or a PDF. Spreadsheets aren't processed by this assistant; to load many products use the [CSV import](/en/docs/cuenta/catalogo).
+**"Upload a photo (JPG, PNG or WEBP) or a PDF."** You attached another format. Spreadsheets aren't processed by this assistant; to load many products use the [CSV import](/en/docs/cuenta/catalogo).
+
+**I don't see the AI text box.** The block is folded because the document already has lines: click **Open**. A new version of a sent quote has no AI block.
 
 **It matched a product wrong.** Clear names and defined SKUs in your catalog improve matching. Fix the line before sending.
 

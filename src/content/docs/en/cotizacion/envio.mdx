@@ -1,8 +1,8 @@
 ---
 title: "Preview and sending"
 seoTitle: "Preview and send a quote in Cord"
-description: "Review the quote as your client will see it, send it by email or share it on WhatsApp, and what happens with the link, send limits, and payment."
-lastUpdated: "2026-10-07"
+description: "The editor's Review and send summary, preview, autosave, and shortcuts; how to send the quote by email or WhatsApp and what happens with the link, send limits, and payment."
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -27,10 +27,38 @@ your team keeps seeing in Cord, and any new version arrives at the same link.
 - **Client email:** optional. Without an email, the quote is still marked as sent and you share the link.
 - **Online payment:** optional. For the client to pay from the link you need an active payment rail (see [Payment methods](/en/docs/pagos/metodos)).
 
+## The "Review and send" summary
+
+On the right of the editor (at the end, on a phone) the summary tells you how much it
+is and what comes next:
+
+- **Document tag:** **Draft** or, on a new version, **Version N**.
+- **Save status:** on a draft that's already saved, "Saving…" and then "Saved at …" (see "Autosave and local copy" below).
+- **Count:** lines and units, for example "3 lines · 46 units".
+- **Subtotal**, **Discount given** (if you lowered prices), one row per tax rate, and withholding if your catalog has any.
+- The **Prices include VAT** switch (with your country's tax name).
+- **Total**, and below it the terms on one line, for example "Net 30 · valid for 30 days".
+- The main button (**Create and send**, **Save and send**, or **Send new version**), **Save draft** or **Save changes**, and **Preview**.
+
 ## Review before sending
 
+### Preview in the editor
+
+Click **Preview** in the summary. **What your client will see** opens: a sheet with
+your logo (or your initial), your business name and tax ID, the document type and its
+number (or "Draft"), the date, the client and their email, the validity, the item table
+with the list price struck through where there's a discount, subtotal, taxes,
+withholding, the total with its currency, and your note.
+
+It's an approximate view and saves nothing: "Approximate view. The final PDF uses your
+template, branding and tax details."
+
+### Preview of the link
+
+To see the real link exactly as your client will open it:
+
 <Steps>
-1. Open the draft from **Quotes** and, in the actions panel, click **Preview**.
+1. Save the draft, open it from **Quotes** and, in the actions panel, click **Preview**.
 2. The link opens in a new tab with the notice "Preview — this is what your client sees. Your visit is not counted as a view." While you're signed in to the organization that owns the quote, your visit doesn't mark it as *Viewed* or trigger notifications.
 3. Check the total, the lines, the struck-through prices where you negotiated, the payment plan if you asked for a deposit, and the notes. What the client sees is explained in [What your client sees](/en/docs/interaccion/vista-del-cliente).
 </Steps>
@@ -45,18 +73,58 @@ link and log the email in the activity.
 
 | From | Button |
 |---|---|
-| The editor of a new quote | **Create and send** |
+| The editor of a new quote | **Create and send** (sending creates V1 and the public link) |
 | The editor of a draft | **Save and send** |
 | The detail of a draft | **Send to client** |
+
+Before sending, the editor checks that there's a client ("Choose a client to be able to
+send.") and that every line has a description, a quantity greater than zero, and a
+price; if something is missing, it takes you to the line marked in red.
 
 You can also drag the card from *Draft* to *Sent* on the board (see [Home and
 views](/en/docs/gestion/dashboard)); it performs exactly the same send.
 
 <Callout type="info">
 **Internal approval.** If your organization uses [internal
-approvals](/en/docs/cotizacion/aprobaciones-internas) and a new quote exceeds your caps
-on **Create and send**, it stays a draft **Pending approval** until a manager approves it.
+approvals](/en/docs/cotizacion/aprobaciones-internas) and the quote exceeds your caps on
+**Create and send** or **Save and send**, it stays a draft **Pending approval** until a
+manager approves it. The editor tells you: "Approval requested for COT-0149. Waiting for
+an approver's sign-off."
 </Callout>
+
+## Autosave and local copy
+
+- **A draft that's already saved saves itself** a few seconds after your last change, as long as all its lines are complete. The summary shows "Saving…" and "Saved at …"; if it fails, it says "Not saved: check your connection."
+- **A new quote isn't created on its own**, because every quote counts against your plan's limit. While you build it, your browser keeps a local copy of the client, terms, lines, and note. If you close the tab without saving, the next time you open **New quote** Cord asks "You have unsaved changes from last time" and lets you **Restore** or **Discard**. The copy lives only in that browser and expires after 7 days.
+- **Leaving with unsaved changes** makes the browser ask for confirmation before closing the page.
+
+## Keyboard shortcuts
+
+On desktop:
+
+| Shortcut | What it does |
+|---|---|
+| **⌘ Enter** (Ctrl Enter on Windows) | The main action: create and send, save and send, or send the version. |
+| **⌘ S** (Ctrl S) | Saves the draft. Not available on a new version. |
+| **/** | Jumps to the catalog search when you're not typing in a field. **⌘ K** still opens the app's general search. |
+| **Alt + Up / Down arrow** | Moves the line you're on. |
+
+## On a phone
+
+The editor stacks into one column: AI, client, lines, terms, note, and the summary at
+the end. A bar pinned to the bottom shows the **Total** and the main button; it steps
+aside once the summary is in view. On a phone there are no keyboard shortcuts and no
+dragging to reorder lines.
+
+## New version
+
+From the detail of a *Sent*, *Viewed*, or *Expired* quote, **Modify and resend** (with
+the next version number, for example "Modify and resend (V2)") opens the same editor in
+new-version mode (the old `/app/cotizaciones/[id]/editar` route only redirects there).
+A new version changes lines and prices; the client, currency, and terms stay as they
+were sent, and the AI block doesn't appear. The summary is tagged **Version N** and the
+main button is **Send new version**: your client sees the new version at the same link
+and the previous one stays in the history.
 
 ## Share the link
 
@@ -110,7 +178,11 @@ monthly limit and suggests upgrading.
 
 **The client didn't get the email.** Check that their profile has an email and look for the email entry in the activity. If it isn't there, share the link manually.
 
-**I don't see the pay button on the link.** Payment shows after approval and only if you have an active rail. With Net 30 or Net 60 terms it's enabled on the due date (see [Advanced options](/en/docs/cotizacion/opciones)).
+**I don't see the pay button on the link.** Payment shows after approval and only if you have an active rail. With a Net term it's enabled on the due date (see [Advanced options](/en/docs/cotizacion/opciones)).
+
+**My new quote didn't save itself.** Autosave is for drafts that already exist. Click **Save draft** (or ⌘ S) the first time; until then, the local copy lets you restore it in that browser.
+
+**The summary says "Not saved: check your connection."** Autosave didn't reach the server. Check your network and click **Save changes**.
 
 **My own visit marked the quote as viewed.** It shouldn't: open the link while signed in to the same organization. From another browser without a session, Cord can't tell you apart from the client.
 

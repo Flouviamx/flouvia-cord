@@ -2,7 +2,7 @@
 title: "Productos y descuentos"
 seoTitle: "Productos, kits, descuentos y margen en una cotización"
 description: "Agrega productos, kits y líneas libres, negocia precios, usa el precio sugerido por tu historial, vigila el margen y entiende cómo se calculan impuestos y descuentos."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -16,10 +16,15 @@ prerequisites: ["Permiso Cotizaciones", "Permiso Productos para crear o importar
 
 ## Qué es
 
-El paso **¿Qué le vas a cotizar?** del editor es donde agregas las partidas. Cada
-partida guarda su precio de **Lista** (el de tu catálogo) y su precio **Negociado**
-(el que realmente pagará el cliente). El descuento no es un campo aparte: es la
-diferencia entre los dos.
+El paso 2 del editor, **¿Qué le vas a cotizar?**, es donde agregas las partidas. Cada
+partida guarda su precio de **Lista** (el de tu catálogo) y su **Precio** (el que
+realmente pagará el cliente, que puedes bajar sin tocar tu lista). El descuento no es
+un campo aparte: es la diferencia entre los dos. Al crear una factura, el mismo paso se
+llama **¿Qué le estás cobrando?** y funciona igual, sin la columna de margen.
+
+La tabla tiene las columnas **Concepto**, **Cant.**, **Lista**, **Precio**, el impuesto
+de la línea (solo si tu catálogo tiene más de una tasa), **Importe** y **Margen** (solo
+en cotizaciones).
 
 <DmCotLines lang="es" />
 
@@ -46,24 +51,35 @@ aplica el escalón que corresponde a la cantidad capturada.
 ## Agrega partidas
 
 <Steps>
-1. **Busca en el catálogo** por nombre o SKU en el buscador de la sección. Presiona Enter para agregar el resultado y sigue escribiendo para agregar varios seguidos.
-2. **Inserta un kit** con **+ Insertar kit**: elige el kit, escribe cuántas veces insertarlo y pulsa **Agregar**. Cord añade todas sus partes multiplicando las cantidades; si el kit tiene precio de combo, lo reparte entre sus líneas y te dice cuánto ahorra el cliente.
-3. **Agrega una línea libre** con **+ Línea libre** para algo que no está en tu catálogo: escribes la descripción, la cantidad y el precio.
-4. **Ajusta cada línea:** cantidad, precio **Negociado** y, si tu catálogo tiene más de una tasa, el impuesto de la línea.
+1. **Busca en el catálogo** por nombre o SKU en el buscador "Busca en tu catálogo… (nombre o SKU)". En escritorio, la tecla `/` te lleva a ese buscador. Presiona **Enter** para agregar el resultado y sigue escribiendo para agregar varios seguidos.
+2. **Agrega varias unidades de una vez** escribiendo la cantidad junto a la búsqueda: "40 tubo", "40x tubo" o "tubo x40" agregan 40 piezas del producto, y la lista de resultados lo indica con ×40. Si lo que escribes ya es el nombre de un producto con un número (por ejemplo "Foco 100 W"), el número se toma como parte del nombre.
+3. **Inserta un kit** con **+ Insertar kit**: elige el kit, escribe cuántas veces insertarlo y pulsa **Agregar**. Cord añade todas sus partes multiplicando las cantidades; si el kit tiene precio de combo, lo reparte entre sus líneas y te dice cuánto ahorra el cliente.
+4. **Agrega una línea libre** con **+ Línea libre** para algo que no está en tu catálogo: escribes la descripción, la cantidad y el precio.
+5. **Ajusta cada línea:** cantidad, **Precio** y, si tu catálogo tiene más de una tasa, el impuesto de la línea.
 </Steps>
 
-Las partidas no llevan notas propias. Para aclaraciones al cliente usa **Notas para el
-cliente** (ver [Opciones avanzadas](/docs/cotizacion/opciones)).
+Las partidas no llevan notas propias. Para aclaraciones al cliente usa **Nota para el
+cliente**, al final del editor.
+
+## Edita, reordena y quita líneas
+
+- **Cantidades y precios con decimales:** la cantidad acepta decimales (1.5 o 0,125 kg) y el precio acepta coma o punto decimal. Con los dos separadores, el último es el decimal (1.234,50 o 1,234.50).
+- **Impuesto sugerido:** si le asignaste una tasa de impuesto al producto y esa tasa sigue en tu catálogo de impuestos, la línea entra con ella; si no, con tu tasa predeterminada. Puedes cambiarla en la línea.
+- **Duplicar:** el botón **Duplicar línea** de cada fila crea una copia justo debajo.
+- **Quitar con deshacer:** al quitar una línea aparece una barra "Quitaste "…"." con el botón **Deshacer** durante unos segundos.
+- **Reordenar:** en escritorio, arrastra la fila por su agarre a la izquierda. Con teclado, desde cualquier campo de la línea, usa **Alt + flecha arriba** o **Alt + flecha abajo**. En el celular no hay arrastre.
+- **Líneas incompletas:** al guardar o enviar, Cord marca en rojo la línea que no tiene descripción, la que tiene cantidad 0 o la que no tiene precio (por ejemplo, "Ponle precio a esta línea (puede ser 0)."). Una línea no se guarda en cero sin que lo decidas.
+- **Pantallas angostas:** en una ventana estrecha la fila se reacomoda: el precio de lista baja bajo el nombre o, más angosto aún, los campos se apilan con su etiqueta (Cant., Precio). No se oculta ningún importe.
 
 ## Cómo se forma el descuento
 
-1. **Nivel del cliente (automático):** si el cliente tiene un descuento en su nivel de precio, Cord baja el negociado de los productos de catálogo en ese porcentaje y muestra "Nivel del cliente: −10% aplicado automáticamente a los precios de lista".
-2. **Lista de precios B2B de Shopify (automático):** si conectaste [Shopify](/docs/automatizacion/integraciones/shopify) y el cliente compra por una empresa con lista de precios B2B, esa lista manda sobre el descuento por nivel, producto por producto, y solo cuando la cotización está en la divisa de la lista. Si ya cambiaste el negociado a mano, Cord no lo sobrescribe.
+1. **Nivel del cliente (automático):** si el cliente tiene un descuento en su nivel de precio, Cord baja el precio de los productos de catálogo en ese porcentaje y muestra "Nivel del cliente: −10% aplicado a los precios de lista de tu catálogo."
+2. **Lista de precios B2B de Shopify (automático):** si conectaste [Shopify](/docs/automatizacion/integraciones/shopify) y el cliente compra por una empresa con lista de precios B2B, esa lista manda sobre el descuento por nivel, producto por producto, y solo cuando la cotización está en la divisa de la lista. Si ya cambiaste el precio a mano, Cord no lo sobrescribe.
 3. **Precio por volumen (automático):** si la cantidad alcanza un escalón, el precio de lista de la línea pasa al del escalón.
-4. **Negociado manual:** puedes bajar el negociado de cualquier línea.
+4. **Precio manual:** puedes bajar el precio de cualquier línea.
 
-En **Revisa y envía**, **Le descontaste** suma la diferencia entre lista y negociado de
-toda la cotización. Cord no tiene un descuento global sobre el subtotal.
+En el resumen **Revisa y envía**, **Le descontaste** suma la diferencia entre lista y
+precio de toda la cotización. Cord no tiene un descuento global sobre el subtotal.
 
 <Callout type="warning">
 Los descuentos siempre se calculan **antes** de impuestos. El editor y el servidor usan
@@ -78,13 +94,15 @@ Agrupa el historial en bandas de descuento de 5 en 5 puntos y elige la banda má
 que cierra al menos 60% de las veces; si ninguna llega, elige la de mejor cierre.
 
 - Cord busca primero en el historial de **ese producto**, luego en el de **ese cliente** y al final en el de **toda tu organización**, y usa el primero que tenga al menos 3 líneas decididas.
-- La sugerencia aparece bajo el nombre como "Sugerido: … (68% cierra)". Haz clic para aplicarla al negociado.
-- Si el negociado ya coincide con la sugerencia, o no hay historial suficiente, no aparece nada.
+- La sugerencia aparece bajo el nombre como "Sugerido: … (68% cierra)". Haz clic para aplicarla al precio de la línea.
+- Si el precio ya coincide con la sugerencia, o no hay historial suficiente, no aparece nada.
 
 ## Margen
 
-La columna **Margen** muestra tu ganancia sobre el precio negociado, ya descontado el
-costo: (negociado − costo) ÷ negociado. Las líneas sin costo muestran un guion. Si
+La columna **Margen** muestra tu ganancia sobre el precio, ya descontado el costo:
+(precio − costo) ÷ precio. Las líneas sin costo muestran un guion. El costo de cada
+línea se conserva al reabrir un borrador o al armar una versión nueva, así que el margen
+no se pierde. Si
 tu organización tiene un margen mínimo en [aprobaciones
 internas](/docs/cotizacion/aprobaciones-internas), el margen de las líneas por debajo
 se pinta en rojo.
@@ -99,10 +117,10 @@ o "Agotado". Es un aviso: Cord no bloquea la cotización.
 
 ## Cálculo en tiempo real
 
-El panel **Revisa y envía** se actualiza al instante:
+El resumen **Revisa y envía** se actualiza al instante:
 
 - **Subtotal:** suma de las partidas sin impuestos.
-- **Le descontaste:** diferencia total entre lista y negociado (solo si hay descuento).
+- **Le descontaste:** diferencia total entre lista y precio (solo si hay descuento).
 - **Impuestos:** un renglón por tasa, con el nombre de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos).
 - **Retenciones:** si tu catálogo las tiene, se restan.
 - **Total:** lo que pagará el cliente.
@@ -117,13 +135,17 @@ El panel **Revisa y envía** se actualiza al instante:
 
 ## Problemas comunes
 
-**No aparece "Sugerido".** Tu plan es Gratis, el producto no tiene historial suficiente, o el negociado ya es el sugerido.
+**No aparece "Sugerido".** Tu plan es Gratis, el producto no tiene historial suficiente, o el precio ya es el sugerido.
 
 **El margen sale con guion.** El producto no tiene costo capturado, o es una línea libre.
 
 **No veo la columna de impuesto por línea.** Tu catálogo tiene una sola tasa; todas las líneas usan esa.
 
-**La lista de Shopify no se aplicó.** La cotización está en otra divisa que la de la lista, o ya editaste el negociado de esa línea.
+**La lista de Shopify no se aplicó.** La cotización está en otra divisa que la de la lista, o ya editaste el precio de esa línea.
+
+**Quité una línea por error.** Pulsa **Deshacer** en la barra que aparece abajo antes de que se cierre. Si ya se cerró, vuelve a agregarla desde el buscador.
+
+**No puedo arrastrar las líneas en el celular.** El arrastre es de escritorio; en el celular las líneas quedan en el orden en que las agregas.
 
 ## Relacionadas
 
