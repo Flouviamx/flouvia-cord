@@ -37,7 +37,11 @@ const hasAccess = !perm || memberCan(ME!, perm);
 import { iconInner } from '../../lib/icons';
 ---
 
-<AppLayout title={title} page="ajustes" heading="Ajustes">
+{/* El título visible es "Ajustes"/"Settings" (antes fijo en español) y el
+    fijado se nombra como en ⌘K: "Ajustes · Impuestos". Sin esto, toda pestaña
+    fijada salía como "Ajustes" y no se distinguía de las demás. */}
+<AppLayout title={title} page="ajustes" heading={t(L, 'topbar.ajustes')}
+           pinLabel={`${t(L, 'topbar.ajustes')} · ${activeTab?.label ?? category.label}`}>
     <div class="set2">
         {/* La miga incluye la PESTAÑA actual, no sólo "Configuración". El <h2>
             de abajo muestra la CATEGORÍA, así que estando en Impuestos la

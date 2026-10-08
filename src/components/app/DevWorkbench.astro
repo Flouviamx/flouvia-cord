@@ -946,6 +946,8 @@ import { iconInner } from '../../lib/icons';
             const cmdk = document.getElementById('cmdk') as HTMLElement | null;
             if (cmdk && !cmdk.hidden) return;                          // Cmd+K abierto
             if (e.key.toLowerCase() !== 'w') return;
+            // `G` y luego `W` es "ir a Workflows" (AppLayout), no abrir el Workbench.
+            if (e.defaultPrevented || (window as any).__cordGChord) return;
             e.preventDefault();
             if (e.shiftKey) toggleMax();                               // ⇧W → pantalla completa
             else isOpen ? closeDock() : openDock();                    // W  → abrir/cerrar

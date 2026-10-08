@@ -16,6 +16,6 @@ Una propuesta ganadora se compone de cuatro grandes bloques:
 3. **Términos Legales y Crédito:** Aquí defines las reglas del juego. Por ejemplo: "Esta propuesta es válida por 15 días. El pago debe realizarse a 30 días naturales (Net 30) tras la aceptación".
 4. **Bloque de Cierre (Firma/Pago):** Es el Call To Action (CTA). Dependiendo de tu configuración, el cliente verá un botón para firmar electrónicamente o un módulo para introducir su tarjeta y pagar el anticipo de inmediato.
 
-**Personalización:** Puedes cambiar los colores de acento y el logotipo desde **Ajustes > Branding**, y el mensaje de bienvenida del link público desde **Ajustes > Portal del cliente**, para que coincidan con tu manual de marca.
+**Personalización:** Puedes cambiar los colores de acento y el logotipo desde **Ajustes > Marca y apariencia > Identidad**, y el mensaje de bienvenida del link público desde **Ajustes > Portal del cliente**, para que coincidan con tu manual de marca.
 
 Para armar una cotización paso a paso en el editor, ver [Crear una cotización o una factura paso a paso](/soporte/crear-cotizacion-o-factura).

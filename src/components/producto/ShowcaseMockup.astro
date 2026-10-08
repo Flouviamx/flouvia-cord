@@ -21,35 +21,53 @@ const WA_PATH = 'M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74
 const SNAP = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>';
 const HOY = tx('Al día de hoy · 24 de septiembre de 2026', 'As of today · September 24, 2026');
 const chk = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-const ICON: Record<string, string> = {
-  dashboard: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
-  cotizaciones: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>',
-  clientes: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>',
-  productos: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>',
-  facturas: '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7" stroke-opacity="0.5"/><path d="M9 13h6" stroke-opacity="0.55"/><path d="M9 17h4" stroke-opacity="0.55"/>',
-  cobros: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-  cobranza: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>',
-  informes: '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 16l3-3 2.5 2.5L17 10"/><path d="M15 10h2v2" stroke-opacity="0.55"/><path d="M7 7h5" stroke-opacity="0.45"/>',
-  desempeno: '<circle cx="9" cy="8" r="3.4" fill="currentColor" fill-opacity="0.15"/><path d="M2.8 20.2a6.2 6.2 0 0 1 12.4 0" stroke-opacity="0.8"/><circle cx="17.2" cy="9.4" r="2.4" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.75"/><path d="M16 14.1a5 5 0 0 1 5.2 4.8" stroke-opacity="0.55"/>',
-  workflows: '<rect x="8.25" y="2.5" width="7.5" height="6" rx="2.2" fill="currentColor" fill-opacity="0.15"/><path d="M12 8.5v3.2M5.4 15.5v-1.6a2.2 2.2 0 0 1 2.2-2.2h8.8a2.2 2.2 0 0 1 2.2 2.2v1.6" stroke-opacity="0.7"/><rect x="2.5" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/><rect x="15.7" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/>',
-};
 const WI = (k: string) => (WORKFLOW_ICONS[k] ?? WORKFLOW_ICONS.action).replace('<svg ', '<svg width="15" height="15" ');
-const GEAR = '<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>';
-const NAV = [
-  { k: 'dashboard', l: tx('Inicio', 'Home') },
-  { k: 'cotizaciones', l: tx('Cotizaciones', 'Quotes'), b: '3' },
-  { k: 'clientes', l: tx('Clientes', 'Clients') },
-  { k: 'productos', l: tx('Productos', 'Products') },
-  { g: tx('Mi dinero', 'My money') },
-  { k: 'facturas', l: tx('Facturas', 'Invoices') },
-  { k: 'cobros', l: tx('Cobros', 'Payments') },
-  { k: 'cobranza', l: tx('Cobranza', 'Collections') },
-  { g: tx('Inteligencia', 'Intelligence') },
-  { k: 'informes', l: tx('Informes', 'Reports') },
-  { k: 'desempeno', l: tx('Equipo', 'Team') },
-  { k: 'workflows', l: 'Workflows' },
+// ── Sidebar de /app — calca de src/components/app/Sidebar.astro + src/lib/sidebar-nav.ts (oct 2026).
+// Mismo orden, nombres, iconos del registro y contadores. Se arma como HTML (una sola
+// fuente para las ~28 pantallas) y su CSS vive bajo `.shwm-as-side :global(...)`.
+// Contadores consistentes con las escenas: 3 vistas sin responder, 2 tareas, 5 vencidas.
+// Materiales del Valle está en Pro: sin medidor de cotizaciones y con "Invitar al equipo".
+type SbItem = { id: string; l: string; ic: IconName; b?: [string, '' | 'danger']; kids?: SbItem[] };
+const SB_NAV: { g: string | null; items: SbItem[] }[] = [
+  { g: null, items: [
+    { id: 'dashboard', l: tx('Inicio', 'Home'), ic: 'overview' },
+    { id: 'cotizaciones', l: tx('Cotizaciones', 'Quotes'), ic: 'quote', b: ['3', ''] },
+    { id: 'clientes', l: tx('Clientes', 'Clients'), ic: 'clients' },
+    { id: 'productos', l: tx('Productos', 'Products'), ic: 'products' },
+    { id: 'tareas', l: tx('Tareas', 'Tasks'), ic: 'checklist', b: ['2', ''] },
+  ] },
+  { g: tx('Ingresos', 'Revenue'), items: [
+    { id: 'facturas', l: tx('Facturas', 'Invoices'), ic: 'invoice' },
+    { id: 'cobros', l: tx('Cobros', 'Payments'), ic: 'coin' },
+    { id: 'cobranza', l: tx('Cobranza', 'Collections'), ic: 'tray', b: ['5', 'danger'], kids: [{ id: 'ai-ar', l: tx('Agente IA', 'AI agent'), ic: 'cpu' }] },
+  ] },
+  { g: tx('Análisis', 'Insights'), items: [
+    { id: 'informes', l: tx('Informes', 'Reports'), ic: 'chart' },
+    { id: 'desempeno', l: tx('Desempeño', 'Performance'), ic: 'pulse' },
+  ] },
+  { g: tx('Automatización', 'Automation'), items: [
+    { id: 'workflows', l: 'Workflows', ic: 'workflow' },
+  ] },
 ];
-import { iconInner } from '../../lib/icons';
+const sbIco = (n: IconName, cls = 'shwm-sb-ico') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconInner(n)}</svg>`;
+// Botón de colapsar: el mismo dibujo del icono animado de Sidebar.astro (no pasa por el registro, igual que allá).
+const SB_TGL = '<svg class="shwm-sb-tgl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="pane" x="3.5" y="4.5" width="6" height="15" rx="3.2" fill="currentColor" fill-opacity="0.14" stroke="none"/><rect x="3.5" y="4.5" width="17" height="15" rx="3.2"/><path class="div" d="M9.5 4.5v15"/></svg>';
+/** Sidebar completa. `page` = id activo (vacío en pantallas de Ajustes: Ajustes vive en la topbar). */
+const side = (page = '') => {
+  const inSec = (it: SbItem) => page === it.id || !!it.kids?.some((k) => k.id === page);
+  const row = (it: SbItem, sub = false) => {
+    const cls = ['shwm-sb-i', page === it.id ? 'on' : '', !sub && inSec(it) && page !== it.id ? 'sec' : ''].filter(Boolean).join(' ');
+    const badge = it.b ? `<span class="shwm-sb-n${it.b[1] ? ' ' + it.b[1] : ''}">${it.b[0]}</span>` : '';
+    return `<span class="${cls}">${sbIco(it.ic)}<span class="shwm-sb-l">${it.l}</span>${badge}</span>`;
+  };
+  const groups = SB_NAV.map((g) => `<div class="shwm-sb-g">${g.g ? `<span class="shwm-sb-h">${g.g}</span>` : ''}${g.items.map((it) => row(it) + (it.kids && inSec(it) ? `<div class="shwm-sb-sub">${it.kids.map((k) => row(k, true)).join('')}</div>` : '')).join('')}</div>`).join('');
+  return `<div class="shwm-sb">`
+    + `<div class="shwm-sb-acc"><span class="shwm-sb-org"><span class="av">M</span><span class="tx"><span class="eb">${tx('Espacio de trabajo', 'Workspace')}</span><span class="nm">Materiales del Valle</span></span>${sbIco('chevron-down', 'chev')}</span></div>`
+    + `<div class="shwm-sb-nav">${groups}</div>`
+    + `<div class="shwm-sb-foot"><span class="shwm-sb-inv">${sbIco('user-plus', 'ic')}<span>${tx('Invitar al equipo', 'Invite people')}</span></span><span class="shwm-sb-tg">${SB_TGL}</span></div>`
+    + `</div>`;
+};
+import { iconInner, type IconName } from '../../lib/icons';
 ---
 <div class={`shwm-wrap shwm-${slug}-${index}${CALCA ? ' shwm-x' : ''}`} data-loc={CALCA ? LOC : undefined}>
 
@@ -124,12 +142,7 @@ import { iconInner } from '../../lib/icons';
           <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
-            <nav class="shwm-as-nav">
-              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
-            </nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head">
               <span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
@@ -386,10 +399,7 @@ import { iconInner } from '../../lib/icons';
           <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0148</strong></span><span class="shwm-sts viewed">{tx('Vista', 'Viewed')}</span></div>
             <div class="shwm-stp2">
@@ -440,12 +450,7 @@ import { iconInner } from '../../lib/icons';
           <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
-            <nav class="shwm-as-nav">
-              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
-            </nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('dashboard')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
             <div class="shwm-card shwm-hero2">
@@ -566,10 +571,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-cc0-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=clientes</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('informes')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
             <div class="shwm-wgs">
@@ -626,10 +628,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=clientes</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('informes')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Clientes', 'Clients')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-pick">{tx('Clientes', 'Clients')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg></span><span class="shwm-snap"><Fragment set:html={SNAP} />{tx('Últimos 30 días', 'Last 30 days')}</span></span></div>
             <div class="shwm-wg shwm-cc1-mx">
@@ -670,10 +669,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-cc2-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/clientes/distribuidora-el-zarco</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'clientes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('clientes')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Clientes', 'Clients')} <span class="sep">/</span></span><strong>Distribuidora El Zarco</strong></span><span class="shwm-ph-r"><span class="shwm-btn">{tx('Editar', 'Edit')}</span><span class="shwm-btn pri">{tx('Nueva cotización', 'New quote')}</span></span></div>
             <div class="shwm-dtg shwm-cc2-g">
@@ -738,14 +734,9 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
-            <nav class="shwm-as-nav">
-              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
-            </nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cobranza')}></aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Cobranza', 'Collections')}</strong><span class="shwm-ptabs"><span class="on">{tx('Cobranza', 'Collections')}</span><span>{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></div>
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Cobranza', 'Collections')}</strong><span class="shwm-ptabs"><span class="on">{tx('Cobranza', 'Collections')}</span><span>{tx('Agente IA', 'AI agent')}</span></span></span><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></div>
             <div class="shwm-kts">
               <div class="shwm-kt"><span class="lb">{tx('VENCIDO', 'OVERDUE')}</span><span class="editorial v danger" data-n="1047819">{cm(1047819, 'MXN', 0)}</span><span class="s">{tx('5 cuenta(s) · toca para filtrar', '5 account(s) · tap to filter')}</span></div>
               <div class="shwm-kt"><span class="lb">{tx('VENCE ESTA SEMANA', 'DUE THIS WEEK')}</span><span class="editorial v" data-n="154160">{cm(154160, 'MXN', 0)}</span><span class="s">{tx('2 cuenta(s) en los próximos 7 días', '2 account(s) in the next 7 days')}</span></div>
@@ -795,12 +786,9 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza/agente</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('ai-ar')}></aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev"><i></i>{tx('Requiere aprobación', 'Needs approval')}</span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente IA', 'AI agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev"><i></i>{tx('Requiere aprobación', 'Needs approval')}</span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
             <div class="shwm-kts k3">
               <div class="shwm-kt is-hot"><span class="lb">{tx('Recuperado por el agente', 'Recovered by the agent')}</span><span class="editorial v ok" data-rec>{cm(606018, 'MXN', 0)}</span><span class="s">{tx('Últimos 30 días · 3 cuenta(s) cobradas tras su correo', 'Last 30 days · 3 account(s) paid after its email')}</span></div>
               <div class="shwm-kt"><span class="lb">{tx('Esperan tu aprobación', 'Awaiting your approval')}</span><span class="editorial v warn">2</span><span class="s">{tx('Revisa antes de que salgan', 'Review them before they go out')}</span></div>
@@ -843,12 +831,9 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobranza/agente</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cobranza' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('ai-ar')}></aside>
           <div class="shwm-as-main shwm-canvas">
-            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente de IA', 'AI Agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev" data-mode data-auto={tx('Automático', 'Automatic')}><i></i><span data-mode-t>{tx('Requiere aprobación', 'Needs approval')}</span></span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
+            <div class="shwm-ph"><span class="shwm-ph-t"><strong>{tx('Agente de cobranza', 'Collections agent')}</strong><span class="shwm-ptabs"><span>{tx('Cobranza', 'Collections')}</span><span class="on">{tx('Agente IA', 'AI agent')}</span></span></span><span class="shwm-ph-r"><span class="shwm-mode rev" data-mode data-auto={tx('Automático', 'Automatic')}><i></i><span data-mode-t>{tx('Requiere aprobación', 'Needs approval')}</span></span><span class="shwm-btn">{tx('Correr ahora', 'Run now')}</span><span class="shwm-btn">{tx('Configurar', 'Configure')}</span></span></div>
             <div class="shwm-nudge" data-nudge>
               <span>{tx('Llevas 8 correos aprobados sin cambiarles una palabra. ¿Dejas que salgan solos?', "You've approved 8 emails without changing a word. Let them go out on their own?")}</span>
               <span class="b"><span class="y" data-yes>{tx('Pasar a automático', 'Switch to automatic')}</span><span class="n">{tx('Ahora no', 'Not now')}</span></span>
@@ -882,12 +867,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/nueva</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
-            <nav class="shwm-as-nav">
-              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
-            </nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
             <div class="shwm-edg shwm-edg-wide shwm-fx0-edg">
@@ -1009,10 +989,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fa0-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/facturas/recurrentes</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'facturas' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('facturas')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Facturas', 'Invoices')} <span class="sep">/</span></span><strong>{tx('Facturas recurrentes', 'Recurring invoices')}</strong></span><span class="shwm-rc-back">{tx('Facturas', 'Invoices')} →</span></div>
             <p class="shwm-rc-intro">{tx('Cord emite y envía estas facturas por ti en la fecha que definiste. Cada emisión congela sus propios importes e impuestos.', 'Cord issues and sends these invoices for you on the date you set. Each run freezes its own amounts and taxes.')}</p>
@@ -1056,10 +1033,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fa1-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/facturas/0b7e4f1c-5d2a-4e8b-9c31-6a1f2d8e4b70</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'facturas' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('facturas')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Facturas', 'Invoices')} <span class="sep">/</span></span><strong>A-001052</strong></span><span class="shwm-sts paid" data-pill data-was={tx('Abierta', 'Open')}>{tx('Saldada', 'Settled')}</span></div>
             <div class="shwm-stp2">
@@ -1129,10 +1103,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fa2-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/COT-0154</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0154</strong></span><span class="shwm-sts inv" data-pill data-was={tx('Aprobada', 'Approved')}>{tx('Facturada', 'Invoiced')}</span></div>
             <div class="shwm-stp2">
@@ -1195,10 +1166,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-pg0-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/ajustes/cobros</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class="shwm-as-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Ajustes', 'Settings')} <span class="sep">/</span></span><strong>{tx('Cobros', 'Payments')}</strong></span><span class="shwm-mono">acct_1QfT8m2eZvKYlo2C</span></div>
             <div class="shwm-co">
@@ -1269,10 +1237,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-pg1-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cobros/disputas/du_1QfW2x2eZvKYlo2C</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cobros' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cobros')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><strong>{tx('Contracargo', 'Chargeback')}</strong></span></div>
             <div class="shwm-dp">
@@ -1323,10 +1288,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/cotizaciones/COT-0157</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0157</strong></span><span class="shwm-sts paid" data-pill data-was={tx('Aprobada', 'Approved')}>{tx('Pagada', 'Paid')}</span></div>
             <div class="shwm-stp2" data-steps>
@@ -1406,10 +1368,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-wf1-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/workflows/8d41c2e0</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'workflows' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('workflows')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-wfb"><span class="x"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" set:html={iconInner('x')}></svg></span><strong>{tx('Arrancar cuando llega el anticipo', 'Kick off when the deposit arrives')}</strong><span class="bd">{tx('Activo', 'Active')}</span><span class="sp"></span><span class="b">{tx('Probar', 'Test')}</span><span class="b">{tx('Guardar borrador', 'Save draft')}</span><span class="b pri">{tx('Publicar', 'Publish')}</span></div>
             <div class="shwm-wft"><span>Editor</span><span class="on">{tx('Ejecuciones', 'Runs')}</span></div>
@@ -1455,10 +1414,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-wf2-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/workflows</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'workflows' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('workflows')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><strong>Cord Workflows</strong></span><span class="shwm-wnew">{tx('Nuevo workflow', 'New workflow')}</span></div>
             <div class="shwm-wtop"><p>{tx('Automatiza lo que pasa después de cada venta: cuando ocurre algo en Cord, el workflow da el siguiente paso por ti.', 'Automate what happens after every sale: when something happens in Cord, the workflow takes the next step for you.')}</p><span class="cupo">{tx('4 de 5 workflows activos en tu plan', '4 of 5 active workflows on your plan')}</span></div>
@@ -1503,10 +1459,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fn-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=cobranza</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('informes')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Cobranza y cartera', 'Collections and receivables')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></span></div>
             <div class="shwm-kts">
@@ -1554,12 +1507,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fn-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevrons-updown')}></svg></div>
-            <nav class="shwm-as-nav">
-              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
-            </nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('dashboard')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
             <div class="shwm-wg shwm-hlth">
@@ -1609,10 +1557,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-fn-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/informes?r=flujo</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'informes' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('informes')}></aside>
           <div class="shwm-as-main shwm-canvas">
             <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Flujo de caja · 90 días', 'Cash flow · 90 days')}</strong><small>{tx('Una sola casa para entender el desempeño y decidir qué mover.', 'One place to understand performance and decide what to move.')}</small></span><span class="shwm-ph-r"><span class="shwm-snap"><Fragment set:html={SNAP} />{HOY}</span></span></div>
             <div class="shwm-kts">
@@ -1668,10 +1613,7 @@ import { iconInner } from '../../lib/icons';
           <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
             <div class="shwm-edg shwm-edg-wide">
@@ -1755,10 +1697,7 @@ import { iconInner } from '../../lib/icons';
           <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('upload')}></svg></span>
         </div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('cotizaciones')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0294</strong></span><span class="shwm-sts sent">{tx('Enviada', 'Sent')}</span></div>
             <div class="shwm-stp2">
@@ -1801,10 +1740,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-eq0-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/ajustes/equipo</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class="shwm-as-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}<span class="shwm-as-i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={GEAR}></svg></span></nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-set">
               <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Equipo y Roles', 'Team & roles')}</b></span>
@@ -1851,10 +1787,7 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-eq1-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/ajustes/seguridad</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class="shwm-as-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}<span class="shwm-as-i on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={GEAR}></svg></span></nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('')}></aside>
           <div class="shwm-as-main">
             <div class="shwm-set">
               <span class="cb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-left')}></svg>{tx('Configuración', 'Settings')}<span class="sep">/</span><b>{tx('Seguridad', 'Security')}</b></span>
@@ -1907,12 +1840,9 @@ import { iconInner } from '../../lib/icons';
       <div class="shwm-brw shwm-eq2-brw">
         <div class="shwm-brw-top"><span class="nav" set:html={BRW_NAV}></span><span class="url"><Fragment set:html={BRW_LOCK} />cordhq.app/app/desempeno</span><span class="act" set:html={BRW_SHARE}></span></div>
         <div class="shwm-as is-col">
-          <aside class="shwm-as-side">
-            <div class="shwm-as-org"><span class="av">M</span></div>
-            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'desempeno' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
-          </aside>
+          <aside class="shwm-as-side" set:html={side('desempeno')}></aside>
           <div class="shwm-as-main">
-            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Desempeño', 'Performance')}</strong></span><span class="shwm-ptabs"><span>{tx('Informes', 'Reports')}</span><span class="on">{tx('Equipo', 'Team')}</span></span></div>
+            <div class="shwm-ph"><span class="shwm-ph-l"><strong>{tx('Desempeño', 'Performance')}</strong></span><span class="shwm-ptabs"><span>{tx('Informes', 'Reports')}</span><span class="on">{tx('Desempeño', 'Performance')}</span></span></div>
             <div class="shwm-dk">
               <span><em>{tx('CERRADO POR EL EQUIPO', 'CLOSED BY THE TEAM')}</em><b class="editorial ok" data-kc>{cm(2280760, 'MXN', 0)}</b><small>{tx('aprobadas, pagadas y facturadas', 'approved, paid and invoiced')}</small></span>
               <span><em>{tx('TASA DE CIERRE PROMEDIO', 'AVERAGE CLOSE RATE')}</em><b class="editorial">35<i>%</i></b><small>{tx('de lo enviado por vendedor', 'of what each rep sent')}</small></span>
@@ -2392,24 +2322,75 @@ import { iconInner } from '../../lib/icons';
   .shwm-brw-top .url svg { width: 11px; height: 11px; color: #6b7280; flex-shrink: 0; }
 
   /* shell de la app */
-  .shwm-as { display: grid; grid-template-columns: 196px minmax(0,1fr); height: calc(100% - 40px); }
-  .shwm-as.is-col { grid-template-columns: 58px minmax(0,1fr); }
-  .shwm-as-side { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; background: #fbfbfc; border-right: 1px solid rgba(10,25,47,0.07); min-width: 0; }
-  .shwm-as-org { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; margin-bottom: 4px; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.7rem; color: #0f1729; min-width: 0; }
-  .shwm-as-org .av { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
-  .shwm-as-org strong { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
-  .shwm-as-org svg { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
-  .shwm-as-nav { display: flex; flex-direction: column; gap: 1px; }
-  .shwm-as-g { font-size: 0.62rem; font-weight: 600; color: #99a2af; padding: 10px 8px 4px; }
-  .shwm-as-i { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; color: #5b6472; white-space: nowrap; }
-  .shwm-as-i svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.62; }
-  .shwm-as-i.on { background: rgba(10,25,47,0.07); color: #0a192f; font-weight: 600; }
-  .shwm-as-i.on svg { opacity: 1; }
-  .shwm-as-i em { margin-left: auto; font-size: 0.56rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.07); border-radius: 100px; padding: 1px 6px; }
-  .shwm-as.is-col .shwm-as-side { align-items: center; padding: 12px 6px; }
-  .shwm-as.is-col .shwm-as-org { border: 0; padding: 4px 0 8px; }
-  .shwm-as.is-col .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; }
-  .shwm-as.is-col .shwm-as-i svg { width: 16px; height: 16px; }
+  .shwm-as { display: grid; grid-template-columns: 205px minmax(0,1fr); height: calc(100% - 40px); background: #fafbfc; }
+  .shwm-as.is-col { grid-template-columns: 61px minmax(0,1fr); }
+  /* Sidebar — calca de Sidebar.astro a la escala del mockup (~0.82): pill flotante
+     (mismo material que la app: blanco, radio 22 → 16, sombra --sb-shadow), filas de
+     30 → 25 px, texto 0.84 → 0.7rem/500, iconos 16 → 13 px, encabezados 0.72 → 0.6rem/500
+     sin mayúsculas, activo tintado, contadores tintados, sub-página con guía y pie sin
+     logo. El rail (68 px) lo decide el ANCHO de la columna vía container query, así
+     `.is-col` y el breakpoint de 960 px comparten las mismas reglas.
+     El markup llega por set:html (una sola fuente), por eso :global bajo el aside. */
+  .shwm-as-side { display: flex; min-width: 0; min-height: 0; padding: 9px 0 9px 9px; container-type: inline-size; }
+  .shwm-as-side :global(.shwm-sb) { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 11px 7px 8px; border-radius: 16px; background: #ffffff; color: #5b6472; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(10,25,47,0.045), 0 8px 32px -8px rgba(0,0,0,0.07), 0 4px 12px -2px rgba(0,0,0,0.035), inset 0 1px 1px rgba(255,255,255,0.9); }
+  .shwm-as-side :global(.shwm-sb-acc) { position: relative; padding-bottom: 6px; margin-bottom: 6px; }
+  .shwm-as-side :global(.shwm-sb-acc::after) { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(to right, transparent, rgba(10,25,47,0.08) 25%, rgba(10,25,47,0.08) 75%, transparent); }
+  .shwm-as-side :global(.shwm-sb-org) { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 10px; min-width: 0; }
+  .shwm-as-side :global(.shwm-sb-org .av) { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: #ffffff; background: linear-gradient(135deg, #1b3a64, #0a192f); box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 3px 8px -3px rgba(10,25,47,0.4); }
+  .shwm-as-side :global(.shwm-sb-org .tx) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .shwm-as-side :global(.shwm-sb-org .eb) { font-size: 0.48rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #99a2af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-as-side :global(.shwm-sb-org .nm) { font-size: 0.7rem; font-weight: 600; line-height: 1.2; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-as-side :global(.shwm-sb-org .chev) { width: 12px; height: 12px; flex-shrink: 0; color: #99a2af; }
+  .shwm-as-side :global(.shwm-sb-nav) { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .shwm-as-side :global(.shwm-sb-g) { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-as-side :global(.shwm-sb-g + .shwm-sb-g) { margin-top: 9px; }
+  .shwm-as-side :global(.shwm-sb-h) { padding: 3px 8px; margin-bottom: 1px; font-size: 0.6rem; font-weight: 500; letter-spacing: 0; color: #99a2af; white-space: nowrap; }
+  .shwm-as-side :global(.shwm-sb-i) { position: relative; display: flex; align-items: center; gap: 8px; height: 25px; padding: 0 7px 0 8px; border-radius: 7px; font-size: 0.7rem; font-weight: 500; letter-spacing: -0.005em; color: #5b6472; white-space: nowrap; }
+  .shwm-as-side :global(.shwm-sb-ico) { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.62; }
+  .shwm-as-side :global(.shwm-sb-l) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-as-side :global(.shwm-sb-i.sec) { color: #0f1729; }
+  .shwm-as-side :global(.shwm-sb-i.on) { background: rgba(10,25,47,0.075); color: #0a192f; }
+  .shwm-as-side :global(.shwm-sb-i.on .shwm-sb-ico), .shwm-as-side :global(.shwm-sb-i.sec .shwm-sb-ico) { opacity: 1; }
+  .shwm-as-side :global(.shwm-sb-sub) { position: relative; display: flex; flex-direction: column; gap: 1px; padding-left: 19px; }
+  .shwm-as-side :global(.shwm-sb-sub::before) { content: ''; position: absolute; left: 14px; top: 3px; bottom: 3px; width: 1px; background: rgba(10,25,47,0.08); }
+  .shwm-as-side :global(.shwm-sb-sub .shwm-sb-i) { padding-left: 10px; }
+  .shwm-as-side :global(.shwm-sb-sub .shwm-sb-ico) { display: none; }
+  .shwm-as-side :global(.shwm-sb-n) { flex-shrink: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 600; font-variant-numeric: tabular-nums; color: #5b6472; background: rgba(10,25,47,0.07); }
+  .shwm-as-side :global(.shwm-sb-n.danger) { color: #c2410c; background: rgba(234,88,12,0.1); }
+  .shwm-as-side :global(.shwm-sb-foot) { display: flex; align-items: center; gap: 4px; padding-top: 8px; }
+  .shwm-as-side :global(.shwm-sb-inv) { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; height: 23px; padding: 0 7px; border-radius: 7px; font-size: 0.64rem; font-weight: 500; color: #5b6472; white-space: nowrap; }
+  .shwm-as-side :global(.shwm-sb-inv .ic) { width: 12.5px; height: 12.5px; flex-shrink: 0; opacity: 0.62; }
+  .shwm-as-side :global(.shwm-sb-inv span) { overflow: hidden; text-overflow: ellipsis; }
+  .shwm-as-side :global(.shwm-sb-tg) { flex-shrink: 0; margin-left: auto; width: 23px; height: 23px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #5b6472; }
+  .shwm-as-side :global(.shwm-sb-tgl) { width: 15px; height: 15px; }
+  /* Rail colapsado (68 px → ~52 px): iconos centrados, contadores como punto,
+     separadores cortos entre grupos, sub-página con icono, pie apilado. */
+  @container (max-width: 90px) {
+    .shwm-as-side :global(.shwm-sb) { padding: 11px 0 8px; align-items: center; }
+    .shwm-as-side :global(.shwm-sb-acc) { display: flex; justify-content: center; align-self: stretch; padding-bottom: 11px; margin-bottom: 7px; }
+    .shwm-as-side :global(.shwm-sb-acc::after) { left: 50%; right: auto; width: 13px; margin-left: -6.5px; background: rgba(10,25,47,0.08); }
+    .shwm-as-side :global(.shwm-sb-org) { padding: 0; gap: 0; }
+    .shwm-as-side :global(.shwm-sb-org .tx), .shwm-as-side :global(.shwm-sb-org .chev) { display: none; }
+    .shwm-as-side :global(.shwm-sb-nav) { align-self: stretch; align-items: center; }
+    .shwm-as-side :global(.shwm-sb-g) { width: 100%; align-items: center; }
+    .shwm-as-side :global(.shwm-sb-g + .shwm-sb-g) { position: relative; margin-top: 7px; padding-top: 7px; }
+    .shwm-as-side :global(.shwm-sb-g + .shwm-sb-g::before) { content: ''; position: absolute; top: 0; left: 50%; width: 13px; margin-left: -6.5px; height: 1px; background: rgba(10,25,47,0.08); }
+    .shwm-as-side :global(.shwm-sb-h), .shwm-as-side :global(.shwm-sb-l), .shwm-as-side :global(.shwm-sb-inv span) { display: none; }
+    .shwm-as-side :global(.shwm-sb-i) { width: 34px; height: 30px; padding: 0; gap: 0; justify-content: center; border-radius: 8px; }
+    .shwm-as-side :global(.shwm-sb-ico) { width: 15px; height: 15px; }
+    .shwm-as-side :global(.shwm-sb-sub) { padding-left: 0; }
+    .shwm-as-side :global(.shwm-sb-sub::before) { display: none; }
+    .shwm-as-side :global(.shwm-sb-sub .shwm-sb-i) { padding: 0; }
+    .shwm-as-side :global(.shwm-sb-sub .shwm-sb-ico) { display: block; }
+    .shwm-as-side :global(.shwm-sb-n) { position: absolute; top: 5px; right: 6px; min-width: 0; width: 6px; height: 6px; padding: 0; border-radius: 50%; font-size: 0; background: #5b6472; box-shadow: 0 0 0 2px #ffffff; }
+    .shwm-as-side :global(.shwm-sb-n.danger) { background: #ef4444; }
+    .shwm-as-side :global(.shwm-sb-foot) { flex-direction: column; gap: 3px; }
+    .shwm-as-side :global(.shwm-sb-inv) { flex: none; width: 30px; height: 27px; padding: 0; justify-content: center; }
+    .shwm-as-side :global(.shwm-sb-tg) { margin-left: 0; }
+    .shwm-as-side :global(.shwm-sb-tgl .pane) { transform: scaleX(0.5); transform-box: fill-box; transform-origin: left center; }
+    .shwm-as-side :global(.shwm-sb-tgl .div) { transform: translateX(-3px); }
+  }
   .shwm-as-main { position: relative; min-width: 0; padding: 0 22px; overflow: hidden; }
   .shwm-as-main.shwm-canvas { padding: 0 20px 20px; }
   .shwm-as-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0 12px; }
@@ -2871,12 +2852,7 @@ import { iconInner } from '../../lib/icons';
     .shwm-audit2 { width: 500px; }
   }
   @media (max-width: 960px) {
-    .shwm-as { grid-template-columns: 58px minmax(0,1fr); }
-    .shwm-as .shwm-as-side { align-items: center; padding: 12px 6px; }
-    .shwm-as .shwm-as-org { border: 0; padding: 4px 0 8px; }
-    .shwm-as .shwm-as-org strong, .shwm-as .shwm-as-org svg, .shwm-as-g { display: none; }
-    .shwm-as .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; font-size: 0; }
-    .shwm-as .shwm-as-i em { display: none; }
+    .shwm-as { grid-template-columns: 61px minmax(0,1fr); }
     .shwm-dtg { grid-template-columns: minmax(0,1fr) 250px; gap: 18px; }
     .shwm-sheet { width: 42%; left: 2%; }
     .shwm-ed0-win { left: 36%; width: 63%; }
@@ -3273,11 +3249,7 @@ import { iconInner } from '../../lib/icons';
   .shwm-med .shwm-fxc .stp .editorial { font-size: 0.66rem; }
   .shwm-med .shwm-fxc .stp em { white-space: normal; line-height: 1.25; }
   @media (max-width: 1180px) {
-    [data-shx="fx0"] .shwm-as { grid-template-columns: 58px minmax(0,1fr); }
-    [data-shx="fx0"] .shwm-as-side { align-items: center; padding: 12px 6px; }
-    [data-shx="fx0"] .shwm-as-org { border: 0; padding: 4px 0 8px; }
-    [data-shx="fx0"] .shwm-as-org strong, [data-shx="fx0"] .shwm-as-org svg, [data-shx="fx0"] .shwm-as-g, [data-shx="fx0"] .shwm-as-i em { display: none; }
-    [data-shx="fx0"] .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; font-size: 0; }
+    [data-shx="fx0"] .shwm-as { grid-template-columns: 61px minmax(0,1fr); }
     .shwm-fx0-edg { grid-template-columns: minmax(0,1fr) 240px; gap: 18px; }
   }
   @media (max-width: 760px) {

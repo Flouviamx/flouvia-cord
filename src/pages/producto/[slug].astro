@@ -18,6 +18,7 @@ import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
 import { flagSrc } from '../../lib/flags';
 import { WORKFLOW_ICONS } from '../../lib/workflows/icons';
+import { SIDEBAR_NAV } from '../../lib/sidebar-nav';
 import { getLangFromUrl } from '../../i18n/utils';
 
 export function getStaticPaths() {
@@ -209,25 +210,14 @@ const howtoSchema = howto ? {
     })),
 } : null;
 
-// Iconos del hero-calca (mismos trazos que Sidebar.astro y la topbar de AppLayout).
+// Iconos del contenido de las calcas del hero. El marco (rail y topbar) usa el
+// registro (`iconInner`), igual que Sidebar.astro y AppLayout.
 const MKI = {
-    inicio: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
-    cotizaciones: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/>',
-    clientes: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>',
-    productos: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>',
-    facturas: '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7" stroke-opacity="0.5"/><path d="M9 13h6" stroke-opacity="0.55"/><path d="M9 17h4" stroke-opacity="0.55"/>',
-    cobros: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-    cobranza: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>',
-    informes: '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 16l3-3 2.5 2.5L17 10"/><path d="M15 10h2v2" stroke-opacity="0.55"/>',
-    equipo: '<circle cx="9" cy="8" r="3.4" fill="currentColor" fill-opacity="0.15"/><path d="M2.8 20.2a6.2 6.2 0 0 1 12.4 0" stroke-opacity="0.8"/><circle cx="17.2" cy="9.4" r="2.4" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.75"/><path d="M16 14.1a5 5 0 0 1 5.2 4.8" stroke-opacity="0.55"/>',
-    panel: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><rect x="4" y="5" width="7" height="14" rx="2.5" fill="currentColor" fill-opacity="0.3" stroke="none"/>',
+    // Botón de colapsar de Sidebar.astro en su estado de rail (panel angosto, sin chevron en reposo).
+    panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="3.2"/><path d="M6.7 4.5v15a3.2 3.2 0 0 1-3.2-3.2V7.7a3.2 3.2 0 0 1 3.2-3.2z" fill="currentColor" fill-opacity="0.14" stroke="none"/><path d="M6.7 4.5v15"/>',
     search: '<circle cx="11" cy="11" r="7.5" fill="currentColor" fill-opacity="0.1"/><line x1="21" y1="21" x2="16.4" y2="16.4"/>',
     plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     caret: '<polyline points="6 9 12 15 18 9"/>',
-    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.12"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
-    help: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" fill="currentColor" fill-opacity="0.1"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/>',
-    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" fill-opacity="0.12"/>',
-    gear: '<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     lock: '<rect x="4" y="11" width="16" height="10" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     back: '<polyline points="15 18 9 12 15 6"/>',
     fwd: '<polyline points="9 18 15 12 9 6"/>',
@@ -239,10 +229,8 @@ const MKI = {
     clock: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/>',
     chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.12"/>',
     doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/>',
-    burger: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
     cursor: '<path d="M5.5 3.2 19 14.6l-6.1.5 3.5 7.3-2.6 1.2-3.4-7.4-4.9 4.6z"/>',
     cal: '<rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/>',
-    workflows: '<rect x="8.25" y="2.5" width="7.5" height="6" rx="2.2" fill="currentColor" fill-opacity="0.15"/><path d="M12 8.5v3.2M5.4 15.5v-1.6a2.2 2.2 0 0 1 2.2-2.2h8.8a2.2 2.2 0 0 1 2.2 2.2v1.6" stroke-opacity="0.7"/><rect x="2.5" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/><rect x="15.7" y="15.5" width="5.8" height="6" rx="2" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.8"/>',
     x: '<path d="M18 6 6 18M6 6l12 12"/>',
     minus: '<path d="M5 12h14"/>',
     fit: '<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/>',
@@ -258,14 +246,24 @@ const MKI = {
     flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3" fill="currentColor" fill-opacity="0.12"/>',
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
 };
-const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
-    { k: 'inicio' }, { k: 'cotizaciones', on: true }, { k: 'clientes' }, { k: 'productos' },
-    { k: 'facturas', sep: true }, { k: 'cobros' }, { k: 'cobranza' },
-    { k: 'informes', sep: true }, { k: 'equipo' },
-];
-const MK_RAIL_WF: typeof MK_RAIL = [...MK_RAIL.map((it) => ({ ...it, on: false })), { k: 'workflows', on: true }];
+// Rail colapsado de la sidebar real (html.sb-collapsed), DERIVADO de SIDEBAR_NAV:
+// mismo orden, mismos iconos y un separador corto entre grupos. Las sub-páginas
+// (Cobranza › Agente IA) solo aparecen con su sección activa, y los contadores
+// se vuelven punto: gris para lo que espera respuesta, tinte de alerta para lo
+// vencido. Si la sidebar cambia, estas calcas cambian con ella.
+type MkRailRow = { id: string; icon: IconName; sep: boolean; on: boolean; dot: 'muted' | 'danger' | null };
+const mkRail = (active: string | null): MkRailRow[] =>
+    SIDEBAR_NAV.flatMap((g, gi) => g.items.flatMap((it, ii) => {
+        const kids = it.children ?? [];
+        const open = active === it.id || kids.some((c) => c.id === active);
+        const dot = it.badge === 'seguimiento' ? 'muted' : it.badge === 'vencidas' ? 'danger' : null;
+        return [
+            { id: it.id, icon: it.icon, sep: gi > 0 && ii === 0, on: active === it.id, dot },
+            ...(open ? kids.map((c) => ({ id: c.id, icon: c.icon, sep: false, on: active === c.id, dot: null })) : []),
+        ];
+    }));
 const WFI = WORKFLOW_ICONS;
-import { iconInner } from '../../lib/icons';
+import { iconInner, type IconName } from '../../lib/icons';
 ---
 
 <Layout
@@ -335,24 +333,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -506,24 +505,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-tr-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -642,24 +642,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-cc-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('clientes').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.k === 'clientes' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -743,24 +744,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-ci-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('ai-ar').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.k === 'cobranza' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -770,7 +772,7 @@ import { iconInner } from '../../lib/icons';
                                         </div>
                                         <span class="mkc-ci-acts"><span class="mkc-ci-state"><i></i>{isEn ? 'Needs approval' : 'Requiere aprobación'}</span><span class="mkc-btn">{isEn ? 'Run now' : 'Correr ahora'}</span></span>
                                     </div>
-                                    <div class="mkc-tabs"><span>{isEn ? 'Collections' : 'Cobranza'}</span><span class="on">{isEn ? 'AI agent' : 'Agente de IA'}</span></div>
+                                    <div class="mkc-tabs"><span>{isEn ? 'Collections' : 'Cobranza'}</span><span class="on">{isEn ? 'AI agent' : 'Agente IA'}</span></div>
                                     <div class="mkc-pad">
                                         <div class="mkc-kpis mkc-kpis-3">
                                             <div class="mkc-panel mkc-kpi"><span class="mkc-kl">{isEn ? 'Recovered by the agent' : 'Recuperado por el agente'}</span><b class="editorial is-ok"><small>MXN</small>286,940</b><small>{isEn ? 'Last 30 days · 4 account(s) paid after its email' : 'Últimos 30 días · 4 cuenta(s) cobradas tras su correo'}</small></div>
@@ -819,24 +821,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-fx-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -937,24 +940,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-py-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('cobros').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.k === 'cobros' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot" id="pyBell"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial" id="pyBell" data-to="3">2</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -1046,24 +1050,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-fa-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('facturas').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.k === 'facturas' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot" id="faBell"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial" id="faBell" data-to="3">2</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -1208,24 +1213,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-wf-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL_WF.map((it) => (
+                                    {mkRail('workflows').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-wf-bar">
@@ -1384,24 +1390,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-fn-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('informes').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.k === 'informes' }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -1470,24 +1477,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-ap-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-pgh">
@@ -1551,24 +1559,25 @@ import { iconInner } from '../../lib/icons';
                               <div class="mkc-app mkc-eq-app">
                                 <aside class="mkc-rail">
                                     <span class="mkc-rail-org" id="eqOrgBtn">M</span>
-                                    {MK_RAIL.map((it) => (
+                                    {mkRail(null).map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class="mkc-rail-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
-                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
                                 </aside>
                                 <div class="mkc-main">
                                     <header class="mkc-top">
-                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
-                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('menu')} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('search')} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
                                         <span class="mkc-top-r">
-                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
-                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
-                                            <span class="mkc-ti mkc-ti-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
+                                            <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
+                                            <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
+                                            <span class="mkc-ti on mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
                                         </span>
                                     </header>
                                     <div class="mkc-eq-page">

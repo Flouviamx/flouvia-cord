@@ -2602,7 +2602,7 @@ export const appStrings = {
 
 
         "an.tab_analitica": "Informes",
-        "an.tab_equipo": "Equipo",
+        "an.tab_equipo": "Desempeño",
         "an.sin_acceso_titulo": "Sin acceso",
         "an.sin_acceso_desc": "Tu rol actual no tiene permiso para ver la analítica. Contacta al administrador de tu organización.",
         "an.informe_restringido_titulo": "Informe restringido",
@@ -2646,7 +2646,7 @@ export const appStrings = {
         "cob.title": "Cobranza — Cord",
         "cob.heading": "Cobranza",
         "cob.tab_cobranza": "Cobranza",
-        "cob.tab_ia": "Cobranza con IA",
+        "cob.tab_ia": "Agente IA",
         "cob.sin_acceso_titulo": "Sin acceso",
         "cob.sin_acceso_desc": "Tu rol actual no tiene permiso para ver cobranza. Contacta al administrador de tu organización.",
         "cob.plan_titulo": "Cobra lo que te deben sin perseguir a nadie",
@@ -2782,7 +2782,7 @@ export const appStrings = {
         "cob.f_vacio": "Ninguna cuenta coincide con este filtro.",
         "cob.todo_cobrado": "Ya no queda nada por cobrar.",
 
-        "cbr.title": "Dinero Cobrado — Cord",
+        "cbr.title": "Cobros — Cord",
         "cbr.heading": "Cobros",
         "cbr.zone_balance_eyebrow": "SALDO Y OPERACIÓN",
         "cbr.zone_balance": "Tu dinero hoy",
@@ -2873,11 +2873,11 @@ export const appStrings = {
         "cbr.sin_depositos": "Cord Payments aún no ha enviado un depósito.",
         "cbr.error_actualizar": "No se pudo actualizar el dashboard.",
 
-        "cia.title": "Cobranza con IA — Cord",
+        "cia.title": "Agente de cobranza — Cord",
         "cia.heading": "Agente de cobranza",
         "cia.sub": "Redacta, negocia y cobra por ti. Tú decides qué sale.",
         "cia.tab_cobranza": "Cobranza",
-        "cia.tab_ia": "Agente de IA",
+        "cia.tab_ia": "Agente IA",
         "cia.sin_acceso_titulo": "Sin acceso",
         "cia.sin_acceso_desc": "El agente de cobranza requiere el permiso de Cobranza. Pídeselo al administrador de tu organización.",
         "cia.plan_titulo": "Un agente que cobra por ti, con tu visto bueno",
@@ -6382,7 +6382,7 @@ export const appStrings = {
 
 
         "an.tab_analitica": "Reports",
-        "an.tab_equipo": "Team",
+        "an.tab_equipo": "Performance",
         "an.sin_acceso_titulo": "No access",
         "an.sin_acceso_desc": "Your current role doesn't have permission to view analytics. Contact your organization's admin.",
         "an.informe_restringido_titulo": "Restricted report",
@@ -6426,7 +6426,7 @@ export const appStrings = {
         "cob.title": "Collections — Cord",
         "cob.heading": "Collections",
         "cob.tab_cobranza": "Collections",
-        "cob.tab_ia": "AI Collections",
+        "cob.tab_ia": "AI agent",
         "cob.sin_acceso_titulo": "No access",
         "cob.sin_acceso_desc": "Your current role doesn't have permission to view collections. Contact your organization's admin.",
         "cob.plan_titulo": "Collect what you're owed without chasing anyone",
@@ -6562,7 +6562,7 @@ export const appStrings = {
         "cob.f_vacio": "No account matches this filter.",
         "cob.todo_cobrado": "There's nothing left to collect.",
 
-        "cbr.title": "Money Collected — Cord",
+        "cbr.title": "Payments — Cord",
         "cbr.heading": "Payments",
         "cbr.zone_balance_eyebrow": "BALANCE AND OPERATIONS",
         "cbr.zone_balance": "Your money today",
@@ -6653,7 +6653,7 @@ export const appStrings = {
         "cbr.sin_depositos": "Cord Payments has not sent you a payout yet.",
         "cbr.error_actualizar": "Could not refresh the dashboard.",
 
-        "cia.title": "AI Collections — Cord",
+        "cia.title": "Collections agent — Cord",
         "cia.heading": "Collections agent",
         "cia.sub": "It drafts, negotiates and collects for you. You decide what goes out.",
         "cia.tab_cobranza": "Collections",

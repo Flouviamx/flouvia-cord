@@ -884,7 +884,8 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
                 if (d.pinToastOn) (window as any).cordToast?.(d.pinToastOn);
                 commit();
             } else {
-                const label = (document.querySelector('.ph-title')?.textContent || document.title).replace(/\s+/g, ' ').trim().slice(0, 80);
+                const titleEl = document.querySelector<HTMLElement>('.ph-title');
+                const label = (titleEl?.dataset.pinLabel || titleEl?.textContent || document.title).replace(/\s+/g, ' ').trim().slice(0, 80);
                 pins = [...pins, { href: key, label }].slice(-12);
                 if (d.pinToastOff) (window as any).cordToast?.(d.pinToastOff, 'ok');
                 commit(key);

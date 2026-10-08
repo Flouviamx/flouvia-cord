@@ -111,9 +111,10 @@ interface Props {
     page: string;         // id de la página activa en el sidebar
     heading?: string;     // título visible en la topbar
     crumbs?: { label: string; href?: string }[]; // migajas opcionales (páginas anidadas)
+    pinLabel?: string;    // nombre con el que se fija la página (default: el título visible)
 }
 
-const { title, page, heading, crumbs = [] } = Astro.props;
+const { title, page, heading, crumbs = [], pinLabel } = Astro.props;
 
 // Entorno de PRUEBA (cookie leída server-side — misma señal que usa el
 // middleware/getActiveOrgId para resolver la org sandbox). Pinta el banner
@@ -331,7 +332,7 @@ import { iconInner } from '../lib/icons';
                                 </nav>
                             )}
                             <div class="ph-title-row">
-                                <h1 class="ph-title">{heading ?? title}</h1>
+                                <h1 class="ph-title" data-pin-label={pinLabel}>{heading ?? title}</h1>
                                 <button class="ph-pin" id="phPin" type="button" aria-label={t(L, 'layout.aria.fijar_pagina')} title={t(L, 'layout.aria.fijar_menu')}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('pin')}></svg>
                                 </button>
@@ -1827,7 +1828,11 @@ import { iconInner } from '../lib/icons';
         const G = I18N.cmdkGroups || { ir_a: 'Ir a', acciones: 'Acciones', recientes: 'Recientes', cotizaciones: 'Cotizaciones', clientes: 'Clientes', productos: 'Productos' };
         const KEYS: Record<string, string> = I18N.cmdkKeys || {};
         const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords, kbd: mobileUi() ? undefined : KEYS[href] }));
-        const ACTIONS: any[] = (I18N.cmdkActions || []).map((a: any) => ({
+        // Las acciones de crear salen solo si su opción existe en el menú Crear,
+        // que ya respeta permisos: antes ⌘K ofrecía "Nueva factura" o "Nuevo
+        // cliente" a quien no podía crearlos, y el guardado fallaba después.
+        const canAct = (a: any) => !a.kbd || !!document.querySelector(`#tbCreateMenu [data-key="${CSS.escape(String(a.kbd).toLowerCase())}"]`);
+        const ACTIONS: any[] = (I18N.cmdkActions || []).filter(canAct).map((a: any) => ({
             group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: mobileUi() ? undefined : a.kbd, hint: a.hint,
             run: a.runKey === 'quickTask' ? () => (window as any).cordQuickTask?.() : undefined,
         }));
@@ -2280,11 +2285,15 @@ import { iconInner } from '../lib/icons';
             if (e.key === '?') { e.preventDefault(); if (help) (help as HTMLElement).hidden = !(help as HTMLElement).hidden; return; }
             if (help && !(help as HTMLElement).hidden) return; // overlay de ayuda abierto
             if (gPending) {
-                gPending = false; clearTimeout(gTimer);
+                gPending = false; clearTimeout(gTimer); (window as any).__cordGChord = false;
                 const route = routeFor(k);
                 if (route) { e.preventDefault(); window.location.href = route; return; }
             }
-            if (k === 'g') { gPending = true; gTimer = window.setTimeout(() => { gPending = false; }, 1200); return; }
+            // `__cordGChord` avisa a otros atajos de una sola letra (W del Workbench)
+            // que la siguiente tecla es la segunda de G + letra: sin esto, G W abría
+            // Workflows Y el Workbench a la vez (el orden de los listeners no está
+            // garantizado, así que también se marca defaultPrevented al consumirla).
+            if (k === 'g') { gPending = true; (window as any).__cordGChord = true; gTimer = window.setTimeout(() => { gPending = false; (window as any).__cordGChord = false; }, 1200); return; }
             if (k === '/') { e.preventDefault(); document.getElementById('cmdkOpen')?.click(); return; }
             if (e.key === '[') { e.preventDefault(); (window as any).__cordToggleSidebar?.(); return; }
             // Crear: la tecla sale del propio menú Crear (data-key), con la misma

@@ -39,7 +39,7 @@ const GRUPOS = [
 import { iconInner } from '../../../lib/icons';
 ---
 
-<AppLayout title={t(L, 'ajustes.titulo_index')} page="ajustes" heading="Ajustes">
+<AppLayout title={t(L, 'ajustes.titulo_index')} page="ajustes" heading={t(L, 'topbar.ajustes')}>
     {!hasAccess && (
         <AccessGate title={t(L, 'settings.sin_acceso')} desc={t(L, 'settings.sin_acceso_idx_desc')} />
     )}
