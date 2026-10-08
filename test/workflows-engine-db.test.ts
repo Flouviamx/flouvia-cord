@@ -52,8 +52,8 @@ vi.mock('../src/lib/integraciones/hubspot/actions', () => ({
 vi.mock('../src/lib/actions/tasks', () => ({
     createTask: async (ctx: any, input: any) => {
         const { rows } = await m.db.query(
-            `insert into tareas (org_id, titulo, due_date, cotizacion_id) values ($1, $2, $3, $4) returning id`,
-            [ctx.orgId, input.titulo, input.due_date, input.cotizacion_id]);
+            `insert into tareas (org_id, titulo, due_date, cotizacion_id, documento_id) values ($1, $2, $3, $4, $5) returning id`,
+            [ctx.orgId, input.titulo, input.due_date, input.cotizacion_id, input.documento_id ?? null]);
         await m.recordEvent!(ctx.orgId, 'task.created', { id: rows[0].id, titulo: input.titulo }, ctx.actor);
         return { status: 200, body: { id: rows[0].id } };
     },
@@ -95,7 +95,7 @@ beforeAll(async () => {
         create table org_members(org_id uuid, user_id uuid, estado text);
         create table cotizaciones(id uuid primary key, org_id uuid, status text);
         create table documentos_fiscales(id uuid primary key, org_id uuid, lifecycle text);
-        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid, titulo text, due_date date, cotizacion_id uuid);
+        create table tareas(id uuid primary key default gen_random_uuid(), org_id uuid, titulo text, due_date date, cotizacion_id uuid, documento_id uuid);
         create table test_plan(plan text);
         insert into test_plan values ('pro');
         create function cord_effective_plan(uuid) returns text language sql stable as $$ select plan from test_plan limit 1 $$;
@@ -190,6 +190,16 @@ describe('ejecución', () => {
         await quoteEvent(A, { total: 50 });
         await flush();
         expect((await q('select titulo from tareas')).map((r: any) => r.titulo)).toEqual(['Chica']);
+    });
+
+    it('sobre un evento de factura, la tarea queda ligada a esa factura (y a su cotización)', async () => {
+        const DOC = '00000000-0000-4000-8000-0000000000d1';
+        await m.db.query(`insert into documentos_fiscales values ($1, $2, 'finalized') on conflict do nothing`, [DOC, A]);
+        await workflow(A, 'invoice.paid', [task('tsk1', 'Agradecer el pago')]);
+        await recordDomainEvent(A, 'invoice.paid', { id: DOC, object: 'invoice', cotizacion_id: QUOTE, folio: 'F-12', total: 1000, moneda: 'MXN' }, 'user:x');
+        await flush();
+        const [t] = await q('select titulo, documento_id, cotizacion_id from tareas');
+        expect(t).toEqual({ titulo: 'Agradecer el pago', documento_id: DOC, cotizacion_id: QUOTE });
     });
 
     it('espera días, se reanuda y reevalúa el estado actual de la cotización', async () => {

@@ -184,7 +184,7 @@ export const OPERATIONS: Operation[] = [
 
     { method: 'GET', path: '/cobranza', summary: 'Cartera por cobrar', tag: 'Cobranza', scope: 'read', response: open({ resumen: z.unknown(), aging: z.unknown(), items: z.array(z.unknown()), clientes: z.unknown() }) },
     { method: 'GET', path: '/events', summary: 'Historial de eventos', tag: 'Eventos', scope: 'read', page: 'cursor', query: { ...cursorQ, type: z.string(), object_id: z.string() }, response: DomainEvent },
-    { method: 'POST', path: '/tareas', summary: 'Crear tarea', tag: 'Tareas', scope: 'write', body: z.object({ titulo: z.string(), due_date: z.string().optional(), cotizacion_id: z.string().optional() }), response: Ack },
+    { method: 'POST', path: '/tareas', summary: 'Crear tarea', tag: 'Tareas', scope: 'write', body: z.object({ titulo: z.string(), due_date: z.string().optional(), cotizacion_id: z.string().optional(), factura_id: z.string().optional() }), response: Ack },
 
     { method: 'GET', path: '/webhooks', summary: 'Endpoints creados por esta llave', tag: 'Webhooks', scope: 'read', response: z.array(WebhookEndpoint) },
     { method: 'POST', path: '/webhooks', summary: 'Crear endpoint (el secreto se devuelve una vez)', tag: 'Webhooks', scope: 'write', body: z.object({ url: z.string(), eventos: z.array(z.string()).optional() }), response: WebhookEndpoint.extend({ secret: z.string() }) },
@@ -267,6 +267,7 @@ export const FIELD_DOCS: Record<string, string> = {
     eventos: 'Lista de eventos o tipos de evento. Vacía = todos.',
     existencias: 'Unidades disponibles; null si no se lleva inventario.',
     expira: 'Fecha de vencimiento, ISO 8601.',
+    factura_id: 'ID de la factura relacionada (el `id` de /facturas).',
     fiscal: 'Datos fiscales.',
     fiscal_currency: 'Divisa contable ISO 4217; si difiere de la de venta, la factura declara el tipo de cambio.',
     folio: 'Folio legible asignado por Cord, por ejemplo COT-0042.',

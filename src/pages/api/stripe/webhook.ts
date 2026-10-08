@@ -29,6 +29,7 @@ import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
 import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
+import { civilDayIn, emitTaskCreated, orgTaskProfile, systemTaskInsert, systemTaskTitle } from '../../../lib/actions/tasks';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -655,7 +656,7 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
     if (!disputeId.startsWith('dp_')) return;
     const chargeId = typeof dispute?.charge === 'string' ? dispute.charge : String(dispute?.charge?.id || '');
     const [[cobro]] = await withOrgTx(orgId, sql`
-        select id from cotizacion_cobros
+        select id, cotizacion_id from cotizacion_cobros
          where org_id = ${orgId} and stripe_charge_id = ${chargeId}
          limit 1`);
     const amount = Math.max(0, Number(dispute?.amount || 0));
@@ -664,7 +665,12 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         ? new Date(Number(dispute.evidence_details.due_by) * 1000).toISOString()
         : null;
     const status = String(dispute?.status || eventType.replace('charge.dispute.', ''));
-    const [disputaRows] = await withOrgTx(orgId,
+    // La tarea de responder nace en la misma transacción que la disputa, con
+    // el título en el idioma del negocio y el plazo como día civil de SU zona
+    // (el `due_by` del procesador es un instante UTC: cortarlo a `yyyy-mm-dd`
+    // en UTC ponía la tarea un día tarde por la noche en América).
+    const taskProfile = eventType === 'charge.dispute.created' ? await orgTaskProfile(orgId) : null;
+    const [disputaRows, tareaRows] = await withOrgTx(orgId,
         sql`insert into cobro_disputas
               (org_id, cobro_id, stripe_dispute_id, stripe_charge_id, amount_cents, currency,
                reason, status, evidence_due_at, updated_at)
@@ -675,13 +681,18 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
               status = excluded.status, reason = excluded.reason,
               evidence_due_at = excluded.evidence_due_at, updated_at = now()
             returning id`,
-        ...(eventType === 'charge.dispute.created'
+        ...(taskProfile
             // Con plazo de evidencia y dinero en disputa: prioridad alta.
-            ? [sql`insert into tareas (org_id, titulo, due_date, prioridad)
-                    values (${orgId}, ${`Responder contracargo ${fromMinorUnits(amount, currency)} ${currency}`},
-                            ${dueAt ? dueAt.slice(0, 10) : null}, 'alta')`]
+            ? [systemTaskInsert(orgId, {
+                titulo: systemTaskTitle('contracargo', taskProfile.locale, `${fromMinorUnits(amount, currency)} ${currency}`),
+                due_date: dueAt ? civilDayIn(taskProfile.zona, new Date(dueAt)) : null,
+                prioridad: 'alta',
+                cotizacion_id: (cobro?.cotizacion_id as string | undefined) ?? null,
+            })]
             : []),
     );
+    // Como cualquier otra tarea: webhooks y workflows ven `task.created`.
+    if (tareaRows?.[0]) emitTaskCreated(orgId, tareaRows[0]);
     await logAudit(orgId, {
         accion: eventType === 'charge.dispute.created' ? 'cord_pagos.disputa_creada' : 'cord_pagos.disputa_actualizada',
         entidad: 'dispute',

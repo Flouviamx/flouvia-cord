@@ -1,13 +1,14 @@
-import { sql, withOrgTx } from '../db';
+import { sql, withOrgTx, type DbRow } from '../db';
 import { currentLocale } from '../context';
-import { t } from '../../i18n/app';
+import { t, type AppLocale } from '../../i18n/app';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
 import { taskEventData } from '../event-payloads';
 import { TASK_NOTES_MAX, TASK_TITLE_MAX, isIsoDay, isTaskPriority } from '../tasks';
+import { localClock } from '../task-reminders';
 import { type ActionContext, type ActionOutcome, done, isUuid } from './outcome';
 
-export const TASK_PERMISSIONS = ['cotizar', 'cobranza', 'clientes'] as const;
+export { TASK_PERMISSIONS } from '../tasks';
 
 const noEncontrada = () => done(404, { error: t(currentLocale(), 'err.tarea.no_encontrada'), code: 'not_found' });
 const invalida = (key: 'err.tarea.vacia' | 'err.tarea.fecha' | 'err.tarea.responsable' | 'err.tarea.prioridad') =>
@@ -36,21 +37,91 @@ export async function createTask(ctx: ActionContext, input: Record<string, any>)
     if (!asignado && input.asignar_a_creador === true && isUuid(ctx.userId) && await isActiveMember(ctx.orgId, ctx.userId)) {
         asignado = ctx.userId;
     }
+    // Los vínculos se verifican contra ESTA organización (regla 30): un id de
+    // otra cuenta responde igual que uno que no existe.
     const cotizacionId = input.cotizacion_id ? String(input.cotizacion_id) : null;
     if (cotizacionId) {
         const [own] = isUuid(cotizacionId)
             ? await withOrgTx(ctx.orgId, sql`select id from cotizaciones where id = ${cotizacionId} and org_id = ${ctx.orgId}`)
             : [[]];
-        if (!own.length) return done(404, { error: 'Cotización no encontrada', code: 'not_found' });
+        if (!own.length) return done(404, { error: t(currentLocale(), 'err.tarea.cotizacion_no_encontrada'), code: 'not_found' });
+    }
+    const documentoId = input.documento_id ? String(input.documento_id) : null;
+    if (documentoId) {
+        const [own] = isUuid(documentoId)
+            ? await withOrgTx(ctx.orgId, sql`select id from documentos_fiscales where id = ${documentoId} and org_id = ${ctx.orgId}`)
+            : [[]];
+        if (!own.length) return done(404, { error: t(currentLocale(), 'err.tarea.factura_no_encontrada'), code: 'not_found' });
     }
     const creadoPor = isUuid(ctx.userId) ? ctx.userId : null;
     const [[row]] = await withOrgTx(ctx.orgId, sql`
-        insert into tareas (org_id, cotizacion_id, titulo, due_date, prioridad, notas, asignado_a, creado_por)
-        values (${ctx.orgId}, ${cotizacionId}, ${titulo.slice(0, TASK_TITLE_MAX)}, ${due}, ${prioridad},
+        insert into tareas (org_id, cotizacion_id, documento_id, titulo, due_date, prioridad, notas, asignado_a, creado_por)
+        values (${ctx.orgId}, ${cotizacionId}, ${documentoId}, ${titulo.slice(0, TASK_TITLE_MAX)}, ${due}, ${prioridad},
                 ${notas || null}, ${asignado}, ${creadoPor})
         returning *`);
-    after(dispatchEvent(ctx.orgId, 'task.created', taskEventData(row), ctx.actor));
+    emitTaskCreated(ctx.orgId, row, ctx.actor);
     return done(200, { id: row.id });
+}
+
+/** `task.created` sale por aquí desde CUALQUIER camino que cree una tarea: a mano, API, MCP, workflow o Cord solo. */
+export function emitTaskCreated(orgId: string, row: DbRow, actor?: string): void {
+    after(dispatchEvent(orgId, 'task.created', taskEventData(row), actor));
+}
+
+// ── Tareas que crea Cord solo ──
+//
+// El contracargo (webhook del procesador) y el reembolso SPEI manual crean su
+// tarea en la MISMA transacción que el registro de dinero que la origina — si
+// una falla, no queda la otra —, así que no pasan por createTask(). Pero sí
+// por aquí: mismo INSERT, título en el idioma de la organización (regla 36) y
+// el mismo `task.created` que cualquier otra tarea. Antes eran `insert` sueltos
+// con el título en español, y ni webhooks ni workflows se enteraban de ellas.
+
+export type SystemTaskKind = 'contracargo' | 'reembolso_spei';
+
+/**
+ * Idioma y zona de la organización, para lo que Cord escribe en su nombre: el
+ * aviso llega de un webhook o de otra pantalla, no del request del negocio.
+ */
+export async function orgTaskProfile(orgId: string): Promise<{ locale: AppLocale; zona: string | null }> {
+    const [[o]] = await withOrgTx(orgId, sql`select idioma, zona_horaria from orgs where id = ${orgId}`);
+    return {
+        locale: String(o?.idioma ?? '').toLowerCase().startsWith('en') ? 'en' : 'es',
+        zona: (o?.zona_horaria as string) || null,
+    };
+}
+
+/** Día civil, en la zona del negocio, de un instante (un plazo del procesador viene en UTC). */
+export function civilDayIn(zona: string | null, instant: Date): string {
+    return localClock(zona, instant).day;
+}
+
+/** "Responder contracargo 1500 MXN" / "Respond to chargeback 1500 MXN". El importe viaja con su divisa (regla 21). */
+export function systemTaskTitle(kind: SystemTaskKind, locale: AppLocale, importe: string): string {
+    return t(locale, `tareas.auto.${kind}`).replace('{importe}', importe).slice(0, TASK_TITLE_MAX);
+}
+
+export interface SystemTaskInput {
+    titulo: string;
+    due_date?: string | null;
+    prioridad?: 'normal' | 'alta';
+    cotizacion_id?: string | null;
+    documento_id?: string | null;
+    asignado_a?: string | null;
+    creado_por?: string | null;
+}
+
+/**
+ * El INSERT de una tarea automática, para ir DENTRO de la transacción que la
+ * origina. Devuelve la fila (`returning *`) para pasársela a `emitTaskCreated`
+ * DESPUÉS de que la transacción confirmó.
+ */
+export function systemTaskInsert(orgId: string, input: SystemTaskInput) {
+    const due = input.due_date && isIsoDay(input.due_date) ? input.due_date : null;
+    return sql`insert into tareas (org_id, cotizacion_id, documento_id, titulo, due_date, prioridad, asignado_a, creado_por)
+               values (${orgId}, ${input.cotizacion_id ?? null}, ${input.documento_id ?? null}, ${input.titulo.slice(0, TASK_TITLE_MAX)},
+                       ${due}, ${input.prioridad ?? 'normal'}, ${input.asignado_a ?? null}, ${input.creado_por ?? null})
+               returning *`;
 }
 
 /**
