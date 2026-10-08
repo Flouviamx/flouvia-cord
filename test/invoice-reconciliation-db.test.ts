@@ -10,7 +10,7 @@ vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: m.event }));
 vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: () => undefined }));
 vi.mock('../src/lib/fiscal/emit', () => ({ metadata: (v: unknown) => v || {}, cleanPrefix: () => 'F', documentTypeFor: () => 'cfdi_40', isBillableCfdi: () => false, money: (n: number) => Math.round(n * 100) / 100, newInvoiceToken: () => crypto.randomUUID() }));
 vi.mock('../src/lib/impuestos-db', () => ({ taxCatalogFor: vi.fn(), TaxCatalogUnavailableError: class extends Error {} }));
-import { reconcileInvoice, recordInvoiceRefund, recordMpInvoiceRefund } from '../src/lib/fiscal/reconciliation';
+import { allocatePendingInvoiceRefunds, reconcileInvoice, recordInvoiceRefund, recordMpInvoiceRefund } from '../src/lib/fiscal/reconciliation';
 import { applyPayment } from '../src/lib/fiscal/payments';
 import { createCreditNote, finalizeInvoice, voidInvoice } from '../src/lib/fiscal/invoices';
 const org = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
@@ -57,7 +57,7 @@ beforeAll(async () => {
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
       monto numeric, currency text, stripe_payment_intent_id text, mp_payment_id text, metodo text, referencia text,
-      cobro_id uuid, nota text, registrado_por uuid
+      cobro_id uuid, nota text, registrado_por uuid, aplicado_at timestamptz not null default now()
     );
     create unique index pagos_pi on documento_pagos(documento_id,stripe_payment_intent_id) where stripe_payment_intent_id is not null;
     create unique index pagos_mp on documento_pagos(documento_id,mp_payment_id) where mp_payment_id is not null;
@@ -66,6 +66,11 @@ beforeAll(async () => {
   const start = schema.indexOf('-- Conciliación de facturas:');
   const next = schema.indexOf('\n-- BEGIN ', start);
   await db.exec(schema.slice(start, next === -1 ? undefined : next));
+  // El reparto de reembolsos vive en la sección del portal (cobro agrupado).
+  const portal = schema.slice(schema.indexOf('-- PORTAL DEL CLIENTE, COBRO AGRUPADO'));
+  for (const sentencia of portal.split(';').filter((x) => /documento_reembolso_asignaciones/.test(x) && !/grant /.test(x))) {
+    await db.exec(sentencia.replace(/^\s*(--[^\n]*\n\s*)*/, ''));
+  }
   m.tx.mockImplementation((orgId: string, ...queries: Array<{ text: string; values: unknown[] }>) => db.transaction(async (tx) => {
     await tx.query("select set_config('app.org_id', $1, true)", [orgId]);
     const results = [];
@@ -184,6 +189,61 @@ describe('conciliación ejecutada en PostgreSQL local', () => {
     const attempts = m.issue.mock.calls.filter(([request]) => request.documentId === note.documentId);
     expect(attempts).toHaveLength(2);
     expect(attempts[0][0].idempotencyKey).toBe(attempts[1][0].idempotencyKey);
+  });
+  describe('un cobro que pagó varias facturas', () => {
+    const idB = '22222222-2222-4222-8222-222222222222';
+    const readB = async () => (await q('select * from documentos_fiscales where id=$1', [idB])).rows[0];
+    const lineas = JSON.stringify([{ description: 'Otro', quantity: 1, unitPrice: 60, taxRate: 0, subtotal: 60, taxAmount: 0, total: 60 }]);
+    const refundG = (refundId: string, amount: number, status = 'succeeded', eventCreated = 1) =>
+      recordInvoiceRefund(org, { id: refundId, paymentIntentId: 'pi_g', amount, currency: 'MXN', status, eventCreated });
+    // A se aplicó primero y B después: lo último que se pagó es lo primero que se devuelve.
+    const payGroup = async () => {
+      await applyPayment(org, id, { monto: 100, currency: 'MXN', stripePaymentIntentId: 'pi_g' });
+      await applyPayment(org, idB, { monto: 60, currency: 'MXN', stripePaymentIntentId: 'pi_g' });
+      await q("update documento_pagos set aplicado_at = case when documento_id = $1 then now() - interval '1 minute' else now() end where stripe_payment_intent_id = 'pi_g'", [id]);
+    };
+    beforeEach(async () => {
+      await q("insert into documentos_fiscales(id,org_id,total,subtotal,tax_total,currency,amount_remaining,lifecycle,status,line_items_snapshot) values ($1,$2,60,60,0,'MXN',60,'open','issued',$3)", [idB, org, lineas]);
+    });
+
+    it('un reembolso parcial reabre solo la última factura, no las dos', async () => {
+      await payGroup();
+      await refundG('re_g1', 50);
+      expect(await readB()).toMatchObject({ amount_refunded: '50', amount_remaining: '50', lifecycle: 'open' });
+      expect(await read()).toMatchObject({ amount_refunded: '0', amount_remaining: '0', lifecycle: 'paid' });
+    });
+    it('un reembolso mayor que la última factura sigue con la anterior', async () => {
+      await payGroup();
+      await refundG('re_g1', 130);
+      expect(await readB()).toMatchObject({ amount_refunded: '60', amount_remaining: '60' });
+      expect(await read()).toMatchObject({ amount_refunded: '70', amount_remaining: '70' });
+    });
+    it('reembolsos sucesivos no reparten dos veces la misma capacidad', async () => {
+      await payGroup();
+      await refundG('re_g1', 40); await refundG('re_g2', 40); await refundG('re_g2', 40, 'succeeded', 2);
+      expect(await readB()).toMatchObject({ amount_refunded: '60', amount_remaining: '60' });
+      expect(await read()).toMatchObject({ amount_refunded: '20', amount_remaining: '20' });
+    });
+    it('un reembolso fallido libera su parte para el siguiente', async () => {
+      await payGroup();
+      await refundG('re_g1', 60, 'pending'); await refundG('re_g1', 60, 'failed', 2);
+      await refundG('re_g2', 60);
+      expect(await readB()).toMatchObject({ amount_refunded: '60', amount_remaining: '60' });
+      expect(await read()).toMatchObject({ amount_refunded: '0', amount_remaining: '0' });
+    });
+    it('un reembolso que llegó antes que el pago no cuenta en ninguna hasta repartirse', async () => {
+      await refundG('re_g1', 50);
+      await payGroup();
+      await reconcileInvoice(org, id); await reconcileInvoice(org, idB);
+      expect((await read()).amount_refunded).toBe('0');
+      expect((await readB()).amount_refunded).toBe('0');
+      await allocatePendingInvoiceRefunds(org, 'pi_g');
+      expect(await readB()).toMatchObject({ amount_refunded: '50', amount_remaining: '50' });
+      expect((await read()).amount_refunded).toBe('0');
+      // Repetir el reparto no lo duplica.
+      await allocatePendingInvoiceRefunds(org, 'pi_g');
+      expect((await q("select * from documento_reembolso_asignaciones where stripe_refund_id = 're_g1'")).rows).toHaveLength(1);
+    });
   });
   it('RLS impide leer e insertar reembolsos de otra organización con rol de aplicación', async () => {
     await refund();
