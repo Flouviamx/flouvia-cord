@@ -1,0 +1,228 @@
+# Proyecto Cord
+
+> Documento de estado actual. Para decisiones fechadas o migraciones, consulta
+> [`historial/README.md`](historial/README.md).
+
+## Identidad y posicionamiento
+
+Cord es la plataforma de cierre comercial standalone de Flouvia. Cubre el ciclo
+desde la propuesta hasta el pago y vive en **cordhq.app**.
+
+Nació como la versión independiente de la app de Shopify "Flouvia Cotizaciones
+B2B" del repositorio hermano `../flouvia`, pero Cord no depende de Shopify ni se
+limita a B2B, a un tamaño de empresa o a un país. El timbrado CFDI continúa siendo
+una capacidad exclusiva de México.
+
+Mensajes canónicos de producto:
+
+- "De la propuesta al pago. Todo en un solo link."
+- "El ciclo de ventas desde la propuesta hasta el pago."
+
+La regla completa de copy y posicionamiento vive en
+[`estandares-ingenieria.md`](estandares-ingenieria.md#10-posicionamiento-horizontal).
+
+## Repositorio y despliegue
+
+- Repositorio local: `~/Desktop/flouvia-cord`.
+- Repositorio hermano: `~/Desktop/flouvia`; son repos Git y proyectos Vercel
+  independientes, no carpetas anidadas.
+- La app original de Shopify se referencia en `../flouvia/src/data/apps.ts`.
+- GitHub: `github.com/Flouviamx/flouvia-cord`.
+- Producción: `cordhq.app`.
+- Cada push a `main` despliega automáticamente el proyecto independiente de Cord
+  en Vercel.
+
+### Rebrand Trato a Cord
+
+El código se renombró a Cord en junio de 2026. La lista histórica de tareas
+manuales fuera del repositorio fue:
+
+- renombrar el repositorio GitHub de `flouvia-trato` a `flouvia-cord`;
+- renombrar la carpeta local `~/Desktop/flouvia-trato`;
+- renombrar el proyecto de Vercel;
+- mover el DNS de `trato.flouvia.com` a `cordhq.app`;
+- sustituir el arte todavía heredado en
+  `public/imgs/logo-cord-{navy,white}.png` cuando André entregue los logos nuevos;
+- republicar `@flouviahq/elements` para distribuir el Web Component
+  `<cord-cotizador>`.
+
+La ruta local, GitHub y el dominio documentados arriba ya usan Cord. Los puntos
+restantes viven fuera del repo y deben verificarse en su sistema correspondiente;
+esta lista no afirma por sí sola que sigan pendientes.
+
+## Comandos
+
+Requiere Node **>=22.12.0**. `.nvmrc` fija Node 24.15.0, alineado con Node 24 LTS.
+
+```bash
+npm run dev       # desarrollo en localhost:4321
+npm run build     # build de producción
+npm run preview   # servir localmente el build
+npm run db:migrate
+npm run test:payments
+```
+
+Los scripts especializados de seguridad y operación se descubren en
+`package.json`; no se duplican aquí para evitar drift.
+
+## Stack actual
+
+| Capa | Tecnología y contrato |
+|---|---|
+| Framework | Astro 7.2.0 en modo SSR (`output: 'server'`) con `@astrojs/vercel` 11.0.5. |
+| Auth | Backend propio: sesiones stateful en `sessions`, Argon2id, Google OAuth nativo, Apple OAuth, passkeys y TOTP. Cookies principales: `cord_session` y `cord_active_org`. Clerk fue removido. |
+| Datos | Neon PostgreSQL serverless. Schema canónico en `db/schema.sql`; aislamiento por organización mediante RLS y transacciones con contexto. |
+| Billing | Stripe Billing freemium, medidores de excedente y Customer Portal. |
+| Cobros | Stripe Connect para pagos directos a las cuentas conectadas. |
+| Correo | Resend para correo transaccional y cobranza. |
+| Fiscal | Facturapi mediante `MexicoSatProvider` para CFDI 4.0 en México; `SpainVerifactuProvider` para Verifactu en España (huella SHA-256 encadenada + envío SOAP a la AEAT). |
+| IA | Anthropic SDK; `AI_MODEL` permite override. El default del código es `claude-haiku-5-5` (oct 2026; antes Haiku 4.5, 10x más caro). Las llamadas fijan `output_config.effort`; la ayuda de la app usa siempre el default. |
+| Animación | GSAP 3 únicamente en landing y login; dentro de la aplicación se usa CSS. |
+| Analytics | PostHog para producto y Vercel Analytics para Web Vitals. El contrato detallado vive en [`estado/analytics.md`](estado/analytics.md). |
+| Tipografía | Inter como única familia. Los montos usan `.editorial`: Inter 600, tracking `-0.03em` y números tabulares. |
+
+### Estado operativo relevante
+
+- Auth propio está activo. `src/middleware.ts` protege rutas internas y API leyendo
+  `cord_session`; `users` y `org_members` son las fuentes de identidad y membresía.
+- La migración desde Clerk preservó las identidades existentes mapeándolas a UUIDs
+  propios en `users`; el detalle y los scripts históricos viven en el historial de auth.
+- Stripe Billing está conectado en producción con cinco planes y medidores de
+  excedente. Los identificadores reales de precios y meters viven en
+  `src/lib/billing.ts`; llaves, webhook y Customer Portal se configuran fuera del
+  repositorio.
+- Las referencias históricas a Clerk se conservan en
+  `historial/auth-clerk.md`, pero no describen una dependencia vigente.
+- Internacionalización real (ago 2026): `orgs.idioma` sirve español e inglés en
+  toda la app interna, `/q` y los correos transaccionales — el selector de
+  Ajustes ya no dice "próximamente". `orgs.zona_horaria` tiene consumidor real
+  vía `src/lib/fmt-server.ts`. Los impuestos son por línea y por país
+  (`TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar al crear la
+  cuenta) y las cuentas de depósito usan el formato del país
+  (`src/lib/payout-fields.ts`: CLABE, IBAN, routing+account, sort code, transit,
+  BSB, banco+agência). Detalle en `estado/cobros-facturacion.md` y reglas 23–25
+  de `estandares-ingenieria.md`.
+- Mercados ofrecidos (ago 2026): el alta se abrió a los 12 países que Cord
+  sostiene de punta a punta —MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE— en
+  lugar de los 249 códigos ISO, y las divisas se acotaron a las de ese set más
+  las de comercio internacional. En CO, AR, CL y PE la cuenta cotiza, factura y
+  lleva cobranza, pero el cobro en línea no está disponible y se dice antes de
+  empezar el alta. Contrato y criterio de admisión en la regla 28 de
+  `estandares-ingenieria.md`; fuentes en `src/lib/countries.ts`
+  (`SUPPORTED_COUNTRIES`, `supportsOnlinePayments`) y `src/lib/currency.ts`
+  (`OFFERED_CURRENCIES`).
+- Estados Unidos y España al 100% del núcleo financiero (ago 2026): antes de esto,
+  la factura ignoraba el impuesto por línea (`emit.ts` aplicaba una tasa plana),
+  EE.UU. no tenía dónde capturar sales tax (el selector no se dibujaba con una
+  sola opción) y el alta de Connect estaba hardcodeada a México
+  (`country: 'MX'` bloqueaba cualquier cuenta no mexicana). Ahora: motor único
+  `calculateDocumentTotals()` en toda factura y cotización; EE.UU. siembra sales
+  tax por estado (`usStateTaxPresets()`) y Connect Custom acepta KYC de EE.UU.
+  (`ssn_last_4`, estados de 2 letras, checksum ABA real); España emite con base
+  legal completa (IRPF, serie+ejercicio, NIF/NIE/CIF validados,
+  inversión del sujeto pasivo intracomunitaria) y **Verifactu** — el sistema de
+  facturación certificado que exige el RD 1007/2023, con huella SHA-256
+  encadenada verificada contra los vectores oficiales de la AEAT y envío real
+  por SOAP verificado contra el WSDL/XSD oficial. Ver regla 29 de
+  `estandares-ingenieria.md` y `estado/cobros-facturacion.md`.
+- **Pendiente operativo, no de código (ago 2026):** dos huecos de trámite bloquean
+  el 100% real de EE.UU. y España — ninguno se resuelve con más ingeniería.
+  - *España:* Verifactu está construido y verificado, pero `VERIFACTU_SIF_NIF`
+    sigue sin configurarse porque Flouvia todavía no tiene NIF español. Falta
+    conseguirlo (gestor), presentar la declaración responsable del software
+    (RD 1007/2023) y probar un envío real contra el sandbox de la AEAT antes de
+    `VERIFACTU_AEAT_ENABLED=true`. Sin esto, España sigue en el fallback
+    `commercial_only` — funcional, pero sin registro ante la AEAT.
+  - *Estados Unidos:* el wizard de 1099-K de Stripe Connect (Tax forms) quedó a
+    medias en "Información de la empresa" — Flouvia no tiene un EIN propio.
+    No hace falta constituir una entidad en EE.UU.: un extranjero puede
+    solicitar EIN directo con el Formulario SS-4 (responsible party
+    identificado por pasaporte, sin SSN/ITIN). Con el EIN, se retoma el wizard:
+    "Entidad de liquidación de pagos" + "Red de terceros" + montos brutos
+    (incluir comisiones) ya quedaron decididos correctamente en las pantallas
+    previas.
+
+- Aislamiento multi-tenant declarado (ago 2026): el schema habilitaba y forzaba
+  RLS en ~50 tablas con políticas correctas, y **ninguna se aplicaba** — el rol
+  de conexión conservaba `rolbypassrls`, así que Postgres las ignoraba y el único
+  muro real era que el código no olvidara un `where org_id`. No hubo fuga, pero
+  tampoco segunda línea de defensa. Hoy las 69 rutas que consultan tablas
+  multi-tenant viajan en un carril declarado (`withOrgTx` / `withUserTx` /
+  `withSystemTx` / `withOpsTx` / `withCaptureToken`, en `src/lib/db.ts`), Cord Ops
+  tiene carril propio en vez de heredar el bypass, los crons separan el barrido
+  cross-org del trabajo por organización, y los flujos previos a la membresía
+  (SSO, invitación, baja de cuenta, correo entrante) se resuelven con funciones
+  `security definer` estrechas. `npm run security:tenancy` impide que la deuda
+  vuelva a crecer y `npm run security:rls` audita la base real. Contrato en la
+  regla 30 de `estandares-ingenieria.md`; la activación del rol `cord_app` es una
+  tarea de consola pendiente, con criterios de salida y revert en
+  `db/RUNBOOK-cord-app.md`.
+
+- Cord Payments auditado de punta a punta (ago 2026): el alta, el KYC, la captura
+  de documentos, el cobro y el depósito. Lo que se encontró no era deuda menor —
+  había un carril de dinero MUERTO en producción (`/api/i/` nunca se agregó a
+  `PUBLIC_API_PREFIXES`, así que ninguna factura hospedada se podía pagar), un
+  KYC de una sola persona que no cabía en la ley de la mitad de los mercados
+  ofrecidos, y la captura móvil bloqueada por un header de seguridad
+  (`Permissions-Policy: camera=()` aplicaba también a la pantalla de
+  verificación). Hoy: personas múltiples con titulares reales
+  (`connect_personas`), requisitos derivados del proveedor en vez de ramas por
+  país, captura con compuertas de calidad y guía documental por país, evidencia
+  de KYC con retención declarada, depósitos con historial y frecuencia propia, y
+  tarifas por divisa donde el hueco fuera de MXN es explícito en vez de un `if`
+  escondido. Reglas 32, 33 y 34 de `estandares-ingenieria.md`; detalle en
+  `estado/cobros-facturacion.md`.
+
+## Configuración
+
+La fuente única y completa de variables es [`.env.example`](../.env.example).
+Está agrupada por capacidad y documenta obligatoriedad, fallbacks y formatos. No
+mantengas una segunda lista exhaustiva en archivos Markdown.
+
+Mapa de configuración:
+
+| Capacidad | Variables principales |
+|---|---|
+| Auth/OAuth | `GOOGLE_*`, `APPLE_*`, `SITE` |
+| Base de datos | `DATABASE_URL` con endpoint pooled |
+| Rate limit/MCP | `UPSTASH_REDIS_REST_*`; Neon es fallback durable de `strictRateLimit` |
+| Cifrado | `ENCRYPTION_KEY*`; `MCP_SECRET_KEY` solo como compatibilidad histórica |
+| SSO | `SAML_SP_PRIVATE_KEY`, `SAML_SP_CERT` |
+| Stripe | `STRIPE_*`, incluida la firma separada de Connect |
+| Correo y cron | `RESEND_*`, `SALES_EMAIL`, `CRON_SECRET`, `INBOUND_EMAIL_SECRET` |
+| Fiscal | `FACTURAPI_*`, incluida la llave de la organización Cord; `VERIFACTU_SIF_*`, `VERIFACTU_AEAT_*` para Verifactu (España) |
+| IA | `ANTHROPIC_API_KEY`, `AI_MODEL` |
+| Analytics | `PUBLIC_POSTHOG_*`, `POSTHOG_DISABLE_CAPTURE` |
+
+`PUBLIC_SITE_URL` todavía se consume en correo y webhooks con fallback a
+`https://cordhq.app`, aunque `SITE` es el origen canónico de OAuth y validación de
+origen. Si se consolida este contrato, debe hacerse en código y `.env.example` en
+el mismo cambio.
+
+Las antiguas variables `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` y
+`CLERK_WEBHOOK_SECRET` pertenecen al sistema removido. Se preservan en el historial
+de la migración, no deben reintroducirse en la configuración vigente.
+
+Neon se recomienda provisionar desde Vercel Marketplace para recibir un
+`DATABASE_URL` pooled en todos los entornos.
+
+## Contrato de despliegue
+
+- Plataforma: Vercel, proyecto independiente de `flouvia.com`.
+- Producción: `cordhq.app`; el DNS apunta a Vercel.
+- Subdominios, todos servidos por el MISMO proyecto y ruteados exclusivamente
+  desde `SUBDOMAINS` en `src/middleware.ts` (nunca desde `vercel.json`):
+  `dev.` (dev-blog), `docs.` (documentación), `ops.` (Cord Ops),
+  `billing.` (facturación de la suscripción, ago 2026) y `status.` (estado
+  público; su raíz y `/en` sirven `/desarrolladores/status`, oct 2026). Cada uno necesita darse
+  de alta como dominio del proyecto en Vercel y su CNAME en DNS.
+- `billing.cordhq.app` no comparte la cookie de sesión con el apex: la recibe por
+  traspaso de un solo uso. Ver regla 26 de `estandares-ingenieria.md`.
+- Las ramas `claude/*` no despliegan (`git.deploymentEnabled` en `vercel.json`,
+  oct 2026). Vercel cuenta contra su tope diario de 100 despliegues incluso los
+  previews que una regla cancela, y una docena de sesiones en paralelo lo
+  agotaron y bloquearon el despliegue de producción de `main`. Esas ramas se
+  verifican con build, tests y capturas locales; `main` despliega igual que antes.
+- Adaptador: SSR.
+- La landing y otras páginas explícitas pueden usar `prerender: true`.
+- Toda nueva ruta API debe declarar `export const prerender = false`.

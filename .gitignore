@@ -41,7 +41,3 @@ archived.hubspot.config.yml
 
 # clasp: el id del script de cada complemento, como el .env de las demás apps
 .clasp.json
-
-# Documentación interna (estado, historial, estándares, incidentes): vive solo
-# en local. La pública es src/content/docs y sigue versionada.
-/docs/
