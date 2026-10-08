@@ -1,20 +1,27 @@
 name: Cord crons
 
-# Los crons de Cord, disparados desde GitHub y no desde Vercel.
+# Segundo reloj de los crons de Cord. El primero es `crons` en vercel.json.
 #
-# Por qué: el plan Hobby de Vercel solo admite crons DIARIOS y un puñado de
-# ellos. Cord tiene 16, y desde que los workflows programados y las esperas
-# condicionadas existen, uno necesita correr CADA HORA — un horario que el
-# negocio eligió ("cada lunes a las 9") no se puede honrar con un barrido al
-# día. Un `0 * * * *` en vercel.json hace que el deployment entero sea
-# rechazado, que es exactamente lo que pasó el 20 de septiembre de 2026.
+# Por qué dos: el plan Hobby de Vercel solo admite crons DIARIOS (un `0 * * * *`
+# ahí no es un cron que no corre, es un deployment RECHAZADO: pasó el 20 sep
+# 2026), y Vercel no reintenta una corrida que falló. Este workflow recupera lo
+# que Vercel no corrió y llama los endpoints que necesitan más de una corrida
+# al día (workflows programados, recordatorio de tareas por zona horaria,
+# reintentos de webhooks, envío a la AEAT).
 #
-# Este workflow corre cada hora y decide qué endpoints tocan, con la MISMA
-# tabla de horarios que tenía vercel.json. `cron/tareas` solo vive aquí: es
-# horario porque manda el recordatorio a las 8:00 de CADA zona horaria, y él
-# mismo decide en qué organizaciones ya es esa hora. Los de vercel.json se quedan como
-# respaldo para el día que la cuenta suba de plan: todos los endpoints son
-# idempotentes, así que una doble corrida no duplica trabajo.
+# Qué llama: lo decide scripts/cron-schedule.mjs, que lee vercel.json. NO se
+# compara la hora exacta: GitHub no corre el schedule a la hora pedida (del 1
+# al 8 oct 2026 corrió 3-4 veces al día, a horas variables) y con hora exacta
+# casi nunca coincidía. En cada corrida se llama todo endpoint cuya hora ya
+# pasó hoy (UTC), los mensuales si su día ya pasó en el mes, y los "de cada
+# corrida". Cada endpoint reclama su periodo en `cron_runs`
+# (src/lib/cron-runs.ts): lo que ya corrió hoy responde `omitido` sin trabajar,
+# y lo que quedó en error se reintenta. Que esto sea seguro depende de ese
+# reclamo, no de que los endpoints "sean idempotentes" en general.
+#
+# Un endpoint que no responde 200 hace FALLAR el job (después de llamar a
+# todos los demás): así GitHub avisa por correo en vez de dejar un warning que
+# nadie lee. El periodo fallido se reintenta solo en la corrida siguiente.
 #
 # Requiere el secret del repositorio CRON_SECRET, con el mismo valor que la
 # variable de entorno CRON_SECRET en Vercel.
@@ -22,16 +29,22 @@ name: Cord crons
 on:
   schedule:
     # A los :10 de cada hora. No en punto: el minuto 0 es el más congestionado
-    # de la cola de GitHub y los retrasos ahí son de decenas de minutos.
+    # de la cola de GitHub. Aun así GitHub corre esto cuando puede, no cada hora.
     - cron: '10 * * * *'
   workflow_dispatch:
     inputs:
       endpoint:
-        description: 'Correr un solo endpoint (ej. cron/workflows). Vacío = los que tocan por horario.'
+        description: 'Correr un solo endpoint (ej. api/cron/workflows). Vacío = los que tocan por horario.'
         required: false
         type: string
+      force:
+        description: 'Repetir el periodo aunque ya haya corrido (?force=1). Solo con un endpoint.'
+        required: false
+        type: boolean
+        default: false
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   group: cord-crons
@@ -40,10 +53,13 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       BASE: https://cordhq.app
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      # Los inputs viajan por entorno, nunca interpolados en el script.
+      MANUAL: ${{ inputs.endpoint }}
+      FORCE: ${{ inputs.force }}
     steps:
       - name: Verificar el secret
         run: |
@@ -52,71 +68,53 @@ jobs:
             exit 1
           fi
 
+      # Solo la tabla y vercel.json: el script no tiene dependencias y usa el
+      # Node que ya trae el runner.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/cron-schedule.mjs
+            vercel.json
+          sparse-checkout-cone-mode: false
+
       - name: Llamar los endpoints que tocan
         run: |
           set -u
-          HORA=$(date -u +%-H)
-          MIN_DIA=$(date -u +%-d)
-          MANUAL='${{ inputs.endpoint }}'
-
-          # Tabla de horarios (UTC), espejo de vercel.json. Formato:
-          #   <hora|*>:<día del mes|*>:<ruta>
-          TABLA="
-          *:*:api/cron/workflows
-          *:*:api/cron/tareas
-          10:*:api/health
-          13:*:api/cron/recurrencias
-          15:*:api/cron/recordatorios
-          16:*:api/cron/cobranza
-          5:*:api/cron/webhooks
-          4:*:api/cron/webhooks-limpieza
-          4:*:api/cron/limpieza-capturas
-          4:*:api/cron/stripe-webhook-health
-          5:*:api/cron/billing-reconcile
-          7:*:api/cron/expirar-cotizaciones
-          9:*:api/cron/verifactu-submit
-          12:*:api/cron/anclas-tiempo
-          14:*:api/cron/integraciones
-          6:1:api/cron/intereses
-          8:2:api/cron/comisiones-mensuales
-          "
-
           fallos=0
           llamar() {
             ruta="$1"
-            # 503 no es un fallo de este workflow: es el endpoint diciendo que
-            # algo suyo no está configurado, y eso se ve en sus propios logs.
-            status=$(curl -sS -o /tmp/out.json -w '%{http_code}' --max-time 300 \
-              -H "Authorization: Bearer $CRON_SECRET" "$BASE/$ruta")
+            # Una llamada puede durar lo que la función de Vercel (300 s).
+            status=$(curl -sS -o /tmp/out.json -w '%{http_code}' --max-time 310 \
+              -H "Authorization: Bearer $CRON_SECRET" "$BASE$ruta") || true
             echo "  $ruta → HTTP $status"
-            head -c 400 /tmp/out.json || true
+            head -c 400 /tmp/out.json 2>/dev/null || true
             echo
-            if [ "$status" != "200" ] && [ "$status" != "503" ]; then
-              echo "::warning::$ruta respondió $status"
+            if [ "$status" != "200" ]; then
+              echo "::error::$ruta respondió ${status:-sin respuesta}"
               fallos=$((fallos + 1))
             fi
           }
 
           if [ -n "$MANUAL" ]; then
-            echo "Corrida manual: $MANUAL"
-            llamar "$MANUAL"
+            ruta="/${MANUAL#/}"
+            if ! printf '%s' "$ruta" | grep -Eq '^/api/(cron/[a-z0-9-]+|health)$'; then
+              echo "::error::Endpoint inválido: $MANUAL"
+              exit 1
+            fi
+            [ "$FORCE" = "true" ] && ruta="$ruta?force=1"
+            echo "Corrida manual: $ruta"
+            llamar "$ruta"
           else
-            echo "Hora UTC $HORA, día $MIN_DIA"
-            for linea in $TABLA; do
-              [ -z "$linea" ] && continue
-              hora="${linea%%:*}"
-              resto="${linea#*:}"
-              dia="${resto%%:*}"
-              ruta="${resto#*:}"
-              if { [ "$hora" = "*" ] || [ "$hora" = "$HORA" ]; } \
-                 && { [ "$dia" = "*" ] || [ "$dia" = "$MIN_DIA" ]; }; then
-                llamar "$ruta"
-              fi
+            echo "Ahora: $(date -u +'%Y-%m-%d %H:%M') UTC"
+            node scripts/cron-schedule.mjs --tabla
+            rutas=$(node scripts/cron-schedule.mjs)
+            for ruta in $rutas; do
+              llamar "$ruta"
             done
           fi
 
-          # Un endpoint caído no debe tumbar la corrida entera: los demás ya
-          # corrieron y el aviso queda en el resumen del job.
           if [ "$fallos" -gt 0 ]; then
-            echo "::warning::$fallos endpoint(s) respondieron algo distinto de 200/503"
+            echo "::error::$fallos endpoint(s) no respondieron 200; la siguiente corrida los reintenta"
+            exit 1
           fi
