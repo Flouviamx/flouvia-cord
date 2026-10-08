@@ -7,6 +7,31 @@
 
 ---
 
+**Crons: reloj de recuperación y reclamo por periodo (8 oct 2026)** — los crons
+se disparaban desde `vercel.json` y desde `cord-crons.yml`, y el comentario del
+workflow daba por hecho que "todos los endpoints son idempotentes". No lo eran:
+`recordatorios` mandaba dos veces el mismo aviso (corregido antes en 7cdca98),
+`expirar-cotizaciones` repetía el aviso "por vencer", `intereses` volvía a
+mandar el resumen al dueño con cargos que no se reaplicaban, y `cobranza`
+llamaba dos veces al agente. A la vez GitHub corrió el schedule `10 * * * *`
+solo 3-4 veces al día a horas variables (1-8 oct), y la tabla del workflow
+exigía la hora UTC exacta: los diarios casi nunca los disparaba GitHub, y
+`informes-programados` ni siquiera estaba en esa tabla.
+- Tabla `cron_runs` (migración de build `scripts/migrate-cron-runs.mjs`, RLS
+  solo de carril de sistema) y `runCronOnce()` en `src/lib/cron-runs.ts`: cada
+  endpoint reclama día, mes u hora antes de trabajar; un `error` o un `running`
+  de más de 30 min se reintenta; sin la tabla, falla abierto.
+- `cord-crons.yml` llama todo endpoint cuya hora ya pasó hoy (y los mensuales
+  cuyo día ya pasó), con la lista derivada de `vercel.json` por
+  `scripts/cron-schedule.mjs`; un endpoint que no responde 200 hace fallar el
+  job. `webhooks` y `verifactu-submit` pasan a correr en cada corrida.
+- Aislamiento por organización en `workflows`, `integraciones`, `intereses` y
+  por documento en `expirar-cotizaciones` y `recordatorios`.
+- Acciones de GitHub a Node 24 (`checkout`, `setup-node`, `setup-python` @v7).
+Pruebas: `test/cron-runs-db.test.ts`, `test/intereses-cron-db.test.ts`,
+`test/crons-aislamiento.test.ts`. Estado vigente en
+[`confiabilidad.md`](../estado/confiabilidad.md#crons-dos-relojes-y-reclamo-por-periodo).
+
 **Cord Ops: herramientas de operador (8 oct 2026)** — segunda fase del rediseño.
 Búsqueda global con ⌘K (organizaciones, personas, folios, facturas e IDs) y
 atajos de teclado solo en escritorio. Filtros cerrados en organizaciones y

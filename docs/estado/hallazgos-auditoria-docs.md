@@ -28,15 +28,15 @@
    insertaría un id de documento en una columna de cotización.
 4. **`splitCuotas()` sin divisa** (`src/lib/agents/ar-agent.ts:87`,
    `src/pages/api/cobranza-ia/[id].ts:175`): parte en centavos también CLP/JPY.
-5. **[verificado] Los crons "horarios" no corren cada hora.** `cord-crons.yml`
-   está programado `10 * * * *`, pero GitHub sólo lo ejecutó 3-4 veces al día y a
-   horas variables (corridas del 1 al 8 oct 2026). Los endpoints `*` (workflows,
-   tareas) corren unas 4 veces al día, y los de hora fija sólo cuando la corrida cae
-   en esa hora UTC. Hoy los crons diarios se sostienen por `vercel.json`. Si el
-   negocio depende del horario (workflows "cada lunes a las 9"), mover el disparo
-   a un reloj confiable (plan Pro de Vercel o un cron externo). El recordatorio de
-   tareas no se pierde (manda "a partir de" las 8:00 locales con dedup en
-   `tareas.recordada_el`), pero puede llegar horas tarde.
+5. **[verificado] La precisión horaria de Workflows depende de GitHub.** Ya
+   resuelto (oct 2026): una corrida perdida se recupera y dos disparos no
+   duplican trabajo (reclamo por periodo en `cron_runs`, ver
+   `confiabilidad.md`, sección de crons). Queda: `cord-crons.yml` corre 3-4 veces
+   al día, no cada hora, y las docs públicas prometen "cada hora" / "en punto"
+   (`automatizacion/workflows.mdx`, `workflows/esperas.mdx`,
+   `workflows/ejecuciones.mdx`, `workflows/disparadores.mdx`, ES y EN). Decidir
+   un reloj sub-diario confiable (opciones y costo en `confiabilidad.md`) o
+   reescribir esas páginas con la frecuencia real.
 
 ## P1 — topes, permisos y contratos que se pueden saltar
 
@@ -56,10 +56,12 @@
     límite de cotizaciones activas sólo lo atrapa el trigger (500 en vez de 402).
 11. **Importar clientes sin permiso.** `src/pages/api/clientes/import.ts` no tiene
     `requirePerm('clientes')` (productos sí) ni captura el error de límite de plan.
-12. **[verificado] Reintentos de webhooks diarios.** El barrido `/api/cron/webhooks`
-    corre `0 5 * * *` (`vercel.json`), así que los intentos 2–11 no siguen el
-    calendario de 10 s / 1 min / 5 min. Las docs ya lo dicen; decidir si se sube la
-    frecuencia.
+12. **[verificado] Reintentos de webhooks poco frecuentes.** El barrido
+    `/api/cron/webhooks` corre a diario en `vercel.json` y, desde oct 2026, en
+    cada corrida de `cord-crons.yml` (3-4 al día en la práctica), así que los
+    intentos 2–11 siguen sin el calendario de 10 s / 1 min / 5 min. Las docs ya
+    lo dicen; cerrarlo del todo exige un reloj sub-diario confiable (opciones en
+    `confiabilidad.md`, sección de crons).
 13. **`/api/v1/events`**: no filtra tipos internos (`quote.expiring`,
     `invoice.due_soon`, `invoice.past_due`, `schedule.tick`) y responde
     `invalid_request` en vez de `invalid_cursor`. `listCursor` sólo valida la forma:

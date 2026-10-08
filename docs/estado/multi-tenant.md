@@ -36,6 +36,7 @@ consulta [`../historial/auth-clerk.md`](../historial/auth-clerk.md).
 - `ops_operators`/`ops_auth_challenges`/`ops_sessions`/`ops_audit_log` (ago 2026) — carril de identidad privilegiada exclusivo de `ops.cordhq.app`. Allowlist en código + BD, passkey o contraseña con TOTP, cookie separada, tokens y retos hasheados, expiración corta y bitácora de acceso. Una sesión normal de Cord nunca autoriza Ops.
 - `external_usage_events` (ago 2026) — telemetría RLS por organización para proveedores con costo variable. Registra proveedor, categoría, operación, unidades, tokens de entrada/salida y estado; nunca prompts, destinatarios, payloads, respuestas, llaves ni secretos. Complementa `uso_periodo`, `api_requests`, `webhook_deliveries` y `cotizacion_cobros` en `/ops/usage`.
 - `health_checks`/`status_incidents` (ago 2026) — telemetría global de disponibilidad, separada de los datos multi-tenant. El cron autenticado registra éxito y latencia de Neon, Stripe y `/q/demo`; los incidentes solo nacen mediante una acción manual y auditada en `/ops/status`. No contienen datos de clientes ni incidentes sembrados.
+- `cron_runs` (oct 2026) — bitácora y reclamo por periodo de los crons (`src/lib/cron-runs.ts`). Sin `org_id`: RLS forzada con una sola política, la del carril de sistema; solo la toca `runCronOnce()` después de validar `CRON_SECRET`.
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`). `country_code`
   (ago 2026, nullable, sin default) = país del CLIENTE; `null` hereda el del emisor, así que

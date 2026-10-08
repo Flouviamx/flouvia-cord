@@ -99,24 +99,112 @@ La actualización documental no debe desplegar el worktree compartido completo.
    - `elements.yml` — solo si cambia `packages/elements/**`: tipos, build,
      exports contra `api-report.json`, `attw` y `publint`. En verde desde sep 2026.
    - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
-   - `cord-crons.yml` — los 17 crons de Cord, cada hora, con la misma tabla de
-     horarios de `vercel.json`. `cron/tareas` (recordatorio de tareas, oct 2026)
-     vive SOLO aquí: corre cada hora y él mismo decide en qué organizaciones ya
-     son las 8:00 locales. Existe porque el plan Hobby de Vercel solo
-     admite crons DIARIOS: un `0 * * * *` ahí no es un cron que no corre, es un
-     deployment RECHAZADO — pasó el 20 sep 2026 al volver horario el barrido de
-     workflows, que lo necesita para honrar un horario elegido por el negocio y
-     para revisar las esperas condicionadas. Los crons de `vercel.json` se
-     quedan como respaldo diario: todos los endpoints son idempotentes, así que
-     una doble corrida no duplica trabajo. Requiere el secret `CRON_SECRET` del
-     repositorio, con el mismo valor que la variable en Vercel.
+   - `cord-crons.yml` — segundo reloj de los crons; el contrato completo está
+     en [Crons: dos relojes y reclamo por periodo](#crons-dos-relojes-y-reclamo-por-periodo).
+     Un endpoint que no responde 200 hace fallar el job (GitHub avisa por
+     correo); requiere el secret `CRON_SECRET` del repositorio, con el mismo
+     valor que la variable en Vercel.
+
+   Las acciones oficiales corren en Node 24 (`checkout@v7`, `setup-node@v7`,
+   `setup-python@v7`, verificadas en el `action.yml` de cada tag, oct 2026);
+   las versiones anteriores (`@v4`/`@v5`) corrían en Node 20 y GitHub las
+   marcaba como obsoletas. `publish-packages.yml` no usa caché de npm: es el
+   único job con `id-token: write`.
 
    Ninguno está configurado como check obligatorio de rama ni como puerta de
    Vercel: un push a main despliega aunque CI falle.
-   Faltan entrega durable, recuperación automática, alertas accionables y evidencia
-   de restauración de un respaldo en un entorno aislado.
+   Faltan entrega durable de eventos de negocio y evidencia de restauración de
+   un respaldo en un entorno aislado. Los crons ya se recuperan solos y su fallo
+   avisa (ver abajo); los demás eventos todavía no.
 6. **Aceptación y publicación:** recorridos completos de pago/factura en TEST,
    permisos entre empresas, móvil, rollback y verificación posterior al despliegue.
+
+## Crons: dos relojes y reclamo por periodo
+
+Estado vigente (oct 2026). Los endpoints viven en `src/pages/api/cron/*` y todos
+validan `CRON_SECRET` con `assertCronAuth()` antes de cualquier otra cosa.
+
+**Dos relojes.**
+
+- `crons` de `vercel.json` es el reloj principal de los diarios y mensuales. El
+  plan Hobby solo admite crons diarios (un horario sub-diario rechaza el
+  deployment entero) y Vercel no reintenta una corrida fallida.
+- `.github/workflows/cord-crons.yml` es el reloj de recuperación y el de los
+  endpoints que necesitan varias corridas al día. GitHub no corre el schedule a
+  la hora pedida: del 1 al 8 oct 2026 corrió 3-4 veces al día a horas
+  variables. Por eso no compara la hora exacta: en cada corrida llama todo
+  endpoint cuya hora programada YA PASÓ hoy (UTC), los mensuales si su día ya
+  pasó en el mes, y los de "cada corrida". La lista sale de
+  `scripts/cron-schedule.mjs`, que lee `vercel.json`: no hay una segunda tabla
+  a mano. `node scripts/cron-schedule.mjs --tabla` la imprime y
+  `--at <ISO>` simula una hora.
+
+**Reclamo por periodo.** `runCronOnce(request, endpoint, periodo, fn)`
+(`src/lib/cron-runs.ts`) reclama `(endpoint, periodo)` en la tabla `cron_runs`
+con un `insert … on conflict` atómico antes de trabajar:
+
+- el segundo disparo del mismo periodo responde 200 `omitido` sin trabajar;
+- un periodo que terminó en `error` (5xx o excepción) o que lleva más de 30 min
+  en `running` (la función murió) se vuelve a reclamar en la corrida siguiente;
+- si la tabla no existe o la base no responde al reclamar, el cron corre igual
+  y lo deja en el log: falla ABIERTO, porque cada endpoint conserva su
+  idempotencia por fila y un cron detenido por la bitácora es peor que uno
+  repetido;
+- `?force=1` (input `force` del workflow manual) repite un periodo ya `ok`,
+  nunca uno en curso;
+- la tabla no tiene `org_id`: RLS forzada y una sola política, la del carril
+  de sistema (regla 30). Sin retención automática (unas 20-40 filas al día).
+
+| Endpoint | Horario (UTC) | Reclamo | Por qué |
+|---|---|---|---|
+| `recordatorios`, `cobranza`, `expirar-cotizaciones`, `anclas-tiempo`, `recurrencias`, `informes-programados`, `integraciones`, `billing-reconcile`, `webhooks-limpieza`, `limpieza-capturas` | diario, `vercel.json` | día | una vez al día; se recupera si Vercel no corrió o falló |
+| `intereses` (día 1), `comisiones-mensuales` (día 2) | mensual | mes | se recupera cualquier día posterior del mes |
+| `verifactu-submit` | diario + cada corrida de GitHub | hora | remisión lo más inmediata posible sin dos envíos simultáneos del mismo lote |
+| `workflows`, `webhooks`, `tareas` | diario + cada corrida de GitHub | ninguno | se repiten a propósito; su seguridad es por fila (compare-and-set, lease con `skip locked`, `tareas.recordada_el`) |
+| `stripe-webhook-health` | diario | ninguno | solo lee; la alerta se acota a una cada 24 h |
+| `/api/health` | diario | ninguno | lo muestrea `status-probe.yml` cada hora; cord-crons no lo llama |
+| `comisiones-emitir` | manual (POST) | — | Ops lo invoca tras revisar el borrador; no está programado |
+
+**Aislamiento.** El barrido descubre organizaciones en `withSystemTx` y el
+trabajo de cada una vuelve a `withOrgTx`; la excepción de una organización (o
+de un documento) se registra y la corrida sigue con las demás.
+
+**Límites conocidos.**
+
+- Un día UTC en que ni Vercel ni ninguna corrida de GitHub posterior a la hora
+  programada lleguen a correr se pierde para los endpoints de ventana exacta
+  (el aviso "por vencer" de `expirar-cotizaciones`); los de escalera o ventana
+  (`recordatorios`, `anclas-tiempo`, `recurrencias`) lo retoman al día
+  siguiente.
+- La precisión horaria de `workflows` ("cada lunes a las 9") depende de
+  GitHub: hoy llega con horas de retraso. Opciones, ninguna contratada:
+  Vercel Pro (precio por miembro del equipo; admite crons sub-diarios, así
+  que `workflows` y `webhooks` podrían ir cada hora en `vercel.json`; verificar
+  precio y límites vigentes antes de decidir), o un cron externo con nivel
+  gratuito (cron-job.org, Upstash QStash) que llame los mismos endpoints con
+  `CRON_SECRET`: cero o pocos dólares, pero es otro proveedor que vigilar y
+  otro lugar donde vive el secreto. Disparar el workflow por
+  `repository_dispatch` desde ese mismo servicio no gana nada sobre llamarlo
+  directo. Con el
+  reclamo por periodo cualquiera de ellos se puede sumar como tercer reloj sin
+  cambiar los endpoints.
+- `intereses` hace una escritura por documento; con carteras de miles de
+  documentos vencidos puede acercarse al límite de 300 s de la función.
+
+**Cómo agregar un cron.**
+
+1. Crea `src/pages/api/cron/<nombre>.ts` con `export const prerender = false`,
+   `assertCronAuth()` primero, y el trabajo dentro de
+   `runCronOnce(request, '/api/cron/<nombre>', cronPeriod('dia' | 'mes' | 'hora'), () => run())`.
+   Sin reclamo solo si el endpoint es seguro de repetir por construcción, y
+   entonces va en `EN_CADA_CORRIDA` de `scripts/cron-schedule.mjs` con el
+   motivo.
+2. Barrido en `withSystemTx`, trabajo por organización en `withOrgTx`, con
+   `try/catch` por organización (regla 30).
+3. Prográmalo en `crons` de `vercel.json` como `M H * * *` o `M H D * *` (día
+   del mes hasta 28). cord-crons.yml lo recupera sin tocar el workflow.
+4. `test/cron-runs-db.test.ts` verifica que todo cron de `vercel.json` se llame
+   o tenga motivo en `NO_LLAMAR`, y que cada ruta exista.
 
 ## Fase 2 — no iniciada
 
