@@ -1,0 +1,54 @@
+---
+// Pieza interna (no es un mockup registrado): el banner ámbar "Entorno de
+// prueba" de AppLayout (.test-banner), que va ARRIBA de la topbar. Úsalo como
+// primer hijo del contenido de un DocsMockup con la clase `dm-wbtest-figure`:
+// esa clase vuelve el contenido `display: contents` para que el banner pueda
+// ordenarse antes de la topbar. El resto del contenido va en `.dm-testbody`.
+import { dmT, type DmLang } from './format';
+
+interface Props { lang: DmLang }
+const { lang } = Astro.props;
+---
+<div class="dm-testbar">
+    <span class="dm-testbar-badge">{dmT(lang, 'layout.test.badge')}</span>
+    <span class="dm-testbar-desc">{dmT(lang, 'layout.test.desc')}</span>
+    <span class="dm-testbar-actions">
+        <span class="dm-testbar-reset">{dmT(lang, 'layout.test.reset')}</span>
+        <span class="dm-testbar-exit">{dmT(lang, 'layout.test.exit')}</span>
+    </span>
+</div>
+
+<style is:global>
+    /* Banner "Entorno de prueba" de AppLayout: va ARRIBA de la topbar. El
+       contenido se vuelve hijo directo de .dm-main (display: contents) para que
+       el banner pueda ordenarse antes de la topbar. */
+    .dm-wbtest-figure .dm-content { display: contents; }
+    .dm-wbtest-figure .dm-testbody { padding: 14px 20px 22px; min-width: 0; }
+    .dm-testbar {
+        order: -1;
+        display: flex; align-items: center; gap: 9px;
+        margin: 10px 10px 0; padding: 7px 8px 7px 12px;
+        border-radius: 13px; background: #f59e0b; color: #fff;
+        box-shadow: 0 1px 2px rgba(120, 53, 15, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        min-width: 0;
+    }
+    .dm-testbar-badge { font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .dm-testbar-desc { font-size: 11.5px; color: rgba(255, 255, 255, 0.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 9px; border-left: 1px solid rgba(255, 255, 255, 0.28); min-width: 0; }
+    .dm-testbar-actions { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
+    .dm-testbar-reset, .dm-testbar-exit { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 5px 11px; white-space: nowrap; }
+    .dm-testbar-reset { background: rgba(255, 255, 255, 0.15); }
+    .dm-testbar-exit { background: #fff; color: #92400e; }
+    .dm-wbtest-figure .dm-topbar { margin-top: 8px; }
+
+    @container dm (max-width: 760px) {
+        .dm-testbar-reset { display: none; }
+    }
+    @container dm (max-width: 640px) {
+        .dm-testbar-desc { display: none; }
+        .dm-wbtest-figure .dm-testbody { display: none; }
+    }
+    @container dm (max-width: 520px) {
+        .dm-wbtest-figure .dm-testbody { padding: 12px 14px 18px; }
+    }
+
+</style>
