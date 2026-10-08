@@ -2,7 +2,7 @@
 title: "Products API"
 seoTitle: "Cord Products API"
 description: "Feed and query your product and service catalog."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with permission on the productos resource"]
@@ -46,6 +46,16 @@ curl -X POST "https://cordhq.app/api/v1/productos" \
 }
 ```
 
+### Optional tax and invoicing fields
+
+| Field | What it is | Validation |
+|---|---|---|
+| `tax_rate` | The tax the product **suggests** when added to a quote or invoice, as a fraction (`0.08` = 8%). Without it, the line uses your default rate. | Must be a rate in your tax catalog (or `0`); otherwise `400`. |
+| `clave_sat` | SAT product or service key (c_ClaveProdServ) for the CFDI in Mexico. | 8 digits (`81111500`); otherwise `400`. |
+| `clave_unidad_sat` | SAT unit key (c_ClaveUnidad). Without it, it's derived from `unidad` when stamping (`hora` → `HUR`). | 1 to 3 letters or digits (`E48`), stored uppercased; otherwise `400`. |
+
+In the list they come back as `taxRate`, `claveSat`, and `claveUnidadSat` (`null` when not set).
+
 ## Listing Products & Data Security
 
 The listing API (`GET /api/v1/productos`) features a Dynamic Masking mechanism based on the trust level of the API key you authenticate with.
@@ -64,13 +74,13 @@ curl -X GET "https://cordhq.app/api/v1/productos?limit=50" \
 With `sk_live_...` the same product includes `costo`:
 
 ```json
-{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "costo": 4000, "activo": true } ] }
+{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "costo": 4000, "activo": true, "taxRate": null, "claveSat": "43231500", "claveUnidadSat": null } ] }
 ```
 
 With `pk_live_...`, `costo` simply isn't present on the object (not `null` or `0` — the key doesn't exist):
 
 ```json
-{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "activo": true } ] }
+{ "data": [ { "id": "7e3c9a1f-2b4d-4c6e-8f0a-b1d3e5f7a9c2", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "activo": true, "taxRate": null, "claveSat": "43231500", "claveUnidadSat": null } ] }
 ```
 
 Note: a Publishable Key can only be used on four routes: `GET /api/v1/productos`, `POST /api/v1/cotizaciones`, `GET /api/v1/elements/config`, and `POST /api/v1/elements/ai-draft`. Any other route (creating products, reading clients, collections) responds `403 insufficient_scope`. It also requires an `Origin` or `Referer` header matching your organization's allowed domains, configured in **Settings › Embeddable quote builder**. A `pk_live_` key with no domains configured responds `403 origin_allowlist_required`; a `pk_test_` key works from any origin.

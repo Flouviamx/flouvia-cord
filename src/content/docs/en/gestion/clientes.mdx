@@ -20,17 +20,21 @@ identity plus terms that control suggested discounts, due dates, and credit expo
 
 ## Create a client
 
-Open **Clients > New client**. Company name is the only field required to save, but
-complete the remaining data before sending a quote that must be collected or invoiced.
+Open **Clients > New client**. The **name or legal name** is the only field required to
+save (it works for a company or a person), but complete the remaining data before
+sending a quote that must be collected or invoiced.
 
 | Group | Fields | Effect |
 |---|---|---|
-| Contact | person, email, and phone | Recipient for quotes, invoices, and follow-up. |
-| Tax identity | RFC or local tax ID, regime, CFDI use, and postal code | Receiver data used for the fiscal document. |
-| Address | country, address lines, city, and region | Receiver address and country context. |
+| Identity | name or legal name, country, and tax ID | The country decides the tax ID's name (RFC, EIN, NIF, CNPJ…) and Cord checks its format in the markets it offers; if it doesn't look right you get a warning, but you can still save. |
+| Contact | person, email, and phone with country code | The phone is saved in international format (`+1 512 555 0100`), which WhatsApp delivery needs. |
+| Address | address lines, city, state or province, and postal code | Labels follow the country (ZIP code, CEP…); Mexico, the United States, Canada, Brazil, and Spain have a list of states or provinces. |
+| Tax details for CFDI | regime and CFDI use | Only when your business invoices in Mexico and the client is Mexican; options are filtered by RFC type (individual or legal entity). |
 | Terms | chips Due on receipt, Net 15, Net 30, and Net 60, or **Other term** (Net 7, Net 45, or Net 90) | Default due date for new client operations. |
 | Credit | limit at or above zero | Reference for exposure and over-limit alerts. |
 | Price level | Standard, Silver, Gold, or Distributor | Commercial classification and suggested discount. |
+
+<DmClientModal lang="en" />
 
 Levels initially suggest 0%, 5%, 10%, and 15%. The percentage can be edited from 0%
 to 100%; the level is a label while the stored percentage is the effective default.
@@ -42,12 +46,15 @@ guarantee. The seller decides whether to keep selling above that exposure.
 
 ## Client country
 
-Country may remain empty and inherit the issuer's country. Select it explicitly for a
-foreign receiver. Cord accepts receiver countries beyond the 12 markets where the
-platform is sold.
+A new client starts with your business's country; change it if the receiver operates
+elsewhere. Cord accepts receiver countries beyond the 12 markets where the platform is
+sold (common ones are listed first). A client saved earlier without a country keeps
+inheriting your business's country until you edit it.
 
-Changing country adjusts the expected tax-ID label, but doesn't turn a commercial
-invoice into an automatic filing with the receiver's authority.
+Changing country adjusts the tax ID's name and expected format, the phone's country code,
+and the address fields, but doesn't turn a commercial invoice into an automatic filing
+with the receiver's authority. If your business is in Mexico and the client isn't, their
+CFDI is stamped to a foreign resident: see [Invoicing](/en/docs/pagos/facturacion).
 
 ## Import clients from CSV
 

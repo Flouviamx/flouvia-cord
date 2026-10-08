@@ -1,0 +1,296 @@
+---
+// Mockup: el modal "Editar producto" (ProductModal.astro) con un servicio que
+// se vende por hora. Calca de su markup: chips de tipo de venta, nombre, SKU,
+// unidad y descripción; Precio e impuestos con "/ hora" en la etiqueta, sufijo
+// de divisa, la barra de margen (updateMargin: verde desde 30%) y el select
+// Impuesto; Facturación electrónica (SAT), Precios por volumen y Estado.
+//
+// Los datos que no escribe el negocio salen de las mismas fuentes que el
+// modal: la clave de unidad automática (satUnitForUnit + satUnitName de
+// sat-claves.ts: "hora" → HUR · Hora), el nombre de la tasa de 8% (el preset
+// que siembra TAX_PRESETS.MX en una cuenta mexicana nueva; el negocio puede
+// renombrarlo en Ajustes) y los textos del diccionario pmod.*.
+//
+// Escenarios:
+// - completo: el modal entero, con la clave 81111500 ya elegida (su
+//   descripción debajo, pmod.clave_sat_elegida) y dos niveles de volumen.
+// - sat: el cuerpo desplazado hasta la sección SAT, como se ve en una laptop
+//   (encabezado y pie fijos con su hairline), con "software" escrito en el
+//   buscador y los tres resultados del catálogo del SAT abiertos encima de la
+//   clave de unidad. Las descripciones son textos del catálogo c_ClaveProdServ.
+//
+// Montos con su código de divisa (regla 21): la app formatea con la divisa del
+// negocio; aquí lleva además el código, igual que DmKitModal.
+import './dm-app-modal.css';
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, dmMoney, pick, tpl, type DmLang } from './format';
+import { DEFAULT_UNIT_KEY, satUnitForUnit, satUnitName } from '../../../lib/fiscal/sat-claves';
+import { TAX_PRESETS } from '../../../lib/countries';
+
+interface Props {
+    lang: DmLang;
+    /** completo: el modal entero con la clave SAT elegida · sat: el buscador de claves SAT abierto. */
+    escenario?: 'completo' | 'sat';
+    caption?: string;
+}
+const { lang, escenario = 'completo' } = Astro.props;
+const CUR = 'MXN';
+
+const DATA = {
+    es: {
+        nombre: 'Consultoría de implementación',
+        sku: 'CONS-IMPL-HR',
+        unidad: 'hora',
+        desc: 'Sesiones remotas o en sitio con un consultor senior: configuración, migración de datos y capacitación de tu equipo.',
+    },
+    en: {
+        nombre: 'Implementation consulting',
+        sku: 'CONS-IMPL-HR',
+        unidad: 'hour',
+        desc: 'Remote or on-site sessions with a senior consultant: setup, data migration and training for your team.',
+    },
+};
+const d = pick(DATA, lang);
+const PRECIO = 1800;
+const COSTO = 950;
+const gana = PRECIO - COSTO;
+const margen = Math.round((gana / PRECIO) * 100);
+// updateMargin(): < 15 rojo, < 30 ámbar, el resto verde.
+const marginCls = margen < 15 ? 'is-bad' : margen < 30 ? 'is-warn' : 'is-good';
+const ganaHtml = tpl(dmT(lang, 'pmod.gana_por_unidad'), { monto: dmMoney(gana, CUR, lang), pct: margen });
+
+const tax8 = (TAX_PRESETS.MX ?? []).find((p) => p.kind === 'consumo' && p.tasa === 8)?.nombre ?? 'IVA 8%';
+
+// Clave de unidad vacía: la app la deduce de la unidad al timbrar.
+const claveU = satUnitForUnit(d.unidad) ?? DEFAULT_UNIT_KEY;
+const nombreU = satUnitName(claveU);
+const unidadHint = tpl(dmT(lang, 'pmod.clave_unidad_auto'), { clave: nombreU ? `${claveU} · ${nombreU}` : claveU });
+
+// Resultados del catálogo del SAT para "software" (descripciones oficiales).
+const SAT_RESULTS = [
+    { clave: '81111500', descripcion: 'Ingeniería de software o hardware' },
+    { clave: '81111800', descripcion: 'Servicios de sistemas y administración de componentes de sistemas' },
+    { clave: '80101500', descripcion: 'Servicios de consultoría de negocios y administración corporativa' },
+];
+const elegida = SAT_RESULTS[0];
+
+const VOL = [
+    { min: 20, precio: 1650 },
+    { min: 50, precio: 1500 },
+];
+const nf2 = (n: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+
+const CAPTIONS = {
+    completo: {
+        es: `Modal Editar producto de un servicio: tipo de venta Servicio, nombre ${d.nombre}, SKU ${d.sku} y unidad ${d.unidad}. Precio de venta 1800 ${CUR} por ${d.unidad} y costo 950 ${CUR}; la barra de margen dice Ganas ${dmMoney(gana, CUR, 'es')} por unidad, margen ${margen}%. Impuesto ${tax8}. En Facturación electrónica (SAT), la clave ${elegida.clave} (${elegida.descripcion}) y la clave de unidad automática ${claveU} · ${nombreU}. Dos precios por volumen: desde 20 horas a ${dmMoney(1650, CUR, 'es')} y desde 50 a ${dmMoney(1500, CUR, 'es')}. Estado Activo y, al pie, Eliminar, Cancelar y Guardar producto.`,
+        en: `Edit product modal for a service: type of sale Service, name ${d.nombre}, SKU ${d.sku} and unit ${d.unidad}. Selling price 1800 ${CUR} per ${d.unidad} and cost 950 ${CUR}; the margin bar reads You earn ${dmMoney(gana, CUR, 'en')} per unit, margin ${margen}%. Tax ${tax8}. Under E-invoicing (SAT, Mexico), key ${elegida.clave} (${elegida.descripcion}) and the automatic unit key ${claveU} · ${nombreU}. Two volume prices: from 20 hours at ${dmMoney(1650, CUR, 'en')} and from 50 at ${dmMoney(1500, CUR, 'en')}. Status Active and, at the bottom, Delete, Cancel and Save product.`,
+    },
+    sat: {
+        es: `Modal Editar producto desplazado hasta Facturación electrónica (SAT): en Clave de producto o servicio está escrito "software" y la lista muestra tres claves del catálogo del SAT: ${SAT_RESULTS.map((r) => `${r.clave} ${r.descripcion}`).join('; ')}. Encima, el impuesto ${tax8}; debajo, Precios por volumen.`,
+        en: `Edit product modal scrolled to E-invoicing (SAT, Mexico): "software" is typed in SAT product or service key and the list shows three keys from the SAT catalog, whose descriptions are in Spanish: ${SAT_RESULTS.map((r) => `${r.clave} ${r.descripcion}`).join('; ')}. Above, the ${tax8} tax; below, Volume pricing.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(CAPTIONS[escenario], lang);
+const isSat = escenario === 'sat';
+const optLbl = dmT(lang, 'pmod.vol_opcional');
+const noStar = (s: string) => s.replace(/\s*\*$/, '');
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={600} caption={caption} class={isSat ? 'dm-prm-figure dm-prm-is-sat' : 'dm-prm-figure'}>
+    <div class="dm-mod dm-prm">
+        <div class:list={['dm-mod-head', { 'is-scrolled': isSat }]}>
+            <div class="dm-mod-headline">
+                <span class="dm-mod-avatar"><DmIcon name="products" /></span>
+                <span class="dm-mod-titles">
+                    <span class="dm-mod-title">{dmT(lang, 'pmod.editar_titulo')}</span>
+                    <span class="dm-mod-sub">{dmT(lang, 'pmod.sub')}</span>
+                </span>
+            </div>
+            <span class="dm-mod-close"><DmIcon name="x" stroke={2} /></span>
+        </div>
+
+        <div class:list={['dm-mod-body', { 'is-clipped': isSat }]}>
+            {!isSat && (
+                <div class="dm-mod-sec">
+                    <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="tag" /></span><span class="dm-mod-sec-t">{dmT(lang, 'pmod.sec_que')}</span></div>
+                    <span class="dm-mod-chips">
+                        <span class="dm-mod-chip"><DmIcon name="products" />{dmT(lang, 'pmod.tipo_bien')}</span>
+                        <span class="dm-mod-chip is-on"><DmIcon name="clock" />{dmT(lang, 'pmod.tipo_servicio')}</span>
+                        <span class="dm-mod-chip"><DmIcon name="refresh" />{dmT(lang, 'pmod.tipo_suscripcion')}</span>
+                    </span>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'pmod.nombre')}</span>
+                        <span class="dm-mod-input"><span class="dm-mod-v">{d.nombre}</span></span>
+                    </div>
+                    <div class="dm-mod-row">
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'pmod.sku')} <i>{optLbl}</i></span>
+                            <span class="dm-mod-input is-mono"><span class="dm-mod-v">{d.sku}</span></span>
+                        </div>
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'pmod.unidad')}</span>
+                            <span class="dm-mod-input"><span class="dm-mod-v">{d.unidad}</span></span>
+                        </div>
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'pmod.descripcion')} <i>{optLbl}</i></span>
+                        <span class="dm-mod-input dm-mod-textarea">{d.desc}</span>
+                    </div>
+                </div>
+            )}
+
+            {!isSat && (
+                <div class="dm-mod-sec">
+                    <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="coin" /></span><span class="dm-mod-sec-t">{dmT(lang, 'pmod.sec_precio')}</span></div>
+                    <div class="dm-mod-row">
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'pmod.precio_venta')} <i class="dm-prm-per">/ {d.unidad}</i></span>
+                            <span class="dm-mod-input is-mono"><span class="dm-mod-v">{PRECIO}</span><span class="dm-mod-affix">{CUR}</span></span>
+                        </div>
+                        <div class="dm-mod-field">
+                            <span class="dm-mod-label">{dmT(lang, 'pmod.costo_pregunta')} <i>{optLbl}</i></span>
+                            <span class="dm-mod-input is-mono"><span class="dm-mod-v">{COSTO}</span><span class="dm-mod-affix">{CUR}</span></span>
+                        </div>
+                    </div>
+                    <span class="dm-mod-hint">{dmT(lang, 'pmod.costo_hint')}</span>
+                    <div class="dm-prm-margin">
+                        <span class="dm-prm-bar"><span class:list={['dm-prm-fill', marginCls]} style={`--dm-prm-m:${margen}%`}></span></span>
+                        <span class="dm-prm-mtext" set:html={ganaHtml} />
+                    </div>
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'pmod.impuesto')}</span>
+                        <span class="dm-mod-input is-select"><span class="dm-mod-v">{tax8}</span></span>
+                        <span class="dm-mod-hint">{dmT(lang, 'pmod.impuesto_hint')}</span>
+                    </div>
+                </div>
+            )}
+
+            {isSat && (
+                <div class="dm-mod-sec is-flush">
+                    <div class="dm-mod-field">
+                        <span class="dm-mod-label">{dmT(lang, 'pmod.impuesto')}</span>
+                        <span class="dm-mod-input is-select"><span class="dm-mod-v">{tax8}</span></span>
+                        <span class="dm-mod-hint">{dmT(lang, 'pmod.impuesto_hint')}</span>
+                    </div>
+                </div>
+            )}
+
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="document" /></span><span class="dm-mod-sec-t">{dmT(lang, 'pmod.sec_sat')} <i class="dm-prm-opt">{optLbl}</i></span></div>
+                <span class="dm-mod-hint">{dmT(lang, 'pmod.sat_hint')}</span>
+                <div class="dm-mod-field dm-prm-combo">
+                    <span class="dm-mod-label">{dmT(lang, 'pmod.clave_sat')}</span>
+                    {isSat ? (
+                        <span class="dm-mod-input is-focus"><span>software</span><span class="dm-mod-caret"></span></span>
+                    ) : (
+                        <span class="dm-mod-input is-mono"><span class="dm-mod-v">{elegida.clave}</span></span>
+                    )}
+                    {isSat ? (
+                        <span class="dm-prm-satlist">
+                            {SAT_RESULTS.map((r) => <span class="dm-prm-satopt"><b>{r.clave}</b><span>{r.descripcion}</span></span>)}
+                        </span>
+                    ) : (
+                        <span class="dm-mod-hint">{tpl(dmT(lang, 'pmod.clave_sat_elegida'), { descripcion: elegida.descripcion })}</span>
+                    )}
+                </div>
+                <div class="dm-mod-field">
+                    <span class="dm-mod-label">{dmT(lang, 'pmod.clave_unidad')}</span>
+                    <span class="dm-mod-input is-mono is-ph"><span class="dm-mod-v">{claveU}</span></span>
+                    <span class="dm-mod-hint">{unidadHint}</span>
+                </div>
+            </div>
+
+            <div class="dm-mod-sec">
+                <div class="dm-mod-sec-h"><span class="dm-mod-sec-i"><DmIcon name="chart" /></span><span class="dm-mod-sec-t">{dmT(lang, 'pmod.vol_titulo')} <i class="dm-prm-opt">{optLbl}</i></span></div>
+                <span class="dm-mod-hint">{dmT(lang, 'pmod.vol_hint')}</span>
+                {!isSat && (
+                    <div class="dm-prm-vol">
+                        {VOL.map((v) => (
+                            <div class="dm-prm-vrow">
+                                <span class="dm-prm-vcell"><span class="dm-prm-vpre">{dmT(lang, 'pmod.vol_desde')}</span><span class="dm-prm-vval">{v.min}</span><span class="dm-prm-vpre">{d.unidad}</span></span>
+                                <span class="dm-prm-varrow">→</span>
+                                <span class="dm-prm-vcell"><span class="dm-prm-vpre">$</span><span class="dm-prm-vval">{nf2(v.precio)}</span><span class="dm-prm-vcur">{CUR}</span></span>
+                                <span class="dm-prm-vdel"><DmIcon name="x" stroke={2} /></span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <span class="dm-prm-vadd"><DmIcon name="plus" stroke={2} />{dmT(lang, 'pmod.vol_agregar')}</span>
+            </div>
+
+            <div class="dm-mod-sec dm-prm-estado">
+                <span class="dm-prm-estado-t">
+                    <span class="dm-mod-sec-t">{dmT(lang, 'pmod.estado_label')}</span>
+                    <span class="dm-mod-hint">{dmT(lang, 'pmod.estado_hint')}</span>
+                </span>
+                <span class="dm-mod-chips">
+                    <span class="dm-mod-chip is-on">{dmT(lang, 'pmod.activo')}</span>
+                    <span class="dm-mod-chip">{dmT(lang, 'pmod.inactivo')}</span>
+                </span>
+            </div>
+        </div>
+
+        <div class:list={['dm-mod-foot', { 'is-more': isSat }]}>
+            <span class="dm-mod-delete">{dmT(lang, 'pmod.eliminar')}</span>
+            <span class="dm-mod-spacer"></span>
+            <span class="dm-mod-cancel">{dmT(lang, 'pmod.cancelar')}</span>
+            <span class="dm-mod-save">{dmT(lang, 'pmod.guardar_producto')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-prm-figure .dm-v-panel { padding: 30px 28px; }
+    .dm-prm-figure.dm-prm-is-sat .dm-mod-body { --dm-mod-body-h: 440px; padding-top: 12px; }
+
+    .dm-prm-per { font-weight: 600; }
+    .dm-prm-opt { font-style: normal; font-weight: 600; color: var(--dm-muted); }
+
+    /* Medidor de margen (.margin-strip) */
+    .dm-prm-margin { display: flex; flex-direction: column; gap: 6px; }
+    .dm-prm-bar { display: block; height: 5px; border-radius: 100px; background: var(--dm-canvas); overflow: hidden; }
+    .dm-prm-fill { display: block; height: 100%; width: var(--dm-prm-m, 0%); border-radius: 100px; }
+    .dm-prm-fill.is-good { background: var(--dm-ok); }
+    .dm-prm-fill.is-warn { background: var(--dm-warn); }
+    .dm-prm-fill.is-bad { background: var(--dm-danger); }
+    .dm-prm-mtext { font-size: 10.5px; font-weight: 500; color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+    .dm-prm-mtext b { font-weight: 700; color: var(--dm-text); }
+
+    /* Buscador de claves SAT abierto (.pm-sat-list): flota sobre el campo de abajo */
+    .dm-prm-combo { z-index: 2; }
+    .dm-prm-satlist { position: absolute; left: 0; right: 0; top: calc(100% + 5px); display: flex; flex-direction: column; padding: 4px; border-radius: 11px; background: #fff; box-shadow: 0 0 0 0.5px rgba(10, 25, 47, 0.1), 0 16px 40px -12px rgba(10, 25, 47, 0.3); }
+    .dm-prm-satopt { display: flex; align-items: baseline; gap: 9px; padding: 8px 9px; border-radius: 7px; font-size: 11px; line-height: 1.35; color: var(--dm-text); min-width: 0; }
+    .dm-prm-satopt b { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dm-prm-satopt span { min-width: 0; }
+
+    /* Niveles de volumen (.vol-row / .vol-cell) */
+    .dm-prm-vol { display: flex; flex-direction: column; gap: 7px; }
+    .dm-prm-vrow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 26px; align-items: center; gap: 7px; }
+    .dm-prm-vcell { display: flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; border-radius: 8px; background: var(--dm-canvas); font-size: 11.5px; color: var(--dm-text); min-width: 0; white-space: nowrap; overflow: hidden; }
+    .dm-prm-vval { flex: 1 1 auto; min-width: 0; font-variant-numeric: tabular-nums; }
+    .dm-prm-vpre { flex-shrink: 0; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-prm-vcur { flex-shrink: 0; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; color: var(--dm-faint); }
+    .dm-prm-varrow { font-size: 11px; color: var(--dm-muted); }
+    .dm-prm-vdel { display: grid; place-items: center; color: var(--dm-muted); }
+    .dm-prm-vdel .dm-ico { width: 11px; height: 11px; }
+    .dm-prm-vadd { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 11px; font-weight: 600; color: var(--dm-navy); }
+    .dm-prm-vadd .dm-ico { width: 11px; height: 11px; }
+
+    /* Estado en una fila (.pm-sec-row) */
+    .dm-prm-estado { flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; }
+    .dm-prm-estado-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-prm-estado .dm-mod-chips { flex-wrap: nowrap; }
+
+    @container dm (max-width: 520px) {
+        .dm-prm-figure .dm-v-panel { padding: 18px 12px; }
+        .dm-prm-figure.dm-prm-is-sat .dm-mod-body { --dm-mod-body-h: 520px; }
+        /* La lista se parte en más renglones: que siga cubriendo solo la clave de unidad. */
+        .dm-prm-is-sat .dm-prm-combo { margin-bottom: 28px; }
+        .dm-prm-vrow { grid-template-columns: minmax(0, 1fr) 26px; }
+        .dm-prm-vrow > .dm-prm-vcell:first-child { grid-column: 1; grid-row: 1; }
+        .dm-prm-vrow > .dm-prm-vcell:nth-child(3) { grid-column: 1; grid-row: 2; }
+        .dm-prm-varrow { display: none; }
+        .dm-prm-vdel { grid-column: 2; grid-row: 1 / 3; }
+        .dm-prm-estado { flex-direction: column; align-items: flex-start; }
+    }
+</style>

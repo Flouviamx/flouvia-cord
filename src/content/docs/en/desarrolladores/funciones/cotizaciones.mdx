@@ -2,7 +2,7 @@
 title: "Quotes API"
 seoTitle: "Cord Quotes API"
 description: "Create, update, and send quotes programmatically."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with permission on the cotizaciones resource"]
@@ -91,6 +91,7 @@ The `status` value is the internal state as-is (English, never translated): `dra
       "total": 6000,
       "moneda": "MXN",
       "terminos": "Net 30",
+      "terminos_codigo": "net30",
       "vigencia": "10 sep 2026",
       "creada": "20 ago 2026",
       "link_publico": "https://cordhq.app/q/9f3b6c2a7e1d4f8b0a5c3e7d1b9f2a46"
@@ -101,7 +102,7 @@ The `status` value is the internal state as-is (English, never translated): `dra
 ```
 
 <Callout type="warning" title="Dates and terms in display format">
-In the list and the detail, `terminos` comes as a label (`Contado`, `Net 30`, `Net 60`) and `vigencia` and `creada` as display dates (`10 sep 2026`), not as codes or ISO dates. Don't parse them: for the exact time of each change, use `created_at` from the [event history](/en/docs/desarrolladores/funciones/eventos) with `object_id`.
+In the list and the detail, `terminos` comes as a label in your account's language (`Due on receipt` or `Contado`, `Net 45`) and `vigencia` and `creada` as display dates (`10 sep 2026`), not as ISO dates. Don't parse them: to compare the term use `terminos_codigo` (`contado`, `net7`, `net15`, `net30`, `net45`, `net60`, or `net90`), which doesn't change with the language; for the exact time of each change, use `created_at` from the [event history](/en/docs/desarrolladores/funciones/eventos) with `object_id`.
 </Callout>
 
 In the list, `link_publico` is also an absolute URL, just like in the creation response. For the detail of a single quote (line items, event timeline, approval), use `GET /api/v1/cotizaciones/{id}`.

@@ -76,7 +76,7 @@ de `DocsSidebar.astro`.
 - Todo `Dm*.astro` de esa carpeta se registra solo en MDX (`index.ts` con
   `import.meta.glob`); se usa como `<DmNombre lang="es" />`. Archivos sin
   prefijo `Dm` son piezas internas.
-- 51 mockups. Son calca del producto real, no ilustraciones: cuando la app
+- 53 mockups. Son calca del producto real, no ilustraciones: cuando la app
   cambia una pantalla documentada, su mockup se revisa. Contenido interno
   `aria-hidden` + `inert`; el `caption` es lo que lee un lector de pantalla.
 - Prohibido HTML con `style=""` dentro del MDX.

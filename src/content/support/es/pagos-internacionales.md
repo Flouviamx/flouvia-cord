@@ -14,10 +14,10 @@ Cord te permite crear la cotización en cualquiera de las divisas que ofrece el 
 
 El tratamiento fiscal de una venta internacional depende de dónde esté domiciliado tu negocio, no del país del cliente:
 
-**Si tu negocio está en México**, la venta a un extranjero es una exportación de servicios y se factura como CFDI:
-1. Usa el RFC genérico internacional **XEXX010101000** para el receptor.
-2. Selecciona Uso de CFDI: **S01 (Sin efectos fiscales)**.
-3. Selecciona la tasa de **IVA 0%** — la exportación de servicios desde México está gravada a tasa cero.
-4. Timbra la factura. Cord genera un CFDI válido que comprueba tu ingreso internacional.
+**Si tu negocio está en México**, la venta a un extranjero se factura como CFDI a un residente en el extranjero:
+1. En la ficha del cliente, elige su **País** y captura su número fiscal de su país (no un RFC).
+2. Cord pone por ti el RFC genérico de extranjeros **XEXX010101000**, su residencia fiscal y el uso **S01 (Sin efectos fiscales)**.
+3. Elige la tasa de impuesto de cada línea con tu contador; la exportación de servicios suele ir al **IVA 0 %**.
+4. Timbra la factura. Ver [Facturar a clientes en el extranjero](/soporte/facturas-extranjero).
 
 **Si tu negocio está en cualquier otro país soportado** (Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile o Perú), la factura es un documento comercial (o Verifactu en España) con el vocabulario fiscal de tu propio país — no el del SAT. Si tu negocio está en la Unión Europea y le vendes a un cliente con NIF-IVA en otro país miembro, la operación puede aplicar la inversión del sujeto pasivo intracomunitaria (tipo 0% con la mención legal correspondiente) en vez de tu IVA local. Consulta con tu asesor fiscal el tratamiento exacto de tu exportación.

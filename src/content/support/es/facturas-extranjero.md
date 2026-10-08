@@ -8,15 +8,17 @@ Configura el cliente correctamente y Cord factura la venta en la divisa que corr
 
 ### Paso común a cualquier país: marca el país del cliente
 
-Al dar de alta al cliente, selecciona su país en el campo **País** de su ficha (no "hereda del emisor"). Cord usa ese dato, junto con el identificador fiscal que captures, para aplicar el tratamiento correcto a la factura.
+Al dar de alta al cliente, elige su país en el campo **País**, al inicio de su ficha. Viene preseleccionado con el país de tu negocio: cámbialo si el cliente radica en otro. Cord usa ese dato, junto con el identificador fiscal que captures, para aplicar el tratamiento correcto a la factura; también ajusta el nombre del identificador fiscal, la lada del teléfono y el formato de la dirección.
 
-### México: exportación de servicios
+### México: CFDI a un residente en el extranjero
 
-Vender servicios o licencias de software a un cliente fuera de México requiere un CFDI de exportación de servicios:
+Si tu negocio está en México y el país del cliente es otro, Cord timbra el CFDI como a un **residente en el extranjero** sin que configures nada más:
 
-1. En el campo de identificador fiscal del cliente, usa el RFC genérico internacional del SAT: `XEXX010101000`. Cord no tiene un campo separado para el Tax ID del país de tu cliente — hoy se usa este único campo.
-2. En **Uso de CFDI** de la ficha del cliente, selecciona **S01 (Sin efectos fiscales)**, ya que el receptor extranjero no deduce impuestos ante el SAT.
-3. Al crear la cotización o factura, configura su **divisa** a la que corresponda (por ejemplo, USD) y selecciona la tasa **Exento** en el impuesto de la línea si tu contador confirma que esa venta califica para tasa 0% de exportación.
+1. En la ficha del cliente, elige su **País** y captura en el identificador fiscal **su número fiscal de su país** (EIN en Estados Unidos, NIF en España, VAT number en Reino Unido…). No escribas un RFC: no lo tiene.
+2. Al timbrar, Cord usa el RFC genérico de extranjeros del SAT (`XEXX010101000`), declara la **residencia fiscal** del país de la ficha, manda su número fiscal como **número de registro tributario** y pone el uso **S01 (Sin efectos fiscales)**. El régimen fiscal y el uso de CFDI de la ficha no aplican a un extranjero.
+3. Al crear la cotización o factura, elige su **divisa** (por ejemplo, USD) y la tasa de impuesto de cada línea. La decides tú con tu contador: la exportación de servicios suele ir al 0 %.
+
+Cord no emite el **Complemento de Comercio Exterior**, que exige la exportación definitiva de mercancías (clave A1). Para servicios o licencias no hace falta.
 
 ### España: cliente en la Unión Europea o fuera de ella
 

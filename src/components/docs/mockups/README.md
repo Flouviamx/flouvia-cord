@@ -20,6 +20,7 @@ imitar (`src/layouts/AppLayout.astro`, `src/pages/app/**`, `src/pages/q/**`).
 | `index.ts` | Registro automático (`import.meta.glob`): todo `Dm*.astro` de la carpeta queda disponible en el MDX por su nombre de archivo. |
 | `DmOnboardingWidget.astro` | Widget "Configura Cord" sobre Inicio. |
 | `DmQuotePayment.astro` | Página de pago del link (`/q/[token]/pay`) con anticipo. |
+| `dm-app-modal.css` | Esqueleto de los modales de la app (`dm-mod-*`, calca de `src/styles/modal.css`): encabezado, secciones, campos, chips y pie. Lo usan `DmClientModal` y `DmProductModal`. |
 
 ## Uso desde MDX
 

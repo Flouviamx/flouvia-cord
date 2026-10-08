@@ -2,7 +2,7 @@
 title: "Import your catalog"
 seoTitle: "Cord catalog: products, kits, volume pricing and CSV import"
 description: "Create products and services, build kits, set volume pricing, and import products and clients from a CSV file with column mapping and preview."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -29,25 +29,51 @@ lives in **Products**, in the sidebar, with two tabs: **Catalog** and **Kits**.
 
 <Steps>
 1. In **Products**, select **+ New product** (or **Create › Product** in the top bar).
-2. Enter the **Name** (required) and, optionally, the **SKU**, the **Unit** (piece,
-   service, hour, m², kg...) and a **Description**.
-3. Enter the **Selling price**, before taxes, in your account's currency.
-4. Optional: under **How much does it cost you?** enter your cost. Cord shows how much
-   you earn or lose per unit and calculates the margin when quoting. Your client never
-   sees the cost.
-5. Optional: add **Volume pricing** (see below).
-6. Choose the **Status** (Active or Inactive) and select **Save product**.
+2. Choose what you sell: **Product**, **Service**, or **Subscription or license**. It only
+   changes the suggested units (unit and box, hour and project, month and license); it
+   doesn't limit anything else.
+3. Enter the **Name** (required) and, optionally, the **SKU**, the **Unit**, and a
+   **Description**. The unit is free text: pick a suggestion or type your own.
+4. Enter the **Selling price**, before taxes, in your account's currency.
+5. Optional: under **Your cost** enter what it costs you. Cord shows how much you earn
+   or lose per unit and calculates the margin when quoting. Your client never sees the
+   cost.
+6. Optional: under **Tax**, choose the rate this product brings into a quote or invoice
+   (shown when your tax catalog has more than one rate).
+7. Mexico only, optional: assign its **SAT keys** (see below).
+8. Optional: add **Volume pricing** (see below).
+9. Choose the **Status** (Active or Inactive) and select **Save product**.
 </Steps>
+
+<DmProductModal lang="en" />
 
 An **inactive** product is no longer offered when quoting, but keeps its history and
 earlier quotes.
 
 <Callout type="info">
-**Tax does not live on the product.** Cord calculates taxes per **quote line**: the same
-product can be taxed in one sale and exempt in another. When you add the line you choose
-the rate from your account's tax catalog (**Settings › Quotes › Taxes**), named after
-your country's tax. See [Products and discounts](/en/docs/cotizacion/productos).
+**A product's tax is a suggestion.** Cord calculates taxes per **quote line**: when you
+add the product, the line comes in with the rate you assigned to it (or with your default
+rate if you didn't assign one, or if that rate is no longer in your catalog under
+**Settings › Quotes › Taxes**), and you can change it on the line. Changing the product's
+rate later doesn't alter quotes or invoices already sent. See
+[Products and discounts](/en/docs/cotizacion/productos).
 </Callout>
+
+## SAT keys (Mexico)
+
+If your business invoices in Mexico, each product has an **E-invoicing (SAT, Mexico)**
+section:
+
+- **SAT product or service key:** type a word ("software", "consulting") and pick the key
+  from the SAT catalog, or type its 8 digits.
+- **SAT unit key:** derived from the product's unit ("hour" → `HUR`, "month" → `MON`,
+  "kg" → `KGM`). Type another one only if your accountant asks for a different key.
+
+Invoices read these keys when stamping. A product without a product key, or a free line,
+is stamped with the generic keys `01010101` and `H87`. More in
+[Invoicing](/en/docs/pagos/facturacion).
+
+<DmProductModal lang="en" escenario="sat" />
 
 ## Volume pricing
 

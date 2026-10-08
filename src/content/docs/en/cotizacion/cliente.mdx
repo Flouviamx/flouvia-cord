@@ -77,21 +77,29 @@ MXN 900. The list price doesn't change and you can adjust any line's price by ha
 
 ### Commercial
 
-- **Company** (required): the client's name. It's also the recipient name on their invoice; write it as it appears on their tax documents.
+- **Name or legal name** (required): the client's name, whether a company or a person. It's also the recipient name on their invoice; write it as it appears on their tax documents.
 - **Contact:** the person who decides.
 - **Email:** where the link is sent when you send the quote from Cord.
-- **Phone**, **Credit limit**, and **Payment terms** (Due on receipt, Net 15, Net 30, Net 60, or another term: Net 7, Net 45, or Net 90) proposed when you quote them.
+- **Phone** with country code (chosen next to the number, following the client's country), **Credit limit**, and **Payment terms** (Due on receipt, Net 15, Net 30, Net 60, or another term: Net 7, Net 45, or Net 90) proposed when you quote them.
 
 ### Tax
 
-- **Tax ID:** the label adapts to the client's country: **RFC** in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on. Cord stores it uppercased and trimmed; it doesn't validate its structure.
-- **Address:** country, postal code, address, city, and state or province, in the **Address** section.
+- **Country** and **Tax ID:** the tax ID label adapts to the client's country: **RFC** in Mexico, NIF/CIF in Spain, EIN/Tax ID in the United States, and so on. In Cord's 12 markets its format is also checked (in Mexico, the RFC's shape, date and check digit): if it doesn't look right you'll see a warning, but you can still save. It's stored uppercased.
+- **Address:** address, city, state or province, and postal code, in the **Address** section; field names follow the country.
 
-If the client is Mexican (or you don't set a country and your business is in Mexico),
-a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
+If your business invoices in Mexico and the client is Mexican, a **Tax details for CFDI
+(Mexico)** section appears with two CFDI 4.0 fields, filtered by RFC type (12
+characters, legal entity; 13, individual):
 
 - **Tax regime**, for example *601 - General de Ley Personas Morales*.
 - **CFDI use**, for example *G03 - Gastos en general*, which is used if you leave it empty.
+
+If your business invoices in Mexico and the client is from another country, that section
+doesn't appear: their CFDI is stamped to a foreign resident (generic RFC XEXX010101000,
+their country as tax residence, their tax ID as the foreign tax registration number, and
+use S01). The profile shows a notice about it.
+
+<DmClientModal lang="en" escenario="extranjero" />
 
 ## Behavior and edge cases
 
@@ -116,7 +124,7 @@ a **CFDI tax data (Mexico)** section appears with two CFDI 4.0 fields:
 
 **The tier discount wasn't applied.** It only lowers catalog products; free lines have no list price.
 
-**The CFDI was issued to "público en general".** The client had no RFC when you stamped.
+**The CFDI was issued to "público en general".** The client is Mexican and had no RFC when you stamped. If they're actually foreign, choose their country in the profile: their next CFDI will be issued to a foreign resident.
 
 ## Related
 

@@ -66,9 +66,10 @@
     `invoice.due_soon`, `invoice.past_due`, `schedule.tick`) y responde
     `invalid_request` en vez de `invalid_cursor`. `listCursor` sólo valida la forma:
     un cursor de otro recurso llega a la base (probable 500).
-14. **Campos de API que son texto de pantalla**: `terminos` ("Net 30"), `vigencia`
-    y `creada` ("10 sep 2026") en cotizaciones, facturas y clientes. Exponer el
-    dato (`net30`, ISO) y dejar el texto como campo aparte.
+14. **Fechas de API que son texto de pantalla**: `vigencia` y `creada`
+    ("10 sep 2026") en cotizaciones, facturas y clientes. Exponer la fecha ISO y
+    dejar el texto como campo aparte. (Los términos ya tienen su código estable:
+    `terminos_codigo` en cotizaciones y `terminosCode` en clientes, oct 2026.)
 15. **`POST /api/v1/setup/plans`**: 413 y 502 salen con `code: invalid_request` y
     no valida content-type como las demás rutas.
 16. **`test_helpers/webhooks` con `objeto_id`** devuelve `datos: "real"` aunque el
