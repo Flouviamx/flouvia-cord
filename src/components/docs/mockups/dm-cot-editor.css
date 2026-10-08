@@ -38,8 +38,8 @@
 .dm-ced-or::before, .dm-ced-or::after { content: ''; flex: 1; height: 1px; background: var(--dm-border); }
 
 /* ── Líneas ─────────────────────────────────────────────────────────────── */
-.dm-ced-lines { --ced-cols: minmax(0, 1fr) 40px 90px 98px 58px max-content 38px 12px; }
-.dm-ced-lines.no-tax { --ced-cols: minmax(0, 1fr) 40px 90px 98px max-content 38px 12px; }
+.dm-ced-lines { --ced-cols: minmax(0, 1fr) 40px 90px 98px 58px 112px 38px 12px; }
+.dm-ced-lines.no-tax { --ced-cols: minmax(0, 1fr) 40px 90px 98px 112px 38px 12px; }
 .dm-ced-lh, .dm-ced-lr { display: grid; grid-template-columns: var(--ced-cols); gap: 8px; align-items: center; }
 .dm-ced-lh { padding-bottom: 7px; border-bottom: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; }
 .dm-ced-lh .is-right { text-align: right; }
