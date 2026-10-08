@@ -1,0 +1,117 @@
+---
+// Mockup: el diálogo de nueva llave del Workbench (#wbKey en
+// DevWorkbench.astro) con el tipo "Restringida (Backend)" elegido, tal como
+// queda para el proxy de Elements: cotizaciones y elements en escritura,
+// productos y clientes en lectura, el resto sin acceso, una IP permitida y
+// vencimiento a 90 días. Con una llave restringida la app oculta el campo de
+// permisos global (syncKeyFields) y muestra los permisos por recurso; el
+// título es "Nueva API key EN VIVO" porque se crea en modo vivo.
+//
+// Los recursos y su orden salen de RESOURCE_IDS (api-key-policy.ts) y sus
+// nombres del diccionario real (set.api.rec.*). `setup` se omite: hoy no tiene
+// nombre en el diccionario y el diálogo real muestra la clave cruda.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import './WbPanel.astro';
+import { RESOURCE_IDS, type PermissionLevel } from '../../../lib/api-key-policy';
+import { dmT, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const LEVEL: Partial<Record<string, PermissionLevel>> = {
+    cotizaciones: 'write', clientes: 'read', productos: 'read', elements: 'write',
+};
+const RES = RESOURCE_IDS.filter((id) => id !== 'setup');
+const DATA = {
+    es: {
+        caption: 'Diálogo "Nueva API key EN VIVO" con el tipo Restringida (Backend) seleccionado y los permisos por recurso del proxy de Elements: Cotizaciones y Elements en escritura, Productos y Clientes en lectura, el resto sin acceso; con una IP permitida y vencimiento a 90 días.',
+        nombre: 'Proxy de Elements — portal',
+    },
+    en: {
+        caption: '"New LIVE API key" dialog with the Restricted (Backend) type selected and the Elements proxy permissions per resource: Quotes and Elements with write access, Products and Customers with read access, everything else with no access; plus one allowed IP and a 90-day expiration.',
+        nombre: 'Elements proxy — portal',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const TYPES = [
+    { id: 'secreta', on: false },
+    { id: 'restringida', on: true },
+    { id: 'publica', on: false },
+] as const;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={470} caption={caption} class="dm-rkey-figure">
+    <div class="wbm-modal rkey">
+        <div class="wbm-modal-top">
+            <span class="wbm-modal-x"><DmIcon name="x" /></span>
+            <span class="wbm-modal-title">{dmT(lang, 'set.api.modal_nueva_vivo')}</span>
+        </div>
+        <div class="wbm-modal-body">
+            <div class="wbm-field">
+                <span class="wbm-flabel">{dmT(lang, 'set.api.modal_nombre')}</span>
+                <span class="wbm-input">{d.nombre}</span>
+            </div>
+            <div class="wbm-field">
+                <span class="wbm-flabel">{dmT(lang, 'set.api.tipo_clave')}</span>
+                <div class="wbm-opts">
+                    {TYPES.map((tp) => (
+                        <div class:list={['wbm-opt', { 'is-on': tp.on }]}>
+                            <span class="wbm-radio"></span>
+                            <span class="wbm-opt-body">
+                                <b>{dmT(lang, `set.api.tipo_${tp.id}_titulo`)}</b>
+                                <i>{dmT(lang, `set.api.tipo_${tp.id}_desc`)}</i>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div class="wbm-field">
+                <span class="wbm-flabel">{dmT(lang, 'set.api.permisos_recurso')}</span>
+                <div class="rkey-perms">
+                    {RES.map((id) => {
+                        const lv = LEVEL[id] ?? 'none';
+                        return (
+                            <div class:list={['rkey-perm', { 'is-set': lv !== 'none' }]}>
+                                <span>{dmT(lang, `set.api.rec.${id}` as any)}</span>
+                                <span class:list={['wbm-input is-sel', `rkey-lv-${lv}`]}>{dmT(lang, `set.api.nivel_${lv}`)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            <div class="wbm-field">
+                <span class="wbm-flabel">{dmT(lang, 'set.api.ips_label')}</span>
+                <span class="wbm-input wbm-mono rkey-ips">203.0.113.24</span>
+                <span class="wbm-hint">{dmT(lang, 'set.api.ips_hint')}</span>
+            </div>
+            <div class="wbm-field">
+                <span class="wbm-flabel">{dmT(lang, 'set.api.vence_label')}</span>
+                <span class="wbm-input is-sel">{tpl(dmT(lang, 'set.api.vence_dias'), { n: 90 })}</span>
+            </div>
+        </div>
+        <div class="wbm-modal-foot">
+            <span class="wbm-btn">{dmT(lang, 'set.api.cancelar')}</span>
+            <span class="wbm-btn wbm-btn-solid">{dmT(lang, 'set.api.generar_clave')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* El modal navy ES la tarjeta: el marco blanco del panel se retira. */
+    .dm-rkey-figure .dm-v-panel { background: linear-gradient(160deg, #1b2738 0%, #121b28 100%); box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.2); }
+    .dm-rkey-figure .dm-panel { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+    .rkey .wbm-modal-body { gap: 13px; }
+    .rkey-perms { display: flex; flex-direction: column; gap: 5px; }
+    .rkey-perm { display: grid; grid-template-columns: minmax(0, 1fr) 128px; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 500; color: var(--wbm-muted); }
+    .rkey-perm.is-set { color: var(--wbm-text); }
+    .rkey-perm .wbm-input { min-height: 28px; font-size: 11px; }
+    .rkey-lv-none { color: rgba(255, 255, 255, 0.4); }
+    .rkey-ips { font-size: 11.5px; }
+    @container dm (max-width: 520px) {
+        .rkey-perm { grid-template-columns: minmax(0, 1fr) 112px; }
+    }
+</style>
