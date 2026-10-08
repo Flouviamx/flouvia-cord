@@ -1,0 +1,118 @@
+---
+// Mockup: el informe personalizado (/app/informes?r=explorar). Calca de
+// src/pages/app/informes.astro + informes/ExplorerControls.astro + TablaReport.astro
+// con los datos que arma getExplorer() (src/lib/informes-explorar.ts):
+//
+//   - la tarjeta de controles: "Agrupar por" (select, aquí País), los chips de
+//     Métricas en el orden de METRICS — los elegidos en navy; Unidades y Margen
+//     bruto deshabilitados porque solo existen al agrupar por producto, con el
+//     motivo en su tooltip — y el botón Guardar con el pin. "Aplicar" no se ve:
+//     con JavaScript cada cambio aplica solo;
+//   - debajo, el informe tabla: KPIs de las cuatro primeras métricas contra el
+//     periodo anterior, barras de lo vendido y la tabla con su fila Total.
+//
+// `saved`: el mismo informe abierto desde Informes › Personalizados. El título es
+// el nombre guardado, el selector muestra el pin, y quien lo guardó ve el botón
+// de eliminar y "Guardar cambios".
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import RepTabla from './RepTabla.astro';
+import { REPORT_BY_ID, reportLabel } from '../../../lib/informes';
+import { METRICS, METRIC_LABEL, ITEM_ONLY } from '../../../lib/informes-explorar';
+import { dmT, dmMoney, pick, type DmLang } from './format';
+import { EXPLORER_COLS, EXPLORER_KPIS, EXPLORER_METRICS, EXPLORER_TOTALS, SAVED_REPORT, explorerRows } from './dm-informes';
+
+interface Props {
+    lang: DmLang;
+    /** Dibuja el informe guardado: su nombre como título, eliminar y Guardar cambios. */
+    saved?: boolean;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const saved = Astro.props.saved === true || (Astro.props.saved as unknown) === 'true';
+const def = REPORT_BY_ID.explorar;
+const nombre = SAVED_REPORT[lang];
+const title = saved ? nombre : reportLabel(def, lang);
+const rows = explorerRows(lang);
+const vendido = Number(EXPLORER_KPIS[2].value);
+const chosen = new Set<string>(EXPLORER_METRICS);
+
+const DATA = {
+    es: {
+        base: `con Agrupar por País y las métricas Cotizaciones, Ventas, Vendido, Tasa de cierre y Ticket promedio elegidas; Unidades y Margen bruto aparecen deshabilitados porque solo aplican al agrupar por producto. Debajo, los KPIs contra el periodo anterior (Vendido ${dmMoney(vendido, 'MXN', 'es')}, +18 %), las barras de lo vendido por país (México, Estados Unidos, España, Colombia, Canadá y Chile) y la tabla con su fila Total.`,
+        nuevo: 'Informes › Informe personalizado en los últimos 30 días, con el botón Guardar en la tarjeta de controles,',
+        guardado: `El informe guardado "${nombre}" abierto desde Personalizados: el título es su nombre, el selector muestra el pin y la tarjeta de controles trae el botón de eliminar y Guardar cambios,`,
+    },
+    en: {
+        base: `with Group by Country and the metrics Quotes, Sales, Sold, Close rate and Average ticket selected; Units and Gross margin appear disabled because they only apply when grouping by product. Below, the KPIs against the previous period (Sold ${dmMoney(vendido, 'MXN', 'en')}, +18%), bars of what was sold by country (Mexico, United States, Spain, Colombia, Canada and Chile) and the table with its Total row.`,
+        nuevo: 'Reports › Custom report for the last 30 days, with the Save button in the controls card,',
+        guardado: `The saved report "${nombre}" opened from Custom: the title is its name, the picker shows the pin and the controls card has the delete button and Save changes,`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? `${saved ? d.guardado : d.nuevo} ${d.base}`;
+const reason = dmT(lang, 'inf.x.solo_producto');
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="informes" title={title} height={950} caption={caption} class="dm-rex-figure">
+    <span slot="actions" class="dm-rx-actions">
+        <span class="dm-rx-pill"><DmIcon name={saved ? 'pin' : 'search-insight'} />{title}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+        <span class="dm-rx-pill is-date"><DmIcon name="calendar" />{dmT(lang, 'dash.dp_ultimos30')}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+    </span>
+    <div class="dm-rx-sub">{lang === 'en' ? 'One place to understand performance and decide what to move.' : 'Una sola casa para entender el desempeño y decidir qué mover.'}</div>
+
+    <div class="dm-surface dm-rex-form">
+        <span class="dm-rex-dim">
+            <span class="dm-rex-label">{dmT(lang, 'inf.t.agrupar')}</span>
+            <span class="dm-rex-select">{dmT(lang, 'inf.x.pais')}<DmIcon name="chevron-down" /></span>
+        </span>
+        <span class="dm-rex-metrics">
+            <span class="dm-rex-label">{dmT(lang, 'inf.x.metricas')}</span>
+            <span class="dm-rex-chips">
+                {METRICS.map((k) => {
+                    const off = ITEM_ONLY.includes(k);
+                    return (
+                        <span class:list={['dm-rex-chip', { 'is-on': chosen.has(k), 'is-off': off }]}>
+                            {dmT(lang, METRIC_LABEL[k] as any)}
+                            {k === 'margen' && <span class="dm-rex-tip">{reason}</span>}
+                        </span>
+                    );
+                })}
+            </span>
+        </span>
+        <span class="dm-rex-actions">
+            {saved && <span class="dm-rex-icon"><DmIcon name="trash" /></span>}
+            <span class="dm-rex-save"><DmIcon name="pin" />{saved ? dmT(lang, 'inf.x.guardar_cambios') : dmT(lang, 'inf.x.guardar')}</span>
+        </span>
+    </div>
+
+    <RepTabla lang={lang} descKey="inf.desc.explorar" kpis={EXPLORER_KPIS} cols={EXPLORER_COLS}
+        rows={rows} totals={EXPLORER_TOTALS} chart={{ kind: 'hbar', key: 'vendido' }}
+        zeros />
+</DocsMockup>
+
+<style is:global>
+    .dm-rex-figure .dm-page-head { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-rex-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-rex-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px 16px; padding: 13px 15px; margin-bottom: 12px; border-radius: 16px; }
+    .dm-rex-label { display: block; margin-bottom: 6px; font-size: 7.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-rex-dim { flex: 0 0 auto; }
+    .dm-rex-select { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 150px; height: 32px; padding: 0 10px 0 12px; border-radius: 10px; background: var(--dm-canvas); font-size: 11px; font-weight: 600; color: var(--dm-text); }
+    .dm-rex-select .dm-ico { width: 12px; height: 12px; color: var(--dm-muted); }
+    .dm-rex-metrics { flex: 1 1 320px; min-width: 0; }
+    .dm-rex-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dm-rex-chip { position: relative; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--dm-canvas); color: var(--dm-muted); font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .dm-rex-chip.is-on { background: var(--dm-navy); color: #fff; box-shadow: 0 4px 12px -6px rgba(10, 25, 47, 0.5); }
+    .dm-rex-chip.is-off { color: rgba(91, 100, 114, 0.45); background: rgba(245, 245, 247, 0.6); }
+    /* Tooltip nativo (title) del chip deshabilitado: el motivo. */
+    .dm-rex-tip { position: absolute; right: 0; top: calc(100% + 6px); padding: 4px 7px; border-radius: 5px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.16); box-shadow: 0 3px 10px -3px rgba(10, 25, 47, 0.22); font-size: 9.5px; font-weight: 500; color: var(--dm-text); white-space: nowrap; z-index: 2; }
+    .dm-rex-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .dm-rex-save { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 10.5px; font-weight: 650; white-space: nowrap; box-shadow: 0 4px 12px -6px rgba(10, 25, 47, 0.5); }
+    .dm-rex-save .dm-ico { width: 13px; height: 13px; }
+    .dm-rex-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 1px solid var(--dm-border-strong); color: var(--dm-muted); }
+    .dm-rex-icon .dm-ico { width: 13px; height: 13px; }
+    @container dm (max-width: 640px) {
+        .dm-rex-figure .dm-stage { height: auto; max-height: 1700px; }
+        .dm-rex-figure .dm-page-head { flex-wrap: wrap; }
+        .dm-rex-tip { left: auto; right: 0; transform: none; }
+    }
+</style>

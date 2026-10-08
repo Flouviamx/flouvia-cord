@@ -1,7 +1,7 @@
 ---
 title: "Team, permissions, and security"
 description: "How to invite members, assign permissions, require 2FA, restrict domains, manage sessions, passkeys, OAuth, SSO access, and emergency access in Cord."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -43,7 +43,7 @@ user rates are in [Your subscription](/en/docs/cuenta/suscripcion).
 <Steps>
 1. Open **Settings › Team & permissions › Team & roles** and select **Add member**.
 2. Enter their email.
-3. Choose Administrator, Sales rep, Read only, or a custom combination.
+3. Choose Admin, Rep, Read only, or a custom combination.
 4. Review each permission and send the invitation.
 </Steps>
 
@@ -58,14 +58,14 @@ configured under **Settings › Team & permissions › Security**.
 
 Roles are editable presets, not a replacement for effective permissions:
 
-- **Administrator:** almost everything, including team; refunds are not enabled.
-- **Sales rep:** quotes, clients, products, and analytics; no settings or approvals.
+- **Admin:** almost everything, including team; refunds are not enabled.
+- **Rep:** quotes, clients, products, and reports; no settings or approvals.
 - **Read only:** enters the app without modification permissions.
 - **Custom:** a combination saved specifically for that member.
-- **Owner:** full access by definition; cannot be downgraded or revoked from Team.
+- **Super admin:** whoever created the account (the owner). Full access by definition; cannot be downgraded or revoked from Team.
 
 The independent permissions are Quotes, Approvals, Collections, Clients, Products,
-Analytics, Settings, Payment configuration, Refunds, and Team.
+Reports, Settings, Payment settings, Refunds, and Team.
 
 <Callout type="info">
 Hiding a button is not the security boundary. The APIs validate the permission and the

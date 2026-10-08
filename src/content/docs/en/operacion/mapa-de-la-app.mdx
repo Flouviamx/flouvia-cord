@@ -29,7 +29,7 @@ databases; they show different stages of the same clients, documents and transac
 6. Cord records the online payment or the payment you mark manually.
 7. The deal moves to **Invoices** and **Collections** based on the document issued, the
    balance and the due date.
-8. **Reports** and **Team** aggregate the results without creating a second copy of the
+8. **Reports** and **Performance** aggregate the results without creating a second copy of the
    transaction.
 </Steps>
 
@@ -52,8 +52,8 @@ workspaces, create a new one (**Create workspace**), open **Team settings**, tur
 | Revenue | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
 | Revenue | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
 | Revenue | **AI agent** (under Collections) | `/app/cobranza/agente` | Configure and supervise AI collections (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
-| Insights | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
-| Insights | **Performance** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
+| Insights | **Reports** | `/app/informes` | 15 reports in seven groups: Overview, Sales, Clients, Products, Finance, Team, and Custom. Seven are widget boards, seven are tables with comparison and CSV export, and the Custom report builds your own, saves it for the team, and emails it. Guides: [Reports and performance](/en/docs/gestion/informes) and [Custom reports](/en/docs/gestion/informes-personalizados). |
+| Insights | **Performance** | `/app/desempeno` | Team performance across your whole history: results attributed to whoever created or duplicated each quote. For a range with comparison, use the **Sales by team member** report. |
 | Automation | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
 
 Also:
@@ -91,7 +91,7 @@ narrower than 880 px they are disabled and everything is done with visible butto
 | `C` | New quote |
 | `F` | New invoice |
 | `T` | New task |
-| `G` then `D`, `C`, `L`, `P`, `T`, `B`, `A` or `F` | Go to Home, Quotes, Clients, Products, Tasks, Collections, Reports or Invoices |
+| `G` then `D`, `C`, `L`, `P`, `T`, `F`, `O`, `B`, `A`, `E` or `W` | Go to Home, Quotes, Clients, Products, Tasks, Invoices, Payments, Collections, Reports, Performance or Workflows |
 | `X` | Pin or unpin the current page in the sidebar |
 | `?` | Show or hide the shortcuts help |
 
@@ -174,9 +174,9 @@ The owner always has full access. Other members get presets or per-section permi
 - **Approvals:** approve discounts, amounts or controlled changes.
 - **Collections:** review and manage receivables.
 - **Clients** and **Products:** change their directories.
-- **Analytics:** open Reports and Team (performance).
+- **Reports:** open Reports and Performance, see Home's analytics widgets, and save custom reports.
 - **Settings:** change the business configuration.
-- **Payment configuration:** change Cord Payments and the payout account.
+- **Payment settings:** change Cord Payments and the payout account.
 - **Refunds:** start refunds of reconciled charges.
 - **Team:** invite people and change permissions.
 

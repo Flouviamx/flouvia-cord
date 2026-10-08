@@ -1,0 +1,91 @@
+/* ============================================================================
+   Informes en los mockups de docs (dm-rx-*). Calca, a escala de screenshot, de:
+   - el selector de informe y el de fechas de /app/informes (pastillas grises:
+     .report-picker-trigger de ReportPicker.astro y .dp-trigger de daterange.css);
+   - el informe tabla (TablaReport.astro): descripción, Exportar CSV, selector
+     Día/Semana/Mes, franja de KPIs con su comparación, gráfica y tabla ordenable
+     con fila de totales;
+   - la nota de divisa (MonedaNota.astro).
+
+   Lo comparten DmReports, DmReportTable y DmReportExplorer (cada uno con su
+   propio scope de Astro), así que es una hoja global a propósito (regla 11).
+   ============================================================================ */
+
+/* ── Acciones de la topbar de Informes ──────────────────────────────────── */
+.dm-rx-actions { display: flex; align-items: center; gap: 6px; }
+.dm-rx-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; background: #eceef2; color: var(--dm-text); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.dm-rx-pill .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+.dm-rx-pill .dm-ico:first-child { color: var(--dm-navy); }
+.dm-rx-pill .dm-rx-chev { width: 10px; height: 10px; opacity: 0.6; }
+.dm-rx-pill.is-date .dm-ico:first-child { color: var(--dm-muted); }
+.dm-rx-pill.is-open { background: #fff; box-shadow: inset 0 0 0 1.5px var(--dm-navy), 0 1px 3px rgba(10, 25, 47, 0.1); }
+.dm-rx-sub { margin: -8px 0 12px; font-size: 11px; color: var(--dm-muted); }
+
+/* ── Informe tabla ───────────────────────────────────────────────────────── */
+.dm-rx { display: flex; flex-direction: column; gap: 11px; }
+.dm-rx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.dm-rx-desc { flex: 1 1 260px; max-width: 62ch; font-size: 11px; line-height: 1.5; color: var(--dm-muted); }
+.dm-rx-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dm-rx-seg { display: inline-flex; padding: 2.5px; border-radius: 999px; background: var(--dm-canvas); box-shadow: inset 0 0 0 1px var(--dm-border); }
+.dm-rx-seg span { padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 600; color: var(--dm-muted); }
+.dm-rx-seg span.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 4px rgba(10, 25, 47, 0.08); }
+.dm-rx-export { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: #fff; border: 1px solid var(--dm-border-strong); font-size: 10.5px; font-weight: 650; color: var(--dm-text); white-space: nowrap; }
+.dm-rx-export .dm-ico { width: 13px; height: 13px; }
+
+.dm-rx-kpis { display: grid; grid-template-columns: repeat(var(--dm-rx-k, 4), minmax(0, 1fr)); gap: 1px; overflow: hidden; border-radius: 16px; background: var(--dm-border); box-shadow: var(--dm-shadow-card); }
+.dm-rx-kpi { display: flex; flex-direction: column; gap: 5px; padding: 12px 13px 13px; background: #fff; min-width: 0; }
+.dm-rx-kpi .dm-kpi-label { font-size: 8.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-rx-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 7px; }
+.dm-rx-num { font-size: 19px; line-height: 1.05; color: var(--dm-navy); letter-spacing: -0.035em; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dm-rx-num .dm-cur { font-size: 9px; }
+.dm-rx-kpi small { font-size: 9.5px; color: var(--dm-muted); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.dm-rx-kpi small .dm-cur { font-size: 7.5px; }
+
+/* Variación (.wx-delta): pastilla verde hacia arriba, roja hacia abajo. */
+.dm-rx-delta { display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px 1px 4px; border-radius: 999px; font-size: 9.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--dm-canvas); color: var(--dm-muted); }
+.dm-rx-delta .dm-ico { width: 9px; height: 9px; }
+.dm-rx-delta.is-up { background: rgba(16, 185, 129, 0.12); color: #0f8a5f; }
+.dm-rx-delta.is-down { background: rgba(239, 68, 68, 0.1); color: #c53030; }
+.dm-rx-delta.is-down .dm-ico { transform: rotate(180deg); }
+
+/* Gráfica (chart.ts): barras navy sobre pista gris. */
+.dm-rx-chart { padding: 14px 16px 12px; }
+.dm-rx-hbar { display: flex; flex-direction: column; gap: 9px; }
+.dm-rx-hrow { display: grid; grid-template-columns: minmax(0, 1.05fr) 1.5fr minmax(92px, auto); align-items: center; gap: 10px; }
+.dm-rx-hname { font-size: 10.5px; font-weight: 550; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-rx-htrack { height: 7px; border-radius: 99px; background: rgba(10, 25, 47, 0.06); overflow: hidden; }
+.dm-rx-htrack i { display: block; height: 100%; border-radius: 99px; background: var(--dm-navy); }
+.dm-rx-hval { font-size: 10.5px; font-weight: 600; color: var(--dm-navy); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dm-rx-hval .dm-cur { font-size: 7.5px; }
+.dm-rx-bars { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 6px; }
+.dm-rx-yax { display: flex; flex-direction: column; justify-content: space-between; height: 128px; font-size: 8.5px; color: var(--dm-faint); text-align: right; font-variant-numeric: tabular-nums; }
+.dm-rx-plot { position: relative; height: 128px; display: flex; align-items: flex-end; gap: 5px; background: repeating-linear-gradient(to bottom, rgba(10, 25, 47, 0.06) 0, rgba(10, 25, 47, 0.06) 1px, transparent 1px, transparent 42.33px); border-bottom: 1px solid rgba(10, 25, 47, 0.1); }
+.dm-rx-plot i { flex: 1; min-width: 0; border-radius: 4px 4px 1px 1px; background: var(--dm-navy); }
+.dm-rx-xax { grid-column: 2; display: flex; gap: 5px; font-size: 8.5px; color: var(--dm-faint); }
+.dm-rx-xax span { flex: 1; min-width: 0; text-align: center; white-space: nowrap; }
+.dm-rx-xax span.is-skip { visibility: hidden; }
+
+/* Tabla ordenable con totales (.rt-table). */
+.dm-rx-tcard { padding: 0; overflow: hidden; }
+.dm-rx-scroll { overflow: hidden; }
+.dm-rx-table { display: grid; grid-template-columns: var(--dm-rx-cols); min-width: var(--dm-rx-min, 0); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.dm-rx-table > span { display: flex; align-items: center; gap: 4px; padding: 8px 11px; border-bottom: 1px solid var(--dm-border); white-space: nowrap; overflow: hidden; min-width: 0; color: var(--dm-text); }
+.dm-rx-table > span.is-num { justify-content: flex-end; }
+.dm-rx-table > span.is-first { font-weight: 600; }
+.dm-rx-table > span.is-empty { color: var(--dm-muted); }
+.dm-rx-table > span .dm-cur { font-size: 7.5px; }
+.dm-rx-table > span.is-th { padding: 9px 11px 8px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--dm-muted); }
+.dm-rx-thl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dm-rx-table > span.is-th .dm-ico { width: 10px; height: 10px; flex: 0 0 auto; opacity: 0.35; }
+.dm-rx-table > span.is-th.is-sorted { color: var(--dm-text); }
+.dm-rx-table > span.is-th.is-sorted .dm-ico { opacity: 0.9; }
+.dm-rx-table > span.is-ft { background: var(--dm-canvas); font-weight: 700; border-bottom: 0; border-top: 1px solid var(--dm-border); margin-top: -1px; }
+.dm-rx-table > span.is-ellipsis { display: block; text-overflow: ellipsis; }
+.dm-rx-note { display: flex; align-items: flex-start; gap: 7px; padding: 9px 11px; border-radius: 12px; background: #eceef2; font-size: 10px; line-height: 1.45; color: var(--dm-muted); }
+.dm-rx-note .dm-ico { flex: 0 0 auto; width: 13px; height: 13px; margin-top: 1px; }
+
+@container dm (max-width: 640px) {
+  .dm-rx-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dm-rx-hrow { grid-template-columns: minmax(0, 1fr) minmax(80px, auto); row-gap: 4px; }
+  .dm-rx-htrack { grid-column: 1 / -1; grid-row: 2; }
+}

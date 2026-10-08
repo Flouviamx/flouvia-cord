@@ -1,0 +1,77 @@
+---
+// Mockup: un informe tabla de /app/informes (estilo Shopify). Calca de
+// src/pages/app/informes.astro + informes/TablaReport.astro con los datos que
+// arman getVentasCliente() y getVentasTiempo() en src/lib/informes-tabla.ts:
+//
+//   report="ventas-cliente" (por defecto) → "Ventas por cliente", últimos 30 días:
+//     KPIs Clientes que compraron · Vendido · Ticket promedio · Clientes recurrentes,
+//     barras horizontales de lo vendido por cliente (máx. 8) y la tabla con
+//     Cliente, Cotizaciones, Ventas, Vendido, Ticket promedio, Última venta,
+//     Cliente desde y Saldo hoy, ordenada por Vendido, con su fila Total.
+//   report="ventas" → "Ventas en el tiempo", últimos 90 días: selector
+//     Día / Semana / Mes (automático en Semana para 91 días), barras verticales por
+//     semana y la tabla por periodo.
+//
+// Arriba a la derecha, el selector de informe y el de fechas (pastillas grises).
+// Los importes de clientes en EE. UU. y España se suman reexpresados en MXN: por
+// eso la nota de divisa al pie (MonedaNota).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import RepTabla from './RepTabla.astro';
+import { REPORT_BY_ID, reportLabel } from '../../../lib/informes';
+import { dmT, dmMoney, pick, type DmLang } from './format';
+import {
+    CERRADO_30, VENTAS_CLIENTE, VENTAS_CLIENTE_COLS, VENTAS_CLIENTE_KPIS, VENTAS_CLIENTE_TOTALS,
+    VENTAS_TIEMPO, VENTAS_TIEMPO_COLS, VENTAS_TIEMPO_KPIS, VENTAS_TIEMPO_TOTALS,
+} from './dm-informes';
+
+interface Props {
+    lang: DmLang;
+    /** Qué informe tabla se dibuja. */
+    report?: 'ventas-cliente' | 'ventas';
+    caption?: string;
+}
+const { lang, report = 'ventas-cliente' } = Astro.props;
+const def = REPORT_BY_ID[report];
+const isTiempo = report === 'ventas';
+const VT = Number(VENTAS_TIEMPO_KPIS[0].value);
+
+const DATA = {
+    es: {
+        'ventas-cliente': `Informes › Ventas por cliente en los últimos 30 días: la descripción del informe y el botón Exportar CSV; los KPIs Clientes que compraron (8, +14 %), Vendido (${dmMoney(CERRADO_30, 'MXN', 'es')}, +18 % vs. el periodo anterior), Ticket promedio y Clientes recurrentes (63 %, +5 pts); las barras de lo vendido por cliente y la tabla ordenada por Vendido con su fila Total. Los clientes de Estados Unidos y España se suman reexpresados en MXN, como dice la nota de divisa.`,
+        ventas: `Informes › Ventas en el tiempo en los últimos 90 días, agrupado por Semana (el selector Día, Semana y Mes junto a Exportar CSV): KPIs Vendido (${dmMoney(VT, 'MXN', 'es')}, +12 % vs. el periodo anterior), Ventas, Ticket promedio y Cobrado; barras de lo vendido por semana y la tabla por periodo con su fila Total.`,
+    },
+    en: {
+        'ventas-cliente': `Reports › Sales by client for the last 30 days: the report description and the Export CSV button; the KPIs Clients who bought (8, +14%), Sold (${dmMoney(CERRADO_30, 'MXN', 'en')}, +18% vs. the previous period), Average ticket and Returning clients (63%, +5 pts); bars of what each client bought and the table sorted by Sold with its Total row. Clients in the United States and Spain are added up converted to MXN, as the currency note says.`,
+        ventas: `Reports › Sales over time for the last 90 days, grouped by Week (the Day, Week and Month selector next to Export CSV): the KPIs Sold (${dmMoney(VT, 'MXN', 'en')}, +12% vs. the previous period), Sales, Average ticket and Collected; bars of what was sold each week and the table by period with its Total row.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(DATA, lang)[report];
+const ICON = isTiempo ? 'chart-line' : 'clients';
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="informes" title={reportLabel(def, lang)} height={isTiempo ? 880 : 940} caption={caption} class="dm-rtb-figure">
+    <span slot="actions" class="dm-rx-actions">
+        <span class="dm-rx-pill"><DmIcon name={ICON} />{reportLabel(def, lang)}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+        <span class="dm-rx-pill is-date"><DmIcon name="calendar" />{dmT(lang, isTiempo ? 'dash.dp_ultimos90' : 'dash.dp_ultimos30')}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+    </span>
+    <div class="dm-rx-sub">{lang === 'en' ? 'One place to understand performance and decide what to move.' : 'Una sola casa para entender el desempeño y decidir qué mover.'}</div>
+
+    {isTiempo ? (
+        <RepTabla lang={lang} descKey="inf.desc.ventas" kpis={VENTAS_TIEMPO_KPIS} cols={VENTAS_TIEMPO_COLS}
+            rows={VENTAS_TIEMPO} totals={VENTAS_TIEMPO_TOTALS} chart={{ kind: 'bar', key: 'vendido' }}
+            granularity="week" gran sortKey="" maxRows={6} />
+    ) : (
+        <RepTabla lang={lang} descKey="inf.desc.ventas-cliente" kpis={VENTAS_CLIENTE_KPIS} cols={VENTAS_CLIENTE_COLS}
+            rows={VENTAS_CLIENTE} totals={VENTAS_CLIENTE_TOTALS} chart={{ kind: 'hbar', key: 'vendido' }}
+            sortKey="vendido" maxRows={8} />
+    )}
+</DocsMockup>
+
+<style is:global>
+    .dm-rtb-figure .dm-page-head { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-rtb-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); }
+    @container dm (max-width: 640px) {
+        .dm-rtb-figure .dm-stage { height: auto; max-height: 1500px; }
+        .dm-rtb-figure .dm-page-head { flex-wrap: wrap; }
+    }
+</style>

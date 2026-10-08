@@ -1,0 +1,89 @@
+---
+// Mockup: el diálogo "Guardar informe" del informe personalizado. Calca del
+// <dialog class="modal"> de src/components/app/informes/ExplorerControls.astro
+// (esqueleto de src/styles/modal.css): m-head con el h2 y el botón de cerrar,
+// m-body con Nombre (1 a 80 caracteres) y Envío por correo — Sin envío, Cada lunes,
+// El día 1 de cada mes — con su nota, y m-foot con Cancelar y Guardar.
+//
+// `saved`: el diálogo abierto desde un informe ya guardado por quien lo mira — el
+//   botón principal dice "Guardar cambios" y aparece "Guardar como nuevo".
+// `menu`: dibuja abierto el selector de Envío por correo con sus tres opciones
+//   (la lista del navegador tapa la nota mientras está abierta).
+import './dm-app-modal.css';
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, type DmLang } from './format';
+import { SAVED_REPORT } from './dm-informes';
+
+interface Props {
+    lang: DmLang;
+    saved?: boolean;
+    menu?: boolean;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const flag = (v: unknown) => v === true || v === 'true';
+const saved = flag(Astro.props.saved);
+const menu = flag(Astro.props.menu);
+const nombre = SAVED_REPORT[lang];
+const OPTS = ['inf.x.envio_ninguna', 'inf.x.envio_semanal', 'inf.x.envio_mensual'] as const;
+const current = 'inf.x.envio_semanal';
+
+const DATA = {
+    es: {
+        caption: `El diálogo Guardar informe: Nombre "${nombre}" y Envío por correo en Cada lunes${menu ? ', con la lista abierta: Sin envío, Cada lunes y El día 1 de cada mes' : `, con la nota "${dmT('es', 'inf.x.envio_nota')}"`}${menu ? '' : `; abajo, ${saved ? 'Guardar como nuevo, Cancelar y Guardar cambios' : 'Cancelar y Guardar'}`}.`,
+    },
+    en: {
+        caption: `The Save report dialog: Name "${nombre}" and Email delivery set to Every Monday${menu ? ', with the list open: No delivery, Every Monday and On the 1st of every month' : `, with the note "${dmT('en', 'inf.x.envio_nota')}"`}${menu ? '' : `; at the bottom, ${saved ? 'Save as new, Cancel and Save changes' : 'Cancel and Save'}`}.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(DATA, lang).caption;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={440} caption={caption} class={menu ? 'dm-svr-figure dm-svr-has-menu' : 'dm-svr-figure'}>
+    <div class="dm-mod">
+        <div class="dm-mod-head">
+            <span class="dm-svr-title">{dmT(lang, 'inf.x.titulo_guardar')}</span>
+            <span class="dm-mod-close dm-svr-close"><DmIcon name="x" /></span>
+        </div>
+        <div class="dm-mod-body dm-svr-body">
+            <div class="dm-mod-field">
+                <span class="dm-mod-label">{dmT(lang, 'inf.x.nombre')}</span>
+                <span class:list={['dm-mod-input', { 'is-focus': !menu }]}><span class="dm-mod-v">{nombre}</span>{!menu && <span class="dm-svr-caret"></span>}</span>
+            </div>
+            <div class="dm-mod-field dm-svr-freq">
+                <span class="dm-mod-label">{dmT(lang, 'inf.x.envio')}</span>
+                <span class:list={['dm-mod-input', 'is-select', { 'is-focus': menu }]}><span class="dm-mod-v">{dmT(lang, current)}</span></span>
+                <span class="dm-mod-hint">{dmT(lang, 'inf.x.envio_nota')}</span>
+                {menu && (
+                    <span class="dm-svr-menu">
+                        {OPTS.map((k) => <span class:list={['dm-svr-opt', { 'is-on': k === current }]}>{k === current ? <DmIcon name="check" stroke={2.2} /> : <i></i>}{dmT(lang, k)}</span>)}
+                    </span>
+                )}
+            </div>
+        </div>
+        <div class="dm-mod-foot">
+            {saved && <span class="dm-mod-cancel">{dmT(lang, 'inf.x.guardar_nuevo')}</span>}
+            <span class="dm-mod-spacer"></span>
+            <span class="dm-mod-cancel">{dmT(lang, 'inf.x.cancelar')}</span>
+            <span class="dm-mod-save">{dmT(lang, saved ? 'inf.x.guardar_cambios' : 'inf.x.guardar')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* El modal estándar mide 520 px; con el ancho del panel se calca a ~0.85. */
+    .dm-svr-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-svr-close { width: 26px; height: 26px; }
+    .dm-svr-body { gap: 14px; padding-bottom: 14px; }
+    .dm-svr-freq { position: relative; }
+    .dm-svr-caret { flex-shrink: 0; width: 1.5px; height: 15px; margin-left: -6px; background: var(--dm-navy); }
+    /* Lista del <select> abierta (popup del navegador): superficie sólida y sombra. */
+    .dm-svr-menu { position: absolute; left: 0; right: 0; top: 52px; z-index: 3; display: flex; flex-direction: column; padding: 4px; border-radius: 9px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.14); box-shadow: 0 10px 28px -10px rgba(10, 25, 47, 0.35), 0 2px 6px rgba(10, 25, 47, 0.08); }
+    .dm-svr-opt { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 6px; font-size: 11.5px; color: var(--dm-text); }
+    .dm-svr-opt .dm-ico, .dm-svr-opt i { width: 12px; height: 12px; flex: 0 0 auto; }
+    .dm-svr-opt.is-on { background: var(--dm-navy); color: #fff; }
+    .dm-svr-figure .dm-mod-foot { padding-top: 4px; }
+    /* La lista del navegador sale del diálogo: no la recorta el modal. */
+    .dm-svr-has-menu .dm-panel { overflow: visible; }
+    .dm-svr-has-menu .dm-v-panel { padding-bottom: 64px; }
+</style>

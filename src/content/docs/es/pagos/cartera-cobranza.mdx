@@ -2,7 +2,7 @@
 title: "Cartera y cobranza operativa"
 seoTitle: "Cartera y cobranza en Cord: qué cobrar hoy y cómo dar seguimiento"
 description: "Cómo funciona Cobranza: qué entra a la lista, qué mide cada widget, cómo registrar promesas de pago, recordar por WhatsApp y registrar un pago manual, y cómo se relaciona con la vista unificada de cuentas por cobrar."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Pro, Scale, Developer]
@@ -28,13 +28,16 @@ prerequisites: ["Plan Pro o superior", "Permiso Cobranza", "Cotizaciones aprobad
 
 ## Qué entra a la lista
 
-La lista de Cobranza incluye las **cotizaciones aprobadas o facturadas que todavía no están pagadas por completo**:
+La lista de Cobranza sale de la [vista unificada de cuentas por cobrar](#la-vista-unificada-de-cuentas-por-cobrar), así que junta los dos rieles:
 
-- con su **total**, su término de pago y su fecha de vencimiento (aprobación más los días del término);
+- las **cotizaciones aprobadas o facturadas que todavía no están pagadas**, con vencimiento igual a la aprobación más los días del término de pago;
+- las **facturas abiertas** con saldo, con su propia fecha de vencimiento, incluidas las emitidas sin cotización;
 - excepto las [igualas recurrentes](/docs/pagos/igualas), que se cobran solas cada mes y nunca se tratan como cartera vencida.
 
-<Callout type="info" title="Facturas y saldos parciales">
-La lista muestra el **total** de cada cotización, no el saldo después de anticipos o abonos, y hoy no incluye las facturas emitidas sin cotización. Para el **saldo real** de un cliente, con cotizaciones y facturas juntas, abre su ficha: el **estado de cuenta** usa la vista unificada de cuentas por cobrar. Las facturas vencidas también se ven en **Facturas**.
+Cada cuenta muestra su **saldo**: en una cotización, el total menos los pagos ya recibidos (anticipos, cuotas); en una factura, el total menos abonos parciales y notas de crédito. Los importes se expresan en la divisa de tu negocio; si vendes en varias divisas, la nota bajo la página dice cómo se convirtieron y cuál quedó fuera por no tener tipo de cambio disponible.
+
+<Callout type="info" title="Facturas en la lista">
+Una factura se cobra desde su propio detalle, porque ahí se registra el abono en su historial. Por eso, en las filas de factura el botón dice **Ver factura** en lugar de **Cobrada**, y la promesa de pago se registra solo en filas de cotización. Recordar por WhatsApp funciona en las dos.
 </Callout>
 
 ### La vista unificada de cuentas por cobrar
@@ -64,11 +67,11 @@ La usan el [agente de cobranza con IA](/docs/pagos/cobranza-ia), el **estado de 
 | **Antigüedad de la cartera** | Por vencer, 1–30 días, 31–60 días y más de 60 días. |
 | **Cuentas por cobrar** | La tabla accionable. |
 
-Puedes ocultar, ordenar o cambiar el tamaño de los widgets. Esa preferencia es personal y no cambia ningún cálculo.
+Con **Personalizar** puedes ocultar, ordenar o cambiar el tamaño de los widgets, con los mismos botones de icono (**Biblioteca**, **Restablecer** y **Listo**), la misma biblioteca flotante y el mismo teclado que el [Inicio](/docs/gestion/dashboard#personaliza-el-inicio). Desde la biblioteca puedes agregar además **Límites de crédito excedidos**: cuántos clientes están hoy por encima de su límite de crédito configurado. Esa preferencia es personal y no cambia ningún cálculo.
 
 ## La tabla y sus acciones
 
-La tabla filtra por **todas**, **vencidas**, **con promesa** o **sin gestión**. Cada fila muestra cliente, folio, términos, vencimiento, estado y monto, con estas acciones:
+La tabla filtra por **Todas**, **Vencidas**, **Con promesa** o **Sin gestión**. Cada fila muestra cliente, folio, términos, vencimiento, estado y saldo, con estas acciones:
 
 ### Registrar una promesa de pago
 
@@ -87,7 +90,7 @@ Una promesa sirve para ordenar el seguimiento y medir cumplimiento. **No** baja 
 
 ### Registrar un pago manual
 
-**Registrar pago** marca la cotización como pagada por su total, después de una confirmación ("¿Registrar el pago de [folio] por [total]?").
+El botón **Cobrada** marca la cotización como pagada, después de una confirmación ("¿Registrar el pago de [folio] por [monto]?"). En las facturas, **Ver factura** abre su detalle para registrar el pago ahí.
 
 <Callout type="warning">
 Registrar un pago es un registro manual: no crea un cargo ni confirma un depósito. Úsalo solo después de verificar la transferencia en tu banco, y nunca para simular un ingreso.
@@ -109,18 +112,19 @@ La aplicación automática de interés moratorio está **suspendida** mientras c
 
 ## Límites
 
-- La lista muestra totales de cotización, no saldos parciales.
-- Las facturas sin cotización no aparecen en la lista; sí en Facturas, en el estado de cuenta del cliente y en el agente de IA.
-- Una promesa no modifica el saldo.
-- **Registrar pago** registra el total de la cotización: para pagos parciales, regístralos en el documento.
+- Una promesa no modifica el saldo, y solo se registra en cotizaciones.
+- **Cobrada** marca pagada la cotización completa: para pagos parciales, regístralos en el documento. Las facturas se cobran desde su detalle.
+- Una venta en una divisa sin tipo de cambio disponible no se suma a los totales hasta que haya uno.
 
 ## Problemas comunes
 
 **No aparece Cobranza.** Revisa que tu plan sea Pro o superior y que tengas el permiso **Cobranza**.
 
-**Un cliente pagó el anticipo y la lista muestra el total.** Es lo esperado en esta lista. Revisa el saldo real en el estado de cuenta del cliente o en el link de la cotización.
+**Un cliente pagó el anticipo y la cuenta sigue en la lista.** Es lo esperado: la fila muestra el saldo que falta, ya sin el anticipo, hasta que se pague todo.
 
-**No veo una factura vencida.** Si se emitió sin cotización, búscala en **Facturas** o en el estado de cuenta del cliente.
+**No veo una factura vencida.** La lista incluye las facturas abiertas con fecha de vencimiento y saldo. Una factura en borrador, anulada, ya pagada o sin fecha de vencimiento no aparece; búscala en **Facturas**.
+
+**Un importe no coincide con el documento.** La lista expresa todo en la divisa de tu negocio. Revisa la nota bajo la página: una divisa sin tipo de cambio disponible no se suma.
 
 **Una promesa no bajó el saldo.** Es intencional: solo un pago registrado lo reduce.
 

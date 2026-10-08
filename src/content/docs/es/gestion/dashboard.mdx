@@ -1,12 +1,12 @@
 ---
 title: "Inicio y vistas de cotizaciones"
 seoTitle: "El Inicio de Cord: widgets, rango de fechas y tablero de cotizaciones"
-description: "Qué muestra cada widget del Inicio, cómo personalizarlo en escritorio y en celular, qué respeta el selector de fechas, qué permisos ocultan widgets, y cómo usar las vistas de Lista y Tablero en Cotizaciones."
+description: "Qué muestra cada widget del Inicio y con qué ventana de tiempo, cómo se calculan los KPIs y su variación, cómo personalizar el tablero con la biblioteca de widgets en escritorio, teclado y celular, y cómo usar las vistas de Lista y Tablero en Cotizaciones."
 lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Permiso Informes para los widgets de embudo, pipeline, tendencia, rankings y salud", "Permiso Cobranza para la antigüedad de cartera"]
+prerequisites: ["Permiso Informes para los widgets analíticos", "Permiso Cobranza para Antigüedad de cartera y Facturas vencidas", "Plan Pro o superior para los widgets financieros"]
 ---
 
 <header class="content-header">
@@ -16,91 +16,239 @@ prerequisites: ["Permiso Informes para los widgets de embudo, pipeline, tendenci
 
 ## Qué es
 
-**Inicio** es la primera pantalla al entrar a Cord: un indicador de dinero arriba y,
-debajo, un tablero de widgets que puedes reordenar, redimensionar y ocultar. Tu
-pipeline completo vive en **Cotizaciones**, con una vista de **Lista** y otra de
-**Tablero**.
+**Inicio** es la primera pantalla al entrar a Cord. Arriba, fijo, está el **indicador de
+dinero** con el selector de fechas; debajo, un tablero de widgets que puedes ordenar,
+redimensionar, ocultar y completar desde la **Biblioteca de widgets**. Tu pipeline
+completo vive en **Cotizaciones**, con una vista de **Lista** y otra de **Tablero**.
 
 <DmHome lang="es" />
 
 ## Requisitos
 
-- **Permiso:** cualquier miembro ve el Inicio. Los widgets analíticos requieren **Informes** y la antigüedad de cartera requiere **Cobranza**; sin ellos, esos widgets no aparecen.
-- **Plan:** el indicador, los KPI, las listas y las tareas están en todos los planes. Los datos de **Flujo esperado**, **Salud del pipeline**, **Necesitan seguimiento** y **Pipeline esperado** vienen del panel financiero (Pro o superior), y la **Antigüedad de cartera** del módulo de cobranza (Pro o superior); en Gratis y Starter esos widgets aparecen vacíos.
+| Requisito | Detalle |
+|---|---|
+| Permiso | Cualquier miembro ve el Inicio. Los widgets analíticos requieren **Informes**; **Antigüedad de cartera** y **Facturas vencidas** requieren **Cobranza**. Un widget que tu permiso no permite no se dibuja y no aparece en la biblioteca. |
+| Plan | El indicador, los KPIs, el embudo, la tendencia, los rankings, las listas y las tareas están en todos los planes. **Flujo esperado**, **Salud del pipeline** y **Necesitan seguimiento** toman sus datos del panel financiero, igual que **Antigüedad de cartera** y **Pipeline esperado**: los cinco existen desde Pro; en Gratis y Starter no aparecen ni la biblioteca los ofrece. |
+
+## Todo en la divisa y la zona horaria de tu negocio
+
+Todos los importes del Inicio se expresan en la **divisa de tu negocio** (la de
+**Ajustes**), aunque vendas en varias. Cada venta en otra divisa se convierte con el tipo
+de cambio fijado en esa cotización o factura y, si no tiene uno, con el publicado hoy. Si
+para una divisa no hay ningún tipo de cambio disponible, esas ventas **no se suman** en
+lugar de sumarse con una tasa inventada. Cuando vendes en más de una divisa, bajo el
+indicador aparece la nota:
+
+> Importes en {divisa}. Las ventas en {divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
+
+y, si alguna quedó fuera: "No hay tipo de cambio disponible para {divisas}: esas ventas
+no se suman por ahora."
+
+Los días se cuentan en la **zona horaria de tu negocio**: "hoy", "ayer" y el corte de
+cada día son los tuyos, no los del servidor.
 
 ## El indicador de dinero
 
-Arriba de todo, fijo, está el monto del periodo con tres métricas a elegir:
+Arriba de todo, fijo (no se mueve ni se oculta), está el monto del periodo con tres
+métricas a elegir:
 
-- **Cerrado:** lo aprobado en el periodo.
-- **Cobrado:** lo pagado en el periodo.
-- **Cotizado:** lo cotizado en el periodo.
+| Métrica | Qué suma | Fecha que usa |
+|---|---|---|
+| **Cerrado** | El total de las cotizaciones ganadas (Aprobada, Pagada o Facturada). | La fecha de aprobación. |
+| **Cobrado** | El dinero que entró: pagos de cotizaciones y de facturas, menos reembolsos. Es la misma definición que el informe **Pagos recibidos**. | La fecha del pago. |
+| **Cotizado** | El total de las cotizaciones que salieron del borrador. | La fecha de creación. |
 
 Junto al monto aparece la variación **vs. periodo anterior** y, debajo, la gráfica del
-periodo.
+periodo con el periodo anterior como referencia. Si el periodo anterior suma cero, la
+variación no se muestra: un "+100 %" contra nada no dice nada.
 
 ## Selector de fechas
 
-El selector arranca en **Últimos 30 días** y recuerda tu última elección en ese
-navegador. Opciones: **Hoy**, **Ayer**, **Últimos 7 días**, **Últimos 30 días**,
-**Últimos 90 días**, **Este mes**, **Mes pasado**, **Este trimestre**, **Año a la
-fecha**, **Todo** y **Personalizado** (con **Desde**, **Hasta** y **Aplicar**).
+El selector arranca en **Últimos 30 días**. Opciones: **Hoy**, **Ayer**, **Últimos 7
+días**, **Últimos 30 días**, **Últimos 90 días**, **Este mes**, **Mes pasado**, **Este
+trimestre**, **Año a la fecha**, **Últimos 12 meses** y **Personalizado** (con **Desde**,
+**Hasta**, **Cancelar** y **Aplicar**). El Inicio guarda 12 meses de historia, así que no
+se puede elegir una fecha anterior.
+
+- **El rango se recuerda en tu navegador**, no en la dirección de la página. Al volver al
+  Inicio en ese mismo navegador ves el último rango que elegiste; en otro navegador o
+  dispositivo arranca en Últimos 30 días. Un enlace viejo con `?rango=` se respeta una
+  vez y la dirección se limpia.
+- Cambiar el rango actualiza el indicador, los KPIs, el embudo, la tendencia y los
+  rankings sin recargar la página. Las tarjetas que esperan datos nuevos se marcan como
+  ocupadas en vez de mostrar números del rango anterior.
 
 Como dice la nota bajo el indicador: "El rango aplica a ingreso, tendencia, embudo y
 rankings. Cartera, pipeline y salud siempre muestran hoy."
 
+### Etiqueta de alcance: Hoy, Rango o Histórico
+
+Cada widget con datos lleva una etiqueta que dice qué ventana de tiempo mide. Pasa el
+cursor sobre ella para ver la explicación:
+
+| Etiqueta | Significado (texto de la ayuda) |
+|---|---|
+| **Hoy** | "Foto de este momento; no sigue el selector de fechas." |
+| **Rango** | "Sigue el rango de fechas elegido arriba." |
+| **Histórico** | "Todo tu historial, sin importar el rango." |
+
+Así no comparas un número del rango con una foto de hoy sin darte cuenta.
+
+## KPIs con variación
+
+**Tasa de cierre**, **Ticket promedio** y el opcional **Cobrado** siguen al rango, se
+comparan contra el periodo anterior y llevan una minigráfica.
+
+| KPI | Cómo se calcula | Subtítulo | Variación | Minigráfica |
+|---|---|---|---|---|
+| **Tasa de cierre** | De las cotizaciones que **salieron** en el rango (por fecha de creación), qué porcentaje ya se ganó. Es una cohorte: no mezcla lo que se creó en un periodo con lo que se cerró en otro. | "{g} de {n} enviadas en el rango" o "Sin cotizaciones enviadas en el rango" | En **puntos** (38 % → 43 % = 5 pts), no en porcentaje. | Barra de avance con la tasa. |
+| **Ticket promedio** | Lo cerrado en el rango entre el número de ventas que lo forman (por fecha de aprobación). | "sobre {n} cotizaciones cerradas" o "Sin ventas cerradas en el rango" | En %. | Lo cerrado por día. |
+| **Cobrado** (opcional) | El dinero que entró en el rango, neto de reembolsos. | "vs. {monto} el periodo anterior" o "Sin periodo anterior para comparar" | En %. | Lo cobrado por día. |
+
+Reglas de la comparación:
+
+- **El periodo anterior** tiene el mismo número de días y termina el día antes de que
+  empiece tu rango. Para "Últimos 30 días" es los 30 días previos; para "Este mes" a mitad
+  de mes, los mismos días justo antes.
+- **Sin base no hay variación.** Si el periodo anterior vale cero, o cae antes de los 12
+  meses de historia (por ejemplo con **Últimos 12 meses**), la flecha no se dibuja y el
+  subtítulo dice "Sin periodo anterior para comparar".
+- **La minigráfica** va por día hasta unos 45 días; en rangos más largos agrupa por
+  semana.
+- Un KPI sin datos muestra un guion (—), no un cero.
+
 ## Los widgets
 
-| Widget | Qué muestra | Respeta el rango | Requiere |
-|---|---|---|---|
-| **Por cerrar** | Suma de las cotizaciones enviadas y vistas, cuántas son y una minigráfica de lo cotizado en los últimos 14 días. | No (hoy) | — |
-| **Tasa de cierre** | Cotizaciones aprobadas, pagadas o facturadas entre todas las que salieron del borrador. | No | Informes |
-| **Ticket promedio** | Importe promedio por cotización cerrada, sobre todo tu historial. | No | Informes |
-| **Por dar seguimiento** | Cotizaciones *Vistas* que el cliente todavía no decide. Lleva a Cotizaciones. | No (hoy) | — |
-| **Embudo de conversión** | Enviadas → Vistas → Aprobadas → Pagadas. Cada barra lleva a Cotizaciones con el filtro correspondiente. | Sí | Informes |
-| **Pipeline** | Monto y número de cotizaciones por estado (Borrador, Enviada, Vista, Aprobada, Pagada). | No (hoy) | Informes |
-| **Tendencia mensual** | Cotizado contra cerrado en el tiempo. | Sí | Informes |
-| **Antigüedad de cartera** | Saldos por cobrar por antigüedad. | No (hoy) | Cobranza · Pro o superior |
-| **Flujo esperado · 5 semanas** | Cobros esperados por semana, con enlace a **Tesorería**. | No (hoy) | Informes · Pro o superior |
-| **Salud del pipeline** | Días promedio de cobro (DSO), concentración de riesgo, margen cedido e ingreso esperado ponderado. | No (hoy) | Informes · Pro o superior |
-| **Clientes por tasa de aprobación** | Los 5 clientes con mejor tasa de aprobación. | Sí | Informes |
-| **Productos por ingreso** | Los 5 productos con más importe en cotizaciones que salieron del borrador. | Sí | Informes |
-| **Necesitan seguimiento** | Cotizaciones abiertas con más de 7 días sin actividad, con días sin respuesta y monto. | No (hoy) | Pro o superior |
-| **Cotizaciones recientes** | Las 5 últimas cotizaciones con su estado. | No | — |
-| **Actividad** | Los 7 eventos más recientes (envíos, vistas, aprobaciones, pagos). | No | — |
-| **Tareas y recordatorios** | Las 8 tareas pendientes más urgentes, agrupadas por vencimiento, con capturador y enlaces **Ver todas** y **Ver las N restantes** a la página completa. Con más de una persona en la cuenta muestra el filtro **Mías**/**Todas** y abre en **Mías** o en el último que elegiste en ese navegador. Agregar, completar o editar desde aquí requiere el permiso Cotizaciones, Cobranza o Clientes (ver [Tareas](/docs/gestion/tareas)). | No (hoy) | — |
+En el orden en que aparecen por defecto:
 
-Hay dos widgets opcionales que empiezan ocultos y se agregan desde la biblioteca:
-**De enviada a pagada** (porcentaje de cotizaciones enviadas que terminaron pagadas; requiere Informes) y **Pipeline
-esperado** (pipeline abierto ponderado por probabilidad; requiere Informes y Pro o
-superior).
+| Widget (nombre en la biblioteca) | Qué muestra | Alcance | Requiere |
+|---|---|---|---|
+| **Por cerrar** | Suma de las cotizaciones **Enviada** y **Vista**, "{n} cotizaciones activas" y una barra que separa cuánto está solo enviado y cuánto ya lo abrió el cliente. | Hoy | — |
+| **Tasa de cierre** | Ver [KPIs con variación](#kpis-con-variación). | Rango | Informes |
+| **Ticket promedio** | Ver [KPIs con variación](#kpis-con-variación). | Rango | Informes |
+| **Por dar seguimiento** | Cuántas cotizaciones están en **Vista** sin respuesta del cliente. Lleva a Cotizaciones. | Hoy | — |
+| **Embudo de conversión** | Enviadas → Vistas → Aprobadas → Pagadas de las cotizaciones creadas en el rango. "Vistas" cuenta la primera apertura real del cliente, aunque después la haya rechazado. Cada barra lleva a Cotizaciones filtrada: Enviadas y Vistas a abiertas, Aprobadas a aprobadas y Pagadas a pagadas. | Rango | Informes |
+| **Pipeline** | Monto y número por estado (Borrador, Enviada, Vista, Aprobada, Pagada); cada segmento lleva a Cotizaciones con su filtro. Enlace **Ver todas →**. | Hoy | Informes |
+| **Tendencia mensual** | Cotizado (barras) contra cerrado (línea). Agrupa por día en rangos de hasta 16 días, por semana hasta 70 días y por mes en rangos más largos. | Rango | Informes |
+| **Antigüedad de cartera** | Saldos por cobrar de cotizaciones y facturas, por antigüedad. | Hoy | Cobranza · Pro o superior |
+| **Flujo esperado** | "Flujo esperado · 5 semanas": cobros esperados por semana. Enlace **Tesorería →** al informe Flujo de caja · 90 días. | Hoy | Informes · Pro o superior |
+| **Salud del pipeline** | Cuatro indicadores: **Días promedio de cobro (DSO)** (Saludable hasta 30 días, Vigilar hasta 60, "Alto — acelerar cobro" después), **Concentración de riesgo** (Bien diversificado, Moderada desde 40 %, "Top cliente domina el pipeline" desde 70 %), **Margen cedido** (descuento sobre precio de lista) e **Ingreso esperado (ponderado)** "de {monto} en pipeline abierto". Enlace **Ver CFO →** al informe Finanzas. | Hoy | Informes · Pro o superior |
+| **Clientes por tasa de aprobación** | Los 5 clientes con mejor tasa en el rango. Si al menos tres clientes tienen dos o más cotizaciones, solo compiten esos: un 1 de 1 no gana el primer lugar. | Rango | Informes |
+| **Productos por ingreso** | Los 5 productos con más importe en cotizaciones que salieron del borrador en el rango. | Rango | Informes |
+| **Necesitan seguimiento** | Hasta 5 cotizaciones abiertas con más de 7 días sin actividad, ordenadas por días en silencio, con "{n}d sin respuesta", el monto y el total de casos. | Hoy | Informes · Pro o superior |
+| **Cotizaciones recientes** | Las 5 últimas cotizaciones con su estado ("Recientes"). Enlace **Ver todas →**. | — | — |
+| **Actividad** | Los eventos más recientes: envíos, vistas, aprobaciones y pagos. | — | — |
+| **Tareas** | "Tareas y recordatorios": las 8 tareas pendientes más urgentes, con capturador y filtro **Mías**/**Todas** cuando hay más de una persona. Ver [Tareas](/docs/gestion/tareas). | — | — |
+
+### Widgets opcionales (empiezan ocultos)
+
+Estos viven en la biblioteca hasta que los agregas. Un widget nuevo nunca aparece de
+sorpresa en un tablero que ya personalizaste.
+
+| Widget | Qué muestra | Alcance | Requiere |
+|---|---|---|---|
+| **De enviada a pagada** | Porcentaje de cotizaciones enviadas que terminaron pagadas, con el desglose Enviadas / Pagadas. "Conversión de todo tu historial". | Histórico | Informes |
+| **Pipeline esperado** | Pipeline abierto ponderado por probabilidad, hoy, con el pipeline abierto sin ponderar. | Hoy | Informes · Pro o superior |
+| **Cobrado** | KPI con variación y minigráfica: "Dinero que entró en el rango y cómo va contra el periodo anterior". | Rango | Informes |
+| **Días a cierre** | "Promedio de días entre crear una cotización y ganarla". | Histórico | Informes |
+| **Facturas vencidas** | "{n} vencidas · {monto}" y las facturas vencidas que más pesan, con "{n} d vencida" y su saldo. Enlace **Ver todas →** a Facturas. | Hoy | Cobranza |
+| **Ranking de vendedores** | "Quién cierra más valor en el equipo": los 5 miembros con más monto cerrado. Enlace **Ver todas →** a Desempeño. | Histórico | Informes |
+
+<Callout type="info" title="Plan y permiso no son lo mismo">
+Sin el **permiso**, el widget desaparece: no se dibuja, sus datos no viajan a tu
+navegador y la biblioteca no lo ofrece. Sin el **plan**, pasa lo mismo con Flujo esperado, Salud
+del pipeline, Necesitan seguimiento, Antigüedad de cartera y Pipeline esperado: no
+aparecen, en vez de mostrarse vacíos o en ceros como si tu cartera no tuviera nada.
+</Callout>
 
 ## Personaliza el Inicio
 
-<Tabs>
-<TabItem label="Escritorio">
+### Entrar y salir del modo edición
 
-1. Pulsa **Personalizar** en la barra superior.
-2. **Mueve** un widget arrastrándolo.
-3. **Cambia su tamaño** con **Compacto** o **Ampliado**.
-4. **Ocúltalo** con el botón de ocultar; pasa a la **Biblioteca**, donde puedes buscarlo ("Buscar widgets…") y volver a mostrarlo con **Agregar**.
-5. Pulsa **Listo** para salir del modo edición.
+1. Pulsa **Personalizar** (icono de controles deslizantes) en la barra superior.
+2. En su lugar aparecen tres botones redondos de icono, con su nombre en un tooltip al
+   pasar el cursor:
+   - **Biblioteca** (cuadrícula con un +): abre la [Biblioteca de widgets](#la-biblioteca-de-widgets).
+     Muestra un contador con cuántos widgets tienes para agregar.
+   - **Restablecer** (flecha de deshacer): pregunta "¿Restablecer el orden y los widgets
+     ocultos del dashboard?" y, si confirmas, vuelve al orden, tamaños y widgets por
+     defecto. Los opcionales regresan a la biblioteca.
+   - **Listo** (palomita, relleno navy): sale del modo edición.
+3. Mientras editas, el contenido de los widgets no responde a clics (así no abres una
+   cotización por accidente al arrastrar) y cada widget muestra su barra de controles.
 
-**Restablecer** pregunta "¿Restablecer el orden y los widgets ocultos del dashboard?" y
-vuelve al diseño original.
+### Escritorio
 
-</TabItem>
-<TabItem label="Celular">
+- **Mover:** arrastra el widget desde cualquier punto; los demás se reacomodan mientras
+  lo mueves y la página se desplaza sola al acercarte al borde. **Subir** y **Bajar**
+  hacen lo mismo con un clic.
+- **Tamaño:** **Compacto** o **Ampliado**. Solo aparece en los widgets que tienen dos
+  tamaños; un indicador sin gráfica ni detalle tiene un solo tamaño honesto. En Ampliado,
+  las listas usan dos columnas y los KPIs ponen la minigráfica al lado.
+- **Ocultar:** el botón con la X. El widget pasa a la biblioteca y el botón **Biblioteca**
+  late una vez y suma uno a su contador. Ocultar un widget no borra datos ni cambia
+  cálculos.
+
+### Teclado
+
+Todo el modo edición funciona con teclado:
+
+- <kbd>Tab</kbd> recorre **Subir**, **Bajar**, **Compacto**, **Ampliado** y **Ocultar** de
+  cada widget; el foco se queda en el widget que moviste.
+- <kbd>Escape</kbd> cierra la biblioteca si está abierta y devuelve el foco a su botón; si
+  no, sale del modo edición y devuelve el foco a **Personalizar**. Durante un arrastre,
+  lo cancela y el widget regresa a su lugar.
+- Los lectores de pantalla anuncian "{widget} movido", "{widget} agregado al tablero" y
+  "{widget} oculto; lo encuentras en la biblioteca".
+
+### Celular
 
 Por debajo de 880 px los widgets se apilan en una columna y no se arrastran. En modo
-**Personalizar**, cada widget muestra botones de **Subir**, **Bajar** y **Ocultar**. Los
-ocultos se recuperan desde la **Biblioteca** igual que en escritorio.
+edición, cada widget muestra **Subir**, **Bajar** y **Ocultar** como botones de 44 px; el
+selector de tamaño no se muestra. Los tres botones de la barra superior también miden
+44 px y no llevan tooltip.
 
-</TabItem>
-</Tabs>
+## La biblioteca de widgets
 
-Tu diseño es personal: se guarda en tu usuario de la organización y te sigue en otros
-dispositivos. No cambia lo que ven tus compañeros. Ocultar un widget no borra datos.
+<DmWidgetLibrary lang="es" />
+
+Pulsa **Biblioteca** en modo edición. En escritorio se abre como una **tarjeta flotante**
+anclada al botón; en celular, como una **hoja inferior** sobre un fondo oscurecido.
+
+- **Encabezado:** "Biblioteca de widgets" y el resumen "{n} para agregar · {m} en
+  pantalla". La X ("Cerrar biblioteca") la cierra.
+- **Búsqueda:** "Buscar widgets…" busca en el nombre, la descripción y la categoría. Sin
+  coincidencias, dice "Sin resultados".
+- **Categorías**, cada una con su número: **Todos**, **Para agregar** y una por grupo:
+  **KPIs**, **Pipeline**, **Finanzas**, **Rankings** y **Actividad** (un widget sin grupo
+  cae en **Otros**). Las categorías por grupo solo aparecen cuando el tablero tiene más de
+  un grupo.
+- **Tarjetas:** cada widget trae una **miniatura** dibujada con los mismos datos que tiene
+  hoy en tu tablero (tu rango, tus números), su nombre y su descripción. Los que puedes
+  agregar van primero.
+- **Agregar:** el botón **+** ("Agregar {widget}") lo pone en el tablero, lo desplaza a la
+  vista y lo resalta un momento. Los que ya están visibles muestran una palomita y
+  **En pantalla**, deshabilitada.
+- **No es modal:** con la biblioteca abierta en escritorio puedes seguir ordenando el
+  tablero y agregar varios widgets seguidos. <kbd>Escape</kbd> o un clic fuera la cierran.
+  En celular, la hoja se cierra sola al agregar para que veas dónde quedó el widget, y el
+  buscador no se enfoca solo (el teclado taparía la hoja).
+- **Lo que no puedes usar no aparece.** Un widget que tu permiso o tu plan no permiten no
+  está en la biblioteca, y un diseño guardado antes de perder el acceso no lo vuelve a
+  mostrar.
+
+## Dónde se guarda tu diseño
+
+Tu diseño (orden, tamaños y widgets ocultos) es **personal**: se guarda en tu navegador y
+en tu usuario de esa organización, así que te sigue en otros dispositivos. Si cambias el
+diseño en dos dispositivos, gana el cambio más reciente completo, sin mezclar los dos. No
+cambia lo que ven tus compañeros y cada organización en la que estés tiene su propio
+diseño.
+
+Cada pantalla con widgets guarda el suyo por separado: el Inicio, cada informe de
+[Informes](/docs/gestion/informes), [Cobros](/docs/pagos/dashboard),
+[Cobranza](/docs/pagos/cartera-cobranza), [Cobranza con IA](/docs/pagos/cobranza-ia) y
+Desempeño usan los mismos botones y la misma biblioteca.
 
 ## Cotizaciones: Lista y Tablero
 
@@ -159,23 +307,47 @@ botones del detalle.
 
 | | Gratis | Starter | Pro | Scale | Developer |
 |---|---|---|---|---|---|
-| Inicio, KPI, embudo, tendencia y tablero | Sí | Sí | Sí | Sí | Sí |
-| Flujo esperado, Salud, Necesitan seguimiento, Pipeline esperado | Vacíos | Vacíos | Sí | Sí | Sí |
-| Antigüedad de cartera | Vacía | Vacía | Sí | Sí | Sí |
+| Indicador, KPIs, embudo, tendencia, rankings, listas, tareas y tablero | Sí | Sí | Sí | Sí | Sí |
+| Flujo esperado, Salud del pipeline, Necesitan seguimiento | No aparecen | No aparecen | Sí | Sí | Sí |
+| Antigüedad de cartera, Pipeline esperado | No aparecen | No aparecen | Sí | Sí | Sí |
+| Personalizar y biblioteca | Sí | Sí | Sí | Sí | Sí |
 
 ## Problemas comunes
 
-**No veo el embudo ni la tendencia.** Tu rol no tiene el permiso Informes.
+**No veo el embudo ni la tendencia, y tampoco están en la biblioteca.** Tu rol no tiene el
+permiso Informes. Pídeselo a quien administra el equipo.
 
-**Salud del pipeline sale en ceros.** Tu plan no incluye el panel financiero (Pro o superior), o no tienes cotizaciones abiertas.
+**No veo Flujo esperado, Salud del pipeline ni Necesitan seguimiento.** Tu plan no
+incluye el panel financiero (Pro o superior) o tu rol no tiene el permiso Informes.
 
-**Cambié el rango y un widget no cambió.** Ese widget es una foto de hoy; ver la tabla de arriba.
+**Salud del pipeline o Flujo esperado salen en ceros.** No tienes cotizaciones abiertas
+ni cobros esperados en las próximas semanas.
 
-**No puedo arrastrar una tarjeta.** Estás en un celular, o el destino no es válido para el estado actual.
+**Cambié el rango y un widget no cambió.** Revisa su etiqueta: **Hoy** e **Histórico** no
+siguen el selector.
+
+**La variación no aparece.** El periodo anterior vale cero o cae fuera de los 12 meses de
+historia.
+
+**Un importe parece bajo y vendo en varias divisas.** Lee la nota bajo el indicador: una
+divisa sin tipo de cambio disponible queda fuera de la suma hasta que haya uno.
+
+**En otro dispositivo veo otro rango.** El rango se recuerda por navegador; el diseño del
+tablero sí te sigue.
+
+**No puedo arrastrar un widget.** Estás en un celular (usa **Subir** y **Bajar**) o no has
+pulsado **Personalizar**.
+
+**No puedo arrastrar una tarjeta del tablero de Cotizaciones.** Estás en un celular, o el
+destino no es válido para el estado actual.
 
 ## Relacionadas
 
-- [Gestión de cotizaciones](/docs/gestion/cotizaciones)
 - [Informes y desempeño](/docs/gestion/informes)
+- [Informes personalizados y envío por correo](/docs/gestion/informes-personalizados)
+- [Gestión de cotizaciones](/docs/gestion/cotizaciones)
 - [Tareas y seguimiento](/docs/gestion/tareas)
 - [Mapa completo de la app](/docs/operacion/mapa-de-la-app)
+- Soporte: [Personalizar el Inicio y sus widgets](https://cordhq.app/soporte/personalizar-inicio-widgets)
+- Soporte: [Leer los KPIs y el selector de fechas](https://cordhq.app/soporte/leer-kpis-y-rango)
+- Soporte: [Importes en varias divisas y zona horaria en el Inicio y los informes](https://cordhq.app/soporte/importes-en-varias-divisas-informes)

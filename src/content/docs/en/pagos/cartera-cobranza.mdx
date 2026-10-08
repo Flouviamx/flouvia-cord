@@ -2,7 +2,7 @@
 title: "Receivables and operating collections"
 seoTitle: "Receivables and collections in Cord: what to collect today"
 description: "How Collections works: what goes into the list, what each widget measures, how to record payment promises, remind via WhatsApp, and record a manual payment, and how it relates to the unified accounts receivable view."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Pro, Scale, Developer]
@@ -28,13 +28,16 @@ prerequisites: ["Pro plan or higher", "Collections permission", "Approved quotes
 
 ## What goes into the list
 
-The Collections list includes **approved or invoiced quotes that aren't fully paid yet**:
+The Collections list comes from the [unified accounts receivable view](#the-unified-accounts-receivable-view), so it brings both rails together:
 
-- with their **total**, payment term, and due date (approval plus the term's days);
+- **approved or invoiced quotes that aren't paid yet**, due on the approval date plus the payment term's days;
+- **open invoices** with a balance, with their own due date, including those issued without a quote;
 - except [recurring retainers](/en/docs/pagos/igualas), which charge themselves every month and are never treated as overdue receivables.
 
-<Callout type="info" title="Invoices and partial balances">
-The list shows each quote's **total**, not the balance after deposits or partial payments, and today it doesn't include invoices issued without a quote. For a customer's **real balance**, with quotes and invoices together, open their record: the **account statement** uses the unified accounts receivable view. Overdue invoices also show in **Invoices**.
+Each account shows its **balance**: for a quote, the total minus payments already received (deposits, installments); for an invoice, the total minus partial payments and credit notes. Amounts are expressed in your business currency; if you sell in several currencies, the note below the page says how they were converted and which one was left out for lack of an available exchange rate.
+
+<Callout type="info" title="Invoices in the list">
+An invoice is collected from its own detail, because that's where the payment is recorded in its history. That's why invoice rows show **View invoice** instead of **Paid**, and payment promises are recorded only on quote rows. Remind via WhatsApp works on both.
 </Callout>
 
 ### The unified accounts receivable view
@@ -64,11 +67,11 @@ It's used by the [AI collections agent](/en/docs/pagos/cobranza-ia), each custom
 | **Receivables age** | Not yet due, 1–30 days, 31–60 days, and more than 60 days. |
 | **Accounts receivable** | The actionable table. |
 
-You can hide, reorder, or resize the widgets. That preference is personal and doesn't change any calculation.
+With **Customize** you can hide, reorder, or resize the widgets, with the same icon buttons (**Library**, **Reset**, and **Done**), the same floating library, and the same keyboard support as [Home](/en/docs/gestion/dashboard#customize-home). From the library you can also add **Credit limits exceeded**: how many clients are above their configured credit limit today. That preference is personal and doesn't change any calculation.
 
 ## The table and its actions
 
-The table filters by **all**, **overdue**, **with promise**, or **untouched**. Each row shows customer, number, terms, due date, status, and amount, with these actions:
+The table filters by **All**, **Overdue**, **With promise**, or **Untouched**. Each row shows customer, number, terms, due date, status, and balance, with these actions:
 
 ### Record a payment promise
 
@@ -87,7 +90,7 @@ A promise helps organize follow-up and measure compliance. It does **not** lower
 
 ### Record a manual payment
 
-**Record payment** marks the quote as paid for its total, after a confirmation ("Record the payment of [number] for [total]?").
+The **Paid** button marks the quote as paid, after a confirmation ("Record the payment of [number] for [amount]?"). On invoices, **View invoice** opens its detail so you record the payment there.
 
 <Callout type="warning">
 Recording a payment is a manual record: it doesn't create a charge or confirm a deposit. Use it only after verifying the transfer in your bank, and never to simulate revenue.
@@ -109,18 +112,19 @@ Automatic late interest is **suspended** while the legal review by country concl
 
 ## Limits
 
-- The list shows quote totals, not partial balances.
-- Invoices without a quote don't appear in the list; they do in Invoices, the customer's account statement, and the AI agent.
-- A promise doesn't change the balance.
-- **Record payment** records the quote's total: record partial payments on the document.
+- A promise doesn't change the balance, and it's only recorded on quotes.
+- **Paid** marks the whole quote as paid: record partial payments on the document. Invoices are collected from their detail.
+- A sale in a currency without an available exchange rate isn't added to the totals until one exists.
 
 ## Common problems
 
 **Collections doesn't appear.** Check that your plan is Pro or higher and that you have the **Collections** permission.
 
-**A customer paid the deposit and the list shows the total.** That's expected in this list. Check the real balance in the customer's account statement or on the quote link.
+**A customer paid the deposit and the account is still on the list.** That's expected: the row shows the remaining balance, already without the deposit, until everything is paid.
 
-**I don't see an overdue invoice.** If it was issued without a quote, look for it in **Invoices** or in the customer's account statement.
+**I don't see an overdue invoice.** The list includes open invoices with a due date and a balance. A draft, voided, already paid, or undated invoice doesn't appear; look for it in **Invoices**.
+
+**An amount doesn't match the document.** The list expresses everything in your business currency. Check the note below the page: a currency without an available exchange rate isn't added.
 
 **A promise didn't lower the balance.** That's intentional: only a recorded payment lowers it.
 

@@ -3,10 +3,19 @@
 // abierto. Calca de src/pages/app/informes.astro + ReportPicker.astro +
 // informes/ResumenReport.astro.
 // En la app la lista de informes NO es una columna fija: es el panel del selector
-// (arriba, junto al rango de fechas), agrupado por categoría en el orden de
-// REPORT_GROUPS. El catálogo sale de REPORTS (src/lib/informes.ts), así que un
-// informe nuevo aparece aquí solo. La madurez de la cohorte es una barra segmentada
+// (arriba, junto al rango de fechas), con su buscador "Buscar informes" y los 15
+// informes agrupados por categoría en el orden de REPORT_GROUPS — Resumen, Ventas,
+// Clientes, Productos, Finanzas, Equipo y Personalizados —, cada uno con su icono
+// y "Por rango de fechas" o "Al día de hoy" según su alcance. Los informes
+// guardados van al final de Personalizados, con el pin y "Informe guardado". El
+// catálogo sale de REPORTS (src/lib/informes.ts), así que un informe nuevo aparece
+// aquí solo.
+//
+// El panel real mide como máximo 560 px y hace scroll: `scroll="top"` (por
+// defecto) lo dibuja recién abierto; `scroll="end"` desplazado hasta abajo, con
+// Finanzas, Equipo, Personalizados y los guardados. La madurez de la cohorte es una barra segmentada
 // (Ganado / Perdido / Aún abierto), como el widget real.
+import './dm-reports.css';
 import DocsMockup from './DocsMockup.astro';
 import DmIcon from './DmIcon.astro';
 import type { IconName } from '../../../lib/icons';
@@ -16,9 +25,14 @@ import { money0Parts } from './dm-gestion';
 
 interface Props {
     lang: DmLang;
+    /** Posición del scroll del panel del selector. */
+    scroll?: 'top' | 'end';
     caption?: string;
 }
 const { lang } = Astro.props;
+const atEnd = Astro.props.scroll === 'end';
+// Informes guardados de la organización (al final de Personalizados).
+const SAVED = { es: ['Ventas por país', 'Ventas por nivel de cliente'], en: ['Sales by country', 'Sales by client tier'] }[lang];
 
 const ICON: Record<string, IconName> = {
     overview: 'overview', pulse: 'pulse', sales: 'chart-line', clients: 'clients', products: 'products',
@@ -38,12 +52,14 @@ const path = serie.map((v, i) => `${i ? 'L' : 'M'}${((i / 29) * W).toFixed(1)},$
 
 const DATA = {
     es: {
-        caption: `Informes › Resumen (con los widgets en el orden que eligió el usuario) y el selector de informes abierto, agrupado por categoría (Resumen, Ventas, Clientes y, al desplazarse, Productos, Finanzas, Equipo y Personalizados); el rango "Últimos 30 días" arriba y los widgets Tasa de cierre (38 %), Valor cerrado (${dmMoney(CERRADO, 'MXN', 'es')}) y la madurez de la cohorte: Ganado, Perdido y Aún abierto.`,
+        caption: `Informes › Resumen con el selector de informes abierto: el buscador "Buscar informes" y los informes agrupados por categoría, cada uno con su icono y si va "Por rango de fechas" o "Al día de hoy" (Resumen, Ventas y Clientes arriba; al desplazarse, Productos, Finanzas, Equipo y Personalizados). Detrás, el rango "Últimos 30 días", el botón Personalizar y los widgets Tasa de cierre (38 %), Valor cerrado (${dmMoney(CERRADO, 'MXN', 'es')}) y la madurez de la cohorte.`,
+        captionEnd: 'El selector de informes desplazado hasta abajo: Finanzas (Pagos recibidos, Impuestos facturados, Finanzas, Flujo de caja · 90 días, Cobranza y cartera), Equipo (Ventas por vendedor) y Personalizados, con el Informe personalizado y, al final, los informes guardados "Ventas por país" y "Ventas por nivel de cliente" con su pin.',
         sub: 'Una sola casa para entender el desempeño y decidir qué mover.',
         rango: 'Últimos 30 días',
         buscar: 'Buscar informes',
         porRango: 'Por rango de fechas',
         hoy: 'Al día de hoy',
+        guardado: 'Informe guardado',
         w: {
             tasa: 'TASA DE CIERRE', tasaSub: '12 / 32 cotizaciones enviadas',
             cerrado: 'VALOR CERRADO', cerradoSub: 'Cohorte creada en el rango',
@@ -56,12 +72,14 @@ const DATA = {
         },
     },
     en: {
-        caption: `Reports › Overview (widgets in the order the user chose) with the report picker open, grouped by category (Overview, Sales, Clients and, further down, Products, Finance, Team and Custom); the "Last 30 days" range at the top and the Close rate (38%), Closed value (${dmMoney(CERRADO, 'MXN', 'en')}) and cohort maturity widgets: Won, Lost and Still open.`,
+        caption: `Reports › Overview with the report picker open: the "Search reports" box and the reports grouped by category, each with its icon and whether it uses a "Date range" or is "As of today" (Overview, Sales and Clients at the top; scrolling down, Products, Finance, Team and Custom). Behind it, the "Last 30 days" range, the Customize button and the Close rate (38%), Closed value (${dmMoney(CERRADO, 'MXN', 'en')}) and cohort maturity widgets.`,
+        captionEnd: 'The report picker scrolled to the bottom: Finance (Payments received, Invoiced taxes, Finance, Cash flow · 90 days, Collections and receivables), Team (Sales by team member) and Custom, with the Custom report and, at the end, the saved reports "Sales by country" and "Sales by client tier" with their pin.',
         sub: 'One place to understand performance and decide what to move.',
         rango: 'Last 30 days',
         buscar: 'Search reports',
         porRango: 'Date range',
         hoy: 'As of today',
+        guardado: 'Saved report',
         w: {
             tasa: 'CLOSE RATE', tasaSub: '12 / 32 sent quotes',
             cerrado: 'CLOSED VALUE', cerradoSub: 'Cohort created in range',
@@ -75,14 +93,17 @@ const DATA = {
     },
 };
 const d = pick(DATA, lang);
-const caption = Astro.props.caption ?? d.caption;
+const caption = Astro.props.caption ?? (atEnd ? d.captionEnd : d.caption);
 const M = (n: number) => money0Parts(n, 'MXN', lang);
 const resumen = REPORTS.find((r) => r.id === 'resumen')!;
 ---
-<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="informes" title={reportLabel(resumen, lang)} height={545} caption={caption} class="dm-rp-figure">
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="informes" title={reportLabel(resumen, lang)} height={690} caption={caption} class="dm-rp-figure">
     <Fragment slot="actions">
-        <span class="dm-rp-trigger is-open"><DmIcon name="overview" />{reportLabel(resumen, lang)}<DmIcon name="chevron-down" stroke={2.2} /></span>
-        <span class="dm-rp-trigger"><DmIcon name="calendar" />{d.rango}<DmIcon name="chevron-down" stroke={2.2} /></span>
+        <span class="dm-rx-actions">
+            <span class="dm-rx-pill is-open"><DmIcon name="overview" />{reportLabel(resumen, lang)}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+            <span class="dm-rx-pill is-date"><DmIcon name="calendar" />{d.rango}<DmIcon name="chevron-down" class="dm-rx-chev" /></span>
+            <span class="dm-rp-custom"><DmIcon name="sliders" />{dmT(lang, 'widgets.personalizar')}</span>
+        </span>
     </Fragment>
 
     <div class="dm-rp-sub">{d.sub}</div>
@@ -114,31 +135,36 @@ const resumen = REPORTS.find((r) => r.id === 'resumen')!;
         </div>
     </div>
 
-    <div slot="overlay" class="dm-rp-panel">
+    <div slot="overlay" class:list={['dm-rp-panel', { 'is-end': atEnd }]}>
         <span class="dm-rp-search"><DmIcon name="search" />{d.buscar}</span>
         <div class="dm-rp-list">
-            {groups.map(({ g, items }) => (
-                <div class="dm-rp-group">
-                    <span class="dm-rp-glabel">{dmT(lang, `inf.grupo.${g}`)}</span>
-                    {items.map((r) => (
-                        <span class:list={['dm-rp-opt', { 'is-on': r.id === 'resumen' }]}>
-                            <DmIcon name={ICON[r.icon] ?? 'chart'} />
-                            <span class="dm-rp-copy"><b>{reportLabel(r, lang)}</b><small>{r.scope === 'snapshot' ? d.hoy : d.porRango}</small></span>
-                            {r.id === 'resumen' && <DmIcon name="check" stroke={2.2} class="dm-rp-check" />}
-                        </span>
-                    ))}
-                </div>
-            ))}
+            <div class="dm-rp-scroll">
+                {groups.map(({ g, items }) => (
+                    <div class="dm-rp-group">
+                        <span class="dm-rp-glabel">{dmT(lang, `inf.grupo.${g}`)}</span>
+                        {items.map((r) => (
+                            <span class:list={['dm-rp-opt', { 'is-on': r.id === 'resumen' }]}>
+                                <DmIcon name={ICON[r.icon] ?? 'chart'} />
+                                <span class="dm-rp-copy"><b>{reportLabel(r, lang)}</b><small>{r.scope === 'snapshot' ? d.hoy : d.porRango}</small></span>
+                                {r.id === 'resumen' && <DmIcon name="check" class="dm-rp-check" />}
+                            </span>
+                        ))}
+                        {g === 'personalizados' && SAVED.map((n) => (
+                            <span class="dm-rp-opt">
+                                <DmIcon name="pin" />
+                                <span class="dm-rp-copy"><b>{n}</b><small>{d.guardado}</small></span>
+                            </span>
+                        ))}
+                    </div>
+                ))}
+            </div>
+            <span class="dm-rp-thumb"></span>
         </div>
     </div>
 </DocsMockup>
 
 <style is:global>
     .dm-rp-figure .dm-page-head, .dm-rp-figure .dm-content { padding-right: calc(18px + var(--dm-bleed)); }
-    .dm-rp-trigger { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border-strong), 0 1px 2px rgba(10, 25, 47, 0.05); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-    .dm-rp-trigger .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
-    .dm-rp-trigger .dm-ico:last-child { width: 10px; height: 10px; }
-    .dm-rp-trigger.is-open { box-shadow: inset 0 0 0 1.5px var(--dm-navy), 0 0 0 3px rgba(10, 25, 47, 0.08); }
     .dm-rp-sub { margin: -6px 0 12px; font-size: 11px; color: var(--dm-muted); }
     .dm-rp-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
     .dm-rp-kpi { display: flex; flex-direction: column; gap: 5px; padding: 12px 13px; min-width: 0; }
@@ -162,34 +188,37 @@ const resumen = REPORTS.find((r) => r.id === 'resumen')!;
     .dm-rp-legend b { margin-left: auto; color: var(--dm-text); font-weight: 650; font-variant-numeric: tabular-nums; }
     .dm-rp-explain { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--dm-border); font-size: 9.5px; line-height: 1.5; color: var(--dm-muted); }
 
-    /* Panel del selector, abierto bajo su botón. */
+    .dm-rp-custom { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px 0 10px; border-radius: 999px; background: #fff; border: 1px solid var(--dm-border); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.06); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .dm-rp-custom .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+
+    /* Panel del selector (.report-picker-panel), abierto bajo su botón: 380 px y
+       máximo 560 px de alto en la app; aquí a escala. */
     .dm-rp-panel {
         position: absolute;
-        right: calc(var(--dm-bleed) + 18px + 146px - 120px);
-        top: 120px;
-        width: 254px;
-        max-height: 360px;
-        overflow: hidden;
+        right: calc(var(--dm-bleed) + 92px);
+        top: 112px;
+        width: 290px;
         padding: 8px;
-        border-radius: 14px;
+        border-radius: 20px;
         background: #fff;
-        border: 1px solid var(--dm-border);
-        box-shadow: var(--dm-shadow-float);
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow: 0 24px 80px rgba(10, 25, 47, 0.16), 0 3px 14px rgba(10, 25, 47, 0.08);
     }
-    .dm-rp-panel::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: linear-gradient(rgba(255, 255, 255, 0), #fff); border-radius: 0 0 14px 14px; }
-    .dm-rp-search { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 9px; margin-bottom: 6px; border-radius: 8px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11px; color: var(--dm-faint); }
-    .dm-rp-search .dm-ico { width: 12px; height: 12px; }
+    .dm-rp-search { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; border-radius: 12px; background: var(--dm-canvas); font-size: 11px; color: var(--dm-faint); }
+    .dm-rp-search .dm-ico { width: 13px; height: 13px; color: #687181; }
+    .dm-rp-list { position: relative; height: 480px; overflow: hidden; margin-top: 4px; }
+    .dm-rp-panel.is-end .dm-rp-scroll { position: absolute; left: 0; right: 0; bottom: 0; }
+    .dm-rp-thumb { position: absolute; right: 1px; top: 6px; width: 3px; height: 46%; border-radius: 99px; background: rgba(10, 25, 47, 0.18); }
+    .dm-rp-panel.is-end .dm-rp-thumb { top: auto; bottom: 6px; }
     .dm-rp-group { padding: 4px 0; }
-    .dm-rp-group + .dm-rp-group { border-top: 1px solid var(--dm-border); }
-    .dm-rp-glabel { display: block; padding: 4px 8px 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dm-faint); }
-    .dm-rp-opt { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 8px; }
-    .dm-rp-opt.is-on { background: var(--dm-active); }
-    .dm-rp-opt > .dm-ico { width: 15px; height: 15px; color: var(--dm-muted); }
-    .dm-rp-opt.is-on > .dm-ico { color: var(--dm-navy); }
-    .dm-rp-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .dm-rp-copy b { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dm-rp-copy small { font-size: 9px; color: var(--dm-faint); }
-    .dm-rp-opt .dm-rp-check { width: 13px; height: 13px; color: var(--dm-navy); }
+    .dm-rp-glabel { display: block; padding: 6px 9px 3px; font-size: 7.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9299a5; }
+    .dm-rp-opt { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 5px 9px; border-radius: 11px; }
+    .dm-rp-opt.is-on { background: #eef2f7; }
+    .dm-rp-opt > .dm-ico { width: 16px; height: 16px; flex: 0 0 auto; color: var(--dm-navy); }
+    .dm-rp-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .dm-rp-copy b { font-size: 11px; font-weight: 650; color: #1d2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-rp-copy small { font-size: 9px; color: #858d99; }
+    .dm-rp-opt .dm-rp-check { width: 14px; height: 14px; color: var(--dm-navy); }
 
     @container dm (max-width: 640px) {
         .dm-rp-figure .dm-stage { height: auto; max-height: 1300px; }

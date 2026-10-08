@@ -1,120 +1,531 @@
 ---
 title: "Reports and sales performance"
-description: "What each Cord report measures, which data follows the date range, what is a current snapshot, and how seller performance is attributed."
-lastUpdated: "2026-10-07"
+seoTitle: "Cord reports: 15 reports, comparisons, CSV, and performance by rep"
+description: "Cord's 15 reports one by one: what each answers, its KPIs, columns, and chart, what follows the range and what is a snapshot of today, how the previous-period comparison works, how CSV export works, how currency is converted, and how performance is attributed by team member."
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Reports permission", "Collections permission for the receivables report", "Pro plan or higher for Finance, Cash flow, and Collections"]
+prerequisites: ["Reports permission", "Collections permission for Payments received and Collections and receivables", "Pro plan or higher for Finance, Cash flow, and Collections"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Reports and sales performance</h1>
-  <p class="page-subtitle">Read metrics without confusing a historical cohort with today's operating position.</p>
+  <p class="page-subtitle">Fifteen reports to understand your sales, clients, products, and money, without confusing a historical cohort with today's position.</p>
 </header>
 
-**Reports** is Cord's single analytics surface. It contains seven views, while
-**Team** compares results by the person who created or duplicated each quote.
+**Reports** is Cord's analytics surface: "One place to understand performance and decide
+what to move." It brings together **15 reports in 7 groups** behind one picker. Seven are
+**widget reports** (customizable boards), seven are **table reports** (compared KPIs, a
+chart, a table with totals, and CSV export), and one is the **Custom report**, where you
+choose how to group and what to measure. **Performance**, in the same menu group,
+compares the people on the team.
 
-## The seven reports
+## Where it is and how to pick a report
 
-**Reports** is in the side menu, under the **Insights** group. Each report has its
-own URL and its own widget layout.
+**Reports** is in the side menu, under the **Insights** group (shortcut <kbd>G</kbd> then
+<kbd>A</kbd>). At the top right is the **report picker**: click the current report's name
+to open it.
 
 <DmReports lang="en" />
 
-| Report | Main question | Time scope | Permission | Plan |
-|---|---|---|---|---|
-| Overview | Close rate, closed and lost value, velocity, and maturity. | Selected range | Reports | All |
-| Commercial diagnosis | Funnel, pipeline, stalled quotes, discount cost, and stage time. | Cohort plus current snapshot | Reports | All |
-| Finance | MRR, ARR, DSO, MRR at risk, weighted pipeline, and concentration. | Current snapshot | Reports | Pro or higher |
-| Cash flow · 90 days | Receivables, probable pipeline, retainers, and near-term concentration. | Current projection | Reports | Pro or higher |
-| Collections and receivables | Open, overdue, aging, promises, and payment behavior. | Current snapshot | Reports and Collections | Pro or higher |
-| Clients | Value and conversion by client, cohorts, and inactive clients. | Range plus current snapshot | Reports | All |
-| Products | Quoted amount, volume, discount elasticity, and close rate. | Selected range | Reports | All |
+- The panel groups reports by category: **Overview**, **Sales**, **Clients**,
+  **Products**, **Finance**, **Team**, and **Custom**. Only categories with a report your
+  permission allows appear.
+- Under each name it says **Date range** or **As of today**.
+- **Search reports** filters by name in Spanish and English.
+- With a keyboard: the search box gets focus when the panel opens, <kbd>↑</kbd> and
+  <kbd>↓</kbd> move through the list, <kbd>Enter</kbd> opens the report, and
+  <kbd>Escape</kbd> closes the panel.
+- Your organization's [saved reports](/en/docs/gestion/informes-personalizados) appear at
+  the end, under **Custom**, labeled **Saved report**.
 
-If you're missing the permission, the report asks you to request it from whoever
-manages the team. If you're missing the plan, it offers to take you to **Settings ›
-Plans & subscription**.
+Each report has its own address (`/app/informes?r=...`), so you can bookmark it or share
+it with a teammate who has the permission.
 
-## Range-based reports
+## The 15 reports
 
-Overview, Commercial diagnosis, Clients, and Products provide a date picker that
-starts at the last 30 days and covers up to the last year. Cohort metrics assign a quote to the range by its creation date.
-A quote created yesterday may still be open and shouldn't be compared directly with a
-six-month-old cohort that had time to close.
+| Group | Report | Type | Scope | Permission | Plan |
+|---|---|---|---|---|---|
+| Overview | **Overview** | Widgets | Range | Reports | All |
+| Overview | **Commercial diagnosis** | Widgets | Range, with today widgets | Reports | All |
+| Sales | **Sales over time** | Table | Range | Reports | All |
+| Sales | **Sales by client** | Table | Range | Reports | All |
+| Sales | **Sales by product** | Table | Range | Reports | All |
+| Clients | **Clients** | Widgets | Range, with today widgets | Reports | All |
+| Clients | **Repeat purchase by cohort** | Table | As of today | Reports | All |
+| Products | **Products** | Widgets | Range | Reports | All |
+| Finance | **Payments received** | Table | Range | Reports and Collections | All |
+| Finance | **Invoiced taxes** | Table | Range | Reports | All |
+| Finance | **Finance** | Widgets | As of today | Reports | Pro or higher |
+| Finance | **Cash flow · 90 days** | Widgets | As of today | Reports | Pro or higher |
+| Finance | **Collections and receivables** | Widgets | As of today | Reports and Collections | Pro or higher |
+| Team | **Sales by team member** | Table | Range | Reports | All |
+| Custom | **Custom report** | Explorer | Range | Reports | All |
 
-<Callout type="info">
-A low rate in a recent range may mean an **immature cohort**, not worse performance.
-Check the “still open” share first.
+### If you're missing the permission or the plan
+
+Each reason asks for a different action, and the screen tells them apart:
+
+- **Without the Reports permission** you see no report: "No access. Your current role
+  doesn't have permission to view analytics. Contact your organization's admin."
+- **Without the Collections permission**, Payments received and Collections and
+  receivables don't appear in the picker; if you open their link, you see "Restricted
+  report" and a prompt to ask for the permission.
+- **Without the plan**, Finance, Cash flow, and Collections do appear in the picker, but
+  when you open them you see what they offer and the button to go to **Settings › Plans
+  & subscription**. For example, Cash flow says "How much cash is coming in over the
+  next 90 days".
+
+The permission is called **Reports** in **Settings › Team & permissions**. See
+[Team and security](/en/docs/cuenta/equipo-seguridad).
+
+## Dates, time zone, and currency
+
+### The date picker
+
+**Date range** reports show the picker next to the report picker: **Today**,
+**Yesterday**, **Last 7 days**, **Last 30 days**, **Last 90 days**, **This month**,
+**Last month**, **This quarter**, **Year to date**, **Last 12 months**, and **Custom**.
+You can look back up to one year.
+
+- When you open a report, the range comes, in this order: from the link's address; if it
+  has none, from the last range you used **in that report** in this browser (each report
+  remembers its own); otherwise, **Last 30 days**.
+- The range is written into the page address, so a copied link opens the same period for
+  whoever receives it.
+- In widget reports, changing the range repaints the numbers without reloading. In table
+  reports, the page reloads because the table, totals, and CSV are built in full on the
+  server.
+
+**As of today** reports have no picker (there would be nothing to ignore): they show the
+label "As of today · {date}". Inside a range report, widgets tagged **Today** also ignore
+the range; hover over the tag to see the explanation.
+
+### Time zone
+
+Days are cut in your **business time zone**: "today", the start and end of each day, and
+weeks and months are yours. A payment on the 31st at 11 p.m. in your city counts in that
+month even if it's already the 1st in another zone.
+
+### Currency: everything in your business currency
+
+If you sell in several currencies, Cord doesn't add up amounts in different currencies
+as if they were one: it **restates everything in your business currency**, the one set in
+Settings. For each amount it uses the best real rate available:
+
+1. if the sale is already in your business currency, as is;
+2. if the quote's or invoice's accounting currency is your business currency, the
+   **exchange rate set on that document** (the same one the invoice declares);
+3. otherwise, **today's published** exchange rate.
+
+If no exchange rate is available for a currency, its amounts **are left out of the sum**;
+Cord never makes up a rate. Below the report you see the note:
+
+> Amounts in {currency}. Sales in {currencies} are converted with the exchange rate set on each quote or invoice, or with today's published rate when there is none.
+
+and, if a currency was left out: "No exchange rate is available for {currencies}, so
+those sales are not included for now." If you sell in a single currency, the note
+doesn't appear.
+
+### Which date each measure uses
+
+| Measure | What it counts | Date |
+|---|---|---|
+| **Quotes** / **Quoted** | Quotes that left draft (including ones later rejected or expired). | Creation |
+| **Sales** / **Sold** | Won quotes: Approved, Paid, or Invoiced. Sold is their total, including taxes and minus withholdings. | Approval |
+| **Close rate** | Of what went out in the range, what percentage was won (cohort). | Creation |
+| **Collected** | Money that came in. | Payment |
+| **Balance today**, receivables, pipeline | Snapshot of the moment. | Today |
+
+**"Collected" means the same thing across Cord** (Home, Reports, and Payments): quote
+payments (deposits, installments, retainers) plus payments applied to invoices, plus
+quotes marked paid by hand without any recorded payment, **minus refunds**. An invoice
+payment that already came from a quote charge isn't counted twice.
+
+<Callout type="info" title="A cohort is not the same as a close">
+A close rate is calculated on the **cohort**: the quotes created in the range. A recent
+cohort still has open quotes, so its rate can look low without the team selling worse.
+Compare against a cohort of the same age or check **Cohort maturity** in Overview.
 </Callout>
 
-## Current-snapshot reports
+## How to read table reports
 
-Finance, Cash flow, and Collections display **As of today** instead of an ineffective
-date selector. Mixed reports also mark current widgets as **today**; for example,
-Pipeline and stalled quotes describe the current state while the funnel uses the range.
+The seven table reports (Sales over time, Sales by client, Sales by product, Payments
+received, Invoiced taxes, Repeat purchase by cohort, and Sales by team member) and the
+Custom report share the same structure, top to bottom:
 
-## Funnel calculation
+1. A one-line **description** of what the report answers.
+2. **KPIs** compared against the previous period.
+3. **Chart.**
+4. The full **table**, sortable and with a **Total** row.
+5. Notes specific to the report (margin, cohorts) and the currency note.
 
-The commercial funnel is `sent → viewed → approved → paid`. Its base includes every
-quote that left draft, even if later rejected or expired. Viewed records the client's
-first real opening; internal activity and reloads don't create new conversions.
+### KPIs and the previous-period comparison
 
-## Finance metrics
+Each KPI shows its value, an arrow with the change and, below, "vs. {value} the previous
+period".
 
-- **Contracted MRR:** monthly value of active retainers.
-- **ARR:** annualized MRR, not cash already received.
-- **MRR at risk:** retainers with a pending charge or scheduled for cancellation.
-- **DSO:** estimated time to collection from available history.
-- **Weighted pipeline:** expected value from historical probability and timing; not
-  guaranteed cash.
-- **Concentration:** the largest client's share of pipeline.
+- **The previous period** has the same number of days as your range and ends the day
+  before your range starts. September 1–30 is compared against the 30 days before
+  (August 2–31), not against "August".
+- **Amounts and counts** change in **percent**. **Rates and percentages** (close rate,
+  margin %, returning clients) change in **points**: from 38% to 43% is "5 pts", not
+  "13%".
+- **No base, no arrow.** If the previous period is zero, the arrow doesn't appear. If
+  there's no previous value, the line says "No previous period to compare".
+- With **Last 12 months** there's no comparison: the previous period would fall outside
+  the queryable year. Repeat purchase by cohort doesn't compare either: it's a snapshot of
+  today.
 
-## Cash flow separates three sources
+### The table
 
-The 90-day projection keeps certain receivables, probability-weighted pipeline, and
-contracted recurring revenue separate. The total is an expected scenario, not a bank
-balance. Movements from day 91 remain visible outside the horizon.
+- **Sort:** click a column header. The first click sorts from highest to lowest; the
+  second, lowest to highest. Empty cells always go last.
+- **Total row:** at the bottom, pinned. It adds up what can be added; rates and averages
+  in the total are those of the full period, not the sum of the rows. A column that isn't
+  added stays blank.
+- **Links:** when the first column is a client, a catalog product, a quote, or an
+  invoice, it links to its record or detail.
+- **Reading:** the header and first column stay pinned as you scroll. A dash (—) means
+  "not applicable or no data", not zero.
+- **No data:** "No data in this range. Adjust the date range or come back once there is
+  activity in this period."
+- **Mobile:** KPIs go in two columns, the table scrolls sideways with the first column
+  pinned, and buttons are 44 px.
 
-## Collections and payment behavior
+### The chart and drill-down
 
-The report uses the same unified receivables as the operating module: open and overdue
-totals, expected 30-day collections, average delay, aging, client-limit exposure,
-promise compliance, and actual-versus-agreed payment timing. A payment promise records
-a commitment; it doesn't move money or change the balance by itself.
+- In **client** and **product** charts, each bar opens that client's or product's record.
+- In **Sales over time** and in the Custom report grouped by **Month** or **Week**, each
+  bar opens that month or week. The period is trimmed to your range: if the range starts
+  on the 15th, the month's bar opens the 15th through month end.
+- On desktop, a click (or <kbd>Enter</kbd> with focus on the bar) navigates directly. On
+  mobile, the first tap shows the value and the tooltip includes **View detail →**.
 
-## Customize widgets
+### Export CSV
 
-Each report keeps its own member-level layout. Edit mode can reorder, resize, or hide
-widgets; Reset restores that report's default. Hiding a widget doesn't remove data or
-change calculations.
+**Export CSV**, at the top right, downloads exactly what you see: the same report, the
+same range and, in Sales over time, the same grouping. The button appears when the table
+has rows.
 
-## Seller performance
+| Aspect | Format |
+|---|---|
+| File name | `cord-{report}-{from}_{to}.csv`, for example `cord-ventas-cliente-2026-09-01_2026-09-30.csv`. Repeat purchase by cohort uses today's date: `cord-recompra-2026-10-08.csv`. |
+| Encoding | UTF-8 with BOM, so Excel opens accented characters correctly. Comma separator and Windows line breaks. |
+| Headers | The same as the table, in your account language. |
+| Amounts | As a **number**, with no symbol or thousands separator and a period as decimal point (`196469.20`). Whole numbers carry no decimals. |
+| Currency | If the report has any money column, a **Currency** column is added at the end with your business currency on every row. |
+| Percentages | As a whole number: `42` means 42%. |
+| Dates | `YYYY-MM-DD`. In period reports, the date is the first day of the period. |
+| Empty values | Empty cell (on screen they show as —). |
+| Total row | Not exported: the file carries only the rows, so you can sum and filter your own way. |
+| Protection | Text that starts with `=`, `+`, `-`, `@`, tab, or carriage return is exported with a leading apostrophe, so a spreadsheet doesn't run it as a formula. Amounts are left alone. |
 
-**Performance**, under the **Insights** group in the side menu, attributes each quote to
-the person who created or duplicated it. It requires the Reports permission. It shows quotes created, close rate, closed value, collected value,
-average ticket, and days to close.
+## Table reports, one by one
 
-Older documents without a creator appear as **Unassigned**. Cord doesn't redistribute
-them or credit the latest editor automatically. The team rate is the average of the
-displayed seller rates, not payroll or commission accounting.
+### Sales over time
+
+"How much you quote, win and collect, period by period. Sales by close date; collected by
+payment date."
+
+<DmReportTable report="ventas" lang="en" />
+
+- **KPIs:** Sold, Sales, Average ticket, and Collected.
+- **Chart:** Sold per period, as bars.
+- **Columns:** Period, Quotes, Quoted, Sales, Sold, Average ticket, Collected. **Every**
+  period in the range appears, even at zero.
+- **Day / Week / Month grouping:** at the top right. If you don't choose, Cord decides by
+  the range's length: **day** up to 31 days, **week** up to 124 days, and **month** after
+  that. Weeks start on Monday. The first and last periods can be partial if your range
+  doesn't start on a Monday or on the 1st.
+- Each column uses its own date: Quotes and Quoted by creation, Sales and Sold by
+  approval, Collected by payment date. That's why a row can have sales without quotes:
+  something quoted earlier was won in that period.
+
+### Sales by client
+
+"Each client with what they bought in the range, their ticket, last purchase and what
+they owe you today."
+
+<DmReportTable report="ventas-cliente" lang="en" />
+
+- **KPIs:** Clients who bought, Sold, Average ticket, and **Returning clients**: the
+  percentage of clients who bought in the range that had bought from you before (changes
+  in points).
+- **Chart:** the 8 clients with the most sold, as horizontal bars; each bar opens their
+  record.
+- **Columns:** Client, Quotes (sent in the range), Sales, Sold, Average ticket, **Last
+  sale** and **Client since** (from your whole history, not the range), and **Balance
+  today**: what they owe you right now across quotes and invoices, with partial payments
+  deducted.
+- Every client that received a quote or bought from you in the range appears, sorted by
+  sold, up to 500 rows. Quotes without an assigned client aren't included.
+
+### Sales by product
+
+"Which products sell, how many units, at what margin and how often they win when quoted."
+
+- **KPIs:** Units, Sold, Gross margin, and Margin %.
+- **Chart:** the 8 products with the most sold; each bar opens the product's record.
+- **Columns:** Product, SKU, Units, Sales (won quotes that include it), Sold, Gross
+  margin, Margin %, Close rate (of the quotes created in the range that included it, how
+  many were won). Totals for Units, Sold, Gross margin, and Margin %.
+- **Sold here is per line:** negotiated (or list) price times quantity, **before taxes**
+  and the document-level discount. That's why it doesn't match Sold in Sales over time,
+  which uses the quote total.
+- A free-text line, without a catalog product, appears with its description and no link.
+  Lines the client didn't approve in a partial approval don't count.
+- **Margin:** "Margin only counts lines with a cost captured when quoting; without a cost,
+  the line counts toward sales but not margin." The cost is what the product had when it
+  was quoted; a zero cost is treated as "I don't know", not "it was free". With no line
+  carrying a cost, margin shows as —.
+
+### Payments received
+
+"Every payment that came in, from quotes and invoices, with its method and refunds."
+It also requires the **Collections** permission.
+
+- **KPIs:** Net collected, Gross collected, Refunded, and Payments.
+- **Chart:** net collected by method.
+- **Columns:** Date, Number, Client, Method, Amount, Refunded, Net. One row per payment,
+  newest first, up to 1,000 rows. The number opens the quote or invoice.
+- **Methods:** Card, SPEI, Bank transfer, Cash, Mercado Pago, Online payment, and
+  **Recorded manually** (a quote marked paid without any recorded payment). A method Cord
+  doesn't name yet appears as is.
+- A refund is subtracted from the payment it belongs to, on that payment's date. This is
+  the "Collected" definition used by Home and Sales over time.
+
+### Invoiced taxes
+
+"Taxes and withholdings from issued invoices, month by month: what you report."
+
+- **KPIs:** Taxes, Withholdings, Subtotal, and Invoices.
+- **Chart:** taxes by month.
+- **Columns:** Month, Invoices, Subtotal, Taxes, Withholdings, Total. Always by month.
+- It comes from **issued invoices** by issue date, not from quotes. It doesn't count
+  drafts, voided invoices, or credit notes (those aren't subtracted here).
+- It's a supporting read for your bookkeeping, not a filing: confirm it with your
+  adviser.
+
+### Repeat purchase by cohort
+
+"Of the clients who first bought each month, how many came back to buy again." It's an
+**As of today** snapshot: no picker and no comparison.
+
+- **KPIs:** New clients (12 months) and Repeat purchase next month (of the cohorts that
+  have already reached one month).
+- **Heat map:** one row per month of first purchase over the last 12 months, with Cohort,
+  Clients, and **Month 1** through **Month 6**. Each cell is the percentage of that cohort
+  that bought again that many months later; darker means more repeat purchases.
+- "A dash is a month that cohort has not reached yet": the August cohort has no Month 3
+  in October. It isn't 0%.
+
+### Sales by team member
+
+"What each team member quoted and closed in the range, with their close rate and time to
+close."
+
+- **KPIs:** Sold, Sales, Average ticket, and Members with sales.
+- **Chart:** the 8 members with the most sold.
+- **Columns:** Team member, Sent (created in the range and out of draft), Sales, Sold,
+  Close rate (of their quotes sent in the range, how many they won), Average ticket, and
+  Days to close (average days from creation to approval, with one decimal).
+- Each quote is attributed to the person who **created or duplicated** it. The table lists
+  **active members**, even without sales. What people who have left the team created is
+  grouped in a **Former team members** row, so the Total row matches the KPIs. Quotes
+  without a creator (before attribution or created via the API) appear in neither the
+  table nor the KPIs.
+
+## Widget reports, one by one
+
+These are boards you can [customize](#customizing-a-reports-widgets). Widgets marked
+**optional** start hidden and are added from the library.
+
+### Overview
+
+Cohort of quotes created in the range.
+
+| Widget | What it shows |
+|---|---|
+| **Close rate** | Won over sent: "{g} / {n} sent quotes". |
+| **Closed value** | Total won from the cohort created in the range. |
+| **Pipeline velocity** | Closed value per day of the range. |
+| **Lost value** | Rejected plus expired, with their count. |
+| **Commercial movement** | Closed value by quote creation date. |
+| **Cohort maturity** | What happened to quotes created in the range: Won, Lost, and Still open. With no sends in the range, it stays empty. |
+| **Decided quotes** (optional) | Won, rejected, or expired in the cohort. |
+
+### Commercial diagnosis
+
+| Widget | What it shows | Scope |
+|---|---|---|
+| **Where conversion breaks** | Funnel sent → viewed → approved → paid. The base includes every quote that went out, even if rejected or expired; "viewed" is the client's first real open. | Range |
+| **Pipeline** | Amount and count by open or won status. | Today |
+| **Stalled** | "Quotes that need a next move": up to 5 sent or viewed quotes with no activity in 7 days or more, by amount. | Today |
+| **Negotiation cost** | Products with the most discount given up against list price. Requires Starter or higher. | Range |
+| **Median time by stage** | Created → sent, Sent → viewed, Viewed → approved, Approved → paid, in days. The median keeps a few outliers from distorting the cycle. | Range |
+| **Stalled follow-ups** (optional) | How many quotes have been inactive for seven days or more; it counts all of them, even though the Stalled list shows only the 5 with the highest amount. | Today |
+
+### Finance
+
+Snapshot of today. Pro plan or higher.
+
+| Widget | What it shows |
+|---|---|
+| **MRR** | Contracted MRR: monthly amount of active retainers. |
+| **ARR** | Annualized MRR; not money already received. |
+| **DSO** | Estimated time to collection, based on your history. |
+| **MRR at risk** | Retainers with a late payment or set to cancel at period end. |
+| **Weighted pipeline** | Pipeline by client weighted by probability and timing, based on your history. Not guaranteed cash. |
+| **Concentration** | How much of the pipeline depends on the largest client. |
+| **Profitability by tier** | By client tier: average discount, close rate, number of sends, and closed value. |
+| **Active retainers** (optional) | Contracts contributing recurring revenue, with MRR and ARR. |
+
+### Cash flow · 90 days
+
+Snapshot and forecast as of today. Pro plan or higher. The forecast separates three
+sources: **certain receivables** (approved or invoiced balances, with an estimated
+collection date), **pipeline** (open opportunities weighted by probability), and
+**retainers** (recurring installments within the horizon). The total is an expected
+scenario, not a bank balance.
+
+| Widget | What it shows |
+|---|---|
+| **Expected inflow** | Next 90 days: receivables + pipeline + retainers. |
+| **Beyond horizon** | What's expected from day 91, so it doesn't disappear from view. |
+| **MRR** | Active retainers and their count. |
+| **Certain receivables** | Outstanding balances not weighted by close rate. |
+| **30-day concentration** | Which clients concentrate what you expect to collect in 30 days. |
+| **Weekly flow** | Weekly flow · 90 days. |
+| **Cumulative cash** | Cumulative cash curve. |
+| **Expected daily inflow** (optional) | Daily forecast without accumulation. |
+
+### Collections and receivables
+
+Snapshot of today. Pro plan or higher and the Collections permission. It uses the same
+receivables as the [Collections](/en/docs/pagos/cartera-cobranza) module: approved unpaid
+quotes and open invoices, with partial payments deducted.
+
+| Widget | What it shows |
+|---|---|
+| **Receivables** | Outstanding amount and number of documents. |
+| **Overdue** | Total overdue and number of accounts. |
+| **Expected collections** | What you expect to collect in 30 days: certain receivables, estimated timing. |
+| **Average delay** | Average days late against agreed terms. |
+| **Aging** | Not yet due, 1–30 days, 31–60 days, and 60+ days. |
+| **Client exposure** | Open balance against the configured credit limit. |
+| **Promise compliance** | Kept, broken, and overdue pending promises. A promise records the commitment; it doesn't move money. |
+| **Actual vs. agreed DSO** | How many payments arrive On time, 1–7 days late, 8–30 days late, and 30+ days late. |
+| **Outstanding documents** (optional) | Documents awaiting collection today and their amount. |
+
+### Clients
+
+| Widget | What it shows | Scope |
+|---|---|---|
+| **Clients by closed value** | Who converts value, not just quote volume. | Range |
+| **Client conversion** | Approved over quotes and rate, with closed value; each row opens the record. | Range |
+| **New vs. returning** | New (their first quote falls in the range) against returning. | Range |
+| **Clients at risk** | Clients with history and no quotes in 90 days, by closed value. | Today |
+| **Tier and behavior** | Tier × payment behavior matrix (on time, slightly late, late). | Today |
+| **Relationships to reactivate** (optional) | How many clients with history have been inactive for 90 days; it counts all of them, even though the Clients at risk list shows only the 10 with the most closed value. | Today |
+
+### Products
+
+| Widget | What it shows |
+|---|---|
+| **Products by quoted amount** | Demand inside the selected range. |
+| **Product volume** | Quoted units and proposal presence. |
+| **Discount elasticity** | Close rate by discount band, with the sample size. It uses your whole history and requires Starter or higher. |
+| **Close rate by product** | Which products win, not only which are quoted. |
+| **Units by product** (optional) | Quoted units in the selected range. |
+
+## Customizing a report's widgets
+
+The seven widget reports have the **Customize** button, with the same controls as Home:
+**Library**, **Reset**, and **Done** as icon buttons; drag, **Move up**, **Move down**,
+**Compact**/**Expanded**, and hide; full keyboard support and, on mobile, 44 px buttons.
+**Reset** asks "Reset this report?". The full explanation is in
+[Home and views](/en/docs/gestion/dashboard#customize-home).
+
+- **Each report saves its own layout**, and the layout is yours: it doesn't change what
+  your teammates see.
+- Hiding a widget doesn't delete data or change calculations.
+- Table reports and the Custom report aren't customized with widgets: their configuration
+  is the table itself.
+
+## Custom report and saved reports
+
+When no report answers your question, the **Custom report** lets you choose how to group
+(client, product, team member, status, month, week, day, country, client tier, or
+currency) and up to six metrics, save it with a name for the whole team, and receive it
+every Monday or every 1st by email with the CSV attached. It's documented in
+[Custom reports and email delivery](/en/docs/gestion/informes-personalizados).
+
+## Performance by team member
+
+There are two places to look at the team, for different questions:
+
+| | **Sales by team member** (report) | **Performance** (page) |
+|---|---|---|
+| Where | Reports › Team | Side menu, **Insights** group (shortcut <kbd>G</kbd> then <kbd>E</kbd>) |
+| Period | The range you choose, with comparison | Whole history |
+| Columns | Sent, Sales, Sold, Close rate, Average ticket, Days to close | Quotes, Close, Closed, Collected, Ticket, Days |
+| Exports CSV | Yes | No |
+
+**Performance** requires the Reports permission and is a customizable widget board:
+**Closed by the team** (approved, paid, and invoiced, with collected and unassigned in the
+detail), **Average close rate** ("of what each rep sent"), **Leading seller**, **Active
+reps**, **Contribution to closed sales**, **Sales activity**, **Ranking by rep** (by
+amount closed, with your row marked **You**), and the optional **Team average deal**.
+Amounts are in your business currency.
+
+Both attribute each quote to the person who created or duplicated it. Documents without
+a creator appear in Performance as **Unassigned** ("from before this report or via
+API"). Cord doesn't redistribute that history or credit a sale to the last editor. The
+team rate in Performance is the average of each rep's rate; it isn't a commission or a
+payroll calculation.
 
 ## Common problems
 
-**Report is missing.** Check the Reports permission; Collections has its own permission,
-and Finance, Cash flow, and Collections require Pro or above.
+**A report doesn't appear in the picker.** Check the Reports permission; Payments
+received and Collections and receivables also require Collections. Finance, Cash flow,
+and Collections do appear without the plan, but ask for Pro or higher when opened.
 
-**Changing dates doesn't change a widget.** It is a current snapshot marked “today.”
+**Changing dates doesn't modify a widget.** It's a snapshot of today: it carries the
+**Today** tag.
 
-**A cohort's closed value looks low.** Some quotes may remain open; review maturity.
+**A recent cohort's closed value looks low.** Part of it is still open; check maturity
+and compare again once your normal sales cycle has passed.
 
-**A closing is Unassigned.** The quote has no stored creator: it predates the current
-attribution model or was created through the API.
+**A total doesn't match between two reports.** Check which date each measure uses: Sold
+goes by approval date, Quoted by creation, and Collected by payment date. In Sales by
+product, Sold is per line and before taxes.
+
+**Sales in another currency are missing.** Read the currency note: if a currency has no
+exchange rate available, its sales are left out of the sum for now.
+
+**I don't see the change arrow.** The previous period is zero, you picked Last 12 months,
+or the report is a snapshot of today.
+
+**I don't see the Export CSV button.** The table has no rows in that range, or you're in
+a widget report: those don't export.
+
+**The CSV opens with odd characters.** Open it with Excel or Google Sheets directly; the
+file carries the UTF-8 mark they need. If you import it by hand, choose UTF-8 and comma
+as the separator.
+
+**A close doesn't appear in Sales by team member.** The quote doesn't keep the person who
+created it (it predates attribution or was created via the API). If whoever created it is
+no longer active on the team, the sale appears in the **Former team members** row.
 
 ## Related
 
+- [Custom reports and email delivery](/en/docs/gestion/informes-personalizados)
 - [Home and views](/en/docs/gestion/dashboard)
 - [Receivables and collections](/en/docs/pagos/cartera-cobranza)
 - [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx)
 - [Team and security](/en/docs/cuenta/equipo-seguridad)
+- Support: [Cord's reports: which one answers which question](https://cordhq.app/en/support/informes-de-cord)
+- Support: [Export a report to CSV (Excel and Google Sheets)](https://cordhq.app/en/support/exportar-informes-csv)
+- Support: [Amounts in multiple currencies and time zone on Home and in reports](https://cordhq.app/en/support/importes-en-varias-divisas-informes)

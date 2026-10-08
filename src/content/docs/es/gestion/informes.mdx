@@ -1,151 +1,531 @@
 ---
 title: "Informes y desempeño comercial"
-description: "Qué mide cada informe de Cord, qué datos respetan el rango, cuáles son una foto de hoy y cómo se atribuye el desempeño por vendedor."
-lastUpdated: "2026-10-07"
+seoTitle: "Informes de Cord: 15 informes, comparativa, CSV y desempeño por vendedor"
+description: "Los 15 informes de Cord uno por uno: qué responde cada uno, sus KPIs, columnas y gráfica, qué respeta el rango y qué es una foto de hoy, cómo se compara contra el periodo anterior, cómo se exporta a CSV, cómo se convierte la divisa y cómo se atribuye el desempeño por vendedor."
+lastUpdated: "2026-10-08"
 reviewedBy: "Producto y operaciones de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Permiso Informes", "Permiso Cobranza para el informe de cartera", "Plan Pro o superior para Finanzas, Flujo de caja y Cobranza"]
+prerequisites: ["Permiso Informes", "Permiso Cobranza para Pagos recibidos y Cobranza y cartera", "Plan Pro o superior para Finanzas, Flujo de caja y Cobranza"]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Informes y desempeño comercial</h1>
-  <p class="page-subtitle">Cómo leer las métricas sin confundir una cohorte histórica con la situación actual.</p>
+  <p class="page-subtitle">Quince informes para entender tus ventas, tus clientes, tus productos y tu dinero, sin confundir una cohorte histórica con la situación de hoy.</p>
 </header>
 
-**Informes** es la única superficie analítica de Cord. Reúne siete vistas y un
-selector común, mientras **Equipo** compara resultados por la persona que creó o
-duplicó cada cotización.
+**Informes** es la superficie analítica de Cord: "Una sola casa para entender el
+desempeño y decidir qué mover." Reúne **15 informes en 7 grupos** con un selector común.
+Siete son **informes de widgets** (tableros personalizables), siete son **informes
+tabla** (KPIs comparados, gráfica, tabla con totales y exportación a CSV) y uno es el
+**Informe personalizado**, donde tú eliges cómo agrupar y qué medir. **Desempeño**, en el
+mismo grupo del menú, compara a las personas del equipo.
 
-## Los siete informes
+## Dónde está y cómo se elige un informe
 
-**Informes** está en el menú lateral, en el grupo **Análisis**. Cada informe tiene
-su propia URL y su propia disposición de widgets.
+**Informes** está en el menú lateral, en el grupo **Análisis** (atajo <kbd>G</kbd> y luego
+<kbd>A</kbd>). Arriba a la derecha está el **selector de informes**: pulsa el nombre del
+informe actual para abrirlo.
 
 <DmReports lang="es" />
 
-| Informe | Qué responde | Alcance temporal | Permiso | Plan |
-|---|---|---|---|---|
-| Resumen | Tasa de cierre, valor cerrado y perdido, velocidad y madurez. | Rango elegido | Informes | Todos |
-| Diagnóstico comercial | Embudo, pipeline, detenidas, descuento cedido y tiempo por etapa. | Mixto: cohorte + foto de hoy | Informes | Todos |
-| Finanzas | MRR, ARR, DSO, MRR en riesgo, pipeline ponderado y concentración. | Foto de hoy | Informes | Pro o superior |
-| Flujo de caja · 90 días | Cartera, pipeline probable, igualas y concentración próxima. | Foto y proyección actual | Informes | Pro o superior |
-| Cobranza y cartera | Por cobrar, vencido, aging, promesas y comportamiento de pago. | Foto de hoy | Informes y Cobranza | Pro o superior |
-| Clientes | Valor y conversión por cliente, cohortes y clientes sin actividad. | Mixto: rango + foto de hoy | Informes | Todos |
-| Productos | Importe, volumen, elasticidad del descuento y cierre por producto. | Rango elegido | Informes | Todos |
+- El panel agrupa los informes por categoría: **Resumen**, **Ventas**, **Clientes**,
+  **Productos**, **Finanzas**, **Equipo** y **Personalizados**. Solo aparecen las
+  categorías con algún informe que tu permiso permite.
+- Debajo de cada nombre dice **Por rango de fechas** o **Al día de hoy**.
+- **Buscar informes** filtra por nombre en español y en inglés.
+- Con teclado: el buscador recibe el foco al abrir, <kbd>↑</kbd> y <kbd>↓</kbd> recorren
+  la lista, <kbd>Enter</kbd> abre el informe y <kbd>Escape</kbd> cierra el panel.
+- Los [informes guardados](/docs/gestion/informes-personalizados) de tu organización
+  aparecen al final, en **Personalizados**, con la etiqueta **Informe guardado**.
 
-Si te falta el permiso, el informe te pide solicitarlo a quien administra el equipo.
-Si te falta el plan, te ofrece ir a **Ajustes › Planes y suscripción**.
+Cada informe tiene su propia dirección (`/app/informes?r=...`), así que puedes guardarla
+en favoritos o compartirla con alguien del equipo que tenga el permiso.
 
+## Los 15 informes
 
-## Informes con rango
+| Grupo | Informe | Tipo | Alcance | Permiso | Plan |
+|---|---|---|---|---|---|
+| Resumen | **Resumen** | Widgets | Rango | Informes | Todos |
+| Resumen | **Diagnóstico comercial** | Widgets | Rango, con widgets de hoy | Informes | Todos |
+| Ventas | **Ventas en el tiempo** | Tabla | Rango | Informes | Todos |
+| Ventas | **Ventas por cliente** | Tabla | Rango | Informes | Todos |
+| Ventas | **Ventas por producto** | Tabla | Rango | Informes | Todos |
+| Clientes | **Clientes** | Widgets | Rango, con widgets de hoy | Informes | Todos |
+| Clientes | **Recompra por cohorte** | Tabla | Al día de hoy | Informes | Todos |
+| Productos | **Productos** | Widgets | Rango | Informes | Todos |
+| Finanzas | **Pagos recibidos** | Tabla | Rango | Informes y Cobranza | Todos |
+| Finanzas | **Impuestos facturados** | Tabla | Rango | Informes | Todos |
+| Finanzas | **Finanzas** | Widgets | Al día de hoy | Informes | Pro o superior |
+| Finanzas | **Flujo de caja · 90 días** | Widgets | Al día de hoy | Informes | Pro o superior |
+| Finanzas | **Cobranza y cartera** | Widgets | Al día de hoy | Informes y Cobranza | Pro o superior |
+| Equipo | **Ventas por vendedor** | Tabla | Rango | Informes | Todos |
+| Personalizados | **Informe personalizado** | Explorador | Rango | Informes | Todos |
 
-Resumen, Diagnóstico comercial, Clientes y Productos muestran selector de fechas, que
-arranca en los últimos 30 días. El rango máximo consultable en esta interfaz es el
-último año. Cuando cambias fechas,
-Cord vuelve a cargar la cohorte sin recargar toda la página.
+### Si te falta el permiso o el plan
 
-En métricas de cohorte, una cotización pertenece al rango por su fecha de origen. Una
-cotización creada ayer puede seguir abierta: no debe compararse directamente con una
-cohorte de hace seis meses que ya tuvo tiempo de cerrar.
+Cada motivo de bloqueo pide una acción distinta, y la pantalla lo distingue:
 
-<Callout type="info">
-Una tasa baja en un rango reciente puede significar **cohorte inmadura**, no un equipo
-peor. Revisa la proporción “aún abierto” antes de concluir.
+- **Sin el permiso Informes** no ves ningún informe: "Sin acceso. Tu rol actual no tiene
+  permiso para ver la analítica. Contacta al administrador de tu organización."
+- **Sin el permiso Cobranza**, Pagos recibidos y Cobranza y cartera no aparecen en el
+  selector; si abres su enlace, ves "Informe restringido" y la indicación de pedir el
+  permiso.
+- **Sin el plan**, Finanzas, Flujo de caja y Cobranza sí aparecen en el selector, pero al
+  abrirlos ves qué ofrecen y el botón para ir a **Ajustes › Planes y suscripción**. Por
+  ejemplo, Flujo de caja dice "Cuánto dinero va a entrar en los próximos 90 días".
+
+El permiso se llama **Informes** en **Ajustes › Equipo y permisos**. Ver
+[Equipo y seguridad](/docs/cuenta/equipo-seguridad).
+
+## Fechas, zona horaria y divisa
+
+### El selector de fechas
+
+Los informes **Por rango de fechas** muestran el selector junto al selector de informes:
+**Hoy**, **Ayer**, **Últimos 7 días**, **Últimos 30 días**, **Últimos 90 días**, **Este
+mes**, **Mes pasado**, **Este trimestre**, **Año a la fecha**, **Últimos 12 meses** y
+**Personalizado**. Se puede consultar hasta un año hacia atrás.
+
+- Al abrir un informe, el rango sale, en este orden: de la dirección del enlace; si no
+  trae uno, del último rango que usaste **en ese informe** en este navegador (cada informe
+  recuerda el suyo); si no, **Últimos 30 días**.
+- El rango se escribe en la dirección de la página, así que un enlace copiado abre el
+  mismo periodo para quien lo reciba.
+- En los informes de widgets, cambiar el rango repinta los números sin recargar. En los
+  informes tabla, la página se vuelve a cargar porque la tabla, los totales y el CSV se
+  arman completos en el servidor.
+
+Los informes **Al día de hoy** no tienen selector (no habría nada que ignorar): muestran
+la etiqueta "Al día de hoy · {fecha}". Dentro de un informe de rango, los widgets marcados
+**Hoy** también ignoran el rango; pasa el cursor sobre la etiqueta para ver la
+explicación.
+
+### Zona horaria
+
+Los días se cortan en la **zona horaria de tu negocio**: "hoy", el inicio y el fin de
+cada día, las semanas y los meses son los tuyos. Un pago del 31 a las 11 de la noche en
+tu ciudad cuenta en ese mes aunque en otra zona ya sea día 1.
+
+### Divisa: todo en la divisa de tu negocio
+
+Si vendes en varias divisas, Cord no suma importes de monedas distintas como si fueran
+una: **reexpresa todo en la divisa de tu negocio**, la que tienes en Ajustes. Para cada
+importe usa la mejor tasa real disponible:
+
+1. si la venta ya está en la divisa de tu negocio, tal cual;
+2. si la divisa contable de la cotización o factura es la de tu negocio, el **tipo de
+   cambio fijado en ese documento** (el mismo que declara la factura);
+3. si no, el tipo de cambio **publicado hoy**.
+
+Si para una divisa no hay ningún tipo de cambio disponible, sus importes **quedan fuera
+de la suma**; Cord nunca inventa una tasa. Debajo del informe aparece la nota:
+
+> Importes en {divisa}. Las ventas en {divisas} se convierten con el tipo de cambio fijado en cada cotización o factura; si no tiene uno, con el publicado hoy.
+
+y, si alguna divisa quedó fuera: "No hay tipo de cambio disponible para {divisas}: esas
+ventas no se suman por ahora." Si vendes en una sola divisa, la nota no aparece.
+
+### Qué fecha usa cada medida
+
+| Medida | Qué cuenta | Fecha |
+|---|---|---|
+| **Cotizaciones** / **Cotizado** | Cotizaciones que salieron del borrador (incluidas las que después se rechazaron o vencieron). | Creación |
+| **Ventas** / **Vendido** | Cotizaciones ganadas: Aprobada, Pagada o Facturada. Vendido es su total, con impuestos y menos retenciones. | Aprobación |
+| **Tasa de cierre** | De lo que salió en el rango, qué porcentaje se ganó (cohorte). | Creación |
+| **Cobrado** | El dinero que entró. | Pago |
+| **Saldo hoy**, cartera, pipeline | Foto del momento. | Hoy |
+
+**"Cobrado" significa lo mismo en todo Cord** (Inicio, Informes y Cobros): pagos de
+cotizaciones (anticipos, cuotas, igualas) más pagos aplicados a facturas, más las
+cotizaciones marcadas como pagadas a mano sin ningún pago registrado, **menos
+reembolsos**. Un pago de factura que ya vino de un cobro de cotización no se cuenta dos
+veces.
+
+<Callout type="info" title="Cohorte no es lo mismo que cierre">
+Una tasa de cierre se calcula sobre la **cohorte**: las cotizaciones creadas en el rango.
+Una cohorte reciente todavía tiene cotizaciones abiertas, así que su tasa puede parecer
+baja sin que el equipo venda peor. Compara contra una cohorte de la misma edad o revisa
+**Madurez de la cohorte** en Resumen.
 </Callout>
 
-## Informes de foto actual
+## Cómo se leen los informes tabla
 
-Finanzas, Flujo y Cobranza muestran **Al día de hoy** en vez de un selector que no
-tendría efecto. Usan saldos, suscripciones, vencimientos y pipeline existentes ahora.
+Los siete informes tabla (Ventas en el tiempo, Ventas por cliente, Ventas por producto,
+Pagos recibidos, Impuestos facturados, Recompra por cohorte y Ventas por vendedor) y el
+Informe personalizado comparten la misma estructura, de arriba abajo:
 
-Dentro de informes mixtos, los widgets marcados **hoy** también ignoran el rango. Por
-ejemplo, Pipeline y cotizaciones detenidas describen el estado actual aunque el embudo
-del mismo informe use una cohorte de fechas.
+1. **Descripción** de una línea de qué responde el informe.
+2. **KPIs** comparados contra el periodo anterior.
+3. **Gráfica.**
+4. **Tabla** completa, ordenable y con fila de **Total**.
+5. Notas propias del informe (margen, cohortes) y la nota de divisa.
 
-## Cómo se calcula el embudo
+### KPIs y comparativa contra el periodo anterior
 
-El embudo comercial sigue:
+Cada KPI muestra su valor, una flecha con la variación y, debajo, "vs. {valor} el periodo
+anterior".
 
-```text
-enviada → vista → aprobada → pagada
-```
+- **El periodo anterior** tiene el mismo número de días que tu rango y termina el día
+  antes de que tu rango empiece. Del 1 al 30 de septiembre se compara contra los 30 días
+  anteriores (del 2 al 31 de agosto), no contra "agosto".
+- **Importes y conteos** varían en **porcentaje**. **Tasas y porcentajes** (tasa de
+  cierre, margen %, clientes recurrentes) varían en **puntos**: de 38 % a 43 % son
+  "5 pts", no "13 %".
+- **Sin base no hay flecha.** Si el periodo anterior vale cero, la flecha no aparece. Si
+  no hay valor anterior, la línea dice "Sin periodo anterior para comparar".
+- Con **Últimos 12 meses** no hay comparativa: el periodo anterior caería fuera del año
+  consultable. Recompra por cohorte tampoco compara: es una foto de hoy.
 
-La base incluye toda cotización que salió del borrador, incluso si después quedó
-rechazada o vencida. La vista cuenta la primera apertura real del cliente; recargas y
-actividad interna no crean conversiones nuevas.
+### La tabla
 
-## Finanzas: qué significan las métricas
+- **Ordenar:** pulsa el encabezado de una columna. El primer clic ordena de mayor a menor;
+  el segundo, de menor a mayor. Las celdas vacías van siempre al final.
+- **Fila Total:** abajo, fija. Suma lo que se puede sumar; las tasas y promedios del total
+  son los del periodo completo, no la suma de las filas. Una columna que no se suma queda
+  en blanco.
+- **Enlaces:** cuando la primera columna es un cliente, un producto del catálogo, una
+  cotización o una factura, es un enlace a su ficha o detalle.
+- **Lectura:** el encabezado y la primera columna se quedan fijos al desplazarte. Un guion
+  (—) es "no aplica o no hay dato", no cero.
+- **Sin datos:** "Sin datos en este rango. Ajusta el rango de fechas o vuelve cuando haya
+  movimiento en este periodo."
+- **Celular:** los KPIs van en dos columnas, la tabla se desplaza de lado con la primera
+  columna fija y los botones miden 44 px.
 
-- **MRR contratado:** importe mensual de igualas activas.
-- **ARR:** MRR anualizado; no es ingreso bancario ya recibido.
-- **MRR en riesgo:** igualas con cobro pendiente o programadas para cancelarse.
-- **DSO:** tiempo estimado hasta el cobro a partir del historial disponible.
-- **Pipeline ponderado:** valor esperado usando probabilidad y tiempo derivados del
-  comportamiento histórico; no es efectivo garantizado.
-- **Concentración:** proporción del pipeline asociada al cliente de mayor peso.
+### La gráfica y el drill-down
 
-## Flujo de caja: tres fuentes distintas
+- En las gráficas de **clientes** y **productos**, cada barra abre la ficha de ese
+  cliente o producto.
+- En **Ventas en el tiempo** y en el Informe personalizado agrupado por **Mes** o
+  **Semana**, cada barra abre ese mes o esa semana. El periodo se recorta a tu rango: si
+  el rango empieza el 15, la barra del mes abre del 15 al fin de mes.
+- En escritorio, el clic (o <kbd>Enter</kbd> con el foco en la barra) navega directo. En
+  celular, el primer toque muestra el dato y el tooltip trae **Ver detalle →**.
 
-La proyección de 90 días separa:
+### Exportar CSV
 
-1. **Cartera cierta:** saldos ya aprobados o facturados; el momento de cobro sigue
-   siendo estimado.
-2. **Pipeline:** oportunidades abiertas ponderadas por probabilidad.
-3. **MRR:** cuotas recurrentes contratadas en el horizonte.
+**Exportar CSV**, arriba a la derecha, descarga exactamente lo que ves: el mismo informe,
+el mismo rango y, en Ventas en el tiempo, la misma agrupación. El botón aparece cuando la
+tabla tiene filas.
 
-El total es un escenario esperado, no un saldo bancario. Los movimientos desde el día
-91 aparecen fuera del horizonte para no desaparecer de la lectura.
+| Aspecto | Formato |
+|---|---|
+| Nombre del archivo | `cord-{informe}-{desde}_{hasta}.csv`, por ejemplo `cord-ventas-cliente-2026-09-01_2026-09-30.csv`. Recompra por cohorte usa la fecha de hoy: `cord-recompra-2026-10-08.csv`. |
+| Codificación | UTF-8 con BOM, para que Excel abra bien los acentos. Separador coma y saltos de línea de Windows. |
+| Encabezados | Los mismos de la tabla, en el idioma de tu cuenta. |
+| Importes | Como **número**, sin símbolo ni separador de miles y con punto decimal (`196469.20`). Los enteros van sin decimales. |
+| Divisa | Si el informe tiene alguna columna de dinero, se agrega al final la columna **Divisa** con la divisa de tu negocio en cada fila. |
+| Porcentajes | Como número entero: `42` es 42 %. |
+| Fechas | `AAAA-MM-DD`. En informes por periodo, la fecha es el primer día del periodo. |
+| Vacíos | Celda vacía (en pantalla se ven como —). |
+| Fila Total | No se exporta: el archivo trae solo las filas, para que puedas sumar y filtrar a tu manera. |
+| Protección | Un texto que empieza con `=`, `+`, `-`, `@`, tabulador o retorno se exporta con un apóstrofo delante, para que una hoja de cálculo no lo ejecute como fórmula. Los importes no se tocan. |
 
-## Cobranza y comportamiento
+## Los informes tabla, uno por uno
 
-El informe de cobranza usa la misma cartera unificada que el módulo operativo:
+### Ventas en el tiempo
 
-- total por cobrar y total vencido;
-- cobranza esperada en 30 días;
-- retraso medio contra el plazo pactado;
-- aging y exposición contra el límite del cliente;
-- promesas cumplidas, incumplidas o vencidas pendientes;
-- distribución del pago real frente al término acordado.
+"Cuánto cotizas, cuánto ganas y cuánto entra, periodo por periodo. Ventas por fecha de
+cierre; cobrado por fecha de pago."
 
-Una promesa de pago registra el compromiso; no mueve dinero ni cambia por sí sola el
-saldo.
+<DmReportTable report="ventas" lang="es" />
 
-## Personalizar widgets
+- **KPIs:** Vendido, Ventas, Ticket promedio y Cobrado.
+- **Gráfica:** Vendido por periodo, en barras.
+- **Columnas:** Periodo, Cotizaciones, Cotizado, Ventas, Vendido, Ticket promedio,
+  Cobrado. Aparece **todo** periodo del rango, aunque esté en cero.
+- **Agrupación Día / Semana / Mes:** arriba a la derecha. Si no eliges, Cord decide por
+  el largo del rango: **día** hasta 31 días, **semana** hasta 124 días y **mes** después.
+  Las semanas empiezan en lunes. El primer y el último periodo pueden estar incompletos
+  si tu rango no empieza en lunes o en día 1.
+- Cada columna usa su propia fecha: Cotizaciones y Cotizado por creación, Ventas y Vendido
+  por aprobación, Cobrado por fecha de pago. Por eso una fila puede tener ventas sin
+  cotizaciones: se ganó en ese periodo algo que se cotizó antes.
 
-Cada informe conserva su propio layout. En modo edición puedes reordenar, cambiar
-tamaño u ocultar widgets; **Restablecer** vuelve al orden predeterminado de ese informe.
-La preferencia pertenece al miembro, no a todos los usuarios de la organización.
+### Ventas por cliente
 
-Ocultar un widget no elimina datos ni cambia los cálculos.
+"Cada cliente con lo que compró en el rango, su ticket, su última compra y lo que te debe
+hoy."
+
+<DmReportTable report="ventas-cliente" lang="es" />
+
+- **KPIs:** Clientes que compraron, Vendido, Ticket promedio y **Clientes recurrentes**:
+  el porcentaje de los clientes que compraron en el rango que ya te habían comprado antes
+  (varía en puntos).
+- **Gráfica:** los 8 clientes con más vendido, en barras horizontales; cada barra abre su
+  ficha.
+- **Columnas:** Cliente, Cotizaciones (enviadas en el rango), Ventas, Vendido, Ticket
+  promedio, **Última venta** y **Cliente desde** (de todo el historial, no del rango) y
+  **Saldo hoy**: lo que te debe ahora mismo entre cotizaciones y facturas, con abonos
+  parciales descontados.
+- Aparece todo cliente que recibió una cotización o te compró en el rango, ordenado por
+  vendido, hasta 500 filas. Las cotizaciones sin cliente asignado no entran.
+
+### Ventas por producto
+
+"Qué productos se venden, cuántas unidades, con qué margen y qué tanto ganan cuando se
+cotizan."
+
+- **KPIs:** Unidades, Vendido, Margen bruto y Margen %.
+- **Gráfica:** los 8 productos con más vendido; cada barra abre la ficha del producto.
+- **Columnas:** Producto, SKU, Unidades, Ventas (cotizaciones ganadas que lo incluyen),
+  Vendido, Margen bruto, Margen %, Tasa de cierre (de las cotizaciones creadas en el rango
+  que lo incluían, cuántas se ganaron). Total de Unidades, Vendido, Margen bruto y Margen %.
+- **Vendido aquí es por línea:** precio negociado (o de lista) por cantidad, **antes de
+  impuestos** y del descuento global del documento. Por eso no coincide con el Vendido de
+  Ventas en el tiempo, que usa el total de la cotización.
+- Una línea libre, sin producto del catálogo, aparece con su descripción y sin enlace. Las
+  líneas que el cliente no aprobó en una aprobación parcial no cuentan.
+- **Margen:** "El margen solo considera líneas con costo capturado al cotizar; sin costo,
+  la línea cuenta en ventas pero no en margen." El costo es el que tenía el producto al
+  cotizar; un costo en cero se trata como "no lo sé", no como "me salió gratis". Sin
+  ninguna línea con costo, el margen sale como —.
+
+### Pagos recibidos
+
+"Cada pago que entró, de cotizaciones y de facturas, con su método y sus reembolsos."
+Requiere además el permiso **Cobranza**.
+
+- **KPIs:** Cobrado neto, Cobrado bruto, Reembolsado y Pagos.
+- **Gráfica:** cobrado neto por método.
+- **Columnas:** Fecha, Folio, Cliente, Método, Monto, Reembolsado, Neto. Una fila por
+  pago, del más reciente al más antiguo, hasta 1,000 filas. El folio abre la cotización o
+  la factura.
+- **Métodos:** Tarjeta, SPEI, Transferencia, Efectivo, Mercado Pago, Pago en línea y
+  **Registrado a mano** (una cotización marcada como pagada sin ningún pago registrado).
+  Un método que Cord todavía no nombra aparece tal cual.
+- Un reembolso se resta del pago al que pertenece, en la fecha de ese pago. Es la
+  definición de "Cobrado" que usan el Inicio y Ventas en el tiempo.
+
+### Impuestos facturados
+
+"Impuestos y retenciones de las facturas emitidas, mes por mes: lo que declaras."
+
+- **KPIs:** Impuestos, Retenciones, Subtotal y Facturas.
+- **Gráfica:** impuestos por mes.
+- **Columnas:** Mes, Facturas, Subtotal, Impuestos, Retenciones, Total. Siempre por mes.
+- Sale de las **facturas emitidas** por fecha de emisión, no de cotizaciones. No cuenta
+  borradores, facturas anuladas ni notas de crédito (estas no se restan aquí).
+- Es una lectura de apoyo para tu contabilidad, no una declaración: confírmala con tu
+  asesor.
+
+### Recompra por cohorte
+
+"De los clientes que compraron por primera vez cada mes, cuántos volvieron a comprar
+después." Es una foto **Al día de hoy**: no tiene selector ni comparativa.
+
+- **KPIs:** Clientes nuevos (12 meses) y Recompra al mes siguiente (de las cohortes que
+  ya cumplieron un mes).
+- **Tabla de calor:** una fila por mes de primera compra de los últimos 12 meses, con
+  Cohorte, Clientes y **Mes 1** a **Mes 6**. Cada celda es el porcentaje de esa cohorte
+  que volvió a comprar ese número de meses después; más intenso, más recompra.
+- "Un guion es un mes que esa cohorte todavía no vive": la cohorte de agosto no tiene
+  Mes 3 en octubre. No es un 0 %.
+
+### Ventas por vendedor
+
+"Lo que cada persona del equipo cotizó y cerró en el rango, con su tasa y su tiempo a
+cierre."
+
+- **KPIs:** Vendido, Ventas, Ticket promedio y Vendedores con ventas.
+- **Gráfica:** los 8 miembros con más vendido.
+- **Columnas:** Vendedor, Enviadas (creadas en el rango y salidas del borrador), Ventas,
+  Vendido, Tasa de cierre (de sus enviadas en el rango, cuántas ganó), Ticket promedio y
+  Días a cierre (promedio de días entre crear y aprobar, con un decimal).
+- Atribuye cada cotización a la persona que la **creó o duplicó**. La tabla lista a los
+  **miembros activos**, incluso sin ventas. Lo que crearon personas que ya dejaron el
+  equipo se agrupa en una fila **Exmiembros del equipo**, así que la fila Total cuadra con
+  los KPIs. Las cotizaciones sin creador (anteriores a la atribución o creadas por la API)
+  no entran ni en la tabla ni en los KPIs.
+
+## Los informes de widgets, uno por uno
+
+Son tableros que puedes [personalizar](#personalizar-los-widgets-de-un-informe). Los
+widgets marcados **opcional** empiezan ocultos y se agregan desde la biblioteca.
+
+### Resumen
+
+Cohorte de cotizaciones creadas en el rango.
+
+| Widget | Qué muestra |
+|---|---|
+| **Tasa de cierre** | Ganadas entre enviadas: "{g} / {n} cotizaciones enviadas". |
+| **Valor cerrado** | Total ganado de la cohorte creada en el rango. |
+| **Velocidad del pipeline** | Valor cerrado por día del rango. |
+| **Valor perdido** | Rechazadas más vencidas, con su número. |
+| **Movimiento comercial** | Valor cerrado por fecha de origen de la cotización. |
+| **Madurez de la cohorte** | Qué pasó con lo cotizado en el rango: Ganado, Perdido y Aún abierto. Sin envíos en el rango, queda vacía. |
+| **Cotizaciones decididas** (opcional) | Ganadas, rechazadas o vencidas de la cohorte. |
+
+### Diagnóstico comercial
+
+| Widget | Qué muestra | Alcance |
+|---|---|---|
+| **Dónde se rompe la conversión** | Embudo enviada → vista → aprobada → pagada. La base incluye toda cotización que salió, aunque terminara rechazada o vencida; "vista" es la primera apertura real del cliente. | Rango |
+| **Pipeline** | Monto y número por estado abierto o ganado. | Hoy |
+| **Detenidas** | "Cotizaciones que necesitan movimiento": hasta 5 enviadas o vistas sin actividad en 7 días o más, por monto. | Hoy |
+| **Costo de negociación** | Productos con más descuento cedido contra precio de lista. Requiere Starter o superior. | Rango |
+| **Tiempo mediano por etapa** | Creada → enviada, Enviada → vista, Vista → aprobada, Aprobada → pagada, en días. La mediana evita que unos pocos casos extremos distorsionen el ciclo. | Rango |
+| **Seguimientos detenidos** (opcional) | Cuántas cotizaciones llevan siete días o más sin actividad; las cuenta todas, aunque la lista Detenidas solo muestre las 5 de mayor monto. | Hoy |
+
+### Finanzas
+
+Foto de hoy. Plan Pro o superior.
+
+| Widget | Qué muestra |
+|---|---|
+| **MRR** | MRR contratado: importe mensual de igualas activas. |
+| **ARR** | MRR anualizado; no es dinero ya recibido. |
+| **DSO** | Tiempo estimado hasta el cobro, a partir de tu historial. |
+| **MRR en riesgo** | Igualas con pago atrasado o que se cancelan al cierre del periodo. |
+| **Pipeline ponderado** | Pipeline por cliente ponderado por probabilidad y tiempo, según tu historial. No es efectivo garantizado. |
+| **Concentración** | Qué parte del pipeline depende del cliente de mayor peso. |
+| **Rentabilidad por nivel** | Por nivel de cliente: descuento promedio, tasa de cierre, número de envíos y valor cerrado. |
+| **Igualas activas** (opcional) | Contratos que aportan ingreso recurrente, con MRR y ARR. |
+
+### Flujo de caja · 90 días
+
+Foto y proyección de hoy. Plan Pro o superior. La proyección separa tres fuentes:
+**cartera cierta** (saldos aprobados o facturados, con fecha de cobro estimada),
+**pipeline** (oportunidades abiertas ponderadas por probabilidad) e **igualas** (cuotas
+recurrentes en el horizonte). El total es un escenario esperado, no un saldo bancario.
+
+| Widget | Qué muestra |
+|---|---|
+| **Ingreso esperado** | Próximos 90 días: cartera + pipeline + igualas. |
+| **Fuera del horizonte** | Lo esperado desde el día 91, para que no desaparezca de la lectura. |
+| **MRR** | Igualas activas y su número. |
+| **Cartera cierta** | Saldos por cobrar sin ponderar por cierre. |
+| **Concentración a 30 días** | Qué clientes concentran lo que esperas cobrar en 30 días. |
+| **Flujo semanal** | Flujo semanal · 90 días. |
+| **Caja acumulada** | Curva acumulada de caja. |
+| **Flujo diario esperado** (opcional) | Proyección diaria sin acumular. |
+
+### Cobranza y cartera
+
+Foto de hoy. Plan Pro o superior y permiso Cobranza. Usa la misma cartera que el módulo
+[Cobranza](/docs/pagos/cartera-cobranza): cotizaciones aprobadas sin pagar y facturas
+abiertas, con abonos parciales descontados.
+
+| Widget | Qué muestra |
+|---|---|
+| **Cartera** | Por cobrar y número de documentos. |
+| **Vencido** | Total vencido y número de cuentas. |
+| **Cobranza esperada** | Lo que esperas cobrar en 30 días: cartera cierta, fecha estimada. |
+| **Retraso medio** | Días de retraso promedio contra el plazo pactado. |
+| **Aging** | Por vencer, 1–30 días, 31–60 días y +60 días. |
+| **Exposición por cliente** | Saldo abierto frente al límite de crédito configurado. |
+| **Cumplimiento de promesas** | Promesas cumplidas, incumplidas y vencidas pendientes. Una promesa registra el compromiso; no mueve dinero. |
+| **DSO real vs. pactado** | Cuántos pagos llegan A tiempo, 1–7 días tarde, 8–30 días tarde y +30 días tarde. |
+| **Documentos por cobrar** (opcional) | Documentos pendientes de cobro hoy y su importe. |
+
+### Clientes
+
+| Widget | Qué muestra | Alcance |
+|---|---|---|
+| **Clientes por valor cerrado** | Quién convierte valor, no solo volumen de cotizaciones. | Rango |
+| **Conversión por cliente** | Aprobadas entre cotizaciones y tasa, con valor cerrado; cada fila abre la ficha. | Rango |
+| **Nuevos vs. recurrentes** | Nuevos (su primera cotización cae en el rango) contra recurrentes. | Rango |
+| **Clientes en riesgo** | Clientes con historial y sin cotizaciones en 90 días, por valor cerrado. | Hoy |
+| **Nivel y comportamiento** | Matriz nivel × comportamiento de pago (puntual, ligero retraso, tarde). | Hoy |
+| **Relaciones por reactivar** (opcional) | Cuántos clientes con historial llevan 90 días sin actividad; los cuenta todos, aunque la lista Clientes en riesgo solo muestre los 10 con más valor cerrado. | Hoy |
+
+### Productos
+
+| Widget | Qué muestra |
+|---|---|
+| **Productos por importe cotizado** | Demanda dentro del rango elegido. |
+| **Volumen por producto** | Unidades cotizadas y presencia en propuestas. |
+| **Elasticidad del descuento** | Tasa de cierre por banda de descuento, con el tamaño de la muestra. Usa todo tu historial y requiere Starter o superior. |
+| **Tasa de cierre por producto** | Qué productos ganan, no solo cuáles se cotizan. |
+| **Unidades por producto** (opcional) | Cantidad cotizada en el rango. |
+
+## Personalizar los widgets de un informe
+
+Los siete informes de widgets tienen el botón **Personalizar**, con los mismos controles
+que el Inicio: **Biblioteca**, **Restablecer** y **Listo** como botones de icono; mover,
+**Subir**, **Bajar**, **Compacto**/**Ampliado** y ocultar; teclado completo y, en
+celular, botones de 44 px. **Restablecer** pregunta "¿Restablecer este informe?". La
+explicación completa está en [Inicio y vistas](/docs/gestion/dashboard#personaliza-el-inicio).
+
+- **Cada informe guarda su propio diseño**, y el diseño es tuyo: no cambia lo que ven
+  tus compañeros.
+- Ocultar un widget no elimina datos ni cambia los cálculos.
+- Los informes tabla y el Informe personalizado no se personalizan con widgets: su
+  configuración es la tabla misma.
+
+## Informe personalizado e informes guardados
+
+Cuando ningún informe responde tu pregunta, el **Informe personalizado** te deja elegir
+cómo agrupar (cliente, producto, vendedor, estado, mes, semana, día, país, nivel de
+cliente o divisa) y hasta seis métricas, guardarlo con nombre para todo el equipo y
+recibirlo cada lunes o cada día 1 por correo con el CSV adjunto. Está documentado en
+[Informes personalizados y envío por correo](/docs/gestion/informes-personalizados).
 
 ## Desempeño por vendedor
 
-**Desempeño**, en el grupo **Análisis** del menú lateral, atribuye cada cotización a
-la persona que la creó o la duplicó. Requiere el permiso Informes. Muestra cotizaciones creadas, tasa de cierre, valor cerrado, cobrado, ticket
-promedio y días al cierre.
+Hay dos lugares para ver al equipo, con preguntas distintas:
 
-Los documentos antiguos sin creador aparecen como **Sin asignar**. La página no
-redistribuye ese historial ni atribuye automáticamente una venta al último editor.
-La tasa del equipo es el promedio de las tasas mostradas por vendedor, no una comisión
+| | **Ventas por vendedor** (informe) | **Desempeño** (página) |
+|---|---|---|
+| Dónde | Informes › Equipo | Menú lateral, grupo **Análisis** (atajo <kbd>G</kbd> y luego <kbd>E</kbd>) |
+| Periodo | El rango que elijas, con comparativa | Todo el historial |
+| Columnas | Enviadas, Ventas, Vendido, Tasa de cierre, Ticket promedio, Días a cierre | Cotiz., Cierre, Cerrado, Cobrado, Ticket, Días |
+| Exporta CSV | Sí | No |
+
+**Desempeño** requiere el permiso Informes y es un tablero de widgets personalizable:
+**Cerrado por el equipo** (aprobadas, pagadas y facturadas, con lo cobrado y lo sin
+asignar en el detalle), **Tasa de cierre promedio** ("de lo enviado por vendedor"),
+**Líder en cierres**, **Vendedores activos**, **Contribución al cierre**, **Actividad
+comercial**, **Ranking por vendedor** (por monto cerrado, con tu fila marcada **Tú**) y el
+opcional **Ticket del equipo**. Los importes están en la divisa de tu negocio.
+
+Ambos atribuyen cada cotización a la persona que la creó o la duplicó. Los documentos
+sin creador aparecen en Desempeño como **Sin asignar** ("de antes de este reporte o vía
+API"). Cord no redistribuye ese historial ni atribuye una venta al último editor. La tasa
+del equipo en Desempeño es el promedio de las tasas de cada vendedor; no es una comisión
 ni un cálculo de nómina.
 
 ## Problemas comunes
 
-**No aparece un informe.** Revisa permiso Informes; Cobranza requiere además su
-permiso propio. Finanzas, Flujo y Cobranza requieren Pro o superior.
+**No aparece un informe en el selector.** Revisa el permiso Informes; Pagos recibidos y
+Cobranza y cartera piden además Cobranza. Finanzas, Flujo de caja y Cobranza sí aparecen
+sin el plan, pero piden Pro o superior al abrirlos.
 
-**Cambiar fechas no modifica un widget.** Es una foto actual y aparece marcado “hoy”.
+**Cambiar fechas no modifica un widget.** Es una foto de hoy: tiene la etiqueta **Hoy**.
 
-**El valor cerrado de una cohorte parece bajo.** Parte puede seguir abierta; revisa
-madurez y vuelve a comparar cuando haya transcurrido el ciclo normal de venta.
+**El valor cerrado de una cohorte reciente parece bajo.** Parte sigue abierta; revisa la
+madurez y vuelve a comparar cuando haya pasado tu ciclo normal de venta.
 
-**Un cierre sale Sin asignar.** La cotización no conserva a la persona que la creó:
-es anterior a la atribución actual o se creó por la API.
+**Un total no coincide entre dos informes.** Revisa qué fecha usa cada medida: Vendido va
+por fecha de aprobación, Cotizado por creación y Cobrado por fecha de pago. En Ventas por
+producto, Vendido es por línea y antes de impuestos.
+
+**Faltan ventas en otra divisa.** Lee la nota de divisa: si una divisa no tiene tipo de
+cambio disponible, sus ventas quedan fuera de la suma por ahora.
+
+**No veo la flecha de variación.** El periodo anterior vale cero, elegiste Últimos 12
+meses o el informe es una foto de hoy.
+
+**No veo el botón Exportar CSV.** La tabla no tiene filas en ese rango, o estás en un
+informe de widgets: esos no exportan.
+
+**El CSV abre con caracteres raros.** Ábrelo con Excel o Google Sheets directamente; el
+archivo trae la marca UTF-8 que necesitan. Si lo importas a mano, elige UTF-8 y coma como
+separador.
+
+**Un cierre no aparece en Ventas por vendedor.** La cotización no conserva a la persona
+que la creó (es anterior a la atribución o se creó por la API). Si quien la creó ya no
+está activa en el equipo, la venta aparece en la fila **Exmiembros del equipo**.
 
 ## Relacionadas
 
+- [Informes personalizados y envío por correo](/docs/gestion/informes-personalizados)
 - [Inicio y vistas](/docs/gestion/dashboard)
 - [Cartera y cobranza](/docs/pagos/cartera-cobranza)
 - [Tesorería y FX Lock](/docs/pagos/tesoreria-fx)
 - [Equipo y seguridad](/docs/cuenta/equipo-seguridad)
+- Soporte: [Los informes de Cord: cuál usar para cada pregunta](https://cordhq.app/soporte/informes-de-cord)
+- Soporte: [Exportar un informe a CSV (Excel y Google Sheets)](https://cordhq.app/soporte/exportar-informes-csv)
+- Soporte: [Importes en varias divisas y zona horaria en el Inicio y los informes](https://cordhq.app/soporte/importes-en-varias-divisas-informes)

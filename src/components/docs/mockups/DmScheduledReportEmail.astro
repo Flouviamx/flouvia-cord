@@ -1,0 +1,167 @@
+---
+// Mockup: el correo del envío programado de un informe guardado, abierto en el
+// cliente de correo de quien lo guardó.
+//
+// Calca de emailHtml() en src/lib/informes-programados.ts: logo de Cord, el
+// nombre del negocio como antetítulo, el nombre del informe, el periodo cerrado
+// (formatRange: semana lunes–domingo anterior), una fila por KPI —las cuatro
+// primeras métricas del informe— con "vs. X el periodo anterior", la nota del CSV
+// adjunto, el botón "Abrir en Cord" y el pie. Asunto: inf.mail.asunto
+// ("{nombre} · {periodo}"). Remitente: Cord, sin nombre de negocio (sendEmail sin
+// fromName). Adjunto: cord-informe-{desde}_{hasta}.csv.
+//
+// El cron corre 13:45 UTC; el correo de la semana del 28 sep al 4 oct llega el
+// lunes 5 a las 7:45 en la zona del negocio (Ciudad de México). La app escribe
+// el importe con el símbolo de la divisa del negocio; aquí lleva además su
+// código (regla 21).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, tpl, DEMO, type DmLang } from './format';
+import { fmtCell, SAVED_REPORT, type DmKpi } from './dm-informes';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const DESDE = '2026-09-28';
+const HASTA = '2026-10-04';
+const nombre = SAVED_REPORT[lang];
+
+const f = new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const rango = `${f.format(new Date(`${DESDE}T12:00:00Z`))} – ${f.format(new Date(`${HASTA}T12:00:00Z`))}`.replace(/\./g, '');
+const asunto = tpl(dmT(lang, 'inf.mail.asunto'), { nombre, periodo: rango });
+
+// Semana cerrada del informe "Ventas por país" (Agrupar por País).
+const KPIS: DmKpi[] = [
+    { label: 'inf.t.cotizaciones', format: 'number', value: 12, prev: 10 },
+    { label: 'inf.t.ventas', format: 'number', value: 6, prev: 5 },
+    { label: 'inf.t.vendido', format: 'money', value: 296400, prev: 264800 },
+    { label: 'inf.t.tasa_cierre', format: 'pct', value: 50, prev: 47 },
+];
+const [vsPre, vsPost] = dmT(lang, 'inf.t.vs_prev').split('{v}');
+const archivo = `cord-informe-${DESDE}_${HASTA}.csv`;
+
+const DATA = {
+    es: {
+        caption: `Correo del envío programado de "${nombre}": logo de Cord, ${DEMO.org}, el nombre del informe y la semana cerrada (${rango}); Cotizaciones 12, Ventas 6, Vendido $296,400 MXN y Tasa de cierre 50 %, cada uno con su comparación contra el periodo anterior; la nota del CSV adjunto, el botón ${dmT('es', 'inf.mail.boton')} y el pie que explica por qué llega. Al final, el archivo ${archivo}.`,
+        para: 'Para',
+        fecha: '5 oct 2026, 7:45',
+    },
+    en: {
+        caption: `Scheduled email for "${nombre}": the Cord logo, ${DEMO.org}, the report name and the closed week (${rango}); Quotes 12, Sales 6, Sold $296,400 MXN and Close rate 50%, each compared with the previous period; the note about the attached CSV, the ${dmT('en', 'inf.mail.boton')} button and the footer that explains why it arrives. At the end, the file ${archivo}.`,
+        para: 'To',
+        fecha: 'Oct 5, 2026, 7:45 AM',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={600} caption={caption} class="dm-sre-figure">
+    <div class="dm-sre">
+        <div class="dm-sre-client">
+            <div class="dm-sre-tools">
+                <span><DmIcon name="arrow-left" /></span>
+                <span><DmIcon name="archive" /></span>
+                <span><DmIcon name="trash" /></span>
+                <span><DmIcon name="mail" /></span>
+                <span class="dm-sre-tools-end"><DmIcon name="more" /></span>
+            </div>
+            <div class="dm-sre-subject">{asunto}</div>
+            <div class="dm-sre-from">
+                <span class="dm-av dm-sre-av">C</span>
+                <span class="dm-sre-from-main">
+                    <span class="dm-sre-from-line"><span class="dm-strong">Cord</span><span class="dm-sre-addr dm-hide-narrow">&lt;cotizaciones@cordhq.app&gt;</span></span>
+                    <span class="dm-sre-meta">{d.para}: ana@materialesdelvalle.mx</span>
+                </span>
+                <span class="dm-sre-date"><DmIcon name="paperclip" />{d.fecha}</span>
+            </div>
+        </div>
+
+        <div class="dm-sre-mail">
+            <img src="/imgs/logo-cord-navy.png" alt="" class="dm-sre-logo" width="78" loading="lazy" decoding="async" />
+            <span class="dm-sre-eyebrow">{DEMO.org}</span>
+            <span class="dm-sre-h1">{nombre}</span>
+            <span class="dm-sre-range">{rango}</span>
+            <div class="dm-sre-kpis">
+                {KPIS.map((k) => {
+                    const v = fmtCell(k.value, k.format, lang);
+                    const p = fmtCell(k.prev, k.format, lang);
+                    return (
+                        <div class="dm-sre-tr">
+                            <span class="dm-sre-k">{dmT(lang, k.label as any)}</span>
+                            <span class="dm-sre-v">
+                                <b>{v.value}{v.code && <span class="dm-cur">{v.code}</span>}</b>
+                                <small>{vsPre}{p.value}{p.code && <span class="dm-cur"> {p.code}</span>}{vsPost}</small>
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+            <span class="dm-sre-p">{dmT(lang, 'inf.mail.adjunto')}</span>
+            <span class="dm-sre-cta">{dmT(lang, 'inf.mail.boton')}</span>
+            <span class="dm-sre-foot">{dmT(lang, 'inf.mail.pie')}</span>
+        </div>
+
+        <div class="dm-sre-att">
+            <span class="dm-sre-file">
+                <span class="dm-sre-file-ico"><DmIcon name="document" /></span>
+                <span class="dm-sre-file-txt"><b>{archivo}</b><small>CSV · 1 KB</small></span>
+                <DmIcon name="download" />
+            </span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-sre-figure .dm-v-panel { padding-bottom: 0; justify-content: flex-start; }
+    .dm-sre-figure .dm-panel { border-radius: 16px 16px 0 0; border-bottom: 0; }
+    .dm-sre { display: flex; flex-direction: column; font-size: 12.5px; background: #fff; }
+
+    .dm-sre-client { padding: 10px 20px 14px; border-bottom: 1px solid var(--dm-border); }
+    .dm-sre-tools { display: flex; align-items: center; gap: 4px; color: var(--dm-faint); margin: 0 -6px 10px; }
+    .dm-sre-tools > span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px; }
+    .dm-sre-tools .dm-ico { width: 15px; height: 15px; }
+    .dm-sre-tools-end { margin-left: auto; }
+    .dm-sre-subject { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; color: var(--dm-text); line-height: 1.3; margin-bottom: 12px; }
+    .dm-sre-from { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .dm-sre-av { width: 32px; height: 32px; font-size: 12px; background: var(--dm-navy); }
+    .dm-sre-from-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .dm-sre-from-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
+    .dm-sre-addr { font-size: 11px; color: var(--dm-faint); overflow: hidden; text-overflow: ellipsis; }
+    .dm-sre-meta { font-size: 11px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-sre-date { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; font-size: 10.5px; color: var(--dm-faint); white-space: nowrap; flex-shrink: 0; }
+    .dm-sre-date .dm-ico { width: 12px; height: 12px; }
+
+    /* El HTML del correo: fondo blanco, columna de 540 px (aquí a escala). */
+    .dm-sre-mail { display: flex; flex-direction: column; align-items: flex-start; max-width: 460px; width: 100%; margin: 0 auto; padding: 30px 18px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; }
+    .dm-sre-logo { display: block; height: auto; margin-bottom: 26px; }
+    .dm-sre-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin-bottom: 7px; }
+    .dm-sre-h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: #111827; margin-bottom: 5px; }
+    .dm-sre-range { font-size: 12px; color: #6b7280; margin-bottom: 20px; }
+    .dm-sre-kpis { width: 100%; margin-bottom: 22px; }
+    .dm-sre-tr { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid #eef0f3; }
+    .dm-sre-k { font-size: 12px; color: #4b5563; }
+    .dm-sre-v { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+    .dm-sre-v b { font-size: 14.5px; font-weight: 600; color: #0a192f; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .dm-sre-v small { font-size: 10.5px; color: #9ca3af; font-variant-numeric: tabular-nums; }
+    .dm-sre-v .dm-cur { font-size: 8.5px; }
+    .dm-sre-p { font-size: 12px; line-height: 1.6; color: #374151; margin-bottom: 20px; }
+    .dm-sre-cta { display: inline-flex; align-items: center; height: 38px; padding: 0 20px; border-radius: 8px; background: #0a192f; color: #fff; font-size: 12.5px; font-weight: 500; }
+    .dm-sre-foot { width: 100%; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 11px; line-height: 1.5; color: #6b7280; }
+
+    .dm-sre-att { padding: 14px 20px 22px; border-top: 1px solid var(--dm-border); }
+    .dm-sre-file { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 8px 12px 8px 8px; border-radius: 10px; border: 1px solid var(--dm-border-strong); color: var(--dm-muted); }
+    .dm-sre-file > .dm-ico { width: 14px; height: 14px; flex: 0 0 auto; }
+    .dm-sre-file-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: rgba(16, 132, 107, 0.1); color: #16846b; flex: 0 0 auto; }
+    .dm-sre-file-ico .dm-ico { width: 15px; height: 15px; }
+    .dm-sre-file-txt { display: flex; flex-direction: column; min-width: 0; }
+    .dm-sre-file-txt b { font-size: 11.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-sre-file-txt small { font-size: 10px; color: var(--dm-faint); }
+
+    @container dm (max-width: 520px) {
+        .dm-sre-client { padding: 8px 14px 12px; }
+        .dm-sre-subject { font-size: 14.5px; }
+        .dm-sre-mail { padding: 22px 14px 18px; }
+    }
+</style>

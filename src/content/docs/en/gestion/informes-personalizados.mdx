@@ -1,0 +1,327 @@
+---
+title: "Custom reports and email delivery"
+seoTitle: "Cord custom report: group, metrics, save, and email delivery"
+description: "How to build your own report in Cord: every grouping and every metric with its exact definition, which metrics don't apply to which grouping, how to share it with a link, save it for the whole team, and receive it every Monday or every 1st by email with the CSV attached."
+lastUpdated: "2026-10-08"
+reviewedBy: "Cord product and operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Reports permission", "To receive email delivery: be the person who saved the report and remain active on the team"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Custom reports and email delivery</h1>
+  <p class="page-subtitle">Choose how to group and what to measure, save it with a name for the whole team, and get it in your inbox with the period that just ended.</p>
+</header>
+
+## What it is
+
+The **Custom report** is the explorer in [Reports](/en/docs/gestion/informes): "Choose
+how to group and what to measure. Counts the quotes created in the range and what
+happened to them." You decide the row (**Group by**) and the columns (**Metrics**), and
+Cord builds the same kind of table report as the others: KPIs compared against the
+previous period, a chart, a sortable table with totals, and **Export CSV**.
+
+When a configuration works for you, you **save** it with a name: it stays in the report
+picker for the whole team and, if you want, it reaches you **by email** every Monday or
+every 1st with the CSV attached.
+
+<DmReportExplorer lang="en" />
+
+## Requirements
+
+| Requirement | Detail |
+|---|---|
+| Plan | Every plan, including Free. |
+| Permission | **Reports**, to view, build, save, and receive custom reports. |
+| Edit or delete a saved report | Whoever saved it, or a **Super admin** or **Admin** of the organization. |
+| Schedule email delivery | Only whoever saved the report. A Super admin or Admin can turn it off, not on. |
+
+## Opening it
+
+1. Go to **Reports** (side menu › **Insights**).
+2. Open the report picker and choose **Custom report**, in the **Custom** group.
+3. The first time, it starts grouped by **Client** with **Quotes**, **Sales**, **Sold**,
+   and **Close rate**, over **Last 30 days**.
+
+Above the table is the explorer bar: **Group by**, the **Metrics** chips and, on the
+right, **Save**.
+
+## The cohort: which quotes are included
+
+The explorer measures **a single cohort**: the quotes **created in the range** that left
+draft (Sent, Viewed, Approved, Paid, Invoiced, Rejected, or Expired). Each row answers:
+"of what was quoted in this period, what happened?".
+
+- **Drafts don't count.**
+- **A sale counts in the cohort where the quote was created**, even if it was won after
+  the range ended. That's why the explorer's Sold may not match **Sales over time**, which
+  counts sales by approval date.
+- **Dates in your time zone** and **all amounts in your business currency**, with the
+  same conversion as the rest of Reports: the rate set on the quote first, today's
+  published rate after that; a currency without a rate is left out of the sum and the
+  currency note says so. See
+  [Dates, time zone, and currency](/en/docs/gestion/informes#dates-time-zone-and-currency).
+
+## Group by
+
+Each option decides what a row is. There are ten:
+
+| Group by | A row is | Details |
+|---|---|---|
+| **Client** | One client. | Quotes without a client are gathered under **No client**. The row and the bar open the client's record. |
+| **Product** | A catalog product or, for free-text lines, its description. | Measures **per line**, not per quote (see below). A catalog product opens its record; a free-text line has no link. Lines the client didn't approve in a partial approval don't count. |
+| **Team member** | The person who created or duplicated the quote. | Without a creator (before attribution or created via the API): **No team member**. |
+| **Status** | The quote's **current** status: Sent, Viewed, Approved, Paid, Invoiced, Rejected, or Expired. | Useful to see where the cohort ended up. |
+| **Month** | A creation month. | In chronological order. Each bar opens that month grouped by **Week**. |
+| **Week** | A creation week, Monday to Sunday. | Each bar opens that week grouped by **Day**. |
+| **Day** | A creation day. | In chronological order. |
+| **Country** | The client's country, named in your account language. | Clients without a country: **No data**. |
+| **Client tier** | The tier assigned to the client. | Clients without a tier: **No data**. |
+| **Currency** | The quote's sale currency (MXN, USD, EUR…). | Each row's amounts are still expressed in your business currency: the row tells you how much you sold **in** that currency, converted. |
+
+By **Client**, **Product**, **Team member**, **Status**, **Country**, **Client tier**,
+and **Currency**, rows are sorted by the first metric, highest to lowest, with empty ones
+last. By **Month**, **Week**, and **Day**, in chronological order; only periods with at
+least one quote appear. The table shows up to 500 rows.
+
+## Metrics
+
+Check the chips for the metrics you want to see. The exact definitions:
+
+| Metric | Grouping by quote | Grouping by Product |
+|---|---|---|
+| **Quotes** | Number of quotes in the cohort. | Number of quotes that include the product. |
+| **Quoted** | Sum of those quotes' **total** (including taxes and minus withholdings). | Sum of the product's **lines**: negotiated (or list) price times quantity, before taxes. |
+| **Sales** | How many were won: Approved, Paid, or Invoiced. | How many won quotes include the product. |
+| **Sold** | Total of the won quotes. | Sum of the product's lines in won quotes. |
+| **Close rate** | Sales over Quotes, as a whole percentage. | Same, counting quotes that include the product. |
+| **Average ticket** | Sold over Sales. | The product's Sold over the won quotes that include it. |
+| **Lost** | How many ended up Rejected or Expired. | How many quotes with the product ended up Rejected or Expired. |
+| **Days to close** | Average days from creation to approval for won quotes, with one decimal. | Not available. |
+| **Units** | Not available. | Units of the product in won quotes. |
+| **Gross margin** | Not available. | Sold minus cost, only on lines with a cost captured when quoting. |
+
+### Which metrics don't apply to which grouping, and why
+
+- **Units** and **Gross margin** exist **per line**: a quote with five products has no
+  single "units" or cost. They can only be checked when grouping by **Product**; in any
+  other grouping they appear disabled with the hint "Only when grouping by product".
+- **Days to close** exists **per quote**: the time between creating and winning it isn't
+  split across its lines. When grouping by **Product** it appears disabled with the hint
+  "Not available by product".
+- If you change the grouping and a checked metric stops applying, it's removed
+  automatically. If none is left, the starting set (Quotes, Sales, Sold, and Close rate)
+  comes back without the ones that don't apply.
+- **Gross margin** only adds lines with a cost: a zero cost is treated as "I don't know",
+  not "it was free". If no line in the row has a cost, the cell shows —.
+
+### Up to six metrics
+
+You can check **up to six metrics at a time**. Once you reach six, the other chips are
+disabled and "Up to six metrics at a time." appears; uncheck one to pick another. At
+least one always stays checked: unchecking the last one does nothing.
+
+### How your chosen metrics are used
+
+- **KPIs:** the first **four** checked metrics, in chip order, with their comparison
+  against the previous period (in percent; close rate in points).
+- **Chart:** the first money metric you checked (if there's none, the first metric). By
+  Month, Week, or Day, vertical bars with every period; in other groupings, the first 10
+  rows as horizontal bars.
+- **Total row:** the values for the **whole range**, not the sum of the rows: a rate or a
+  ticket can't be added. That's why the Quotes total when grouping by Product can be lower
+  than the sum of the rows (a quote with two products counts once).
+
+## Applying changes and sharing with a link
+
+Every change in **Group by** or in the metrics applies on its own and reloads the table.
+(If your browser doesn't run JavaScript, the **Apply** button appears.)
+
+**The configuration lives in the page address**: the report, the range, the grouping,
+and the metrics. Copy the link and whoever opens it, with the Reports permission, sees
+exactly the same report under their own permissions. **Export CSV** downloads exactly
+what you see, named `cord-explorar-{from}_{to}.csv`; the file format is described in
+[Export CSV](/en/docs/gestion/informes#export-csv).
+
+## Drill-down: from month to week to day
+
+Grouped by **Month**, each bar in the chart opens that month grouped by **Week**; grouped
+by **Week**, each bar opens that week grouped by **Day**. You keep the same metrics. The
+period is trimmed to your range. Grouped by **Client** or **Product**, the bar opens the
+record.
+
+On desktop, a click (or <kbd>Enter</kbd>) navigates directly. On mobile, the first tap
+shows the value and the tooltip includes **View detail →**.
+
+## Saving a report
+
+<DmSaveReport lang="en" />
+
+1. Set up the grouping and metrics.
+2. Click **Save**. **Save report** opens.
+3. Type a **Name** of 1 to 80 characters (for example, "Sales by country this quarter").
+   Repeated spaces are collapsed into one.
+4. Choose **Email delivery**: **No delivery**, **Every Monday**, or **On the 1st of every
+   month**. Below it says: "It goes to you, covering the period that just ended, with the
+   CSV attached."
+5. Click **Save**. The page reloads with the saved report open.
+
+What is saved and what isn't:
+
+- **Saved:** the name, the grouping, the metrics, and the delivery frequency.
+- **The date range isn't saved.** When you open a saved report, the range is the link's,
+  or the last one you used in the Custom report in that browser, or Last 30 days. That way
+  the same report works for this month and the next.
+
+### Where it appears
+
+Saved reports appear in the report picker, under **Custom**, in alphabetical order,
+labeled **Saved report**. When you open one, its name becomes the page and picker title.
+
+They're **shared with the whole organization**: anyone with the Reports permission sees
+and opens them. If someone else saved it, "Saved by another team member" appears under
+the bar.
+
+### Cap
+
+Each organization can have up to **50 saved reports**. At the cap, Cord says "You reached
+the maximum of 50 saved reports. Delete one to save another." It isn't a plan limit: it's
+the same on every plan.
+
+## Editing, duplicating, and deleting
+
+<DmReportExplorer saved lang="en" />
+
+With a saved report open, what you can do depends on who you are:
+
+| Action | Whoever saved it | Super admin or Admin | Any other member with Reports |
+|---|---|---|---|
+| View it, change the range, export CSV | Yes | Yes | Yes |
+| **Save changes** (name, grouping, metrics) | Yes | Yes | No |
+| **Save as new** (a copy with another name) | Yes | Yes | — |
+| **Save** (creates a new report of your own) | — | — | Yes |
+| **Delete** | Yes | Yes | No |
+| Schedule or change **Email delivery** | Yes | Only turn it off | No (yes on their own copy) |
+
+- **Save changes:** change the grouping or metrics, click **Save changes**, and confirm in
+  the dialog. The dialog includes **Save as new** to create a copy without touching the
+  original. The copy is yours and takes the **Email delivery** chosen in the dialog; if it
+  has delivery, it goes to you.
+- **Delete:** the trash icon button, next to **Save changes**. It asks "Delete this saved
+  report? This does not delete any data." Deleting it also turns off its email delivery.
+- **If you can't edit it**, you see the **Save** button (without the trash icon). When you
+  click it, **Save report** opens with an empty name and creates a **new report of your
+  own** with the grouping and metrics on screen; the original isn't touched. That copy is
+  yours: you can edit it, delete it, and schedule its email delivery.
+
+## Receiving it by email
+
+### Scheduling it
+
+When you save (or with **Save changes** on a report you saved), choose under **Email
+delivery**:
+
+| Option | When it arrives | Which period it covers |
+|---|---|---|
+| **Every Monday** | On Monday, in your business time zone. | The full previous week, Monday to Sunday. |
+| **On the 1st of every month** | On the 1st, in your business time zone. | The full previous month. |
+| **No delivery** | It doesn't arrive. | — |
+
+- **It only goes to you**, at the email address of your Cord user. You can't add
+  recipients: if someone else on the team wants it, they save their own copy and schedule
+  it.
+- **The first email arrives in the next period.** If you schedule weekly delivery on a
+  Wednesday, the first one arrives the following Monday with the week that just ended; a
+  monthly one scheduled on October 8 arrives on November 1 with all of October. Switching
+  from weekly to monthly (or back) restarts that clock.
+- **Nobody schedules it for you.** An email that would reach you is only turned on by
+  you. What someone else sees when they open your saved report:
+  - A **Super admin** or **Admin**, if the report **has** delivery: under **Email
+    delivery**, only **No delivery** and the current frequency, with the note "As an admin
+    you can turn this delivery off; only the person who saved the report can schedule it."
+  - An admin, if the report has **no** delivery: "Email delivery is scheduled by whoever
+    saved the report."
+  - Any other member: the **Save** button creates their own copy, and that one they can
+    schedule.
+
+### What the email contains
+
+<DmScheduledReportEmail lang="en" />
+
+- **Subject:** "{name} · {period}", for example "Sales by country · Sep 1, 2026 – Sep 30,
+  2026".
+- **Header:** your business name, the report name, and the period dates.
+- **KPIs:** the report's first four metrics with their value for the period and, below,
+  "vs. {value} the previous period". In the email, the previous period is the **full
+  previous calendar period**: the previous Monday-to-Sunday week, or the whole previous
+  month (September against all of August, even though August has 31 days). On the Reports
+  screen, by contrast, the comparison is still against the same number of days right
+  before.
+- "The full detail is in the attached CSV, ready to open in Excel or Google Sheets."
+- **Open in Cord:** opens that saved report with exactly that period. It asks you to sign
+  in and requires the Reports permission.
+- **Attachment:** `cord-informe-{from}_{to}.csv`, in the same format as **Export CSV**.
+- **Footer:** "You receive this email because you scheduled this report. Change or turn it
+  off from Reports in Cord."
+
+The email uses your account language and amounts in your business currency, without
+decimals.
+
+### Changing or turning it off
+
+Open the saved report, click **Save changes**, and choose another frequency or **No
+delivery**. It also stops arriving if the report is deleted. A Super admin or Admin can
+turn off delivery on someone else's report (choosing **No delivery** and **Save
+changes**) or delete it.
+
+### When it stops arriving without you turning it off
+
+- **You leave the team** or your user is deactivated in that organization.
+- **You lose the Reports permission.**
+
+In both cases the report isn't sent and its clock doesn't advance: if you get access back,
+the next delivery covers the latest closed period. In the meantime nobody else receives
+your numbers.
+
+### If delivery fails
+
+If the email couldn't be sent, the period **isn't marked as sent** and is retried on the
+next run, the following day. A run that doesn't happen doesn't skip the week either: the
+next one sends it. Two emails for the same period never arrive.
+
+## Common problems
+
+**A metric is disabled.** It doesn't apply to that grouping: Units and Gross margin only
+by Product; Days to close not by Product. Or you already checked six.
+
+**Sold doesn't match Sales over time.** The explorer counts the cohort of quotes
+**created** in the range; Sales over time counts sales by **approval** date.
+
+**The Quotes total is lower than the sum of the rows.** Grouped by Product, a quote with
+several products appears in several rows but counts once in the total.
+
+**I opened a saved report and the range isn't the one it had.** Saved reports don't save
+the range: they use the link's or the last one you used in that browser.
+
+**Monday's email didn't arrive.** Check that you saved the report, that its delivery says
+**Every Monday**, that you're still active with the Reports permission, and that you
+didn't schedule it this same week (the first one arrives in the next period). Also check
+your spam folder.
+
+**I can't schedule delivery.** Only whoever saved the report can schedule it. Open the
+report, click **Save** to create your own copy, and schedule that one.
+
+**"You reached the maximum of 50 saved reports."** Delete one that's no longer used; the
+organization shares the cap.
+
+## Related
+
+- [Reports and performance](/en/docs/gestion/informes)
+- [Home and views](/en/docs/gestion/dashboard)
+- Support: [Create, save, and share custom reports](https://cordhq.app/en/support/informes-personalizados)
+- Support: [Get a report by email every week or every month](https://cordhq.app/en/support/recibir-informes-por-correo)
+- Support: [Export a report to CSV (Excel and Google Sheets)](https://cordhq.app/en/support/exportar-informes-csv)
+- [Google Sheets](/en/docs/automatizacion/integraciones/google-sheets)
+- [Excel](/en/docs/automatizacion/integraciones/excel)
+- [Team and security](/en/docs/cuenta/equipo-seguridad)

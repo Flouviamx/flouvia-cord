@@ -1,0 +1,333 @@
+---
+title: "Informes personalizados y envío por correo"
+seoTitle: "Informe personalizado de Cord: agrupar, métricas, guardar y enviar"
+description: "Cómo armar un informe propio en Cord: cada forma de agrupar y cada métrica con su definición exacta, qué métricas no aplican a qué agrupación, cómo compartirlo con un link, guardarlo para todo el equipo y recibirlo cada lunes o cada día 1 por correo con el CSV adjunto."
+lastUpdated: "2026-10-08"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Informes", "Para recibir el envío por correo: ser quien guardó el informe y seguir activo en el equipo"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Informes personalizados y envío por correo</h1>
+  <p class="page-subtitle">Elige cómo agrupar y qué medir, guárdalo con nombre para todo el equipo y recíbelo en tu correo con el periodo que terminó.</p>
+</header>
+
+## Qué es
+
+El **Informe personalizado** es el explorador de [Informes](/docs/gestion/informes):
+"Elige cómo agrupar y qué medir. Cuenta las cotizaciones creadas en el rango y lo que
+pasó con ellas." Tú decides la fila (**Agrupar por**) y las columnas (**Métricas**), y
+Cord arma el mismo tipo de informe tabla que el resto: KPIs comparados contra el periodo
+anterior, gráfica, tabla ordenable con totales y **Exportar CSV**.
+
+Cuando una configuración te sirve, la **guardas** con un nombre: queda en el selector de
+informes para todo el equipo y, si quieres, te llega **por correo** cada lunes o cada
+día 1 con el CSV adjunto.
+
+<DmReportExplorer lang="es" />
+
+## Requisitos
+
+| Requisito | Detalle |
+|---|---|
+| Plan | Todos los planes, incluido Gratis. |
+| Permiso | **Informes**, para ver, armar, guardar y recibir informes personalizados. |
+| Editar o eliminar un informe guardado | Quien lo guardó, o un **Súper administrador** o **Administrador** de la organización. |
+| Programar el envío por correo | Solo quien guardó el informe. Un Súper administrador o Administrador puede apagarlo, no encenderlo. |
+
+## Abrirlo
+
+1. Ve a **Informes** (menú lateral › **Análisis**).
+2. Abre el selector de informes y elige **Informe personalizado**, en el grupo
+   **Personalizados**.
+3. La primera vez arranca agrupado por **Cliente** con **Cotizaciones**, **Ventas**,
+   **Vendido** y **Tasa de cierre**, sobre **Últimos 30 días**.
+
+Arriba de la tabla está la barra del explorador: **Agrupar por**, los chips de
+**Métricas** y, a la derecha, **Guardar**.
+
+## La cohorte: qué cotizaciones entran
+
+El explorador mide **una sola cohorte**: las cotizaciones **creadas en el rango** que
+salieron del borrador (Enviada, Vista, Aprobada, Pagada, Facturada, Rechazada o Vencida).
+Cada fila responde: "de lo que se cotizó en este periodo, ¿qué pasó?".
+
+- **Los borradores no cuentan.**
+- **Una venta cuenta en la cohorte en que se creó la cotización**, aunque se haya ganado
+  después de que terminara el rango. Por eso el Vendido del explorador puede no coincidir
+  con el de **Ventas en el tiempo**, que cuenta las ventas por fecha de aprobación.
+- **Fechas en tu zona horaria** y **todos los importes en la divisa de tu negocio**, con
+  la misma conversión que el resto de Informes: tasa fijada en la cotización primero, la
+  publicada hoy después; una divisa sin tasa queda fuera de la suma y la nota de divisa lo
+  dice. Ver [Fechas, zona horaria y divisa](/docs/gestion/informes#fechas-zona-horaria-y-divisa).
+
+## Agrupar por
+
+Cada opción decide qué es una fila. Hay diez:
+
+| Agrupar por | Una fila es | Detalles |
+|---|---|---|
+| **Cliente** | Un cliente. | Las cotizaciones sin cliente se juntan en **Sin cliente**. La fila y la barra abren la ficha del cliente. |
+| **Producto** | Un producto del catálogo o, en líneas libres, su descripción. | Mide **por línea**, no por cotización (ver abajo). Un producto del catálogo abre su ficha; una línea libre no tiene enlace. Las líneas que el cliente no aprobó en una aprobación parcial no cuentan. |
+| **Vendedor** | La persona que creó o duplicó la cotización. | Sin creador (anteriores a la atribución o creadas por la API): **Sin vendedor**. |
+| **Estado** | El estado **actual** de la cotización: Enviada, Vista, Aprobada, Pagada, Facturada, Rechazada o Vencida. | Útil para ver en qué quedó la cohorte. |
+| **Mes** | Un mes de creación. | En orden cronológico. Cada barra abre ese mes agrupado por **Semana**. |
+| **Semana** | Una semana de creación, de lunes a domingo. | Cada barra abre esa semana agrupada por **Día**. |
+| **Día** | Un día de creación. | En orden cronológico. |
+| **País** | El país del cliente, con su nombre en el idioma de tu cuenta. | Clientes sin país: **Sin dato**. |
+| **Nivel de cliente** | El nivel asignado al cliente. | Clientes sin nivel: **Sin dato**. |
+| **Divisa** | La divisa de venta de la cotización (MXN, USD, EUR…). | Los importes de cada fila siguen expresados en la divisa de tu negocio: la fila te dice cuánto vendiste **en** esa divisa, convertido. |
+
+Por **Cliente**, **Producto**, **Vendedor**, **Estado**, **País**, **Nivel** y **Divisa**
+las filas se ordenan por la primera métrica, de mayor a menor, con las vacías al final.
+Por **Mes**, **Semana** y **Día**, en orden cronológico; solo aparecen los periodos con al
+menos una cotización. La tabla muestra hasta 500 filas.
+
+## Métricas
+
+Marca los chips de las métricas que quieres ver. Las definiciones exactas:
+
+| Métrica | Agrupación por cotización | Agrupación por Producto |
+|---|---|---|
+| **Cotizaciones** | Número de cotizaciones de la cohorte. | Número de cotizaciones que incluyen el producto. |
+| **Cotizado** | Suma del **total** de esas cotizaciones (con impuestos y menos retenciones). | Suma de las **líneas** del producto: precio negociado (o de lista) por cantidad, antes de impuestos. |
+| **Ventas** | Cuántas se ganaron: Aprobada, Pagada o Facturada. | Cuántas cotizaciones ganadas incluyen el producto. |
+| **Vendido** | Total de las ganadas. | Suma de las líneas del producto en cotizaciones ganadas. |
+| **Tasa de cierre** | Ventas entre Cotizaciones, en porcentaje entero. | Igual, contando cotizaciones que incluyen el producto. |
+| **Ticket promedio** | Vendido entre Ventas. | Vendido del producto entre las cotizaciones ganadas que lo incluyen. |
+| **Perdidas** | Cuántas terminaron Rechazadas o Vencidas. | Cuántas cotizaciones con el producto terminaron Rechazadas o Vencidas. |
+| **Días a cierre** | Promedio de días entre crear y aprobar las ganadas, con un decimal. | No aplica. |
+| **Unidades** | No aplica. | Unidades del producto en cotizaciones ganadas. |
+| **Margen bruto** | No aplica. | Vendido menos costo, solo en líneas con costo capturado al cotizar. |
+
+### Qué métricas no aplican a qué agrupación, y por qué
+
+- **Unidades** y **Margen bruto** existen **por línea**: una cotización con cinco productos
+  no tiene "unidades" ni un costo único. Solo se pueden marcar al agrupar por
+  **Producto**; en cualquier otra agrupación aparecen apagadas con el aviso "Solo al
+  agrupar por producto".
+- **Días a cierre** existe **por cotización**: el tiempo entre crearla y ganarla no se
+  reparte entre sus líneas. Al agrupar por **Producto** aparece apagada con el aviso "No
+  aplica por producto".
+- Si cambias de agrupación y una métrica marcada deja de aplicar, se quita sola. Si no
+  queda ninguna, vuelve el conjunto inicial (Cotizaciones, Ventas, Vendido y Tasa de
+  cierre) sin las que no apliquen.
+- **Margen bruto** solo suma líneas con costo: un costo en cero se trata como "no lo sé",
+  no como "me salió gratis". Si ninguna línea de la fila tiene costo, la celda queda en —.
+
+### Tope de seis métricas
+
+Puedes marcar **hasta seis métricas a la vez**. Al llegar a seis, los demás chips se
+apagan y aparece "Hasta seis métricas a la vez."; desmarca una para elegir otra. Siempre
+queda al menos una: desmarcar la última no hace nada.
+
+### Cómo se usan las métricas que elegiste
+
+- **KPIs:** las primeras **cuatro** métricas marcadas, en el orden de los chips, con su
+  comparación contra el periodo anterior (en porcentaje; la tasa de cierre en puntos).
+- **Gráfica:** la primera métrica de dinero que hayas marcado (si no hay, la primera
+  métrica). Por Mes, Semana o Día, barras verticales con todos los periodos; en las demás
+  agrupaciones, las 10 primeras filas en barras horizontales.
+- **Fila Total:** los valores del **rango completo**, no la suma de las filas: una tasa o
+  un ticket no se suman. Por eso el Total de Cotizaciones agrupando por Producto puede ser
+  menor que la suma de las filas (una cotización con dos productos cuenta una vez).
+
+## Aplicar los cambios y compartir con un link
+
+Cada cambio en **Agrupar por** o en las métricas se aplica solo y vuelve a cargar la
+tabla. (Si tu navegador no ejecuta JavaScript, aparece el botón **Aplicar**.)
+
+**La configuración vive en la dirección de la página**: el informe, el rango, la
+agrupación y las métricas. Copia el link y quien lo abra, con el permiso Informes, ve
+exactamente el mismo informe con sus propios permisos. **Exportar CSV** descarga
+exactamente lo que ves, con el nombre `cord-explorar-{desde}_{hasta}.csv`; el formato del
+archivo está en [Exportar CSV](/docs/gestion/informes#exportar-csv).
+
+## Drill-down: de mes a semana a día
+
+Con la agrupación por **Mes**, cada barra de la gráfica abre ese mes agrupado por
+**Semana**; con **Semana**, cada barra abre esa semana agrupada por **Día**. Conservas
+las mismas métricas. El periodo se recorta a tu rango. Agrupando por **Cliente** o
+**Producto**, la barra abre la ficha.
+
+En escritorio, el clic (o <kbd>Enter</kbd>) navega directo. En celular, el primer toque
+muestra el dato y el tooltip trae **Ver detalle →**.
+
+## Guardar un informe
+
+<DmSaveReport lang="es" />
+
+1. Arma la agrupación y las métricas.
+2. Pulsa **Guardar**. Se abre **Guardar informe**.
+3. Escribe un **Nombre** de 1 a 80 caracteres (por ejemplo, "Ventas por país del
+   trimestre"). Los espacios repetidos se juntan en uno.
+4. Elige el **Envío por correo**: **Sin envío**, **Cada lunes** o **El día 1 de cada
+   mes**. Debajo dice: "Te llega a ti, con el periodo que terminó y el CSV adjunto."
+5. Pulsa **Guardar**. La página se recarga con el informe guardado abierto.
+
+Qué se guarda y qué no:
+
+- **Se guarda:** el nombre, la agrupación, las métricas y la frecuencia de envío.
+- **No se guarda el rango de fechas.** Al abrir un informe guardado, el rango es el del
+  link, o el último que usaste en el Informe personalizado en ese navegador, o Últimos 30
+  días. Así el mismo informe sirve para este mes y para el próximo.
+
+### Dónde aparece
+
+Los informes guardados aparecen en el selector de informes, en **Personalizados**, en
+orden alfabético, con la etiqueta **Informe guardado**. Al abrir uno, su nombre es el
+título de la página y del selector.
+
+Son **compartidos con toda la organización**: cualquiera con el permiso Informes los ve y
+los abre. Si lo guardó otra persona, bajo la barra aparece "Guardado por otra persona del
+equipo".
+
+### Tope
+
+Cada organización puede tener hasta **50 informes guardados**. Al llegar al tope, Cord
+dice "Llegaste al máximo de 50 informes guardados. Elimina alguno para guardar otro." No
+es un límite de plan: es el mismo en todos.
+
+## Editar, duplicar y eliminar
+
+<DmReportExplorer saved lang="es" />
+
+Con un informe guardado abierto, lo que puedes hacer depende de quién eres:
+
+| Acción | Quien lo guardó | Súper administrador o Administrador | Cualquier otro miembro con Informes |
+|---|---|---|---|
+| Verlo, cambiar el rango, exportar CSV | Sí | Sí | Sí |
+| **Guardar cambios** (nombre, agrupación, métricas) | Sí | Sí | No |
+| **Guardar como nuevo** (una copia con otro nombre) | Sí | Sí | — |
+| **Guardar** (crea un informe nuevo y propio) | — | — | Sí |
+| **Eliminar** | Sí | Sí | No |
+| Programar o cambiar el **Envío por correo** | Sí | Solo apagarlo | No (sí en su propia copia) |
+
+- **Guardar cambios:** cambia la agrupación o las métricas, pulsa **Guardar cambios** y
+  confirma en el diálogo. El diálogo trae **Guardar como nuevo** para crear una copia sin
+  tocar el original. La copia es tuya y toma el **Envío por correo** elegido en el cuadro;
+  si tiene envío, te llega a ti.
+- **Eliminar:** el botón con el icono de papelera, junto a **Guardar cambios**. Pregunta
+  "¿Eliminar este informe guardado? Esto no borra ningún dato." Eliminarlo también apaga
+  su envío por correo.
+- **Si no puedes editarlo**, ves el botón **Guardar** (sin el icono de papelera). Al
+  pulsarlo, **Guardar informe** se abre con el nombre vacío y crea un **informe nuevo y
+  tuyo** con la agrupación y las métricas que tienes en pantalla; el original no se toca.
+  Esa copia es tuya: puedes editarla, eliminarla y programar su envío por correo.
+
+## Recibirlo por correo
+
+### Programarlo
+
+Al guardar (o con **Guardar cambios** en un informe que guardaste tú), elige en **Envío
+por correo**:
+
+| Opción | Cuándo llega | Qué periodo trae |
+|---|---|---|
+| **Cada lunes** | El lunes, en la zona horaria de tu negocio. | La semana anterior completa, de lunes a domingo. |
+| **El día 1 de cada mes** | El día 1, en la zona horaria de tu negocio. | El mes anterior completo. |
+| **Sin envío** | No llega. | — |
+
+- **Solo te llega a ti**, a la dirección de correo de tu usuario de Cord. No se pueden
+  agregar destinatarios: si alguien más del equipo lo quiere, que guarde su propia copia
+  y la programe.
+- **El primer correo llega en el siguiente periodo.** Si programas un envío semanal un
+  miércoles, el primero llega el lunes siguiente con la semana que acaba de terminar; uno
+  mensual programado el 8 de octubre llega el 1 de noviembre con octubre completo. Cambiar
+  de semanal a mensual (o al revés) reinicia ese reloj.
+- **Nadie lo programa por ti.** Un correo que te llegaría a ti solo lo enciendes tú. Lo
+  que ve otra persona al abrir tu informe guardado:
+  - Un **Súper administrador** o **Administrador**, si el informe **tiene** envío: en
+    **Envío por correo** solo las opciones **Sin envío** y la frecuencia actual, con la nota
+    "Como administrador puedes apagar este envío; programarlo solo lo puede hacer quien
+    guardó el informe."
+  - Un administrador, si el informe **no tiene** envío: "El envío por correo lo programa
+    quien guardó el informe."
+  - Cualquier otro miembro: el botón **Guardar** crea su propia copia, y esa sí la puede
+    programar.
+
+### Qué trae el correo
+
+<DmScheduledReportEmail lang="es" />
+
+- **Asunto:** "{nombre} · {periodo}", por ejemplo "Ventas por país · 1 sep 2026 – 30 sep
+  2026".
+- **Encabezado:** el nombre de tu negocio, el nombre del informe y las fechas del periodo.
+- **KPIs:** las primeras cuatro métricas del informe con su valor del periodo y, debajo,
+  "vs. {valor} el periodo anterior". En el correo, el periodo anterior es el **periodo
+  calendario anterior completo**: la semana de lunes a domingo previa, o el mes previo
+  entero (septiembre contra agosto completo, aunque agosto tenga 31 días). En la pantalla
+  de Informes, en cambio, la comparación sigue siendo contra los mismos días
+  inmediatamente anteriores.
+- "El detalle completo va en el CSV adjunto, listo para abrir en Excel o Google Sheets."
+- **Abrir en Cord:** abre ese informe guardado con exactamente ese periodo. Pide iniciar
+  sesión y el permiso Informes.
+- **Adjunto:** `cord-informe-{desde}_{hasta}.csv`, con el mismo formato que **Exportar
+  CSV**.
+- **Pie:** "Recibes este correo porque programaste el envío de este informe. Lo cambias o
+  lo apagas desde Informes en Cord."
+
+El correo usa el idioma de tu cuenta y los importes en la divisa de tu negocio, sin
+decimales.
+
+### Cambiarlo o apagarlo
+
+Abre el informe guardado, pulsa **Guardar cambios** y elige otra frecuencia o **Sin
+envío**. También deja de llegar si el informe se elimina. Un Súper administrador o
+Administrador puede apagar el envío de un informe ajeno (eligiendo **Sin envío** y
+**Guardar cambios**) o eliminarlo.
+
+### Cuándo deja de llegar sin que lo apagues
+
+- **Dejas el equipo** o tu usuario se desactiva en esa organización.
+- **Pierdes el permiso Informes.**
+
+En los dos casos el informe no se manda y su reloj no avanza: si recuperas el acceso, el
+siguiente envío trae el último periodo cerrado. Mientras tanto nadie más recibe tus
+números.
+
+### Si el envío falla
+
+Si el correo no se pudo enviar, el periodo **no se marca como enviado** y se reintenta en
+la siguiente corrida, al día siguiente. Una corrida que no ocurre tampoco se salta la
+semana: la siguiente la manda. Nunca llegan dos correos del mismo periodo.
+
+## Problemas comunes
+
+**Una métrica está apagada.** No aplica a esa agrupación: Unidades y Margen bruto solo
+por Producto; Días a cierre no por Producto. O ya marcaste seis.
+
+**El Vendido no coincide con Ventas en el tiempo.** El explorador cuenta la cohorte de
+cotizaciones **creadas** en el rango; Ventas en el tiempo cuenta las ventas por fecha de
+**aprobación**.
+
+**El total de Cotizaciones es menor que la suma de las filas.** Agrupando por Producto,
+una cotización con varios productos aparece en varias filas pero cuenta una vez en el
+total.
+
+**Abrí un informe guardado y el rango no es el que tenía.** Los informes guardados no
+guardan el rango: usan el del link o el último que usaste en ese navegador.
+
+**No me llegó el correo del lunes.** Revisa que el informe lo hayas guardado tú, que su
+envío diga **Cada lunes**, que sigas activo con el permiso Informes y que no lo hayas
+programado esta misma semana (el primero llega en el siguiente periodo). Busca también
+en correo no deseado.
+
+**No puedo programar el envío.** Solo quien guardó el informe puede programarlo. Abre el
+informe, pulsa **Guardar** para crear tu propia copia y programa esa.
+
+**"Llegaste al máximo de 50 informes guardados."** Elimina uno que ya no se use; la
+organización comparte el tope.
+
+## Relacionadas
+
+- [Informes y desempeño](/docs/gestion/informes)
+- [Inicio y vistas](/docs/gestion/dashboard)
+- Soporte: [Crear, guardar y compartir informes personalizados](https://cordhq.app/soporte/informes-personalizados)
+- Soporte: [Recibir un informe por correo cada semana o cada mes](https://cordhq.app/soporte/recibir-informes-por-correo)
+- Soporte: [Exportar un informe a CSV (Excel y Google Sheets)](https://cordhq.app/soporte/exportar-informes-csv)
+- [Google Sheets](/docs/automatizacion/integraciones/google-sheets)
+- [Excel](/docs/automatizacion/integraciones/excel)
+- [Equipo y seguridad](/docs/cuenta/equipo-seguridad)

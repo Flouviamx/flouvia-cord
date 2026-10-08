@@ -1,0 +1,257 @@
+---
+// Mockup: Inicio en modo edición con la biblioteca de widgets abierta.
+//
+// Calca de:
+//   - WidgetCustomizeButtons.astro: en edición "Personalizar" se oculta y quedan
+//     tres botones circulares de icono — Biblioteca (grid-plus, con el contador de
+//     widgets para agregar), Restablecer (undo) y Listo (check, navy);
+//   - WidgetGrid + widgets.css: cada widget con contorno punteado y su barra de
+//     edición (arrastrar, subir, bajar, Compacto/Ampliado, ocultar);
+//   - widget-library.ts + .wlib-*: tarjeta flotante anclada bajo Biblioteca, NO
+//     modal (el tablero sigue a la vista): "Biblioteca de widgets", el resumen
+//     "{n} para agregar · {m} en pantalla", "Buscar widgets…", las categorías con
+//     su conteo (Todos, Para agregar y un grupo por categoría en el orden de la
+//     página) y las tarjetas con miniatura. Lo que se puede agregar va primero con
+//     su botón + (Agregar); lo que ya está en pantalla, atenuado y con check.
+//
+// Conteos de una cuenta Pro con todos los permisos: 16 widgets por defecto y 6
+// opcionales (De enviada a pagada, Pipeline esperado, Cobrado, Días a cierre,
+// Facturas vencidas y Ranking de vendedores).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, tpl, type DmLang } from './format';
+import { money0Parts } from './dm-gestion';
+import { CERRADO_30, TICKET_30 } from './dm-informes';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const es = lang !== 'en';
+const M = (n: number) => money0Parts(n, 'MXN', lang);
+
+// Acentos por tono (widgets.css: [data-widget-tone]).
+const TONE = { finance: '#16846b', commercial: '#426cc5', team: '#8170b5', activity: '#ad793b', none: '#0a192f' } as const;
+type Thumb =
+    | { kind: 'kpi'; label: string; num: string; cur?: string; spark?: number[] }
+    | { kind: 'rows'; rows: [string, string][] }
+    | { kind: 'hbars'; rows: [string, number][] };
+type Card = { title: string; desc: string; tone: keyof typeof TONE; on: boolean; thumb: Thumb };
+
+const g = (k: string) => dmT(lang, k as any);
+const CARDS: Card[] = [
+    { title: es ? 'De enviada a pagada' : 'Sent to paid', desc: g('dash.kpi_historica_desc'), tone: 'none', on: false,
+      thumb: { kind: 'kpi', label: es ? 'De enviada a pagada' : 'Sent to paid', num: '34%' } },
+    { title: es ? 'Pipeline esperado' : 'Expected pipeline', desc: es ? 'Pipeline abierto ponderado por probabilidad, hoy' : 'Probability-weighted open pipeline today', tone: 'none', on: false,
+      thumb: { kind: 'kpi', label: es ? 'Pipeline esperado' : 'Expected pipeline', num: M(298400).value, cur: 'MXN' } },
+    { title: g('dash.w_kpi_cobrado'), desc: g('dash.kpi_cobrado_desc'), tone: 'finance', on: false,
+      thumb: { kind: 'kpi', label: g('dash.kpi_cobrado'), num: M(1096300).value, cur: 'MXN', spark: [3, 5, 4, 6, 5, 8, 6, 7, 9, 7, 10, 9, 12, 11] } },
+    { title: g('dash.w_dias_cierre'), desc: g('dash.kpi_dias_cierre_desc'), tone: 'commercial', on: false,
+      thumb: { kind: 'kpi', label: g('dash.kpi_dias_cierre'), num: tpl(g('dash.kpi_dias'), { n: 6 }) } },
+    { title: g('dash.w_facturas_vencidas'), desc: g('dash.facturas_vencidas_desc'), tone: 'finance', on: false,
+      thumb: { kind: 'rows', rows: [['Inmobiliaria Altavista', M(87310).value], ['Grupo Edificador Norte', M(64380).value], ['Ferretera Industrial del Bajío', M(52000).value]] } },
+    { title: g('dash.w_rank_vendedores'), desc: g('dash.rank_vendedores_desc'), tone: 'team', on: false,
+      thumb: { kind: 'hbars', rows: [['Ana Torres', 512400], ['Diego Ramírez', 386900], ['Lucía Gómez', 241300], ['Martín Ruiz', 143900]] } },
+    { title: g('dash.w_kpi_por_cerrar'), desc: g('widgets.grupo_kpis'), tone: 'none', on: true,
+      thumb: { kind: 'kpi', label: g('dash.kpi_por_cerrar'), num: M(431589).value, cur: 'MXN' } },
+    { title: g('dash.w_kpi_tasa'), desc: g('widgets.grupo_kpis'), tone: 'commercial', on: true,
+      thumb: { kind: 'kpi', label: g('dash.kpi_tasa_cierre'), num: '38%' } },
+    { title: g('dash.w_kpi_ticket'), desc: g('widgets.grupo_kpis'), tone: 'commercial', on: true,
+      thumb: { kind: 'kpi', label: g('dash.kpi_ticket_promedio'), num: M(TICKET_30).value, cur: 'MXN', spark: [5, 6, 5, 7, 6, 8, 7, 9, 8, 9, 10, 9, 11] } },
+];
+const ADD = CARDS.filter((c) => !c.on).length;
+const ON_SCREEN = 16;
+const CATS: [string, number][] = [
+    [g('widgets.filtro_todos'), ADD + ON_SCREEN],
+    [g('widgets.filtro_agregar'), ADD],
+    [g('widgets.grupo_kpis'), 8],
+    [g('widgets.grupo_pipeline'), 3],
+    [g('widgets.grupo_finanzas'), 4],
+    [g('widgets.grupo_rankings'), 3],
+    [g('widgets.grupo_actividad'), 4],
+];
+
+const spark = (v: number[]) => {
+    const max = Math.max(...v), min = Math.min(...v);
+    const pts = v.map((y, i) => [(i / (v.length - 1)) * 100, 26 - ((y - min) / (max - min || 1)) * 22]);
+    const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    return { line, area: `${line} L100,30 L0,30 Z` };
+};
+
+const DATA = {
+    es: {
+        caption: `Inicio en modo edición: arriba a la derecha, los botones Biblioteca (con ${ADD} widgets para agregar), Restablecer y Listo; cada widget lleva su barra de edición. La biblioteca flota sobre el tablero con el buscador "Buscar widgets…", las categorías Todos, Para agregar, KPIs, Pipeline, Finanzas, Rankings y Actividad con su conteo, y las tarjetas con miniatura: primero las que se pueden agregar (De enviada a pagada, Pipeline esperado, Cobrado, Días a cierre, Facturas vencidas y Ranking de vendedores) y después las que ya están en pantalla.`,
+    },
+    en: {
+        caption: `Home in edit mode: at the top right, the Library (with ${ADD} widgets to add), Reset and Done buttons; each widget has its edit bar. The library floats over the board with the "Search widgets…" box, the All widgets, To add, KPIs, Pipeline, Finance, Rankings and Activity categories with their counts, and cards with thumbnails: first the ones you can add (Sent to paid, Expected pipeline, Collected, Days to close, Overdue invoices and Sales leaderboard), then the ones already on screen.`,
+    },
+};
+const caption = Astro.props.caption ?? pick(DATA, lang).caption;
+const hero = M(CERRADO_30);
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" title={dmT(lang, 'dash.heading')} height={860} caption={caption} class="dm-wl-figure">
+    <span slot="actions" class="dm-wl-btns">
+        <span class="dm-wl-circle is-open" data-count={ADD}><DmIcon name="grid-plus" /></span>
+        <span class="dm-wl-circle"><DmIcon name="undo" /></span>
+        <span class="dm-wl-circle is-done"><DmIcon name="check" stroke={1.9} /></span>
+    </span>
+
+    <div class="dm-surface dm-wl-hero">
+        <div class="dm-wl-pills"><span class="is-on">{g('dash.hero_metric_cerrado')}</span><span>{g('dash.hero_metric_cobrado')}</span><span>{g('dash.hero_metric_cotizado')}</span></div>
+        <span class="dm-money dm-wl-hero-num">{hero.value}<span class="dm-cur">MXN</span></span>
+    </div>
+    <div class="dm-wl-grid">
+        {[
+            [g('dash.kpi_por_cerrar'), M(431589).value + ' ', 'MXN'],
+            [g('dash.kpi_tasa_cierre'), '38%', ''],
+            [g('dash.kpi_ticket_promedio'), M(TICKET_30).value + ' ', 'MXN'],
+            [g('dash.kpi_por_seguimiento'), '2', ''],
+        ].map(([l, n, c]) => (
+            <div class="dm-wl-w">
+                <span class="dm-wl-editbar">
+                    <span><DmIcon name="grip" /></span><span><DmIcon name="chevron-up" /></span><span><DmIcon name="chevron-down" /></span>
+                    <span class="dm-wl-sizes"><span class="is-on">{g('widgets.compacto')}</span><span>{g('widgets.ampliado')}</span></span>
+                    <span><DmIcon name="x" /></span>
+                </span>
+                <span class="dm-kpi-label">{l}</span>
+                <span class="dm-money dm-wl-w-num">{n}{c && <span class="dm-cur">{c}</span>}</span>
+            </div>
+        ))}
+    </div>
+    <div class="dm-wl-grid2">
+        <div class="dm-wl-w is-wide"><span class="dm-wl-editbar"><span><DmIcon name="grip" /></span><span><DmIcon name="chevron-up" /></span><span><DmIcon name="chevron-down" /></span><span class="dm-wl-sizes"><span>{g('widgets.compacto')}</span><span class="is-on">{g('widgets.ampliado')}</span></span><span><DmIcon name="x" /></span></span><span class="dm-wl-t">{g('dash.funnel_titulo')}</span></div>
+        <div class="dm-wl-w is-wide"><span class="dm-wl-editbar"><span><DmIcon name="grip" /></span><span><DmIcon name="chevron-up" /></span><span><DmIcon name="chevron-down" /></span><span class="dm-wl-sizes"><span>{g('widgets.compacto')}</span><span class="is-on">{g('widgets.ampliado')}</span></span><span><DmIcon name="x" /></span></span><span class="dm-wl-t">{g('dash.pipeline_titulo')}</span></div>
+    </div>
+
+    <div slot="overlay" class="dm-wl-lib">
+        <div class="dm-wl-head">
+            <span class="dm-wl-titles">
+                <span class="dm-wl-title">{g('widgets.lib_titulo')}</span>
+                <span class="dm-wl-sub">{tpl(g('widgets.lib_resumen'), { n: ADD, m: ON_SCREEN })}</span>
+            </span>
+            <span class="dm-wl-close"><DmIcon name="x" stroke={1.8} /></span>
+        </div>
+        <span class="dm-wl-search"><DmIcon name="search" />{g('widgets.buscar_ph')}</span>
+        <div class="dm-wl-body">
+            <div class="dm-wl-cats">
+                {CATS.map(([l, n], i) => <span class:list={['dm-wl-cat', { 'is-on': i === 0 }]}><span>{l}</span><span class="dm-wl-cat-n">{n}</span></span>)}
+            </div>
+            <div class="dm-wl-list">
+                {CARDS.map((c) => (
+                    <div class:list={['dm-wl-card', { 'is-on': c.on }]} style={`--wl-acc:${TONE[c.tone]}`}>
+                        <div class="dm-wl-frame">
+                            {c.thumb.kind === 'kpi' && (
+                                <div class="dm-wl-kpi">
+                                    <span class="dm-wl-kpi-l">{c.thumb.label}</span>
+                                    <span class="dm-wl-kpi-n">{c.thumb.num}{c.thumb.cur && <span class="dm-cur">{c.thumb.cur}</span>}</span>
+                                    {c.thumb.spark && (() => { const s = spark(c.thumb.spark!); return <svg class="dm-wl-spark" viewBox="0 0 100 30" preserveAspectRatio="none"><path d={s.area} class="a"></path><path d={s.line} class="l" vector-effect="non-scaling-stroke"></path></svg>; })()}
+                                </div>
+                            )}
+                            {c.thumb.kind === 'rows' && (
+                                <div class="dm-wl-rows">{c.thumb.rows.map(([t, v]) => <span class="dm-wl-row"><span>{t}</span><span>{v}</span></span>)}</div>
+                            )}
+                            {c.thumb.kind === 'hbars' && (() => { const mx = Math.max(...c.thumb.rows.map((r) => r[1])); return (
+                                <div class="dm-wl-hbars">{c.thumb.rows.map(([t, v]) => <span class="dm-wl-hbar"><span>{t}</span><span class="tr"><i style={`width:${((v / mx) * 100).toFixed(0)}%`}></i></span></span>)}</div>
+                            ); })()}
+                        </div>
+                        <span class="dm-wl-meta"><b>{c.title}</b><small>{c.desc}</small></span>
+                        <span class="dm-wl-add"><DmIcon name={c.on ? 'check' : 'plus'} stroke={1.8} /></span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-wl-figure .dm-page-head, .dm-wl-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-wl-figure .dm-content { display: flex; flex-direction: column; gap: 12px; }
+    /* Botones circulares del modo edición (.widget-edit-btn.is-icon). */
+    .dm-wl-btns { display: flex; align-items: center; gap: 6px; }
+    .dm-wl-circle { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 1px solid var(--dm-border); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.06); color: var(--dm-text); }
+    .dm-wl-circle .dm-ico { width: 15px; height: 15px; }
+    .dm-wl-circle.is-open { background: var(--dm-canvas); border-color: rgba(10, 25, 47, 0.18); color: var(--dm-navy); }
+    .dm-wl-circle.is-done { background: var(--dm-navy); border-color: var(--dm-navy); color: #fff; box-shadow: 0 4px 12px rgba(10, 25, 47, 0.22); }
+    .dm-wl-circle[data-count]::before { content: attr(data-count); position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 99px; background: var(--dm-navy); color: #fff; font-size: 8.5px; font-weight: 700; line-height: 15px; text-align: center; box-shadow: 0 0 0 2px var(--dm-canvas); }
+
+    /* Tablero detrás, en edición: contorno punteado y barra de edición. */
+    .dm-wl-hero { padding: 14px 16px; }
+    .dm-wl-pills { display: inline-flex; gap: 3px; margin-bottom: 8px; }
+    .dm-wl-pills span { padding: 4px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: var(--dm-muted); }
+    .dm-wl-pills span.is-on { background: var(--dm-canvas); color: var(--dm-navy); }
+    .dm-wl-hero-num { display: block; font-size: 28px; line-height: 1; color: var(--dm-navy); letter-spacing: -0.04em; }
+    .dm-wl-hero-num .dm-cur { font-size: 11px; }
+    .dm-wl-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .dm-wl-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .dm-wl-w { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 42px 13px 14px; border-radius: 16px; background: #fff; box-shadow: var(--dm-shadow-card); outline: 1.5px dashed rgba(10, 25, 47, 0.14); outline-offset: 3px; }
+    .dm-wl-w.is-wide { min-height: 150px; }
+    .dm-wl-w .dm-kpi-label { font-size: 8.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wl-w-num { font-size: 17px; color: var(--dm-navy); letter-spacing: -0.035em; white-space: nowrap; }
+    .dm-wl-w-num .dm-cur { font-size: 8px; }
+    .dm-wl-t { font-size: 12px; font-weight: 600; }
+    .dm-wl-editbar { position: absolute; top: 7px; right: 7px; display: flex; align-items: center; gap: 1px; padding: 2px; border-radius: 99px; background: #fff; border: 1px solid var(--dm-border); box-shadow: 0 2px 6px rgba(10, 25, 47, 0.1), 0 8px 20px -6px rgba(10, 25, 47, 0.25); color: var(--dm-muted); }
+    .dm-wl-editbar > span:not(.dm-wl-sizes) { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; }
+    .dm-wl-editbar .dm-ico { width: 10px; height: 10px; }
+    .dm-wl-sizes { display: flex; gap: 1px; padding: 2px; border-radius: 99px; background: var(--dm-canvas); }
+    .dm-wl-sizes span { padding: 2px 6px; border-radius: 99px; font-size: 8px; font-weight: 600; color: var(--dm-muted); }
+    .dm-wl-sizes span.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07); }
+    /* KPI angosto: como en un contenedor de ≤ 320 px, sin asa de arrastre; el selector de tamaño no cabe a esta escala. */
+    .dm-wl-grid .dm-wl-sizes, .dm-wl-grid .dm-wl-editbar > span:first-child { display: none; }
+
+    /* Biblioteca flotante (.wlib): superficie sólida, sin backdrop-filter. */
+    .dm-wl-lib { position: absolute; top: 120px; right: calc(var(--dm-bleed) + 14px); width: min(520px, calc(100% - 150px)); max-height: calc(100% - 132px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid var(--dm-border); border-radius: 22px; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 14px 34px -10px rgba(10, 25, 47, 0.18), 0 44px 90px -28px rgba(10, 25, 47, 0.28); }
+    .dm-wl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 18px 10px; }
+    .dm-wl-titles { display: flex; flex-direction: column; gap: 3px; }
+    .dm-wl-title { font-size: 14px; font-weight: 650; letter-spacing: -0.03em; color: var(--dm-text); }
+    .dm-wl-sub { font-size: 10px; color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+    .dm-wl-close { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--dm-canvas); color: var(--dm-muted); flex: 0 0 auto; }
+    .dm-wl-close .dm-ico { width: 13px; height: 13px; }
+    .dm-wl-search { display: flex; align-items: center; gap: 7px; margin: 0 18px 12px; padding: 0 11px; height: 32px; border-radius: 10px; background: var(--dm-canvas); color: var(--dm-faint); font-size: 11px; }
+    .dm-wl-search .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+    .dm-wl-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 132px minmax(0, 1fr); border-top: 1px solid var(--dm-border); }
+    .dm-wl-cats { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; border-right: 1px solid var(--dm-border); }
+    .dm-wl-cat { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 28px; padding: 0 9px; border-radius: 8px; font-size: 10.5px; font-weight: 550; color: var(--dm-muted); }
+    .dm-wl-cat.is-on { background: var(--dm-canvas); color: var(--dm-text); font-weight: 650; }
+    .dm-wl-cat-n { font-size: 9px; font-weight: 600; color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+    .dm-wl-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 10px; padding: 12px 14px 16px; overflow: hidden; }
+    .dm-wl-card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 6px 6px 10px; border-radius: 14px; background: #fff; border: 1px solid var(--dm-border); min-width: 0; }
+    .dm-wl-frame { aspect-ratio: 16 / 10; display: flex; border-radius: 9px; overflow: hidden; background: var(--dm-canvas); padding: 9px 10px; }
+    .dm-wl-card.is-on .dm-wl-frame { opacity: 0.6; }
+    .dm-wl-meta { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
+    .dm-wl-meta b { font-size: 10.5px; font-weight: 650; letter-spacing: -0.01em; color: var(--dm-text); line-height: 1.3; }
+    .dm-wl-meta small { font-size: 9px; line-height: 1.4; color: var(--dm-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .dm-wl-add { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--dm-navy); color: #fff; box-shadow: 0 4px 10px -2px rgba(10, 25, 47, 0.35); }
+    .dm-wl-add .dm-ico { width: 13px; height: 13px; }
+    .dm-wl-card.is-on .dm-wl-add { background: #fff; color: var(--dm-ok); box-shadow: 0 0 0 1px var(--dm-border); }
+
+    /* Miniaturas (widget-preview.ts), con el acento del tono del widget. */
+    .dm-wl-kpi { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+    .dm-wl-kpi-l { font-size: 7px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wl-kpi-n { font-size: 15px; font-weight: 650; letter-spacing: -0.035em; line-height: 1.1; color: var(--dm-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .dm-wl-kpi-n .dm-cur { font-size: 7px; }
+    .dm-wl-spark { display: block; width: 100%; height: 20px; margin-top: 2px; }
+    .dm-wl-spark .a { fill: var(--wl-acc); opacity: 0.12; }
+    .dm-wl-spark .l { fill: none; stroke: var(--wl-acc); stroke-width: 1.4; }
+    .dm-wl-rows { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .dm-wl-row { display: flex; justify-content: space-between; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--dm-border); font-size: 7.5px; }
+    .dm-wl-row:last-child { border-bottom: 0; }
+    .dm-wl-row span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--dm-text); }
+    .dm-wl-row span:last-child { color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+    .dm-wl-hbars { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+    .dm-wl-hbar { display: grid; grid-template-columns: 42% minmax(0, 1fr); align-items: center; gap: 5px; font-size: 7.5px; color: var(--dm-muted); }
+    .dm-wl-hbar > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dm-wl-hbar .tr { height: 5px; border-radius: 99px; background: rgba(10, 25, 47, 0.08); overflow: hidden; }
+    .dm-wl-hbar .tr i { display: block; height: 100%; border-radius: 99px; background: var(--wl-acc); }
+
+    @container dm (max-width: 640px) {
+        .dm-wl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-wl-lib { left: 10px; right: calc(var(--dm-bleed) + 10px); width: auto; top: 108px; }
+        .dm-wl-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+        .dm-wl-cats { flex-direction: row; overflow: hidden; border-right: 0; border-bottom: 1px solid var(--dm-border); padding: 8px 12px; gap: 5px; }
+        .dm-wl-cat { flex: 0 0 auto; border-radius: 99px; background: var(--dm-canvas); min-height: 26px; }
+        .dm-wl-cat.is-on { background: var(--dm-text); color: #fff; }
+        .dm-wl-cat.is-on .dm-wl-cat-n { color: inherit; opacity: 0.7; }
+        .dm-wl-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+</style>

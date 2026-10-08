@@ -30,7 +30,7 @@ documentos y movimientos.
 6. Cord registra el cobro en línea o el pago que marcas a mano.
 7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el saldo y
    la fecha de vencimiento.
-8. **Informes** y **Equipo** agregan los resultados sin crear una segunda copia de la
+8. **Informes** y **Desempeño** agregan los resultados sin crear una segunda copia de la
    operación.
 </Steps>
 
@@ -54,8 +54,8 @@ sesión.
 | Ingresos | **Cobros** | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y disputas. Guía: [Dashboard de cobros](/docs/pagos/dashboard). |
 | Ingresos | **Cobranza** | `/app/cobranza` | Cartera por cobrar, antigüedad de saldos y exposición por cliente (Profesional o superior). El contador en rojo indica documentos vencidos. Guía: [Cartera y seguimiento](/docs/pagos/cartera-cobranza). |
 | Ingresos | **Agente IA** (dentro de Cobranza) | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA (Pro, Scale o Developer). Guía: [Cobranza autónoma (IA)](/docs/pagos/cobranza-ia). |
-| Análisis | **Informes** | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. Guía: [Informes y desempeño](/docs/gestion/informes). |
-| Análisis | **Desempeño** | `/app/desempeno` | Desempeño del equipo: resultados atribuidos a quien creó o duplicó cada cotización. |
+| Análisis | **Informes** | `/app/informes` | 15 informes en siete grupos: Resumen, Ventas, Clientes, Productos, Finanzas, Equipo y Personalizados. Siete son tableros de widgets, siete son tablas con comparativa y exportación a CSV, y el Informe personalizado arma el tuyo, se guarda para el equipo y se manda por correo. Guías: [Informes y desempeño](/docs/gestion/informes) e [Informes personalizados](/docs/gestion/informes-personalizados). |
+| Análisis | **Desempeño** | `/app/desempeno` | Desempeño del equipo, de todo el historial: resultados atribuidos a quien creó o duplicó cada cotización. Para un rango con comparativa, usa el informe **Ventas por vendedor**. |
 | Automatización | **Workflows** | `/app/workflows` | Automatizaciones "cuando pase esto, haz esto", ideas listas e historial de ejecuciones. Guía: [Cord Workflows](/docs/automatizacion/workflows). |
 
 Además:
@@ -93,7 +93,7 @@ pantallas menores a 880 px están desactivados y todo se hace con botones visibl
 | `C` | Nueva cotización |
 | `F` | Nueva factura |
 | `T` | Nueva tarea |
-| `G` y luego `D`, `C`, `L`, `P`, `T`, `B`, `A` o `F` | Ir a Inicio, Cotizaciones, Clientes, Productos, Tareas, Cobranza, Informes o Facturas |
+| `G` y luego `D`, `C`, `L`, `P`, `T`, `F`, `O`, `B`, `A`, `E` o `W` | Ir a Inicio, Cotizaciones, Clientes, Productos, Tareas, Facturas, Cobros, Cobranza, Informes, Desempeño o Workflows |
 | `X` | Fijar o quitar la página actual del menú |
 | `?` | Mostrar u ocultar la ayuda de atajos |
 
@@ -178,7 +178,7 @@ sección:
 - **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
 - **Cobranza:** consultar y gestionar cuentas por cobrar.
 - **Clientes** y **Productos:** modificar sus directorios.
-- **Analítica:** abrir Informes y Equipo (desempeño).
+- **Informes:** abrir Informes y Desempeño, ver los widgets analíticos del Inicio y guardar informes personalizados.
 - **Ajustes:** cambiar la configuración del negocio.
 - **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
 - **Reembolsos:** iniciar devoluciones de cobros conciliados.

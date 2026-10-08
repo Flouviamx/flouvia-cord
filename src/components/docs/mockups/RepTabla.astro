@@ -1,0 +1,138 @@
+---
+// Cuerpo de un informe tabla (calca de src/components/app/informes/TablaReport.astro)
+// para los mockups de docs. No se registra en el MDX (index.ts solo toma Dm*.astro):
+// lo componen DmReportTable y DmReportExplorer.
+//
+// Orden real: descripción + (Día/Semana/Mes) + Exportar CSV · franja de KPIs con
+// "vs. X el periodo anterior" · gráfica · tabla ordenable con fila Total · nota de
+// divisa (MonedaNota, que en la página va después del informe).
+import DmIcon from './DmIcon.astro';
+import { dmT, type DmLang } from './format';
+import { fmtCell, kpiDelta, monedaNota, type DmCol, type DmKpi, type DmRow } from './dm-informes';
+import './dm-reports.css';
+
+interface Props {
+    lang: DmLang;
+    /** Clave de descripción del informe (`inf.desc.<id>`). */
+    descKey: string;
+    kpis: DmKpi[];
+    cols: DmCol[];
+    rows: DmRow[];
+    totals: DmRow | null;
+    chart: { kind: 'hbar' | 'bar'; key: string; max?: number };
+    /** Columna por la que está ordenada la tabla (descendente). */
+    sortKey?: string;
+    granularity?: 'day' | 'week' | 'month';
+    /** Muestra el selector Día / Semana / Mes ("Ventas en el tiempo"). */
+    gran?: boolean;
+    /** Plantilla de columnas (grid-template-columns). Por defecto cada columna mide al menos su contenido, como la tabla real (nowrap + scroll). */
+    template?: string;
+    /** Incluye en la gráfica las filas en cero (el explorador las dibuja; los informes tabla no). */
+    zeros?: boolean;
+    /** Ancho mínimo de la tabla: lo que no cabe sangra por la derecha, como el scroll real. */
+    minWidth?: number;
+    /** Filas visibles antes de la fila Total (la tabla real hace scroll con tfoot fijo). */
+    maxRows?: number;
+    currency?: string;
+}
+const { lang, descKey, kpis, cols, rows, totals, chart, sortKey, granularity, gran = false, minWidth, maxRows, zeros = false, currency = 'MXN' } = Astro.props;
+const template = Astro.props.template ?? cols.map((_, i) => `minmax(max-content, ${i === 0 ? 1.6 : 1}fr)`).join(' ');
+
+const label = (key: string) => dmT(lang, key as any);
+const cell = (v: unknown, c: DmCol) => fmtCell(v, c.format, lang, currency, granularity);
+const isNum = (c: DmCol) => c.format !== 'text' && c.format !== 'date';
+const shown = maxRows ? rows.slice(0, maxRows) : rows;
+
+// Gráfica: hbar con las filas con valor (máx. 8, como informes-tabla.ts); barras
+// verticales por periodo con el eje en día y mes.
+const chartRows = chart.kind === 'hbar'
+    ? rows.filter((r) => r[chart.key] !== null && (zeros || Number(r[chart.key]) > 0)).slice(0, zeros ? 10 : 8)
+    : rows;
+const max = chart.max ?? Math.max(...chartRows.map((r) => Number(r[chart.key] ?? 0))) * (chart.kind === 'bar' ? 1.08 : 1);
+const firstKey = cols[0].key;
+const axis = (iso: string) => new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', granularity === 'month'
+    ? { month: 'short', year: '2-digit', timeZone: 'UTC' }
+    : { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`)).replace(/\./g, '');
+const yTicks = [max, (max * 2) / 3, max / 3, 0].map((v) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', { style: 'currency', currency, currencyDisplay: 'narrowSymbol', notation: 'compact', maximumFractionDigits: 0 }).format(v));
+---
+<div class="dm-rx">
+    <div class="dm-rx-head">
+        <span class="dm-rx-desc">{label(descKey)}</span>
+        <span class="dm-rx-tools">
+            {gran && granularity && (
+                <span class="dm-rx-seg">
+                    {(['day', 'week', 'month'] as const).map((g) => <span class:list={[{ 'is-on': g === granularity }]}>{label(`inf.t.g_${g}`)}</span>)}
+                </span>
+            )}
+            <span class="dm-rx-export"><DmIcon name="download" stroke={1.6} />{label('inf.t.exportar')}</span>
+        </span>
+    </div>
+
+    <div class="dm-rx-kpis" style={`--dm-rx-k:${kpis.length}`}>
+        {kpis.map((k) => {
+            const d = kpiDelta(k);
+            const v = fmtCell(k.value, k.format, lang, currency);
+            const p = fmtCell(k.prev, k.format, lang, currency);
+            const [pre, post] = dmT(lang, 'inf.t.vs_prev').split('{v}');
+            return (
+                <div class="dm-rx-kpi">
+                    <span class="dm-kpi-label">{label(k.label)}</span>
+                    <span class="dm-rx-row">
+                        <span class="dm-rx-num">{v.value}{v.code && <span class="dm-cur">{v.code}</span>}</span>
+                        {d && <span class:list={['dm-rx-delta', `is-${d.dir}`]}><DmIcon name="arrow-up" stroke={2.4} />{d.text}</span>}
+                    </span>
+                    <small>{k.prev === null ? dmT(lang, 'dash.kpi_sin_base') : <>{pre}{p.value}{p.code && <span class="dm-cur"> {p.code}</span>}{post}</>}</small>
+                </div>
+            );
+        })}
+    </div>
+
+    <div class="dm-surface dm-rx-chart">
+        {chart.kind === 'hbar' ? (
+            <div class="dm-rx-hbar">
+                {chartRows.map((r) => {
+                    const v = fmtCell(r[chart.key], 'money', lang, currency);
+                    return (
+                        <div class="dm-rx-hrow">
+                            <span class="dm-rx-hname">{String(r[firstKey])}</span>
+                            <span class="dm-rx-htrack"><i style={`width:${Math.max(Number(r[chart.key]) > 0 ? 2 : 0, (Number(r[chart.key]) / max) * 100).toFixed(1)}%`}></i></span>
+                            <span class="dm-rx-hval">{v.value}<span class="dm-cur">{v.code}</span></span>
+                        </div>
+                    );
+                })}
+            </div>
+        ) : (
+            <div class="dm-rx-bars">
+                <div class="dm-rx-yax">{yTicks.map((y) => <span>{y}</span>)}</div>
+                <div class="dm-rx-plot">{chartRows.map((r) => <i style={`height:${((Number(r[chart.key]) / max) * 100).toFixed(1)}%`}></i>)}</div>
+                <div class="dm-rx-xax">{chartRows.map((r, i) => <span class:list={[{ 'is-skip': i % 2 === 1 }]}>{axis(String(r[firstKey]))}</span>)}</div>
+            </div>
+        )}
+    </div>
+
+    <div class="dm-surface dm-rx-tcard">
+        <div class="dm-rx-scroll">
+            <div class="dm-rx-table" style={`--dm-rx-cols:${template}${minWidth ? `;--dm-rx-min:${minWidth}px` : ''}`}>
+                {cols.map((c, i) => (
+                    <span class:list={['dm-rx-th-cell', 'is-th', { 'is-num': isNum(c), 'is-first': i === 0, 'is-sorted': c.key === sortKey }]}>
+                        <span class="dm-rx-thl">{label(c.label)}</span><DmIcon name="chevrons-updown" stroke={1.8} />
+                    </span>
+                ))}
+                {shown.map((r) => cols.map((c, i) => {
+                    const v = cell(r[c.key], c);
+                    return (
+                        <span class:list={[{ 'is-num': isNum(c), 'is-first': i === 0, 'is-empty': r[c.key] === null, 'is-ellipsis': i === 0 }]}>
+                            {v.value}{v.code && <span class="dm-cur">{v.code}</span>}
+                        </span>
+                    );
+                }))}
+                {totals && cols.map((c, i) => {
+                    const v = i === 0 ? { value: dmT(lang, 'inf.t.total_fila') } : c.key in totals ? cell(totals[c.key], c) : { value: '' };
+                    return <span class:list={['is-ft', { 'is-num': isNum(c), 'is-first': i === 0 }]}>{v.value}{v.code && <span class="dm-cur">{v.code}</span>}</span>;
+                })}
+            </div>
+        </div>
+    </div>
+
+    <div class="dm-rx-note"><DmIcon name="info" />{monedaNota(lang, currency)}</div>
+</div>

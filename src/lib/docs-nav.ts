@@ -117,6 +117,7 @@ export const DOCS_NAV: NavSection[] = [
           { slug: 'gestion/tareas', label: { es: 'Tareas y seguimiento', en: 'Tasks and follow-up' } },
           { slug: 'gestion/notificaciones', label: { es: 'Notificaciones', en: 'Notifications' } },
           { slug: 'gestion/informes', label: { es: 'Informes y desempeño', en: 'Reports and performance' } },
+          { slug: 'gestion/informes-personalizados', label: { es: 'Informes personalizados', en: 'Custom reports' } },
         ],
       },
     ],
