@@ -14,6 +14,7 @@ import { getImpuestos, getOrg } from '../../../lib/queries';
 import { getCountryProfile, hasTaxPreset, taxKindLabel, taxPresetsFor, usStateTaxPresets, type TaxKind } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { EXEMPTION_INFO, EXEMPTION_REASONS } from '../../../lib/fiscal/exemption';
 const ORG = await getOrg();
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -44,6 +45,11 @@ const PRESETS = isUs && usState ? usStateTaxPresets(usState) : taxPresetsFor(PAI
 const PRESET_DEFAULT = PRESETS.find((p) => p.esDefault);
 const NOMBRE_PLACEHOLDER = PRESET_DEFAULT ? `${PRESET_DEFAULT.nombre}…` : `${PROFILE.taxLabel}…`;
 const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
+// España: la causa de exención que Verifactu declara y la factura cita. Vacía,
+// el registro la deriva (no sujeta para un cliente extranjero, exenta dentro).
+const isEs = PAIS === 'ES';
+const CAUSAS = EXEMPTION_REASONS.map((code) => ({ code, label: `${code} · ${L === 'en' ? EXEMPTION_INFO[code].en : EXEMPTION_INFO[code].es}` }));
+const CAUSA_AUTO = L === 'en' ? 'Automatic (from the client)' : 'Automática (según el cliente)';
 ---
 
 <SettingsShell title="Impuestos — Ajustes" tab="impuestos" perm="ajustes"
@@ -90,6 +96,12 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
                         <span class="imp-body">
                             <span class="imp-name">{i.nombre}</span>
                             <span class="imp-tasa editorial">{i.tasa}%</span>
+                            {isEs && i.kind === 'exento' && (
+                                <select class="imp-causa" data-causa={i.id} aria-label={L === 'en' ? `Exemption reason for ${i.nombre}` : `Causa de exención de ${i.nombre}`}>
+                                    <option value="" selected={!i.exemptionReason}>{CAUSA_AUTO}</option>
+                                    {CAUSAS.map((c) => <option value={c.code} selected={i.exemptionReason === c.code}>{c.label}</option>)}
+                                </select>
+                            )}
                         </span>
                         {i.esDefault
                             ? <span class="imp-default">{t(L, 'set.imp.predeterminado')}</span>
@@ -166,6 +178,15 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
                 </select>
             </div>
         </div>
+        {isEs && (
+            <div class="s-field" id="iCausaRow" style="margin-bottom:1rem" hidden>
+                <label for="iCausa">{L === 'en' ? 'Exemption reason (Verifactu)' : 'Causa de exención (Verifactu)'}</label>
+                <select class="s-input" id="iCausa">
+                    <option value="">{CAUSA_AUTO}</option>
+                    {CAUSAS.map((c) => <option value={c.code}>{c.label}</option>)}
+                </select>
+            </div>
+        )}
         <label class="s-toggle" style="margin-bottom:0.3rem">
             <input type="checkbox" id="iDefault" checked />
             <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
@@ -189,9 +210,11 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
     .imp-tipo { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; white-space: nowrap; color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
     .imp-tipo.retencion { color: #b45309; background: rgba(245,158,11,0.12); }
     .imp-tipo.exento { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
-    .imp-body { display: flex; align-items: baseline; gap: 0.8rem; min-width: 0; }
+    .imp-body { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 0.8rem; min-width: 0; }
     .imp-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
     .imp-tasa { font-size: 0.92rem; color: var(--color-blue-deep); }
+    .imp-causa { font-family: var(--font-sans); font-size: 0.74rem; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 8px; padding: 5px 8px; max-width: 100%; min-width: 0; cursor: pointer; }
+    .imp-causa:focus-visible { outline: 2px solid rgba(10, 25, 47, 0.15); outline-offset: 1px; color: var(--color-text); }
     .imp-default { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--color-ok); background: rgba(16,185,129,0.12); padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
     .imp-setdef { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px; cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s; }
     .imp-setdef:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
@@ -213,6 +236,7 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
         .imp-row { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "type body" "default default" "delete delete"; gap: .65rem .8rem; padding: 1rem 0; }
         .imp-tipo { grid-area: type; }
         .imp-body { grid-area: body; flex-wrap: wrap; gap: .25rem .65rem; }
+        .imp-causa { width: 100%; min-height: 44px; font-size: 16px; }
         .imp-default, .imp-setdef { grid-area: default; }
         .key-revoke { grid-area: delete; }
         .imp-setdef, .key-revoke { width: 100%; min-height: 44px; }
@@ -234,9 +258,11 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
 
         const kindSel = document.getElementById('iKind') as HTMLSelectElement;
         const retRow = document.getElementById('iRetRow') as HTMLElement | null;
+        const causaRow = document.getElementById('iCausaRow') as HTMLElement | null;
         const tasaInput = document.getElementById('iTasa') as HTMLInputElement;
         const syncKind = () => {
             if (retRow) retRow.hidden = kindSel.value !== 'retencion';
+            if (causaRow) causaRow.hidden = kindSel.value !== 'exento';
             // Un exento no lleva tasa: el campo se vacía y se bloquea.
             tasaInput.disabled = kindSel.value === 'exento';
             if (kindSel.value === 'exento') tasaInput.value = '0';
@@ -280,14 +306,29 @@ const TASA_DEFAULT = PRESET_DEFAULT ? String(PRESET_DEFAULT.tasa) : '';
             const es_default = (document.getElementById('iDefault') as HTMLInputElement).checked;
             const tipo = kind === 'retencion' ? (document.getElementById('iRetTipo') as HTMLSelectElement | null)?.value : undefined;
             const retencion_base = kind === 'retencion' ? (document.getElementById('iRetBase') as HTMLSelectElement | null)?.value : undefined;
+            const exemption_reason = kind === 'exento' ? (document.getElementById('iCausa') as HTMLSelectElement | null)?.value || undefined : undefined;
             const btn = document.getElementById('impCreate') as HTMLButtonElement;
             btn.disabled = true;
             try {
-                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, kind, tasa, es_default, tipo, retencion_base }) });
+                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, kind, tasa, es_default, tipo, retencion_base, exemption_reason }) });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nCrearErr || 'No se pudo crear');
                 location.reload();
             } catch (err: any) { (window as any).cordToast?.(err.message || M.i18nCrearErr || 'No se pudo crear', 'error'); btn.disabled = false; }
+        });
+
+        document.querySelectorAll<HTMLSelectElement>('[data-causa]').forEach((sel) => {
+            let previo = sel.value;
+            sel.addEventListener('change', async () => {
+                try {
+                    const res = await fetch('/api/impuestos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: sel.dataset.causa, exemption_reason: sel.value || null }) });
+                    if (!res.ok) throw new Error();
+                    previo = sel.value;
+                } catch {
+                    sel.value = previo;
+                    (window as any).cordToast?.(M.i18nActualizarErr || 'No se pudo actualizar', 'error');
+                }
+            });
         });
 
         document.querySelectorAll('[data-setdef]').forEach((b) => b.addEventListener('click', async () => {

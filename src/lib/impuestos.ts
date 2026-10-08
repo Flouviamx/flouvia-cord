@@ -17,6 +17,8 @@ export interface TaxOption {
     /** Fracción 0–1, lista para el motor. Nunca porcentaje. */
     rate: number;
     kind: TaxKind;
+    /** España: causa de exención que el concepto congela al elegir esta opción. */
+    exemptionReason?: string | null;
 }
 
 /**
@@ -44,6 +46,7 @@ export function buildTaxOptions(
             label: i.nombre,
             rate: i.rate,
             kind: i.kind,
+            exemptionReason: i.exemptionReason ?? null,
         }));
 
     // Tasa plana heredada: solo si el catálogo no la cubre ya.
@@ -68,6 +71,7 @@ export function buildTaxOptions(
 
     return options.sort((a, b) => a.rate - b.rate);
 }
+
 
 /** Tasa que traen las líneas nuevas: el perfil default, o la plana heredada. */
 export function defaultTaxRate(impuestos: ImpuestoRow[], orgTaxRate?: number): number {

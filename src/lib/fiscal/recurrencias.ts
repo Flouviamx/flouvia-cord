@@ -57,6 +57,7 @@ export async function createRecurrencia(orgId: string, input: RecurrenciaInput, 
             precioNegociado: numOrNull(l.precioNegociado),
             costoUnitario: numOrNull(l.costoUnitario),
             taxRate: numOrNull(l.taxRate),
+            exemptionReason: l.exemptionReason ? String(l.exemptionReason) : null,
         }));
     if (!lineas.length) return { ok: false as const, error: 'La recurrencia necesita al menos un concepto.' };
     if (!input.clienteId) return { ok: false as const, error: 'La recurrencia necesita un cliente.' };

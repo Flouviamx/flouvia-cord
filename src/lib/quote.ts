@@ -19,6 +19,8 @@ export interface QuoteItem {
     precioNegociado: number | null;
     /** Fracción 0–1. Snapshot de la tasa al capturar, no lectura viva del catálogo. */
     taxRate?: number;
+    /** España: causa de exención congelada del concepto (fiscal/exemption.ts). */
+    exemptionReason?: string | null;
     aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)
     comentarios?: { autor: string; tipo: string; contenido: string; cuando: string; mine?: boolean }[];
 }

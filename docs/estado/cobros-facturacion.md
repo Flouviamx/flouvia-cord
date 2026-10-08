@@ -979,6 +979,18 @@ Contratos que quedaron vigentes tras auditar Cord Invoicing en los 12 mercados.
   reconoce el texto libre anterior) y un catálogo nacional intacto se resiembra
   al elegirla. El número de QST del emisor (`fiscal_metadata.qst_number`,
   10 dígitos + TQ + 4) se imprime junto al de GST/HST.
+- **Causa de exención por concepto (España).** El perfil exento del catálogo
+  lleva su causa (`impuestos.exemption_reason`: E1–E6, N1, N2, S2) y el concepto
+  la CONGELA al elegirlo, como la tasa (`cotizacion_items.exemption_reason`;
+  `exemptionReason` en `line_items_snapshot`). Viaja de la cotización a la
+  factura (`emit.ts`), en borradores, recurrencias, duplicados y `/api/v1`
+  (`items[].exemption_reason`). `desglose.ts` la declara a la AEAT y el PDF cita
+  el precepto (RD 1619/2012, art. 6.1.j). Solo se conserva en España y en una
+  línea al 0 % (`exemptionReasonFor`); sin causa, el registro la deriva del
+  cliente como antes. Los selectores de los editores eligen por índice
+  (`taxOptionIndex`): dos perfiles al 0 % comparten tasa y solo la causa los
+  distingue. Las cuentas españolas con IVA reciben Exportación (E2), Entrega
+  intracomunitaria (E5), Exenta art. 20 (E1) e Inversión del sujeto pasivo (S2).
 - **Columnas `date` en pantalla:** `fmtCalendarDate()` (`fmt-server.ts`), nunca
   `fmtDate()`. El driver entrega un `date` como medianoche del servidor y
   `fmtDate` lo convierte a la zona del negocio: en México el detalle de la

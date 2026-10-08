@@ -48,8 +48,8 @@ export async function seedTaxCatalog(orgId: string, countryCode: string, region?
             : taxPresetsFor(countryCode, region);
         for (const p of presets) {
             await withOrgTx(orgId, sql`
-                insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base)
-                values (${orgId}, ${p.nombre}, ${p.tipo}, ${p.kind}, ${p.tasa}, ${!!p.esDefault}, ${p.base ?? 'subtotal'})`);
+                insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base, exemption_reason)
+                values (${orgId}, ${p.nombre}, ${p.tipo}, ${p.kind}, ${p.tasa}, ${!!p.esDefault}, ${p.base ?? 'subtotal'}, ${p.exemptionReason ?? null})`);
         }
         return presets.length;
     } catch {
@@ -72,13 +72,15 @@ export async function seedTaxCatalog(orgId: string, countryCode: string, region?
 export async function taxCatalogFor(orgId: string) {
     let rows: any[];
     let orgRate: number;
+    let country: string;
     try {
         const [impuestoRows, orgRows] = await withOrgTx(orgId,
             sql`select tasa, kind, tipo, nombre, es_default, activo, retencion_base from impuestos where org_id = ${orgId} and activo = true`,
-            sql`select iva_pct from orgs where id = ${orgId}`,
+            sql`select iva_pct, country_code from orgs where id = ${orgId}`,
         );
         rows = impuestoRows;
         orgRate = Number(orgRows?.[0]?.iva_pct ?? 0) || 0;
+        country = String(orgRows?.[0]?.country_code || '').toUpperCase();
     } catch (cause) {
         // Falla CERRADA: un catálogo que no se pudo leer no es un catálogo
         // vacío. El llamador traduce esto a un 503 accionable, nunca a un
@@ -105,6 +107,8 @@ export async function taxCatalogFor(orgId: string) {
     return {
         defaultRate,
         retenciones,
+        /** País de la organización: decide si un concepto conserva su causa de exención. */
+        country,
         /** Tasa validada, o el fallback si la propuesta no está en el catálogo. */
         resolve(proposed: unknown, fallback: number): number {
             if (proposed === null || proposed === undefined || proposed === '') return fallback;

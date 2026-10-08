@@ -17,6 +17,7 @@ import { trackServer } from './posthog-server';
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { currencyDecimals, listOfferedCurrencies, normalizeCurrency } from './currency';
 import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
+import { exemptionReasonFor } from './fiscal/exemption';
 import { intlLocale } from './fmt-server';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
 import { validateTaxId } from './tax-id';
@@ -62,6 +63,8 @@ export interface NewQuoteItem {
     costo_unitario?: number | null;
     /** Fracción 0–1 (0.16), no porcentaje. Ausente = tasa default de la org. */
     tax_rate?: number | null;
+    /** España: causa de exención del concepto (fiscal/exemption.ts). */
+    exemption_reason?: string | null;
 }
 
 export interface NewQuoteInput {
@@ -272,10 +275,12 @@ export async function createCotizacion(
         throw error;
     }
     const fallbackRate = catalogo.defaultRate;
-    const itemsConImpuesto = items.map((it, i) => ({
-        ...it,
-        tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate),
-    }));
+    const itemsConImpuesto = items.map((it, i) => {
+        const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate);
+        // La causa de exención solo se conserva en España y en una línea al 0 %.
+        const exemption_reason = exemptionReasonFor(catalogo.country, rawItems[i]?.exemption_reason, tax_rate);
+        return { ...it, tax_rate, exemption_reason };
+    });
 
     const totals = calculateDocumentTotals(itemsConImpuesto as any[], {
         ivaIncluido: iva_incluido,
@@ -417,13 +422,13 @@ export async function createCotizacion(
     for (const it of itemsConImpuesto) {
         await withOrgTx(orgId, sql`
             insert into cotizacion_items
-                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
+                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason)
             values
                 (${cot.id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},
-                 ${orden++}, ${it.tax_rate})`);
+                 ${orden++}, ${it.tax_rate}, ${it.exemption_reason})`);
     }
 
     await withOrgTx(orgId, sql`

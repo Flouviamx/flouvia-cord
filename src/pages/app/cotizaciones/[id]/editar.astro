@@ -171,7 +171,7 @@ import { iconInner } from '../../../../lib/icons';
     // compartido. El vendedor veía un total en pantalla y se guardaba otro.
     import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../../lib/currency';
-    import { taxBreakdownRows } from '../../../../lib/tax-components';
+    import { taxBreakdownRows, taxOptionIndex } from '../../../../lib/tax-components';
 
     const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
     const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
@@ -195,6 +195,8 @@ import { iconInner } from '../../../../lib/icons';
         // concepto a la tasa default y borraba un "Exento" que el vendedor
         // había elegido a propósito en la versión anterior.
         taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+        // Y su causa de exención (España), por la misma razón.
+        exemptionReason: it.exemptionReason ?? null,
     }));
 
     const $lines = document.getElementById('lines');
@@ -233,10 +235,12 @@ import { iconInner } from '../../../../lib/icons';
     // dejar un concepto exento y no.
     function taxSelect(l, idx) {
         if (!BOOT.multiTax) return '';
-        const actual = l.taxRate ?? DEFAULT_TAX;
-        const opts = TAX_OPTIONS.map((o) => {
-            const sel = Math.abs(o.rate - actual) < 1e-9 ? ' selected' : '';
-            return `<option value="${o.rate}"${sel}>${escapeHtml(o.label)}</option>`;
+        // El valor es el ÍNDICE de la opción: dos perfiles al 0 % comparten
+        // tasa y solo se distinguen por la causa de exención (España).
+        const actual = taxOptionIndex(TAX_OPTIONS, l.taxRate ?? DEFAULT_TAX, l.exemptionReason);
+        const opts = TAX_OPTIONS.map((o, k) => {
+            const sel = k === actual ? ' selected' : '';
+            return `<option value="${k}"${sel}>${escapeHtml(o.label)}</option>`;
         }).join('');
         return `<select class="lr-tax" data-idx="${idx}" data-field="taxRate" aria-label="${escapeHtml(BOOT.taxLabel)}">${opts}</select>`;
     }
@@ -334,7 +338,9 @@ import { iconInner } from '../../../../lib/icons';
         if (!(t instanceof HTMLSelectElement) || t.dataset.field !== 'taxRate') return;
         const l = lines[parseInt(t.dataset.idx, 10)];
         if (!l) return;
-        l.taxRate = Number(t.value) || 0;
+        const opcion = TAX_OPTIONS[Number(t.value)];
+        l.taxRate = Number(opcion?.rate) || 0;
+        l.exemptionReason = opcion?.exemptionReason ?? null;
         recalc();
     });
 
@@ -405,6 +411,7 @@ import { iconInner } from '../../../../lib/icons';
                 // `undefined` en una línea nueva: el servidor le aplica la tasa
                 // predeterminada del catálogo de la organización.
                 tax_rate: l.taxRate,
+                exemption_reason: l.exemptionReason || undefined,
             }))
         };
 

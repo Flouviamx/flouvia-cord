@@ -11,6 +11,7 @@ import { MAX_ITEMS, NEGATIVE_LINE_ERROR, QuoteError, assertClienteDeOrg, hasNega
 import { materializeAnticipoCobros } from '../cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
+import { exemptionReasonFor } from '../fiscal/exemption';
 import { trackServer } from '../posthog-server';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
@@ -150,10 +151,12 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             if (error instanceof TaxCatalogUnavailableError) return done(503, { error: error.message, code: 'tax_catalog_unavailable' });
             throw error;
         }
-        const items = rawItems.map((raw: any, i: number) => ({
-            ...sanitizeItem(raw),
-            tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate),
-        }));
+        const items = rawItems.map((raw: any, i: number) => {
+            const tax_rate = catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate);
+            // La causa de exención solo se conserva en España y en una línea al 0 %.
+            const exemption_reason = exemptionReasonFor(catalogo.country, rawItems[i]?.exemption_reason, tax_rate);
+            return { ...sanitizeItem(raw), tax_rate, exemption_reason };
+        });
         const totals = calculateDocumentTotals(items as any[], {
             ivaIncluido: iva_incluido,
             retenciones: catalogo.retenciones,
@@ -243,8 +246,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
         writes.push(sql`delete from cotizacion_items where cotizacion_id = ${id}`);
         items.forEach((it: any, orden: number) => {
-            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
-                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate})`);
+            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate, exemption_reason)
+                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate}, ${it.exemption_reason ?? null})`);
         });
 
         if (input.action === 'resend') {

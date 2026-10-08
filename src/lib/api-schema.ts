@@ -118,6 +118,8 @@ const QuoteItemInput = z.object({
     descripcion: z.string(), cantidad: z.number(), precio_unitario: z.number(),
     precio_negociado: z.number().optional(), costo_unitario: z.number().optional(), producto_id: z.string().optional(),
     tax_rate: z.number().optional().describe('Fracción 0–1, validada contra el catálogo de impuestos.'),
+    exemption_reason: z.enum(['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'N1', 'N2', 'S2']).optional()
+        .describe('Solo España y solo en un concepto con tax_rate 0: causa de exención o no sujeción que declara Verifactu y cita la factura. Sin ella se deriva del cliente.'),
 });
 
 export const CreateQuoteInput = z.object({

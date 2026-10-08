@@ -1,7 +1,7 @@
 // /api/impuestos — catálogo de impuestos de la organización.
-//   POST   { nombre, kind, tipo?, tasa, es_default? }        → { id }
+//   POST   { nombre, kind, tipo?, tasa, es_default?, exemption_reason? } → { id }
 //   POST   { action: 'seed' }                                → { creados }
-//   PATCH  { id, nombre?, tasa?, es_default?, activo? }      → { ok }
+//   PATCH  { id, nombre?, tasa?, es_default?, activo?, exemption_reason? } → { ok }
 //   DELETE { id }                                            → { ok }
 //
 // `kind` (consumo | retencion | exento) es la clasificación NEUTRA y la que
@@ -18,6 +18,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { seedTaxCatalog } from '../../lib/impuestos-db';
 import { retencionBase } from '../../../packages/elements/src/engine';
+import { exemptionReasonFor } from '../../lib/fiscal/exemption';
 
 const TIPOS = new Set(['iva', 'ieps', 'ret_iva', 'ret_isr', 'exento']);
 const KINDS = new Set(['consumo', 'retencion', 'exento']);
@@ -90,7 +91,8 @@ export const POST: APIRoute = async ({ request }) => {
     const defaultTipo = kind === 'retencion' ? 'ret_iva' : kind === 'exento' ? 'exento' : 'iva';
     const orgIdTipo = await getActiveOrgId();
     const [[orgPais]] = await withOrgTx(orgIdTipo, sql`select country_code from orgs where id = ${orgIdTipo}`);
-    const esMx = String(orgPais?.country_code || 'MX').toUpperCase() === 'MX';
+    const paisOrg = String(orgPais?.country_code || 'MX').toUpperCase();
+    const esMx = paisOrg === 'MX';
     // El subcódigo solo tiene efecto en México (mapea al CFDI) y debe ser
     // coherente con la clase: antes se aceptaba `tipo` libre en cualquier país
     // —un "ieps" en París— y una retención con `tipo:'iva'` se colaba como si
@@ -108,6 +110,8 @@ export const POST: APIRoute = async ({ request }) => {
     // países; 'impuesto' es el caso Colombia (ReteIVA = 15% DEL IVA) y
     // 'gravado' el de México (la Retención de IVA no alcanza lo exento).
     const retBase = retencionBase(body.retencion_base);
+    // Causa de exención (Verifactu): solo España y solo perfiles exentos.
+    const causa = kind === 'exento' ? exemptionReasonFor(paisOrg, body.exemption_reason, 0) : null;
 
     const orgId = await getActiveOrgId();
     let row: any;
@@ -117,8 +121,8 @@ export const POST: APIRoute = async ({ request }) => {
         // dejarían al editor eligiendo en silencio cuál de los dos aplica.
         if (esDefault) await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and kind = ${kind}`);
         [[row]] = await withOrgTx(orgId, sql`
-            insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base)
-            values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault}, ${retBase})
+            insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, retencion_base, exemption_reason)
+            values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault}, ${retBase}, ${causa})
             returning id`);
     } catch {
         // Regla 14: el dueño del negocio no corre migraciones.
@@ -155,6 +159,11 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (body.retencion_base !== undefined && kind === 'retencion') {
         const base = retencionBase(body.retencion_base);
         await withOrgTx(orgId, sql`update impuestos set retencion_base = ${base} where id = ${id} and org_id = ${orgId}`);
+    }
+    if (body.exemption_reason !== undefined && kind === 'exento') {
+        const [[org]] = await withOrgTx(orgId, sql`select country_code from orgs where id = ${orgId}`);
+        const causa = exemptionReasonFor(String(org?.country_code || ''), body.exemption_reason, 0);
+        await withOrgTx(orgId, sql`update impuestos set exemption_reason = ${causa} where id = ${id} and org_id = ${orgId}`);
     }
     if (typeof body.activo === 'boolean') {
         await withOrgTx(orgId, sql`update impuestos set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`);

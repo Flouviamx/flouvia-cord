@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ params, request }) => {
                    iva_incluido, anticipo_pct, es_recurrente
               from cotizaciones where id = ${id} and org_id = ${orgId}`,
         sql`select i.producto_id, i.descripcion, i.cantidad, i.precio_unitario, i.precio_negociado,
-                   i.costo_unitario, i.tax_rate
+                   i.costo_unitario, i.tax_rate, i.exemption_reason
               from cotizacion_items i
               join cotizaciones c on c.id = i.cotizacion_id and c.org_id = ${orgId}
              where i.cotizacion_id = ${id}
@@ -62,6 +62,7 @@ export const POST: APIRoute = async ({ params, request }) => {
                 precio_negociado: it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado),
                 costo_unitario: it.costo_unitario === null || it.costo_unitario === undefined ? null : Number(it.costo_unitario),
                 tax_rate: it.tax_rate === null || it.tax_rate === undefined ? null : Number(it.tax_rate),
+                exemption_reason: (it.exemption_reason as string) || null,
             })),
         }, {
             origin: new URL(request.url).origin,

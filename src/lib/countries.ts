@@ -258,6 +258,8 @@ export interface TaxPreset {
      * conceptos que trasladan IVA). Ver RetencionBase en engine.ts.
      */
     base?: 'subtotal' | 'impuesto' | 'gravado';
+    /** Solo España y solo exentos: causa que declara Verifactu (src/lib/fiscal/exemption.ts). */
+    exemptionReason?: 'E1' | 'E2' | 'E5' | 'S2';
 }
 
 export type TaxKind = 'consumo' | 'retencion' | 'exento';
@@ -357,6 +359,12 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     // impuesto que el negocio le traslade a nadie.
     ES: [
         std('IVA 21%', 21), red('IVA 10%', 10), red('IVA 4%', 4), EXENTO,
+        // Causas que Verifactu declara y la factura cita. "Exento" a secas
+        // deja que el registro derive la causa (N2 fuera de España, E6 dentro).
+        { ...exempt('Exportación (art. 21)'), exemptionReason: 'E2' },
+        { ...exempt('Entrega intracomunitaria (art. 25)'), exemptionReason: 'E5' },
+        { ...exempt('Exenta art. 20'), exemptionReason: 'E1' },
+        { ...exempt('Inversión del sujeto pasivo'), exemptionReason: 'S2' },
         { nombre: 'Retención IRPF 15%', kind: 'retencion', tipo: 'ret_isr', tasa: 15 },
         { nombre: 'Retención IRPF 7% (nuevo autónomo)', kind: 'retencion', tipo: 'ret_isr', tasa: 7 },
     ],

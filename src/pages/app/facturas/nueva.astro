@@ -176,7 +176,10 @@ const BOOT = {
         lista: l.precioUnitario,
         negociado: null,
         cantidad: l.cantidad,
-        taxRate: l.subtotal > 0 ? l.impuesto / l.subtotal : DEFAULT_TAX_RATE,
+        // La tasa CONGELADA del concepto: dividir importes ya redondeados no la
+        // reproduce (5.33 / 33.33 no es 0.16) y el selector no la encontraba.
+        taxRate: Number.isFinite(Number(l.taxRate)) ? Number(l.taxRate) : DEFAULT_TAX_RATE,
+        exemptionReason: l.exemptionReason ?? null,
     })),
     i18n: {
         sinResultados: L === 'en' ? 'No products match' : 'Ningún producto coincide',
@@ -536,7 +539,7 @@ import { iconInner } from '../../../lib/icons';
     import { createMoney } from '../../../lib/money-client';
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
-    import { taxBreakdownRows } from '../../../lib/tax-components';
+    import { taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { termDueDate } from '../../../lib/payment-terms';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
@@ -551,12 +554,15 @@ import { iconInner } from '../../../lib/icons';
             id: string | null; nombre: string; unidad: string;
             baseLista: number; lista: number; negociado: number | null;
             cantidad: number; taxRate: number; negoTouched: boolean;
+            /** España: causa de exención congelada con la opción elegida. */
+            exemptionReason?: string | null;
             volumen?: any;
         }
         const lines: Linea[] = (BOOT.lineas || []).map((l: any) => ({
             id: l.id, nombre: l.nombre, unidad: l.unidad,
             baseLista: l.lista, lista: l.lista, negociado: l.negociado,
             cantidad: l.cantidad, taxRate: l.taxRate, negoTouched: false,
+            exemptionReason: l.exemptionReason ?? null,
         }));
 
         // El formateo lee la divisa elegida en el editor, no la del documento:
@@ -603,9 +609,12 @@ import { iconInner } from '../../../lib/icons';
         const precioFinal = (l: Linea) => (l.negociado ?? l.lista) || 0;
 
         // ── Render ──────────────────────────────────────────────────────────
+        // El valor de cada opción es su ÍNDICE: dos perfiles al 0 % ("Exento" y
+        // "Exportación (art. 21)") comparten tasa y solo se distinguen por la causa.
         const taxSelect = (l: Linea, i: number) => {
-            const opts = (BOOT.taxOptions || []).map((o: any) =>
-                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
+            const actual = taxOptionIndex(BOOT.taxOptions || [], l.taxRate, l.exemptionReason);
+            const opts = (BOOT.taxOptions || []).map((o: any, k: number) =>
+                `<option value="${k}"${k === actual ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
             return `<select class="lr-tax${l.taxRate === 0 ? ' is-exento' : ''}" data-i="${i}" aria-label="${T.concepto}">${opts}</select>`;
         };
 
@@ -713,7 +722,9 @@ import { iconInner } from '../../../lib/icons';
             if (!el.classList.contains('lr-tax')) return;
             const l = lines[Number(el.dataset.i)];
             if (!l) return;
-            l.taxRate = Number(el.value) || 0;
+            const opcion = (BOOT.taxOptions || [])[Number(el.value)];
+            l.taxRate = Number(opcion?.rate) || 0;
+            l.exemptionReason = opcion?.exemptionReason ?? null;
             el.classList.toggle('is-exento', l.taxRate === 0);
             recalc();
         });
@@ -1044,6 +1055,7 @@ import { iconInner } from '../../../lib/icons';
                 precio_unitario: l.lista,
                 precio_negociado: l.negociado,
                 tax_rate: l.taxRate,
+                exemption_reason: l.exemptionReason || undefined,
             })),
         });
 

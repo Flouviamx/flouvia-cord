@@ -16,6 +16,7 @@ import { mmAPuntos, VERIFACTU_QR_PRESENTACION } from './verifactu/qr';
 import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import { fmtTaxPct, splitTaxBucket } from '../tax-components';
+import { EXEMPTION_INFO, isExemptionReason } from './exemption';
 import {
   PdfDocument, measureText as measure, prepareImage, truncateText as truncate, wrapText as wrap,
   type Align, type FontKey, type RGB,
@@ -693,12 +694,21 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   const smallBusiness = input.issuer.vatRegime === 'small_business' && !(Number(input.taxTotal) > 0)
     ? smallBusinessNotice(issuerCountry) : null;
   const isCreditNote = !!input.creditNoteOfNumber || input.documentType === 'cfdi_egreso';
+  // España: la factura cita el precepto de cada exención (RD 1619/2012, art.
+  // 6.1.j) — una por causa elegida en los conceptos. Si ya va la mención de
+  // operación intracomunitaria, las causas que esa mención cubre no se repiten.
+  const exemptionNotes = issuerCountry === 'ES'
+    ? [...new Set(input.lines.map((l) => l.exemptionReason).filter(isExemptionReason))]
+      .filter((c) => !(isIntraCommunity && (c === 'E5' || c === 'N2' || c === 'S2')))
+      .map((c) => EXEMPTION_INFO[c].mencion)
+    : [];
 
   // ── Cómo pagar y notas, a la izquierda de los totales ──────────────────────
   const blocks = [
     input.paymentInstructions ? { title: tx('howToPay'), body: input.paymentInstructions } : null,
     smallBusiness ? { title: tx('legalNotice'), body: smallBusiness } : null,
     isIntraCommunity ? { title: tx('legalNotice'), body: reverseChargeNotice(issuerCountry, lang) } : null,
+    exemptionNotes.length ? { title: tx('legalNotice'), body: exemptionNotes.join(' ') } : null,
     frenchB2b ? { title: tx('legalNotice'), body: FR_B2B_NOTICE } : null,
     input.documentNotes ? { title: isCreditNote ? tx('reason') : tx('notes'), body: input.documentNotes } : null,
     input.notes ? { title: tx('conditions'), body: input.notes } : null,

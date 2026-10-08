@@ -694,6 +694,8 @@ export interface ImpuestoRow {
     activo: boolean;
     /** Solo para kind:'retencion'. Ver RetencionBase en engine.ts. */
     retencionBase: RetencionBase;
+    /** España, solo exentos: causa que Verifactu declara (fiscal/exemption.ts). */
+    exemptionReason: string | null;
 }
 
 const normalizeKind = (value: unknown, tipo: string): TaxKind => {
@@ -738,6 +740,7 @@ export function mapImpuestoRow(i: any, locale: 'es' | 'en', paisCode: string): I
         esDefault: !!i.es_default,
         activo: !!i.activo,
         retencionBase: retencionBase(i.retencion_base),
+        exemptionReason: (i.exemption_reason as string) || null,
     };
 }
 
@@ -1418,6 +1421,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
             taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
+            exemptionReason: (it.exemption_reason as string) || null,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
         })),
@@ -1917,6 +1921,7 @@ export async function getFacturaDetalle(id: string) {
             // Tasa congelada del concepto: dividir impuesto / subtotal ya
             // redondeados no la reproduce (5.33 / 33.33 no es 0.16).
             taxRate: num(l.taxRate),
+            exemptionReason: (l.exemptionReason as string) || null,
             total: num(l.total),
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,

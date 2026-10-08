@@ -20,6 +20,7 @@ import type {
   FiscalLineItem,
 } from './index';
 import { resolveLineSatKeys } from './sat-claves';
+import { exemptionReasonFor } from './exemption';
 import { serieCompartida, serieCompartidaMensaje } from './serie';
 
 export interface EmitResult {
@@ -345,7 +346,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         limit 1`,
     // Las claves SAT son clasificación, no aritmética: se leen del producto al
     // timbrar y quedan congeladas en `line_items_snapshot` del documento.
-    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate,
+    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate, ci.exemption_reason,
                p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
@@ -415,6 +416,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   }
 
   // `totals.lineas` conserva el orden y la longitud de `approvedItems`.
+  // La causa de exención que el vendedor eligió al cotizar (solo España).
+  const causaDe = (i: number, rate: number): { exemptionReason?: string } => {
+    const causa = exemptionReasonFor(country, approvedItems[i]?.exemption_reason, rate);
+    return causa ? { exemptionReason: causa } : {};
+  };
   const lines: FiscalLineItem[] = totals.lineas.map((l, i) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
@@ -431,6 +437,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
       claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
       unidad: approvedItems[i]?.producto_unidad,
     }) : {}),
+    ...causaDe(i, l.tax_rate),
   }));
   const subtotal = round(totals.subtotal);
   const taxes = round(totals.impuestos);

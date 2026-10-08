@@ -177,3 +177,20 @@ export function taxBreakdownRows(
     }
     return filas;
 }
+
+/**
+ * La opción que corresponde a un concepto: por tasa Y causa de exención. Dos
+ * perfiles al 0 % ("Exento" y "Exportación (art. 21)") comparten tasa, y elegir
+ * por tasa sola devolvía siempre el mismo — el concepto perdía su causa en el
+ * siguiente redibujado. -1 = ninguna.
+ */
+export function taxOptionIndex(
+    options: { rate: number; exemptionReason?: string | null }[],
+    rate: number,
+    exemptionReason?: string | null,
+): number {
+    const causa = exemptionReason || null;
+    const exacta = options.findIndex((o) => Math.abs(o.rate - rate) < 1e-9 && (o.exemptionReason || null) === causa);
+    if (exacta >= 0) return exacta;
+    return options.findIndex((o) => Math.abs(o.rate - rate) < 1e-9);
+}

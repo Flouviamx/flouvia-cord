@@ -336,7 +336,7 @@ import { iconInner } from '../../../lib/icons';
     // sobreviva el bundle — este bloque ya rompió una vez por un `as any`.
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
     import { currencyDecimals } from '../../../lib/currency';
-    import { taxBreakdownRows } from '../../../lib/tax-components';
+    import { taxBreakdownRows, taxOptionIndex } from '../../../lib/tax-components';
     import { wireTermPicker } from '../../../lib/term-picker-client';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
@@ -378,7 +378,8 @@ import { iconInner } from '../../../lib/icons';
                 negociado: it.precioNegociado,
                 cantidad: it.cantidad,
                 negoTouched: it.precioNegociado !== null,
-                taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX
+                taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+                exemptionReason: it.exemptionReason ?? null,
             };
             if (l.id) l.lista = volUnit(l);
             lines.push(l);
@@ -617,10 +618,12 @@ import { iconInner } from '../../../lib/icons';
     // varias, es la diferencia entre poder cotizar un concepto exento y no.
     function taxSelect(l, idx) {
         if (!BOOT.multiTax) return '';
-        const actual = l.taxRate ?? DEFAULT_TAX;
-        const opts = TAX_OPTIONS.map((o) => {
-            const sel = Math.abs(o.rate - actual) < 1e-9 ? ' selected' : '';
-            return `<option value="${o.rate}"${sel}>${escapeHtml(o.label)}</option>`;
+        // El valor es el ÍNDICE de la opción: dos perfiles al 0 % comparten
+        // tasa y solo se distinguen por la causa de exención (España).
+        const actual = taxOptionIndex(TAX_OPTIONS, l.taxRate ?? DEFAULT_TAX, l.exemptionReason);
+        const opts = TAX_OPTIONS.map((o, k) => {
+            const sel = k === actual ? ' selected' : '';
+            return `<option value="${k}"${sel}>${escapeHtml(o.label)}</option>`;
         }).join('');
         return `<select class="lr-tax" data-idx="${idx}" data-field="taxRate" aria-label="${escapeHtml(BOOT.taxLabel)}">${opts}</select>`;
     }
@@ -936,7 +939,9 @@ import { iconInner } from '../../../lib/icons';
         if (!(t instanceof HTMLSelectElement) || t.dataset.field !== 'taxRate') return;
         const l = lines[parseInt(t.dataset.idx, 10)];
         if (!l) return;
-        l.taxRate = Number(t.value) || 0;
+        const opcion = TAX_OPTIONS[Number(t.value)];
+        l.taxRate = Number(opcion?.rate) || 0;
+        l.exemptionReason = opcion?.exemptionReason ?? null;
         recalc();
     });
 
@@ -1042,6 +1047,7 @@ import { iconInner } from '../../../lib/icons';
                 precio_negociado: l.negociado,
                 costo_unitario: l.costo || 0,
                 tax_rate: l.taxRate ?? DEFAULT_TAX,
+                exemption_reason: l.exemptionReason || undefined,
             })),
         };
     }
@@ -1338,6 +1344,7 @@ import { iconInner } from '../../../lib/icons';
                         cantidad: it.cantidad || 1,
                         negoTouched: it.negociado != null,
                         taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
+                        exemptionReason: it.exemptionReason ?? null,
                     };
                     // Ajusta el precio de lista al nivel de volumen de su cantidad.
                     if (l.id) l.lista = volUnit(l);

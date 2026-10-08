@@ -4016,6 +4016,39 @@ update impuestos i set nombre = 'GST 5% + RST 7% (MB)', tasa = 12
  where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'CA'
    and i.nombre = 'RST 7% (MB)' and i.kind = 'consumo' and i.tasa = 7;
 
+-- ── Causa de exención por concepto (España, oct 2026) ──────────────────────
+-- Una línea al 0 % puede ser una exportación (art. 21 LIVA), una entrega
+-- intracomunitaria (art. 25), una exención del art. 20 o una inversión del
+-- sujeto pasivo, y Verifactu declara cuál (OperacionExenta E1–E6,
+-- CalificacionOperacion N1/N2/S2). La causa vive en el perfil exento del
+-- catálogo y se CONGELA en el concepto como la tasa: cambiar el catálogo
+-- después no reescribe un documento ya capturado. En la factura viaja dentro
+-- de `line_items_snapshot` (`exemptionReason`). Null = la deriva desglose.ts.
+alter table impuestos add column if not exists exemption_reason text;
+alter table impuestos drop constraint if exists chk_impuestos_exemption_reason;
+alter table impuestos add constraint chk_impuestos_exemption_reason
+  check (exemption_reason is null or (kind = 'exento' and exemption_reason in ('E1','E2','E3','E4','E5','E6','N1','N2','S2')));
+alter table cotizacion_items add column if not exists exemption_reason text;
+alter table cotizacion_items drop constraint if exists chk_cotizacion_items_exemption_reason;
+alter table cotizacion_items add constraint chk_cotizacion_items_exemption_reason
+  check (exemption_reason is null or exemption_reason in ('E1','E2','E3','E4','E5','E6','N1','N2','S2'));
+
+-- Las cuentas de España que cobran IVA reciben las causas habituales como
+-- perfiles exentos más (idempotente: una por causa y organización). No cambian
+-- nada hasta que un concepto las elige.
+insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default, exemption_reason)
+select o.id, c.nombre, 'exento', 'exento', 0, false, c.causa
+  from orgs o
+ cross join (values
+   ('Exportación (art. 21)', 'E2'),
+   ('Entrega intracomunitaria (art. 25)', 'E5'),
+   ('Exenta art. 20', 'E1'),
+   ('Inversión del sujeto pasivo', 'S2')
+ ) as c(nombre, causa)
+ where upper(coalesce(o.country_code, '')) = 'ES'
+   and exists (select 1 from impuestos i where i.org_id = o.id and i.kind = 'consumo' and i.nombre like 'IVA %')
+   and not exists (select 1 from impuestos i where i.org_id = o.id and i.exemption_reason = c.causa);
+
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con
 -- serie única, pero incompatible con cualquier gestoría española, y cambiar

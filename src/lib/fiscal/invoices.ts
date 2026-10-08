@@ -59,6 +59,7 @@ import type {
   FiscalRetencion,
 } from './index';
 import { resolveLineSatKeys } from './sat-claves';
+import { exemptionReasonFor } from './exemption';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -75,6 +76,8 @@ export interface DraftLineInput {
    * normal en cuanto sales de un solo país.
    */
   taxRate?: number | null;
+  /** España: causa de exención del concepto (E1–E6, N1, N2, S2). Ver fiscal/exemption.ts. */
+  exemptionReason?: string | null;
 }
 
 export interface CreateDraftInput {
@@ -142,6 +145,7 @@ export function parseInvoiceItems(raw: unknown): DraftLineInput[] {
     // `?? null` y no `|| null`: una línea exenta manda 0, y con `||` ese 0
     // caería al default de la org gravando lo que no debe gravarse.
     taxRate: numOrNull(i?.tax_rate),
+    exemptionReason: i?.exemption_reason ? String(i.exemption_reason).slice(0, 4) : null,
     // Solo se descartan los renglones vacíos (cantidad 0 o en blanco). Una
     // cantidad negativa ya no se tira en silencio: llega a la validación y se
     // rechaza con un motivo (ver negativeLineError).
@@ -228,7 +232,7 @@ function buildLines(
   );
   const round = (value: number) => roundTo(value, decimals);
 
-  const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
+  const lines: FiscalLineItem[] = totals.lineas.map((l, i) => ({
     description: String(l.descripcion || 'Concepto').slice(0, 500),
     quantity: l.cantidad,
     // Con impuesto incluido, el documento fiscal declara el precio SIN impuesto:
@@ -239,6 +243,8 @@ function buildLines(
     subtotal: round(l.base),
     taxAmount: round(l.impuesto),
     total: round(l.total),
+    // `totals.lineas` conserva el orden de `items`. Ya validada por el llamador.
+    ...(items[i]?.exemptionReason ? { exemptionReason: items[i].exemptionReason as string } : {}),
   }));
 
   return {
@@ -356,10 +362,11 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
-  const itemsConTasaValidada = items.map((it) => ({
-    ...it,
-    taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
-  }));
+  const itemsConTasaValidada = items.map((it) => {
+    const taxRate = catalogo.resolve(it.taxRate, catalogo.defaultRate);
+    // La causa de exención se conserva solo en España y en una línea al 0 %.
+    return { ...it, taxRate, exemptionReason: exemptionReasonFor(country, it.exemptionReason, taxRate) };
+  });
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   let built;
@@ -476,10 +483,11 @@ export async function updateInvoiceDraft(
     if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
     throw error;
   }
-  const itemsConTasaValidada = items.map((it) => ({
-    ...it,
-    taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
-  }));
+  const itemsConTasaValidada = items.map((it) => {
+    const taxRate = catalogo.resolve(it.taxRate, catalogo.defaultRate);
+    // La causa de exención se conserva solo en España y en una línea al 0 %.
+    return { ...it, taxRate, exemptionReason: exemptionReasonFor(country, it.exemptionReason, taxRate) };
+  });
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
   let built;
