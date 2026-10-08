@@ -5,7 +5,7 @@
 
 // Extensión .ts explícita: verifactu-check.mjs carga este módulo con Node plano.
 import type { AltaPayload, AnulacionPayload, BatchRegistro, RegistroIdentity, RespuestaEnvio, RespuestaLinea } from './aeat.ts';
-import { AeatFaultError } from './aeat.ts';
+import { AeatCertificadoError, AeatFaultError } from './aeat.ts';
 
 export type EstadoEnvio = 'pendiente' | 'aceptado' | 'aceptado_con_errores' | 'rechazado' | 'bloqueado';
 
@@ -157,6 +157,8 @@ export type ClaseFallo = 'transitorio' | 'cabecera' | 'aislable';
  *   solo al culpable y aparcarlo, en vez de reenviar el mismo lote para siempre.
  */
 export function clasificarFallo(error: unknown): ClaseFallo {
+    // Certificado no reconocido: reenviar con el mismo no sirve de nada.
+    if (error instanceof AeatCertificadoError) return 'cabecera';
     if (!(error instanceof AeatFaultError)) return 'transitorio';
     if (/server/i.test(error.faultcode)) return 'transitorio';
     if (error.codigo !== undefined && FAULT_CABECERA.has(error.codigo)) return 'cabecera';

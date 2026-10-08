@@ -176,14 +176,52 @@ BOE.
   WSDL/XSD descargados de la AEAT. NO verificado: un envío real (no había
   certificado). Confirmar contra el portal de pruebas antes de producción.
 
-**Pendiente para encenderlo (trámite, no código):** configurar la identidad del
-software (`VERIFACTU_SIF_ID_OTRO_PAIS=MX`, `_TIPO=04`, `_ID=<RFC de Flouvia>`, nombre
-y versión), incluir la declaración responsable en el propio software, conseguir un
-certificado cualificado de una empresa española de prueba y validar en el entorno
-de pruebas con `VERIFACTU_AEAT_ENABLED=true` antes de pasar a producción. Para que
-Cord envíe **en nombre** de sus clientes con su propio certificado haría falta NIF
-español y adhesión al convenio de colaboración social; con el certificado de cada
-negocio (el modelo actual) no.
+- **Declaración responsable (Orden HAC/1177/2024, art. 15).** `declaracion.ts`
+  arma los apartados 1.a–1.l y el anexo con los textos del modelo de la AEAT
+  (incluida la variante del 1.i para un productor sin NIF español) desde la MISMA
+  identidad que viaja en cada registro, y la página pública
+  `/verifactu/declaracion-responsable` la muestra (imprimible como PDF). Ajustes ›
+  Fiscal la enlaza. Sin dirección, fecha y lugar de la declaración,
+  `requireSifIdentity()` falla cerrado: el sistema no registra facturas sin
+  declaración.
+
+### Activación paso a paso
+
+Ningún paso requiere NIF español. Para que Cord enviara **en nombre** de sus
+clientes con un certificado propio haría falta NIF español y el convenio de
+colaboración social; con el certificado de cada negocio (el modelo actual) no.
+
+1. **Identidad del software** (Vercel › Settings › Environment Variables, en
+   Production y Preview; los mismos valores en un `.env` local para el paso 3):
+   - `VERIFACTU_SIF_NOMBRE`: razón social de Flouvia tal como consta en su RFC.
+   - `VERIFACTU_SIF_ID_OTRO_PAIS=MX`, `VERIFACTU_SIF_ID_OTRO_TIPO=04`
+     (documento oficial del país de residencia), `VERIFACTU_SIF_ID_OTRO_ID=<RFC>`.
+   - `VERIFACTU_SIF_ID`: 2 caracteres `[A-Z0-9]`, para siempre (p. ej. `CD`).
+   - `VERIFACTU_SIF_VERSION=1.0`.
+   - `VERIFACTU_SIF_DIRECCION`: domicilio de Flouvia, líneas separadas por `|`.
+   - `VERIFACTU_DECLARACION_FECHA` (aaaa-mm-dd) y `VERIFACTU_DECLARACION_LUGAR`.
+   - `VERIFACTU_AEAT_ENABLED` se queda en `false` hasta el paso 4.
+   Comprobación: `npm run verifactu:prueba -- --solo-xml` valida la identidad y el
+   envío contra los XSD oficiales sin certificado ni red.
+2. **Declaración responsable.** Tras desplegar, revisar el texto en
+   `cordhq.app/verifactu/declaracion-responsable` (conviene que lo lea el asesor
+   fiscal), imprimirlo como PDF, firmarlo y archivarlo. Una versión nueva del
+   sistema exige subir `VERIFACTU_SIF_VERSION` y suscribir otra (fecha nueva).
+3. **Portal de pruebas de la AEAT.** Hace falta un certificado cualificado (FNMT
+   de persona física, o de representante de una sociedad) de un contribuyente
+   español dispuesto a probar: su NIF es el obligado de la prueba. En local:
+   `VERIFACTU_PRUEBA_PASSWORD='…' npm run verifactu:prueba -- --p12 cert.p12 --nombre "Nombre como consta en la AEAT"`
+   (`--cliente-nif`/`--cliente-nombre` añaden una factura completa F1). Envía dos
+   altas encadenadas y una anulación SOLO al entorno de pruebas, imprime la
+   respuesta línea a línea y las URL del QR para cotejarlas en la sede de pruebas.
+   Los datos del portal de pruebas no tienen efectos fiscales. Un certificado no
+   reconocido responde "403 de identificación" (comprobado contra el portal: la
+   AEAT redirige a una página HTML; el cliente lo trata como fallo de cabecera).
+   Después, de punta a punta en un Preview con `VERIFACTU_AEAT_ENABLED=true` y
+   `VERIFACTU_AEAT_SANDBOX=true`: una org española de prueba sube el certificado
+   en Ajustes › Fiscal, emite una factura y la anula.
+4. **Producción.** `npm run db:migrate`, después `VERIFACTU_AEAT_SANDBOX=false` y
+   `VERIFACTU_AEAT_ENABLED=true` en Production, y redesplegar.
 
 **Despliegue:** `npm run db:migrate` ANTES de desplegar. Los registros encadenados
 con el código anterior que rompan el esquema (NIF con prefijo `ES`, R1 viejos, F1

@@ -68,6 +68,9 @@ beforeAll(async () => {
         VERIFACTU_SIF_NIF: 'Q2826000H',
         VERIFACTU_SIF_NOMBRE: 'Flouvia Software',
         VERIFACTU_SIF_ID: 'CD',
+        VERIFACTU_SIF_DIRECCION: 'Calle Mayor 1|28013 Madrid|España',
+        VERIFACTU_DECLARACION_FECHA: '2026-10-01',
+        VERIFACTU_DECLARACION_LUGAR: 'Madrid, España',
     });
     delete process.env.VERIFACTU_AEAT_SANDBOX;
     m.db = new PGlite();

@@ -298,6 +298,21 @@ export class AeatFaultError extends Error {
     }
 }
 
+/**
+ * La AEAT no identificó el certificado de cliente: en vez de un SoapFault
+ * redirige a su página "403 Error de identificación. No se detecta
+ * certificado electrónico" (/Sede/errores/erro403*.html). Comprobado contra
+ * el portal de pruebas externas (oct 2026). No es un fallo de red: reenviar
+ * con el mismo certificado nunca va a funcionar, así que se trata como fallo
+ * de cabecera (se pausa la organización y no se toca ningún registro).
+ */
+export class AeatCertificadoError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'AeatCertificadoError';
+    }
+}
+
 /** Fallo de red o respuesta inesperada: no dice nada de los registros, se reintenta. */
 export class AeatTransitoryError extends Error {
     constructor(message: string) {
@@ -437,11 +452,24 @@ export async function submitToAeat(
             body: envelope,
             dispatcher: agent,
             signal: AbortSignal.timeout(timeoutMs),
+            // Sin seguir redirecciones: la AEAT responde a un certificado no
+            // reconocido con un 30x a una página HTML, y seguirla convertía el
+            // rechazo en un 200 "sin mensaje SOAP" que se reintentaba para siempre.
+            redirect: 'manual',
         });
         status = response.status;
         ok = response.ok;
+        const destino = response.headers.get('location') || '';
+        if (status >= 300 && status < 400) {
+            await response.body?.cancel().catch(() => {});
+            if (/\/errores\/erro403/i.test(destino)) {
+                throw new AeatCertificadoError('La AEAT no reconoció el certificado electrónico (error 403 de identificación). Comprueba que es un certificado cualificado vigente del obligado o de su representante.');
+            }
+            throw new AeatTransitoryError(`La AEAT redirigió el envío (${status}) a ${destino.slice(0, 200)}`);
+        }
         body = await response.text();
     } catch (error) {
+        if (error instanceof AeatCertificadoError || error instanceof AeatTransitoryError) throw error;
         throw new AeatTransitoryError(`No se pudo completar el envío a la AEAT: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
         // Sin await bloqueante sobre una petición viva: el cuerpo ya se leyó.

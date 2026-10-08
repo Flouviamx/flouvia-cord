@@ -130,12 +130,14 @@ Los scripts especializados de seguridad y operación se descubren en
   - *España:* Verifactu está construido y validado contra los XSD oficiales
     (reescrito oct 2026). Flouvia **no** necesita NIF español para identificarse
     como productor: el bloque `SistemaInformatico` admite `IDOtro`
-    (`VERIFACTU_SIF_ID_OTRO_PAIS=MX`, `_TIPO=04`, `_ID=<RFC>`). Falta configurar esa
-    identidad, incluir la declaración responsable en el propio software
-    (RD 1007/2023; no se presenta ante la AEAT) y probar un envío real en el
-    entorno de pruebas con un certificado cualificado antes de
-    `VERIFACTU_AEAT_ENABLED=true`. Sin esto, España sigue en `commercial_only`:
-    funcional, pero sin registro ante la AEAT. Detalle en
+    (`VERIFACTU_SIF_ID_OTRO_PAIS=MX`, `_TIPO=04`, `_ID=<RFC>`). La declaración
+    responsable ya vive en el propio software (`/verifactu/declaracion-responsable`,
+    oct 2026) y `npm run verifactu:prueba` prueba contra el portal de la AEAT.
+    Falta el trámite: cargar la identidad y los datos de la declaración en
+    Vercel, firmar y archivar la declaración, y probar con un certificado
+    cualificado de un contribuyente español antes de `VERIFACTU_AEAT_ENABLED=true`.
+    Sin esto, España sigue en `commercial_only`: funcional, pero sin registro
+    ante la AEAT. Pasos exactos en "Activación paso a paso" de
     `estado/cobros-facturacion.md`.
   - *Estados Unidos:* el wizard de 1099-K de Stripe Connect (Tax forms) quedó a
     medias en "Información de la empresa" — Flouvia no tiene un EIN propio.

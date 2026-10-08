@@ -93,7 +93,41 @@ export type SifIdentidadBase = Omit<SistemaInformaticoIdentity, 'numeroInstalaci
  * empresa extranjera que desarrolla el software no necesita NIF español para
  * declararse productora ante la AEAT.
  */
+/**
+ * Datos de la declaración responsable que no viajan en el registro pero que la
+ * Orden HAC/1177/2024 (art. 15.1.j y 15.1.l) exige: dirección postal completa
+ * del productor, y fecha y lugar en que la suscribe. La declaración debe estar
+ * dentro del propio sistema ANTES de que el sistema registre una sola factura,
+ * así que su ausencia es un fallo cerrado igual que la identidad.
+ */
+export interface DatosDeclaracion {
+    /** Líneas de la dirección postal (en la variable, separadas por "|"). */
+    direccion: string[];
+    /** aaaa-mm-dd: fecha en que el productor suscribe la declaración. */
+    fecha: string;
+    /** Al menos localidad y país. */
+    lugar: string;
+}
+
+export function datosDeclaracion(): DatosDeclaracion {
+    const direccion = env('VERIFACTU_SIF_DIRECCION').split('|').map((l) => l.trim()).filter(Boolean);
+    const fecha = env('VERIFACTU_DECLARACION_FECHA');
+    const lugar = env('VERIFACTU_DECLARACION_LUGAR');
+    if (!direccion.length) throw new SifNotConfiguredError('Falta VERIFACTU_SIF_DIRECCION (dirección postal completa del productor, líneas separadas por "|").');
+    const dia = new Date(`${fecha}T12:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !Number.isFinite(dia.getTime()) || dia.toISOString().slice(0, 10) !== fecha) {
+        throw new SifNotConfiguredError('VERIFACTU_DECLARACION_FECHA debe ser la fecha (aaaa-mm-dd) en que se suscribe la declaración responsable.');
+    }
+    if (fecha > new Date().toISOString().slice(0, 10)) {
+        throw new SifNotConfiguredError('VERIFACTU_DECLARACION_FECHA no puede ser posterior a hoy: la declaración se suscribe antes de usar el sistema.');
+    }
+    if (!lugar) throw new SifNotConfiguredError('Falta VERIFACTU_DECLARACION_LUGAR (localidad y país en que se suscribe la declaración).');
+    return { direccion, fecha, lugar };
+}
+
 export function requireSifIdentity(): SifIdentidadBase {
+    // Sin declaración responsable completa el sistema no puede operar.
+    datosDeclaracion();
     const nombreRazon = textoAEAT(env('VERIFACTU_SIF_NOMBRE'), 120);
     const idSistemaInformatico = env('VERIFACTU_SIF_ID').toUpperCase();
     const nifRaw = env('VERIFACTU_SIF_NIF');

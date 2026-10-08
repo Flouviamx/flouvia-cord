@@ -6,6 +6,7 @@ import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 import { getCountryProfile, US_STATES } from '../../../lib/countries';
 import { verifactuEnvioConfig } from '../../../lib/fiscal/verifactu/sif';
+import { declaracionResponsableONull, DECLARACION_RUTA } from '../../../lib/fiscal/verifactu/declaracion';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -17,6 +18,7 @@ const verifactuOn = ORG.verifactuModo === 'verifactu';
 // Certificado cargado no es lo mismo que registrar: con el envío a la AEAT
 // apagado no se encadena nada, y la pantalla no puede decir "activo".
 const verifactuRegistrando = verifactuOn && verifactuEnvioConfig().habilitado;
+const DECLARACION_DISPONIBLE = isEs && declaracionResponsableONull() !== null;
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
 // El ejemplo sale del prefijo real (el guardado o el del país), no de un
@@ -250,6 +252,13 @@ import { iconInner } from '../../../lib/icons';
                 <button type="button" class="csd-btn-solid" id="vfUpload">{L === 'en' ? 'Upload certificate' : 'Subir certificado'}</button>
                 <span class="csd-msg" id="vfMsg"></span>
             </div>
+            {/* Orden HAC/1177/2024, art. 15.3: la declaración responsable del
+                sistema debe estar accesible para el usuario dentro del sistema. */}
+            {DECLARACION_DISPONIBLE && (
+                <a class="fact-link" href={DECLARACION_RUTA} target="_blank" rel="noopener">
+                    {L === 'en' ? 'Responsible declaration of the invoicing system (Spanish)' : 'Declaración responsable del sistema de facturación'}
+                </a>
+            )}
         </SettingsSection>
     )}
 </SettingsShell>

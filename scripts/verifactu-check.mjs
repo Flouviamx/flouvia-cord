@@ -41,6 +41,7 @@ import { construirAlta, problemasEsquemaAlta, problemasEsquemaAnulacion } from '
 import { primerGrupo, resolverRespuesta, clasificarFallo, loteTrasFallo, segundosDeEspera } from '../src/lib/fiscal/verifactu/envio.ts';
 import { nifEsValido, normalizarNifEs, nifIvaUE, textoAEAT, validarNumSerie, VerifactuDatosError } from '../src/lib/fiscal/verifactu/validacion.ts';
 import { identidadSifParaOrg, numeroInstalacionPorOrg, requireSifIdentity, SifNotConfiguredError } from '../src/lib/fiscal/verifactu/sif.ts';
+import { declaracionResponsable } from '../src/lib/fiscal/verifactu/declaracion.ts';
 
 const XSD_DIR = fileURLToPath(new URL('./fixtures/aeat/', import.meta.url));
 
@@ -232,6 +233,10 @@ const sifOtro = { ...sifNif, nif: undefined, nombreRazon: 'Flouvia SA de CV', id
         assert.throws(() => requireSifIdentity(), SifNotConfiguredError);
         Object.assign(process.env, { VERIFACTU_SIF_NOMBRE: 'Flouvia SA de CV', VERIFACTU_SIF_ID: 'cd',
             VERIFACTU_SIF_ID_OTRO_PAIS: 'MX', VERIFACTU_SIF_ID_OTRO_TIPO: '04', VERIFACTU_SIF_ID_OTRO_ID: 'FLO010101AB1' });
+        // Sin declaración responsable completa (art. 15 de la Orden) el sistema no opera.
+        assert.throws(() => requireSifIdentity(), SifNotConfiguredError, 'sin dirección, fecha y lugar de la declaración responsable no hay identidad');
+        Object.assign(process.env, { VERIFACTU_SIF_DIRECCION: 'Av. Reforma 1|06600 Ciudad de México|México',
+            VERIFACTU_DECLARACION_FECHA: '2026-10-01', VERIFACTU_DECLARACION_LUGAR: 'Ciudad de México, México' });
         const base1 = requireSifIdentity();
         assert.equal(base1.idSistemaInformatico, 'CD');
         assert.deepEqual(base1.idOtro, { codigoPais: 'MX', idType: '04', id: 'FLO010101AB1' });
@@ -239,6 +244,29 @@ const sifOtro = { ...sifNif, nif: undefined, nombreRazon: 'Flouvia SA de CV', id
         const full = identidadSifParaOrg(base1, { numeroInstalacion: numeroInstalacionPorOrg(base1.prefijoInstalacion, org), multiplesOT: false });
         assert.equal(full.numeroInstalacion, `CORD-${org}`, 'número de instalación por organización');
         assert.equal(full.indicadorMultiplesOT, 'N');
+
+        // ── Declaración responsable (Orden HAC/1177/2024, art. 15) ──────────
+        // Apartados 1.a–1.l en el orden de la Orden, con los textos del modelo
+        // de la AEAT y la variante del 1.i para un productor sin NIF español.
+        const decl = declaracionResponsable();
+        assert.equal(decl.titulo, 'DECLARACIÓN RESPONSABLE DEL SISTEMA INFORMÁTICO DE FACTURACIÓN');
+        assert.deepEqual(decl.apartados.map((a) => a.clave), ['1.a', '1.b', '1.c', '1.d', '1.e', '1.f', '1.g', '1.h', '1.i', '1.j', '1.k', '1.l']);
+        const ap = (k) => decl.apartados.find((a) => a.clave === k);
+        assert.deepEqual([ap('1.a').valor[0], ap('1.b').valor[0], ap('1.c').valor[0]], ['Cord', base1.idSistemaInformatico, base1.version], 'lo declarado es lo que viaja en SistemaInformatico');
+        assert.equal(ap('1.e').valor[0], 'S - Sí');
+        assert.equal(ap('1.f').valor[0], 'S - Sí');
+        assert.match(ap('1.i').texto, /^Identificación de la entidad productora/);
+        assert.ok(ap('1.i').valor.includes('País de emisión de la identificación: MX - México.'));
+        assert.match(ap('1.k').texto, /artículo 29\.2\.j\) de la Ley 58\/2003/);
+        assert.deepEqual(ap('1.l').valor, ['Fecha: 1 de octubre de 2026.', 'Lugar: Ciudad de México, México.']);
+        assert.deepEqual(ap('1.j').valor, ['Av. Reforma 1', '06600 Ciudad de México', 'México']);
+        const fechaOk = process.env.VERIFACTU_DECLARACION_FECHA;
+        process.env.VERIFACTU_DECLARACION_FECHA = '2999-01-01';
+        assert.throws(() => requireSifIdentity(), SifNotConfiguredError, 'una declaración no se suscribe en el futuro');
+        process.env.VERIFACTU_DECLARACION_FECHA = '2026-02-31';
+        assert.throws(() => requireSifIdentity(), SifNotConfiguredError, 'fecha que no existe');
+        process.env.VERIFACTU_DECLARACION_FECHA = fechaOk;
+
         process.env.VERIFACTU_SIF_ID = 'C';
         assert.throws(() => requireSifIdentity(), SifNotConfiguredError, 'IdSistemaInformatico debe tener 2 posiciones');
         process.env.VERIFACTU_SIF_ID = 'CD';

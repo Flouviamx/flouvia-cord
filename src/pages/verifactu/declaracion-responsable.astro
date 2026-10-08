@@ -1,0 +1,177 @@
+---
+// Declaración responsable del sistema informático de facturación (Verifactu).
+//
+// Orden HAC/1177/2024, art. 15.3: la declaración debe estar "disponible de
+// manera legible e individualizada dentro del propio sistema informático" y
+// facilitarse al usuario en un formato electrónico de uso generalizado. Esta
+// página es pública (la enlazan Ajustes › Fiscal, el pie de la sección de
+// Verifactu y el contrato) y se imprime o guarda como PDF desde el navegador.
+//
+// Se construye desde la misma identidad que viaja en cada registro
+// (src/lib/fiscal/verifactu/declaracion.ts): lo declarado y lo enviado a la
+// AEAT no pueden divergir.
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import { declaracionResponsableONull, DECLARACION_TITULO } from '../../lib/fiscal/verifactu/declaracion';
+
+export const prerender = false;
+
+const decl = declaracionResponsableONull();
+---
+
+<Layout
+    title="Declaración responsable de Verifactu | Cord"
+    description="Declaración responsable del sistema informático de facturación Cord conforme al Real Decreto 1007/2023 y la Orden HAC/1177/2024."
+    noindex={!decl}
+>
+    <Nav />
+
+    <main class="dr">
+        <article class="dr-doc" lang="es">
+            {decl ? (
+                <>
+                    <header class="dr-head">
+                        <p class="dr-kicker">{decl.nombreSistema} · versión {decl.version}</p>
+                        <h1>{decl.titulo}</h1>
+                    </header>
+
+                    <ol class="dr-list">
+                        {decl.apartados.map((a) => (
+                            <li class="dr-item">
+                                <p class="dr-label"><span class="dr-key">{a.clave})</span> {a.texto}</p>
+                                {a.valor.map((v) => <p class="dr-value">{v}</p>)}
+                            </li>
+                        ))}
+                    </ol>
+
+                    <h2 class="dr-annex">ANEXO</h2>
+                    <ol class="dr-list">
+                        {decl.anexo.map((a) => (
+                            <li class="dr-item">
+                                <p class="dr-label"><span class="dr-key">{a.clave})</span> {a.texto}</p>
+                                {a.valor.map((v) => <p class="dr-value">{v}</p>)}
+                            </li>
+                        ))}
+                    </ol>
+
+                    <div class="dr-actions">
+                        <button type="button" class="dr-print" id="drPrint">Imprimir o guardar como PDF</button>
+                    </div>
+                </>
+            ) : (
+                <header class="dr-head">
+                    <h1>{DECLARACION_TITULO}</h1>
+                    <p class="dr-pending">El registro de facturas ante la Agencia Tributaria (Verifactu) todavía no está disponible en Cord. Su declaración responsable se publicará aquí antes de que lo esté.</p>
+                </header>
+            )}
+        </article>
+    </main>
+
+    <Footer />
+</Layout>
+
+<script>
+    document.getElementById('drPrint')?.addEventListener('click', () => window.print());
+</script>
+
+<style>
+    .dr {
+        background: #f5f5f7;
+        padding: 140px 16px 96px;
+    }
+    .dr-doc {
+        max-width: 760px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 32px;
+        padding: 56px clamp(24px, 6vw, 64px);
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px rgba(10, 25, 47, 0.06);
+    }
+    .dr-head { margin-bottom: 40px; }
+    .dr-kicker {
+        font-size: 13px;
+        color: #6b7280;
+        margin: 0 0 12px;
+    }
+    .dr-head h1 {
+        font-size: clamp(22px, 3vw, 30px);
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        color: #050505;
+        margin: 0;
+        text-wrap: balance;
+    }
+    .dr-pending {
+        margin-top: 20px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #4b5563;
+    }
+    .dr-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .dr-item {
+        padding: 20px 0;
+        border-top: 1px solid #eef0f3;
+    }
+    .dr-item:first-child { border-top: 0; padding-top: 0; }
+    .dr-label {
+        margin: 0 0 8px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: #4b5563;
+    }
+    .dr-key {
+        font-weight: 600;
+        color: #050505;
+        font-variant-numeric: tabular-nums;
+    }
+    .dr-value {
+        margin: 6px 0 0;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #050505;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+    .dr-annex {
+        margin: 48px 0 20px;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        color: #6b7280;
+        font-weight: 600;
+    }
+    .dr-actions { margin-top: 40px; }
+    .dr-print {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        background: #0a192f;
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 22px;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+    }
+    .dr-print:hover { transform: scale(1.02); }
+    .dr-print:active { transform: scale(0.98); }
+    .dr-print:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+
+    @media print {
+        .dr { background: #fff; padding: 0; }
+        .dr-doc { box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+        .dr-actions { display: none; }
+    }
+</style>
+
+<style is:global>
+    @media print {
+        /* La declaración se imprime sola: sin la navegación ni el pie del sitio. */
+        body:has(.dr) nav, body:has(.dr) footer { display: none !important; }
+    }
+</style>

@@ -1609,3 +1609,19 @@ Auditoría completa de facturación en los 12 mercados. Lo que se encontró y ca
 Requiere `npm run db:migrate` antes de desplegar (vista `cuentas_por_cobrar`,
 base `gravado`, columnas e índices de `verifactu_registros`, trigger de
 conservación en `orgs`).
+
+## 2026-10-08 — Verifactu: declaración responsable y prueba contra el portal de la AEAT
+
+- **Declaración responsable dentro del sistema** (Orden HAC/1177/2024, art. 15):
+  `src/lib/fiscal/verifactu/declaracion.ts` arma los apartados 1.a–1.l y el anexo
+  con los textos del modelo de la AEAT (v0.5.1), incluida la variante del 1.i para
+  un productor extranjero; página pública `/verifactu/declaracion-responsable`,
+  enlazada desde Ajustes › Fiscal. Dirección, fecha y lugar de la declaración son
+  obligatorios para operar (`requireSifIdentity` falla cerrado sin ellos).
+- **`npm run verifactu:prueba`**: envía dos altas y una anulación encadenadas al
+  portal de pruebas externas (nunca a producción), o solo valida el XML contra los
+  XSD con `--solo-xml`.
+- **Hallazgo al probar contra el portal real:** un certificado no reconocido no
+  devuelve un SoapFault sino una redirección a la página HTML "403 Error de
+  identificación". El cliente la seguía y la trataba como fallo de red (reintento
+  infinito); ahora es `AeatCertificadoError` y se clasifica como fallo de cabecera.

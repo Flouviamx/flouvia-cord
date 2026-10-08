@@ -5,7 +5,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { AeatFaultError, submitToAeat, type BatchRegistro } from '../src/lib/fiscal/verifactu/aeat';
+import { AeatCertificadoError, AeatFaultError, submitToAeat, type BatchRegistro } from '../src/lib/fiscal/verifactu/aeat';
+import { clasificarFallo } from '../src/lib/fiscal/verifactu/envio';
 
 const NS = 'xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sfR="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/RespuestaSuministro.xsd" xmlns:sf="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd"';
 
@@ -35,7 +36,7 @@ const registro: BatchRegistro = {
 
 let server: Server;
 let url = '';
-let modo: 'grande' | 'fault' = 'grande';
+let modo: 'grande' | 'fault' | 'sin_certificado' = 'grande';
 let soapAction: string | undefined;
 
 beforeAll(async () => {
@@ -43,6 +44,13 @@ beforeAll(async () => {
         soapAction = req.headers.soapaction as string | undefined;
         req.resume();
         req.on('end', () => {
+            if (modo === 'sin_certificado') {
+                // Lo que de verdad responde el portal de pruebas a un certificado
+                // que no reconoce (comprobado oct 2026): redirección a una página HTML.
+                res.writeHead(302, { Location: 'https://sede.agenciatributaria.gob.es/Sede/errores/erro4033.html' });
+                res.end();
+                return;
+            }
             if (modo === 'fault') {
                 res.writeHead(500, { 'Content-Type': 'text/xml' });
                 res.end(`<?xml version="1.0" encoding="UTF-8"?><env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><env:Body><env:Fault><faultcode>env:Client</faultcode><faultstring>Codigo[4102].El XML no cumple el esquema.</faultstring></env:Fault></env:Body></env:Envelope>`);
@@ -79,5 +87,17 @@ describe('submitToAeat', () => {
         expect(error).toBeInstanceOf(AeatFaultError);
         expect(error.codigo).toBe(4102);
         expect(error.faultcode).toBe('Client');
+    });
+
+    it('un certificado que la AEAT no reconoce es un fallo de cabecera, no un reintento infinito', async () => {
+        modo = 'sin_certificado';
+        let error: unknown;
+        try {
+            await submitToAeat({ nif: 'B12345674', nombreRazon: 'ACME SL' }, [registro], {
+                entorno: 'pruebas', credenciales: { key: '', cert: '' }, timeoutMs: 4_000, url,
+            });
+        } catch (e) { error = e; }
+        expect(error).toBeInstanceOf(AeatCertificadoError);
+        expect(clasificarFallo(error)).toBe('cabecera');
     });
 });

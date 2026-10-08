@@ -22,7 +22,7 @@
 
 import forge from 'node-forge';
 import { createSecureContext } from 'node:tls';
-import { normalizarNifEs, nifEsValido } from './validacion';
+import { normalizarNifEs, nifEsValido } from './validacion.ts';
 
 export interface ParsedCertificate {
     /** Fecha de caducidad del certificado de firma. */
