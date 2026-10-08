@@ -1,0 +1,15 @@
+---
+// Estado de una cotización con el color y la etiqueta REALES de la app:
+// color/fondo de STATUS_META (src/lib/quote.ts) y texto del diccionario de la app.
+// <DmStatus status="viewed" lang={lang} />
+import { STATUS_META, type QuoteStatus } from '../../../lib/quote';
+import { dmT, type DmLang } from './format';
+
+interface Props {
+    status: QuoteStatus;
+    lang: DmLang;
+}
+const { status, lang } = Astro.props;
+const meta = STATUS_META[status];
+---
+<span class="dm-status" style={`--dm-st:${meta.color};--dm-st-bg:${meta.bg}`}>{dmT(lang, `cmdk.st.${status}`)}</span>
