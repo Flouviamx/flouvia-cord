@@ -9,12 +9,15 @@ Not all transactions are paid upfront. In the corporate B2B environment, offerin
 
 ### Configure payment terms
 
-When creating a quote, in the right sidebar you'll see the **payment terms**. Choose between:
+When creating a quote or an invoice, in step 1 of the editor, next to the client, you'll see the **Payment terms**. Choose between:
 
-- **Cash (Contado):** payment can be made immediately as soon as the client approves.
-- **Net 30 / Net 60:** the client has 30 or 60 calendar days from approval to pay.
+- **Due on receipt:** payment can be made immediately as soon as the client approves.
+- **Net 15 / Net 30 / Net 60:** the client has 15, 30, or 60 calendar days to pay, counted from the quote's approval (on an invoice, from its date).
+- **Other term:** opens the list with **Net 7**, **Net 45**, and **Net 90**.
 
-You can also set default terms per client on their record, so they're preselected automatically.
+You can also set default terms per client on their record: when you pick them in the editor, their terms are preselected automatically. On an invoice, changing the terms recalculates the **Due date**.
+
+A **Monthly recurring charge (retainer)** is always due on receipt: it can't be combined with a credit term.
 
 ### What happens with a credit sale
 

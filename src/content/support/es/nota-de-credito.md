@@ -10,9 +10,9 @@ Una Nota de Crédito es el mecanismo para acreditar el saldo de una factura ya e
 ### Emitir una Nota de Crédito en Cord
 
 1. Localiza la factura original en tu bandeja de **Facturas**. Solo una factura **emitida** admite Nota de Crédito.
-2. Abre su menú de opciones y elige **Generar Nota de Crédito**.
+2. En su detalle, abre **Más acciones** y elige **Nota de crédito**.
 3. Cord crea una Nota de Crédito nueva como borrador, por el **monto total** de la factura original, y te lleva directo a su detalle.
-4. Desde ahí, edítala como cualquier borrador: ajusta el monto si necesitas acreditar solo una parte y añade un concepto que explique el motivo. Cuando esté lista, emítela desde el mismo editor de borradores que usas para cualquier factura nueva.
+4. Revísala ahí y, cuando esté lista, haz clic en **Emitir nota de crédito**. A diferencia de un borrador de factura, la nota no se abre en el editor: sus conceptos y su monto salen de la factura original.
 
 <Callout type="info">
 Al usar el botón desde la app, la Nota de Crédito nace por el monto total de la factura original — hoy no hay un paso intermedio en la interfaz para indicar un monto parcial antes de crearla. Si facturas por la API, puedes enviar directamente el monto parcial que quieres acreditar.

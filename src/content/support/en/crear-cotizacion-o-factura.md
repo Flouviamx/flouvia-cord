@@ -76,4 +76,4 @@ The editor stacks into a single column and nothing is hidden: in each line, quan
 
 If the client asks for changes to a quote that was sent, viewed or has expired, open it and use **Modify and resend** (it shows the next version number, for example V2). The same editor opens with the version tag: you change lines and prices, while the client, currency and terms stay as they were sent. **Send new version** publishes it at the same link and the previous one stays in the history.
 
-If you need to change the client, currency or terms, use **Duplicate quote** to start from a copy. See [Duplicate or Clone Quotes](/en/support/clonacion-cotizaciones).
+The version restarts the validity from today with the same length it was sent with (this is how an expired quote comes back). If you need to change the client, currency or terms, use **Duplicate quote** to start from a copy. See [Duplicate or Clone Quotes](/en/support/clonacion-cotizaciones).

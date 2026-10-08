@@ -307,9 +307,19 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id} and org_id = ${orgId}`);
         } else {
+            // Una versión nueva es una propuesta nueva: su vigencia vuelve a
+            // correr con la MISMA duración con la que se envió la primera
+            // (vigencia − fecha de creación). Sin esto, reenviar una
+            // cotización vencida la dejaba "enviada" con la fecha vieja y el
+            // cron la volvía a marcar vencida esa misma noche.
+            const renew = input.action === 'resend';
             writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id} and org_id = ${orgId}`);
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido},
+                        vigencia = case when ${renew}
+                            then (current_date + (greatest(1, coalesce(vigencia - created_at::date, 30)) * interval '1 day'))::date
+                            else vigencia end
+                      where id = ${id} and org_id = ${orgId}`);
         }
 
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));

@@ -10,9 +10,9 @@ A Credit Note is the mechanism to credit the balance of an already-issued invoic
 ### Issue a Credit Note in Cord
 
 1. Locate the original invoice in your **Invoices** inbox. Only an **issued** invoice can have a Credit Note.
-2. Open its options menu and choose **Generate Credit Note**.
+2. On its detail page, open **More actions** and choose **Credit note**.
 3. Cord creates a new Credit Note as a draft, for the **full amount** of the original invoice, and takes you straight to its detail page.
-4. From there, edit it like any draft: adjust the amount if you only need to credit part of it, and add a line explaining the reason. When it's ready, issue it from the same draft editor you use for any new invoice.
+4. Review it there and, when it's ready, click **Issue credit note**. Unlike an invoice draft, the note doesn't open in the editor: its line items and amount come from the original invoice.
 
 <Callout type="info">
 When you use the button from the app, the Credit Note is created for the full amount of the original invoice — there isn't an in-between step in the interface today to specify a partial amount before creating it. If you invoice through the API, you can send the partial amount you want to credit directly.

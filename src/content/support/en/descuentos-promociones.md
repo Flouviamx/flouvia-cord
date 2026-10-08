@@ -8,11 +8,11 @@ Flexibility in negotiation is vital. Cord doesn't have a separate "% discount" f
 
 ### How it works
 
-**1. Negotiated price per line item:**
-Every row in the quote has two columns: **List** (the catalog price) and **Negotiated** (the final price you're charging this client). To give a discount, edit the Negotiated field directly — for example, lower it from $1,000 to $800. Cord calculates the resulting discount % and shows it next to that line's gross margin (if you entered the product's cost), so you see in real time how much margin you're giving up. You can leave one item at full price and discount only another within the same quote.
+**1. Price per line item:**
+Every row in the quote has two columns: **List** (the catalog price) and **Price** (the final price you're charging this client). To give a discount, edit the Price field directly — for example, lower it from $1,000 to $800. Your list price doesn't change: it shows struck through on that line. If you entered the product's cost, the **Margin** column shows your profit on the price in real time, and the summary adds up everything you gave away under **Discount given**. You can leave one item at full price and discount only another within the same quote.
 
 **2. Automatic discount by client tier or volume:**
-If the client has a **discount %** configured on their profile (**Clients > [client] > tier/discount**), the editor applies that percentage automatically when you add each line item — you can override it by hand on any line. If the product also has volume pricing set up in the catalog, the negotiated price adjusts based on the quantity entered.
+If the client has a **discount %** configured on their profile (**Clients > [client] > tier/discount**), the editor applies it to your catalog list prices as soon as you pick the client and notes it below them ("Client tier: −10% applied to your catalog list prices"). You can override the price by hand on any line. If the product also has volume pricing set up in the catalog, the price adjusts based on the quantity entered and the line flags it.
 
 **Guardrail against excessive discounts:**
 If your organization has the approval flow enabled (**Settings > Quotes > Approvals**), a per-line discount that exceeds the configured maximum % — or that leaves the gross margin below the minimum — blocks direct sending and requires approval before the quote reaches the client.

@@ -17,3 +17,5 @@ A winning proposal consists of four main blocks:
 4. **Closing Block (Signature/Payment):** This is the Call To Action (CTA). Depending on your setup, the client will see a button to electronically sign or a module to enter their card and pay the advance immediately.
 
 **Customization:** You can change the accent colors and logo from **Settings > Branding**, and the welcome message on the public link from **Settings > Client portal**, to match your brand manual.
+
+To build a quote step by step in the editor, see [Create a quote or an invoice step by step](/en/support/crear-cotizacion-o-factura).

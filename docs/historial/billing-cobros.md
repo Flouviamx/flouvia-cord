@@ -1739,6 +1739,11 @@ Correcciones de la revisión de la fase 2:
 - El vencimiento por defecto de la factura se calcula en la zona del negocio.
 - Una tasa guardada que ya no está en el catálogo se muestra tal cual.
 - Escape cierra el menú de kits; ⌘Enter no envía con el confirm abierto.
+- Una versión nueva (`resend`) vuelve a correr la vigencia con la misma
+  duración con que se envió (`vigencia − created_at`). Antes una cotización
+  vencida reenviada quedaba "enviada" con la fecha vieja y el cron la volvía a
+  vencer esa noche.
+- `id.confirm_invoiced_test` ya no nombra al proveedor fiscal (regla 14).
 
 ## 2026-10-08 — Términos de pago net<N>, claves SAT por producto y CFDI a extranjeros
 

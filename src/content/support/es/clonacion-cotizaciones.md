@@ -9,14 +9,19 @@ Si envías propuestas similares frecuentemente a distintos prospectos (ej. renov
 ### ¿Cómo clonar una cotización?
 
 1. Entra a **Cotizaciones** y abre la cotización que deseas duplicar (puede estar en estatus de borrador, enviada, aprobada o incluso rechazada; cualquier estatus se puede clonar).
-2. En la pantalla de detalle, haz clic en el botón **Duplicar** del panel lateral.
-3. Se genera un nuevo borrador con folio nuevo, vigencia fresca a 30 días y link público propio.
+2. En la pantalla de detalle, haz clic en **Duplicar cotización**.
+3. Se genera un nuevo borrador con folio nuevo, vigencia fresca a 30 días y link público propio, y Cord te lleva a su detalle.
+4. Usa **Continuar editando** para abrirlo en el editor, ajustar lo que haga falta y enviarlo. Ver [Crear una cotización o una factura paso a paso](/soporte/crear-cotizacion-o-factura).
+
+El borrador duplicado cuenta para el límite de cotizaciones activas de tu plan.
 
 **Lo que sí se copia:**
 - El cliente asignado (el clon queda dirigido al mismo cliente; puedes cambiarlo antes de enviarlo).
-- Todas las partidas, con su descripción, cantidad, precio de lista y precio negociado.
-- Términos de crédito y notas de la cotización original.
+- Todas las partidas, con su descripción, cantidad, precio de lista, precio final, costo y tasa de impuesto. Si la tasa de una línea ya no está en tu catálogo de impuestos, el clon usa la tasa predeterminada; revísala antes de enviar.
+- Términos de pago, notas, divisa de venta, si los precios incluyen impuesto, anticipo y cobro recurrente de la cotización original.
 
 **Lo que NO se copia:**
-- La tasa de impuesto por partida ni el costo unitario de cada línea: el clon nace con el impuesto en blanco (aplica el catálogo de la organización) y el costo en cero, así que conviene revisar impuestos y costos de cada partida antes de enviarlo si la cotización original tenía tasas o costos específicos.
+- El tipo de cambio: si la cotización es en otra divisa, el clon congela el tipo de cambio del día en que lo creas.
 - El historial de eventos, firmas, comentarios o pagos. Cada clon es un folio completamente virgen; solo queda un evento nuevo señalando de cuál cotización se duplicó.
+
+**¿Duplicar o crear una nueva versión?** Si solo cambian líneas o precios para el mismo cliente, usa **Modificar y reenviar**: el cliente ve la nueva versión en el mismo link. Una nueva versión vuelve a correr la vigencia con la misma duración. Duplica cuando necesites otro cliente, otra divisa u otras condiciones, incluida otra duración de vigencia.

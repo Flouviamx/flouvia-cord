@@ -11,13 +11,14 @@ The issuance of an Internet Digital Tax Receipt (CFDI) version 4.0 is fully inte
 
 The ideal and recommended flow in Cord is:
 1. The client accepts your quote online.
-2. Automatically, that won quote will display a giant green button: **Issue Invoice**.
-3. Upon clicking, all line items, prices, discounts, and taxes are directly copied to the invoice draft.
-4. Select the **CFDI Usage** (e.g., General expenses) and the **Payment Method** (PUE or PPD).
-5. Click "Stamp Invoice". In 2 seconds, the XML and PDF will be available and sent to the client.
+2. On the detail page of the approved (or paid) quote, the **Stamp CFDI 4.0** button appears.
+3. When you click it, Cord asks you to confirm and stamps the CFDI with the quote's line items, prices, discounts, and taxes. The **CFDI Usage** and the recipient's tax details come from the client's record, so review them before stamping.
+4. The XML and PDF are available on the document's detail page.
 
 ### Direct Billing (Without a Quote)
 If you just want to bill something quickly without sending a commercial proposal first:
-1. Go to **Accounting > Invoices**.
-2. Click on **New Invoice**.
-3. Select the client, manually add the line items, and stamp. The legal and operational result is exactly the same.
+1. Go to **Invoices** and click **New invoice** (or use **Create > Invoice** in the top bar).
+2. Search for the client, add the line items from your catalog or as free lines and, under **Terms**, choose **CFDI 4.0** as the **Document type**.
+3. Click **Issue and send** (or **Issue without sending**), check the final review, and confirm with **Issue invoice**. The legal and operational result is exactly the same.
+
+The full editor walkthrough is in [Create a quote or an invoice step by step](/en/support/crear-cotizacion-o-factura).

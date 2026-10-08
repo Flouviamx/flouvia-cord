@@ -59,7 +59,8 @@ beforeAll(async () => {
             base_currency text, fiscal_currency text, moneda text, fx_rate numeric, fx_rate_source text, fx_locked_until timestamptz,
             sent_at timestamptz, approved_at timestamptz, paid_at timestamptz, payment_method text, aprob_estado text, aprob_motivo text,
             cliente_id uuid, terminos text, vigencia date, notas text, subtotal numeric, iva numeric, total numeric,
-            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean);
+            retencion_total numeric, retenciones_snapshot jsonb, iva_incluido boolean, anticipo_pct numeric, es_recurrente boolean,
+            created_at timestamptz default now());
         create table eventos(org_id uuid, cotizacion_id uuid, tipo text, detalle text);
         create table cotizacion_items(cotizacion_id uuid, producto_id uuid, descripcion text, cantidad numeric, precio_unitario numeric,
             precio_negociado numeric, costo_unitario numeric, orden int, tax_rate numeric);
@@ -207,6 +208,17 @@ describe('topes de aprobación al enviar y reenviar', () => {
         await m.db.exec("update cotizaciones set status = 'draft', aprob_estado = 'pendiente'");
         expect((await runQuoteAction(ctx, QUOTE, { action: 'approve_request' })).status).toBe(200);
         expect(m.reserve).toHaveBeenCalledWith(ORG, 'envios', 1);
+    });
+});
+
+describe('versión nueva', () => {
+    it('una cotización vencida reenviada vuelve a correr su vigencia con la misma duración', async () => {
+        await m.db.exec(`update cotizaciones set status = 'expired',
+            created_at = now() - interval '40 days', vigencia = (current_date - 10)`);
+        const r = await runQuoteAction(ctx, QUOTE, { action: 'resend', items: [{ descripcion: 'v2', cantidad: 1, precio_unitario: 100 }] });
+        expect(r.status).toBe(200);
+        const row = await one(`select status, version, (vigencia - current_date) as dias from cotizaciones`);
+        expect(row).toMatchObject({ status: 'sent', version: 2, dias: 30 });
     });
 });
 

@@ -76,4 +76,4 @@ El editor se acomoda en una sola columna y nada se oculta: en las líneas, canti
 
 Si el cliente pide cambios a una cotización enviada, vista o vencida, ábrela y usa **Modificar y reenviar** (aparece con el número de la siguiente versión, por ejemplo V2). Se abre el mismo editor con la etiqueta de la versión: cambias líneas y precios, mientras que el cliente, la divisa y las condiciones se quedan como se enviaron. **Enviar nueva versión** la publica en el mismo link y la anterior queda en el historial.
 
-Si necesitas cambiar cliente, divisa o condiciones, usa **Duplicar cotización** para partir de una copia. Ver [Duplicar o clonar cotizaciones](/soporte/clonacion-cotizaciones).
+La versión vuelve a correr la vigencia desde hoy, con la misma duración con que se envió (una cotización vencida revive así). Si necesitas cambiar cliente, divisa o condiciones, usa **Duplicar cotización** para partir de una copia. Ver [Duplicar o clonar cotizaciones](/soporte/clonacion-cotizaciones).
