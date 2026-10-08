@@ -3,6 +3,7 @@
 // El owner siempre tiene todo (override en memberCan), aunque su matriz esté vacía.
 
 import { currentLocale } from './context';
+import { TASK_PERMISSIONS } from './tasks';
 
 export const PERMISOS = [
     { key: 'cotizar',   label: 'Cotizaciones', desc: 'Crear, editar, enviar y duplicar cotizaciones' },
@@ -48,6 +49,14 @@ export function memberCan(m: Membership | null | undefined, key: PermKey): boole
     if (!m) return false;
     if (m.esOwner || m.rol === 'owner') return true;
     return !!m.permisos?.[key];
+}
+
+/**
+ * ¿Puede escribir tareas? El mismo criterio que el endpoint (`TASK_PERMISSIONS`),
+ * para que el menú Crear, el tablero y el POST no digan cosas distintas.
+ */
+export function memberCanWriteTasks(m: Membership | null | undefined): boolean {
+    return TASK_PERMISSIONS.some((k) => memberCan(m, k));
 }
 
 export const ROL_LABEL: Record<string, string> = {

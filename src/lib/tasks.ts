@@ -8,6 +8,13 @@
 // servidor)`, así que en la noche de Ciudad de México una tarea de hoy ya salía
 // vencida porque en UTC era mañana.
 
+/**
+ * Quién ESCRIBE tareas (crear, editar, completar, borrar): cualquiera de estos
+ * permisos. Fuente única para el endpoint, el menú Crear y el tablero; leer
+ * tareas lo puede cualquier miembro.
+ */
+export const TASK_PERMISSIONS = ['cotizar', 'cobranza', 'clientes'] as const;
+
 export const TASK_PRIORITIES = ['normal', 'alta'] as const;
 export type TaskPriority = typeof TASK_PRIORITIES[number];
 
