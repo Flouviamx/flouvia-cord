@@ -7,7 +7,11 @@ import { platformCurrencyFor, type PlatformCurrency } from './plan-currency';
 import { hasPaidBillingEvidence, normalizePlan } from './entitlements';
 import { MESES_POR_ANIO, PLANES } from './precios';
 
-/** Suscripción y cuenta de cobros. `effective_plan` es el plan PAGADO (regla 17). */
+/**
+ * Suscripción y cuenta de cobros. `effective_plan` es el ACCESO efectivo:
+ * plan pagado o cortesía, lo que sea mayor. Lo pagado se decide aparte con
+ * hasPaidBillingEvidence (regla 17).
+ */
 export function opsOrgBilling(orgId: string) {
   return sql`select o.id, coalesce(o.plan, 'free') plan, cord_effective_plan(o.id) effective_plan,
       o.subscription_status, o.billing_cycle, o.current_period_end, o.cancel_at_period_end,

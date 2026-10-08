@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ org: {} as Record<string, unknown>, grant: null as null | Record<string, unknown> }));
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray) => ({ text: s.join('?') }),
-    withOrgTx: async (_org: string, q: { text: string }) => [q.text.includes('cord_access_grant') ? (m.grant ? [m.grant] : []) : [m.org]],
+    withOrgTx: async (_org: string, ...qs: { text: string }[]) => qs.map((q) => q.text.includes('cord_access_grant') ? (m.grant ? [m.grant] : []) : [m.org]),
 }));
 vi.mock('../src/lib/permissions', () => ({ planLabel: (p: string) => p }));
 const { getEntitlementContext } = await import('../src/lib/org-entitlements');

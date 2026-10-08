@@ -12,6 +12,7 @@ import { mergeOpsLog, OPS_NOTE_MAX, opsOrgNotes, opsOrgTags } from '../../../lib
 import { iconInner } from '../../../lib/icons';
 import { GRANT_MAX_DAYS, GRANT_MAX_MONTHS, GRANT_PLANS, OPS_GRANT_MECHANISM } from '../../../lib/ops-grants';
 import { PLANES } from '../../../lib/precios';
+import { hasPaidBillingEvidence, normalizePlan } from '../../../lib/entitlements';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const id = String(Astro.params.id || '');
@@ -72,8 +73,13 @@ const fullName = (m: any) => [m.first_name, m.last_name].filter(Boolean).join(' 
 const billing: any = billingRows[0] || {};
 const requirements = opsConnectRequirements(billing.stripe_requirements);
 const effectivePlan = String(billing.effective_plan || 'free');
-// El plan guardado es una proyección; el pagado es el que autoriza (regla 17).
-const planMismatch = effectivePlan !== String(billing.plan || 'free');
+// Acceso efectivo (pago o cortesía) y plan PAGADO son cosas distintas: una
+// cortesía no se rotula como pago (regla 17).
+const paidPlan = hasPaidBillingEvidence({
+  plan: billing.plan, subscriptionStatus: billing.subscription_status, currentPeriodEnd: billing.current_period_end,
+  billingPaidThrough: billing.billing_paid_through, billingPaidPlan: billing.billing_paid_plan,
+  stripeSubscriptionId: billing.stripe_subscription_id, stripeCustomerId: billing.stripe_customer_id,
+}) ? normalizePlan(billing.plan) : 'free';
 const stripeLinks = [
   ['Cliente', stripeDashboardUrl('customer', billing.stripe_customer_id)],
   ['Suscripción', stripeDashboardUrl('subscription', billing.stripe_subscription_id)],
@@ -143,7 +149,8 @@ const resendable = (d: any) => d.invoice_number && d.lifecycle !== 'draft' && d.
     <section>
       <header class="ops-section-header"><div><h2>Suscripción de Cord</h2><p>Lo que paga y lo que eso le da.</p></div></header>
       <div class="ops-card ops-card-pad"><dl class="ops-key-value">
-        <div><dt>Plan pagado</dt><dd><strong>{planName(effectivePlan)}</strong>{planMismatch && <span class="ops-badge amber">Guardado: {planName(billing.plan)}</span>}</dd></div>
+        <div><dt>Acceso efectivo</dt><dd><strong>{planName(effectivePlan)}</strong>{effectivePlan !== paidPlan && <span class="ops-badge blue">{activeGrant ? 'Por cortesía' : 'Por promoción'}</span>}</dd></div>
+        <div><dt>Plan pagado</dt><dd>{planName(paidPlan)}{normalizePlan(billing.plan) !== paidPlan && <span class="ops-badge amber">Guardado: {planName(billing.plan)}</span>}</dd></div>
         <div><dt>Estado</dt><dd>{opsSubscription(billing.subscription_status)}{billing.billing_cycle && ` · ${billing.billing_cycle}`}{billing.cancel_at_period_end && <span class="ops-badge red">Cancela al cierre del periodo</span>}</dd></div>
         <div><dt>{billing.cancel_at_period_end ? 'Termina' : 'Renueva'}</dt><dd>{opsDate(billing.current_period_end, '—')}{billing.billing_paid_through && !sameDay(billing.billing_paid_through, billing.current_period_end) && ` · pagado hasta ${opsDate(billing.billing_paid_through)}`}</dd></div>
         <div><dt>Último cobro</dt><dd>{billing.billing_last_paid_at

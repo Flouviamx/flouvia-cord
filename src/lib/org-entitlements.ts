@@ -57,29 +57,34 @@ function asDate(value: unknown): Date | null {
     return Number.isFinite(date.getTime()) ? date : null;
 }
 
-async function readBillingRow(orgId: string): Promise<any | null> {
-    const [[row]] = await withOrgTx(orgId, sql`
+const billingRowSql = (orgId: string) => sql`
         select id, sandbox_of, coalesce(plan, 'free') as plan,
                subscription_status, current_period_end, billing_paid_through,
                billing_paid_plan,
                stripe_subscription_id, stripe_customer_id
           from orgs
          where id = ${orgId}
-         limit 1`);
+         limit 1`;
+
+async function readBillingRow(orgId: string): Promise<any | null> {
+    const [[row]] = await withOrgTx(orgId, billingRowSql(orgId));
     return row ?? null;
 }
 
-async function readAccessGrant(orgId: string): Promise<EntitlementContext['grant']> {
-    // security definer: resuelve la org padre de una sandbox y lee la tabla de
-    // cortesías, que el carril de la organización no ve.
-    const [[row]] = await withOrgTx(orgId, sql`select plan, expires_at, source from cord_access_grant(${orgId})`);
+function toGrant(row: any): EntitlementContext['grant'] {
     const expiresAt = asDate(row?.expires_at);
     if (!row || !expiresAt) return null;
     return { plan: normalizePlan(row.plan), source: row.source === 'build' ? 'build' : 'ops', expiresAt };
 }
 
 export async function getEntitlementContext(orgId: string, now = new Date()): Promise<EntitlementContext> {
-    const requested = await readBillingRow(orgId);
+    // La fila y la cortesía en un solo viaje. cord_access_grant (security
+    // definer) resuelve sola la org padre de una sandbox y lee la tabla de
+    // cortesías, que el carril de la organización no ve. Si falla, el error
+    // sube y el llamador falla cerrado, igual que con la fila de orgs.
+    const [[requested], [grantRow]] = await withOrgTx(orgId,
+        billingRowSql(orgId),
+        sql`select plan, expires_at, source from cord_access_grant(${orgId})`);
     if (!requested) throw new Error(`Organización ${orgId} no encontrada`);
 
     const billingOrgId = requested.sandbox_of ? String(requested.sandbox_of) : orgId;
@@ -120,9 +125,7 @@ export async function getEntitlementContext(orgId: string, now = new Date()): Pr
         }
     }
 
-    // Sin la cortesía no se puede decidir el plan: si la lectura falla, el
-    // error sube y el llamador falla cerrado, igual que con la fila de orgs.
-    const grant = await readAccessGrant(billingOrgId);
+    const grant = toGrant(grantRow);
     const paidPlan: PlanId = paidAccess ? storedPlan : 'free';
     const grantPlan: PlanId = grant && grant.expiresAt.getTime() > now.getTime() ? grant.plan : 'free';
     const effectivePlan: PlanId = PLAN_RANK[grantPlan] > PLAN_RANK[paidPlan] ? grantPlan : paidPlan;

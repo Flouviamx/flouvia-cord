@@ -33,8 +33,14 @@ create table if not exists ops_plan_grants (
 );
 create unique index if not exists uq_ops_plan_grants_active on ops_plan_grants(org_id) where status = 'active';
 create index if not exists idx_ops_plan_grants_org on ops_plan_grants(org_id, created_at desc);
-alter table ops_plan_grants enable row level security;
-alter table ops_plan_grants force row level security;
+-- El `alter` solo si hace falta: toma ACCESS EXCLUSIVE aunque no cambie nada,
+-- y cord_access_grant() lee esta tabla en cada request.
+do $$ begin
+  if not exists (select 1 from pg_class where oid = 'ops_plan_grants'::regclass and relrowsecurity and relforcerowsecurity) then
+    alter table ops_plan_grants enable row level security;
+    alter table ops_plan_grants force row level security;
+  end if;
+end $$;
 do $$ begin
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ops_plan_grants' and policyname = 'ops_plan_grants_select') then
     create policy ops_plan_grants_select on ops_plan_grants for select using (current_setting('app.scope', true) = 'ops');

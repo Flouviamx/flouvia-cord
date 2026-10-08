@@ -27,6 +27,20 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 const unix = (d: Date) => String(Math.floor(d.getTime() / 1000));
+/**
+ * ¿Stripe rechazó la petición con certeza? Solo un 4xx lo prueba (salvo 409
+ * y 429, que no dicen si el cambio se aplicó). Un 5xx, un timeout o un corte
+ * de red NO prueban que no se aplicó.
+ */
+const definitelyRejected = (error: unknown) => {
+    const status = Number((error as { stripeStatus?: number })?.stripeStatus);
+    return status >= 400 && status < 500 && status !== 409 && status !== 429;
+};
+/** Id del cupón de un descuento, en las formas que han usado las versiones de la API. */
+const discountCoupon = (d: any): string | null => {
+    const c = d?.coupon ?? d?.source?.coupon ?? null;
+    return typeof c === 'string' ? c : c?.id ?? null;
+};
 
 async function loadOrg(orgId: string) {
     const [rows, grants] = await withOpsTx(
@@ -73,7 +87,8 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         const stale = requireFreshOpsAuth(operator);
         if (stale) return stale;
     }
-    const limited = await strictRateLimit(`ops-grant:${operator.userId}`, dryRun ? 60 : 10, 3600);
+    // Revisar no gasta el cupo de dar: claves separadas.
+    const limited = await strictRateLimit(`${dryRun ? 'ops-grant-review' : 'ops-grant'}:${operator.userId}`, dryRun ? 60 : 10, 3600);
     if (!limited.ok) return json({ error: 'Demasiadas cortesías en poco tiempo. Espera unos minutos.' }, 429);
 
     try {
@@ -124,6 +139,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         //    cortesía: un reintento no crea un segundo cupón ni mueve dos veces.
         if (decision.mechanism !== 'acceso' && subscription) {
             const metadata = { 'metadata[ops_grant_id]': grantId, 'metadata[ops_operator_id]': operator.userId, 'metadata[ops_action]': req.kind };
+            let couponId: string | null = null;
             try {
                 if (decision.mechanism === 'trial') {
                     await stripe(`/v1/subscriptions/${encodeURIComponent(subscription.id)}`, {
@@ -134,24 +150,45 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
                         percent_off: '100', duration: 'repeating', duration_in_months: String(decision.couponMonths),
                         'applies_to[products][0]': subscription.baseProduct!, max_redemptions: '1', name: 'Cortesía Cord', ...metadata,
                     }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:coupon` });
+                    couponId = String(coupon.id);
                     await stripe(`/v1/subscriptions/${encodeURIComponent(subscription.id)}`, {
-                        'discounts[0][coupon]': String(coupon.id), ...metadata,
+                        'discounts[0][coupon]': couponId, ...metadata,
                     }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:discount` });
-                    await withOpsTx(sql`update ops_plan_grants set stripe_coupon_id = ${String(coupon.id)} where id = ${grantId}`);
                 }
             } catch (error) {
-                // Stripe no aceptó: la cortesía no se da a medias. Se revoca
-                // la reserva y queda la falla en la bitácora.
-                log.error('cortesía de Ops rechazada por el procesador', { route: 'ops/grants', orgId, err: error });
-                await withOpsTx(
-                    sql`update ops_plan_grants set status = 'revoked', revoked_at = now(), revoked_by = 'sistema: el procesador la rechazó' where id = ${grantId}`,
-                    audit('ops.plan_grant_failed', { grant: grantId, mechanism: decision.mechanism }, 'failure'),
-                ).catch(() => null);
+                log.error('cortesía de Ops: el procesador falló', { route: 'ops/grants', orgId, grant: grantId, err: error });
+                if (!definitelyRejected(error)) {
+                    // No se sabe si Stripe aplicó el cambio. Si lo aplicó y se
+                    // revocara la reserva, el negocio quedaría en `trialing` o
+                    // con un cupón y SIN acceso. La cortesía queda vigente.
+                    await withOpsTx(audit('ops.plan_grant_failed', { grant: grantId, mechanism: decision.mechanism, ambiguous: true }, 'failure'))
+                        .catch((err) => log.error('auditoría de cortesía no escrita', { route: 'ops/grants', err }));
+                    return json({ error: 'No se pudo confirmar si el procesador aplicó el cambio. La cortesía queda vigente para no dejarlo sin acceso; revisa su suscripción en el procesador y, si no cambió, revócala.' }, 502);
+                }
+                // Rechazo definitivo: nada se aplicó (el cupón huérfano, si se
+                // creó, es de un solo uso y nadie lo tiene). No se da a medias.
+                try {
+                    await withOpsTx(
+                        sql`update ops_plan_grants set status = 'revoked', revoked_at = now(), revoked_by = 'sistema: el procesador la rechazó' where id = ${grantId}`,
+                        audit('ops.plan_grant_failed', { grant: grantId, mechanism: decision.mechanism }, 'failure'),
+                    );
+                } catch (err) {
+                    log.error('cortesía rechazada por el procesador quedó activa: revócala a mano', { route: 'ops/grants', orgId, grant: grantId, err });
+                }
                 return json({ error: `El procesador no aceptó el cambio: ${translateStripeError(error)}. No se dio la cortesía.` }, 502);
+            }
+            // Ya aplicado en Stripe: guardar el cupón es para revocarlo
+            // después. Si esta escritura falla, la cortesía sigue siendo válida.
+            if (couponId) {
+                await withOpsTx(sql`update ops_plan_grants set stripe_coupon_id = ${couponId} where id = ${grantId}`)
+                    .catch((err) => log.error('no se guardó el cupón de la cortesía', { route: 'ops/grants', grant: grantId, coupon: couponId, err }));
             }
         }
         return json({ success: true, message: decision.summary });
     } catch (error) {
+        // Dos admins a la vez: el índice de una sola cortesía viva rechaza al
+        // segundo antes de tocar el procesador.
+        if ((error as { code?: string })?.code === '23505') return json({ error: 'Ya tiene una cortesía vigente. Recarga la ficha.' }, 409);
         log.error('error no controlado', { route: 'ops/grants', err: error });
         return json({ error: 'No se pudo dar la cortesía. Revisa la ficha antes de reintentar.' }, 500);
     }
@@ -178,21 +215,43 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     try {
         const [orgs, grants] = await withOpsTx(
             sql`select nombre from orgs where id = ${orgId}`,
-            sql`select id, mechanism, stripe_subscription_id from ops_plan_grants where id = ${grantId} and org_id = ${orgId} and status = 'active'`,
+            sql`select id, mechanism, stripe_subscription_id, stripe_coupon_id from ops_plan_grants where id = ${grantId} and org_id = ${orgId} and status = 'active'`,
         );
         if (!orgs.length) return json({ error: 'Organización no encontrada' }, 404);
         if (body?.confirmation !== orgs[0].nombre) return json({ error: 'La confirmación no coincide con el nombre de la organización' }, 400);
         const grant = grants[0] as any;
         if (!grant) return json({ error: 'Esa cortesía ya no está vigente.' }, 409);
 
+        // Qué se deshizo en el procesador, para la bitácora y el mensaje.
+        let undone: 'trial' | 'cupon' | 'nada' = 'nada';
         if (grant.stripe_subscription_id && grant.mechanism !== 'acceso') {
             const subPath = `/v1/subscriptions/${encodeURIComponent(String(grant.stripe_subscription_id))}`;
             try {
-                if (grant.mechanism === 'trial') {
+                // Primero el estado REAL: la prueba pudo terminar sola, el
+                // cliente pudo cancelar, o el cupón pudo ya no estar.
+                let sub: any = null;
+                try {
+                    sub = await stripe(subPath, { 'expand[0]': 'discounts' }, 'GET', { version: STRIPE_VERSION });
+                } catch (error) {
+                    if (Number((error as { stripeStatus?: number })?.stripeStatus) !== 404) throw error;
+                }
+                const live = sub && !['canceled', 'incomplete_expired'].includes(String(sub.status));
+                if (live && grant.mechanism === 'trial' && sub.status === 'trialing') {
                     // Terminar el periodo sin cobro: Stripe factura el periodo nuevo AHORA.
                     await stripe(subPath, { trial_end: 'now', proration_behavior: 'none' }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:revoke` });
-                } else {
-                    await stripe(subPath, { discounts: '' }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:revoke` });
+                    undone = 'trial';
+                } else if (live && grant.mechanism === 'cupon') {
+                    // Quitar SOLO el descuento de esta cortesía; los demás se conservan.
+                    const discounts: any[] = Array.isArray(sub.discounts) ? sub.discounts : [];
+                    const ours = (d: any) => !!grant.stripe_coupon_id && discountCoupon(d) === grant.stripe_coupon_id;
+                    if (discounts.some(ours)) {
+                        const keep = discounts.filter((d) => !ours(d)).map((d) => (typeof d === 'string' ? d : String(d.id)));
+                        const params: Record<string, string> = keep.length
+                            ? Object.fromEntries(keep.map((id, i) => [`discounts[${i}][discount]`, id]))
+                            : { discounts: '' };
+                        await stripe(subPath, params, 'POST', { version: STRIPE_VERSION, idempotencyKey: `ops-grant:${grantId}:revoke` });
+                        undone = 'cupon';
+                    }
                 }
             } catch (error) {
                 log.error('revocación de cortesía rechazada por el procesador', { route: 'ops/grants', orgId, err: error });
@@ -203,10 +262,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
             sql`update ops_plan_grants set status = 'revoked', revoked_at = now(), revoked_by = ${operator.email} where id = ${grantId} and status = 'active'`,
             opsAuditQuery({
                 actorUserId: operator.userId, actorEmail: operator.email, action: 'ops.plan_grant_revoked', targetType: 'organization', targetId: orgId,
-                metadata: { grant: grantId, mechanism: grant.mechanism }, ip: trustedIp(request), userAgent: request.headers.get('user-agent') || 'desconocido',
+                metadata: { grant: grantId, mechanism: grant.mechanism, undone }, ip: trustedIp(request), userAgent: request.headers.get('user-agent') || 'desconocido',
             }),
         );
-        return json({ success: true, message: grant.mechanism === 'trial' ? 'Cortesía revocada. El procesador cobra el periodo nuevo ahora.' : 'Cortesía revocada.' });
+        return json({ success: true, message: undone === 'trial' ? 'Cortesía revocada. El procesador cobra el periodo nuevo ahora.'
+            : undone === 'cupon' ? 'Cortesía revocada. Su próxima mensualidad se cobra completa.'
+            : grant.mechanism === 'acceso' ? 'Cortesía revocada.'
+            : 'Cortesía revocada. En el procesador ya no había nada que deshacer (la prueba terminó, el cupón ya no estaba o la suscripción se canceló).' });
     } catch (error) {
         log.error('error no controlado', { route: 'ops/grants', err: error });
         return json({ error: 'No se pudo revocar la cortesía. Revisa la ficha antes de reintentar.' }, 500);
