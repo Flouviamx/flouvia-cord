@@ -16,7 +16,7 @@ prerequisites: ["Clients permission to create, edit, import, export, or delete",
 A Cord client is more than a contact. Its record stores reusable commercial and tax
 identity plus terms that control suggested discounts, due dates, and credit exposure.
 
-{/* MOCKUP: Clients directory with the "Search clients…" box, the filters All / With quotes / Not quoted / With tier / With credit / Missing tax data, the "Highest closed" sort, and rows with client, contact, tax ID, terms, credit limit, and quote count; on the right, the "Constructora GAMA" profile with closed value, pipeline, close rate, credit-limit usage, and the statement by aging. */}
+<DmClients lang="en" />
 
 ## Create a client
 
@@ -54,8 +54,10 @@ invoice into an automatic filing with the receiver's authority.
 The **Clients > Import CSV** flow lets you upload a `.csv`, map columns, preview rows,
 and choose whether to update existing matches.
 
-One import accepts up to **2,000 rows**. Rows without a company are skipped. Valid
-term codes are `contado`, `net30`, and `net60`; anything else becomes due now.
+One import accepts up to **2,000 rows**. Rows without a company are skipped. The terms
+column accepts codes (`contado`, `net7` to `net90`) or plain text such as "Net 45" or
+"45 days": Cord picks the offered term that does not exceed what was written. "Credit"
+without a number reads as `net30`, and any other text becomes due now.
 
 With **Update existing** enabled, Cord matches by exact tax ID first and case-insensitive
 company name second. Matches update contact, email, phone, ID, terms, and limit; other

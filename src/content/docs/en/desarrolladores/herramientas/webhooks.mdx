@@ -383,7 +383,7 @@ curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=50" \
 
 ## Delivery log and retention
 
-{/* MOCKUP: Workbench Webhooks tab with one endpoint expanded: delivery log with event, attempt, status, duration and date columns; a failed row (500) selected showing the server's response and the Retry button. */}
+<DmWebhookDeliveries lang="en" />
 
 In the Workbench's Webhooks tab, each endpoint has an expandable log with the outcome of every attempt (status, duration, your server's response) and a "Retry" button per row. The Workbench's **Events** tab shows the same thing from another angle: one logical event with all its deliveries grouped, instead of a per-endpoint log. The log is kept for **30 days**; events that ultimately failed for good are kept for **90 days** (so "Retry" keeps working longer in that case). Don't use Cord's log as long-term storage of what was sent — persist whatever you need to keep in your own system as you process each delivery.
 

@@ -473,6 +473,24 @@ export const ANALYTICS_EVENTS = {
     description: 'El vendedor insertó un kit de productos en una cotización.',
     since: 2,
   },
+  // Informes (fase 5): qué informes se abren de verdad y cuántos se guardan. Del
+  // navegador y no del SSR (regla 19): el prefetch del picker no es una vista.
+  report_viewed: {
+    rail: 'adoption', surface: 'client', scope: 'org', revenue: false,
+    insertIdFrom: null,
+    required: { report_id: 'string', kind: ['widgets', 'tabla', 'explorador'], saved: 'boolean' },
+    optional: { dim: 'string', metric_count: 'number' },
+    description: 'Alguien del equipo abrió un informe en /app/informes (incluye el explorador y los guardados).',
+    since: 2,
+  },
+  report_saved: {
+    rail: 'adoption', surface: 'client', scope: 'org', revenue: false,
+    insertIdFrom: null,
+    required: { dim: 'string', metric_count: 'number', frecuencia: ['ninguna', 'semanal', 'mensual'], is_new: 'boolean' },
+    optional: {},
+    description: 'Se guardó (o actualizó) un informe personalizado del explorador, con o sin envío por correo.',
+    since: 2,
+  },
   // El embudo de la suscripción empieza ANTES del checkout: sin estos dos, una
   // función bloqueada que nadie abre se lee igual que un paywall que no convence.
   paywall_viewed: {

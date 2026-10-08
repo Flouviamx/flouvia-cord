@@ -1,0 +1,266 @@
+---
+// Mockup: el link público de una cotización (/q/[token]) en escritorio, tal como
+// lo ve el cliente con la cotización viva. Calca de src/components/q/QuoteCard.astro:
+// cabecera de marca + folio, fila PARA / VÁLIDA HASTA / TÉRMINOS con el chip de
+// urgencia, total protagonista con la nota del anticipo, partidas con la casilla de
+// aprobación parcial y el precio de lista tachado, subtotales, franja de presencia
+// ("Ana Torres está en línea"), acciones y la sección CONVERSACIÓN.
+// Textos de la app con dmT(); datos de demo en dm-gestion.ts (COT-0149).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+import { Q149, SELLER, dmDate, dmNum, lineAmount, q149Subtotal, q149Total } from './dm-gestion';
+import { getQuoteCardRuntimeI18n } from '../../../i18n/app';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const RT = getQuoteCardRuntimeI18n(lang);
+
+const subtotal = q149Subtotal();
+const total = q149Total();
+const iva = total - subtotal;
+const anticipo = Math.round(total * Q149.anticipoPct) / 100;
+const saldo = total - anticipo;
+
+const DATA = {
+    es: {
+        caption: `Link público de la cotización ${Q149.folio} de ${DEMO.org} en escritorio: vence en 6 días, total de ${dmMoney(total, 'MXN', 'es')} con anticipo de ${dmMoney(anticipo, 'MXN', 'es')} (50 %) al aprobar, partidas con un precio de lista tachado, IVA 16 %, el aviso "${SELLER} está en línea", el botón Aprobar cotización y la conversación.`,
+        rfc: 'RFC MVA0812153K9',
+        msgs: [
+            { mine: false, text: 'Hola Luis, el flete ya incluye la descarga en obra con montacargas.', when: 'ayer, 17:20' },
+            { mine: true, text: 'Perfecto. Lo reviso con compras y te confirmo hoy.', when: 'hace 20 min' },
+        ],
+    },
+    en: {
+        caption: `Public link for ${DEMO.org}'s quote ${Q149.folio} on desktop: due in 6 days, a ${dmMoney(total, 'MXN', 'en')} total with a ${dmMoney(anticipo, 'MXN', 'en')} (50%) deposit on approval, line items with a struck-through list price, IVA 16%, the "${SELLER} is online" notice, the Approve quote button and the conversation.`,
+        rfc: 'RFC MVA0812153K9',
+        msgs: [
+            { mine: false, text: 'Hi Luis, delivery already includes forklift unloading on site.', when: 'yesterday, 5:20 PM' },
+            { mine: true, text: 'Great. I will check with purchasing and confirm today.', when: '20 min ago' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const splitNote = `${dmT(lang, 'q.split_al_aprobar')} ${dmMoney(anticipo, 'MXN', lang)}${tpl(dmT(lang, 'q.split_de_anticipo'), { pct: Q149.anticipoPct, saldo: dmMoney(saldo, 'MXN', lang) })}`;
+---
+<DocsMockup lang={lang} variant="browser" url={`cordhq.app/q/${Q149.token}`} brand={DEMO.brand} height={1020} caption={caption} class="dm-ql-figure">
+    <div class="dm-ql">
+        <div class="dm-ql-card">
+            <div class="dm-ql-head">
+                <div class="dm-ql-brand">
+                    <span class="dm-ql-logo">{DEMO.orgInitial}</span>
+                    <span class="dm-ql-brand-text">
+                        <span class="dm-ql-company">{DEMO.org}</span>
+                        <span class="dm-ql-rfc">{d.rfc}</span>
+                    </span>
+                </div>
+                <div class="dm-ql-folio">
+                    <span class="dm-ql-eyebrow">{dmT(lang, 'q.folio_eyebrow')}</span>
+                    <span class="dm-ql-folio-num">{Q149.folio}</span>
+                </div>
+            </div>
+            <div class="dm-ql-rule"></div>
+
+            <div class="dm-ql-meta">
+                <div class="dm-ql-meta-col">
+                    <span class="dm-ql-eyebrow">{dmT(lang, 'q.meta_para')}</span>
+                    <span class="dm-ql-meta-val">{Q149.cliente}</span>
+                </div>
+                <div class="dm-ql-meta-col">
+                    <span class="dm-ql-eyebrow">{dmT(lang, 'q.meta_vigencia')}</span>
+                    <span class="dm-ql-meta-val">{dmDate(Q149.vigencia, lang)}</span>
+                    <span class="dm-ql-chip">{tpl(dmT(lang, 'q.vig_en_dias'), { n: 6, s: 's' })}</span>
+                </div>
+                <div class="dm-ql-meta-col">
+                    <span class="dm-ql-eyebrow">{dmT(lang, 'q.meta_terminos')}</span>
+                    <span class="dm-ql-meta-val">{lang === 'en' ? 'Due on receipt' : 'Contado'}</span>
+                </div>
+            </div>
+
+            <div class="dm-ql-hero">
+                <span class="dm-ql-eyebrow">{dmT(lang, 'q.total_eyebrow')}</span>
+                <DmMoney amount={total} lang={lang} class="dm-ql-hero-num" />
+                <span class="dm-ql-hero-note">{dmT(lang, 'q.total_note')}</span>
+                <span class="dm-ql-split">{splitNote}</span>
+            </div>
+
+            <div class="dm-ql-items">
+                <div class="dm-ql-ihead">
+                    <span>{dmT(lang, 'q.th_concepto')}</span>
+                    <span class="dm-ql-c">{dmT(lang, 'q.th_cant')}</span>
+                    <span class="dm-ql-r">{dmT(lang, 'q.th_unit')}</span>
+                    <span class="dm-ql-r">{dmT(lang, 'q.th_importe')}</span>
+                </div>
+                {Q149.lines.map((l, i) => (
+                    <div class="dm-ql-row">
+                        <span class="dm-ql-name">
+                            <span class="dm-ql-pick"><DmIcon name="check" stroke={3} /></span>
+                            <span class="dm-ql-name-text">{l[lang]}<span class="dm-ql-chat"><DmIcon name="chat" stroke={2.2} />{i === 2 ? '2' : ''}</span></span>
+                        </span>
+                        <span class="dm-ql-c dm-ql-qty">{dmNum(l.qty, lang)} {l.unit[lang]}</span>
+                        <span class="dm-ql-r dm-ql-price">
+                            {l.list > l.price && <s><DmMoney amount={l.list} lang={lang} /></s>}
+                            <DmMoney amount={l.price} lang={lang} />
+                        </span>
+                        <span class="dm-ql-r dm-ql-amount"><DmMoney amount={lineAmount(l)} lang={lang} /></span>
+                    </div>
+                ))}
+                <div class="dm-ql-totals">
+                    <div class="dm-ql-trow"><span>{dmT(lang, 'q.subtotal')}</span><DmMoney amount={subtotal} lang={lang} /></div>
+                    <div class="dm-ql-trow"><span>IVA 16%</span><DmMoney amount={iva} lang={lang} /></div>
+                    <div class="dm-ql-trow dm-ql-grand"><span>{dmT(lang, 'q.total')}</span><DmMoney amount={total} lang={lang} /></div>
+                </div>
+            </div>
+
+            <div class="dm-ql-trust">
+                <span class="dm-ql-live"><i></i>{RT.vendedorEnLinea.replace('{nombre}', SELLER)}</span>
+                <span class="dm-ql-secure"><DmIcon name="lock" />{dmT(lang, 'q.cifrado_firma')}</span>
+            </div>
+
+            <div class="dm-ql-actions">
+                <span class="dm-ql-cta"><DmIcon name="check" stroke={2.5} />{dmT(lang, 'q.aprobar_cotizacion')}</span>
+                <div class="dm-ql-secondary">
+                    <span class="dm-ql-ghost"><DmIcon name="document" />{dmT(lang, 'q.descargar_pdf')}</span>
+                    <span class="dm-ql-ghost dm-ql-reject">{dmT(lang, 'q.rechazar')}</span>
+                </div>
+            </div>
+
+            <div class="dm-ql-chatsec">
+                <span class="dm-ql-eyebrow">{dmT(lang, 'q.conversacion')}</span>
+                <div class="dm-ql-thread">
+                    {d.msgs.map((m) => (
+                        <div class:list={['dm-ql-msg', m.mine ? 'is-mine' : 'is-theirs']}>
+                            <span>{m.text}</span>
+                            <span class="dm-ql-msg-meta"><b>{m.mine ? dmT(lang, 'q.chat_tu') : DEMO.org}</b>{m.when}</span>
+                        </div>
+                    ))}
+                </div>
+                <div class="dm-ql-compose">
+                    <div class="dm-ql-compose-row">
+                        <span class="dm-ql-ph">{dmT(lang, 'q.escribe_mensaje')}</span>
+                        <span class="dm-ql-send"><DmIcon name="send" stroke={2.2} /></span>
+                    </div>
+                    <div class="dm-ql-compose-extras">
+                        <span class="dm-ql-prop">{dmT(lang, 'q.propuesta_placeholder')}</span>
+                        <span class="dm-ql-counter"><DmIcon name="trending-up" stroke={2.4} />{dmT(lang, 'q.contraoferta')}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* Calca de QuoteCard (q-*) a escala de screenshot. Prefijo dm-ql-. */
+    .dm-ql { padding: 22px 18px 0; display: flex; justify-content: center; }
+    .dm-ql-card {
+        width: 100%;
+        max-width: 560px;
+        background: #fff;
+        border-radius: 24px;
+        padding: 26px 28px 28px;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: #111;
+    }
+    .dm-ql-eyebrow { font-size: 8px; font-weight: 800; letter-spacing: 0.16em; color: #6b7280; text-transform: uppercase; }
+    .dm-ql-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .dm-ql-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .dm-ql-logo { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 800; }
+    .dm-ql-brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-ql-company { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+    .dm-ql-rfc { font-size: 10px; color: #6b7280; font-weight: 500; }
+    .dm-ql-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .dm-ql-folio-num { font-size: 13px; font-weight: 800; letter-spacing: -0.02em; }
+    .dm-ql-rule { height: 1px; margin: -6px 0; background: linear-gradient(to right, transparent, rgba(10, 25, 47, 0.08) 15%, rgba(10, 25, 47, 0.08) 85%, transparent); }
+
+    .dm-ql-meta { display: flex; gap: 30px; flex-wrap: wrap; }
+    .dm-ql-meta-col { display: flex; flex-direction: column; gap: 4px; }
+    .dm-ql-meta-val { font-size: 12.5px; font-weight: 600; }
+    .dm-ql-chip { align-self: flex-start; margin-top: 2px; font-size: 9.5px; font-weight: 700; color: #b45309; background: rgba(245, 158, 11, 0.13); padding: 2px 8px; border-radius: 999px; }
+
+    .dm-ql-hero { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 22px 16px 20px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 18px; text-align: center; }
+    .dm-ql-hero-num { font-size: 38px; line-height: 1.05; letter-spacing: -0.045em; color: var(--dm-brand); }
+    .dm-ql-hero-num .dm-cur { font-size: 13px; }
+    .dm-ql-hero-note { font-size: 10.5px; color: #6b7280; font-weight: 500; }
+    .dm-ql-split { margin-top: 6px; padding: 5px 12px; font-size: 11px; font-weight: 600; color: var(--dm-navy); background: rgba(10, 25, 47, 0.05); border-radius: 999px; text-wrap: balance; }
+
+    .dm-ql-items { display: flex; flex-direction: column; }
+    .dm-ql-ihead, .dm-ql-row { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.1fr); gap: 12px; align-items: center; }
+    .dm-ql-ihead { padding-bottom: 9px; border-bottom: 1px solid rgba(10, 25, 47, 0.07); font-size: 8px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
+    .dm-ql-row { padding: 11px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.045); font-size: 12px; }
+    .dm-ql-c { text-align: center; }
+    .dm-ql-r { text-align: right; justify-self: end; }
+    .dm-ql-name { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+    .dm-ql-name-text { min-width: 0; line-height: 1.3; }
+    .dm-ql-pick { width: 16px; height: 16px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-navy); color: #fff; }
+    .dm-ql-pick .dm-ico { width: 10px; height: 10px; }
+    .dm-ql-chat { display: inline-flex; vertical-align: 1px; margin-left: 7px; align-items: center; gap: 3px; flex-shrink: 0; padding: 3px 5px; border-radius: 6px; background: rgba(10, 25, 47, 0.04); color: #6b7280; font-size: 9.5px; font-weight: 600; }
+    .dm-ql-chat .dm-ico { width: 11px; height: 11px; }
+    .dm-ql-qty { color: #6b7280; font-size: 11px; }
+    .dm-ql-price { display: flex; flex-direction: column; align-items: flex-end; color: #6b7280; font-size: 11.5px; }
+    .dm-ql-price s { font-size: 10px; color: #8a93a2; text-decoration-color: rgba(0, 0, 0, 0.35); }
+    .dm-ql-price s .dm-money { font-weight: 500; }
+    .dm-ql-price .dm-money { font-weight: 600; }
+    .dm-ql-amount { font-size: 12px; }
+        .dm-ql-totals { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; padding-top: 14px; }
+    .dm-ql-trow { display: flex; justify-content: space-between; gap: 40px; min-width: 210px; font-size: 11.5px; color: #6b7280; }
+    .dm-ql-trow .dm-money { color: #6b7280; font-size: 12px; }
+    .dm-ql-grand { padding-top: 8px; margin-top: 2px; border-top: 1px solid rgba(10, 25, 47, 0.07); color: #111; font-weight: 700; }
+    .dm-ql-grand .dm-money { font-size: 16px; color: #111; }
+
+    .dm-ql-trust { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .dm-ql-live { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: #065f46; }
+    .dm-ql-live i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16); }
+    .dm-ql-secure { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: #6b7280; }
+    .dm-ql-secure .dm-ico { width: 12px; height: 12px; }
+
+    .dm-ql-actions { display: flex; flex-direction: column; gap: 10px; }
+    .dm-ql-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 13px; background: var(--dm-brand); color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10, 25, 47, 0.42); }
+    .dm-ql-cta .dm-ico { width: 15px; height: 15px; }
+    .dm-ql-secondary { display: flex; gap: 8px; }
+    .dm-ql-ghost { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 11px; border: 1px solid rgba(10, 25, 47, 0.1); color: #6b7280; font-size: 12px; font-weight: 600; }
+    .dm-ql-ghost .dm-ico { width: 13px; height: 13px; }
+    .dm-ql-reject { flex: none; padding: 0 16px; border-color: transparent; }
+
+    .dm-ql-chatsec { display: flex; flex-direction: column; gap: 9px; }
+    .dm-ql-thread { display: flex; flex-direction: column; gap: 7px; }
+    .dm-ql-msg { display: flex; flex-direction: column; gap: 3px; max-width: 78%; padding: 9px 12px; font-size: 12px; line-height: 1.45; }
+    .dm-ql-msg.is-theirs { align-self: flex-start; background: #f3f4f6; border-radius: 14px 14px 14px 3px; }
+    .dm-ql-msg.is-mine { align-self: flex-end; background: var(--dm-navy); color: #fff; border-radius: 14px 14px 3px 14px; }
+    .dm-ql-msg-meta { display: flex; gap: 5px; font-size: 9px; opacity: 0.66; }
+    .dm-ql-msg-meta b { font-weight: 700; }
+    .dm-ql-compose { background: #f9fafb; border: 1px solid rgba(10, 25, 47, 0.07); border-radius: 14px; overflow: hidden; }
+    .dm-ql-compose-row { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; }
+    .dm-ql-ph { flex: 1; font-size: 12px; color: #6b7280; }
+    .dm-ql-send { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-brand); color: #fff; flex-shrink: 0; }
+    .dm-ql-send .dm-ico { width: 13px; height: 13px; }
+    .dm-ql-compose-extras { display: flex; align-items: center; gap: 8px; padding: 8px 10px 9px 12px; border-top: 1px solid rgba(10, 25, 47, 0.055); }
+    .dm-ql-prop { flex: 0 1 170px; min-width: 0; padding: 5px 9px; border-radius: 8px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.09); font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-ql-counter { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--dm-brand); color: var(--dm-brand); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .dm-ql-counter .dm-ico { width: 10px; height: 10px; }
+
+    /* Angosto: la tabla pasa a filas apiladas, como QuoteCard en el celular. */
+    @container dm (max-width: 520px) {
+        .dm-ql-figure .dm-stage { height: auto; max-height: 1010px; }
+        .dm-ql { padding: 12px 8px 0; }
+        .dm-ql-card { padding: 18px 15px 20px; border-radius: 18px; gap: 16px; }
+        .dm-ql-rfc { display: none; }
+        .dm-ql-meta { gap: 12px 20px; }
+        .dm-ql-hero-num { font-size: 29px; }
+        .dm-ql-ihead { display: none; }
+        .dm-ql-row { grid-template-columns: auto auto; justify-content: space-between; row-gap: 5px; column-gap: 10px; }
+        .dm-ql-name { grid-column: 1 / -1; }
+        .dm-ql-qty { text-align: left; }
+        .dm-ql-price { display: none; }
+        .dm-ql-trow { min-width: 0; width: 100%; }
+        .dm-ql-msg { max-width: 88%; }
+    }
+</style>

@@ -51,7 +51,7 @@ Sin riel de cobro en línea, el link muestra tus datos para transferencia manual
 4. Al confirmarse, el link muestra el pago y el documento cambia de estado.
 </Steps>
 
-{/* MOCKUP: página de pago de una cotización en MXN: encabezado "Volver a la cotización", monto "Anticipo a pagar $5,000.00 MXN del total de $10,000.00 MXN", selector de método con "Tarjeta" y "Transferencia SPEI", formulario de tarjeta y botón "Pagar $5,000.00 MXN" con el color de la marca; abajo, separador y botón "Pagar con Mercado Pago". */}
+<DmQuotePayment lang="es" />
 
 ### Con tarjeta
 
@@ -77,7 +77,7 @@ Tu cliente va al checkout de Mercado Pago, paga con los métodos disponibles en 
 ## Después del pago
 
 - **Tu cliente** ve el pago reflejado en el link. Si regresa de un pago todavía en confirmación, el link espera unos segundos a que llegue el aviso y le permite actualizar.
-- **Tú** ves el cobro en [Mi dinero › Cobros](/docs/pagos/dashboard), en la línea de tiempo del documento y, si configuraste avisos, en tus [notificaciones](/docs/gestion/notificaciones).
+- **Tú** ves el cobro en [Ingresos › Cobros](/docs/pagos/dashboard), en la línea de tiempo del documento y, si configuraste avisos, en tus [notificaciones](/docs/gestion/notificaciones).
 - **Tus integraciones** reciben el evento de pago. Un pago parcial (anticipo, cuota o abono) no dispara el evento de cotización pagada: ese solo sale cuando ya no queda saldo.
 - **El dinero** entra al saldo de tu cuenta de cobros y llega a tu banco con tu [frecuencia de depósito](/docs/pagos/depositos).
 

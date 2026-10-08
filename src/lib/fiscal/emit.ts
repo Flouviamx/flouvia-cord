@@ -18,6 +18,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
 } from './index';
+import { resolveLineSatKeys } from './sat-claves';
 
 export interface EmitResult {
   emitted: boolean;
@@ -337,9 +338,13 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
         left join clientes cl on cl.id = c.cliente_id
         where c.id = ${cotizacionId} and c.org_id = ${orgId}
         limit 1`,
-    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate
+    // Las claves SAT son clasificación, no aritmética: se leen del producto al
+    // timbrar y quedan congeladas en `line_items_snapshot` del documento.
+    sql`select ci.descripcion, ci.cantidad, ci.precio_unitario, ci.precio_negociado, ci.aprobado, ci.tax_rate,
+               p.clave_sat, p.clave_unidad_sat, p.unidad as producto_unidad
         from cotizacion_items ci
         join cotizaciones c on c.id = ci.cotizacion_id
+        left join productos p on p.id = ci.producto_id and p.org_id = c.org_id
         where ci.cotizacion_id = ${cotizacionId} and c.org_id = ${orgId}
         order by ci.orden asc`,
   );
@@ -417,7 +422,16 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string, do
   // CFDI de varias líneas descuadrados por centavos, que el PAC rechazaba con
   // el folio ya quemado.
   const rounded = roundDocumentTotals(totals, documentDecimals(docType, currency));
-  const lines: FiscalLineItem[] = rounded.lines;
+  // `rounded.lines` conserva el orden y la longitud de `approvedItems`. Las
+  // claves SAT son clasificación, no aritmética: se leen del producto.
+  const lines: FiscalLineItem[] = rounded.lines.map((l, i) => ({
+    ...l,
+    ...(country === 'MX' ? resolveLineSatKeys({
+      claveSat: approvedItems[i]?.clave_sat,
+      claveUnidadSat: approvedItems[i]?.clave_unidad_sat,
+      unidad: approvedItems[i]?.producto_unidad,
+    }) : {}),
+  }));
   const { subtotal, taxes, total, retencionTotal } = rounded;
   const storedRate = Number(head.fx_rate);
   const fxRate = currency === ledgerCurrency

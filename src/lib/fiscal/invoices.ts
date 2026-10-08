@@ -52,6 +52,7 @@ import type {
   FiscalParty,
   FiscalRetencion,
 } from './index';
+import { resolveLineSatKeys } from './sat-claves';
 
 export interface DraftLineInput {
   descripcion: string;
@@ -123,6 +124,25 @@ export interface DraftResult {
   documentId?: string;
   publicToken?: string;
 }
+
+/**
+ * Agrega a cada concepto las claves SAT de su producto del catálogo. Las líneas
+ * de `buildLines` conservan el orden de `items`. Se leen en servidor y acotadas
+ * a la organización: el navegador no decide con qué clave se timbra.
+ */
+async function withSatKeys(orgId: string, items: DraftLineInput[], lines: FiscalLineItem[]): Promise<FiscalLineItem[]> {
+  const ids = Array.from(new Set(items.map((i) => i.productoId).filter((id): id is string => !!id && UUID_RE.test(id))));
+  if (!ids.length) return lines;
+  const [rows] = await withOrgTx(orgId, sql`
+    select id, clave_sat, clave_unidad_sat, unidad from productos
+     where org_id = ${orgId} and id = any(${ids}::uuid[])`);
+  const byId = new Map(rows.map((r: any) => [String(r.id), r]));
+  return lines.map((line, i) => {
+    const p: any = items[i]?.productoId ? byId.get(String(items[i].productoId)) : null;
+    return p ? { ...line, ...resolveLineSatKeys({ claveSat: p.clave_sat, claveUnidadSat: p.clave_unidad_sat, unidad: p.unidad }) } : line;
+  });
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Convierte las líneas capturadas en el contrato fiscal, con sus totales.
@@ -234,8 +254,6 @@ async function resolveFxRate(
   return { rate };
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** ¿`YYYY-MM-DD` es una fecha que existe en el calendario? `2026-02-31` no. */
 export function isCalendarDay(value: string): boolean {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -328,7 +346,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
+  const { subtotal, taxes, total, retenciones, retencionTotal } = built;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
+  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
 
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
@@ -472,7 +492,9 @@ export async function updateInvoiceDraft(
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
+  const { subtotal, taxes, total, retenciones, retencionTotal } = built;
+  // México: cada concepto lleva las claves SAT de su producto (sat-claves.ts).
+  const lines = country === 'MX' ? await withSatKeys(orgId, itemsConTasaValidada, built.lines) : built.lines;
 
   const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };

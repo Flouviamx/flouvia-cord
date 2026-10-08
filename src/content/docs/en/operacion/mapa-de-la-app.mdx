@@ -1,7 +1,7 @@
 ---
 title: "Complete app map"
 description: "What each section of Cord does, how quotes, clients, invoices, payments, collections, reports and settings connect, what is in the sidebar and top bar, and how the test environment and Cord Workbench work."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -35,7 +35,7 @@ databases; they show different stages of the same clients, documents and transac
 
 ## Sidebar
 
-{/* MOCKUP: Cord app on desktop with the full sidebar (organization switcher, My money and Intelligence groups, one pinned item) and the top bar with Search, Create and notifications */}
+<DmAppMap lang="en" />
 
 At the top of the sidebar is the **organization switcher**. From it you switch
 workspaces, create a new one (**Create workspace**), open **Team settings**, turn the
@@ -47,19 +47,20 @@ workspaces, create a new one (**Create workspace**), open **Team settings**, tur
 | — | **Quotes** | `/app/cotizaciones` | Create, search, filter, edit, duplicate, send and print. The counter shows quotes that need follow-up. Guide: [Quote management](/en/docs/gestion/cotizaciones). |
 | — | **Clients** | `/app/clientes` | Directory, CSV import, commercial terms, tax details, credit and statement. Guide: [Clients and statements](/en/docs/gestion/clientes). |
 | — | **Products** | `/app/productos` | Catalog, volume pricing, CSV import and the **Kits** tab. Guide: [Import your catalog](/en/docs/cuenta/catalogo). |
-| My money | **Invoices** | `/app/facturas` | Issue, review, export and follow up on invoices; includes recurring ones (Professional or higher). Guide: [Invoices](/en/docs/pagos/facturas-emitidas). |
-| My money | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
-| My money | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
-| My money | **AI Collections** | `/app/cobranza/agente` | Configure and supervise AI collections (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
-| Intelligence | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
-| Intelligence | **Team** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
-| Intelligence | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
+| — | **Tasks** | `/app/tareas` | Team to-dos by assignee and due date, with filters, editing and completed tasks. The counter shows your tasks (or unassigned ones) due today or overdue; it turns red when some are overdue. Guide: [Tasks and follow-up](/en/docs/gestion/tareas). |
+| Revenue | **Invoices** | `/app/facturas` | Issue, review, export and follow up on invoices; includes recurring ones (Professional or higher). Guide: [Invoices](/en/docs/pagos/facturas-emitidas). |
+| Revenue | **Payments** | `/app/cobros` | Charges, payouts, balances, refunds and disputes. Guide: [Payments dashboard](/en/docs/pagos/dashboard). |
+| Revenue | **Collections** | `/app/cobranza` | Receivables, aging and exposure by client (Professional or higher). The red counter shows overdue documents. Guide: [Receivables and follow-up](/en/docs/pagos/cartera-cobranza). |
+| Revenue | **AI agent** (under Collections) | `/app/cobranza/agente` | Configure and supervise AI collections (Pro, Scale, or Developer). Guide: [Autonomous collections (AI)](/en/docs/pagos/cobranza-ia). |
+| Insights | **Reports** | `/app/informes` | Overview, sales diagnosis, finance, cash flow, collections, clients and products. Guide: [Reports and performance](/en/docs/gestion/informes). |
+| Insights | **Performance** | `/app/desempeno` | Team performance: results attributed to whoever created or duplicated each quote. |
+| Automation | **Workflows** | `/app/workflows` | "When this happens, do this" automations, ready-made ideas and run history. Guide: [Cord Workflows](/en/docs/automatizacion/workflows). |
 
 Also:
 
 - **Pinned.** The pin button next to any page title (or the `X` key) adds it to the
   **Pinned** group at the top of the sidebar.
-- **Collapsible groups.** **My money** and **Intelligence** collapse with a click on their
+- **Collapsible groups.** **Revenue**, **Insights** and **Automation** collapse with a click on their
   title.
 - **Collapse the sidebar.** The button at the bottom of the sidebar shrinks it to icons.
 - **Settings** (`/app/ajustes`) opens with the gear in the top bar. See the
@@ -89,7 +90,8 @@ narrower than 880 px they are disabled and everything is done with visible butto
 | `⌘K` / `Ctrl+K` or `/` | Open search |
 | `C` | New quote |
 | `F` | New invoice |
-| `G` then `D`, `C`, `L`, `P`, `B`, `A` or `F` | Go to Home, Quotes, Clients, Products, Collections, Reports or Invoices |
+| `T` | New task |
+| `G` then `D`, `C`, `L`, `P`, `T`, `B`, `A` or `F` | Go to Home, Quotes, Clients, Products, Tasks, Collections, Reports or Invoices |
 | `X` | Pin or unpin the current page in the sidebar |
 | `?` | Show or hide the shortcuts help |
 

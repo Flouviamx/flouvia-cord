@@ -9,8 +9,10 @@ import { tablaLabel } from '../../../lib/informes-csv';
 import type { ColFormat, TablaReport } from '../../../lib/informes-tabla';
 import type { ReportId } from '../../../lib/informes';
 
-interface Props { data: TablaReport; L: 'es' | 'en'; reportId: ReportId; csvHref: string; granHref?: (g: 'day' | 'week' | 'month') => string }
-const { data: D, L, reportId, csvHref, granHref } = Astro.props;
+// `zoomHref`: drill-down en el tiempo — una barra de mes abre ese mes (y una de
+// semana, esa semana) con el mismo informe. La página decide a qué URL.
+interface Props { data: TablaReport; L: 'es' | 'en'; reportId: ReportId; csvHref: string; granHref?: (g: 'day' | 'week' | 'month') => string; zoomHref?: (desde: string, hasta: string) => string }
+const { data: D, L, reportId, csvHref, granHref, zoomHref } = Astro.props;
 const locale = L === 'en' ? 'en-US' : 'es-MX';
 const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
 
@@ -50,10 +52,22 @@ function delta(k: TablaReport['kpis'][number]) {
 const axisDate = (value: string) => new Intl.DateTimeFormat(locale, D.granularity === 'month'
     ? { month: 'short', year: '2-digit', timeZone: 'UTC' }
     : { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
-const chartItems = D.chart?.items.map((item) => ({
-    label: item.label.startsWith('metodo:') ? tablaLabel(L, item.label) : /^\d{4}-\d{2}-\d{2}$/.test(item.label) ? axisDate(item.label) : item.label,
-    value: item.value,
-})) ?? [];
+const isoDay = (iso: string, days: number) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+function periodHref(start: string): string | undefined {
+    if (!zoomHref || (D.granularity !== 'month' && D.granularity !== 'week')) return undefined;
+    const end = D.granularity === 'month' ? isoDay(isoDay(`${start.slice(0, 7)}-01`, 32).slice(0, 7) + '-01', -1) : isoDay(start, 6);
+    const desde = start < D.rango.desde ? D.rango.desde : start;
+    const hasta = end > D.rango.hasta ? D.rango.hasta : end;
+    return desde <= hasta ? zoomHref(desde, hasta) : undefined;
+}
+const chartItems = D.chart?.items.map((item) => {
+    const isDate = /^\d{4}-\d{2}-\d{2}$/.test(item.label);
+    return {
+        label: item.label.startsWith('metodo:') ? tablaLabel(L, item.label) : isDate ? axisDate(item.label) : item.label,
+        value: item.value,
+        href: item.href ?? (isDate ? periodHref(item.label) : undefined),
+    };
+}) ?? [];
 const hasRows = D.rows.length > 0;
 const heat = new Set(D.heat ?? []);
 const heatStyle = (v: unknown) => v === null || v === undefined ? '' : `--heat:${Math.min(1, Number(v) / 60).toFixed(2)}`;

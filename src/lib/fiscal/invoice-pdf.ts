@@ -19,6 +19,7 @@ import {
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
 import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
+import { termLabel } from '../payment-terms';
 
 export interface InvoicePdfInput {
   brandProfile?: unknown;
@@ -52,7 +53,8 @@ export interface InvoicePdfInput {
   /** Vencimiento del pago. */
   dueDate?: string | Date | null;
   /** Condiciones legibles ("Contado", "Net 30"). */
-  paymentTerms?: string | null;
+  /** Código del plazo (src/lib/payment-terms.ts); se rotula en el idioma del documento. */
+  paymentTermsCode?: string | null;
   /** Referencia u orden de compra del cliente. */
   reference?: string | null;
   /** Folio de la factura ORIGINAL, si este documento es su nota de crédito/rectificativa. */
@@ -254,7 +256,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // corrige. Va primero: es el dato más importante de todo el documento.
   if (input.creditNoteOfNumber) facts.push({ k: t('Rectifica a', 'Corrects invoice'), v: input.creditNoteOfNumber });
   if (input.dueDate) facts.push({ k: t('Vencimiento', 'Due date'), v: fmtDateShort(input.dueDate) });
-  if (input.paymentTerms) facts.push({ k: t('Condiciones', 'Terms'), v: input.paymentTerms });
+  if (input.paymentTermsCode) facts.push({ k: t('Condiciones', 'Terms'), v: termLabel(input.paymentTermsCode, isSpanish ? 'es' : 'en') });
   facts.push({ k: t('Moneda', 'Currency'), v: currency });
   if (input.reference) facts.push({ k: t('Referencia', 'Reference'), v: input.reference });
 

@@ -20,7 +20,7 @@ const fields = [
  ['cotizaciones','quote_prefix','Prefijo de cotización','Quote prefix','folio consecutivo'],
  ['cotizaciones','iva_pct','Impuesto predeterminado','Default tax','iva vat impuesto'],
  ['cotizaciones','vigencia_default_dias','Vigencia','Validity','dias expiration'],
- ['cotizaciones','terminos_default','Términos de pago','Payment terms','contado net30 net60'],
+ ['cotizaciones','terminos_default','Términos de pago','Payment terms','contado credito net7 net15 net30 net45 net60 net90 plazo dias'],
  ['cotizaciones','texto_legal','Texto legal','Legal text','condiciones'],
  ['pdf','pdfConditions','Condiciones del PDF','PDF terms','documento condiciones'],
  ['pdf','pdfMessage','Mensaje del PDF','PDF message','documento mensaje'],

@@ -14,6 +14,8 @@ import {
 } from './core';
 import { createMoney, decimalsFor } from '../money-client';
 import { iconSvg } from '../icons';
+import { termDueDate, termLabel } from '../payment-terms';
+import { wireTermPicker } from '../term-picker-client';
 import type { DocumentEditorText } from '../../i18n/app';
 
 export type EditorKind = 'quote' | 'invoice';
@@ -69,6 +71,8 @@ const norm = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFD').repl
 // en un "Unexpected token" en pantalla.
 const readJson = async (res: Response): Promise<any> => { try { return await res.json(); } catch { return {}; } };
 const toast = (msg: string, type: 'ok' | 'error' | 'info' = 'info', ms?: number) => (window as any).cordToast?.(msg, type, ms);
+/** Fecha de calendario local (no UTC): con toISOString() caía al día siguiente de tarde. */
+const isoLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const isMobile = () => window.matchMedia('(max-width: 880px)').matches;
 
 export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
@@ -102,6 +106,12 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     });
 
     // ── Estado ──────────────────────────────────────────────────────────────
+    // La tasa que sugiere el producto, si sigue en el catálogo de impuestos de
+    // la org; si se dio de baja, la predeterminada. La línea guarda su snapshot.
+    const validTaxRate = (r: unknown) => (r !== null && r !== undefined && r !== ''
+        && boot.taxOptions.some((o) => Math.abs(o.rate - Number(r)) < 1e-9) ? Number(r) : boot.defaultTaxRate);
+    const productTax = (p: CatalogProduct | null) => validTaxRate(p?.taxRate);
+
     const fromBoot = (b: BootLine): Line => {
         const p = b.productoId ? catalogMap.get(b.productoId) : undefined;
         const taxRate = b.taxRate ?? boot.defaultTaxRate;
@@ -287,13 +297,18 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     function syncSumTerms() {
         const el = $('deSumTerms');
         if (!el) return;
-        const chip = $('deTerms')?.querySelector<HTMLElement>('.chip.active');
-        const term = chip?.textContent?.trim() || '';
+        const term = termLabel(currentTerm(), T.intl.startsWith('en') ? 'en' : 'es');
         if (isQuote) {
             const n = Number($<HTMLSelectElement>('deValidity')?.value) || 30;
-            el.textContent = term ? tpl(T.sumTermsQuoteTpl, { term, n }) : '';
+            el.textContent = tpl(T.sumTermsQuoteTpl, { term, n });
         } else {
-            el.textContent = term && dueText() ? tpl(T.sumTermsInvoiceTpl, { term, fecha: dueText() }) : '';
+            // Una fecha elegida a mano que no corresponde al plazo no se
+            // atribuye al plazo: solo se dice cuándo vence.
+            const due = $<HTMLInputElement>('deDueDate')?.value || '';
+            const matches = due === isoLocal(termDueDate(new Date(), currentTerm()));
+            el.textContent = !dueText() ? '' : matches
+                ? tpl(T.sumTermsInvoiceTpl, { term, fecha: dueText() })
+                : tpl(T.sumDueOnlyTpl, { fecha: dueText() });
         }
     }
     function dueText() {
@@ -543,7 +558,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
     };
     const pick = (p: CatalogProduct | undefined) => {
         if (!p || !$search) return;
-        addLines([lineFromProduct(p, ctx(), boot.defaultTaxRate, pendingQty)]);
+        addLines([lineFromProduct(p, ctx(), productTax(p), pendingQty)]);
         $search.value = '';
         results = searchFor('');
         active = results.length ? 0 : -1;
@@ -600,7 +615,7 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         if (!kit || !kit.items.length) return;
         const row = btn.closest('.kit-insert-row');
         const mult = Number(row?.querySelector<HTMLInputElement>('.kit-insert-qty')?.value) || 1;
-        const { lines: nuevas, ahorro } = linesFromKit(kit, mult, catalogMap, ctx(), boot.defaultTaxRate);
+        const { lines: nuevas, ahorro } = linesFromKit(kit, mult, catalogMap, ctx(), productTax);
         addLines(nuevas);
         closeKits();
         toast(ahorro > 0.004
@@ -627,15 +642,16 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
             })
             .catch(() => {});
     }
-    const $terms = $('deTerms');
+    // Plazo de pago: chips comunes + "Otro plazo" (TermPicker.astro). Se lee y
+    // se escribe solo por su handle; buscar `.chip.active` a mano no ve un
+    // plazo elegido en el <select> de "Otro plazo".
+    const termPicker = wireTermPicker($('deTerms'), (code) => { markDirty(); onTermChange(code); });
     const setTerm = (code: string | undefined) => {
-        if (!code || !$terms) return;
-        const chips = [...$terms.querySelectorAll<HTMLElement>('.chip')];
-        if (!chips.some((c) => c.dataset.term === code)) return;
-        chips.forEach((c) => { c.classList.toggle('active', c.dataset.term === code); c.setAttribute('aria-pressed', String(c.dataset.term === code)); });
-        onTermChange(code);
+        if (!code) return;
+        termPicker.set(code);
+        onTermChange(termPicker.get());
     };
-    const currentTerm = () => $terms?.querySelector<HTMLElement>('.chip.active')?.dataset.term || 'contado';
+    const currentTerm = () => termPicker.get();
 
     $client?.addEventListener('change', () => {
         $clientInput?.classList.remove('is-invalid');
@@ -749,23 +765,14 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
         document.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.client-combo') && !$clientDrop.hidden) closeClients(); });
     }
 
-    $terms?.addEventListener('click', (e) => {
-        const chip = (e.target as HTMLElement).closest<HTMLElement>('.chip');
-        if (!chip || chip.hasAttribute('disabled')) return;
-        markDirty();
-        setTerm(chip.dataset.term);
-    });
-
     // ── Factura: vencimiento y entrega ──────────────────────────────────────
     const $due = $<HTMLInputElement>('deDueDate');
-    const DIAS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-    const isoLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     function onTermChange(code: string) {
         syncRecurring();
         if (!$due) return;
         // Local, no UTC: con toISOString() "contado" fijaba mañana a partir de
         // las 18:00 en México.
-        $due.value = isoLocal(new Date(Date.now() + (DIAS[code] ?? 0) * 86400000));
+        $due.value = isoLocal(termDueDate(new Date(), code));
         $due.dispatchEvent(new Event('change', { bubbles: true }));
     }
     const clientEmail = () => String(clientOption()?.dataset.email || '').trim();
@@ -959,12 +966,12 @@ export function mountDocumentEditor(root: HTMLElement, boot: EditorBoot) {
             if (!res.ok) throw new Error(data.error || T.cantBuild);
             const items: any[] = Array.isArray(data.items) ? data.items : [];
             (window as any).cordTrack?.('ai_draft_used', { has_file: !!aiFile, has_text: !!text, item_count: items.length, ...(isQuote ? {} : { surface: 'invoice' }) });
-            const validRate = (r: unknown) => (r !== null && r !== undefined && boot.taxOptions.some((o) => Math.abs(o.rate - Number(r)) < 1e-9) ? Number(r) : boot.defaultTaxRate);
+            const validRate = validTaxRate;
             const nuevas = items.map((it) => {
                 const p = it.id ? catalogMap.get(String(it.id)) : undefined;
                 const qty = Number(it.cantidad) > 0 ? Number(it.cantidad) : 1;
                 if (p) {
-                    const l = lineFromProduct(p, ctx(), validRate(it.taxRate), qty);
+                    const l = lineFromProduct(p, ctx(), it.taxRate != null ? validRate(it.taxRate) : productTax(p), qty);
                     // El precio que la IA leyó del documento es una propuesta
                     // pactada; sin él, aplica el automático del cliente.
                     if (it.negociado !== null && it.negociado !== undefined && Number(it.negociado) >= 0) setPrice(l, Number(it.negociado));

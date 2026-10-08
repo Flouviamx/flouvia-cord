@@ -154,13 +154,41 @@ existe pero es ajeno ya es filtrar entre negocios.
                    columna). Un rango nuevo recarga la página (la tabla se arma en
                    servidor). "Cobrado" en todas partes = pagosSql: pagos de cotización y de
                    factura (cobro_id null), netos de reembolsos. Categorías del selector:
-                   resumen, ventas, clientes, productos, finanzas, equipo.
-                   Lo verifica test/informes-tabla-db.test.ts.
+                   resumen, ventas, clientes, productos, finanzas, equipo, personalizados.
+                   Lo verifica test/informes-tabla-db.test.ts, que corre sobre las tablas
+                   REALES de db/schema.sql (test/helpers/schema-subset.ts): un esquema a
+                   mano escondió que cotizaciones.creado_por es text y tumbó vendedores.
+                   Explorador (oct 2026, ?r=explorar, kind 'explorador'): "agrupar por"
+                   (?dim=) y hasta 6 métricas (?m=), listas blancas en
+                   src/lib/informes-explorar.ts; cohorte = cotizaciones CREADAS en el rango.
+                   Sale como TablaReport (tabla, totales, comparativa y CSV). Informes
+                   guardados: tabla informes_guardados, API /api/informes/guardados
+                   (analitica; editar/borrar = quien lo guardó u owner/admin; tope 50 por
+                   organización) y ?guardado=<id> carga la configuración. Envío programado
+                   (semanal = lunes, mensual = día 1, en la zona del negocio): cron diario
+                   /api/cron/informes-programados manda el periodo cerrado con CSV SOLO a
+                   quien lo guardó, mientras siga activo y con analitica; el reloj avanza
+                   antes de enviar y se libera si el correo falla. Drill-down: las barras de
+                   cliente/producto abren su ficha y las de mes/semana abren ese periodo.
+                   Eventos report_viewed / report_saved (cliente). Lo verifican
+                   test/informes-explorar-db.test.ts y test/informes-programados-db.test.ts.
 /app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
                    (`users.id`); gateado por el permiso `analitica`.
+/app/tareas      → TAREAS (oct 2026): todas las tareas, no solo las del widget del Inicio.
+                   Filtros Pendientes/Completadas y Mías/Todas/Sin asignar en la URL
+                   (?estado=&scope=), contadores arriba, edición en modal. La interacción
+                   vive en components/app/tasks/TaskBoard.astro (la comparte el widget) y
+                   las filas en TaskList.astro, el ÚNICO constructor de filas: lo renderizan
+                   el SSR y el fragmento /app/tareas/lista (`partial = true`), que el
+                   navegador pide después de cada cambio en vez de recargar la página.
+                   Leer: todos los miembros. Escribir: Cotizaciones, Cobranza o Clientes
+                   (TASK_PERMISSIONS). Sidebar: G T, badge con lo tuyo o sin dueño que
+                   vence hoy o antes (rojo solo si hay vencidas). Read-model en
+                   src/lib/tasks-db.ts; reglas de fecha (día civil del negocio) en
+                   src/lib/tasks.ts.
 /app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
                    del plan. Permiso `ajustes`.
 /app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos
@@ -397,7 +425,11 @@ APIs de cobros (ago 2026)
                    ("Corregir y reintentar"). La acción primaria es "Emitir y enviar":
                    primero muestra una revisión final, guarda el borrador y llama
                    `finalize_and_send`. El folio solo nace al emitir. También
-                   permite emitir sin enviar o guardar y salir.
+                   permite emitir sin enviar o guardar y salir. El plazo
+                   (`<TermPicker>`, `net<N>`) recalcula el vencimiento con
+                   `termDueDate()`; el vencimiento por defecto se calcula en el
+                   día civil del NEGOCIO (`civilDay`), no en UTC. El borrador se
+                   autoguarda y la vista previa usa la marca de la org.
                    Su hoja `src/styles/editor.css` consume los tokens
                    `--editor-*` de `AppLayout`: resumen, campos y menús mantienen
                    contraste en dark; el hero de IA usa un navy propio y no el

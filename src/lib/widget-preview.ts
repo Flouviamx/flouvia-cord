@@ -162,9 +162,9 @@ function gauges(items: { value: number; max: number }[]): HTMLElement {
 }
 
 function listRows(w: HTMLElement): HTMLElement | null {
-    const host = w.querySelector<HTMLElement>('.report-list, .quote-list, .feed, .silence-list, .task-list, .eq-summary-list, .cia-threads, .cbz-table-wrap, table');
+    const host = w.querySelector<HTMLElement>('.report-list, .quote-list, .feed, .silence-list, .tk-list, .eq-summary-list, .cia-threads, .cbz-table-wrap, table');
     if (!host) return null;
-    const rows = Array.from(host.querySelectorAll<HTMLElement>(':scope > a, :scope > div:not(.t-head), :scope > li, :scope .t-row, :scope tbody tr, :scope .quote-row, :scope .feed-item, :scope .silence-row, :scope .task-row'))
+    const rows = Array.from(host.querySelectorAll<HTMLElement>(':scope > a, :scope > div:not(.t-head):not(.tk-summary):not(.tk-empty), :scope > li, :scope .t-row, :scope tbody tr, :scope .quote-row, :scope .feed-item, :scope .silence-row, :scope .tk-row'))
         .filter((r) => (r.textContent || '').trim())
         .slice(0, 3);
     const wrap = div('wlib-rows');
@@ -173,8 +173,8 @@ function listRows(w: HTMLElement): HTMLElement | null {
         return wrap;
     }
     rows.forEach((r) => {
-        const title = (r.querySelector('strong, .t-client, .q-client, .feed-text, .task-title') || r).textContent?.trim().replace(/\s+/g, ' ') || '';
-        const value = r.querySelector('b, .t-amount, .editorial, .q-amount')?.textContent?.trim() || '';
+        const title = (r.querySelector('strong, .t-client, .q-client, .feed-text, .tk-title-text') || r).textContent?.trim().replace(/\s+/g, ' ') || '';
+        const value = r.querySelector('b, .t-amount, .editorial, .q-amount, .tk-due')?.textContent?.trim() || '';
         const line = div('wlib-row');
         line.append(div('wlib-row-t', title.slice(0, 42)), div('wlib-row-v', value));
         wrap.appendChild(line);

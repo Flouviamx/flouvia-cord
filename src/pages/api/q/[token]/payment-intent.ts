@@ -120,7 +120,7 @@ export const POST: APIRoute = async ({ params, request }) => {
             await materializeAnticipoCobros(c.id as string, orgId);
         } else {
             // Pago total simple. El vencimiento hereda los términos de crédito:
-            // contado = hoy; net30/net60 = la fecha de vencimiento (defensa en
+            // contado = hoy; net<N> = la fecha de vencimiento (defensa en
             // profundidad — la UI ya oculta el botón, esto bloquea el API directo).
             const venceTotal = isoDay(dueDateFor(c.base_date as string, c.terminos as string));
             await withOrgTx(orgId, sql`

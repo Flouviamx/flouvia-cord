@@ -47,6 +47,11 @@ const BADGES: Record<SidebarBadge, { n: number; tone: 'neutral' | 'danger'; tip:
         n: badges.vencidas, tone: 'danger',
         tip: `${badges.vencidas} ${t(L, badges.vencidas === 1 ? 'sidebar.badge.vencida' : 'sidebar.badge.vencidas')}`,
     },
+    // Tareas tuyas o sin dueño que vencen hoy o ya vencieron; rojo solo si hay vencidas.
+    tareas: {
+        n: badges.tareas, tone: badges.tareasVencidas > 0 ? 'danger' : 'neutral',
+        tip: `${badges.tareas} ${t(L, badges.tareas === 1 ? 'sidebar.badge.tarea' : 'sidebar.badge.tareas')}`,
+    },
 };
 const badgeOf = (it: SidebarNavItem) => {
     const b = it.badge ? BADGES[it.badge] : null;

@@ -1,4 +1,5 @@
 import { sql, withOrgTx, type DbQuery } from '../db';
+import { normalizeTerm } from '../payment-terms';
 import { notifyQuoteSent } from '../email';
 import { invalidateMoneyCaches } from '../queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../webhooks';
@@ -252,8 +253,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             // y una vigencia negativa dejaba la cotización ya vencida.
             const vigDias = vigenciaDias(input.vigencia_dias);
             const esRecurrente = !!input.es_recurrente;
-            const terminos = esRecurrente ? 'contado'
-                : (['contado', 'net30', 'net60'].includes(String(input.terminos)) ? String(input.terminos) : 'contado');
+            const terminos = esRecurrente ? 'contado' : normalizeTerm(input.terminos);
             const antRaw = Number(input.anticipo_pct);
             const anticipoPct = esRecurrente ? null
                 : (Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null);

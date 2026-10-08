@@ -385,7 +385,7 @@ curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=50" \
 
 ## Log de entregas y retención
 
-{/* MOCKUP: pestaña Webhooks del Workbench con un endpoint expandido: log de entregas con columnas evento, intento, status, duración y fecha; una fila fallida (500) seleccionada mostrando la respuesta del servidor y el botón Reintentar. */}
+<DmWebhookDeliveries lang="es" />
 
 En la pestaña Webhooks del Workbench, cada endpoint tiene un log expandible con el resultado de cada intento (status, duración, respuesta de tu servidor) y un botón "Reintentar" por fila. La pestaña **Eventos** del Workbench muestra lo mismo desde otro ángulo: un evento lógico con todas sus entregas agrupadas, en vez de un log por endpoint. El log se conserva **30 días**; los eventos que llegaron a fallar del todo se conservan **90 días** (para que "Reintentar" siga funcionando más tiempo en ese caso). No uses el log de Cord como almacenamiento de largo plazo de lo que se envió — guarda tú lo que necesites conservar en tu propio sistema al procesarlo.
 

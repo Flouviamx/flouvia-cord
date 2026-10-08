@@ -2,7 +2,7 @@
 title: "Tasks API"
 seoTitle: "Cord Tasks API"
 description: "Create follow-up tasks for your team from other tools."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord engineering"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["A key with write permission on the tareas resource"]
@@ -43,13 +43,15 @@ curl -X POST "https://cordhq.app/api/v1/tareas" \
 { "data": { "id": "7c1e0b4a-3f2d-4e8c-9a6b-5d1f0e2c3b4a" } }
 ```
 
+The task is created **unassigned** with normal priority. In the app, its assignee, priority, and notes are set from **Tasks**; while it has no assignee, the morning [email reminder](/en/docs/gestion/tareas#email-reminder) goes to the account owner.
+
 Every new task emits the `task.created` event. When someone marks it done in the app, `task.completed` is emitted.
 
 ## Possible errors
 
 | Code | When |
 |---|---|
-| `invalid_request` (400) | `titulo` is missing (or empty), or `due_date` isn't formatted as `YYYY-MM-DD`. |
+| `invalid_request` (400) | `titulo` is missing (or empty), or `due_date` isn't a real date formatted as `YYYY-MM-DD` (for example, `2026-02-30` is rejected). |
 | `not_found` (404) | `cotizacion_id` isn't a UUID or isn't a quote from your organization. |
 | `invalid_json` (400) | The body isn't valid JSON. |
 | `insufficient_scope` / `insufficient_permissions` (403) | The key is read-only, or it's a restricted key without `write` on `tareas`. |

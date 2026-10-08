@@ -1,0 +1,155 @@
+---
+// Mockup: la app de Cord en escritorio con el menú lateral completo y la barra
+// superior, sobre Inicio. Calca de src/components/app/Sidebar.astro: el
+// selector de organización arriba, el grupo "Fijados" con un elemento fijado
+// por el miembro, la lista plana de accesos diarios con sus atajos G + letra,
+// los grupos con encabezado y acordeón (Ingresos, Análisis, Automatización)
+// con los contadores accionables, y el pie con "Invitar al equipo" y el botón
+// de colapsar. Los grupos, el orden, los iconos y los nombres salen de
+// SIDEBAR_NAV y del diccionario real: si el menú cambia, el mockup lo sigue.
+// La topbar es DmTopbar (Buscar ⌘K, Crear, notificaciones…) con el punto de
+// "sin leer" en la campana.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import DmStatus from './DmStatus.astro';
+import DmTopbar from './DmTopbar.astro';
+import { SIDEBAR_NAV } from '../../../lib/sidebar-nav';
+import type { QuoteStatus } from '../../../lib/quote';
+import { dmT, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const BADGES: Record<string, number> = { seguimiento: 3, vencidas: 2 };
+
+const DATA = {
+    es: {
+        caption: 'La app en escritorio sobre Inicio: el menú lateral con el selector de Materiales del Valle, un cliente fijado, los accesos diarios con sus atajos, los grupos Ingresos, Análisis y Automatización con 3 cotizaciones por dar seguimiento y 2 cuentas vencidas, y la barra superior con Buscar, Crear y notificaciones sin leer.',
+        eyebrow: 'Espacio de trabajo',
+        pin: DEMO.cliente,
+        activas: '7 cotizaciones activas',
+    },
+    en: {
+        caption: 'The app on desktop over Home: the sidebar with the Materiales del Valle switcher, one pinned client, the daily shortcuts with their keys, the Revenue, Insights and Automation groups with 3 quotes to follow up and 2 overdue accounts, and the top bar with Search, Create and unread notifications.',
+        eyebrow: 'Workspace',
+        pin: DEMO.cliente,
+        activas: '7 active quotes',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const RECENT: { folio: string; cliente: string; status: QuoteStatus; total: number }[] = [
+    { folio: 'COT-0152', cliente: 'Constructora Apex', status: 'approved', total: 10000 },
+    { folio: DEMO.folio, cliente: DEMO.cliente, status: 'viewed', total: DEMO.total },
+    { folio: 'COT-0147', cliente: 'Aceros del Norte', status: 'sent', total: 84310.5 },
+    { folio: 'COT-0146', cliente: 'Grupo Inmobiliario Lerma', status: 'paid', total: 312880 },
+];
+---
+<DocsMockup lang={lang} variant="app" chrome="none" caption={caption} class="dm-map-figure">
+    <div class="map">
+        <div class="dm-sidebar map-sb">
+            <div class="dm-sb-org">
+                <span class="dm-sb-org-av">{DEMO.orgInitial}</span>
+                <span class="dm-sb-org-text">
+                    <span class="dm-sb-org-eyebrow">{d.eyebrow}</span>
+                    <span class="dm-sb-org-name">{DEMO.org}</span>
+                </span>
+                <DmIcon name="chevrons-updown" />
+            </div>
+
+            <div class="dm-sb-group">
+                <div class="dm-sb-label">{dmT(lang, 'sidebar.grupo.fijados')}</div>
+                <div class="dm-sb-item"><DmIcon name="clients" /><span class="dm-sb-item-label">{d.pin}</span></div>
+            </div>
+
+            {SIDEBAR_NAV.map((group) => (
+                <div class="dm-sb-group">
+                    {group.label && <div class="dm-sb-label map-glabel"><span>{dmT(lang, group.label)}</span><DmIcon name="chevron-down" stroke={2} /></div>}
+                    {group.items.map((it) => {
+                        const n = it.badge ? BADGES[it.badge] ?? 0 : 0;
+                        return (
+                            <div class:list={['dm-sb-item', { 'is-active': it.id === 'dashboard' }]}>
+                                <DmIcon name={it.icon} />
+                                <span class="dm-sb-item-label">{dmT(lang, it.label)}</span>
+                                {n > 0
+                                    ? <span class:list={['dm-sb-badge', { 'is-danger': it.badge === 'vencidas' }]}>{n}</span>
+                                    : it.key && <span class="map-kbd"><i>G</i><i>{it.key.toUpperCase()}</i></span>}
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
+
+            <div class="map-foot">
+                <span class="map-invite"><DmIcon name="user-plus" /><span>{dmT(lang, 'sidebar.invitar')}</span></span>
+                <span class="map-toggle"><DmIcon name="sidebar" /></span>
+            </div>
+        </div>
+
+        <div class="map-main">
+            <DmTopbar lang={lang} />
+            <div class="dm-page-head"><div class="dm-h1">{dmT(lang, 'dash.heading')}</div></div>
+            <div class="dm-content">
+                <div class="dm-kpis map-kpis">
+                    <div class="dm-surface dm-kpi">
+                        <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_cerrar')}</span>
+                        <span class="dm-kpi-num"><DmMoney amount={603659.7} lang={lang} /></span>
+                        <span class="dm-kpi-sub">{d.activas}</span>
+                    </div>
+                    <div class="dm-surface dm-kpi">
+                        <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_seguimiento')}</span>
+                        <span class="dm-kpi-num dm-editorial">3</span>
+                        <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_vista_plural')}</span>
+                    </div>
+                </div>
+                <div class="dm-surface map-recent">
+                    <div class="dm-sec-head"><span class="dm-sec-title">{dmT(lang, 'dash.w_recientes')}</span></div>
+                    <div class="dm-table">
+                        {RECENT.map((q) => (
+                            <div class="dm-tr" style="--dm-cols: 74px minmax(0,1fr) auto auto">
+                                <span class="dm-folio">{q.folio}</span>
+                                <span class="dm-ellipsis">{q.cliente}</span>
+                                <DmStatus status={q.status} lang={lang} />
+                                <span class="dm-num"><DmMoney amount={q.total} lang={lang} /></span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-map-figure .dm-content { padding: 0; }
+    .dm-map-figure .map .dm-content { padding: 14px 20px 22px; }
+    .map { display: grid; grid-template-columns: 206px minmax(0, 1fr); align-items: start; }
+    .map-sb { display: flex; flex-direction: column; }
+    .map-glabel { display: flex; align-items: center; justify-content: space-between; padding-right: 8px; }
+    .map-glabel .dm-ico { width: 10px; height: 10px; opacity: 0.6; }
+    .map-kbd { display: inline-flex; gap: 2px; opacity: 0.55; }
+    .map-kbd i { font-style: normal; font-size: 8.5px; font-weight: 700; color: var(--dm-muted); border: 1px solid var(--dm-border); border-radius: 4px; padding: 0 3px; line-height: 13px; }
+    .map-foot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 9px; border-top: 1px solid var(--dm-border); }
+    .map-invite { flex: 1; display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 8px; border-radius: 8px; font-size: 11.5px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; overflow: hidden; }
+    .map-invite .dm-ico { width: 14px; height: 14px; opacity: 0.7; }
+    .map-toggle { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--dm-muted); }
+    .map-toggle .dm-ico { width: 15px; height: 15px; }
+    .map-main { min-width: 0; display: flex; flex-direction: column; padding-right: var(--dm-bleed); }
+    /* Punto de notificaciones sin leer en la campana. */
+    .dm-map-figure .dm-tb-create + .dm-tb-icon { position: relative; }
+    .dm-map-figure .dm-tb-create + .dm-tb-icon::after { content: ''; position: absolute; top: 6px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: #ea580c; box-shadow: 0 0 0 2px #fff; }
+    .map-kpis { --dm-kpi-min: 170px; }
+    .map-recent { margin-top: 12px; padding: 12px 0 2px; }
+    .map-recent .dm-sec-head { padding: 0 14px 9px; margin-bottom: 0; }
+
+    /* Angosto: como en el teléfono, el menú se abre como cajón sobre la app. */
+    @container dm (max-width: 640px) {
+        .map { grid-template-columns: minmax(0, 1fr); }
+        .dm-map-figure .map-sb { display: flex; margin: 10px var(--dm-bleed) 14px 10px; }
+        .map-main { order: -1; padding-right: var(--dm-bleed); }
+        .map-main .dm-page-head, .map-main .dm-content, .map-kbd { display: none; }
+    }
+</style>

@@ -145,10 +145,12 @@ escribe en el negocio de alguien más, así que todo está acotado a propósito:
   `integracion_vinculos` con `objeto = 'quote'` es la llave: el tipo pasa de
   `shopify_draft_order` a `shopify_order` al completarse. Un evento repetido
   reusa el que existe.
-- **Una divisa distinta no se convierte, se detiene** (regla 21). Si la
-  cotización va en otra divisa que la tienda —guardada al conectar con
-  `leerTienda()`— no se crea el pedido. Mandar el número sin su divisa lo
-  cobraría en la equivocada.
+- **Una divisa distinta nunca se convierte** (reglas 21 y 22). Si la
+  cotización va en otra divisa que la tienda, el pedido se crea EN esa divisa
+  (`presentmentCurrencyCode`, con el precio negociado exacto) cuando la tienda
+  la tiene activada en sus mercados (`enabledPresentmentCurrencies`); si no la
+  tiene, no se crea y la cotización dice cómo activarla. Cord no inventa un
+  tipo de cambio.
 - **El precio que viaja es el negociado con su descuento.** Una línea con
   producto vinculado va como variante (descuenta inventario) y una línea libre
   como concepto suelto, en vez de perderse. El impuesto lo calcula Shopify con

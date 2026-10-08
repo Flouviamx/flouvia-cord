@@ -1,0 +1,140 @@
+---
+// Mockup: Ajustes › Cobros con la cuenta de cobros activa y la sección
+// "Frecuencia de depósito" en Semanal / Viernes, lista para guardar.
+//
+// Calca de src/pages/app/ajustes/cobros.astro (SettingsShell + estado de la
+// cuenta + #payoutSched). Los textos de la sección de depósitos están escritos
+// en línea en la página real (no viven en el diccionario), así que se copian
+// aquí tal cual; si cambian allá, cambian aquí. Se omite la sección "Métodos de
+// pago" que en la app va entre las dos: el mockup recorta, no inventa.
+//
+// La descripción real de la categoría nombra al proveedor ("tarjeta vía
+// Stripe"); el mockup no la repite (regla 14) y usa la bajada de la pestaña.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const DATA = {
+    es: {
+        caption: `Ajustes › Cobros de ${DEMO.org} con la cuenta de cobros activa: en "Frecuencia de depósito" la frecuencia está en Semanal y el día de la semana en Viernes, con el botón Guardar cambios.`,
+        categoria: 'Cobros',
+        titulo: 'Frecuencia de depósito',
+        texto: 'Cada cuánto sale tu dinero hacia tu cuenta bancaria. Los depósitos diarios pagan más veces la comisión fija de transferencia; los mensuales juntan el dinero pero lo dejan más lejos.',
+        frecuencia: 'Frecuencia',
+        dia: 'Día de la semana',
+        semanal: 'Semanal',
+        viernes: 'Viernes',
+    },
+    en: {
+        caption: `${DEMO.org}'s Settings › Payments with an active payments account: under "Payout frequency" the frequency is set to Weekly and the day of the week to Friday, with the Save changes button.`,
+        categoria: 'Payments',
+        titulo: 'Payout frequency',
+        texto: 'How often your money leaves for your bank account. Daily payouts pay the fixed transfer fee more often; monthly ones pool the money but keep it further away.',
+        frecuencia: 'Frequency',
+        dia: 'Day of the week',
+        semanal: 'Weekly',
+        viernes: 'Friday',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="" height={640} caption={caption} class="dm-pos-figure">
+    <div class="dm-pos">
+        <div class="dm-pos-crumb"><DmIcon name="chevron-left" stroke={2} />{dmT(lang, 'settings.configuracion')}</div>
+        <div class="dm-pos-heading">
+            <span class="dm-pos-cat"><DmIcon name="wallet" /></span>
+            <span class="dm-pos-heading-text">
+                <span class="dm-pos-h2">{d.categoria}</span>
+                <span class="dm-pos-desc">{dmT(lang, 'set.cobros.intro')}</span>
+            </span>
+        </div>
+
+        <div class="dm-pos-surface dm-pos-status-surface">
+            <span class="dm-pos-h3">{dmT(lang, 'set.cobros.estado_cuenta')}</span>
+            <div class="dm-pos-status">
+                <span class="dm-pos-dot"></span>
+                <span class="dm-pos-status-text">
+                    <span class="dm-strong">{dmT(lang, 'set.cobros.activo_titulo')}</span>
+                    <span class="dm-pos-status-desc">{dmT(lang, 'set.cobros.activo_desc')}</span>
+                </span>
+                <span class="dm-pos-disconnect dm-hide-narrow">{dmT(lang, 'set.cobros.desconectar')}</span>
+            </div>
+        </div>
+
+        <div class="dm-pos-surface dm-pos-sched">
+            <span class="dm-pos-h3">{d.titulo}</span>
+            <span class="dm-pos-p">{d.texto}</span>
+            <div class="dm-pos-row">
+                <div class="dm-pos-field">
+                    <span class="dm-pos-label">{d.frecuencia}</span>
+                    <span class="dm-pos-input dm-select">{d.semanal}</span>
+                </div>
+                <div class="dm-pos-field">
+                    <span class="dm-pos-label">{d.dia}</span>
+                    <span class="dm-pos-input dm-select is-focus">{d.viernes}</span>
+                </div>
+            </div>
+            <div class="dm-pos-foot">
+                <span class="dm-pos-save">{dmT(lang, 'settings.guardar_cambios')}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-pos-figure .dm-content { padding-top: 18px; }
+    .dm-pos { max-width: 720px; }
+    .dm-pos-crumb { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); margin-bottom: 10px; }
+    .dm-pos-crumb .dm-ico { width: 13px; height: 13px; }
+    .dm-pos-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; }
+    .dm-pos-cat { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; background: #fff; color: var(--dm-muted); box-shadow: var(--dm-shadow-card); }
+    .dm-pos-cat .dm-ico { width: 21px; height: 21px; }
+    .dm-pos-heading-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-pos-h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--dm-text); }
+    .dm-pos-desc { font-size: 12px; line-height: 1.5; color: var(--dm-muted); max-width: 62ch; }
+
+    /* = .settings-surface: blanca, borde fino y sombra difusa, radio amplio. */
+    .dm-pos-surface {
+        display: flex; flex-direction: column; gap: 10px;
+        padding: 20px 22px; margin-bottom: 16px;
+        background: #fff; border: 1px solid rgba(10, 25, 47, 0.06); border-radius: 20px;
+        box-shadow: var(--dm-shadow-card);
+    }
+    .dm-pos-h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dm-pos-p { font-size: 11.5px; line-height: 1.55; color: var(--dm-muted); max-width: 62ch; }
+
+    .dm-pos-status { display: flex; align-items: center; gap: 12px; padding: 4px 0 2px; }
+    .dm-pos-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: var(--dm-ok); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14); }
+    .dm-pos-status-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12.5px; }
+    .dm-pos-status-desc { font-size: 11px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-pos-disconnect { margin-left: auto; align-self: flex-start; flex-shrink: 0; padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(239, 68, 68, 0.25); font-size: 10.5px; font-weight: 600; color: var(--dm-danger-ink); white-space: nowrap; }
+
+    .dm-pos-sched { gap: 9px; }
+    .dm-pos-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 4px; }
+    .dm-pos-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    /* = .s-field label: mayúsculas pequeñas con tracking. */
+    .dm-pos-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); }
+    /* = .s-input: gris suave con borde fino. */
+    .dm-pos-input { display: flex; align-items: center; height: 40px; padding: 0 13px; border-radius: 11px; background: var(--dm-canvas); border: 1px solid var(--dm-border); font-size: 12.5px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; }
+    .dm-pos-input.is-focus { border-color: var(--dm-muted); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.07); background: #fff; }
+    .dm-pos-foot { display: flex; justify-content: flex-end; padding-top: 8px; margin-top: 6px; }
+    /* = SettingsSaveButton: rectángulo redondeado navy de 48 px. */
+    .dm-pos-save { display: inline-flex; align-items: center; justify-content: center; min-width: 150px; height: 40px; padding: 0 20px; border-radius: 12px; background: var(--dm-navy); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 8px 22px -12px rgba(10, 25, 47, 0.55); }
+
+    @container dm (max-width: 520px) {
+        .dm-pos-figure .dm-stage { height: auto; }
+        .dm-pos-surface { padding: 16px 14px; border-radius: 16px; }
+        .dm-pos-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+        .dm-pos-save { width: 100%; }
+        .dm-pos-heading { align-items: flex-start; }
+        .dm-pos-cat { width: 36px; height: 36px; border-radius: 11px; }
+    }
+</style>

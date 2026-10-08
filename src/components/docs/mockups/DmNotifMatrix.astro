@@ -1,0 +1,158 @@
+---
+// Mockup: Ajustes › Notificaciones (/app/ajustes/notificaciones). Calca de
+// src/pages/app/ajustes/notificaciones.astro dentro de SettingsShell: miga
+// "Configuración / Notificaciones", encabezado de la categoría con sus pestañas
+// (Notificaciones · Correo), la matriz de 7 eventos × 3 canales (Correo, Slack,
+// Teams) y la sección avanzada "Canal de Slack" con el webhook y el flujo de Teams.
+// Eventos, descripciones y canales salen del diccionario real (set.notif.*). La
+// celda de Slack y Teams de "Alguien se unió al equipo" no es una casilla: es "—"
+// con el aviso "No aplica a este evento", igual que en la app.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const EVENTOS = ['viewed', 'approved', 'rejected', 'paid', 'expiring', 'overdue', 'team_join'] as const;
+const CANALES = ['email', 'slack', 'teams'] as const;
+// Preferencias guardadas de la organización (orgs.notif_prefs).
+const ON: Record<string, string[]> = {
+    viewed: [],
+    approved: ['email', 'slack'],
+    rejected: ['email'],
+    paid: ['email', 'slack'],
+    expiring: [],
+    overdue: [],
+    team_join: [],
+};
+const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
+
+const DATA = {
+    es: {
+        caption: 'Ajustes › Notificaciones: la matriz de 7 eventos por Correo, Slack y Teams, con Cotización aprobada, Cotización rechazada y Pago recibido marcadas en Correo (aprobada y pago también en Slack); las celdas de Slack y Teams de "Alguien se unió al equipo" muestran "No aplica a este evento". Debajo, la sección Canal de Slack con el webhook de Slack y el flujo de Teams.',
+        desc: 'Qué eventos te avisan y por qué canal (correo, Slack…).',
+        tabs: ['Notificaciones', 'Correo'],
+        hint: 'Canales externos · configura solo los que use tu equipo.',
+    },
+    en: {
+        caption: 'Settings › Notifications: the 7-event matrix across Email, Slack and Teams, with Quote approved, Quote rejected and Payment received checked under Email (approved and payment also under Slack); the Slack and Teams cells for "Someone joined the team" show "Not available for this event". Below, the Slack channel section with the Slack webhook and the Teams flow.',
+        desc: 'Which events notify you and through which channel (email, Slack…).',
+        tabs: ['Notifications', 'Email'],
+        hint: 'External channels · configure only those your team uses.',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ajustes" height={990} caption={caption} class="dm-nm-figure">
+    <div class="dm-nm">
+        <div class="dm-nm-crumbs"><DmIcon name="chevron-left" stroke={2.2} />{dmT(lang, 'settings.configuracion')}<i>/</i><b>{d.tabs[0]}</b></div>
+        <div class="dm-nm-heading">
+            <span class="dm-nm-catico"><DmIcon name="bell" /></span>
+            <span><span class="dm-nm-title">{d.tabs[0]}</span><span class="dm-nm-desc">{d.desc}</span></span>
+        </div>
+        <div class="dm-nm-tabs"><span class="is-on">{d.tabs[0]}</span><span>{d.tabs[1]}</span></div>
+        <div class="dm-nm-intro">{dmT(lang, 'set.notif.intro')}</div>
+
+        <div class="dm-nm-block">
+            <div class="dm-nm-bhead"><span class="dm-nm-sico"><DmIcon name="mail" /></span>{dmT(lang, 'set.notif.eventos')}</div>
+            <div class="dm-nm-grid">
+                <div class="dm-nm-row dm-nm-head">
+                    <span></span>
+                    {CANALES.map((c) => <span class="dm-nm-ch">{dmT(lang, `set.notif.canal.${c}`)}</span>)}
+                </div>
+                {EVENTOS.map((ev) => (
+                    <div class="dm-nm-row">
+                        <span class="dm-nm-ev">
+                            <span class="dm-nm-ev-label">{dmT(lang, `set.notif.ev.${ev}`)}</span>
+                            <span class="dm-nm-ev-desc">{dmT(lang, `set.notif.ev.${ev}_desc`)}</span>
+                        </span>
+                        {CANALES.map((c) =>
+                            sinCanal(ev, c) ? (
+                                <span class="dm-nm-na">—{c === 'teams' && <span class="dm-nm-tip">{dmT(lang, 'set.notif.sin_canal')}</span>}</span>
+                            ) : (
+                                <span class="dm-nm-cell"><span class:list={['dm-nm-box', { 'is-on': ON[ev].includes(c) }]}>{ON[ev].includes(c) && <DmIcon name="check" stroke={3.2} />}</span></span>
+                            )
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div class="dm-nm-block">
+            <div class="dm-nm-summary">
+                <span class="dm-nm-bhead"><span class="dm-nm-sico"><DmIcon name="link" /></span>{dmT(lang, 'set.notif.slack_canal')}</span>
+                <small>{d.hint}</small>
+                <DmIcon name="chevron-up" class="dm-nm-disc" />
+            </div>
+            <div class="dm-nm-field">
+                <span class="dm-nm-label">{dmT(lang, 'set.notif.slack_webhook')}</span>
+                <span class="dm-nm-input dm-mono">https://hooks.slack.com/services/T04QH2M7A/B06K1VV3D2C/••••••••••••</span>
+                <span class="dm-nm-hint">{dmT(lang, 'set.notif.slack_hint')}</span>
+            </div>
+            <div class="dm-nm-field">
+                <span class="dm-nm-label">{dmT(lang, 'set.notif.teams_webhook')}</span>
+                <span class="dm-nm-input is-ph dm-mono">https://prod-00.westus.logic.azure.com:443/workflows/...</span>
+                <span class="dm-nm-hint">{dmT(lang, 'set.notif.teams_hint')}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-nm-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); padding-top: 18px; }
+    .dm-nm { max-width: 600px; }
+    .dm-nm-crumbs { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; font-size: 11px; font-weight: 600; color: var(--dm-muted); }
+    .dm-nm-crumbs .dm-ico { width: 12px; height: 12px; }
+    .dm-nm-crumbs i { font-style: normal; color: #c4cad3; }
+    .dm-nm-crumbs b { color: var(--dm-text); font-weight: 600; }
+    .dm-nm-heading { display: flex; align-items: center; gap: 12px; }
+    .dm-nm-heading > span:last-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-nm-catico { width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0; display: grid; place-items: center; background: #fff; color: var(--dm-muted); box-shadow: 0 2px 5px rgba(10, 25, 47, 0.03), 0 14px 32px -20px rgba(10, 25, 47, 0.3); }
+    .dm-nm-catico .dm-ico { width: 20px; height: 20px; }
+    .dm-nm-title { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; }
+    .dm-nm-desc { font-size: 11.5px; color: var(--dm-muted); }
+    .dm-nm-tabs { display: inline-flex; gap: 2px; margin-top: 14px; padding: 3px; border-radius: 11px; background: rgba(10, 25, 47, 0.065); }
+    .dm-nm-tabs span { display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--dm-muted); }
+    .dm-nm-tabs span.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.13), 0 1px 5px rgba(10, 25, 47, 0.05); }
+    .dm-nm-intro { margin: 16px 0 14px; font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); max-width: 62ch; }
+
+    .dm-nm-block { display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 14px; margin-bottom: 14px; border-radius: 18px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.05); box-shadow: 0 2px 5px rgba(10, 25, 47, 0.012), 0 14px 32px -26px rgba(10, 25, 47, 0.19); }
+    .dm-nm-bhead { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; letter-spacing: -0.015em; }
+    .dm-nm-sico { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: rgba(10, 25, 47, 0.05); color: var(--dm-navy); }
+    .dm-nm-sico .dm-ico { width: 14px; height: 14px; }
+    .dm-nm-grid { display: flex; flex-direction: column; }
+    .dm-nm-row { display: grid; grid-template-columns: minmax(0, 1fr) 62px 62px 62px; align-items: center; gap: 6px; padding: 10px 2px; border-bottom: 1px solid var(--dm-border); }
+    .dm-nm-row:last-child { border-bottom: 0; }
+    .dm-nm-head { padding-top: 0; padding-bottom: 7px; }
+    .dm-nm-ch { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #99a2af; text-align: center; }
+    .dm-nm-ev { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-nm-ev-label { font-size: 12px; font-weight: 600; }
+    .dm-nm-ev-desc { font-size: 10px; color: var(--dm-muted); line-height: 1.4; }
+    .dm-nm-cell { display: flex; justify-content: center; }
+    .dm-nm-box { width: 18px; height: 18px; border-radius: 5.5px; display: grid; place-items: center; background: var(--dm-soft); border: 1.5px solid var(--dm-border-strong); color: #fff; }
+    .dm-nm-box.is-on { background: var(--dm-ok); border-color: var(--dm-ok); }
+    .dm-nm-box .dm-ico { width: 11px; height: 11px; }
+    .dm-nm-na { position: relative; display: flex; justify-content: center; font-size: 13px; color: rgba(91, 100, 114, 0.45); }
+    /* El aviso nativo (title) de la celda, dibujado como lo muestra el navegador al pasar el cursor. */
+    .dm-nm-tip { position: absolute; right: 4px; bottom: calc(100% + 6px); padding: 5px 8px; border-radius: 6px; background: var(--dm-navy); color: #fff; font-size: 9.5px; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 18px -8px rgba(10, 25, 47, 0.5); }
+
+    .dm-nm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .dm-nm-summary small { font-size: 10px; color: var(--dm-muted); }
+    .dm-nm-disc { width: 13px; height: 13px; margin-left: auto; color: var(--dm-faint); }
+    .dm-nm-field { display: flex; flex-direction: column; gap: 5px; }
+    .dm-nm-label { font-size: 11px; font-weight: 600; color: #4a5567; }
+    .dm-nm-input { display: block; height: 32px; line-height: 32px; padding: 0 11px; border-radius: 9px; background: var(--dm-canvas); font-size: 10.5px; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-nm-input.is-ph { color: #aab2bf; }
+    .dm-nm-hint { font-size: 9.5px; line-height: 1.5; color: var(--dm-muted); }
+
+    @container dm (max-width: 520px) {
+        .dm-nm-figure .dm-stage { height: auto; max-height: 1180px; }
+        .dm-nm-row { grid-template-columns: minmax(0, 1fr) 40px 40px 40px; }
+        .dm-nm-block { padding: 14px 12px 10px; }
+    }
+</style>

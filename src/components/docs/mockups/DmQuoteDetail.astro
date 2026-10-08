@@ -1,0 +1,320 @@
+---
+// Mockup: detalle de una cotización del lado del vendedor (/app/cotizaciones/[id]).
+// Calca de src/pages/app/cotizaciones/[id].astro: stepper de estado, encabezado con
+// cliente + versión (+ insignia "Viendo ahora — sección" en Pro), detalle de partidas
+// con totales y la columna lateral de Acciones.
+//
+// Dos vistas de la MISMA pantalla:
+//   view="atencion" (Pro): el cliente la tiene abierta; la columna lateral muestra
+//                          Acciones y el bloque "Atención del cliente".
+//   view="acciones":       la columna lateral con Acciones, Actividad y Conversación.
+// Datos: COT-0149 (dm-gestion.ts), versión 2.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import DmStatus from './DmStatus.astro';
+import { dmT, dmMoney, pick, tpl, favicon, type DmLang } from './format';
+import { Q149, SELLER, dmDate, dmNum, lineAmount, q149Subtotal, q149Total } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    view?: 'atencion' | 'acciones';
+    caption?: string;
+}
+const { lang, view = 'acciones' } = Astro.props;
+const live = view === 'atencion';
+
+const subtotal = q149Subtotal();
+const total = q149Total();
+const VERSION = 2;
+
+// Segundos por sección del link (orden de lectura del cliente, como lo devuelve la API).
+const SECS = [
+    { key: 'q.atencion.sec_partidas', s: 240 },
+    { key: 'q.atencion.sec_pago', s: 80 },
+    { key: 'q.atencion.sec_resumen', s: 40 },
+    { key: 'q.atencion.sec_conversacion', s: 15 },
+] as const;
+const totalSecs = SECS.reduce((a, b) => a + b.s, 0);
+const maxSecs = Math.max(...SECS.map((x) => x.s));
+const dwell = (s: number) => (s < 60 ? `${s}s` : s % 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s / 60}m`);
+
+const DATA = {
+    es: {
+        captionAtencion: `Detalle de ${Q149.folio} del lado del vendedor: junto a ${Q149.cliente} aparece la insignia "Viendo ahora — Partidas", y el bloque Atención del cliente marca 2 personas y 5 aperturas, la primera el 3 oct y la última hoy, con el tiempo por sección (Partidas 4m, Aprobación y pago 1m 20s, Resumen 40s) y el tiempo total sobre la propuesta.`,
+        captionAcciones: `Detalle de ${Q149.folio} en estado Vista: el stepper Borrador, Enviada, Vista, Aprobada, Pagada con Vista activo, la insignia V2, el panel Acciones con Marcar aprobada, Marcar rechazada y Modificar y reenviar (V3), los accesos Abrir link, Copiar link, PDF y WhatsApp, Duplicar cotización y, debajo, Actividad y Conversación.`,
+        primera: '3 oct 2026, 16:05',
+        ultima: 'hoy, 11:38',
+        actividad: [
+            { c: '#7c3aed', t: 'Abierta por el cliente desde el link', w: 'hoy, 11:31' },
+            { c: '#3b82f6', t: `Enviada por correo a ${Q149.contacto} (V2)`, w: '2 oct, 10:14' },
+            { c: '#cbd5e1', t: 'Versión 2: precio negociado en cemento', w: '2 oct, 10:12' },
+            { c: '#7c3aed', t: 'Abierta por el cliente desde el link', w: '1 oct, 18:47' },
+            { c: '#cbd5e1', t: `Creada por ${SELLER}`, w: '29 sep, 9:02' },
+        ],
+        chat: [
+            { mine: false, t: '¿El flete incluye la descarga en obra?', w: 'ayer, 16:58' },
+            { mine: true, t: 'Sí, con montacargas. Lo dejamos al pie de la obra.', w: 'ayer, 17:20' },
+            { mine: false, t: 'Perfecto. Lo reviso con compras y te confirmo hoy.', w: 'hace 20 min' },
+        ],
+    },
+    en: {
+        captionAtencion: `Seller-side detail of ${Q149.folio}: the "Viewing now — Line items" badge appears next to ${Q149.cliente}, and the Client attention block shows 2 people and 5 opens, first on Oct 3 and last today, with time per section (Line items 4m, Approval and payment 1m 20s, Summary 40s) and the total time on the proposal.`,
+        captionAcciones: `Detail of ${Q149.folio} in Viewed status: the Draft, Sent, Viewed, Approved, Paid stepper with Viewed active, the V2 badge, the Actions panel with Mark approved, Mark rejected and Modify and resend (V3), the Open link, Copy link, PDF and WhatsApp shortcuts, Duplicate quote and, below, Activity and Conversation.`,
+        primera: 'Oct 3, 2026, 4:05 PM',
+        ultima: 'today, 11:38 AM',
+        actividad: [
+            { c: '#7c3aed', t: 'Opened by the client from the link', w: 'today, 11:31 AM' },
+            { c: '#3b82f6', t: `Emailed to ${Q149.contacto} (V2)`, w: 'Oct 2, 10:14 AM' },
+            { c: '#cbd5e1', t: 'Version 2: negotiated cement price', w: 'Oct 2, 10:12 AM' },
+            { c: '#7c3aed', t: 'Opened by the client from the link', w: 'Oct 1, 6:47 PM' },
+            { c: '#cbd5e1', t: `Created by ${SELLER}`, w: 'Sep 29, 9:02 AM' },
+        ],
+        chat: [
+            { mine: false, t: 'Does delivery include unloading on site?', w: 'yesterday, 4:58 PM' },
+            { mine: true, t: 'Yes, with a forklift. We leave it at the site entrance.', w: 'yesterday, 5:20 PM' },
+            { mine: false, t: 'Great. I will check with purchasing and confirm today.', w: '20 min ago' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? (live ? d.captionAtencion : d.captionAcciones);
+const STEPS = ['id.step_borrador', 'id.step_enviada', 'id.step_vista', 'id.step_aprobada', 'id.step_pagada'] as const;
+const CURRENT = 2;
+const crumb = dmT(lang, 'id.volver').replace('← ', '');
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={Q149.folio} crumbs={[crumb]} badges={{ seguimiento: 2 }} height={live ? 760 : 820} caption={caption} class:list={['dm-qd-figure', live ? 'dm-qd-is-live' : 'dm-qd-is-actions']}>
+    <DmStatus slot="actions" status="viewed" lang={lang} />
+
+    <div class="dm-qd-stepper">
+        {STEPS.map((k, i) => (
+            <div class:list={['dm-qd-step', { 'is-done': i < CURRENT, 'is-current': i === CURRENT }]}>
+                <span class="dm-qd-dot">{i < CURRENT ? <DmIcon name="check" stroke={3.2} /> : i + 1}</span>
+                <span class="dm-qd-steplabel">{dmT(lang, k)}</span>
+            </div>
+        ))}
+    </div>
+
+    <div class="dm-qd-grid">
+        <div class="dm-qd-main">
+            <div class="dm-qd-head">
+                <div class="dm-qd-client">
+                    <span class="dm-qd-avatar">C</span>
+                    <span class="dm-qd-client-text">
+                        <span class="dm-qd-name">
+                            {Q149.cliente}
+                            <span class="dm-qd-version">V{VERSION}</span>
+                            {live && <span class="dm-qd-live"><i></i>{dmT(lang, 'id.viendo_ahora')}<span class="dm-qd-live-sec"> — {dmT(lang, 'q.atencion.sec_partidas')}</span></span>}
+                        </span>
+                        <span class="dm-qd-meta">{lang === 'en' ? 'Due on receipt' : 'Contado'} · {dmT(lang, 'id.vigente_hasta')} {dmDate(Q149.vigencia, lang)} · {dmT(lang, 'id.creada')} {dmDate(Q149.creada, lang)}</span>
+                    </span>
+                </div>
+                <div class="dm-qd-total">
+                    <span class="dm-qd-total-label">{dmT(lang, 'id.total')}</span>
+                    <DmMoney amount={total} lang={lang} class="dm-qd-total-val" />
+                </div>
+            </div>
+
+            <div class="dm-qd-items">
+                <div class="dm-qd-sechead">{dmT(lang, 'id.detalle')}</div>
+                <div class="dm-qd-irow dm-qd-ihead">
+                    <span>{dmT(lang, 'id.th_producto')}</span><span>{dmT(lang, 'id.th_cant')}</span><span>{dmT(lang, 'id.th_precio')}</span><span class="dm-qd-r">{dmT(lang, 'id.th_importe')}</span>
+                </div>
+                {Q149.lines.map((l, i) => (
+                    <div class="dm-qd-irow">
+                        <span class="dm-qd-iname">
+                            <span>{l[lang]}</span>
+                            <small>{l.unit[lang]}</small>
+                            <span class="dm-qd-ichat"><DmIcon name="chat" stroke={2.2} />{i === 2 ? '2' : ''}</span>
+                        </span>
+                        <span class="dm-qd-qty">{dmNum(l.qty, lang)}</span>
+                        <span class="dm-qd-price">
+                            {l.list > l.price && <s>{dmMoney(l.list, 'MXN', lang)}</s>}
+                            <DmMoney amount={l.price} lang={lang} />
+                        </span>
+                        <DmMoney amount={lineAmount(l)} lang={lang} class="dm-qd-amt" />
+                    </div>
+                ))}
+                <div class="dm-qd-totals">
+                    <div class="dm-qd-tline"><span>{dmT(lang, 'id.subtotal')}</span><DmMoney amount={subtotal} lang={lang} /></div>
+                    <div class="dm-qd-tline"><span>IVA 16%</span><DmMoney amount={total - subtotal} lang={lang} /></div>
+                    <div class="dm-qd-tline dm-qd-grand"><span>{dmT(lang, 'id.total_line')}</span><DmMoney amount={total} lang={lang} /></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dm-qd-side">
+            <div class="dm-qd-block">
+                <div class="dm-qd-sechead">{dmT(lang, 'id.acciones')}</div>
+                <div class="dm-qd-acts">
+                    <span class="dm-qd-act is-ok">{dmT(lang, 'id.marcar_aprobada')}</span>
+                    <span class="dm-qd-act is-danger">{dmT(lang, 'id.marcar_rechazada')}</span>
+                    <span class="dm-qd-act is-secondary">{tpl(dmT(lang, 'id.modificar_reenviar'), { n: VERSION + 1 })}</span>
+                    <div class="dm-qd-util">
+                        <span><DmIcon name="external" />{dmT(lang, 'id.abrir_link')}</span>
+                        <span><DmIcon name="copy" />{dmT(lang, 'id.copiar_link')}</span>
+                        <span><DmIcon name="download" />{dmT(lang, 'id.pdf')}</span>
+                        <span class="is-wa"><img class="dm-logo" src={favicon('whatsapp.com')} alt="" width="16" height="16" loading="lazy" decoding="async" />WhatsApp</span>
+                    </div>
+                    <span class="dm-qd-act is-secondary">{dmT(lang, 'id.duplicar')}</span>
+                </div>
+            </div>
+
+            {live && (
+                <div class="dm-qd-block">
+                    <div class="dm-qd-sechead">{dmT(lang, 'id.atencion.titulo')}</div>
+                    <div class="dm-qd-at">
+                        <span class="dm-qd-at-sum">{tpl(dmT(lang, 'id.atencion.personas'), { n: 2 })}<i>·</i>{tpl(dmT(lang, 'id.atencion.aperturas'), { n: 5 })}</span>
+                        <span class="dm-qd-at-dates"><span><b>{dmT(lang, 'id.atencion.primera')}</b> {d.primera}</span><span><b>{dmT(lang, 'id.atencion.ultima')}</b> {d.ultima}</span></span>
+                        <div class="dm-qd-bars">
+                            {SECS.map((x) => (
+                                <div class="dm-qd-bar">
+                                    <span class="dm-qd-bar-label">{dmT(lang, x.key)}</span>
+                                    <span class="dm-qd-track"><i style={`width:${Math.round((x.s / maxSecs) * 100)}%`}></i></span>
+                                    <span class="dm-qd-bar-val">{dwell(x.s)}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <span class="dm-qd-at-note">{tpl(dmT(lang, 'id.atencion.pdf'), { n: 1 })}</span>
+                        <span class="dm-qd-at-note dm-qd-at-total">{dmT(lang, 'id.atencion.tiempo_total')} <b>{dwell(totalSecs)}</b></span>
+                    </div>
+                </div>
+            )}
+
+            {!live && (
+                <div class="dm-qd-block">
+                    <div class="dm-qd-sechead">{dmT(lang, 'id.actividad')}</div>
+                    <div class="dm-qd-tl">
+                        {d.actividad.map((e) => (
+                            <div class="dm-qd-tl-item">
+                                <i style={`background:${e.c}`}></i>
+                                <span><span class="dm-qd-tl-text">{e.t}</span><span class="dm-qd-tl-time">{e.w}</span></span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {!live && (
+                <div class="dm-qd-block">
+                    <div class="dm-qd-sechead">{dmT(lang, 'id.conversacion')}</div>
+                    <div class="dm-qd-chat">
+                        {d.chat.map((m) => (
+                            <div class:list={['dm-qd-msg', m.mine ? 'is-mine' : 'is-theirs']}>
+                                <span>{m.t}</span>
+                                <span class="dm-qd-msg-meta"><b>{m.mine ? dmT(lang, 'id.chat_tu') : Q149.cliente}</b>{m.w}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div class="dm-qd-compose"><span>{dmT(lang, 'id.responder_ph')}</span><i><DmIcon name="send" stroke={2.4} /></i></div>
+                </div>
+            )}
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-qd-figure .dm-content { padding-top: 12px; padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-qd-figure .dm-page-head { padding-right: calc(18px + var(--dm-bleed)); }
+    .dm-qd-stepper { display: flex; align-items: center; margin-bottom: 18px; }
+    .dm-qd-step { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+    .dm-qd-step:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 8px; border-radius: 2px; background: var(--dm-border); }
+    .dm-qd-step.is-done:not(:last-child)::after { background: var(--dm-ok); }
+    .dm-qd-step:last-child { flex: 0 0 auto; }
+    .dm-qd-dot { width: 21px; height: 21px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 10px; font-weight: 800; color: var(--dm-muted); background: var(--dm-soft); border: 1.5px solid var(--dm-border); }
+    .dm-qd-dot .dm-ico { width: 10px; height: 10px; }
+    .dm-qd-step.is-done .dm-qd-dot { background: var(--dm-ok); border-color: var(--dm-ok); color: #fff; }
+    .dm-qd-step.is-current .dm-qd-dot { background: var(--dm-navy); border-color: var(--dm-navy); color: #fff; box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08); }
+    .dm-qd-steplabel { font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-qd-step.is-done .dm-qd-steplabel, .dm-qd-step.is-current .dm-qd-steplabel { color: var(--dm-text); }
+
+    .dm-qd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 214px; gap: 22px; align-items: start; }
+    .dm-qd-main { min-width: 0; }
+    .dm-qd-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--dm-border); }
+    .dm-qd-client { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .dm-qd-avatar { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 13px; font-weight: 800; }
+    .dm-qd-client-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-qd-name { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+    .dm-qd-version { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--dm-navy); background: rgba(10, 25, 47, 0.06); padding: 2px 6px; border-radius: 5px; }
+    .dm-qd-live { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; letter-spacing: 0; color: #059669; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 999px; padding: 3px 9px; }
+    .dm-qd-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18); }
+    .dm-qd-live-sec { font-weight: 500; opacity: 0.85; }
+    .dm-qd-meta { font-size: 11px; color: var(--dm-muted); }
+    .dm-qd-total { display: flex; flex-direction: column; align-items: flex-end; }
+    .dm-qd-total-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em; color: #99a2af; }
+    .dm-qd-total-val { font-size: 24px; line-height: 1.15; color: var(--dm-navy); }
+
+    .dm-qd-sechead { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--dm-border); }
+    .dm-qd-irow { display: grid; grid-template-columns: minmax(0, 1.6fr) 38px minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--dm-border); font-size: 11.5px; }
+    .dm-qd-ihead { padding-top: 0; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-qd-r { text-align: right; }
+    .dm-qd-iname { display: flex; flex-direction: column; font-weight: 600; min-width: 0; }
+    .dm-qd-iname small { font-size: 9.5px; font-weight: 500; color: #99a2af; }
+    .dm-qd-ichat { display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; font-size: 9.5px; font-weight: 700; color: var(--dm-muted); }
+    .dm-qd-ichat .dm-ico { width: 11px; height: 11px; }
+    .dm-qd-qty { color: var(--dm-muted); }
+    .dm-qd-price { display: flex; flex-direction: column; color: var(--dm-navy); }
+    .dm-qd-price s { font-size: 9.5px; color: #b6bcc6; }
+    .dm-qd-amt { justify-self: end; color: var(--dm-navy); }
+    .dm-qd-totals { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding: 12px 4px 0; }
+    .dm-qd-tline { display: flex; justify-content: space-between; gap: 30px; min-width: 210px; font-size: 11px; color: var(--dm-muted); }
+    .dm-qd-tline .dm-money { color: var(--dm-navy); }
+    .dm-qd-grand { padding-top: 7px; border-top: 1px solid var(--dm-border); font-weight: 700; color: var(--dm-text); }
+    .dm-qd-grand .dm-money { font-size: 15px; }
+
+    .dm-qd-side { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+    .dm-qd-acts { display: flex; flex-direction: column; gap: 6px; }
+    .dm-qd-act { display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 9px; font-size: 11.5px; font-weight: 600; text-align: center; }
+    .dm-qd-act.is-ok { background: #10b981; color: #fff; box-shadow: inset 0 0 0 1px #059669; }
+    .dm-qd-act.is-danger { background: rgba(239, 68, 68, 0.07); color: var(--dm-danger-ink); box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.22); }
+    .dm-qd-act.is-secondary { background: var(--dm-soft); color: var(--dm-text); box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-qd-util { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 2px; }
+    .dm-qd-util > span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px 6px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border), 0 1px 2px rgba(10, 25, 47, 0.04); font-size: 8.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; overflow: hidden; }
+    .dm-qd-util .dm-ico { width: 15px; height: 15px; }
+    .dm-qd-util .dm-logo { width: 15px; height: 15px; }
+    .dm-qd-util .is-wa { color: #0b7a4b; }
+
+    .dm-qd-at { display: flex; flex-direction: column; gap: 9px; }
+    .dm-qd-at-sum { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+    .dm-qd-at-sum i { font-style: normal; color: #c4cad3; }
+    .dm-qd-at-dates { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; color: var(--dm-muted); }
+    .dm-qd-at-dates b { font-weight: 600; }
+    .dm-qd-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+    .dm-qd-bar { display: grid; grid-template-columns: 84px minmax(0, 1fr) 42px; align-items: center; gap: 8px; }
+    .dm-qd-bar-label { font-size: 10px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-qd-track { height: 6px; border-radius: 999px; background: rgba(10, 25, 47, 0.07); overflow: hidden; }
+    .dm-qd-track i { display: block; height: 100%; border-radius: 999px; background: var(--dm-navy); }
+    .dm-qd-bar-val { font-size: 10px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+    .dm-qd-at-note { font-size: 10px; color: var(--dm-muted); }
+    .dm-qd-at-total { padding-top: 8px; border-top: 1px solid var(--dm-border); }
+    .dm-qd-at-total b { color: var(--dm-text); font-weight: 650; }
+
+    .dm-qd-tl { position: relative; display: flex; flex-direction: column; gap: 11px; }
+    .dm-qd-tl::before { content: ''; position: absolute; left: 3px; top: 6px; bottom: 6px; width: 1px; background: var(--dm-border); }
+    .dm-qd-tl-item { position: relative; display: flex; gap: 11px; }
+    .dm-qd-tl-item > i { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px var(--dm-canvas); }
+    .dm-qd-tl-item > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-qd-tl-text { font-size: 11px; font-weight: 500; line-height: 1.35; }
+    .dm-qd-tl-time { font-size: 9.5px; color: var(--dm-muted); }
+
+    .dm-qd-chat { display: flex; flex-direction: column; gap: 6px; margin-bottom: 9px; }
+    .dm-qd-msg { display: flex; flex-direction: column; gap: 2px; max-width: 90%; padding: 7px 10px; font-size: 11px; line-height: 1.4; }
+    .dm-qd-msg.is-theirs { align-self: flex-start; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); border-radius: 12px 12px 12px 3px; }
+    .dm-qd-msg.is-mine { align-self: flex-end; background: var(--dm-navy); color: #fff; border-radius: 12px 12px 3px 12px; }
+    .dm-qd-msg-meta { display: flex; gap: 5px; font-size: 8.5px; opacity: 0.66; }
+    .dm-qd-compose { display: flex; align-items: center; gap: 6px; padding: 5px 5px 5px 10px; border-radius: 11px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 10.5px; color: var(--dm-muted); }
+    .dm-qd-compose span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-qd-compose i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-navy); color: #fff; flex-shrink: 0; }
+    .dm-qd-compose .dm-ico { width: 11px; height: 11px; }
+
+    /* Columna lateral debajo del detalle cuando el marco se angosta, como en la app. */
+    @container dm (max-width: 640px) {
+        .dm-qd-figure .dm-stage { height: auto; }
+        .dm-qd-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+        .dm-qd-steplabel { display: none; }
+        .dm-qd-step:nth-child(3) .dm-qd-steplabel { display: inline; }
+        .dm-qd-is-live .dm-qd-items, .dm-qd-is-actions .dm-qd-items { display: none; }
+        .dm-qd-head { margin-bottom: 0; }
+        .dm-qd-total { align-items: flex-start; }
+    }
+</style>

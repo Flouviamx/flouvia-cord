@@ -17,10 +17,14 @@ import CobranzaReport from '../../components/app/informes/CobranzaReport.astro';
 import ClientesReport from '../../components/app/informes/ClientesReport.astro';
 import ProductosReport from '../../components/app/informes/ProductosReport.astro';
 import TablaReport from '../../components/app/informes/TablaReport.astro';
+import ExplorerControls from '../../components/app/informes/ExplorerControls.astro';
 import { getMyMembership } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { REPORTS, REPORT_BY_ID, parseGranularity, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
 import { loadReport } from '../../lib/informes-data';
+import { DEFAULT_CONFIG, configFromSearch } from '../../lib/informes-explorar';
+import { getGuardado, listGuardados } from '../../lib/informes-guardados';
+import { actor as guardadosActor } from '../../lib/informes-guardados-http';
 import { addDaysISO, parseRangoParams } from '../../lib/rango';
 import { todayInZone } from '../../lib/report-scope';
 import { currentLocale, currentTimeZone } from '../../lib/context';
@@ -55,8 +59,19 @@ const todayISO = todayInZone(currentTimeZone());
 const minISO = addDaysISO(todayISO, -364);
 const rango = parseRangoParams(Astro.url.searchParams, { minISO, maxISO: todayISO, anchorISO: todayISO, fallback: '30' });
 const granularity = parseGranularity(Astro.url.searchParams.get('g'));
-const payload = hasReportAccess ? await loadReport(reportId, rango, { g: granularity }) : null;
-const isTabla = report.kind === 'tabla';
+// Explorador (fase 5): la configuración sale de la URL; un informe guardado
+// (?guardado=) la pone cuando la URL todavía no trae una propia.
+const isExplorer = report.kind === 'explorador';
+const actorG = hasAnalytics ? await guardadosActor() : null;
+// Los guardados son un extra del selector: si su consulta falla (p. ej. la tabla
+// todavía no migra en un entorno), Informes sigue funcionando sin ellos.
+const guardados = actorG ? await listGuardados(actorG).catch(() => []) : [];
+const guardadoId = isExplorer ? Astro.url.searchParams.get('guardado') : null;
+const saved = actorG && guardadoId ? await getGuardado(actorG, guardadoId).catch(() => null) : null;
+const urlHasConfig = Astro.url.searchParams.has('dim') || Astro.url.searchParams.has('m');
+const explorerConfig = isExplorer ? (urlHasConfig || !saved ? configFromSearch(Astro.url.searchParams) : saved.config) : DEFAULT_CONFIG;
+const payload = hasReportAccess ? await loadReport(reportId, rango, { g: granularity, x: isExplorer ? explorerConfig : undefined }) : null;
+const isTabla = report.kind !== 'widgets';
 const data = payload ? (payload as any)[isTabla ? 'tabla' : reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
 // Parámetros del rango en la URL (export CSV y selector de granularidad): el rango
 // que se pintó, no el que el navegador tenga guardado.
@@ -66,9 +81,20 @@ const rangeQuery = (extra: Record<string, string> = {}) => {
     for (const [k, v] of Object.entries(extra)) q.set(k, v);
     return q.toString();
 };
-const csvHref = `/api/informes/${reportId}?${rangeQuery({ format: 'csv', ...(granularity ? { g: granularity } : {}) })}`;
+const rangeParams = Object.fromEntries(new URLSearchParams(rangeQuery()));
+const explorerParams = isExplorer ? `&dim=${explorerConfig.dim}&m=${explorerConfig.m.join(',')}` : '';
+const csvHref = `/api/informes/${reportId}?${rangeQuery({ format: 'csv', ...(granularity ? { g: granularity } : {}) })}${explorerParams}`;
 const granHref = reportId === 'ventas' ? (g: string) => `/app/informes?r=${reportId}&${rangeQuery({ g })}` : undefined;
-const heading = reportLabel(report, L);
+// Drill-down en el tiempo: el mes (o la semana) de la barra con el mismo informe; en
+// el explorador, un nivel más fino de "agrupar por". Un rango nuevo elige solo su
+// granularidad, así que el link no la fija.
+const finer: Record<string, string> = { mes: 'semana', semana: 'dia' };
+const zoomHref = reportId === 'ventas'
+    ? (desde: string, hasta: string) => `/app/informes?r=ventas&desde=${desde}&hasta=${hasta}`
+    : isExplorer && finer[explorerConfig.dim]
+        ? (desde: string, hasta: string) => `/app/informes?r=explorar&desde=${desde}&hasta=${hasta}&dim=${finer[explorerConfig.dim]}&m=${explorerConfig.m.join(',')}`
+        : undefined;
+const heading = saved?.nombre ?? reportLabel(report, L);
 const widgetLabels = {
     drag: es ? 'Arrastrar widget' : 'Drag widget', up: es ? 'Subir widget' : 'Move widget up',
     down: es ? 'Bajar widget' : 'Move widget down', resize: es ? 'Cambiar tamaño' : 'Resize widget',
@@ -81,7 +107,7 @@ import { iconInner } from '../../lib/icons';
     <p slot="page-sub">{es ? 'Una sola casa para entender el desempeño y decidir qué mover.' : 'One place to understand performance and decide what to move.'}</p>
     <Fragment slot="topbar-actions">
         <div class="reports-top-actions">
-            <ReportPicker current={reportId} locale={L} allowed={allowed as ReportId[]} />
+            <ReportPicker current={reportId} locale={L} allowed={allowed as ReportId[]} saved={guardados.map((g) => ({ id: g.id, nombre: g.nombre }))} currentSaved={saved?.id ?? null} />
             {report.scope === 'rango' ? (
                 <DateRangePicker minISO={minISO} maxISO={todayISO} initialKey={rango.key as any} initialDesde={rango.desde} initialHasta={rango.hasta} storageKey={`cord.report.${reportId}.range.v1`} />
             ) : (
@@ -108,14 +134,17 @@ import { iconInner } from '../../lib/icons';
     )}
 
     {hasReportAccess && data && isTabla && (
-        <div data-report-shell data-report-kind="tabla" data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}>
-            <TablaReport data={data} L={L} reportId={reportId} csvHref={csvHref} granHref={granHref as any} />
+        <div data-report-shell data-report-kind="tabla" data-report-type={report.kind} data-report-saved={saved ? '1' : undefined}
+            data-report-dim={isExplorer ? explorerConfig.dim : undefined} data-report-metrics={isExplorer ? String(explorerConfig.m.length) : undefined}
+            data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}>
+            {isExplorer && <ExplorerControls config={explorerConfig} L={L} range={rangeParams} saved={saved} />}
+            <TablaReport data={data} L={L} reportId={reportId} csvHref={csvHref} granHref={granHref as any} zoomHref={zoomHref} />
             <MonedaNota nota={data.moneda} />
         </div>
     )}
 
     {hasReportAccess && data && !isTabla && (
-        <div data-report-shell data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}
+        <div data-report-shell data-report-type="widgets" data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}
             data-labels={JSON.stringify({
                 status: Object.fromEntries(['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((k) => [k, t(L, `cot.col.${k}` as any)])),
                 etapa: Object.fromEntries(['created_sent', 'sent_viewed', 'viewed_approved', 'approved_paid'].map((k) => [k, t(L, `inf.etapa.${k}` as any)])),
@@ -144,6 +173,17 @@ import { iconInner } from '../../lib/icons';
     const reportId = shell?.dataset.reportId;
     const locale = shell?.dataset.locale || 'es';
     const es = locale !== 'en';
+    // Vista de informe (regla 35): desde el navegador, una vez por carga; el
+    // prefetch del selector no ejecuta este script, así que no cuenta como vista.
+    // Regla 13: se difiere a DOMContentLoaded para que el bootstrap de PostHog ya exista.
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!shell || !reportId) return;
+        const kind = shell.dataset.reportType === 'explorador' ? 'explorador' : shell.dataset.reportType === 'tabla' ? 'tabla' : 'widgets';
+        (window as any).cordTrack?.('report_viewed', {
+            report_id: reportId, kind, saved: shell.dataset.reportSaved === '1',
+            dim: shell.dataset.reportDim, metric_count: shell.dataset.reportMetrics ? Number(shell.dataset.reportMetrics) : undefined,
+        });
+    });
     const widget = (id: string) => shell?.querySelector<HTMLElement>(`[data-widget="${id}"]`);
     const text = (selector: string, value: string) => { const el = shell?.querySelector<HTMLElement>(selector); if (el) el.textContent = value; };
     const setChart = (widgetId: string, data: Record<string, unknown>) => {

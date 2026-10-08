@@ -1,7 +1,7 @@
 ---
 // Dashboard — pipeline, dinero, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getDashboard, getTareas, getCFO, getAnalytics, getOrg, getSerieDiaria, getCobranza, getMyMembership, getFacturasResumen, getDesempeno, STATUS_META, money } from '../../lib/queries';
+import { getDashboard, getCFO, getAnalytics, getOrg, getSerieDiaria, getCobranza, getMyMembership, getFacturasResumen, getDesempeno, STATUS_META, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
@@ -16,6 +16,9 @@ import { invoicingFeatureFor } from '../../lib/fiscal/gate';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../components/app/WidgetEmpty.astro';
+import TaskBoard from '../../components/app/tasks/TaskBoard.astro';
+import { listTasks, taskAssignees } from '../../lib/tasks-db';
+import { TASK_PERMISSIONS } from '../../lib/actions/tasks';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
 
@@ -36,8 +39,13 @@ const EMPTY_ANALYTICS = { funnel: { enviadas: 0, vistas: 0, aprobadas: 0, pagada
 const EMPTY_COBRANZA = { aging: [] } as any;
 // Facturas vencidas: mismo gate que /app/facturas (permiso de cobranza + plan de facturación).
 const canFacturas = memberCan(ME, 'cobranza') && (await checkEntitlement(await getActiveOrgId(), await invoicingFeatureFor(await getActiveOrgId()))).ok;
+// Tareas: con equipo, el Inicio abre en "Mías" (lo que le toca a quien mira).
+const TASK_PEOPLE = await taskAssignees();
+const TASK_SCOPE = TASK_PEOPLE.length > 1 && TASK_PEOPLE.some((a) => a.esYo) ? 'mias' : 'todas';
+const TASK_LIMIT = 8;
+const canTasks = TASK_PERMISSIONS.some((k) => memberCan(ME, k));
 const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA, FACTURAS, DESEMPENO] = await Promise.all([
-    getDashboard(), getTareas(), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
+    getDashboard(), listTasks({ estado: 'pendientes', scope: TASK_SCOPE, limit: TASK_LIMIT }), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
     getOrg(), getSerieDiaria(), canCollections ? getCobranza() : EMPTY_COBRANZA,
     canFacturas ? getFacturasResumen() : null, canAnalytics ? getDesempeno() : null,
 ]);
@@ -440,26 +448,8 @@ import { iconInner } from '../../lib/icons';
 
         <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-group={t(L, 'widgets.grupo_actividad')} data-widget-tone="activity" data-size-sm="4" data-size-lg="4" data-span="4">
             <div class="dash-card tasks-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
-                <form class="task-add" id="taskAdd">
-                    <input id="taskTitulo" class="task-input" placeholder={t(L, 'dash.tarea_ph')} autocomplete="off" required />
-                    <input id="taskDue" class="task-date" type="date" aria-label={t(L, 'dash.tarea_fecha_limite')} />
-                    <button class="task-btn" type="submit">{t(L, 'dash.agregar')}</button>
-                </form>
-                <div class="task-list" id="taskList">
-                    {TAREAS.map((tarea) => (
-                        <div class="task-row" data-id={tarea.id}>
-                            <button class="task-check" data-done aria-label={t(L, 'dash.marcar_completada')}></button>
-                            <div class="task-body">
-                                <span class="task-title">{tarea.titulo}</span>
-                                {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
-                            </div>
-                            {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
-                            <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg></button>
-                        </div>
-                    ))}
-                    <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
-                </div>
+                <TaskBoard variant="widget" title={t(L, 'dash.tareas_titulo')} result={TAREAS} estado="pendientes"
+                           scope={TASK_SCOPE} limit={TASK_LIMIT} canEdit={canTasks} assignees={TASK_PEOPLE} />
             </div>
         </article>
 
@@ -724,25 +714,6 @@ import { iconInner } from '../../lib/icons';
     .feed-text { font-size: 0.8rem; color: var(--color-text); font-weight: 500; }
     .feed-meta { font-size: 0.68rem; color: var(--color-text-muted); }
 
-    /* Tareas / recordatorios */
-    .task-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .task-input { flex: 1; min-width: 180px; font-family: var(--font-sans); font-size: 0.85rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 12px; }
-    .task-input:focus, .task-date:focus { outline: none; border-color: var(--color-blue-deep); }
-    .task-date { font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px; }
-    .task-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
-    .task-btn:hover { transform: translateY(-2px); }
-    .task-list { display: flex; flex-direction: column; }
-    .task-row { display: flex; align-items: center; gap: 11px; padding: 0.65rem 0; border-bottom: 1px solid var(--color-border); }
-    .task-row:last-of-type { border-bottom: none; }
-    .task-check { width: 19px; height: 19px; flex-shrink: 0; border: 1.8px solid var(--color-border); border-radius: 6px; background: var(--surface); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-    .task-check:hover { border-color: var(--color-ok); background: rgba(16,185,129,0.08); }
-    .task-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-    .task-title { font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
-    .task-meta { font-size: 0.7rem; color: var(--color-text-muted); }
-    .task-overdue { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; flex-shrink: 0; }
-    .task-del { background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
-    .task-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.07); }
-    .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
 
     @media (max-width: 680px) {
         .hero-rev { padding: 1.25rem 1rem; }
@@ -783,9 +754,6 @@ import { iconInner } from '../../lib/icons';
         .qr-info { grid-area: info; }
         .quote-row .status-pill { grid-area: status; display: inline-flex; justify-self: start; }
         .qr-amount { grid-area: amount; }
-        .task-add { flex-direction: column; align-items: stretch; }
-        .task-input, .task-date, .task-btn { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
-        .task-check, .task-del { min-width: 44px; min-height: 44px; }
     }
 </style>
 
@@ -1123,33 +1091,6 @@ import { iconInner } from '../../lib/icons';
                 if (p < 1) requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
-        });
-    });
-</script>
-
-<script>
-    // ── Tareas / recordatorios ──
-    document.getElementById('taskAdd')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const tEl = document.getElementById('taskTitulo') as HTMLInputElement;
-        const dEl = document.getElementById('taskDue') as HTMLInputElement;
-        const titulo = tEl.value.trim();
-        if (!titulo) return;
-        try {
-            const res = await fetch('/api/tareas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, due_date: dEl.value || null }) });
-            if (!res.ok) throw new Error();
-            location.reload();
-        } catch { /* noop */ }
-    });
-    document.querySelectorAll<HTMLElement>('.task-row').forEach((row) => {
-        const id = row.dataset.id;
-        row.querySelector('[data-done]')?.addEventListener('click', async () => {
-            await fetch('/api/tareas', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, done: true }) }).catch(() => {});
-            row.remove();
-        });
-        row.querySelector('[data-del]')?.addEventListener('click', async () => {
-            await fetch('/api/tareas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {});
-            row.remove();
         });
     });
 </script>

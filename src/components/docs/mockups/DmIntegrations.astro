@@ -1,0 +1,389 @@
+---
+// Mockup: Ajustes › Integraciones (/app/ajustes/integraciones y su detalle).
+//
+//   view="directory" · el directorio: Conectadas (HubSpot, Slack, Google Sheets)
+//                      y Disponibles, con "¿Usas otra herramienta?" al final.
+//   view="hubspot"   · detalle de HubSpot conectado: datos de la conexión y la
+//                      etapa de HubSpot para cada estado de la cotización.
+//   view="teams"     · detalle de Microsoft Teams conectado con Microsoft.
+//   view="whatsapp"  · detalle de WhatsApp Business con su conexión guardada.
+//
+// Calca de SettingsShell + IntegrationsDirectory/IntegrationTile/IntegrationPill
+// + IntegrationDetail y sus tarjetas (HubSpotCard, TeamsCard, WhatsAppCard).
+// Catálogo, categorías y textos salen del código real (INTEGRATION_APPS,
+// set.integ.*); los logos, de Google Favicon V2 (regla 8).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { INTEGRATION_APPS, type IntegrationApp, type IntegrationState } from '../../../lib/integraciones/catalogo';
+import { WORKFLOW_TEMPLATES } from '../../../lib/workflows/templates';
+import { dmT, favicon, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    view?: 'directory' | 'hubspot' | 'teams' | 'whatsapp';
+    caption?: string;
+}
+const { lang, view = 'directory' } = Astro.props;
+const L = lang;
+
+// Google Sheets y Gmail: el favicon de su dominio es la G genérica; la app usa el
+// ícono oficial del CDN de producto de Google y aquí también.
+const logoOf = (a: IntegrationApp) => (a.logo.startsWith('https://www.gstatic.com/') ? a.logo : favicon(a.dominio, 128));
+const app = (slug: string) => INTEGRATION_APPS.find((a) => a.slug === slug)! as IntegrationApp;
+const PILL: Record<IntegrationState, string> = {
+    on: dmT(L, 'set.integ.conectado'), warn: dmT(L, 'set.integ.hs.estado_error'), off: dmT(L, 'set.integ.sin_conectar'),
+    info: dmT(L, 'set.integ.dir.con_webhooks'), key: dmT(L, 'set.integ.dir.con_llave'), oauth: dmT(L, 'set.integ.dir.con_oauth'), soon: dmT(L, 'set.integ.dir.proximamente'),
+};
+// Estado de la cuenta de demo: HubSpot, Slack y Google Sheets conectados.
+const STATE: Record<string, IntegrationState> = {
+    hubspot: 'on', slack: 'on', 'google-sheets': 'on',
+    shopify: 'off', excel: 'off', gmail: 'off', quickbooks: 'off', xero: 'off', teams: 'off', whatsapp: 'off',
+    make: 'oauth', zapier: 'oauth', n8n: 'key',
+};
+if (view === 'teams') STATE.teams = 'on';
+if (view === 'whatsapp') STATE.whatsapp = 'on';
+const CONECTADAS = INTEGRATION_APPS.filter((a) => STATE[a.slug] === 'on');
+const RESTO = INTEGRATION_APPS.filter((a) => STATE[a.slug] !== 'on');
+
+const CATEGORY = {
+    es: { label: 'Integraciones', desc: 'Conecta Cord con tus aplicaciones y plataformas favoritas.' },
+    en: { label: 'Integrations', desc: 'Connect Cord with your favorite apps and platforms.' },
+};
+const cat = pick(CATEGORY, L);
+
+const DETAIL = view === 'directory' ? null : app(view);
+const DESC: Record<string, string> = {
+    hubspot: dmT(L, 'set.integ.hs.desc'),
+    teams: dmT(L, 'set.integ.teams_desc'),
+    whatsapp: dmT(L, 'set.integ.wa.desc'),
+};
+
+// HubSpot: estados que se sincronizan (QUOTE_STATUSES) y la etapa elegida.
+const HS_STAGES: [string, string][] = [
+    ['sent', 'Presentation Scheduled'], ['viewed', 'Decision Maker Bought-In'], ['approved', 'Contract Sent'],
+    ['rejected', 'Closed Lost'], ['expired', 'Closed Lost'], ['paid', 'Closed Won'], ['invoiced', 'Closed Won'],
+];
+const IDEAS_TEAMS = WORKFLOW_TEMPLATES.filter((t) => t.key === 'teams_aprobada');
+
+const DATA = {
+    es: {
+        directory: 'Ajustes › Integraciones: arriba, las conectadas (HubSpot, Slack y Google Sheets); debajo, las disponibles con su logo, su categoría y su estado: Shopify, Excel, Gmail, QuickBooks, Xero, Microsoft Teams y, más abajo, WhatsApp, Make, Zapier y n8n.',
+        hubspot: `Detalle de HubSpot conectado a la cuenta materialesdelvalle.com: última sincronización hace 4 minutos, 0 en cola y 0 errores; debajo, la etapa del Sales Pipeline para cada estado de la cotización y el envío de los datos que ya existían.`,
+        teams: 'Detalle de Microsoft Teams conectado con Microsoft: publica en #ventas del equipo Materiales del Valle a nombre de Mariana Ortega, con los botones para cambiar de canal, enviar una prueba o desconectar, y el bloque plegado para usar un flujo de Power Automate.',
+        whatsapp: 'Detalle de WhatsApp Business conectado: identificador del número, token guardado, plantilla recordatorio_pago en es_MX y el número con lada para mandar una prueba.',
+        guardado: 'hace 4 min',
+        vista: 'Ver Deals en HubSpot',
+    },
+    en: {
+        directory: 'Settings › Integrations: at the top, the connected ones (HubSpot, Slack and Google Sheets); below, the available ones with their logo, category and status: Shopify, Excel, Gmail, QuickBooks, Xero, Microsoft Teams and, further down, WhatsApp, Make, Zapier and n8n.',
+        hubspot: `HubSpot detail connected to the materialesdelvalle.com account: last sync 4 minutes ago, 0 queued and 0 errors; below, the Sales Pipeline stage for each quote status and sending the data that already existed.`,
+        teams: 'Microsoft Teams detail connected with Microsoft: it posts to #ventas in the Materiales del Valle team as Mariana Ortega, with buttons to change channel, send a test or disconnect, and the collapsed block to use a Power Automate flow.',
+        whatsapp: 'WhatsApp Business detail, connected: phone number ID, saved token, the recordatorio_pago template in es_MX and the number with country code to send a test.',
+        guardado: '4 min ago',
+        vista: 'View Deals in HubSpot',
+    },
+};
+const d = pick(DATA, L);
+const caption = Astro.props.caption ?? d[view];
+const HEIGHT = { directory: 1000, hubspot: 1090, teams: 760, whatsapp: 900 }[view];
+---
+<DocsMockup lang={L} variant="app" chrome="full" sidebar="rail" active="ajustes" height={HEIGHT} caption={caption} class={`dm-int-figure dm-int-v-${view}`}>
+    <div class="dm-int">
+        <span class="dm-int-crumb"><DmIcon name="chevron-left" />{dmT(L, 'settings.configuracion')}</span>
+        <div class="dm-int-heading">
+            <span class="dm-int-cat-icon"><DmIcon name="plug" /></span>
+            <span class="dm-int-heading-text">
+                <span class="dm-int-title">{cat.label}</span>
+                <span class="dm-int-desc">{cat.desc}</span>
+            </span>
+        </div>
+
+        {view === 'directory' && (
+            <div class="dm-int-content">
+                <span class="dm-int-intro">{dmT(L, 'set.integ.intro')}</span>
+                <span class="dm-int-sec-title">{dmT(L, 'set.integ.dir.conectadas')}</span>
+                <div class="dm-int-grid">
+                    {CONECTADAS.map((a) => (
+                        <div class="dm-surface dm-int-tile">
+                            <span class="dm-int-tile-top">
+                                <span class="dm-int-logo"><img src={logoOf(a)} alt="" width="24" height="24" loading="lazy" decoding="async" /></span>
+                                <span class="dm-int-pill" data-estado={STATE[a.slug]}>{PILL[STATE[a.slug]]}</span>
+                            </span>
+                            <span class="dm-int-tile-name">{a.nombre}</span>
+                            <span class="dm-int-tile-cat">{dmT(L, `set.integ.cat.${a.categoria}` as any)}</span>
+                            <span class="dm-int-tile-desc">{dmT(L, `set.integ.app.${a.slug}` as any)}</span>
+                            <span class="dm-int-go"><DmIcon name="arrow-right" /></span>
+                        </div>
+                    ))}
+                </div>
+                <span class="dm-int-sec-title">{dmT(L, 'set.integ.dir.disponibles')}</span>
+                <div class="dm-int-grid">
+                    {RESTO.map((a) => (
+                        <div class="dm-surface dm-int-tile">
+                            <span class="dm-int-tile-top">
+                                <span class="dm-int-logo"><img src={logoOf(a)} alt="" width="24" height="24" loading="lazy" decoding="async" /></span>
+                                <span class="dm-int-pill" data-estado={STATE[a.slug]}>{PILL[STATE[a.slug]]}</span>
+                            </span>
+                            <span class="dm-int-tile-name">{a.nombre}</span>
+                            <span class="dm-int-tile-cat">{dmT(L, `set.integ.cat.${a.categoria}` as any)}</span>
+                            <span class="dm-int-tile-desc">{dmT(L, `set.integ.app.${a.slug}` as any)}</span>
+                            <span class="dm-int-go"><DmIcon name="arrow-right" /></span>
+                        </div>
+                    ))}
+                </div>
+                <div class="dm-int-more">
+                    <span class="dm-int-more-icon"><DmIcon name="plug" /></span>
+                    <span class="dm-int-more-body">
+                        <span class="dm-int-more-title">{dmT(L, 'set.integ.mas_proximamente_titulo')}</span>
+                        <span class="dm-int-more-desc">{dmT(L, 'set.integ.mas_proximamente_desc')}</span>
+                    </span>
+                    <span class="dm-int-more-cta">{dmT(L, 'set.integ.pedir_prioridad')}</span>
+                </div>
+            </div>
+        )}
+
+        {DETAIL && (
+            <div class="dm-int-content">
+                <span class="dm-int-back"><DmIcon name="chevron-left" />{dmT(L, 'set.integ.det.volver')}</span>
+                <div class="dm-int-hero">
+                    <span class="dm-int-logo is-lg"><img src={logoOf(DETAIL)} alt="" width="32" height="32" loading="lazy" decoding="async" /></span>
+                    <span class="dm-int-hero-text">
+                        <span class="dm-int-hero-row">
+                            <span class="dm-int-hero-name">{DETAIL.nombre}</span>
+                            <span class="dm-int-pill" data-estado="on">{PILL.on}</span>
+                        </span>
+                        <span class="dm-int-tile-cat">{dmT(L, `set.integ.cat.${DETAIL.categoria}` as any)}</span>
+                        <span class="dm-int-hero-desc">{DESC[DETAIL.slug]}</span>
+                        <span class="dm-int-hero-links">
+                            {DETAIL.guia && <span>{dmT(L, 'set.integ.det.guia')}<DmIcon name="arrow-up-right" /></span>}
+                            <span>{DETAIL.dominio}<DmIcon name="arrow-up-right" /></span>
+                        </span>
+                    </span>
+                </div>
+
+                {view === 'hubspot' && (
+                    <Fragment>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.det.conexion')}</span>
+                            <div class="dm-int-facts">
+                                <span><small>{dmT(L, 'set.integ.hs.cuenta')}</small><b>materialesdelvalle.com</b></span>
+                                <span><small>{dmT(L, 'set.integ.hs.ultima_sync')}</small><b>{d.guardado}</b></span>
+                                <span><small>{dmT(L, 'set.integ.hs.pendientes')}</small><b class="dm-editorial">0</b></span>
+                                <span><small>{dmT(L, 'set.integ.hs.fallidas')}</small><b class="dm-editorial">0</b></span>
+                            </div>
+                            <span class="dm-int-actions"><span class="dm-int-btn is-danger">{dmT(L, 'set.integ.hs.desconectar')}</span></span>
+                        </div>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.hs.etapas_titulo')}</span>
+                            <div class="dm-int-field">
+                                <span class="dm-int-label">{dmT(L, 'set.integ.hs.pipeline')}</span>
+                                <span class="dm-input dm-select dm-int-input">Sales Pipeline</span>
+                            </div>
+                            <div class="dm-int-stages">
+                                {HS_STAGES.map(([st, stage]) => (
+                                    <div class="dm-int-stage">
+                                        <span class="dm-int-stage-label">{dmT(L, `set.integ.hs.estado.${st}` as any)}</span>
+                                        <span class="dm-input dm-select dm-int-input">{stage}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <span class="dm-int-actions"><span class="dm-int-btn is-solid">{dmT(L, 'set.integ.hs.guardar_etapas')}</span></span>
+                        </div>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.hs.existentes_titulo')}</span>
+                            <span class="dm-int-note">{dmT(L, 'set.integ.hs.existentes_desc')}</span>
+                            <span class="dm-int-actions"><span class="dm-int-btn">{dmT(L, 'set.integ.hs.enviar_existentes')}</span></span>
+                        </div>
+                    </Fragment>
+                )}
+
+                {view === 'teams' && (
+                    <Fragment>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.det.conexion')}</span>
+                            <span class="dm-int-conn">
+                                {dmT(L, 'set.integ.slack.conectado_a')} <b>#ventas</b> · {DEMO.org}
+                                <span class="dm-int-conn-sub">{dmT(L, 'set.integ.teams.publica_como')} Mariana Ortega</span>
+                            </span>
+                            <span class="dm-int-actions">
+                                <span class="dm-int-btn is-solid">{dmT(L, 'set.integ.slack.cambiar')}</span>
+                                <span class="dm-int-btn">{dmT(L, 'set.integ.enviar_prueba')}</span>
+                                <span class="dm-int-btn">{dmT(L, 'set.integ.slack.desconectar')}</span>
+                            </span>
+                            <span class="dm-int-manual">
+                                <span class="dm-int-manual-icon"><DmIcon name="link" /></span>
+                                <span class="dm-int-manual-text">
+                                    <span class="dm-int-manual-title">{dmT(L, 'set.integ.teams.manual_titulo')}</span>
+                                    <span class="dm-int-manual-desc">{dmT(L, 'set.integ.teams.manual_desc')}</span>
+                                </span>
+                                <DmIcon name="chevron-right" class="dm-int-chev" />
+                            </span>
+                        </div>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.det.workflows_titulo')}</span>
+                            <span class="dm-int-note">{dmT(L, 'set.integ.det.workflows_desc').replace('{app}', DETAIL.nombre)}</span>
+                            {IDEAS_TEAMS.map((t) => (
+                                <span class="dm-int-idea">
+                                    <span class="dm-int-idea-text">
+                                        <span class="dm-int-idea-title">{t.nombre[L]}</span>
+                                        <span class="dm-int-note">{t.descripcion[L]}</span>
+                                    </span>
+                                    <span class="dm-int-btn">{dmT(L, 'wf.usar_plantilla')}</span>
+                                </span>
+                            ))}
+                        </div>
+                    </Fragment>
+                )}
+
+                {view === 'whatsapp' && (
+                    <Fragment>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.wa.pasos_titulo')}</span>
+                            <span class="dm-int-steps">
+                                {[1, 2, 3].map((n) => <span class="dm-int-step"><i>{n}.</i>{dmT(L, `set.integ.wa.paso_${n}` as any)}</span>)}
+                            </span>
+                        </div>
+                        <div class="dm-int-block">
+                            <span class="dm-int-block-title"><DmIcon name="sliders" />{dmT(L, 'set.integ.det.conexion')}</span>
+                            <div class="dm-int-field">
+                                <span class="dm-int-label">{dmT(L, 'set.integ.wa.phone_id')}</span>
+                                <span class="dm-input dm-int-input">109876543210987</span>
+                            </div>
+                            <div class="dm-int-field">
+                                <span class="dm-int-label">{dmT(L, 'set.integ.wa.token')}</span>
+                                <span class="dm-input dm-int-input is-placeholder">••••••••••••</span>
+                                <span class="dm-int-hint">{dmT(L, 'set.integ.wa.token_hint')} · {dmT(L, 'set.integ.wa.token_guardado')}</span>
+                            </div>
+                            <div class="dm-int-wa-grid">
+                                <div class="dm-int-field">
+                                    <span class="dm-int-label">{dmT(L, 'set.integ.wa.plantilla')}</span>
+                                    <span class="dm-input dm-int-input">recordatorio_pago</span>
+                                </div>
+                                <div class="dm-int-field">
+                                    <span class="dm-int-label">{dmT(L, 'set.integ.wa.idioma')}</span>
+                                    <span class="dm-input dm-int-input">es_MX</span>
+                                </div>
+                            </div>
+                            <span class="dm-int-actions">
+                                <span class="dm-int-btn is-solid">{dmT(L, 'set.integ.guardar')}</span>
+                                <span class="dm-input dm-int-input dm-int-num">+52 55 1234 5678</span>
+                                <span class="dm-int-btn">{dmT(L, 'set.integ.wa.probar')}</span>
+                                <span class="dm-int-btn is-danger">{dmT(L, 'set.integ.wa.desconectar')}</span>
+                            </span>
+                        </div>
+                    </Fragment>
+                )}
+            </div>
+        )}
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-int { display: flex; flex-direction: column; padding: 4px var(--dm-bleed) 10px 0; }
+    .dm-int-crumb { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 9px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-int-crumb .dm-ico, .dm-int-back .dm-ico { width: 12px; height: 12px; }
+    .dm-int-heading { display: flex; align-items: center; gap: 12px; }
+    .dm-int-cat-icon { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; background: #fff; color: var(--dm-muted); box-shadow: 0 2px 5px rgba(10, 25, 47, 0.02), 0 14px 32px -26px rgba(10, 25, 47, 0.19); }
+    .dm-int-cat-icon .dm-ico { width: 19px; height: 19px; }
+    .dm-int-heading-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-int-title { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; color: var(--dm-text); }
+    .dm-int-desc { font-size: 11.5px; color: var(--dm-muted); }
+    .dm-int-content { display: flex; flex-direction: column; padding-top: 18px; }
+    .dm-int-intro { max-width: 470px; margin-bottom: 18px; font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); }
+
+    .dm-int-sec-title { margin-bottom: 9px; font-size: 11px; font-weight: 650; color: var(--dm-muted); }
+    .dm-int-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .dm-int-tile { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 13px 14px 13px; }
+    .dm-int-tile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .dm-int-logo { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 11px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border), 0 1px 2px rgba(10, 25, 47, 0.06); }
+    .dm-int-logo img { width: 20px; height: 20px; border-radius: 4px; }
+    .dm-int-logo.is-lg { width: 50px; height: 50px; border-radius: 14px; }
+    .dm-int-logo.is-lg img { width: 28px; height: 28px; border-radius: 6px; }
+    .dm-int-pill { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap; font-size: 9.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; color: var(--dm-muted); background: rgba(10, 25, 47, 0.06); }
+    .dm-int-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.55; }
+    .dm-int-pill[data-estado="on"] { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .dm-int-pill[data-estado="on"]::before { opacity: 1; }
+    .dm-int-pill[data-estado="key"], .dm-int-pill[data-estado="oauth"] { color: var(--dm-navy); }
+    .dm-int-tile-name { font-size: 12.5px; font-weight: 650; letter-spacing: -0.01em; color: var(--dm-text); }
+    .dm-int-tile-cat { font-size: 10px; font-weight: 600; color: var(--dm-muted); }
+    .dm-int-tile-desc { margin-top: 4px; padding-right: 18px; font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-int-go { position: absolute; right: 12px; bottom: 12px; color: var(--dm-faint); }
+    .dm-int-go .dm-ico { width: 12px; height: 12px; }
+    .dm-int-more { display: flex; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--dm-border); }
+    .dm-int-more-icon { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: #eceef2; color: var(--dm-muted); }
+    .dm-int-more-icon .dm-ico { width: 18px; height: 18px; }
+    .dm-int-more-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .dm-int-more-title { font-size: 12px; font-weight: 650; color: var(--dm-text); }
+    .dm-int-more-desc { font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-int-more-cta { flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--dm-navy); white-space: nowrap; }
+
+    .dm-int-back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 14px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-int-hero { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 18px; margin-bottom: 16px; border-bottom: 1px solid var(--dm-border); }
+    .dm-int-hero-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .dm-int-hero-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .dm-int-hero-name { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-int-hero-desc { margin-top: 5px; max-width: 470px; font-size: 11.5px; line-height: 1.55; color: var(--dm-muted); }
+    .dm-int-hero-links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; }
+    .dm-int-hero-links span { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--dm-navy); }
+    .dm-int-hero-links .dm-ico { width: 11px; height: 11px; }
+
+    /* Bloque de Ajustes (= .set2 .s-block). */
+    .dm-int-block { display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; margin-bottom: 12px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.045); border-radius: 18px; box-shadow: 0 2px 5px rgba(10, 25, 47, 0.012), 0 14px 32px -26px rgba(10, 25, 47, 0.19); }
+    .dm-int-block-title { display: flex; align-items: center; gap: 9px; font-size: 12.5px; font-weight: 600; letter-spacing: -0.015em; color: var(--dm-text); }
+    .dm-int-block-title .dm-ico { width: 16px; height: 16px; color: var(--dm-muted); }
+    .dm-int-note { font-size: 10.5px; line-height: 1.55; color: var(--dm-muted); }
+    .dm-int-hint { font-size: 10px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-int-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .dm-int-label { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-int-input { height: 34px; font-size: 11.5px; font-weight: 500; border-color: var(--dm-border); border-radius: 9px; }
+    .dm-int-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+    .dm-int-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 13px; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--dm-muted); border: 1px solid var(--dm-border); background: #fff; }
+    .dm-int-btn.is-solid { color: #fff; background: var(--dm-navy); border-color: var(--dm-navy); }
+    .dm-int-btn.is-danger { color: var(--dm-danger-ink); border-color: rgba(239, 68, 68, 0.3); }
+
+    .dm-int-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 10px 0; border-top: 1px solid var(--dm-border); border-bottom: 1px solid var(--dm-border); }
+    .dm-int-facts span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-int-facts small { font-size: 9.5px; color: var(--dm-muted); }
+    .dm-int-facts b { font-size: 11.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-int-stages { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; }
+    .dm-int-stage { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .dm-int-stage-label { font-size: 10.5px; font-weight: 600; color: var(--dm-text); }
+
+    .dm-int-conn { display: block; font-size: 12px; color: var(--dm-text); }
+    .dm-int-conn-sub { display: block; margin-top: 2px; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-int-manual { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 13px; background: #f5f5f7; box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-int-manual-icon { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; background: #fff; color: var(--dm-muted); box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-int-manual-icon .dm-ico { width: 14px; height: 14px; }
+    .dm-int-manual-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .dm-int-manual-title { font-size: 11.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-int-manual-desc { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-int-chev { width: 13px; height: 13px; color: var(--dm-faint); }
+    .dm-int-idea { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 11px; border-top: 1px solid var(--dm-border); }
+    .dm-int-idea-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-int-idea-title { font-size: 11.5px; font-weight: 600; color: var(--dm-text); }
+
+    .dm-int-steps { display: flex; flex-direction: column; gap: 6px; }
+    .dm-int-step { display: flex; gap: 6px; font-size: 11px; line-height: 1.5; color: var(--dm-text); }
+    .dm-int-step i { font-style: normal; color: var(--dm-muted); flex-shrink: 0; }
+    .dm-int-wa-grid { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 12px; }
+    .dm-int-num { width: 170px; flex-shrink: 0; height: 30px; }
+
+    @container dm (max-width: 560px) {
+        .dm-int { padding-left: 0; }
+        .dm-int-title { font-size: 17px; }
+        .dm-int-grid { grid-template-columns: minmax(0, 1fr); }
+        .dm-int-more { flex-wrap: wrap; }
+        .dm-int-more-cta { width: 100%; padding-left: 48px; }
+        .dm-int-hero { flex-direction: column; gap: 10px; }
+        .dm-int-facts { grid-template-columns: 1fr 1fr; }
+        .dm-int-stages, .dm-int-wa-grid { grid-template-columns: minmax(0, 1fr); }
+        .dm-int-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .dm-int-actions .dm-int-btn { height: 34px; }
+        .dm-int-num { grid-column: 1 / -1; width: auto; }
+        .dm-int-v-hubspot .dm-int-actions, .dm-int-v-teams .dm-int-block:first-of-type .dm-int-actions .dm-int-btn:first-child { grid-column: 1 / -1; }
+        .dm-int-idea { flex-direction: column; align-items: stretch; }
+        .dm-int-block { padding: 14px; }
+        .dm-int-figure .dm-stage { height: 900px; }
+        .dm-int-v-directory .dm-int-tile-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+    }
+</style>

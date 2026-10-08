@@ -1,12 +1,12 @@
 ---
 title: "Tasks and follow-up"
 seoTitle: "Follow-up tasks and reminders in Cord"
-description: "Create to-dos with due dates from the app, the API, MCP, or a workflow; how they show, who sees them, which tasks Cord creates for you, and which events they emit."
-lastUpdated: "2026-10-07"
+description: "To-dos with an assignee, due date, and priority; a daily email reminder; how to create them from the app, the API, MCP, or a workflow, and which events they emit."
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
-prerequisites: ["Quotes, Collections, or Clients permission to create, complete, or delete tasks"]
+prerequisites: ["Quotes, Collections, or Clients permission to create, edit, complete, or delete tasks"]
 ---
 
 <header class="content-header">
@@ -16,48 +16,63 @@ prerequisites: ["Quotes, Collections, or Clients permission to create, complete,
 
 ## What it is
 
-Tasks are a lightweight to-do list for your organization. They show in the **Tasks and
-reminders** widget on [Home](/en/docs/gestion/dashboard), ordered by due date. A task
-can be linked to a quote; in that case it shows the quote number.
+Tasks are your team's to-dos: the next call, the pending delivery, the follow-up on a
+quote. Each one has an assignee, a due date, and a priority, and Cord emails you when it's
+due.
 
-{/* MOCKUP: Home "Tasks and reminders" widget with the field "E.g. Call GAMA for a follow-up…", the date picker, and the Add button; below, four tasks: "Call Luis about COT-0149" (COT-0149 · Oct 9), "Responder contracargo USD 1,200.00" with the red "overdue" label, "Transferir reembolso SPEI por 3,500.00 MXN" (COT-0131), and "Send updated catalog" with no date. */}
+They show in two places:
+
+- The **Tasks and reminders** widget on [Home](/en/docs/gestion/dashboard), with the most urgent ones.
+- The **Tasks** page in the sidebar (shortcut <kbd>G</kbd> <kbd>T</kbd>), with every task and the completed ones.
+
+{/* MOCKUP: Tasks page with the counters "Overdue 2", "Due today 3", "Mine open 5", "Unassigned 1"; below, the composer "E.g. Call GAMA for a follow-up…" with the Today, Tomorrow, Monday shortcuts, the date picker, "High priority", and the assignee "Ana López (me)"; and the grouped list: OVERDUE — "Responder contracargo" with the HIGH tag and "Overdue by 2 days"; TODAY — "Call Luis" with COT-0149 · Acme and the AL avatar; THIS WEEK — "Send updated catalog" on Thursday. */}
 
 ## Requirements
 
-- **Permission:** Quotes, Collections, or Clients (any of the three) to create, complete, or delete.
+- **Permission:** Quotes, Collections, or Clients (any of the three) to create, edit, complete, or delete. Without any of them you see tasks but can't change them.
 - **Plan:** all.
-- **Who sees them:** every member who sees Home. A task isn't assigned to a person.
+- **Who sees them:** every member of the organization.
 
 ## Create a task
 
 <Steps>
-1. **From any screen:** click **Create** in the top bar and choose **Task**. Or, on Home, use the field in the **Tasks and reminders** widget.
-2. Type the description, for example "Call Luis to ask whether he reviewed the quote". Up to 200 characters.
-3. Optional: choose the **Due date**.
-4. Click **Add** (or **Create**, depending on where you opened it).
+1. **From any screen:** click **Create** in the top bar and choose **Task** (or press <kbd>T</kbd>). Or use the composer on Home or on the **Tasks** page.
+2. Type the task, for example "Call Luis to ask whether he reviewed the quote". Up to 200 characters.
+3. Optional: pick the date with the **Today**, **Tomorrow**, or **Monday** shortcuts, or with the calendar.
+4. Optional: turn on **High priority** and choose the **assignee**.
+5. Click **Add** (or press <kbd>Enter</kbd>). The task shows up in the list without reloading the page.
 </Steps>
 
-Tasks you create from the app aren't linked to a quote. Those created by a workflow,
-the API, or MCP can be.
+If you don't choose an assignee, the task belongs to whoever typed it. In the composer you
+can pick **Unassigned** on purpose.
 
-## Follow-up
+## Organize your day
 
-- The widget lists up to 12 pending tasks, nearest due date first; tasks without a date go last.
-- When the due date has passed, the task carries the red **overdue** label.
-- Check the box to complete it: it leaves the pending list.
-- The **×** button deletes it entirely.
+- **Groups by urgency:** Overdue, Today, Tomorrow, This week, Later, and No date. "Today" is the day in your business's time zone, not the server's (change it in Settings › General).
+- **Filters:** **Mine**, **All**, and **Unassigned**; on the page, also **Open** and **Completed**. With a single person on the account, the assignee filter doesn't show.
+- **Complete:** click the circle. For a few seconds you can click **Undo**. Under **Completed** you see who completed it and when, and you can **Reopen** it.
+- **Task menu (···):** **Edit** (title, notes, date, priority, and assignee), **Snooze until** tomorrow, Monday, or in a week, **Assign to me**, and **Delete**. Delete asks for confirmation because it can't be undone.
+- **Linked to a document:** if the task comes from a quote or invoice, its number and the client show as a link to the document.
+- In the sidebar, **Tasks** shows how many of yours or unassigned ones are due today or overdue; the number is red when some are overdue.
 
-<Callout type="warning">
-**Cord doesn't send task reminders.** When the due date arrives you get no email or
-alert: the task is only marked overdue in the widget. Check your Home often.
-</Callout>
+## Email reminder
+
+Every morning, from 8:00 in your business's time zone, each assignee gets an email with
+their tasks due today and overdue. An unassigned task goes to whoever created it. If no one on the team
+created it (a workflow, the API, or a chargeback added it) or that person is no longer on
+the team, it goes to the account owner.
+
+- One email a day per person, at most.
+- If you snooze a task, it reminds again on its new date.
+- An overdue task that isn't completed shows up in each day's email until you complete or snooze it.
+- To turn it off for the whole organization, uncheck **Task reminder** in [Settings › Notifications](/en/docs/gestion/notificaciones).
 
 ## Tasks Cord creates for you
 
-When a payment operation needs your attention, Cord adds the task:
+When a payment operation needs your attention, Cord adds the task with **high priority**:
 
 - **Chargeback response** (titled "Responder contracargo" with the amount): when a client disputes a card charge, with the deadline to submit evidence as the due date (see [Disputes](/en/docs/pagos/disputas)).
-- **SPEI refund transfer** (titled "Transferir reembolso SPEI" with the amount): when you request a refund of a SPEI payment, which is transferred outside Cord, linked to the quote (see [Refunds](/en/docs/pagos/reembolsos)).
+- **SPEI refund transfer** (titled "Transferir reembolso SPEI" with the amount): when you request a refund of a SPEI payment, which is transferred outside Cord, linked to the quote and assigned to whoever requested it (see [Refunds](/en/docs/pagos/reembolsos)).
 
 ## Other ways to create tasks
 
@@ -75,7 +90,7 @@ tomorrow".
 
 `POST /api/v1/tareas` creates a task with `titulo`, an optional `due_date`
 (YYYY-MM-DD), and an optional `cotizacion_id`. It requires a key with write permission.
-The API creates tasks; completing and deleting them is done in the app. See [Tasks
+The API creates unassigned tasks; assigning, completing, and deleting them is done in the app. See [Tasks
 API](/en/docs/desarrolladores/funciones/tareas).
 
 </TabItem>
@@ -97,7 +112,7 @@ and [webhooks](/en/docs/desarrolladores/herramientas/webhooks):
 | **A task is created** | When it's created from the app, a workflow, the API, or MCP. |
 | **A task is completed** | When it's marked complete. |
 
-Deleting a task emits no event.
+Editing, snoozing, reopening, or deleting a task emits no event.
 
 ## Limits by plan
 
@@ -105,11 +120,13 @@ Tasks have no cap by plan.
 
 ## Common problems
 
-**I don't see the tasks widget.** You hid it when customizing Home: bring it back from the **Library**.
+**I don't see the tasks widget.** You hid it when customizing Home: bring it back from the **Library**. The **Tasks** page in the sidebar is always available.
 
 **I can't add a task.** Your role doesn't have the Quotes, Collections, or Clients permission.
 
-**A task is missing from the list.** The widget shows 12 pending tasks; complete or delete the ones that no longer apply.
+**A task is missing from the list.** Check the filter: **Mine** only shows yours. The Home widget shows the 8 most urgent; the rest are on the **Tasks** page.
+
+**I didn't get the reminder.** It only arrives if you have tasks due today or overdue, from 8:00 in your business's time zone. Check that **Task reminder** is still on in Settings › Notifications, and your spam folder.
 
 ## Related
 

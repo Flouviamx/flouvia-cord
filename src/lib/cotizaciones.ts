@@ -21,6 +21,7 @@ import { unknownTaxRate, unknownTaxRateMessage } from './impuestos';
 import { approvalMotivo, evaluateApproval, policyFromOrg, totalForPolicy } from './quote-approval';
 import { cancelUsage, reserveUsage } from './billing';
 import { validateFiscalReceptor, type FiscalReceptor, type FiscalReceptorInput } from '../../packages/elements/src/fiscal/receptor';
+import { normalizeTerm } from './payment-terms';
 
 // Máximo de líneas por cotización — evita que un POST con miles de items dispare
 // miles de INSERT secuenciales (DoS + latencia).
@@ -277,7 +278,7 @@ export async function createCotizacion(
     const esRecurrente = !!input.es_recurrente;
     const terminos = esRecurrente
         ? 'contado'
-        : (['contado', 'net30', 'net60'].includes(input.terminos ?? '') ? input.terminos! : 'contado');
+        : normalizeTerm(input.terminos);
     // Anticipo: % válido entre 1 y 99; cualquier otro valor = sin anticipo.
     const anticipoPctRaw = Number(input.anticipo_pct);
     const anticipoPct = esRecurrente ? null

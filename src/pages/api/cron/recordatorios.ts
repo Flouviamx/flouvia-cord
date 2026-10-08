@@ -29,8 +29,8 @@ import { publicDocumentUrl } from '../../../lib/public-links';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
+import { termDays } from '../../../lib/payment-terms';
 
-const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 // Cada recordatorio se formatea con la divisa de SU cotización: este cron
 // barre la cartera de TODAS las orgs, así que un formateador fijo mezclaba
 // pesos, dólares y euros bajo el mismo "$".
@@ -75,7 +75,7 @@ export const GET: APIRoute = async ({ request }) => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const MS = 86400000;
     const todas = rows.map((r) => {
-        const due = new Date(r.base as string); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
+        const due = new Date(r.base as string); due.setDate(due.getDate() + termDays(r.terminos));
         const dias = Math.round((due.getTime() - today.getTime()) / MS);
         return {
             id: r.id as string, folio: r.folio as string, total: num(r.total),

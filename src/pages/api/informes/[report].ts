@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { REPORT_BY_ID, REPORT_IDS, parseGranularity, type ReportId } from '../../../lib/informes';
 import { tablaToCsv } from '../../../lib/informes-csv';
 import { loadReport } from '../../../lib/informes-data';
+import { configFromSearch } from '../../../lib/informes-explorar';
 import { requirePerm } from '../../../lib/queries';
 import { addDaysISO, parseRangoParams } from '../../../lib/rango';
 import { todayInZone } from '../../../lib/report-scope';
@@ -35,7 +36,9 @@ export const GET: APIRoute = async ({ params, url }) => {
     const range = parseRangoParams(url.searchParams, {
         minISO: addDaysISO(todayISO, -364), maxISO: todayISO, anchorISO: todayISO, fallback: '30',
     });
-    const data = await loadReport(id, range, { g: parseGranularity(url.searchParams.get('g')) });
+    // Explorador: dimensión y métricas por URL; configFromSearch solo deja pasar claves
+    // de la lista blanca.
+    const data = await loadReport(id, range, { g: parseGranularity(url.searchParams.get('g')), x: id === 'explorar' ? configFromSearch(url.searchParams) : undefined });
     // Exportación (informes tabla): importes como número y la divisa en su columna.
     if (url.searchParams.get('format') === 'csv' && data && 'tabla' in data && data.tabla) {
         const name = `cord-${id}-${report.scope === 'snapshot' ? todayISO : `${range.desde}_${range.hasta}`}.csv`;

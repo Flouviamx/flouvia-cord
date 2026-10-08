@@ -1,0 +1,53 @@
+---
+// Pieza interna (no es un mockup registrado): la lista de Cotizaciones que
+// queda detrás del dock del Workbench en los mockups de desarrolladores. El
+// Workbench vive sobre cualquier página de la app; aquí se dibuja la más común
+// para que se lea "la barra se abrió encima de lo que estabas haciendo".
+import DmMoney from './DmMoney.astro';
+import DmStatus from './DmStatus.astro';
+import type { QuoteStatus } from '../../../lib/quote';
+import { dmT, pick, DEMO, type DmLang } from './format';
+
+interface Props { lang: DmLang }
+const { lang } = Astro.props;
+
+const ROWS: { folio: string; cliente: string; terminos: { es: string; en: string }; vig: { es: string; en: string }; total: number; status: QuoteStatus }[] = [
+    { folio: 'COT-0152', cliente: 'Constructora Apex', terminos: { es: '50% anticipo', en: '50% deposit' }, vig: { es: '22 oct 2026', en: 'Oct 22, 2026' }, total: 10000, status: 'approved' },
+    { folio: DEMO.folio, cliente: DEMO.cliente, terminos: { es: 'Contado', en: 'Due on receipt' }, vig: { es: '31 oct 2026', en: 'Oct 31, 2026' }, total: DEMO.total, status: 'viewed' },
+    { folio: 'COT-0147', cliente: 'Aceros del Norte', terminos: { es: 'Neto 30', en: 'Net 30' }, vig: { es: '18 oct 2026', en: 'Oct 18, 2026' }, total: 84310.5, status: 'sent' },
+    { folio: 'COT-0146', cliente: 'Grupo Inmobiliario Lerma', terminos: { es: 'Neto 15', en: 'Net 15' }, vig: { es: '14 oct 2026', en: 'Oct 14, 2026' }, total: 312880, status: 'paid' },
+    { folio: 'COT-0145', cliente: 'Ferretera San Mateo', terminos: { es: 'Contado', en: 'Due on receipt' }, vig: { es: '9 oct 2026', en: 'Oct 9, 2026' }, total: 18245.9, status: 'draft' },
+    { folio: 'COT-0144', cliente: 'Desarrollos Metepec', terminos: { es: 'Neto 30', en: 'Net 30' }, vig: { es: '2 oct 2026', en: 'Oct 2, 2026' }, total: 127400, status: 'expired' },
+];
+const cols = '--dm-cols: 78px minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) auto 112px';
+---
+<div class="dm-surface wbbd">
+    <div class="dm-table">
+        <div class="dm-tr dm-th" style={cols}>
+            <span>{dmT(lang, 'cot.th_cotizacion')}</span>
+            <span>{dmT(lang, 'cot.th_cliente')}</span>
+            <span class="dm-hide-narrow">{dmT(lang, 'cot.th_terminos')}</span>
+            <span class="dm-hide-narrow">{dmT(lang, 'cot.th_vigencia')}</span>
+            <span>{dmT(lang, 'cot.th_estado')}</span>
+            <span class="dm-num">{dmT(lang, 'cot.th_total')}</span>
+        </div>
+        {ROWS.map((r) => (
+            <div class="dm-tr" style={cols}>
+                <span class="dm-folio">{r.folio}</span>
+                <span class="dm-ellipsis">{r.cliente}</span>
+                <span class="dm-ellipsis dm-muted dm-hide-narrow">{pick(r.terminos, lang)}</span>
+                <span class="dm-ellipsis dm-muted dm-hide-narrow">{pick(r.vig, lang)}</span>
+                <DmStatus status={r.status} lang={lang} />
+                <span class="dm-num"><DmMoney amount={r.total} lang={lang} /></span>
+            </div>
+        ))}
+    </div>
+</div>
+
+<style is:global>
+    .wbbd { overflow: hidden; }
+    @container dm (max-width: 640px) {
+        .wbbd .dm-tr { grid-template-columns: 70px minmax(0, 1fr) auto !important; }
+        .wbbd .dm-tr > .dm-num, .wbbd .dm-tr > .dm-hide-narrow { display: none; }
+    }
+</style>

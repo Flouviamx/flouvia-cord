@@ -1,0 +1,250 @@
+---
+// Mockup: directorio de Clientes (/app/clientes) con la ficha de un cliente
+// (/app/clientes/[id]) abierta encima, como dos capturas apiladas: en la app la
+// ficha es su propia página, no un panel lateral, y así se dibuja.
+// Calca de src/pages/app/clientes/index.astro (buscador, filtros con conteo, orden
+// "Mayor cerrado", tabla Cliente · Contacto · RFC · Términos · Límite · Cotizaciones)
+// y de clientes/[id].astro (Cerrado, KPIs, uso del crédito y estado de cuenta por
+// antigüedad).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, type DmLang } from './format';
+import { money0Parts } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+type Tier = 'estandar' | 'plata' | 'oro' | 'distribuidor';
+const C = (empresa: string, contacto: string, email: string, rfc: string, term: 'contado' | 'net30' | 'net60', limite: number, n: number, nivel: Tier = 'estandar', desc = 0) =>
+    ({ empresa, contacto, email, rfc, term, limite, n, nivel, desc });
+const CLIENTES = [
+    C('Constructora GAMA', 'Sofía Garza', 'sofia.garza@constructoragama.mx', 'CGA100512KP3', 'net60', 500000, 9, 'oro'),
+    C('Distribuidora El Zarco', 'Raúl Mendoza', 'raul@elzarco.com.mx', 'DEZ0903114T2', 'net30', 350000, 7, 'distribuidor', 8),
+    C('Inmobiliaria Altavista', 'Carmen Ruiz', 'compras@altavista.mx', 'IAL180226RT1', 'net30', 200000, 5, 'plata'),
+    C('Grupo Edificador Norte', 'Diego Salinas', 'dsalinas@edificadornorte.mx', 'GEN120705HB8', 'net30', 250000, 6),
+    C('Constructora Apex', 'Luis Herrera', 'luis.herrera@constructoraapex.mx', 'CAP150820LM6', 'contado', 0, 4),
+    C('Acabados Monterrey', 'Jorge Treviño', 'jtrevino@acabadosmty.com', 'AMO1906038N5', 'contado', 0, 4),
+    C('Ferretera Industrial del Bajío', 'Martha Ibarra', 'mibarra@fibajio.mx', 'FIB0711239Q4', 'contado', 0, 3),
+];
+const TERM = { contado: { es: 'Contado', en: 'Due on receipt' }, net30: { es: 'Net 30', en: 'Net 30' }, net60: { es: 'Net 60', en: 'Net 60' } };
+const FILTERS = [
+    ['cli.filter_todos', 23], ['cli.filter_con_cotizaciones', 17], ['cli.filter_sin_cotizar', 6],
+    ['cli.filter_con_nivel', 5], ['cli.filter_con_credito', 11], ['cli.filter_sin_fiscal', 3],
+] as const;
+
+// Ficha de Constructora GAMA.
+const G = {
+    cerrado: 612480, cotizaciones: 9, pipeline: 61480, cobrado: 498240, ticket: 102080, tasa: 67, dias: 6,
+    limite: 500000, saldo: 149420, vencido: 48940, atraso: 18,
+    bandas: [100480, 48940, 0, 0, 0],
+};
+const usoPct = Math.round((G.saldo / G.limite) * 100);
+const BANDS = ['cdet.ec_corriente', 'cdet.ec_1_30', 'cdet.ec_31_60', 'cdet.ec_61_90', 'cdet.ec_90mas'] as const;
+
+const DATA = {
+    es: {
+        caption: `Directorio de Clientes con el buscador, los filtros Todos, Con cotizaciones, Sin cotizar, Con nivel, Con crédito y Sin datos fiscales, el orden Mayor cerrado y la tabla con cliente, contacto, RFC, términos, límite de crédito y cotizaciones; encima, la ficha de Constructora GAMA: ${dmMoney(G.cerrado, 'MXN', 'es')} cerrados, pipeline, tasa de cierre del ${G.tasa} %, ${usoPct} % del límite de crédito usado y el estado de cuenta por antigüedad.`,
+        clientes: 'clientes',
+    },
+    en: {
+        caption: `Clients directory with the search box, the All, With quotes, No quotes yet, With tier, With credit and Missing tax info filters, the Highest closed sort and the table with client, contact, tax ID, terms, credit limit and quotes; on top, the Constructora GAMA profile: ${dmMoney(G.cerrado, 'MXN', 'en')} closed, pipeline, a ${G.tasa}% close rate, ${usoPct}% of the credit limit used and the statement by aging.`,
+        clientes: 'clients',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const M = (n: number) => money0Parts(n, 'MXN', lang);
+const nuevo = dmT(lang, 'cli.nuevo_cliente').replace(/^\+\s*/, '');
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="clientes" title={dmT(lang, 'cli.heading')} height={800} caption={caption} class="dm-cl-figure">
+    <Fragment slot="actions">
+        <span class="dm-cl-search"><DmIcon name="search" />{dmT(lang, 'cli.buscar_ph')}</span>
+        <span class="dm-btn dm-btn-secondary dm-btn-rect dm-hide-narrow"><DmIcon name="upload" />{dmT(lang, 'cli.importar_csv')}</span>
+        <span class="dm-btn dm-btn-primary dm-btn-rect"><DmIcon name="plus" stroke={2.2} />{nuevo}</span>
+    </Fragment>
+
+    <div class="dm-cl-sechead"><span>{dmT(lang, 'cli.directorio')}</span><span class="dm-cl-count">23 {d.clientes}</span></div>
+    <div class="dm-cl-bar">
+        <div class="dm-cl-filters">
+            {FILTERS.map(([k, n], i) => <span class:list={['dm-cl-pill', { 'is-on': i === 0 }]}>{dmT(lang, k)}<b>{n}</b></span>)}
+        </div>
+        <span class="dm-cl-sort"><DmIcon name="filter" />{dmT(lang, 'cli.sort_cerrado')}<DmIcon name="chevron-down" stroke={2.2} /></span>
+    </div>
+    <div class="dm-cl-table">
+        <div class="dm-cl-tr dm-cl-th">
+            <span>{dmT(lang, 'cli.th_cliente')}</span><span>{dmT(lang, 'cli.th_contacto')}</span><span>{dmT(lang, 'cli.th_rfc')}</span><span>{dmT(lang, 'cli.th_terminos')}</span><span class="dm-cl-r">{dmT(lang, 'cli.th_limite')}</span><span class="dm-cl-r">{dmT(lang, 'cli.th_cotizaciones')}</span>
+        </div>
+        {CLIENTES.map((c, i) => (
+            <div class:list={['dm-cl-tr', { 'is-hl': i === 0, 'is-fade': i === CLIENTES.length - 1 }]}>
+                <span class="dm-cl-client">
+                    <span class="dm-cl-av">{c.empresa.charAt(0)}</span>
+                    <span class="dm-cl-cname">
+                        <span class="dm-ellipsis">{c.empresa}</span>
+                        {c.nivel !== 'estandar' && <span class:list={['dm-cl-tier', `is-${c.nivel}`]}>{dmT(lang, `cmod.nivel_${c.nivel}`)}{c.desc ? ` −${c.desc}%` : ''}</span>}
+                    </span>
+                </span>
+                <span class="dm-cl-contact"><span>{c.contacto}</span><small>{c.email}</small></span>
+                <span class="dm-cl-muted dm-mono">{c.rfc}</span>
+                <span class="dm-cl-muted">{TERM[c.term][lang]}</span>
+                <span class="dm-cl-r dm-cl-amt">{c.limite > 0 ? <span class="dm-money">{M(c.limite).value}<span class="dm-cur">MXN</span></span> : '—'}</span>
+                <span class="dm-cl-r dm-cl-muted">{c.n}</span>
+            </div>
+        ))}
+    </div>
+
+    <div slot="overlay" class="dm-cl-sheet">
+        <div class="dm-cl-sheet-crumbs"><DmIcon name="chevron-left" stroke={2.2} />{dmT(lang, 'cdet.volver').replace('← ', '')}<i>/</i><b>Constructora GAMA</b></div>
+        <div class="dm-cl-sheet-head">
+            <span class="dm-cl-sheet-av">G</span>
+            <span class="dm-cl-sheet-id">
+                <span class="dm-cl-sheet-name">Constructora GAMA</span>
+                <span class="dm-cl-sheet-badges"><span class="dm-cl-tier is-oro">{dmT(lang, 'cdet.nivel_oro')}</span><span class="dm-cl-fiscal">{dmT(lang, 'cdet.fiscal_completo')}</span></span>
+            </span>
+            <span class="dm-cl-sheet-total">
+                <span>{dmT(lang, 'cdet.kpi_cerrado')}</span>
+                <span class="dm-money">{M(G.cerrado).value}<span class="dm-cur">MXN</span></span>
+            </span>
+        </div>
+        <div class="dm-cl-kpis">
+            <span><small>{dmT(lang, 'cdet.kpi_cotizaciones')}</small><b class="dm-editorial">{G.cotizaciones}</b></span>
+            <span><small>{dmT(lang, 'cdet.kpi_pipeline')}</small><b class="dm-money">{M(G.pipeline).value}<span class="dm-cur">MXN</span></b></span>
+            <span><small>{dmT(lang, 'cdet.kpi_cobrado')}</small><b class="dm-money">{M(G.cobrado).value}<span class="dm-cur">MXN</span></b></span>
+            <span><small>{dmT(lang, 'cdet.kpi_ticket')}</small><b class="dm-money">{M(G.ticket).value}<span class="dm-cur">MXN</span></b></span>
+            <span><small>{dmT(lang, 'cdet.kpi_tasa_cierre')}</small><b class="dm-editorial">{G.tasa}%</b></span>
+            <span><small>{dmT(lang, 'cdet.kpi_dias_cierre')}</small><b class="dm-editorial">{G.dias}</b></span>
+        </div>
+        <div class="dm-cl-block">
+            <div class="dm-cl-bhead"><span>{dmT(lang, 'cdet.credito_titulo')}</span><span class="dm-cl-pct">{tpl(dmT(lang, 'cdet.credito_uso'), { pct: usoPct })}</span></div>
+            <span class="dm-cl-track"><i style={`width:${usoPct}%`}></i></span>
+            <span class="dm-cl-credit"><span class="dm-money">{M(G.saldo).value}<span class="dm-cur">MXN</span></span><small>{dmT(lang, 'cdet.kpi_saldo')} · {M(G.limite).value} MXN {dmT(lang, 'cdet.credito_titulo').toLowerCase()}</small></span>
+        </div>
+        <div class="dm-cl-block">
+            <div class="dm-cl-bhead"><span>{dmT(lang, 'cdet.estado_cuenta')}</span></div>
+            <div class="dm-cl-ec">
+                <span><small>{dmT(lang, 'cdet.ec_saldo')}</small><DmMoney amount={G.saldo} lang={lang} /></span>
+                <span><small>{dmT(lang, 'cdet.ec_vencido')}</small><DmMoney amount={G.vencido} lang={lang} class="is-bad" /></span>
+                <span><small>{dmT(lang, 'cdet.ec_mas_viejo')}</small><b class="dm-editorial">{tpl(dmT(lang, 'cdet.ec_dias'), { n: G.atraso })}</b></span>
+            </div>
+            <div class="dm-cl-aging">
+                {BANDS.map((k, i) => (
+                    <span class:list={['dm-cl-band', { 'is-empty': G.bandas[i] <= 0, 'is-late': i > 0 && G.bandas[i] > 0 }]}>
+                        <small>{dmT(lang, k)}</small>
+                        <span class="dm-money">{M(G.bandas[i]).value}<span class="dm-cur">MXN</span></span>
+                    </span>
+                ))}
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cl-figure .dm-page-head, .dm-cl-figure .dm-content { padding-right: calc(16px + var(--dm-bleed)); }
+    .dm-cl-cname { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; flex: 1; }
+    .dm-cl-cname > .dm-ellipsis { max-width: 100%; }
+    .dm-cl-search { display: inline-flex; align-items: center; gap: 6px; height: 30px; width: 170px; padding: 0 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11px; color: var(--dm-faint); }
+    .dm-cl-search .dm-ico { width: 12px; height: 12px; }
+    .dm-cl-sechead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--dm-border); font-size: 13px; font-weight: 600; }
+    .dm-cl-count { font-size: 10.5px; font-weight: 500; color: var(--dm-muted); }
+    .dm-cl-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .dm-cl-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dm-cl-pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 10px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 10px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cl-pill b { font-size: 8.5px; font-weight: 700; padding: 1px 5px; border-radius: 999px; background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-cl-pill.is-on { background: var(--dm-navy); color: #fff; box-shadow: none; }
+    .dm-cl-pill.is-on b { background: rgba(255, 255, 255, 0.22); box-shadow: none; }
+    .dm-cl-sort { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 8px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .dm-cl-sort .dm-ico { width: 11px; height: 11px; color: var(--dm-muted); }
+    .dm-cl-table { display: flex; flex-direction: column; }
+    .dm-cl-tr { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.3fr) 90px 54px 76px 66px; gap: 9px; align-items: center; min-height: 46px; padding: 0 8px; border-bottom: 1px solid var(--dm-border); font-size: 11.5px; border-radius: 8px; }
+    .dm-cl-tr.is-hl { background: rgba(10, 25, 47, 0.035); }
+    .dm-cl-tr.is-fade { opacity: 0.4; }
+    .dm-cl-th > span { overflow-wrap: anywhere; }
+    .dm-cl-th { line-height: 1.25; min-height: 26px; padding-bottom: 6px; align-items: end; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-cl-r { text-align: right; justify-self: end; }
+    .dm-cl-client { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; }
+    .dm-cl-av { width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 9px; font-weight: 800; }
+    .dm-cl-tier { flex-shrink: 0; font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: rgba(10, 25, 47, 0.06); color: var(--dm-muted); white-space: nowrap; }
+    .dm-cl-tier.is-oro { color: #92600a; background: rgba(245, 158, 11, 0.13); }
+    .dm-cl-tier.is-plata { color: #475569; background: rgba(100, 116, 139, 0.13); }
+    .dm-cl-tier.is-distribuidor { color: var(--dm-info-ink); background: rgba(37, 99, 235, 0.09); }
+    .dm-cl-contact { display: flex; flex-direction: column; min-width: 0; }
+    .dm-cl-contact span, .dm-cl-contact small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cl-contact small { font-size: 9.5px; color: var(--dm-faint); }
+    .dm-cl-muted { color: var(--dm-muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cl-amt .dm-money { font-size: 11.5px; color: var(--dm-navy); }
+
+    /* La ficha: segunda captura apilada abajo a la derecha. */
+    .dm-cl-sheet {
+        position: absolute;
+        right: calc(var(--dm-bleed) + 14px);
+        top: 352px;
+        width: 330px;
+        padding: 14px 16px 16px;
+        border-radius: 16px;
+        background: var(--dm-canvas);
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        box-shadow: var(--dm-shadow-float);
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+    }
+    .dm-cl-sheet-crumbs { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--dm-muted); }
+    .dm-cl-sheet-crumbs .dm-ico { width: 11px; height: 11px; }
+    .dm-cl-sheet-crumbs i { font-style: normal; color: #c4cad3; }
+    .dm-cl-sheet-crumbs b { color: var(--dm-text); font-weight: 600; }
+    .dm-cl-sheet-head { display: flex; align-items: center; gap: 9px; padding-bottom: 11px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cl-sheet-av { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; background: #b45309; color: #fff; font-size: 13px; font-weight: 800; }
+    .dm-cl-sheet-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .dm-cl-sheet-name { font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cl-sheet-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+    .dm-cl-fiscal { font-size: 8.5px; font-weight: 700; padding: 2px 6px; border-radius: 999px; color: var(--dm-ok-ink); background: rgba(16, 185, 129, 0.12); white-space: nowrap; }
+    .dm-cl-sheet-total { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .dm-cl-sheet-total > span:first-child { font-size: 8px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #99a2af; }
+    .dm-cl-sheet-total .dm-money { font-size: 18px; color: var(--dm-navy); }
+    .dm-cl-sheet-total .dm-cur { font-size: 8.5px; }
+    .dm-cl-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; border-radius: 11px; overflow: hidden; background: var(--dm-border); }
+    .dm-cl-kpis > span { display: flex; flex-direction: column; gap: 3px; padding: 8px 9px; background: #fff; min-width: 0; }
+    .dm-cl-kpis small { font-size: 8.5px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cl-kpis b { font-size: 12.5px; color: var(--dm-navy); }
+    .dm-cl-kpis .dm-cur { font-size: 7.5px; }
+    .dm-cl-block { display: flex; flex-direction: column; gap: 7px; }
+    .dm-cl-bhead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--dm-border); font-size: 11.5px; font-weight: 600; }
+    .dm-cl-pct { font-size: 10px; font-weight: 700; color: var(--dm-ok-ink); }
+    .dm-cl-track { height: 7px; border-radius: 99px; background: rgba(10, 25, 47, 0.07); overflow: hidden; }
+    .dm-cl-track i { display: block; height: 100%; border-radius: 99px; background: var(--dm-navy); }
+    .dm-cl-credit { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 11px; }
+    .dm-cl-credit small { font-size: 9px; color: var(--dm-muted); text-align: right; }
+    .dm-cl-credit .dm-cur { font-size: 8px; }
+    .dm-cl-ec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .dm-cl-ec > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cl-ec small { font-size: 8.5px; color: var(--dm-muted); }
+    .dm-cl-ec .dm-money, .dm-cl-ec b { font-size: 11.5px; color: var(--dm-navy); }
+    .dm-cl-ec .dm-money.is-bad { color: var(--dm-danger-ink); }
+    .dm-cl-ec .dm-cur { font-size: 7.5px; }
+    .dm-cl-aging { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+    .dm-cl-band { display: flex; flex-direction: column; gap: 2px; padding: 6px 6px; border-radius: 8px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); min-width: 0; }
+    .dm-cl-band small { font-size: 7.5px; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cl-band .dm-money { font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cl-band .dm-cur { display: none; }
+    .dm-cl-band.is-empty { opacity: 0.5; }
+    .dm-cl-band.is-late { box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.4); background: #fffbeb; }
+    .dm-cl-band.is-late .dm-money { color: var(--dm-warn-ink); }
+
+    @container dm (max-width: 640px) {
+        .dm-cl-figure .dm-stage { height: auto; }
+        .dm-cl-search { width: auto; }
+        .dm-cl-tr { grid-template-columns: minmax(0, 1fr) auto; }
+        .dm-cl-tr > span:nth-child(n+2):not(:nth-child(5)) { display: none; }
+        .dm-cl-tr:nth-child(n+6) { display: none; }
+        .dm-cl-figure .dm-overlay { position: static; }
+        .dm-cl-sheet { position: relative; right: auto; top: auto; width: auto; margin: 0 calc(var(--dm-bleed) + 12px) 16px 12px; }
+    }
+    @container dm (max-width: 520px) {
+        .dm-cl-search { display: none; }
+        .dm-cl-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-cl-aging { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+</style>

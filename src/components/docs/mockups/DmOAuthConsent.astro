@@ -1,0 +1,95 @@
+---
+// Mockup: pantalla de consentimiento de Cord como proveedor OAuth
+// (/oauth/authorize) abierta desde Zapier, Make o el complemento de Gmail.
+//
+// Calca de src/pages/oauth/authorize.astro: logo de Cord, línea punteada y el
+// logo de la app; eyebrow, título, selector de espacio de trabajo (la persona
+// administra dos), qué podrá hacer la app con el alcance de escritura, qué no
+// podrá, Cancelar / Autorizar y la nota de revocación. Textos de oauth.*.
+import DocsMockup from './DocsMockup.astro';
+import { dmT, favicon, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** App que pide la conexión. */
+    app?: 'zapier' | 'make';
+    caption?: string;
+}
+const { lang, app = 'zapier' } = Astro.props;
+const L = lang;
+const APPS = {
+    zapier: { nombre: 'Zapier', dominio: 'zapier.com', client: 'cord_zapier' },
+    make: { nombre: 'Make', dominio: 'make.com', client: 'cord_make' },
+};
+const A = APPS[app];
+const PUEDE = ['write_1', 'write_2'];
+
+const DATA = {
+    es: { caption: `Pantalla de autorización de Cord abierta desde ${A.nombre}: elige el espacio de trabajo (${DEMO.org}), lista lo que ${A.nombre} podrá hacer y lo que no, con los botones Cancelar y Autorizar.` },
+    en: { caption: `Cord authorization screen opened from ${A.nombre}: choose the workspace (${DEMO.org}), see what ${A.nombre} will and will not be able to do, with the Cancel and Authorize buttons.` },
+};
+const caption = Astro.props.caption ?? pick(DATA, L).caption;
+const url = `cordhq.app/oauth/authorize?client_id=${A.client}&scope=write`;
+---
+<DocsMockup lang={L} variant="browser" url={url} caption={caption} class="dm-oa-figure">
+    <div class="dm-oa">
+        <div class="dm-oa-card">
+            <div class="dm-oa-logos">
+                <img src="/imgs/logo-cord-navy.png" alt="" class="dm-oa-cord" height="18" loading="lazy" decoding="async" />
+                <span class="dm-oa-link"></span>
+                <img src={favicon(A.dominio, 128)} alt="" class="dm-oa-app" width="30" height="30" loading="lazy" decoding="async" />
+            </div>
+            <span class="dm-oa-eyebrow">{dmT(L, 'oauth.eyebrow')}</span>
+            <span class="dm-oa-title">{tpl(dmT(L, 'oauth.titulo'), { app: A.nombre })}</span>
+
+            <span class="dm-oa-field">
+                <span>{dmT(L, 'oauth.espacio')}</span>
+                <span class="dm-oa-select dm-select">{DEMO.org}</span>
+            </span>
+
+            <div class="dm-oa-block">
+                <span class="dm-oa-h">{tpl(dmT(L, 'oauth.podra'), { app: A.nombre })}</span>
+                <span class="dm-oa-list">
+                    {PUEDE.map((k) => <span class="dm-oa-li">{dmT(L, `oauth.puede.${k}` as any)}</span>)}
+                </span>
+                <span class="dm-oa-no">{dmT(L, 'oauth.no_podra')}</span>
+            </div>
+
+            <div class="dm-oa-actions">
+                <span class="dm-oa-btn is-ghost">{dmT(L, 'oauth.cancelar')}</span>
+                <span class="dm-oa-btn">{dmT(L, 'oauth.autorizar')}</span>
+            </div>
+            <span class="dm-oa-foot">{dmT(L, 'oauth.revocable')}</span>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-oa { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 30px 16px 34px; }
+    .dm-oa-card { width: 100%; max-width: 360px; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--dm-border); border-radius: 22px; box-shadow: 0 30px 70px -30px rgba(10, 25, 47, 0.25); padding: 26px 22px 22px; }
+    .dm-oa-logos { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 18px; }
+    .dm-oa .dm-oa-cord { display: block; height: 18px; width: auto; max-width: none; margin: 0; }
+    .dm-oa .dm-oa-app { display: block; width: 30px; height: 30px; max-width: none; margin: 0; border-radius: 8px; }
+    .dm-oa-link { width: 24px; border-top: 1.5px dashed rgba(10, 25, 47, 0.25); }
+    .dm-oa-eyebrow { margin-bottom: 6px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; text-align: center; color: #99a2af; }
+    .dm-oa-title { margin-bottom: 18px; font-size: 18px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; text-align: center; color: #050505; text-wrap: balance; }
+    .dm-oa-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-oa-select { display: flex; align-items: center; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; font-size: 12px; font-weight: 500; color: #050505; }
+    .dm-oa-block { padding-top: 14px; margin-bottom: 18px; border-top: 1px solid var(--dm-border); }
+    .dm-oa-h { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: #050505; }
+    .dm-oa-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 11px; }
+    .dm-oa-li { position: relative; padding-left: 14px; font-size: 11.5px; line-height: 1.45; color: #050505; }
+    .dm-oa-li::before { content: ''; position: absolute; left: 3px; top: 7px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+    .dm-oa-no { display: block; font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-oa-actions { display: flex; gap: 8px; }
+    .dm-oa-btn { flex: 1; display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; background: var(--dm-navy); }
+    .dm-oa-btn.is-ghost { color: var(--dm-navy); background: transparent; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.14); }
+    .dm-oa-foot { margin-top: 13px; font-size: 10px; line-height: 1.4; text-align: center; color: #777; }
+
+    @container dm (max-width: 520px) {
+        .dm-oa { padding: 16px 8px 20px; }
+        .dm-oa-card { padding: 22px 16px 18px; border-radius: 18px; }
+        .dm-oa-actions { flex-direction: column-reverse; }
+        .dm-oa-btn { flex: none; }
+    }
+</style>

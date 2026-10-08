@@ -5,6 +5,7 @@
 // campo nuevo no rompe a nadie (ver versiones de la API).
 import { z } from 'zod';
 import { WEBHOOK_EVENT_OBJECTS } from '../../packages/elements/src/contract/webhook-events.ts';
+import { TERM_CODES } from './payment-terms.ts';
 
 const id = z.string().describe('Identificador (UUID).');
 const money = z.number().describe('Importe en la divisa indicada por `moneda`.');
@@ -16,7 +17,9 @@ const open = <T extends z.ZodRawShape>(shape: T) => z.looseObject(shape);
 
 export const Quote = open({
     id, folio: z.string(), cliente: z.string().nullable(), status: z.string(), total: money, moneda: currency,
-    terminos: z.string().nullable(), vigencia: date, creada: date,
+    terminos: z.string().nullable().describe('Etiqueta legible del plazo en el idioma de la cuenta ("Contado", "Net 45"); para comparar usa terminos_codigo.'),
+    terminos_codigo: z.string().nullable(),
+    vigencia: date, creada: date,
     link_publico: z.string().describe('Link público absoluto de la cotización.'),
 });
 
@@ -46,6 +49,9 @@ export const Product = open({
     activo: z.boolean(), createdAt: date,
     preciosVolumen: z.array(open({ min: z.number(), precio: money })),
     existencias: z.number().nullable(),
+    taxRate: z.number().nullable(),
+    claveSat: z.string().nullable(),
+    claveUnidadSat: z.string().nullable(),
 });
 
 export const Invoice = open({
@@ -81,8 +87,8 @@ export const ElementsConfig = open({
         retenciones: z.array(open({ nombre: z.string(), tasa: z.number(), base: z.enum(['subtotal', 'impuesto']) })),
         precios_incluyen_impuesto: z.boolean(),
     }),
-    terminos: z.array(z.enum(['contado', 'net30', 'net60'])),
-    terminos_default: z.enum(['contado', 'net30', 'net60']),
+    terminos: z.array(z.enum(TERM_CODES)),
+    terminos_default: z.enum(TERM_CODES),
     vigencia_dias_default: z.number(),
     fiscal: open({ pais: z.string(), reglas_propias: z.boolean() }),
 });
@@ -121,7 +127,7 @@ export const CreateQuoteInput = z.object({
         empresa: z.string(), email: z.string().optional(), contacto: z.string().optional(),
         telefono: z.string().optional(), rfc: z.string().optional(), fiscal: FiscalReceptorInput.optional(),
     }).optional(),
-    terminos: z.enum(['contado', 'net30', 'net60']).optional(),
+    terminos: z.enum(TERM_CODES).optional(),
     vigencia_dias: z.number().int().optional(),
     notas: z.string().optional(),
     base_currency: z.string().optional(),
@@ -220,6 +226,8 @@ export const FIELD_DOCS: Record<string, string> = {
     base_currency: 'Divisa de venta ISO 4217: en la que se capturan los precios, se cobra y se factura. Default: la del negocio.',
     body: 'Cuerpo crudo del evento; reenvíalo sin modificar para que la firma valide.',
     cantidad: 'Cantidad de unidades; admite decimales.',
+    claveSat: 'Clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) para el CFDI en México; null si no se clasificó.',
+    claveUnidadSat: 'Clave de unidad del SAT (c_ClaveUnidad, como H87 o E48) para el CFDI en México; null = se deduce de la unidad.',
     cliente: 'Cliente al que va dirigido: nombre de la empresa, o los datos para darlo de alta si no existe.',
     cliente_id: 'ID de un cliente del directorio.',
     clientes: 'Saldo agrupado por cliente.',
@@ -332,9 +340,11 @@ export const FIELD_DOCS: Record<string, string> = {
     tasa: 'Porcentaje (16 = 16 %).',
     tasa_default: 'Tasa por defecto como fracción 0–1.',
     tax_id: 'Identificador fiscal: RFC en México, NIF/NIE/CIF en España, EIN en EE. UU.',
+    taxRate: 'Impuesto que se sugiere al agregar el producto a una línea, como fracción 0–1; null = el predeterminado de la organización.',
     telefono: 'Teléfono con lada internacional.',
-    terminos: 'Términos de pago: contado, net30 o net60.',
-    terminosCode: 'Código de términos de pago: contado, net30 o net60.',
+    terminos: 'Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90).',
+    terminosCode: 'Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90).',
+    terminos_codigo: 'Código estable del plazo: contado o net<N> (net7, net15, net30, net45, net60, net90).',
     terminos_default: 'Términos de pago por defecto.',
     texto: 'Texto libre del pedido.',
     tipo: 'Tipo.',

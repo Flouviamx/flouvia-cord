@@ -1,0 +1,55 @@
+---
+// Selector de términos de pago — COMPARTIDO por el modal de cliente y los
+// editores de cotización y factura. Los plazos comunes van como chips; el resto
+// en un chip "Otro plazo" que es un <select> nativo (teclado, lector de pantalla
+// y teclado virtual del celular sin código propio).
+//
+// No trae estilos de chip: hereda los de su anfitrión (`.modal .chip` o
+// `[data-editor] .chip`), así se ve igual que los demás chips de esa pantalla.
+// El estado se lee y se escribe con `wireTermPicker()` de
+// src/lib/term-picker-client.ts — nunca buscando `.chip.active` a mano.
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+import Icon from '../Icon.astro';
+import { COMMON_TERM_CODES, TERM_CODES, normalizeTerm, termLabel, termOptionLabel } from '../../lib/payment-terms';
+
+interface Props {
+    id: string;
+    value?: string | null;
+    class?: string;
+    ariaLabel?: string;
+    /** Plazo fijo (p. ej. una versión nueva de una cotización ya enviada). */
+    disabled?: boolean;
+}
+const { id, value, class: className = '', ariaLabel, disabled = false } = Astro.props;
+const L = currentLocale();
+const current = normalizeTerm(value);
+const MORE = TERM_CODES.filter((code) => !COMMON_TERM_CODES.includes(code));
+const inMore = MORE.includes(current);
+const otro = t(L, 'terms.otro');
+---
+
+<div class:list={['term-chips', 'tp', className]} id={id} role="group" aria-label={ariaLabel ?? t(L, 'terms.label')} data-term-picker data-value={current}>
+    {COMMON_TERM_CODES.map((code) => (
+        <button type="button" class:list={['chip', { active: code === current }]} data-term={code} aria-pressed={String(code === current)} disabled={disabled}>{termLabel(code, L)}</button>
+    ))}
+    <span class:list={['chip', 'tp-more', { active: inMore }]}>
+        <span class="tp-more-label" data-more-label data-default={otro}>{inMore ? termLabel(current, L) : otro}</span>
+        <Icon name="chevron-down" size={12} />
+        <select data-term-more aria-label={otro} disabled={disabled}>
+            <option value="">{otro}</option>
+            {MORE.map((code) => <option value={code} selected={code === current}>{termOptionLabel(code, L)}</option>)}
+        </select>
+    </span>
+</div>
+
+<style>
+    .tp { flex-wrap: wrap; }
+    .tp-more { position: relative; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+    .tp-more :global(svg) { flex: 0 0 auto; opacity: 0.7; }
+    .tp-more select {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        opacity: 0; cursor: pointer; font-size: 16px; /* 16px: iOS no hace zoom al abrirlo */
+    }
+    .tp-more:focus-within { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+</style>

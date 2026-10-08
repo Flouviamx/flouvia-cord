@@ -1,5 +1,7 @@
 import { sql, withOrgTx } from '../db';
 import { normVolumen } from '../queries';
+import { TaxCatalogUnavailableError, taxCatalogFor } from '../impuestos-db';
+import { isProductKey, isUnitKey, normalizeProductKey, normalizeUnitKey } from '../fiscal/sat-claves';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
@@ -16,22 +18,72 @@ export function cleanProductInput(input: Record<string, any>) {
         costo: Math.max(0, Number(input.costo) || 0),
         activo: input.activo === undefined ? true : Boolean(input.activo),
         preciosVolumen: normVolumen(input.precios_volumen),
+        // `null` = la tasa predeterminada de la organización. Fracción, no porcentaje.
+        taxRate: input.tax_rate === undefined || input.tax_rate === null || input.tax_rate === ''
+            ? null : Number(input.tax_rate),
+        // Claves SAT del CFDI (solo México). `null` = sin clasificar: el CFDI usa
+        // los defaults del SAT.
+        claveSat: normalizeProductKey(input.clave_sat),
+        claveUnidadSat: normalizeUnitKey(input.clave_unidad_sat),
+        // Un campo que no viene en la petición NO se toca al actualizar: la
+        // pantalla solo muestra el impuesto si hay más de una tasa y las claves
+        // SAT si el negocio factura en México, y omitirlos no puede borrarlos.
+        provided: {
+            taxRate: input.tax_rate !== undefined,
+            claveSat: input.clave_sat !== undefined,
+            claveUnidadSat: input.clave_unidad_sat !== undefined,
+        },
     };
+}
+
+function invalidSatKeys(p: ReturnType<typeof cleanProductInput>): ActionOutcome | null {
+    if (p.claveSat !== null && !isProductKey(p.claveSat)) {
+        return done(400, { error: 'La clave de producto o servicio del SAT tiene 8 dígitos (por ejemplo 81111500).', code: 'invalid_request' });
+    }
+    if (p.claveUnidadSat !== null && !isUnitKey(p.claveUnidadSat)) {
+        return done(400, { error: 'La clave de unidad del SAT tiene de 1 a 3 letras o números (por ejemplo H87 o E48).', code: 'invalid_request' });
+    }
+    return null;
+}
+
+/**
+ * Una tasa sugerida que no está en el catálogo del negocio no se guarda: el
+ * editor la ofrecería en una línea y el servidor la rechazaría al cotizar.
+ */
+async function invalidTaxRate(orgId: string, rate: number | null): Promise<ActionOutcome | null> {
+    if (rate === null) return null;
+    if (!Number.isFinite(rate)) return TASA_INVALIDA;
+    try {
+        const catalog = await taxCatalogFor(orgId);
+        return Number.isNaN(catalog.resolve(rate, Number.NaN)) ? TASA_INVALIDA : null;
+    } catch (error) {
+        if (error instanceof TaxCatalogUnavailableError) {
+            return done(503, { error: 'No pudimos leer tu catálogo de impuestos. Intenta de nuevo en un momento.', code: 'service_unavailable' });
+        }
+        throw error;
+    }
 }
 
 const NOMBRE_OBLIGATORIO = done(400, { error: 'El nombre del producto es obligatorio', code: 'invalid_request' });
 const NO_ENCONTRADO = done(404, { error: 'Producto no encontrado', code: 'not_found' });
+const TASA_INVALIDA = done(400, { error: 'Ese impuesto no está en tu catálogo. Revísalo en Ajustes › Impuestos.', code: 'invalid_request' });
 
 export async function createProduct(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
     const p = cleanProductInput(input);
     if (!p.nombre) return NOMBRE_OBLIGATORIO;
+    const satDenied = invalidSatKeys(p);
+    if (satDenied) return satDenied;
+    const taxDenied = await invalidTaxRate(ctx.orgId, p.taxRate);
+    if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'products');
     if (capacityDenied) return fromResponse(capacityDenied);
     let row: any;
     try {
         [[row]] = await withOrgTx(ctx.orgId, sql`
-            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen)
-            values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
+            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen, tax_rate,
+                                   clave_sat, clave_unidad_sat)
+            values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)}, ${p.taxRate},
+                    ${p.claveSat}, ${p.claveUnidadSat})
             returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
@@ -47,13 +99,20 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
     const p = cleanProductInput(input);
     if (!p.nombre) return NOMBRE_OBLIGATORIO;
     if (!isUuid(id)) return NO_ENCONTRADO;
+    const satDenied = invalidSatKeys(p);
+    if (satDenied) return satDenied;
+    const taxDenied = await invalidTaxRate(ctx.orgId, p.taxRate);
+    if (taxDenied) return taxDenied;
     const [antes, rows] = await withOrgTx(ctx.orgId,
         sql`select precio_lista, activo from productos where id = ${id} and org_id = ${ctx.orgId}`,
         sql`
         update productos set
             sku = ${p.sku}, nombre = ${p.nombre}, unidad = ${p.unidad}, descripcion = ${p.descripcion},
             precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo},
-            precios_volumen = ${JSON.stringify(p.preciosVolumen)}
+            precios_volumen = ${JSON.stringify(p.preciosVolumen)},
+            tax_rate = case when ${p.provided.taxRate} then ${p.taxRate}::numeric else tax_rate end,
+            clave_sat = case when ${p.provided.claveSat} then ${p.claveSat}::text else clave_sat end,
+            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

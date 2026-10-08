@@ -1,0 +1,124 @@
+/* ============================================================================
+   Vocabulario del editor de cotizaciones para los mockups de docs (dm-ced-*).
+   Calca de src/styles/editor.css + el <style is:global> de
+   src/pages/app/cotizaciones/nueva.astro, a escala de screenshot.
+
+   Lo consumen DmCotClientStep, DmCotAiBlock, DmCotLines y DmCotReviewPanel
+   (y CotEdLines.astro). Hoja global a propósito (regla 11): cada componente
+   tiene su propio scope de Astro y todos comparten estas clases.
+   ============================================================================ */
+
+.dm-ced { --ced-field: #ebecef; --ced-ok: #059669; --ced-low: #dc2626; }
+
+/* Etiqueta "Borrador" de la topbar del editor */
+.dm-ced-draft { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 6px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); background: var(--dm-soft); border: 1px solid var(--dm-border); }
+
+/* Pasos numerados */
+.dm-ced-step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+.dm-ced-num { flex-shrink: 0; width: 22px; height: 22px; margin-top: 1px; border-radius: 7px; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 11px; font-weight: 700; }
+.dm-ced-step-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dm-ced-step-title { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+.dm-ced-step-hint { font-size: 11px; line-height: 1.45; color: var(--dm-muted); }
+.dm-ced-step-hint b { font-weight: 600; color: var(--dm-text); }
+
+/* Campo tipo select del editor (gris sin borde, foco navy) */
+.dm-ced-select { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--ced-field); border: 1.5px solid transparent; font-size: 12px; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+.dm-ced-select::after { content: ''; margin-left: auto; flex-shrink: 0; width: 6px; height: 6px; border-right: 1.5px solid #99a2af; border-bottom: 1.5px solid #99a2af; transform: translateY(-2px) rotate(45deg); }
+.dm-ced-select.is-focus { background: #fff; border-color: var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+.dm-ced-select.is-placeholder { color: var(--dm-muted); }
+.dm-ced-select-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Chips de términos */
+.dm-ced-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.dm-ced-chip { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); background: var(--ced-field); border: 1.5px solid transparent; white-space: nowrap; }
+.dm-ced-chip.is-on { color: #fff; background: var(--dm-navy); border-color: var(--dm-navy); box-shadow: 0 2px 8px -2px rgba(10, 25, 47, 0.3); }
+
+/* Divisor "o créala manualmente" */
+.dm-ced-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--dm-muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.dm-ced-or::before, .dm-ced-or::after { content: ''; flex: 1; height: 1px; background: var(--dm-border); }
+
+/* ── Líneas ─────────────────────────────────────────────────────────────── */
+.dm-ced-lines { --ced-cols: minmax(0, 1fr) 48px 90px 98px 58px 112px 38px 12px; }
+.dm-ced-lines.no-tax { --ced-cols: minmax(0, 1fr) 48px 90px 98px 112px 38px 12px; }
+.dm-ced-lh, .dm-ced-lr { display: grid; grid-template-columns: var(--ced-cols); gap: 8px; align-items: center; }
+.dm-ced-lh { padding-bottom: 7px; border-bottom: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; }
+.dm-ced-lh .is-right { text-align: right; }
+.dm-ced-lh .is-center { text-align: center; }
+.dm-ced-lh-i { display: inline-grid; place-items: center; width: 12px; height: 12px; margin-left: 2px; border-radius: 50%; border: 1px solid var(--dm-border-strong); font-size: 8px; font-weight: 700; vertical-align: 1px; }
+.dm-ced-lr { padding: 10px 0; border-bottom: 1px solid var(--dm-border); font-size: 12px; }
+.dm-ced-lr:last-child { border-bottom: 0; }
+.dm-ced-lr.is-added { background: linear-gradient(90deg, rgba(16, 185, 129, 0.07), rgba(16, 185, 129, 0) 70%); }
+.dm-ced-name { display: flex; flex-direction: column; min-width: 0; font-weight: 500; color: var(--dm-text); }
+.dm-ced-name-main { line-height: 1.35; }
+.dm-ced-name small { font-size: 10px; font-weight: 500; color: var(--dm-muted); line-height: 1.45; }
+.dm-ced-hintp { color: var(--dm-navy); font-weight: 600; border-bottom: 1px dashed rgba(10, 25, 47, 0.35); }
+.dm-ced-in { display: flex; align-items: center; height: 30px; padding: 0 8px; border-radius: 8px; background: var(--ced-field); border: 1.5px solid transparent; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+.dm-ced-in.is-deal { color: var(--ced-ok); font-weight: 600; }
+.dm-ced-in .dm-cur { font-size: 8.5px; }
+.dm-ced-tax { display: flex; align-items: center; justify-content: center; height: 30px; padding: 0 6px; border-radius: 8px; background: var(--ced-field); font-size: 10.5px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; }
+.dm-ced-lista { font-size: 11px; color: var(--dm-muted); text-decoration: line-through; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.dm-ced-lista .dm-money { font-weight: 400; letter-spacing: 0; }
+.dm-ced-lista .dm-cur { display: inline-block; font-size: 8.5px; margin-left: 0.25em; }
+.dm-ced-imp { justify-self: end; text-align: right; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.dm-ced-imp .dm-cur { font-size: 8.5px; }
+.dm-ced-mg { justify-self: center; display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; font-size: 10.5px; font-weight: 600; color: var(--ced-ok); background: rgba(16, 185, 129, 0.1); }
+.dm-ced-mg.is-low { color: var(--ced-low); background: rgba(220, 38, 38, 0.1); }
+.dm-ced-mg.is-na { color: #94a3b8; background: transparent; font-weight: 400; }
+.dm-ced-del { justify-self: center; color: #94a3b8; }
+.dm-ced-del .dm-ico { width: 12px; height: 12px; }
+
+/* Buscador + línea libre + kit */
+.dm-ced-add { display: flex; align-items: center; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
+.dm-ced-search-t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dm-ced-search { flex: 1 1 220px; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 10px; background: var(--ced-field); font-size: 11.5px; color: #99a2af; min-width: 0; white-space: nowrap; overflow: hidden; }
+.dm-ced-search .dm-ico { width: 13px; height: 13px; flex-shrink: 0; }
+.dm-ced-btn2 { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 10px; font-size: 11.5px; font-weight: 600; color: var(--dm-text); background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border-strong); white-space: nowrap; }
+
+/* Resumen lateral "Revisa y envía" */
+.dm-ced-sum { display: flex; flex-direction: column; gap: 11px; padding: 20px; background: #fff; border-radius: 18px; border: 1px solid var(--dm-border); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.03), 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 16px 40px -8px rgba(10, 25, 47, 0.1); }
+.dm-ced-sum-title { font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em; }
+.dm-ced-sum-count { margin-top: -6px; font-size: 10.5px; color: var(--dm-muted); }
+.dm-ced-sl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12px; color: var(--dm-muted); }
+.dm-ced-sl .dm-money { color: var(--dm-text); font-size: 13px; }
+.dm-ced-sl.is-save .dm-money { color: var(--ced-ok); }
+.dm-ced-sl.is-tax { padding-left: 9px; font-size: 11px; }
+.dm-ced-sl.is-tax .dm-money { font-size: 12px; }
+.dm-ced-div { height: 1px; background: var(--dm-border); margin: 1px 0; }
+.dm-ced-sl.is-total { font-weight: 700; color: var(--dm-text); align-items: center; }
+.dm-ced-sl.is-total .dm-money { font-size: 22px; letter-spacing: -0.03em; }
+.dm-ced-field { display: flex; flex-direction: column; gap: 6px; }
+.dm-ced-flabel { font-size: 10.5px; font-weight: 500; color: var(--dm-muted); }
+.dm-ced-opt { font-weight: 400; color: var(--dm-faint); }
+.dm-ced-frow { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--dm-text); }
+.dm-ced-toggle { position: relative; flex-shrink: 0; width: 36px; height: 20px; border-radius: 999px; background: rgba(10, 25, 47, 0.15); }
+.dm-ced-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+.dm-ced-toggle.is-on { background: var(--dm-navy); }
+.dm-ced-toggle.is-on::after { left: 18px; }
+.dm-ced-note { font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+.dm-ced-send { display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; margin-top: 6px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px -4px rgba(10, 25, 47, 0.4); }
+.dm-ced-send .dm-ico { width: 14px; height: 14px; }
+.dm-ced-draftbtn { display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 999px; background: var(--ced-field); font-size: 12px; font-weight: 600; color: var(--dm-text); }
+
+/* ── Angosto: la fila se reordena en renglones, como el editor en móvil ── */
+@container dm (max-width: 560px) {
+    .dm-ced-lh { display: none; }
+    .dm-ced-lr, .dm-ced-lines.no-tax .dm-ced-lr {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 20px;
+        grid-template-areas:
+            "name name del"
+            "qty price price"
+            "tax tax tax"
+            "list margin amount";
+        gap: 7px 9px;
+        padding: 12px 0;
+    }
+    .dm-ced-lines.no-tax .dm-ced-lr { grid-template-areas: "name name del" "qty price price" "list margin amount"; }
+    .dm-ced-lr > .dm-ced-name { grid-area: name; }
+    .dm-ced-lr > .dm-ced-qty { grid-area: qty; }
+    .dm-ced-lr > .dm-ced-lista { grid-area: list; }
+    .dm-ced-lr > .dm-ced-nego { grid-area: price; }
+    .dm-ced-lr > .dm-ced-tax { grid-area: tax; }
+    .dm-ced-lr > .dm-ced-imp { grid-area: amount; }
+    .dm-ced-lr > .dm-ced-mg { grid-area: margin; justify-self: start; }
+    .dm-ced-lr > .dm-ced-del { grid-area: del; justify-self: end; align-self: start; }
+}

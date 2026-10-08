@@ -1,0 +1,19 @@
+---
+// Anillo de progreso verde (guía de configuración). size en px.
+import { ringDash } from './format';
+
+interface Props {
+    pct: number;
+    size?: number;
+    /** Color del riel: 'light' sobre fondo claro, 'dark' sobre navy. */
+    tone?: 'light' | 'dark';
+}
+const { pct, size = 22, tone = 'light' } = Astro.props;
+---
+<span class:list={['dm-ring', { 'dm-ring-dark': tone === 'dark' }]} style={`--dm-ring-size:${size}px`}>
+    <svg viewBox="0 0 36 36" aria-hidden="true">
+        <circle class="dm-ring-bg" cx="18" cy="18" r="15.5"></circle>
+        <circle class="dm-ring-fg" cx="18" cy="18" r="15.5" style={`stroke-dasharray:${ringDash(pct)}`}></circle>
+    </svg>
+    <b class="dm-editorial">{pct}%</b>
+</span>

@@ -1,0 +1,180 @@
+---
+// Mockup: Mi dinero › Cobranza (/app/cobranza) con cartera vencida: los cuatro
+// indicadores, "Atiende primero" y "Antigüedad de la cartera".
+//
+// Calca de src/pages/app/cobranza/index.astro: pestañas Cobranza / Cobranza con
+// IA, chip "Al día de hoy" en la topbar, KPIs cbz-vencido, cbz-semana,
+// cbz-promesas-hoy y cbz-singestion, la lista cbz-prioridad (empresa, folio,
+// "Vencida N d", saldo y el botón de WhatsApp) y la barra segmentada cbz-aging
+// con los cuatro tramos y sus colores reales (getCobranza en queries.ts).
+// Los widgets de la página se pueden reordenar; aquí "Antigüedad" va junto a
+// "Atiende primero".
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const CUR = 'MXN';
+const VENCIDO = 184300;
+const SEMANA = 96480;
+const SIN_GESTION = 71950;
+const PRIORIDAD = [
+    { empresa: DEMO.cliente, folio: 'COT-0118', dias: 34, total: 68400 },
+    { empresa: 'Grupo Constructor Altamira', folio: 'F-0037', dias: 22, total: 41250 },
+    { empresa: 'Ferretería Los Altos', folio: 'COT-0126', dias: 61, total: 24900 },
+];
+const AGING = [
+    { key: 'vigente', monto: 228480, color: '#3b82f6' },
+    { key: 'd30', monto: 82150, color: '#f59e0b' },
+    { key: 'd60', monto: 77250, color: '#f97316' },
+    { key: 'd60p', monto: 24900, color: '#ef4444' },
+] as const;
+const POR_COBRAR = AGING.reduce((s, a) => s + a.monto, 0);
+const pct = (v: number) => Math.round((v / POR_COBRAR) * 1000) / 10;
+
+const DATA = {
+    es: {
+        caption: `Cobranza de ${DEMO.org}: Vencido ${dmMoney(VENCIDO, CUR, 'es')} en 7 cuentas, Vence esta semana, Promesas por vencer y Vencido sin gestión arriba; "Atiende primero" con ${DEMO.cliente}, Grupo Constructor Altamira y Ferretería Los Altos, y la barra de antigüedad de la cartera en cuatro tramos sobre ${dmMoney(POR_COBRAR, CUR, 'es')} por cobrar.`,
+        hoy: '8 de octubre de 2026',
+    },
+    en: {
+        caption: `${DEMO.org}'s Collections: Overdue ${dmMoney(VENCIDO, CUR, 'en')} across 7 accounts, Due this week, Promises coming due and Overdue, untouched at the top; "Handle first" with ${DEMO.cliente}, Grupo Constructor Altamira and Ferretería Los Altos, and the receivables age bar in four segments over ${dmMoney(POR_COBRAR, CUR, 'en')} outstanding.`,
+        hoy: 'October 8, 2026',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const agingLabel = { vigente: 'cob.aging_vigente', d30: 'cob.aging_d30', d60: 'cob.aging_d60', d60p: 'cob.aging_d60p' } as const;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cobranza" badges={{ vencidas: 7 }} title={dmT(lang, 'cob.heading')} height={860} caption={caption} class="dm-cbz-figure">
+    <Fragment slot="actions">
+        <span class="dm-cbz-chip"><DmIcon name="calendar" />{tpl(dmT(lang, 'cob.hoy'), { fecha: d.hoy })}</span>
+    </Fragment>
+
+    <div class="dm-cbz-tabs"><span class="is-on">{dmT(lang, 'cob.tab_cobranza')}</span><span>{dmT(lang, 'cob.tab_ia')}</span></div>
+
+    <div class="dm-cbz-kpis">
+        <div class="dm-surface dm-cbz-kpi">
+            <span class="dm-cbz-label">{dmT(lang, 'cob.k_vencido')}</span>
+            <DmMoney amount={VENCIDO} currency={CUR} lang={lang} class="dm-cbz-num is-danger" />
+            <span class="dm-cbz-sub">{tpl(dmT(lang, 'cob.k_vencido_sub'), { n: 7 })}</span>
+        </div>
+        <div class="dm-surface dm-cbz-kpi">
+            <span class="dm-cbz-label">{dmT(lang, 'cob.k_semana')}</span>
+            <DmMoney amount={SEMANA} currency={CUR} lang={lang} class="dm-cbz-num" />
+            <span class="dm-cbz-sub">{tpl(dmT(lang, 'cob.k_semana_sub'), { n: 3 })}</span>
+        </div>
+        <div class="dm-surface dm-cbz-kpi">
+            <span class="dm-cbz-label">{dmT(lang, 'cob.k_promesas')}</span>
+            <span class="dm-cbz-num dm-editorial is-warn">2</span>
+            <span class="dm-cbz-sub">{tpl(dmT(lang, 'cob.k_promesas_sub'), { n: 2 })}</span>
+            <span class="dm-cbz-sub">{tpl(dmT(lang, 'cob.k_promesas_ok'), { pct: 78 })}</span>
+        </div>
+        <div class="dm-surface dm-cbz-kpi">
+            <span class="dm-cbz-label">{dmT(lang, 'cob.k_singestion')}</span>
+            <DmMoney amount={SIN_GESTION} currency={CUR} lang={lang} class="dm-cbz-num is-danger" />
+            <span class="dm-cbz-sub">{tpl(dmT(lang, 'cob.k_singestion_sub'), { n: 4 })}</span>
+        </div>
+    </div>
+
+    <div class="dm-cbz-row">
+        <div class="dm-surface dm-cbz-card">
+            <div class="dm-cbz-head">
+                <span class="dm-cbz-titles"><span class="dm-cbz-title">{dmT(lang, 'cob.prioridad')}</span><span class="dm-cbz-desc">{dmT(lang, 'cob.prioridad_sub')}</span></span>
+            </div>
+            {PRIORIDAD.map((it) => (
+                <div class="dm-cbz-item">
+                    <span class="dm-cbz-item-main">
+                        <span class="dm-strong dm-ellipsis">{it.empresa}</span>
+                        <span class="dm-cbz-meta">{it.folio} · <span class="dm-cbz-over">{tpl(dmT(lang, 'cob.vencida_dias'), { n: it.dias })}</span></span>
+                    </span>
+                    <span class="dm-cbz-item-right">
+                        <span class="dm-money">{dmMoney(it.total, CUR, lang)}</span>
+                        <span class="dm-cbz-wa"><DmIcon name="chat" /></span>
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div class="dm-surface dm-cbz-card">
+            <div class="dm-cbz-head">
+                <span class="dm-cbz-titles"><span class="dm-cbz-title">{dmT(lang, 'cob.aging_titulo')}</span><span class="dm-cbz-desc">{dmT(lang, 'cob.aging_sub')}</span></span>
+                <DmMoney amount={POR_COBRAR} currency={CUR} lang={lang} class="dm-cbz-total" />
+            </div>
+            <div class="dm-cbz-segbar">{AGING.map((a) => <i style={`flex:0 0 ${pct(a.monto)}%;background:${a.color}`}></i>)}</div>
+            <div class="dm-cbz-legend">
+                {AGING.map((a) => (
+                    <div class="dm-cbz-leg">
+                        <span class="dm-cbz-leg-top"><i style={`background:${a.color}`}></i><span class="dm-cbz-leg-label">{dmT(lang, agingLabel[a.key])}</span><span class="dm-cbz-leg-pct">{pct(a.monto)}%</span></span>
+                        <span class="dm-money dm-cbz-leg-val">{dmMoney(a.monto, CUR, lang)}</span>
+                        <span class="dm-cbz-track"><i style={`width:${pct(a.monto)}%;background:${a.color}`}></i></span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cbz-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cbz-chip .dm-ico { width: 13px; height: 13px; }
+    /* = .ph-tabs: control segmentado bajo el título. */
+    .dm-cbz-tabs { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px; border-radius: 12px; background: rgba(10, 25, 47, 0.065); box-shadow: inset 0 1px 1px rgba(10, 25, 47, 0.06); }
+    .dm-cbz-tabs span { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 9px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cbz-tabs span.is-on { background: #fff; color: var(--dm-text); font-weight: 650; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.13), 0 1px 5px rgba(10, 25, 47, 0.05); }
+
+    .dm-cbz-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .dm-cbz-kpi { display: flex; flex-direction: column; gap: 5px; padding: 14px 15px; min-width: 0; }
+    .dm-cbz-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cbz-num { font-size: 19px; line-height: 1.1; color: var(--dm-navy); white-space: nowrap; }
+    .dm-cbz-num.is-danger { color: #dc2626; }
+    .dm-cbz-num.is-warn { color: #d97706; }
+    .dm-cbz-sub { font-size: 10.5px; line-height: 1.4; color: var(--dm-muted); }
+
+    .dm-cbz-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+    .dm-cbz-card { padding: 14px 16px 6px; }
+    .dm-cbz-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 9px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cbz-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cbz-title { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+    .dm-cbz-desc { font-size: 10.5px; line-height: 1.4; color: var(--dm-muted); }
+    .dm-cbz-total { font-size: 17px; color: var(--dm-navy); }
+
+    .dm-cbz-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid var(--dm-border); font-size: 12px; }
+    .dm-cbz-head + .dm-cbz-item { border-top: 0; }
+    .dm-cbz-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cbz-meta { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cbz-over { color: #dc2626; font-weight: 600; }
+    .dm-cbz-item-right { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .dm-cbz-item-right .dm-money { font-size: 12.5px; }
+    .dm-cbz-wa { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--dm-muted); box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-cbz-wa .dm-ico { width: 14px; height: 14px; }
+
+    /* = segbar de charts.css: barra de 14 px con separadores y leyenda con pista. */
+    .dm-cbz-segbar { display: flex; gap: 2px; height: 14px; margin: 14px 0 14px; border-radius: 999px; overflow: hidden; background: rgba(10, 25, 47, 0.06); }
+    .dm-cbz-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; padding-bottom: 12px; }
+    .dm-cbz-leg { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .dm-cbz-leg-top { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--dm-muted); }
+    .dm-cbz-leg-top i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dm-cbz-leg-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cbz-leg-pct { font-variant-numeric: tabular-nums; }
+    .dm-cbz-leg-val { font-size: 12.5px; color: var(--dm-text); }
+    .dm-cbz-track { display: block; height: 3px; border-radius: 999px; background: rgba(10, 25, 47, 0.06); overflow: hidden; }
+    .dm-cbz-track i { display: block; height: 100%; border-radius: 999px; }
+
+    @container dm (max-width: 900px) {
+        .dm-cbz-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-cbz-row { grid-template-columns: minmax(0, 1fr); }
+    }
+    @container dm (max-width: 520px) {
+        .dm-cbz-figure .dm-stage { height: auto; }
+        .dm-cbz-kpis { grid-template-columns: minmax(0, 1fr); }
+        .dm-cbz-chip { display: none; }
+    }
+</style>

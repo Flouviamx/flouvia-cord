@@ -169,9 +169,12 @@ describe('ejecución', () => {
         const [run] = await q('select status, log from workflow_runs');
         expect(run.status).toBe('succeeded');
         expect(run.log.map((e: any) => `${e.step}:${e.resultado}`)).toEqual(['cond1:si', 'tsk1:ok']);
-        const [t] = await q('select titulo, due_date, cotizacion_id from tareas where titulo like $1', ['Kickoff%']);
+        const [t] = await q(`select titulo, to_char(due_date, 'YYYY-MM-DD') as due, cotizacion_id from tareas where titulo like $1`, ['Kickoff%']);
         expect(t.titulo).toBe('Kickoff COT-7 con ACME <script>');
         expect(t.cotizacion_id).toBe(QUOTE);
+        // "Vence en 2 días" cuenta desde HOY del negocio (Ciudad de México), no desde la fecha UTC.
+        const hoyMx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        expect(t.due).toBe(new Date(Date.parse(`${hoyMx}T00:00:00Z`) + 2 * 86_400_000).toISOString().slice(0, 10));
     });
 
     it('en los textos, el estado actual se consulta al ejecutar y las opciones salen con su nombre', async () => {

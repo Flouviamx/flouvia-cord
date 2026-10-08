@@ -1,3 +1,5 @@
+import { TERM_CODES, termOptionLabel } from '../payment-terms';
+
 export type Lang = 'es' | 'en';
 export type Text = Record<Lang, string>;
 export type FieldType = 'text' | 'number' | 'enum' | 'boolean';
@@ -142,7 +144,7 @@ const CLIENT_FIELDS: WorkflowField[] = [
     f('email', 'Correo', 'Email', 'text'),
     f('country_code', 'País', 'Country', 'text'),
     f('terminos', 'Términos de pago', 'Payment terms', 'enum', {
-        options: [opt('contado', 'Contado', 'Upfront'), opt('net30', '30 días', 'Net 30'), opt('net60', '60 días', 'Net 60')],
+        options: TERM_CODES.map((code) => opt(code, termOptionLabel(code, 'es'), termOptionLabel(code, 'en'))),
     }),
     ACTOR_FIELD,
 ];

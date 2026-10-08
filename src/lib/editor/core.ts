@@ -24,6 +24,8 @@ export interface CatalogProduct {
     costo?: number | null;
     preciosVolumen?: VolTier[] | null;
     existencias?: number | null;
+    /** Tasa que el producto sugiere. Solo vale si sigue en el catálogo de impuestos de la org. */
+    taxRate?: number | null;
 }
 
 export interface KitItemDef {
@@ -193,8 +195,10 @@ export function linesFromKit(
     mult: number,
     catalog: Map<string, CatalogProduct>,
     ctx: PricingContext,
-    taxRate: number,
+    /** Tasa fija, o la que sugiere cada producto (null = partida libre). */
+    taxRate: number | ((p: CatalogProduct | null) => number),
 ): { lines: Line[]; ahorro: number } {
+    const rateFor = (p: CatalogProduct | null) => (typeof taxRate === 'function' ? taxRate(p) : taxRate);
     const m = Math.max(1, Math.floor(finite(mult, 1)));
     const lines: Line[] = [];
     const catalogLines: { line: Line; unitQty: number }[] = [];
@@ -203,12 +207,12 @@ export function linesFromKit(
         const unitQty = finite(it.cantidad, 1) || 1;
         const p = it.productoId ? catalog.get(it.productoId) : undefined;
         if (p) {
-            const line = lineFromProduct(p, ctx, taxRate, unitQty * m);
+            const line = lineFromProduct(p, ctx, rateFor(p), unitQty * m);
             lines.push(line);
             catalogLines.push({ line, unitQty });
             sumaUno += unitQty * line.baseLista;
         } else {
-            lines.push(freeLine(taxRate, { nombre: it.descripcion, cantidad: unitQty * m, unidad: it.unidad || 'pieza' }));
+            lines.push(freeLine(rateFor(null), { nombre: it.descripcion, cantidad: unitQty * m, unidad: it.unidad || 'pieza' }));
         }
     }
     let ahorro = 0;

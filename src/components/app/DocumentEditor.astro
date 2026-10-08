@@ -15,6 +15,7 @@
 // configuración y el botón de enviar se salía de la pantalla en una laptop.
 import ClientModal from './ClientModal.astro';
 import DatePicker from './DatePicker.astro';
+import TermPicker from './TermPicker.astro';
 import FlagSelect from '../ui/FlagSelect';
 import { iconInner } from '../../lib/icons';
 import { currentLocale } from '../../lib/context';
@@ -61,8 +62,6 @@ const T = getDocumentEditorI18n(L);
 const isQuote = kind === 'quote';
 const isVersion = mode === 'version';
 const locked = isVersion;
-const TERM_CODES = ['contado', 'net30', 'net60'] as const;
-const termLabel = { contado: T.termContado, net30: T.termNet30, net60: T.termNet60 };
 const buffer = P.fxBuffer ?? 2;
 const kitSuma = (k: EditorBoot['kits'][number]) => k.items.reduce((s, it) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
 const moneyFmt = (n: number) => {
@@ -148,13 +147,7 @@ const primaryLabel = isQuote ? (isVersion ? T.sendVersion : mode === 'draft' ? T
                             value={selectedClient ? clientText(selectedClient) : ''} disabled={locked} />
                         <div class="prod-drop client-drop" id="deClientDrop" role="listbox" hidden></div>
                     </div>
-                    <div class="term-chips" id="deTerms" role="group" aria-label={T.termsLabel}>
-                        {TERM_CODES.map((code) => (
-                            <button type="button" class:list={['chip', { active: code === P.terms }]} data-term={code} aria-pressed={code === P.terms ? 'true' : 'false'} disabled={locked}>
-                                {termLabel[code]}
-                            </button>
-                        ))}
-                    </div>
+                    <TermPicker id="deTerms" value={P.terms} ariaLabel={T.termsLabel} disabled={locked} />
                 </div>
                 <p class="client-meta" id="deClientMeta" hidden></p>
                 <p class="desc-note" id="deDescNote" hidden></p>

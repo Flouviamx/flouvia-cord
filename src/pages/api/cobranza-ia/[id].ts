@@ -32,8 +32,7 @@ async function loadContexto(orgId: string, cotizacionId: string) {
                          where cotizacion_id = c.id and status = 'pagado'), 0) as pagado,
                floor(date_part('day', now() - (
                  coalesce(c.approved_at, c.created_at)
-                 + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')
-                     when 'net30' then 30 when 'net60' then 60 else 0 end)
+                 + make_interval(days => cord_term_days(coalesce(c.terminos, cl.terminos_default)))
                )))::int as dias_vencido
         from cotizaciones c
         join clientes cl on cl.id = c.cliente_id

@@ -1,0 +1,17 @@
+---
+// Monto con divisa SIEMPRE (regla 21): cifra .editorial + código ISO atenuado.
+// <DmMoney amount={196469.2} currency="MXN" lang={lang} />  →  $196,469.20 MXN
+import { dmMoneyParts, type DmLang } from './format';
+
+interface Props {
+    amount: number;
+    currency?: string;
+    lang: DmLang;
+    /** Fuerza el formato de un país (p.ej. 'es-ES' para EUR en España). */
+    locale?: string;
+    class?: string;
+}
+const { amount, currency = 'MXN', lang, locale, class: cls } = Astro.props;
+const { value, code } = dmMoneyParts(amount, currency, lang, locale);
+---
+<span class:list={['dm-money', cls]}>{value}<span class="dm-cur">{code}</span></span>

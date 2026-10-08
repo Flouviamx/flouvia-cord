@@ -1,0 +1,246 @@
+---
+// Mockup: detalle de una cotización retenida por una aprobación interna, con
+// el mensaje de Slack que recibe el canal de quien decide.
+//
+// Detalle: calca de src/pages/app/cotizaciones/[id].astro con aprob_estado =
+// 'pendiente' (aviso ámbar con el motivo y los botones de quien tiene el
+// permiso Aprobaciones), el stepper en Borrador y el encabezado con el total.
+// El motivo tiene la forma exacta que escribe src/lib/cotizaciones.ts
+// ("descuento 22% supera el 15% permitido").
+//
+// Slack: los bloques de avisarAprobacion() en src/lib/integraciones/slack-app.ts
+// — "Cotización COT-0153 pide aprobación · cliente · total", "Motivo: …" y los
+// botones Aprobar (primary), Rechazar (danger) y Abrir en Cord. El total va con
+// el código de divisa delante, igual que dinero() de esa app.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import DmStatus from './DmStatus.astro';
+import { dmT, dmMoney, favicon, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const FOLIO = 'COT-0153';
+const CUR = 'MXN';
+// Línea 1 con 22% de descuento (245.00 → 191.10): rebasa el tope de 15%.
+const ITEMS = [
+    { es: 'Cemento gris CPC 30R', en: 'Gray cement CPC 30R', uEs: 'saco 50 kg', uEn: '50 kg bag', qty: 400, lista: 245, nego: 191.1 },
+    { es: 'Varilla corrugada 3/8" × 12 m', en: 'Rebar 3/8" × 12 m', uEs: 'pieza', uEn: 'piece', qty: 300, lista: 189, nego: 175 },
+    { es: 'Block hueco 15 × 20 × 40', en: 'Hollow block 15 × 20 × 40', uEs: 'pieza', uEn: 'piece', qty: 2500, lista: 14.5, nego: 13.8 },
+];
+const subtotal = ITEMS.reduce((s, it) => s + it.qty * it.nego, 0);
+const iva = Math.round(subtotal * 0.16 * 100) / 100;
+const total = subtotal + iva;
+const slackTotal = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', { style: 'currency', currency: CUR, currencyDisplay: 'code', minimumFractionDigits: 2 }).format(total);
+
+const DATA = {
+    es: {
+        caption: `Detalle de la cotización ${FOLIO} para ${DEMO.cliente} retenida en Borrador con el aviso Pendiente de aprobación: descuento 22% supera el 15% permitido, con los botones Aprobar y enviar y Rechazar. Al lado, el mensaje de Slack con Aprobar, Rechazar y Abrir en Cord.`,
+        motivo: 'descuento 22% supera el 15% permitido',
+        meta: 'Net 30 · Vigente hasta 7 nov 2026 · Creada 8 oct 2026',
+        canal: 'ventas-aprobaciones',
+        hora: '10:42',
+        app: 'APP',
+        notas: 'Precio especial por volumen. Entrega en obra incluida en Zapopan; descarga a pie de camión.',
+        cotizacion: 'Cotización', pide: 'pide aprobación', motivoL: 'Motivo', aprobar: 'Aprobar', rechazar: 'Rechazar', abrir: 'Abrir en Cord',
+    },
+    en: {
+        caption: `Detail of quote ${FOLIO} for ${DEMO.cliente} held as a Draft with the Pending approval notice: a 22% discount over the allowed 15%, with the Approve and send and Reject buttons. Next to it, the Slack message with Approve, Reject and Open in Cord.`,
+        motivo: 'discount 22% exceeds the allowed 15%',
+        meta: 'Net 30 · Valid until Nov 7, 2026 · Created Oct 8, 2026',
+        canal: 'sales-approvals',
+        hora: '10:42 AM',
+        app: 'APP',
+        notas: 'Special volume pricing. Delivery to the Zapopan site included; unloaded at the truck.',
+        cotizacion: 'Quote', pide: 'needs approval', motivoL: 'Reason', aprobar: 'Approve', rechazar: 'Reject', abrir: 'Open in Cord',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const steps = ['id.step_borrador', 'id.step_enviada', 'id.step_vista', 'id.step_aprobada', 'id.step_pagada'] as const;
+const qty = (n: number) => n.toLocaleString(lang === 'en' ? 'en-US' : 'es-MX');
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={FOLIO} crumbs={[dmT(lang, 'id.volver').replace('← ', '')]} height={890} caption={caption} class="dm-cot-ap-figure">
+    <DmStatus slot="actions" status="draft" lang={lang} />
+
+    <div class="dm-cot-ap-banner">
+        <div class="dm-cot-ap-info">
+            <span class="dm-cot-ap-title"><DmIcon name="clock" />{dmT(lang, 'id.pendiente_aprobacion')}</span>
+            <span class="dm-cot-ap-motivo">{d.motivo}</span>
+        </div>
+        <div class="dm-cot-ap-actions">
+            <span class="dm-cot-ap-approve">{dmT(lang, 'id.aprobar_enviar')}</span>
+            <span class="dm-cot-ap-reject">{dmT(lang, 'id.rechazar')}</span>
+        </div>
+    </div>
+
+    <div class="dm-cot-ap-stepper">
+        {steps.map((k, i) => (
+            <span class:list={['dm-cot-ap-step', { 'is-current': i === 0 }]}>
+                <span class="dm-cot-ap-dot">{i + 1}</span>
+                <span class="dm-cot-ap-slabel">{dmT(lang, k)}</span>
+            </span>
+        ))}
+    </div>
+
+    <div class="dm-cot-ap-head">
+        <div class="dm-cot-ap-client">
+            <span class="dm-cot-ap-avatar">D</span>
+            <span class="dm-cot-ap-ctext">
+                <span class="dm-cot-ap-name">{DEMO.cliente}<span class="dm-cot-ap-ver">V1</span></span>
+                <span class="dm-cot-ap-meta">{d.meta}</span>
+            </span>
+        </div>
+        <div class="dm-cot-ap-total">
+            <span class="dm-cot-ap-total-label">{dmT(lang, 'id.total')}</span>
+            <DmMoney amount={total} currency={CUR} lang={lang} class="dm-cot-ap-total-val" />
+        </div>
+    </div>
+
+    <div class="dm-cot-ap-items">
+        <div class="dm-cot-ap-sec">{dmT(lang, 'id.detalle')}</div>
+        <div class="dm-cot-ap-row dm-cot-ap-th">
+            <span>{dmT(lang, 'id.th_producto')}</span><span>{dmT(lang, 'id.th_cant')}</span><span>{dmT(lang, 'id.th_precio')}</span><span class="dm-cot-ap-right">{dmT(lang, 'id.th_importe')}</span>
+        </div>
+        {ITEMS.map((it) => (
+            <div class="dm-cot-ap-row">
+                <span class="dm-cot-ap-pname">{lang === 'en' ? it.en : it.es}<small>{lang === 'en' ? it.uEn : it.uEs}</small></span>
+                <span class="dm-cot-ap-qty">{qty(it.qty)}</span>
+                <span class="dm-cot-ap-price"><s>{dmMoney(it.lista, CUR, lang)}</s><DmMoney amount={it.nego} currency={CUR} lang={lang} /></span>
+                <span class="dm-cot-ap-right"><DmMoney amount={it.qty * it.nego} currency={CUR} lang={lang} class="dm-cot-ap-amount" /></span>
+            </div>
+        ))}
+        <div class="dm-cot-ap-totals">
+            <div class="dm-cot-ap-tl"><span>{dmT(lang, 'id.subtotal')}</span><DmMoney amount={subtotal} currency={CUR} lang={lang} /></div>
+            <div class="dm-cot-ap-tl"><span>IVA 16%</span><DmMoney amount={iva} currency={CUR} lang={lang} /></div>
+            <div class="dm-cot-ap-tl is-grand"><span>{dmT(lang, 'id.total_line')}</span><DmMoney amount={total} currency={CUR} lang={lang} /></div>
+        </div>
+    </div>
+
+    <div class="dm-cot-ap-notes">
+        <div class="dm-cot-ap-sec">{dmT(lang, 'id.notas')}</div>
+        <div class="dm-cot-ap-note">{d.notas}</div>
+    </div>
+
+    <div slot="overlay" class="dm-cot-ap-slack">
+        <div class="dm-cot-ap-sl-bar">
+            <img class="dm-logo" src={favicon('slack.com')} alt="" width="16" height="16" loading="lazy" decoding="async" />
+            <span class="dm-cot-ap-sl-chan"># {d.canal}</span>
+        </div>
+        <div class="dm-cot-ap-sl-msg">
+            <img class="dm-cot-ap-sl-app" src="/favicon-96x96.png" alt="" width="34" height="34" loading="lazy" decoding="async" />
+            <div class="dm-cot-ap-sl-body">
+                <div class="dm-cot-ap-sl-who"><b>Cord</b><span class="dm-cot-ap-sl-badge">{d.app}</span><span class="dm-cot-ap-sl-time">{d.hora}</span></div>
+                <div class="dm-cot-ap-sl-text">
+                    <b>{d.cotizacion} {FOLIO}</b> {d.pide} · {DEMO.cliente} · <b>{slackTotal}</b>
+                </div>
+                <div class="dm-cot-ap-sl-text">{d.motivoL}: {d.motivo}</div>
+                <div class="dm-cot-ap-sl-btns">
+                    <span class="dm-cot-ap-sl-btn is-primary">{d.aprobar}</span>
+                    <span class="dm-cot-ap-sl-btn is-danger">{d.rechazar}</span>
+                    <span class="dm-cot-ap-sl-btn">{d.abrir}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cot-ap-figure .dm-content, .dm-cot-ap-figure .dm-page-head { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-cot-ap-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 11px 14px; border-radius: 11px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .dm-cot-ap-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .dm-cot-ap-title { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #92600a; }
+    .dm-cot-ap-title .dm-ico { width: 15px; height: 15px; }
+    .dm-cot-ap-motivo { font-size: 11.5px; color: var(--dm-muted); }
+    .dm-cot-ap-actions { display: flex; gap: 7px; flex-shrink: 0; }
+    .dm-cot-ap-approve, .dm-cot-ap-reject { display: inline-flex; align-items: center; height: 32px; padding: 0 13px; border-radius: 9px; font-size: 12px; white-space: nowrap; }
+    .dm-cot-ap-approve { font-weight: 700; color: #fff; background: var(--dm-ok); }
+    .dm-cot-ap-reject { font-weight: 600; color: #dc2626; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+
+    .dm-cot-ap-stepper { display: flex; align-items: center; margin: 18px 0 20px; }
+    .dm-cot-ap-step { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+    .dm-cot-ap-step:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 9px; border-radius: 2px; background: var(--dm-border-strong); }
+    .dm-cot-ap-step:last-child { flex: 0 0 auto; }
+    .dm-cot-ap-dot { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 800; color: var(--dm-muted); background: #fff; border: 1px solid var(--dm-border-strong); }
+    .dm-cot-ap-step.is-current .dm-cot-ap-dot { color: #fff; background: var(--dm-navy); border-color: var(--dm-navy); box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08); }
+    .dm-cot-ap-slabel { font-size: 11px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cot-ap-step.is-current .dm-cot-ap-slabel { color: var(--dm-text); }
+
+    .dm-cot-ap-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cot-ap-client { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .dm-cot-ap-avatar { width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background: var(--dm-navy); color: #fff; font-size: 13px; font-weight: 800; }
+    .dm-cot-ap-ctext { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .dm-cot-ap-name { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-cot-ap-ver { font-size: 9.5px; font-weight: 700; color: var(--dm-muted); background: rgba(10, 25, 47, 0.06); padding: 2px 6px; border-radius: 5px; letter-spacing: 0; }
+    .dm-cot-ap-meta { font-size: 11px; color: var(--dm-muted); }
+    .dm-cot-ap-total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .dm-cot-ap-total-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.16em; color: #99a2af; }
+    .dm-cot-ap-total-val { font-size: 24px; line-height: 1.1; color: var(--dm-navy); }
+
+    .dm-cot-ap-sec { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cot-ap-row { display: grid; grid-template-columns: minmax(0, 1.8fr) 58px minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 9px 6px; border-bottom: 1px solid var(--dm-border); font-size: 12px; }
+    .dm-cot-ap-th { padding-top: 6px; padding-bottom: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dm-muted); }
+    .dm-cot-ap-pname { display: flex; flex-direction: column; font-weight: 600; min-width: 0; }
+    .dm-cot-ap-pname small { font-size: 10px; font-weight: 500; color: #99a2af; }
+    .dm-cot-ap-qty { color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+    .dm-cot-ap-price { display: flex; flex-direction: column; color: var(--dm-navy); }
+    .dm-cot-ap-price s { font-size: 10px; color: #b6bcc6; font-variant-numeric: tabular-nums; }
+    .dm-cot-ap-right { text-align: right; justify-self: end; }
+    .dm-cot-ap-amount { color: var(--dm-navy); font-size: 12.5px; }
+
+    .dm-cot-ap-totals { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; padding-top: 14px; }
+    .dm-cot-ap-tl { display: flex; justify-content: space-between; gap: 40px; min-width: 230px; font-size: 11.5px; color: var(--dm-muted); }
+    .dm-cot-ap-tl .dm-money { color: var(--dm-navy); font-size: 12.5px; }
+    .dm-cot-ap-tl.is-grand { padding-top: 8px; border-top: 1px solid var(--dm-border); font-weight: 700; color: var(--dm-text); }
+    .dm-cot-ap-tl.is-grand .dm-money { font-size: 16px; }
+    .dm-cot-ap-notes { margin-top: 26px; }
+    .dm-cot-ap-note { padding-top: 8px; font-size: 12px; line-height: 1.55; color: var(--dm-muted); }
+
+    /* Mensaje de Slack: superficie blanca flotando sobre la ventana. */
+    .dm-cot-ap-slack {
+        position: absolute; right: calc(var(--dm-bleed) + 18px); bottom: 20px; width: 340px;
+        border-radius: 12px; background: #fff; border: 1px solid rgba(29, 28, 29, 0.13);
+        box-shadow: 0 30px 70px -28px rgba(10, 25, 47, 0.5), 0 4px 14px -8px rgba(10, 25, 47, 0.22);
+        overflow: hidden; color: #1d1c1d; pointer-events: auto;
+    }
+    .dm-cot-ap-sl-bar { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-bottom: 1px solid rgba(29, 28, 29, 0.1); background: #f8f8f8; }
+    .dm-cot-ap-sl-bar .dm-logo { width: 15px; height: 15px; }
+    .dm-cot-ap-sl-chan { font-size: 12px; font-weight: 800; letter-spacing: -0.01em; }
+    .dm-cot-ap-sl-msg { display: flex; gap: 9px; padding: 12px 13px 14px; }
+    .dm-cot-ap-sl-app { width: 34px; height: 34px; border-radius: 7px; flex-shrink: 0; align-self: flex-start; object-fit: cover; background: var(--dm-navy); }
+    .dm-cot-ap-sl-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .dm-cot-ap-sl-who { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; }
+    .dm-cot-ap-sl-who b { font-weight: 800; }
+    .dm-cot-ap-sl-badge { font-size: 8.5px; font-weight: 700; color: #616061; background: rgba(29, 28, 29, 0.08); padding: 1px 4px; border-radius: 3px; letter-spacing: 0.02em; transform: translateY(-1px); }
+    .dm-cot-ap-sl-time { font-size: 10.5px; color: #616061; }
+    .dm-cot-ap-sl-text { font-size: 12px; line-height: 1.45; }
+    .dm-cot-ap-sl-text b { font-weight: 800; }
+    .dm-cot-ap-sl-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .dm-cot-ap-sl-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 11px; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #1d1c1d; background: #fff; border: 1px solid rgba(29, 28, 29, 0.3); white-space: nowrap; }
+    .dm-cot-ap-sl-btn.is-primary { color: #fff; background: #007a5a; border-color: #007a5a; }
+    .dm-cot-ap-sl-btn.is-danger { color: #e01e5a; border-color: rgba(224, 30, 90, 0.55); }
+
+    /* Angosto: el mensaje de Slack baja al flujo, debajo del detalle. */
+    @container dm (max-width: 640px) {
+        .dm-cot-ap-figure .dm-stage { height: auto; }
+        .dm-cot-ap-figure .dm-overlay { position: static; }
+        .dm-cot-ap-slack { position: relative; right: auto; bottom: auto; width: auto; margin: 0 calc(var(--dm-bleed) + 12px) 16px 12px; }
+        .dm-cot-ap-slabel { display: none; }
+        .dm-cot-ap-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; }
+        .dm-cot-ap-th { display: none; }
+        .dm-cot-ap-qty, .dm-cot-ap-items .dm-cot-ap-row > .dm-cot-ap-right { display: none; }
+        .dm-cot-ap-price { align-items: flex-end; text-align: right; }
+        .dm-cot-ap-items .dm-cot-ap-row:nth-child(n+4), .dm-cot-ap-notes { display: none; }
+        .dm-cot-ap-tl { min-width: 0; width: 100%; }
+    }
+    @container dm (max-width: 520px) {
+        .dm-cot-ap-actions { width: 100%; }
+        .dm-cot-ap-approve { flex: 1; justify-content: center; }
+        .dm-cot-ap-total { align-items: flex-start; }
+    }
+</style>

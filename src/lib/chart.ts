@@ -236,6 +236,14 @@ function attachDrill(el: HTMLElement, href: string | undefined, show: () => void
     });
 }
 
+/** Con teclado, Enter sobre una barra con detalle navega igual que el clic. */
+function drillKey(el: HTMLElement, href: string | undefined) {
+    if (!href) return;
+    el.addEventListener('keydown', (event) => {
+        if ((event as KeyboardEvent).key === 'Enter') { event.preventDefault(); location.href = href; }
+    });
+}
+
 function emptyState(container: HTMLElement, opts: ChartEmptyOpts) {
     const runtime = (typeof window !== 'undefined' && (window as any).CORD_I18N) || {};
     const el = renderEmpty(container, {
@@ -657,7 +665,8 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
 
 // ── 3. Bar chart vertical con ejes — flujo esperado ─────────────────────────
 
-export interface BarItem { label: string; value: number; sub?: string }
+/** `href`: drill-down — el clic (o Enter) lleva al detalle de esa barra. */
+export interface BarItem { label: string; value: number; sub?: string; href?: string }
 export interface BarChartOptions extends ChartEmptyOpts {
     items: BarItem[];
     height?: number;
@@ -757,7 +766,8 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
             });
             hit.setAttribute('tabindex', '0');
             const show = () => {
-                tooltip.innerHTML = `<div class="cd-tt-x">${esc(it.label)}${it.sub ? ` · ${esc(it.sub)}` : ''}</div>` + tooltipRow(color, '', formatY(it.value));
+                tooltip.innerHTML = `<div class="cd-tt-x">${esc(it.label)}${it.sub ? ` · ${esc(it.sub)}` : ''}</div>` + tooltipRow(color, '', formatY(it.value))
+                    + (it.href ? tooltipDrillRow(it.href) : '');
                 placeTooltip(tooltip, container, cx, PAD.top + plotH - barH);
                 rect.style.fill = 'var(--chart-fill-2)';
                 dim.focus(rect);
@@ -766,9 +776,11 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
             hit.addEventListener('pointerenter', show);
             hit.addEventListener('pointermove', show);
             hit.addEventListener('pointerleave', unshow);
-            hit.addEventListener('click', () => { if (mobileChart()) show(); });
+            attachDrill(hit as unknown as HTMLElement, it.href, show);
+            drillKey(hit as unknown as HTMLElement, it.href);
             hit.addEventListener('focus', show);
             hit.addEventListener('blur', unshow);
+            if (it.href) rect.classList.add('is-drillable');
             svg.appendChild(hit);
         });
 
@@ -785,7 +797,7 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
 // "track+fill animado" ya es el lenguaje visual establecido del proyecto — solo le faltaba
 // esta capa de interacción real con tooltip clamped y destroy().
 
-export interface HBarItem { label: string; value: number; color?: string }
+export interface HBarItem { label: string; value: number; color?: string; href?: string }
 export interface HBarChartOptions extends ChartEmptyOpts {
     items: HBarItem[];
     formatY?: (v: number) => string;
@@ -839,7 +851,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
         const fill = fills[idx];
         const row = wrap.children[idx] as HTMLElement;
         const show = () => {
-            tooltip.innerHTML = tooltipRow(it.color ?? color, it.label, formatY(it.value));
+            tooltip.innerHTML = tooltipRow(it.color ?? color, it.label, formatY(it.value)) + (it.href ? tooltipDrillRow(it.href) : '');
             const fillRect = fill.getBoundingClientRect();
             const hostRect = container.getBoundingClientRect();
             placeTooltip(tooltip, container, fillRect.right - hostRect.left, fillRect.top - hostRect.top);
@@ -849,7 +861,9 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
         row.addEventListener('pointerenter', show);
         row.addEventListener('pointermove', show);
         row.addEventListener('pointerleave', unshow);
-        row.addEventListener('click', () => { if (mobileChart()) show(); });
+        attachDrill(row, it.href, show);
+        drillKey(row, it.href);
+        if (it.href) row.classList.add('is-drillable');
         row.addEventListener('focus', show);
         row.addEventListener('blur', unshow);
         listeners.push(() => {

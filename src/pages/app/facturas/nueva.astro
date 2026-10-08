@@ -22,6 +22,7 @@ import { CURRENCY_FLAG } from '../../../lib/flags';
 import { listOfferedCurrencies, normalizeCurrency } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { civilDay } from '../../../lib/fmt-server';
+import { TERM_CODES, normalizeTerm, termDays } from '../../../lib/payment-terms';
 import { t, getDocumentEditorI18n } from '../../../i18n/app';
 import type { EditorBoot } from '../../../lib/editor/document-editor';
 
@@ -85,13 +86,14 @@ const currencyOptions = listOfferedCurrencies(currency).map((code) => ({
 // 18:00 en México.
 const DAY = 86400000;
 const plusDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
-const DIAS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-const orgTerm = ORG.terminosDefault || 'contado';
+const orgTerm = normalizeTerm(ORG.terminosDefault);
 const today = civilDay(new Date());
-const dueDate = draft?.venceISO || plusDays(today, DIAS[orgTerm] ?? 0);
-// El chip activo es el que corresponde al vencimiento guardado (o ninguno).
+const dueDate = draft?.venceISO || plusDays(today, termDays(orgTerm));
+// El plazo de un borrador es el que corresponde a su vencimiento guardado; si
+// la fecha se eligió a mano y no coincide con ninguno, se marca contado y el
+// resumen dice solo la fecha.
 const dueDays = Math.round((Date.parse(`${dueDate}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / DAY);
-const terms = draft ? (Object.entries(DIAS).find(([, d]) => d === dueDays)?.[0] ?? '') : orgTerm;
+const terms = draft ? (TERM_CODES.find((c) => termDays(c) === dueDays) ?? 'contado') : orgTerm;
 
 const boot: Omit<EditorBoot, 'T'> = {
     kind: 'invoice',
@@ -100,7 +102,7 @@ const boot: Omit<EditorBoot, 'T'> = {
     orgCountry: country,
     catalogo: (productos as any[]).filter((p) => p.activo).map((p) => ({
         id: p.id, nombre: p.nombre, sku: p.sku, unidad: p.unidad, precio: p.precio, costo: p.costo,
-        preciosVolumen: p.preciosVolumen, existencias: p.existencias,
+        preciosVolumen: p.preciosVolumen, existencias: p.existencias, taxRate: p.taxRate ?? null,
     })),
     kits: (kits as any[]).map((k) => ({
         id: k.id, nombre: k.nombre, precioCombo: k.precioCombo,
