@@ -79,10 +79,10 @@ const SEEDS: DmTaskSeed[] = [
         asignado: null,
     },
     {
-        titulo: { es: 'Llamar a cuentas por pagar de El Zarco por la factura vencida', en: "Call El Zarco's accounts payable about the overdue invoice" },
+        titulo: { es: 'Llamar a cuentas por pagar de El Zarco por el saldo de COT-0144', en: "Call El Zarco's accounts payable about the COT-0144 balance" },
         prioridad: 'normal',
         due: '2026-10-09',
-        ref: { tipo: 'factura', label: 'F-0042', cliente: 'Distribuidora El Zarco' },
+        ref: { tipo: 'cotizacion', label: 'COT-0144', cliente: 'Distribuidora El Zarco' },
         asignado: 'ana',
     },
     {

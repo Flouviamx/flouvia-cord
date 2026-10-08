@@ -145,6 +145,34 @@
     base de datos") en el texto público del roadmap, y `src/lib/precios.en.ts:158`
     anuncia "AI CFO (cash flow insight)", que no existe.
 
+## Tareas (función nueva de oct 2026, revisada al documentarla)
+
+30. **`tareas.documento_id` nunca se escribe.** La lista, el cron y el read-model
+    pintan una referencia a factura, pero ningún camino la llena: un workflow sobre un
+    evento `invoice.*` no liga la tarea a la factura. Las docs dicen "sólo
+    cotización" hasta que exista.
+31. **Las tareas automáticas no emiten `task.created`** (contracargo en
+    `src/pages/api/stripe/webhook.ts`, reembolso SPEI en
+    `src/pages/api/cobros/[cobroId]/reembolso.ts`): son `insert` directos, así que
+    webhooks y workflows no las ven. Sus títulos van siempre en español (regla 36).
+32. **Crear › Tarea no sigue `TASK_PERMISSIONS`.** Se muestra con cualquier permiso
+    del menú Crear (cotizar, clientes o productos): quien sólo tiene Productos la ve y
+    el POST falla; quien sólo tiene Cobranza puede crear tareas pero no ve el menú.
+33. **Recordatorio de tareas:** puede mandar más de un correo al día (una tarea que
+    entra a "hoy" después de la corrida de la mañana sale en otro correo; el
+    comentario del cron promete uno); formatea con `es-MX`/`en-US` fijo y no con el
+    locale de la organización; el apagado es de toda la organización (pide permiso de
+    Ajustes) pero el pie del correo le dice a cada responsable que lo apague él.
+34. **`/app/tareas` corta en 200 sin avisarlo** (`LIMIT = 200`), a diferencia del
+    widget, que dice "Ver las N restantes".
+35. **El reembolso SPEI manual nunca se cierra:** `cobro_reembolsos.status =
+    'pending_manual'` no tiene código que lo pase a completado; sólo completar la
+    tarea cierra el seguimiento.
+36. Menores: el 404 de `createTask` por `cotizacion_id` inexistente es texto fijo en
+    español; `DocsMockup`/`DmSidebar` no aceptan el badge `tareas` (los mockups de
+    docs no muestran el punto de Tareas en el menú salvo `DmTasksPage`, que lo fuerza
+    con CSS propio).
+
 ## Pendientes operativos (no son código)
 
 - **Probar en producción** lo que las docs marcan como "función nueva": pagos de
