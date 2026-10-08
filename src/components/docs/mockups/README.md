@@ -20,6 +20,15 @@ imitar (`src/layouts/AppLayout.astro`, `src/pages/app/**`, `src/pages/q/**`).
 | `index.ts` | Registro automático (`import.meta.glob`): todo `Dm*.astro` de la carpeta queda disponible en el MDX por su nombre de archivo. |
 | `DmOnboardingWidget.astro` | Widget "Configura Cord" sobre Inicio. |
 | `DmQuotePayment.astro` | Página de pago del link (`/q/[token]/pay`) con anticipo. |
+| `DmHome.astro` | Inicio: Personalizar, hero de dinero con nota de divisa y los widgets por defecto con su alcance (Hoy / Rango). |
+| `DmWidgetLibrary.astro` | Inicio en modo edición con la biblioteca de widgets abierta (Biblioteca, Restablecer, Listo). |
+| `DmReports.astro` | Informes › Resumen con el selector de informes abierto. `scroll="end"` lo dibuja desplazado hasta Personalizados y los guardados. |
+| `DmReportTable.astro` | Informe tabla (`report="ventas-cliente"` por defecto, o `"ventas"` con Día/Semana/Mes). |
+| `DmReportExplorer.astro` | Informe personalizado (explorador). `saved` dibuja el informe guardado. |
+| `DmSaveReport.astro` | Diálogo "Guardar informe". `saved` = editar uno guardado; `menu` = lista de envío abierta. |
+| `DmScheduledReportEmail.astro` | Correo del envío programado de un informe guardado, con el CSV adjunto. |
+| `RepTabla.astro` | Cuerpo compartido del informe tabla (KPIs, gráfica, tabla con Total, nota de divisa). No se registra en el MDX. |
+| `dm-informes.ts` / `dm-reports.css` | Datos de demo de Informes (cuadran con el Inicio) y primitivas `dm-rx-*` del informe tabla y del selector. |
 | `dm-app-modal.css` | Esqueleto de los modales de la app (`dm-mod-*`, calca de `src/styles/modal.css`): encabezado, secciones, campos, chips y pie. Lo usan `DmClientModal` y `DmProductModal`. |
 
 ## Uso desde MDX

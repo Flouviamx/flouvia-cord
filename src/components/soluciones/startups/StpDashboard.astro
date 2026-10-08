@@ -1,5 +1,8 @@
 ---
 // Calca de /app (Inicio) para Nodo Labs: sidebar real, KPIs reales y actividad por cotización.
+// Como el Inicio actual (src/pages/app/index.astro): "Personalizar" en la cabecera, el hero
+// con las píldoras Cerrado / Cobrado / Cotizado, el selector de fechas dentro del hero y la
+// curva del periodo; los KPI llevan su alcance (Hoy / Rango) y la tasa, su variación en puntos.
 interface Props { isEn?: boolean }
 const { isEn = false } = Astro.props;
 const t = (es: string, en: string) => (isEn ? en : es);
@@ -36,8 +39,17 @@ const feed = [
     { k: 'sent', tx: t('Cotización enviada — link generado', 'Quote sent — link created'), r: 'COT-0084 · Estudio Brava', w: t('ayer 12:30', 'yesterday 12:30') },
     { k: 'invoiced', tx: t('Factura FAC-0043 emitida', 'Invoice FAC-0043 issued'), r: 'COT-0083 · Altamar Seguros', w: t('15 sep', 'Sep 15') },
 ];
-const bars = [38, 46, 41, 58, 64, 88];
-const months = isEn ? ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'] : ['abr', 'may', 'jun', 'jul', 'ago', 'sep'];
+// Curva del cerrado diario del mes (hero): determinista, suavizada como chart.ts.
+const serie = Array.from({ length: 24 }, (_, i) => 0.5 + Math.sin(i / 2.4) * 0.28 + Math.sin(i / 5.2 + 1.2) * 0.22 + i * 0.03);
+const mxS = Math.max(...serie) * 1.12;
+const pts = serie.map((v, i) => [(i / (serie.length - 1)) * 400, 80 - (v / mxS) * 80]);
+const heroLine = pts.reduce((acc, [x, y], i) => {
+    if (i === 0) return `M${x.toFixed(1)},${y.toFixed(1)}`;
+    const [x0, y0] = pts[i - 2] ?? pts[i - 1]; const [x1, y1] = pts[i - 1]; const [x3, y3] = pts[i + 1] ?? [x, y];
+    return `${acc} C${(x1 + (x - x0) / 6).toFixed(1)},${(y1 + (y - y0) / 6).toFixed(1)} ${(x - (x3 - x1) / 6).toFixed(1)},${(y - (y3 - y1) / 6).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+}, '');
+const heroArea = `${heroLine} L400,80 L0,80 Z`;
+const axis = isEn ? ['Sep 1', 'Sep 8', 'Sep 15', 'Sep 22'] : ['1 sep', '8 sep', '15 sep', '22 sep'];
 import { iconInner } from '../../../lib/icons';
 ---
 
@@ -69,8 +81,7 @@ import { iconInner } from '../../../lib/icons';
         <header class="sd-top">
             <h3>{t('Inicio', 'Home')}</h3>
             <div class="sd-top-r">
-                <span class="sd-range">{t('Este mes', 'This month')}</span>
-                <span class="sd-new">+ {t('Nueva cotización', 'New quote')}</span>
+                <span class="sd-cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sliders')}></svg>{t('Personalizar', 'Customize')}</span>
             </div>
         </header>
 
@@ -79,26 +90,21 @@ import { iconInner } from '../../../lib/icons';
                 <section class="sd-card sd-hero stp-in">
                     <div class="sd-hero-top">
                         <div>
-                            <div class="sd-lbl">{t('Cerrado este mes', 'Closed this month')}</div>
+                            <div class="sd-pills"><span class="on">{t('Cerrado', 'Closed')}</span><span>{t('Cobrado', 'Collected')}</span><span>{t('Cotizado', 'Quoted')}</span></div>
                             <div class="sd-big">MXN 312,840</div>
-                            <div class="sd-delta"><b>+18%</b> {t('vs. periodo anterior', 'vs. previous period')}</div>
+                            <div class="sd-delta"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>18%</b> {t('vs. periodo anterior', 'vs. previous period')}</div>
                         </div>
-                        <div class="sd-bars">
-                            {bars.map((h, i) => (
-                                <div class="sd-bar-c"><i class:list={[{ on: i === bars.length - 1 }]} style={`height:${h}%`}></i><span>{months[i]}</span></div>
-                            ))}
-                        </div>
+                        <span class="sd-range"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>{t('Este mes', 'This month')}</span>
                     </div>
-                    <div class="sd-metrics">
-                        <div><span>{t('Cerrado', 'Closed')}</span><b>MXN 312,840</b></div>
-                        <div><span>{t('Cobrado', 'Collected')}</span><b>MXN 268,400</b></div>
-                        <div><span>{t('Cotizado', 'Quoted')}</span><b>MXN 486,900</b></div>
+                    <div class="sd-line">
+                        <svg viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden="true"><path d={heroArea} class="a"></path><path d={heroLine} class="l" vector-effect="non-scaling-stroke"></path></svg>
+                        <div class="sd-ax">{axis.map((a) => <span>{a}</span>)}</div>
                     </div>
                 </section>
                 <div class="sd-kpis">
-                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('POR CERRAR', 'IN PROGRESS')}</div><b>MXN 110,500</b><small>{t('2 cotizaciones activas', '2 active quotes')}</small></section>
-                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('TASA DE CIERRE', 'CLOSE RATE')}</div><b>64%</b><small>{t('últimos 90 días', 'last 90 days')}</small></section>
-                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('POR DAR SEGUIMIENTO', 'NEEDS FOLLOW-UP')}</div><b>1</b><small>{t('cotización vista, sin responder', 'quote viewed, no reply')}</small></section>
+                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('POR CERRAR', 'IN PROGRESS')}<span class="sd-sc">{t('Hoy', 'Today')}</span></div><b>MXN 110,500</b><small>{t('2 cotizaciones activas', '2 active quotes')}</small></section>
+                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('TASA DE CIERRE', 'CLOSE RATE')}<span class="sd-sc rg">{t('Rango', 'Range')}</span></div><b>64%<i class="sd-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('arrow-up')}></svg>6 pts</i></b><small>{t('7 de 11 enviadas en el rango', '7 of 11 sent in the range')}</small></section>
+                    <section class="sd-card sd-kpi stp-in"><div class="sd-eb">{t('POR DAR SEGUIMIENTO', 'NEEDS FOLLOW-UP')}<span class="sd-sc">{t('Hoy', 'Today')}</span></div><b>1</b><small>{t('cotización vista, sin responder', 'quote viewed, no reply')}</small></section>
                 </div>
             </div>
 
@@ -107,11 +113,10 @@ import { iconInner } from '../../../lib/icons';
                     <div class="sd-card-h"><b>{t('Recientes', 'Recent')}</b><span>{t('Ver todas →', 'View all →')}</span></div>
                     {recent.map((q) => (
                         <div class="sd-tr">
-                            <span class="sd-folio">{q.f}</span>
-                            <span class="sd-cli">{q.c}</span>
+                            <span class="sd-av sd-qav">{q.c.charAt(0)}</span>
+                            <span class="sd-2l"><span class="sd-folio">{q.f}</span><span class="sd-cli">{q.c}</span></span>
                             <span class="sd-amt">{q.a}</span>
                             <span><span class={`sd-pill sd-${q.s[1]}`}>{q.s[0]}</span></span>
-                            <span class="sd-date">{q.d}</span>
                         </div>
                     ))}
                 </section>
@@ -157,42 +162,46 @@ import { iconInner } from '../../../lib/icons';
     .sd-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px 4px; }
     .sd-top h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; }
     .sd-top-r { display: flex; gap: 8px; align-items: center; }
-    .sd-range { font-size: 12px; font-weight: 600; color: #334155; background: #fff; padding: 6px 12px; border-radius: 99px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); }
-    .sd-new { font-size: 12px; font-weight: 600; color: #fff; background: #0a192f; padding: 7px 14px; border-radius: 99px; }
+    /* "Personalizar" (.widget-edit-btn.is-customize) y selector de fechas (.dp-trigger, pastilla gris). */
+    .sd-cust { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink); background: #fff; padding: 6px 13px 6px 11px; border-radius: 99px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 1px 2px rgba(10,25,47,0.06); }
+    .sd-cust svg, .sd-range svg { width: 14px; height: 14px; color: var(--mut); }
+    .sd-range { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12px; font-weight: 600; color: #334155; background: #eceef2; padding: 6px 12px; border-radius: 99px; white-space: nowrap; }
     .sd-body { padding: 14px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
     .sd-card { background: #fff; border-radius: 16px; box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 6px 18px -12px rgba(10,25,47,0.18); }
     .sd-row1 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; }
     .sd-hero { padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
     .sd-hero-top { display: flex; justify-content: space-between; gap: 20px; }
-    .sd-lbl { font-size: 12.5px; font-weight: 600; color: var(--mut); }
+    .sd-pills { display: inline-flex; gap: 3px; }
+    .sd-pills span { font-size: 11.5px; font-weight: 700; color: var(--mut); padding: 4px 10px; border-radius: 99px; }
+    .sd-pills .on { background: #f5f5f7; color: var(--ink); }
     .sd-big { white-space: nowrap; font-size: 32px; font-weight: 650; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; margin: 4px 0 2px; }
     .sd-delta { font-size: 12px; color: var(--mut); }
-    .sd-delta b { color: #047857; font-weight: 650; }
-    .sd-bars { display: flex; align-items: flex-end; gap: 8px; height: 96px; flex: 0 1 220px; min-width: 0; }
-    .sd-bar-c { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px; }
-    .sd-bar-c i { width: 100%; background: #e2e8f0; border-radius: 5px 5px 2px 2px; display: block; }
-    .sd-bar-c i.on { background: #0a192f; }
-    .sd-bar-c span { font-size: 10px; color: var(--faint); }
-    .sd-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); padding-top: 12px; }
-    .sd-metrics div { display: flex; flex-direction: column; gap: 2px; }
-    .sd-metrics div + div { padding-left: 14px; border-left: 1px solid var(--line); }
-    .sd-metrics span { font-size: 11.5px; color: var(--mut); }
-    .sd-metrics b { font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .sd-delta b { display: inline-flex; align-items: center; gap: 2px; color: #047857; font-weight: 650; }
+    .sd-delta b svg, .sd-dl svg { width: 10px; height: 10px; }
+    .sd-line svg { display: block; width: 100%; height: 78px; }
+    .sd-line .a { fill: rgba(10,25,47,0.06); }
+    .sd-line .l { fill: none; stroke: #0a192f; stroke-width: 1.8; stroke-linejoin: round; }
+    .sd-ax { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; color: var(--faint); }
     .sd-kpis { display: grid; grid-template-rows: repeat(3, 1fr); gap: 10px; }
     .sd-kpi { padding: 11px 16px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 12px; align-items: center; }
-    .sd-eb { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; color: var(--faint); }
-    .sd-kpi b { grid-row: span 2; font-size: 19px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; text-align: right; grid-column: 2; grid-row-start: 1; }
+    .sd-eb { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; color: var(--faint); }
+    /* Alcance (ScopeTag) y variación (.wx-delta) del KPI. */
+    .sd-sc { display: inline-flex; padding: 1px 6px; border-radius: 99px; font-size: 9.5px; font-weight: 650; letter-spacing: 0.02em; color: var(--mut); background: #fafbfc; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08); }
+    .sd-sc.rg { color: #3157a6; background: rgba(66,108,197,0.09); box-shadow: none; }
+    .sd-dl { margin-top: 3px; font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: 0; color: #0f8a5f; background: rgba(16,185,129,0.12); padding: 1px 6px; border-radius: 99px; display: inline-flex; align-items: center; gap: 2px; }
+    .sd-kpi b { display: flex; flex-direction: column; align-items: flex-end; grid-row: span 2; font-size: 19px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; text-align: right; grid-column: 2; grid-row-start: 1; }
     .sd-kpi small { font-size: 11.5px; color: var(--mut); grid-column: 1; }
 
     .sd-row2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; }
     .sd-card-h { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px 8px; }
     .sd-card-h b { font-size: 14px; font-weight: 650; }
     .sd-card-h span { font-size: 12px; color: #2563eb; font-weight: 600; }
-    .sd-tr { display: grid; grid-template-columns: 74px 1fr 118px 84px 88px; align-items: center; gap: 10px; padding: 9px 18px; border-top: 1px solid #f3f5f8; font-size: 12.5px; }
+    /* Fila de "Recientes" (.quote-row): inicial, folio y cliente, monto y estado. */
+    .sd-tr { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 9px 18px; border-top: 1px solid #f3f5f8; font-size: 12.5px; }
+    .sd-qav { border-radius: 8px; background: #0a192f; font-size: 10px; }
     .sd-folio { font-weight: 650; color: #334155; font-variant-numeric: tabular-nums; font-size: 12px; }
-    .sd-cli { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-cli { font-size: 11.5px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sd-amt { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .sd-date { text-align: right; color: var(--faint); font-size: 11.5px; white-space: nowrap; }
     .sd-pill { display: inline-flex; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
     .sd-gray { color: #64748b; background: rgba(100,116,139,0.1); }
     .sd-blue { color: #2563eb; background: rgba(37,99,235,0.09); }
@@ -217,20 +226,19 @@ import { iconInner } from '../../../lib/icons';
     }
     @media (max-width: 600px) {
         .sd-top { padding: 14px 16px 2px; }
-        .sd-top-r .sd-new { display: none; }
+        .sd-top-r .sd-cust { padding: 6px 11px; }
         .sd-body { padding: 12px 14px 16px; gap: 12px; }
         .sd-hero-top { flex-direction: column; gap: 12px; }
-        .sd-bars { flex-basis: auto; height: 72px; }
+        .sd-line svg { height: 64px; }
         .sd-big { font-size: 27px; }
-        .sd-metrics b { font-size: 11.5px; white-space: nowrap; }
+
         .sd-ev .sd-2l b { white-space: normal; }
-        .sd-metrics div + div { padding-left: 10px; }
-        .sd-tr { grid-template-columns: 1fr auto; row-gap: 3px; padding: 10px 16px; }
-        .sd-tr .sd-folio { grid-column: 1; }
-        .sd-tr .sd-cli { grid-column: 1; }
-        .sd-tr .sd-amt { grid-column: 2; grid-row: 1; }
-        .sd-tr > span:nth-child(4) { grid-column: 2; grid-row: 2; text-align: right; }
-        .sd-tr .sd-date { display: none; }
+
+        .sd-tr { grid-template-columns: 28px minmax(0, 1fr) auto; row-gap: 3px; padding: 10px 16px; }
+        .sd-tr .sd-qav { grid-row: span 2; }
+        .sd-tr .sd-amt { grid-column: 3; grid-row: 1; }
+        .sd-tr > span:nth-child(4) { grid-column: 3; grid-row: 2; text-align: right; }
+        .sd-tr .sd-2l { grid-column: 2; grid-row: span 2; }
         .sd-ev { padding: 9px 16px; }
     }
 </style>
