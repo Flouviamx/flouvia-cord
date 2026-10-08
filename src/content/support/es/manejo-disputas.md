@@ -9,7 +9,7 @@ Una disputa o contracargo ocurre cuando el titular de una tarjeta desconoce un c
 
 ### ¿Dónde se gestionan las disputas?
 
-Cord centraliza el seguimiento y la preparación de evidencia en **Cobros › Disputas**. Cuando se abre un contracargo, la plataforma crea una tarea, notifica al propietario y muestra la fecha límite informada por la red de pagos.
+Cord centraliza el seguimiento y la preparación de evidencia en **Cobros › Disputas**. Cuando se abre un contracargo, la plataforma crea una tarea con prioridad alta en **Tareas** (con el plazo de evidencia como fecha límite, así que entra en el [recordatorio de la mañana](/soporte/tareas-y-recordatorios)), notifica al propietario y muestra la fecha límite informada por la red de pagos.
 
 1. Abre la disputa desde **Cobros** y revisa el motivo, monto y fecha límite.
 2. Prepara la descripción del producto o servicio, la comunicación con el cliente y los datos de entrega.

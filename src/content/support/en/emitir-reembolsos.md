@@ -13,7 +13,7 @@ Cord lets you initiate a full or partial refund from the payment history without
 1. Go to **Payments** and locate the successful payment.
 2. Select **Refund**, enter the amount, and confirm the operation.
 3. For card payments, Cord requests the return to the issuing bank and updates the net amount when it receives the result.
-4. For SPEI transfers (Mexican peso payments only), Cord creates a manual task with the amount and reference. You must complete the transfer from your bank; Cord never simulates an outgoing transfer.
+4. For SPEI transfers (Mexican peso payments only), Cord creates a high-priority task in **Tasks** with the amount and reference, assigned to whoever requested the refund. You must complete the transfer from your bank; Cord never simulates an outgoing transfer.
 
 Only the owner or a member with refund permission can confirm the operation. For security, Cord may request a recent password or second-factor verification.
 

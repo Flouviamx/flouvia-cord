@@ -2,7 +2,7 @@
 title: "Actions"
 seoTitle: "Cord Workflows actions"
 description: "The eleven Cord Workflows actions in detail: task, email to the team, email to the client, WhatsApp to the client, expire quote, approve internal request, void invoice, POST to a URL, Slack, Teams and HubSpot."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Cord product and operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -45,10 +45,12 @@ Adds a task for your team in **Tasks**, just as if you had created it by hand.
 
 **What it is linked to:**
 
-- If the trigger is about a quote (sent, approved, paid, partial payment, invoiced, etc.), the task is linked to that quote and shows in its detail.
+- If the trigger is about a quote (sent, approved, paid, partial payment, invoiced, etc.), the task is linked to that quote: in **Tasks** it shows the quote number and client as a link to the quote.
 - If the trigger is a dispute or refund on a quote, it is also linked to that quote.
 - On **A draft is deleted** it is not linked, because the quote no longer exists.
 - On other triggers (invoices, clients, products, payouts, tasks, promises) the task is standalone.
+
+**Assignee:** the task is created unassigned with normal priority; assign it or raise its priority from **Tasks**. While it has no assignee, the [email reminder](/en/docs/gestion/tareas#email-reminder) goes to the account owner.
 
 **When it fails:**
 

@@ -8,6 +8,7 @@ import { deliverTeams } from '../integraciones/teams-graph';
 import { sendWhatsAppTemplate, WHATSAPP_MAX_VARS } from '../whatsapp';
 import { strictRateLimit } from '../ratelimit';
 import { createTask } from '../actions/tasks';
+import { addDays, isIsoDay } from '../tasks';
 import { decideApprovalRequest, expireQuote } from '../actions/quotes';
 import { safeFetch } from '../ssrf';
 import { cancelUsage, reserveUsage } from '../billing';
@@ -421,7 +422,10 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
         const titulo = oneLine(renderTemplate(String(p.titulo ?? ''), values)).slice(0, 200);
         if (!titulo) throw new WorkflowStepError(wfError('tarea_titulo'), true);
         const dias = typeof p.dias === 'number' ? p.dias : null;
-        const due = dias === null ? null : new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+        // "Vence en 0 días" es HOY del negocio (`values.hoy`), no de UTC: por la
+        // noche en América la fecha UTC ya es mañana (regla 24).
+        const base = isIsoDay(values.hoy) ? values.hoy : new Date().toISOString().slice(0, 10);
+        const due = dias === null ? null : addDays(base, dias);
         const outcome = await createTask(
             { orgId, origin: siteOrigin(), actor: `workflow:${input.workflowId}` },
             { titulo, due_date: due, cotizacion_id: quoteId },
