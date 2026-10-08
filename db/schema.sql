@@ -110,7 +110,7 @@ create table clientes (
   email             text,
   telefono          text,
   rfc               text,
-  terminos_default  text        not null default 'contado',  -- 'contado' | 'net30' | 'net60'
+  terminos_default  text        not null default 'contado',  -- 'contado' | 'net<N>' (src/lib/payment-terms.ts)
   limite_credito    numeric,
   created_at        timestamptz default now()
 );
@@ -134,7 +134,7 @@ create table cotizaciones (
   fx_rate       numeric     not null default 1,     -- Tipo de cambio aplicado
   fx_rate_source text       not null default 'spot',-- 'spot' | 'buffer' | 'forward'
   fx_locked_until timestamptz,                      -- Fecha de expiración de cobertura
-  terminos      text        not null default 'contado', -- 'contado' | 'net30' | 'net60'
+  terminos      text        not null default 'contado', -- 'contado' | 'net<N>' (src/lib/payment-terms.ts)
   vigencia      date,                                 -- fecha de expiración
   public_token  text        not null unique default encode(gen_random_bytes(16), 'hex'), -- /q/{token}
   notas         text,
@@ -301,7 +301,7 @@ create index if not exists idx_audit_org on audit_log(org_id, created_at desc);
 -- ── Superpoderes de configuración (jun 2026) ────────────────────────────────
 -- Defaults de cotización (los usa el editor /nueva y el POST de cotizaciones).
 alter table orgs add column if not exists vigencia_default_dias int not null default 30; -- días de vigencia por default
-alter table orgs add column if not exists terminos_default text not null default 'contado'; -- contado | net30 | net60
+alter table orgs add column if not exists terminos_default text not null default 'contado'; -- contado | net<N> (src/lib/payment-terms.ts)
 -- Retenciones e impuestos avanzados (servicios / CFDI) + leyenda legal del PDF.
 alter table orgs add column if not exists retencion_isr_pct numeric not null default 0; -- % retención de ISR
 alter table orgs add column if not exists retencion_iva_pct numeric not null default 0; -- % retención de IVA
@@ -3686,6 +3686,20 @@ create index if not exists idx_planes_documento    on planes_pago_negociados(doc
 create index if not exists idx_promesas_documento  on promesas_pago(documento_id)           where documento_id is not null;
 create index if not exists idx_intereses_documento on intereses_moratorios(documento_id)    where documento_id is not null;
 
+-- Días de un término de pago. Misma regla que `termDays()` de
+-- src/lib/payment-terms.ts: 'net<N>' = N días naturales; cualquier otra cosa
+-- (contado, null, un código desconocido) = 0. Antes cada consulta tenía su
+-- propio `case` con los días de net30 y net60 escritos a mano, así que un
+-- plazo nuevo vencía el mismo día en la cartera y la cobranza lo perseguía
+-- como vencido. `immutable`: se puede usar en índices y el planificador lo
+-- pliega.
+create or replace function cord_term_days(p_terminos text)
+returns integer
+language sql immutable parallel safe
+as $$
+  select coalesce(substring(lower(trim(p_terminos)) from '^net([0-9]{1,3})$')::integer, 0)
+$$;
+
 -- Vista única de cuentas por cobrar. Une los dos rieles con UNA forma común
 -- para que el agente de cobranza, el cron de intereses y los informes consulten
 -- un solo lugar en vez de duplicar la aritmética del vencimiento — que en
@@ -3729,11 +3743,9 @@ create or replace view cuentas_por_cobrar as
     c.total - coalesce((select sum(cc.monto) from cotizacion_cobros cc
                where cc.cotizacion_id = c.id and cc.status = 'pagado'), 0)  as saldo,
     (coalesce(c.approved_at, c.created_at)
-      + make_interval(days => case coalesce(c.terminos, 'contado')
-          when 'net30' then 30 when 'net60' then 60 else 0 end))::date      as vence,
+      + make_interval(days => cord_term_days(c.terminos)))::date        as vence,
     (current_date - (coalesce(c.approved_at, c.created_at)
-      + make_interval(days => case coalesce(c.terminos, 'contado')
-          when 'net30' then 30 when 'net60' then 60 else 0 end))::date)     as dias_vencido,
+      + make_interval(days => cord_term_days(c.terminos)))::date)       as dias_vencido,
     c.public_token                               as token,
     c.id                                         as cotizacion_id
   from cotizaciones c
@@ -5896,3 +5908,15 @@ end $$;
 -- valida contra el catálogo `impuestos` al guardar (actions/products.ts).
 alter table productos add column if not exists tax_rate numeric
   check (tax_rate is null or (tax_rate >= 0 and tax_rate <= 1));
+
+-- ── Claves SAT por producto (oct 2026) ──────────────────────────────────────
+-- Todo CFDI salía con 01010101 ("No existe en el catálogo") y H87 (pieza),
+-- también una hora de consultoría o una licencia. `clave_sat` es
+-- c_ClaveProdServ (8 dígitos) y `clave_unidad_sat` c_ClaveUnidad (1 a 3
+-- alfanuméricos). `null` = sin clasificar: el CFDI usa los defaults del SAT y,
+-- para la unidad, la deducida de `unidad` (src/lib/fiscal/sat-claves.ts). Se
+-- leen al timbrar y quedan congeladas en `line_items_snapshot`.
+alter table productos add column if not exists clave_sat text
+  check (clave_sat is null or clave_sat ~ '^[0-9]{8}$');
+alter table productos add column if not exists clave_unidad_sat text
+  check (clave_unidad_sat is null or clave_unidad_sat ~ '^[A-Z0-9]{1,3}$');

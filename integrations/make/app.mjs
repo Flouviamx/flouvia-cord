@@ -207,10 +207,15 @@ const QUOTE_INTERFACE = [
     { name: 'created_at', type: 'date', label: 'Created at' },
 ];
 
+// `net<N>` = N días de crédito. Misma lista que src/lib/payment-terms.ts de Cord.
 const TERMS = [
     { label: 'Upfront', value: 'contado' },
+    { label: 'Net 7', value: 'net7' },
+    { label: 'Net 15', value: 'net15' },
     { label: 'Net 30', value: 'net30' },
+    { label: 'Net 45', value: 'net45' },
     { label: 'Net 60', value: 'net60' },
+    { label: 'Net 90', value: 'net90' },
 ];
 
 const clientFields = (requireCompany) => [

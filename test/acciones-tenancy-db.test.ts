@@ -42,7 +42,8 @@ beforeAll(async () => {
             telefono text, rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text,
             uso_cfdi text, cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text);
         create table productos(id uuid primary key default gen_random_uuid(), org_id uuid not null, sku text, nombre text not null, unidad text,
-            descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric);
+            descripcion text, precio_lista numeric, costo numeric, activo boolean, precios_volumen jsonb, tax_rate numeric,
+            clave_sat text, clave_unidad_sat text);
         create table cotizaciones(id uuid primary key, org_id uuid not null, base_currency text default 'MXN');
         create table orgs(id uuid primary key, iva_pct numeric);
         create table impuestos(id uuid primary key default gen_random_uuid(), org_id uuid not null, tasa numeric, kind text, tipo text,
@@ -146,6 +147,24 @@ describe('eventos del camino normal', () => {
         expect((await products.updateProduct(ctxA, ok.body.id as string, { nombre: 'Frontera', precio: 10, tax_rate: 'abc' })).status).toBe(400);
         const rows = (await m.db.query(`select nombre, tax_rate::float as tax_rate from productos where org_id = '${A}' order by nombre`)).rows;
         expect(rows).toEqual([{ nombre: 'Exento', tax_rate: 0 }, { nombre: 'Frontera', tax_rate: 0.08 }]);
+    });
+
+    it('producto: claves SAT con formato del catálogo, y lo que no viene no se borra', async () => {
+        expect((await products.createProduct(ctxA, { nombre: 'Mala', precio: 1, clave_sat: '8111' })).status).toBe(400);
+        expect((await products.createProduct(ctxA, { nombre: 'Mala', precio: 1, clave_unidad_sat: 'HORA' })).status).toBe(400);
+        const ok = await products.createProduct(ctxA, {
+            nombre: 'Consultoría', precio: 100, tax_rate: 0.08, clave_sat: '81111500', clave_unidad_sat: 'hur',
+        });
+        expect(ok.status).toBe(200);
+        const id = ok.body.id as string;
+        const read = async () => (await m.db.query(`select clave_sat, clave_unidad_sat, tax_rate::float as tax_rate from productos where id = '${id}'`)).rows[0];
+        expect(await read()).toEqual({ clave_sat: '81111500', clave_unidad_sat: 'HUR', tax_rate: 0.08 });
+        // Una pantalla que no muestra impuesto ni claves (otro país, una sola tasa) no las manda.
+        expect((await products.updateProduct(ctxA, id, { nombre: 'Consultoría', precio: 120 })).status).toBe(200);
+        expect(await read()).toEqual({ clave_sat: '81111500', clave_unidad_sat: 'HUR', tax_rate: 0.08 });
+        // Mandarlas vacías sí las limpia.
+        expect((await products.updateProduct(ctxA, id, { nombre: 'Consultoría', precio: 120, tax_rate: null, clave_sat: '', clave_unidad_sat: null })).status).toBe(200);
+        expect(await read()).toEqual({ clave_sat: null, clave_unidad_sat: null, tax_rate: null });
     });
 
     it('tarea: completar dos veces emite task.completed una sola vez', async () => {

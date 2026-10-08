@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- Payment terms now include Net 7, Net 15, Net 45 and Net 90 alongside Upfront, Net 30 and Net 60.
+
 ## 1.1.0
 
 - Rebuilt on the official n8n node starter: TypeScript, strict lint and n8n Cloud eligibility.

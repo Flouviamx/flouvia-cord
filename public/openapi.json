@@ -366,7 +366,7 @@
                                 "type": "null"
                               }
                             ],
-                            "description": "Términos de pago: contado, net30 o net60."
+                            "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                           },
                           "vigencia": {
                             "anyOf": [
@@ -794,10 +794,14 @@
                     "type": "string",
                     "enum": [
                       "contado",
+                      "net7",
+                      "net15",
                       "net30",
-                      "net60"
+                      "net45",
+                      "net60",
+                      "net90"
                     ],
-                    "description": "Términos de pago: contado, net30 o net60."
+                    "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                   },
                   "vigencia_dias": {
                     "type": "integer",
@@ -944,7 +948,7 @@
                               "type": "null"
                             }
                           ],
-                          "description": "Términos de pago: contado, net30 o net60."
+                          "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                         },
                         "vigencia": {
                           "anyOf": [
@@ -1745,7 +1749,7 @@
                           },
                           "terminosCode": {
                             "type": "string",
-                            "description": "Código de términos de pago: contado, net30 o net60."
+                            "description": "Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                           },
                           "limite": {
                             "type": "number",
@@ -2114,7 +2118,7 @@
                         },
                         "terminosCode": {
                           "type": "string",
-                          "description": "Código de términos de pago: contado, net30 o net60."
+                          "description": "Código de términos de pago: contado o net<N> (net7, net15, net30, net45, net60, net90)."
                         },
                         "limite": {
                           "type": "number",
@@ -2531,6 +2535,28 @@
                               }
                             ],
                             "description": "Impuesto que se sugiere al agregar el producto a una línea, como fracción 0–1; null = el predeterminado de la organización."
+                          },
+                          "claveSat": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Clave de producto o servicio del SAT (c_ClaveProdServ, 8 dígitos) para el CFDI en México; null si no se clasificó."
+                          },
+                          "claveUnidadSat": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Clave de unidad del SAT (c_ClaveUnidad, como H87 o E48) para el CFDI en México; null = se deduce de la unidad."
                           }
                         },
                         "required": [
@@ -2544,7 +2570,9 @@
                           "createdAt",
                           "preciosVolumen",
                           "existencias",
-                          "taxRate"
+                          "taxRate",
+                          "claveSat",
+                          "claveUnidadSat"
                         ],
                         "additionalProperties": {}
                       },
@@ -5088,18 +5116,26 @@
                             "type": "string",
                             "enum": [
                               "contado",
+                              "net7",
+                              "net15",
                               "net30",
-                              "net60"
+                              "net45",
+                              "net60",
+                              "net90"
                             ]
                           },
-                          "description": "Términos de pago: contado, net30 o net60."
+                          "description": "Términos de pago: contado o net<N> (N días de crédito: 7, 15, 30, 45, 60 o 90)."
                         },
                         "terminos_default": {
                           "type": "string",
                           "enum": [
                             "contado",
+                            "net7",
+                            "net15",
                             "net30",
-                            "net60"
+                            "net45",
+                            "net60",
+                            "net90"
                           ],
                           "description": "Términos de pago por defecto."
                         },

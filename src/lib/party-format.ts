@@ -2,9 +2,11 @@
 // país: lada telefónica, cómo se llama su código postal y su subdivisión, un
 // ejemplo de su identificador fiscal y una verificación BLANDA de su formato.
 //
-// Módulo puro y sin imports a propósito: lo consume el `<script>` del modal de
-// clientes (bundleado al navegador) y los tests. Nada aquí toca la red ni el
-// servidor.
+// Módulo puro: lo consume el `<script>` del modal de clientes (bundleado al
+// navegador) y los tests. Nada aquí toca la red ni el servidor. RFC, NIF/NIE/CIF
+// y EIN se validan con el MISMO código que el Fiscal Element y el asistente de
+// configuración (packages/elements/src/fiscal/tax-id.ts): dos validadores del
+// mismo dato terminan diciendo cosas distintas.
 //
 // Lo que este módulo NO decide:
 //   · Cómo se llama el identificador fiscal — eso es `taxIdLabel` del perfil del
@@ -13,6 +15,8 @@
 //     falso rechazo deja a un negocio sin poder dar de alta a quien le compra,
 //     y un formato que no conocemos no es un formato inválido (mismo criterio
 //     que la compuerta de captura de la regla 34).
+
+import { validEin, validRfc, validSpainTaxId } from '../../packages/elements/src/fiscal/tax-id.ts';
 
 export type PartyLocale = 'es' | 'en';
 
@@ -206,7 +210,7 @@ export function regionLabel(country: string, locale: PartyLocale): string {
 // Ejemplos con dígito de control VÁLIDO (los verifica test/party-format.test.ts):
 // un placeholder que no pasa su propia verificación enseña el formato mal.
 const TAX_ID_EXAMPLES: Record<string, string> = {
-    MX: 'DEZ981123QX1',
+    MX: 'EKU9003173C9',
     US: '12-3456789',
     CA: '123456782RT0001',
     BR: '11.222.333/0001-81',
@@ -263,33 +267,6 @@ function cnpj(d: string): boolean {
         && dv([6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(d[13]);
 }
 
-const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
-
-function spain(v: string): boolean {
-    const s = v.startsWith('ES') ? v.slice(2) : v;
-    // DNI / NIF de persona física
-    if (/^\d{8}[A-Z]$/.test(s)) return DNI_LETTERS[Number(s.slice(0, 8)) % 23] === s[8];
-    // NIE (X/Y/Z) y NIF especiales (K/L/M), misma letra de control
-    if (/^[XYZ]\d{7}[A-Z]$/.test(s)) return DNI_LETTERS[Number('XYZ'.indexOf(s[0]) + s.slice(1, 8)) % 23] === s[8];
-    if (/^[KLM]\d{7}[A-Z]$/.test(s)) return DNI_LETTERS[Number(s.slice(1, 8)) % 23] === s[8];
-    // CIF / NIF de persona jurídica
-    if (/^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/.test(s)) {
-        const body = s.slice(1, 8);
-        let sum = 0;
-        for (let i = 0; i < 7; i++) {
-            const n = Number(body[i]);
-            if (i % 2 === 0) { const x = n * 2; sum += Math.floor(x / 10) + (x % 10); } else sum += n;
-        }
-        const control = (10 - (sum % 10)) % 10;
-        const ctl = s[8];
-        const letter = 'JABCDEFGHI'[control];
-        if ('ABEH'.includes(s[0])) return ctl === String(control);
-        if ('NPQRSW'.includes(s[0])) return ctl === letter;
-        return ctl === String(control) || ctl === letter;
-    }
-    return false;
-}
-
 function colombia(raw: string): boolean {
     const parts = String(raw).replace(/[\s.]/g, '').split('-');
     if (parts.length > 2 || !parts.every((p) => /^\d+$/.test(p))) return false;
@@ -340,20 +317,17 @@ export function checkTaxId(country: string, raw: string | null | undefined): Tax
     const v = compact(String(raw ?? ''));
     if (!v) return 'unchecked';
     switch (String(country || '').toUpperCase()) {
-        case 'MX': {
-            const m = /^[A-ZÑ&]{3,4}(\d{2})(\d{2})(\d{2})[A-Z\d]{3}$/.exec(v);
-            if (!m) return 'invalid';
-            const mes = Number(m[2]);
-            const dia = Number(m[3]);
-            return mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 ? 'valid' : 'invalid';
-        }
-        case 'US': return /^\d{9}$/.test(v) ? 'valid' : 'invalid'; // EIN, SSN o ITIN
+        // RFC con fecha y dígito verificador del SAT (incluye los genéricos).
+        case 'MX': return validRfc(v) ? 'valid' : 'invalid';
+        // EIN de una empresa, o SSN/ITIN de una persona (3-2-4).
+        case 'US': return validEin(String(raw).trim()) || /^\d{3}-?\d{2}-?\d{4}$/.test(String(raw).trim()) ? 'valid' : 'invalid';
         case 'CA': {
             const m = /^(\d{9})((RT|RC|RP|RM|RR|RZ)\d{4})?$/.exec(v);
             return m && luhn(m[1]) ? 'valid' : 'invalid';
         }
         case 'BR': return cpf(v) || cnpj(v) ? 'valid' : 'invalid';
-        case 'ES': return spain(v) ? 'valid' : 'invalid';
+        // NIF-IVA intracomunitario = "ES" + NIF/NIE/CIF.
+        case 'ES': return validSpainTaxId(v.startsWith('ES') ? v.slice(2) : v) ? 'valid' : 'invalid';
         case 'GB': {
             const s = v.startsWith('GB') ? v.slice(2) : v;
             return /^(\d{9}|\d{12}|GD\d{3}|HA\d{3}|\d{10})$/.test(s) ? 'valid' : 'invalid';

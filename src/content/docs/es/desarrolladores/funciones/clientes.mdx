@@ -52,7 +52,7 @@ curl -X POST "https://cordhq.app/api/v1/clientes" \
 ### Reglas de Negocio Automatizadas
 
 Cuando creas clientes vía API, Cord aplica restricciones lógicas en tiempo real:
-- Los términos de pago (`terminos`) deben ser válidos (`contado`, `net30`, `net60`). Si pasas algo inválido, recae por defecto a `contado`.
+- Los términos de pago (`terminos`) deben ser válidos: `contado` o `net7`, `net15`, `net30`, `net45`, `net60`, `net90` (N días de crédito). Si pasas algo inválido, recae por defecto a `contado`.
 - El nivel de alianza (`nivel`) está restringido a `estandar`, `plata`, `oro`, o `distribuidor`.
 - El RFC (si lo envías) se normaliza a mayúsculas automáticamente.
 - El descuento (`descuento_pct`) está limitado matemáticamente entre 0 y 100.

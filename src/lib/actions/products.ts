@@ -1,6 +1,7 @@
 import { sql, withOrgTx } from '../db';
 import { normVolumen } from '../queries';
 import { TaxCatalogUnavailableError, taxCatalogFor } from '../impuestos-db';
+import { isProductKey, isUnitKey, normalizeProductKey, normalizeUnitKey } from '../fiscal/sat-claves';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
@@ -20,7 +21,29 @@ export function cleanProductInput(input: Record<string, any>) {
         // `null` = la tasa predeterminada de la organización. Fracción, no porcentaje.
         taxRate: input.tax_rate === undefined || input.tax_rate === null || input.tax_rate === ''
             ? null : Number(input.tax_rate),
+        // Claves SAT del CFDI (solo México). `null` = sin clasificar: el CFDI usa
+        // los defaults del SAT.
+        claveSat: normalizeProductKey(input.clave_sat),
+        claveUnidadSat: normalizeUnitKey(input.clave_unidad_sat),
+        // Un campo que no viene en la petición NO se toca al actualizar: la
+        // pantalla solo muestra el impuesto si hay más de una tasa y las claves
+        // SAT si el negocio factura en México, y omitirlos no puede borrarlos.
+        provided: {
+            taxRate: input.tax_rate !== undefined,
+            claveSat: input.clave_sat !== undefined,
+            claveUnidadSat: input.clave_unidad_sat !== undefined,
+        },
     };
+}
+
+function invalidSatKeys(p: ReturnType<typeof cleanProductInput>): ActionOutcome | null {
+    if (p.claveSat !== null && !isProductKey(p.claveSat)) {
+        return done(400, { error: 'La clave de producto o servicio del SAT tiene 8 dígitos (por ejemplo 81111500).', code: 'invalid_request' });
+    }
+    if (p.claveUnidadSat !== null && !isUnitKey(p.claveUnidadSat)) {
+        return done(400, { error: 'La clave de unidad del SAT tiene de 1 a 3 letras o números (por ejemplo H87 o E48).', code: 'invalid_request' });
+    }
+    return null;
 }
 
 /**
@@ -48,6 +71,8 @@ const TASA_INVALIDA = done(400, { error: 'Ese impuesto no está en tu catálogo.
 export async function createProduct(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
     const p = cleanProductInput(input);
     if (!p.nombre) return NOMBRE_OBLIGATORIO;
+    const satDenied = invalidSatKeys(p);
+    if (satDenied) return satDenied;
     const taxDenied = await invalidTaxRate(ctx.orgId, p.taxRate);
     if (taxDenied) return taxDenied;
     const capacityDenied = await requireResourceCapacity(ctx.orgId, 'products');
@@ -55,8 +80,10 @@ export async function createProduct(ctx: ActionContext, input: Record<string, an
     let row: any;
     try {
         [[row]] = await withOrgTx(ctx.orgId, sql`
-            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen, tax_rate)
-            values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)}, ${p.taxRate})
+            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen, tax_rate,
+                                   clave_sat, clave_unidad_sat)
+            values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)}, ${p.taxRate},
+                    ${p.claveSat}, ${p.claveUnidadSat})
             returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
@@ -72,6 +99,8 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
     const p = cleanProductInput(input);
     if (!p.nombre) return NOMBRE_OBLIGATORIO;
     if (!isUuid(id)) return NO_ENCONTRADO;
+    const satDenied = invalidSatKeys(p);
+    if (satDenied) return satDenied;
     const taxDenied = await invalidTaxRate(ctx.orgId, p.taxRate);
     if (taxDenied) return taxDenied;
     const [antes, rows] = await withOrgTx(ctx.orgId,
@@ -80,7 +109,10 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
         update productos set
             sku = ${p.sku}, nombre = ${p.nombre}, unidad = ${p.unidad}, descripcion = ${p.descripcion},
             precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo},
-            precios_volumen = ${JSON.stringify(p.preciosVolumen)}, tax_rate = ${p.taxRate}
+            precios_volumen = ${JSON.stringify(p.preciosVolumen)},
+            tax_rate = case when ${p.provided.taxRate} then ${p.taxRate}::numeric else tax_rate end,
+            clave_sat = case when ${p.provided.claveSat} then ${p.claveSat}::text else clave_sat end,
+            clave_unidad_sat = case when ${p.provided.claveUnidadSat} then ${p.claveUnidadSat}::text else clave_unidad_sat end
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;

@@ -1574,3 +1574,24 @@ Auditoría de precios con André. Sustituye las cuotas del 2026-09-09.
 
 Columna `uso_periodo.docs` verificada en la base configurada (integer, default 0). Sin cambios en
 Stripe: precios base, tarifas medidas y monedas se conservan.
+
+## 2026-10-08 — Términos de pago net<N>, claves SAT por producto y CFDI a extranjeros
+
+- **Términos:** la lista `contado | net30 | net60` vivía escrita a mano en ~20 sitios
+  (API, MCP, Elements, PDF, cron de recordatorios, vista de cartera, tres consultas SQL,
+  importación CSV, workflows, n8n/Make/Zapier). Ahora `src/lib/payment-terms.ts` y
+  `cord_term_days()` son la fuente; se agregan Net 7, 15, 45 y 90. Hallazgos de paso: el
+  editor de cotizaciones guardaba la ETIQUETA ("Net 30") en `data-term` de cada cliente y
+  comparaba contra el CÓDIGO, así que elegir un cliente nunca aplicaba sus términos y un
+  borrador se reabría en contado; y el PDF de la factura decía "Contado" en inglés.
+- **Claves SAT:** todo CFDI salía con 01010101 / H87, incluso servicios. Producto con
+  clave de producto/servicio y de unidad (deducida de la unidad si no se captura),
+  buscador del catálogo vía Facturapi y validación de forma antes del PAC.
+- **Extranjeros:** un cliente con país distinto de México se timbraba con el RFC de
+  público en general (XAXX) y régimen 601/616, declarándolo nacional. Ahora va como
+  residente en el extranjero según la guía de clientes de Facturapi (`address.country`
+  alfa-3, `tax_id` extranjero opcional, sin `tax_system`, uso S01).
+- **Despliegue:** primera migración de columnas acoplada al `buildCommand`
+  (`migrate-catalogo-fiscal.mjs`), igual que `migrate-brand-profile.mjs`.
+- Pendiente fuera del repo: publicar `@flouviahq/elements` 2.1.0, `n8n-nodes-cord` 1.2.0
+  y las apps de Zapier y Make con las nuevas opciones de plazo.

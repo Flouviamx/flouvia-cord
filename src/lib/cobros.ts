@@ -9,17 +9,13 @@
 //   (el flip atómico vive en el webhook de Stripe).
 import { sql, withOrgTx } from './db';
 import { currencyDecimals, normalizeCurrency } from './currency';
-
-export const TERM_DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+import { termDueDate } from './payment-terms';
 
 // Fecha de vencimiento canónica de una cotización según sus términos —
 // el MISMO cálculo que getCobranza()/cron de intereses/recordatorios:
 // coalesce(approved_at, created_at) + días del término.
 export function dueDateFor(baseDate: string | Date, terminos: string | null): Date {
-    const base = new Date(baseDate);
-    const due = new Date(base);
-    due.setDate(due.getDate() + (TERM_DAYS[terminos ?? 'contado'] ?? 0));
-    return due;
+    return termDueDate(new Date(baseDate), terminos);
 }
 
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);

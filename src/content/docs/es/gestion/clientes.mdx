@@ -62,8 +62,10 @@ En **Clientes > Importar CSV** el flujo tiene tres pasos:
 2. indica si la primera fila contiene encabezados y relaciona columnas;
 3. revisa la vista previa y decide si se actualizan coincidencias existentes.
 
-Una importación acepta hasta **2,000 filas**. Las filas sin empresa se omiten. Los
-términos válidos son `contado`, `net30` y `net60`; cualquier otro valor cae a contado.
+Una importación acepta hasta **2,000 filas**. Las filas sin empresa se omiten. La
+columna de términos acepta códigos (`contado`, `net7` a `net90`) o texto como "Net 45"
+o "45 días": Cord toma el plazo ofrecido que no excede lo escrito. "Crédito" sin
+número se lee como `net30`, y cualquier otro texto cae a contado.
 
 Con **Actualizar existentes** activo, Cord busca primero una coincidencia exacta por
 RFC o identificador fiscal y después por nombre de empresa sin distinguir mayúsculas.

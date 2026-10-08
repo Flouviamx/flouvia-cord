@@ -91,6 +91,8 @@ beforeAll(async () => {
     const start = schema.indexOf('create or replace view cuentas_por_cobrar as');
     const end = schema.indexOf(';', schema.indexOf('where d2.cotizacion_id = c.id', start)) + 1;
     expect(start).toBeGreaterThan(0);
+    // La vista calcula el vencimiento con cord_term_days(): se crea primero, tal cual.
+    await m.db.exec(/create or replace function cord_term_days[\s\S]*?\$\$;/.exec(schema)![0]);
     await m.db.exec(schema.slice(start, end));
 }, 30000);
 

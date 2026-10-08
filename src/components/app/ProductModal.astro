@@ -14,6 +14,8 @@ import { getImpuestos, getOrg } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
 import { buildTaxOptions, defaultTaxRate } from '../../lib/impuestos';
 import Icon from '../Icon.astro';
+import { SAT_UNITS } from '../../lib/fiscal/sat-claves';
+import { PRODUCT_UNITS } from '../../lib/product-units';
 
 interface Props {
     showDelete?: boolean;
@@ -32,20 +34,10 @@ const DEFAULT_TAX_LABEL = TAX_OPTIONS.find((o) => Math.abs(o.rate - DEFAULT_RATE
 // Con una sola opción no hay nada que elegir: el campo no se dibuja (mismo
 // criterio que `MULTI_TAX` en el editor de cotizaciones).
 const MULTI_TAX = TAX_OPTIONS.length > 1;
+// Las claves SAT existen para el CFDI: solo las ve un negocio que factura en México.
+const SAT = PAIS === 'MX';
 
-// Unidades sugeridas por tipo de venta. Son sugerencias de un <datalist>: la
-// unidad sigue siendo texto libre, porque ningún catálogo cubre todos los giros.
-const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
-    ? {
-        bien: ['unit', 'box', 'pack', 'set', 'pair', 'dozen', 'kg', 'g', 'lb', 'ton', 'L', 'mL', 'gal', 'm', 'ft', 'm²', 'm³', 'roll', 'bag', 'pallet'],
-        servicio: ['service', 'hour', 'day', 'week', 'project', 'visit', 'session', 'trip', 'km'],
-        suscripcion: ['month', 'year', 'license', 'user', 'seat'],
-    }
-    : {
-        bien: ['pieza', 'caja', 'paquete', 'juego', 'par', 'docena', 'kg', 'g', 'lb', 'tonelada', 'L', 'mL', 'galón', 'm', 'pie', 'm²', 'm³', 'rollo', 'saco', 'tarima'],
-        servicio: ['servicio', 'hora', 'día', 'semana', 'proyecto', 'visita', 'sesión', 'viaje', 'km'],
-        suscripcion: ['mes', 'año', 'licencia', 'usuario', 'asiento'],
-    };
+const UNITS = PRODUCT_UNITS[L];
 ---
 
 <dialog class="modal modal-lg pm" id="prodModal"
@@ -57,6 +49,10 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
     data-i18n-vol-desde={t(L, 'pmod.vol_desde')} data-i18n-vol-pz={t(L, 'pmod.vol_unidades')} data-i18n-vol-quitar={t(L, 'pmod.vol_quitar')}
     data-i18n-nombre-obligatorio={t(L, 'pmod.nombre_obligatorio')}
     data-i18n-precio-obligatorio={t(L, 'pmod.precio_obligatorio')}
+    data-i18n-sat-buscando={t(L, 'pmod.sat_buscando')} data-i18n-sat-sin-resultados={t(L, 'pmod.sat_sin_resultados')}
+    data-i18n-sat-no-disponible={t(L, 'pmod.sat_no_disponible')} data-i18n-sat-formato={t(L, 'pmod.sat_formato')}
+    data-i18n-sat-unidad-formato={t(L, 'pmod.sat_unidad_formato')} data-i18n-sat-unidad-auto={t(L, 'pmod.clave_unidad_auto')}
+    data-i18n-sat-elegida={t(L, 'pmod.clave_sat_elegida')}
     data-i18n-creando={t(L, 'pmod.creando')} data-i18n-guardando={t(L, 'pmod.guardando')}
     data-show-delete={showDelete ? '1' : ''}
 >
@@ -137,6 +133,31 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
                 )}
             </section>
 
+            {SAT && (
+                <section class="pm-sec" id="pmSat" aria-labelledby="pmSecSat">
+                    <header class="pm-sec-h"><span class="pm-sec-i"><Icon name="document" size={15} /></span><h3 id="pmSecSat">{t(L, 'pmod.sec_sat')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></h3></header>
+                    <span class="m-hint">{t(L, 'pmod.sat_hint')}</span>
+                    <div class="m-field pm-sat-field">
+                        <label for="pmClaveSat">{t(L, 'pmod.clave_sat')}</label>
+                        <div class="pm-sat-combo">
+                            <input class="m-input" id="pmClaveSat" autocomplete="off" spellcheck="false" maxlength="80"
+                                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="pmSatList"
+                                placeholder={t(L, 'pmod.clave_sat_ph')} />
+                            <ul class="pm-sat-list" id="pmSatList" role="listbox" hidden></ul>
+                        </div>
+                        <span class="m-hint" id="pmClaveSatHint" aria-live="polite"></span>
+                    </div>
+                    <div class="m-field">
+                        <label for="pmClaveUnidad">{t(L, 'pmod.clave_unidad')}</label>
+                        <input class="m-input pm-mono" id="pmClaveUnidad" list="pmSatUnits" autocomplete="off" spellcheck="false" maxlength="3" />
+                        <datalist id="pmSatUnits">
+                            {SAT_UNITS.map((u) => <option value={u.clave}>{u.nombre}</option>)}
+                        </datalist>
+                        <span class="m-hint" id="pmClaveUnidadHint"></span>
+                    </div>
+                </section>
+            )}
+
             <section class="pm-sec" aria-labelledby="pmSecVol">
                 <header class="pm-sec-h">
                     <span class="pm-sec-i"><Icon name="chart" size={15} /></span>
@@ -204,6 +225,21 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
     .pm-textarea { resize: vertical; min-height: 76px; line-height: 1.5; font-family: var(--font-sans); }
     .pm-per { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--color-text-muted); }
 
+    .pm-sat-combo { position: relative; }
+    .pm-sat-list {
+        position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; right: 0;
+        margin: 0; padding: 0.35rem; list-style: none; max-height: 240px; overflow-y: auto;
+        background: var(--surface); border-radius: 12px;
+        box-shadow: 0 0 0 0.5px rgba(10,25,47,0.08), 0 16px 40px -12px rgba(10,25,47,0.3);
+    }
+    .pm-sat-list[hidden] { display: none; }
+    .pm-sat-list :global(li) {
+        display: flex; gap: 0.6rem; align-items: baseline; padding: 0.5rem 0.6rem; border-radius: 8px;
+        font-size: 0.8rem; line-height: 1.35; color: var(--color-text); cursor: pointer;
+    }
+    .pm-sat-list :global(li[aria-selected="true"]), .pm-sat-list :global(li:hover) { background: var(--row-hover); }
+    .pm-sat-list :global(li b) { font-variant-numeric: tabular-nums; font-weight: 700; flex: 0 0 auto; }
+    .pm-sat-list :global(li.pm-sat-empty) { color: var(--color-text-muted); cursor: default; }
     .pm-affix { position: relative; }
     .pm-affix .m-input { width: 100%; padding-right: 54px; }
     .pm-affix-t {
@@ -221,6 +257,7 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
 <script>
     import { iconSvg } from '../../lib/icons';
     import { createMoney, documentCurrency, documentLocale } from '../../lib/money-client';
+    import { DEFAULT_UNIT_KEY, isProductKey, isUnitKey, satUnitForUnit, satUnitName } from '../../lib/fiscal/sat-claves';
     // CRUD de productos contra /api/productos, disparado por 'prodmodal:open' y
     // notificando 'prodmodal:saved'/'prodmodal:deleted'.
     (function () {
@@ -283,6 +320,7 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
             const all = Object.values(units).flat().map((x) => x.toLowerCase());
             if (applyUnit && (!unidad.value.trim() || all.includes(unidad.value.trim().toLowerCase()))) unidad.value = units[k][0] || '';
             syncPer();
+            syncUnidadHint();
             renderVol();
         };
         const syncPer = () => {
@@ -351,6 +389,97 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
             volList.querySelectorAll<HTMLElement>('.vol-cell:first-child .vc-pre:last-child').forEach((el) => { el.textContent = unitText(); });
         });
         input('pmUnidad').addEventListener('change', () => setKind(kindOf(input('pmUnidad').value), false));
+
+        // ── Claves SAT (solo México) ──
+        // Producto/servicio: el catálogo tiene más de 50 000 claves, así que se
+        // busca en vivo; 8 dígitos escritos a mano también valen. Unidad: vacía =
+        // se deduce de la unidad al timbrar ("hora" → HUR); escribirla la fija.
+        const satSection = document.getElementById('pmSat');
+        const claveSat = document.getElementById('pmClaveSat') as HTMLInputElement | null;
+        const satList = document.getElementById('pmSatList') as HTMLUListElement | null;
+        const satHint = document.getElementById('pmClaveSatHint');
+        const claveUnidad = document.getElementById('pmClaveUnidad') as HTMLInputElement | null;
+        const unidadHint = document.getElementById('pmClaveUnidadHint');
+        let satResults: { clave: string; descripcion: string }[] = [];
+        let satActive = -1;
+        let satTimer = 0;
+        let satSeq = 0;
+        const satKeyValue = () => (claveSat?.value.replace(/\s/g, '') ?? '');
+        const closeSat = () => { if (satList) satList.hidden = true; claveSat?.setAttribute('aria-expanded', 'false'); satActive = -1; };
+        const paintSat = (message?: string) => {
+            if (!satList || !claveSat) return;
+            satList.innerHTML = '';
+            if (message) {
+                const li = document.createElement('li'); li.className = 'pm-sat-empty'; li.textContent = message; satList.appendChild(li);
+            }
+            satResults.forEach((r, i) => {
+                const li = document.createElement('li');
+                li.id = `pmSatOpt${i}`; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(i === satActive));
+                const b = document.createElement('b'); b.textContent = r.clave;
+                const span = document.createElement('span'); span.textContent = r.descripcion;
+                li.append(b, span);
+                li.addEventListener('mousedown', (e) => { e.preventDefault(); pickSat(i); });
+                satList.appendChild(li);
+            });
+            satList.hidden = !message && !satResults.length;
+            claveSat.setAttribute('aria-expanded', String(!satList.hidden));
+            claveSat.setAttribute('aria-activedescendant', satActive >= 0 ? `pmSatOpt${satActive}` : '');
+        };
+        const pickSat = (i: number) => {
+            const r = satResults[i];
+            if (!r || !claveSat) return;
+            claveSat.value = r.clave;
+            if (satHint) satHint.textContent = tpl(I.i18nSatElegida || '', { descripcion: r.descripcion });
+            closeSat();
+        };
+        const searchSat = async (q: string) => {
+            const seq = ++satSeq;
+            satResults = []; satActive = -1; paintSat(I.i18nSatBuscando || '');
+            try {
+                const res = await fetch(`/api/fiscal/catalogo-sat?tipo=productos&q=${encodeURIComponent(q)}`);
+                const body = await res.json().catch(() => ({}));
+                if (seq !== satSeq) return; // llegó tarde: ya se escribió otra cosa
+                if (!res.ok) { paintSat(body.error || I.i18nSatNoDisponible || ''); return; }
+                if (body.disponible === false) { paintSat(I.i18nSatNoDisponible || ''); return; }
+                satResults = Array.isArray(body.data) ? body.data : [];
+                paintSat(satResults.length ? undefined : (I.i18nSatSinResultados || ''));
+            } catch {
+                if (seq === satSeq) paintSat(I.i18nSatNoDisponible || '');
+            }
+        };
+        claveSat?.addEventListener('input', () => {
+            window.clearTimeout(satTimer);
+            if (satHint) satHint.textContent = '';
+            const v = claveSat.value.trim();
+            // Dígitos = la persona está escribiendo la clave; texto = está buscando.
+            if (v.length < 2 || /^\d+$/.test(v)) { satResults = []; closeSat(); return; }
+            satTimer = window.setTimeout(() => searchSat(v), 250);
+        });
+        claveSat?.addEventListener('keydown', (e) => {
+            if (!satList || satList.hidden || !satResults.length) return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                satActive = (satActive + (e.key === 'ArrowDown' ? 1 : -1) + satResults.length) % satResults.length;
+                paintSat();
+            } else if (e.key === 'Enter' && satActive >= 0) {
+                e.preventDefault(); pickSat(satActive);
+            } else if (e.key === 'Escape') {
+                e.preventDefault(); e.stopPropagation(); closeSat();
+            }
+        });
+        claveSat?.addEventListener('blur', () => window.setTimeout(closeSat, 120));
+        const syncUnidadHint = () => {
+            if (!claveUnidad || !unidadHint) return;
+            const explicit = claveUnidad.value.trim().toUpperCase();
+            const clave = explicit || satUnitForUnit(input('pmUnidad').value || input('pmUnidad').placeholder) || DEFAULT_UNIT_KEY;
+            const nombre = satUnitName(clave);
+            claveUnidad.placeholder = clave;
+            unidadHint.textContent = explicit
+                ? (nombre ? `${clave} · ${nombre}` : '')
+                : tpl(I.i18nSatUnidadAuto || '', { clave: nombre ? `${clave} · ${nombre}` : clave });
+        };
+        claveUnidad?.addEventListener('input', () => { claveUnidad.value = claveUnidad.value.toUpperCase(); syncUnidadHint(); });
+        input('pmUnidad').addEventListener('input', syncUnidadHint);
         kindChips.forEach((c) => c.addEventListener('click', () => setKind(c.dataset.v as Kind, true)));
 
         function openModal(data?: DOMStringMap) {
@@ -370,11 +499,14 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
                 const match = Array.from(taxSel.options).find((o) => o.value !== '' && rate !== '' && Math.abs(Number(o.value) - Number(rate)) < 1e-9);
                 taxSel.value = match ? match.value : '';
             }
+            if (claveSat) { claveSat.value = data?.claveSat ?? ''; closeSat(); if (satHint) satHint.textContent = ''; }
+            if (claveUnidad) claveUnidad.value = data?.claveUnidadSat ?? '';
             setActivo(data ? Boolean(data.activo) : true);
             try { volTiers = JSON.parse(data?.volumen || '[]'); } catch { volTiers = []; }
             if (!Array.isArray(volTiers)) volTiers = [];
             setKind(kindOf(data?.unidad ?? ''), !editId);
             updateMargin();
+            syncUnidadHint();
             dlg.showModal();
             (window as any).cordWireModal?.(dlg);
             if (!editId) setTimeout(() => input('pmNombre').focus(), 60);
@@ -400,6 +532,12 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
                 input('pmPrecio').focus();
                 return;
             }
+            if (satSection) {
+                const k = satKeyValue();
+                if (k && !isProductKey(k)) { errorEl.textContent = I.i18nSatFormato || ''; claveSat?.focus(); return; }
+                const u = claveUnidad?.value.trim().toUpperCase() ?? '';
+                if (u && !isUnitKey(u)) { errorEl.textContent = I.i18nSatUnidadFormato || ''; claveUnidad?.focus(); return; }
+            }
             btnSave.disabled = true;
             errorEl.textContent = '';
             const prevLabel = btnSave.textContent;
@@ -413,7 +551,13 @@ const UNITS: Record<'bien' | 'servicio' | 'suscripcion', string[]> = L === 'en'
                 precio: input('pmPrecio').value,
                 costo: input('pmCosto').value || '0',
                 activo,
-                tax_rate: taxSel && taxSel.value !== '' ? Number(taxSel.value) : null,
+                // Solo se mandan los campos que esta pantalla muestra: el servidor no
+                // toca los que faltan (actions/products.ts).
+                ...(taxSel ? { tax_rate: taxSel.value !== '' ? Number(taxSel.value) : null } : {}),
+                ...(satSection ? {
+                    clave_sat: satKeyValue() || null,
+                    clave_unidad_sat: claveUnidad?.value.trim().toUpperCase() || null,
+                } : {}),
                 precios_volumen: volTiers
                     .map((t2) => ({ min: Math.floor(Number(t2.min) || 0), precio: Math.max(0, Number(t2.precio) || 0) }))
                     .filter((t2) => t2.min > 0 && t2.precio > 0)

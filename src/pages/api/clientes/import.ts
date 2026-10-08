@@ -8,9 +8,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
+import { parseTermText } from '../../../lib/payment-terms';
 
 const MAX_ROWS = 2000;
-const TERMINOS = new Set(['contado', 'net30', 'net60']);
 
 export const POST: APIRoute = async ({ request }) => {
     let body: any;
@@ -27,7 +27,8 @@ export const POST: APIRoute = async ({ request }) => {
         email: String(r.email ?? '').trim() || null,
         telefono: String(r.telefono ?? '').trim() || null,
         rfc: String(r.rfc ?? '').trim().toUpperCase() || null,
-        terminos: TERMINOS.has(String(r.terminos)) ? String(r.terminos) : 'contado',
+        // El CSV lo escribe una persona: "Net 45", "45 días" y "net45" valen lo mismo.
+        terminos: parseTermText(r.terminos),
         limite: (r.limite === '' || r.limite === null || r.limite === undefined) ? null : Math.max(0, Number(r.limite) || 0),
     })).filter((r: any) => r.empresa);
 

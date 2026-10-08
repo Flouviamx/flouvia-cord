@@ -5,8 +5,9 @@
 // aplica. Puro y sin DB: lo prueban los tests sin red.
 import { z } from 'zod';
 import { validRfc, validSpainTaxId, validEin } from '../tax-id';
+import { TERM_CODES } from '../payment-terms';
 
-export const TERMINOS = ['contado', 'net30', 'net60'] as const;
+export const TERMINOS = TERM_CODES;
 export const PDF_TEMPLATES = ['clasico', 'minimal', 'detallado'] as const;
 export const TAX_KINDS = ['consumo', 'retencion', 'exento'] as const;
 export const CANALES = ['whatsapp', 'email', 'nota'] as const;
@@ -34,7 +35,7 @@ export const draftSchema = z.object({
         pdf_template: z.enum(PDF_TEMPLATES).optional().describe('clasico, minimal o detallado según el estilo del negocio.'),
     }).partial().optional(),
     cotizaciones: z.object({
-        terminos_default: z.enum(TERMINOS).optional().describe('contado, net30 o net60, solo si la fuente habla de crédito o plazos.'),
+        terminos_default: z.enum(TERMINOS).optional().describe('contado o net<N> (net7, net15, net30, net45, net60, net90): el plazo de crédito en días, solo si la fuente habla de crédito o plazos.'),
         vigencia_default_dias: z.number().int().optional().describe('Días de vigencia de una cotización, entre 1 y 365.'),
         quote_prefix: z.string().max(12).optional().describe('Prefijo del folio, hasta 6 letras o números, por ejemplo las iniciales del negocio.'),
         precios_incluyen_impuesto: z.boolean().optional().describe('true si la fuente dice que los precios ya incluyen el impuesto.'),

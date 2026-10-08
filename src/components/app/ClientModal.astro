@@ -27,6 +27,7 @@ import { STRIPE_MX_STATES } from '../../lib/stripe-catalogs';
 import { CALLING_CODES } from '../../lib/party-format';
 import { flagSrc } from '../../lib/flags';
 import Icon from '../Icon.astro';
+import TermPicker from './TermPicker.astro';
 
 interface Props {
     showDelete?: boolean;
@@ -136,6 +137,11 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 <p class="cm-note" id="cmIntracom" hidden>
                     <Icon name="info" size={14} /><span>{t(L, 'cmod.intracom_hint')}</span>
                 </p>
+                {orgIsMx && (
+                    <p class="cm-note" id="cmCfdiExt" hidden data-tpl={t(L, 'cmod.cfdi_extranjero_hint')}>
+                        <Icon name="globe" size={14} /><span></span>
+                    </p>
+                )}
             </section>
 
             <section class="cm-sec" aria-labelledby="cmSecContacto">
@@ -198,11 +204,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 <div class="m-row">
                     <div class="m-field">
                         <label>{t(L, 'cmod.terminos_pago')}</label>
-                        <div class="m-chips" id="cmTerminos" role="group">
-                            <button type="button" class="chip active" data-v="contado">{t(L, 'cmod.term_contado')}</button>
-                            <button type="button" class="chip" data-v="net30">{t(L, 'cmod.term_net30')}</button>
-                            <button type="button" class="chip" data-v="net60">{t(L, 'cmod.term_net60')}</button>
-                        </div>
+                        <TermPicker id="cmTerminos" class="m-chips" ariaLabel={t(L, 'cmod.terminos_pago')} />
                     </div>
                     <div class="m-field">
                         <label for="cmLimite">{t(L, 'cmod.limite_credito')} <span class="m-optlbl">{t(L, 'cmod.opcional')}</span></label>
@@ -359,6 +361,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     import { flagSrc } from '../../lib/flags';
     import { createMoney } from '../../lib/money-client';
     import { iconSvg } from '../../lib/icons';
+    import { wireTermPicker } from '../../lib/term-picker-client';
 
     // CRUD de clientes contra /api/clientes, disparado por 'clientmodal:open' y
     // notificando 'clientmodal:saved'/'clientmodal:deleted' — la página anfitriona decide
@@ -382,7 +385,6 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const errorEl = document.getElementById('cmError')!;
         const btnDelete = document.getElementById('cmDelete') as HTMLButtonElement | null;
         const btnSave = document.getElementById('cmSave') as HTMLButtonElement;
-        const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTerminos .chip'));
         const tierChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTiers .chip'));
         const avatar = document.getElementById('cmAvatar')!;
         const avatarIcon = avatar.innerHTML;
@@ -395,11 +397,11 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const regionLabelEl = document.getElementById('cmRegionLabel')!;
         const cpLabel = document.getElementById('cmCpLabel')!;
         const fiscal = document.getElementById('cmFiscal');
+        const cfdiExt = document.getElementById('cmCfdiExt');
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
         const select = (id: string) => document.getElementById(id) as HTMLSelectElement | null;
 
         let editId: string | null = null;
-        let terminos = 'contado';
         // La lada sigue al país del cliente mientras la persona no la elija a mano:
         // un cliente en Madrid con el celular de su gerente en México es normal.
         let ccTouched = false;
@@ -500,13 +502,15 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             fillRegion(c, opts.keepRegion ? regionPending : '');
             if (!ccTouched) setCc(c);
             if (fiscal) fiscal.hidden = c !== 'MX';
+            if (cfdiExt) {
+                cfdiExt.hidden = c === 'MX';
+                const pais = select('cmCountry')?.selectedOptions[0]?.textContent?.trim() || c;
+                cfdiExt.querySelector('span')!.textContent = (cfdiExt.dataset.tpl || '').replace('{pais}', pais);
+            }
             syncTaxCheck();
         };
 
-        const setTerm = (v: string) => {
-            terminos = v;
-            chips.forEach((c) => { c.classList.toggle('active', c.dataset.v === v); c.setAttribute('aria-pressed', String(c.dataset.v === v)); });
-        };
+        const termPicker = wireTermPicker(document.getElementById('cmTerminos'));
 
         const updateDiscPreview = () => {
             const d = Math.min(100, Math.max(0, parseFloat(input('cmDescuento').value) || 0));
@@ -528,7 +532,6 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         };
 
         tierChips.forEach((c) => c.addEventListener('click', () => setNivel(c.dataset.v!, true)));
-        chips.forEach((c) => c.addEventListener('click', () => setTerm(c.dataset.v!)));
         input('cmDescuento').addEventListener('input', updateDiscPreview);
         input('cmEmpresa').addEventListener('input', syncAvatar);
         input('cmRfc').addEventListener('input', syncTaxCheck);
@@ -572,7 +575,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             setCc(phone.country);
             input('cmTelefono').value = phone.national;
             setNivel(data?.nivel ?? 'estandar', false);
-            setTerm(data?.terminos ?? 'contado');
+            termPicker.set(data?.terminos ?? 'contado');
             syncCountry({ keepRegion: true });
             syncAvatar();
             dlg.showModal();
@@ -611,7 +614,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 email: emailEl.value.trim(),
                 telefono: joinPhone(select('cmPhoneCc')!.value, input('cmTelefono').value),
                 rfc: input('cmRfc').value,
-                terminos,
+                terminos: termPicker.get(),
                 limite: input('cmLimite').value,
                 nivel: input('cmNivel').value,
                 descuento_pct: input('cmDescuento').value,
