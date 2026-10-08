@@ -160,7 +160,8 @@ con un `insert … on conflict` atómico antes de trabajar:
 | `recordatorios`, `cobranza`, `expirar-cotizaciones`, `anclas-tiempo`, `recurrencias`, `informes-programados`, `integraciones`, `billing-reconcile`, `webhooks-limpieza`, `limpieza-capturas` | diario, `vercel.json` | día | una vez al día; se recupera si Vercel no corrió o falló |
 | `intereses` (día 1), `comisiones-mensuales` (día 2) | mensual | mes | se recupera cualquier día posterior del mes |
 | `verifactu-submit` | diario + cada corrida de GitHub | hora | remisión lo más inmediata posible sin dos envíos simultáneos del mismo lote |
-| `workflows`, `webhooks`, `tareas` | diario + cada corrida de GitHub | ninguno | se repiten a propósito; su seguridad es por fila (compare-and-set, lease con `skip locked`, `tareas.recordada_el`) |
+| `workflows`, `webhooks` | diario + cada corrida de GitHub | ninguno | se repiten a propósito; su seguridad es por fila (compare-and-set, lease con `skip locked`) |
+| `tareas` | solo cada corrida de GitHub (no está en `vercel.json`) | ninguno | decide él mismo en qué zonas ya son las 8:00; dedup por tarea (`tareas.recordada_el`) y por persona y día (`org_members.tareas_avisadas_el`) |
 | `stripe-webhook-health` | diario | ninguno | solo lee; la alerta se acota a una cada 24 h |
 | `/api/health` | diario | ninguno | lo muestrea `status-probe.yml` cada hora; cord-crons no lo llama |
 | `comisiones-emitir` | manual (POST) | — | Ops lo invoca tras revisar el borrador; no está programado |

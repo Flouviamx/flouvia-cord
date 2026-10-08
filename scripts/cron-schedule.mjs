@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
  */
 export const EN_CADA_CORRIDA = new Map([
     ['/api/cron/workflows', 'horarios elegidos por el negocio y esperas condicionadas; avanza next_run_at con compare-and-set'],
-    ['/api/cron/tareas', 'decide él mismo en qué zonas ya son las 8:00; dedup en tareas.recordada_el'],
+    ['/api/cron/tareas', 'decide él mismo en qué zonas ya son las 8:00; dedup en tareas.recordada_el y org_members.tareas_avisadas_el'],
     ['/api/cron/webhooks', 'reintentos del outbox; reclama filas con lease y skip locked'],
     ['/api/cron/verifactu-submit', 'la remisión a la AEAT debe ser lo más inmediata posible; reclamo por hora'],
 ]);
