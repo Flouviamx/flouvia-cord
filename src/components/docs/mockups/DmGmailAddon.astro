@@ -1,0 +1,205 @@
+---
+// Mockup: el complemento de Cord para Gmail abierto junto a un correo del cliente.
+//
+// Calca de onGmailMessage() en integrations/gmail/Code.js: encabezado "Cord"
+// con el asunto, "Cotización en este hilo" (fila de folio · estado, importe con
+// divisa y cliente; "Última actividad"; Responder con ella / Reenviar por Cord /
+// Abrir), la persona ("Cliente en Cord"), "Sus cotizaciones" y el pie fijo con
+// "Cotizar con IA" y "Cotización en blanco". Gmail se dibuja sobrio y genérico:
+// lo que importa es el panel de Cord.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { dmMoney, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const L = lang;
+const CORD_ICON = '/favicon-192x192.png';
+const EMAIL = 'raul.mendoza@elzarco.mx';
+
+const DATA = {
+    es: {
+        asunto: `Re: Cotización ${DEMO.folio} — ${DEMO.org}`,
+        cuerpo: ['Hola, gracias por la cotización.', '¿Nos pueden respetar el precio del cemento si agregamos 40 bultos más al pedido? Si es así, la aprobamos hoy mismo.', 'Saludos,'],
+        firma: `${DEMO.contacto} · Compras, ${DEMO.cliente}`,
+        para: 'para mí',
+        hora: '10:58',
+        hilo: 'Cotización en este hilo', ultima: 'Última actividad', actividad: 'Abierta por el cliente desde el link · hace 2 h',
+        responder: 'Responder con ella', reenviar: 'Reenviar por Cord', abrir: 'Abrir',
+        cliente: 'Cliente en Cord', verCliente: 'Ver cliente en Cord', sus: 'Sus cotizaciones',
+        ia: 'Cotizar con IA', blanco: 'Cotización en blanco',
+        st: { viewed: 'Vista', paid: 'Pagada', invoiced: 'Facturada' },
+        caption: `El complemento de Cord en Gmail junto al correo de ${DEMO.contacto}: reconoce ${DEMO.folio} en el hilo (vista, ${dmMoney(DEMO.total, DEMO.currency, 'es')}, abierta por el cliente hace 2 horas) con los botones para responder con ella, reenviarla o abrirla; debajo, ${DEMO.cliente} como cliente en Cord con sus cotizaciones y los botones "Cotizar con IA" y "Cotización en blanco".`,
+    },
+    en: {
+        asunto: `Re: Quote ${DEMO.folio} — ${DEMO.org}`,
+        cuerpo: ['Hi, thanks for the quote.', 'Can you hold the cement price if we add 40 more bags to the order? If so, we will approve it today.', 'Best,'],
+        firma: `${DEMO.contacto} · Purchasing, ${DEMO.cliente}`,
+        para: 'to me',
+        hora: '10:58 AM',
+        hilo: 'Quote in this thread', ultima: 'Latest activity', actividad: 'Opened by the client from the link · 2 h ago',
+        responder: 'Reply with it', reenviar: 'Resend via Cord', abrir: 'Open',
+        cliente: 'Client in Cord', verCliente: 'View client in Cord', sus: 'Their quotes',
+        ia: 'Quote with AI', blanco: 'Blank quote',
+        st: { viewed: 'Viewed', paid: 'Paid', invoiced: 'Invoiced' },
+        caption: `The Cord add-on in Gmail next to ${DEMO.contacto}'s email: it recognizes ${DEMO.folio} in the thread (viewed, ${dmMoney(DEMO.total, DEMO.currency, 'en')}, opened by the client 2 hours ago) with buttons to reply with it, resend it or open it; below, ${DEMO.cliente} as a client in Cord with their quotes and the "Quote with AI" and "Blank quote" buttons.`,
+    },
+};
+const d = pick(DATA, L);
+const caption = Astro.props.caption ?? d.caption;
+// dinero() del complemento: Intl con la divisa y el código ISO al final.
+const dinero = (n: number) => dmMoney(n, 'MXN', L);
+const OTRAS = [
+    { folio: 'COT-0139', st: 'invoiced' as const, total: 84210 },
+    { folio: 'COT-0127', st: 'paid' as const, total: 132655.4 },
+];
+---
+<DocsMockup lang={L} variant="browser" url="mail.google.com/mail/u/0/#inbox/FMfcgzQXJWkdbRvG" height={640} caption={caption} class="dm-gm-figure">
+    <div class="dm-gm">
+        <div class="dm-gm-top">
+            <img class="dm-gm-glogo" src="https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_64dp.png" alt="" width="22" height="22" loading="lazy" decoding="async" />
+            <span class="dm-gm-search"><DmIcon name="search" /><span class="dm-gm-ph">{L === 'en' ? 'Search mail' : 'Buscar correo'}</span></span>
+        </div>
+        <div class="dm-gm-body">
+            <div class="dm-gm-mail">
+                <span class="dm-gm-subject">{d.asunto}</span>
+                <div class="dm-gm-from">
+                    <span class="dm-av dm-av-2">RM</span>
+                    <span class="dm-gm-from-text">
+                        <span><b>{DEMO.contacto}</b> <span class="dm-gm-faint">&lt;{EMAIL}&gt;</span></span>
+                        <span class="dm-gm-faint">{d.para}</span>
+                    </span>
+                    <span class="dm-gm-faint dm-gm-time">{d.hora}</span>
+                </div>
+                <div class="dm-gm-text">
+                    {d.cuerpo.map((l) => <span>{l}</span>)}
+                    <span class="dm-gm-firma">{d.firma}</span>
+                </div>
+                <div class="dm-gm-quoted"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="dm-gm-addon">
+                <div class="dm-gm-card">
+                    <div class="dm-gm-head">
+                        <img src={CORD_ICON} alt="" width="26" height="26" loading="lazy" decoding="async" />
+                        <span class="dm-gm-head-text"><span class="dm-gm-head-title">Cord</span><span class="dm-gm-head-sub">{d.asunto}</span></span>
+                    </div>
+                    <div class="dm-gm-scroll">
+                    <div class="dm-gm-sec">
+                        <span class="dm-gm-sec-title">{d.hilo}</span>
+                        <span class="dm-gm-dt">
+                            <span class="dm-gm-top-label">{DEMO.folio}  ·  {d.st.viewed}</span>
+                            <span class="dm-gm-dt-main">{dinero(DEMO.total)}</span>
+                            <span class="dm-gm-bottom-label">{DEMO.cliente}</span>
+                        </span>
+                        <span class="dm-gm-dt has-icon">
+                            <DmIcon name="clock" />
+                            <span class="dm-gm-dt-col">
+                                <span class="dm-gm-top-label">{d.ultima}</span>
+                                <span class="dm-gm-dt-text">{d.actividad}</span>
+                            </span>
+                        </span>
+                        <span class="dm-gm-btns"><span>{d.responder}</span><span>{d.reenviar}</span><span>{d.abrir}</span></span>
+                    </div>
+                    <div class="dm-gm-sec">
+                        <span class="dm-gm-dt has-icon">
+                            <DmIcon name="user" />
+                            <span class="dm-gm-dt-col">
+                                <span class="dm-gm-top-label">{d.cliente}</span>
+                                <span class="dm-gm-dt-main is-sm">{DEMO.cliente}</span>
+                                <span class="dm-gm-bottom-label">{EMAIL}</span>
+                            </span>
+                        </span>
+                        <span class="dm-gm-btns"><span>{d.verCliente}</span></span>
+                    </div>
+                    <div class="dm-gm-sec">
+                        <span class="dm-gm-sec-title">{d.sus}</span>
+                        {OTRAS.map((q) => (
+                            <span class="dm-gm-dt">
+                                <span class="dm-gm-top-label">{q.folio}  ·  {d.st[q.st]}</span>
+                                <span class="dm-gm-dt-main is-sm">{dinero(q.total)}</span>
+                                <span class="dm-gm-bottom-label">{DEMO.cliente}</span>
+                            </span>
+                        ))}
+                    </div>
+                    </div>
+                    <div class="dm-gm-foot">
+                        <span class="dm-gm-foot-btn is-primary">{d.ia}</span>
+                        <span class="dm-gm-foot-btn">{d.blanco}</span>
+                    </div>
+                </div>
+                <div class="dm-gm-rail">
+                    <img src="https://www.gstatic.com/images/branding/product/2x/calendar_2020q4_48dp.png" alt="" width="18" height="18" loading="lazy" decoding="async" />
+                    <img src="https://www.gstatic.com/images/branding/product/2x/keep_2020q4_48dp.png" alt="" width="18" height="18" loading="lazy" decoding="async" />
+                    <span class="dm-gm-rail-on"><img src={CORD_ICON} alt="" width="18" height="18" loading="lazy" decoding="async" /></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-gm-figure .dm-browser-page { background: #f6f8fc; }
+    .dm-gm { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
+    .dm-gm img { display: block; max-width: none; margin: 0; }
+    .dm-gm-top { display: flex; align-items: center; gap: 14px; height: 50px; padding: 0 14px; }
+    .dm-gm-search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 14px; border-radius: 999px; background: #e9eef6; color: #5f6368; font-size: 12px; }
+    .dm-gm-search .dm-ico { width: 14px; height: 14px; }
+    .dm-gm-body { height: 520px; display: flex; gap: 0; min-width: 0; padding: 0 0 0 10px; }
+    .dm-gm-scroll { flex: 1; min-height: 0; overflow: hidden; }
+    .dm-gm-mail { flex: 1; min-width: 0; padding: 18px 20px; background: #fff; border-radius: 14px 0 0 0; }
+    .dm-gm-subject { display: block; margin-bottom: 16px; font-size: 16px; font-weight: 400; color: #1f1f1f; }
+    .dm-gm-from { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .dm-gm-from .dm-av { width: 30px; height: 30px; font-size: 10.5px; }
+    .dm-gm-from-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 11.5px; color: #1f1f1f; }
+    .dm-gm-from-text b { font-weight: 600; }
+    .dm-gm-faint { color: #5f6368; font-size: 10.5px; }
+    .dm-gm-time { margin-left: auto; white-space: nowrap; }
+    .dm-gm-text { display: flex; flex-direction: column; gap: 8px; padding-left: 40px; font-size: 12px; line-height: 1.5; color: #1f1f1f; }
+    .dm-gm-firma { color: #5f6368; }
+    .dm-gm-quoted { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 0 40px; padding-left: 10px; border-left: 2px solid #e3e3e3; }
+    .dm-gm-quoted span { height: 7px; border-radius: 4px; background: #eef0f3; }
+    .dm-gm-quoted span:nth-child(1) { width: 70%; }
+    .dm-gm-quoted span:nth-child(2) { width: 82%; }
+    .dm-gm-quoted span:nth-child(3) { width: 46%; }
+
+    /* Panel lateral del complemento (tarjeta de CardService). */
+    .dm-gm-addon { display: flex; flex-shrink: 0; padding-right: var(--dm-bleed); }
+    .dm-gm-card { position: relative; width: 268px; display: flex; flex-direction: column; background: #fff; border-left: 1px solid #e3e6ea; }
+    .dm-gm-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #eceef1; }
+    .dm-gm-head img { width: 26px; height: 26px; border-radius: 6px; }
+    .dm-gm-head-text { display: flex; flex-direction: column; min-width: 0; }
+    .dm-gm-head-title { font-size: 13px; font-weight: 500; color: #1f1f1f; }
+    .dm-gm-head-sub { font-size: 10.5px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-gm-sec { display: flex; flex-direction: column; gap: 9px; padding: 12px 14px; border-bottom: 1px solid #eceef1; }
+    .dm-gm-sec-title { font-size: 11px; font-weight: 500; color: #5f6368; }
+    .dm-gm-dt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-gm-dt.has-icon { flex-direction: row; align-items: flex-start; gap: 10px; }
+    .dm-gm-dt.has-icon > .dm-ico { width: 15px; height: 15px; margin-top: 2px; color: #5f6368; }
+    .dm-gm-dt-col { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-gm-top-label, .dm-gm-bottom-label { font-size: 10px; color: #5f6368; white-space: pre; }
+    .dm-gm-dt-main { font-size: 13px; font-weight: 700; color: #1f1f1f; font-variant-numeric: tabular-nums; }
+    .dm-gm-dt-main.is-sm { font-size: 12px; }
+    .dm-gm-dt-text { font-size: 11.5px; line-height: 1.4; color: #1f1f1f; }
+    .dm-gm-btns { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+    .dm-gm-btns span { font-size: 11px; font-weight: 500; color: #0b57d0; padding: 3px 0; }
+    .dm-gm-foot { flex-shrink: 0; display: flex; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid #eceef1; background: #fff; }
+    .dm-gm-foot-btn { flex: 1; display: grid; place-items: center; height: 30px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 500; color: #0b57d0; white-space: nowrap; box-shadow: inset 0 0 0 1px #c7cbd1; }
+    .dm-gm-foot-btn.is-primary { color: #fff; background: #0a192f; box-shadow: none; }
+    .dm-gm-rail { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 40px; padding-top: 14px; background: #f6f8fc; }
+    .dm-gm-rail img { width: 18px; height: 18px; }
+    .dm-gm-rail-on { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #d3e3fd; }
+    .dm-gm-rail-on img { border-radius: 4px; }
+
+    @container dm (max-width: 600px) {
+        .dm-gm-mail { display: none; }
+        .dm-gm-body { padding-left: 0; }
+        .dm-gm-addon { flex: 1; }
+        .dm-gm-card { flex: 1; width: auto; border-left: 0; border-radius: 12px 0 0 0; }
+        .dm-gm-top { gap: 10px; }
+        .dm-gm-search { padding: 0 12px; }
+    }
+</style>

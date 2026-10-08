@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "claude/*": false
+    }
+  },
   "buildCommand": "node scripts/migrate-brand-profile.mjs && node scripts/migrate-catalogo-fiscal.mjs && node scripts/migrate-tareas.mjs && npm run build",
   "crons": [
     {

@@ -1723,109 +1723,14 @@ import { iconInner } from '../lib/icons';
     opacity: 0.8;
   }
 
-  /* Mockup Visual */
+  /* Sección dividida: texto + visual (mockups en src/components/docs/mockups) */
   .split {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
     gap: 64px;
     align-items: center;
   }
-  .mockup-card {
-    background: #ffffff;
-    border-radius: 40px; /* Squircles massivos */
-    box-shadow: 0 24px 64px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02);
-    display: flex;
-    overflow: hidden;
-    transform: scale(0.95);
-    transform-origin: center right;
-  }
-  .mockup-left {
-    flex: 1.5;
-    padding: 40px;
-    background: #ffffff;
-  }
-  .mockup-left h3 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 24px 0;
-    color: #050505;
-    letter-spacing: -0.02em;
-  }
-  .mockup-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .mockup-form label {
-    font-size: 12px;
-    color: #4f566b;
-    font-weight: 500;
-    margin-bottom: -4px;
-  }
-  .input-field {
-    background: #f5f5f7; /* Apple gray bg */
-    border: none;
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #c1c9d2;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: box-shadow 0.2s;
-  }
-  .input-field:hover {
-    box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.05);
-  }
-  .input-row {
-    display: flex;
-    gap: 12px;
-  }
-  .input-field.half { flex: 1; }
-  .input-field.full { width: 100%; }
-
-  .mockup-right {
-    flex: 1;
-    background: #fafafa;
-    padding: 40px 32px;
-    border-left: 1px solid rgba(0,0,0,0.03);
-  }
-  .mockup-steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-  .mockup-steps li {
-    font-size: 13px;
-    font-weight: 500;
-    color: #8792a2;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .mockup-steps li.active {
-    color: #050505;
-    font-weight: 600;
-  }
-  .step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #e3e3e8;
-    color: #697386;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .mockup-steps li.active .step-num {
-    background: #050505;
-    color: #ffffff;
-  }
+  .split > .section-visual { min-width: 0; }
 
   /* Use Cases Grid */
   .use-cases-grid {
@@ -2332,9 +2237,6 @@ import { iconInner } from '../lib/icons';
     .docs-sidebar {
       width: 220px;
     }
-    .mockup-card {
-      transform: scale(1);
-    }
     .resources-split {
       grid-template-columns: 1fr;
     }
@@ -2534,12 +2436,6 @@ import { iconInner } from '../lib/icons';
     .use-cases-grid {
       grid-template-columns: 1fr;
     }
-    .mockup-card {
-      flex-direction: column;
-    }
-    .mockup-left, .mockup-right {
-      flex: none;
-    }
     .product-grid {
       grid-template-columns: 1fr;
       gap: 24px;
@@ -2694,8 +2590,10 @@ import { iconInner } from '../lib/icons';
   }
 
   if (article) {
-    article.querySelectorAll<HTMLPreElement>('pre').forEach(decorateCode);
-    article.querySelectorAll<HTMLTableElement>('table').forEach(decorateTable);
+    // Los mockups (.dm-figure) son ilustración: su markup no se decora.
+    const inMockup = (el: Element) => !!el.closest('.dm-figure');
+    article.querySelectorAll<HTMLPreElement>('pre').forEach((pre) => { if (!inMockup(pre)) decorateCode(pre); });
+    article.querySelectorAll<HTMLTableElement>('table').forEach((table) => { if (!inMockup(table)) decorateTable(table); });
     syncScrollableTables();
     window.addEventListener('resize', () => window.requestAnimationFrame(syncScrollableTables), { passive: true });
 
@@ -2711,7 +2609,7 @@ import { iconInner } from '../lib/icons';
   // --- Copiar para IA: Markdown con estructura, no innerText aplanado --------
   const SKIP = [
     '.docs-copy-ai', '#docsCopyAiStatus', '.docs-footer', '.doc-metadata', '.docs-code-bar', '[data-copy-ignore]',
-    '.dn-crumbs', '.dn-pager', 'nav', 'script', 'style', 'template', 'button', 'svg', '.docs-sr-only', '[aria-hidden="true"]', '[role="tablist"]',
+    '.dn-crumbs', '.dn-pager', '.dm-figure', 'nav', 'script', 'style', 'template', 'button', 'svg', '.docs-sr-only', '[aria-hidden="true"]', '[role="tablist"]',
   ].join(',');
   const BLOCK_TAGS = new Set([
     'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'PRE', 'TABLE', 'BLOCKQUOTE', 'HR', 'DIV', 'SECTION',

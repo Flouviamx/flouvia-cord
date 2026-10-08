@@ -1,0 +1,94 @@
+---
+// Mockup: la sección "Tarifa de Cord Payments" de Ajustes › Cobros, cuando la
+// versión vigente de la tabla todavía no está aceptada.
+//
+// Calca de #feeAccept en src/pages/app/ajustes/cobros.astro: título, aviso
+// (set.cobros.tarifa_desc), las tres tarifas en baldosas (.fee-lines: Tarjeta,
+// SPEI, Igualas con tarjeta), la casilla de aceptación y "Activar tarifa
+// actual". Las cifras salen de FEE_SCHEDULES.MXN (src/lib/fees.ts): tarjeta
+// 4% + $3 + IVA; SPEI 1% + $7 + IVA con tope de margen de $500, o sea un máximo
+// de ($500 + $7) × 1.16 = $588.12. La app las formatea con describeFee() sin el
+// código de divisa; aquí se escriben con MXN (regla 21).
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import { FEE_SCHEDULES } from '../../../lib/fees';
+import { dmT, dmMoney, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const S = FEE_SCHEDULES.MXN;
+const CUR = 'MXN';
+const imp = lang === 'en' ? 'tax' : 'IVA';
+const linea = (m: 'card' | 'spei') => {
+    const r = S.cordRate[m]!;
+    return `${r.bps / 100}% + ${dmMoney(r.fixedCents / 100, CUR, lang)} + ${imp}`;
+};
+const capCents = (S.marginCapCents.spei ?? 0) + S.stripeCost.spei!.fixedCents;
+const maximo = dmMoney(Math.round(capCents * (1 + S.taxBps / 10_000)) / 100, CUR, lang);
+const tarjeta = linea('card');
+const spei = linea('spei');
+
+const DATA = {
+    es: {
+        caption: `Sección Tarifa de Cord Payments en Ajustes › Cobros, antes de aceptar la versión vigente: Tarjeta ${tarjeta}, SPEI ${spei} con un máximo de ${maximo} por cobro, Igualas con tarjeta ${tarjeta}, la casilla de aceptación marcada y el botón Activar tarifa actual.`,
+        maximo: `máximo ${maximo}`,
+    },
+    en: {
+        caption: `The Cord Payments fee section in Settings › Payments, before accepting the current version: Card ${tarjeta}, SPEI ${spei} with a maximum of ${maximo} per payment, Card retainers ${tarjeta}, the acceptance box checked, and the Activate current fee button.`,
+        maximo: `max ${maximo}`,
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={560} caption={caption} class="dm-fee-figure">
+    <div class="dm-fee">
+        <span class="dm-fee-h3">{dmT(lang, 'set.cobros.tarifa_titulo')}</span>
+        <span class="dm-fee-p">{dmT(lang, 'set.cobros.tarifa_desc')}</span>
+        <div class="dm-fee-lines">
+            <span class="dm-fee-line">
+                <span class="dm-fee-k"><DmIcon name="card" />{dmT(lang, 'set.cobros.tarifa_tarjeta')}</span>
+                <span class="dm-fee-v">{tarjeta}</span>
+            </span>
+            <span class="dm-fee-line">
+                <span class="dm-fee-k"><DmIcon name="bank" />SPEI</span>
+                <span class="dm-fee-v">{spei} ({d.maximo})</span>
+            </span>
+            <span class="dm-fee-line">
+                <span class="dm-fee-k"><DmIcon name="refresh" />{dmT(lang, 'set.cobros.tarifa_igualas')}</span>
+                <span class="dm-fee-v">{tarjeta}</span>
+            </span>
+        </div>
+        <span class="dm-fee-check">
+            <span class="dm-check is-on"><DmIcon name="check" stroke={3} /></span>
+            <span>{dmT(lang, 'set.cobros.tarifa_acepto_pre')} <span class="dm-fee-link">{dmT(lang, 'set.cobros.tarifa_acepto_link')}</span>{dmT(lang, 'set.cobros.tarifa_acepto_post')}</span>
+        </span>
+        <span class="dm-btn dm-btn-primary dm-fee-btn">{dmT(lang, 'set.cobros.tarifa_activar')}</span>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-fee { display: flex; flex-direction: column; gap: 10px; padding: 24px 26px 26px; }
+    .dm-fee-h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-fee-p { font-size: 12px; line-height: 1.55; color: var(--dm-muted); max-width: 62ch; margin-bottom: 4px; }
+    /* = .fee-lines: baldosas grises en dos columnas, sin borde (no es card-en-card). */
+    .dm-fee-lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+    .dm-fee-line { display: flex; flex-direction: column; gap: 4px; padding: 12px 13px; border-radius: 12px; background: var(--dm-canvas); min-width: 0; }
+    .dm-fee-k { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-fee-k .dm-ico { width: 13px; height: 13px; }
+    .dm-fee-v { font-size: 12.5px; font-weight: 600; color: var(--dm-text); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .dm-fee-check { display: flex; align-items: flex-start; gap: 9px; font-size: 11.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-fee-check .dm-check { margin-top: 2px; }
+    .dm-fee-link { color: var(--dm-navy); font-weight: 600; }
+    .dm-fee-btn { align-self: flex-start; height: 36px; padding: 0 18px; margin-top: 6px; font-size: 12px; }
+
+    @container dm (max-width: 520px) {
+        .dm-fee { padding: 18px 16px 20px; }
+        .dm-fee-lines { grid-template-columns: minmax(0, 1fr); }
+    }
+</style>

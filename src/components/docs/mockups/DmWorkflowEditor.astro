@@ -1,0 +1,571 @@
+---
+// Mockup: el editor de un workflow (/app/workflows/[id]) en cuatro momentos.
+//
+//   view="editor"  · lienzo con la "Escalera de seguimiento" y el panel
+//                    "Editar acción" abierto sobre "Crear una tarea".
+//   view="test"    · el mismo lienzo con la tarjeta "Prueba sin publicar".
+//   view="runs"    · pestaña Ejecuciones con una ejecución fallida abierta.
+//   view="trigger" · workflow nuevo con el buscador de disparadores abierto en
+//                    la categoría Facturas.
+//
+// Calca de src/components/app/WorkflowEditor.astro: barra (cerrar, nombre,
+// estado, "Cambios sin publicar", Probar / Guardar borrador / Publicar), pestañas
+// Editor / Ejecuciones, lienzo punteado con nodos, rombo y ramas, panel lateral,
+// tarjeta de prueba y buscador. Los textos salen del diccionario de la app
+// (wf.*) y del catálogo real (src/lib/workflows/catalog.ts); el flujo es la
+// plantilla escalera_seguimiento con un aviso a Slack en la rama "Si ocurre".
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import type { IconName } from '../../../lib/icons';
+import { findAction, findTrigger, TRIGGER_CATEGORIES, WORKFLOW_TRIGGERS, type ActionKey } from '../../../lib/workflows/catalog';
+import { WORKFLOW_TEMPLATES } from '../../../lib/workflows/templates';
+import { dmT, favicon, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    view?: 'editor' | 'test' | 'runs' | 'trigger';
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang, view = 'editor' } = Astro.props;
+const L = lang;
+
+// Íconos: mismo mapa que src/lib/workflows/icons.ts (categoría o acción → ícono).
+const ICON: Record<string, IconName> = {
+    quotes: 'quote', invoices: 'invoice', schedule: 'calendar', approvals: 'shield', payments: 'card', clients: 'user', products: 'products', tasks: 'check-square',
+    create_task: 'check-square', notify_team: 'bell', send_client_email: 'mail-forward', query: 'search-insight',
+    wait_until: 'history', wait: 'clock', condition: 'decision', plus: 'plus', trigger: 'bolt',
+};
+const BRAND_DOMAIN: Record<string, string> = { slack: 'slack.com', teams: 'teams.microsoft.com', hubspot: 'hubspot.com', whatsapp: 'whatsapp.com' };
+
+const tplEsc = WORKFLOW_TEMPLATES.find((x) => x.key === 'escalera_seguimiento')!;
+const trig = findTrigger('quote.sent')!;
+const catLabel = (key: string) => TRIGGER_CATEGORIES.find((c) => c.key === key)?.label[L] ?? '';
+
+// Texto de una condición "espera hasta", igual que stepSummary() del editor.
+const estadoLabel = (v: string) => trig.fields.find((f) => f.key === 'estado_actual')!.options!.find((o) => o.value === v)!.label[L];
+const estadoField = trig.fields.find((f) => f.key === 'estado_actual')!.label[L];
+const opEs = L === 'en' ? 'is' : 'es';
+const yMas = tpl(dmT(L, 'wf.y_mas'), { n: 1 });
+const waitTitle = (v: string) => `${estadoField} ${opEs} ${estadoLabel(v)} ${yMas}`;
+
+const def = tplEsc.definicion(L);
+const root = def.steps[0] as any;
+const taskTitle = String(root.then[0].params.titulo);
+const emailSubject = String(root.else[0].params.asunto);
+const slackMsg = L === 'en' ? '{{cliente}} opened {{folio}}: {{total}} {{moneda}}' : '{{cliente}} abrió {{folio}}: {{total}} {{moneda}}';
+
+type NodeData = { kind: 'action' | 'trigger'; icon?: IconName; brand?: string; eyebrow: string; title: string; sub?: string; selected?: boolean };
+const actionNode = (key: ActionKey, sub: string, selected = false): NodeData => {
+    const a = findAction(key)!;
+    return { kind: 'action', icon: ICON[key], brand: a.brand !== 'cord' ? a.brand : undefined, eyebrow: dmT(L, 'wf.accion'), title: a.label[L], sub, selected };
+};
+const isEditor = view === 'editor';
+const N_TASK = actionNode('create_task', taskTitle, isEditor);
+const N_SLACK = actionNode('slack_message', slackMsg);
+const N_EMAIL = actionNode('send_client_email', emailSubject);
+
+const W = {
+    nombre: tplEsc.nombre[L],
+    estado: view === 'trigger' ? 'draft' : 'active',
+    dirty: view === 'editor' || view === 'test',
+};
+if (view === 'trigger') W.nombre = L === 'en' ? 'Untitled workflow' : 'Workflow sin título';
+
+// Panel "Editar acción" sobre Crear una tarea.
+const TASK = findAction('create_task')!;
+const CHIPS = trig.fields.map((f) => ({ label: f.label[L], live: Boolean(f.live) }));
+
+// Prueba sin publicar: resultado de simulateWorkflow() con el último envío real.
+const fechaEvento = new Date('2026-10-06T10:42:00').toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+const fill = (s: string) => s.split('{{cliente}}').join(DEMO.cliente).split('{{folio}}').join(DEMO.folio).split('{{total}}').join('196,469.2').split('{{moneda}}').join(DEMO.currency);
+const TEST = [
+    { icon: 'wait_until', title: dmT(L, 'wf.espera_hasta'), r: 'si', label: dmT(L, 'wf.paso.si'), out: [] as string[] },
+    { icon: 'action', title: TASK.label[L], r: 'ok', label: dmT(L, 'wf.probar.haria'), out: [`${TASK.params[0].label[L]}: ${fill(taskTitle)}`] },
+    { icon: 'action', title: findAction('slack_message')!.label[L], r: 'ok', label: dmT(L, 'wf.probar.haria'), out: [`${findAction('slack_message')!.params[0].label[L]}: ${fill(slackMsg)}`] },
+];
+
+// Ejecuciones: lo que devuelve /api/workflows/[id]/runs, ya formateado.
+const when = (iso: string) => new Date(iso).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const RUNS = [
+    { s: 'queued', sum: `COT-0153 · Ferretería La Huerta`, at: '2026-10-07T17:02:00', open: false },
+    {
+        s: 'failed', sum: `COT-0151 · Constructora Apex`, at: '2026-10-07T16:20:00', open: true,
+        steps: [
+            { r: 'si', label: waitTitle('viewed') },
+            { r: 'ok', label: TASK.label[L] },
+            { r: 'error', label: findAction('slack_message')!.label[L], err: dmT(L, 'wf.err.slack_sin_conexion') },
+        ],
+        hint: tpl(dmT(L, 'wf.intento'), { n: 3 }),
+        retry: true,
+    },
+    {
+        s: 'waiting', sum: `COT-0150 · Grupo Ferretero Altamira`, at: '2026-10-07T09:15:00', open: true,
+        steps: [{ r: 'esperando', label: waitTitle('viewed') }],
+        hint: tpl(dmT(L, 'wf.continua'), { fecha: when('2026-10-09T09:15:00') }),
+        cancel: true,
+    },
+    { s: 'succeeded', sum: `${DEMO.folio} · ${DEMO.cliente}`, at: '2026-10-06T10:42:00', open: false },
+    { s: 'succeeded', sum: `COT-0147 · Aceros del Norte`, at: '2026-10-05T13:08:00', open: false },
+    { s: 'succeeded', sum: `COT-0146 · Constructora Apex`, at: '2026-10-03T18:31:00', open: false },
+];
+
+// Buscador de disparadores, filtrado por Facturas.
+const PICK_CAT = 'invoices';
+const PICK = WORKFLOW_TRIGGERS.filter((t) => t.category === PICK_CAT);
+
+const DATA = {
+    es: {
+        editor: `Editor de la "${tplEsc.nombre.es}": cuando se envía una cotización, espera hasta 2 días a que el cliente la abra. Si ocurre, crea una tarea y avisa en Slack; si se acaba el plazo, le escribe al cliente y vuelve a esperar hasta 5 días. Abierto, el panel "Editar acción" de la tarea con los datos del evento.`,
+        test: `Prueba sin publicar con el último envío real (${fechaEvento}): la espera se cumplió y el workflow habría creado la tarea "${fill(taskTitle)}" y avisado en Slack, sin enviar nada.`,
+        runs: `Pestaña Ejecuciones: una en cola, una fallida porque Slack no está conectado (con el detalle paso por paso y el botón Reintentar), una en espera que continúa el ${when('2026-10-09T09:15:00')} y varias completadas.`,
+        trigger: `Buscador de disparadores de un workflow nuevo, filtrado por Facturas: los ${PICK.length} eventos de facturas, de "${PICK[0].label.es}" a "${PICK[PICK.length - 1].label.es}".`,
+    },
+    en: {
+        editor: `Editor for "${tplEsc.nombre.en}": when a quote is sent, it waits up to 2 days for the client to open it. If that happens, it creates a task and posts to Slack; if the time runs out, it emails the client and waits again for up to 5 days. Open, the task's "Edit action" panel with the event data.`,
+        test: `Test without publishing using the latest real send (${fechaEvento}): the wait was met and the workflow would have created the task "${fill(taskTitle)}" and posted to Slack, without sending anything.`,
+        runs: `Runs tab: one queued, one failed because Slack is not connected (with the step-by-step detail and the Retry button), one waiting that resumes ${when('2026-10-09T09:15:00')}, and several completed.`,
+        trigger: `Trigger search for a new workflow, filtered by Invoices: the ${PICK.length} invoice events, from "${PICK[0].label.en}" to "${PICK[PICK.length - 1].label.en}".`,
+    },
+};
+const caption = Astro.props.caption ?? pick(DATA, L)[view];
+const HEIGHT = { editor: 640, test: 600, runs: 690, trigger: 690 }[view];
+---
+<DocsMockup lang={L} variant="app" chrome="none" height={HEIGHT} caption={caption} class={`dm-wfe-figure dm-wfe-v-${view}`}>
+    <div class="dm-wfe">
+        <div class="dm-wfe-bar">
+            <span class="dm-wfe-close"><DmIcon name="x" /></span>
+            <span class="dm-wfe-name">{W.nombre}</span>
+            <span class="dm-wfe-badge" data-estado={W.estado}>{dmT(L, `wf.estado.${W.estado}` as any)}</span>
+            {W.dirty && <span class="dm-wfe-dirty">{dmT(L, 'wf.cambios_sin_publicar')}</span>}
+            <span class="dm-wfe-actions">
+                <span class="dm-wfe-btn">{dmT(L, 'wf.probar')}</span>
+                <span class="dm-wfe-btn">{dmT(L, 'wf.guardar')}</span>
+                <span class="dm-wfe-btn dm-wfe-btn-primary">{W.estado === 'draft' ? dmT(L, 'wf.publicar') : dmT(L, 'wf.publicar_cambios')}</span>
+                <span class="dm-wfe-icon-btn"><DmIcon name="more" /></span>
+            </span>
+        </div>
+
+        <div class="dm-wfe-tabs">
+            <span class:list={['dm-wfe-tab', { 'is-on': view !== 'runs' }]}>{dmT(L, 'wf.tab_editor')}</span>
+            <span class:list={['dm-wfe-tab', { 'is-on': view === 'runs' }]}>{dmT(L, 'wf.tab_ejecuciones')}</span>
+        </div>
+
+        {view === 'runs' ? (
+            <div class="dm-wfe-runs">
+                <div class="dm-wfe-runs-bar"><span class="dm-wfe-btn">{dmT(L, 'wf.actualizar')}</span></div>
+                {RUNS.map((run) => (
+                    <div class="dm-wfe-run">
+                        <div class="dm-wfe-run-row">
+                            <span class="dm-wfe-pill" data-s={run.s}>{dmT(L, `wf.run.${run.s}` as any)}</span>
+                            <span class="dm-wfe-run-main">
+                                <span class="dm-wfe-run-title">{trig.label[L]}</span>
+                                <span class="dm-wfe-run-sum">{run.sum}</span>
+                            </span>
+                            <span class="dm-wfe-run-when">{when(run.at)}</span>
+                        </div>
+                        {run.open && (
+                            <div class="dm-wfe-run-detail">
+                                <div class="dm-wfe-run-steps">
+                                    {run.steps!.map((st) => (
+                                        <div class="dm-wfe-run-step">
+                                            <span class:list={['dm-wfe-res', `is-${st.r}`]}>{dmT(L, `wf.paso.${st.r}` as any)}</span>
+                                            <span class="dm-wfe-run-step-main">
+                                                <span>{st.label}</span>
+                                                {(st as any).err && <span class="dm-wfe-run-err">{(st as any).err}</span>}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <span class="dm-wfe-hint">{run.hint}</span>
+                                <span class="dm-wfe-run-actions">
+                                    {run.retry && <span class="dm-wfe-btn">{dmT(L, 'wf.reintentar')}</span>}
+                                    {run.cancel && <span class="dm-wfe-btn">{dmT(L, 'wf.cancelar')}</span>}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <div class="dm-wfe-stage">
+                <div class="dm-wfe-canvas">
+                    {view === 'trigger' ? (
+                        <div class="dm-wfe-flow">
+                            <div class="dm-wfe-node is-empty is-top">
+                                <span class="dm-wfe-node-icon"><DmIcon name="plus" /></span>
+                                <span class="dm-wfe-node-text">
+                                    <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.cuando')}</span>
+                                    <span class="dm-wfe-node-title">{dmT(L, 'wf.agregar_disparador')}</span>
+                                </span>
+                            </div>
+                            <div class="dm-wfe-link"></div>
+                            <div class="dm-wfe-node is-empty is-top">
+                                <span class="dm-wfe-node-icon"><DmIcon name="plus" /></span>
+                                <span class="dm-wfe-node-text">
+                                    <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.haz_esto')}</span>
+                                    <span class="dm-wfe-node-title">{dmT(L, 'wf.agregar_paso')}</span>
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div class="dm-wfe-flow">
+                            <div class="dm-wfe-node is-top">
+                                <span class="dm-wfe-node-icon"><DmIcon name={ICON[trig.category]} /></span>
+                                <span class="dm-wfe-node-text">
+                                    <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.cuando')}</span>
+                                    <span class="dm-wfe-node-title">{trig.label[L]}</span>
+                                    <span class="dm-wfe-node-sub">{catLabel(trig.category)}</span>
+                                </span>
+                            </div>
+                            <div class="dm-wfe-link"><span class="dm-wfe-plus"><DmIcon name="plus" stroke={2} /></span></div>
+                            <div class="dm-wfe-cond">
+                                <span class="dm-wfe-diamond"><DmIcon name="history" /></span>
+                                <div class="dm-wfe-node is-top dm-wfe-cond-summary">
+                                    <span class="dm-wfe-node-icon"><DmIcon name="history" /></span>
+                                    <span class="dm-wfe-node-text">
+                                        <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.espera_hasta')}</span>
+                                        <span class="dm-wfe-node-title">{waitTitle('viewed')}</span>
+                                        <span class="dm-wfe-node-sub">{tpl(dmT(L, 'wf.hasta_dias'), { n: 2 })}</span>
+                                    </span>
+                                    <span class="dm-wfe-node-menu"><DmIcon name="more" /></span>
+                                </div>
+                                <div class="dm-wfe-branches">
+                                    <div class="dm-wfe-branch">
+                                        <span class="dm-wfe-branch-label">{dmT(L, 'wf.si_ocurre')}</span>
+                                        {[N_TASK, N_SLACK].map((n, i) => (
+                                            <Fragment>
+                                                {i > 0 && <div class="dm-wfe-link"></div>}
+                                                <div class:list={['dm-wfe-node', { 'is-selected': n.selected }]}>
+                                                    <span class="dm-wfe-node-icon">{n.brand ? <img class="dm-logo" src={favicon(BRAND_DOMAIN[n.brand])} alt="" width="16" height="16" loading="lazy" decoding="async" /> : <DmIcon name={n.icon!} />}</span>
+                                                    <span class="dm-wfe-node-text">
+                                                        <span class="dm-wfe-node-eyebrow">{n.eyebrow}</span>
+                                                        <span class="dm-wfe-node-title">{n.title}</span>
+                                                        <span class="dm-wfe-node-sub">{n.sub}</span>
+                                                    </span>
+                                                    <span class="dm-wfe-node-menu"><DmIcon name="more" /></span>
+                                                </div>
+                                            </Fragment>
+                                        ))}
+                                        <div class="dm-wfe-link"></div>
+                                        <div class="dm-wfe-node is-empty">
+                                            <span class="dm-wfe-node-icon"><DmIcon name="plus" /></span>
+                                            <span class="dm-wfe-node-text">
+                                                <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.haz_esto')}</span>
+                                                <span class="dm-wfe-node-title">{dmT(L, 'wf.agregar_paso')}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dm-wfe-branch">
+                                        <span class="dm-wfe-branch-label">{dmT(L, 'wf.si_no_ocurre')}</span>
+                                        <div class="dm-wfe-node">
+                                            <span class="dm-wfe-node-icon"><DmIcon name={N_EMAIL.icon!} /></span>
+                                            <span class="dm-wfe-node-text">
+                                                <span class="dm-wfe-node-eyebrow">{N_EMAIL.eyebrow}</span>
+                                                <span class="dm-wfe-node-title">{N_EMAIL.title}</span>
+                                                <span class="dm-wfe-node-sub">{N_EMAIL.sub}</span>
+                                            </span>
+                                            <span class="dm-wfe-node-menu"><DmIcon name="more" /></span>
+                                        </div>
+                                        <div class="dm-wfe-link"></div>
+                                        <span class="dm-wfe-diamond"><DmIcon name="history" /></span>
+                                        <div class="dm-wfe-node dm-wfe-cond-summary">
+                                            <span class="dm-wfe-node-icon"><DmIcon name="history" /></span>
+                                            <span class="dm-wfe-node-text">
+                                                <span class="dm-wfe-node-eyebrow">{dmT(L, 'wf.espera_hasta')}</span>
+                                                <span class="dm-wfe-node-title">{waitTitle('approved')}</span>
+                                                <span class="dm-wfe-node-sub">{tpl(dmT(L, 'wf.hasta_dias'), { n: 5 })}</span>
+                                            </span>
+                                            <span class="dm-wfe-node-menu"><DmIcon name="more" /></span>
+                                        </div>
+                                        <div class="dm-wfe-link"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <span class="dm-wfe-zoom">
+                        <span><DmIcon name="plus" /></span>
+                        <span><DmIcon name="minus" /></span>
+                        <span><DmIcon name="expand" /></span>
+                    </span>
+                </div>
+
+                {view === 'editor' && (
+                    <Fragment>
+                        <div class="dm-wfe-sheet-scrim"></div>
+                        <div class="dm-wfe-panel">
+                            <div class="dm-wfe-panel-head">
+                                <span class="dm-wfe-panel-title">{dmT(L, 'wf.panel_accion')}</span>
+                                <span class="dm-wfe-icon-btn"><DmIcon name="x" /></span>
+                            </div>
+                            <div class="dm-wfe-panel-body">
+                                <div class="dm-wfe-summary">
+                                    <span class="dm-wfe-node-icon"><DmIcon name="check-square" /></span>
+                                    <span class="dm-wfe-node-text">
+                                        <span class="dm-wfe-node-title">{TASK.label[L]}</span>
+                                        <span class="dm-wfe-node-sub">{TASK.description[L]}</span>
+                                    </span>
+                                    <span class="dm-wfe-btn dm-wfe-btn-sm">{dmT(L, 'wf.cambiar')}</span>
+                                </div>
+                                <div class="dm-wfe-field">
+                                    <span class="dm-wfe-label">{TASK.params[0].label[L]}</span>
+                                    <span class="dm-wfe-input is-focus">{taskTitle}<i class="dm-wfe-caret"></i></span>
+                                </div>
+                                <div class="dm-wfe-field">
+                                    <span class="dm-wfe-label">{TASK.params[1].label[L]}</span>
+                                    <span class="dm-wfe-input">1</span>
+                                    <span class="dm-wfe-hint">{TASK.params[1].hint![L]}</span>
+                                </div>
+                                <div class="dm-wfe-field">
+                                    <span class="dm-wfe-label">{dmT(L, 'wf.variables')}</span>
+                                    <span class="dm-wfe-hint">{dmT(L, 'wf.variables_hint')}</span>
+                                    <span class="dm-wfe-chips">
+                                        {CHIPS.map((c) => <span class="dm-wfe-chip">{c.label}{c.live && <small> · {dmT(L, 'wf.en_vivo')}</small>}</span>)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="dm-wfe-panel-foot"><span class="dm-wfe-btn dm-wfe-btn-primary">{dmT(L, 'wf.listo')}</span></div>
+                        </div>
+                    </Fragment>
+                )}
+
+                {view === 'test' && (
+                    <div class="dm-wfe-test">
+                        <div class="dm-wfe-test-head">
+                            <span class="dm-wfe-panel-title">{dmT(L, 'wf.probar_titulo')}</span>
+                            <span class="dm-wfe-icon-btn"><DmIcon name="x" /></span>
+                        </div>
+                        <span class="dm-wfe-test-sub">{tpl(dmT(L, 'wf.probar_con_evento'), { fecha: fechaEvento }).replace('..', '.')}</span>
+                        <div class="dm-wfe-test-steps">
+                            {TEST.map((s) => (
+                                <div class="dm-wfe-test-step">
+                                    <span class="dm-wfe-node-icon"><DmIcon name={s.icon === 'action' ? 'bolt' : 'history'} /></span>
+                                    <span class="dm-wfe-node-text">
+                                        <span class="dm-wfe-test-title">{s.title}</span>
+                                        {s.out.map((o) => <span class="dm-wfe-test-out">{o}</span>)}
+                                    </span>
+                                    <span class="dm-wfe-test-res" data-r={s.r}>{s.label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+            </div>
+        )}
+    </div>
+    {view === 'trigger' && (
+        <div slot="overlay" class="dm-wfe-overlay">
+            <div class="dm-scrim"></div>
+            <div class="dm-wfe-picker">
+                <div class="dm-wfe-picker-top">
+                    <span class="dm-wfe-search"><DmIcon name="search" /><span>{dmT(L, 'wf.buscar_disparador')}</span></span>
+                    <span class="dm-wfe-chips">
+                        <span class="dm-wfe-chip">{dmT(L, 'wf.todos')}</span>
+                        {TRIGGER_CATEGORIES.map((c) => <span class:list={['dm-wfe-chip', { 'is-on': c.key === PICK_CAT }]}>{c.label[L]}</span>)}
+                    </span>
+                </div>
+                <div class="dm-wfe-picker-list">
+                    {PICK.map((t) => (
+                        <div class="dm-wfe-picker-item">
+                            <span class="dm-wfe-node-icon"><DmIcon name={ICON[t.category]} /></span>
+                            <span class="dm-wfe-picker-lbl">{t.label[L]}</span>
+                            <span class="dm-wfe-picker-cat">{catLabel(t.category)}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )}
+</DocsMockup>
+
+<style is:global>
+    /* El editor ocupa la ventana completa: sin topbar, con su propia barra. */
+    .dm-wfe-figure .dm-content { padding: 14px 14px 0; display: flex; flex-direction: column; }
+    .dm-wfe-figure .dm-main, .dm-wfe-figure .dm-app { align-self: stretch; }
+    .dm-wfe { display: flex; flex-direction: column; gap: 10px; padding-right: var(--dm-bleed); flex: 1 0 auto; }
+
+    .dm-wfe-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 8px; }
+    .dm-wfe-close, .dm-wfe-icon-btn { width: 28px; height: 28px; display: grid; place-items: center; flex-shrink: 0; border-radius: 8px; color: var(--dm-text); background: #fff; border: 1px solid var(--dm-border); }
+    .dm-wfe-close .dm-ico, .dm-wfe-icon-btn .dm-ico { width: 14px; height: 14px; }
+    .dm-wfe-name { font-size: 15px; font-weight: 700; letter-spacing: -0.03em; color: var(--dm-text); padding: 2px 4px; min-width: 0; }
+    .dm-wfe-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .dm-wfe-badge[data-estado="draft"] { color: #5b6472; background: rgba(91, 100, 114, 0.1); }
+    .dm-wfe-badge[data-estado="active"] { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .dm-wfe-dirty { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; }
+    .dm-wfe-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    .dm-wfe-btn { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--dm-text); background: #fff; border: 1px solid var(--dm-border); }
+    .dm-wfe-btn-primary { color: #fff; background: var(--dm-navy); border-color: var(--dm-navy); box-shadow: 0 6px 18px -8px rgba(10, 25, 47, 0.5); }
+    .dm-wfe-btn-sm { height: 24px; padding: 0 10px; font-size: 10.5px; flex-shrink: 0; }
+
+    .dm-wfe-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--dm-border); }
+    .dm-wfe-tab { font-size: 11.5px; font-weight: 600; color: var(--dm-muted); padding: 4px 0 8px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .dm-wfe-tab.is-on { color: var(--dm-text); border-bottom-color: var(--dm-navy); }
+
+    /* Lienzo punteado (= .wfe-canvas). */
+    .dm-wfe-stage { position: relative; flex: 1 0 auto; display: flex; }
+    .dm-wfe-canvas {
+        position: relative; flex: 1; min-height: 540px; border-radius: 16px 16px 0 0; overflow: hidden;
+        background-color: #f4f5f8; background-image: radial-gradient(rgba(10, 25, 47, 0.13) 1px, transparent 1px); background-size: 16px 16px;
+        box-shadow: inset 0 0 0 1px var(--dm-border);
+    }
+    .dm-wfe-flow { display: flex; flex-direction: column; align-items: center; padding: 22px 14px 0; }
+    .dm-wfe-v-editor .dm-wfe-flow { padding-right: 270px; }
+    .dm-wfe-v-test .dm-wfe-flow { padding-right: 330px; }
+
+    .dm-wfe-node {
+        position: relative; width: 100%; max-width: 236px; display: flex; align-items: center; gap: 9px;
+        padding: 9px 6px 9px 10px; border-radius: 12px; background: #fff; border: 1px solid var(--dm-border);
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 10px 24px -16px rgba(10, 25, 47, 0.22);
+    }
+    .dm-wfe-node.is-top { width: 236px; }
+    .dm-wfe-node.is-selected { border-color: var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08), 0 10px 24px -16px rgba(10, 25, 47, 0.22); }
+    .dm-wfe-node.is-empty { background: transparent; box-shadow: none; border: 1.5px dashed rgba(10, 25, 47, 0.18); }
+    .dm-wfe-node-icon { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; color: var(--dm-navy); background: #f5f5f7; box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-wfe-node.is-empty .dm-wfe-node-icon { background: #fff; }
+    .dm-wfe-node-icon .dm-ico { width: 14px; height: 14px; }
+    .dm-wfe-node-icon .dm-logo { width: 15px; height: 15px; border-radius: 3px; background: transparent; }
+    .dm-wfe-node-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .dm-wfe-node-eyebrow { font-size: 9.5px; color: var(--dm-muted); }
+    .dm-wfe-node-title { font-size: 11.5px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; color: var(--dm-text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .dm-wfe-node.is-empty .dm-wfe-node-title { color: var(--dm-navy); }
+    .dm-wfe-node-sub { font-size: 10px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfe-node-menu { width: 20px; height: 20px; flex-shrink: 0; display: grid; place-items: center; color: var(--dm-faint); }
+    .dm-wfe-node-menu .dm-ico { width: 13px; height: 13px; }
+
+    .dm-wfe-link { position: relative; height: 26px; width: 100%; display: flex; align-items: center; justify-content: center; }
+    .dm-wfe-link::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1.5px; transform: translateX(-50%); background: rgba(10, 25, 47, 0.18); }
+    .dm-wfe-plus { position: relative; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: var(--dm-navy); background: #fff; border: 1.5px solid rgba(10, 25, 47, 0.18); }
+    .dm-wfe-plus .dm-ico { width: 10px; height: 10px; }
+
+    .dm-wfe-cond { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .dm-wfe-diamond { position: relative; width: 40px; height: 40px; display: grid; place-items: center; flex-shrink: 0; }
+    .dm-wfe-diamond::before { content: ''; position: absolute; inset: 6px; border-radius: 8px; transform: rotate(45deg); background: #fff; border: 1px solid var(--dm-border); box-shadow: 0 6px 16px -10px rgba(10, 25, 47, 0.3); }
+    .dm-wfe-diamond .dm-ico { position: relative; width: 15px; height: 15px; color: var(--dm-navy); }
+    .dm-wfe-cond-summary { margin-top: 10px; }
+    .dm-wfe-cond-summary::before { content: ''; position: absolute; left: 50%; top: -11px; width: 1.5px; height: 10px; background: rgba(10, 25, 47, 0.18); }
+    .dm-wfe-branches { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; width: 100%; max-width: 400px; margin-top: 14px; padding-top: 22px; }
+    .dm-wfe-branches::before { content: ''; position: absolute; top: 0; left: calc(25% - 4px); right: calc(25% - 4px); height: 22px; border: 1.5px solid rgba(10, 25, 47, 0.18); border-bottom: 0; border-radius: 12px 12px 0 0; }
+    .dm-wfe-branches::after { content: ''; position: absolute; top: -14px; left: 50%; width: 1.5px; height: 14px; background: rgba(10, 25, 47, 0.18); }
+    .dm-wfe-branch { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .dm-wfe-branch-label { font-size: 10px; font-weight: 600; color: var(--dm-muted); padding: 3px 10px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--dm-border); margin-bottom: 10px; white-space: nowrap; }
+
+    .dm-wfe-zoom { position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px var(--dm-border), 0 10px 24px -16px rgba(10, 25, 47, 0.3); }
+    .dm-wfe-zoom span { width: 28px; height: 28px; display: grid; place-items: center; color: var(--dm-muted); }
+    .dm-wfe-zoom span + span { border-top: 1px solid var(--dm-border); }
+    .dm-wfe-zoom .dm-ico { width: 13px; height: 13px; }
+
+    /* Panel lateral (= .wfe-panel). */
+    .dm-wfe-panel {
+        position: absolute; top: 10px; right: 10px; bottom: 0; width: 252px; z-index: 3; display: flex; flex-direction: column;
+        background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 16px 40px -8px rgba(10, 25, 47, 0.22), 0 0 0 1px rgba(10, 25, 47, 0.05); overflow: hidden;
+    }
+    .dm-wfe-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px 10px; border-bottom: 1px solid var(--dm-border); }
+    .dm-wfe-panel-title { font-size: 13px; font-weight: 700; letter-spacing: -0.02em; color: var(--dm-text); }
+    .dm-wfe-panel-body { flex: 1; min-height: 0; overflow: hidden; padding: 12px 14px; display: flex; flex-direction: column; gap: 13px; }
+    .dm-wfe-panel-foot { display: none; }
+    .dm-wfe-summary { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 11px; box-shadow: inset 0 0 0 1px var(--dm-border); }
+    .dm-wfe-summary .dm-wfe-node-sub { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.35; }
+    .dm-wfe-field { display: flex; flex-direction: column; gap: 5px; }
+    .dm-wfe-label { font-size: 10.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-wfe-input { display: block; font-size: 11px; line-height: 1.4; color: var(--dm-text); background: #f5f5f7; border: 1px solid transparent; border-radius: 9px; padding: 7px 9px; }
+    .dm-wfe-input.is-focus { background: #fff; border-color: rgba(10, 25, 47, 0.15); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+    .dm-wfe-caret { display: inline-block; width: 1px; height: 12px; margin: 0 0 -2px 1px; background: var(--dm-navy); }
+    .dm-wfe-hint { font-size: 10px; line-height: 1.45; color: var(--dm-muted); }
+    .dm-wfe-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dm-wfe-chip { font-size: 10px; font-weight: 600; line-height: 1.35; color: var(--dm-muted); background: #fff; border: 1px solid var(--dm-border); padding: 3px 8px; border-radius: 999px; }
+    .dm-wfe-chip small { font-weight: 500; opacity: 0.75; font-size: inherit; }
+    .dm-wfe-chip.is-on { background: var(--dm-navy); border-color: var(--dm-navy); color: #fff; }
+    .dm-wfe-sheet-scrim { display: none; }
+
+    /* Prueba sin publicar (= .wfe-test, tarjeta flotante abajo a la derecha). */
+    .dm-wfe-test {
+        position: absolute; right: 12px; top: 70px; width: 318px; z-index: 3; padding: 14px 14px 14px;
+        background: #fff; border: 1px solid var(--dm-border); border-radius: 18px; box-shadow: var(--dm-shadow-float);
+    }
+    .dm-wfe-test-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .dm-wfe-test-sub { display: block; margin-bottom: 11px; font-size: 10.5px; line-height: 1.5; color: var(--dm-muted); }
+    .dm-wfe-test-steps { display: flex; flex-direction: column; gap: 7px; }
+    .dm-wfe-test-step { display: flex; align-items: flex-start; gap: 9px; padding: 9px 10px; border-radius: 12px; background: #f5f5f7; }
+    .dm-wfe-test-step .dm-wfe-node-icon { width: 24px; height: 24px; border-radius: 7px; background: #fff; }
+    .dm-wfe-test-step .dm-wfe-node-icon .dm-ico { width: 12px; height: 12px; }
+    .dm-wfe-test-title { font-size: 11.5px; font-weight: 600; color: var(--dm-text); line-height: 24px; }
+    .dm-wfe-test-out { font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); margin-top: -2px; }
+    .dm-wfe-test-res { flex-shrink: 0; margin-left: auto; padding-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dm-muted); white-space: nowrap; }
+    .dm-wfe-test-res[data-r="si"], .dm-wfe-test-res[data-r="ok"] { color: #059669; }
+
+    /* Buscador de disparadores (= .wfe-picker). */
+    .dm-wfe-picker {
+        position: absolute; z-index: 3; top: 58px; left: calc(50% - var(--dm-bleed) / 2); width: min(520px, calc(100% - var(--dm-bleed) - 28px)); transform: translateX(-50%);
+        display: flex; flex-direction: column; background: #fff; border-radius: 18px; box-shadow: 0 16px 40px -8px rgba(10, 25, 47, 0.3); overflow: hidden;
+    }
+    .dm-wfe-picker-top { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; border-bottom: 1px solid var(--dm-border); }
+    .dm-wfe-search { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #a3abb8; }
+    .dm-wfe-search .dm-ico { width: 15px; height: 15px; color: var(--dm-muted); }
+    .dm-wfe-search span { border-left: 1.5px solid var(--dm-navy); padding-left: 2px; }
+    .dm-wfe-picker-list { padding: 6px 10px 10px; }
+    .dm-wfe-picker-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+    .dm-wfe-picker-item:first-child { background: #f5f5f7; }
+    .dm-wfe-picker-item .dm-wfe-node-icon { width: 26px; height: 26px; }
+    .dm-wfe-picker-item .dm-wfe-node-icon .dm-ico { width: 13px; height: 13px; }
+    .dm-wfe-picker-lbl { flex: 1; min-width: 0; font-size: 12px; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfe-picker-cat { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; }
+
+    /* Ejecuciones (= .wfe-runs). */
+    .dm-wfe-runs { display: flex; flex-direction: column; padding-bottom: 20px; }
+    .dm-wfe-runs-bar { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+    .dm-wfe-run { border-bottom: 1px solid var(--dm-border); }
+    .dm-wfe-run-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 4px; }
+    .dm-wfe-pill { justify-self: start; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .dm-wfe-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .dm-wfe-pill[data-s="succeeded"] { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .dm-wfe-pill[data-s="failed"] { color: #b91c1c; background: rgba(239, 68, 68, 0.1); }
+    .dm-wfe-pill[data-s="waiting"], .dm-wfe-pill[data-s="queued"] { color: #1d4ed8; background: rgba(59, 130, 246, 0.1); }
+    .dm-wfe-run-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-wfe-run-title { font-size: 12px; font-weight: 600; color: var(--dm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfe-run-sum, .dm-wfe-run-when { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-wfe-run-detail { display: flex; flex-direction: column; gap: 8px; padding: 0 4px 12px 108px; }
+    .dm-wfe-run-steps { display: flex; flex-direction: column; gap: 5px; }
+    .dm-wfe-run-step { display: flex; align-items: baseline; gap: 10px; font-size: 11px; color: var(--dm-text); }
+    .dm-wfe-res { flex-shrink: 0; min-width: 72px; font-size: 10px; font-weight: 700; color: var(--dm-muted); }
+    .dm-wfe-res.is-ok, .dm-wfe-res.is-si { color: #047857; }
+    .dm-wfe-res.is-error { color: var(--dm-danger-ink); }
+    .dm-wfe-run-step-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .dm-wfe-run-err { font-size: 10.5px; color: var(--dm-muted); }
+    .dm-wfe-run-actions { display: flex; gap: 6px; }
+    .dm-wfe-run-actions:empty { display: none; }
+
+    /* ── Angosto: lo mismo que la app en móvil (ramas apiladas, panel como hoja). ── */
+    @container dm (max-width: 560px) {
+        .dm-wfe-figure .dm-stage { height: 660px; }
+        .dm-wfe-figure.dm-wfe-v-runs .dm-stage { height: 620px; }
+        .dm-wfe-figure .dm-content { padding: 10px 10px 0; }
+        .dm-wfe-name { font-size: 13.5px; flex: 1 1 100%; order: 1; padding: 0; }
+        .dm-wfe-close { order: 0; }
+        .dm-wfe-badge { order: 2; }
+        .dm-wfe-dirty { order: 3; }
+        .dm-wfe-actions { order: 4; width: 100%; margin-left: 0; }
+        .dm-wfe-actions .dm-wfe-btn { flex: 1; padding: 0 6px; font-size: 10.5px; }
+        .dm-wfe-flow, .dm-wfe-v-editor .dm-wfe-flow, .dm-wfe-v-test .dm-wfe-flow { padding: 16px 10px 0; }
+        .dm-wfe-node.is-top { width: 100%; }
+        .dm-wfe-node { max-width: none; }
+        .dm-wfe-branches { grid-template-columns: minmax(0, 1fr); row-gap: 14px; margin-top: 6px; padding-top: 10px; max-width: none; }
+        .dm-wfe-branches::before, .dm-wfe-branches::after { display: none; }
+        .dm-wfe-zoom { display: none; }
+        .dm-wfe-stage { flex: none; }
+        .dm-wfe-canvas { flex: 1; height: 500px; min-height: 0; }
+        .dm-wfe-v-trigger .dm-wfe-canvas { height: 560px; }
+        .dm-wfe-panel, .dm-wfe-test { top: auto; left: 0; right: 0; bottom: 0; width: auto; border-radius: 18px 18px 0 0; }
+        .dm-wfe-panel { height: 66%; }
+        .dm-wfe-sheet-scrim { display: block; position: absolute; inset: 0; z-index: 2; background: rgba(10, 25, 47, 0.28); border-radius: 16px 16px 0 0; }
+        .dm-wfe-test { padding-bottom: 18px; }
+        .dm-wfe-picker { top: 14px; width: calc(100% - var(--dm-bleed) - 16px); }
+        .dm-wfe-picker-cat { display: none; }
+        .dm-wfe-run-row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }
+        .dm-wfe-run-row .dm-wfe-pill { grid-column: 2; grid-row: 1; }
+        .dm-wfe-run-main { grid-column: 1; grid-row: 1 / span 2; }
+        .dm-wfe-run-when { grid-column: 2; grid-row: 2; text-align: right; }
+        .dm-wfe-run-detail { padding-left: 4px; }
+    }
+</style>

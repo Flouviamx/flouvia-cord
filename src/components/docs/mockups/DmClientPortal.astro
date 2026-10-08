@@ -1,0 +1,255 @@
+---
+// Mockup: el portal del cliente (/q/[token]) en escritorio, tal como lo abre
+// Raúl Mendoza. Calca de src/components/q/QuoteCard.astro en su orden real:
+// aviso superior con el color de la marca, encabezado (logo/inicial, RFC,
+// folio), Para / Válida hasta / Términos, bienvenida, total protagonista,
+// partidas con la casilla de aprobación parcial (una desmarcada, tachada y
+// atenuada; el precio de lista tachado sobre el negociado), subtotal + IVA,
+// la nota "Aprobarás 4 de 5 líneas", Aprobar / Descargar PDF / Rechazar y la
+// conversación con su caja de mensaje, el monto propuesto y Contraoferta.
+//
+// Las partidas suman exactamente DEMO.total con IVA 16 %. La burbuja de
+// contraoferta lleva el rótulo "Propuesta: <monto>" que arma /api/q/[token].
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const CUR = 'MXN';
+const IVA = 0.16;
+const nf = (n: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX').format(n);
+const m = (n: number) => dmMoney(n, CUR, lang).replace(` ${CUR}`, '');
+
+const DATA = {
+    es: {
+        banner: 'Precios sostenidos hasta el 31 de octubre · entrega sin costo en obra dentro del Valle de Toluca',
+        vigencia: '31 oct 2026',
+        terminos: '50% anticipo, saldo contra entrega',
+        welcome: 'Raúl, te comparto la propuesta para la segunda etapa de la bodega de Lerma. Puedes aprobar solo las partidas que necesites ahora y dejar el resto para después.',
+        items: [
+            { d: 'Cemento gris CPC 30R, bulto 50 kg', q: 220, u: 'bulto', lista: 249, p: 238 },
+            { d: 'Varilla corrugada 3/8" × 12 m', q: 180, u: 'pza', lista: 186.5, p: 186.5 },
+            { d: 'Block hueco de concreto 15×20×40', q: 3000, u: 'pza', lista: 14.2, p: 14.2 },
+            { d: 'Malla electrosoldada 6-6/10-10', q: 80, u: 'rollo', lista: 452, p: 452, off: true },
+            { d: 'Flete a obra — Lerma', q: 1, u: 'servicio', lista: 4680, p: 4680 },
+        ],
+        msgs: [
+            { mine: false, t: 'Raúl, la malla te la puedo surtir hasta la próxima semana. Si la quitas de esta aprobación, te la cotizo aparte.', when: 'hoy, 10:42' },
+            { mine: true, t: 'Perfecto, la dejo fuera. ¿Me sostienes el precio del cemento si aprobamos hoy?', when: 'hoy, 11:05' },
+            { mine: true, counter: true, t: `Propuesta: ${dmMoney(150000, CUR, 'es')} — por las 4 partidas, con anticipo hoy`, when: 'hoy, 11:06' },
+        ],
+        lineas: (n: number, t: number) => `${n} de ${t} líneas`,
+    },
+    en: {
+        banner: 'Prices held until October 31 · free delivery to job sites in the Toluca Valley',
+        vigencia: 'Oct 31, 2026',
+        terminos: '50% deposit, balance on delivery',
+        welcome: 'Raúl, here is the proposal for the second phase of the Lerma warehouse. You can approve only the items you need now and leave the rest for later.',
+        items: [
+            { d: 'Gray cement CPC 30R, 50 kg bag', q: 220, u: 'bag', lista: 249, p: 238 },
+            { d: 'Corrugated rebar 3/8" × 12 m', q: 180, u: 'pc', lista: 186.5, p: 186.5 },
+            { d: 'Hollow concrete block 15×20×40', q: 3000, u: 'pc', lista: 14.2, p: 14.2 },
+            { d: 'Welded wire mesh 6-6/10-10', q: 80, u: 'roll', lista: 452, p: 452, off: true },
+            { d: 'Job-site delivery — Lerma', q: 1, u: 'service', lista: 4680, p: 4680 },
+        ],
+        msgs: [
+            { mine: false, t: 'Raúl, I can only supply the mesh next week. If you leave it out of this approval, I’ll quote it separately.', when: 'today, 10:42' },
+            { mine: true, t: 'Great, I’ll leave it out. Can you hold the cement price if we approve today?', when: 'today, 11:05' },
+            { mine: true, counter: true, t: `Proposal: ${dmMoney(150000, CUR, 'en')} — for the 4 items, with the deposit today`, when: 'today, 11:06' },
+        ],
+        lineas: (n: number, t: number) => `${n} of ${t} lines`,
+    },
+};
+const d = pick(DATA, lang);
+const subtotal = d.items.reduce((s, it) => s + it.q * it.p, 0);
+const total = Math.round(subtotal * (1 + IVA) * 100) / 100;
+const sel = d.items.filter((it) => !it.off);
+const parcial = Math.round(sel.reduce((s, it) => s + it.q * it.p, 0) * (1 + IVA) * 100) / 100;
+const caption = Astro.props.caption ?? (lang === 'en'
+    ? `The client portal for ${DEMO.folio} on desktop: the top announcement in the brand color, the welcome message, the ${dmMoney(total, CUR, 'en')} total, line items with partial-approval checkboxes (the mesh is unchecked, so the approval covers 4 of 5 lines for ${dmMoney(parcial, CUR, 'en')}), and the conversation with a counteroffer and the Counteroffer button.`
+    : `El portal del cliente de ${DEMO.folio} en escritorio: el aviso superior con el color de la marca, la bienvenida, el total de ${dmMoney(total, CUR, 'es')}, las partidas con sus casillas de aprobación parcial (la malla desmarcada, así que se aprueban 4 de 5 líneas por ${dmMoney(parcial, CUR, 'es')}) y la conversación con una contraoferta y el botón Contraoferta.`);
+---
+<DocsMockup lang={lang} variant="browser" url="cordhq.app/q/k3Vn8RwQ" brand={DEMO.brand} height={1290} caption={caption} class="dm-portal-figure">
+    <div class="qpm">
+        <div class="qpm-card">
+            <div class="qpm-banner">{d.banner}</div>
+
+            <div class="qpm-header">
+                <span class="qpm-brand">
+                    <span class="qpm-initial">{DEMO.orgInitial}</span>
+                    <span class="qpm-brand-text"><span class="qpm-company">{DEMO.org}</span><span class="qpm-rfc">RFC MVA180412K29</span></span>
+                </span>
+                <span class="qpm-folio"><span class="qpm-eyebrow">{dmT(lang, 'q.folio_eyebrow')}</span><span class="qpm-folio-num">{DEMO.folio}</span></span>
+            </div>
+            <div class="qpm-rule"></div>
+
+            <div class="qpm-meta">
+                <span class="qpm-meta-col"><span class="qpm-eyebrow">{dmT(lang, 'q.meta_para')}</span><span class="qpm-meta-val">{DEMO.cliente}</span></span>
+                <span class="qpm-meta-col"><span class="qpm-eyebrow">{dmT(lang, 'q.meta_vigencia')}</span><span class="qpm-meta-val">{d.vigencia}</span><span class="qpm-chip">{tpl(dmT(lang, 'q.vig_en_dias'), { n: 23, s: 's' })}</span></span>
+                <span class="qpm-meta-col dm-hide-narrow"><span class="qpm-eyebrow">{dmT(lang, 'q.meta_terminos')}</span><span class="qpm-meta-val">{d.terminos}</span></span>
+            </div>
+
+            <div class="qpm-welcome">{d.welcome}</div>
+
+            <div class="qpm-total">
+                <span class="qpm-eyebrow">{dmT(lang, 'q.total_eyebrow')}</span>
+                <span class="qpm-total-amt">{m(total)}</span>
+                <span class="qpm-total-note">{CUR} · {dmT(lang, 'q.total_note')}</span>
+            </div>
+
+            <div class="qpm-items">
+                <div class="qpm-ih">
+                    <span>{dmT(lang, 'q.th_concepto')}</span>
+                    <span class="c">{dmT(lang, 'q.th_cant')}</span>
+                    <span class="r dm-hide-narrow">{dmT(lang, 'q.th_unit')}</span>
+                    <span class="r">{dmT(lang, 'q.th_importe')}</span>
+                </div>
+                {d.items.map((it) => (
+                    <div class:list={['qpm-row', { 'is-off': it.off }]}>
+                        <span class="qpm-name">
+                            <span class:list={['qpm-pick', { 'is-on': !it.off }]}></span>
+                            <span class="qpm-desc">{it.d}</span>
+                            <span class="qpm-chat"><DmIcon name="chat" stroke={2.25} /></span>
+                        </span>
+                        <span class="c qpm-qty">{nf(it.q)} {it.u}</span>
+                        <span class="r qpm-price dm-hide-narrow">
+                            {it.p < it.lista && <s><DmMoney amount={it.lista} currency={CUR} lang={lang} /></s>}
+                            <DmMoney amount={it.p} currency={CUR} lang={lang} />
+                        </span>
+                        <span class="r qpm-imp"><DmMoney amount={it.q * it.p} currency={CUR} lang={lang} /></span>
+                    </div>
+                ))}
+                <div class="qpm-subs">
+                    <span class="qpm-sub"><span>{dmT(lang, 'q.subtotal')}</span><DmMoney amount={subtotal} currency={CUR} lang={lang} /></span>
+                    <span class="qpm-sub"><span>IVA 16%</span><DmMoney amount={subtotal * IVA} currency={CUR} lang={lang} /></span>
+                    <span class="qpm-sub qpm-grand"><span>{dmT(lang, 'q.total')}</span><DmMoney amount={total} currency={CUR} lang={lang} /></span>
+                </div>
+            </div>
+
+            <div class="qpm-actions">
+                <div class="qpm-partial">{dmT(lang, 'q.partial_aprobaras')} <b>{d.lineas(sel.length, d.items.length)}</b> · {dmT(lang, 'q.partial_total')} <b>{dmMoney(parcial, CUR, lang)}</b></div>
+                <span class="qpm-cta"><DmIcon name="check" stroke={2.5} />{dmT(lang, 'q.aprobar_cotizacion')}</span>
+                <span class="qpm-secondary">
+                    <span class="qpm-ghost"><DmIcon name="document" />{dmT(lang, 'q.descargar_pdf')}</span>
+                    <span class="qpm-ghost qpm-reject">{dmT(lang, 'q.rechazar')}</span>
+                </span>
+            </div>
+
+            <div class="qpm-chatbox">
+                <span class="qpm-eyebrow">{dmT(lang, 'q.conversacion')}</span>
+                <div class="qpm-thread">
+                    {d.msgs.map((x) => (
+                        <div class:list={['qpm-msg', x.mine ? 'mine' : 'theirs', { counter: x.counter }]}>
+                            <span>{x.t}</span>
+                            <span class="qpm-msg-meta"><b>{x.mine ? dmT(lang, 'q.chat_tu') : DEMO.org}</b> {x.when}</span>
+                        </div>
+                    ))}
+                </div>
+                <div class="qpm-compose">
+                    <div class="qpm-compose-row"><span class="qpm-ph">{dmT(lang, 'q.escribe_mensaje')}</span><span class="qpm-send"><DmIcon name="send" stroke={2.25} /></span></div>
+                    <div class="qpm-compose-extras">
+                        <span class="qpm-prop">{dmT(lang, 'q.propuesta_placeholder')}</span>
+                        <span class="qpm-counter"><DmIcon name="trending-up" stroke={2.5} />{dmT(lang, 'q.contraoferta')}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-portal-figure .dm-browser-page { background: #f3f2ef; }
+    .qpm { padding: 20px 18px 30px; display: flex; justify-content: center; }
+    .qpm-card {
+        width: 100%; max-width: 560px;
+        display: flex; flex-direction: column; gap: 14px;
+        padding: 20px 24px 24px; border-radius: 22px; background: #fff;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        color: #111;
+    }
+    .qpm-banner { margin: -8px -12px 0; padding: 8px 12px; border-radius: 14px 14px 0 0; background: var(--dm-brand); color: #fff; font-size: 11px; font-weight: 600; text-align: center; line-height: 1.4; }
+    .qpm-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .qpm-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .qpm-initial { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 800; }
+    .qpm-brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .qpm-company { font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em; }
+    .qpm-rfc { font-size: 9.5px; color: #6b7280; font-weight: 500; }
+    .qpm-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .qpm-folio-num { font-size: 12.5px; font-weight: 800; letter-spacing: -0.02em; }
+    .qpm-eyebrow { font-size: 7.5px; font-weight: 800; letter-spacing: 0.2em; color: #6b7280; text-transform: uppercase; }
+    .qpm-rule { height: 1px; margin: -6px 0; background: linear-gradient(to right, transparent, rgba(10, 25, 47, 0.07) 15%, rgba(10, 25, 47, 0.07) 85%, transparent); }
+    .qpm-meta { display: flex; gap: 24px; flex-wrap: wrap; }
+    .qpm-meta-col { display: flex; flex-direction: column; gap: 3px; }
+    .qpm-meta-val { font-size: 12px; font-weight: 600; }
+    .qpm-chip { align-self: flex-start; margin-top: 2px; font-size: 9.5px; font-weight: 600; color: #6b7280; background: rgba(10, 25, 47, 0.05); padding: 2px 7px; border-radius: 999px; }
+    .qpm-welcome { padding: 11px 13px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 12px; font-size: 11.5px; line-height: 1.6; color: #6b7280; }
+    .qpm-total { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 13px 14px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 16px; text-align: center; }
+    .qpm-total-amt { font-size: 31px; line-height: 1; font-weight: 600; letter-spacing: -0.04em; color: var(--dm-brand); font-variant-numeric: tabular-nums; }
+    .qpm-total-note { font-size: 10px; font-weight: 500; color: #6b7280; }
+    .qpm-items { display: flex; flex-direction: column; }
+    .qpm-ih, .qpm-row { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 1fr); gap: 10px; align-items: center; }
+    .qpm-ih { padding-bottom: 7px; font-size: 7.5px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid rgba(10, 25, 47, 0.07); }
+    .qpm-row { padding: 7px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.045); font-size: 11.5px; }
+    .qpm-items .c { text-align: center; }
+    .qpm-items .r { text-align: right; justify-self: end; }
+    .qpm-name { display: flex; align-items: center; gap: 7px; font-weight: 600; min-width: 0; }
+    .qpm-desc { min-width: 0; }
+    .qpm-pick { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #fff; flex-shrink: 0; position: relative; }
+    .qpm-pick.is-on { background: #0a192f; border-color: #0a192f; }
+    .qpm-pick.is-on::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 1.8px 1.8px 0; transform: rotate(45deg); }
+    .qpm-chat { display: inline-flex; padding: 3px 5px; border-radius: 6px; background: rgba(10, 25, 47, 0.04); color: #6b7280; flex-shrink: 0; }
+    .qpm-chat .dm-ico { width: 10px; height: 10px; }
+    .qpm-qty { font-size: 10.5px; color: #6b7280; }
+    .qpm-price { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: #6b7280; font-variant-numeric: tabular-nums; }
+    .qpm-price s { font-size: 9.5px; line-height: 1.2; }
+    .qpm-imp { font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .qpm-row.is-off { opacity: 0.5; }
+    .qpm-row.is-off .qpm-desc { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, 0.3); }
+    .qpm-subs { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; padding-top: 9px; }
+    .qpm-sub { display: flex; justify-content: space-between; gap: 32px; min-width: 210px; font-size: 11px; color: #6b7280; font-variant-numeric: tabular-nums; }
+    .qpm-grand { color: #111; font-weight: 700; border-top: 1px solid rgba(10, 25, 47, 0.07); padding-top: 7px; margin-top: 2px; }
+    .qpm-grand .dm-money { font-size: 14px; }
+    .qpm-items .dm-money { font-weight: inherit; letter-spacing: -0.01em; }
+    .qpm-items .dm-cur { font-size: 0.78em; }
+    .qpm-actions { display: flex; flex-direction: column; gap: 9px; }
+    .qpm-partial { padding: 9px 12px; border-radius: 10px; background: rgba(10, 25, 47, 0.04); font-size: 11px; color: #374151; line-height: 1.5; }
+    .qpm-partial b { color: #111; font-weight: 700; }
+    .qpm-cta { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 18px; border-radius: 12px; background: var(--dm-brand); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10, 25, 47, 0.42); }
+    .qpm-cta .dm-ico { width: 15px; height: 15px; }
+    .qpm-secondary { display: flex; gap: 8px; }
+    .qpm-ghost { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 13px; border-radius: 11px; border: 1px solid rgba(10, 25, 47, 0.1); font-size: 11.5px; font-weight: 600; color: #6b7280; }
+    .qpm-ghost .dm-ico { width: 13px; height: 13px; }
+    .qpm-reject { flex: none; border-color: transparent; }
+    .qpm-chatbox { display: flex; flex-direction: column; gap: 9px; }
+    .qpm-thread { display: flex; flex-direction: column; gap: 6px; }
+    .qpm-msg { display: flex; flex-direction: column; gap: 2px; max-width: 82%; padding: 7px 11px; font-size: 11.5px; line-height: 1.5; }
+    .qpm-msg.theirs { align-self: flex-start; background: #f3f4f6; border-radius: 13px 13px 13px 3px; }
+    .qpm-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 13px 13px 3px 13px; }
+    .qpm-msg.counter { background: rgba(245, 158, 11, 0.09); border: 1px solid rgba(245, 158, 11, 0.25); color: #111; }
+    .qpm-msg-meta { font-size: 8.5px; opacity: 0.66; }
+    .qpm-msg-meta b { font-weight: 700; }
+    .qpm-compose { background: #f9fafb; border: 1px solid rgba(10, 25, 47, 0.07); border-radius: 14px; overflow: hidden; }
+    .qpm-compose-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px 8px 12px; }
+    .qpm-ph { flex: 1; font-size: 11.5px; color: #6b7280; }
+    .qpm-send { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--dm-brand); color: #fff; flex-shrink: 0; }
+    .qpm-send .dm-ico { width: 12px; height: 12px; }
+    .qpm-compose-extras { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 7px 10px 9px; border-top: 1px solid rgba(10, 25, 47, 0.055); }
+    .qpm-prop { flex: 1; max-width: 170px; font-size: 10.5px; color: #6b7280; background: #fff; border: 1px solid rgba(10, 25, 47, 0.09); border-radius: 7px; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qpm-counter { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 100px; border: 1px solid var(--dm-brand); color: var(--dm-brand); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .qpm-counter .dm-ico { width: 10px; height: 10px; }
+
+    @container dm (max-width: 520px) {
+        .qpm { padding: 14px 8px 18px; }
+        .qpm-card { padding: 16px 14px 18px; border-radius: 18px; gap: 15px; }
+        .qpm-banner { margin: -4px -6px 0; }
+        .qpm-ih, .qpm-row { grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr); }
+        .qpm-total-amt { font-size: 28px; }
+        .qpm-chat { display: none; }
+        .qpm-sub { min-width: 0; width: 100%; }
+    }
+</style>

@@ -1,0 +1,176 @@
+---
+// Mockup: Cobranza con IA (/app/cobranza/agente) en modo "Requiere aprobación",
+// con un borrador en la bandeja que propone un plan de pago en cuotas.
+//
+// Calca de src/pages/app/cobranza/agente.astro: estado y botones de la topbar
+// (cia-state, Correr ahora, Configurar), pestañas, los cuatro KPIs
+// (cia-recuperado, cia-pendientes, cia-planes, cia-correos) y la bandeja
+// (.cia-draft: avatar, empresa, folio · "vencida hace N días", saldo,
+// .cia-plan-card "Propone N cuotas de …", el correo editable y las acciones).
+// El plan es el mismo de DmInstallmentsLink: COT-0131 de Constructora Apex,
+// 10,000.00 MXN en 3 cuotas, la última absorbe el redondeo.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const CUR = 'MXN';
+const SALDO = 10000;
+const CUOTA = 3333.33;
+const m = (n: number) => dmMoney(n, CUR, lang);
+
+const DATA = {
+    es: {
+        caption: `Cobranza con IA de ${DEMO.org} en modo Requiere aprobación: los indicadores Recuperado por el agente, Esperan tu aprobación, Planes de pago activos y Correos enviados, y en la Bandeja de aprobación el borrador para Constructora Apex, vencida hace 18 días, con la etiqueta "Propone 3 cuotas de ${dmMoney(CUOTA, CUR, 'es')}" y los botones Aprobar y enviar, Regenerar, Descartar y No escribirle.`,
+        correo: [
+            'Hola, Ing. Salgado:',
+            `Gracias por su respuesta. Como lo comentamos, le propongo liquidar el saldo de ${dmMoney(SALDO, CUR, 'es')} de la cotización COT-0131 en 3 pagos mensuales: ${dmMoney(CUOTA, CUR, 'es')} hoy, ${dmMoney(CUOTA, CUR, 'es')} el 7 de noviembre y ${dmMoney(3333.34, CUR, 'es')} el 7 de diciembre.`,
+            'Cada pago se hace desde el mismo enlace de su cotización, con tarjeta o transferencia. Si le parece bien, el primero queda disponible desde hoy.',
+            `Saludos,\nCobranza · ${DEMO.org}`,
+        ],
+        otro: 'vencida hace 61 días',
+        otroCorreo: 'Hola, Sra. Ibarra: le escribo porque la cotización COT-0126 por',
+    },
+    en: {
+        caption: `${DEMO.org}'s AI Collections in Needs approval mode: the Recovered by the agent, Awaiting your approval, Active payment plans and Emails sent indicators, and in the Approval inbox the draft for Constructora Apex, 18 days overdue, labeled "Proposes 3 instalments of ${dmMoney(CUOTA, CUR, 'en')}", with the Approve and send, Regenerate, Discard and Don't email them buttons.`,
+        correo: [
+            'Hello Mr. Salgado,',
+            `Thank you for getting back to us. As discussed, I'd like to propose settling the ${dmMoney(SALDO, CUR, 'en')} balance on quote COT-0131 in 3 monthly payments: ${dmMoney(CUOTA, CUR, 'en')} today, ${dmMoney(CUOTA, CUR, 'en')} on November 7, and ${dmMoney(3333.34, CUR, 'en')} on December 7.`,
+            'Each payment is made from the same link to your quote, by card or bank transfer. If this works for you, the first one is available today.',
+            `Best regards,\nCollections · ${DEMO.org}`,
+        ],
+        otro: '61 days overdue',
+        otroCorreo: 'Hello Ms. Ibarra, I am writing about quote COT-0126 for',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="ai-ar" badges={{ vencidas: 7 }} title={dmT(lang, 'cia.heading')} height={960} caption={caption} class="dm-cia-figure">
+    <Fragment slot="actions">
+        <span class="dm-cia-state"><i></i>{dmT(lang, 'cia.modo_aprobacion')}</span>
+        <span class="dm-cia-btn dm-hide-narrow">{dmT(lang, 'cia.forzar')}</span>
+        <span class="dm-cia-btn dm-hide-narrow">{dmT(lang, 'cia.configurar')}</span>
+    </Fragment>
+
+    <div class="dm-cia-sub">{dmT(lang, 'cia.sub')}</div>
+    <div class="dm-cia-tabs"><span>{dmT(lang, 'cia.tab_cobranza')}</span><span class="is-on">{dmT(lang, 'cia.tab_ia')}</span></div>
+
+    <div class="dm-cia-kpis">
+        <div class="dm-surface dm-cia-kpi">
+            <span class="dm-cia-label">{dmT(lang, 'cia.k_recuperado')}</span>
+            <DmMoney amount={126840} currency={CUR} lang={lang} class="dm-cia-num is-ok" />
+            <span class="dm-cia-small">{tpl(dmT(lang, 'cia.k_recuperado_sub'), { n: 5 })}</span>
+        </div>
+        <div class="dm-surface dm-cia-kpi">
+            <span class="dm-cia-label">{dmT(lang, 'cia.k_pendientes')}</span>
+            <span class="dm-cia-num dm-editorial is-warn">2</span>
+            <span class="dm-cia-small">{dmT(lang, 'cia.k_pendientes_sub')}</span>
+        </div>
+        <div class="dm-surface dm-cia-kpi">
+            <span class="dm-cia-label">{dmT(lang, 'cia.k_planes')}</span>
+            <span class="dm-cia-num dm-editorial">2</span>
+            <span class="dm-cia-small">{tpl(dmT(lang, 'cia.k_planes_sub'), { monto: m(23600) })}</span>
+        </div>
+        <div class="dm-surface dm-cia-kpi">
+            <span class="dm-cia-label">{dmT(lang, 'cia.k_correos')}</span>
+            <span class="dm-cia-num dm-editorial">41</span>
+            <span class="dm-cia-small">{tpl(dmT(lang, 'cia.k_correos_sub'), { pct: 37 })}</span>
+        </div>
+    </div>
+
+    <div class="dm-surface dm-cia-inbox">
+        <div class="dm-cia-head">
+            <span class="dm-cia-title">{dmT(lang, 'cia.bandeja')}</span>
+            <span class="dm-cia-small">{dmT(lang, 'cia.bandeja_sub')}</span>
+        </div>
+
+        <div class="dm-cia-draft">
+            <div class="dm-cia-draft-head">
+                <span class="dm-cia-av">C</span>
+                <span class="dm-cia-who">
+                    <span class="dm-strong dm-ellipsis">Constructora Apex</span>
+                    <span class="dm-cia-small"><span class="dm-mono">COT-0131</span> · {tpl(dmT(lang, 'cia.vencida_dias'), { n: 18 })}</span>
+                </span>
+                <span class="dm-money dm-cia-monto">{m(SALDO)}</span>
+            </div>
+            <div class="dm-cia-plan"><DmIcon name="calendar" />{tpl(dmT(lang, 'cia.plan_propuesto'), { n: 3, monto: m(CUOTA) })}</div>
+            <div class="dm-cia-text">{d.correo.map((p) => <span>{p}</span>)}</div>
+            <div class="dm-cia-actions">
+                <span class="dm-cia-act is-primary">{dmT(lang, 'cia.aprobar_enviar')}</span>
+                <span class="dm-cia-act">{dmT(lang, 'cia.regenerar')}</span>
+                <span class="dm-cia-act is-ghost">{dmT(lang, 'cia.descartar')}</span>
+                <span class="dm-cia-act is-ghost">{dmT(lang, 'cia.no_escribir')}</span>
+            </div>
+        </div>
+
+        <div class="dm-cia-draft is-peek">
+            <div class="dm-cia-draft-head">
+                <span class="dm-cia-av">F</span>
+                <span class="dm-cia-who">
+                    <span class="dm-strong dm-ellipsis">Ferretería Los Altos</span>
+                    <span class="dm-cia-small"><span class="dm-mono">COT-0126</span> · {d.otro}</span>
+                </span>
+                <span class="dm-money dm-cia-monto">{m(24900)}</span>
+            </div>
+            <div class="dm-cia-text"><span>{d.otroCorreo} {m(24900)}…</span></div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-cia-state { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(245, 158, 11, 0.12); color: #b45309; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+    .dm-cia-state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .dm-cia-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11px; font-weight: 600; color: var(--dm-text); white-space: nowrap; }
+    .dm-cia-figure .dm-page-head { align-items: center; }
+    .dm-cia-sub { margin: -8px 0 12px; font-size: 12px; color: var(--dm-muted); }
+    .dm-cia-tabs { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px; border-radius: 12px; background: rgba(10, 25, 47, 0.065); box-shadow: inset 0 1px 1px rgba(10, 25, 47, 0.06); }
+    .dm-cia-tabs span { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 9px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cia-tabs span.is-on { background: #fff; color: var(--dm-text); font-weight: 650; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.13), 0 1px 5px rgba(10, 25, 47, 0.05); }
+
+    .dm-cia-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .dm-cia-kpi { display: flex; flex-direction: column; gap: 5px; padding: 14px 15px; min-width: 0; }
+    .dm-cia-label { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cia-num { font-size: 19px; line-height: 1.1; color: var(--dm-navy); white-space: nowrap; }
+    .dm-cia-num.is-ok { color: #059669; }
+    .dm-cia-num.is-warn { color: #d97706; }
+    .dm-cia-small { font-size: 10.5px; line-height: 1.45; color: var(--dm-muted); }
+
+    .dm-cia-inbox { padding: 14px 16px 4px; }
+    .dm-cia-head { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cia-title { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--dm-text); }
+    /* = .cia-draft: tarjeta con hairline dentro del widget (es la unidad de la bandeja). */
+    .dm-cia-draft { padding: 14px 15px; margin-bottom: 12px; border: 1px solid var(--dm-border); border-radius: 16px; background: #fff; }
+    .dm-cia-draft-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .dm-cia-av { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-canvas); color: var(--dm-muted); font-size: 11.5px; font-weight: 700; }
+    .dm-cia-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; }
+    .dm-cia-monto { font-size: 14px; color: var(--dm-text); }
+    .dm-cia-plan { display: flex; align-items: center; gap: 8px; padding: 9px 11px; margin-bottom: 10px; border-radius: 11px; background: rgba(10, 25, 47, 0.05); font-size: 11.5px; font-weight: 500; color: var(--dm-text); }
+    .dm-cia-plan .dm-ico { width: 16px; height: 16px; color: var(--dm-navy); }
+    .dm-cia-text { display: flex; flex-direction: column; gap: 9px; padding: 12px 14px; border-radius: 11px; background: var(--dm-canvas); font-size: 11.5px; line-height: 1.6; color: var(--dm-text); white-space: pre-line; }
+    .dm-cia-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .dm-cia-act { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border); font-size: 11.5px; font-weight: 600; color: var(--dm-text); white-space: nowrap; }
+    .dm-cia-act.is-primary { background: var(--dm-navy); color: #fff; box-shadow: 0 6px 16px -8px rgba(10, 25, 47, 0.55); }
+    .dm-cia-act.is-ghost { background: transparent; box-shadow: none; color: var(--dm-muted); }
+    .dm-cia-draft.is-peek { opacity: 0.85; }
+
+    @container dm (max-width: 900px) {
+        .dm-cia-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @container dm (max-width: 520px) {
+        .dm-cia-figure .dm-stage { height: auto; }
+        .dm-cia-kpis { grid-template-columns: minmax(0, 1fr); }
+        .dm-cia-draft-head { flex-wrap: wrap; }
+        .dm-cia-monto { width: 100%; padding-left: 40px; }
+        .dm-cia-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .dm-cia-act { justify-content: center; }
+        .dm-cia-draft.is-peek { display: none; }
+    }
+</style>

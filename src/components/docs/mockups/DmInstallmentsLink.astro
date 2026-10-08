@@ -1,0 +1,240 @@
+---
+// Mockup: el link público de una cotización (/q/[token]) con un plan de pago en
+// cuotas activo, la primera pagada y la segunda ya exigible.
+//
+// Calca de src/components/q/QuoteCard.astro en estado aprobado: BrandHeader,
+// meta (Para / Términos), total protagonista con la nota "Pagado · Pendiente"
+// (q.split_pagado_pendiente), conceptos con subtotales y, abajo, el bloque
+// "Cotización aprobada" con el desglose "Plan de pago" (.ql-cobros) y el cobro
+// de hoy (.ql-pay): "A PAGAR AHORA · CUOTA 2".
+//
+// Reglas del desglose que el mockup respeta: una cuota exigible dice "Por
+// pagar" (sin fecha); solo una futura dice "Vence el …"; el botón cobra la
+// siguiente cuota exigible, nunca el saldo completo.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import { dmT, dmMoney, pick, tpl, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** Pie de figura; por defecto describe el estado dibujado. */
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const CUR = 'MXN';
+const FOLIO = 'COT-0131';
+const CLIENTE = 'Constructora Apex';
+const TOTAL = 10000;
+const SUBTOTAL = 8620.69;
+const IVA = 1379.31;
+// El saldo se reparte en partes iguales y la última cuota absorbe el redondeo.
+const CUOTAS = [
+    { n: 1, monto: 3333.33, estado: 'pagado' as const },
+    { n: 2, monto: 3333.33, estado: 'por_pagar' as const },
+    { n: 3, monto: 3333.34, estado: 'futura' as const },
+];
+const pagado = CUOTAS.filter((c) => c.estado === 'pagado').reduce((s, c) => s + c.monto, 0);
+const pendiente = CUOTAS.filter((c) => c.estado !== 'pagado').reduce((s, c) => s + c.monto, 0);
+const siguiente = CUOTAS.find((c) => c.estado === 'por_pagar')!;
+
+const DATA = {
+    es: {
+        caption: `Link público de la cotización ${FOLIO} de ${DEMO.org} con su plan de pago en tres cuotas: la cuota 1 pagada, la cuota 2 de ${dmMoney(siguiente.monto, CUR, 'es')} por pagar y la cuota 3 que vence el 7 dic 2026. El botón cobra solo la cuota 2, sobre un total de ${dmMoney(TOTAL, CUR, 'es')}.`,
+        terminos: 'Neto 30',
+        vence3: '7 dic 2026',
+        items: [
+            { desc: 'Block de concreto 15×20×40 cm', cant: '500 pza', precio: 12.5, importe: 6250 },
+            { desc: 'Flete a obra, Zapopan', cant: '1 servicio', precio: 2370.69, importe: 2370.69 },
+        ],
+        iva: 'IVA (16%)',
+    },
+    en: {
+        caption: `Public link for ${DEMO.org}'s quote ${FOLIO} with its three-installment payment plan: installment 1 paid, installment 2 of ${dmMoney(siguiente.monto, CUR, 'en')} due, and installment 3 due on Dec 7, 2026. The button charges installment 2 only, on a ${dmMoney(TOTAL, CUR, 'en')} total.`,
+        terminos: 'Net 30',
+        vence3: 'Dec 7, 2026',
+        items: [
+            { desc: 'Concrete block 15×20×40 cm', cant: '500 pcs', precio: 12.5, importe: 6250 },
+            { desc: 'Delivery to site, Zapopan', cant: '1 service', precio: 2370.69, importe: 2370.69 },
+        ],
+        iva: 'VAT (16%)',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+
+const cuotaLabel = (n: number) => tpl(dmT(lang, 'q.tipo_cuota'), { n });
+const estadoLabel = (c: (typeof CUOTAS)[number]) =>
+    c.estado === 'pagado' ? dmT(lang, 'q.pagado')
+    : c.estado === 'futura' ? tpl(dmT(lang, 'q.vence_el'), { fecha: d.vence3 })
+    : dmT(lang, 'q.por_pagar');
+const split = tpl(dmT(lang, 'q.split_pagado_pendiente'), { pagado: dmMoney(pagado, CUR, lang), pendiente: dmMoney(pendiente, CUR, lang) });
+const recibio = tpl(dmT(lang, 'q.recibio_confirmacion'), { org: DEMO.org });
+---
+<DocsMockup lang={lang} variant="browser" url="cordhq.app/q/k7Xm2pQr" brand={DEMO.brand} caption={caption} class="dm-qcu-figure">
+    <div class="dm-qcu">
+        <div class="dm-qcu-card">
+            <div class="dm-qcu-header">
+                <span class="dm-qcu-brand">
+                    <span class="dm-qcu-initial">{DEMO.orgInitial}</span>
+                    <span class="dm-qcu-company">{DEMO.org}</span>
+                </span>
+                <span class="dm-qcu-folio">
+                    <span class="dm-qcu-eyebrow">{dmT(lang, 'q.folio_eyebrow')}</span>
+                    <span class="dm-qcu-folio-num">{FOLIO}</span>
+                </span>
+            </div>
+            <div class="dm-qcu-rule"></div>
+            <div class="dm-qcu-meta">
+                <span><span class="dm-qcu-eyebrow">{dmT(lang, 'q.meta_para')}</span><span class="dm-qcu-meta-val">{CLIENTE}</span></span>
+                <span><span class="dm-qcu-eyebrow">{dmT(lang, 'q.meta_terminos')}</span><span class="dm-qcu-meta-val">{d.terminos}</span></span>
+            </div>
+
+            <div class="dm-qcu-hero">
+                <span class="dm-qcu-eyebrow">{dmT(lang, 'q.total_eyebrow')}</span>
+                <DmMoney amount={TOTAL} currency={CUR} lang={lang} class="dm-qcu-total" />
+                <span class="dm-qcu-note">{CUR} · {dmT(lang, 'q.total_note')}</span>
+                <span class="dm-qcu-split">{split}</span>
+            </div>
+
+            <div class="dm-qcu-items">
+                <div class="dm-qcu-irow dm-qcu-ihead">
+                    <span>{dmT(lang, 'q.th_concepto')}</span>
+                    <span class="dm-qcu-c dm-hide-narrow">{dmT(lang, 'q.th_cant')}</span>
+                    <span class="dm-qcu-r dm-hide-narrow">{dmT(lang, 'q.th_unit')}</span>
+                    <span class="dm-qcu-r">{dmT(lang, 'q.th_importe')}</span>
+                </div>
+                {d.items.map((it) => (
+                    <div class="dm-qcu-irow">
+                        <span class="dm-qcu-iname">{it.desc}</span>
+                        <span class="dm-qcu-c dm-qcu-mut dm-hide-narrow">{it.cant}</span>
+                        <span class="dm-qcu-r dm-qcu-mut dm-hide-narrow dm-editorial">{dmMoney(it.precio, CUR, lang)}</span>
+                        <span class="dm-qcu-r dm-editorial">{dmMoney(it.importe, CUR, lang)}</span>
+                    </div>
+                ))}
+                <div class="dm-qcu-subs">
+                    <span class="dm-qcu-sub"><span>{dmT(lang, 'q.subtotal')}</span><span class="dm-editorial">{dmMoney(SUBTOTAL, CUR, lang)}</span></span>
+                    <span class="dm-qcu-sub"><span>{d.iva}</span><span class="dm-editorial">{dmMoney(IVA, CUR, lang)}</span></span>
+                    <span class="dm-qcu-sub is-total"><span>{dmT(lang, 'q.total')}</span><span class="dm-editorial">{dmMoney(TOTAL, CUR, lang)}</span></span>
+                </div>
+            </div>
+
+            <div class="dm-qcu-done">
+                <svg class="dm-qcu-check" viewBox="0 0 52 52" aria-hidden="true">
+                    <circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    <polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                </svg>
+                <span class="dm-qcu-done-title">{dmT(lang, 'q.cotizacion_aprobada')}</span>
+                <span class="dm-qcu-done-sub">{recibio}</span>
+            </div>
+
+            <div class="dm-qcu-plan">
+                <span class="dm-qcu-plan-title">{dmT(lang, 'q.plan_de_pago')}</span>
+                {CUOTAS.map((c) => (
+                    <div class:list={['dm-qcu-cobro', { 'is-paid': c.estado === 'pagado', 'is-due': c.estado === 'por_pagar' }]}>
+                        <span class="dm-qcu-cobro-tipo">{cuotaLabel(c.n)}</span>
+                        <span class="dm-qcu-cobro-monto dm-editorial">{dmMoney(c.monto, CUR, lang)}</span>
+                        <span class="dm-qcu-cobro-st">{c.estado === 'pagado' && <DmIcon name="check" stroke={2.4} />}{estadoLabel(c)}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div class="dm-qcu-pay">
+                <div class="dm-qcu-pay-amount">
+                    <span class="dm-qcu-pay-label">{dmT(lang, 'q.a_pagar_ahora')} · {cuotaLabel(siguiente.n).toUpperCase()}</span>
+                    <DmMoney amount={siguiente.monto} currency={CUR} lang={lang} class="dm-qcu-pay-total" />
+                </div>
+                <span class="dm-qcu-cta"><DmIcon name="lock" stroke={2.2} />{dmT(lang, 'q.pagar_seguro')}</span>
+                <span class="dm-qcu-secure">
+                    <DmIcon name="lock" />
+                    {dmT(lang, 'q.tarjeta_o_spei')}
+                    <span class="dm-qcu-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
+                </span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-qcu { padding: 22px 18px 0; display: flex; justify-content: center; }
+    /* = .q-card: blanca, 28 px, sombra difusa; se recorta por abajo (sangrado). */
+    .dm-qcu-card {
+        width: 100%; max-width: 520px;
+        display: flex; flex-direction: column; gap: 20px;
+        padding: 26px 28px 30px;
+        background: #fff; border-radius: 26px 26px 0 0;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        color: #111;
+    }
+    .dm-qcu-eyebrow { display: block; font-size: 8px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #6b7280; }
+    .dm-qcu-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .dm-qcu-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .dm-qcu-initial { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-brand); color: #fff; font-size: 14px; font-weight: 800; }
+    .dm-qcu-company { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-qcu-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .dm-qcu-folio-num { font-size: 13px; font-weight: 800; letter-spacing: -0.02em; }
+    .dm-qcu-rule { height: 1px; margin: -6px 0; background: linear-gradient(to right, transparent, rgba(10, 25, 47, 0.08) 15%, rgba(10, 25, 47, 0.08) 85%, transparent); }
+    .dm-qcu-meta { display: flex; gap: 30px; flex-wrap: wrap; }
+    .dm-qcu-meta > span { display: flex; flex-direction: column; gap: 4px; }
+    .dm-qcu-meta-val { font-size: 12.5px; font-weight: 600; }
+
+    .dm-qcu-hero { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 20px 16px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 18px; text-align: center; }
+    .dm-qcu-total { font-size: 38px; line-height: 1.05; letter-spacing: -0.045em; color: var(--dm-brand); }
+    .dm-qcu-total .dm-cur { display: none; }
+    .dm-qcu-note { font-size: 10.5px; font-weight: 500; color: #6b7280; }
+    .dm-qcu-split { margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(10, 25, 47, 0.05); font-size: 11px; font-weight: 600; color: #0a192f; }
+
+    .dm-qcu-irow { display: grid; grid-template-columns: minmax(0, 1.7fr) 0.7fr auto auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.045); font-size: 12px; }
+    .dm-qcu-ihead { padding: 0 0 8px; font-size: 8px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #6b7280; border-bottom-color: rgba(10, 25, 47, 0.07); }
+    .dm-qcu-iname { font-weight: 600; }
+    .dm-qcu-c { text-align: center; }
+    .dm-qcu-r { text-align: right; white-space: nowrap; }
+    .dm-qcu-mut { color: #6b7280; font-size: 11.5px; }
+    .dm-qcu-subs { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 12px; }
+    .dm-qcu-sub { display: flex; justify-content: space-between; gap: 40px; min-width: 230px; font-size: 11.5px; color: #6b7280; }
+    .dm-qcu-sub.is-total { padding-top: 6px; border-top: 1px solid rgba(10, 25, 47, 0.07); font-size: 13px; font-weight: 700; color: #111; }
+
+    .dm-qcu-done { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding-top: 4px; }
+    .dm-qcu-check { width: 48px; height: 48px; color: var(--dm-brand); margin-bottom: 2px; }
+    .dm-qcu-done-title { font-size: 15.5px; font-weight: 700; }
+    .dm-qcu-done-sub { font-size: 11.5px; line-height: 1.55; color: #6b7280; max-width: 330px; }
+
+    /* = .ql-cobros */
+    .dm-qcu-plan { display: flex; flex-direction: column; padding: 2px 16px 6px; background: #fff; border: 1px solid rgba(10, 25, 47, 0.07); border-radius: 15px; }
+    .dm-qcu-plan-title { padding: 11px 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #6b7280; }
+    .dm-qcu-cobro { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(10, 25, 47, 0.06); }
+    .dm-qcu-cobro-tipo { flex: 1; font-size: 12px; font-weight: 600; color: #0a192f; }
+    .dm-qcu-cobro-monto { font-size: 12.5px; color: #0a192f; }
+    .dm-qcu-cobro-st { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 116px; font-size: 10.5px; font-weight: 600; color: #6b7280; text-align: right; }
+    .dm-qcu-cobro-st .dm-ico { width: 11px; height: 11px; }
+    .dm-qcu-cobro.is-paid .dm-qcu-cobro-st { color: #047857; }
+    .dm-qcu-cobro.is-paid .dm-qcu-cobro-tipo, .dm-qcu-cobro.is-paid .dm-qcu-cobro-monto { color: #6b7686; }
+    .dm-qcu-cobro.is-due .dm-qcu-cobro-st { color: #0a192f; }
+
+    /* = .ql-pay */
+    .dm-qcu-pay { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #fafafa; border: 1px solid rgba(10, 25, 47, 0.06); border-radius: 15px; }
+    .dm-qcu-pay-amount { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .dm-qcu-pay-label { font-size: 8.5px; font-weight: 800; letter-spacing: 2px; color: #6b7280; }
+    .dm-qcu-pay-total { font-size: 22px; line-height: 1; color: var(--dm-brand); }
+    .dm-qcu-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 13px; background: var(--dm-brand); color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 28px -10px rgba(10, 25, 47, 0.42); }
+    .dm-qcu-cta .dm-ico { width: 14px; height: 14px; }
+    .dm-qcu-secure { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 10px; color: #6b7280; }
+    .dm-qcu-secure .dm-ico { width: 11px; height: 11px; }
+    .dm-qcu-cards { display: inline-flex; gap: 4px; margin-left: auto; }
+    .dm-qcu-cards span { font-size: 7px; font-weight: 800; letter-spacing: 0.4px; color: #6b7280; background: #fff; border: 1px solid rgba(10, 25, 47, 0.1); border-radius: 4px; padding: 2px 5px; }
+
+    @container dm (max-width: 520px) {
+        .dm-qcu { padding: 14px 8px 0; }
+        .dm-qcu-card { padding: 20px 16px 18px; gap: 16px; border-radius: 22px 22px 0 0; }
+        .dm-qcu-irow { grid-template-columns: minmax(0, 1fr) auto; }
+        .dm-qcu-sub { min-width: 0; width: 100%; gap: 16px; }
+        .dm-qcu-total { font-size: 32px; }
+        /* = .ql-cobro-row en móvil: tipo y monto arriba, estado abajo. */
+        .dm-qcu-cobro { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+        .dm-qcu-cobro-st { grid-column: 1 / -1; min-width: 0; justify-content: flex-start; text-align: left; }
+        .dm-qcu-pay-amount { flex-direction: column; align-items: flex-start; gap: 6px; }
+        .dm-qcu-split { font-size: 10.5px; }
+        .dm-qcu-cards { display: none; }
+    }
+</style>

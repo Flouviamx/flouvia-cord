@@ -2,7 +2,7 @@
 title: "API de Tareas"
 seoTitle: "API de tareas de Cord"
 description: "Crea tareas de seguimiento para tu equipo desde otras herramientas."
-lastUpdated: "2026-10-07"
+lastUpdated: "2026-10-08"
 reviewedBy: "Ingeniería de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 prerequisites: ["Una llave con permiso de escritura sobre el recurso tareas"]
@@ -43,13 +43,15 @@ curl -X POST "https://cordhq.app/api/v1/tareas" \
 { "data": { "id": "7c1e0b4a-3f2d-4e8c-9a6b-5d1f0e2c3b4a" } }
 ```
 
+La tarea nace **sin responsable** y con prioridad normal. En la app se le asigna responsable, prioridad y notas desde **Tareas**; mientras no tenga responsable, el [recordatorio por correo](/docs/gestion/tareas#recordatorio-por-correo) de la mañana le llega al dueño de la cuenta.
+
 Cada tarea nueva emite el evento `task.created`. Cuando alguien la marca como hecha en la app se emite `task.completed`.
 
 ## Errores posibles
 
 | Código | Cuándo |
 |---|---|
-| `invalid_request` (400) | Falta `titulo` (o viene vacío), o `due_date` no tiene el formato `YYYY-MM-DD`. |
+| `invalid_request` (400) | Falta `titulo` (o viene vacío), o `due_date` no es una fecha real en formato `YYYY-MM-DD` (por ejemplo, `2026-02-30` se rechaza). |
 | `not_found` (404) | `cotizacion_id` no es un UUID o no es una cotización de tu organización. |
 | `invalid_json` (400) | El cuerpo no es JSON válido. |
 | `insufficient_scope` / `insufficient_permissions` (403) | La llave es de solo lectura, o es una llave restringida sin `write` en `tareas`. |

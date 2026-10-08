@@ -1,0 +1,90 @@
+---
+// Mockup: la llave de prueba recién creada, mostrada UNA sola vez. La app está
+// en el entorno de prueba (banner ámbar de AppLayout sobre la topbar), el
+// Workbench abierto en la pestaña API con el selector en Prueba, y encima el
+// modal "Tu nueva API key" (#wbSecret de DevWorkbench.astro) con la llave
+// completa y su botón Copiar. Detrás, la fila nueva ya aparece en la tabla como
+// Secreta · Escritura · Prueba: es lo que eligió el diálogo "Nueva API key de
+// prueba" del paso anterior. El formato de la llave es el de /api/keys
+// (`sk_test_` + 48 hex) y la tabla la enmascara con sus últimos 4.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import WbPanel from './WbPanel.astro';
+import WbApiTab, { type WbKeyRow } from './WbApiTab.astro';
+import WbBackdrop from './WbBackdrop.astro';
+import WbTestBar from './WbTestBar.astro';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+const KEY = 'sk_test_afb32ac8bfea65ef827823e391c39b21d4c14054dfce6e05';
+
+const DATA: { es: { caption: string; rows: WbKeyRow[] }; en: { caption: string; rows: WbKeyRow[] } } = {
+    es: {
+        caption: 'La app en el entorno de prueba con el Workbench abierto en la pestaña API: la llave secreta de lectura y escritura recién creada aparece completa una sola vez, sk_test_ seguida de 48 caracteres, con su botón Copiar; detrás, la fila nueva ya figura en la tabla como Prueba y Secreta.',
+        rows: [
+            { nombre: 'Inicio rápido', mode: 'test', type: 'secret', prefix: KEY.slice(0, 16), last4: KEY.slice(-4), scope: 'write', ultimoUso: null, creada: '8 oct 2026', nueva: true },
+            { nombre: 'Pruebas', mode: 'test', type: 'secret', prefix: 'sk_test_7a90f3e2', last4: '05bd', scope: 'write', ultimoUso: 'hoy, 09:15', creada: '20 feb 2026' },
+            { nombre: 'Producción — ERP', mode: 'live', type: 'secret', prefix: 'sk_live_9f3c2a71', last4: 'a4d2', scope: 'write', ultimoUso: 'hoy, 11:42', creada: '12 mar 2026' },
+        ],
+    },
+    en: {
+        caption: 'The app in the test environment with the Workbench open on the API tab: the newly created read and write secret key is shown in full only once, sk_test_ followed by 48 characters, with its Copy button; behind it, the new row already shows in the table as Test and Secret.',
+        rows: [
+            { nombre: 'Quickstart', mode: 'test', type: 'secret', prefix: KEY.slice(0, 16), last4: KEY.slice(-4), scope: 'write', ultimoUso: null, creada: 'Oct 8, 2026', nueva: true },
+            { nombre: 'Testing', mode: 'test', type: 'secret', prefix: 'sk_test_7a90f3e2', last4: '05bd', scope: 'write', ultimoUso: 'today, 09:15', creada: 'Feb 20, 2026' },
+            { nombre: 'Production — ERP', mode: 'live', type: 'secret', prefix: 'sk_live_9f3c2a71', last4: 'a4d2', scope: 'write', ultimoUso: 'today, 11:42', creada: 'Mar 12, 2026' },
+        ],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={dmT(lang, 'cot.heading')} caption={caption} class="dm-wb-figure dm-wbtest-figure dm-tkey-figure">
+    <WbTestBar lang={lang} />
+    <div class="dm-testbody"><WbBackdrop lang={lang} /></div>
+
+    <div slot="overlay">
+        <WbPanel lang={lang} tab="api" class="dm-wb-sheet">
+            <WbApiTab compact lang={lang} rows={d.rows} mode="test" plan={lang === 'en' ? 'Professional' : 'Profesional'} limite={20} />
+        </WbPanel>
+        <div class="tkey-scrim"></div>
+        <div class="wbm-modal tkey-modal">
+            <div class="wbm-modal-top">
+                <span class="wbm-modal-x"><DmIcon name="x" /></span>
+                <span class="wbm-modal-title">{dmT(lang, 'set.api.modal_clave_titulo')}</span>
+            </div>
+            <div class="wbm-modal-body">
+                <span class="tkey-warn" set:html={dmT(lang, 'set.api.modal_clave_warn')} />
+                <div class="tkey-key">
+                    <span class="tkey-code">{KEY}</span>
+                    <span class="tkey-copy"><DmIcon name="copy" />{dmT(lang, 'set.api.copiar')}</span>
+                </div>
+            </div>
+            <div class="wbm-modal-foot">
+                <span class="wbm-btn wbm-btn-solid">{dmT(lang, 'set.api.listo_guardada')}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* ── Modal de la llave (= .wb-modal.compact sobre su backdrop) ── */
+    .tkey-scrim { position: absolute; inset: 0; background: rgba(3, 8, 18, 0.55); pointer-events: none; }
+    .tkey-modal { position: absolute; left: 50%; top: 64px; width: min(440px, calc(100% - 2 * var(--dm-bleed) - 40px)); transform: translateX(calc(-50% - var(--dm-bleed) / 2)); }
+    .tkey-warn { font-size: 11.5px; line-height: 1.55; color: var(--wbm-muted, #93a3bb); }
+    .tkey-warn b { color: #fff; font-weight: 600; }
+    .tkey-key { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.34); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .tkey-code { flex: 1; min-width: 0; font-family: var(--dm-mono); font-size: 11px; line-height: 1.5; color: #fff; word-break: break-all; }
+    .tkey-copy { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; font-size: 10.5px; font-weight: 600; color: #e8eef8; background: rgba(255, 255, 255, 0.12); border-radius: 7px; padding: 5px 10px; }
+    .tkey-copy .dm-ico { width: 11px; height: 11px; }
+    .tkey-modal .wbm-modal-foot .wbm-btn { height: 30px; padding: 0 14px; }
+
+    /* Angosto: el modal compacto se vuelve hoja inferior, como en la app. */
+    @container dm (max-width: 640px) {
+        .tkey-modal { left: 0; right: var(--dm-bleed); top: auto; bottom: 0; width: auto; transform: none; border-radius: 18px 18px 0 0; }
+    }
+</style>

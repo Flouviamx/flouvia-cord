@@ -1,0 +1,60 @@
+---
+// Pieza interna (no es un mockup registrado): el chasis de una sub-página de
+// Ajustes (SettingsShell.astro) — miga "‹ Configuración / Pestaña", icono y
+// nombre de la categoría con su descripción y la barra segmentada de pestañas.
+// Sale de la MISMA fuente que la app: localizedCategoryOfTab() de
+// src/lib/settings.ts; si la categoría se renombra, el mockup la sigue.
+import { localizedCategoryOfTab } from '../../../lib/settings';
+import DmIcon from './DmIcon.astro';
+import { dmT, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    /** id de la pestaña activa (p.ej. 'dominio', 'plan'). */
+    tab: string;
+}
+const { lang, tab } = Astro.props;
+const category = localizedCategoryOfTab(tab, lang)!;
+const single = category.tabs.length <= 1;
+const active = category.tabs.find((tb) => tb.id === tab);
+---
+<div class="seth">
+    <div class="seth-crumb">
+        <span class="seth-back"><DmIcon name="chevron-left" />{dmT(lang, 'settings.configuracion')}</span>
+        {!single && active && <><span class="seth-sep">/</span><span class="seth-here">{active.label}</span></>}
+    </div>
+    <div class="seth-heading">
+        <span class="seth-icon"><svg class="dm-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={category.icon}></svg></span>
+        <span class="seth-titles">
+            <span class="seth-title">{category.label}</span>
+            <span class="seth-desc">{category.desc}</span>
+        </span>
+    </div>
+    {!single && (
+        <div class="seth-tabs">
+            {category.tabs.map((tb) => <span class:list={['seth-tab', { 'is-on': tb.id === tab }]}>{tb.label}</span>)}
+        </div>
+    )}
+</div>
+
+<style is:global>
+    .seth { padding: 4px 0 16px; min-width: 0; }
+    .seth-crumb { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; font-size: 11px; font-weight: 600; color: var(--dm-muted); }
+    .seth-back { display: inline-flex; align-items: center; gap: 3px; }
+    .seth-back .dm-ico { width: 12px; height: 12px; }
+    .seth-sep { color: #c4cad3; }
+    .seth-here { color: var(--dm-text); }
+    .seth-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .seth-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: #fff; color: var(--dm-muted); box-shadow: var(--dm-shadow-card); }
+    .seth-icon .dm-ico { width: 19px; height: 19px; }
+    .seth-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .seth-title { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; color: var(--dm-text); }
+    .seth-desc { font-size: 11.5px; color: var(--dm-muted); }
+    .seth-tabs { display: inline-flex; gap: 2px; margin-top: 14px; padding: 3px; border-radius: 11px; background: rgba(10, 25, 47, 0.065); box-shadow: inset 0 1px 1px rgba(10, 25, 47, 0.06); max-width: 100%; overflow: hidden; }
+    .seth-tab { display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; flex-shrink: 0; }
+    .seth-tab.is-on { background: #fff; color: var(--dm-text); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.13), 0 1px 5px rgba(10, 25, 47, 0.05); }
+    @container dm (max-width: 520px) {
+        .seth-desc { display: none; }
+        .seth-title { font-size: 17px; }
+    }
+</style>

@@ -1,0 +1,292 @@
+---
+// Mockup: Inicio (/app) en escritorio. Calca de src/pages/app/index.astro:
+//   - hero de dinero fijo: píldoras Cerrado / Cobrado / Cotizado, el monto del periodo,
+//     la variación "vs. periodo anterior", el selector "Últimos 30 días", la nota del
+//     rango y la gráfica del periodo;
+//   - la cuadrícula de widgets en su orden por defecto: Por cerrar, Tasa de cierre,
+//     Ticket promedio, Por dar seguimiento, Embudo de conversión, Pipeline, Tendencia
+//     mensual y Tareas y recordatorios (este último, el mismo DmTasksWidget).
+// Cada widget lleva su alcance (Hoy / Rango) como la ScopeTag real. Gráficas en SVG
+// propio con la paleta de la app: gris + un acento navy; el pipeline usa los colores
+// de STATUS_META, como mountSegBar.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmTasksWidget from './DmTasksWidget.astro';
+import { STATUS_META } from '../../../lib/quote';
+import { dmT, dmMoney, dmMoneyParts, pick, tpl, type DmLang } from './format';
+import { BOARD_TOTALS, money0Parts } from './dm-gestion';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const HERO = 1284500;
+const DELTA = 18;
+
+// Serie diaria de 30 días (cerrado), determinista y escalada al total del hero.
+const raw = Array.from({ length: 30 }, (_, i) => {
+    const wave = Math.sin(i / 2.3) * 0.5 + Math.sin(i / 5.1 + 1) * 0.35;
+    const weekend = i % 7 === 5 || i % 7 === 6 ? 0.55 : 1;
+    return Math.max(0.08, (1 + wave + ((i * 37) % 11) / 14) * weekend + i * 0.03);
+});
+const rawSum = raw.reduce((a, b) => a + b, 0);
+const daily = raw.map((v) => (v / rawSum) * HERO);
+const W = 600;
+const H = 130;
+const maxD = Math.max(...daily) * 1.12;
+const pts = daily.map((v, i) => [(i / (daily.length - 1)) * W, H - (v / maxD) * H] as const);
+// Curva suave (Catmull-Rom → Bézier), como la línea de chart.ts.
+const f1 = (n: number) => n.toFixed(1);
+const line = pts.reduce((acc, [x, y], i) => {
+    if (i === 0) return `M${f1(x)},${f1(y)}`;
+    const [x0, y0] = pts[i - 2] ?? pts[i - 1];
+    const [x1, y1] = pts[i - 1];
+    const [x3, y3] = pts[i + 1] ?? [x, y];
+    const c1x = x1 + (x - x0) / 6, c1y = y1 + (y - y0) / 6;
+    const c2x = x - (x3 - x1) / 6, c2y = y - (y3 - y1) / 6;
+    return `${acc} C${f1(c1x)},${f1(c1y)} ${f1(c2x)},${f1(c2y)} ${f1(x)},${f1(y)}`;
+}, '');
+const area = `${line} L${W},${H} L0,${H} Z`;
+
+const SENT = BOARD_TOTALS.sent.total;
+const VIEWED = BOARD_TOTALS.viewed.total;
+const POR_CERRAR = SENT + VIEWED;
+const FUNNEL = [
+    { key: 'dash.funnel_enviadas', v: 32 },
+    { key: 'dash.funnel_vistas', v: 26 },
+    { key: 'dash.funnel_aprobadas', v: 14 },
+    { key: 'dash.funnel_pagadas', v: 11 },
+] as const;
+const PIPE = (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((k) => ({ k, ...BOARD_TOTALS[k] }));
+const pipeTotal = PIPE.reduce((s, p) => s + p.total, 0);
+const WEEKS = [
+    { es: '9 sep', en: 'Sep 9', cot: 412000, cer: 214000 },
+    { es: '16 sep', en: 'Sep 16', cot: 538000, cer: 296000 },
+    { es: '23 sep', en: 'Sep 23', cot: 466000, cer: 241000 },
+    { es: '30 sep', en: 'Sep 30', cot: 590000, cer: 318000 },
+    { es: '7 oct', en: 'Oct 7', cot: 503000, cer: 215500 },
+];
+const maxW = Math.max(...WEEKS.map((w) => w.cot)) * 1.08;
+const spark = [42, 48, 45, 51, 49, 55, 52, 58, 54, 60, 57, 62];
+const sparkPath = spark.map((v, i) => `${i ? 'L' : 'M'}${((i / (spark.length - 1)) * 100).toFixed(1)},${(30 - ((v - 40) / 24) * 28).toFixed(1)}`).join(' ');
+
+const DATA = {
+    es: {
+        caption: `Inicio en escritorio: el indicador de dinero con Cerrado, Cobrado y Cotizado muestra ${dmMoney(HERO, 'MXN', 'es')} cerrados en los últimos 30 días, +${DELTA} % vs. periodo anterior; debajo, los widgets Por cerrar, Tasa de cierre, Ticket promedio, Por dar seguimiento, Embudo de conversión, Pipeline, Tendencia mensual y Tareas y recordatorios.`,
+        rango: 'Últimos 30 días',
+        conv: 'Conversión de principio a fin',
+        xs: ['9 sep', '16 sep', '23 sep', '30 sep', '7 oct'],
+    },
+    en: {
+        caption: `Home on desktop: the money indicator with Closed, Collected and Quoted shows ${dmMoney(HERO, 'MXN', 'en')} closed in the last 30 days, +${DELTA}% vs. the previous period; below, the In progress, Close rate, Average ticket, Needs follow-up, Conversion funnel, Pipeline, Monthly trend, and Tasks and reminders widgets.`,
+        rango: 'Last 30 days',
+        conv: 'End-to-end conversion',
+        xs: ['Sep 9', 'Sep 16', 'Sep 23', 'Sep 30', 'Oct 7'],
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+const M = (n: number) => money0Parts(n, 'MXN', lang);
+const heroParts = dmMoneyParts(HERO, 'MXN', lang);
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" title={dmT(lang, 'dash.heading')} badges={{ seguimiento: 2 }} height={1140} caption={caption} class="dm-hm-figure">
+    <span slot="actions" class="dm-btn dm-btn-secondary dm-btn-rect"><DmIcon name="sliders" />{dmT(lang, 'widgets.personalizar')}</span>
+
+    <div class="dm-surface dm-hm-hero">
+        <div class="dm-hm-hero-top">
+            <div>
+                <div class="dm-hm-metrics">
+                    <span class="is-on">{dmT(lang, 'dash.hero_metric_cerrado')}</span>
+                    <span>{dmT(lang, 'dash.hero_metric_cobrado')}</span>
+                    <span>{dmT(lang, 'dash.hero_metric_cotizado')}</span>
+                </div>
+                <div class="dm-hm-hero-row">
+                    <span class="dm-money dm-hm-hero-num">{heroParts.value}<span class="dm-cur">{heroParts.code}</span></span>
+                    <span class="dm-hm-delta"><DmIcon name="arrow-up" stroke={2.5} />{DELTA}%<span>{dmT(lang, 'dash.hero_vs_periodo')}</span></span>
+                </div>
+            </div>
+            <span class="dm-hm-range"><DmIcon name="calendar" />{d.rango}<DmIcon name="chevron-down" stroke={2.2} /></span>
+        </div>
+        <span class="dm-hm-note">{dmT(lang, 'dash.rango_nota')}</span>
+        <div class="dm-hm-chart">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+                {[0.25, 0.5, 0.75].map((f) => <line x1="0" x2={W} y1={H * f} y2={H * f} class="dm-hm-grid"></line>)}
+                <path d={area} class="dm-hm-area"></path>
+                <path d={line} class="dm-hm-line" vector-effect="non-scaling-stroke"></path>
+            </svg>
+            <div class="dm-hm-xs">{d.xs.map((x) => <span>{x}</span>)}</div>
+        </div>
+    </div>
+
+    <div class="dm-hm-grid4">
+        <div class="dm-surface dm-hm-kpi">
+            <span class="dm-hm-kpi-head"><span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_cerrar')}</span><span class="dm-hm-scope">{dmT(lang, 'widgets.scope_hoy')}</span></span>
+            <span class="dm-money dm-hm-kpi-num">{M(POR_CERRAR).value}<span class="dm-cur">MXN</span></span>
+            <span class="dm-kpi-sub">{tpl(dmT(lang, 'dash.kpi_cotizaciones_activas'), { n: BOARD_TOTALS.sent.n + BOARD_TOTALS.viewed.n })}</span>
+            <span class="dm-hm-split"><i style={`flex-grow:${SENT};background:${STATUS_META.sent.color}`}></i><i style={`flex-grow:${VIEWED};background:${STATUS_META.viewed.color}`}></i></span>
+            <span class="dm-hm-legend"><span><i style={`background:${STATUS_META.sent.color}`}></i>{dmT(lang, 'cot.col.sent')}</span><span><i style={`background:${STATUS_META.viewed.color}`}></i>{dmT(lang, 'cot.col.viewed')}</span></span>
+        </div>
+        <div class="dm-surface dm-hm-kpi">
+            <span class="dm-hm-kpi-head"><span class="dm-kpi-label">{dmT(lang, 'dash.kpi_tasa_cierre')}</span><span class="dm-hm-scope is-range">{dmT(lang, 'widgets.scope_rango')}</span></span>
+            <span class="dm-hm-kpi-row"><span class="dm-editorial dm-hm-kpi-num">38%</span><span class="dm-hm-up"><DmIcon name="arrow-up" stroke={2.5} />4 pts</span></span>
+            <span class="dm-kpi-sub">{tpl(dmT(lang, 'dash.kpi_tasa_sub'), { g: 12, n: 32 })}</span>
+            <span class="dm-hm-progress"><i style="width:38%"></i></span>
+        </div>
+        <div class="dm-surface dm-hm-kpi">
+            <span class="dm-hm-kpi-head"><span class="dm-kpi-label">{dmT(lang, 'dash.kpi_ticket_promedio')}</span><span class="dm-hm-scope is-range">{dmT(lang, 'widgets.scope_rango')}</span></span>
+            <span class="dm-hm-kpi-row"><span class="dm-money dm-hm-kpi-num">{M(53520).value}<span class="dm-cur">MXN</span></span><span class="dm-hm-up"><DmIcon name="arrow-up" stroke={2.5} />6%</span></span>
+            <span class="dm-kpi-sub">{tpl(dmT(lang, 'dash.kpi_ticket_n'), { n: 24 })}</span>
+            <svg class="dm-hm-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"><path d={sparkPath} vector-effect="non-scaling-stroke"></path></svg>
+        </div>
+        <div class="dm-surface dm-hm-kpi">
+            <span class="dm-hm-kpi-head"><span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_seguimiento')}</span><span class="dm-hm-scope">{dmT(lang, 'widgets.scope_hoy')}</span></span>
+            <span class="dm-editorial dm-hm-kpi-num is-warn">2</span>
+            <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_vista_plural')}</span>
+        </div>
+    </div>
+
+    <div class="dm-hm-grid2">
+        <div class="dm-surface dm-hm-card">
+            <div class="dm-hm-sechead"><span>{dmT(lang, 'dash.funnel_titulo')}<span class="dm-hm-scope is-range">{dmT(lang, 'widgets.scope_rango')}</span></span></div>
+            <div class="dm-hm-funnel">
+                {FUNNEL.map((f, i) => (
+                    <div class="dm-hm-frow">
+                        <span class="dm-hm-fbar" style={`width:${Math.max(30, (f.v / FUNNEL[0].v) * 100)}%;opacity:${(1 - i * (0.55 / 3)).toFixed(2)}`}><span>{dmT(lang, f.key)}</span><b>{f.v}</b></span>
+                        <span class="dm-hm-fnote">{i > 0 ? `${Math.round((f.v / FUNNEL[i - 1].v) * 100)}%` : ''}</span>
+                    </div>
+                ))}
+            </div>
+            <span class="dm-hm-conv">{d.conv} <b>{Math.round((FUNNEL[3].v / FUNNEL[0].v) * 100)}%</b></span>
+        </div>
+        <div class="dm-surface dm-hm-card">
+            <div class="dm-hm-sechead"><span>{dmT(lang, 'dash.pipeline_titulo')}<span class="dm-hm-scope">{dmT(lang, 'widgets.scope_hoy')}</span></span><span class="dm-hm-link">{dmT(lang, 'dash.ver_todas')}</span></div>
+            <span class="dm-hm-segbar">{PIPE.map((p) => <i style={`flex-grow:${p.total};background:${STATUS_META[p.k].color}`}></i>)}</span>
+            <div class="dm-hm-seglegend">
+                {PIPE.map((p) => (
+                    <span class="dm-hm-segrow">
+                        <i style={`background:${STATUS_META[p.k].color}`}></i>
+                        <span class="dm-hm-seglabel">{dmT(lang, `cot.col.${p.k}`)} · {p.n}</span>
+                        <span class="dm-money">{M(p.total).value}<span class="dm-cur">MXN</span></span>
+                        <span class="dm-hm-segpct">{Math.round((p.total / pipeTotal) * 100)}%</span>
+                    </span>
+                ))}
+            </div>
+        </div>
+    </div>
+
+    <div class="dm-surface dm-hm-card dm-hm-trend">
+        <div class="dm-hm-sechead">
+            <span>{dmT(lang, 'dash.tendencia_titulo')}<span class="dm-hm-scope is-range">{dmT(lang, 'widgets.scope_rango')}</span></span>
+            <span class="dm-hm-tlegend"><span><i class="is-cot"></i>{dmT(lang, 'dash.tendencia_cotizado')}</span><span><i class="is-cer"></i>{dmT(lang, 'dash.tendencia_cerrado')}</span></span>
+        </div>
+        <div class="dm-hm-bars">
+            {WEEKS.map((w) => (
+                <div class="dm-hm-bcol">
+                    <span class="dm-hm-bpair">
+                        <i class="is-cot" style={`height:${((w.cot / maxW) * 100).toFixed(1)}%`}></i>
+                        <i class="is-cer" style={`height:${((w.cer / maxW) * 100).toFixed(1)}%`}></i>
+                    </span>
+                    <span class="dm-hm-blabel">{w[lang]}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="dm-surface dm-hm-tasks"><DmTasksWidget lang={lang} bare /></div>
+</DocsMockup>
+
+<style is:global>
+    .dm-hm-figure .dm-page-head { padding-right: calc(20px + var(--dm-bleed)); }
+    .dm-hm-figure .dm-content { padding-right: calc(20px + var(--dm-bleed)); display: flex; flex-direction: column; gap: 10px; }
+    .dm-hm-hero { padding: 16px 18px 12px; }
+    .dm-hm-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .dm-hm-metrics { display: inline-flex; gap: 3px; margin-bottom: 8px; }
+    .dm-hm-metrics span { padding: 4px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: var(--dm-muted); }
+    .dm-hm-metrics span.is-on { background: var(--dm-canvas); color: var(--dm-navy); }
+    .dm-hm-hero-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .dm-hm-hero-num { font-size: 32px; line-height: 1; color: var(--dm-navy); letter-spacing: -0.04em; }
+    .dm-hm-hero-num .dm-cur { font-size: 12px; }
+    .dm-hm-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--dm-ok); }
+    .dm-hm-delta .dm-ico { width: 11px; height: 11px; }
+    .dm-hm-delta span { margin-left: 3px; font-weight: 500; color: var(--dm-muted); }
+    .dm-hm-range { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border-strong), 0 1px 2px rgba(10, 25, 47, 0.05); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .dm-hm-range .dm-ico { width: 13px; height: 13px; color: var(--dm-muted); }
+    .dm-hm-range .dm-ico:last-child { width: 10px; height: 10px; }
+    .dm-hm-note { display: block; margin-top: 7px; font-size: 10px; color: var(--dm-muted); opacity: 0.85; }
+    .dm-hm-chart { margin-top: 10px; }
+    .dm-hm-chart svg { display: block; width: 100%; height: 96px; }
+    .dm-hm-grid { stroke: rgba(10, 25, 47, 0.06); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .dm-hm-area { fill: rgba(10, 25, 47, 0.06); }
+    .dm-hm-line { fill: none; stroke: var(--dm-navy); stroke-width: 1.8; stroke-linejoin: round; }
+    .dm-hm-xs { display: flex; justify-content: space-between; margin-top: 5px; font-size: 9.5px; color: var(--dm-faint); }
+
+    .dm-hm-scope { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 8.5px; font-weight: 650; letter-spacing: 0.02em; text-transform: none; color: var(--dm-muted); background: var(--dm-soft); box-shadow: inset 0 0 0 1px var(--dm-border); white-space: nowrap; }
+    .dm-hm-scope.is-range { color: #3157a6; background: rgba(66, 108, 197, 0.09); box-shadow: none; }
+    .dm-hm-grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .dm-hm-kpi { display: flex; flex-direction: column; gap: 6px; padding: 12px 13px 13px; min-width: 0; }
+    .dm-hm-kpi-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; min-width: 0; }
+    .dm-hm-kpi-head .dm-kpi-label { font-size: 8.5px; white-space: normal; overflow: visible; }
+    .dm-hm-kpi-head .dm-hm-scope { margin-left: 0; }
+    .dm-hm-kpi-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 7px; }
+    .dm-hm-kpi-num { font-size: 19px; line-height: 1.05; color: var(--dm-navy); letter-spacing: -0.035em; }
+    .dm-hm-kpi-num .dm-cur { font-size: 9px; }
+    .dm-hm-kpi-num.is-warn { color: var(--dm-warn); }
+    .dm-hm-up { display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px; border-radius: 5px; font-size: 9.5px; font-weight: 700; color: #047857; background: rgba(16, 185, 129, 0.12); }
+    .dm-hm-up .dm-ico { width: 9px; height: 9px; }
+    .dm-hm-kpi .dm-kpi-sub { white-space: normal; line-height: 1.35; font-size: 10px; }
+    .dm-hm-split { display: flex; gap: 2px; height: 7px; margin-top: auto; border-radius: 99px; overflow: hidden; }
+    .dm-hm-split i { flex-basis: 0; }
+    .dm-hm-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 9.5px; color: var(--dm-muted); }
+    .dm-hm-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .dm-hm-legend i { width: 6px; height: 6px; border-radius: 50%; }
+    .dm-hm-progress { height: 6px; margin-top: auto; border-radius: 99px; background: rgba(10, 25, 47, 0.07); overflow: hidden; }
+    .dm-hm-progress i { display: block; height: 100%; border-radius: 99px; background: var(--dm-navy); }
+    .dm-hm-spark { display: block; width: 100%; height: 30px; margin-top: auto; }
+    .dm-hm-spark path { fill: none; stroke: var(--dm-navy); stroke-width: 1.5; opacity: 0.75; }
+
+    .dm-hm-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dm-hm-card { padding: 13px 15px 14px; min-width: 0; }
+    .dm-hm-sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 11px; border-bottom: 1px solid var(--dm-border); font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; }
+    .dm-hm-link { font-size: 10px; font-weight: 600; color: var(--dm-navy); white-space: nowrap; }
+    .dm-hm-funnel { display: flex; flex-direction: column; gap: 5px; }
+    .dm-hm-frow { display: flex; align-items: center; gap: 8px; }
+    .dm-hm-fbar { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 24px; padding: 0 9px; border-radius: 6px; background: var(--dm-navy); color: #fff; font-size: 10px; font-weight: 600; }
+    .dm-hm-fbar b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dm-hm-fnote { font-size: 9.5px; font-weight: 600; color: var(--dm-muted); }
+    .dm-hm-conv { display: block; margin-top: 10px; font-size: 10px; color: var(--dm-muted); }
+    .dm-hm-conv b { color: var(--dm-text); font-weight: 700; }
+    .dm-hm-segbar { display: flex; gap: 2px; height: 10px; border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+    .dm-hm-segbar i { flex-basis: 0; min-width: 4px; }
+    .dm-hm-seglegend { display: flex; flex-direction: column; gap: 6px; }
+    .dm-hm-segrow { display: grid; grid-template-columns: 7px minmax(0, 1fr) auto 30px; align-items: center; gap: 7px; font-size: 10.5px; }
+    .dm-hm-segrow > i { width: 7px; height: 7px; border-radius: 50%; }
+    .dm-hm-seglabel { color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-hm-segrow .dm-money { font-size: 11px; }
+    .dm-hm-segrow .dm-cur { font-size: 8px; }
+    .dm-hm-segpct { font-size: 9.5px; color: var(--dm-faint); text-align: right; font-variant-numeric: tabular-nums; }
+
+    .dm-hm-tlegend { display: inline-flex; gap: 10px; font-size: 9.5px; font-weight: 500; color: var(--dm-muted); }
+    .dm-hm-tlegend span { display: inline-flex; align-items: center; gap: 4px; }
+    .dm-hm-tlegend i, .dm-hm-bpair i { display: block; border-radius: 3px; }
+    .dm-hm-tlegend i { width: 8px; height: 8px; }
+    .dm-hm-tlegend i.is-cot, .dm-hm-bpair i.is-cot { background: #e2e8f0; }
+    .dm-hm-tlegend i.is-cer, .dm-hm-bpair i.is-cer { background: var(--dm-navy); }
+    .dm-hm-bars { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; height: 92px; padding-top: 4px; background: repeating-linear-gradient(to bottom, transparent 0, transparent 26px, rgba(10, 25, 47, 0.05) 26px, rgba(10, 25, 47, 0.05) 27px); }
+    .dm-hm-bcol { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+    .dm-hm-bpair { flex: 1; display: flex; align-items: flex-end; gap: 4px; width: 100%; max-width: 54px; }
+    .dm-hm-bpair i { flex: 1; border-radius: 4px 4px 1px 1px; }
+    .dm-hm-blabel { font-size: 9.5px; color: var(--dm-faint); }
+    .dm-hm-tasks { overflow: hidden; }
+
+    @container dm (max-width: 640px) {
+        .dm-hm-figure .dm-stage { height: auto; max-height: 1500px; }
+        .dm-hm-grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dm-hm-grid2 { grid-template-columns: minmax(0, 1fr); }
+    }
+    @container dm (max-width: 520px) {
+        .dm-hm-hero-num { font-size: 25px; }
+        .dm-hm-kpi-num { font-size: 16px; }
+    }
+</style>

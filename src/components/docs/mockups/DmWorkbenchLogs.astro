@@ -1,0 +1,117 @@
+---
+// Mockup: la app en el entorno de prueba (banner ámbar de AppLayout) con la
+// barra Desarrolladores abierta: las seis pestañas del Workbench y la de
+// Registros activa. Calca de la rama `tab === 'registros'` de
+// src/pages/app/wb/[tab].astro: buscador por ruta, chips de método y de clase
+// de status, la lista maestra (status · método · ruta · fecha) y el detalle de
+// la fila seleccionada. Las peticiones son las del Inicio rápido con una llave
+// sk_test_: /v1/me, alta de cliente, cotización (una con 422) y su envío.
+// El modo se muestra crudo ("test"), igual que el detalle real.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import WbPanel from './WbPanel.astro';
+import WbBackdrop from './WbBackdrop.astro';
+import WbTestBar from './WbTestBar.astro';
+import { dmT, pick, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const QID = '8b0c6f0e-2d55-4c1e-9a43-6a2f1c7d9e10';
+const LOGS = [
+    { st: 200, m: 'PATCH', path: `/v1/cotizaciones/${QID}`, t: '11:46' },
+    { st: 201, m: 'POST', path: '/v1/cotizaciones', t: '11:45', sel: true },
+    { st: 422, m: 'POST', path: '/v1/cotizaciones', t: '11:44' },
+    { st: 201, m: 'POST', path: '/v1/clientes', t: '11:43' },
+    { st: 200, m: 'GET', path: '/v1/me', t: '11:42' },
+    { st: 401, m: 'GET', path: '/v1/me', t: '11:41' },
+    { st: 200, m: 'GET', path: '/v1/productos', t: '11:38' },
+];
+const DATA = {
+    es: {
+        caption: 'La barra Desarrolladores abierta al fondo de la app en el entorno de prueba, con sus pestañas Resumen, Webhooks, Eventos, API, Registros y Salud; en Registros, las peticiones del inicio rápido hechas con la llave de prueba y el detalle de POST /v1/cotizaciones (201, 184 ms, modo test).',
+        dia: '8 oct',
+        largo: '8 oct 2026, 11:45:12',
+        llave: 'Inicio rápido',
+    },
+    en: {
+        caption: 'The Developers bar open at the bottom of the app in the test environment, with its Overview, Webhooks, Events, API, Logs and Health tabs; on Logs, the quickstart requests made with the test key and the detail of POST /v1/cotizaciones (201, 184 ms, test mode).',
+        dia: 'Oct 8',
+        largo: 'Oct 8, 2026, 11:45:12',
+        llave: 'Quickstart',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" title={dmT(lang, 'cot.heading')} caption={caption} class="dm-wb-figure dm-wbtest-figure dm-wblogs-figure">
+    <WbTestBar lang={lang} />
+    <div class="dm-testbody"><WbBackdrop lang={lang} /></div>
+
+    <WbPanel slot="overlay" lang={lang} tab="registros" class="dm-wb-sheet">
+        <div class="wblog">
+            <div class="wblog-filters">
+                <span class="wblog-search"><DmIcon name="search" /><span>{dmT(lang, 'wb.logs.buscar')}</span></span>
+                <span class="wbm-seg"><span class="is-on">{dmT(lang, 'wb.logs.todos')}</span><span>GET</span><span>POST</span></span>
+                <span class="wbm-seg dm-hide-narrow"><span class="is-on">{dmT(lang, 'wb.logs.todos')}</span><span>2xx</span><span>4xx</span><span>5xx</span></span>
+                <span class="wblog-count">{LOGS.length}</span>
+            </div>
+            <div class="wblog-cols">
+                <div class="wblog-list">
+                    {LOGS.map((r) => (
+                        <div class:list={['wblog-row', { 'is-on': r.sel }]}>
+                            <span class:list={['wbm-st', r.st >= 400 ? 'bad' : 'ok']}>{r.st}</span>
+                            <span class:list={['wbm-m', r.m.toLowerCase()]}>{r.m}</span>
+                            <span class="wbm-path">{r.path}</span>
+                            <span class="wbm-when">{d.dia}, {r.t}</span>
+                        </div>
+                    ))}
+                </div>
+                <div class="wblog-detail">
+                    <span class="wbm-lbl">{dmT(lang, 'wb.logs.peticion')}</span>
+                    <span class="wblog-title"><b>POST</b> <span class="wbm-mono">/v1/cotizaciones</span></span>
+                    <div class="wbm-kv">
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.estado')}</span><b class="ok">201</b></div>
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.tiempo')}</span><b>{d.largo}</b></div>
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.latencia')}</span><b>184 ms</b></div>
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.ip')}</span><b>189.203.41.17</b></div>
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.clave')}</span><b>{d.llave}</b></div>
+                        <div class="wbm-kv-row"><span>{dmT(lang, 'wb.logs.modo')}</span><b>test</b></div>
+                    </div>
+                    <span class="wblog-note">{dmT(lang, 'wb.logs.sin_cuerpos')}</span>
+                </div>
+            </div>
+        </div>
+    </WbPanel>
+</DocsMockup>
+
+<style is:global>
+    .wblog { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+    .wblog-filters { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .wblog-search { display: inline-flex; align-items: center; gap: 7px; height: 28px; width: 170px; padding: 0 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); font-size: 11px; color: rgba(255, 255, 255, 0.32); white-space: nowrap; overflow: hidden; }
+    .wblog-search .dm-ico { width: 12px; height: 12px; color: rgba(255, 255, 255, 0.35); }
+    .wblog-count { margin-left: auto; font-size: 10.5px; color: rgba(255, 255, 255, 0.35); font-variant-numeric: tabular-nums; }
+    .wblog-cols { display: grid; grid-template-columns: minmax(0, 1fr) 214px; gap: 10px; align-items: start; }
+    .wblog-list { border: 1px solid var(--wbm-border); border-radius: 12px; background: var(--wbm-surface); overflow: hidden; min-width: 0; }
+    .wblog-row { display: grid; grid-template-columns: 30px 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 11px; border-bottom: 1px solid var(--wbm-border); }
+    .wblog-row:last-child { border-bottom: 0; }
+    .wblog-row.is-on { background: rgba(107, 155, 242, 0.12); box-shadow: inset 2px 0 0 var(--wbm-blue); }
+    .wblog-detail { display: flex; flex-direction: column; gap: 4px; padding: 12px 13px; border: 1px solid var(--wbm-border); border-radius: 12px; background: var(--wbm-surface); min-width: 0; }
+    .wblog-title { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 2px 0 4px; font-size: 12px; color: #dbe6f6; }
+    .wblog-title b { font-size: 10.5px; letter-spacing: 0.03em; color: var(--wbm-blue); }
+    .wblog-detail .wbm-kv-row { font-size: 10.5px; }
+    .wblog-note { margin-top: 8px; font-size: 10px; line-height: 1.5; color: rgba(255, 255, 255, 0.35); }
+
+    @container dm (max-width: 640px) {
+        .wblog-cols { grid-template-columns: minmax(0, 1fr); }
+        .wblog-search { width: 100%; }
+        .wblog-count { margin-left: 0; }
+    }
+    @container dm (max-width: 520px) {
+        .wblog-row { grid-template-columns: 30px 40px minmax(0, 1fr); }
+        .wblog-row .wbm-when { display: none; }
+    }
+</style>

@@ -16,6 +16,7 @@ Under **Settings › Notifications** you choose which events notify you and how:
 - Quote about to expire (3 days before)
 - Overdue payment
 - Someone joined the team
+- Task reminder (every morning)
 
 Check the email and/or Slack box for each event; it saves instantly.
 
@@ -26,3 +27,7 @@ If you've never touched this screen, Cord already emails you when a quote is app
 ### Slack
 
 You need an **Incoming Webhook** from your Slack workspace (Apps → Incoming Webhooks → Add to Slack). Paste the URL into the same Notifications screen and use the "Send test" button to confirm it arrives. The "Someone joined the team" alert only has an email version — it has no folio or amount to show in a Slack channel.
+
+### Task reminder
+
+It's the only alert that doesn't go to the owner: from 8:00 in your business's time zone, each assignee gets an email with their tasks due today and overdue. It's email only and comes on by default; unchecking it turns it off for the whole organization. More in [Team tasks and reminders](/en/support/tareas-y-recordatorios).

@@ -274,7 +274,7 @@ los detalles comparten `RoadmapDetail.astro`. Los cuatro archivos de ruta solo
 resuelven idioma, slug y `getStaticPaths`, por lo que el comportamiento ES/EN no se
 duplica.
 
-- `src/lib/roadmap-data.ts` es la fuente única de 19 iniciativas. Cada entrada declara
+- `src/lib/roadmap-data.ts` es la fuente única de 22 iniciativas. Cada entrada declara
   familia (`quotes`, `payments`, `invoicing`, `platform`), mercado, flujo, alcance,
   límites y relaciones además de estado y disponibilidad de API.
 - La lista separa Cord Invoicing como producto, CFDI 4.0 (México), Verifactu
