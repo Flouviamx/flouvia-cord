@@ -7,6 +7,16 @@
 
 ---
 
+**Cord Ops: herramientas de operador (8 oct 2026)** — segunda fase del rediseño.
+Búsqueda global con ⌘K (organizaciones, personas, folios, facturas e IDs) y
+atajos de teclado solo en escritorio. Filtros cerrados en organizaciones y
+usuarios, con métricas del filtro completo: antes "Activas en 7 días" contaba
+solo la página visible. Vistas guardadas por navegador y exportación CSV
+auditada, solo para admin y protegida contra inyección de fórmulas. Los
+índices de búsqueda viajaron en la migración `ops-hardening`.
+`npm run security:ops` vigila la exportación y la búsqueda;
+`test/ops-csv.test.ts`, el CSV y los filtros.
+
 **Cord Ops: auditoría de seguridad y sistema visual nuevo (7 oct 2026)** — una
 auditoría de punta a punta encontró un hueco alto y varios medios; todos se
 cerraron en el mismo cambio, junto con el rediseño de la consola.

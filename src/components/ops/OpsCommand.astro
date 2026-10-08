@@ -26,9 +26,10 @@ const svg = (name: IconName) => iconInner(name);
   <div class="ops-command-box">
     <label class="ops-command-input">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={svg('search')} />
-      <input id="ops-command-q" type="search" autocomplete="off" spellcheck="false" placeholder="Busca una organización, persona, folio, factura o pega un ID"
+      <input id="ops-command-q" type="search" autocomplete="off" spellcheck="false" placeholder="Organización, persona, folio o ID"
         role="combobox" aria-expanded="true" aria-controls="ops-command-list" aria-autocomplete="list" />
       <kbd class="ops-kbd">esc</kbd>
+      <button class="ops-command-close" type="button" data-ops-command-close>Cerrar</button>
     </label>
     <div class="ops-command-list" id="ops-command-list" role="listbox" aria-label="Resultados">
       <div class="ops-command-group" data-static>
@@ -185,6 +186,9 @@ const svg = (name: IconName) => iconInner(name);
     timer = window.setTimeout(() => search(input.value.trim()), 180);
   });
   input?.addEventListener('keydown', (event) => {
+    // Un campo type="search" gasta el primer Esc en borrar su texto: aquí un
+    // solo Esc cierra la paleta, como en cualquier paleta de comandos.
+    if (event.key === 'Escape') { event.preventDefault(); palette?.close(); return; }
     if (event.key === 'ArrowDown') { event.preventDefault(); highlight(active + 1); }
     else if (event.key === 'ArrowUp') { event.preventDefault(); highlight(active - 1); }
     else if (event.key === 'Enter') {
@@ -201,6 +205,7 @@ const svg = (name: IconName) => iconInner(name);
     if (button.dataset.action === 'logout') document.getElementById('ops-shell-logout')?.click();
   });
   document.querySelectorAll('[data-ops-command-open]').forEach((el) => el.addEventListener('click', openPalette));
+  document.querySelector('[data-ops-command-close]')?.addEventListener('click', () => palette?.close());
 
   // ── Atajos (solo escritorio) ──
   const typing = (target: EventTarget | null) => {
