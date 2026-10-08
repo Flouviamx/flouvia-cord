@@ -142,11 +142,13 @@ export function opsTopEventTypes(days = 7, orgId: string | null = null) {
 
 export function opsTopOrgs(days = 7) {
   return sql`
-    select o.id, o.nombre, coalesce(o.plan, 'free') plan, count(*)::int n,
-           count(distinct e.actor) filter (where e.actor like 'user:%')::int people
-    from domain_events e join orgs o on o.id = e.org_id
-    where e.created_at >= now() - make_interval(days => ${days})
-    group by o.id, o.nombre, o.plan order by n desc limit 8`;
+    select t.*, cord_effective_plan(t.id) plan from (
+      select o.id, o.nombre, count(*)::int n,
+             count(distinct e.actor) filter (where e.actor like 'user:%')::int people
+      from domain_events e join orgs o on o.id = e.org_id
+      where e.created_at >= now() - make_interval(days => ${days})
+      group by o.id, o.nombre order by n desc limit 8
+    ) t order by t.n desc`;
 }
 
 export function opsTopUsers(days = 7) {

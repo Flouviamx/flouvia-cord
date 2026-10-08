@@ -17,7 +17,7 @@ const [userRows, memberships, sessions, passkeys, connections, audit, activity, 
       (select count(*)::int from passkeys p where p.user_id=u.id) passkey_count,
       (select count(*)::int from oauth_accounts a where a.user_id=u.id) connection_count
       from users u where u.id=${id} limit 1`,
-  sql`select o.id,o.nombre,m.rol,m.estado,m.joined_at,o.plan from org_members m join orgs o on o.id=m.org_id where m.user_id=${id} order by m.created_at desc limit 50`,
+  sql`select o.id,o.nombre,m.rol,m.estado,m.joined_at,cord_effective_plan(o.id) plan from org_members m join orgs o on o.id=m.org_id where m.user_id=${id} order by m.created_at desc limit 50`,
   sql`select id,ip,user_agent,created_at,last_used_at,expires_at,revoked_at from sessions where user_id=${id} order by last_used_at desc limit 50`,
   sql`select name,device_type,backed_up,transports,created_at,last_used_at from passkeys where user_id=${id} order by created_at desc limit 25`,
   sql`select provider,email,created_at from oauth_accounts where user_id=${id} order by created_at desc limit 25`,

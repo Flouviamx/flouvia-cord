@@ -185,6 +185,9 @@ export const appStrings = {
         "topbar.ajustes": "Ajustes",
 
         // AppLayout — banner de entorno de prueba
+        "layout.opsview.badge": "Vista de Cord Ops · solo lectura",
+        "layout.opsview.desc": "Hasta las {hora} ves {org} como su dueño; nada se puede cambiar",
+        "layout.opsview.exit": "Salir de la vista",
         "layout.test.badge": "Entorno de prueba",
         "layout.test.desc": "Todo lo que hagas aquí es de prueba — tus datos reales no se tocan.",
         "layout.test.reset": "Vaciar datos de prueba",
@@ -3972,6 +3975,9 @@ export const appStrings = {
         "topbar.ajustes": "Settings",
 
         // AppLayout — test mode banner
+        "layout.opsview.badge": "Cord Ops view · read only",
+        "layout.opsview.desc": "Until {hora} you see {org} as its owner; nothing can be changed",
+        "layout.opsview.exit": "Exit view",
         "layout.test.badge": "Test mode",
         "layout.test.desc": "Everything you do here is a test — your real data is untouched.",
         "layout.test.reset": "Clear test data",

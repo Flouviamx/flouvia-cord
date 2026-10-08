@@ -2,6 +2,7 @@ import { PostHog } from 'posthog-node';
 import { isInternalAnalyticsEmail, isInternalAnalyticsOrg } from './analytics-internal';
 import { ANALYTICS_EVENTS, ANALYTICS_VERSION } from './analytics-events';
 import type { EventProps, OrgEvent, ServerEvent, UserEvent } from './analytics-events';
+import { currentOpsView } from './context';
 
 const key = import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '';
 const host = import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
@@ -49,7 +50,7 @@ export async function trackPaymentReceived(
     isDemo = false,
     metadata: { payment_id: string } & Partial<EventProps<'payment_received'>> = { payment_id: '' },
 ): Promise<void> {
-    if (!posthogServer) return;
+    if (!posthogServer || currentOpsView()) return;
     const internal = await isInternalAnalyticsOrg(orgId);
     if (internal) markCompanyInternal(orgId);
     const paymentId = typeof metadata.payment_id === 'string' ? metadata.payment_id.trim() : '';
@@ -93,7 +94,9 @@ export async function trackServer<E extends ServerEvent & OrgEvent>(
 ): Promise<boolean> {
     // Callers with durable delivery markers must distinguish disabled capture
     // from an acknowledged flush. Failures still reject so they can retry.
-    if (!posthogServer) return false;
+    // Una vista de Cord Ops ("ver como") no es actividad del negocio: no se
+    // mide, y por eso tampoco se marca nada como entregado.
+    if (!posthogServer || currentOpsView()) return false;
     const internal = await isInternalAnalyticsOrg(orgId);
     if (internal) markCompanyInternal(orgId);
     const props = properties as Record<string, unknown>;
@@ -131,7 +134,7 @@ export async function trackUser<E extends UserEvent>(
     properties: EventProps<E>,
     ctx: { email?: string | null; orgId?: string; isSandbox?: boolean; isDemo?: boolean } = {},
 ): Promise<void> {
-    if (!posthogServer || !userId) return;
+    if (!posthogServer || !userId || currentOpsView()) return;
     const internal = ctx.orgId
         ? await isInternalAnalyticsOrg(ctx.orgId)
         : isInternalAnalyticsEmail(ctx.email);
