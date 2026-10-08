@@ -1,0 +1,11 @@
+---
+// Qué ventana de tiempo mide un widget. En un mismo tablero conviven fotos de hoy
+// (pipeline, cartera), cifras que siguen al selector de fechas y totales
+// históricos; sin decirlo, quien lee compara números que no son comparables.
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+interface Props { scope: 'hoy' | 'rango' | 'historico' }
+const { scope } = Astro.props;
+const L = currentLocale();
+---
+<span class="wx-scope" data-scope={scope} title={t(L, `widgets.scope_${scope}_tip` as any)}>{t(L, `widgets.scope_${scope}` as any)}</span>

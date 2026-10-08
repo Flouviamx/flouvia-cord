@@ -3,7 +3,9 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/modal.css';
 import AccessGate from '../../components/app/AccessGate.astro';
 import PlanGate from '../../components/app/PlanGate.astro';
+import type { PaywallFeature } from '../../components/app/PlanUpsell.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import MonedaNota from '../../components/app/MonedaNota.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
@@ -14,17 +16,22 @@ import FlujoReport from '../../components/app/informes/FlujoReport.astro';
 import CobranzaReport from '../../components/app/informes/CobranzaReport.astro';
 import ClientesReport from '../../components/app/informes/ClientesReport.astro';
 import ProductosReport from '../../components/app/informes/ProductosReport.astro';
+import TablaReport from '../../components/app/informes/TablaReport.astro';
+import ExplorerControls from '../../components/app/informes/ExplorerControls.astro';
 import { getMyMembership } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
-import { REPORTS, REPORT_BY_ID, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
+import { REPORTS, REPORT_BY_ID, parseGranularity, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
 import { loadReport } from '../../lib/informes-data';
+import { DEFAULT_CONFIG, configFromSearch } from '../../lib/informes-explorar';
+import { getGuardado, listGuardados } from '../../lib/informes-guardados';
+import { actor as guardadosActor } from '../../lib/informes-guardados-http';
 import { addDaysISO, parseRangoParams } from '../../lib/rango';
-import { currentLocale } from '../../lib/context';
-import { t } from '../../i18n/app';
+import { todayInZone } from '../../lib/report-scope';
+import { currentLocale, currentTimeZone } from '../../lib/context';
+import { t, type AppStringKey } from '../../i18n/app';
 import { dateFull } from '../../lib/fmt';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
-import { planLabel } from '../../lib/permissions';
 
 const L = currentLocale();
 const es = L !== 'en';
@@ -47,12 +54,47 @@ const hasReportAccess = hasPerm && subscriptionAccess;
 const allowed = hasAnalytics
     ? REPORTS.filter((item) => memberCan(ME, item.perm)).map((item) => item.id)
     : [];
-const todayISO = new Date().toISOString().slice(0, 10);
+// "Hoy" del negocio (orgs.zona_horaria), no el del servidor: regla 24.
+const todayISO = todayInZone(currentTimeZone());
 const minISO = addDaysISO(todayISO, -364);
 const rango = parseRangoParams(Astro.url.searchParams, { minISO, maxISO: todayISO, anchorISO: todayISO, fallback: '30' });
-const payload = hasReportAccess ? await loadReport(reportId, rango) : null;
-const data = payload ? (payload as any)[reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
-const heading = reportLabel(report, L);
+const granularity = parseGranularity(Astro.url.searchParams.get('g'));
+// Explorador (fase 5): la configuración sale de la URL; un informe guardado
+// (?guardado=) la pone cuando la URL todavía no trae una propia.
+const isExplorer = report.kind === 'explorador';
+const actorG = hasAnalytics ? await guardadosActor() : null;
+// Los guardados son un extra del selector: si su consulta falla (p. ej. la tabla
+// todavía no migra en un entorno), Informes sigue funcionando sin ellos.
+const guardados = actorG ? await listGuardados(actorG).catch(() => []) : [];
+const guardadoId = isExplorer ? Astro.url.searchParams.get('guardado') : null;
+const saved = actorG && guardadoId ? await getGuardado(actorG, guardadoId).catch(() => null) : null;
+const urlHasConfig = Astro.url.searchParams.has('dim') || Astro.url.searchParams.has('m');
+const explorerConfig = isExplorer ? (urlHasConfig || !saved ? configFromSearch(Astro.url.searchParams) : saved.config) : DEFAULT_CONFIG;
+const payload = hasReportAccess ? await loadReport(reportId, rango, { g: granularity, x: isExplorer ? explorerConfig : undefined }) : null;
+const isTabla = report.kind !== 'widgets';
+const data = payload ? (payload as any)[isTabla ? 'tabla' : reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
+// Parámetros del rango en la URL (export CSV y selector de granularidad): el rango
+// que se pintó, no el que el navegador tenga guardado.
+const rangeQuery = (extra: Record<string, string> = {}) => {
+    const q = new URLSearchParams();
+    if (rango.key === 'custom') { q.set('desde', rango.desde); q.set('hasta', rango.hasta); } else q.set('rango', String(rango.key));
+    for (const [k, v] of Object.entries(extra)) q.set(k, v);
+    return q.toString();
+};
+const rangeParams = Object.fromEntries(new URLSearchParams(rangeQuery()));
+const explorerParams = isExplorer ? `&dim=${explorerConfig.dim}&m=${explorerConfig.m.join(',')}` : '';
+const csvHref = `/api/informes/${reportId}?${rangeQuery({ format: 'csv', ...(granularity ? { g: granularity } : {}) })}${explorerParams}`;
+const granHref = reportId === 'ventas' ? (g: string) => `/app/informes?r=${reportId}&${rangeQuery({ g })}` : undefined;
+// Drill-down en el tiempo: el mes (o la semana) de la barra con el mismo informe; en
+// el explorador, un nivel más fino de "agrupar por". Un rango nuevo elige solo su
+// granularidad, así que el link no la fija.
+const finer: Record<string, string> = { mes: 'semana', semana: 'dia' };
+const zoomHref = reportId === 'ventas'
+    ? (desde: string, hasta: string) => `/app/informes?r=ventas&desde=${desde}&hasta=${hasta}`
+    : isExplorer && finer[explorerConfig.dim]
+        ? (desde: string, hasta: string) => `/app/informes?r=explorar&desde=${desde}&hasta=${hasta}&dim=${finer[explorerConfig.dim]}&m=${explorerConfig.m.join(',')}`
+        : undefined;
+const heading = saved?.nombre ?? reportLabel(report, L);
 const widgetLabels = {
     drag: es ? 'Arrastrar widget' : 'Drag widget', up: es ? 'Subir widget' : 'Move widget up',
     down: es ? 'Bajar widget' : 'Move widget down', resize: es ? 'Cambiar tamaño' : 'Resize widget',
@@ -65,7 +107,7 @@ import { iconInner } from '../../lib/icons';
     <p slot="page-sub">{es ? 'Una sola casa para entender el desempeño y decidir qué mover.' : 'One place to understand performance and decide what to move.'}</p>
     <Fragment slot="topbar-actions">
         <div class="reports-top-actions">
-            <ReportPicker current={reportId} locale={L} allowed={allowed as ReportId[]} />
+            <ReportPicker current={reportId} locale={L} allowed={allowed as ReportId[]} saved={guardados.map((g) => ({ id: g.id, nombre: g.nombre }))} currentSaved={saved?.id ?? null} />
             {report.scope === 'rango' ? (
                 <DateRangePicker minISO={minISO} maxISO={todayISO} initialKey={rango.key as any} initialDesde={rango.desde} initialHasta={rango.hasta} storageKey={`cord.report.${reportId}.range.v1`} />
             ) : (
@@ -74,7 +116,7 @@ import { iconInner } from '../../lib/icons';
                     {es ? `Al día de hoy · ${dateFull(todayISO, L)}` : `As of today · ${dateFull(todayISO, L)}`}
                 </span>
             )}
-            {hasReportAccess && <WidgetCustomizeButtons editId="reportEditBtn" resetId="reportResetBtn" doneId="reportDoneBtn" />}
+            {hasReportAccess && !isTabla && <WidgetCustomizeButtons editId="reportEditBtn" resetId="reportResetBtn" doneId="reportDoneBtn" />}
         </div>
     </Fragment>
 
@@ -83,19 +125,32 @@ import { iconInner } from '../../lib/icons';
     {hasAnalytics && hasPerm && !subscriptionAccess && entitlementCheck && (
         <PlanGate
             id="informesPlanModal"
-            title={t(L, 'an.informe_plan_titulo')}
-            desc={t(L, 'an.informe_plan_desc')
-                .replace('{report}', reportLabel(report, L))
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            title={t(L, `an.plan.${reportId}.titulo` as AppStringKey)}
+            desc={t(L, `an.plan.${reportId}.desc` as AppStringKey)}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app/informes" />
+            preview={reportId === 'cobranza' ? 'cobranza' : 'informe'}
+            feature={`informe_${reportId}` as PaywallFeature} />
     )}
 
-    {hasReportAccess && data && (
-        <div data-report-shell data-report-id={reportId} data-locale={L}>
-        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} serverPrefs={ME.widgetPrefs?.[`cord.report.${reportId}.v1`] as Record<string, unknown> | undefined} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" trayTitle={es ? 'Widgets ocultos' : 'Hidden widgets'} resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels} librarySearchPlaceholder={es ? 'Buscar widgets…' : 'Search widgets…'} libraryNoResults={es ? 'Sin resultados' : 'No results'} libraryAddLabel={es ? 'Agregar' : 'Add'}>
+    {hasReportAccess && data && isTabla && (
+        <div data-report-shell data-report-kind="tabla" data-report-type={report.kind} data-report-saved={saved ? '1' : undefined}
+            data-report-dim={isExplorer ? explorerConfig.dim : undefined} data-report-metrics={isExplorer ? String(explorerConfig.m.length) : undefined}
+            data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}>
+            {isExplorer && <ExplorerControls config={explorerConfig} L={L} range={rangeParams} saved={saved} />}
+            <TablaReport data={data} L={L} reportId={reportId} csvHref={csvHref} granHref={granHref as any} zoomHref={zoomHref} />
+            <MonedaNota nota={data.moneda} />
+        </div>
+    )}
+
+    {hasReportAccess && data && !isTabla && (
+        <div data-report-shell data-report-type="widgets" data-report-id={reportId} data-locale={L} data-desde={rango.desde} data-hasta={rango.hasta}
+            data-labels={JSON.stringify({
+                status: Object.fromEntries(['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((k) => [k, t(L, `cot.col.${k}` as any)])),
+                etapa: Object.fromEntries(['created_sent', 'sent_viewed', 'viewed_approved', 'approved_paid'].map((k) => [k, t(L, `inf.etapa.${k}` as any)])),
+                vacio: t(L, 'inf.sin_resultados_rango'),
+            })}>
+        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} serverPrefs={ME.widgetPrefs?.[`cord.report.${reportId}.v1`] as Record<string, unknown> | undefined} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels}>
             {reportId === 'resumen' && <ResumenReport data={data} L={L} />}
             {reportId === 'comercial' && <ComercialReport data={data} L={L} />}
             {reportId === 'finanzas' && <FinanzasReport data={data} L={L} />}
@@ -104,6 +159,7 @@ import { iconInner } from '../../lib/icons';
             {reportId === 'clientes' && <ClientesReport data={data} L={L} />}
             {reportId === 'productos' && <ProductosReport data={data} L={L} />}
         </WidgetGrid>
+        <MonedaNota nota={(data as any).moneda} />
         </div>
     )}
 </AppLayout>
@@ -117,6 +173,17 @@ import { iconInner } from '../../lib/icons';
     const reportId = shell?.dataset.reportId;
     const locale = shell?.dataset.locale || 'es';
     const es = locale !== 'en';
+    // Vista de informe (regla 35): desde el navegador, una vez por carga; el
+    // prefetch del selector no ejecuta este script, así que no cuenta como vista.
+    // Regla 13: se difiere a DOMContentLoaded para que el bootstrap de PostHog ya exista.
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!shell || !reportId) return;
+        const kind = shell.dataset.reportType === 'explorador' ? 'explorador' : shell.dataset.reportType === 'tabla' ? 'tabla' : 'widgets';
+        (window as any).cordTrack?.('report_viewed', {
+            report_id: reportId, kind, saved: shell.dataset.reportSaved === '1',
+            dim: shell.dataset.reportDim, metric_count: shell.dataset.reportMetrics ? Number(shell.dataset.reportMetrics) : undefined,
+        });
+    });
     const widget = (id: string) => shell?.querySelector<HTMLElement>(`[data-widget="${id}"]`);
     const text = (selector: string, value: string) => { const el = shell?.querySelector<HTMLElement>(selector); if (el) el.textContent = value; };
     const setChart = (widgetId: string, data: Record<string, unknown>) => {
@@ -124,11 +191,22 @@ import { iconInner } from '../../lib/icons';
         if (chart) remount(chart, data);
     };
     const pct = (a: number, b: number) => b ? Math.round(a / b * 100) : 0;
-    const clearAndRows = (host: HTMLElement | null | undefined, rows: any[], fields: (row: any) => [string, string, string]) => {
+    const labels = (() => { try { return JSON.parse(shell?.dataset.labels || '{}'); } catch { return {}; } })() as {
+        status?: Record<string, string>; etapa?: Record<string, string>; vacio?: string;
+    };
+    // Reconstruye una lista con el MISMO markup que el SSR: fila enlazada cuando hay
+    // destino (si no, el clic que funcionaba al cargar dejaba de funcionar tras cambiar
+    // el rango) y un estado vacío en lugar de una tarjeta en blanco.
+    const clearAndRows = (host: HTMLElement | null | undefined, rows: any[], fields: (row: any) => [string, string, string, string?]) => {
         if (!host) return; host.innerHTML = '';
+        if (!rows.length) {
+            const empty = document.createElement('p'); empty.className = 'report-empty'; empty.textContent = labels.vacio || '';
+            host.append(empty); return;
+        }
         rows.forEach((row) => {
-            const [title, sub, value] = fields(row);
-            const line = document.createElement('div');
+            const [title, sub, value, href] = fields(row);
+            const line = document.createElement(href ? 'a' : 'div');
+            if (href) (line as HTMLAnchorElement).href = href;
             const copy = document.createElement('span');
             const strong = document.createElement('strong'); strong.textContent = title;
             const small = document.createElement('small'); small.textContent = sub;
@@ -136,6 +214,13 @@ import { iconInner } from '../../lib/icons';
             copy.append(strong, small); line.append(copy, amount); host.append(line);
         });
     };
+    function paintMetric(widgetId: string, value: string | number, details: (string | number)[] = []) {
+        const w = widget(widgetId);
+        if (!w) return;
+        const num = w.querySelector<HTMLElement>('.kpi-num');
+        if (num) num.textContent = String(value);
+        w.querySelectorAll<HTMLElement>('[data-widget-detail] dd').forEach((dd, i) => { if (details[i] !== undefined) dd.textContent = String(details[i]); });
+    }
     function paintRangeData(payload: any) {
         const wrapped = payload?.data;
         if (!wrapped || !reportId) return;
@@ -151,39 +236,51 @@ import { iconInner } from '../../lib/icons';
             text('[data-report-bind="lost"]', formatMoney(lost, locale));
             text('[data-report-bind="lost-sub"]', `${lostN} ${es ? 'cotizaciones' : 'quotes'}`);
             setChart('resumen-evolucion', { points: D.series.map((day: any) => ({ x: day.fecha, y: day.cerrado })) });
-            setChart('resumen-madurez', { segments: [
+            // Sin envíos en el rango no hay cohorte: estado vacío, no una barra "100% abierta".
+            setChart('resumen-madurez', { segments: !D.summary.sent ? [] : [
                 { key: 'won', label: es ? 'Ganado' : 'Won', value: won, color: '#059669' },
                 { key: 'lost', label: es ? 'Perdido' : 'Lost', value: lostPct, color: '#ef4444' },
                 { key: 'open', label: es ? 'Aún abierto' : 'Still open', value: Math.max(0, 100 - won - lostPct), color: '#8b95a5' },
             ] });
+            paintMetric('resumen-opcional-decididas', D.summary.approved + lostN, [D.summary.approved, D.losses.rejected.n, D.losses.expired.n]);
         } else if (reportId === 'comercial') {
             const D = wrapped.diagnosis;
             setChart('comercial-embudo', { steps: [
                 { label: es ? 'Enviadas' : 'Sent', value: D.funnel.sent }, { label: es ? 'Vistas' : 'Viewed', value: D.funnel.views },
                 { label: es ? 'Aprobadas' : 'Approved', value: D.funnel.approved }, { label: es ? 'Pagadas' : 'Paid', value: D.funnel.paid },
             ] });
-            setChart('comercial-pipeline', { items: D.pipeline.map((row: any) => ({ label: row.key, value: row.monto, sub: String(row.n) })) });
+            setChart('comercial-pipeline', { items: D.pipeline.map((row: any) => ({ label: labels.status?.[row.key] ?? row.key, value: row.monto, sub: String(row.n) })) });
             setChart('comercial-descuento', { items: D.discounts.map((row: any) => ({ label: row.nombre, value: row.cedido, sub: `${Math.round(row.pct)}%` })) });
-            setChart('comercial-tiempo-etapa', { items: D.stageTiming.map((row: any) => ({ label: row.label, value: row.dias, sub: es ? 'días' : 'days' })) });
-            clearAndRows(widget('comercial-detenidas')?.querySelector<HTMLElement>('.report-list'), D.stalled, (row) => [row.empresa, `${row.folio} · ${row.dias}d`, formatMoney(row.total, locale)]);
+            setChart('comercial-tiempo-etapa', { items: D.stageTiming.map((row: any) => ({ label: labels.etapa?.[row.key] ?? row.key, value: row.dias, sub: es ? 'días' : 'days' })) });
+            clearAndRows(widget('comercial-detenidas')?.querySelector<HTMLElement>('.report-list'), D.stalled, (row) => [row.empresa, `${row.folio} · ${row.dias}d`, formatMoney(row.total, locale), `/app/cotizaciones/${row.id}`]);
+            paintMetric('comercial-opcional-atencion', D.stalled.length);
         } else if (reportId === 'clientes') {
             const D = wrapped.analytics;
             setChart('clientes-ranking', { items: D.clientes.map((row: any) => ({ label: row.empresa, value: row.cerrado, sub: `${row.tasa}%` })) });
-            clearAndRows(widget('clientes-tabla')?.querySelector<HTMLElement>('.report-list'), D.clientes, (row) => [row.empresa, `${row.aprobadas} / ${row.cotizaciones} · ${row.tasa}%`, formatMoney(row.cerrado, locale)]);
+            clearAndRows(widget('clientes-tabla')?.querySelector<HTMLElement>('.report-list'), D.clientes, (row) => [row.empresa, `${row.aprobadas} / ${row.cotizaciones} · ${row.tasa}%`, formatMoney(row.cerrado, locale), row.id ? `/app/clientes/${row.id}` : undefined]);
             setChart('clientes-cohortes', { items: D.cohortes.map((row: any) => ({ label: row.tipo === 'nuevo' ? (es ? 'Nuevos' : 'New') : (es ? 'Recurrentes' : 'Returning'), value: row.cerrado, sub: String(row.clientes) })) });
-            clearAndRows(widget('clientes-riesgo')?.querySelector<HTMLElement>('.report-list'), D.enRiesgo, (row) => [row.empresa, `${row.nivel} · ${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, formatMoney(row.cerrado, locale)]);
+            clearAndRows(widget('clientes-riesgo')?.querySelector<HTMLElement>('.report-list'), D.enRiesgo, (row) => [row.empresa, `${row.nivel} · ${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, formatMoney(row.cerrado, locale), `/app/clientes/${row.id}`]);
+            paintMetric('clientes-opcional-riesgo', D.enRiesgo.length);
         } else if (reportId === 'productos') {
             const D = wrapped.analytics;
             setChart('productos-importe', { items: D.productos.map((row: any) => ({ label: row.nombre, value: row.importe, sub: String(row.cotizaciones) })) });
             clearAndRows(widget('productos-volumen')?.querySelector<HTMLElement>('.report-list'), D.productos, (row) => [row.nombre, `${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, `${row.cantidad} · ${formatMoney(row.importe, locale)}`]);
             setChart('productos-elasticidad', { items: D.pricingBands.map((row: any) => ({ label: `${row.band}%`, value: row.winRate * 100, sub: `n=${row.sample}` })) });
             setChart('productos-cierre', { items: D.cierre.map((row: any) => ({ label: row.nombre, value: row.tasa, sub: `n=${row.decididas}` })) });
+            setChart('productos-opcional-unidades', { items: D.productos.map((row: any) => ({ label: row.nombre, value: row.cantidad })) });
         }
     }
     let request: AbortController | null = null;
     document.addEventListener('cord:range', async (event) => {
         const detail = (event as CustomEvent).detail;
-        if (detail?.initial || !reportId || location.pathname !== '/app/informes') return;
+        if (!reportId || location.pathname !== '/app/informes') return;
+        // El emit inicial solo se ignora si el picker resolvió el MISMO rango que pintó el
+        // servidor. Si resolvió otro (rango guardado en este navegador, o un link sin
+        // ?rango=), los números tienen que seguir a la etiqueta, no al revés.
+        if (detail?.initial && detail.desde === shell?.dataset.desde && detail.hasta === shell?.dataset.hasta) return;
+        // Los informes tabla se arman en el servidor (tabla completa, totales, CSV): un
+        // rango nuevo es una carga nueva. El picker ya escribió el rango en la URL.
+        if (shell?.dataset.reportKind === 'tabla') { location.assign(location.href); return; }
         request?.abort(); request = new AbortController();
         shell?.setAttribute('aria-busy', 'true');
         try {

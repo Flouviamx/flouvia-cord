@@ -1,10 +1,19 @@
 ---
-// Contrato único de bloqueo por PLAN. El contenido inline explica por qué la
-// pantalla no carga y el modal presenta el peldaño mínimo real + el siguiente.
-// Mantenerlos juntos evita gates sin CTA, paywalls sin CSS o planes divergentes.
-import AccessGate from './AccessGate.astro';
-import PlanPaywallModal from './PlanPaywallModal.astro';
+// Contrato único de bloqueo de PÁGINA por plan.
+//
+// La página se ve detrás —desenfocada, con datos de ejemplo— y el panel de
+// upgrade flota encima. Antes era un <dialog> modal abierto en automático sobre
+// un estado vacío: el backdrop tapaba también el menú lateral, la página no
+// mostraba nada de lo que se iba a comprar, y cerrar con ✕ redirigía a otra
+// ruta. Ahora la navegación sigue viva: no hay nada que cerrar.
+//
+// La vista previa es `inert` + `aria-hidden`: no recibe foco, clics ni lectores
+// de pantalla. Lo único accesible es el panel.
+import PlanUpsell, { type PaywallFeature } from './PlanUpsell.astro';
+import PlanGatePreview, { type GatePreview } from './PlanGatePreview.astro';
 import type { PlanId } from '../../lib/entitlements';
+import { t } from '../../i18n/app';
+import { iconInner } from '../../lib/icons';
 
 interface Props {
     id: string;
@@ -12,24 +21,105 @@ interface Props {
     desc: string;
     requiredPlan: PlanId;
     locale?: 'es' | 'en';
-    returnHref?: string;
+    /** Qué página se dibuja detrás. */
+    preview: GatePreview;
+    /** Lista "lo que desbloqueas" propia de la función, si la tiene. */
+    feature?: PaywallFeature;
+    /** `is-inset` dentro de Ajustes (columna angosta, sin alto de página). */
     class?: string;
 }
 
-const {
-    id, title, desc, requiredPlan, locale = 'es', returnHref = '/app',
-    class: className,
-} = Astro.props;
+const { id, title, desc, requiredPlan, locale = 'es', preview, feature, class: className } = Astro.props;
 ---
 
-<Fragment>
-    <AccessGate reason="plan" class={className} title={title} desc={desc} />
-    <PlanPaywallModal
-        id={id}
-        title={title}
-        desc={desc}
-        requiredPlan={requiredPlan}
-        locale={locale}
-        returnHref={returnHref}
-    />
-</Fragment>
+<section class:list={['pg', className]} data-plan-gate aria-labelledby={`${id}Title`} aria-describedby={`${id}Desc`}>
+    <div class="pg-preview" inert aria-hidden="true">
+        <PlanGatePreview variant={preview} locale={locale} />
+    </div>
+    <div class="pg-stage">
+        <div class="pg-panel">
+            <PlanUpsell id={id} title={title} desc={desc} requiredPlan={requiredPlan} locale={locale} feature={feature} surface="page" />
+        </div>
+        <p class="pg-sample">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('eye')}></svg>
+            {t(locale, 'pw.ejemplo')}
+        </p>
+    </div>
+</section>
+
+<style>
+    .pg { position: relative; display: grid; isolation: isolate; }
+    .pg > * { grid-area: 1 / 1; }
+
+    /* La página "como se vería". El desenfoque es leve a propósito: se reconoce
+       la forma (KPIs, lista, tabla) sin poder leer un importe. La máscara la
+       desvanece hacia abajo para que no compita con el panel. */
+    .pg-preview {
+        pointer-events: none; user-select: none;
+        max-height: 1100px; overflow: hidden;
+        filter: blur(3.5px) saturate(0.85);
+        opacity: 0.8;
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 92%);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 92%);
+    }
+
+    .pg-stage {
+        position: relative; z-index: 1;
+        display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+        padding: clamp(1.5rem, 7vh, 4.5rem) 0 3rem;
+    }
+    /* Velo detrás del panel: separa sin oscurecer la página entera. */
+    .pg-stage::before {
+        content: ""; position: absolute; z-index: -1; inset: -2rem -1rem auto;
+        height: min(820px, 100%);
+        background: radial-gradient(ellipse 55% 60% at 50% 38%, var(--app-canvas) 30%, transparent 100%);
+        opacity: 0.9; pointer-events: none;
+    }
+
+    .pg-panel {
+        width: min(500px, 100%);
+        padding: 1.6rem 1.65rem 1.4rem;
+        border-radius: 28px;
+        background: var(--surface);
+        box-shadow:
+            0 0 0 0.5px rgba(10,25,47,0.08),
+            0 2px 4px rgba(10,25,47,0.04),
+            0 24px 60px -18px rgba(10,25,47,0.28),
+            0 60px 120px -40px rgba(10,25,47,0.22);
+        animation: pg-in 0.5s var(--ease-spring) both;
+    }
+    :global(html[data-theme="dark"]) .pg-panel {
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 30px 80px -20px rgba(0,0,0,0.7);
+    }
+
+    .pg-sample {
+        margin: 0; display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
+        padding: 5px 11px; border-radius: 999px;
+        background: color-mix(in srgb, var(--surface) 80%, transparent);
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .pg-sample svg { width: 13px; height: 13px; }
+
+    @keyframes pg-in {
+        from { opacity: 0; transform: translateY(14px) scale(0.98); }
+        to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .pg-panel { animation: none; } }
+
+    /* Dentro de Ajustes: columna de 640px, sin alto de página. */
+    .pg.is-inset .pg-preview { max-height: 760px; }
+    .pg.is-inset .pg-stage { padding-top: 1.5rem; }
+
+    /* En móvil el panel ocupa el ancho completo: se baja lo suficiente para que
+       asome la primera fila de la página y siga leyéndose "esto está detrás". */
+    @media (max-width: 880px) {
+        .pg-preview { max-height: 760px; filter: blur(3px) saturate(0.85); }
+        .pg-stage { padding-top: 7.5rem; }
+        .pg-preview :global(.report-kpi-value) { font-size: 1.35rem; }
+        .pg.is-inset .pg-stage { padding-top: 5rem; }
+    }
+    @media (max-width: 560px) {
+        .pg-panel { padding: 1.3rem 1.15rem 1.15rem; border-radius: 24px; }
+    }
+</style>

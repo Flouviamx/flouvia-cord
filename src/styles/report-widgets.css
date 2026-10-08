@@ -49,7 +49,7 @@
 .report-chart { min-height: 250px; }
 
 /* Etiqueta "hoy"/"en vivo": marca un dato que NO depende del rango de fechas. */
-.snapshot-tag { display: inline-flex; margin-left: .45rem; padding: 2px 7px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .6rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+/* .snapshot-tag comparte estilo con .wx-scope (ScopeTag.astro): vive en widgets.css. */
 
 /* ── Listas hairline ─────────────────────────────────────────────────────── */
 .report-list { display: flex; flex-direction: column; }

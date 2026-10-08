@@ -1,6 +1,7 @@
 ---
 // Los tres botones que gobiernan el modo de edición de un WidgetGrid:
-// Personalizar → Restablecer → Listo.
+// Personalizar → Biblioteca · Restablecer · Listo. En modo edición los tres
+// son botones redondos de icono (con aria-label y tooltip), idénticos en toda la app.
 //
 // WidgetGrid NO los renderiza a propósito (solo recibe sus ids y les alterna
 // `hidden`), así que cada una de las cinco páginas con widgets autoraba su
@@ -25,10 +26,16 @@ const L = currentLocale();
 import { iconInner } from '../../lib/icons';
 ---
 
-<button type="button" class="widget-edit-btn" id={editId}>
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sidebar')}></svg>
-    {t(L, 'widgets.personalizar')}
+<button type="button" class="widget-edit-btn is-customize" id={editId}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sliders')}></svg>
+    <span>{t(L, 'widgets.personalizar')}</span>
 </button>
-<button type="button" class="widget-edit-btn" id={`${editId}Library`} aria-expanded="false" hidden>{t(L, 'widgets.biblioteca')}</button>
-<button type="button" class="widget-edit-btn" id={resetId} hidden>{t(L, 'widgets.restablecer')}</button>
-<button type="button" class="widget-edit-btn is-done" id={doneId} hidden>{t(L, 'widgets.listo')}</button>
+<button type="button" class="widget-edit-btn is-icon" id={`${editId}Library`} aria-expanded="false" aria-label={t(L, 'widgets.biblioteca')} data-tip={t(L, 'widgets.biblioteca')} hidden>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg>
+</button>
+<button type="button" class="widget-edit-btn is-icon" id={resetId} aria-label={t(L, 'widgets.restablecer')} data-tip={t(L, 'widgets.restablecer')} hidden>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('undo')}></svg>
+</button>
+<button type="button" class="widget-edit-btn is-icon is-done" id={doneId} aria-label={t(L, 'widgets.listo')} data-tip={t(L, 'widgets.listo')} hidden>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('check')}></svg>
+</button>

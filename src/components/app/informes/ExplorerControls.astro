@@ -1,0 +1,260 @@
+---
+// Controles del explorador de informes (fase 5): "agrupar por" y métricas, más
+// guardar el informe con nombre y, si quien lo guardó quiere, recibirlo por correo.
+//
+// Es un formulario GET: la configuración vive en la URL (?dim=&m=), así que el
+// informe se comparte con un link y el CSV exporta exactamente lo que se ve. Con
+// JavaScript se aplica solo al cambiar un control; sin él, con el botón Aplicar.
+import { t } from '../../../i18n/app';
+import { iconInner } from '../../../lib/icons';
+import { DIMENSIONS, DIM_LABEL, ITEM_ONLY, METRICS, METRIC_LABEL, QUOTE_ONLY, type ExplorerConfig } from '../../../lib/informes-explorar';
+import type { InformeGuardado } from '../../../lib/informes-guardados';
+import { tablaLabel } from '../../../lib/informes-csv';
+
+interface Props { config: ExplorerConfig; L: 'es' | 'en'; range: Record<string, string>; saved: InformeGuardado | null }
+const { config, L, range, saved } = Astro.props;
+const porProducto = config.dim === 'producto';
+const disabledReason = (k: typeof METRICS[number]) =>
+    !porProducto && ITEM_ONLY.includes(k) ? t(L, 'inf.x.solo_producto')
+    : porProducto && QUOTE_ONLY.includes(k) ? t(L, 'inf.x.no_producto') : null;
+const frecuencias = [
+    { v: 'ninguna', label: t(L, 'inf.x.envio_ninguna') },
+    { v: 'semanal', label: t(L, 'inf.x.envio_semanal') },
+    { v: 'mensual', label: t(L, 'inf.x.envio_mensual') },
+];
+const puedeProgramar = !saved || saved.mio;
+---
+<div class="xc" data-explorer data-confirm-delete={t(L, 'inf.x.eliminar_confirmar')} data-error-text={t(L, 'inf.x.error')} data-saved={saved ? JSON.stringify({ id: saved.id, nombre: saved.nombre, frecuencia: saved.frecuencia, mio: saved.mio }) : ''}>
+    <form class="xc-form" method="get" action="/app/informes" data-explorer-form>
+        <input type="hidden" name="r" value="explorar" />
+        {Object.entries(range).map(([k, v]) => <input type="hidden" name={k} value={v} />)}
+        {saved && <input type="hidden" name="guardado" value={saved.id} />}
+        <label class="xc-dim">
+            <span class="xc-label">{t(L, 'inf.t.agrupar')}</span>
+            <span class="xc-select">
+                <select name="dim" data-explorer-dim>
+                    {DIMENSIONS.map((d) => <option value={d} selected={d === config.dim}>{tablaLabel(L, DIM_LABEL[d])}</option>)}
+                </select>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
+            </span>
+        </label>
+        <fieldset class="xc-metrics">
+            <legend class="xc-label">{t(L, 'inf.x.metricas')}</legend>
+            <div class="xc-chips">
+                {METRICS.map((k) => {
+                    const reason = disabledReason(k);
+                    return (
+                        <label class="xc-chip" title={reason ?? undefined}>
+                            <input type="checkbox" name="m" value={k} checked={config.m.includes(k)} disabled={!!reason} data-explorer-metric />
+                            <span>{tablaLabel(L, METRIC_LABEL[k])}</span>
+                        </label>
+                    );
+                })}
+            </div>
+            <p class="xc-hint" data-explorer-max hidden>{t(L, 'inf.x.max_metricas')}</p>
+        </fieldset>
+        <div class="xc-actions">
+            <button type="submit" class="xc-apply" data-explorer-apply>{t(L, 'inf.x.aplicar')}</button>
+            {saved?.puedeEditar && (
+                <button type="button" class="xc-icon" data-explorer-delete aria-label={t(L, 'inf.x.eliminar')} title={t(L, 'inf.x.eliminar')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('trash')}></svg>
+                </button>
+            )}
+            <button type="button" class="xc-save" data-explorer-save>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('pin')}></svg>
+                <span>{saved?.puedeEditar ? t(L, 'inf.x.guardar_cambios') : t(L, 'inf.x.guardar')}</span>
+            </button>
+        </div>
+    </form>
+    {saved && !saved.mio && <p class="xc-owner">{t(L, 'inf.x.guardado_de')}</p>}
+
+    <dialog class="modal" data-explorer-dialog aria-labelledby="xcDialogTitle">
+        <form method="dialog" class="m-form" data-explorer-save-form>
+            <div class="m-head">
+                <h2 id="xcDialogTitle">{t(L, 'inf.x.titulo_guardar')}</h2>
+                <button type="button" class="m-close" data-explorer-close aria-label={t(L, 'inf.x.cancelar')}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('x')}></svg>
+                </button>
+            </div>
+            <div class="m-body">
+                <div class="m-field">
+                    <label for="xcNombre">{t(L, 'inf.x.nombre')}</label>
+                    <input class="m-input" id="xcNombre" name="nombre" maxlength="80" required autocomplete="off" placeholder={t(L, 'inf.x.nombre_ph')} value={saved?.nombre ?? ''} />
+                </div>
+                <div class="m-field">
+                    <label for="xcFrecuencia">{t(L, 'inf.x.envio')}</label>
+                    {puedeProgramar ? (
+                        <>
+                            <select class="m-input" id="xcFrecuencia" name="frecuencia">
+                                {frecuencias.map((f) => <option value={f.v} selected={(saved?.frecuencia ?? 'ninguna') === f.v}>{f.label}</option>)}
+                            </select>
+                            <p class="m-hint">{t(L, 'inf.x.envio_nota')}</p>
+                        </>
+                    ) : (
+                        <p class="m-hint">{t(L, 'inf.x.envio_ajeno')}</p>
+                    )}
+                </div>
+            </div>
+            <div class="m-foot">
+                <p class="m-error" data-explorer-error></p>
+                <div class="m-actions">
+                    {saved?.puedeEditar && <button type="button" class="m-cancel" data-explorer-save-new>{t(L, 'inf.x.guardar_nuevo')}</button>}
+                    <span class="m-spacer"></span>
+                    <button type="button" class="m-cancel" data-explorer-cancel>{t(L, 'inf.x.cancelar')}</button>
+                    <button type="submit" class="m-save" data-explorer-submit>{saved?.puedeEditar ? t(L, 'inf.x.guardar_cambios') : t(L, 'inf.x.guardar')}</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+</div>
+
+<script>
+    const MAX = 6;
+    document.querySelectorAll<HTMLElement>('[data-explorer]').forEach((root) => {
+        const form = root.querySelector<HTMLFormElement>('[data-explorer-form]');
+        const dialog = root.querySelector<HTMLDialogElement>('[data-explorer-dialog]');
+        const saveForm = root.querySelector<HTMLFormElement>('[data-explorer-save-form]');
+        const error = root.querySelector<HTMLElement>('[data-explorer-error]');
+        const maxHint = root.querySelector<HTMLElement>('[data-explorer-max]');
+        if (!form || !dialog || !saveForm || !error) return;
+        const saved = root.dataset.saved ? JSON.parse(root.dataset.saved) as { id: string; nombre: string; frecuencia: string; mio: boolean } : null;
+        const metrics = [...form.querySelectorAll<HTMLInputElement>('[data-explorer-metric]')];
+
+        // Con JavaScript, cada cambio aplica solo; Aplicar queda para quien no lo tenga.
+        form.querySelector<HTMLElement>('[data-explorer-apply]')?.setAttribute('hidden', '');
+        const submit = () => form.requestSubmit();
+        form.querySelector('[data-explorer-dim]')?.addEventListener('change', submit);
+        // `data-off`: la métrica no aplica a esta dimensión (lo decidió el servidor).
+        metrics.forEach((m) => { if (m.disabled) m.dataset.off = '1'; });
+        const syncMax = () => {
+            const n = metrics.filter((m) => m.checked).length;
+            metrics.forEach((m) => { m.disabled = !!m.dataset.off || (!m.checked && n >= MAX); });
+            if (maxHint) maxHint.hidden = n < MAX;
+        };
+        metrics.forEach((m) => m.addEventListener('change', () => {
+            // Nunca cero métricas: desmarcar la última no hace nada.
+            if (!metrics.some((x) => x.checked)) { m.checked = true; return; }
+            syncMax();
+            submit();
+        }));
+        syncMax();
+
+        const currentConfig = () => {
+            const data = new FormData(form);
+            return { dim: String(data.get('dim') || ''), m: data.getAll('m').map(String) };
+        };
+        const send = async (method: 'POST' | 'PATCH', body: Record<string, unknown>) => {
+            const url = method === 'POST' ? '/api/informes/guardados' : `/api/informes/guardados/${saved!.id}`;
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json.error || '');
+            return json.guardado as { id: string };
+        };
+        const go = (id: string) => {
+            const url = new URL(location.href);
+            url.searchParams.set('guardado', id);
+            location.assign(url.toString());
+        };
+        const save = async (asNew: boolean) => {
+            const data = new FormData(saveForm);
+            const body: Record<string, unknown> = { nombre: String(data.get('nombre') || ''), config: currentConfig() };
+            if (data.has('frecuencia')) body.frecuencia = String(data.get('frecuencia'));
+            const submitBtn = saveForm.querySelector<HTMLButtonElement>('[data-explorer-submit]');
+            if (submitBtn) submitBtn.disabled = true;
+            error.textContent = '';
+            try {
+                const isNew = asNew || !saved;
+                const out = await send(isNew ? 'POST' : 'PATCH', body);
+                const config = currentConfig();
+                const frecuencia = String(body.frecuencia ?? saved?.frecuencia ?? 'ninguna');
+                (window as any).cordTrack?.('report_saved', {
+                    dim: config.dim, metric_count: config.m.length,
+                    frecuencia: frecuencia === 'semanal' || frecuencia === 'mensual' ? frecuencia : 'ninguna', is_new: isNew,
+                });
+                go(out.id);
+            } catch (e) {
+                error.textContent = (e as Error).message || root.dataset.errorText || '';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        };
+
+        root.querySelector('[data-explorer-save]')?.addEventListener('click', () => { error.textContent = ''; dialog.showModal(); });
+        const close = () => dialog.close();
+        root.querySelector('[data-explorer-close]')?.addEventListener('click', close);
+        root.querySelector('[data-explorer-cancel]')?.addEventListener('click', close);
+        saveForm.addEventListener('submit', (event) => { event.preventDefault(); save(false); });
+        root.querySelector('[data-explorer-save-new]')?.addEventListener('click', () => save(true));
+        root.querySelector('[data-explorer-delete]')?.addEventListener('click', async () => {
+            if (!saved || !confirm(root.dataset.confirmDelete || '')) return;
+            const res = await fetch(`/api/informes/guardados/${saved.id}`, { method: 'DELETE' });
+            if (!res.ok) { const json = await res.json().catch(() => ({})); alert(json.error || root.dataset.errorText || ''); return; }
+            const url = new URL(location.href);
+            url.searchParams.delete('guardado');
+            location.assign(url.toString());
+        });
+    });
+</script>
+
+<style>
+    .xc { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.2rem; }
+    .xc-form {
+        display: flex; align-items: flex-end; gap: 1.1rem 1.4rem; flex-wrap: wrap;
+        padding: 1rem 1.2rem; border-radius: 22px; background: var(--surface); box-shadow: var(--card-shadow);
+    }
+    .xc-label { display: block; margin: 0 0 .45rem; padding: 0; font-size: .6rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-muted); }
+    .xc-dim { flex: 0 0 auto; }
+    .xc-select { position: relative; display: inline-flex; align-items: center; }
+    .xc-select select {
+        appearance: none; min-height: 40px; min-width: 190px; padding: 0 2.2rem 0 .95rem; border: 1px solid transparent; border-radius: 12px;
+        background: var(--color-bg-soft); color: var(--color-text); font: 600 .84rem var(--font-sans); cursor: pointer;
+    }
+    .xc-select select:focus-visible { outline: none; border-color: rgba(10, 25, 47, .3); background: var(--surface); }
+    .xc-select svg { position: absolute; right: .8rem; pointer-events: none; color: var(--color-text-muted); }
+    .xc-metrics { flex: 1 1 380px; min-width: 0; margin: 0; padding: 0; border: 0; }
+    .xc-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .xc-chip { position: relative; display: inline-flex; }
+    .xc-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+    .xc-chip span {
+        display: inline-flex; align-items: center; min-height: 32px; padding: 0 .8rem; border-radius: 999px;
+        background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .76rem; font-weight: 600;
+        transition: background .15s, color .15s, box-shadow .15s;
+    }
+    .xc-chip input:checked + span { background: var(--color-blue-deep); color: #fff; box-shadow: 0 4px 12px -6px rgba(10, 25, 47, .5); }
+    .xc-chip input:disabled { cursor: not-allowed; }
+    .xc-chip input:disabled + span { opacity: .4; }
+    .xc-chip input:not(:disabled):not(:checked):hover + span { background: var(--row-hover); color: var(--color-text); }
+    .xc-chip input:focus-visible + span { outline: 2px solid rgba(66, 108, 197, .55); outline-offset: 2px; }
+    .xc-hint { margin: .45rem 0 0; font-size: .72rem; color: var(--color-text-muted); }
+    .xc-actions { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+    .xc-apply, .xc-save {
+        display: inline-flex; align-items: center; gap: .45rem; min-height: 38px; padding: 0 1rem; border-radius: 999px;
+        font: 650 .8rem var(--font-sans); cursor: pointer; transition: transform .15s, background .15s, filter .15s;
+    }
+    .xc-apply { border: 1px solid var(--color-border); background: var(--surface); color: var(--color-text); }
+    .xc-save { border: 0; background: var(--color-blue-deep); color: #fff; box-shadow: 0 4px 12px -6px rgba(10, 25, 47, .5); }
+    .xc-save:hover { filter: brightness(1.18); }
+    .xc-icon {
+        display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%;
+        border: 1px solid var(--color-border); background: var(--surface); color: var(--color-text-muted); cursor: pointer;
+        transition: color .15s, background .15s, transform .15s;
+    }
+    .xc-icon:hover { color: var(--color-danger); background: var(--row-hover); }
+    .xc-apply:active, .xc-save:active, .xc-icon:active { transform: scale(.97); }
+    .xc-apply:focus-visible, .xc-save:focus-visible, .xc-icon:focus-visible { outline: 2px solid rgba(66, 108, 197, .55); outline-offset: 2px; }
+    .xc-apply[hidden] { display: none; }
+    .xc-owner { margin: 0 .3rem; font-size: .72rem; color: var(--color-text-muted); }
+    @media (max-width: 880px) {
+        .xc-form { padding: 1rem; }
+        .xc-select select { min-height: 44px; width: 100%; }
+        .xc-dim, .xc-select { width: 100%; }
+        .xc-chip span { min-height: 44px; padding: 0 1rem; }
+        .xc-actions { width: 100%; margin-left: 0; }
+        .xc-save { flex: 1; justify-content: center; min-height: 44px; }
+        .xc-apply, .xc-icon { min-height: 44px; }
+        .xc-icon { width: 44px; height: 44px; }
+    }
+</style>

@@ -75,7 +75,7 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     collections: 'pro',
     cashflow_90: 'pro',
     approvals: 'scale',
-    collections_ai: 'scale',
+    collections_ai: 'pro',
     late_interest: 'scale',
     smtp: 'scale',
     sso: 'scale',

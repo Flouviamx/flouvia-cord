@@ -16,8 +16,9 @@ import PlanGate from '../../../components/app/PlanGate.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../../components/app/WidgetEmpty.astro';
+import MonedaNota from '../../../components/app/MonedaNota.astro';
 import { getCobranza, getMyMembership, money } from '../../../lib/queries';
-import { memberCan, planLabel } from '../../../lib/permissions';
+import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { dateFull } from '../../../lib/fmt';
@@ -104,12 +105,11 @@ import { iconInner } from '../../../lib/icons';
         <PlanGate
             id="cobranzaPlanModal"
             title={t(L, 'cob.plan_titulo')}
-            desc={t(L, 'cob.plan_desc')
-                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))}
+            desc={t(L, 'cob.plan_desc')}
             requiredPlan={entitlementCheck.requiredPlan}
             locale={L === 'en' ? 'en' : 'es'}
-            returnHref="/app" />
+            preview="cobranza"
+            feature="cobranza" />
     )}
     {hasAccess && !hay && (
         <section class="empty">
@@ -125,9 +125,8 @@ import { iconInner } from '../../../lib/icons';
         <WidgetGrid
             id="cobranzaWidgets" storageKey="cord.cobranza.v1"
             serverPrefs={ME.widgetPrefs?.['cord.cobranza.v1'] as Record<string, unknown> | undefined}
-            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbzEditBtn" doneButtonId="cbzDoneBtn" resetButtonId="cbzResetBtn"
-            trayTitle={t(L, 'cob.widgets_ocultos')} resetConfirm={t(L, 'cob.reset_confirm')}
+            resetConfirm={t(L, 'cob.reset_confirm')}
             labels={widgetLabels}
         >
             <!-- 1 · Vencido. Clic → filtra la tabla. -->
@@ -285,13 +284,13 @@ import { iconInner } from '../../../lib/icons';
                             <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="t-right">{t(L, 'cob.th_saldo')}</span><span class="t-right">{t(L, 'cob.th_accion')}</span>
                         </div>
                         {C.items.map((it) => (
-                            <div class="t-row" data-cbz-id={it.id} data-id={it.id} data-link={it.publicUrl} data-folio={it.folio} data-empresa={it.empresa}
+                            <div class="t-row" data-cbz-id={it.id} data-id={it.id} data-origen={it.origen} data-link={it.publicUrl} data-folio={it.folio} data-empresa={it.empresa}
                                 data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
                                 data-total-num={String(it.total)} data-interes-num={String(it.interes)}
                                 data-overdue={it.overdue ? '1' : ''} data-dias={String(it.diasParaVencer)}
                                 data-prom-id={it.promesa?.id ?? ''} data-prom-fecha={it.promesa?.fechaISO ?? ''} data-prom-monto={it.promesa?.monto != null ? String(it.promesa.monto) : ''} data-prom-nota={it.promesa?.nota ?? ''}>
                                 <span class="t-client"><span class="t-avatar">{it.inicial}</span>{it.empresa}</span>
-                                <a class="t-folio" href={`/app/cotizaciones/${it.id}`}>{it.folio}</a>
+                                <a class="t-folio" href={it.href}>{it.folio}</a>
                                 <span class="t-muted">{it.terminos}</span>
                                 <span class="t-muted">{it.vence}</span>
                                 <span class="t-estado">
@@ -310,13 +309,16 @@ import { iconInner } from '../../../lib/icons';
                                     {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} {t(L, 'cob.mora')}</small>}
                                 </span>
                                 <span class="t-actions t-right">
-                                    <button class:list={['cob-prom', { 'has-prom': it.promesa }]} type="button" title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
+                                    {it.origen === 'cotizacion' && <button class:list={['cob-prom', { 'has-prom': it.promesa }]} type="button" title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('calendar')}></svg>
-                                    </button>
+                                    </button>}
                                     <button class="cob-whats" type="button" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat')}></svg>
                                     </button>
-                                    <button class="cob-paid" type="button">{t(L, 'cob.cobrada')}</button>
+                                    {/* Una factura se marca pagada desde su propio detalle (registra el abono en su ledger). */}
+                                    {it.origen === 'cotizacion'
+                                        ? <button class="cob-paid" type="button">{t(L, 'cob.cobrada')}</button>
+                                        : <a class="cob-paid" href={it.href}>{t(L, 'cob.ver_factura')}</a>}
                                 </span>
                             </div>
                         ))}
@@ -326,6 +328,7 @@ import { iconInner } from '../../../lib/icons';
             </article>
         <MetricWidget id="cbz-opcional-excedidos" optional tone="finance" title={L === 'en' ? 'Credit limits exceeded' : 'Límites de crédito excedidos'} value={excedidos.length} description={L === 'en' ? 'Clients above their configured credit limit today' : 'Clientes por encima de su límite de crédito configurado, hoy'} />
         </WidgetGrid>
+        <MonedaNota nota={C?.moneda} />
         </div>
 
         <!-- ⚠️ El <dialog> vive FUERA de <WidgetGrid> a propósito, por dos razones:
@@ -605,7 +608,8 @@ import { iconInner } from '../../../lib/icons';
             if (!row) return;
             if (el.closest('.cob-prom')) return openProm(row);
             if (el.closest('.cob-whats')) return sendWhats(row);
-            const paid = el.closest<HTMLElement>('.cob-paid');
+            // Solo el botón marca pagada una cotización; en facturas es un enlace a su detalle.
+            const paid = el.closest<HTMLElement>('button.cob-paid');
             if (paid) return markPaid(row, paid as HTMLButtonElement);
         });
 
@@ -745,6 +749,7 @@ import { iconInner } from '../../../lib/icons';
         color: #fff; background: var(--color-ok); border: none; border-radius: 8px; padding: 7px 12px;
         transition: transform 0.3s var(--ease-spring), opacity 0.2s;
     }
+    a.cob-paid { display: inline-flex; align-items: center; text-decoration: none; background: var(--color-blue-deep); }
     .cob-paid:hover { transform: translateY(-1px); }
     .cob-paid:disabled { opacity: 0.55; cursor: wait; }
     .cob-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
