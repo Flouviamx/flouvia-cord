@@ -3940,6 +3940,15 @@ update impuestos i set retencion_base = 'gravado'
 update impuestos set nombre = 'Retención IVA 10.6667%', tasa = 10.6667
  where tipo = 'ret_iva' and nombre = 'Retención IVA 10.667%' and tasa = 10.667;
 
+-- Perú (oct 2026): la "Retención IGV 3%" sembrada no corresponde al emisor —la
+-- practica el comprador agente de retención, al pagar y con su propio
+-- comprobante—. Se retira la fila sembrada mientras nadie la haya marcado como
+-- predeterminada; los documentos ya emitidos conservan su snapshot.
+delete from impuestos i
+ using orgs o
+ where o.id = i.org_id and upper(coalesce(o.country_code, '')) = 'PE'
+   and i.nombre = 'Retención IGV 3%' and i.kind = 'retencion' and i.tasa = 3 and i.es_default is not true;
+
 -- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
 -- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con
 -- serie única, pero incompatible con cualquier gestoría española, y cambiar

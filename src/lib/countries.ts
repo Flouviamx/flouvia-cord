@@ -289,13 +289,15 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
     DO: [std('ITBIS 18%', 18), red('ITBIS 16%', 16), EXENTO],
     GT: [std('IVA 12%', 12), EXENTO],
     PA: [std('ITBMS 7%', 7), EXENTO],
-    // Régimen de Retenciones del IGV (RS 037-2002/SUNAT): 3% del importe de la
-    // operación, tasa única sin importar el rubro — a diferencia de las
-    // Detracciones (SPOT), que varían 4-12% por tipo de bien o servicio y por
-    // eso NO se agregan aquí como una sola tasa.
+    // Sin "Retención IGV 3%" a propósito: en el Régimen de Retenciones del IGV
+    // (RS 037-2002/SUNAT) retiene el COMPRADOR designado agente de retención,
+    // al pagar, con su propio comprobante de retención y sobre el importe total
+    // CON IGV. La factura del vendedor no la descuenta; ofrecerla en el
+    // catálogo del emisor restaba del total algo que no le toca (y sobre la
+    // base equivocada). Las Detracciones (SPOT) tampoco van aquí.
     // "Exonerado" es el término de SUNAT (Apéndice I del TUO de la Ley del IGV);
     // "Inafecto" es otra cosa (operación fuera del campo del impuesto).
-    PE: [std('IGV 18%', 18), exempt('Exonerado'), exempt('Inafecto'), { nombre: 'Retención IGV 3%', kind: 'retencion', tipo: 'ret_iva', tasa: 3 }],
+    PE: [std('IGV 18%', 18), exempt('Exonerado'), exempt('Inafecto')],
     PY: [std('IVA 10%', 10), red('IVA 5%', 5), EXENTO],
     UY: [std('IVA 22%', 22), red('IVA 10%', 10), EXENTO],
 

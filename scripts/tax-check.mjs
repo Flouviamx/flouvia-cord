@@ -131,6 +131,8 @@ assert.ok(!taxPresetsFor('ES', 'Santa Cruz de Tenerife').some((p) => p.nombre.st
 assert.ok(taxPresetsFor('ES', '28').some((p) => p.nombre === 'IVA 21%'), 'Madrid conserva el IVA 21%');
 // Luisiana: 5% desde el 1 de enero de 2025 (antes 4.45%).
 assert.equal(US_STATE_TAX.LA, 5, 'Luisiana: la tasa estatal es 5% desde 2025');
+// Perú: la retención del IGV la practica el comprador al pagar, no el emisor.
+assert.ok(!taxPresetsFor('PE').some((p) => p.kind === 'retencion'), 'PE: el catálogo del emisor no lleva la retención del IGV');
 
 // ── 8. La constante muerta no vuelve a las superficies de dinero ────────────
 // Los totales que lee el cliente salen del motor compartido y de la tasa de la
