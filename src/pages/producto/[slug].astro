@@ -251,15 +251,15 @@ const MKI = {
 // (Cobranza › Agente IA) solo aparecen con su sección activa, y los contadores
 // se vuelven punto: gris para lo que espera respuesta, tinte de alerta para lo
 // vencido. Si la sidebar cambia, estas calcas cambian con ella.
-type MkRailRow = { id: string; icon: IconName; sep: boolean; on: boolean; dot: 'muted' | 'danger' | null };
+type MkRailRow = { id: string; icon: IconName; sep: boolean; on: boolean; sec: boolean; dot: 'muted' | 'danger' | null };
 const mkRail = (active: string | null): MkRailRow[] =>
     SIDEBAR_NAV.flatMap((g, gi) => g.items.flatMap((it, ii) => {
         const kids = it.children ?? [];
         const open = active === it.id || kids.some((c) => c.id === active);
         const dot = it.badge === 'seguimiento' ? 'muted' : it.badge === 'vencidas' ? 'danger' : null;
         return [
-            { id: it.id, icon: it.icon, sep: gi > 0 && ii === 0, on: active === it.id, dot },
-            ...(open ? kids.map((c) => ({ id: c.id, icon: c.icon, sep: false, on: active === c.id, dot: null })) : []),
+            { id: it.id, icon: it.icon, sep: gi > 0 && ii === 0, on: active === it.id, sec: open && active !== it.id, dot },
+            ...(open ? kids.map((c) => ({ id: c.id, icon: c.icon, sep: false, on: active === c.id, sec: false, dot: null })) : []),
         ];
     }));
 const WFI = WORKFLOW_ICONS;
@@ -336,7 +336,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -348,7 +348,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -508,7 +508,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -520,7 +520,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -645,7 +645,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('clientes').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -657,7 +657,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -747,7 +747,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('ai-ar').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -759,7 +759,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -824,7 +824,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -836,7 +836,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -943,7 +943,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('cobros').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -955,7 +955,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial" id="pyBell" data-to="3">2</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count" id="pyBell" data-from="2" data-to="3">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -1053,7 +1053,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('facturas').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -1065,7 +1065,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial" id="faBell" data-to="3">2</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count" id="faBell" data-from="2" data-to="3">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -1216,7 +1216,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('workflows').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -1228,7 +1228,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -1393,7 +1393,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('informes').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -1405,7 +1405,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -1480,7 +1480,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail('cotizaciones').map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -1492,7 +1492,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -1562,7 +1562,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                     {mkRail(null).map((it) => (
                                         <Fragment>
                                             {it.sep && <span class="mkc-rail-sep"></span>}
-                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
+                                            <span class:list={['mkc-rail-i', { on: it.on, sec: it.sec }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner(it.icon)} />{it.dot && <i class:list={['mkc-rail-dot', it.dot]}></i>}</span>
                                         </Fragment>
                                     ))}
                                     <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
@@ -1574,7 +1574,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                                         <span class="mkc-top-r">
                                             <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('plus')} /><span>{isEn ? 'Create' : 'Crear'}</span><svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" set:html={iconInner('chevron-down')} /></span>
                                             <span class="mkc-ti mkc-ti-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('grid-plus')} /></span>
-                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count editorial">3</i></span>
+                                            <span class="mkc-ti mkc-ti-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('bell')} /><i class="mkc-ti-count">3</i></span>
                                             <span class="mkc-ti mkc-ti-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('chat-help')} /></span>
                                             <span class="mkc-ti mkc-ti-theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('sun')} /></span>
                                             <span class="mkc-ti on mkc-ti-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" set:html={iconInner('gear')} /></span>
@@ -2023,30 +2023,43 @@ import { iconInner, type IconName } from '../../lib/icons';
     }
     .mkc-app::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
 
-    /* Sidebar en su estado colapsado (html.sb-collapsed) */
-    .mkc-rail { flex: 0 0 46px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 8px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10,25,47,0.12), inset 0 0 0 1px rgba(10,25,47,0.045); }
-    .mkc-rail-org { width: 28px; height: 28px; border-radius: 9px; margin-bottom: 9px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1b3a64, #0a192f); box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 3px 8px -3px rgba(10,25,47,0.45); }
-    .mkc-rail-i { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
-    .mkc-rail-i svg { width: 16px; height: 16px; opacity: 0.72; }
-    .mkc-rail-i.on { color: #0a192f; background: rgba(10,25,47,0.07); }
-    .mkc-rail-i.on svg { opacity: 1; }
-    .mkc-rail-sep { width: 18px; height: 1px; margin: 5px 0; background: rgba(10,25,47,0.09); }
+    /* Sidebar en su estado de rail (html.sb-collapsed de Sidebar.astro), a ~80 %:
+       cuadros de 40×36 → 32×27, icono 18 → 15, avatar de la organización con el
+       mismo aire arriba y abajo, separadores CORTOS entre grupos y contadores
+       convertidos en punto. Activo = tinte fijo, nunca navy sólido. */
+    .mkc-rail { flex: 0 0 52px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 11px 0 7px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10,25,47,0.12), inset 0 0 0 1px rgba(10,25,47,0.045); }
+    .mkc-rail-org { position: relative; flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; margin-bottom: 19px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1b3a64, #0a192f); box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.12), 0 3px 8px -3px rgba(10,25,47,0.4); }
+    .mkc-rail-org::after { content: ''; position: absolute; left: 50%; bottom: -11px; width: 14px; height: 1px; margin-left: -7px; background: rgba(10,25,47,0.08); }
+    .mkc-rail-i { position: relative; flex-shrink: 0; width: 32px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
+    .mkc-rail-i svg { width: 15px; height: 15px; opacity: 0.62; }
+    .mkc-rail-i.sec { color: #0f1729; }
+    .mkc-rail-i.on { color: #0a192f; background: rgba(10,25,47,0.075); }
+    .mkc-rail-i.on svg, .mkc-rail-i.sec svg { opacity: 1; }
+    .mkc-rail-dot { position: absolute; top: 4px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #5b6472; box-shadow: 0 0 0 2px #fff; }
+    .mkc-rail-dot.danger { background: #ef4444; }
+    .mkc-rail-sep { flex-shrink: 0; width: 14px; height: 1px; margin: 6px 0; background: rgba(10,25,47,0.08); }
     .mkc-rail-foot { margin-top: auto; }
 
+    /* Topbar de AppLayout: buscador "Buscar… ⌘K" a la izquierda; a la derecha
+       Crear (navy), Aplicaciones, campana CON CONTADOR, ayuda, tema (icono del
+       modo actual: sol = Claro) y engrane. Iconos quietos y del registro. */
     .mkc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .mkc-top { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10,25,47,0.12), inset 0 0 0 1px rgba(10,25,47,0.045); }
     .mkc-burger { display: none; }
-    .mkc-search { flex: 0 1 230px; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 5px 6px 5px 9px; font-size: 11.5px; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 8px; }
+    .mkc-search { flex: 0 1 260px; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 5px 6px 5px 9px; font-size: 11.5px; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 8px; }
     .mkc-search svg { width: 12px; height: 12px; color: #99a2af; }
     .mkc-search span { flex: 1; white-space: nowrap; }
     .mkc-search kbd { font: 700 9px/1 var(--font-sans); color: #5b6472; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 5px; padding: 3px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06); }
     .mkc-top-r { margin-left: auto; display: flex; align-items: center; gap: 2px; }
-    .mkc-create { display: inline-flex; align-items: center; gap: 5px; margin-right: 5px; padding: 5px 7px 5px 7px; border-radius: 7px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .mkc-create { display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; padding: 5px 8px 5px 7px; border-radius: 7px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6), inset 0 1px 0 rgba(255,255,255,0.12); }
     .mkc-create svg { width: 11px; height: 11px; }
     .mkc-create .mkc-create-c { width: 9px; height: 9px; opacity: 0.7; }
-    .mkc-ti { position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
+    .mkc-ti { position: relative; flex-shrink: 0; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
     .mkc-ti svg { width: 14px; height: 14px; }
-    .mkc-ti-dot { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 1.5px #fff; }
+    /* Engrane en Ajustes: el mismo tinte de "aquí estás" que la sidebar. */
+    .mkc-ti.on { color: #0a192f; background: rgba(10,25,47,0.075); }
+    /* Campana = bandeja: contador con tinte navy y aro del color de la barra. */
+    .mkc-ti-count { position: absolute; top: 0; right: -2px; min-width: 13px; height: 13px; padding: 0 3px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font: 700 8px/1 var(--font-sans); font-style: normal; font-variant-numeric: tabular-nums; color: #0a192f; background: #d8dade; box-shadow: 0 0 0 1.5px #fff; }
 
     .mkc-pgh { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 14px var(--gut) 12px 10px; }
     .mkc-pgh-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -2885,7 +2898,6 @@ import { iconInner, type IconName } from '../../lib/icons';
     /* ── Equipo (ajustes/equipo + selector de organizaciones): invitas con permisos exactos ── */
     .mkc-eq-app { min-width: 820px; height: 500px; }
     .mkc-rail-org.is-open { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(10,25,47,0.22); }
-    .mkc-ti-on { color: #fff; background: #0a192f; border-radius: 7px; }
     .mkc-eq-page { display: flex; flex-direction: column; min-width: 0; padding: 13px var(--gut) 0 10px; }
     .mkc-eq-crumb { display: flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 600; color: #5b6472; }
     .mkc-eq-crumb svg { width: 10px; height: 10px; }
@@ -3251,11 +3263,16 @@ import { iconInner, type IconName } from '../../lib/icons';
         .mkc-top { gap: 6px; padding: 5px 5px 5px 6px; }
         .mkc-burger { display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: #5b6472; }
         .mkc-burger svg { width: 16px; height: 16px; }
-        .mkc-search { flex: 0 0 auto; padding: 6px; border-radius: 8px; }
+        .mkc-search { flex: 0 0 auto; padding: 6px; border: none; background: transparent; border-radius: 8px; }
         .mkc-search span, .mkc-search kbd { display: none; }
         .mkc-search svg { width: 14px; height: 14px; }
-        .mkc-top-r .mkc-ti:nth-child(n+3) { display: none; }
-        .mkc-create { font-size: 12px; padding: 6px 9px; }
+        .mkc-ti-help, .mkc-ti-theme, .mkc-ti-gear { display: none; }
+        .mkc-create { width: 28px; height: 28px; padding: 0; margin-right: 2px; border-radius: 50%; justify-content: center; }
+        .mkc-create svg { width: 13px; height: 13px; }
+        .mkc-create span, .mkc-create .mkc-create-c { display: none; }
+        .mkc-top-r { gap: 4px; }
+        .mkc-ti { width: 28px; height: 28px; }
+        .mkc-ti svg { width: 16px; height: 16px; }
         .mkc-pgh { padding: 14px var(--gut) 12px; }
         .mkc-title { font-size: 20px; }
         .mkc-crumbs { font-size: 11px; }
@@ -4031,6 +4048,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                     gsap.set(tick, { strokeDasharray: 40 });
                     const reset = () => {
                         num.textContent = ''; exp.textContent = ''; cvc.textContent = '';
+                        bell.textContent = bell.dataset.from;
                         fields.forEach((f) => f.classList.remove('on'));
                         btnT.textContent = payLabel;
                         gsap.set(btn, { opacity: 0.55, scale: 1 });
@@ -4060,7 +4078,8 @@ import { iconInner, type IconName } from '../../lib/icons';
                         tl.fromTo(hot, { backgroundColor: 'rgba(16,185,129,0.16)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 2.6, ease: 'power1.in' }, '<0.25');
                         const o = { v: pFrom };
                         tl.to(o, { v: pTo, duration: 1.3, ease: 'power2.out', onUpdate: () => { pend.textContent = tplPend.replace('{m}', m0(o.v)); } }, '<');
-                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.9, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
+                        tl.call(() => { bell.textContent = bell.dataset.to; }, null, '<');
+                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.25, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
                         tl.to({}, { duration: 3.6 });
                         tl.to([ok, pend], { autoAlpha: 0, duration: 0.35 });
                         tl.to(hot, { opacity: 0, duration: 0.3 }, '<');
@@ -4095,6 +4114,7 @@ import { iconInner, type IconName } from '../../lib/icons';
                     const maxY = () => -Math.max(0, scroll.offsetHeight - page.clientHeight);
                     const reset = () => {
                         paint(PAID0, true);
+                        bell.textContent = bell.dataset.from;
                         gsap.set(scroll, { y: 0 });
                         gsap.set([box, phNew, newPago, newTl], { height: 0, opacity: 0 });
                         amt.textContent = ''; amtF.classList.remove('on'); cont.textContent = contLabel;
@@ -4120,7 +4140,8 @@ import { iconInner, type IconName } from '../../lib/icons';
                         tl.to(newPago, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '<0.1');
                         tl.fromTo(newPago.firstElementChild, { backgroundColor: 'rgba(16,185,129,0.16)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0)', duration: 2.6, ease: 'power1.in' }, '<0.2');
                         tl.to(newTl, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '<');
-                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.9, duration: 0.25, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
+                        tl.call(() => { bell.textContent = bell.dataset.to; }, null, '<');
+                        tl.fromTo(bell, { scale: 1 }, { immediateRender: false, scale: 1.25, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.out' }, '<');
                         tl.to(scroll, { y: 0, duration: 1.4, ease: 'power2.inOut' }, '+=0.7');
                         const h = { v: TOTAL - PAID0 };
                         tl.to(h, { v: TOTAL - PAID1, duration: 1.1, ease: 'power2.out', onUpdate: () => { phSaldo.textContent = fm(h.v); } }, '-=0.45');

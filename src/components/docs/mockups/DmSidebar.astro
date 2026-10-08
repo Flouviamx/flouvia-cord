@@ -32,7 +32,7 @@ interface Props {
     plan?: DmPlanMeter;
     /** Pie: "Invitar al equipo" (permiso de Equipo y plan con más de un asiento: Pro o superior). */
     invite?: boolean;
-    /** id de un ítem con el cursor encima: tinte de hover y su atajo G + letra (si no tiene contador). */
+    /** id de un ítem con el cursor encima: tinte de hover y su atajo G + letra (si no tiene contador). En el rail, el tooltip propio "Etiqueta · contador · G X". */
     hover?: string;
     /** ids de grupos plegados (ingresos, analisis, automatizacion). Un grupo con la página activa se abre solo. */
     folded?: string[];
@@ -46,16 +46,23 @@ const {
 const eyebrow = lang === 'en' ? 'Workspace' : 'Espacio de trabajo';
 type NavItem = (typeof SIDEBAR_NAV)[number]['items'][number];
 const inSection = (it: NavItem) => it.id === active || !!it.children?.some((c) => c.id === active);
+// Texto del contador en el tooltip del rail: las mismas claves que Sidebar.astro.
+const TIP_KEYS = {
+    seguimiento: ['dash.kpi_vista_singular', 'dash.kpi_vista_plural'],
+    vencidas: ['sidebar.badge.vencida', 'sidebar.badge.vencidas'],
+    tareas: ['sidebar.badge.tarea', 'sidebar.badge.tareas'],
+} as const;
 const badgeOf = (it: NavItem) => {
     const n = it.badge ? badges[it.badge] ?? 0 : 0;
-    if (n <= 0) return null;
+    if (n <= 0 || !it.badge) return null;
     const danger = it.badge === 'vencidas' || (it.badge === 'tareas' && (badges.tareasVencidas ?? 0) > 0);
-    return { text: n > 99 ? '99+' : String(n), danger };
+    const tip = `${n} ${dmT(lang, TIP_KEYS[it.badge][n === 1 ? 0 : 1])}`;
+    return { text: n > 99 ? '99+' : String(n), danger, tip };
 };
 const pct = plan ? Math.min(100, Math.round((plan.used / Math.max(1, plan.limit)) * 100)) : 0;
 const planTone = plan ? (plan.used >= plan.limit ? 'is-full' : pct >= 80 ? 'is-warn' : '') : '';
 ---
-<div class:list={['dm-sidebar', { 'is-rail': rail }]}>
+<div class:list={['dm-sidebar', { 'is-rail': rail, 'has-tip': rail && !!hover }]}>
     <div class="dm-sb-org">
         <span class="dm-sb-org-btn">
             <span class="dm-sb-org-av">{org.trim().charAt(0).toUpperCase()}</span>
@@ -113,6 +120,13 @@ const planTone = plan ? (plan.used >= plan.limit ? 'is-full' : pct >= 80 ? 'is-w
                                     <span class="dm-sb-item-label">{dmT(lang, it.label)}</span>
                                     {b && <span class:list={['dm-sb-badge', { 'is-danger': b.danger }]}>{b.text}</span>}
                                     {!b && isHover && it.key && <span class="dm-sb-keys"><i>G</i><i>{it.key.toUpperCase()}</i></span>}
+                                    {rail && hover === it.id && (
+                                        <span class="dm-tip dm-sb-tip">
+                                            <span>{dmT(lang, it.label)}</span>
+                                            {b && <span class="dm-tip-sub">{b.tip}</span>}
+                                            {it.key && <span class="dm-tip-keys"><i>G</i><i>{it.key.toUpperCase()}</i></span>}
+                                        </span>
+                                    )}
                                 </div>
                                 {it.children && inSection(it) && (
                                     <div class="dm-sb-sub">

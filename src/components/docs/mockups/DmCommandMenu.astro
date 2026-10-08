@@ -1,0 +1,228 @@
+---
+// Mockup: el menú de comandos (⌘K / Ctrl K, o "/") abierto sobre Cotizaciones.
+// Calca de .cmdk-* en AppLayout.astro y de su pintado en initCmdk(): renglón
+// con la lupa, el buscador y ESC; la lista agrupada (etiqueta en versalitas,
+// icono en cuadro, título y a la derecha la tecla o la pista); el primer
+// resultado seleccionado con la barra navy y ↵; y el pie ↑↓ navegar · ↵ abrir ·
+// esc cerrar.
+//
+//   view="browse"  · buscador vacío: Recientes y, debajo, "Ir a" con el atajo
+//                    G + letra de cada sección (sale de la misma tabla que la
+//                    sidebar). La lista sigue hacia abajo: se recorta.
+//   view="search"  · "apex": cotizaciones y facturas con su estado y su monto EN
+//                    SU DIVISA (una en USD, dos en MXN) y la ficha del cliente.
+//   view="actions" · "nuev" / "new": las Acciones con su tecla (F, L, P, T).
+//
+// Las entradas de "Ir a" y de "Acciones" se leen del runtime real de la app
+// (getAppRuntimeI18n), y el filtrado de "actions" es el mismo que hace la app
+// (título que contiene la consulta): si la app cambia, el mockup la sigue.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import DmStatus from './DmStatus.astro';
+import { getAppRuntimeI18n } from '../../../i18n/app';
+import { sidebarShortcuts } from '../../../lib/sidebar-nav';
+import type { IconName } from '../../../lib/icons';
+import type { QuoteStatus } from '../../../lib/quote';
+import { dmT, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    view?: 'browse' | 'search' | 'actions';
+    caption?: string;
+}
+const { lang, view = 'browse' } = Astro.props;
+const RT = getAppRuntimeI18n(lang);
+const G = RT.cmdkGroups;
+// Mismo mapa de iconos que initCmdk() (clave del runtime → icono del registro).
+const ICON: Record<string, IconName> = {
+    dashboard: 'overview', doc: 'document', card: 'card', users: 'clients', box: 'products',
+    chart: 'chart', gear: 'gear', plus: 'plus', receipt: 'invoice', sparkle: 'cpu', check: 'check-circle', external: 'external',
+    tasks: 'checklist', coin: 'coin', tray: 'tray', pulse: 'pulse', workflow: 'workflow',
+};
+const KEYS: Record<string, string> = Object.fromEntries(sidebarShortcuts().map((it) => [it.href, `G ${it.key!.toUpperCase()}`]));
+
+type Money = { amount: number; currency: string };
+type Item = { group: string; title: string; icon: IconName; kbd?: string; hint?: string; status?: string; money?: Money };
+
+const DATA = {
+    es: {
+        query: { browse: '', search: 'apex', actions: 'nuev' },
+        captions: {
+            browse: 'El menú de comandos abierto sobre Cotizaciones con el buscador vacío: Recientes (una cotización y un cliente) y "Ir a" con el atajo G + letra de cada sección a la derecha, la primera opción seleccionada y, al pie, las teclas para navegar, abrir y cerrar.',
+            search: 'El menú de comandos con la búsqueda "apex": dos cotizaciones de Constructora Apex con su estado y su monto en su divisa (una vista por $1,200.00 USD y una aprobada por $10,000.00 MXN), la factura F-0042 por cobrar por $3,480.00 MXN y la ficha del cliente.',
+            actions: 'El menú de comandos con la búsqueda "nuev": las Acciones Nueva factura, Nuevo cliente, Nuevo producto y Nueva tarea, cada una con su tecla F, L, P y T.',
+        },
+        st: { viewed: 'cmdk.st.viewed', approved: 'cmdk.st.approved', open: 'cmdk.fac.open' },
+    },
+    en: {
+        query: { browse: '', search: 'apex', actions: 'new' },
+        captions: {
+            browse: 'The command menu open over Quotes with an empty search: Recent (a quote and a client) and "Go to" with each section\'s G + letter shortcut on the right, the first option selected and, at the bottom, the keys to navigate, open and close.',
+            search: 'The command menu searching "apex": two Constructora Apex quotes with their status and amount in their own currency (one viewed for $1,200.00 USD and one approved for $10,000.00 MXN), invoice F-0042 open for $3,480.00 MXN, and the client record.',
+            actions: 'The command menu searching "new": the New invoice, New client, New product and New task actions, each with its F, L, P and T key.',
+        },
+        st: { viewed: 'cmdk.st.viewed', approved: 'cmdk.st.approved', open: 'cmdk.fac.open' },
+    },
+};
+const d = pick(DATA, lang);
+const query = d.query[view];
+const caption = Astro.props.caption ?? d.captions[view];
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+let items: Item[] = [];
+if (view === 'browse') {
+    items = [
+        { group: G.recientes, title: `${DEMO.folio} · ${DEMO.cliente}`, icon: 'document' },
+        { group: G.recientes, title: DEMO.cliente, icon: 'clients' },
+        ...RT.cmdkNav.slice(0, 6).map(([title, href, iconKey, hint]) => ({
+            group: G.ir_a, title, icon: ICON[iconKey] ?? 'document', kbd: KEYS[href], hint: KEYS[href] ? undefined : hint,
+        })),
+    ];
+} else if (view === 'search') {
+    items = [
+        { group: G.cotizaciones, title: 'COT-0155 · Constructora Apex', icon: 'document', status: dmT(lang, d.st.viewed as any), money: { amount: 1200, currency: 'USD' } },
+        { group: G.cotizaciones, title: 'COT-0152 · Constructora Apex', icon: 'document', status: dmT(lang, d.st.approved as any), money: { amount: 10000, currency: 'MXN' } },
+        { group: G.facturas, title: 'F-0042 · Constructora Apex', icon: 'invoice', status: dmT(lang, d.st.open as any), money: { amount: 3480, currency: 'MXN' } },
+        { group: G.clientes, title: 'Constructora Apex', icon: 'clients' },
+    ];
+} else {
+    items = RT.cmdkActions
+        .filter((a) => norm(a.title).includes(norm(query)))
+        .map((a) => ({ group: G.acciones, title: a.title, icon: ICON[a.icon] ?? 'plus', kbd: a.kbd, hint: a.kbd ? undefined : a.hint }));
+}
+const groups = items.reduce<{ label: string; rows: Item[] }[]>((acc, it) => {
+    const last = acc[acc.length - 1];
+    if (last && last.label === it.group) last.rows.push(it);
+    else acc.push({ label: it.group, rows: [it] });
+    return acc;
+}, []);
+
+const BEHIND: { folio: string; cliente: string; status: QuoteStatus; total: number }[] = [
+    { folio: 'COT-0155', cliente: 'Constructora Apex', status: 'viewed', total: 23940 },
+    { folio: 'COT-0152', cliente: 'Constructora Apex', status: 'approved', total: 10000 },
+    { folio: DEMO.folio, cliente: DEMO.cliente, status: 'viewed', total: DEMO.total },
+    { folio: 'COT-0147', cliente: 'Aceros del Norte', status: 'sent', total: 84310.5 },
+    { folio: 'COT-0146', cliente: 'Grupo Inmobiliario Lerma', status: 'paid', total: 312880 },
+    { folio: 'COT-0145', cliente: 'Ferretera San Pedro', status: 'draft', total: 18560 },
+];
+let n = 0;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="cotizaciones" badges={{ seguimiento: 2 }} notif={1} title={dmT(lang, 'cot.heading')} height={view === 'browse' ? 540 : 480} caption={caption} class="dm-cmdk-figure">
+    <div class="dm-surface">
+        <div class="dm-table">
+            {BEHIND.map((q) => (
+                <div class="dm-tr" style="--dm-cols: 80px minmax(0,1fr) auto auto">
+                    <span class="dm-folio">{q.folio}</span>
+                    <span class="dm-ellipsis">{q.cliente}</span>
+                    <DmStatus status={q.status} lang={lang} />
+                    <span class="dm-num"><DmMoney amount={q.total} lang={lang} /></span>
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div slot="overlay" class="dm-cmdk-layer">
+        <div class="dm-scrim"></div>
+        <div class="dm-cmdk">
+            <div class="dm-cmdk-input">
+                <DmIcon name="search" />
+                {query
+                    ? <span class="dm-cmdk-q">{query}<i class="dm-cmdk-caret"></i></span>
+                    : <span class="dm-cmdk-q is-ph"><i class="dm-cmdk-caret"></i>{dmT(lang, 'layout.cmdk.placeholder')}</span>}
+                <span class="dm-cmdk-esc">ESC</span>
+            </div>
+            <div class:list={['dm-cmdk-results', { 'is-cut': view === 'browse' }]}>
+                {groups.map((g) => (
+                    <Fragment>
+                        <div class="dm-cmdk-group">{g.label}</div>
+                        {g.rows.map((it) => {
+                            const sel = n++ === 0;
+                            return (
+                                <div class:list={['dm-cmdk-item', { 'is-sel': sel }]}>
+                                    <span class="dm-cmdk-ico"><DmIcon name={it.icon} stroke={1.9} /></span>
+                                    <span class="dm-cmdk-title">{it.title}</span>
+                                    {it.kbd && <span class="dm-cmdk-kbd">{it.kbd}</span>}
+                                    {!it.kbd && it.money && <span class="dm-cmdk-hint">{it.status} · <DmMoney amount={it.money.amount} currency={it.money.currency} lang={lang} /></span>}
+                                    {!it.kbd && !it.money && it.hint && <span class="dm-cmdk-hint">{it.hint}</span>}
+                                    {sel && <span class="dm-cmdk-enter">↵</span>}
+                                </div>
+                            );
+                        })}
+                    </Fragment>
+                ))}
+            </div>
+            <div class="dm-cmdk-foot">
+                <span><i>↑</i><i>↓</i> {dmT(lang, 'layout.cmdk.navegar')}</span>
+                <span><i>↵</i> {dmT(lang, 'layout.cmdk.abrir')}</span>
+                <span><i>esc</i> {dmT(lang, 'layout.cmdk.cerrar')}</span>
+            </div>
+        </div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* = .cmdk-backdrop: el velo navy sobre la app (sin blur; regla 31). */
+    .dm-cmdk-figure .dm-cmdk-layer { position: absolute; inset: 0; }
+    .dm-cmdk-figure .dm-scrim { background: rgba(10, 25, 47, 0.32); }
+    /* = .cmdk-panel (620 px en la app): centrado en lo visible del escenario. */
+    .dm-cmdk {
+        position: absolute;
+        top: 58px;
+        left: 0;
+        right: var(--dm-bleed);
+        margin: 0 auto;
+        width: min(500px, calc(100% - var(--dm-bleed) - 32px));
+        background: var(--dm-surface);
+        border: 1px solid var(--dm-border);
+        border-radius: 14px;
+        box-shadow: 0 40px 100px -24px rgba(10, 25, 47, 0.5), 0 2px 6px rgba(10, 25, 47, 0.06);
+        overflow: hidden;
+    }
+    .dm-cmdk-input { display: flex; align-items: center; gap: 9.5px; padding: 12px 14px; border-bottom: 1px solid var(--dm-border); }
+    .dm-cmdk-input > .dm-ico { width: 15.5px; height: 15.5px; color: #99a2af; }
+    .dm-cmdk-q { flex: 1; min-width: 0; display: flex; align-items: center; font-size: 13.75px; color: var(--dm-text); white-space: nowrap; overflow: hidden; }
+    .dm-cmdk-q.is-ph { color: #aab2bf; }
+    .dm-cmdk-caret { display: inline-block; width: 1.5px; height: 16px; margin: 0 1px; background: var(--dm-navy); flex-shrink: 0; }
+    .dm-cmdk-q.is-ph .dm-cmdk-caret { margin-left: 0; margin-right: 2px; }
+    .dm-cmdk-esc { flex-shrink: 0; padding: 2px 5px; border-radius: 4.5px; border: 1px solid var(--dm-border); background: var(--dm-soft); font-size: 8.75px; font-weight: 700; color: #99a2af; }
+
+    .dm-cmdk-results { padding: 5px; }
+    /* El buscador vacío sigue con más secciones: la lista se recorta como un scroll. */
+    .dm-cmdk-results.is-cut { max-height: 330px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+    /* = .cmdk-group-label */
+    .dm-cmdk-group { padding: 8.5px 10px 4px; font-size: 8.25px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+    /* = .cmdk-item (+ .sel: barra navy a la izquierda y ↵ a la derecha) */
+    .dm-cmdk-item { position: relative; display: flex; align-items: center; gap: 9.5px; padding: 7.5px 10px; border-radius: 8px; color: var(--dm-text); min-width: 0; }
+    .dm-cmdk-item.is-sel { background: var(--dm-soft); }
+    .dm-cmdk-item.is-sel::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 0 3px 3px 0; background: var(--dm-navy); }
+    .dm-cmdk-ico { width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-soft); color: var(--dm-navy); box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.04); }
+    .dm-cmdk-ico .dm-ico { width: 13px; height: 13px; }
+    .dm-cmdk-item.is-sel .dm-cmdk-ico { background: var(--dm-navy); color: #fff; box-shadow: none; }
+    .dm-cmdk-title { flex: 1; min-width: 0; font-size: 12.25px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-cmdk-hint { flex-shrink: 0; margin-left: auto; padding-left: 12px; font-size: 10.5px; color: #99a2af; white-space: nowrap; }
+    .dm-cmdk-hint .dm-money { font-weight: 600; letter-spacing: -0.01em; color: var(--dm-muted); }
+    .dm-cmdk-hint .dm-cur { color: #99a2af; }
+    .dm-cmdk-kbd { flex-shrink: 0; padding: 2px 5px; border-radius: 4.5px; border: 1px solid var(--dm-border); background: var(--dm-soft); font-size: 8.75px; font-weight: 700; color: var(--dm-muted); white-space: nowrap; }
+    .dm-cmdk-enter { flex-shrink: 0; margin-left: 4px; width: 14px; text-align: center; font-size: 11px; color: var(--dm-muted); }
+
+    /* = .cmdk-foot */
+    .dm-cmdk-foot { display: flex; gap: 17px; padding: 8px 14px; border-top: 1px solid var(--dm-border); background: var(--dm-soft); }
+    .dm-cmdk-foot span { display: inline-flex; align-items: center; gap: 4px; font-size: 9.75px; color: #99a2af; white-space: nowrap; }
+    .dm-cmdk-foot i { font-style: normal; padding: 1px 4px; border-radius: 3.5px; border: 1px solid var(--dm-border); background: #fff; font-size: 8.75px; font-weight: 700; color: var(--dm-muted); }
+
+    /* Angosto: el panel ocupa el ancho. En el teléfono la app no enseña teclas
+       (.cmdk-kbd se oculta por debajo de 880 px, regla 16). */
+    @container dm (max-width: 520px) {
+        .dm-cmdk { top: 52px; width: calc(100% - var(--dm-bleed) - 20px); }
+        .dm-cmdk-kbd { display: none; }
+        .dm-cmdk-hint { font-size: 10px; }
+        .dm-cmdk-foot { gap: 12px; }
+    }
+    @container dm (max-width: 420px) {
+        .dm-cmdk-item:has(.dm-cmdk-hint .dm-money) { flex-wrap: wrap; row-gap: 1px; }
+        .dm-cmdk-item:has(.dm-cmdk-hint .dm-money) .dm-cmdk-title { flex-basis: calc(100% - 34px); }
+        .dm-cmdk-item:has(.dm-cmdk-hint .dm-money) .dm-cmdk-hint { margin-left: 33px; padding-left: 0; }
+        .dm-cmdk-item:has(.dm-cmdk-hint .dm-money) .dm-cmdk-enter { display: none; }
+    }
+</style>

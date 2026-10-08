@@ -1,0 +1,72 @@
+---
+// Mockup: el panel de atajos de teclado (tecla "?", solo escritorio). Calca de
+// #kbdHelp en AppLayout.astro: encabezado "Atajos de teclado" con esc y una
+// fila por atajo, separadas por hairline, con la tecla a la derecha.
+//
+// Las filas salen de las mismas fuentes que el panel real: los textos de
+// layout.kbd.* y, para "Ir a…", sidebarShortcuts() de src/lib/sidebar-nav.ts
+// (la misma tabla que pinta el atajo en la sidebar). Se dibuja con todos los
+// permisos; en la app cada atajo de crear solo aparece si tienes el permiso.
+import DocsMockup from './DocsMockup.astro';
+import { sidebarShortcuts } from '../../../lib/sidebar-nav';
+import { dmT, pick, tpl, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const DATA = {
+    es: { caption: 'El panel de atajos de teclado que se abre con la tecla ?: buscar con ⌘ K o /, crear cotización (C), factura (F), cliente (L), producto (P) y tarea (T), ir a cada sección con G y su letra, alternar el menú con [, fijar la página con X y mostrar los atajos con ?.' },
+    en: { caption: 'The keyboard shortcuts panel that opens with the ? key: search with ⌘ K or /, create a quote (C), invoice (F), client (L), product (P) and task (T), go to each section with G and its letter, toggle the menu with [, pin the page with X and show the shortcuts with ?.' },
+};
+const caption = Astro.props.caption ?? pick(DATA, lang).caption;
+
+type Row = { label: string; keys: string[][] };
+const ROWS: Row[] = [
+    { label: dmT(lang, 'layout.kbd.buscar_menu'), keys: [['⌘', 'K'], ['/']] },
+    { label: dmT(lang, 'layout.kbd.crear_cotizacion'), keys: [['C']] },
+    { label: dmT(lang, 'layout.kbd.crear_factura'), keys: [['F']] },
+    { label: dmT(lang, 'layout.kbd.crear_cliente'), keys: [['L']] },
+    { label: dmT(lang, 'layout.kbd.crear_producto'), keys: [['P']] },
+    { label: dmT(lang, 'layout.kbd.crear_tarea'), keys: [['T']] },
+    ...sidebarShortcuts().map((it) => ({ label: tpl(dmT(lang, 'layout.kbd.ir_a'), { x: dmT(lang, it.label) }), keys: [['G', it.key!.toUpperCase()]] })),
+    { label: dmT(lang, 'sidebar.alternar_menu'), keys: [['[']] },
+    { label: dmT(lang, 'layout.kbd.fijar_quitar'), keys: [['X']] },
+    { label: dmT(lang, 'layout.kbd.mostrar_atajos'), keys: [['?']] },
+];
+---
+<DocsMockup lang={lang} variant="panel" panelWidth={380} caption={caption} class="dm-kbd-figure">
+    <div class="dm-kbd-head"><span class="dm-kbd-title">{dmT(lang, 'layout.kbd.titulo')}</span><span class="dm-kbd-k">esc</span></div>
+    <div class="dm-kbd-body">
+        {ROWS.map((r) => (
+            <div class="dm-kbd-row">
+                <span class="dm-kbd-label">{r.label}</span>
+                <span class="dm-kbd-keys">
+                    {r.keys.map((combo, i) => (
+                        <Fragment>
+                            {i > 0 && <span class="dm-kbd-sep">·</span>}
+                            {combo.map((k) => <span class="dm-kbd-k">{k}</span>)}
+                        </Fragment>
+                    ))}
+                </span>
+            </div>
+        ))}
+    </div>
+</DocsMockup>
+
+<style is:global>
+    /* = .kbd-help-panel (440 px en la app) */
+    .dm-kbd-figure .dm-panel { border-radius: 14px; box-shadow: 0 40px 100px -24px rgba(10, 25, 47, 0.5), 0 2px 6px rgba(10, 25, 47, 0.05); }
+    .dm-kbd-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid var(--dm-border); }
+    .dm-kbd-title { font-size: 13px; font-weight: 700; color: var(--dm-text); }
+    .dm-kbd-body { padding: 7px 9px 10px; }
+    .dm-kbd-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 7px; font-size: 11.75px; color: var(--dm-text); }
+    .dm-kbd-row + .dm-kbd-row { border-top: 1px solid var(--dm-border); }
+    .dm-kbd-label { min-width: 0; }
+    .dm-kbd-keys { display: inline-flex; align-items: center; gap: 3.5px; flex-shrink: 0; color: var(--dm-muted); }
+    .dm-kbd-sep { font-size: 11px; }
+    /* = .kbd-row kbd */
+    .dm-kbd-k { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; padding: 2px 5px; border-radius: 4.5px; border: 1px solid var(--dm-border); background: var(--dm-soft); font-size: 9.25px; font-weight: 700; line-height: 1.2; color: var(--dm-muted); }
+</style>

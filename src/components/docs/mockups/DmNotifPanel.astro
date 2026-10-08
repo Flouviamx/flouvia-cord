@@ -1,0 +1,123 @@
+---
+// Mockup: la campana de la topbar abierta sobre Inicio. Calca de #notifPanel
+// en AppLayout.astro y de su pintado en initNotifs(): encabezado
+// "Notificaciones" con "Marcar como leídas", la lista con icono en tinte por
+// tipo (ámbar para vistas y contraofertas, verde para aprobación y dinero),
+// título, "folio · cliente" y hace cuánto, las nuevas resaltadas, y al pie
+// "Ver toda la actividad".
+//
+// Solo entra lo que hizo el cliente o el dinero que entró, de cotizaciones Y
+// facturas (src/lib/notificaciones.ts): aquí, una vista, una aprobación, una
+// contraoferta, un abono y una factura pagada. Los títulos salen del mismo
+// diccionario que usa /api/notificaciones y el "hace…" del mismo
+// Intl.RelativeTimeFormat corto.
+//
+// Como en la app, abrir la campana la marca como vista: el contador de la
+// campana ya no se dibuja, pero las tres nuevas siguen resaltadas.
+// Aplicaciones va en su cápsula con HubSpot y Slack conectados.
+import DocsMockup from './DocsMockup.astro';
+import DmIcon from './DmIcon.astro';
+import DmMoney from './DmMoney.astro';
+import type { IconName } from '../../../lib/icons';
+import { dmT, pick, DEMO, type DmLang } from './format';
+
+interface Props {
+    lang: DmLang;
+    caption?: string;
+}
+const { lang } = Astro.props;
+
+const rtf = new Intl.RelativeTimeFormat(lang === 'en' ? 'en-US' : 'es-MX', { numeric: 'auto', style: 'short' });
+type Row = { key: string; icon: IconName; tone: 'ok' | 'warn' | 'danger'; folio: string; cliente: string; when: string; unread: boolean };
+const ROWS: Row[] = [
+    { key: 'notif.tipo.viewed', icon: 'eye', tone: 'warn', folio: DEMO.folio, cliente: DEMO.cliente, when: rtf.format(-4, 'minute'), unread: true },
+    { key: 'notif.tipo.approved', icon: 'check', tone: 'ok', folio: 'COT-0152', cliente: 'Constructora Apex', when: rtf.format(-38, 'minute'), unread: true },
+    { key: 'notif.tipo.counter', icon: 'chat', tone: 'warn', folio: 'COT-0149', cliente: 'Aceros del Norte', when: rtf.format(-2, 'hour'), unread: true },
+    { key: 'notif.fac.payment', icon: 'card', tone: 'ok', folio: 'F-0042', cliente: 'Constructora Apex', when: rtf.format(-5, 'hour'), unread: false },
+    { key: 'notif.fac.paid', icon: 'card', tone: 'ok', folio: 'F-0037', cliente: 'Grupo Inmobiliario Lerma', when: rtf.format(-1, 'day'), unread: false },
+];
+
+const DATA = {
+    es: {
+        caption: `La campana abierta sobre Inicio con las cinco notificaciones más recientes: tu cliente vio la cotización ${DEMO.folio}, Constructora Apex aprobó la COT-0152, Aceros del Norte mandó una contraoferta, un abono a la factura F-0042 y la factura F-0037 pagada. Las tres nuevas van resaltadas; arriba, Marcar como leídas, y al pie, Ver toda la actividad.`,
+        activas: '7 cotizaciones activas',
+    },
+    en: {
+        caption: `The bell open over Home with the five most recent notifications: your client viewed quote ${DEMO.folio}, Constructora Apex approved COT-0152, Aceros del Norte sent a counteroffer, a partial payment on invoice F-0042 and invoice F-0037 paid. The three new ones are highlighted; at the top, Mark as read, and at the bottom, View all activity.`,
+        activas: '7 active quotes',
+    },
+};
+const d = pick(DATA, lang);
+const caption = Astro.props.caption ?? d.caption;
+---
+<DocsMockup lang={lang} variant="app" chrome="full" sidebar="rail" active="dashboard" badges={{ seguimiento: 3, vencidas: 2 }} apps={["hubspot.com", "slack.com"]} open="notif" title={dmT(lang, 'dash.heading')} height={480} caption={caption} class="dm-np-figure">
+    <div class="dm-kpis">
+        <div class="dm-surface dm-kpi">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_cerrar')}</span>
+            <span class="dm-kpi-num"><DmMoney amount={603659.7} lang={lang} /></span>
+            <span class="dm-kpi-sub">{d.activas}</span>
+        </div>
+        <div class="dm-surface dm-kpi">
+            <span class="dm-kpi-label">{dmT(lang, 'dash.kpi_por_seguimiento')}</span>
+            <span class="dm-kpi-num dm-editorial">3</span>
+            <span class="dm-kpi-sub">{dmT(lang, 'dash.kpi_vista_plural')}</span>
+        </div>
+    </div>
+
+    <div slot="topbar-panel" class="dm-np">
+        <div class="dm-np-head">
+            <span class="dm-np-title">{dmT(lang, 'layout.notif.titulo')}</span>
+            <span class="dm-np-mark">{dmT(lang, 'layout.notif.marcar_leidas')}</span>
+        </div>
+        <div class="dm-np-list">
+            {ROWS.map((r) => (
+                <div class:list={['dm-np-item', { 'is-unread': r.unread }]}>
+                    <span class:list={['dm-np-ico', `is-${r.tone}`]}><DmIcon name={r.icon} stroke={1.9} /></span>
+                    <span class="dm-np-body">
+                        <span class="dm-np-t">{dmT(lang, r.key as any)}</span>
+                        <span class="dm-np-sub">{r.folio} · {r.cliente}</span>
+                        <span class="dm-np-when">{r.when}</span>
+                    </span>
+                </div>
+            ))}
+        </div>
+        <div class="dm-np-foot">{dmT(lang, 'layout.notif.ver_todo')}</div>
+    </div>
+</DocsMockup>
+
+<style is:global>
+    .dm-np-figure .dm-kpis { --dm-kpi-min: 170px; }
+    /* = .notif-panel (340 px en la app) */
+    .dm-np {
+        display: block;
+        width: 292px;
+        background: var(--dm-surface);
+        border: 1px solid var(--dm-border);
+        border-radius: 12px;
+        box-shadow: 0 24px 60px -18px rgba(10, 25, 47, 0.45), 0 2px 6px rgba(10, 25, 47, 0.05);
+        overflow: hidden;
+        white-space: normal;
+    }
+    .dm-np-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--dm-border); }
+    .dm-np-title { font-size: 12.25px; font-weight: 700; color: var(--dm-text); }
+    .dm-np-mark { font-size: 10.25px; font-weight: 600; color: var(--dm-muted); white-space: nowrap; }
+    .dm-np-list { padding: 5px; display: flex; flex-direction: column; }
+    /* = .notif-item (+ .unread: las que llegaron desde la última vez) */
+    .dm-np-item { display: flex; align-items: flex-start; gap: 8.5px; padding: 8px 8.5px; border-radius: 8.5px; }
+    .dm-np-item.is-unread { background: rgba(10, 25, 47, 0.035); }
+    .dm-np-ico { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; display: grid; place-items: center; background: var(--dm-soft); color: var(--dm-navy); }
+    .dm-np-ico .dm-ico { width: 13px; height: 13px; }
+    .dm-np-ico.is-ok { background: rgba(16, 185, 129, 0.12); color: #059669; }
+    .dm-np-ico.is-warn { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+    .dm-np-ico.is-danger { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+    .dm-np-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .dm-np-t { font-size: 11.5px; font-weight: 600; color: var(--dm-text); }
+    .dm-np-sub { font-size: 10.5px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-np-when { font-size: 9.75px; color: #99a2af; }
+    .dm-np-foot { padding: 9px; border-top: 1px solid var(--dm-border); text-align: center; font-size: 11px; font-weight: 600; color: var(--dm-navy); }
+
+    /* Angosto: como en el teléfono, el panel casi a todo el ancho. */
+    @container dm (max-width: 520px) {
+        .dm-np { width: min(292px, calc(100cqw - 40px)); }
+    }
+</style>

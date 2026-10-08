@@ -382,6 +382,9 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
     /* ── Fijados ── */
     .sb-pins[hidden] { display: none; }
     .sb-pins + .sb-group { margin-top: 0.7rem; }
+    /* Sin fijados el grupo queda oculto pero sigue en el DOM: no debe empujar a
+       Inicio ni dibujar un separador encima de él en el rail. */
+    .sb-pins[hidden] + .sb-group { margin-top: 0; }
     .sb-pin-list { display: flex; flex-direction: column; gap: 1px; }
     .sb-pin-row { position: relative; display: flex; }
     .sb-pin-row .sb-item { flex: 1; min-width: 0; }
@@ -509,6 +512,8 @@ const toggleLabel = t(L, 'sidebar.alternar_menu');
             content: ''; position: absolute; top: 0; left: 50%; width: 16px; margin-left: -8px; height: 1px;
             background: var(--sb-divider);
         }
+        :global(.sb-collapsed) .sb-pins[hidden] + .sb-group { margin-top: 0; padding-top: 0; }
+        :global(.sb-collapsed) .sb-pins[hidden] + .sb-group::before { display: none; }
         :global(.sb-collapsed) .sb-group-label,
         :global(.sb-collapsed) .sb-group-head { display: none; }
         /* En el rail se ven todos los ítems: plegar un grupo es cosa del menú ancho. */

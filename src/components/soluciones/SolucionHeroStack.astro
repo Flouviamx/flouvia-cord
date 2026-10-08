@@ -181,23 +181,25 @@ import { iconInner } from '../../lib/icons';
                         </div>
                     ) : (
                         <div class="ehs-app">
-                            <!-- Topbar real de AppLayout: búsqueda ⌘K, Crear y accesos. -->
+                            <!-- Topbar real de AppLayout: buscador ⌘K; a la derecha Crear, Aplicaciones,
+                                 campana con contador, ayuda, tema (sol = Claro) y engrane. -->
                             <div class="ehs-tb">
                                 <span class="ehs-tb-search">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('search')}></svg>
                                     {L('Buscar…', 'Search…')}
                                     <kbd>⌘K</kbd>
                                 </span>
                                 <span class="ehs-tb-right">
                                     <span class="ehs-tb-create">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={iconInner('plus')}></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('plus')}></svg>
                                         {L('Crear', 'Create')}
-                                        <svg class="ehs-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={iconInner('chevron-down')}></svg>
+                                        <svg class="ehs-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chevron-down')}></svg>
                                     </span>
-                                    <span class="ehs-tb-ic">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg>
-                                    </span>
-                                    <span class="ehs-tb-av">AV</span>
+                                    <span class="ehs-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('grid-plus')}></svg></span>
+                                    <span class="ehs-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('bell')}></svg><i class="ehs-tb-count">3</i></span>
+                                    <span class="ehs-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('chat-help')}></svg></span>
+                                    <span class="ehs-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('sun')}></svg></span>
+                                    <span class="ehs-tb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={iconInner('gear')}></svg></span>
                                 </span>
                             </div>
 
@@ -620,6 +622,7 @@ import { iconInner } from '../../lib/icons';
     }
     .ehs-tb-create svg { width: 9px; height: 9px; }
     .ehs-tb-ic {
+        position: relative;
         width: 22px;
         height: 22px;
         display: grid;
@@ -627,18 +630,25 @@ import { iconInner } from '../../lib/icons';
         color: var(--a-mut);
     }
     .ehs-tb-ic svg { width: 12.5px; height: 12.5px; }
-    .ehs-tb-av {
-        width: 20px;
-        height: 20px;
-        margin-left: 2px;
-        border-radius: 50%;
+    /* Campana = bandeja: contador con tinte navy (no punto rojo), como .tb-notif-count. */
+    .ehs-tb-count {
+        position: absolute;
+        top: 0;
+        right: -2px;
+        min-width: 12px;
+        height: 12px;
+        padding: 0 3px;
+        border-radius: 6px;
         display: grid;
         place-items: center;
-        background: #1b3a64;
-        color: #fff;
+        font-style: normal;
         font-size: 7px;
         font-weight: 700;
         line-height: 1;
+        font-variant-numeric: tabular-nums;
+        color: var(--a-navy);
+        background: #d8dade;
+        box-shadow: 0 0 0 1.5px #fff;
     }
 
     /* Page head (.page-head / .ph-title / .ph-crumbs) */

@@ -13,8 +13,9 @@
 // colapsar. Con `meter` el pie es el de Starter: "Cotizaciones activas 38 / 50"
 // y "Mejorar plan".
 //
-// Topbar (calca de AppLayout + TopbarApps): Buscar ⌘K, Crear, Aplicaciones con
-// HubSpot y Slack conectados, la campana con 3 sin leer, Ayuda, Tema (sol =
+// Topbar (calca de AppLayout + TopbarApps): Buscar ⌘K, Crear, Aplicaciones (el
+// icono; la cápsula con logos ocupa el ancho que el buscador necesita en este
+// marco: la enseña DmNotifPanel), la campana con 3 sin leer, Ayuda, Tema (sol =
 // Claro) y Ajustes.
 //
 // En un marco angosto se dibuja como en el teléfono: la topbar móvil y el menú
@@ -40,14 +41,14 @@ const DATA = {
     es: {
         caption: meter
             ? 'La app en escritorio sobre Inicio con el plan Starter: el menú lateral con el selector de Materiales del Valle, dos páginas fijadas, la lista Inicio, Cotizaciones (3 vistas sin responder), Clientes, Productos y Tareas (2 para hoy), los grupos Ingresos (Cobranza con 2 cuentas vencidas), Análisis y Automatización, y al pie el medidor Cotizaciones activas 38 / 50 con Mejorar plan. Arriba, Buscar, Crear, Aplicaciones, la campana con 3 sin leer, Ayuda, Tema y Ajustes.'
-            : 'La app en escritorio sobre Inicio: el menú lateral con el selector de Materiales del Valle, dos páginas fijadas, la lista Inicio, Cotizaciones (3 vistas sin responder), Clientes con su atajo G L al pasar el cursor, Productos y Tareas (2 para hoy), los grupos Ingresos (Cobranza con 2 cuentas vencidas), Análisis y Automatización, y al pie Invitar al equipo y el botón para colapsar. Arriba, Buscar, Crear, Aplicaciones con dos apps conectadas, la campana con 3 notificaciones sin leer, Ayuda, Tema y Ajustes.',
+            : 'La app en escritorio sobre Inicio: el menú lateral con el selector de Materiales del Valle, dos páginas fijadas, la lista Inicio, Cotizaciones (3 vistas sin responder), Clientes con su atajo G L al pasar el cursor, Productos y Tareas (2 para hoy), los grupos Ingresos (Cobranza con 2 cuentas vencidas), Análisis y Automatización, y al pie Invitar al equipo y el botón para colapsar. Arriba, Buscar, Crear, Aplicaciones, la campana con 3 notificaciones sin leer, Ayuda, Tema y Ajustes.',
         pinReport: 'Flujo de caja',
         activas: '7 cotizaciones activas',
     },
     en: {
         caption: meter
             ? 'The app on desktop over Home on the Starter plan: the sidebar with the Materiales del Valle switcher, two pinned pages, the Home, Quotes (3 viewed with no reply), Clients, Products and Tasks (2 due today) list, the Revenue (Collections with 2 overdue accounts), Insights and Automation groups, and at the bottom the Active quotes 38 / 50 meter with Upgrade plan. At the top, Search, Create, Apps, the bell with 3 unread, Help, Theme and Settings.'
-            : 'The app on desktop over Home: the sidebar with the Materiales del Valle switcher, two pinned pages, the Home, Quotes (3 viewed with no reply), Clients showing its G L shortcut on hover, Products and Tasks (2 due today) list, the Revenue (Collections with 2 overdue accounts), Insights and Automation groups, and at the bottom Invite people and the collapse button. At the top, Search, Create, Apps with two connected apps, the bell with 3 unread notifications, Help, Theme and Settings.',
+            : 'The app on desktop over Home: the sidebar with the Materiales del Valle switcher, two pinned pages, the Home, Quotes (3 viewed with no reply), Clients showing its G L shortcut on hover, Products and Tasks (2 due today) list, the Revenue (Collections with 2 overdue accounts), Insights and Automation groups, and at the bottom Invite people and the collapse button. At the top, Search, Create, Apps, the bell with 3 unread notifications, Help, Theme and Settings.',
         pinReport: 'Cash flow',
         activas: '7 active quotes',
     },
@@ -78,7 +79,7 @@ const RECENT: { folio: string; cliente: string; status: QuoteStatus; total: numb
             mobile
         />
         <div class="dm-map-main">
-            <DmTopbar lang={lang} notif={3} apps={['hubspot.com', 'slack.com']} />
+            <DmTopbar lang={lang} notif={3} />
             <div class="dm-page-head"><div class="dm-h1">{dmT(lang, 'dash.heading')}</div></div>
             <div class="dm-content">
                 <div class="dm-kpis dm-map-kpis">
