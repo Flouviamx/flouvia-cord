@@ -1,14 +1,17 @@
 /* ============================================================================
    Vocabulario del editor de cotizaciones para los mockups de docs (dm-ced-*).
-   Calca de src/styles/editor.css + el <style is:global> de
-   src/pages/app/cotizaciones/nueva.astro, a escala de screenshot.
+   Calca de src/styles/editor.css y src/components/app/DocumentEditor.astro
+   (el editor ÚNICO de cotizaciones y facturas), a escala de screenshot.
 
    Lo consumen DmCotClientStep, DmCotAiBlock, DmCotLines y DmCotReviewPanel
    (y CotEdLines.astro). Hoja global a propósito (regla 11): cada componente
    tiene su propio scope de Astro y todos comparten estas clases.
    ============================================================================ */
 
-.dm-ced { --ced-field: #ebecef; --ced-ok: #059669; --ced-low: #dc2626; }
+.dm-ced { --ced-field: #ffffff; --ced-ok: #059669; --ced-low: #dc2626; }
+/* Sobre el gris de la app los campos del editor son blancos; dentro de una
+   tarjeta blanca (resumen, menús) vuelven al gris. */
+.dm-ced-sum, .dm-cot-rp, .dm-ced-menu { --ced-field: #f0f1f3; }
 
 /* Etiqueta "Borrador" de la topbar del editor */
 .dm-ced-draft { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 6px; font-size: 10.5px; font-weight: 600; color: var(--dm-muted); background: var(--dm-soft); border: 1px solid var(--dm-border); }
@@ -33,13 +36,31 @@
 .dm-ced-chip { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--dm-muted); background: var(--ced-field); border: 1.5px solid transparent; white-space: nowrap; }
 .dm-ced-chip.is-on { color: #fff; background: var(--dm-navy); border-color: var(--dm-navy); box-shadow: 0 2px 8px -2px rgba(10, 25, 47, 0.3); }
 
-/* Divisor "o créala manualmente" */
-.dm-ced-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--dm-muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
-.dm-ced-or::before, .dm-ced-or::after { content: ''; flex: 1; height: 1px; background: var(--dm-border); }
+/* Chip "Otro plazo" del selector de términos */
+.dm-ced-chip.is-more { gap: 5px; }
+.dm-ced-chip.is-more .dm-ico { width: 10px; height: 10px; opacity: 0.7; }
+
+/* Buscador de clientes (combobox) */
+.dm-ced-combo { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--ced-field); border: 1.5px solid transparent; font-size: 12px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+.dm-ced-combo .dm-ico { width: 14px; height: 14px; flex-shrink: 0; color: #99a2af; }
+.dm-ced-combo.is-focus { border-color: var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+.dm-ced-combo.is-placeholder { color: #99a2af; font-weight: 400; }
+.dm-ced-combo-t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dm-ced-caret { display: inline-block; width: 1px; height: 14px; margin-left: -6px; background: var(--dm-navy); }
+.dm-ced-menu { display: flex; flex-direction: column; padding: 4px 0; border-radius: 12px; background: #fff; box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 12px 32px -8px rgba(10, 25, 47, 0.18), 0 4px 12px -4px rgba(10, 25, 47, 0.08); }
+.dm-ced-opt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; font-size: 11.5px; font-weight: 500; color: var(--dm-text); }
+.dm-ced-opt-row.is-active { background: var(--ced-field); }
+.dm-ced-opt-name { display: flex; flex-direction: column; min-width: 0; }
+.dm-ced-opt-name small { font-size: 9.5px; font-weight: 500; color: #99a2af; }
+.dm-ced-opt-side { flex-shrink: 0; font-size: 10px; color: #99a2af; font-variant-numeric: tabular-nums; }
+.dm-ced-opt-side b { font-weight: 700; color: var(--dm-navy); background: var(--ced-field); border-radius: 4px; padding: 1px 4px; margin-right: 3px; }
+.dm-ced-opt-row.is-create { border-top: 1px solid var(--dm-border); color: var(--dm-navy); font-weight: 600; }
+.dm-ced-meta { font-size: 11px; color: var(--dm-muted); }
+.dm-ced-ok { font-size: 11px; font-weight: 500; color: #059669; }
 
 /* ── Líneas ─────────────────────────────────────────────────────────────── */
-.dm-ced-lines { --ced-cols: minmax(0, 1fr) 48px 90px 98px 58px 112px 38px 12px; }
-.dm-ced-lines.no-tax { --ced-cols: minmax(0, 1fr) 48px 90px 98px 112px 38px 12px; }
+.dm-ced-lines { --ced-cols: 10px minmax(0, 1fr) 46px 84px 84px 58px 100px 38px 38px; }
+.dm-ced-lines.no-tax { --ced-cols: 10px minmax(0, 1fr) 46px 84px 84px 100px 38px 38px; }
 .dm-ced-lh, .dm-ced-lr { display: grid; grid-template-columns: var(--ced-cols); gap: 8px; align-items: center; }
 .dm-ced-lh { padding-bottom: 7px; border-bottom: 1px solid var(--dm-border); font-size: 10.5px; font-weight: 500; color: var(--dm-muted); white-space: nowrap; }
 .dm-ced-lh .is-right { text-align: right; }
@@ -52,11 +73,12 @@
 .dm-ced-name-main { line-height: 1.35; }
 .dm-ced-name small { font-size: 10px; font-weight: 500; color: var(--dm-muted); line-height: 1.45; }
 .dm-ced-hintp { color: var(--dm-navy); font-weight: 600; border-bottom: 1px dashed rgba(10, 25, 47, 0.35); }
-.dm-ced-in { display: flex; align-items: center; height: 30px; padding: 0 8px; border-radius: 8px; background: var(--ced-field); border: 1.5px solid transparent; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+.dm-ced-in { display: flex; align-items: center; justify-content: flex-end; height: 30px; padding: 0 8px; border-radius: 8px; background: var(--ced-field); border: 1.5px solid transparent; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--dm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
 .dm-ced-in.is-deal { color: var(--ced-ok); font-weight: 600; }
 .dm-ced-in .dm-cur { font-size: 8.5px; }
 .dm-ced-tax { display: flex; align-items: center; justify-content: center; height: 30px; padding: 0 6px; border-radius: 8px; background: var(--ced-field); font-size: 10.5px; font-weight: 500; color: var(--dm-text); white-space: nowrap; overflow: hidden; }
-.dm-ced-lista { font-size: 11px; color: var(--dm-muted); text-decoration: line-through; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.dm-ced-lista { text-align: right; font-size: 11px; color: var(--dm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.dm-ced-lista.is-struck { text-decoration: line-through; }
 .dm-ced-lista .dm-money { font-weight: 400; letter-spacing: 0; }
 .dm-ced-lista .dm-cur { display: inline-block; font-size: 8.5px; margin-left: 0.25em; }
 .dm-ced-imp { justify-self: end; text-align: right; font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -64,15 +86,32 @@
 .dm-ced-mg { justify-self: center; display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; font-size: 10.5px; font-weight: 600; color: var(--ced-ok); background: rgba(16, 185, 129, 0.1); }
 .dm-ced-mg.is-low { color: var(--ced-low); background: rgba(220, 38, 38, 0.1); }
 .dm-ced-mg.is-na { color: #94a3b8; background: transparent; font-weight: 400; }
-.dm-ced-del { justify-self: center; color: #94a3b8; }
-.dm-ced-del .dm-ico { width: 12px; height: 12px; }
+/* Agarre y acciones de la fila: discretos hasta que la fila tiene el puntero */
+.dm-ced-grip { color: #94a3b8; opacity: 0; display: grid; place-items: center; }
+.dm-ced-grip .dm-ico { width: 11px; height: 11px; }
+.dm-ced-acts { justify-self: end; display: inline-flex; gap: 6px; color: #94a3b8; opacity: 0.5; }
+.dm-ced-acts .dm-ico { width: 12px; height: 12px; }
+.dm-ced-lr.is-hover { background: rgba(10, 25, 47, 0.02); }
+.dm-ced-lr.is-hover .dm-ced-grip { opacity: 0.7; }
+.dm-ced-lr.is-hover .dm-ced-acts { opacity: 1; color: var(--dm-muted); }
+
+/* Barra de deshacer */
+.dm-ced-undo { display: inline-flex; align-items: center; gap: 12px; align-self: center; padding: 7px 7px 7px 13px; border-radius: 10px; background: #0a192f; color: #fff; font-size: 11px; box-shadow: 0 14px 36px -10px rgba(10, 25, 47, 0.55); }
+.dm-ced-undo b { font-weight: 600; padding: 5px 9px; border-radius: 7px; background: rgba(255, 255, 255, 0.14); }
+
+/* Paso 3 · Condiciones */
+.dm-ced-cond { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 14px; align-items: start; }
+
 
 /* Buscador + línea libre + kit */
 .dm-ced-add { display: flex; align-items: center; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
 .dm-ced-search-t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dm-ced-search { flex: 1 1 220px; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 10px; background: var(--ced-field); font-size: 11.5px; color: #99a2af; min-width: 0; white-space: nowrap; overflow: hidden; }
+.dm-ced-search.is-typed { color: var(--dm-text); border: 1.5px solid var(--dm-navy); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+.dm-ced-searchwrap { flex: 1 1 260px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.dm-ced-kbd { margin-left: auto; font-size: 9.5px; font-weight: 600; color: var(--dm-muted); padding: 1px 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--dm-border); }
 .dm-ced-search .dm-ico { width: 13px; height: 13px; flex-shrink: 0; }
-.dm-ced-btn2 { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 10px; font-size: 11.5px; font-weight: 600; color: var(--dm-text); background: #fff; box-shadow: inset 0 0 0 1px var(--dm-border-strong); white-space: nowrap; }
+.dm-ced-btn2 { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 10px; font-size: 11.5px; font-weight: 500; color: var(--dm-muted); background: var(--ced-field); white-space: nowrap; }
 
 /* Resumen lateral "Revisa y envía" */
 .dm-ced-sum { display: flex; flex-direction: column; gap: 11px; padding: 20px; background: #fff; border-radius: 18px; border: 1px solid var(--dm-border); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.03), 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 16px 40px -8px rgba(10, 25, 47, 0.1); }
@@ -98,12 +137,20 @@
 .dm-ced-send { display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; margin-top: 6px; border-radius: 999px; background: var(--dm-navy); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px -4px rgba(10, 25, 47, 0.4); }
 .dm-ced-send .dm-ico { width: 14px; height: 14px; }
 .dm-ced-draftbtn { display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 999px; background: var(--ced-field); font-size: 12px; font-weight: 600; color: var(--dm-text); }
+.dm-ced-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 10px; font-weight: 600; color: var(--dm-muted); background: var(--dm-soft); border: 1px solid var(--dm-border); }
+.dm-ced-state { display: flex; align-items: center; gap: 6px; margin-top: -6px; font-size: 10.5px; color: var(--dm-muted); }
+.dm-ced-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+.dm-ced-terms { margin-top: -6px; text-align: right; font-size: 10.5px; color: var(--dm-muted); }
+.dm-ced-tools { display: flex; justify-content: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--dm-muted); }
+.dm-ced-tools .dm-ico { width: 13px; height: 13px; }
+.dm-ced-kbds { display: flex; justify-content: center; gap: 4px 12px; flex-wrap: wrap; font-size: 9.5px; color: #99a2af; }
+.dm-ced-kbds kbd { font: 600 9px var(--dm-font, inherit); color: var(--dm-muted); background: var(--dm-soft); border-radius: 4px; padding: 1px 5px; margin-right: 2px; }
 
 /* ── Angosto: la fila se reordena en renglones, como el editor en móvil ── */
 @container dm (max-width: 560px) {
     .dm-ced-lh { display: none; }
     .dm-ced-lr, .dm-ced-lines.no-tax .dm-ced-lr {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 20px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
         grid-template-areas:
             "name name del"
             "qty price price"
@@ -120,5 +167,8 @@
     .dm-ced-lr > .dm-ced-tax { grid-area: tax; }
     .dm-ced-lr > .dm-ced-imp { grid-area: amount; }
     .dm-ced-lr > .dm-ced-mg { grid-area: margin; justify-self: start; }
-    .dm-ced-lr > .dm-ced-del { grid-area: del; justify-self: end; align-self: start; }
+    .dm-ced-lr > .dm-ced-acts { grid-area: del; justify-self: end; align-self: start; opacity: 1; }
+    .dm-ced-lr > .dm-ced-grip { display: none; }
+    .dm-ced-lr > .dm-ced-lista { text-align: left; }
+    .dm-ced-cond { grid-template-columns: 1fr; }
 }

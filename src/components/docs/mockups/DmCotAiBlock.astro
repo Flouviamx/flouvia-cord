@@ -1,21 +1,23 @@
 ---
 // Mockup: bloque "Arma la cotización con IA" del editor justo después de armar.
 //
-// Calca de nueva.astro: el bloque navy (título, bajada, cuadro de texto con el
-// clip para adjuntar, botón blanco y el estado "3 líneas armadas"), el
-// divisor "o créala manualmente", el paso 1 todavía sin cliente (la IA no
-// elige cliente) y el paso 2 con las tres partidas recién agregadas desde el
-// catálogo de Materiales del Valle, a precio de lista.
+// Calca de DocumentEditor.astro: el bloque navy (icono de CPU, título, bajada,
+// cuadro de texto con el clip para adjuntar, botón blanco y el estado
+// builtTpl), el paso 1 todavía sin cliente (la IA no elige cliente) y el paso
+// 2 con las tres partidas recién agregadas desde el catálogo de Materiales del
+// Valle, a precio de lista. Ya no hay divisor "o créala manualmente": el
+// documento se arma en los mismos tres pasos, con o sin IA. Cuando el
+// documento ya tiene líneas, el bloque se pliega a una barra con "Abrir".
 //
-// El pedido es el texto de ejemplo real del cuadro (ed.ai_textarea_ph sin el
-// "Ej."). El estado sale de lineasArmadasTpl sin la palomita de texto: aquí
-// es un icono (sin emojis ni "✓" de texto).
+// El pedido es el texto de ejemplo real del cuadro (aiPlaceholder sin el
+// "Ej."). El estado lleva un icono, no una palomita de texto.
 import DocsMockup from './DocsMockup.astro';
 import DmIcon from './DmIcon.astro';
 import CotEdLines, { type CotLine } from './CotEdLines.astro';
+import CotEdTerms from './CotEdTerms.astro';
 import './dm-cot-editor.css';
-import { getEditorRuntimeI18n } from '../../../i18n/app';
-import { dmT, pick, tpl, type DmLang } from './format';
+import { getDocumentEditorI18n } from '../../../i18n/app';
+import { pick, tpl, type DmLang } from './format';
 
 interface Props {
     lang: DmLang;
@@ -23,13 +25,13 @@ interface Props {
     caption?: string;
 }
 const { lang } = Astro.props;
-const RT = getEditorRuntimeI18n(lang);
-const pedido = dmT(lang, 'ed.ai_textarea_ph').replace(/^(Ej\.|E\.g\.|Eg\.)\s*/, '');
-const estado = tpl(RT.lineasArmadasTpl, { n: 3, lineaLabel: RT.lineas, armadaLabel: RT.armadas }).replace(/^✓\s*/, '');
+const T = getDocumentEditorI18n(lang);
+const pedido = T.aiPlaceholder.replace(/^(Ej\.|E\.g\.|Eg\.)\s*/, '');
+const estado = tpl(T.builtTpl, { n: 3, lineas: T.lines });
 
 const DATA: { es: { caption: string; lines: CotLine[] }; en: { caption: string; lines: CotLine[] } } = {
     es: {
-        caption: 'Bloque Arma la cotización con IA con el pedido "Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena", el clip para adjuntar y el botón Armar cotización con IA; debajo, las tres partidas que Cord AI agregó desde el catálogo: cemento gris × 200, varilla de 3/8 × 50 y arena × 2 m³.',
+        caption: 'Bloque Arma la cotización con IA con el pedido "Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena", el clip para adjuntar, el botón Armar cotización con IA y el aviso "3 líneas listas"; debajo, el paso 1 todavía sin cliente y las tres partidas que agregó desde el catálogo: cemento gris × 200, varilla de 3/8 × 50 y arena × 2 m³.',
         lines: [
             { name: 'Cemento gris CPC 30R', unit: 'saco 50 kg', qty: 200, lista: 245, costo: 178.6, added: true },
             { name: 'Varilla corrugada 3/8" × 12 m', unit: 'pieza', qty: 50, lista: 189, costo: 141.75, added: true },
@@ -37,7 +39,7 @@ const DATA: { es: { caption: string; lines: CotLine[] }; en: { caption: string; 
         ],
     },
     en: {
-        caption: 'Build the quote with AI block with the order "Hi, I need 200 bags of gray cement, 50 3/8" rebars, and 2 m³ of sand", the attach clip and the Build quote with AI button; below, the three lines Cord AI added from the catalog: gray cement × 200, 3/8" rebar × 50 and sand × 2 m³.',
+        caption: 'Build the quote with AI block with the order "Hi, I need 200 bags of gray cement, 50 3/8 rebars, and 2 m³ of sand", the attach clip, the Build quote with AI button and the "3 lines ready" notice; below, step 1 still without a client and the three lines it added from the catalog: gray cement × 200, 3/8" rebar × 50 and sand × 2 m³.',
         lines: [
             { name: 'Gray cement CPC 30R', unit: '50 kg bag', qty: 200, lista: 245, costo: 178.6, added: true },
             { name: 'Rebar 3/8" × 12 m', unit: 'piece', qty: 50, lista: 189, costo: 141.75, added: true },
@@ -47,43 +49,44 @@ const DATA: { es: { caption: string; lines: CotLine[] }; en: { caption: string; 
 };
 const d = pick(DATA, lang);
 const caption = Astro.props.caption ?? d.caption;
-const TERMS = ['contado', 'net30', 'net60'] as const;
 ---
-<DocsMockup lang={lang} variant="app" chrome="topbar" title={dmT(lang, 'ed.title_nueva')} crumbs={[dmT(lang, 'ed.crumb_cotizaciones')]} height={770} caption={caption} class="dm-cot-ai-figure">
-    <span slot="actions" class="dm-ced-draft">{dmT(lang, 'ed.borrador')}</span>
+<DocsMockup lang={lang} variant="app" chrome="topbar" title={T.titleNewQuote} crumbs={[T.crumbQuotes]} height={770} caption={caption} class="dm-cot-ai-figure">
     <div class="dm-ced dm-cot-ai">
         <div class="dm-cot-ai-block">
-            <span class="dm-cot-ai-title">{dmT(lang, 'ed.ai_titulo')}</span>
-            <span class="dm-cot-ai-sub">{dmT(lang, 'ed.ai_sub')}</span>
+            <div class="dm-cot-ai-head">
+                <DmIcon name="cpu" class="dm-cot-ai-ic" />
+                <span class="dm-cot-ai-headtext">
+                    <span class="dm-cot-ai-title">{T.aiTitleQuote}</span>
+                    <span class="dm-cot-ai-sub">{T.aiSub}</span>
+                </span>
+            </div>
             <div class="dm-cot-ai-area">
                 <span class="dm-cot-ai-text">{pedido}</span>
                 <span class="dm-cot-ai-clip"><DmIcon name="paperclip" /></span>
             </div>
             <div class="dm-cot-ai-actions">
-                <span class="dm-cot-ai-btn">{dmT(lang, 'ed.ai_boton')}</span>
+                <span class="dm-cot-ai-btn">{T.aiButtonQuote}</span>
                 <span class="dm-cot-ai-status"><DmIcon name="check-circle" />{estado}</span>
             </div>
         </div>
 
-        <div class="dm-ced-or">{dmT(lang, 'ed.o_manual')}</div>
-
-        <div class="dm-ced-step">
+        <div class="dm-ced-step dm-cot-ai-step1">
             <span class="dm-ced-num">1</span>
             <span class="dm-ced-step-text">
-                <span class="dm-ced-step-title">{dmT(lang, 'ed.paso1_titulo')}</span>
-                <span class="dm-ced-step-hint">{dmT(lang, 'ed.paso1_hint')}</span>
+                <span class="dm-ced-step-title">{T.step1Quote}</span>
+                <span class="dm-ced-step-hint">{T.step1HintQuote}</span>
             </span>
         </div>
         <div class="dm-cot-ai-client">
-            <span class="dm-ced-select is-placeholder dm-cot-ai-sel"><span class="dm-ced-select-text">{dmT(lang, 'ed.selecciona_cliente')}</span></span>
-            <span class="dm-ced-chips">{TERMS.map((c) => <span class:list={['dm-ced-chip', { 'is-on': c === 'contado' }]}>{dmT(lang, `ed.term_${c}`)}</span>)}</span>
+            <span class="dm-ced-combo is-placeholder dm-cot-ai-sel"><DmIcon name="user" /><span class="dm-ced-combo-t">{T.searchClient}</span></span>
+            <CotEdTerms lang={lang} value="contado" />
         </div>
 
-        <div class="dm-ced-step dm-cot-ai-step2">
+        <div class="dm-ced-step">
             <span class="dm-ced-num">2</span>
             <span class="dm-ced-step-text">
-                <span class="dm-ced-step-title">{dmT(lang, 'ed.paso2_titulo')}</span>
-                <span class="dm-ced-step-hint" set:html={dmT(lang, 'ed.paso2_hint')} />
+                <span class="dm-ced-step-title">{T.step2Quote}</span>
+                <span class="dm-ced-step-hint">{T.step2HintQuote}</span>
             </span>
         </div>
         <CotEdLines lang={lang} lines={d.lines} showTax={false} marginMin={20} />
@@ -94,6 +97,9 @@ const TERMS = ['contado', 'net30', 'net60'] as const;
     .dm-cot-ai-figure .dm-content, .dm-cot-ai-figure .dm-page-head { padding-right: calc(4px + var(--dm-bleed)); }
     .dm-cot-ai { padding-top: 4px; }
     .dm-cot-ai-block { display: flex; flex-direction: column; padding: 18px 20px; border-radius: 16px; background: #0a192f; color: #fff; box-shadow: 0 24px 50px -30px rgba(10, 25, 47, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+    .dm-cot-ai-head { display: flex; align-items: flex-start; gap: 10px; }
+    .dm-cot-ai-ic { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; opacity: 0.85; }
+    .dm-cot-ai-headtext { display: flex; flex-direction: column; min-width: 0; }
     .dm-cot-ai-title { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
     .dm-cot-ai-sub { margin: 2px 0 12px; font-size: 11.5px; line-height: 1.4; color: rgba(255, 255, 255, 0.66); }
     .dm-cot-ai-area { position: relative; min-height: 74px; padding: 10px 46px 10px 13px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1.5px solid rgba(255, 255, 255, 0.14); }
@@ -104,8 +110,9 @@ const TERMS = ['contado', 'net30', 'net60'] as const;
     .dm-cot-ai-btn { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 9px; background: #fff; color: #0a192f; font-size: 12px; font-weight: 650; }
     .dm-cot-ai-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255, 255, 255, 0.66); }
     .dm-cot-ai-status .dm-ico { width: 14px; height: 14px; color: #6ee7b7; }
+    .dm-cot-ai-step1 { margin-top: 24px; }
     .dm-cot-ai-client { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 26px; }
-    .dm-cot-ai-sel { width: 250px; max-width: 100%; }
+    .dm-cot-ai-sel { width: 290px; max-width: 100%; }
     @container dm (max-width: 560px) {
         .dm-cot-ai-figure .dm-stage { height: auto; }
         .dm-cot-ai-block { padding: 15px 14px; }
